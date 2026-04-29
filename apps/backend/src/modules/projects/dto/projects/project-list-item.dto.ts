@@ -3,6 +3,7 @@ import {
   ProjectPriority,
   ProjectStatus,
   type ProjectMetadata,
+  type QuoteSnapshot,
   type TaskStatusConfig,
 } from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
@@ -92,6 +93,18 @@ export class ProjectListItemDto {
   @Expose()
   @Transform(({ obj }) => toNum(latestQuoteVersion(obj)?.systemSizeKw))
   systemSizeKw!: number;
+
+  @ApiPropertyOptional({
+    example: 10.08,
+    description: 'Actual system size from quote snapshot calculation',
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    const snapshot = latestQuoteVersion(obj)?.quoteSnapshot as QuoteSnapshot | undefined;
+    const val = toNum(snapshot?.calculation?.actualSystemSizeKw);
+    return val != null && val > 0 ? val : undefined;
+  })
+  actualSystemSizeKw?: number;
 
   @ApiProperty({ example: 'residential', description: 'Derived from latest quote version' })
   @Expose()

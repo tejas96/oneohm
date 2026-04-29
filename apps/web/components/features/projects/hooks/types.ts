@@ -45,6 +45,7 @@ export interface ProjectDetail {
   propertyId: string;
   property: ProjectDetailProperty;
   systemSizeKw?: number;
+  actualSystemSizeKw?: number;
   projectType?: string;
   status: ProjectStatus;
   priority: ProjectPriority;

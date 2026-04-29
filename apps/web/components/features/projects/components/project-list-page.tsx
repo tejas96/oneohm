@@ -47,13 +47,13 @@ import {
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
+import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import {
   formatCurrency,
   formatDate,
   formatRelativeDate,
-  formatSystemSize,
   getErrorMessage,
   toTitleLabel,
 } from '@/lib/utils';
@@ -258,13 +258,15 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     sortable: true,
     filterable: true,
     filterType: 'range',
-    width: 130,
+    width: 165,
     renderCell: ({ row }): JSX.Element => {
       const project = row as ProjectListItem;
       return (
-        <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 500 }}>
-          {formatSystemSize(project.systemSizeKw)} kW
-        </MUITypography>
+        <SystemSizeDisplay
+          actualKw={project.actualSystemSizeKw}
+          requestedKw={project.systemSizeKw}
+          layout="stacked"
+        />
       );
     },
   },

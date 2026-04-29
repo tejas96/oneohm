@@ -162,7 +162,7 @@ export function Step2ProjectDetails({ form }: Step2ProjectDetailsProps): React.J
               </div>
               <div>
                 <MUITypography variant="timestamp" className="text-foreground-secondary mb-1">
-                  System Size
+                  Requested Size
                 </MUITypography>
                 <MUITypography variant="bodyPrimary">
                   {selectedQuote.systemSizeKw

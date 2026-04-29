@@ -18,7 +18,12 @@ import type { ProjectDetail } from '../../../../hooks/types';
 import { Badge, Card, CardContent, Skeleton } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { buildTasksTabUrl, toTitleLabel } from '@/lib/utils';
-import { formatCurrency, formatDate, formatSystemSize, getInitials } from '@/lib/utils/format';
+import {
+  formatCurrency,
+  formatDate,
+  formatSystemSizeDisplay,
+  getInitials,
+} from '@/lib/utils/format';
 
 const PROGRESS_RING_STROKE: Record<string, string> = {
   primary: '#76c044',
@@ -117,8 +122,11 @@ export function OverviewHero({ project, projectId, isActive }: OverviewHeroProps
       : 'secondary';
 
   const systemSubtitleParts: string[] = [];
-  if (project.systemSizeKw != null && project.systemSizeKw > 0) {
-    systemSubtitleParts.push(`${formatSystemSize(project.systemSizeKw)} kW`);
+  const primarySizeKw = project.actualSystemSizeKw ?? project.systemSizeKw;
+  if (primarySizeKw != null && primarySizeKw > 0) {
+    systemSubtitleParts.push(
+      formatSystemSizeDisplay(project.actualSystemSizeKw, project.systemSizeKw),
+    );
   }
   if (projectTypeLabel) systemSubtitleParts.push(projectTypeLabel);
   const systemSubtitle = systemSubtitleParts.length > 0 ? systemSubtitleParts.join(' · ') : null;

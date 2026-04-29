@@ -52,6 +52,7 @@ export interface ProjectListItem {
   quoteId: string;
   quoteNumber?: string;
   systemSizeKw: number;
+  actualSystemSizeKw?: number;
   projectType: string;
   status: ProjectStatus;
   priority: ProjectPriority;

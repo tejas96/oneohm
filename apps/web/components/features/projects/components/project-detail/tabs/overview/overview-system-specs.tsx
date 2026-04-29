@@ -5,9 +5,8 @@ import Link from 'next/link';
 
 import type { ProjectDetail } from '../../../../hooks/types';
 
-import { Card, CardContent } from '@/components/ui';
+import { Card, CardContent, SystemSizeDisplay } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { formatSystemSize } from '@/lib/utils/format';
 
 interface OverviewSystemSpecsProps {
   project: ProjectDetail;
@@ -75,10 +74,11 @@ export function OverviewSystemSpecs({ project }: OverviewSystemSpecsProps): Reac
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-3 flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] text-foreground-secondary">Installed Capacity</p>
-            <p className="text-3xl leading-none font-semibold text-primary mt-1">
-              {project.systemSizeKw ? formatSystemSize(project.systemSizeKw) : '—'}
-              <span className="text-sm text-foreground-secondary ml-1">kW</span>
-            </p>
+            <SystemSizeDisplay
+              actualKw={project.actualSystemSizeKw ?? project.systemSizeKw}
+              requestedKw={project.systemSizeKw}
+              size="lg"
+            />
           </div>
           <div className="text-right">
             <p className="text-[10px] text-foreground-secondary uppercase font-semibold">Panels</p>

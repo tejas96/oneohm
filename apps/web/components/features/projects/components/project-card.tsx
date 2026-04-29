@@ -17,8 +17,9 @@ import type { ProjectListItem } from '../hooks';
 import { TeamAvatarGroup } from './team-avatar-group';
 
 import { Badge } from '@/components/ui/badge';
+import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { formatCurrency, formatDate, formatRelativeDate, formatSystemSize } from '@/lib/utils';
+import { formatCurrency, formatDate, formatRelativeDate } from '@/lib/utils';
 
 interface ProjectCardProps {
   project: ProjectListItem;
@@ -153,7 +154,11 @@ export function ProjectCard({ project }: ProjectCardProps) {
       <div className="flex items-center gap-4 text-sm text-foreground-secondary mb-3">
         <span className="flex items-center">
           <Zap className="size-4 mr-1 text-warning" />
-          {formatSystemSize(project.systemSizeKw)} kW
+          <SystemSizeDisplay
+            actualKw={project.actualSystemSizeKw}
+            requestedKw={project.systemSizeKw}
+            layout="inline"
+          />
         </span>
         {project.estimatedCost != null && (
           <>

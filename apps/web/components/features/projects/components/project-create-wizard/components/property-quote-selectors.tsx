@@ -145,7 +145,7 @@ export function PropertyQuoteSelectors({
                 </div>
                 <div>
                   <MUITypography variant="timestamp" className="text-foreground-secondary">
-                    System Size
+                    Requested Size
                   </MUITypography>
                   <MUITypography variant="bodyPrimary">{q.systemSizeKw ?? 0}kW</MUITypography>
                 </div>

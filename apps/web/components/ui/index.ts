@@ -230,6 +230,14 @@ export type { MUITypographyProps, MUITypographyVariant } from './mui-typography'
 export { MUIStatusChip } from './mui-status-chip';
 export type { MUIStatusChipProps, StatusChipColor, StatusChipVariant } from './mui-status-chip';
 
+// System Size Display
+export { SystemSizeDisplay } from './system-size-display';
+export type {
+  SystemSizeDisplayLayout,
+  SystemSizeDisplayProps,
+  SystemSizeDisplaySize,
+} from './system-size-display';
+
 // Sonner (Toasts)
 export { Toaster, showToast } from './sonner';
 

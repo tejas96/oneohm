@@ -20,8 +20,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { ROUTES } from '@/lib/config/routes';
-import { formatDate, formatSystemSize } from '@/lib/utils/format';
+import { formatDate } from '@/lib/utils/format';
 
 interface ProjectDetailHeaderProps {
   project: ProjectDetail;
@@ -67,7 +68,17 @@ export const ProjectDetailHeader = React.memo(
             </div>
             <p className="text-xs text-foreground-secondary mt-1">
               {project.projectNumber}
-              {project.systemSizeKw ? ` · ${formatSystemSize(project.systemSizeKw)} kW` : ''}
+              {project.systemSizeKw != null && (
+                <>
+                  {' · '}
+                  <SystemSizeDisplay
+                    actualKw={project.actualSystemSizeKw}
+                    requestedKw={project.systemSizeKw}
+                    size="sm"
+                    layout="inline"
+                  />
+                </>
+              )}
               {project.projectType ? ` · ${project.projectType}` : ''}
               {project.startDate ? ` · Started ${formatDate(project.startDate, 'medium')}` : ''}
             </p>

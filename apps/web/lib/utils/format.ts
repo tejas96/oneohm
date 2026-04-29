@@ -11,6 +11,8 @@ export {
   formatSystemSize,
 } from '@oneohm-epc/shared/utils';
 
+import { formatSystemSize } from '@oneohm-epc/shared/utils';
+
 export function formatLabel(key: string): string {
   return key
     .split('_')
@@ -58,4 +60,18 @@ export function getDueDateMuiColor(endDate?: string): string {
   if (d < now) return 'error.main';
   if (d.getTime() === now.getTime()) return 'warning.main';
   return 'text.secondary';
+}
+
+/**
+ * Plain-string fallback for contexts that cannot render JSX (e.g. subtitle string building).
+ * Shows actual as primary. Appends "(sel. X kW)" only when actual differs from requested.
+ */
+export function formatSystemSizeDisplay(actual?: number, requested?: number): string {
+  const primary = actual ?? requested;
+  if (primary == null) return '—';
+  const primaryStr = `${formatSystemSize(primary)} kW`;
+  if (actual != null && requested != null && Math.abs(actual - requested) > 0.01) {
+    return `${primaryStr} (sel. ${formatSystemSize(requested)} kW)`;
+  }
+  return primaryStr;
 }

@@ -22,6 +22,7 @@ export {
   formatRelativeDate,
   formatRoleCode,
   formatSystemSize,
+  formatSystemSizeDisplay,
   formatTimeAgo,
   getInitials,
   toTitleLabel,
