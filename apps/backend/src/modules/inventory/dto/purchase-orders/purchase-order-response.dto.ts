@@ -153,6 +153,23 @@ export class PurchaseOrderResponseDto {
   @Expose()
   paymentStatus!: PaymentStatus;
 
+  @ApiProperty({ example: 50000.0, description: 'Cumulative paid amount in INR' })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  paidAmount!: number;
+
+  @ApiProperty({
+    example: 68000.0,
+    description: 'Outstanding amount = totalAmount - paidAmount (computed, not stored)',
+  })
+  @Expose()
+  @Transform(({ obj }: { obj: { totalAmount?: unknown; paidAmount?: unknown } }) => {
+    const total = toNum(obj.totalAmount) ?? 0;
+    const paid = toNum(obj.paidAmount) ?? 0;
+    return Math.max(0, total - paid);
+  })
+  outstandingAmount!: number;
+
   // ==================== Status ====================
 
   @ApiProperty({

@@ -15,6 +15,7 @@ import {
   VendorRepository,
   WarehouseRepository,
 } from '../repositories';
+import { derivePaymentStatus } from './helpers/payment-status';
 import { InventoryStockService } from './inventory-stock.service';
 
 /**
@@ -407,6 +408,66 @@ export class PurchaseOrderService {
       status: PurchaseOrderStatus.CANCELLED,
       notes: `${po.notes ?? ''}\nCancelled: ${reason}`,
       updatedBy,
+    });
+  }
+
+  /**
+   * Record a payment against a PO. Updates paid_amount under a pessimistic
+   * lock and re-derives payment_status from cumulative paid_amount.
+   * Disallowed for DRAFT (not yet approved) and CANCELLED POs.
+   */
+  async recordPayment(
+    id: string,
+    organizationId: string,
+    amount: number,
+    performedBy: string,
+    notes?: string,
+  ): Promise<PurchaseOrderEntity> {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Payment amount must be greater than 0');
+    }
+
+    return this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(PurchaseOrderEntity);
+      const po = await repo
+        .createQueryBuilder('po')
+        .where('po.id = :id', { id })
+        .andWhere('po.organizationId = :organizationId', { organizationId })
+        .andWhere('po.deletedAt IS NULL')
+        .setLock('pessimistic_write')
+        .getOne();
+
+      if (!po) {
+        throw new NotFoundException(`Purchase Order with ID ${id} not found`);
+      }
+      if (po.status === PurchaseOrderStatus.DRAFT) {
+        throw new BadRequestException('Cannot record payment on a draft purchase order');
+      }
+      if (po.status === PurchaseOrderStatus.CANCELLED) {
+        throw new BadRequestException('Cannot record payment on a cancelled purchase order');
+      }
+      if (po.paymentStatus === PaymentStatus.PAID) {
+        throw new BadRequestException('Purchase order is already fully paid');
+      }
+
+      const total = Number(po.totalAmount);
+      const currentPaid = Number(po.paidAmount);
+      const nextPaid = Number((currentPaid + amount).toFixed(2));
+
+      if (nextPaid > total) {
+        const remaining = Number((total - currentPaid).toFixed(2));
+        throw new BadRequestException(
+          `Payment exceeds outstanding balance. Remaining: ${remaining}`,
+        );
+      }
+
+      po.paidAmount = nextPaid;
+      po.paymentStatus = derivePaymentStatus(nextPaid, total);
+      const noteLine = `[PAYMENT ${amount}] ${notes ?? ''}`.trim();
+      po.notes = po.notes ? `${po.notes}\n${noteLine}` : noteLine;
+      po.updatedBy = performedBy;
+      await repo.save(po);
+      return po;
     });
   }
 

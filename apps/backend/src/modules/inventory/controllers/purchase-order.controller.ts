@@ -32,6 +32,7 @@ import {
   CreatePurchaseOrderDto,
   PurchaseOrderResponseDto,
   ReceivePurchaseOrderDto,
+  RecordPaymentDto,
   UpdatePurchaseOrderDto,
 } from '../dto';
 import { PurchaseOrderService } from '../services';
@@ -320,6 +321,32 @@ export class PurchaseOrderController {
       currentUser.id,
     );
 
+    return plainToInstance(PurchaseOrderResponseDto, po, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Record a payment against a PO. Updates paid_amount and re-derives
+   * payment_status (pending | partial | paid). Disallowed for draft and
+   * cancelled POs.
+   */
+  @RequirePermission('purchase-order:write')
+  @Post(':id/record-payment')
+  @ApiOperation({ summary: 'Record a payment against a purchase order' })
+  async recordPayment(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: RecordPaymentDto,
+  ): Promise<PurchaseOrderResponseDto> {
+    const po = await this.purchaseOrderService.recordPayment(
+      id,
+      organizationId,
+      body.amount,
+      currentUser.id,
+      body.notes,
+    );
     return plainToInstance(PurchaseOrderResponseDto, po, {
       excludeExtraneousValues: true,
     });
