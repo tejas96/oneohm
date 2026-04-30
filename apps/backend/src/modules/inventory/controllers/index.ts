@@ -6,3 +6,4 @@ export * from './inventory-transaction.controller';
 export * from './stock-allocation.controller';
 export * from './material-dispatch.controller';
 export * from './project-vendor.controller';
+export * from './inventory-search.controller';

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
+  InventorySearchController,
   InventoryStockController,
   InventoryTransactionController,
   MaterialDispatchController,
@@ -37,6 +38,7 @@ import {
 } from './repositories';
 import {
   InventoryBulkService,
+  InventorySearchService,
   InventoryStockService,
   InventoryTransactionService,
   LowStockAlertService,
@@ -50,6 +52,7 @@ import {
   WarehouseService,
 } from './services';
 import { PermissionGuard } from '../iam/guards/permission.guard';
+import { ProductEntity } from '../master-data/entities/product.entity';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
@@ -79,6 +82,7 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
       MaterialDispatchItemEntity,
       // External entities needed by cross-module repositories
       ProjectEntity,
+      ProductEntity,
     ]),
     OrganizationsModule,
     MasterDataModule,
@@ -93,6 +97,7 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     StockAllocationController,
     MaterialDispatchController,
     ProjectVendorController,
+    InventorySearchController,
   ],
   providers: [
     // Repositories
@@ -120,6 +125,7 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     StockAllocationService,
     MaterialDispatchService,
     InventoryBulkService,
+    InventorySearchService,
     // Guards
     PermissionGuard,
   ],
