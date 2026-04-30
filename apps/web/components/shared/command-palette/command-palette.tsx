@@ -6,6 +6,10 @@ import { useCallback, useMemo, useState } from 'react';
 
 import { useCommandPaletteCommands } from './use-command-palette-commands';
 import { useEntitySearch } from './use-entity-search';
+import {
+  useInventoryPaletteSearch,
+  type InventoryPaletteHit,
+} from './use-inventory-palette-search';
 
 import {
   CommandDialog,
@@ -55,6 +59,36 @@ function EntityIcon({ icon: Icon, type }: { icon: typeof Users; type: RecentView
   );
 }
 
+/**
+ * Renders a single inventory federated-search hit. Kept as a separate
+ * component so the JSX inside the `inventorySearch.groups` map stays
+ * readable and the icon (an MUI SvgIconComponent, not lucide) gets
+ * its own `sx` sizing without conflicting with the lucide-sized
+ * EntityIcon above.
+ */
+function InventoryHitRow({
+  hit,
+  onSelect,
+}: {
+  hit: InventoryPaletteHit;
+  onSelect: (href: string) => void;
+}) {
+  const Icon = hit.icon;
+  return (
+    <CommandItem onSelect={() => onSelect(hit.href)}>
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+        <Icon sx={{ fontSize: 16 }} />
+      </span>
+      <div className="flex-1 truncate">
+        <span className="font-medium">{hit.label}</span>
+      </div>
+      {hit.secondary && (
+        <span className="shrink-0 text-xs text-muted-foreground">{hit.secondary}</span>
+      )}
+    </CommandItem>
+  );
+}
+
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const router = useRouter();
@@ -64,13 +98,20 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     query,
     open,
   );
+  const inventorySearch = useInventoryPaletteSearch({ query, open });
 
   const recentViews = useMemo(
     () => (open && user?.id ? getRecentViews(user.id) : []),
     [open, user?.id],
   );
   const hasSearch = query.length >= 2;
-  const hasResults = customers.length > 0 || quotes.length > 0 || projects.length > 0;
+  const hasInventoryResults = inventorySearch.groups.length > 0;
+  const hasResults =
+    customers.length > 0 || quotes.length > 0 || projects.length > 0 || hasInventoryResults;
+  // Combined loading state — the empty-state copy needs to show
+  // "Searching..." while either fan-out is still in flight, not just
+  // the legacy customer/quote/project bundle.
+  const anyLoading = isLoading || inventorySearch.isLoading;
 
   const handleSelect = useCallback(
     (href: string) => {
@@ -111,7 +152,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   return (
     <CommandDialog open={open} onOpenChange={handleOpenChange}>
       <CommandInput
-        placeholder="Search commands, customers, quotes..."
+        placeholder={
+          inventorySearch.isEnabled
+            ? 'Search commands, customers, quotes, vendors, POs...'
+            : 'Search commands, customers, quotes...'
+        }
         value={query}
         onValueChange={setQuery}
         trailing={
@@ -122,7 +167,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       />
       <CommandList>
         {/* Loading / error / empty states for entity search */}
-        {hasSearch && isLoading && (
+        {hasSearch && anyLoading && (
           <CommandEmpty>
             <span className="flex items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
@@ -130,12 +175,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             </span>
           </CommandEmpty>
         )}
-        {hasSearch && isError && !isLoading && (
+        {hasSearch && isError && !anyLoading && (
           <CommandEmpty className="text-muted-foreground">
             {errorMessage ?? 'Search failed. Please try again.'}
           </CommandEmpty>
         )}
-        {hasSearch && !isLoading && !isError && !hasResults && (
+        {hasSearch && !anyLoading && !isError && !hasResults && (
           <CommandEmpty>
             <div className="flex flex-col items-center gap-2 text-muted-foreground">
               <Search className="size-5" />
@@ -193,7 +238,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         )}
 
         {/* Entity search results */}
-        {hasSearch && !isLoading && customers.length > 0 && (
+        {hasSearch && !anyLoading && customers.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading="Customers">
@@ -218,7 +263,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           </>
         )}
 
-        {hasSearch && !isLoading && quotes.length > 0 && (
+        {hasSearch && !anyLoading && quotes.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading="Quotes">
@@ -240,7 +285,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           </>
         )}
 
-        {hasSearch && !isLoading && projects.length > 0 && (
+        {hasSearch && !anyLoading && projects.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading="Projects">
@@ -261,6 +306,34 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                 </CommandItem>
               ))}
             </CommandGroup>
+          </>
+        )}
+
+        {/* Inventory federated search results (Part 13).
+            Gated by the `inventory:search` permission via useInventoryPaletteSearch. */}
+        {hasSearch && !anyLoading && hasInventoryResults && (
+          <>
+            {inventorySearch.groups.map((group) => (
+              <div key={`inv-group-${group.type}`}>
+                <CommandSeparator />
+                <CommandGroup heading={group.label}>
+                  {group.hits.map((hit) => (
+                    <InventoryHitRow
+                      key={`inv-${group.type}-${hit.id}`}
+                      hit={hit}
+                      onSelect={handleSelect}
+                    />
+                  ))}
+                </CommandGroup>
+              </div>
+            ))}
+            {inventorySearch.degraded.length > 0 && (
+              <div className="px-3 py-1.5 text-[11px] text-muted-foreground">
+                Some inventory results may be incomplete (
+                {inventorySearch.degraded.join(', ')} bucket
+                {inventorySearch.degraded.length > 1 ? 's' : ''} unavailable).
+              </div>
+            )}
           </>
         )}
       </CommandList>
