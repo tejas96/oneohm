@@ -36,7 +36,12 @@ import {
   UpdateMaterialDispatchDto,
   UpdateMaterialDispatchStatusDto,
 } from '../dto';
-import { InventoryBulkService, MaterialDispatchService } from '../services';
+import type { FunnelResponse } from '../dto/common';
+import {
+  InventoryBulkService,
+  InventoryStatsService,
+  MaterialDispatchService,
+} from '../services';
 
 /**
  * Material Dispatch Controller
@@ -50,6 +55,7 @@ export class MaterialDispatchController {
   constructor(
     private readonly materialDispatchService: MaterialDispatchService,
     private readonly inventoryBulkService: InventoryBulkService,
+    private readonly inventoryStatsService: InventoryStatsService,
   ) {}
 
   // ==================== Static Routes (MUST come before :id) ====================
@@ -88,6 +94,20 @@ export class MaterialDispatchController {
     @CurrentUser() _currentUser: CurrentUserType,
   ) {
     return this.materialDispatchService.getStatistics(organizationId);
+  }
+
+  @RequirePermission('inventory:read')
+  @Get('stats/funnel')
+  @ApiOperation({ summary: 'Dispatch funnel: lifecycle counts in window + cancelled side-bucket' })
+  @ApiQuery({ name: 'fromDate', required: false, type: String })
+  @ApiQuery({ name: 'toDate', required: false, type: String })
+  async statsFunnel(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ): Promise<FunnelResponse> {
+    return this.inventoryStatsService.dispatchFunnel(organizationId, fromDate, toDate);
   }
 
   /**

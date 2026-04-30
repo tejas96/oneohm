@@ -27,25 +27,32 @@ import {
 } from './entities';
 import {
   InventoryStockRepository,
+  InventoryStockStatsRepository,
   InventoryTransactionRepository,
+  InventoryTransactionStatsRepository,
   MaterialDispatchItemRepository,
   MaterialDispatchRepository,
+  MaterialDispatchStatsRepository,
   ProjectVendorRepository,
   PurchaseOrderItemRepository,
   PurchaseOrderRepository,
+  PurchaseOrderStatsRepository,
   StockAllocationRepository,
+  StockAllocationStatsRepository,
   VendorRepository,
   WarehouseRepository,
 } from './repositories';
 import {
   InventoryBulkService,
   InventorySearchService,
+  InventoryStatsService,
   InventoryStockService,
   InventoryTransactionService,
   LowStockAlertService,
   MaterialDispatchService,
   ProjectVendorService,
   PurchaseOrderService,
+  PurchaseOrderStatsService,
   ReservedStockService,
   StockAllocationService,
   StockTransferService,
@@ -114,6 +121,12 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     MaterialDispatchRepository,
     MaterialDispatchItemRepository,
     ProjectRepository,
+    // Stats repositories (Part 10)
+    PurchaseOrderStatsRepository,
+    InventoryTransactionStatsRepository,
+    StockAllocationStatsRepository,
+    MaterialDispatchStatsRepository,
+    InventoryStockStatsRepository,
     // Services
     LowStockAlertService,
     ReservedStockService,
@@ -128,6 +141,9 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     MaterialDispatchService,
     InventoryBulkService,
     InventorySearchService,
+    // Stats services (Part 10)
+    PurchaseOrderStatsService,
+    InventoryStatsService,
     // Guards
     PermissionGuard,
   ],

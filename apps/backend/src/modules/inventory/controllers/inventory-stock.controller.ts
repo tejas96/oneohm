@@ -25,7 +25,8 @@ import {
   StockTransferDto,
   UpdateStockDto,
 } from '../dto';
-import { InventoryStockService } from '../services';
+import type { TopItemsResponse } from '../dto/common';
+import { InventoryStatsService, InventoryStockService } from '../services';
 
 /**
  * Inventory Stock Controller
@@ -36,7 +37,10 @@ import { InventoryStockService } from '../services';
 @Controller('inventory-stock')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class InventoryStockController {
-  constructor(private readonly inventoryStockService: InventoryStockService) {}
+  constructor(
+    private readonly inventoryStockService: InventoryStockService,
+    private readonly inventoryStatsService: InventoryStatsService,
+  ) {}
 
   /**
    * Get all stock across organization
@@ -342,6 +346,18 @@ export class InventoryStockController {
     }>
   > {
     return this.inventoryStockService.getStockSummaryByWarehouse(organizationId);
+  }
+
+  @RequirePermission('inventory:read')
+  @Get('stats/top-low-stock')
+  @ApiOperation({ summary: 'Top items that have crossed their minimum stock level (deficit DESC)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async statsTopLowStock(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Query('limit') limit?: string,
+  ): Promise<TopItemsResponse> {
+    return this.inventoryStatsService.topLowStock(organizationId, limit);
   }
 
   /**

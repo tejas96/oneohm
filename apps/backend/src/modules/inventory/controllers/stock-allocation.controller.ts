@@ -34,7 +34,12 @@ import {
   FulfillStockAllocationDto,
   StockAllocationResponseDto,
 } from '../dto';
-import { InventoryBulkService, StockAllocationService } from '../services';
+import type { FunnelResponse } from '../dto/common';
+import {
+  InventoryBulkService,
+  InventoryStatsService,
+  StockAllocationService,
+} from '../services';
 
 /**
  * Stock Allocation Controller
@@ -49,6 +54,7 @@ export class StockAllocationController {
   constructor(
     private readonly stockAllocationService: StockAllocationService,
     private readonly inventoryBulkService: InventoryBulkService,
+    private readonly inventoryStatsService: InventoryStatsService,
   ) {}
 
   // ==================== Static Routes (MUST come before :id) ====================
@@ -87,6 +93,20 @@ export class StockAllocationController {
     @CurrentUser() _currentUser: CurrentUserType,
   ) {
     return this.stockAllocationService.getStatistics(organizationId);
+  }
+
+  @RequirePermission('inventory:read')
+  @Get('stats/funnel')
+  @ApiOperation({ summary: 'Allocation funnel: lifecycle counts in window + cancelled side-bucket' })
+  @ApiQuery({ name: 'fromDate', required: false, type: String })
+  @ApiQuery({ name: 'toDate', required: false, type: String })
+  async statsFunnel(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+  ): Promise<FunnelResponse> {
+    return this.inventoryStatsService.allocationFunnel(organizationId, fromDate, toDate);
   }
 
   /**

@@ -38,7 +38,12 @@ import {
   RecordPaymentDto,
   UpdatePurchaseOrderDto,
 } from '../dto';
-import { InventoryBulkService, PurchaseOrderService } from '../services';
+import type { TopItemsResponse, TrendResponse } from '../dto/common';
+import {
+  InventoryBulkService,
+  PurchaseOrderService,
+  PurchaseOrderStatsService,
+} from '../services';
 
 /**
  * Purchase Order Controller
@@ -53,6 +58,7 @@ export class PurchaseOrderController {
   constructor(
     private readonly purchaseOrderService: PurchaseOrderService,
     private readonly inventoryBulkService: InventoryBulkService,
+    private readonly purchaseOrderStatsService: PurchaseOrderStatsService,
   ) {}
 
   // ==================== Static Routes (MUST come before :id) ====================
@@ -121,6 +127,66 @@ export class PurchaseOrderController {
     overdueCount: number;
   }> {
     return this.purchaseOrderService.getStatistics(organizationId);
+  }
+
+  @RequirePermission('inventory:read')
+  @Get('stats/spend-trend')
+  @ApiOperation({ summary: 'PO spend trend bucketed by po_date (CANCELLED excluded)' })
+  @ApiQuery({ name: 'fromDate', required: false, type: String })
+  @ApiQuery({ name: 'toDate', required: false, type: String })
+  @ApiQuery({ name: 'bucket', required: false, enum: ['day', 'week'] })
+  async statsSpendTrend(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+    @Query('bucket') bucket?: string,
+  ): Promise<TrendResponse> {
+    return this.purchaseOrderStatsService.spendTrend(organizationId, fromDate, toDate, bucket);
+  }
+
+  @RequirePermission('inventory:read')
+  @Get('stats/top-vendors')
+  @ApiOperation({ summary: 'Top vendors by PO spend in window' })
+  @ApiQuery({ name: 'fromDate', required: false, type: String })
+  @ApiQuery({ name: 'toDate', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async statsTopVendors(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+    @Query('limit') limit?: string,
+  ): Promise<TopItemsResponse> {
+    return this.purchaseOrderStatsService.topVendors(organizationId, fromDate, toDate, limit);
+  }
+
+  @RequirePermission('inventory:read')
+  @Get('stats/spend-by-warehouse')
+  @ApiOperation({ summary: 'PO spend grouped by warehouse in window' })
+  @ApiQuery({ name: 'fromDate', required: false, type: String })
+  @ApiQuery({ name: 'toDate', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async statsSpendByWarehouse(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+    @Query('limit') limit?: string,
+  ): Promise<TopItemsResponse> {
+    return this.purchaseOrderStatsService.spendByWarehouse(organizationId, fromDate, toDate, limit);
+  }
+
+  @RequirePermission('inventory:read')
+  @Get('stats/outstanding-by-vendor')
+  @ApiOperation({ summary: 'Outstanding balance per vendor (now-snapshot)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async statsOutstandingByVendor(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Query('limit') limit?: string,
+  ): Promise<TopItemsResponse> {
+    return this.purchaseOrderStatsService.outstandingByVendor(organizationId, limit);
   }
 
   /**

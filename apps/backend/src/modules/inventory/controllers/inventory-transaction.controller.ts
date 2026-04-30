@@ -10,7 +10,8 @@ import type { CurrentUserType } from '../../auth/types';
 import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
 import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { InventoryTransactionResponseDto } from '../dto';
-import { InventoryTransactionService } from '../services';
+import type { TrendResponse } from '../dto/common';
+import { InventoryStatsService, InventoryTransactionService } from '../services';
 
 /**
  * Inventory Transaction Controller
@@ -22,7 +23,10 @@ import { InventoryTransactionService } from '../services';
 @Controller('inventory-transactions')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class InventoryTransactionController {
-  constructor(private readonly inventoryTransactionService: InventoryTransactionService) {}
+  constructor(
+    private readonly inventoryTransactionService: InventoryTransactionService,
+    private readonly inventoryStatsService: InventoryStatsService,
+  ) {}
 
   // ==================== Static Routes ====================
 
@@ -41,6 +45,27 @@ export class InventoryTransactionController {
     @Query('toDate') toDate?: string,
   ) {
     return this.inventoryTransactionService.getSummaryByType(organizationId, fromDate, toDate);
+  }
+
+  @RequirePermission('inventory:read')
+  @Get('stats/by-type-trend')
+  @ApiOperation({ summary: 'Transactions count bucketed by date with per-type series' })
+  @ApiQuery({ name: 'fromDate', required: false, type: String })
+  @ApiQuery({ name: 'toDate', required: false, type: String })
+  @ApiQuery({ name: 'bucket', required: false, enum: ['day', 'week'] })
+  async statsByTypeTrend(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
+    @Query('bucket') bucket?: string,
+  ): Promise<TrendResponse> {
+    return this.inventoryStatsService.transactionsByTypeTrend(
+      organizationId,
+      fromDate,
+      toDate,
+      bucket,
+    );
   }
 
   /**

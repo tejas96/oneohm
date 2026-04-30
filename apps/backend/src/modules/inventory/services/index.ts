@@ -11,3 +11,5 @@ export * from './stock-allocation.service';
 export * from './material-dispatch.service';
 export * from './inventory-bulk.service';
 export * from './inventory-search.service';
+export * from './inventory-stats.service';
+export * from './purchase-order-stats.service';
