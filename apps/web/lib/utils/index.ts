@@ -31,3 +31,4 @@ export { formatPhoneForWhatsApp, formatPhoneForDisplay, isValidPhone } from './p
 export { getRecentViews, recordRecentView } from './recent-views';
 export type { RecentViewItem, RecentViewType } from './recent-views';
 export { deterministicIndex, pickDeterministic } from './color';
+export { downloadFromUrl, PayloadTooLargeError } from './download';
