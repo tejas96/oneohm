@@ -273,6 +273,30 @@ export class MaterialDispatchController {
   }
 
   /**
+   * Mark dispatch as DELIVERED. Allowed from IN_TRANSIT or PARTIALLY_DELIVERED.
+   */
+  @RequirePermission('dispatch:write')
+  @Post(':id/mark-delivered')
+  @ApiOperation({ summary: 'Mark dispatch as DELIVERED' })
+  async markDelivered(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { actualDeliveryDate?: string; receivedById?: string } = {},
+  ): Promise<MaterialDispatchResponseDto> {
+    const dispatch = await this.materialDispatchService.markDelivered(
+      id,
+      organizationId,
+      currentUser.id,
+      body.actualDeliveryDate ? new Date(body.actualDeliveryDate) : undefined,
+      body.receivedById,
+    );
+    return plainToInstance(MaterialDispatchResponseDto, dispatch, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
    * Cancel material dispatch
    */
   @RequirePermission('dispatch:write')

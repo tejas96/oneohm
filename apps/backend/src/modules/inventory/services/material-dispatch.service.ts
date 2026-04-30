@@ -18,6 +18,7 @@ import {
   StockAllocationRepository,
   WarehouseRepository,
 } from '../repositories';
+import { validateDispatchStatusTransition } from './helpers/dispatch-status-machine';
 import { InventoryStockService } from './inventory-stock.service';
 
 /**
@@ -222,8 +223,7 @@ export class MaterialDispatchService {
   ): Promise<MaterialDispatchEntity> {
     const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
 
-    // Validate status transition
-    this.validateStatusTransition(dispatch.status, statusDto.status);
+    validateDispatchStatusTransition(dispatch.status, statusDto.status);
 
     const updateData: Record<string, unknown> = {
       status: statusDto.status,
@@ -311,6 +311,59 @@ export class MaterialDispatchService {
 
     return this.materialDispatchRepository.update(id, organizationId, {
       status: MaterialDispatchStatus.IN_TRANSIT,
+      updatedBy: performedBy,
+    });
+  }
+
+  /**
+   * Mark dispatch as DELIVERED. Transitions IN_TRANSIT → DELIVERED or
+   * PARTIALLY_DELIVERED → DELIVERED. Sets actualDeliveryDate and finalises
+   * linked allocations to COMPLETED when fully dispatched.
+   */
+  async markDelivered(
+    id: string,
+    organizationId: string,
+    performedBy: string,
+    actualDeliveryDate?: Date,
+    receivedById?: string,
+  ): Promise<MaterialDispatchEntity> {
+    const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
+
+    const allowed =
+      dispatch.status === MaterialDispatchStatus.IN_TRANSIT ||
+      dispatch.status === MaterialDispatchStatus.PARTIALLY_DELIVERED;
+    if (!allowed) {
+      throw new BadRequestException(
+        `Cannot mark delivered — dispatch is in status ${dispatch.status}`,
+      );
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const { StockAllocationEntity } = await import('../entities/stock-allocation.entity');
+      const allocRepo = manager.getRepository(StockAllocationEntity);
+      for (const item of dispatch.items ?? []) {
+        if (!item.stockAllocationId) continue;
+        const alloc = await allocRepo
+          .createQueryBuilder('alloc')
+          .where('alloc.id = :id', { id: item.stockAllocationId })
+          .setLock('pessimistic_write')
+          .getOne();
+        if (
+          alloc &&
+          alloc.status === StockAllocationStatus.DISPATCHED &&
+          Number(alloc.dispatchedQuantity) >= Number(alloc.allocatedQuantity)
+        ) {
+          alloc.status = StockAllocationStatus.COMPLETED;
+          alloc.updatedBy = performedBy;
+          await allocRepo.save(alloc);
+        }
+      }
+    });
+
+    return this.materialDispatchRepository.update(id, organizationId, {
+      status: MaterialDispatchStatus.DELIVERED,
+      actualDeliveryDate: actualDeliveryDate ?? new Date(),
+      receivedBy: receivedById,
       updatedBy: performedBy,
     });
   }
@@ -428,41 +481,5 @@ export class MaterialDispatchService {
    */
   async getPendingDispatches(organizationId: string): Promise<MaterialDispatchEntity[]> {
     return this.materialDispatchRepository.getPendingDispatches(organizationId);
-  }
-
-  /**
-   * Validate status transition
-   */
-  private validateStatusTransition(
-    currentStatus: MaterialDispatchStatus,
-    newStatus: MaterialDispatchStatus,
-  ): void {
-    const validTransitions: Record<MaterialDispatchStatus, MaterialDispatchStatus[]> = {
-      [MaterialDispatchStatus.PREPARED]: [
-        MaterialDispatchStatus.DISPATCHED,
-        MaterialDispatchStatus.CANCELLED,
-      ],
-      [MaterialDispatchStatus.DISPATCHED]: [
-        MaterialDispatchStatus.IN_TRANSIT,
-        MaterialDispatchStatus.CANCELLED,
-      ],
-      [MaterialDispatchStatus.IN_TRANSIT]: [
-        MaterialDispatchStatus.DELIVERED,
-        MaterialDispatchStatus.PARTIALLY_DELIVERED,
-        MaterialDispatchStatus.CANCELLED,
-      ],
-      [MaterialDispatchStatus.DELIVERED]: [],
-      [MaterialDispatchStatus.PARTIALLY_DELIVERED]: [
-        MaterialDispatchStatus.DELIVERED,
-        MaterialDispatchStatus.CANCELLED,
-      ],
-      [MaterialDispatchStatus.CANCELLED]: [],
-    };
-
-    if (!validTransitions[currentStatus].includes(newStatus)) {
-      throw new BadRequestException(
-        `Invalid status transition from ${currentStatus} to ${newStatus}`,
-      );
-    }
   }
 }
