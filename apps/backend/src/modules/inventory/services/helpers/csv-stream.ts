@@ -58,11 +58,11 @@ export function escapeCsvCell(value: unknown): string {
 }
 
 function buildHeaderLine<TRow>(columns: CsvColumn<TRow>[]): string {
-  return `${columns.map((c) => escapeCsvCell(c.header)).join(',')  }\r\n`;
+  return `${columns.map((c) => escapeCsvCell(c.header)).join(',')}\r\n`;
 }
 
 function buildDataLine<TRow>(row: TRow, columns: CsvColumn<TRow>[]): string {
-  return `${columns.map((c) => escapeCsvCell(c.pick(row))).join(',')  }\r\n`;
+  return `${columns.map((c) => escapeCsvCell(c.pick(row))).join(',')}\r\n`;
 }
 
 /**

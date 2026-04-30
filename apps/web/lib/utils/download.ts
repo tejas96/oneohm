@@ -136,8 +136,7 @@ export async function downloadFromUrl(options: DownloadFromUrlOptions): Promise<
 
   const blob = response.data;
   const headers = response.headers as Record<string, string | undefined>;
-  const contentDispHeader =
-    headers['content-disposition'] ?? headers['Content-Disposition'];
+  const contentDispHeader = headers['content-disposition'] ?? headers['Content-Disposition'];
 
   const filename =
     options.filename ??

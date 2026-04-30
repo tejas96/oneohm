@@ -37,11 +37,7 @@ import {
   UpdateMaterialDispatchStatusDto,
 } from '../dto';
 import type { FunnelResponse } from '../dto/common';
-import {
-  InventoryBulkService,
-  InventoryStatsService,
-  MaterialDispatchService,
-} from '../services';
+import { InventoryBulkService, InventoryStatsService, MaterialDispatchService } from '../services';
 
 /**
  * Material Dispatch Controller

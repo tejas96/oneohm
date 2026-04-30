@@ -2,11 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { type TopItem, type TopItemsResponse, type TrendResponse } from '../dto/common';
 import { PurchaseOrderStatsRepository } from '../repositories/purchase-order-stats.repository';
-import {
-  resolveStatsBucket,
-  resolveStatsLimit,
-  resolveStatsWindow,
-} from './helpers/stats-window';
+import { resolveStatsBucket, resolveStatsLimit, resolveStatsWindow } from './helpers/stats-window';
 
 /**
  * Thin service wrapper around the PO stats repository. Resolves /

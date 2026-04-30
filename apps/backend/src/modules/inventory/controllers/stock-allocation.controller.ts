@@ -35,11 +35,7 @@ import {
   StockAllocationResponseDto,
 } from '../dto';
 import type { FunnelResponse } from '../dto/common';
-import {
-  InventoryBulkService,
-  InventoryStatsService,
-  StockAllocationService,
-} from '../services';
+import { InventoryBulkService, InventoryStatsService, StockAllocationService } from '../services';
 
 /**
  * Stock Allocation Controller
@@ -97,7 +93,9 @@ export class StockAllocationController {
 
   @RequirePermission('inventory:read')
   @Get('stats/funnel')
-  @ApiOperation({ summary: 'Allocation funnel: lifecycle counts in window + cancelled side-bucket' })
+  @ApiOperation({
+    summary: 'Allocation funnel: lifecycle counts in window + cancelled side-bucket',
+  })
   @ApiQuery({ name: 'fromDate', required: false, type: String })
   @ApiQuery({ name: 'toDate', required: false, type: String })
   async statsFunnel(

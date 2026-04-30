@@ -23,7 +23,8 @@ type Guard = (v: unknown) => boolean;
 const isString: Guard = (v) => typeof v === 'string';
 const isBool: Guard = (v) => typeof v === 'boolean';
 const isUuid: Guard = (v) =>
-  typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+  typeof v === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 const isIsoDate: Guard = (v) =>
   typeof v === 'string' && /^\d{4}-\d{2}-\d{2}(T.+)?$/.test(v) && !Number.isNaN(Date.parse(v));
 

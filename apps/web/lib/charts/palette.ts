@@ -80,7 +80,8 @@ export type SemanticChartColor = keyof typeof SEMANTIC_CHART_COLORS;
  */
 export function getChartColor(index: number, fallback = SEMANTIC_CHART_COLORS.neutral): string {
   if (CHART_SERIES_COLORS.length === 0) return fallback;
-  const i = ((index % CHART_SERIES_COLORS.length) + CHART_SERIES_COLORS.length) %
+  const i =
+    ((index % CHART_SERIES_COLORS.length) + CHART_SERIES_COLORS.length) %
     CHART_SERIES_COLORS.length;
   return CHART_SERIES_COLORS[i] ?? fallback;
 }
@@ -89,9 +90,7 @@ export function getChartColor(index: number, fallback = SEMANTIC_CHART_COLORS.ne
  * Look up a semantic colour by name; returns `neutral` if a caller
  * passes an unknown key (rare but possible when a status enum widens).
  */
-export function getSemanticChartColor(
-  name: SemanticChartColor | (string & {}),
-): string {
+export function getSemanticChartColor(name: SemanticChartColor | (string & {})): string {
   if (name in SEMANTIC_CHART_COLORS) {
     return SEMANTIC_CHART_COLORS[name as SemanticChartColor];
   }

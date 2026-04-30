@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { type CreateSavedViewDto, type UpdateSavedViewDto } from '../dto';
 import { SavedViewEntity } from '../entities/saved-view.entity';

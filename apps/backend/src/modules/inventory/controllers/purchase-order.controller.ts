@@ -39,11 +39,7 @@ import {
   UpdatePurchaseOrderDto,
 } from '../dto';
 import type { TopItemsResponse, TrendResponse } from '../dto/common';
-import {
-  InventoryBulkService,
-  PurchaseOrderService,
-  PurchaseOrderStatsService,
-} from '../services';
+import { InventoryBulkService, PurchaseOrderService, PurchaseOrderStatsService } from '../services';
 
 /**
  * Purchase Order Controller

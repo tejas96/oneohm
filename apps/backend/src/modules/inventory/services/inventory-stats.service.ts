@@ -11,11 +11,7 @@ import { InventoryStockStatsRepository } from '../repositories/inventory-stock-s
 import { InventoryTransactionStatsRepository } from '../repositories/inventory-transaction-stats.repository';
 import { MaterialDispatchStatsRepository } from '../repositories/material-dispatch-stats.repository';
 import { StockAllocationStatsRepository } from '../repositories/stock-allocation-stats.repository';
-import {
-  resolveStatsBucket,
-  resolveStatsLimit,
-  resolveStatsWindow,
-} from './helpers/stats-window';
+import { resolveStatsBucket, resolveStatsLimit, resolveStatsWindow } from './helpers/stats-window';
 
 /**
  * Aggregate stats service covering the four resources that have a
@@ -82,10 +78,7 @@ export class InventoryStatsService {
 
   // ==================== Stock ====================
 
-  async topLowStock(
-    organizationId: string,
-    limit: string | undefined,
-  ): Promise<TopItemsResponse> {
+  async topLowStock(organizationId: string, limit: string | undefined): Promise<TopItemsResponse> {
     const resolvedLimit = resolveStatsLimit(limit);
     const rows = await this.stockStats.topLowStock(organizationId, resolvedLimit);
     return {

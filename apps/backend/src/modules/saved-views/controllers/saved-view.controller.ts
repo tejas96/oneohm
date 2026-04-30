@@ -22,11 +22,7 @@ import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
 import { PermissionGuard } from '../../iam/guards/permission.guard';
-import {
-  CreateSavedViewDto,
-  SavedViewResponseDto,
-  UpdateSavedViewDto,
-} from '../dto';
+import { CreateSavedViewDto, SavedViewResponseDto, UpdateSavedViewDto } from '../dto';
 import { SavedViewService } from '../services/saved-view.service';
 import { isSavedViewResource } from '../types/saved-view-resource';
 

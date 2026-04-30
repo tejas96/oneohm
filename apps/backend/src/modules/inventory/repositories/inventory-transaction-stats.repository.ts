@@ -4,10 +4,7 @@ import { InventoryTransactionType } from '@oneohm-epc/shared/types';
 import { Repository } from 'typeorm';
 
 import { InventoryTransactionEntity } from '../entities/inventory-transaction.entity';
-import {
-  bucketDateExpr,
-  type StatsBucket,
-} from '../services/helpers/stats-window';
+import { bucketDateExpr, type StatsBucket } from '../services/helpers/stats-window';
 
 /**
  * Read-only aggregations for transaction-type-trend chart.
@@ -40,7 +37,7 @@ export class InventoryTransactionStatsRepository {
       .addSelect('COUNT(*)', 'count')
       .where('txn.organizationId = :organizationId', { organizationId })
       .andWhere('txn.transaction_date >= :fromDate', { fromDate })
-      .andWhere('txn.transaction_date < (CAST(:toDate AS date) + INTERVAL \'1 day\')', { toDate })
+      .andWhere("txn.transaction_date < (CAST(:toDate AS date) + INTERVAL '1 day')", { toDate })
       .groupBy(dateExpr)
       .addGroupBy('txn.transactionType')
       .orderBy(dateExpr, 'ASC')

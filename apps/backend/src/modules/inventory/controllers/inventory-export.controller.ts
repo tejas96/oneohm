@@ -70,7 +70,12 @@ export class InventoryExportController {
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.purchaseOrderRepository.findAll(organizationId, page, limit, filters);
+          const r = await this.purchaseOrderRepository.findAll(
+            organizationId,
+            page,
+            limit,
+            filters,
+          );
           return r.purchaseOrders;
         },
       },

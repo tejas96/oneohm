@@ -4,10 +4,7 @@ import { PurchaseOrderStatus } from '@oneohm-epc/shared/types';
 import { Repository } from 'typeorm';
 
 import { PurchaseOrderEntity } from '../entities/purchase-order.entity';
-import {
-  bucketDateExpr,
-  type StatsBucket,
-} from '../services/helpers/stats-window';
+import { bucketDateExpr, type StatsBucket } from '../services/helpers/stats-window';
 
 /**
  * Read-only aggregations for the PO dashboard charts. Lives in its own

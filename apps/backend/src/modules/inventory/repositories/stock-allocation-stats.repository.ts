@@ -35,7 +35,7 @@ export class StockAllocationStatsRepository {
       .addSelect('COUNT(*)', 'count')
       .where('alloc.organizationId = :organizationId', { organizationId })
       .andWhere('alloc.allocated_at >= :fromDate', { fromDate })
-      .andWhere('alloc.allocated_at < (CAST(:toDate AS date) + INTERVAL \'1 day\')', { toDate })
+      .andWhere("alloc.allocated_at < (CAST(:toDate AS date) + INTERVAL '1 day')", { toDate })
       .groupBy('alloc.status')
       .getRawMany<{ status: StockAllocationStatus; count: string }>();
 
