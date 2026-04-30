@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
+  InventoryExportController,
   InventorySearchController,
   InventoryStockController,
   InventoryTransactionController,
@@ -98,6 +99,7 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     MaterialDispatchController,
     ProjectVendorController,
     InventorySearchController,
+    InventoryExportController,
   ],
   providers: [
     // Repositories
