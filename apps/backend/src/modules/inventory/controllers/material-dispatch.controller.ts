@@ -29,12 +29,14 @@ import type { CurrentUserType } from '../../auth/types';
 import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
 import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
+  BulkCancelDto,
+  BulkOperationResultDto,
   CreateMaterialDispatchDto,
   MaterialDispatchResponseDto,
   UpdateMaterialDispatchDto,
   UpdateMaterialDispatchStatusDto,
 } from '../dto';
-import { MaterialDispatchService } from '../services';
+import { InventoryBulkService, MaterialDispatchService } from '../services';
 
 /**
  * Material Dispatch Controller
@@ -45,9 +47,35 @@ import { MaterialDispatchService } from '../services';
 @Controller('material-dispatches')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class MaterialDispatchController {
-  constructor(private readonly materialDispatchService: MaterialDispatchService) {}
+  constructor(
+    private readonly materialDispatchService: MaterialDispatchService,
+    private readonly inventoryBulkService: InventoryBulkService,
+  ) {}
 
   // ==================== Static Routes (MUST come before :id) ====================
+
+  /**
+   * Bulk cancel dispatches (best-effort, restores reserved stock per id)
+   */
+  @RequirePermission('dispatch:write')
+  @Post('bulk/cancel')
+  @ApiOperation({
+    summary: 'Bulk cancel dispatches (best-effort)',
+    description:
+      'Returns { succeeded: string[], failed: { id, reason }[] } at HTTP 200. Each cancel runs in its own transaction and restores reserved stock if applicable.',
+  })
+  async bulkCancel(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() body: BulkCancelDto,
+  ): Promise<BulkOperationResultDto> {
+    return this.inventoryBulkService.cancelDispatches(
+      body.ids,
+      organizationId,
+      body.reason,
+      currentUser.id,
+    );
+  }
 
   /**
    * Get dispatch statistics

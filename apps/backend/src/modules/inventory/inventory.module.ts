@@ -36,6 +36,7 @@ import {
   WarehouseRepository,
 } from './repositories';
 import {
+  InventoryBulkService,
   InventoryStockService,
   InventoryTransactionService,
   LowStockAlertService,
@@ -118,6 +119,7 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     PurchaseOrderService,
     StockAllocationService,
     MaterialDispatchService,
+    InventoryBulkService,
     // Guards
     PermissionGuard,
   ],

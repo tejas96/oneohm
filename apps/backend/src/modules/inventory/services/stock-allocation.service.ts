@@ -259,22 +259,33 @@ export class StockAllocationService {
     reason: string,
     updatedBy: string,
   ): Promise<StockAllocationEntity> {
-    const allocation = await this.stockAllocationRepository.findById(id, organizationId);
-
-    if (allocation.status === StockAllocationStatus.DISPATCHED) {
-      throw new BadRequestException('Cannot cancel a fully dispatched allocation');
-    }
-    if (allocation.status === StockAllocationStatus.CANCELLED) {
-      throw new BadRequestException('Allocation is already cancelled');
-    }
-
-    const undispatchedQuantity =
-      Number(allocation.allocatedQuantity) - Number(allocation.dispatchedQuantity);
-    const newNotes = allocation.notes
-      ? `${allocation.notes}\nCancelled: ${reason}`
-      : `Cancelled: ${reason}`;
-
     const updatedAllocationId = await this.dataSource.transaction(async (manager) => {
+      // Pessimistic-lock the allocation row first so concurrent cancels serialize
+      // and the second one observes status=CANCELLED instead of racing to a
+      // double release of the reserved stock.
+      const allocationRepo = manager.getRepository(StockAllocationEntity);
+      const allocation = await allocationRepo
+        .createQueryBuilder('alloc')
+        .where('alloc.id = :id', { id })
+        .andWhere('alloc.organizationId = :organizationId', { organizationId })
+        .setLock('pessimistic_write')
+        .getOne();
+      if (!allocation) {
+        throw new NotFoundException(`Stock Allocation with ID ${id} not found`);
+      }
+      if (allocation.status === StockAllocationStatus.DISPATCHED) {
+        throw new BadRequestException('Cannot cancel a fully dispatched allocation');
+      }
+      if (allocation.status === StockAllocationStatus.CANCELLED) {
+        throw new BadRequestException('Allocation is already cancelled');
+      }
+
+      const undispatchedQuantity =
+        Number(allocation.allocatedQuantity) - Number(allocation.dispatchedQuantity);
+      const newNotes = allocation.notes
+        ? `${allocation.notes}\nCancelled: ${reason}`
+        : `Cancelled: ${reason}`;
+
       if (undispatchedQuantity > 0) {
         const stock = await this.lockInventoryStock(
           manager,
@@ -311,19 +322,14 @@ export class StockAllocationService {
         );
       }
 
-      const allocationRepo = manager.getRepository(StockAllocationEntity);
-      const allocationRow = await allocationRepo.findOne({ where: { id, organizationId } });
-      if (!allocationRow) {
-        throw new NotFoundException(`Stock Allocation with ID ${id} not found`);
-      }
-      Object.assign(allocationRow, {
+      Object.assign(allocation, {
         status: StockAllocationStatus.CANCELLED,
         notes: newNotes,
         updatedBy,
       });
-      await allocationRepo.save(allocationRow);
+      await allocationRepo.save(allocation);
 
-      return allocationRow.id;
+      return allocation.id;
     });
 
     return this.stockAllocationRepository.findById(updatedAllocationId, organizationId);

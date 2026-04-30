@@ -29,13 +29,16 @@ import type { CurrentUserType } from '../../auth/types';
 import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
 import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
+  BulkCancelDto,
+  BulkIdsDto,
+  BulkOperationResultDto,
   CreatePurchaseOrderDto,
   PurchaseOrderResponseDto,
   ReceivePurchaseOrderDto,
   RecordPaymentDto,
   UpdatePurchaseOrderDto,
 } from '../dto';
-import { PurchaseOrderService } from '../services';
+import { InventoryBulkService, PurchaseOrderService } from '../services';
 
 /**
  * Purchase Order Controller
@@ -47,9 +50,57 @@ import { PurchaseOrderService } from '../services';
 @Controller('purchase-orders')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class PurchaseOrderController {
-  constructor(private readonly purchaseOrderService: PurchaseOrderService) {}
+  constructor(
+    private readonly purchaseOrderService: PurchaseOrderService,
+    private readonly inventoryBulkService: InventoryBulkService,
+  ) {}
 
   // ==================== Static Routes (MUST come before :id) ====================
+
+  /**
+   * Bulk approve POs (best-effort: returns per-id succeeded/failed at HTTP 200)
+   */
+  @RequirePermission('purchase-order:approve')
+  @Post('bulk/approve')
+  @ApiOperation({
+    summary: 'Bulk approve purchase orders (best-effort)',
+    description:
+      'Returns { succeeded: string[], failed: { id, reason }[] } at HTTP 200. Failures on one id do not roll back the rest.',
+  })
+  async bulkApprove(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() body: BulkIdsDto,
+  ): Promise<BulkOperationResultDto> {
+    return this.inventoryBulkService.approvePurchaseOrders(
+      body.ids,
+      organizationId,
+      currentUser.id,
+    );
+  }
+
+  /**
+   * Bulk cancel POs (best-effort)
+   */
+  @RequirePermission('purchase-order:write')
+  @Post('bulk/cancel')
+  @ApiOperation({
+    summary: 'Bulk cancel purchase orders (best-effort)',
+    description:
+      'Returns { succeeded: string[], failed: { id, reason }[] } at HTTP 200. Each id is cancelled independently.',
+  })
+  async bulkCancel(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() body: BulkCancelDto,
+  ): Promise<BulkOperationResultDto> {
+    return this.inventoryBulkService.cancelPurchaseOrders(
+      body.ids,
+      organizationId,
+      body.reason,
+      currentUser.id,
+    );
+  }
 
   /**
    * Get purchase order statistics

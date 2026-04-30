@@ -27,12 +27,14 @@ import type { CurrentUserType } from '../../auth/types';
 import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
 import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
+  BulkCancelDto,
+  BulkOperationResultDto,
   CreateStockAllocationDto,
   EditAllocationDetailsDto,
   FulfillStockAllocationDto,
   StockAllocationResponseDto,
 } from '../dto';
-import { StockAllocationService } from '../services';
+import { InventoryBulkService, StockAllocationService } from '../services';
 
 /**
  * Stock Allocation Controller
@@ -44,9 +46,35 @@ import { StockAllocationService } from '../services';
 @Controller('stock-allocations')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class StockAllocationController {
-  constructor(private readonly stockAllocationService: StockAllocationService) {}
+  constructor(
+    private readonly stockAllocationService: StockAllocationService,
+    private readonly inventoryBulkService: InventoryBulkService,
+  ) {}
 
   // ==================== Static Routes (MUST come before :id) ====================
+
+  /**
+   * Bulk cancel allocations (best-effort, releases reserved stock per id)
+   */
+  @RequirePermission('allocation:write')
+  @Post('bulk/cancel')
+  @ApiOperation({
+    summary: 'Bulk cancel allocations (best-effort)',
+    description:
+      'Returns { succeeded: string[], failed: { id, reason }[] } at HTTP 200. Each cancel runs in its own transaction.',
+  })
+  async bulkCancel(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() body: BulkCancelDto,
+  ): Promise<BulkOperationResultDto> {
+    return this.inventoryBulkService.cancelAllocations(
+      body.ids,
+      organizationId,
+      body.reason,
+      currentUser.id,
+    );
+  }
 
   /**
    * Get stock allocation statistics
