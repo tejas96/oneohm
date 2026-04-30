@@ -1,11 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MaterialDispatchStatus } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
   IsDateString,
-  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -72,17 +70,7 @@ export class CreateMaterialDispatchDto {
   @MaxLength(255)
   transportCompany?: string;
 
-  // ==================== Status ====================
-
-  @ApiProperty({
-    enum: Object.values(MaterialDispatchStatus),
-    enumName: 'MaterialDispatchStatus',
-    example: MaterialDispatchStatus.PREPARED,
-    default: MaterialDispatchStatus.PREPARED,
-  })
-  @IsEnum(MaterialDispatchStatus)
-  @IsOptional()
-  status?: MaterialDispatchStatus;
+  // Note: status is NOT accepted from clients — service forces PREPARED on create.
 
   // ==================== Items ====================
 

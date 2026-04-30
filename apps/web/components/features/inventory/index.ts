@@ -1,2 +1,25 @@
-// Export inventory components
-export {};
+export { InventoryDashboard } from './components/inventory-dashboard';
+export { InventoryStockPage } from './components/inventory-stock-page';
+export { InventoryStockDetailPage } from './components/inventory-stock-detail-page';
+export { InventoryWarehousesPage } from './components/inventory-warehouses-page';
+export { WarehouseDetailPage } from './components/warehouse-detail-page';
+export { WarehouseFormDialog } from './components/warehouse-form-dialog';
+export { InventoryVendorsPage } from './components/inventory-vendors-page';
+export { InventoryPurchaseOrdersPage } from './components/inventory-purchase-orders-page';
+export { PoDetailPage } from './components/po-detail-page';
+export { PoCreatePage } from './components/po-create-page';
+export { PoReceiveDialog } from './components/po-receive-dialog';
+export { VendorDetailPage } from './components/vendor-detail-page';
+export { VendorFormDialog } from './components/vendor-form-dialog';
+export { InventoryAllocationsPage } from './components/inventory-allocations-page';
+export { AllocationDetailPage } from './components/allocation-detail-page';
+export { AllocationCreateDialog } from './components/allocation-create-dialog';
+export { ProjectAllocationsTab } from './components/project-allocations-tab';
+export { InventoryDispatchesPage } from './components/inventory-dispatches-page';
+export { DispatchDetailPage } from './components/dispatch-detail-page';
+export { DispatchCreatePage } from './components/dispatch-create-page';
+export { ProductPicker } from './components/shared/product-picker';
+export { WarehousePicker } from './components/shared/warehouse-picker';
+export { VendorPicker } from './components/shared/vendor-picker';
+export { InventoryTransactionsPage } from './components/inventory-transactions-page';
+export { InventoryAlertsPage } from './components/inventory-alerts-page';

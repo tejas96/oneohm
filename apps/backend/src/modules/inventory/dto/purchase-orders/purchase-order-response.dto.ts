@@ -5,6 +5,48 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { PurchaseOrderItemResponseDto } from './purchase-order-item-response.dto';
 import { toNum } from '../../../../common/utils';
 
+class PurchaseOrderVendorSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Tata Power Solar' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'VEN-001', required: false })
+  @Expose()
+  code?: string;
+}
+
+class PurchaseOrderWarehouseSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Main Warehouse Mumbai' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'WH-MUM-001', required: false })
+  @Expose()
+  code?: string;
+}
+
+class PurchaseOrderProjectSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Residential Rooftop - Sharma' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'PRJ-2026-001', required: false })
+  @Expose()
+  projectNumber?: string;
+}
+
 /**
  * Purchase Order Response DTO
  * Represents purchase order data returned from API
@@ -31,6 +73,21 @@ export class PurchaseOrderResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', required: false })
   @Expose()
   projectId?: string;
+
+  @ApiProperty({ type: PurchaseOrderVendorSummaryDto, required: false })
+  @Expose()
+  @Type(() => PurchaseOrderVendorSummaryDto)
+  vendor?: PurchaseOrderVendorSummaryDto;
+
+  @ApiProperty({ type: PurchaseOrderWarehouseSummaryDto, required: false })
+  @Expose()
+  @Type(() => PurchaseOrderWarehouseSummaryDto)
+  warehouse?: PurchaseOrderWarehouseSummaryDto;
+
+  @ApiProperty({ type: PurchaseOrderProjectSummaryDto, required: false })
+  @Expose()
+  @Type(() => PurchaseOrderProjectSummaryDto)
+  project?: PurchaseOrderProjectSummaryDto;
 
   // ==================== PO Info ====================
 

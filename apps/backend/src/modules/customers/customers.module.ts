@@ -32,7 +32,7 @@ import { UsersModule } from '../users/users.module';
     forwardRef(() => UsersModule),
     forwardRef(() => EmployeesModule),
     OrganizationsModule,
-    QuotesModule,
+    forwardRef(() => QuotesModule),
     LoanFinanceModule,
     StorageModule,
     forwardRef(() => SiteActivitiesModule),

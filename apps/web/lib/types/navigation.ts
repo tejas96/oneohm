@@ -21,7 +21,11 @@ export type UserRole =
   | 'manager'
   | 'sales'
   | 'field_worker'
-  | 'viewer';
+  | 'viewer'
+  | 'inventory_manager'
+  | 'store'
+  | 'project_manager'
+  | 'accounts_manager';
 
 /** Badge variants for navigation items */
 export type NavBadgeVariant = 'default' | 'primary' | 'warning' | 'error' | 'success' | 'info';

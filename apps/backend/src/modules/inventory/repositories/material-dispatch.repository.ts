@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MaterialDispatchStatus } from '@oneohm-epc/shared/types';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 import { MaterialDispatchEntity } from '../entities/material-dispatch.entity';
 
@@ -30,15 +30,7 @@ export class MaterialDispatchRepository {
   async findById(id: string, organizationId: string): Promise<MaterialDispatchEntity> {
     const dispatch = await this.repository.findOne({
       where: { id, organizationId },
-      relations: [
-        'project',
-        'warehouse',
-        'items',
-        'items.product',
-        'preparedBy',
-        'deliveredBy',
-        'receivedBy',
-      ],
+      relations: ['project', 'warehouse', 'items', 'items.product', 'creator', 'updater'],
     });
 
     if (!dispatch) {
@@ -126,9 +118,12 @@ export class MaterialDispatchRepository {
   /**
    * Find dispatches by project
    */
-  async findByProject(projectId: string): Promise<MaterialDispatchEntity[]> {
+  async findByProject(
+    projectId: string,
+    organizationId: string,
+  ): Promise<MaterialDispatchEntity[]> {
     return this.repository.find({
-      where: { projectId },
+      where: { projectId, organizationId },
       relations: ['warehouse', 'items', 'items.product'],
       order: { dispatchDate: 'DESC' },
     });
@@ -237,26 +232,27 @@ export class MaterialDispatchRepository {
   }
 
   /**
-   * Generate next dispatch number
+   * Generate next dispatch number (concurrency-safe via numbering_sequences)
    */
-  async generateDispatchNumber(organizationId: string, prefix = 'MD'): Promise<string> {
-    const year = new Date().getFullYear();
-    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  async generateDispatchNumber(organizationId: string, manager?: EntityManager): Promise<string> {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const sequenceKey = `dispatch-${year}-${month}`;
+    const yyyymm = `${year}${month}`;
 
-    // Find the last dispatch number for this organization
-    const lastDispatch = await this.repository
-      .createQueryBuilder('dispatch')
-      .where('dispatch.organizationId = :organizationId', { organizationId })
-      .andWhere('dispatch.dispatchNumber LIKE :pattern', { pattern: `${prefix}-${year}${month}%` })
-      .orderBy('dispatch.dispatchNumber', 'DESC')
-      .getOne();
+    const exec = manager ?? this.repository.manager;
+    const result = await exec.query(
+      `INSERT INTO numbering_sequences (organization_id, sequence_key, last_value)
+       VALUES ($1, $2, 1)
+       ON CONFLICT (organization_id, sequence_key)
+       DO UPDATE SET last_value = numbering_sequences.last_value + 1
+       RETURNING last_value`,
+      [organizationId, sequenceKey],
+    );
 
-    let sequence = 1;
-    if (lastDispatch?.dispatchNumber) {
-      const lastSequence = parseInt(lastDispatch.dispatchNumber.split('-').pop() ?? '0', 10);
-      sequence = lastSequence + 1;
-    }
-
-    return `${prefix}-${year}${month}-${String(sequence).padStart(4, '0')}`;
+    const raw = result[0]?.last_value;
+    const seq = typeof raw === 'string' ? parseInt(raw, 10) : (raw ?? 1);
+    return `MD-${yyyymm}-${String(seq).padStart(4, '0')}`;
   }
 }

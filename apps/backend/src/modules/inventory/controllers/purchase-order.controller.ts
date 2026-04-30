@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaymentStatus, PurchaseOrderStatus } from '@oneohm-epc/shared/types';
+import { parsePaginationParams } from '@oneohm-epc/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -25,6 +26,8 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
+import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
   CreatePurchaseOrderDto,
   PurchaseOrderResponseDto,
@@ -35,18 +38,65 @@ import { PurchaseOrderService } from '../services';
 
 /**
  * Purchase Order Controller
- * Handles HTTP requests for purchase order management
+ * IMPORTANT: Static sub-paths (stats/summary, overdue/list) are declared BEFORE :id
+ * to prevent NestJS from treating them as UUID params.
  */
 @ApiTags('Inventory - Purchase Orders')
 @ApiBearerAuth()
 @Controller('purchase-orders')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class PurchaseOrderController {
   constructor(private readonly purchaseOrderService: PurchaseOrderService) {}
+
+  // ==================== Static Routes (MUST come before :id) ====================
+
+  /**
+   * Get purchase order statistics
+   */
+  @RequirePermission('inventory:read')
+  @Get('stats/summary')
+  @ApiOperation({
+    summary: 'Get purchase order statistics',
+    description: 'Get PO count by status and pending approvals',
+  })
+  async getStatistics(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+  ): Promise<{
+    total: number;
+    byStatus: Record<PurchaseOrderStatus, number>;
+    pendingApprovals: number;
+    overdueCount: number;
+  }> {
+    return this.purchaseOrderService.getStatistics(organizationId);
+  }
+
+  /**
+   * Get overdue purchase orders
+   */
+  @RequirePermission('inventory:read')
+  @Get('overdue/list')
+  @ApiOperation({
+    summary: 'Get overdue purchase orders',
+    description: 'Get list of purchase orders past expected delivery date',
+  })
+  async getOverdue(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+  ): Promise<PurchaseOrderResponseDto[]> {
+    const pos = await this.purchaseOrderService.getOverduePurchaseOrders(organizationId);
+
+    return plainToInstance(PurchaseOrderResponseDto, pos, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  // ==================== Collection Routes ====================
 
   /**
    * Create a new purchase order
    */
+  @RequirePermission('purchase-order:write')
   @Post()
   @ApiCreate({
     summary: 'Create a new purchase order',
@@ -68,79 +118,27 @@ export class PurchaseOrderController {
   /**
    * Get all purchase orders with filters
    */
+  @RequirePermission('inventory:read')
   @Get()
   @ApiReadAll({
     summary: 'Get all purchase orders',
     description: 'Retrieve all purchase orders with optional filters and pagination',
     responseType: PurchaseOrderResponseDto,
   })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page',
-    example: 20,
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: Object.values(PurchaseOrderStatus),
-    description: 'Filter by status',
-  })
-  @ApiQuery({
-    name: 'paymentStatus',
-    required: false,
-    enum: Object.values(PaymentStatus),
-    description: 'Filter by payment status',
-  })
-  @ApiQuery({
-    name: 'vendorId',
-    required: false,
-    type: String,
-    description: 'Filter by vendor',
-  })
-  @ApiQuery({
-    name: 'warehouseId',
-    required: false,
-    type: String,
-    description: 'Filter by warehouse',
-  })
-  @ApiQuery({
-    name: 'projectId',
-    required: false,
-    type: String,
-    description: 'Filter by project',
-  })
-  @ApiQuery({
-    name: 'fromDate',
-    required: false,
-    type: String,
-    description: 'Filter by date range (start)',
-  })
-  @ApiQuery({
-    name: 'toDate',
-    required: false,
-    type: String,
-    description: 'Filter by date range (end)',
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    type: String,
-    description: 'Search by PO number or vendor name',
-  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: Object.values(PurchaseOrderStatus) })
+  @ApiQuery({ name: 'paymentStatus', required: false, enum: Object.values(PaymentStatus) })
+  @ApiQuery({ name: 'vendorId', required: false, type: String })
+  @ApiQuery({ name: 'warehouseId', required: false, type: String })
+  @ApiQuery({ name: 'projectId', required: false, type: String })
+  @ApiQuery({ name: 'fromDate', required: false, type: String })
+  @ApiQuery({ name: 'toDate', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
   async findAll(
     @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Query() query: Record<string, string>,
     @Query('status') status?: PurchaseOrderStatus,
     @Query('paymentStatus') paymentStatus?: PaymentStatus,
     @Query('vendorId') vendorId?: string,
@@ -153,20 +151,12 @@ export class PurchaseOrderController {
     data: PurchaseOrderResponseDto[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
+    const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
     const { purchaseOrders, total } = await this.purchaseOrderService.findAll(
       organizationId,
-      page,
-      limit,
-      {
-        status,
-        paymentStatus,
-        vendorId,
-        warehouseId,
-        projectId,
-        fromDate,
-        toDate,
-        search,
-      },
+      pageNum,
+      limitNum,
+      { status, paymentStatus, vendorId, warehouseId, projectId, fromDate, toDate, search },
     );
 
     return {
@@ -174,17 +164,20 @@ export class PurchaseOrderController {
         excludeExtraneousValues: true,
       }),
       meta: {
-        page: page ?? 1,
-        limit: limit ?? 20,
+        page: pageNum,
+        limit: limitNum,
         total,
-        totalPages: Math.ceil(total / (limit ?? 20)),
+        totalPages: Math.ceil(total / limitNum),
       },
     };
   }
 
+  // ==================== Item Routes (:id — MUST come after static routes) ====================
+
   /**
    * Get purchase order by ID
    */
+  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({
     summary: 'Get purchase order by ID',
@@ -193,7 +186,7 @@ export class PurchaseOrderController {
   })
   async findOne(
     @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<PurchaseOrderResponseDto> {
     const po = await this.purchaseOrderService.findById(id, organizationId);
@@ -206,6 +199,7 @@ export class PurchaseOrderController {
   /**
    * Update purchase order
    */
+  @RequirePermission('purchase-order:write')
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update purchase order',
@@ -233,6 +227,7 @@ export class PurchaseOrderController {
   /**
    * Delete purchase order
    */
+  @RequirePermission('purchase-order:write')
   @Delete(':id')
   @ApiDelete({
     summary: 'Delete purchase order',
@@ -251,11 +246,9 @@ export class PurchaseOrderController {
   /**
    * Submit purchase order for approval
    */
+  @RequirePermission('purchase-order:submit')
   @Post(':id/submit')
-  @ApiOperation({
-    summary: 'Submit purchase order for approval',
-    description: 'Submit a draft purchase order for approval',
-  })
+  @ApiOperation({ summary: 'Submit purchase order for approval' })
   async submitForApproval(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
@@ -275,11 +268,9 @@ export class PurchaseOrderController {
   /**
    * Approve purchase order
    */
+  @RequirePermission('purchase-order:approve')
   @Post(':id/approve')
-  @ApiOperation({
-    summary: 'Approve purchase order',
-    description: 'Approve a pending purchase order',
-  })
+  @ApiOperation({ summary: 'Approve purchase order' })
   async approve(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
@@ -295,11 +286,9 @@ export class PurchaseOrderController {
   /**
    * Send purchase order to vendor
    */
+  @RequirePermission('purchase-order:send')
   @Post(':id/send')
-  @ApiOperation({
-    summary: 'Send purchase order',
-    description: 'Send an approved purchase order to vendor',
-  })
+  @ApiOperation({ summary: 'Send purchase order to vendor' })
   async send(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
@@ -315,11 +304,9 @@ export class PurchaseOrderController {
   /**
    * Receive purchase order items
    */
+  @RequirePermission('purchase-order:receive')
   @Post(':id/receive')
-  @ApiOperation({
-    summary: 'Receive purchase order',
-    description: 'Receive items from a purchase order (full or partial)',
-  })
+  @ApiOperation({ summary: 'Receive purchase order (full or partial)' })
   async receive(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
@@ -341,11 +328,9 @@ export class PurchaseOrderController {
   /**
    * Cancel purchase order
    */
+  @RequirePermission('purchase-order:write')
   @Post(':id/cancel')
-  @ApiOperation({
-    summary: 'Cancel purchase order',
-    description: 'Cancel a purchase order',
-  })
+  @ApiOperation({ summary: 'Cancel purchase order' })
   async cancel(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
@@ -355,45 +340,6 @@ export class PurchaseOrderController {
     const po = await this.purchaseOrderService.cancel(id, organizationId, reason, currentUser.id);
 
     return plainToInstance(PurchaseOrderResponseDto, po, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  /**
-   * Get purchase order statistics
-   */
-  @Get('stats/summary')
-  @ApiOperation({
-    summary: 'Get purchase order statistics',
-    description: 'Get PO count by status and pending approvals',
-  })
-  async getStatistics(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<{
-    total: number;
-    byStatus: Record<PurchaseOrderStatus, number>;
-    pendingApprovals: number;
-    overdueCount: number;
-  }> {
-    return this.purchaseOrderService.getStatistics(organizationId);
-  }
-
-  /**
-   * Get overdue purchase orders
-   */
-  @Get('overdue/list')
-  @ApiOperation({
-    summary: 'Get overdue purchase orders',
-    description: 'Get list of purchase orders past expected delivery date',
-  })
-  async getOverdue(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<PurchaseOrderResponseDto[]> {
-    const pos = await this.purchaseOrderService.getOverduePurchaseOrders(organizationId);
-
-    return plainToInstance(PurchaseOrderResponseDto, pos, {
       excludeExtraneousValues: true,
     });
   }

@@ -1,5 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { StockAllocationSourceType } from '@oneohm-epc/shared/types';
+import { DataSource } from 'typeorm';
 
+import { StockAllocationService } from '../../inventory/services/stock-allocation.service';
 import { CalculateQuoteResponseDto } from '../../quotes/dto/calculator/calculate-quote-response.dto';
 import { BomItemEntity } from '../entities/bom-item.entity';
 import { BomEntity } from '../entities/bom.entity';
@@ -9,7 +20,12 @@ import { BomRepository } from '../repositories/bom.repository';
 export class BomService {
   private readonly logger = new Logger(BomService.name);
 
-  constructor(private readonly bomRepository: BomRepository) {}
+  constructor(
+    private readonly bomRepository: BomRepository,
+    @Inject(forwardRef(() => StockAllocationService))
+    private readonly stockAllocationService: StockAllocationService,
+    @InjectDataSource() private readonly dataSource: DataSource,
+  ) {}
 
   async createFromCalculation(
     organizationId: string,
@@ -111,5 +127,98 @@ export class BomService {
     entityId: string,
   ): Promise<void> {
     return this.bomRepository.deleteByEntity(organizationId, entityType, entityId);
+  }
+
+  /**
+   * Finalize BOM and auto-create stock allocations for each line item.
+   * Idempotent: if BOM status is already 'allocated', returns existing allocations.
+   * Atomic: all allocations or none.
+   */
+  async finalizeAndAllocate(
+    organizationId: string,
+    bomId: string,
+    warehouseId: string,
+    userId: string,
+  ): Promise<{
+    bom: BomEntity;
+    shortages: Array<{ productId: string; name: string; available: number; required: number }>;
+  }> {
+    // Fetch BOM with items
+    const bom = await this.bomRepository.findByEntityId(bomId, organizationId);
+    if (!bom) throw new NotFoundException(`BOM ${bomId} not found`);
+
+    // Idempotency check
+    if (bom.status === 'allocated') {
+      return { bom, shortages: [] };
+    }
+
+    if (!['finalized', 'draft'].includes(bom.status)) {
+      throw new BadRequestException(`Cannot allocate BOM in status ${bom.status}`);
+    }
+
+    const projectId = bom.entityId;
+    if (bom.entityType !== 'project') {
+      throw new BadRequestException('Can only allocate BOMs associated with a project');
+    }
+
+    // Check stock sufficiency for all items with productId
+    const productItems = bom.items?.filter((item) => item.productId) ?? [];
+    const shortages: Array<{
+      productId: string;
+      name: string;
+      available: number;
+      required: number;
+    }> = [];
+
+    for (const item of productItems) {
+      const { InventoryStockEntity } = await import(
+        '../../inventory/entities/inventory-stock.entity'
+      );
+      const stockRepo = this.dataSource.getRepository(InventoryStockEntity);
+      const stock = await stockRepo.findOne({
+        where: { organizationId, warehouseId, productId: item.productId! },
+      });
+
+      const available = stock ? Number(stock.availableQuantity) : 0;
+      if (available < item.quantity) {
+        shortages.push({
+          productId: item.productId!,
+          name: item.name,
+          available,
+          required: item.quantity,
+        });
+      }
+    }
+
+    if (shortages.length > 0) {
+      return { bom, shortages };
+    }
+
+    // Create allocations atomically for each product item
+    for (const item of productItems) {
+      await this.stockAllocationService.create(
+        organizationId,
+        {
+          projectId,
+          warehouseId,
+          productId: item.productId!,
+          allocatedQuantity: item.quantity,
+          sourceType: StockAllocationSourceType.OWN,
+          notes: `Auto-allocated from BOM ${bom.bomNumber} — ${item.name}`,
+        },
+        userId,
+      );
+    }
+
+    // Update BOM status to allocated
+    await this.dataSource
+      .createQueryBuilder()
+      .update(BomEntity)
+      .set({ status: 'allocated', updatedBy: userId })
+      .where('id = :id', { id: bomId })
+      .execute();
+
+    const updated = await this.bomRepository.findByEntityId(bomId, organizationId);
+    return { bom: updated!, shortages: [] };
   }
 }

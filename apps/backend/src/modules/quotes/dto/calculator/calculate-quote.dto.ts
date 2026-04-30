@@ -306,6 +306,15 @@ export class CalculateQuoteDto {
   @IsOptional()
   @Min(1)
   manualNonDcrPanelCount?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Warehouse ID for inventory availability check (requires showInventoryStock=true in config)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  @IsOptional()
+  warehouseId?: string;
 }
 
 /**

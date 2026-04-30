@@ -46,6 +46,10 @@ export class ProjectVendorResponseDto {
   @Type(() => Date)
   contractEndDate?: Date;
 
+  @ApiProperty({ example: 'INR' })
+  @Expose()
+  currency!: string;
+
   // ==================== Status ====================
 
   @ApiProperty({

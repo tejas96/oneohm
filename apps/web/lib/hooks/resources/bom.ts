@@ -1,10 +1,12 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { createResourceKeys, defineResource, useOrgContext } from '../core';
 
+import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
+import { getErrorMessage } from '@/lib/utils/error';
 
 // ============================================================================
 // Types
@@ -82,4 +84,38 @@ export function useEntityBom(entityType: string, entityId: string | undefined) {
     enabled: isReady && !!entityId,
     staleTime: 60_000,
   });
+}
+
+export function useFinalizeBomAndAllocate() {
+  const queryClient = useQueryClient();
+  const { orgHeaders } = useOrgContext();
+  const mutation = useMutation<
+    { allocations: unknown[] },
+    unknown,
+    { bomId: string; warehouseId: string }
+  >({
+    mutationFn: async ({ bomId, warehouseId }) => {
+      const { data } = await apiClient.post<{ allocations: unknown[] }>(
+        `/bom/${bomId}/finalize-and-allocate`,
+        { warehouseId },
+        { headers: orgHeaders },
+      );
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['stock-allocations'] });
+      void queryClient.invalidateQueries({ queryKey: ['inventory-stock'] });
+      void queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
+      void queryClient.invalidateQueries({ queryKey: ['bom'] });
+      showToast.success('BOM finalized and stock allocated');
+    },
+    onError: (err) => {
+      showToast.error(getErrorMessage(err));
+    },
+  });
+
+  return {
+    ...mutation,
+    execute: (bomId: string, warehouseId: string) => mutation.mutateAsync({ bomId, warehouseId }),
+  };
 }

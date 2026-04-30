@@ -1,8 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { PaymentStatus, PurchaseOrderStatus } from '@oneohm-epc/shared/types';
+import { DataSource } from 'typeorm';
 
+import { ProductRepository } from '../../master-data/repositories';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
+import { ProjectRepository } from '../../projects/repositories';
 import { CreatePurchaseOrderDto, ReceivePurchaseOrderDto, UpdatePurchaseOrderDto } from '../dto';
+import { PurchaseOrderItemEntity } from '../entities/purchase-order-item.entity';
 import { PurchaseOrderEntity } from '../entities/purchase-order.entity';
 import {
   PurchaseOrderItemRepository,
@@ -25,6 +30,9 @@ export class PurchaseOrderService {
     private readonly warehouseRepository: WarehouseRepository,
     private readonly organizationRepository: OrganizationRepository,
     private readonly inventoryStockService: InventoryStockService,
+    private readonly projectRepository: ProjectRepository,
+    private readonly productRepository: ProductRepository,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -49,8 +57,16 @@ export class PurchaseOrderService {
       await this.warehouseRepository.findById(createDto.warehouseId, organizationId);
     }
 
-    // Generate PO number
-    const poNumber = await this.purchaseOrderRepository.generatePoNumber(organizationId);
+    if (createDto.projectId) {
+      await this.projectRepository.findById(createDto.projectId, organizationId);
+    }
+
+    for (const item of createDto.items) {
+      const product = await this.productRepository.findById(item.productId, organizationId);
+      if (!product) {
+        throw new NotFoundException(`Product with ID ${item.productId} not found`);
+      }
+    }
 
     // Calculate totals
     let subtotal = 0;
@@ -62,40 +78,58 @@ export class PurchaseOrderService {
     const taxAmount = createDto.taxAmount ?? 0;
     const totalAmount = subtotal + taxAmount;
 
-    // Create purchase order
-    const po = await this.purchaseOrderRepository.create({
-      organizationId,
-      vendorId: createDto.vendorId,
-      warehouseId: createDto.warehouseId,
-      projectId: createDto.projectId,
-      poNumber,
-      poDate: createDto.poDate ? new Date(createDto.poDate) : new Date(),
-      poType: createDto.poType,
-      expectedDeliveryDate: createDto.expectedDeliveryDate
-        ? new Date(createDto.expectedDeliveryDate)
-        : undefined,
-      subtotal,
-      taxAmount,
-      totalAmount,
-      paymentTerms: createDto.paymentTerms,
-      paymentStatus: PaymentStatus.PENDING,
-      status: createDto.status ?? PurchaseOrderStatus.DRAFT,
-      notes: createDto.notes,
-      termsConditions: createDto.termsConditions,
-      createdBy,
+    const lineItems = createDto.items.map((item) => {
+      const taxRate = item.taxRate ?? 0;
+      const lineTotal = item.unitPrice * item.orderedQuantity * (1 + taxRate / 100);
+      return { item, taxRate, lineTotal };
     });
 
-    // Create PO items
-    const items = createDto.items.map((item) => ({
-      purchaseOrderId: po.id,
-      productId: item.productId,
-      orderedQuantity: item.orderedQuantity,
-      receivedQuantity: 0,
-      unitPrice: item.unitPrice,
-      notes: item.notes,
-    }));
+    const po = await this.dataSource.transaction(async (manager) => {
+      const poNumberTx = await this.purchaseOrderRepository.generatePoNumber(
+        organizationId,
+        manager,
+      );
+      const poRepo = manager.getRepository(PurchaseOrderEntity);
+      const saved = await poRepo.save(
+        poRepo.create({
+          organizationId,
+          vendorId: createDto.vendorId,
+          warehouseId: createDto.warehouseId,
+          projectId: createDto.projectId,
+          poNumber: poNumberTx,
+          poDate: createDto.poDate ? new Date(createDto.poDate) : new Date(),
+          poType: createDto.poType,
+          expectedDeliveryDate: createDto.expectedDeliveryDate
+            ? new Date(createDto.expectedDeliveryDate)
+            : undefined,
+          subtotal,
+          taxAmount,
+          totalAmount,
+          paymentTerms: createDto.paymentTerms,
+          paymentStatus: PaymentStatus.PENDING,
+          status: PurchaseOrderStatus.DRAFT,
+          notes: createDto.notes,
+          termsConditions: createDto.termsConditions,
+          createdBy,
+        }),
+      );
 
-    await this.purchaseOrderItemRepository.createMany(items);
+      const itemRepo = manager.getRepository(PurchaseOrderItemEntity);
+      const rows = lineItems.map(({ item, taxRate, lineTotal }) =>
+        itemRepo.create({
+          purchaseOrderId: saved.id,
+          productId: item.productId,
+          orderedQuantity: item.orderedQuantity,
+          receivedQuantity: 0,
+          unitPrice: item.unitPrice,
+          taxRate,
+          lineTotal,
+          notes: item.notes,
+        }),
+      );
+      await itemRepo.save(rows);
+      return saved;
+    });
 
     return this.purchaseOrderRepository.findById(po.id, organizationId);
   }
@@ -164,6 +198,7 @@ export class PurchaseOrderService {
       throw new BadRequestException('Only draft purchase orders can be deleted');
     }
 
+    await this.purchaseOrderItemRepository.deleteByPurchaseOrder(id);
     await this.purchaseOrderRepository.softDelete(id, organizationId, deletedBy);
   }
 
@@ -232,66 +267,120 @@ export class PurchaseOrderService {
     receiveDto: ReceivePurchaseOrderDto,
     performedBy: string,
   ): Promise<PurchaseOrderEntity> {
-    const po = await this.purchaseOrderRepository.findById(id, organizationId);
+    await this.dataSource.transaction(async (manager) => {
+      const poRepo = manager.getRepository(PurchaseOrderEntity);
+      const itemRepo = manager.getRepository(PurchaseOrderItemEntity);
 
-    if (!po.warehouseId) {
-      throw new BadRequestException('Purchase order must have a warehouse assigned');
-    }
+      const orderRow = await poRepo
+        .createQueryBuilder('po')
+        .where('po.id = :id', { id })
+        .andWhere('po.organizationId = :organizationId', { organizationId })
+        .andWhere('po.deletedAt IS NULL')
+        .setLock('pessimistic_write')
+        .getOne();
 
-    // Update received quantities for each item
-    for (const receivedItem of receiveDto.items) {
-      const item = await this.purchaseOrderItemRepository.findById(receivedItem.itemId);
-
-      if (item.purchaseOrderId !== id) {
-        throw new BadRequestException('Invalid item ID');
+      if (!orderRow) {
+        throw new NotFoundException(`Purchase Order with ID ${id} not found`);
       }
 
-      const newReceivedQuantity = item.receivedQuantity + receivedItem.quantityReceived;
-
-      if (newReceivedQuantity > item.orderedQuantity) {
-        throw new BadRequestException('Received quantity cannot exceed ordered quantity');
+      const receivableStatuses = [
+        PurchaseOrderStatus.APPROVED,
+        PurchaseOrderStatus.SENT,
+        PurchaseOrderStatus.CONFIRMED,
+        PurchaseOrderStatus.PARTIALLY_RECEIVED,
+      ];
+      if (!receivableStatuses.includes(orderRow.status)) {
+        throw new BadRequestException(
+          `Cannot receive PO in status ${orderRow.status}. PO must be in APPROVED, SENT, CONFIRMED, or PARTIALLY_RECEIVED status.`,
+        );
       }
 
-      // Update item received quantity
-      await this.purchaseOrderItemRepository.update(receivedItem.itemId, {
-        receivedQuantity: newReceivedQuantity,
+      if (!orderRow.warehouseId) {
+        throw new BadRequestException('Purchase order must have a warehouse assigned');
+      }
+
+      const receiveLines: {
+        itemId: string;
+        productId: string;
+        quantityReceived: number;
+      }[] = [];
+
+      for (const receivedItem of receiveDto.items) {
+        const row = await itemRepo
+          .createQueryBuilder('item')
+          .where('item.id = :itemId', { itemId: receivedItem.itemId })
+          .setLock('pessimistic_write')
+          .getOne();
+
+        if (!row) {
+          throw new NotFoundException(
+            `Purchase Order Item with ID ${receivedItem.itemId} not found`,
+          );
+        }
+        if (row.purchaseOrderId !== id) {
+          throw new BadRequestException('Invalid item ID');
+        }
+
+        const currentReceived = Number(row.receivedQuantity);
+        const incomingQuantity = Number(receivedItem.quantityReceived);
+        const orderedQuantity = Number(row.orderedQuantity);
+        const newReceivedQuantity = currentReceived + incomingQuantity;
+
+        if (newReceivedQuantity > orderedQuantity) {
+          throw new BadRequestException('Received quantity cannot exceed ordered quantity');
+        }
+
+        row.receivedQuantity = newReceivedQuantity;
+        await itemRepo.save(row);
+
+        receiveLines.push({
+          itemId: row.id,
+          productId: row.productId,
+          quantityReceived: incomingQuantity,
+        });
+      }
+
+      const itemsAfter = await itemRepo.find({
+        where: { purchaseOrderId: id },
+        order: { createdAt: 'ASC' },
       });
-
-      // Update stock
-      await this.inventoryStockService.addStock(
-        organizationId,
-        po.warehouseId,
-        item.productId,
-        receivedItem.quantityReceived,
-        'purchase_order',
-        po.id,
-        performedBy,
-        `Received from PO ${po.poNumber}`,
+      const allFullyReceived = itemsAfter.every(
+        (row) => Number(row.receivedQuantity) >= Number(row.orderedQuantity),
       );
-    }
+      const anyPartiallyReceived = itemsAfter.some(
+        (row) =>
+          Number(row.receivedQuantity) > 0 &&
+          Number(row.receivedQuantity) < Number(row.orderedQuantity),
+      );
 
-    // Check if all items are fully received
-    const items = await this.purchaseOrderItemRepository.findByPurchaseOrder(id);
-    const allFullyReceived = items.every((item) => item.receivedQuantity >= item.orderedQuantity);
-    const anyPartiallyReceived = items.some(
-      (item) => item.receivedQuantity > 0 && item.receivedQuantity < item.orderedQuantity,
-    );
+      if (allFullyReceived) {
+        orderRow.status = PurchaseOrderStatus.RECEIVED;
+      } else if (anyPartiallyReceived) {
+        orderRow.status = PurchaseOrderStatus.PARTIALLY_RECEIVED;
+      }
 
-    let newStatus = po.status;
-    if (allFullyReceived) {
-      newStatus = PurchaseOrderStatus.RECEIVED;
-    } else if (anyPartiallyReceived) {
-      newStatus = PurchaseOrderStatus.PARTIALLY_RECEIVED;
-    }
-
-    // Update PO status and actual delivery date
-    return this.purchaseOrderRepository.update(id, organizationId, {
-      status: newStatus,
-      actualDeliveryDate: receiveDto.receivingDate
+      orderRow.actualDeliveryDate = receiveDto.receivingDate
         ? new Date(receiveDto.receivingDate)
-        : new Date(),
-      updatedBy: performedBy,
+        : new Date();
+      orderRow.updatedBy = performedBy;
+      await poRepo.save(orderRow);
+
+      for (const line of receiveLines) {
+        await this.inventoryStockService.addStock(
+          organizationId,
+          orderRow.warehouseId,
+          line.productId,
+          line.quantityReceived,
+          'purchase_order',
+          orderRow.id,
+          performedBy,
+          `Received from PO ${orderRow.poNumber}`,
+          manager,
+        );
+      }
     });
+
+    return this.purchaseOrderRepository.findById(id, organizationId);
   }
 
   /**
@@ -305,8 +394,13 @@ export class PurchaseOrderService {
   ): Promise<PurchaseOrderEntity> {
     const po = await this.purchaseOrderRepository.findById(id, organizationId);
 
-    if (po.status === PurchaseOrderStatus.RECEIVED) {
-      throw new BadRequestException('Cannot cancel a received purchase order');
+    if (
+      po.status === PurchaseOrderStatus.RECEIVED ||
+      po.status === PurchaseOrderStatus.PARTIALLY_RECEIVED
+    ) {
+      throw new BadRequestException(
+        `Cannot cancel a purchase order in status ${po.status}. Stock has already been received.`,
+      );
     }
 
     return this.purchaseOrderRepository.update(id, organizationId, {

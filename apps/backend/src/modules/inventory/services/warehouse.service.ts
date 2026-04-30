@@ -4,7 +4,7 @@ import { WarehouseStatus, WarehouseType } from '@oneohm-epc/shared/types';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateWarehouseDto, UpdateWarehouseDto } from '../dto';
 import { WarehouseEntity } from '../entities/warehouse.entity';
-import { WarehouseRepository } from '../repositories';
+import { InventoryStockRepository, WarehouseRepository } from '../repositories';
 
 /**
  * Warehouse Service
@@ -15,6 +15,7 @@ export class WarehouseService {
   constructor(
     private readonly warehouseRepository: WarehouseRepository,
     private readonly organizationRepository: OrganizationRepository,
+    private readonly inventoryStockRepository: InventoryStockRepository,
   ) {}
 
   /**
@@ -49,6 +50,7 @@ export class WarehouseService {
       address: createDto.address,
       city: createDto.city,
       state: createDto.state,
+      country: createDto.country,
       pincode: createDto.pincode,
       coordinates: createDto.coordinates,
       warehouseType: createDto.warehouseType || WarehouseType.OWN,
@@ -119,7 +121,10 @@ export class WarehouseService {
    * Delete warehouse (soft delete)
    */
   async delete(id: string, organizationId: string, deletedBy: string): Promise<void> {
-    // TODO: Check if warehouse has active stock before deletion
+    const hasActive = await this.inventoryStockRepository.hasActiveStock(id);
+    if (hasActive) {
+      throw new BadRequestException('Cannot delete warehouse with active stock');
+    }
     await this.warehouseRepository.softDelete(id, organizationId, deletedBy);
   }
 

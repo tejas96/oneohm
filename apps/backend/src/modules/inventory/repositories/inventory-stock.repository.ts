@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 import { InventoryStockEntity } from '../entities/inventory-stock.entity';
 
@@ -33,29 +33,93 @@ export class InventoryStockRepository {
     }
 
     const stock = this.repository.create(stockData);
-    return this.repository.save(stock);
+    try {
+      return await this.repository.save(stock);
+    } catch (error: unknown) {
+      const isUniqueViolation =
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code?: string }).code === '23505';
+
+      if (!isUniqueViolation) {
+        throw error;
+      }
+
+      const conflictingRow = await this.repository.findOne({
+        where: {
+          warehouseId: stockData.warehouseId!,
+          productId: stockData.productId!,
+        },
+      });
+
+      if (!conflictingRow) {
+        throw error;
+      }
+
+      return conflictingRow;
+    }
   }
 
   /**
-   * Find stock by warehouse and product
+   * Returns true if any stock row for the warehouse has non-zero available, reserved, or in-transit quantity.
+   */
+  async hasActiveStock(warehouseId: string): Promise<boolean> {
+    const row = await this.repository
+      .createQueryBuilder('stock')
+      .where('stock.warehouseId = :warehouseId', { warehouseId })
+      .andWhere(
+        '(stock.availableQuantity > 0 OR stock.reservedQuantity > 0 OR stock.inTransitQuantity > 0)',
+      )
+      .limit(1)
+      .getOne();
+
+    return row !== null;
+  }
+
+  /**
+   * Find stock by warehouse and product (optionally org-scoped)
    */
   async findByWarehouseAndProduct(
     warehouseId: string,
     productId: string,
+    organizationId?: string,
   ): Promise<InventoryStockEntity | null> {
+    const where: Record<string, string> = { warehouseId, productId };
+    if (organizationId) where.organizationId = organizationId;
     return this.repository.findOne({
-      where: { warehouseId, productId },
+      where,
       relations: ['warehouse', 'product'],
     });
   }
 
   /**
-   * Find stock by ID
+   * Find stock with pessimistic write lock (must be inside a transaction manager)
    */
-  async findById(id: string): Promise<InventoryStockEntity> {
+  async findForUpdate(
+    warehouseId: string,
+    productId: string,
+    manager: EntityManager,
+  ): Promise<InventoryStockEntity | null> {
+    const result = await manager
+      .getRepository(InventoryStockEntity)
+      .createQueryBuilder('stock')
+      .where('stock.warehouseId = :warehouseId', { warehouseId })
+      .andWhere('stock.productId = :productId', { productId })
+      .setLock('pessimistic_write')
+      .getOne();
+    return result ?? null;
+  }
+
+  /**
+   * Find stock by ID (optionally org-scoped)
+   */
+  async findById(id: string, organizationId?: string): Promise<InventoryStockEntity> {
+    const where: Record<string, string> = { id };
+    if (organizationId) where.organizationId = organizationId;
     const stock = await this.repository.findOne({
-      where: { id },
-      relations: ['warehouse', 'product', 'organization'],
+      where,
+      relations: ['warehouse', 'product'],
     });
 
     if (!stock) {
@@ -81,7 +145,9 @@ export class InventoryStockRepository {
       .createQueryBuilder('stock')
       .leftJoinAndSelect('stock.product', 'product')
       .leftJoinAndSelect('stock.warehouse', 'warehouse')
-      .where('stock.warehouseId = :warehouseId', { warehouseId });
+      .where('stock.warehouseId = :warehouseId', { warehouseId })
+      .andWhere('product.deletedAt IS NULL')
+      .andWhere('warehouse.deletedAt IS NULL');
 
     // Apply filters
     if (filters?.lowStock) {
@@ -103,6 +169,59 @@ export class InventoryStockRepository {
 
     // Split getCount + getMany to avoid TypeORM getManyAndCount crash
     // when leftJoinAndSelect is combined with orderBy on a joined alias.
+    const total = await query.getCount();
+    const stocks = await query.skip(skip).take(limit).getMany();
+
+    return { stocks, total };
+  }
+
+  /**
+   * Find stock across organization with filters and pagination
+   */
+  async findAll(
+    organizationId: string,
+    page = 1,
+    limit = 50,
+    filters?: {
+      warehouseId?: string;
+      productId?: string;
+      lowStock?: boolean;
+      search?: string;
+    },
+  ): Promise<{ stocks: InventoryStockEntity[]; total: number }> {
+    const query = this.repository
+      .createQueryBuilder('stock')
+      .leftJoinAndSelect('stock.product', 'product')
+      .leftJoinAndSelect('stock.warehouse', 'warehouse')
+      .where('stock.organizationId = :organizationId', { organizationId })
+      .andWhere('product.deletedAt IS NULL')
+      .andWhere('warehouse.deletedAt IS NULL');
+
+    if (filters?.warehouseId) {
+      query.andWhere('stock.warehouseId = :warehouseId', { warehouseId: filters.warehouseId });
+    }
+
+    if (filters?.productId) {
+      query.andWhere('stock.productId = :productId', { productId: filters.productId });
+    }
+
+    if (filters?.lowStock) {
+      query.andWhere('stock.availableQuantity <= stock.minimumStockLevel');
+    }
+
+    if (filters?.search) {
+      query.andWhere(
+        '(product.name ILIKE :search OR product.code ILIKE :search OR warehouse.name ILIKE :search OR warehouse.code ILIKE :search)',
+        {
+          search: `%${filters.search}%`,
+        },
+      );
+    }
+
+    const skip = (page - 1) * limit;
+    query.skip(skip).take(limit);
+    query.orderBy('stock.updatedAt', 'DESC');
+
     const total = await query.getCount();
     const stocks = await query.skip(skip).take(limit).getMany();
 

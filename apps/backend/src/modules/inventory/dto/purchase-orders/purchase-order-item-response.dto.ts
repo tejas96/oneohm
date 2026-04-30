@@ -3,6 +3,20 @@ import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';
 
+class PurchaseOrderItemProductSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Mono PERC Solar Panel 550W' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'PNL-550W-001', required: false })
+  @Expose()
+  code?: string;
+}
+
 /**
  * Purchase Order Item Response DTO
  * Represents PO item data returned from API
@@ -21,6 +35,11 @@ export class PurchaseOrderItemResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   productId!: string;
+
+  @ApiProperty({ type: PurchaseOrderItemProductSummaryDto, required: false })
+  @Expose()
+  @Type(() => PurchaseOrderItemProductSummaryDto)
+  product?: PurchaseOrderItemProductSummaryDto;
 
   // ==================== Quantity ====================
 

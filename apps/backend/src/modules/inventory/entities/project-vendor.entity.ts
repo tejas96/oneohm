@@ -48,6 +48,9 @@ export class ProjectVendorEntity extends BaseEntity {
   @Column({ name: 'contract_end_date', type: 'date', nullable: true })
   contractEndDate?: Date;
 
+  @Column({ type: 'varchar', length: 3, default: 'INR' })
+  currency!: string;
+
   // ==================== Status ====================
 
   @Column({

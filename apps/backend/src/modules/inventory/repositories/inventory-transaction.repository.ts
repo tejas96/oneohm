@@ -27,10 +27,10 @@ export class InventoryTransactionRepository {
   /**
    * Find transaction by ID
    */
-  async findById(id: string): Promise<InventoryTransactionEntity> {
+  async findById(id: string, organizationId?: string): Promise<InventoryTransactionEntity> {
     const txn = await this.repository.findOne({
-      where: { id },
-      relations: ['warehouse', 'product', 'fromWarehouse', 'toWarehouse', 'performedBy'],
+      where: organizationId ? { id, organizationId } : { id },
+      relations: ['warehouse', 'product', 'fromWarehouse', 'toWarehouse', 'creator'],
     });
 
     if (!txn) {
@@ -108,10 +108,11 @@ export class InventoryTransactionRepository {
   }
 
   /**
-   * Find transactions by warehouse
+   * Find transactions by warehouse (org-scoped)
    */
   async findByWarehouse(
     warehouseId: string,
+    organizationId: string,
     page = 1,
     limit = 50,
   ): Promise<{ transactions: InventoryTransactionEntity[]; total: number }> {
@@ -119,6 +120,7 @@ export class InventoryTransactionRepository {
       .createQueryBuilder('txn')
       .leftJoinAndSelect('txn.product', 'product')
       .where('txn.warehouseId = :warehouseId', { warehouseId })
+      .andWhere('txn.organizationId = :organizationId', { organizationId })
       .skip((page - 1) * limit)
       .take(limit)
       .orderBy('txn.transactionDate', 'DESC');
@@ -152,14 +154,15 @@ export class InventoryTransactionRepository {
   }
 
   /**
-   * Find transactions by reference
+   * Find transactions by reference (org-scoped)
    */
   async findByReference(
     referenceType: string,
     referenceId: string,
+    organizationId: string,
   ): Promise<InventoryTransactionEntity[]> {
     return this.repository.find({
-      where: { referenceType, referenceId },
+      where: { referenceType, referenceId, organizationId },
       relations: ['warehouse', 'product'],
       order: { transactionDate: 'DESC', createdAt: 'DESC' },
     });
@@ -204,23 +207,24 @@ export class InventoryTransactionRepository {
   ): Promise<InventoryTransactionEntity[]> {
     return this.repository.find({
       where: { organizationId },
-      relations: ['warehouse', 'product', 'performedBy'],
+      relations: ['warehouse', 'product', 'creator'],
       order: { createdAt: 'DESC' },
       take: limit,
     });
   }
 
   /**
-   * Get stock movement history for a product
+   * Get stock movement history for a product in a warehouse
    */
   async getStockMovementHistory(
     productId: string,
     warehouseId: string,
+    organizationId: string,
     limit = 20,
   ): Promise<InventoryTransactionEntity[]> {
     return this.repository.find({
-      where: { productId, warehouseId },
-      relations: ['performedBy'],
+      where: { productId, warehouseId, organizationId },
+      relations: ['creator'],
       order: { transactionDate: 'DESC', createdAt: 'DESC' },
       take: limit,
     });

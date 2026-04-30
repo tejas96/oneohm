@@ -45,6 +45,10 @@ export class WarehouseResponseDto {
   @Expose()
   state?: string;
 
+  @ApiProperty({ example: 'India' })
+  @Expose()
+  country!: string;
+
   @ApiProperty({ example: '400069', required: false })
   @Expose()
   pincode?: string;

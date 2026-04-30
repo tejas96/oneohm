@@ -210,4 +210,101 @@ export {
 export { useQuoteListResource, quoteResourceKeys, type QuoteListFilters } from './quotes';
 
 // BOM (FDAL resource)
-export { useEntityBom, bomResourceKeys, type Bom, type BomItem } from './bom';
+export {
+  useEntityBom,
+  useFinalizeBomAndAllocate,
+  bomResourceKeys,
+  type Bom,
+  type BomItem,
+} from './bom';
+
+// Inventory — Stock
+export {
+  useInventoryStockList,
+  useInventoryStockDetail,
+  useAdjustInventoryStock,
+  useTransferInventoryStock,
+  inventoryStockKeys,
+  type InventoryStock,
+  type InventoryStockFilters,
+  type AdjustStockPayload,
+  type TransferStockPayload,
+} from './inventory-stock';
+
+// Inventory — Warehouses
+export {
+  useWarehouses,
+  useWarehouse,
+  useWarehouseMutations,
+  useWarehouseStats,
+  warehouseKeys,
+  type Warehouse,
+  type WarehouseFilters,
+} from './warehouses';
+
+// Inventory — Vendors
+export {
+  useVendors,
+  useVendor,
+  useVendorMutations,
+  useVendorStats,
+  vendorKeys,
+  type Vendor,
+  type VendorFilters,
+} from './vendors';
+
+// Inventory — Purchase Orders
+export {
+  usePurchaseOrders,
+  usePurchaseOrder,
+  usePurchaseOrderMutations,
+  usePurchaseOrderStats,
+  purchaseOrderKeys,
+  type PurchaseOrder,
+  type PurchaseOrderItem,
+  type PurchaseOrderFilters,
+} from './purchase-orders';
+
+// Inventory — Stock Allocations
+export {
+  useStockAllocations,
+  useStockAllocation,
+  useStockAllocationMutations,
+  useStockAllocationStats,
+  stockAllocationKeys,
+  type StockAllocation,
+  type StockAllocationFilters,
+} from './stock-allocations';
+
+// Inventory — Material Dispatches
+export {
+  useMaterialDispatches,
+  useMaterialDispatch,
+  useMaterialDispatchMutations,
+  useMaterialDispatchStats,
+  materialDispatchKeys,
+  type MaterialDispatch,
+  type MaterialDispatchItem,
+  type MaterialDispatchFilters,
+} from './material-dispatches';
+
+// Inventory — Transactions (read-only ledger)
+export {
+  useInventoryTransactions,
+  useInventoryTransaction,
+  useInventoryTransactionStats,
+  inventoryTransactionKeys,
+  type InventoryTransaction,
+  type InventoryTransactionFilters,
+} from './inventory-transactions';
+
+// Notifications
+export {
+  useNotifications,
+  useNotificationUnreadCount,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+  notificationKeys,
+  type Notification,
+  type NotificationFilters,
+} from './notifications';

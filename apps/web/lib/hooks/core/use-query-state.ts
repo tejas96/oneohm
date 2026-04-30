@@ -148,11 +148,8 @@ export function useQueryState<F extends BaseFilters>(
 
     const params = new URLSearchParams(window.location.search);
 
-    if (page > 1) params.set('page', String(page));
-    else params.delete('page');
-
-    if (pageSize !== defaultPageSize) params.set('limit', String(pageSize));
-    else params.delete('limit');
+    params.set('page', String(Math.max(page, 1)));
+    params.set('limit', String(pageSize));
 
     if (search) params.set('search', search);
     else params.delete('search');
@@ -354,8 +351,10 @@ export function useQueryState<F extends BaseFilters>(
   }, [markUserChange, options?.defaultSort]);
 
   const setMeta = useCallback((meta: { total: number; totalPages: number }) => {
+    const safeTotalPages = Math.max(meta.totalPages, 1);
     setTotal(meta.total);
-    setTotalPages(meta.totalPages);
+    setTotalPages(safeTotalPages);
+    setPageRaw((prev) => (prev > safeTotalPages ? safeTotalPages : Math.max(prev, 1)));
   }, []);
 
   const pagination: PaginationState = useMemo(

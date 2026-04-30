@@ -4,7 +4,7 @@ import { VendorStatus, VendorType } from '@oneohm-epc/shared/types';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateVendorDto, UpdateVendorDto } from '../dto';
 import { VendorEntity } from '../entities/vendor.entity';
-import { VendorRepository } from '../repositories';
+import { PurchaseOrderRepository, VendorRepository } from '../repositories';
 
 /**
  * Vendor Service
@@ -15,6 +15,7 @@ export class VendorService {
   constructor(
     private readonly vendorRepository: VendorRepository,
     private readonly organizationRepository: OrganizationRepository,
+    private readonly purchaseOrderRepository: PurchaseOrderRepository,
   ) {}
 
   /**
@@ -120,7 +121,10 @@ export class VendorService {
    * Delete vendor (soft delete)
    */
   async delete(id: string, organizationId: string, deletedBy: string): Promise<void> {
-    // TODO: Check if vendor has active purchase orders before deletion
+    const hasActive = await this.purchaseOrderRepository.hasActivePOs(id, organizationId);
+    if (hasActive) {
+      throw new BadRequestException('Cannot delete vendor with active purchase orders');
+    }
     await this.vendorRepository.softDelete(id, organizationId, deletedBy);
   }
 

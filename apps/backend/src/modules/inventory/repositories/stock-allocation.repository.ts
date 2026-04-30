@@ -93,9 +93,9 @@ export class StockAllocationRepository {
   /**
    * Find allocations by project
    */
-  async findByProject(projectId: string): Promise<StockAllocationEntity[]> {
+  async findByProject(projectId: string, organizationId: string): Promise<StockAllocationEntity[]> {
     return this.repository.find({
-      where: { projectId },
+      where: { projectId, organizationId },
       relations: ['warehouse', 'product'],
       order: { allocatedAt: 'DESC' },
     });

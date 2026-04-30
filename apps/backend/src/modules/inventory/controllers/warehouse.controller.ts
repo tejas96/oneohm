@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseEnumPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -12,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { type StatisticsResponse, WarehouseStatus, WarehouseType } from '@oneohm-epc/shared/types';
+import { parsePaginationParams } from '@oneohm-epc/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -25,23 +27,39 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
+import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { CreateWarehouseDto, UpdateWarehouseDto, WarehouseResponseDto } from '../dto';
 import { WarehouseService } from '../services';
 
 /**
  * Warehouse Controller
- * Handles HTTP requests for warehouse management
+ * IMPORTANT: Static sub-paths (stats/summary) are declared BEFORE :id routes.
  */
 @ApiTags('Inventory - Warehouses')
 @ApiBearerAuth()
 @Controller('warehouses')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class WarehouseController {
   constructor(private readonly warehouseService: WarehouseService) {}
 
   /**
+   * Get warehouse statistics — MUST be before :id
+   */
+  @RequirePermission('inventory:read')
+  @Get('stats/summary')
+  @ApiOperation({ summary: 'Get warehouse statistics' })
+  async getStatistics(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+  ): Promise<StatisticsResponse<WarehouseStatus>> {
+    return this.warehouseService.getStatistics(organizationId);
+  }
+
+  /**
    * Create a new warehouse
    */
+  @RequirePermission('inventory:write')
   @Post()
   @ApiCreate({
     summary: 'Create a new warehouse',
@@ -63,6 +81,7 @@ export class WarehouseController {
   /**
    * Get all warehouses with filters
    */
+  @RequirePermission('inventory:read')
   @Get()
   @ApiReadAll({
     summary: 'Get all warehouses',
@@ -110,8 +129,7 @@ export class WarehouseController {
   async findAll(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query() query: Record<string, string>,
     @Query('status') status?: WarehouseStatus,
     @Query('warehouseType') warehouseType?: WarehouseType,
     @Query('warehouseManagerId') warehouseManagerId?: string,
@@ -120,22 +138,28 @@ export class WarehouseController {
     data: WarehouseResponseDto[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
-    const { warehouses, total } = await this.warehouseService.findAll(organizationId, page, limit, {
-      status,
-      warehouseType,
-      warehouseManagerId,
-      search,
-    });
+    const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
+    const { warehouses, total } = await this.warehouseService.findAll(
+      organizationId,
+      pageNum,
+      limitNum,
+      {
+        status,
+        warehouseType,
+        warehouseManagerId,
+        search,
+      },
+    );
 
     return {
       data: plainToInstance(WarehouseResponseDto, warehouses, {
         excludeExtraneousValues: true,
       }),
       meta: {
-        page: page ?? 1,
-        limit: limit ?? 20,
+        page: pageNum,
+        limit: limitNum,
         total,
-        totalPages: Math.ceil(total / (limit ?? 20)),
+        totalPages: Math.ceil(total / limitNum),
       },
     };
   }
@@ -143,6 +167,7 @@ export class WarehouseController {
   /**
    * Get warehouse by ID
    */
+  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({
     summary: 'Get warehouse by ID',
@@ -164,6 +189,7 @@ export class WarehouseController {
   /**
    * Update warehouse
    */
+  @RequirePermission('inventory:write')
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update warehouse',
@@ -191,6 +217,7 @@ export class WarehouseController {
   /**
    * Delete warehouse
    */
+  @RequirePermission('inventory:write')
   @Delete(':id')
   @ApiDelete({
     summary: 'Delete warehouse',
@@ -207,23 +234,9 @@ export class WarehouseController {
   }
 
   /**
-   * Get warehouse statistics
-   */
-  @Get('stats/summary')
-  @ApiOperation({
-    summary: 'Get warehouse statistics',
-    description: 'Get warehouse count by status',
-  })
-  async getStatistics(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<StatisticsResponse<WarehouseStatus>> {
-    return this.warehouseService.getStatistics(organizationId);
-  }
-
-  /**
    * Change warehouse status
    */
+  @RequirePermission('inventory:write')
   @Patch(':id/status')
   @ApiOperation({
     summary: 'Change warehouse status',
@@ -233,7 +246,7 @@ export class WarehouseController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('status') status: WarehouseStatus,
+    @Body('status', new ParseEnumPipe(WarehouseStatus)) status: WarehouseStatus,
   ): Promise<WarehouseResponseDto> {
     const warehouse = await this.warehouseService.changeStatus(
       id,

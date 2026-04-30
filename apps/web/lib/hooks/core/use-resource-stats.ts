@@ -10,7 +10,7 @@ import { useOrgContext } from './use-org-context';
 
 import { apiClient } from '@/lib/api/client';
 
-interface UseResourceStatsReturn<TStats> {
+export interface UseResourceStatsReturn<TStats> {
   stats: TStats | undefined;
   isLoading: boolean;
   isError: boolean;

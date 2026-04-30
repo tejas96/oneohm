@@ -34,6 +34,12 @@ export class UpdateProjectVendorDto {
   @IsOptional()
   contractEndDate?: string;
 
+  @ApiProperty({ example: 'INR', required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(3)
+  currency?: string;
+
   // ==================== Notes ====================
 
   @ApiProperty({ example: 'Specialized in residential solar installations', required: false })

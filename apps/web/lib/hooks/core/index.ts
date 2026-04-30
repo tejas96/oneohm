@@ -46,6 +46,7 @@ export type { UseResourceMutationsReturn } from './use-resource-mutations';
 export { useResourceSubList } from './use-resource-sub-list';
 export type { UseResourceSubListReturn } from './use-resource-sub-list';
 export { useResourceStats, mapStatsToFilterTabs } from './use-resource-stats';
+export type { UseResourceStatsReturn } from './use-resource-stats';
 export { useInfiniteResourceList } from './use-infinite-resource-list';
 export { useResourcePermissions } from './use-resource-permissions';
 export type { ResourcePermissions } from './use-resource-permissions';

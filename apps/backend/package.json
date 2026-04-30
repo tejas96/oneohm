@@ -21,5 +21,8 @@
     "seed:platform-admin": "ts-node -r tsconfig-paths/register src/database/seeds/platform-admin.seed.ts",
     "seed:master-data": "ts-node -r tsconfig-paths/register src/database/seeds/master-data.seed.ts",
     "seed:prod": "ts-node -r tsconfig-paths/register src/scripts/run-seeds-prod.ts"
+  },
+  "dependencies": {
+    "@nestjs/schedule": "^6.1.3"
   }
 }

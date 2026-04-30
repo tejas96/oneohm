@@ -334,17 +334,20 @@ export class InventoryStatusDto {
   @ApiProperty({ description: 'Product ID' })
   productId!: string;
 
-  @ApiProperty({ description: 'Product name' })
-  productName!: string;
+  @ApiProperty({ description: 'Warehouse ID' })
+  warehouseId!: string;
 
-  @ApiProperty({ description: 'Required quantity' })
-  requiredQuantity!: number;
+  @ApiProperty({ description: 'Available stock quantity' })
+  availableQuantity!: number;
 
-  @ApiProperty({ description: 'Available stock' })
-  availableStock!: number;
+  @ApiProperty({ description: 'Reserved stock quantity' })
+  reservedQuantity!: number;
 
-  @ApiProperty({ description: 'Whether stock is sufficient' })
-  isSufficient!: boolean;
+  @ApiProperty({ description: 'Minimum stock level threshold' })
+  minimumStockLevel!: number;
+
+  @ApiProperty({ description: 'Whether stock is below minimum level' })
+  isLowStock!: boolean;
 }
 
 /**

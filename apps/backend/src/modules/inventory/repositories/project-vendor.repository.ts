@@ -25,13 +25,18 @@ export class ProjectVendorRepository {
   }
 
   /**
-   * Find project-vendor by ID
+   * Find project-vendor by ID (scoped to organization via project.property.organizationId)
    */
-  async findById(id: string): Promise<ProjectVendorEntity> {
-    const projectVendor = await this.repository.findOne({
-      where: { id },
-      relations: ['project', 'vendor'],
-    });
+  async findById(id: string, organizationId: string): Promise<ProjectVendorEntity> {
+    const projectVendor = await this.repository
+      .createQueryBuilder('projectVendor')
+      .innerJoinAndSelect('projectVendor.project', 'project')
+      .innerJoin('project.property', 'property')
+      .leftJoinAndSelect('projectVendor.vendor', 'vendor')
+      .where('projectVendor.id = :id', { id })
+      .andWhere('property.organizationId = :organizationId', { organizationId })
+      .andWhere('project.deletedAt IS NULL')
+      .getOne();
 
     if (!projectVendor) {
       throw new NotFoundException(`Project-Vendor with ID ${id} not found`);
@@ -56,6 +61,7 @@ export class ProjectVendorRepository {
    */
   async findByVendor(
     vendorId: string,
+    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -64,8 +70,11 @@ export class ProjectVendorRepository {
   ): Promise<{ projectVendors: ProjectVendorEntity[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('projectVendor')
-      .leftJoinAndSelect('projectVendor.project', 'project')
-      .where('projectVendor.vendorId = :vendorId', { vendorId });
+      .innerJoinAndSelect('projectVendor.project', 'project')
+      .innerJoin('project.property', 'property')
+      .where('projectVendor.vendorId = :vendorId', { vendorId })
+      .andWhere('property.organizationId = :organizationId', { organizationId })
+      .andWhere('project.deletedAt IS NULL');
 
     // Apply filters
     if (filters?.status) {
@@ -87,8 +96,12 @@ export class ProjectVendorRepository {
   /**
    * Update project-vendor
    */
-  async update(id: string, updateData: Record<string, unknown>): Promise<ProjectVendorEntity> {
-    const projectVendor = await this.findById(id);
+  async update(
+    id: string,
+    organizationId: string,
+    updateData: Record<string, unknown>,
+  ): Promise<ProjectVendorEntity> {
+    const projectVendor = await this.findById(id, organizationId);
 
     Object.assign(projectVendor, updateData);
 
@@ -98,8 +111,8 @@ export class ProjectVendorRepository {
   /**
    * Delete project-vendor relationship
    */
-  async delete(id: string): Promise<void> {
-    const projectVendor = await this.findById(id);
+  async delete(id: string, organizationId: string): Promise<void> {
+    const projectVendor = await this.findById(id, organizationId);
     await this.repository.remove(projectVendor);
   }
 

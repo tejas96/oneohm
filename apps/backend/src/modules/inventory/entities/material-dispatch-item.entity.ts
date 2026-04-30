@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { MaterialDispatchEntity } from './material-dispatch.entity';
+import { StockAllocationEntity } from './stock-allocation.entity';
 import { ProductEntity } from '../../master-data/entities/product.entity';
 
 /**
@@ -26,6 +27,10 @@ export class MaterialDispatchItemEntity {
   @JoinColumn({ name: 'product_id' })
   product!: ProductEntity;
 
+  @ManyToOne(() => StockAllocationEntity, { nullable: true })
+  @JoinColumn({ name: 'stock_allocation_id' })
+  stockAllocation?: StockAllocationEntity;
+
   // ==================== Foreign Keys ====================
 
   @Column({ name: 'dispatch_id', type: 'uuid' })
@@ -33,6 +38,9 @@ export class MaterialDispatchItemEntity {
 
   @Column({ name: 'product_id', type: 'uuid' })
   productId!: string;
+
+  @Column({ name: 'stock_allocation_id', type: 'uuid', nullable: true })
+  stockAllocationId?: string;
 
   // ==================== Quantity ====================
 

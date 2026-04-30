@@ -1,12 +1,14 @@
 'use client';
 
-import { Bell } from 'lucide-react';
-import { useState } from 'react';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import { Badge, IconButton, Tooltip } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
 import { MobileNav } from './mobile-nav';
 import { UserMenu } from './user-menu';
 
 import { SearchTrigger } from '@/components/shared/search';
+import { useNotificationUnreadCount } from '@/lib/hooks/resources/notifications';
 import { cn } from '@/lib/utils';
 
 interface GlobalHeaderProps {
@@ -16,13 +18,12 @@ interface GlobalHeaderProps {
 
 /**
  * GlobalHeader - 48px fixed header component
- * Features: Logo, global search (Cmd+K), notifications, user menu, mobile nav
- * Reference: apps/ux/web/v2/dashboard/index.html
+ * Features: Logo, global search (Cmd+K), notifications bell with live unread count, user menu, mobile nav
  */
 export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
-  const [notificationCount] = useState(3);
-
-  // Note: Keyboard shortcut (⌘K) is handled by SearchTrigger component
+  const router = useRouter();
+  const { data: unreadData } = useNotificationUnreadCount();
+  const unreadCount = unreadData?.count ?? 0;
 
   return (
     <header
@@ -57,15 +58,23 @@ export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
       {/* Right: Actions */}
       <div className="flex items-center space-x-1 lg:space-x-2">
         {/* Notifications */}
-        <button
-          className="relative p-2 hover:bg-background-secondary rounded-lg transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell className="size-icon-md text-muted-foreground" />
-          {notificationCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 size-2 bg-error rounded-full" />
-          )}
-        </button>
+        <Tooltip title="Notifications">
+          <IconButton
+            size="small"
+            aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+            onClick={() => router.push('/notifications')}
+            sx={{ borderRadius: '8px' }}
+          >
+            <Badge
+              badgeContent={unreadCount > 0 ? unreadCount : undefined}
+              color="error"
+              max={99}
+              sx={{ '& .MuiBadge-badge': { fontSize: 10, minWidth: 16, height: 16 } }}
+            >
+              <NotificationsIcon sx={{ fontSize: 20, color: 'var(--color-muted-foreground)' }} />
+            </Badge>
+          </IconButton>
+        </Tooltip>
 
         {/* User Menu */}
         <UserMenu />

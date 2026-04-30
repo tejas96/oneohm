@@ -100,3 +100,48 @@ export interface VendorContractDetails {
   contractEndDate?: Date | string;
   vendorRole?: string;
 }
+
+/**
+ * Inventory status for a product at a warehouse — used in QuoteCalculator output.
+ */
+export interface InventoryStatus {
+  productId: string;
+  warehouseId: string;
+  availableQuantity: number;
+  reservedQuantity: number;
+  minimumStockLevel: number;
+  isLowStock: boolean;
+}
+
+/**
+ * Low stock alert — returned by /inventory-stock?filter=low-stock
+ */
+export interface LowStockAlert {
+  stockId: string;
+  productId: string;
+  productName: string;
+  warehouseId: string;
+  warehouseName: string;
+  availableQuantity: number;
+  minimumStockLevel: number;
+}
+
+/**
+ * Inventory dashboard stats
+ */
+export interface InventoryDashboardStats {
+  totalStockValue: number;
+  warehouseCount: number;
+  lowStockItemCount: number;
+  pendingPoCount: number;
+  inTransitDispatchCount: number;
+}
+
+/**
+ * Stock movement summary for dashboard
+ */
+export interface StockMovementSummary {
+  transactionType: string;
+  count: number;
+  totalQuantity: number;
+}
