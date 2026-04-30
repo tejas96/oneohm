@@ -263,6 +263,7 @@ export {
   type PurchaseOrder,
   type PurchaseOrderItem,
   type PurchaseOrderFilters,
+  type RecordPaymentPayload,
 } from './purchase-orders';
 
 // Inventory — Stock Allocations
@@ -308,3 +309,68 @@ export {
   type Notification,
   type NotificationFilters,
 } from './notifications';
+
+// Inventory — Stats (Part 10)
+export {
+  resolveStatsWindow,
+  usePoSpendTrend,
+  usePoTopVendors,
+  usePoSpendByWarehouse,
+  usePoOutstandingByVendor,
+  useTransactionsByTypeTrend,
+  useDispatchFunnel,
+  useAllocationFunnel,
+  useTopLowStock,
+  type StatsTrendPoint,
+  type StatsTrendResponse,
+  type StatsTopItem,
+  type StatsTopItemsResponse,
+  type StatsFunnelStage,
+  type StatsFunnelResponse,
+  type StatsRangePreset,
+  type StatsWindowInput,
+  type ResolvedStatsWindow,
+  type UseTrendStatsOptions,
+  type UseTopStatsOptions,
+  type UseFunnelStatsOptions,
+  type UseTopLowStockOptions,
+} from './inventory-stats';
+
+// Inventory — Federated Search (Part 5)
+export {
+  useInventorySearch,
+  type InventorySearchType,
+  type InventorySearchHit,
+  type InventorySearchResponse,
+  type UseInventorySearchOptions,
+  type UseInventorySearchReturn,
+} from './inventory-search';
+
+// Inventory — Saved Views (Part 7)
+export {
+  useSavedViews,
+  useSavedView,
+  useSavedViewMutations,
+  savedViewKeys,
+  type SavedView,
+  type SavedViewResource,
+  type CreateSavedViewPayload,
+  type UpdateSavedViewPayload,
+  type SavedViewMutations,
+} from './saved-views';
+
+// Inventory — Bulk operations (Part 4)
+export {
+  useInventoryBulk,
+  type BulkResult,
+  type BulkCancelPayload,
+  type UseInventoryBulkReturn,
+} from './inventory-bulk';
+
+// Inventory — CSV Export (Part 6 + Part 9)
+export {
+  useInventoryExport,
+  type InventoryExportResource,
+  type ExportInventoryOptions,
+  type UseInventoryExportReturn,
+} from './inventory-export';

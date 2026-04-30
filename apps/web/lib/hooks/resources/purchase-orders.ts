@@ -33,6 +33,10 @@ export interface PurchaseOrder {
   subtotal: number;
   taxAmount: number;
   totalAmount: number;
+  /** Total payments recorded against this PO (Part 2). */
+  paidAmount: number;
+  /** Computed = totalAmount - paidAmount; sent by the backend response DTO. */
+  outstandingAmount?: number;
   vendor?: { id: string; name: string };
   warehouse?: { id: string; name: string };
   items?: PurchaseOrderItem[];
@@ -142,6 +146,10 @@ export function usePurchaseOrderMutations() {
         method: 'POST',
         path: (id) => `/purchase-orders/${id}/cancel`,
       },
+      recordPayment: {
+        method: 'POST',
+        path: (id) => `/purchase-orders/${id}/record-payment`,
+      },
     },
     toast: {
       create: { success: 'Purchase order created', error: 'Failed to create purchase order' },
@@ -152,8 +160,20 @@ export function usePurchaseOrderMutations() {
       send: { success: 'PO sent to vendor', error: 'Failed to send PO' },
       receive: { success: 'Items received', error: 'Failed to receive items' },
       cancel: { success: 'PO cancelled', error: 'Failed to cancel PO' },
+      recordPayment: { success: 'Payment recorded', error: 'Failed to record payment' },
     },
   });
+}
+
+// ============================================================================
+// Payment-recorded payload — typed wrapper around the customAction.
+// ============================================================================
+
+export interface RecordPaymentPayload {
+  /** Currency-decimal amount; backend validates 0 < amount <= outstanding. */
+  amount: number;
+  /** Optional free-text note attached to the audit trail. */
+  notes?: string;
 }
 
 export function usePurchaseOrderStats() {
