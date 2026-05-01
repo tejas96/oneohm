@@ -6,8 +6,7 @@ import { useFmt } from '../dashboard/use-fmt';
 import { useStockAggregates } from '../stock/use-stock-aggregates';
 
 import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
-import { useInventoryStockList } from '@/lib/hooks/resources/inventory-stock';
-import { useStockSummaryByWarehouse } from '@/lib/hooks/resources/inventory-stock';
+import { useInventoryStockList , useStockSummaryByWarehouse } from '@/lib/hooks/resources/inventory-stock';
 
 /**
  * KPI tile row for the warehouse detail page. Aggregates come from two

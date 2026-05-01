@@ -179,7 +179,7 @@ export function InventoryDispatchesPage(): React.JSX.Element {
             label,
           }))}
           onChange={(value) =>
-            setFilter('status', value === 'all' ? undefined : (value as string))
+            setFilter('status', value === 'all' ? undefined : (value))
           }
           allLabel="All statuses"
           minWidth={170}
@@ -189,7 +189,7 @@ export function InventoryDispatchesPage(): React.JSX.Element {
           value={(filters.warehouseId as string) || ''}
           options={warehouseOptions}
           onChange={(value) =>
-            setFilter('warehouseId', (value || undefined) as string | undefined)
+            setFilter('warehouseId', (value || undefined))
           }
           allLabel="All warehouses"
           minWidth={180}

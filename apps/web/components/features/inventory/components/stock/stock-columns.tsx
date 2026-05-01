@@ -7,9 +7,9 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import * as React from 'react';
 
+import type { ColumnConfig } from '@/components/shared/advanced-table';
 import { ProgressBarCell } from '@/components/shared/inventory/progress-bar-cell';
 import { RowActionMenu, type RowAction } from '@/components/shared/inventory/row-action-menu';
-import type { ColumnConfig } from '@/components/shared/advanced-table';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { ROUTES } from '@/lib/config/routes';
 import type { InventoryStock } from '@/lib/hooks/resources/inventory-stock';

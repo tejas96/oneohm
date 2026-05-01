@@ -2,12 +2,12 @@
 
 import * as React from 'react';
 
-import { useFmt } from '../dashboard/use-fmt';
 import { useWarehouseAggregates } from './use-warehouse-aggregates';
+import { useFmt } from '../dashboard/use-fmt';
 
 import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
-import type { Warehouse } from '@/lib/hooks/resources/warehouses';
 import type { StockSummaryByWarehouseRow } from '@/lib/hooks/resources/inventory-stock';
+import type { Warehouse } from '@/lib/hooks/resources/warehouses';
 
 export interface WarehouseKpiStripProps {
   warehouses: readonly Warehouse[] | undefined;

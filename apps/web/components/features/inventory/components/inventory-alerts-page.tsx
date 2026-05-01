@@ -70,7 +70,7 @@ export function InventoryAlertsPage(): React.JSX.Element {
   const aggregates = useMemo(() => {
     let totalDeficit = 0;
     let critical = 0;
-    let warehouseSet = new Set<string>();
+    const warehouseSet = new Set<string>();
     for (const r of rows) {
       const min = Number(r.minimumStockLevel ?? 0);
       const avail = Number(r.availableQuantity ?? 0);

@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 
-import { useFmt } from '../dashboard/use-fmt';
 import { useStockAggregates } from './use-stock-aggregates';
+import { useFmt } from '../dashboard/use-fmt';
 
 import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
 import type { InventoryStock } from '@/lib/hooks/resources/inventory-stock';

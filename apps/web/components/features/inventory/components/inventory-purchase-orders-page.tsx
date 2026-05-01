@@ -10,9 +10,9 @@ import {
   PAYMENT_STATUS_LABEL,
   PO_STATUS_LABEL,
 } from '../constants';
-import { TableFilterSelect } from './shared/table-filter-select';
 import { buildPoColumns, type PoColumnRow } from './po/po-columns';
 import { PoKpiStrip } from './po/po-kpi-strip';
+import { TableFilterSelect } from './shared/table-filter-select';
 
 import { AdvancedTable } from '@/components/shared/advanced-table';
 import type { TableSortModel } from '@/components/shared/advanced-table/types';
@@ -207,7 +207,7 @@ export function InventoryPurchaseOrdersPage(): React.JSX.Element {
           value={(filters.vendorId as string) || ''}
           options={vendorOptions}
           onChange={(value) =>
-            setFilter('vendorId', (value || undefined) as string | undefined)
+            setFilter('vendorId', (value || undefined))
           }
           allLabel="All vendors"
           minWidth={170}
@@ -217,7 +217,7 @@ export function InventoryPurchaseOrdersPage(): React.JSX.Element {
           value={(filters.warehouseId as string) || ''}
           options={warehouseOptions}
           onChange={(value) =>
-            setFilter('warehouseId', (value || undefined) as string | undefined)
+            setFilter('warehouseId', (value || undefined))
           }
           allLabel="All warehouses"
           minWidth={170}

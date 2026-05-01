@@ -6,11 +6,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
 import { ALLOCATION_STATUS_LABEL } from '../constants';
-import { AllocationKpiStrip } from './allocations/allocation-kpi-strip';
 import {
   buildAllocationColumns,
   type AllocationColumnRow,
 } from './allocations/allocation-columns';
+import { AllocationKpiStrip } from './allocations/allocation-kpi-strip';
 import { TableFilterSelect } from './shared/table-filter-select';
 
 import { AdvancedTable } from '@/components/shared/advanced-table';
@@ -177,7 +177,7 @@ export function InventoryAllocationsPage(): React.JSX.Element {
           value={(filters.warehouseId as string) || ''}
           options={warehouseOptions}
           onChange={(value) =>
-            setFilter('warehouseId', (value || undefined) as string | undefined)
+            setFilter('warehouseId', (value || undefined))
           }
           allLabel="All warehouses"
           minWidth={180}

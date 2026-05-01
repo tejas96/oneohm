@@ -120,7 +120,7 @@ export function buildPoColumns(callbacks: PoRowActionCallbacks): ColumnConfig<Po
         return (
           <span
             className={
-              'text-xs ' + (overdue ? 'font-medium text-warning' : 'text-foreground-secondary')
+              `text-xs ${  overdue ? 'font-medium text-warning' : 'text-foreground-secondary'}`
             }
             title={overdue ? 'Overdue' : undefined}
           >

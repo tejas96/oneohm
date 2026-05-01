@@ -24,8 +24,8 @@ import {
   type InventoryTransactionFilters,
 } from '@/lib/hooks/resources/inventory-transactions';
 import { useWarehouses } from '@/lib/hooks/resources/warehouses';
-import { useAuth } from '@/providers/auth-provider';
 import { formatDate } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 
 type TxRow = InventoryTransaction & Record<string, unknown>;
 
@@ -303,7 +303,7 @@ export function InventoryTransactionsPage(): React.JSX.Element {
           value={(filters.warehouseId as string) || ''}
           options={warehouseOptions}
           onChange={(value) =>
-            setFilter('warehouseId', (value || undefined) as string | undefined)
+            setFilter('warehouseId', (value || undefined))
           }
           allLabel="All warehouses"
           minWidth={180}

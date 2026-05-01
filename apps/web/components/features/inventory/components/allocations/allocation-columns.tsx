@@ -110,8 +110,8 @@ export function buildAllocationColumns(
         return (
           <span
             className={
-              'block text-right text-sm tabular-nums ' +
-              (returned > 0 ? 'text-warning' : 'text-foreground-tertiary')
+              `block text-right text-sm tabular-nums ${ 
+              returned > 0 ? 'text-warning' : 'text-foreground-tertiary'}`
             }
           >
             {returned > 0 ? returned : '—'}

@@ -174,7 +174,7 @@ export function InventoryStockPage(): React.JSX.Element {
           value={(filters.warehouseId as string | undefined) ?? ''}
           options={warehouseOptions}
           onChange={(value) =>
-            setFilter('warehouseId', (value || undefined) as string | undefined)
+            setFilter('warehouseId', (value || undefined))
           }
           allLabel="All warehouses"
           minWidth={200}

@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 
-import { useFmt } from '../dashboard/use-fmt';
 import { useVendorAggregates } from './use-vendor-aggregates';
+import { useFmt } from '../dashboard/use-fmt';
 
 import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
 import type { Vendor } from '@/lib/hooks/resources/vendors';

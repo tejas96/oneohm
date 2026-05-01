@@ -11,9 +11,9 @@ import {
   PROJECT_VENDOR_STATUS_COLOR,
   PROJECT_VENDOR_STATUS_LABEL,
 } from '../constants';
+import { VendorFormDialog } from './vendor-form-dialog';
 import { VendorDetailHeader } from './vendors/vendor-detail-header';
 import { VendorDetailKpi } from './vendors/vendor-detail-kpi';
-import { VendorFormDialog } from './vendor-form-dialog';
 
 import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
 import type { TableSortModel } from '@/components/shared/advanced-table/types';
@@ -25,8 +25,8 @@ import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useOrgContext } from '@/lib/hooks/core';
 import { usePurchaseOrders, type PurchaseOrder } from '@/lib/hooks/resources/purchase-orders';
 import { useVendor } from '@/lib/hooks/resources/vendors';
-import { useAuth } from '@/providers/auth-provider';
 import { formatCurrency } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 
 interface ProjectVendorAssignment {
   id: string;
@@ -109,7 +109,7 @@ const ASSIGN_COLUMNS: ColumnConfig<AssignRow>[] = [
       return (
         <div className="flex flex-col gap-0.5 py-1">
           <span className="text-sm font-medium text-primary">
-            {name || code || row.projectId.slice(0, 8) + '…'}
+            {name || code || `${row.projectId.slice(0, 8)  }…`}
           </span>
           {name && code ? (
             <span className="text-xs text-foreground-tertiary">{code}</span>

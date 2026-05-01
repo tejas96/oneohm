@@ -158,7 +158,7 @@ export function StockTransactionsCard({
                   ) : null}
                 </div>
                 <div
-                  className={'shrink-0 text-sm font-medium tabular-nums ' + valueColor}
+                  className={`shrink-0 text-sm font-medium tabular-nums ${  valueColor}`}
                 >
                   {sign}
                   {fmt.number(Math.abs(Number(t.quantity)))}

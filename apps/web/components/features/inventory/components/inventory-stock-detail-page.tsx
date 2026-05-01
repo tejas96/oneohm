@@ -8,13 +8,13 @@ import { StockDetailHeader } from './stock/stock-detail-header';
 import { StockTransactionsCard } from './stock/stock-transactions-card';
 import { StockTransferDialog } from './stock/stock-transfer-dialog';
 
-import { ProgressBarCell } from '@/components/shared/inventory/progress-bar-cell';
 import { ErrorState } from '@/components/shared/feedback';
+import { ProgressBarCell } from '@/components/shared/inventory/progress-bar-cell';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInventoryStockDetail } from '@/lib/hooks/resources/inventory-stock';
-import { useAuth } from '@/providers/auth-provider';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 
 /**
  * Inventory Stock detail page (Part: rebuild-stock-pages).

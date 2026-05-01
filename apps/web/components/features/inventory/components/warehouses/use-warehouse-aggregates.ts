@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 
-import type { Warehouse } from '@/lib/hooks/resources/warehouses';
 import type { StockSummaryByWarehouseRow } from '@/lib/hooks/resources/inventory-stock';
+import type { Warehouse } from '@/lib/hooks/resources/warehouses';
 
 /**
  * Page-scoped warehouse aggregates derived from the visible list and

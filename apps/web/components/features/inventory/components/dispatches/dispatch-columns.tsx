@@ -89,8 +89,8 @@ export function buildDispatchColumns(
         return (
           <span
             className={
-              'text-sm tabular-nums ' +
-              (isOverdue ? 'font-medium text-error' : 'text-foreground-secondary')
+              `text-sm tabular-nums ${ 
+              isOverdue ? 'font-medium text-error' : 'text-foreground-secondary'}`
             }
             title={isOverdue ? 'Overdue' : undefined}
           >

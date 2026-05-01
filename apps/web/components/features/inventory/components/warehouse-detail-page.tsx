@@ -8,9 +8,9 @@ import {
   WarehouseStockTab,
   WarehouseTransactionsTab,
 } from './warehouse-detail-tabs';
+import { WarehouseFormDialog } from './warehouse-form-dialog';
 import { WarehouseDetailHeader } from './warehouses/warehouse-detail-header';
 import { WarehouseDetailKpi } from './warehouses/warehouse-detail-kpi';
-import { WarehouseFormDialog } from './warehouse-form-dialog';
 
 import { ErrorState } from '@/components/shared/feedback';
 import { Skeleton } from '@/components/ui/skeleton';
