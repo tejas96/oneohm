@@ -28,8 +28,12 @@ export interface StockAllocation {
   sourceType: string;
   notes?: string;
   project?: { id: string; name: string; projectNumber: string };
-  warehouse?: { id: string; name: string };
-  product?: { id: string; name: string; code: string };
+  warehouse?: { id: string; name: string; code?: string };
+  product?: { id: string; name: string; code: string; unit?: string };
+  /** Allocated/dispatched timeline. Backend exposes both — we use them for
+   * the activity timeline on the detail page. */
+  allocatedAt?: string;
+  dispatchedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
