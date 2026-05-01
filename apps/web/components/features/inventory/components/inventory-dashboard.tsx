@@ -76,7 +76,7 @@ export function InventoryDashboard(): React.JSX.Element {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-5 p-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <MUITypography variant="drawerTitle">Inventory</MUITypography>
@@ -89,20 +89,23 @@ export function InventoryDashboard(): React.JSX.Element {
 
       <DashboardKpiStrip statsWindow={statsWindow} />
 
-      <section className="flex flex-col gap-3">
-        <MUITypography variant="sectionTitle">Operations</MUITypography>
-        <DashboardOpsSection statsWindow={statsWindow} />
-      </section>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-w-0 flex-col gap-5">
+          <section className="flex flex-col gap-3">
+            <MUITypography variant="sectionTitle">Operations</MUITypography>
+            <DashboardOpsSection statsWindow={statsWindow} />
+          </section>
 
-      <section className="flex flex-col gap-3">
-        <MUITypography variant="sectionTitle">Financial</MUITypography>
-        <DashboardFinancialSection statsWindow={statsWindow} />
-      </section>
+          <section className="flex flex-col gap-3">
+            <MUITypography variant="sectionTitle">Financial</MUITypography>
+            <DashboardFinancialSection statsWindow={statsWindow} />
+          </section>
+        </div>
 
-      <section className="flex flex-col gap-3">
-        <MUITypography variant="sectionTitle">Recent activity</MUITypography>
-        <DashboardActivityRail />
-      </section>
+        <aside className="min-w-0">
+          <DashboardActivityRail />
+        </aside>
+      </div>
     </div>
   );
 }

@@ -60,7 +60,10 @@ export function ChartShell({
         </div>
       )}
 
-      <div style={{ height }} className="w-full">
+      <div
+        style={{ height, minWidth: 0 }}
+        className="relative w-full min-w-0 overflow-hidden"
+      >
         {isLoading ? (
           <Skeleton className="h-full w-full rounded-lg" />
         ) : error ? (

@@ -36,6 +36,8 @@ export interface FunnelChartProps {
   stageHeight?: number;
   /** Gap between stages */
   gap?: number;
+  /** Render the bottom legend block (defaults to true). */
+  showLegend?: boolean;
   /** Additional CSS classes */
   className?: string;
 }
@@ -58,6 +60,7 @@ export function FunnelChart({
   minWidthPercent = 30,
   stageHeight = 56,
   gap = 2,
+  showLegend = true,
   className,
 }: FunnelChartProps): React.JSX.Element {
   // Calculate width percentages for each stage
@@ -90,12 +93,12 @@ export function FunnelChart({
           <React.Fragment key={stage.id}>
             {/* Conversion rate connector */}
             {showConversionRates && stage.conversionRate !== undefined && index > 0 && (
-              <div className="flex items-center gap-2 py-1">
-                <div className="h-px w-8 bg-border-light" />
-                <span className="text-xs font-medium text-foreground-secondary">
+              <div className="flex items-center gap-2">
+                <div className="h-px w-6 bg-border-light" />
+                <span className="text-[10px] font-medium text-foreground-tertiary tabular-nums">
                   {stage.conversionRate}%
                 </span>
-                <div className="h-px w-8 bg-border-light" />
+                <div className="h-px w-6 bg-border-light" />
               </div>
             )}
 
@@ -118,10 +121,22 @@ export function FunnelChart({
               <div className={cn('absolute inset-0 rounded-lg', stage.color)} />
 
               {/* Content */}
-              <div className="relative z-10 flex items-center justify-between w-full px-4">
-                <span className="text-sm font-medium text-white truncate">{stage.label}</span>
+              <div className="relative z-10 flex items-center justify-between w-full px-3">
+                <span
+                  className={cn(
+                    'font-medium text-white truncate',
+                    stageHeight <= 36 ? 'text-xs' : 'text-sm',
+                  )}
+                >
+                  {stage.label}
+                </span>
                 {showValues && (
-                  <span className="text-lg font-semibold text-white">
+                  <span
+                    className={cn(
+                      'font-semibold text-white tabular-nums',
+                      stageHeight <= 36 ? 'text-xs' : 'text-base',
+                    )}
+                  >
                     {stage.value.toLocaleString()}
                   </span>
                 )}
@@ -131,15 +146,16 @@ export function FunnelChart({
         ))}
       </div>
 
-      {/* Legend */}
-      <div className="mt-6 flex flex-wrap justify-center gap-4">
-        {stagesWithWidth.map((stage) => (
-          <div key={stage.id} className="flex items-center gap-2">
-            <div className={cn('size-3 rounded-sm', stage.color)} />
-            <span className="text-xs text-foreground-secondary">{stage.label}</span>
-          </div>
-        ))}
-      </div>
+      {showLegend && (
+        <div className="mt-6 flex flex-wrap justify-center gap-4">
+          {stagesWithWidth.map((stage) => (
+            <div key={stage.id} className="flex items-center gap-2">
+              <div className={cn('size-3 rounded-sm', stage.color)} />
+              <span className="text-xs text-foreground-secondary">{stage.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

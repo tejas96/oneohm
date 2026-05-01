@@ -151,7 +151,7 @@ export function DashboardKpiStrip({ statsWindow }: DashboardKpiStripProps): Reac
         value: fmt.currency(outstandingTotal),
         intent: outstandingTotal > 0 ? 'warning' : 'neutral',
         isLoading: outstandingByVendor.isLoading,
-        secondary: 'status-based · A2',
+        secondary: 'across all open POs',
       },
       {
         id: 'active-allocations',

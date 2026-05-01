@@ -94,7 +94,13 @@ export function StackedBarChartImpl({
             }
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
           />
-          {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
+          {series.length > 1 && (
+            <Legend
+              wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+              iconSize={8}
+              iconType="circle"
+            />
+          )}
           {series.map((seriesKey, index) => (
             <Bar
               key={seriesKey}
@@ -102,7 +108,8 @@ export function StackedBarChartImpl({
               name={seriesKey === 'value' ? undefined : seriesKey}
               stackId="stack"
               fill={getChartColor(index)}
-              radius={index === series.length - 1 ? [4, 4, 0, 0] : 0}
+              maxBarSize={28}
+              radius={index === series.length - 1 ? [3, 3, 0, 0] : 0}
             />
           ))}
         </BarChart>

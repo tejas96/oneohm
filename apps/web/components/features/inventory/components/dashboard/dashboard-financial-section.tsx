@@ -81,7 +81,7 @@ export function DashboardFinancialSection({
       <TrendLineChart
         title="PO spend trend"
         description="Approved spend across the selected window"
-        height={260}
+        height={220}
         data={trendPoints}
         isLoading={spendTrend.isLoading}
         error={spendTrend.error ? (spendTrend.error as Error) : null}
@@ -91,35 +91,35 @@ export function DashboardFinancialSection({
       <HorizontalBarChart
         title="Top vendors by spend"
         description="Top 10 by approved PO total in window"
-        height={260}
+        height={220}
         data={vendorItems}
         isLoading={topVendors.isLoading}
         error={topVendors.error ? (topVendors.error as Error) : null}
         xTickFormatter={(v) => fmt.currencyCompact(v)}
         valueFormatter={(v) => fmt.currency(v)}
-        labelWidth={140}
+        labelWidth={160}
       />
       <HorizontalBarChart
         title="PO spend by warehouse"
         description="Where the orders are going"
-        height={260}
+        height={220}
         data={warehouseItems}
         isLoading={byWarehouse.isLoading}
         error={byWarehouse.error ? (byWarehouse.error as Error) : null}
         xTickFormatter={(v) => fmt.currencyCompact(v)}
         valueFormatter={(v) => fmt.currency(v)}
-        labelWidth={140}
+        labelWidth={160}
       />
       <HorizontalBarChart
         title="Outstanding by vendor"
-        description="Status-based · pending product decision A2"
-        height={260}
+        description="Total – paid across non-cancelled POs"
+        height={220}
         data={outstandingItems}
         isLoading={outstanding.isLoading}
         error={outstanding.error ? (outstanding.error as Error) : null}
         xTickFormatter={(v) => fmt.currencyCompact(v)}
         valueFormatter={(v) => fmt.currency(v)}
-        labelWidth={140}
+        labelWidth={160}
       />
     </div>
   );

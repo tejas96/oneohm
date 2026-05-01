@@ -1,5 +1,7 @@
 'use client';
 
+import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
+import Link from 'next/link';
 import { useMemo } from 'react';
 
 import {
@@ -75,26 +77,52 @@ function adapt(tx: InventoryTransaction): InventoryActivityEvent {
   };
 }
 
+/**
+ * Activity rail. Capped at 8 events on the dashboard so the section
+ * doesn't outgrow the rest of the layout — operators who need the full
+ * list can click "View all" to jump to /inventory/transactions. The
+ * inner timeline is wrapped in a max-height scroll container so even
+ * burst-y windows stay visually contained.
+ */
+const RAIL_LIMIT = 8;
+
 export function DashboardActivityRail(): React.JSX.Element {
   const { items, isLoading } = useInventoryTransactions({
     resource: 'dashboard-activity-rail',
-    defaultPageSize: 20,
+    defaultPageSize: RAIL_LIMIT,
     syncToUrl: false,
     defaultSort: { field: 'transactionDate', order: 'DESC' },
   });
 
   const events = useMemo<ReadonlyArray<InventoryActivityEvent>>(
-    () => items.map(adapt),
+    () => items.slice(0, RAIL_LIMIT).map(adapt),
     [items],
   );
 
   return (
-    <InventoryActivityTimeline
-      title="Recent activity"
-      events={events}
-      isLoading={isLoading}
-      groupByDate
-      emptyMessage="No recent inventory activity in the last 20 transactions"
-    />
+    <div className="rounded-xl border border-border-light bg-surface">
+      <div className="flex items-center justify-between gap-2 border-b border-border-light px-4 py-3">
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-foreground">Recent activity</div>
+          <div className="mt-0.5 text-xs text-foreground-tertiary">
+            Last {RAIL_LIMIT} stock movements
+          </div>
+        </div>
+        <Link
+          href={ROUTES.INVENTORY.TRANSACTIONS}
+          className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+        >
+          View all
+          <OpenInNewRoundedIcon sx={{ fontSize: 12 }} />
+        </Link>
+      </div>
+      <div className="max-h-[520px] overflow-y-auto px-4 py-3">
+        <InventoryActivityTimeline
+          events={events}
+          isLoading={isLoading}
+          emptyMessage="No recent inventory activity"
+        />
+      </div>
+    </div>
   );
 }

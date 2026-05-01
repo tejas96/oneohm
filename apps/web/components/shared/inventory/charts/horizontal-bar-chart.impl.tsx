@@ -5,7 +5,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -24,8 +23,9 @@ import { CHART_AXIS_TICK_STYLE, CHART_TOOLTIP_CURSOR, getChartColor } from '@/li
  * `value` and labelled with the item's `label`. We render bars in
  * input order so the caller controls the sort.
  *
- * Each bar gets its own colour from the rotating palette so the chart
- * reads visually distinct (vs every bar in chart-1 green).
+ * All bars in a single chart share one colour by default. Rainbow bars
+ * felt noisy on a real dashboard — colour is reserved for distinguishing
+ * different series, not different members of the same series.
  */
 
 export interface HorizontalBarChartImplProps
@@ -78,11 +78,7 @@ export function HorizontalBarChartImpl({
             }
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
           />
-          <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-            {dataAsMutable.map((item, index) => (
-              <Cell key={item.id} fill={getChartColor(index)} />
-            ))}
-          </Bar>
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} fill={getChartColor(0)} maxBarSize={22} />
         </BarChart>
       </ResponsiveContainer>
     </ChartShell>

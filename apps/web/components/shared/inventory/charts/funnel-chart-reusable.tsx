@@ -6,24 +6,17 @@ import { ChartShell, type ChartShellProps } from './chart-shell';
 import type { FunnelStageInput } from './types';
 
 import { FunnelChart, type FunnelStage as ExistingFunnelStage } from '@/components/shared/charts';
-import { CHART_SERIES_COLORS } from '@/lib/charts';
 
 
 /**
  * Adapter over the existing `shared/charts/FunnelChart` that
  *   * accepts the `FunnelResponse` shape returned by the inventory
  *     stats endpoints (allocation funnel, dispatch funnel),
- *   * applies the canonical chart palette so funnel colours stay in
- *     sync with the rest of the dashboard, and
+ *   * applies a soft progression-aware palette (start neutral, build
+ *     intent toward "completed/delivered" success), and
  *   * embeds the chart inside the shared `ChartShell` so loading /
  *     empty / error / titled states are consistent with every other
  *     inventory chart.
- *
- * Why a thin adapter and not a rewrite: the existing `FunnelChart` is
- * already a clean reusable component with conversion-rate connectors
- * and clickable stages. The only friction was the call sites had to
- * compute `bg-*` Tailwind classes themselves and remember to pass a
- * loading state — both of which this wrapper takes care of.
  */
 
 export interface FunnelChartReusableProps
@@ -37,27 +30,18 @@ export interface FunnelChartReusableProps
 }
 
 /**
- * Tailwind classes corresponding 1:1 to the canonical chart palette.
- * Required because the existing `FunnelChart` paints stages with
- * Tailwind classes (`bg-*`) rather than raw hex strings, so this
- * adapter has to translate the palette into the matching class names.
- *
- * Order MUST match `CHART_SERIES_COLORS` so a given stage index maps
- * to the same colour it would in any other inventory chart.
+ * Progression palette: each stage darkens slightly toward "complete".
+ * Soft tints (slate / sky / teal / emerald) keep the chart readable
+ * without screaming for attention the way pure brand colours do.
+ * Index 0 = top-of-funnel; the last colour caps a 5+ stage funnel.
  */
 const FUNNEL_BG_CLASSES: readonly string[] = [
-  'bg-chart-1',
-  'bg-chart-2',
-  'bg-chart-3',
-  'bg-chart-4',
-  'bg-chart-5',
+  'bg-slate-400',
+  'bg-sky-500',
+  'bg-teal-500',
+  'bg-emerald-500',
+  'bg-emerald-600',
 ];
-
-if (FUNNEL_BG_CLASSES.length !== CHART_SERIES_COLORS.length) {
-  /* istanbul ignore next */
-  // Defensive: keep the local class list in step with the palette.
-  throw new Error('FunnelChartReusable: palette class list must match CHART_SERIES_COLORS length');
-}
 
 export function FunnelChartReusable({
   stages,
@@ -86,12 +70,15 @@ export function FunnelChartReusable({
 
   return (
     <ChartShell {...shellProps} isEmpty={isEmpty}>
-      <div className="flex h-full w-full items-center">
+      <div className="flex h-full w-full items-center justify-center overflow-hidden">
         <FunnelChart
           stages={adapted}
           showConversionRates={showConversionRates}
           showValues
           onStageClick={handleStageClick}
+          stageHeight={32}
+          gap={4}
+          showLegend={false}
         />
       </div>
     </ChartShell>

@@ -93,8 +93,8 @@ export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): 
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <StackedBarChart
         title="Transactions by type"
-        description="Daily volume across receive, adjust, transfer, deplete"
-        height={260}
+        description="Daily movement volume in selected window"
+        height={220}
         data={txnPoints}
         isLoading={txnByType.isLoading}
         error={txnByType.error ? (txnByType.error as Error) : null}
@@ -102,16 +102,16 @@ export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): 
       />
       <FunnelChartReusable
         title="Allocation funnel"
-        description="Drafted → reserved → consumed in selected window"
-        height={260}
+        description="Allocated → partially dispatched → completed"
+        height={220}
         stages={allocStages}
         isLoading={allocFunnel.isLoading}
         error={allocFunnel.error ? (allocFunnel.error as Error) : null}
       />
       <FunnelChartReusable
         title="Dispatch funnel"
-        description="Created → picked → in transit → delivered"
-        height={260}
+        description="Prepared → in transit → delivered"
+        height={220}
         stages={dispStages}
         isLoading={dispFunnel.isLoading}
         error={dispFunnel.error ? (dispFunnel.error as Error) : null}
@@ -119,12 +119,12 @@ export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): 
       <HorizontalBarChart
         title="Top low-stock items"
         description="Largest deficit vs minimum threshold (point-in-time)"
-        height={260}
+        height={220}
         data={lowItems}
         isLoading={topLow.isLoading}
         error={topLow.error ? (topLow.error as Error) : null}
         valueFormatter={(v) => fmt.number(v)}
-        labelWidth={150}
+        labelWidth={160}
       />
     </div>
   );

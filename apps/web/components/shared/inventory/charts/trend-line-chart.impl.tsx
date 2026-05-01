@@ -97,7 +97,13 @@ export function TrendLineChartImpl({
             }
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
           />
-          {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
+          {series.length > 1 && (
+            <Legend
+              wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+              iconSize={8}
+              iconType="circle"
+            />
+          )}
           {series.map((seriesKey, index) => (
             <Line
               key={seriesKey}
@@ -106,8 +112,10 @@ export function TrendLineChartImpl({
               name={seriesKey === 'value' ? undefined : seriesKey}
               stroke={getChartColor(index)}
               strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4 }}
+              // Show explicit dots when there are few data points so a
+              // single-point or two-point trend is visible at all.
+              dot={rows.length <= 8 ? { r: 3, strokeWidth: 0 } : false}
+              activeDot={{ r: 5 }}
             />
           ))}
         </LineChart>

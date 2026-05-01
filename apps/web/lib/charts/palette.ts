@@ -27,12 +27,19 @@
  * Keys match the Tailwind index for ergonomics: `CHART_COLORS[1]` is
  * `bg-chart-1`.
  */
+/**
+ * Analytical chart palette — desaturated, mid-luminance tones picked for
+ * readability across long sessions. Saturated brand colors (#76c044,
+ * #0d74b8 et al) are perfect on marketing surfaces but compete with the
+ * data on a dashboard, so we use softer Tailwind-500 equivalents that
+ * read clearly when stacked or sat next to each other for hours.
+ */
 export const CHART_COLORS = {
-  1: '#76c044', // primary green
-  2: '#0d74b8', // secondary blue
-  3: '#eab308', // amber
-  4: '#9333ea', // purple
-  5: '#f97316', // orange
+  1: '#3b82f6', // blue-500   — primary series / first stage
+  2: '#14b8a6', // teal-500   — secondary
+  3: '#f59e0b', // amber-500  — accent / warning-ish
+  4: '#8b5cf6', // violet-500 — alt accent
+  5: '#f43f5e', // rose-500   — terminal / error-ish
 } as const;
 
 export type ChartColorIndex = keyof typeof CHART_COLORS;
