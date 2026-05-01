@@ -33,7 +33,7 @@ import {
  */
 
 export interface TrendLineChartImplProps
-  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'className'> {
+  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'help' | 'className'> {
   data: ReadonlyArray<TrendPoint>;
   /** Override the y-axis tick formatter (e.g. for currency or percent). */
   yTickFormatter?: (value: number) => string;

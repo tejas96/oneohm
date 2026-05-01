@@ -41,9 +41,13 @@ import {
 
 interface DashboardOpsSectionProps {
   statsWindow: StatsWindowInput;
+  className?: string;
 }
 
-export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): React.JSX.Element {
+export function DashboardOpsSection({
+  statsWindow,
+  className,
+}: DashboardOpsSectionProps): React.JSX.Element {
   const fmt = useFmt();
 
   const txnByType = useTransactionsByTypeTrend({ window: statsWindow, bucket: 'day' });
@@ -90,7 +94,9 @@ export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): 
   );
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div
+      className={`grid grid-cols-1 gap-4 md:grid-cols-2${className ? ` ${className}` : ''}`}
+    >
       <StackedBarChart
         title="Transactions by type"
         description="Daily movement volume in selected window"
@@ -99,6 +105,24 @@ export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): 
         isLoading={txnByType.isLoading}
         error={txnByType.error ? (txnByType.error as Error) : null}
         valueFormatter={(v) => fmt.number(v)}
+        help={{
+          summary:
+            'Number of stock movements per day, broken down by movement type (purchase, allocation, dispatch, transfer, adjustment).',
+          details: (
+            <>
+              <p>
+                Each bar represents one day in the selected time window. The bar is split into
+                colored segments — one per transaction type — so you can see the relative mix at
+                a glance. Hover any segment to see the exact count.
+              </p>
+              <p className="mt-3">
+                Use this to spot operational patterns: a tall purchase segment means stock came
+                in, a tall dispatch segment means stock went out, and a spike in adjustments may
+                indicate a stocktake.
+              </p>
+            </>
+          ),
+        }}
       />
       <FunnelChartReusable
         title="Allocation funnel"
@@ -107,6 +131,24 @@ export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): 
         stages={allocStages}
         isLoading={allocFunnel.isLoading}
         error={allocFunnel.error ? (allocFunnel.error as Error) : null}
+        help={{
+          summary:
+            'How allocations created in the window progress through their lifecycle stages.',
+          details: (
+            <>
+              <p>
+                Each row is one allocation status; the width is proportional to the count. The
+                percentage between two rows is the conversion rate from the upper status to the
+                lower (e.g. how many allocations moved from <em>allocated</em> to{' '}
+                <em>dispatched</em>).
+              </p>
+              <p className="mt-3">
+                Cancelled allocations are shown separately on the dashboard; only active
+                lifecycle stages appear here.
+              </p>
+            </>
+          ),
+        }}
       />
       <FunnelChartReusable
         title="Dispatch funnel"
@@ -115,6 +157,23 @@ export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): 
         stages={dispStages}
         isLoading={dispFunnel.isLoading}
         error={dispFunnel.error ? (dispFunnel.error as Error) : null}
+        help={{
+          summary:
+            'How material dispatches progress from prepared to delivered in the selected window.',
+          details: (
+            <>
+              <p>
+                Each row corresponds to a dispatch status. The percentages between rows show the
+                conversion rate from one stage to the next, helping you spot bottlenecks (e.g.
+                large drop between <em>in transit</em> and <em>delivered</em> may indicate
+                logistics delays).
+              </p>
+              <p className="mt-3">
+                Cancelled dispatches are excluded from this view.
+              </p>
+            </>
+          ),
+        }}
       />
       <HorizontalBarChart
         title="Top low-stock items"
@@ -125,6 +184,22 @@ export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): 
         error={topLow.error ? (topLow.error as Error) : null}
         valueFormatter={(v) => fmt.number(v)}
         labelWidth={160}
+        help={{
+          summary:
+            'Products whose available quantity is below their minimum stock level, ranked by deficit.',
+          details: (
+            <>
+              <p>
+                <strong>Deficit</strong> = minimum stock level − available quantity. Larger bars
+                mean a bigger shortfall vs the level you configured to keep on hand.
+              </p>
+              <p className="mt-3">
+                This is a point-in-time snapshot — it does not depend on the time window picker.
+                Use it to decide which products to reorder first.
+              </p>
+            </>
+          ),
+        }}
       />
     </div>
   );

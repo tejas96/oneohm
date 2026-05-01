@@ -33,7 +33,7 @@ import {
  */
 
 export interface StackedBarChartImplProps
-  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'className'> {
+  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'help' | 'className'> {
   data: ReadonlyArray<TrendPoint>;
   yTickFormatter?: (value: number) => string;
   valueFormatter?: (value: number) => string;

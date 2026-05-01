@@ -1,5 +1,5 @@
 export { ChartShell } from './chart-shell';
-export type { ChartShellProps } from './chart-shell';
+export type { ChartShellProps, ChartHelpContent } from './chart-shell';
 
 export { TrendLineChart } from './trend-line-chart';
 export type { TrendLineChartProps } from './trend-line-chart';

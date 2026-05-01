@@ -20,7 +20,7 @@ import { FunnelChart, type FunnelStage as ExistingFunnelStage } from '@/componen
  */
 
 export interface FunnelChartReusableProps
-  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'className'> {
+  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'help' | 'className'> {
   /** Stages in funnel order (top-of-funnel first). */
   stages: ReadonlyArray<FunnelStageInput>;
   /** Show conversion rates between adjacent stages. Defaults to true. */
@@ -70,8 +70,9 @@ export function FunnelChartReusable({
 
   return (
     <ChartShell {...shellProps} isEmpty={isEmpty}>
-      <div className="flex h-full w-full items-center justify-center overflow-hidden">
+      <div className="flex h-full w-full flex-col justify-center overflow-hidden">
         <FunnelChart
+          align="left"
           stages={adapted}
           showConversionRates={showConversionRates}
           showValues

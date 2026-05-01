@@ -38,6 +38,8 @@ export interface FunnelChartProps {
   gap?: number;
   /** Render the bottom legend block (defaults to true). */
   showLegend?: boolean;
+  /** Horizontal alignment of stages within the container. Defaults to `center`. */
+  align?: 'left' | 'center' | 'right';
   /** Additional CSS classes */
   className?: string;
 }
@@ -61,6 +63,7 @@ export function FunnelChart({
   stageHeight = 56,
   gap = 2,
   showLegend = true,
+  align = 'center',
   className,
 }: FunnelChartProps): React.JSX.Element {
   // Calculate width percentages for each stage
@@ -86,9 +89,12 @@ export function FunnelChart({
     };
   });
 
+  const alignClass =
+    align === 'left' ? 'items-start' : align === 'right' ? 'items-end' : 'items-center';
+
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex flex-col items-center" style={{ gap: `${gap}px` }}>
+      <div className={cn('flex flex-col', alignClass)} style={{ gap: `${gap}px` }}>
         {stagesWithWidth.map((stage, index) => (
           <React.Fragment key={stage.id}>
             {/* Conversion rate connector */}

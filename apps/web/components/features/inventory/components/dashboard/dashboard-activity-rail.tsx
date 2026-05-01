@@ -86,7 +86,13 @@ function adapt(tx: InventoryTransaction): InventoryActivityEvent {
  */
 const RAIL_LIMIT = 8;
 
-export function DashboardActivityRail(): React.JSX.Element {
+interface DashboardActivityRailProps {
+  className?: string;
+}
+
+export function DashboardActivityRail({
+  className,
+}: DashboardActivityRailProps = {}): React.JSX.Element {
   const { items, isLoading } = useInventoryTransactions({
     resource: 'dashboard-activity-rail',
     defaultPageSize: RAIL_LIMIT,
@@ -100,7 +106,11 @@ export function DashboardActivityRail(): React.JSX.Element {
   );
 
   return (
-    <div className="rounded-xl border border-border-light bg-surface">
+    <div
+      className={`flex flex-col rounded-xl border border-border-light bg-surface${
+        className ? ` ${className}` : ''
+      }`}
+    >
       <div className="flex items-center justify-between gap-2 border-b border-border-light px-4 py-3">
         <div className="min-w-0">
           <div className="text-sm font-semibold text-foreground">Recent activity</div>
@@ -116,7 +126,7 @@ export function DashboardActivityRail(): React.JSX.Element {
           <OpenInNewRoundedIcon sx={{ fontSize: 12 }} />
         </Link>
       </div>
-      <div className="max-h-[520px] overflow-y-auto px-4 py-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         <InventoryActivityTimeline
           events={events}
           isLoading={isLoading}

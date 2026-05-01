@@ -87,6 +87,23 @@ export function DashboardFinancialSection({
         error={spendTrend.error ? (spendTrend.error as Error) : null}
         yTickFormatter={(v) => fmt.currencyCompact(v)}
         valueFormatter={(v) => fmt.currency(v)}
+        help={{
+          summary:
+            'Total approved purchase order value per day in the selected window. Excludes cancelled POs.',
+          details: (
+            <>
+              <p>
+                Each point on the line is the sum of <strong>total amount</strong> across all
+                non-cancelled POs whose <strong>PO date</strong> falls on that day. Hover any
+                point to see the exact value.
+              </p>
+              <p className="mt-3">
+                A rising trend means procurement is accelerating; a flat line at zero means
+                no POs were placed in the window.
+              </p>
+            </>
+          ),
+        }}
       />
       <HorizontalBarChart
         title="Top vendors by spend"
@@ -98,6 +115,20 @@ export function DashboardFinancialSection({
         xTickFormatter={(v) => fmt.currencyCompact(v)}
         valueFormatter={(v) => fmt.currency(v)}
         labelWidth={160}
+        help={{
+          summary:
+            'Vendors ranked by total purchase order value in the selected time window.',
+          details: (
+            <>
+              <p>
+                Bars are sorted descending by spend. Use this to identify your biggest suppliers
+                in the period — a useful signal for vendor consolidation, contract renegotiation,
+                or supply-risk reviews.
+              </p>
+              <p className="mt-3">Cancelled POs are excluded.</p>
+            </>
+          ),
+        }}
       />
       <HorizontalBarChart
         title="PO spend by warehouse"
@@ -109,6 +140,19 @@ export function DashboardFinancialSection({
         xTickFormatter={(v) => fmt.currencyCompact(v)}
         valueFormatter={(v) => fmt.currency(v)}
         labelWidth={160}
+        help={{
+          summary:
+            'Total purchase order value broken down by destination warehouse in the selected window.',
+          details: (
+            <>
+              <p>
+                Each bar is the sum of PO totals routed to that warehouse. Helps you understand
+                which sites are absorbing the most procurement spend — useful for capacity
+                planning and warehouse-level budgeting.
+              </p>
+            </>
+          ),
+        }}
       />
       <HorizontalBarChart
         title="Outstanding by vendor"
@@ -120,6 +164,23 @@ export function DashboardFinancialSection({
         xTickFormatter={(v) => fmt.currencyCompact(v)}
         valueFormatter={(v) => fmt.currency(v)}
         labelWidth={160}
+        help={{
+          summary:
+            'Unpaid balance per vendor: total PO value minus the amount already paid, across all non-cancelled POs.',
+          details: (
+            <>
+              <p>
+                A vendor appears here only if they have a positive outstanding balance. Larger
+                bars mean more money is owed to that vendor.
+              </p>
+              <p className="mt-3">
+                Unlike the other financial charts, this one does <strong>not</strong> respect
+                the time window picker — it always shows current outstanding balance, since
+                "what do we owe" is a now-snapshot, not a windowed metric.
+              </p>
+            </>
+          ),
+        }}
       />
     </div>
   );

@@ -20,7 +20,7 @@ import { CHART_TOOLTIP_CURSOR, getChartColor } from '@/lib/charts';
  */
 
 export interface DonutChartImplProps
-  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'className'> {
+  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'help' | 'className'> {
   data: ReadonlyArray<TopItem>;
   /** Centre label (typically the grand total formatted with currency or units). */
   centerLabel?: string;

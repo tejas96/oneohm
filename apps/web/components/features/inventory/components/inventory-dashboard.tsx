@@ -89,23 +89,18 @@ export function InventoryDashboard(): React.JSX.Element {
 
       <DashboardKpiStrip statsWindow={statsWindow} />
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-w-0 flex-col gap-5">
-          <section className="flex flex-col gap-3">
-            <MUITypography variant="sectionTitle">Operations</MUITypography>
-            <DashboardOpsSection statsWindow={statsWindow} />
-          </section>
-
-          <section className="flex flex-col gap-3">
-            <MUITypography variant="sectionTitle">Financial</MUITypography>
-            <DashboardFinancialSection statsWindow={statsWindow} />
-          </section>
+      <section className="flex flex-col gap-3">
+        <MUITypography variant="sectionTitle">Operations</MUITypography>
+        <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <DashboardOpsSection statsWindow={statsWindow} />
+          <DashboardActivityRail className="xl:h-[460px]" />
         </div>
+      </section>
 
-        <aside className="min-w-0">
-          <DashboardActivityRail />
-        </aside>
-      </div>
+      <section className="flex flex-col gap-3">
+        <MUITypography variant="sectionTitle">Financial</MUITypography>
+        <DashboardFinancialSection statsWindow={statsWindow} />
+      </section>
     </div>
   );
 }

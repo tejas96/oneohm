@@ -29,7 +29,7 @@ import { CHART_AXIS_TICK_STYLE, CHART_TOOLTIP_CURSOR, getChartColor } from '@/li
  */
 
 export interface HorizontalBarChartImplProps
-  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'className'> {
+  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'help' | 'className'> {
   data: ReadonlyArray<TopItem>;
   xTickFormatter?: (value: number) => string;
   valueFormatter?: (value: number) => string;
