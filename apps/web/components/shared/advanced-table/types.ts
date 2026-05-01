@@ -151,6 +151,14 @@ export interface AdvancedTableProps<TRow = Record<string, unknown>> {
    */
   onSearchChange?: (search: string) => void;
 
+  /**
+   * Seed value for the search input. Use when the parent already
+   * derives a search string (e.g. from URL via FDAL) and wants the
+   * input to reflect it on first render. Ignored when enableUrlSync
+   * is true (the table reads URL directly in that mode).
+   */
+  initialSearch?: string;
+
   // ── Row interaction ────────────────────────────────────────────────────────
   onRowClick?: (row: TRow) => void;
   onRowDoubleClick?: (row: TRow) => void;

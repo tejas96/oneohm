@@ -96,6 +96,7 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
 
   // Search
   onSearchChange,
+  initialSearch = '',
 
   // Row interaction
   onRowClick,
@@ -146,7 +147,10 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
   const [internalPageSize, setInternalPageSize] = useState(controlledPageSize ?? 10);
   const [internalSortModel, setInternalSortModel] = useState<TableSortModel | null>(null);
   const [internalFilters, setInternalFilters] = useState<FilterState>({});
-  const [searchQuery, setSearchQuery] = useState('');
+  // Seed from `initialSearch` so deep-linked search params (e.g. when
+  // the parent reads `?search=foo` from URL via FDAL) appear in the
+  // input without an extra effect cycle.
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
@@ -240,17 +244,20 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
   // in one place and declaration order matches usage order.
   const onPageChangeRef = useRef(onPageChange);
   onPageChangeRef.current = onPageChange;
-  const isFirstSearchRender = useRef(true);
+  // Track the last value we notified the parent of so StrictMode's
+  // double-invocation of effects (and the initial mount with an empty
+  // searchQuery) don't clobber a URL-restored search on the parent.
+  // We seed with the current debouncedSearch so the very first effect
+  // run is a no-op unless the user typed during render (which never
+  // happens in practice).
+  const lastNotifiedSearchRef = useRef<string>(debouncedSearch);
 
   useEffect(() => {
-    if (isFirstSearchRender.current) {
-      isFirstSearchRender.current = false;
-      return;
-    }
     if (enableUrlSync) return; // URL mode handles search reset internally
-    // Notify parent for server-side consumers
+    if (lastNotifiedSearchRef.current === debouncedSearch) return;
+    lastNotifiedSearchRef.current = debouncedSearch;
     onSearchChangeRef.current?.(debouncedSearch);
-    // Also reset page on search change
+    // Reset page on real search change.
     const pageChangeCallback = onPageChangeRef.current;
     if (pageChangeCallback) pageChangeCallback(0);
     else setInternalPage(0);

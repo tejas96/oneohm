@@ -30,6 +30,17 @@ export interface InventoryStock {
   inTransitQuantity: number;
   minimumStockLevel: number;
   maximumStockLevel?: number;
+  /** Suggested replenishment qty (set on the entity but not yet
+   * mass-populated by the backend). */
+  reorderQuantity?: number;
+  /** ISO timestamp of the last increasing movement (purchase /
+   * transfer-in / positive adjustment). Backend exposes this even
+   * though it currently always returns null until movement triggers
+   * are wired up. */
+  lastStockInDate?: string | null;
+  /** ISO timestamp of the last decreasing movement (allocation /
+   * dispatch / transfer-out / negative adjustment). */
+  lastStockOutDate?: string | null;
   product?: { id: string; name: string; code: string; unit?: string };
   warehouse?: { id: string; name: string; code: string };
   updatedAt: string;

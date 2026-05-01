@@ -187,6 +187,8 @@ export class InventoryStockRepository {
       productId?: string;
       lowStock?: boolean;
       search?: string;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
     },
   ): Promise<{ stocks: InventoryStockEntity[]; total: number }> {
     const query = this.repository
@@ -218,10 +220,27 @@ export class InventoryStockRepository {
       );
     }
 
-    const skip = (page - 1) * limit;
-    query.skip(skip).take(limit);
-    query.orderBy('stock.updatedAt', 'DESC');
+    // Whitelist sortable columns to prevent SQL injection. Map external
+    // field names (used by the FE columns) to qualified ORM aliases.
+    const sortMap: Record<string, string> = {
+      availableQuantity: 'stock.availableQuantity',
+      reservedQuantity: 'stock.reservedQuantity',
+      inTransitQuantity: 'stock.inTransitQuantity',
+      minimumStockLevel: 'stock.minimumStockLevel',
+      updatedAt: 'stock.updatedAt',
+      'product.name': 'product.name',
+      'product.code': 'product.code',
+      'warehouse.name': 'warehouse.name',
+    };
+    const sortColumn = filters?.sortBy ? sortMap[filters.sortBy] : undefined;
+    const sortDirection: 'ASC' | 'DESC' = filters?.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    if (sortColumn) {
+      query.orderBy(sortColumn, sortDirection);
+    } else {
+      query.orderBy('stock.updatedAt', 'DESC');
+    }
 
+    const skip = (page - 1) * limit;
     const total = await query.getCount();
     const stocks = await query.skip(skip).take(limit).getMany();
 

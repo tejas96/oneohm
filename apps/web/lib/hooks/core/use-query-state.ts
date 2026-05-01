@@ -70,14 +70,21 @@ export function useQueryState<F extends BaseFilters>(
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  // Resolve initial state: URL > localStorage > defaults
+  // Resolve initial state: URL > localStorage > defaults.
+  // When syncToUrl is false (typical for "secondary" hooks like a
+  // warehouses dropdown that lives on a stock-list page), we MUST NOT
+  // read pagination/search/sort from the URL — those belong to the
+  // primary list. Otherwise a deep link such as
+  // /inventory/stock?search=foo would silently send `search=foo` to
+  // every secondary fetch on the page (warehouse picker, etc.) and
+  // break those queries.
   const initialState = useMemo(() => {
     const persisted = options?.persistKey ? readPersistedState<F>(options.persistKey) : null;
-    const urlPage = searchParams.get('page');
-    const urlLimit = searchParams.get('limit');
-    const urlSearch = searchParams.get('search');
-    const urlSortBy = searchParams.get('sortBy');
-    const urlSortOrder = searchParams.get('sortOrder');
+    const urlPage = syncToUrl ? searchParams.get('page') : null;
+    const urlLimit = syncToUrl ? searchParams.get('limit') : null;
+    const urlSearch = syncToUrl ? searchParams.get('search') : null;
+    const urlSortBy = syncToUrl ? searchParams.get('sortBy') : null;
+    const urlSortOrder = syncToUrl ? searchParams.get('sortOrder') : null;
 
     const initialFilters: Record<string, unknown> = {};
 

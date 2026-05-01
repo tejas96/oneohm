@@ -36,7 +36,18 @@ const TYPE_LABEL: Record<string, string> = {
   return: 'Return',
 };
 
+// transactionType -> direction. Adjustment is intentionally omitted:
+// the backend stores `Math.abs(quantity)` so we can't tell whether an
+// adjustment was an increase or a decrease from the API alone. Render
+// adjustments without a sign indicator until the backend adds either
+// signed quantity or an explicit direction enum.
 const POSITIVE_TYPES = new Set(['purchase', 'transfer_in', 'return']);
+const NEGATIVE_TYPES = new Set([
+  'sale',
+  'transfer_out',
+  'allocation',
+  'dispatch',
+]);
 
 function formatDate(iso: string): string {
   try {
@@ -111,8 +122,20 @@ export function StockTransactionsCard({
       ) : (
         <ul className="divide-y divide-border-light">
           {items.map((t) => {
-            const positive = POSITIVE_TYPES.has(t.transactionType) || t.transactionType === 'adjustment' && Number(t.quantity) > 0;
-            const sign = positive ? '+' : '−';
+            const direction: 'in' | 'out' | 'neutral' = POSITIVE_TYPES.has(
+              t.transactionType,
+            )
+              ? 'in'
+              : NEGATIVE_TYPES.has(t.transactionType)
+              ? 'out'
+              : 'neutral';
+            const sign = direction === 'in' ? '+' : direction === 'out' ? '−' : '±';
+            const valueColor =
+              direction === 'in'
+                ? 'text-success'
+                : direction === 'out'
+                ? 'text-warning'
+                : 'text-foreground-secondary';
             return (
               <li key={t.id} className="flex items-start justify-between gap-3 py-2">
                 <div className="min-w-0">
@@ -135,10 +158,7 @@ export function StockTransactionsCard({
                   ) : null}
                 </div>
                 <div
-                  className={
-                    'shrink-0 text-sm font-medium tabular-nums ' +
-                    (positive ? 'text-success' : 'text-warning')
-                  }
+                  className={'shrink-0 text-sm font-medium tabular-nums ' + valueColor}
                 >
                   {sign}
                   {fmt.number(Math.abs(Number(t.quantity)))}

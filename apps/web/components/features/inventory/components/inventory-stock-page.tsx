@@ -275,6 +275,7 @@ export function InventoryStockPage(): React.JSX.Element {
           else sorting.clearSort();
         }}
         onSearchChange={setSearch}
+        initialSearch={search}
         onRowClick={(row) =>
           router.push(ROUTES.INVENTORY.STOCK_DETAIL.replace('[id]', row.id))
         }

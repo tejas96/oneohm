@@ -70,6 +70,8 @@ export class InventoryStockService {
       productId?: string;
       lowStock?: boolean;
       search?: string;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
     },
   ): Promise<{ stocks: InventoryStockEntity[]; total: number }> {
     return this.inventoryStockRepository.findAll(organizationId, page, limit, filters);

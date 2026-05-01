@@ -58,16 +58,22 @@ export class InventoryStockController {
   @ApiQuery({ name: 'productId', required: false, type: String })
   @ApiQuery({ name: 'lowStock', required: false, type: Boolean })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
   async findAll(
     @OrganizationContext() organizationId: string,
     @Query() query: Record<string, string>,
     @Query('warehouseId') warehouseId?: string,
     @Query('productId') productId?: string,
     @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ): Promise<PaginatedResponse<InventoryStockResponseDto>> {
     const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
     const lowStock =
       query.lowStock === 'true' ? true : query.lowStock === 'false' ? false : undefined;
+    const normalizedOrder: 'ASC' | 'DESC' | undefined =
+      sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : undefined;
     const { stocks, total } = await this.inventoryStockService.getAllStock(
       organizationId,
       pageNum,
@@ -77,6 +83,8 @@ export class InventoryStockController {
         productId,
         lowStock,
         search,
+        sortBy,
+        sortOrder: normalizedOrder,
       },
     );
 
