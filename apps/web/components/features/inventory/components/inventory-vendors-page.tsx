@@ -1,89 +1,46 @@
 'use client';
 
-import AddIcon from '@mui/icons-material/Add';
-import StarIcon from '@mui/icons-material/Star';
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import { Button } from '@mui/material';
-import { useRouter } from 'next/navigation';
-import { useCallback, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useMemo, useState } from 'react';
 
 import { VENDOR_STATUS_LABEL, VENDOR_TYPE_LABEL } from '../constants';
 import { TableFilterSelect } from './shared/table-filter-select';
+import { VendorFormDialog } from './vendor-form-dialog';
+import { buildVendorColumns, type VendorColumnRow } from './vendors/vendor-columns';
+import { VendorKpiStrip } from './vendors/vendor-kpi-strip';
 
-import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
+import { AdvancedTable } from '@/components/shared/advanced-table';
 import type { TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
-import { MUIStatusChip } from '@/components/ui/mui-status-chip';
+import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES } from '@/lib/config/routes';
+import { useInventoryExport } from '@/lib/hooks/resources/inventory-export';
 import { useVendors, type Vendor, type VendorFilters } from '@/lib/hooks/resources/vendors';
+import { useAuth } from '@/providers/auth-provider';
 
-type VendorRow = Vendor & Record<string, unknown>;
+const EMPTY_ROWS: VendorColumnRow[] = [];
 
-const EMPTY_ROWS: VendorRow[] = [];
-
-const COLUMNS: ColumnConfig<VendorRow>[] = [
-  {
-    field: 'name',
-    headerName: 'Vendor',
-    flex: 2,
-    sortable: true,
-    renderCell: ({ row }) => (
-      <div className="flex flex-col gap-0.5 py-1">
-        <span className="text-sm font-medium text-foreground">{row.name}</span>
-        <span className="text-xs text-foreground-secondary">{row.code}</span>
-      </div>
-    ),
-  },
-  {
-    field: 'vendorType',
-    headerName: 'Type',
-    width: 130,
-    renderCell: ({ row }) => (
-      <span className="text-sm text-foreground capitalize">{row.vendorType}</span>
-    ),
-  },
-  {
-    field: 'email',
-    headerName: 'Email',
-    flex: 1,
-    renderCell: ({ row }) => (
-      <span className="text-sm text-foreground-secondary">{row.email ?? '—'}</span>
-    ),
-  },
-  {
-    field: 'phone',
-    headerName: 'Phone',
-    width: 140,
-    renderCell: ({ row }) => (
-      <span className="text-sm text-foreground-secondary">{row.phone ?? '—'}</span>
-    ),
-  },
-  {
-    field: 'rating',
-    headerName: 'Rating',
-    width: 110,
-    renderCell: ({ row }) => (
-      <span className="text-sm text-foreground flex items-center gap-1">
-        <StarIcon sx={{ fontSize: 14, color: '#f59e0b' }} />
-        {row.rating != null ? Number(row.rating).toFixed(1) : '—'}
-      </span>
-    ),
-  },
-  {
-    field: 'status',
-    headerName: 'Status',
-    width: 110,
-    renderCell: ({ row }) => (
-      <MUIStatusChip
-        label={row.status === 'active' ? 'Active' : 'Inactive'}
-        color={row.status === 'active' ? 'success' : 'default'}
-      />
-    ),
-  },
-];
-
+/**
+ * Vendors list page (Part: rebuild-vendor-pages).
+ * Mirrors the warehouses rebuild: KPI strip, SavedViewsBar (resource =
+ * "vendors"), AdvancedTable with status/type filters + CSV export +
+ * RowActionMenu, Add Vendor button wired to VendorFormDialog.
+ */
 export function InventoryVendorsPage(): React.JSX.Element {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeViewId = searchParams.get('view');
+
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission('inventory:write');
+  const canEdit = canCreate;
+  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+
+  const list = useVendors();
   const {
     items,
     pagination,
@@ -92,12 +49,50 @@ export function InventoryVendorsPage(): React.JSX.Element {
     sorting,
     filters,
     setFilter,
+    setFilters,
     isLoading,
     isFetching,
     isError,
-  } = useVendors();
+  } = list;
 
-  const rows: VendorRow[] = (items ?? EMPTY_ROWS) as VendorRow[];
+  const rows: VendorColumnRow[] = (items ?? EMPTY_ROWS) as VendorColumnRow[];
+
+  const [formTarget, setFormTarget] = useState<Vendor | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+
+  const exporter = useInventoryExport();
+  const handleExport = useCallback(async () => {
+    await exporter.exportCsv({
+      resource: 'vendors',
+      filters: filters as Record<string, string | number | boolean | undefined>,
+    });
+  }, [exporter, filters]);
+
+  const handleViewSelect = useCallback(
+    (id: string | null, viewFilters: Record<string, unknown>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (id) params.set('view', id);
+      else params.delete('view');
+      params.delete('page');
+      router.replace(`${ROUTES.INVENTORY.VENDORS}?${params.toString()}`);
+      setFilters(viewFilters as Partial<VendorFilters>);
+    },
+    [searchParams, router, setFilters],
+  );
+
+  const columns = useMemo(
+    () =>
+      buildVendorColumns({
+        onView: (row) =>
+          router.push(ROUTES.INVENTORY.VENDOR_DETAIL.replace('[id]', row.id)),
+        onEdit: (row) => {
+          setFormTarget(row);
+          setFormOpen(true);
+        },
+        canEdit,
+      }),
+    [router, canEdit],
+  );
 
   const sortModel: TableSortModel | null = sorting.sortBy
     ? { field: sorting.sortBy, direction: sorting.sortOrder === 'ASC' ? 'asc' : 'desc' }
@@ -122,16 +117,23 @@ export function InventoryVendorsPage(): React.JSX.Element {
         <TableFilterSelect
           label="Status"
           value={(filters.status as string) || 'all'}
-          options={Object.entries(VENDOR_STATUS_LABEL).map(([value, label]) => ({ value, label }))}
+          options={Object.entries(VENDOR_STATUS_LABEL).map(([value, label]) => ({
+            value,
+            label,
+          }))}
           onChange={(value) => {
             setFilter('status', (value === 'all' ? undefined : value) as VendorFilters['status']);
           }}
           allLabel="All statuses"
+          minWidth={140}
         />
         <TableFilterSelect
           label="Type"
           value={(filters.vendorType as string) || 'all'}
-          options={Object.entries(VENDOR_TYPE_LABEL).map(([value, label]) => ({ value, label }))}
+          options={Object.entries(VENDOR_TYPE_LABEL).map(([value, label]) => ({
+            value,
+            label,
+          }))}
           onChange={(value) => {
             setFilter(
               'vendorType',
@@ -139,14 +141,38 @@ export function InventoryVendorsPage(): React.JSX.Element {
             );
           }}
           allLabel="All types"
+          minWidth={150}
         />
+        {canExport && (
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<DownloadRoundedIcon sx={{ fontSize: 16 }} />}
+            onClick={() => void handleExport()}
+            disabled={exporter.isDownloading}
+          >
+            {exporter.isDownloading ? 'Exporting…' : 'Export CSV'}
+          </Button>
+        )}
       </div>
     ),
-    [filters.status, filters.vendorType, setFilter],
+    [
+      filters.status,
+      filters.vendorType,
+      setFilter,
+      canExport,
+      exporter.isDownloading,
+      handleExport,
+    ],
   );
 
   if (isError) {
-    return <ErrorState title="Failed to load vendors" description="Please try again." />;
+    return (
+      <ErrorState
+        title="Failed to load vendors"
+        description="Unable to load vendors. Please try again."
+      />
+    );
   }
 
   return (
@@ -154,17 +180,40 @@ export function InventoryVendorsPage(): React.JSX.Element {
       <div className="flex items-center justify-between">
         <div>
           <MUITypography variant="drawerTitle">Vendors</MUITypography>
-          <MUITypography variant="body" className="text-foreground-secondary mt-1">
-            {pagination.total} vendors
+          <MUITypography variant="body" className="mt-1 text-foreground-secondary">
+            {pagination.total} {pagination.total === 1 ? 'vendor' : 'vendors'}
           </MUITypography>
         </div>
-        <Button variant="contained" startIcon={<AddIcon />} size="small">
-          Add Vendor
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<AddRoundedIcon />}
+            size="small"
+            onClick={() => {
+              setFormTarget(null);
+              setFormOpen(true);
+            }}
+          >
+            Add Vendor
+          </Button>
+        )}
       </div>
 
-      <AdvancedTable<VendorRow>
-        columns={COLUMNS}
+      <VendorKpiStrip
+        vendors={rows}
+        totalRows={pagination.total}
+        isLoading={isLoading}
+      />
+
+      <SavedViewsBar
+        resource={'vendors' as const}
+        activeId={activeViewId}
+        currentFilters={filters as Record<string, unknown>}
+        onSelect={handleViewSelect}
+      />
+
+      <AdvancedTable<VendorColumnRow>
+        columns={columns}
         rows={rows}
         rowIdField="id"
         paginationMode="server"
@@ -172,26 +221,36 @@ export function InventoryVendorsPage(): React.JSX.Element {
         refetching={isFetching && !isLoading}
         page={Math.max(pagination.page - 1, 0)}
         pageSize={pagination.pageSize}
+        pageSizeOptions={[10, 20, 50, 100]}
         totalRowCount={pagination.total}
         sortModel={sortModel}
-        onPageChange={(page) => {
-          pagination.setPage(page + 1);
-        }}
+        onPageChange={(page) => pagination.setPage(page + 1)}
         onPageSizeChange={pagination.setPageSize}
         onSortChange={(model) => {
-          if (model) sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
+          if (model)
+            sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
           else sorting.clearSort();
         }}
         onSearchChange={setSearch}
-        onRowClick={(row) => {
-          void router.push(ROUTES.INVENTORY.VENDOR_DETAIL.replace('[id]', row.id));
-        }}
+        initialSearch={search}
+        onRowClick={(row) =>
+          router.push(ROUTES.INVENTORY.VENDOR_DETAIL.replace('[id]', row.id))
+        }
         enableSearch
         enablePagination
         toolbarActions={toolbarActions}
-        searchPlaceholder="Search by name or code..."
+        searchPlaceholder="Search by name or code…"
         itemLabel="vendors"
         renderEmptyState={renderEmptyState}
+      />
+
+      <VendorFormDialog
+        open={formOpen}
+        onOpenChange={(o) => {
+          setFormOpen(o);
+          if (!o) setFormTarget(null);
+        }}
+        vendor={formTarget ?? undefined}
       />
     </div>
   );

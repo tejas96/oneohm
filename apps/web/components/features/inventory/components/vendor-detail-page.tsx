@@ -1,8 +1,6 @@
 'use client';
 
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EditIcon from '@mui/icons-material/Edit';
-import { Button, IconButton, Rating, Skeleton } from '@mui/material';
+import { Skeleton } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -12,23 +10,22 @@ import {
   PO_STATUS_LABEL,
   PROJECT_VENDOR_STATUS_COLOR,
   PROJECT_VENDOR_STATUS_LABEL,
-  VENDOR_STATUS_COLOR,
-  VENDOR_STATUS_LABEL,
-  VENDOR_TYPE_LABEL,
 } from '../constants';
+import { VendorDetailHeader } from './vendors/vendor-detail-header';
+import { VendorDetailKpi } from './vendors/vendor-detail-kpi';
 import { VendorFormDialog } from './vendor-form-dialog';
 
 import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
 import type { TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
-import { MUITypography } from '@/components/ui/mui-typography';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiClient } from '@/lib/api/client';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useOrgContext } from '@/lib/hooks/core';
 import { usePurchaseOrders, type PurchaseOrder } from '@/lib/hooks/resources/purchase-orders';
 import { useVendor } from '@/lib/hooks/resources/vendors';
+import { useAuth } from '@/providers/auth-provider';
 import { formatCurrency } from '@/lib/utils';
 
 interface ProjectVendorAssignment {
@@ -41,6 +38,9 @@ interface ProjectVendorAssignment {
   contractStartDate?: string;
   contractEndDate?: string;
   notes?: string;
+  /** Backend join — present when the assignment endpoint resolves the
+   * project relation. Field added to ProjectVendorResponseDto. */
+  project?: { id: string; name?: string; code?: string };
 }
 
 interface ProjectVendorListResponse {
@@ -99,12 +99,24 @@ const PO_COLUMNS: ColumnConfig<PORow>[] = [
 
 const ASSIGN_COLUMNS: ColumnConfig<AssignRow>[] = [
   {
-    field: 'projectId',
+    field: 'project',
     headerName: 'Project',
     flex: 1,
-    renderCell: ({ row }) => (
-      <span className="text-sm font-medium text-primary font-mono">{row.projectId}</span>
-    ),
+    sortable: false,
+    renderCell: ({ row }) => {
+      const name = row.project?.name?.trim();
+      const code = row.project?.code?.trim();
+      return (
+        <div className="flex flex-col gap-0.5 py-1">
+          <span className="text-sm font-medium text-primary">
+            {name || code || row.projectId.slice(0, 8) + '…'}
+          </span>
+          {name && code ? (
+            <span className="text-xs text-foreground-tertiary">{code}</span>
+          ) : null}
+        </div>
+      );
+    },
   },
   {
     field: 'vendorRole',
@@ -141,6 +153,8 @@ export function VendorDetailPage(): React.JSX.Element {
   const params = useParams();
   const router = useRouter();
   const { orgHeaders, isReady } = useOrgContext();
+  const { hasPermission } = useAuth();
+  const canEdit = hasPermission('inventory:write');
   const [tab, setTab] = useState('pos');
   const [editOpen, setEditOpen] = useState(false);
   const [assignPage, setAssignPage] = useState(1);
@@ -231,47 +245,13 @@ export function VendorDetailPage(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-start gap-2">
-          <IconButton
-            aria-label="Back"
-            size="small"
-            onClick={() => router.push(ROUTES.INVENTORY.VENDORS)}
-          >
-            <ArrowBackIcon fontSize="small" />
-          </IconButton>
-          <div>
-            <MUITypography variant="drawerTitle">{vendor.name}</MUITypography>
-            <MUITypography variant="body" className="text-foreground-secondary mt-1">
-              {vendor.code} · {VENDOR_TYPE_LABEL[vendor.vendorType] ?? vendor.vendorType}
-            </MUITypography>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <MUIStatusChip
-                label={VENDOR_STATUS_LABEL[vendor.status] ?? vendor.status}
-                color={VENDOR_STATUS_COLOR[vendor.status] ?? 'default'}
-              />
-              <Rating
-                value={vendor.rating != null ? Number(vendor.rating) : 0}
-                readOnly
-                precision={0.5}
-                size="small"
-              />
-            </div>
-            <MUITypography variant="body" className="text-foreground-secondary mt-2">
-              {[vendor.contactPerson, vendor.email, vendor.phone].filter(Boolean).join(' · ') ||
-                '—'}
-            </MUITypography>
-          </div>
-        </div>
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<EditIcon />}
-          onClick={() => setEditOpen(true)}
-        >
-          Edit
-        </Button>
-      </div>
+      <VendorDetailHeader
+        vendor={vendor}
+        canEdit={canEdit}
+        onEdit={() => setEditOpen(true)}
+      />
+
+      <VendorDetailKpi vendorId={id} />
 
       <VendorFormDialog
         open={editOpen}
