@@ -1,16 +1,50 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 
+import { StockAdjustDialog } from './stock/stock-adjust-dialog';
+import { StockDetailHeader } from './stock/stock-detail-header';
+import { StockTransactionsCard } from './stock/stock-transactions-card';
+import { StockTransferDialog } from './stock/stock-transfer-dialog';
+
+import { ProgressBarCell } from '@/components/shared/inventory/progress-bar-cell';
 import { ErrorState } from '@/components/shared/feedback';
-import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInventoryStockDetail } from '@/lib/hooks/resources/inventory-stock';
+import { useAuth } from '@/providers/auth-provider';
+import { cn } from '@/lib/utils';
 
+/**
+ * Inventory Stock detail page (Part: rebuild-stock-pages).
+ *
+ * Sections:
+ *   1. Sticky StockDetailHeader (back, title, status, actions).
+ *   2. Quantity tiles (Available / Reserved / In transit / Min level)
+ *      with a progress bar showing buffer-vs-minimum so operators can
+ *      eyeball headroom at a glance.
+ *   3. Recent transactions card scoped to this product+warehouse pair.
+ *   4. Adjust + Transfer dialogs (controlled here so the buttons in
+ *      the sticky header can trigger them without prop-drilling).
+ *
+ * Cross-page concerns:
+ *   - Adjust + transfer permissions read from useAuth.hasPermission;
+ *     admins bypass via the auth-store fix.
+ *   - All mutations go through the FDAL hooks which already invalidate
+ *     `inventory-stock` + `inventory-transactions` caches, so the
+ *     transactions card refreshes automatically after an adjust.
+ */
 export function InventoryStockDetailPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>();
   const { data: stock, isLoading, isError } = useInventoryStockDetail(id);
+  const { hasPermission } = useAuth();
+
+  const canAdjust = hasPermission('stock:adjust') || hasPermission('inventory:write');
+  const canTransfer = hasPermission('stock:transfer') || hasPermission('inventory:write');
+
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
 
   if (isError) {
     return <ErrorState title="Failed to load stock" description="Unable to load stock details." />;
@@ -19,59 +53,119 @@ export function InventoryStockDetailPage(): React.JSX.Element {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4 p-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-20 w-full rounded-xl" />
+        <Skeleton className="h-10 w-1/2" />
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
           ))}
         </div>
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
 
   if (!stock) return <ErrorState title="Not found" description="Stock record not found." />;
 
-  const isLow = Number(stock.availableQuantity) <= Number(stock.minimumStockLevel ?? 0);
+  const available = Number(stock.availableQuantity ?? 0);
+  const reserved = Number(stock.reservedQuantity ?? 0);
+  const inTransit = Number(stock.inTransitQuantity ?? 0);
+  const min = Number(stock.minimumStockLevel ?? 0);
+  const max = Number(stock.maximumStockLevel ?? 0);
+  const isLow = min > 0 && available <= min;
+
+  const tiles: ReadonlyArray<{
+    label: string;
+    value: number | string;
+    secondary?: string;
+    color: string;
+  }> = [
+    {
+      label: 'Available',
+      value: available,
+      secondary: stock.product?.unit ?? '',
+      color: isLow ? 'text-warning' : 'text-success',
+    },
+    {
+      label: 'Reserved',
+      value: reserved,
+      secondary: 'allocated, not yet dispatched',
+      color: 'text-foreground',
+    },
+    {
+      label: 'In transit',
+      value: inTransit,
+      secondary: 'inbound or moving',
+      color: 'text-info',
+    },
+    {
+      label: 'Min / Max',
+      value: `${min || '—'}${max ? ` / ${max}` : ''}`,
+      secondary: 'thresholds',
+      color: 'text-foreground-secondary',
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <MUITypography variant="drawerTitle">
-            {stock.product?.name ?? stock.productId}
-          </MUITypography>
-          <MUITypography variant="body" className="text-foreground-secondary mt-1">
-            {stock.warehouse?.name} · {stock.product?.code}
-          </MUITypography>
-        </div>
-        <MUIStatusChip
-          label={isLow ? 'Low Stock' : 'In Stock'}
-          color={isLow ? 'warning' : 'success'}
-        />
-      </div>
+      <StockDetailHeader
+        stock={stock}
+        isLow={isLow}
+        canAdjust={canAdjust}
+        canTransfer={canTransfer}
+        onAdjust={() => setAdjustOpen(true)}
+        onTransfer={() => setTransferOpen(true)}
+      />
 
-      {/* Quantity cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          {
-            label: 'Available',
-            value: stock.availableQuantity,
-            color: isLow ? 'text-warning' : 'text-success',
-          },
-          { label: 'Reserved', value: stock.reservedQuantity, color: 'text-foreground' },
-          { label: 'In Transit', value: stock.inTransitQuantity, color: 'text-info' },
-          {
-            label: 'Min Level',
-            value: stock.minimumStockLevel ?? '—',
-            color: 'text-foreground-secondary',
-          },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="bg-surface border border-border rounded-xl p-4">
-            <p className={`text-2xl font-semibold ${color}`}>{value}</p>
-            <p className="text-xs text-foreground-secondary mt-1">{label}</p>
+      <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {tiles.map(({ label, value, secondary, color }) => (
+          <div
+            key={label}
+            className="flex flex-col gap-1 rounded-xl border border-border-light bg-white p-4"
+          >
+            <MUITypography variant="body" className="text-xs uppercase tracking-wide text-foreground-tertiary">
+              {label}
+            </MUITypography>
+            <p className={cn('text-2xl font-semibold tabular-nums', color)}>{value}</p>
+            {secondary ? (
+              <p className="text-xs text-foreground-tertiary">{secondary}</p>
+            ) : null}
           </div>
         ))}
-      </div>
+      </section>
+
+      {min > 0 ? (
+        <section className="flex flex-col gap-2 rounded-xl border border-border-light bg-white p-4">
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-sm font-semibold text-foreground">Buffer vs minimum</h3>
+            <span className="text-xs text-foreground-tertiary">
+              {available} of min {min}
+              {max ? ` (max ${max})` : ''}
+            </span>
+          </div>
+          <ProgressBarCell
+            numerator={Math.min(available, Math.max(min * 2, available))}
+            denominator={Math.max(min * 2, available)}
+            label={`${available} / min ${min}`}
+            intent={isLow ? 'danger' : available <= min * 1.5 ? 'warning' : 'success'}
+          />
+          <p className="text-xs text-foreground-tertiary">
+            {isLow
+              ? 'Available quantity is at or below the minimum threshold — consider raising a Purchase Order.'
+              : available <= min * 1.5
+                ? 'Available is within 50% of the minimum threshold.'
+                : 'Healthy buffer above the minimum threshold.'}
+          </p>
+        </section>
+      ) : null}
+
+      <StockTransactionsCard
+        productId={stock.productId}
+        warehouseId={stock.warehouseId}
+        unit={stock.product?.unit}
+      />
+
+      <StockAdjustDialog open={adjustOpen} onOpenChange={setAdjustOpen} stock={stock} />
+      <StockTransferDialog open={transferOpen} onOpenChange={setTransferOpen} stock={stock} />
     </div>
   );
 }

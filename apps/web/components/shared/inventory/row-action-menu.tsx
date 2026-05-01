@@ -102,36 +102,44 @@ export function RowActionMenu({
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         slotProps={{ paper: { sx: { minWidth: 180 } } }}
       >
-        {actions.map((action, index) => {
+        {actions.flatMap((action, index) => {
           const isDestructive = action.intent === 'destructive';
           const prevIsDestructive = actions[index - 1]?.intent === 'destructive';
           const showDividerAbove = isDestructive && !prevIsDestructive && index > 0;
-          return (
-            <React.Fragment key={action.id}>
-              {showDividerAbove && <Divider component="li" />}
-              <MenuItem
-                onClick={(event) => handleSelect(action, event)}
-                disabled={action.disabled}
-                title={action.tooltip}
-                sx={{
-                  fontSize: 13,
-                  ...(isDestructive && { color: 'error.main' }),
-                }}
-              >
-                {action.icon && (
-                  <ListItemIcon
-                    sx={{ minWidth: '28px !important', color: isDestructive ? 'error.main' : undefined }}
-                  >
-                    {action.icon}
-                  </ListItemIcon>
-                )}
-                <ListItemText
-                  primary={action.label}
-                  primaryTypographyProps={{ fontSize: 13 }}
-                />
-              </MenuItem>
-            </React.Fragment>
+          // MUI Menu does not accept Fragments as children. Return an
+          // array so the divider + item are siblings the menu can iterate.
+          const nodes: React.ReactNode[] = [];
+          if (showDividerAbove) {
+            nodes.push(<Divider key={`${action.id}-divider`} component="li" />);
+          }
+          nodes.push(
+            <MenuItem
+              key={action.id}
+              onClick={(event) => handleSelect(action, event)}
+              disabled={action.disabled}
+              title={action.tooltip}
+              sx={{
+                fontSize: 13,
+                ...(isDestructive && { color: 'error.main' }),
+              }}
+            >
+              {action.icon && (
+                <ListItemIcon
+                  sx={{
+                    minWidth: '28px !important',
+                    color: isDestructive ? 'error.main' : undefined,
+                  }}
+                >
+                  {action.icon}
+                </ListItemIcon>
+              )}
+              <ListItemText
+                primary={action.label}
+                primaryTypographyProps={{ fontSize: 13 }}
+              />
+            </MenuItem>,
           );
+          return nodes;
         })}
       </Menu>
     </>
