@@ -36,10 +36,21 @@ import { apiClient } from '@/lib/api/client';
 // Shared response types — mirror backend dto/common/stats.dto.ts.
 // ============================================================================
 
+/**
+ * Mirrors the backend `TrendPoint` (apps/backend/.../dto/common/stats.dto.ts):
+ *   - `total` is the bucket-wide aggregate (always present)
+ *   - `series` is an optional per-key breakdown that sums to `total`
+ *     (e.g. transactions-by-type emits `{ adjustment: 5, receive: 3 }`)
+ *
+ * Earlier this module typed `series` as a `string` and exposed a `value`
+ * field that the backend never returns. That mismatch caused the
+ * dashboard charts to feed objects into Recharts as keys and produced
+ * the "two children with the same key `[object Object]`" warning.
+ */
 export interface StatsTrendPoint {
   date: string;
-  series?: string;
-  value: number;
+  total: number;
+  series?: Record<string, number>;
 }
 
 export interface StatsTrendResponse {
@@ -49,29 +60,39 @@ export interface StatsTrendResponse {
   points: StatsTrendPoint[];
 }
 
+/**
+ * Mirrors the backend `TopItem`. Note `name` (not `label`) and the
+ * optional `meta` bag for auxiliary columns (orderCount, warehouse, ...).
+ */
 export interface StatsTopItem {
-  id: string;
-  label: string;
+  id: string | null;
+  name: string;
   value: number;
-  secondaryValue?: number;
+  meta?: Record<string, number | string | null>;
 }
 
 export interface StatsTopItemsResponse {
-  fromDate: string;
-  toDate: string;
+  fromDate?: string;
+  toDate?: string;
+  limit: number;
   items: StatsTopItem[];
 }
 
+/**
+ * Mirrors the backend `FunnelStage` — keyed by `status` + `count`. The
+ * dashboard adapter is responsible for mapping status enum values into
+ * human-readable labels for the funnel chart primitive.
+ */
 export interface StatsFunnelStage {
-  id: string;
-  label: string;
-  value: number;
+  status: string;
+  count: number;
 }
 
 export interface StatsFunnelResponse {
   fromDate: string;
   toDate: string;
   stages: StatsFunnelStage[];
+  cancelledCount: number;
 }
 
 // ============================================================================

@@ -94,7 +94,7 @@ export function DashboardKpiStrip({ statsWindow }: DashboardKpiStripProps): Reac
   const totalSpendValue = useMemo(() => {
     const points = spendTrend.data?.points ?? [];
     let sum = 0;
-    for (const p of points) sum += p.value;
+    for (const p of points) sum += p.total;
     return sum;
   }, [spendTrend.data]);
 

@@ -51,20 +51,41 @@ export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): 
   const dispFunnel = useDispatchFunnel({ window: statsWindow });
   const topLow = useTopLowStock({ limit: 10 });
 
-  const txnPoints = useMemo<ReadonlyArray<TrendPoint>>(
-    () => txnByType.data?.points ?? [],
-    [txnByType.data],
-  );
+  // Backend emits `{ date, total, series?: { [type]: count } }` per bucket.
+  // The chart primitive expects one TrendPoint per (date, series-key).
+  // Flatten the per-bucket map into one row per series key, falling back
+  // to a single 'total' series when the bucket carries no breakdown.
+  const txnPoints = useMemo<ReadonlyArray<TrendPoint>>(() => {
+    const buckets = txnByType.data?.points ?? [];
+    const flat: TrendPoint[] = [];
+    for (const bucket of buckets) {
+      const series = bucket.series;
+      if (!series) {
+        flat.push({ date: bucket.date, value: bucket.total });
+        continue;
+      }
+      const entries = Object.entries(series);
+      if (entries.length === 0) {
+        flat.push({ date: bucket.date, value: bucket.total });
+        continue;
+      }
+      for (const [key, value] of entries) {
+        flat.push({ date: bucket.date, series: humanizeStatus(key), value });
+      }
+    }
+    return flat;
+  }, [txnByType.data]);
+
   const allocStages = useMemo<ReadonlyArray<FunnelStageInput>>(
-    () => allocFunnel.data?.stages ?? [],
+    () => (allocFunnel.data?.stages ?? []).map(toFunnelStage),
     [allocFunnel.data],
   );
   const dispStages = useMemo<ReadonlyArray<FunnelStageInput>>(
-    () => dispFunnel.data?.stages ?? [],
+    () => (dispFunnel.data?.stages ?? []).map(toFunnelStage),
     [dispFunnel.data],
   );
   const lowItems = useMemo<ReadonlyArray<TopItem>>(
-    () => topLow.data?.items ?? [],
+    () => (topLow.data?.items ?? []).map(toTopItem),
     [topLow.data],
   );
 
@@ -107,4 +128,33 @@ export function DashboardOpsSection({ statsWindow }: DashboardOpsSectionProps): 
       />
     </div>
   );
+}
+
+function humanizeStatus(value: string): string {
+  return value
+    .split('_')
+    .map((part) => {
+      const head = part.charAt(0);
+      return head ? head.toUpperCase() + part.slice(1) : part;
+    })
+    .join(' ');
+}
+
+function toFunnelStage(stage: { status: string; count: number }, index: number): FunnelStageInput {
+  return {
+    id: stage.status || `stage-${index}`,
+    label: humanizeStatus(stage.status),
+    value: stage.count,
+  };
+}
+
+function toTopItem(
+  item: { id: string | null; name: string; value: number },
+  index: number,
+): TopItem {
+  return {
+    id: item.id ?? `top-${index}`,
+    label: item.name,
+    value: item.value,
+  };
 }

@@ -51,20 +51,28 @@ export function DashboardFinancialSection({
   const byWarehouse = usePoSpendByWarehouse({ window: statsWindow, limit: 10 });
   const outstanding = usePoOutstandingByVendor({ window: statsWindow, limit: 10 });
 
+  // Backend trend rows expose `total` (and an optional per-key `series`
+  // map). The chart primitive's TrendPoint expects `{ date, series?, value }`,
+  // so collapse one bucket -> one point with the bucket total when no
+  // breakdown is present (which is the case for spend-trend).
   const trendPoints = useMemo<ReadonlyArray<TrendPoint>>(
-    () => spendTrend.data?.points ?? [],
+    () =>
+      (spendTrend.data?.points ?? []).map((point) => ({
+        date: point.date,
+        value: point.total,
+      })),
     [spendTrend.data],
   );
   const vendorItems = useMemo<ReadonlyArray<TopItem>>(
-    () => topVendors.data?.items ?? [],
+    () => (topVendors.data?.items ?? []).map(toTopItem),
     [topVendors.data],
   );
   const warehouseItems = useMemo<ReadonlyArray<TopItem>>(
-    () => byWarehouse.data?.items ?? [],
+    () => (byWarehouse.data?.items ?? []).map(toTopItem),
     [byWarehouse.data],
   );
   const outstandingItems = useMemo<ReadonlyArray<TopItem>>(
-    () => outstanding.data?.items ?? [],
+    () => (outstanding.data?.items ?? []).map(toTopItem),
     [outstanding.data],
   );
 
@@ -115,4 +123,15 @@ export function DashboardFinancialSection({
       />
     </div>
   );
+}
+
+function toTopItem(
+  item: { id: string | null; name: string; value: number },
+  index: number,
+): TopItem {
+  return {
+    id: item.id ?? `top-${index}`,
+    label: item.name,
+    value: item.value,
+  };
 }
