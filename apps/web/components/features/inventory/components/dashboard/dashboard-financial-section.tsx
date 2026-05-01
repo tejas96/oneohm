@@ -94,12 +94,12 @@ export function DashboardFinancialSection({
             <>
               <p>
                 Each point on the line is the sum of <strong>total amount</strong> across all
-                non-cancelled POs whose <strong>PO date</strong> falls on that day. Hover any
-                point to see the exact value.
+                non-cancelled POs whose <strong>PO date</strong> falls on that day. Hover any point
+                to see the exact value.
               </p>
               <p className="mt-3">
-                A rising trend means procurement is accelerating; a flat line at zero means
-                no POs were placed in the window.
+                A rising trend means procurement is accelerating; a flat line at zero means no POs
+                were placed in the window.
               </p>
             </>
           ),
@@ -116,14 +116,13 @@ export function DashboardFinancialSection({
         valueFormatter={(v) => fmt.currency(v)}
         labelWidth={160}
         help={{
-          summary:
-            'Vendors ranked by total purchase order value in the selected time window.',
+          summary: 'Vendors ranked by total purchase order value in the selected time window.',
           details: (
             <>
               <p>
-                Bars are sorted descending by spend. Use this to identify your biggest suppliers
-                in the period — a useful signal for vendor consolidation, contract renegotiation,
-                or supply-risk reviews.
+                Bars are sorted descending by spend. Use this to identify your biggest suppliers in
+                the period — a useful signal for vendor consolidation, contract renegotiation, or
+                supply-risk reviews.
               </p>
               <p className="mt-3">Cancelled POs are excluded.</p>
             </>
@@ -147,8 +146,8 @@ export function DashboardFinancialSection({
             <>
               <p>
                 Each bar is the sum of PO totals routed to that warehouse. Helps you understand
-                which sites are absorbing the most procurement spend — useful for capacity
-                planning and warehouse-level budgeting.
+                which sites are absorbing the most procurement spend — useful for capacity planning
+                and warehouse-level budgeting.
               </p>
             </>
           ),
@@ -170,13 +169,13 @@ export function DashboardFinancialSection({
           details: (
             <>
               <p>
-                A vendor appears here only if they have a positive outstanding balance. Larger
-                bars mean more money is owed to that vendor.
+                A vendor appears here only if they have a positive outstanding balance. Larger bars
+                mean more money is owed to that vendor.
               </p>
               <p className="mt-3">
-                Unlike the other financial charts, this one does <strong>not</strong> respect
-                the time window picker — it always shows current outstanding balance, since
-                "what do we owe" is a now-snapshot, not a windowed metric.
+                Unlike the other financial charts, this one does <strong>not</strong> respect the
+                time window picker — it always shows current outstanding balance, since "what do we
+                owe" is a now-snapshot, not a windowed metric.
               </p>
             </>
           ),

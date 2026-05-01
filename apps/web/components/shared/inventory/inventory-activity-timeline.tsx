@@ -152,7 +152,14 @@ const KIND_VISUALS: Record<
 export interface InventoryActivityTimelineProps
   extends Pick<
     TimelineProps,
-    'variant' | 'groupByDate' | 'onLoadMore' | 'hasMore' | 'isLoading' | 'emptyMessage' | 'title' | 'className'
+    | 'variant'
+    | 'groupByDate'
+    | 'onLoadMore'
+    | 'hasMore'
+    | 'isLoading'
+    | 'emptyMessage'
+    | 'title'
+    | 'className'
   > {
   events: ReadonlyArray<InventoryActivityEvent>;
 }

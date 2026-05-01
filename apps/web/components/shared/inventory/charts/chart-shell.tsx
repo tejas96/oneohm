@@ -2,13 +2,7 @@
 
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Tooltip,
-} from '@mui/material';
+import { Dialog, DialogContent, DialogTitle, IconButton, Tooltip } from '@mui/material';
 import * as React from 'react';
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,7 +63,12 @@ export function ChartShell({
 }: ChartShellProps): React.JSX.Element {
   const [helpOpen, setHelpOpen] = React.useState(false);
   return (
-    <div className={cn('flex flex-col gap-3 rounded-xl border border-border-light bg-surface p-card', className)}>
+    <div
+      className={cn(
+        'flex flex-col gap-3 rounded-xl border border-border-light bg-surface p-card',
+        className,
+      )}
+    >
       {(title || action) && (
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -130,10 +129,7 @@ export function ChartShell({
               <CloseRoundedIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </DialogTitle>
-          <DialogContent
-            dividers
-            sx={{ px: 3, py: 2.5, color: 'rgb(63 63 70)', lineHeight: 1.6 }}
-          >
+          <DialogContent dividers sx={{ px: 3, py: 2.5, color: 'rgb(63 63 70)', lineHeight: 1.6 }}>
             <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-tertiary">
               What it shows
             </div>
@@ -146,10 +142,7 @@ export function ChartShell({
         </Dialog>
       )}
 
-      <div
-        style={{ height, minWidth: 0 }}
-        className="relative w-full min-w-0 overflow-hidden"
-      >
+      <div style={{ height, minWidth: 0 }} className="relative w-full min-w-0 overflow-hidden">
         {isLoading ? (
           <Skeleton className="h-full w-full rounded-lg" />
         ) : error ? (

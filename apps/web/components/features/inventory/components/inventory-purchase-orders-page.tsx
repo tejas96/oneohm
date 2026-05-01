@@ -6,16 +6,13 @@ import { Button } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
-import {
-  PAYMENT_STATUS_LABEL,
-  PO_STATUS_LABEL,
-} from '../constants';
+import { PAYMENT_STATUS_LABEL, PO_STATUS_LABEL } from '../constants';
+import { hiddenSelectFilterColumn } from './shared/hidden-filter-column';
 import { buildPoColumns, type PoColumnRow } from './po/po-columns';
 import { PoKpiStrip } from './po/po-kpi-strip';
-import { TableFilterSelect } from './shared/table-filter-select';
 
-import { AdvancedTable } from '@/components/shared/advanced-table';
-import type { TableSortModel } from '@/components/shared/advanced-table/types';
+import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
+import type { TableFilterModel, TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -31,6 +28,13 @@ import { useWarehouses } from '@/lib/hooks/resources/warehouses';
 import { useAuth } from '@/providers/auth-provider';
 
 const EMPTY_ROWS: PoColumnRow[] = [];
+
+const PO_LIST_FILTER_FIELDS = {
+  status: 'filterStatus',
+  paymentStatus: 'paymentStatus',
+  vendorId: 'vendorId',
+  warehouseId: 'warehouseId',
+} as const;
 
 /**
  * Purchase Orders list page (Part: rebuild-po-pages).
@@ -59,10 +63,10 @@ export function InventoryPurchaseOrdersPage(): React.JSX.Element {
     pagination,
     search,
     setSearch,
+    clearSearch,
     sorting,
     filters,
-    setFilter,
-    setFilters,
+    replaceFilters,
     isLoading,
     isFetching,
     isError,
@@ -98,59 +102,18 @@ export function InventoryPurchaseOrdersPage(): React.JSX.Element {
       else params.delete('view');
       params.delete('page');
       router.replace(`${ROUTES.INVENTORY.PURCHASE_ORDERS}?${params.toString()}`);
-      setFilters(viewFilters as Partial<PurchaseOrderFilters>);
+      replaceFilters(viewFilters as Partial<PurchaseOrderFilters>);
     },
-    [searchParams, router, setFilters],
+    [searchParams, router, replaceFilters],
   );
 
-  const columns = useMemo(
-    () =>
-      buildPoColumns({
-        onView: (row) => router.push(`${ROUTES.INVENTORY.PURCHASE_ORDERS}/${row.id}`),
-        onApprove: (row) => {
-          void mutations.action('approve', row.id);
-        },
-        onSend: (row) => {
-          void mutations.action('send', row.id);
-        },
-        onCancel: (row) => {
-          if (typeof window !== 'undefined') {
-            const ok = window.confirm(
-              `Cancel PO ${row.poNumber}? This will release any reserved stock and cannot be undone.`,
-            );
-            if (!ok) return;
-          }
-          void mutations.action('cancel', row.id);
-        },
-        canWrite,
-        canApprove,
-      }),
-    [router, mutations, canWrite, canApprove],
+  const poStatusOptions = useMemo(
+    () => Object.entries(PO_STATUS_LABEL).map(([value, label]) => ({ value, label })),
+    [],
   );
-
-  const sortModel: TableSortModel | null = sorting.sortBy
-    ? { field: sorting.sortBy, direction: sorting.sortOrder === 'ASC' ? 'asc' : 'desc' }
-    : null;
-
-  const renderEmptyState = useCallback(
-    () =>
-      search ? (
-        <NoSearchResults searchTerm={search} onClear={() => setSearch('')} />
-      ) : (
-        <EmptyState
-          title="No purchase orders"
-          description="Create a purchase order to start receiving inventory."
-          action={
-            canCreate
-              ? {
-                  label: 'Create PO',
-                  onClick: () => router.push(ROUTES.INVENTORY.PURCHASE_ORDER_NEW),
-                }
-              : undefined
-          }
-        />
-      ),
-    [search, setSearch, router, canCreate],
+  const paymentStatusOptions = useMemo(
+    () => Object.entries(PAYMENT_STATUS_LABEL ?? {}).map(([value, label]) => ({ value, label })),
+    [],
   );
 
   const vendorOptions = useMemo(
@@ -170,58 +133,126 @@ export function InventoryPurchaseOrdersPage(): React.JSX.Element {
     [warehouses.items],
   );
 
+  const filterColumns = useMemo(
+    (): ColumnConfig<PoColumnRow>[] => [
+      hiddenSelectFilterColumn<PoColumnRow>({
+        field: PO_LIST_FILTER_FIELDS.status,
+        headerName: 'Status',
+        filterOptions: poStatusOptions,
+      }),
+      hiddenSelectFilterColumn<PoColumnRow>({
+        field: PO_LIST_FILTER_FIELDS.paymentStatus,
+        headerName: 'Payment',
+        filterOptions: paymentStatusOptions,
+      }),
+      hiddenSelectFilterColumn<PoColumnRow>({
+        field: PO_LIST_FILTER_FIELDS.vendorId,
+        headerName: 'Vendor',
+        filterOptions: vendorOptions,
+      }),
+      hiddenSelectFilterColumn<PoColumnRow>({
+        field: PO_LIST_FILTER_FIELDS.warehouseId,
+        headerName: 'Warehouse',
+        filterOptions: warehouseOptions,
+      }),
+    ],
+    [poStatusOptions, paymentStatusOptions, vendorOptions, warehouseOptions],
+  );
+
+  const columns = useMemo(
+    () => [
+      ...buildPoColumns({
+        onView: (row) => router.push(`${ROUTES.INVENTORY.PURCHASE_ORDERS}/${row.id}`),
+        onApprove: (row) => {
+          void mutations.action('approve', row.id);
+        },
+        onSend: (row) => {
+          void mutations.action('send', row.id);
+        },
+        onCancel: (row) => {
+          if (typeof window !== 'undefined') {
+            const ok = window.confirm(
+              `Cancel PO ${row.poNumber}? This will release any reserved stock and cannot be undone.`,
+            );
+            if (!ok) return;
+          }
+          void mutations.action('cancel', row.id);
+        },
+        canWrite,
+        canApprove,
+      }),
+      ...filterColumns,
+    ],
+    [router, mutations, canWrite, canApprove, filterColumns],
+  );
+
+  const filterModel = useMemo(
+    () =>
+      ({
+        [PO_LIST_FILTER_FIELDS.status]: (filters.status as string) ?? '',
+        [PO_LIST_FILTER_FIELDS.paymentStatus]: (filters.paymentStatus as string) ?? '',
+        [PO_LIST_FILTER_FIELDS.vendorId]: (filters.vendorId as string) ?? '',
+        [PO_LIST_FILTER_FIELDS.warehouseId]: (filters.warehouseId as string) ?? '',
+      }) satisfies TableFilterModel,
+    [filters.status, filters.paymentStatus, filters.vendorId, filters.warehouseId],
+  );
+
+  const onTableFilterChange = useCallback(
+    (next: TableFilterModel) => {
+      const out: Partial<PurchaseOrderFilters> = {};
+      const st = next[PO_LIST_FILTER_FIELDS.status];
+      if (st) out.status = String(st);
+      const pay = next[PO_LIST_FILTER_FIELDS.paymentStatus];
+      if (pay) out.paymentStatus = String(pay);
+      const v = next[PO_LIST_FILTER_FIELDS.vendorId];
+      if (v) out.vendorId = String(v);
+      const w = next[PO_LIST_FILTER_FIELDS.warehouseId];
+      if (w) out.warehouseId = String(w);
+      replaceFilters(out);
+    },
+    [replaceFilters],
+  );
+
+  const sortModel: TableSortModel | null = sorting.sortBy
+    ? { field: sorting.sortBy, direction: sorting.sortOrder === 'ASC' ? 'asc' : 'desc' }
+    : null;
+
+  const renderEmptyState = useCallback(
+    (hasActive: boolean) =>
+      hasActive ? (
+        <EmptyState
+          title="No matching purchase orders"
+          description="Try clearing search and filters."
+          action={{
+            label: 'Clear search & filters',
+            onClick: () => {
+              replaceFilters({});
+              clearSearch();
+            },
+          }}
+        />
+      ) : search ? (
+        <NoSearchResults searchTerm={search} onClear={() => setSearch('')} />
+      ) : (
+        <EmptyState
+          title="No purchase orders"
+          description="Create a purchase order to start receiving inventory."
+          action={
+            canCreate
+              ? {
+                  label: 'Create PO',
+                  onClick: () => router.push(ROUTES.INVENTORY.PURCHASE_ORDER_NEW),
+                }
+              : undefined
+          }
+        />
+      ),
+    [search, setSearch, router, canCreate, replaceFilters, clearSearch],
+  );
+
   const toolbarActions = useMemo(
     () => (
       <div className="flex flex-wrap items-center gap-2">
-        <TableFilterSelect
-          label="Status"
-          value={(filters.status as string) || 'all'}
-          options={Object.entries(PO_STATUS_LABEL).map(([value, label]) => ({ value, label }))}
-          onChange={(value) => {
-            setFilter(
-              'status',
-              (value === 'all' ? undefined : value) as PurchaseOrderFilters['status'],
-            );
-          }}
-          allLabel="All statuses"
-          minWidth={150}
-        />
-        <TableFilterSelect
-          label="Payment"
-          value={(filters.paymentStatus as string) || 'all'}
-          options={Object.entries(PAYMENT_STATUS_LABEL ?? {}).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-          onChange={(value) => {
-            setFilter(
-              'paymentStatus',
-              (value === 'all' ? undefined : value) as PurchaseOrderFilters['paymentStatus'],
-            );
-          }}
-          allLabel="All payments"
-          minWidth={140}
-        />
-        <TableFilterSelect
-          label="Vendor"
-          value={(filters.vendorId as string) || ''}
-          options={vendorOptions}
-          onChange={(value) =>
-            setFilter('vendorId', (value || undefined))
-          }
-          allLabel="All vendors"
-          minWidth={170}
-        />
-        <TableFilterSelect
-          label="Warehouse"
-          value={(filters.warehouseId as string) || ''}
-          options={warehouseOptions}
-          onChange={(value) =>
-            setFilter('warehouseId', (value || undefined))
-          }
-          allLabel="All warehouses"
-          minWidth={170}
-        />
         {canExport && (
           <Button
             size="small"
@@ -235,18 +266,7 @@ export function InventoryPurchaseOrdersPage(): React.JSX.Element {
         )}
       </div>
     ),
-    [
-      filters.status,
-      filters.paymentStatus,
-      filters.vendorId,
-      filters.warehouseId,
-      vendorOptions,
-      warehouseOptions,
-      setFilter,
-      canExport,
-      exporter.isDownloading,
-      handleExport,
-    ],
+    [canExport, exporter.isDownloading, handleExport],
   );
 
   if (isError) {
@@ -303,14 +323,16 @@ export function InventoryPurchaseOrdersPage(): React.JSX.Element {
         onPageChange={(page) => pagination.setPage(page + 1)}
         onPageSizeChange={pagination.setPageSize}
         onSortChange={(model) => {
-          if (model)
-            sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
+          if (model) sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
           else sorting.clearSort();
         }}
         onSearchChange={setSearch}
         initialSearch={search}
+        filterModel={filterModel}
+        onFilterChange={onTableFilterChange}
         onRowClick={(row) => router.push(`${ROUTES.INVENTORY.PURCHASE_ORDERS}/${row.id}`)}
         enableSearch
+        enableFilters
         enablePagination
         toolbarActions={toolbarActions}
         searchPlaceholder="Search by PO number…"

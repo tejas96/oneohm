@@ -35,9 +35,7 @@ export function buildAllocationColumns(
       sortable: false,
       renderCell: ({ row }) => (
         <div className="flex flex-col gap-0.5 py-1">
-          <span className="text-sm font-medium text-foreground">
-            {row.product?.name ?? '—'}
-          </span>
+          <span className="text-sm font-medium text-foreground">{row.product?.name ?? '—'}</span>
           <span className="text-xs text-foreground-tertiary">{row.product?.code ?? ''}</span>
         </div>
       ),
@@ -62,9 +60,7 @@ export function buildAllocationColumns(
       flex: 1,
       sortable: false,
       renderCell: ({ row }) => (
-        <span className="text-sm text-foreground-secondary">
-          {row.warehouse?.name ?? '—'}
-        </span>
+        <span className="text-sm text-foreground-secondary">{row.warehouse?.name ?? '—'}</span>
       ),
     },
     {
@@ -109,10 +105,9 @@ export function buildAllocationColumns(
         const returned = Number(row.returnedQuantity ?? 0);
         return (
           <span
-            className={
-              `block text-right text-sm tabular-nums ${ 
-              returned > 0 ? 'text-warning' : 'text-foreground-tertiary'}`
-            }
+            className={`block text-right text-sm tabular-nums ${
+              returned > 0 ? 'text-warning' : 'text-foreground-tertiary'
+            }`}
           >
             {returned > 0 ? returned : '—'}
           </span>
@@ -136,10 +131,8 @@ export function buildAllocationColumns(
       width: 56,
       sortable: false,
       renderCell: ({ row }) => {
-        const remaining =
-          Number(row.allocatedQuantity ?? 0) - Number(row.dispatchedQuantity ?? 0);
-        const canFulfillThis =
-          callbacks.canWrite && row.status !== 'cancelled' && remaining > 0;
+        const remaining = Number(row.allocatedQuantity ?? 0) - Number(row.dispatchedQuantity ?? 0);
+        const canFulfillThis = callbacks.canWrite && row.status !== 'cancelled' && remaining > 0;
         const canCancelThis =
           callbacks.canWrite &&
           row.status !== 'cancelled' &&
@@ -170,10 +163,10 @@ export function buildAllocationColumns(
             tooltip: !callbacks.canWrite
               ? 'You need allocation:write to fulfill allocations.'
               : remaining <= 0
-              ? 'Nothing left to fulfill.'
-              : row.status === 'cancelled'
-              ? 'Allocation is cancelled.'
-              : undefined,
+                ? 'Nothing left to fulfill.'
+                : row.status === 'cancelled'
+                  ? 'Allocation is cancelled.'
+                  : undefined,
           },
           {
             id: 'cancel',
@@ -184,10 +177,10 @@ export function buildAllocationColumns(
             tooltip: !callbacks.canWrite
               ? 'You need allocation:write to cancel allocations.'
               : row.status === 'cancelled'
-              ? 'Already cancelled.'
-              : row.status === 'dispatched' || row.status === 'completed'
-              ? 'Dispatched/completed allocations cannot be cancelled.'
-              : undefined,
+                ? 'Already cancelled.'
+                : row.status === 'dispatched' || row.status === 'completed'
+                  ? 'Dispatched/completed allocations cannot be cancelled.'
+                  : undefined,
           },
         ];
         return (

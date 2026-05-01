@@ -47,8 +47,7 @@ export function VendorKpiStrip({
         {
           id: 'v-avg-rating',
           label: 'Avg rating',
-          value:
-            agg.averageRating != null ? agg.averageRating.toFixed(1) : '—',
+          value: agg.averageRating != null ? agg.averageRating.toFixed(1) : '—',
           secondary: `${fmt.number(agg.ratedCount)} rated`,
           isLoading,
         },

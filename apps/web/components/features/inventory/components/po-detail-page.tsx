@@ -177,11 +177,7 @@ export function PoDetailPage(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <PoDetailHeader
-        po={po}
-        busy={busy}
-        onActionsClick={(anchor) => setMenuAnchor(anchor)}
-      />
+      <PoDetailHeader po={po} busy={busy} onActionsClick={(anchor) => setMenuAnchor(anchor)} />
 
       <PoDetailKpi po={po} />
 
@@ -293,11 +289,8 @@ export function PoDetailPage(): React.JSX.Element {
             Subtotal · tax · total
           </MUITypography>
           <MUITypography variant="bodyPrimary">
-            {formatCurrency(Number(po.subtotal))} ·{' '}
-            {formatCurrency(Number(po.taxAmount))} ·{' '}
-            <span className="font-semibold">
-              {formatCurrency(Number(po.totalAmount))}
-            </span>
+            {formatCurrency(Number(po.subtotal))} · {formatCurrency(Number(po.taxAmount))} ·{' '}
+            <span className="font-semibold">{formatCurrency(Number(po.totalAmount))}</span>
           </MUITypography>
         </div>
         {po.notes ? (

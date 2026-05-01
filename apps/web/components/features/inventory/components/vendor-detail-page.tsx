@@ -109,11 +109,9 @@ const ASSIGN_COLUMNS: ColumnConfig<AssignRow>[] = [
       return (
         <div className="flex flex-col gap-0.5 py-1">
           <span className="text-sm font-medium text-primary">
-            {name || code || `${row.projectId.slice(0, 8)  }…`}
+            {name || code || `${row.projectId.slice(0, 8)}…`}
           </span>
-          {name && code ? (
-            <span className="text-xs text-foreground-tertiary">{code}</span>
-          ) : null}
+          {name && code ? <span className="text-xs text-foreground-tertiary">{code}</span> : null}
         </div>
       );
     },
@@ -245,11 +243,7 @@ export function VendorDetailPage(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <VendorDetailHeader
-        vendor={vendor}
-        canEdit={canEdit}
-        onEdit={() => setEditOpen(true)}
-      />
+      <VendorDetailHeader vendor={vendor} canEdit={canEdit} onEdit={() => setEditOpen(true)} />
 
       <VendorDetailKpi vendorId={id} />
 

@@ -7,11 +7,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
 import { TRANSACTION_TYPE_COLOR, TRANSACTION_TYPE_LABEL } from '../constants';
-import { TableFilterSelect } from './shared/table-filter-select';
+import { hiddenSelectFilterColumn } from './shared/hidden-filter-column';
 import { TransactionKpiStrip } from './transactions/transaction-kpi-strip';
 
 import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
-import type { TableSortModel } from '@/components/shared/advanced-table/types';
+import type { TableFilterModel, TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
@@ -48,7 +48,7 @@ function referenceHref(row: InventoryTransaction): string | null {
   }
 }
 
-const COLUMNS: ColumnConfig<TxRow>[] = [
+const TX_LEDGER_DATA_COLUMNS: ColumnConfig<TxRow>[] = [
   {
     field: 'transactionDate',
     headerName: 'Date',
@@ -90,25 +90,18 @@ const COLUMNS: ColumnConfig<TxRow>[] = [
     sortable: false,
     renderCell: ({ row }) => {
       // For transfers, show "from → to" in a compact 2-line cell.
-      if (
-        row.transactionType === 'transfer_in' ||
-        row.transactionType === 'transfer_out'
-      ) {
+      if (row.transactionType === 'transfer_in' || row.transactionType === 'transfer_out') {
         return (
           <div className="flex flex-col gap-0.5 py-1 text-xs">
             <span className="text-foreground-secondary">
               {row.fromWarehouse?.name ?? row.warehouse?.name ?? '—'}
             </span>
-            <span className="text-foreground-tertiary">
-              → {row.toWarehouse?.name ?? '—'}
-            </span>
+            <span className="text-foreground-tertiary">→ {row.toWarehouse?.name ?? '—'}</span>
           </div>
         );
       }
       return (
-        <span className="text-sm text-foreground-secondary">
-          {row.warehouse?.name ?? '—'}
-        </span>
+        <span className="text-sm text-foreground-secondary">{row.warehouse?.name ?? '—'}</span>
       );
     },
   },
@@ -126,8 +119,8 @@ const COLUMNS: ColumnConfig<TxRow>[] = [
       const tone = isPositive
         ? 'text-success'
         : isNegative
-        ? 'text-error'
-        : 'text-foreground-secondary';
+          ? 'text-error'
+          : 'text-foreground-secondary';
       return (
         <span className={`block text-right text-sm font-medium tabular-nums ${tone}`}>
           {sign}
@@ -144,9 +137,7 @@ const COLUMNS: ColumnConfig<TxRow>[] = [
     sortable: false,
     renderCell: ({ row }) => {
       const href = referenceHref(row);
-      const label = row.referenceType
-        ? String(row.referenceType).replace(/_/g, ' ')
-        : '—';
+      const label = row.referenceType ? String(row.referenceType).replace(/_/g, ' ') : '—';
       return (
         <div className="flex items-center gap-1">
           <span className="text-sm capitalize text-foreground-secondary">{label}</span>
@@ -170,15 +161,27 @@ const COLUMNS: ColumnConfig<TxRow>[] = [
   },
 ];
 
+const REFERENCE_TYPE_FILTER_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: 'purchase_order', label: 'Purchase Order' },
+  { value: 'stock_allocation', label: 'Stock Allocation' },
+  { value: 'material_dispatch', label: 'Material Dispatch' },
+  { value: 'warehouse_transfer', label: 'Warehouse Transfer' },
+  { value: 'manual_adjustment', label: 'Manual Adjustment' },
+];
+
+/** Filter-panel column `field` must differ from visible data columns — AdvancedTable keys headers by `field`. */
+const TX_FILTER_FIELD = {
+  transactionType: 'filterTransactionType',
+  referenceType: 'filterReferenceType',
+  warehouseId: 'warehouseId',
+} as const;
+
 /**
  * Inventory transactions ledger (Part: rebuild-transactions-page).
- *
- * Adds the modern list shell on top of the existing table:
  * - TransactionKpiStrip (org-wide totals from
  *   /inventory-transactions/stats/summary).
  * - SavedViewsBar (resource = "inventory-transactions").
- * - Toolbar gains warehouse filter + CSV export, on top of the
- *   existing type/reference filters.
+ * - AdvancedTable filter panel (type, reference, warehouse) + CSV export.
  * - Quantity column now respects sign by transaction type and shows
  *   `±` for adjustments (their direction is ambiguous in storage).
  * - Reference column gets an inline "open" button that deep-links to
@@ -197,10 +200,10 @@ export function InventoryTransactionsPage(): React.JSX.Element {
     pagination,
     search,
     setSearch,
+    clearSearch,
     sorting,
     filters,
-    setFilter,
-    setFilters,
+    replaceFilters,
     isLoading,
     isFetching,
     isError,
@@ -229,18 +232,91 @@ export function InventoryTransactionsPage(): React.JSX.Element {
       else params.delete('view');
       params.delete('page');
       router.replace(`${ROUTES.INVENTORY.TRANSACTIONS}?${params.toString()}`);
-      setFilters(viewFilters as Partial<InventoryTransactionFilters>);
+      replaceFilters(viewFilters as Partial<InventoryTransactionFilters>);
     },
-    [searchParams, router, setFilters],
+    [searchParams, router, replaceFilters],
   );
 
   const sortModel: TableSortModel | null = sorting.sortBy
     ? { field: sorting.sortBy, direction: sorting.sortOrder === 'ASC' ? 'asc' : 'desc' }
     : null;
 
-  const renderEmptyState = useCallback(
+  const warehouseOptions = useMemo(
+    () => (warehouses.items ?? []).map((w) => ({ value: w.id, label: w.name })),
+    [warehouses.items],
+  );
+
+  const transactionTypeFilterOptions = useMemo(
     () =>
-      search ? (
+      Object.entries(TRANSACTION_TYPE_LABEL).map(([value, label]) => ({
+        value,
+        label,
+      })),
+    [],
+  );
+
+  const filterColumns = useMemo(
+    (): ColumnConfig<TxRow>[] => [
+      hiddenSelectFilterColumn<TxRow>({
+        field: TX_FILTER_FIELD.transactionType,
+        headerName: 'Type',
+        filterOptions: transactionTypeFilterOptions,
+      }),
+      hiddenSelectFilterColumn<TxRow>({
+        field: TX_FILTER_FIELD.referenceType,
+        headerName: 'Reference type',
+        filterOptions: REFERENCE_TYPE_FILTER_OPTIONS,
+      }),
+      hiddenSelectFilterColumn<TxRow>({
+        field: TX_FILTER_FIELD.warehouseId,
+        headerName: 'Warehouse',
+        filterOptions: warehouseOptions,
+      }),
+    ],
+    [transactionTypeFilterOptions, warehouseOptions],
+  );
+
+  const columns = useMemo(() => [...TX_LEDGER_DATA_COLUMNS, ...filterColumns], [filterColumns]);
+
+  const filterModel = useMemo(
+    () =>
+      ({
+        [TX_FILTER_FIELD.transactionType]: (filters.transactionType as string) ?? '',
+        [TX_FILTER_FIELD.referenceType]: (filters.referenceType as string) ?? '',
+        [TX_FILTER_FIELD.warehouseId]: (filters.warehouseId as string) ?? '',
+      }) satisfies TableFilterModel,
+    [filters.transactionType, filters.referenceType, filters.warehouseId],
+  );
+
+  const onTableFilterChange = useCallback(
+    (next: TableFilterModel) => {
+      const out: Partial<InventoryTransactionFilters> = {};
+      const tt = next[TX_FILTER_FIELD.transactionType];
+      if (typeof tt === 'string' && tt.trim()) out.transactionType = tt.trim();
+      const rt = next[TX_FILTER_FIELD.referenceType];
+      if (typeof rt === 'string' && rt.trim()) out.referenceType = rt.trim();
+      const wh = next[TX_FILTER_FIELD.warehouseId];
+      if (typeof wh === 'string' && wh.trim()) out.warehouseId = wh.trim();
+      replaceFilters(out);
+    },
+    [replaceFilters],
+  );
+
+  const renderEmptyState = useCallback(
+    (hasActive: boolean) =>
+      hasActive ? (
+        <EmptyState
+          title="No matching transactions"
+          description="Try clearing search and filters."
+          action={{
+            label: 'Clear search & filters',
+            onClick: () => {
+              replaceFilters({});
+              clearSearch();
+            },
+          }}
+        />
+      ) : search ? (
         <NoSearchResults searchTerm={search} onClear={() => setSearch('')} />
       ) : (
         <EmptyState
@@ -248,66 +324,12 @@ export function InventoryTransactionsPage(): React.JSX.Element {
           description="Inventory transactions are recorded when stock moves in or out."
         />
       ),
-    [search, setSearch],
-  );
-
-  const warehouseOptions = useMemo(
-    () => (warehouses.items ?? []).map((w) => ({ value: w.id, label: w.name })),
-    [warehouses.items],
+    [search, setSearch, replaceFilters, clearSearch],
   );
 
   const toolbarActions = useMemo(
     () => (
       <div className="flex flex-wrap items-center gap-2">
-        <TableFilterSelect
-          label="Type"
-          value={(filters.transactionType as string) || 'all'}
-          options={Object.entries(TRANSACTION_TYPE_LABEL).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-          onChange={(value) =>
-            setFilter(
-              'transactionType',
-              (value === 'all'
-                ? undefined
-                : value) as InventoryTransactionFilters['transactionType'],
-            )
-          }
-          allLabel="All types"
-          minWidth={170}
-        />
-        <TableFilterSelect
-          label="Reference"
-          value={(filters.referenceType as string) || 'all'}
-          options={[
-            { value: 'purchase_order', label: 'Purchase Order' },
-            { value: 'stock_allocation', label: 'Stock Allocation' },
-            { value: 'material_dispatch', label: 'Material Dispatch' },
-            { value: 'warehouse_transfer', label: 'Warehouse Transfer' },
-            { value: 'manual_adjustment', label: 'Manual Adjustment' },
-          ]}
-          onChange={(value) =>
-            setFilter(
-              'referenceType',
-              (value === 'all'
-                ? undefined
-                : value) as InventoryTransactionFilters['referenceType'],
-            )
-          }
-          allLabel="All references"
-          minWidth={180}
-        />
-        <TableFilterSelect
-          label="Warehouse"
-          value={(filters.warehouseId as string) || ''}
-          options={warehouseOptions}
-          onChange={(value) =>
-            setFilter('warehouseId', (value || undefined))
-          }
-          allLabel="All warehouses"
-          minWidth={180}
-        />
         {canExport && (
           <Button
             size="small"
@@ -321,16 +343,7 @@ export function InventoryTransactionsPage(): React.JSX.Element {
         )}
       </div>
     ),
-    [
-      filters.transactionType,
-      filters.referenceType,
-      filters.warehouseId,
-      warehouseOptions,
-      setFilter,
-      canExport,
-      exporter.isDownloading,
-      handleExport,
-    ],
+    [canExport, exporter.isDownloading, handleExport],
   );
 
   if (isError) {
@@ -348,8 +361,7 @@ export function InventoryTransactionsPage(): React.JSX.Element {
         <div>
           <MUITypography variant="drawerTitle">Transaction ledger</MUITypography>
           <MUITypography variant="body" className="mt-1 text-foreground-secondary">
-            {pagination.total}{' '}
-            {pagination.total === 1 ? 'transaction' : 'transactions'}
+            {pagination.total} {pagination.total === 1 ? 'transaction' : 'transactions'}
           </MUITypography>
         </div>
       </div>
@@ -364,7 +376,7 @@ export function InventoryTransactionsPage(): React.JSX.Element {
       />
 
       <AdvancedTable<TxRow>
-        columns={COLUMNS}
+        columns={columns}
         rows={rows}
         rowIdField="id"
         paginationMode="server"
@@ -378,13 +390,15 @@ export function InventoryTransactionsPage(): React.JSX.Element {
         onPageChange={(page) => pagination.setPage(page + 1)}
         onPageSizeChange={pagination.setPageSize}
         onSortChange={(model) => {
-          if (model)
-            sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
+          if (model) sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
           else sorting.clearSort();
         }}
         onSearchChange={setSearch}
         initialSearch={search}
+        filterModel={filterModel}
+        onFilterChange={onTableFilterChange}
         enableSearch
+        enableFilters
         enablePagination
         toolbarActions={toolbarActions}
         searchPlaceholder="Search by product or warehouse…"

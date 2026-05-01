@@ -6,7 +6,6 @@ import { MetricTile, type MetricTileProps } from './metric-tile';
 
 import { cn } from '@/lib/utils';
 
-
 /**
  * Layout primitive that renders a row of `MetricTile`s with the right
  * gaps + responsive collapse. Used at the top of the inventory
@@ -56,7 +55,9 @@ function pickColumnClass(count: number, override?: KpiStripeColumns): string {
 
 export function KpiStripe({ tiles, columns, className }: KpiStripeProps): React.JSX.Element {
   return (
-    <div className={cn('grid grid-cols-1 gap-3', pickColumnClass(tiles.length, columns), className)}>
+    <div
+      className={cn('grid grid-cols-1 gap-3', pickColumnClass(tiles.length, columns), className)}
+    >
       {tiles.map((tile, index) => (
         <MetricTile key={tile.id ?? `${tile.label}-${index}`} {...tile} />
       ))}

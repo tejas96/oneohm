@@ -7,15 +7,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
 import { DISPATCH_STATUS_LABEL } from '../constants';
-import {
-  buildDispatchColumns,
-  type DispatchColumnRow,
-} from './dispatches/dispatch-columns';
+import { buildDispatchColumns, type DispatchColumnRow } from './dispatches/dispatch-columns';
 import { DispatchKpiStrip } from './dispatches/dispatch-kpi-strip';
-import { TableFilterSelect } from './shared/table-filter-select';
+import { hiddenSelectFilterColumn } from './shared/hidden-filter-column';
 
-import { AdvancedTable } from '@/components/shared/advanced-table';
-import type { TableSortModel } from '@/components/shared/advanced-table/types';
+import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
+import type { TableFilterModel, TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -30,6 +27,12 @@ import { useWarehouses } from '@/lib/hooks/resources/warehouses';
 import { useAuth } from '@/providers/auth-provider';
 
 const EMPTY_ROWS: DispatchColumnRow[] = [];
+
+/** Hidden filter column `field` must not match a visible column `field` (table keys headers by `field`). */
+const DISPATCH_LIST_FILTER_FIELDS = {
+  status: 'filterStatus',
+  warehouseId: 'warehouseId',
+} as const;
 
 /**
  * Dispatches list page (Part: rebuild-dispatch-pages).
@@ -59,10 +62,10 @@ export function InventoryDispatchesPage(): React.JSX.Element {
     pagination,
     search,
     setSearch,
+    clearSearch,
     sorting,
     filters,
-    setFilter,
-    setFilters,
+    replaceFilters,
     isLoading,
     isFetching,
     isError,
@@ -93,19 +96,46 @@ export function InventoryDispatchesPage(): React.JSX.Element {
       else params.delete('view');
       params.delete('page');
       router.replace(`${ROUTES.INVENTORY.DISPATCHES}?${params.toString()}`);
-      setFilters(viewFilters as Partial<MaterialDispatchFilters>);
+      replaceFilters(viewFilters as Partial<MaterialDispatchFilters>);
     },
-    [searchParams, router, setFilters],
+    [searchParams, router, replaceFilters],
+  );
+
+  const warehouseOptions = useMemo(
+    () => (warehouses.items ?? []).map((w) => ({ value: w.id, label: w.name })),
+    [warehouses.items],
+  );
+
+  const dispatchStatusOpts = useMemo(
+    () => Object.entries(DISPATCH_STATUS_LABEL).map(([value, label]) => ({ value, label })),
+    [],
+  );
+
+  const filterColumns = useMemo(
+    (): ColumnConfig<DispatchColumnRow>[] => [
+      hiddenSelectFilterColumn<DispatchColumnRow>({
+        field: DISPATCH_LIST_FILTER_FIELDS.status,
+        headerName: 'Status',
+        filterOptions: dispatchStatusOpts,
+      }),
+      hiddenSelectFilterColumn<DispatchColumnRow>({
+        field: DISPATCH_LIST_FILTER_FIELDS.warehouseId,
+        headerName: 'Warehouse',
+        filterOptions: warehouseOptions,
+      }),
+    ],
+    [dispatchStatusOpts, warehouseOptions],
   );
 
   const columns = useMemo(
-    () =>
-      buildDispatchColumns({
+    () => [
+      ...buildDispatchColumns({
         onView: (row) => router.push(`${ROUTES.INVENTORY.DISPATCHES}/${row.id}`),
         onMarkDispatched: (row) => {
-          if (typeof window !== 'undefined' && !window.confirm(
-            `Mark ${row.dispatchNumber} as dispatched?`,
-          )) {
+          if (
+            typeof window !== 'undefined' &&
+            !window.confirm(`Mark ${row.dispatchNumber} as dispatched?`)
+          ) {
             return;
           }
           void mutations.action('markDispatched', row.id, {});
@@ -117,8 +147,6 @@ export function InventoryDispatchesPage(): React.JSX.Element {
           ) {
             return;
           }
-          // Important: the backend accepts an OPTIONAL actualDeliveryDate
-          // body; passing today's date keeps the timeline accurate.
           void mutations.action('markDelivered', row.id, {
             actualDeliveryDate: new Date().toISOString().slice(0, 10),
           });
@@ -134,7 +162,30 @@ export function InventoryDispatchesPage(): React.JSX.Element {
         },
         canWrite,
       }),
-    [router, mutations, canWrite],
+      ...filterColumns,
+    ],
+    [router, mutations, canWrite, filterColumns],
+  );
+
+  const filterModel = useMemo(
+    () =>
+      ({
+        [DISPATCH_LIST_FILTER_FIELDS.status]: (filters.status as string) ?? '',
+        [DISPATCH_LIST_FILTER_FIELDS.warehouseId]: (filters.warehouseId as string) ?? '',
+      }) satisfies TableFilterModel,
+    [filters.status, filters.warehouseId],
+  );
+
+  const onTableFilterChange = useCallback(
+    (next: TableFilterModel) => {
+      const out: Partial<MaterialDispatchFilters> = {};
+      const st = next[DISPATCH_LIST_FILTER_FIELDS.status];
+      if (st) out.status = String(st);
+      const wh = next[DISPATCH_LIST_FILTER_FIELDS.warehouseId];
+      if (wh) out.warehouseId = String(wh);
+      replaceFilters(out);
+    },
+    [replaceFilters],
   );
 
   const sortModel: TableSortModel | null = sorting.sortBy
@@ -142,8 +193,20 @@ export function InventoryDispatchesPage(): React.JSX.Element {
     : null;
 
   const renderEmptyState = useCallback(
-    () =>
-      search ? (
+    (hasActive: boolean) =>
+      hasActive ? (
+        <EmptyState
+          title="No matching dispatches"
+          description="Try clearing search and filters."
+          action={{
+            label: 'Clear search & filters',
+            onClick: () => {
+              replaceFilters({});
+              clearSearch();
+            },
+          }}
+        />
+      ) : search ? (
         <NoSearchResults searchTerm={search} onClear={() => setSearch('')} />
       ) : (
         <EmptyState
@@ -159,41 +222,12 @@ export function InventoryDispatchesPage(): React.JSX.Element {
           }
         />
       ),
-    [search, setSearch, router, canWrite],
-  );
-
-  const warehouseOptions = useMemo(
-    () =>
-      (warehouses.items ?? []).map((w) => ({ value: w.id, label: w.name })),
-    [warehouses.items],
+    [search, setSearch, router, canWrite, replaceFilters, clearSearch],
   );
 
   const toolbarActions = useMemo(
     () => (
       <div className="flex flex-wrap items-center gap-2">
-        <TableFilterSelect
-          label="Status"
-          value={(filters.status as string) || 'all'}
-          options={Object.entries(DISPATCH_STATUS_LABEL).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-          onChange={(value) =>
-            setFilter('status', value === 'all' ? undefined : (value))
-          }
-          allLabel="All statuses"
-          minWidth={170}
-        />
-        <TableFilterSelect
-          label="Warehouse"
-          value={(filters.warehouseId as string) || ''}
-          options={warehouseOptions}
-          onChange={(value) =>
-            setFilter('warehouseId', (value || undefined))
-          }
-          allLabel="All warehouses"
-          minWidth={180}
-        />
         {canExport && (
           <Button
             size="small"
@@ -207,15 +241,7 @@ export function InventoryDispatchesPage(): React.JSX.Element {
         )}
       </div>
     ),
-    [
-      filters.status,
-      filters.warehouseId,
-      warehouseOptions,
-      setFilter,
-      canExport,
-      exporter.isDownloading,
-      handleExport,
-    ],
+    [canExport, exporter.isDownloading, handleExport],
   );
 
   if (isError) {
@@ -233,8 +259,7 @@ export function InventoryDispatchesPage(): React.JSX.Element {
         <div>
           <MUITypography variant="drawerTitle">Material dispatches</MUITypography>
           <MUITypography variant="body" className="mt-1 text-foreground-secondary">
-            {pagination.total}{' '}
-            {pagination.total === 1 ? 'dispatch' : 'dispatches'}
+            {pagination.total} {pagination.total === 1 ? 'dispatch' : 'dispatches'}
           </MUITypography>
         </div>
         {canWrite && (
@@ -273,14 +298,16 @@ export function InventoryDispatchesPage(): React.JSX.Element {
         onPageChange={(page) => pagination.setPage(page + 1)}
         onPageSizeChange={pagination.setPageSize}
         onSortChange={(model) => {
-          if (model)
-            sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
+          if (model) sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
           else sorting.clearSort();
         }}
         onSearchChange={setSearch}
         initialSearch={search}
+        filterModel={filterModel}
+        onFilterChange={onTableFilterChange}
         onRowClick={(row) => router.push(`${ROUTES.INVENTORY.DISPATCHES}/${row.id}`)}
         enableSearch
+        enableFilters
         enablePagination
         toolbarActions={toolbarActions}
         searchPlaceholder="Search by dispatch number, project or vehicle…"

@@ -25,6 +25,13 @@ export interface UseQueryStateReturn<F extends BaseFilters> {
   filters: Partial<F>;
   setFilter: <K extends keyof F>(key: K, value: F[K]) => void;
   setFilters: (updates: Partial<F>) => void;
+  /**
+   * Replace the entire filter object (excluding pagination/sort keys, which
+   * live in their own state). Use with AdvancedTable's filter panel — it
+   * emits a full snapshot per change / clear, while `setFilters` only
+   * merges partial updates and cannot remove keys.
+   */
+  replaceFilters: (next: Partial<F>) => void;
   clearFilters: () => void;
   hasActiveFilters: boolean;
 
@@ -275,6 +282,15 @@ export function useQueryState<F extends BaseFilters>(
     [markUserChange],
   );
 
+  const replaceFilters = useCallback(
+    (next: Partial<F>) => {
+      markUserChange();
+      setFiltersRaw(next as Partial<F>);
+      setPageRaw(1);
+    },
+    [markUserChange],
+  );
+
   const clearFilters = useCallback(() => {
     markUserChange();
     setFiltersRaw((options?.defaults ?? {}) as Partial<F>);
@@ -397,6 +413,7 @@ export function useQueryState<F extends BaseFilters>(
     filters,
     setFilter,
     setFilters: setFiltersCallback,
+    replaceFilters,
     clearFilters,
     hasActiveFilters,
     pagination,

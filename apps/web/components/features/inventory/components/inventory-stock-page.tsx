@@ -6,14 +6,14 @@ import { Button, Chip } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
-import { TableFilterSelect } from './shared/table-filter-select';
+import { hiddenSelectFilterColumn } from './shared/hidden-filter-column';
 import { StockAdjustDialog } from './stock/stock-adjust-dialog';
 import { buildStockColumns } from './stock/stock-columns';
 import { StockKpiStrip } from './stock/stock-kpi-strip';
 import { StockTransferDialog } from './stock/stock-transfer-dialog';
 
-import { AdvancedTable } from '@/components/shared/advanced-table';
-import type { TableSortModel } from '@/components/shared/advanced-table/types';
+import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
+import type { TableFilterModel, TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -77,10 +77,10 @@ export function InventoryStockPage(): React.JSX.Element {
     pagination,
     search,
     setSearch,
+    clearSearch,
     sorting,
     filters,
-    setFilter,
-    setFilters,
+    replaceFilters,
     isLoading,
     isFetching,
     isError,
@@ -117,44 +117,10 @@ export function InventoryStockPage(): React.JSX.Element {
       // out-of-range page when the view shrinks the result set.
       params.delete('page');
       router.replace(`${ROUTES.INVENTORY.STOCK}?${params.toString()}`);
-      // Apply the view's filters via the resource state.
-      setFilters(viewFilters as Partial<InventoryStockFilters>);
+      // Full replace so keys removed from the saved view drop off the query too.
+      replaceFilters(viewFilters as Partial<InventoryStockFilters>);
     },
-    [searchParams, router, setFilters],
-  );
-
-  const columns = useMemo(
-    () =>
-      buildStockColumns({
-        onView: (row) =>
-          router.push(ROUTES.INVENTORY.STOCK_DETAIL.replace('[id]', row.id)),
-        onAdjust: (row) => setAdjustTarget(row),
-        onTransfer: (row) => setTransferTarget(row),
-        canAdjust,
-        canTransfer,
-      }),
-    [router, canAdjust, canTransfer],
-  );
-
-  const sortModel: TableSortModel | null = sorting.sortBy
-    ? { field: sorting.sortBy, direction: sorting.sortOrder === 'ASC' ? 'asc' : 'desc' }
-    : null;
-
-  const renderEmptyState = useCallback(
-    () =>
-      search ? (
-        <NoSearchResults searchTerm={search} onClear={() => setSearch('')} />
-      ) : (
-        <EmptyState
-          title={isLowStockUrlFilter ? 'No low stock items' : 'No stock records'}
-          description={
-            isLowStockUrlFilter
-              ? 'Every product is above its minimum threshold. Adjust thresholds in the product master if you expect alerts.'
-              : 'Stock is created when a Purchase Order is received. Receive a PO to see records here.'
-          }
-        />
-      ),
-    [search, setSearch, isLowStockUrlFilter],
+    [searchParams, router, replaceFilters],
   );
 
   const warehouseOptions = useMemo(
@@ -166,32 +132,93 @@ export function InventoryStockPage(): React.JSX.Element {
     [warehouses.items],
   );
 
+  const filterColumns = useMemo(
+    (): ColumnConfig<StockRow>[] => [
+      hiddenSelectFilterColumn<StockRow>({
+        field: 'warehouseId',
+        headerName: 'Warehouse',
+        filterOptions: warehouseOptions,
+      }),
+      hiddenSelectFilterColumn<StockRow>({
+        field: 'lowStock',
+        headerName: 'Stock level',
+        filterOptions: [{ value: 'true', label: 'Low stock only' }],
+      }),
+    ],
+    [warehouseOptions],
+  );
+
+  const columns = useMemo(
+    () => [
+      ...buildStockColumns({
+        onView: (row) => router.push(ROUTES.INVENTORY.STOCK_DETAIL.replace('[id]', row.id)),
+        onAdjust: (row) => setAdjustTarget(row),
+        onTransfer: (row) => setTransferTarget(row),
+        canAdjust,
+        canTransfer,
+      }),
+      ...filterColumns,
+    ],
+    [router, canAdjust, canTransfer, filterColumns],
+  );
+
+  const filterModel = useMemo(
+    () =>
+      ({
+        warehouseId: (filters.warehouseId as string) ?? '',
+        lowStock: filters.lowStock === true || String(filters.lowStock) === 'true' ? 'true' : '',
+      }) satisfies TableFilterModel,
+    [filters.warehouseId, filters.lowStock],
+  );
+
+  const onTableFilterChange = useCallback(
+    (next: TableFilterModel) => {
+      const out: Partial<InventoryStockFilters> = {};
+      const w = next.warehouseId;
+      if (typeof w === 'string' && w.trim()) out.warehouseId = w.trim();
+      const l = next.lowStock;
+      if (l === true || l === 'true') out.lowStock = true;
+      replaceFilters(out);
+    },
+    [replaceFilters],
+  );
+
+  const sortModel: TableSortModel | null = sorting.sortBy
+    ? { field: sorting.sortBy, direction: sorting.sortOrder === 'ASC' ? 'asc' : 'desc' }
+    : null;
+
+  const renderEmptyState = useCallback(
+    (hasActive: boolean) =>
+      hasActive ? (
+        <EmptyState
+          title="No matching stock"
+          description="Try clearing search and filters, or widen your criteria."
+          action={{
+            label: 'Clear search & filters',
+            onClick: () => {
+              replaceFilters({});
+              clearSearch();
+            },
+          }}
+        />
+      ) : search ? (
+        <NoSearchResults searchTerm={search} onClear={() => setSearch('')} />
+      ) : (
+        <EmptyState
+          title={isLowStockUrlFilter ? 'No low stock items' : 'No stock records'}
+          description={
+            isLowStockUrlFilter
+              ? 'Every product is above its minimum threshold. Adjust thresholds in the product master if you expect alerts.'
+              : 'Stock is created when a Purchase Order is received. Receive a PO to see records here.'
+          }
+        />
+      ),
+    [search, setSearch, isLowStockUrlFilter, replaceFilters, clearSearch],
+  );
+
   const toolbarActions = useMemo(
     () => (
       <div className="flex items-center gap-2">
-        <TableFilterSelect
-          label="Warehouse"
-          value={(filters.warehouseId as string | undefined) ?? ''}
-          options={warehouseOptions}
-          onChange={(value) =>
-            setFilter('warehouseId', (value || undefined))
-          }
-          allLabel="All warehouses"
-          minWidth={200}
-        />
-        <TableFilterSelect
-          label="Stock level"
-          value={filters.lowStock ? 'low' : 'all'}
-          options={[{ value: 'low', label: 'Low stock only' }]}
-          onChange={(value) =>
-            setFilter(
-              'lowStock',
-              (value === 'all' ? undefined : true) as InventoryStockFilters['lowStock'],
-            )
-          }
-          allLabel="All levels"
-          minWidth={170}
-        />
         {canExport && (
           <Button
             size="small"
@@ -205,15 +232,7 @@ export function InventoryStockPage(): React.JSX.Element {
         )}
       </div>
     ),
-    [
-      filters.warehouseId,
-      filters.lowStock,
-      warehouseOptions,
-      setFilter,
-      canExport,
-      exporter.isDownloading,
-      handleExport,
-    ],
+    [canExport, exporter.isDownloading, handleExport],
   );
 
   if (isError) {
@@ -276,10 +295,11 @@ export function InventoryStockPage(): React.JSX.Element {
         }}
         onSearchChange={setSearch}
         initialSearch={search}
-        onRowClick={(row) =>
-          router.push(ROUTES.INVENTORY.STOCK_DETAIL.replace('[id]', row.id))
-        }
+        filterModel={filterModel}
+        onFilterChange={onTableFilterChange}
+        onRowClick={(row) => router.push(ROUTES.INVENTORY.STOCK_DETAIL.replace('[id]', row.id))}
         enableSearch
+        enableFilters
         enablePagination
         toolbarActions={toolbarActions}
         searchPlaceholder="Search by product or warehouse…"

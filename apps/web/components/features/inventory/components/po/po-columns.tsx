@@ -119,9 +119,7 @@ export function buildPoColumns(callbacks: PoRowActionCallbacks): ColumnConfig<Po
         const overdue = isOverdue(row);
         return (
           <span
-            className={
-              `text-xs ${  overdue ? 'font-medium text-warning' : 'text-foreground-secondary'}`
-            }
+            className={`text-xs ${overdue ? 'font-medium text-warning' : 'text-foreground-secondary'}`}
             title={overdue ? 'Overdue' : undefined}
           >
             {formatDate(row.expectedDeliveryDate)}
@@ -213,8 +211,8 @@ export function buildPoColumns(callbacks: PoRowActionCallbacks): ColumnConfig<Po
             tooltip: !callbacks.canApprove
               ? 'You need purchase-order:approve to approve POs.'
               : row.status !== 'pending_approval'
-              ? 'Only POs awaiting approval can be approved.'
-              : undefined,
+                ? 'Only POs awaiting approval can be approved.'
+                : undefined,
           },
           {
             id: 'send',
@@ -225,8 +223,8 @@ export function buildPoColumns(callbacks: PoRowActionCallbacks): ColumnConfig<Po
             tooltip: !callbacks.canWrite
               ? 'You need purchase-order:write to send POs.'
               : row.status !== 'approved' && row.status !== 'confirmed'
-              ? 'Only approved or confirmed POs can be sent.'
-              : undefined,
+                ? 'Only approved or confirmed POs can be sent.'
+                : undefined,
           },
           {
             id: 'cancel',
@@ -237,10 +235,10 @@ export function buildPoColumns(callbacks: PoRowActionCallbacks): ColumnConfig<Po
             tooltip: !callbacks.canWrite
               ? 'You need purchase-order:write to cancel POs.'
               : row.status === 'received'
-              ? 'Received POs cannot be cancelled.'
-              : row.status === 'cancelled'
-              ? 'Already cancelled.'
-              : undefined,
+                ? 'Received POs cannot be cancelled.'
+                : row.status === 'cancelled'
+                  ? 'Already cancelled.'
+                  : undefined,
           },
         ];
         return (

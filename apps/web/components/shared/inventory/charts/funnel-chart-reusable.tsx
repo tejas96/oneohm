@@ -7,7 +7,6 @@ import type { FunnelStageInput } from './types';
 
 import { FunnelChart, type FunnelStage as ExistingFunnelStage } from '@/components/shared/charts';
 
-
 /**
  * Adapter over the existing `shared/charts/FunnelChart` that
  *   * accepts the `FunnelResponse` shape returned by the inventory
@@ -20,7 +19,18 @@ import { FunnelChart, type FunnelStage as ExistingFunnelStage } from '@/componen
  */
 
 export interface FunnelChartReusableProps
-  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'help' | 'className'> {
+  extends Pick<
+    ChartShellProps,
+    | 'title'
+    | 'description'
+    | 'height'
+    | 'isLoading'
+    | 'isEmpty'
+    | 'error'
+    | 'action'
+    | 'help'
+    | 'className'
+  > {
   /** Stages in funnel order (top-of-funnel first). */
   stages: ReadonlyArray<FunnelStageInput>;
   /** Show conversion rates between adjacent stages. Defaults to true. */

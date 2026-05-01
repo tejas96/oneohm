@@ -178,11 +178,7 @@ export function useSavedViewMutations(): SavedViewMutations {
     },
   });
 
-  const update = useMutation<
-    SavedView,
-    unknown,
-    { id: string; data: UpdateSavedViewPayload }
-  >({
+  const update = useMutation<SavedView, unknown, { id: string; data: UpdateSavedViewPayload }>({
     retry: RESOURCE_MUTATION_DEFAULTS.retry,
     mutationFn: async ({ id, data: payload }) => {
       const { data } = await apiClient.patch<SavedView>(`/saved-views/${id}`, payload, {

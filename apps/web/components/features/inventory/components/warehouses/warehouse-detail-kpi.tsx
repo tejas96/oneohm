@@ -6,7 +6,10 @@ import { useFmt } from '../dashboard/use-fmt';
 import { useStockAggregates } from '../stock/use-stock-aggregates';
 
 import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
-import { useInventoryStockList , useStockSummaryByWarehouse } from '@/lib/hooks/resources/inventory-stock';
+import {
+  useInventoryStockList,
+  useStockSummaryByWarehouse,
+} from '@/lib/hooks/resources/inventory-stock';
 
 /**
  * KPI tile row for the warehouse detail page. Aggregates come from two
@@ -31,9 +34,7 @@ export interface WarehouseDetailKpiProps {
   warehouseId: string;
 }
 
-export function WarehouseDetailKpi({
-  warehouseId,
-}: WarehouseDetailKpiProps): React.JSX.Element {
+export function WarehouseDetailKpi({ warehouseId }: WarehouseDetailKpiProps): React.JSX.Element {
   const fmt = useFmt();
 
   const summary = useStockSummaryByWarehouse();

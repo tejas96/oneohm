@@ -1,16 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
-
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import { ChartShell, type ChartShellProps } from './chart-shell';
 import type { TopItem } from './types';
@@ -29,7 +20,18 @@ import { CHART_AXIS_TICK_STYLE, CHART_TOOLTIP_CURSOR, getChartColor } from '@/li
  */
 
 export interface HorizontalBarChartImplProps
-  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'help' | 'className'> {
+  extends Pick<
+    ChartShellProps,
+    | 'title'
+    | 'description'
+    | 'height'
+    | 'isLoading'
+    | 'isEmpty'
+    | 'error'
+    | 'action'
+    | 'help'
+    | 'className'
+  > {
   data: ReadonlyArray<TopItem>;
   xTickFormatter?: (value: number) => string;
   valueFormatter?: (value: number) => string;

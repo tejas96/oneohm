@@ -79,9 +79,7 @@ export function WarehouseDetailHeader({
           </div>
         </div>
       </div>
-      <Tooltip
-        title={canEdit ? 'Edit warehouse' : 'You need inventory:write to edit warehouses.'}
-      >
+      <Tooltip title={canEdit ? 'Edit warehouse' : 'You need inventory:write to edit warehouses.'}>
         <span>
           <Button
             variant="outlined"

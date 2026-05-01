@@ -143,12 +143,7 @@ export function StockAdjustDialog({
           />
 
           {Number.isFinite(parsedQty) && delta !== 0 ? (
-            <MUITypography
-              variant="body"
-              className={
-                delta > 0 ? 'text-success' : 'text-warning'
-              }
-            >
+            <MUITypography variant="body" className={delta > 0 ? 'text-success' : 'text-warning'}>
               {delta > 0 ? `+${delta}` : delta} {unit} change vs current
             </MUITypography>
           ) : null}

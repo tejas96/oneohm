@@ -68,9 +68,7 @@ export function AllocationDetailHeader({
                 · for{' '}
                 <span className="text-foreground">
                   {allocation.project.name}
-                  {allocation.project.projectNumber
-                    ? ` (${allocation.project.projectNumber})`
-                    : ''}
+                  {allocation.project.projectNumber ? ` (${allocation.project.projectNumber})` : ''}
                 </span>
               </span>
             ) : null}

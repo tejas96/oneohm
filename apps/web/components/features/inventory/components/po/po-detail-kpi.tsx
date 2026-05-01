@@ -66,48 +66,41 @@ export function PoDetailKpi({ po }: PoDetailKpiProps): React.JSX.Element {
           value: fmt.currency(stats.outstanding),
           intent: stats.outstanding > 0 ? 'warning' : 'success',
           secondary:
-            stats.paidAmount > 0
-              ? `${fmt.currency(stats.paidAmount)} paid`
-              : 'no payments yet',
+            stats.paidAmount > 0 ? `${fmt.currency(stats.paidAmount)} paid` : 'no payments yet',
         },
         {
           id: 'po-receive',
           label: 'Receive progress',
-          value:
-            stats.receivePct != null ? `${Math.round(stats.receivePct)}%` : '—',
+          value: stats.receivePct != null ? `${Math.round(stats.receivePct)}%` : '—',
           intent:
             stats.receivePct == null
               ? 'neutral'
               : stats.receivePct >= 100
-              ? 'success'
-              : stats.receivePct >= 50
-              ? 'info'
-              : 'neutral',
+                ? 'success'
+                : stats.receivePct >= 50
+                  ? 'info'
+                  : 'neutral',
           secondary: 'received vs ordered units',
         },
         {
           id: 'po-days',
-          label: isReceived
-            ? 'Delivered'
-            : isCancelled
-            ? 'Cancelled'
-            : 'Days remaining',
+          label: isReceived ? 'Delivered' : isCancelled ? 'Cancelled' : 'Days remaining',
           value:
             isReceived || isCancelled
               ? '—'
               : stats.daysRemaining == null
-              ? '—'
-              : stats.daysRemaining < 0
-              ? `${Math.abs(stats.daysRemaining)}d overdue`
-              : `${stats.daysRemaining}d`,
+                ? '—'
+                : stats.daysRemaining < 0
+                  ? `${Math.abs(stats.daysRemaining)}d overdue`
+                  : `${stats.daysRemaining}d`,
           intent:
             isReceived || isCancelled
               ? 'neutral'
               : stats.daysRemaining != null && stats.daysRemaining < 0
-              ? 'danger'
-              : stats.daysRemaining != null && stats.daysRemaining < 3
-              ? 'warning'
-              : 'neutral',
+                ? 'danger'
+                : stats.daysRemaining != null && stats.daysRemaining < 3
+                  ? 'warning'
+                  : 'neutral',
           secondary: po.expectedDeliveryDate
             ? new Date(po.expectedDeliveryDate).toLocaleDateString('en-IN', {
                 day: '2-digit',

@@ -132,7 +132,10 @@ export function TimeWindowPicker({
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
       <Select value={range} onValueChange={handlePresetChange}>
         <SelectTrigger className="h-8 w-auto min-w-[140px] text-xs">
-          <CalendarTodayRoundedIcon sx={{ fontSize: 14 }} className="mr-1 text-foreground-tertiary" />
+          <CalendarTodayRoundedIcon
+            sx={{ fontSize: 14 }}
+            className="mr-1 text-foreground-tertiary"
+          />
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

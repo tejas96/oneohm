@@ -26,11 +26,7 @@ export type { ProfileSummary, User } from '@/lib/types/auth';
  * Keep this list in sync with `ADMIN_BYPASS_ROLES` server-side. If the
  * backend list changes, this one MUST change too.
  */
-export const ADMIN_BYPASS_ROLES: readonly string[] = [
-  'platform_admin',
-  'super_admin',
-  'admin',
-];
+export const ADMIN_BYPASS_ROLES: readonly string[] = ['platform_admin', 'super_admin', 'admin'];
 
 function userHasAdminBypass(roles: readonly string[] | undefined): boolean {
   if (!roles?.length) return false;

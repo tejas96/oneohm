@@ -17,10 +17,7 @@ import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
 import { RowActionMenu, type RowAction } from '@/components/shared/inventory/row-action-menu';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES } from '@/lib/config/routes';
-import {
-  useInventoryStockList,
-  type InventoryStock,
-} from '@/lib/hooks/resources/inventory-stock';
+import { useInventoryStockList, type InventoryStock } from '@/lib/hooks/resources/inventory-stock';
 import { useAuth } from '@/providers/auth-provider';
 
 type StockRow = InventoryStock & Record<string, unknown>;
@@ -35,8 +32,7 @@ function buildCreatePoHref(row: InventoryStock): string {
   const params = new URLSearchParams();
   if (row.warehouseId) params.set('warehouseId', row.warehouseId);
   if (row.productId) params.set('productId', row.productId);
-  const deficit =
-    Number(row.minimumStockLevel ?? 0) - Number(row.availableQuantity ?? 0);
+  const deficit = Number(row.minimumStockLevel ?? 0) - Number(row.availableQuantity ?? 0);
   const qty = Number(row.reorderQuantity ?? 0) > 0 ? Number(row.reorderQuantity) : deficit;
   if (qty > 0) params.set('quantity', String(qty));
   params.set('source', 'low-stock-alert');
@@ -56,8 +52,7 @@ export function InventoryAlertsPage(): React.JSX.Element {
   const router = useRouter();
   const fmt = useFmt();
   const { hasPermission } = useAuth();
-  const canCreatePo =
-    hasPermission('purchaseOrder:write') || hasPermission('inventory:write');
+  const canCreatePo = hasPermission('purchaseOrder:write') || hasPermission('inventory:write');
 
   const { items, pagination, search, setSearch, sorting, isLoading, isFetching, isError } =
     useInventoryStockList({
@@ -100,9 +95,7 @@ export function InventoryAlertsPage(): React.JSX.Element {
         sortable: false,
         renderCell: ({ row }) => (
           <div className="flex flex-col gap-0.5 py-1">
-            <span className="text-sm font-medium text-foreground">
-              {row.product?.name ?? '—'}
-            </span>
+            <span className="text-sm font-medium text-foreground">{row.product?.name ?? '—'}</span>
             <span className="text-xs text-foreground-tertiary">{row.product?.code ?? ''}</span>
           </div>
         ),
@@ -149,8 +142,7 @@ export function InventoryAlertsPage(): React.JSX.Element {
         width: 110,
         sortable: false,
         renderCell: ({ row }) => {
-          const deficit =
-            Number(row.minimumStockLevel ?? 0) - Number(row.availableQuantity ?? 0);
+          const deficit = Number(row.minimumStockLevel ?? 0) - Number(row.availableQuantity ?? 0);
           return (
             <span className="text-sm font-medium tabular-nums text-error">
               {deficit > 0 ? deficit : '—'}
@@ -191,8 +183,7 @@ export function InventoryAlertsPage(): React.JSX.Element {
               id: 'view',
               label: 'View stock detail',
               icon: <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />,
-              onSelect: () =>
-                router.push(ROUTES.INVENTORY.STOCK_DETAIL.replace('[id]', row.id)),
+              onSelect: () => router.push(ROUTES.INVENTORY.STOCK_DETAIL.replace('[id]', row.id)),
             },
             {
               id: 'create-po',
@@ -330,15 +321,12 @@ export function InventoryAlertsPage(): React.JSX.Element {
         onPageChange={(page) => pagination.setPage(page + 1)}
         onPageSizeChange={pagination.setPageSize}
         onSortChange={(model) => {
-          if (model)
-            sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
+          if (model) sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
           else sorting.clearSort();
         }}
         onSearchChange={setSearch}
         initialSearch={search}
-        onRowClick={(row) =>
-          router.push(ROUTES.INVENTORY.STOCK_DETAIL.replace('[id]', row.id))
-        }
+        onRowClick={(row) => router.push(ROUTES.INVENTORY.STOCK_DETAIL.replace('[id]', row.id))}
         enableSearch
         enablePagination
         searchPlaceholder="Search by product or warehouse…"

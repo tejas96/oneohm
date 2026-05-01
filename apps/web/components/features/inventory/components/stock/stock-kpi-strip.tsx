@@ -23,7 +23,11 @@ export interface StockKpiStripProps {
   isLoading?: boolean;
 }
 
-export function StockKpiStrip({ rows, totalRows, isLoading }: StockKpiStripProps): React.JSX.Element {
+export function StockKpiStrip({
+  rows,
+  totalRows,
+  isLoading,
+}: StockKpiStripProps): React.JSX.Element {
   const fmt = useFmt();
   const agg = useStockAggregates(rows);
   const showingAll = totalRows === agg.skuCount;

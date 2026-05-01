@@ -165,10 +165,7 @@ export function PoCreatePage(): React.JSX.Element {
     ) {
       form.setValue('warehouseId', '');
     }
-    if (
-      seedRef.current.productId &&
-      !products.some((p) => p.id === seedRef.current.productId)
-    ) {
+    if (seedRef.current.productId && !products.some((p) => p.id === seedRef.current.productId)) {
       form.setValue('items.0.productId', '');
     }
   }, [warehouses, products, form]);

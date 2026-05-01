@@ -47,10 +47,7 @@ function RatingCell({ rating }: { rating?: number }): React.JSX.Element {
   }
   const filled = Math.round(Math.max(0, Math.min(5, Number(rating))));
   return (
-    <div
-      className="flex items-center gap-0.5"
-      aria-label={`${Number(rating).toFixed(1)} out of 5`}
-    >
+    <div className="flex items-center gap-0.5" aria-label={`${Number(rating).toFixed(1)} out of 5`}>
       {Array.from({ length: 5 }).map((_, i) => (
         <StarRoundedIcon
           key={i}
@@ -100,12 +97,8 @@ export function buildVendorColumns(
       sortable: false,
       renderCell: ({ row }) => (
         <div className="flex flex-col gap-0.5 py-1">
-          <span className="text-sm text-foreground">
-            {row.contactPerson ?? '—'}
-          </span>
-          <span className="text-xs text-foreground-tertiary">
-            {row.email ?? row.phone ?? ''}
-          </span>
+          <span className="text-sm text-foreground">{row.contactPerson ?? '—'}</span>
+          <span className="text-xs text-foreground-tertiary">{row.email ?? row.phone ?? ''}</span>
         </div>
       ),
     },
@@ -116,9 +109,7 @@ export function buildVendorColumns(
       sortable: false,
       renderCell: ({ row }) => {
         const loc = [row.city, row.state, row.country].filter(Boolean).join(', ');
-        return (
-          <span className="text-sm text-foreground-secondary">{loc || '—'}</span>
-        );
+        return <span className="text-sm text-foreground-secondary">{loc || '—'}</span>;
       },
     },
     {
@@ -167,9 +158,7 @@ export function buildVendorColumns(
             icon: <EditOutlinedIcon sx={{ fontSize: 16 }} />,
             onSelect: () => callbacks.onEdit(row),
             disabled: !callbacks.canEdit,
-            tooltip: callbacks.canEdit
-              ? undefined
-              : 'You need inventory:write to edit vendors.',
+            tooltip: callbacks.canEdit ? undefined : 'You need inventory:write to edit vendors.',
           },
         ];
         return (

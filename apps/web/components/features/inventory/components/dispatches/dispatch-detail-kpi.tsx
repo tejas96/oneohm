@@ -42,8 +42,8 @@ export function DispatchDetailKpi({ dispatch }: DispatchDetailKpiProps): React.J
   const actualLabel = dispatch.actualDeliveryDate
     ? formatDate(dispatch.actualDeliveryDate)
     : dispatch.status === 'cancelled'
-    ? 'Cancelled'
-    : 'Pending';
+      ? 'Cancelled'
+      : 'Pending';
 
   return (
     <KpiStripe

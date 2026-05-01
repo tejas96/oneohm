@@ -27,7 +27,13 @@ import { cn } from '@/lib/utils';
  * cells where 100% means "completely depleted").
  */
 
-export type ProgressBarIntent = 'auto' | 'auto-inverted' | 'success' | 'warning' | 'danger' | 'info';
+export type ProgressBarIntent =
+  | 'auto'
+  | 'auto-inverted'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info';
 
 export interface ProgressBarCellProps {
   numerator: number;
@@ -82,7 +88,10 @@ export function ProgressBarCell({
       )}
       <div className="h-progress-sm w-full overflow-hidden rounded-full bg-muted">
         <div
-          className={cn('h-full rounded-full transition-[width] duration-fast', INTENT_BG[resolvedIntent])}
+          className={cn(
+            'h-full rounded-full transition-[width] duration-fast',
+            INTENT_BG[resolvedIntent],
+          )}
           style={{ width: `${percent}%` }}
           role="progressbar"
           aria-valuenow={Math.round(percent)}

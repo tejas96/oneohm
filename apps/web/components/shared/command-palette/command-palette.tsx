@@ -329,8 +329,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             ))}
             {inventorySearch.degraded.length > 0 && (
               <div className="px-3 py-1.5 text-[11px] text-muted-foreground">
-                Some inventory results may be incomplete (
-                {inventorySearch.degraded.join(', ')} bucket
+                Some inventory results may be incomplete ({inventorySearch.degraded.join(', ')}{' '}
+                bucket
                 {inventorySearch.degraded.length > 1 ? 's' : ''} unavailable).
               </div>
             )}

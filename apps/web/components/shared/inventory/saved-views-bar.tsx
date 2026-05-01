@@ -247,8 +247,17 @@ export function SavedViewsBar({
             variant={active ? 'filled' : 'outlined'}
             onClick={() => onSelect(view.id, view.filters)}
             label={
-              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pr: canWrite ? 0 : 0.5 }}>
-                <Typography component="span" variant="caption" sx={{ fontWeight: active ? 600 : 500 }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.5}
+                sx={{ pr: canWrite ? 0 : 0.5 }}
+              >
+                <Typography
+                  component="span"
+                  variant="caption"
+                  sx={{ fontWeight: active ? 600 : 500 }}
+                >
                   {view.name}
                 </Typography>
                 {showDot ? (

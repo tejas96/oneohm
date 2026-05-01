@@ -74,10 +74,7 @@ export function EntityLink({
       <span className="truncate font-medium">{label}</span>
       {secondary && <span className="shrink-0 text-foreground-tertiary">{secondary}</span>}
       {external && (
-        <OpenInNewRoundedIcon
-          sx={{ fontSize: 12 }}
-          className="shrink-0 text-foreground-tertiary"
-        />
+        <OpenInNewRoundedIcon sx={{ fontSize: 12 }} className="shrink-0 text-foreground-tertiary" />
       )}
     </span>
   );

@@ -59,9 +59,7 @@ export function buildDispatchColumns(
       flex: 1,
       sortable: false,
       renderCell: ({ row }) => (
-        <span className="text-sm text-foreground-secondary">
-          {row.warehouse?.name ?? '—'}
-        </span>
+        <span className="text-sm text-foreground-secondary">{row.warehouse?.name ?? '—'}</span>
       ),
     },
     {
@@ -88,10 +86,9 @@ export function buildDispatchColumns(
           row.status !== 'cancelled';
         return (
           <span
-            className={
-              `text-sm tabular-nums ${ 
-              isOverdue ? 'font-medium text-error' : 'text-foreground-secondary'}`
-            }
+            className={`text-sm tabular-nums ${
+              isOverdue ? 'font-medium text-error' : 'text-foreground-secondary'
+            }`}
             title={isOverdue ? 'Overdue' : undefined}
           >
             {formatDate(exp as string)}
@@ -105,9 +102,7 @@ export function buildDispatchColumns(
       width: 130,
       sortable: false,
       renderCell: ({ row }) => (
-        <span className="text-sm text-foreground-secondary">
-          {row.vehicleNumber ?? '—'}
-        </span>
+        <span className="text-sm text-foreground-secondary">{row.vehicleNumber ?? '—'}</span>
       ),
     },
     {
@@ -157,8 +152,8 @@ export function buildDispatchColumns(
             tooltip: !callbacks.canWrite
               ? 'You need dispatch:write to update dispatches.'
               : !canDispatch
-              ? 'Only PREPARED dispatches can be marked dispatched.'
-              : undefined,
+                ? 'Only PREPARED dispatches can be marked dispatched.'
+                : undefined,
           },
           {
             id: 'mark-delivered',
@@ -169,8 +164,8 @@ export function buildDispatchColumns(
             tooltip: !callbacks.canWrite
               ? 'You need dispatch:write to update dispatches.'
               : !canDeliver
-              ? 'Only dispatched / in-transit dispatches can be marked delivered.'
-              : undefined,
+                ? 'Only dispatched / in-transit dispatches can be marked delivered.'
+                : undefined,
           },
           {
             id: 'cancel',
@@ -181,8 +176,8 @@ export function buildDispatchColumns(
             tooltip: !callbacks.canWrite
               ? 'You need dispatch:write to cancel dispatches.'
               : !canCancelThis
-              ? 'Already delivered or cancelled.'
-              : undefined,
+                ? 'Already delivered or cancelled.'
+                : undefined,
           },
         ];
         return (

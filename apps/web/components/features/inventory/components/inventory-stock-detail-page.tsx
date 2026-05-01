@@ -122,13 +122,14 @@ export function InventoryStockDetailPage(): React.JSX.Element {
             key={label}
             className="flex flex-col gap-1 rounded-xl border border-border-light bg-white p-4"
           >
-            <MUITypography variant="body" className="text-xs uppercase tracking-wide text-foreground-tertiary">
+            <MUITypography
+              variant="body"
+              className="text-xs uppercase tracking-wide text-foreground-tertiary"
+            >
               {label}
             </MUITypography>
             <p className={cn('text-2xl font-semibold tabular-nums', color)}>{value}</p>
-            {secondary ? (
-              <p className="text-xs text-foreground-tertiary">{secondary}</p>
-            ) : null}
+            {secondary ? <p className="text-xs text-foreground-tertiary">{secondary}</p> : null}
           </div>
         ))}
       </section>

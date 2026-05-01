@@ -6,7 +6,6 @@ import type { HorizontalBarChartImplProps } from './horizontal-bar-chart.impl';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
-
 const HorizontalBarChartLazy = dynamic(() => import('./horizontal-bar-chart.impl'), {
   ssr: false,
   loading: () => <Skeleton className="h-full w-full rounded-lg" />,

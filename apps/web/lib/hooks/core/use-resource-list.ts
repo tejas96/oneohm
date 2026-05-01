@@ -148,6 +148,7 @@ export function useResourceList<
     filters: queryState.filters,
     setFilter: queryState.setFilter,
     setFilters: queryState.setFilters,
+    replaceFilters: queryState.replaceFilters,
     clearFilters: queryState.clearFilters,
     hasActiveFilters: queryState.hasActiveFilters,
     pagination: queryState.pagination,

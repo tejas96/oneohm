@@ -108,16 +108,15 @@ export function VendorDetailKpi({ vendorId }: VendorDetailKpiProps): React.JSX.E
         {
           id: 'v-on-time',
           label: 'On-time delivery',
-          value:
-            stats.onTimeRate != null ? `${Math.round(stats.onTimeRate)}%` : '—',
+          value: stats.onTimeRate != null ? `${Math.round(stats.onTimeRate)}%` : '—',
           intent:
             stats.onTimeRate == null
               ? 'neutral'
               : stats.onTimeRate >= 90
-              ? 'success'
-              : stats.onTimeRate >= 70
-              ? 'warning'
-              : 'danger',
+                ? 'success'
+                : stats.onTimeRate >= 70
+                  ? 'warning'
+                  : 'danger',
           secondary:
             stats.onTimeRate != null
               ? `${stats.onTimeCount}/${stats.onTimeCount + stats.lateCount} POs`

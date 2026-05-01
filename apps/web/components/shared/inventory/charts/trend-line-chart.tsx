@@ -6,7 +6,6 @@ import type { TrendLineChartImplProps } from './trend-line-chart.impl';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
-
 /**
  * `next/dynamic({ ssr:false })` wrapper around the recharts impl so the
  * chart bundle ships only to the client. Loading state is a skeleton

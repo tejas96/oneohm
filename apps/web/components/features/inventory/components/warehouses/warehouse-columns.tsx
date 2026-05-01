@@ -80,9 +80,7 @@ export function buildWarehouseColumns(
       sortable: false,
       renderCell: ({ row }) => {
         const location = [row.city, row.state, row.country].filter(Boolean).join(', ');
-        return (
-          <span className="text-sm text-foreground-secondary">{location || '—'}</span>
-        );
+        return <span className="text-sm text-foreground-secondary">{location || '—'}</span>;
       },
     },
     {
@@ -90,9 +88,7 @@ export function buildWarehouseColumns(
       headerName: 'Contact',
       flex: 1,
       renderCell: ({ row }) => (
-        <span className="text-sm text-foreground-secondary">
-          {row.contactPerson ?? '—'}
-        </span>
+        <span className="text-sm text-foreground-secondary">{row.contactPerson ?? '—'}</span>
       ),
     },
     {
@@ -104,9 +100,7 @@ export function buildWarehouseColumns(
         const summary = stockByWarehouseId.get(row.id);
         const items = Number(summary?.totalItems ?? 0);
         if (items === 0) {
-          return (
-            <span className="text-xs text-foreground-tertiary">No stock yet</span>
-          );
+          return <span className="text-xs text-foreground-tertiary">No stock yet</span>;
         }
         return (
           <ProgressBarCell
@@ -157,9 +151,7 @@ export function buildWarehouseColumns(
             icon: <EditOutlinedIcon sx={{ fontSize: 16 }} />,
             onSelect: () => callbacks.onEdit(row),
             disabled: !callbacks.canEdit,
-            tooltip: callbacks.canEdit
-              ? undefined
-              : 'You need inventory:write to edit warehouses.',
+            tooltip: callbacks.canEdit ? undefined : 'You need inventory:write to edit warehouses.',
           },
         ];
         return (

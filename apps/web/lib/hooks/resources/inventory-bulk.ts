@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  useMutation,
-  useQueryClient,
-  type UseMutationResult,
-} from '@tanstack/react-query';
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 
 import {

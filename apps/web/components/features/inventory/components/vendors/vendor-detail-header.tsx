@@ -7,11 +7,7 @@ import { Button, Chip, IconButton, Tooltip } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import {
-  VENDOR_STATUS_COLOR,
-  VENDOR_STATUS_LABEL,
-  VENDOR_TYPE_LABEL,
-} from '../../constants';
+import { VENDOR_STATUS_COLOR, VENDOR_STATUS_LABEL, VENDOR_TYPE_LABEL } from '../../constants';
 
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { ROUTES } from '@/lib/config/routes';
@@ -50,9 +46,7 @@ export function VendorDetailHeader({
   onEdit,
 }: VendorDetailHeaderProps): React.JSX.Element {
   const router = useRouter();
-  const contact = [vendor.contactPerson, vendor.email, vendor.phone]
-    .filter(Boolean)
-    .join(' · ');
+  const contact = [vendor.contactPerson, vendor.email, vendor.phone].filter(Boolean).join(' · ');
 
   return (
     <header className="sticky top-0 z-10 -mx-6 mb-2 flex flex-wrap items-start justify-between gap-3 border-b border-border bg-background px-6 py-3">

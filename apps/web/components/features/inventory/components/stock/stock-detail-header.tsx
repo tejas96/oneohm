@@ -88,9 +88,7 @@ export function StockDetailHeader({
           startIcon={<EditOutlinedIcon sx={{ fontSize: 16 }} />}
           onClick={onAdjust}
           disabled={!canAdjust}
-          title={
-            canAdjust ? undefined : 'You need stock:adjust to change quantities.'
-          }
+          title={canAdjust ? undefined : 'You need stock:adjust to change quantities.'}
         >
           Adjust
         </Button>

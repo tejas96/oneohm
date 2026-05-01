@@ -12,15 +12,10 @@ import {
   YAxis,
 } from 'recharts';
 
-
 import { ChartShell, type ChartShellProps } from './chart-shell';
 import type { TrendPoint } from './types';
 
-import {
-  CHART_AXIS_TICK_STYLE,
-  CHART_TOOLTIP_CURSOR,
-  getChartColor,
-} from '@/lib/charts';
+import { CHART_AXIS_TICK_STYLE, CHART_TOOLTIP_CURSOR, getChartColor } from '@/lib/charts';
 
 /**
  * Stacked bar chart for transaction-type breakdowns over time. Same
@@ -33,7 +28,18 @@ import {
  */
 
 export interface StackedBarChartImplProps
-  extends Pick<ChartShellProps, 'title' | 'description' | 'height' | 'isLoading' | 'isEmpty' | 'error' | 'action' | 'help' | 'className'> {
+  extends Pick<
+    ChartShellProps,
+    | 'title'
+    | 'description'
+    | 'height'
+    | 'isLoading'
+    | 'isEmpty'
+    | 'error'
+    | 'action'
+    | 'help'
+    | 'className'
+  > {
   data: ReadonlyArray<TrendPoint>;
   yTickFormatter?: (value: number) => string;
   valueFormatter?: (value: number) => string;
@@ -95,11 +101,7 @@ export function StackedBarChartImpl({
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
           />
           {series.length > 1 && (
-            <Legend
-              wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-              iconSize={8}
-              iconType="circle"
-            />
+            <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} iconSize={8} iconType="circle" />
           )}
           {series.map((seriesKey, index) => (
             <Bar

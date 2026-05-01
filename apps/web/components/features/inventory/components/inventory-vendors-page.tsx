@@ -7,13 +7,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
 import { VENDOR_STATUS_LABEL, VENDOR_TYPE_LABEL } from '../constants';
-import { TableFilterSelect } from './shared/table-filter-select';
+import { hiddenSelectFilterColumn } from './shared/hidden-filter-column';
 import { VendorFormDialog } from './vendor-form-dialog';
 import { buildVendorColumns, type VendorColumnRow } from './vendors/vendor-columns';
 import { VendorKpiStrip } from './vendors/vendor-kpi-strip';
 
-import { AdvancedTable } from '@/components/shared/advanced-table';
-import type { TableSortModel } from '@/components/shared/advanced-table/types';
+import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
+import type { TableFilterModel, TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -23,6 +23,11 @@ import { useVendors, type Vendor, type VendorFilters } from '@/lib/hooks/resourc
 import { useAuth } from '@/providers/auth-provider';
 
 const EMPTY_ROWS: VendorColumnRow[] = [];
+
+const VENDOR_LIST_FILTER_FIELDS = {
+  status: 'filterStatus',
+  vendorType: 'filterVendorType',
+} as const;
 
 /**
  * Vendors list page (Part: rebuild-vendor-pages).
@@ -46,10 +51,10 @@ export function InventoryVendorsPage(): React.JSX.Element {
     pagination,
     search,
     setSearch,
+    clearSearch,
     sorting,
     filters,
-    setFilter,
-    setFilters,
+    replaceFilters,
     isLoading,
     isFetching,
     isError,
@@ -75,23 +80,70 @@ export function InventoryVendorsPage(): React.JSX.Element {
       else params.delete('view');
       params.delete('page');
       router.replace(`${ROUTES.INVENTORY.VENDORS}?${params.toString()}`);
-      setFilters(viewFilters as Partial<VendorFilters>);
+      replaceFilters(viewFilters as Partial<VendorFilters>);
     },
-    [searchParams, router, setFilters],
+    [searchParams, router, replaceFilters],
+  );
+
+  const statusFilterOptions = useMemo(
+    () => Object.entries(VENDOR_STATUS_LABEL).map(([value, label]) => ({ value, label })),
+    [],
+  );
+  const typeFilterOptions = useMemo(
+    () => Object.entries(VENDOR_TYPE_LABEL).map(([value, label]) => ({ value, label })),
+    [],
+  );
+
+  const filterColumns = useMemo(
+    (): ColumnConfig<VendorColumnRow>[] => [
+      hiddenSelectFilterColumn<VendorColumnRow>({
+        field: VENDOR_LIST_FILTER_FIELDS.status,
+        headerName: 'Status',
+        filterOptions: statusFilterOptions,
+      }),
+      hiddenSelectFilterColumn<VendorColumnRow>({
+        field: VENDOR_LIST_FILTER_FIELDS.vendorType,
+        headerName: 'Type',
+        filterOptions: typeFilterOptions,
+      }),
+    ],
+    [statusFilterOptions, typeFilterOptions],
   );
 
   const columns = useMemo(
-    () =>
-      buildVendorColumns({
-        onView: (row) =>
-          router.push(ROUTES.INVENTORY.VENDOR_DETAIL.replace('[id]', row.id)),
+    () => [
+      ...buildVendorColumns({
+        onView: (row) => router.push(ROUTES.INVENTORY.VENDOR_DETAIL.replace('[id]', row.id)),
         onEdit: (row) => {
           setFormTarget(row);
           setFormOpen(true);
         },
         canEdit,
       }),
-    [router, canEdit],
+      ...filterColumns,
+    ],
+    [router, canEdit, filterColumns],
+  );
+
+  const filterModel = useMemo(
+    () =>
+      ({
+        [VENDOR_LIST_FILTER_FIELDS.status]: (filters.status as string) ?? '',
+        [VENDOR_LIST_FILTER_FIELDS.vendorType]: (filters.vendorType as string) ?? '',
+      }) satisfies TableFilterModel,
+    [filters.status, filters.vendorType],
+  );
+
+  const onTableFilterChange = useCallback(
+    (next: TableFilterModel) => {
+      const out: Partial<VendorFilters> = {};
+      const st = next[VENDOR_LIST_FILTER_FIELDS.status];
+      if (st) out.status = String(st);
+      const vt = next[VENDOR_LIST_FILTER_FIELDS.vendorType];
+      if (vt) out.vendorType = String(vt);
+      replaceFilters(out);
+    },
+    [replaceFilters],
   );
 
   const sortModel: TableSortModel | null = sorting.sortBy
@@ -99,8 +151,20 @@ export function InventoryVendorsPage(): React.JSX.Element {
     : null;
 
   const renderEmptyState = useCallback(
-    () =>
-      search ? (
+    (hasActive: boolean) =>
+      hasActive ? (
+        <EmptyState
+          title="No matching vendors"
+          description="Try clearing search and filters."
+          action={{
+            label: 'Clear search & filters',
+            onClick: () => {
+              replaceFilters({});
+              clearSearch();
+            },
+          }}
+        />
+      ) : search ? (
         <NoSearchResults searchTerm={search} onClear={() => setSearch('')} />
       ) : (
         <EmptyState
@@ -108,41 +172,12 @@ export function InventoryVendorsPage(): React.JSX.Element {
           description="Add vendors to manage procurement and purchase orders."
         />
       ),
-    [search, setSearch],
+    [search, setSearch, replaceFilters, clearSearch],
   );
 
   const toolbarActions = useMemo(
     () => (
       <div className="flex items-center gap-2">
-        <TableFilterSelect
-          label="Status"
-          value={(filters.status as string) || 'all'}
-          options={Object.entries(VENDOR_STATUS_LABEL).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-          onChange={(value) => {
-            setFilter('status', (value === 'all' ? undefined : value) as VendorFilters['status']);
-          }}
-          allLabel="All statuses"
-          minWidth={140}
-        />
-        <TableFilterSelect
-          label="Type"
-          value={(filters.vendorType as string) || 'all'}
-          options={Object.entries(VENDOR_TYPE_LABEL).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-          onChange={(value) => {
-            setFilter(
-              'vendorType',
-              (value === 'all' ? undefined : value) as VendorFilters['vendorType'],
-            );
-          }}
-          allLabel="All types"
-          minWidth={150}
-        />
         {canExport && (
           <Button
             size="small"
@@ -156,14 +191,7 @@ export function InventoryVendorsPage(): React.JSX.Element {
         )}
       </div>
     ),
-    [
-      filters.status,
-      filters.vendorType,
-      setFilter,
-      canExport,
-      exporter.isDownloading,
-      handleExport,
-    ],
+    [canExport, exporter.isDownloading, handleExport],
   );
 
   if (isError) {
@@ -199,11 +227,7 @@ export function InventoryVendorsPage(): React.JSX.Element {
         )}
       </div>
 
-      <VendorKpiStrip
-        vendors={rows}
-        totalRows={pagination.total}
-        isLoading={isLoading}
-      />
+      <VendorKpiStrip vendors={rows} totalRows={pagination.total} isLoading={isLoading} />
 
       <SavedViewsBar
         resource={'vendors' as const}
@@ -227,16 +251,16 @@ export function InventoryVendorsPage(): React.JSX.Element {
         onPageChange={(page) => pagination.setPage(page + 1)}
         onPageSizeChange={pagination.setPageSize}
         onSortChange={(model) => {
-          if (model)
-            sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
+          if (model) sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
           else sorting.clearSort();
         }}
         onSearchChange={setSearch}
         initialSearch={search}
-        onRowClick={(row) =>
-          router.push(ROUTES.INVENTORY.VENDOR_DETAIL.replace('[id]', row.id))
-        }
+        filterModel={filterModel}
+        onFilterChange={onTableFilterChange}
+        onRowClick={(row) => router.push(ROUTES.INVENTORY.VENDOR_DETAIL.replace('[id]', row.id))}
         enableSearch
+        enableFilters
         enablePagination
         toolbarActions={toolbarActions}
         searchPlaceholder="Search by name or code…"

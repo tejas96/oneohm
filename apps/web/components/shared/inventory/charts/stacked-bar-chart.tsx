@@ -6,7 +6,6 @@ import type { StackedBarChartImplProps } from './stacked-bar-chart.impl';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
-
 const StackedBarChartLazy = dynamic(() => import('./stacked-bar-chart.impl'), {
   ssr: false,
   loading: () => <Skeleton className="h-full w-full rounded-lg" />,

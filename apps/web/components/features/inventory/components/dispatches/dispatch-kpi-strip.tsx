@@ -24,8 +24,7 @@ export function DispatchKpiStrip(): React.JSX.Element {
     (data?.byStatus?.prepared ?? 0) +
     (data?.byStatus?.dispatched ?? 0) +
     (data?.byStatus?.in_transit ?? 0);
-  const delivered =
-    (data?.byStatus?.delivered ?? 0) + (data?.byStatus?.partially_delivered ?? 0);
+  const delivered = (data?.byStatus?.delivered ?? 0) + (data?.byStatus?.partially_delivered ?? 0);
   const cancelled = data?.byStatus?.cancelled ?? 0;
 
   return (

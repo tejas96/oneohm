@@ -7,13 +7,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
 import { WAREHOUSE_STATUS_LABEL, WAREHOUSE_TYPE_LABEL } from '../constants';
-import { TableFilterSelect } from './shared/table-filter-select';
+import { hiddenSelectFilterColumn } from './shared/hidden-filter-column';
 import { WarehouseFormDialog } from './warehouse-form-dialog';
 import { buildWarehouseColumns, type WarehouseColumnRow } from './warehouses/warehouse-columns';
 import { WarehouseKpiStrip } from './warehouses/warehouse-kpi-strip';
 
-import { AdvancedTable } from '@/components/shared/advanced-table';
-import type { TableSortModel } from '@/components/shared/advanced-table/types';
+import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
+import type { TableFilterModel, TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -28,6 +28,11 @@ import {
 import { useAuth } from '@/providers/auth-provider';
 
 const EMPTY_ROWS: WarehouseColumnRow[] = [];
+
+const WAREHOUSE_LIST_FILTER_FIELDS = {
+  status: 'filterStatus',
+  warehouseType: 'filterWarehouseType',
+} as const;
 
 /**
  * Warehouses list page (Part: rebuild-warehouse-pages).
@@ -60,10 +65,10 @@ export function InventoryWarehousesPage(): React.JSX.Element {
     pagination,
     search,
     setSearch,
+    clearSearch,
     sorting,
     filters,
-    setFilter,
-    setFilters,
+    replaceFilters,
     isLoading,
     isFetching,
     isError,
@@ -94,9 +99,9 @@ export function InventoryWarehousesPage(): React.JSX.Element {
       else params.delete('view');
       params.delete('page');
       router.replace(`${ROUTES.INVENTORY.WAREHOUSES}?${params.toString()}`);
-      setFilters(viewFilters as Partial<WarehouseFilters>);
+      replaceFilters(viewFilters as Partial<WarehouseFilters>);
     },
-    [searchParams, router, setFilters],
+    [searchParams, router, replaceFilters],
   );
 
   const stockByWarehouseId = useMemo(() => {
@@ -114,12 +119,36 @@ export function InventoryWarehousesPage(): React.JSX.Element {
     return max;
   }, [rows, stockByWarehouseId]);
 
+  const statusFilterOptions = useMemo(
+    () => Object.entries(WAREHOUSE_STATUS_LABEL).map(([value, label]) => ({ value, label })),
+    [],
+  );
+  const typeFilterOptions = useMemo(
+    () => Object.entries(WAREHOUSE_TYPE_LABEL).map(([value, label]) => ({ value, label })),
+    [],
+  );
+
+  const filterColumns = useMemo(
+    (): ColumnConfig<WarehouseColumnRow>[] => [
+      hiddenSelectFilterColumn<WarehouseColumnRow>({
+        field: WAREHOUSE_LIST_FILTER_FIELDS.status,
+        headerName: 'Status',
+        filterOptions: statusFilterOptions,
+      }),
+      hiddenSelectFilterColumn<WarehouseColumnRow>({
+        field: WAREHOUSE_LIST_FILTER_FIELDS.warehouseType,
+        headerName: 'Type',
+        filterOptions: typeFilterOptions,
+      }),
+    ],
+    [statusFilterOptions, typeFilterOptions],
+  );
+
   const columns = useMemo(
-    () =>
-      buildWarehouseColumns(
+    () => [
+      ...buildWarehouseColumns(
         {
-          onView: (row) =>
-            router.push(ROUTES.INVENTORY.WAREHOUSE_DETAIL.replace('[id]', row.id)),
+          onView: (row) => router.push(ROUTES.INVENTORY.WAREHOUSE_DETAIL.replace('[id]', row.id)),
           onEdit: (row) => {
             setFormTarget(row);
             setFormOpen(true);
@@ -129,7 +158,30 @@ export function InventoryWarehousesPage(): React.JSX.Element {
         stockByWarehouseId,
         maxSkuRows,
       ),
-    [router, canEdit, stockByWarehouseId, maxSkuRows],
+      ...filterColumns,
+    ],
+    [router, canEdit, stockByWarehouseId, maxSkuRows, filterColumns],
+  );
+
+  const filterModel = useMemo(
+    () =>
+      ({
+        [WAREHOUSE_LIST_FILTER_FIELDS.status]: (filters.status as string) ?? '',
+        [WAREHOUSE_LIST_FILTER_FIELDS.warehouseType]: (filters.warehouseType as string) ?? '',
+      }) satisfies TableFilterModel,
+    [filters.status, filters.warehouseType],
+  );
+
+  const onTableFilterChange = useCallback(
+    (next: TableFilterModel) => {
+      const out: Partial<WarehouseFilters> = {};
+      const st = next[WAREHOUSE_LIST_FILTER_FIELDS.status];
+      if (st) out.status = String(st);
+      const wt = next[WAREHOUSE_LIST_FILTER_FIELDS.warehouseType];
+      if (wt) out.warehouseType = String(wt);
+      replaceFilters(out);
+    },
+    [replaceFilters],
   );
 
   const sortModel: TableSortModel | null = sorting.sortBy
@@ -137,8 +189,20 @@ export function InventoryWarehousesPage(): React.JSX.Element {
     : null;
 
   const renderEmptyState = useCallback(
-    () =>
-      search ? (
+    (hasActive: boolean) =>
+      hasActive ? (
+        <EmptyState
+          title="No matching warehouses"
+          description="Try clearing search and filters."
+          action={{
+            label: 'Clear search & filters',
+            onClick: () => {
+              replaceFilters({});
+              clearSearch();
+            },
+          }}
+        />
+      ) : search ? (
         <NoSearchResults searchTerm={search} onClear={() => setSearch('')} />
       ) : (
         <EmptyState
@@ -146,44 +210,12 @@ export function InventoryWarehousesPage(): React.JSX.Element {
           description="Create your first warehouse to start managing inventory."
         />
       ),
-    [search, setSearch],
+    [search, setSearch, replaceFilters, clearSearch],
   );
 
   const toolbarActions = useMemo(
     () => (
       <div className="flex items-center gap-2">
-        <TableFilterSelect
-          label="Status"
-          value={(filters.status as string) || 'all'}
-          options={Object.entries(WAREHOUSE_STATUS_LABEL).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-          onChange={(value) => {
-            setFilter(
-              'status',
-              (value === 'all' ? undefined : value) as WarehouseFilters['status'],
-            );
-          }}
-          allLabel="All statuses"
-          minWidth={140}
-        />
-        <TableFilterSelect
-          label="Type"
-          value={(filters.warehouseType as string) || 'all'}
-          options={Object.entries(WAREHOUSE_TYPE_LABEL).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-          onChange={(value) => {
-            setFilter(
-              'warehouseType',
-              (value === 'all' ? undefined : value) as WarehouseFilters['warehouseType'],
-            );
-          }}
-          allLabel="All types"
-          minWidth={140}
-        />
         {canExport && (
           <Button
             size="small"
@@ -197,14 +229,7 @@ export function InventoryWarehousesPage(): React.JSX.Element {
         )}
       </div>
     ),
-    [
-      filters.status,
-      filters.warehouseType,
-      setFilter,
-      canExport,
-      exporter.isDownloading,
-      handleExport,
-    ],
+    [canExport, exporter.isDownloading, handleExport],
   );
 
   if (isError) {
@@ -269,16 +294,16 @@ export function InventoryWarehousesPage(): React.JSX.Element {
         onPageChange={(page) => pagination.setPage(page + 1)}
         onPageSizeChange={pagination.setPageSize}
         onSortChange={(model) => {
-          if (model)
-            sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
+          if (model) sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
           else sorting.clearSort();
         }}
         onSearchChange={setSearch}
         initialSearch={search}
-        onRowClick={(row) =>
-          router.push(ROUTES.INVENTORY.WAREHOUSE_DETAIL.replace('[id]', row.id))
-        }
+        filterModel={filterModel}
+        onFilterChange={onTableFilterChange}
+        onRowClick={(row) => router.push(ROUTES.INVENTORY.WAREHOUSE_DETAIL.replace('[id]', row.id))}
         enableSearch
+        enableFilters
         enablePagination
         toolbarActions={toolbarActions}
         searchPlaceholder="Search by name or code…"

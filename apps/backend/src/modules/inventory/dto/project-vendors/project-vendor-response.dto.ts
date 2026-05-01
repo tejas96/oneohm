@@ -20,9 +20,14 @@ export class ProjectVendorResponseDto {
   projectId!: string;
 
   @ApiProperty({
-    description: 'Resolved project summary (only when the assignment endpoint joins the project relation; null otherwise)',
+    description:
+      'Resolved project summary (only when the assignment endpoint joins the project relation; null otherwise)',
     required: false,
-    example: { id: '123e4567-e89b-12d3-a456-426614174000', name: 'Bangalore Solar Project', code: 'PRJ-001' },
+    example: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'Bangalore Solar Project',
+      code: 'PRJ-001',
+    },
   })
   @Expose()
   @Transform(({ obj }) => {

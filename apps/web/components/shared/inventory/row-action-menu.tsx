@@ -133,10 +133,7 @@ export function RowActionMenu({
                   {action.icon}
                 </ListItemIcon>
               )}
-              <ListItemText
-                primary={action.label}
-                primaryTypographyProps={{ fontSize: 13 }}
-              />
+              <ListItemText primary={action.label} primaryTypographyProps={{ fontSize: 13 }} />
             </MenuItem>,
           );
           return nodes;

@@ -144,12 +144,7 @@ export function AllocationDetailPage(): React.JSX.Element {
   const headerActions = (
     <>
       {canCancel && (
-        <Button
-          variant="outlined"
-          color="error"
-          size="small"
-          onClick={() => setCancelOpen(true)}
-        >
+        <Button variant="outlined" color="error" size="small" onClick={() => setCancelOpen(true)}>
           Cancel
         </Button>
       )}
@@ -181,7 +176,10 @@ export function AllocationDetailPage(): React.JSX.Element {
 
       <div className="grid gap-4 rounded-lg border border-border-light bg-background p-4 sm:grid-cols-3">
         <DetailItem label="Source type" value={sourceLabel} />
-        <DetailItem label="Allocated on" value={data.allocatedAt ? formatDate(data.allocatedAt) : '—'} />
+        <DetailItem
+          label="Allocated on"
+          value={data.allocatedAt ? formatDate(data.allocatedAt) : '—'}
+        />
         <DetailItem
           label="Last dispatched"
           value={data.dispatchedAt ? formatDate(data.dispatchedAt) : '—'}

@@ -19,9 +19,7 @@ export interface AllocationDetailKpiProps {
  * The progress card visualises dispatched/allocated as a single bar
  * underneath, intent-coloured so a glance reveals fulfilment state.
  */
-export function AllocationDetailKpi({
-  allocation,
-}: AllocationDetailKpiProps): React.JSX.Element {
+export function AllocationDetailKpi({ allocation }: AllocationDetailKpiProps): React.JSX.Element {
   const fmt = useFmt();
 
   const stats = useMemo(() => {
@@ -37,8 +35,8 @@ export function AllocationDetailKpi({
     stats.remaining === 0 && stats.allocated > 0
       ? 'success'
       : stats.returned > 0
-      ? 'warning'
-      : 'info';
+        ? 'warning'
+        : 'info';
 
   const unit = allocation.product?.unit ?? '';
 

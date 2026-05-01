@@ -6,7 +6,6 @@ import type { DonutChartImplProps } from './donut-chart.impl';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
-
 const DonutChartLazy = dynamic(() => import('./donut-chart.impl'), {
   ssr: false,
   loading: () => <Skeleton className="h-full w-full rounded-lg" />,

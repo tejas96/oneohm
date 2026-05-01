@@ -121,9 +121,7 @@ export function buildStockColumns(
         const avail = Number(row.availableQuantity ?? 0);
         const min = Number(row.minimumStockLevel ?? 0);
         if (min <= 0) {
-          return (
-            <span className="text-xs text-foreground-tertiary">No threshold set</span>
-          );
+          return <span className="text-xs text-foreground-tertiary">No threshold set</span>;
         }
         // Show buffer above the minimum as a positive bar capped at 200%
         // of the minimum so a small min isn't misleading. Inverted intent
@@ -190,8 +188,7 @@ export function buildStockColumns(
             label: 'Transfer to…',
             icon: <SwapHorizRoundedIcon sx={{ fontSize: 16 }} />,
             onSelect: () => callbacks.onTransfer(row),
-            disabled:
-              !callbacks.canTransfer || Number(row.availableQuantity ?? 0) <= 0,
+            disabled: !callbacks.canTransfer || Number(row.availableQuantity ?? 0) <= 0,
             tooltip: !callbacks.canTransfer
               ? 'You need stock:transfer to move stock between warehouses.'
               : Number(row.availableQuantity ?? 0) <= 0

@@ -94,9 +94,7 @@ export function DashboardOpsSection({
   );
 
   return (
-    <div
-      className={`grid grid-cols-1 gap-4 md:grid-cols-2${className ? ` ${className}` : ''}`}
-    >
+    <div className={`grid grid-cols-1 gap-4 md:grid-cols-2${className ? ` ${className}` : ''}`}>
       <StackedBarChart
         title="Transactions by type"
         description="Daily movement volume in selected window"
@@ -112,12 +110,12 @@ export function DashboardOpsSection({
             <>
               <p>
                 Each bar represents one day in the selected time window. The bar is split into
-                colored segments — one per transaction type — so you can see the relative mix at
-                a glance. Hover any segment to see the exact count.
+                colored segments — one per transaction type — so you can see the relative mix at a
+                glance. Hover any segment to see the exact count.
               </p>
               <p className="mt-3">
-                Use this to spot operational patterns: a tall purchase segment means stock came
-                in, a tall dispatch segment means stock went out, and a spike in adjustments may
+                Use this to spot operational patterns: a tall purchase segment means stock came in,
+                a tall dispatch segment means stock went out, and a spike in adjustments may
                 indicate a stocktake.
               </p>
             </>
@@ -132,8 +130,7 @@ export function DashboardOpsSection({
         isLoading={allocFunnel.isLoading}
         error={allocFunnel.error ? (allocFunnel.error as Error) : null}
         help={{
-          summary:
-            'How allocations created in the window progress through their lifecycle stages.',
+          summary: 'How allocations created in the window progress through their lifecycle stages.',
           details: (
             <>
               <p>
@@ -143,8 +140,8 @@ export function DashboardOpsSection({
                 <em>dispatched</em>).
               </p>
               <p className="mt-3">
-                Cancelled allocations are shown separately on the dashboard; only active
-                lifecycle stages appear here.
+                Cancelled allocations are shown separately on the dashboard; only active lifecycle
+                stages appear here.
               </p>
             </>
           ),
@@ -164,13 +161,11 @@ export function DashboardOpsSection({
             <>
               <p>
                 Each row corresponds to a dispatch status. The percentages between rows show the
-                conversion rate from one stage to the next, helping you spot bottlenecks (e.g.
-                large drop between <em>in transit</em> and <em>delivered</em> may indicate
-                logistics delays).
+                conversion rate from one stage to the next, helping you spot bottlenecks (e.g. large
+                drop between <em>in transit</em> and <em>delivered</em> may indicate logistics
+                delays).
               </p>
-              <p className="mt-3">
-                Cancelled dispatches are excluded from this view.
-              </p>
+              <p className="mt-3">Cancelled dispatches are excluded from this view.</p>
             </>
           ),
         }}
@@ -194,8 +189,8 @@ export function DashboardOpsSection({
                 mean a bigger shortfall vs the level you configured to keep on hand.
               </p>
               <p className="mt-3">
-                This is a point-in-time snapshot — it does not depend on the time window picker.
-                Use it to decide which products to reorder first.
+                This is a point-in-time snapshot — it does not depend on the time window picker. Use
+                it to decide which products to reorder first.
               </p>
             </>
           ),

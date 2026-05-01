@@ -29,9 +29,7 @@ const ZERO: VendorAggregates = {
   blacklistedCount: 0,
 };
 
-export function useVendorAggregates(
-  vendors: readonly Vendor[] | undefined,
-): VendorAggregates {
+export function useVendorAggregates(vendors: readonly Vendor[] | undefined): VendorAggregates {
   return useMemo(() => {
     if (!vendors || vendors.length === 0) return ZERO;
     let activeCount = 0;

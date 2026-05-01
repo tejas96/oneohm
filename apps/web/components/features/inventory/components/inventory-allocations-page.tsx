@@ -6,15 +6,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
 import { ALLOCATION_STATUS_LABEL } from '../constants';
-import {
-  buildAllocationColumns,
-  type AllocationColumnRow,
-} from './allocations/allocation-columns';
+import { buildAllocationColumns, type AllocationColumnRow } from './allocations/allocation-columns';
 import { AllocationKpiStrip } from './allocations/allocation-kpi-strip';
-import { TableFilterSelect } from './shared/table-filter-select';
+import { hiddenSelectFilterColumn } from './shared/hidden-filter-column';
 
-import { AdvancedTable } from '@/components/shared/advanced-table';
-import type { TableSortModel } from '@/components/shared/advanced-table/types';
+import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
+import type { TableFilterModel, TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -29,6 +26,11 @@ import { useWarehouses } from '@/lib/hooks/resources/warehouses';
 import { useAuth } from '@/providers/auth-provider';
 
 const EMPTY_ROWS: AllocationColumnRow[] = [];
+
+const ALLOCATION_LIST_FILTER_FIELDS = {
+  status: 'filterStatus',
+  warehouseId: 'warehouseId',
+} as const;
 
 /**
  * Allocations list page (Part: rebuild-allocation-pages).
@@ -54,10 +56,10 @@ export function InventoryAllocationsPage(): React.JSX.Element {
     pagination,
     search,
     setSearch,
+    clearSearch,
     sorting,
     filters,
-    setFilter,
-    setFilters,
+    replaceFilters,
     isLoading,
     isFetching,
     isError,
@@ -88,19 +90,42 @@ export function InventoryAllocationsPage(): React.JSX.Element {
       else params.delete('view');
       params.delete('page');
       router.replace(`${ROUTES.INVENTORY.ALLOCATIONS}?${params.toString()}`);
-      setFilters(viewFilters as Partial<StockAllocationFilters>);
+      replaceFilters(viewFilters as Partial<StockAllocationFilters>);
     },
-    [searchParams, router, setFilters],
+    [searchParams, router, replaceFilters],
+  );
+
+  const warehouseOptions = useMemo(
+    () => (warehouses.items ?? []).map((w) => ({ value: w.id, label: w.name })),
+    [warehouses.items],
+  );
+
+  const statusOpts = useMemo(
+    () => Object.entries(ALLOCATION_STATUS_LABEL).map(([value, label]) => ({ value, label })),
+    [],
+  );
+
+  const filterColumns = useMemo(
+    (): ColumnConfig<AllocationColumnRow>[] => [
+      hiddenSelectFilterColumn<AllocationColumnRow>({
+        field: ALLOCATION_LIST_FILTER_FIELDS.status,
+        headerName: 'Status',
+        filterOptions: statusOpts,
+      }),
+      hiddenSelectFilterColumn<AllocationColumnRow>({
+        field: ALLOCATION_LIST_FILTER_FIELDS.warehouseId,
+        headerName: 'Warehouse',
+        filterOptions: warehouseOptions,
+      }),
+    ],
+    [statusOpts, warehouseOptions],
   );
 
   const columns = useMemo(
-    () =>
-      buildAllocationColumns({
-        onView: (row) =>
-          router.push(ROUTES.INVENTORY.ALLOCATION_DETAIL.replace('[id]', row.id)),
+    () => [
+      ...buildAllocationColumns({
+        onView: (row) => router.push(ROUTES.INVENTORY.ALLOCATION_DETAIL.replace('[id]', row.id)),
         onFulfill: (row) => {
-          // Inline-fulfill the entire remaining quantity (the detail page
-          // dialog supports partial fulfillment when needed).
           const remaining =
             Number(row.allocatedQuantity ?? 0) - Number(row.dispatchedQuantity ?? 0);
           if (remaining <= 0) return;
@@ -117,17 +142,37 @@ export function InventoryAllocationsPage(): React.JSX.Element {
         },
         onCancel: (row) => {
           if (typeof window !== 'undefined') {
-            const reason = window.prompt(
-              `Cancel allocation? Optional reason:`,
-              'No longer needed',
-            );
+            const reason = window.prompt(`Cancel allocation? Optional reason:`, 'No longer needed');
             if (reason === null) return;
             void mutations.action('cancel', row.id, { reason: reason || 'Cancelled inline' });
           }
         },
         canWrite,
       }),
-    [router, mutations, canWrite],
+      ...filterColumns,
+    ],
+    [router, mutations, canWrite, filterColumns],
+  );
+
+  const filterModel = useMemo(
+    () =>
+      ({
+        [ALLOCATION_LIST_FILTER_FIELDS.status]: (filters.status as string) ?? '',
+        [ALLOCATION_LIST_FILTER_FIELDS.warehouseId]: (filters.warehouseId as string) ?? '',
+      }) satisfies TableFilterModel,
+    [filters.status, filters.warehouseId],
+  );
+
+  const onTableFilterChange = useCallback(
+    (next: TableFilterModel) => {
+      const out: Partial<StockAllocationFilters> = {};
+      const st = next[ALLOCATION_LIST_FILTER_FIELDS.status];
+      if (st) out.status = String(st) as StockAllocationFilters['status'];
+      const wh = next[ALLOCATION_LIST_FILTER_FIELDS.warehouseId];
+      if (wh) out.warehouseId = String(wh);
+      replaceFilters(out);
+    },
+    [replaceFilters],
   );
 
   const sortModel: TableSortModel | null = sorting.sortBy
@@ -135,8 +180,20 @@ export function InventoryAllocationsPage(): React.JSX.Element {
     : null;
 
   const renderEmptyState = useCallback(
-    () =>
-      search ? (
+    (hasActive: boolean) =>
+      hasActive ? (
+        <EmptyState
+          title="No matching allocations"
+          description="Try clearing search and filters."
+          action={{
+            label: 'Clear search & filters',
+            onClick: () => {
+              replaceFilters({});
+              clearSearch();
+            },
+          }}
+        />
+      ) : search ? (
         <NoSearchResults searchTerm={search} onClear={() => setSearch('')} />
       ) : (
         <EmptyState
@@ -144,44 +201,12 @@ export function InventoryAllocationsPage(): React.JSX.Element {
           description="Stock allocations are created from project BOMs."
         />
       ),
-    [search, setSearch],
-  );
-
-  const warehouseOptions = useMemo(
-    () =>
-      (warehouses.items ?? []).map((w) => ({ value: w.id, label: w.name })),
-    [warehouses.items],
+    [search, setSearch, replaceFilters, clearSearch],
   );
 
   const toolbarActions = useMemo(
     () => (
       <div className="flex flex-wrap items-center gap-2">
-        <TableFilterSelect
-          label="Status"
-          value={(filters.status as string) || 'all'}
-          options={Object.entries(ALLOCATION_STATUS_LABEL).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-          onChange={(value) => {
-            setFilter(
-              'status',
-              (value === 'all' ? undefined : value) as StockAllocationFilters['status'],
-            );
-          }}
-          allLabel="All statuses"
-          minWidth={170}
-        />
-        <TableFilterSelect
-          label="Warehouse"
-          value={(filters.warehouseId as string) || ''}
-          options={warehouseOptions}
-          onChange={(value) =>
-            setFilter('warehouseId', (value || undefined))
-          }
-          allLabel="All warehouses"
-          minWidth={180}
-        />
         {canExport && (
           <Button
             size="small"
@@ -195,15 +220,7 @@ export function InventoryAllocationsPage(): React.JSX.Element {
         )}
       </div>
     ),
-    [
-      filters.status,
-      filters.warehouseId,
-      warehouseOptions,
-      setFilter,
-      canExport,
-      exporter.isDownloading,
-      handleExport,
-    ],
+    [canExport, exporter.isDownloading, handleExport],
   );
 
   if (isError) {
@@ -221,8 +238,7 @@ export function InventoryAllocationsPage(): React.JSX.Element {
         <div>
           <MUITypography variant="drawerTitle">Stock allocations</MUITypography>
           <MUITypography variant="body" className="mt-1 text-foreground-secondary">
-            {pagination.total}{' '}
-            {pagination.total === 1 ? 'allocation' : 'allocations'}
+            {pagination.total} {pagination.total === 1 ? 'allocation' : 'allocations'}
           </MUITypography>
         </div>
       </div>
@@ -251,16 +267,18 @@ export function InventoryAllocationsPage(): React.JSX.Element {
         onPageChange={(page) => pagination.setPage(page + 1)}
         onPageSizeChange={pagination.setPageSize}
         onSortChange={(model) => {
-          if (model)
-            sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
+          if (model) sorting.setSorting(model.field, model.direction === 'asc' ? 'ASC' : 'DESC');
           else sorting.clearSort();
         }}
         onSearchChange={setSearch}
         initialSearch={search}
+        filterModel={filterModel}
+        onFilterChange={onTableFilterChange}
         onRowClick={(row) =>
           router.push(ROUTES.INVENTORY.ALLOCATION_DETAIL.replace('[id]', row.id))
         }
         enableSearch
+        enableFilters
         enablePagination
         toolbarActions={toolbarActions}
         searchPlaceholder="Search by product or project…"
