@@ -1,5 +1,6 @@
 'use client';
 
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
 import {
   Dialog,
@@ -106,18 +107,41 @@ export function ChartShell({
           fullWidth
           PaperProps={{ sx: { borderRadius: 2 } }}
         >
-          <DialogTitle sx={{ fontSize: 16, fontWeight: 600, pb: 1 }}>
-            {title ?? 'About this chart'}
+          <DialogTitle
+            sx={{
+              fontSize: 16,
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+              px: 3,
+              pt: 2.5,
+              pb: 1.5,
+            }}
+          >
+            <span className="truncate">{title ?? 'About this chart'}</span>
+            <IconButton
+              aria-label="Close"
+              size="small"
+              onClick={() => setHelpOpen(false)}
+              sx={{ color: 'rgb(113 113 122)' }}
+            >
+              <CloseRoundedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
           </DialogTitle>
-          <DialogContent sx={{ fontSize: 13, color: 'rgb(63 63 70)', lineHeight: 1.6 }}>
-            <div className="mb-3 text-xs uppercase tracking-wide text-foreground-tertiary">
+          <DialogContent
+            dividers
+            sx={{ px: 3, py: 2.5, color: 'rgb(63 63 70)', lineHeight: 1.6 }}
+          >
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-tertiary">
               What it shows
             </div>
-            <div className="mb-4 text-sm text-foreground">{help.summary}</div>
-            <div className="mb-3 text-xs uppercase tracking-wide text-foreground-tertiary">
+            <div className="mb-5 text-sm text-foreground">{help.summary}</div>
+            <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-tertiary">
               How to read it
             </div>
-            <div className="text-sm text-foreground-secondary">{help.details}</div>
+            <div className="space-y-3 text-sm text-foreground-secondary">{help.details}</div>
           </DialogContent>
         </Dialog>
       )}

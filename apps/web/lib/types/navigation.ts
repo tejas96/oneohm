@@ -169,6 +169,8 @@ export function filterByAccess<T extends { roles?: UserRole[]; permissions?: str
  * - If permissions specified = user must have at least one permission
  * - If both specified = user must satisfy BOTH conditions
  */
+const NAV_ADMIN_BYPASS_ROLES: readonly string[] = ['platform_admin', 'super_admin', 'admin'];
+
 export function hasAccess(
   item: { roles?: UserRole[]; permissions?: string[] },
   userAccess: UserAccessContext,
@@ -178,6 +180,12 @@ export function hasAccess(
 
   // No requirements = accessible to all
   if (!hasRoleRequirement && !hasPermissionRequirement) {
+    return true;
+  }
+
+  // Admin bypass: platform_admin / super_admin / admin always see every nav item.
+  // Mirrors backend ADMIN_BYPASS_ROLES + auth-store permission bypass.
+  if (userAccess.roles.some((r) => NAV_ADMIN_BYPASS_ROLES.includes(r))) {
     return true;
   }
 
