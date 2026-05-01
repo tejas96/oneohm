@@ -33,8 +33,10 @@ export interface MaterialDispatch {
   driverPhone?: string;
   transportCompany?: string;
   notes?: string;
-  warehouse?: { id: string; name: string };
-  project?: { id: string; name: string };
+  receivedBy?: string;
+  receiverSignature?: string;
+  warehouse?: { id: string; name: string; code?: string };
+  project?: { id: string; name: string; projectNumber?: string };
   items?: MaterialDispatchItem[];
   createdAt: string;
   updatedAt: string;
@@ -123,12 +125,17 @@ export function useMaterialDispatchMutations() {
         method: 'POST',
         path: (id) => `/material-dispatches/${id}/mark-delivered`,
       },
+      cancel: {
+        method: 'POST',
+        path: (id) => `/material-dispatches/${id}/cancel`,
+      },
     },
     toast: {
       create: { success: 'Dispatch created', error: 'Failed to create dispatch' },
       update: { success: 'Dispatch updated', error: 'Failed to update dispatch' },
       markDispatched: { success: 'Marked as dispatched', error: 'Failed to mark as dispatched' },
       markDelivered: { success: 'Marked as delivered', error: 'Failed to mark as delivered' },
+      cancel: { success: 'Dispatch cancelled', error: 'Failed to cancel dispatch' },
     },
   });
 }
