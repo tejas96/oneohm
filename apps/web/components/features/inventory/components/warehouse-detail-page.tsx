@@ -1,31 +1,40 @@
 'use client';
 
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import EditIcon from '@mui/icons-material/Edit';
-import { Button, Chip, IconButton, Tooltip } from '@mui/material';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
-import { WAREHOUSE_STATUS_COLOR, WAREHOUSE_STATUS_LABEL, WAREHOUSE_TYPE_LABEL } from '../constants';
 import {
   WarehouseAllocationsTab,
   WarehouseStockTab,
   WarehouseTransactionsTab,
 } from './warehouse-detail-tabs';
+import { WarehouseDetailHeader } from './warehouses/warehouse-detail-header';
+import { WarehouseDetailKpi } from './warehouses/warehouse-detail-kpi';
 import { WarehouseFormDialog } from './warehouse-form-dialog';
 
 import { ErrorState } from '@/components/shared/feedback';
-import { MUIStatusChip } from '@/components/ui/mui-status-chip';
-import { MUITypography } from '@/components/ui/mui-typography';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ROUTES } from '@/lib/config/routes';
 import { useWarehouse } from '@/lib/hooks/resources';
+import { useAuth } from '@/providers/auth-provider';
 
+/**
+ * Warehouse detail page (Part: rebuild-warehouse-pages).
+ *
+ * Layout:
+ *   1. Sticky header (back, name, type/status chips, address, edit btn).
+ *   2. WarehouseDetailKpi tile row (SKU rows, available units, low stock,
+ *      inventory value). Pulls from /inventory-stock/stats/by-warehouse
+ *      and a 100-row sample of /inventory-stock?warehouseId.
+ *   3. Tabs (Stock / Transactions / Allocations) — existing tabs are
+ *      retained because the stock list, transactions, and allocations
+ *      tabs already render `AdvancedTable`s with the right shape.
+ */
 export function WarehouseDetailPage(): React.JSX.Element {
   const params = useParams();
-  const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
+  const { hasPermission } = useAuth();
+  const canEdit = hasPermission('inventory:write');
 
   const id = useMemo(() => {
     const raw = params?.id;
@@ -66,6 +75,7 @@ export function WarehouseDetailPage(): React.JSX.Element {
             <Skeleton className="h-4 w-40" />
           </div>
         </div>
+        <Skeleton className="h-24 w-full rounded-lg" />
         <Skeleton className="h-48 w-full rounded-lg" />
       </div>
     );
@@ -81,64 +91,14 @@ export function WarehouseDetailPage(): React.JSX.Element {
 
   return (
     <>
-      <div className="flex flex-col gap-6 p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <Tooltip title="Back to warehouses">
-              <IconButton
-                aria-label="Back to warehouses"
-                onClick={() => router.push(ROUTES.INVENTORY.WAREHOUSES)}
-                size="small"
-              >
-                <ArrowBackIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <MUITypography variant="drawerTitle">{warehouse.name}</MUITypography>
-                <Chip
-                  size="small"
-                  variant="outlined"
-                  className="text-foreground-secondary"
-                  label={WAREHOUSE_TYPE_LABEL[warehouse.warehouseType] ?? warehouse.warehouseType}
-                />
-                <MUIStatusChip
-                  label={WAREHOUSE_STATUS_LABEL[warehouse.status] ?? warehouse.status}
-                  color={WAREHOUSE_STATUS_COLOR[warehouse.status] ?? 'default'}
-                />
-              </div>
-              <MUITypography variant="body" className="text-foreground-secondary">
-                {warehouse.code}
-              </MUITypography>
-              <div className="flex flex-col gap-1">
-                <MUITypography variant="bodyPrimary">Address</MUITypography>
-                <MUITypography variant="body" className="text-foreground-secondary">
-                  {[
-                    warehouse.address,
-                    [warehouse.city, warehouse.state].filter(Boolean).join(', '),
-                    warehouse.pincode,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ') || '—'}
-                </MUITypography>
-              </div>
-              <div className="flex flex-col gap-1">
-                <MUITypography variant="bodyPrimary">Manager / contact</MUITypography>
-                <MUITypography variant="body" className="text-foreground-secondary">
-                  {warehouse.contactPerson ?? '—'}
-                </MUITypography>
-              </div>
-            </div>
-          </div>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<EditIcon />}
-            onClick={() => setEditOpen(true)}
-          >
-            Edit
-          </Button>
-        </div>
+      <div className="flex flex-col gap-4 p-6">
+        <WarehouseDetailHeader
+          warehouse={warehouse}
+          canEdit={canEdit}
+          onEdit={() => setEditOpen(true)}
+        />
+
+        <WarehouseDetailKpi warehouseId={id} />
 
         <div className="rounded-lg border border-border bg-background">
           <Tabs defaultValue="stock">

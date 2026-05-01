@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   createResourceKeys,
@@ -143,6 +143,17 @@ export function useAdjustInventoryStock() {
   };
 }
 
+// ============================================================================
+// Per-warehouse stock summary
+// ============================================================================
+
+export interface StockSummaryByWarehouseRow {
+  warehouseId: string;
+  warehouseName: string;
+  totalItems: number;
+  totalValue: number;
+}
+
 export function useTransferInventoryStock() {
   const queryClient = useQueryClient();
   const { orgHeaders } = useOrgContext();
@@ -163,4 +174,26 @@ export function useTransferInventoryStock() {
     ...mutation,
     execute: (payload: TransferStockPayload) => mutation.mutateAsync(payload),
   };
+}
+
+/**
+ * Per-warehouse rolled-up stock summary (totalItems = SKU rows,
+ * totalValue = sum of available * unit cost). Backed by
+ * `/inventory-stock/stats/by-warehouse`. Used by the warehouse list
+ * page to render utilization bars and by detail to show value.
+ */
+export function useStockSummaryByWarehouse() {
+  const { organizationId, orgHeaders } = useOrgContext();
+  return useQuery<StockSummaryByWarehouseRow[]>({
+    queryKey: ['inventory-stock', 'stats', 'by-warehouse', organizationId],
+    queryFn: async () => {
+      const res = await apiClient.get<StockSummaryByWarehouseRow[]>(
+        '/inventory-stock/stats/by-warehouse',
+        { headers: orgHeaders },
+      );
+      return res.data;
+    },
+    enabled: Boolean(organizationId),
+    staleTime: 60_000,
+  });
 }

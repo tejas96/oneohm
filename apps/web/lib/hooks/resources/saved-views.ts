@@ -40,13 +40,12 @@ import { apiClient } from '@/lib/api/client';
 
 export type SavedViewResource =
   | 'inventory-stock'
+  | 'inventory-transactions'
   | 'purchase-orders'
   | 'material-dispatches'
   | 'stock-allocations'
-  | 'inventory-transactions'
-  | 'inventory-vendors'
-  | 'inventory-warehouses'
-  | 'inventory-alerts';
+  | 'vendors'
+  | 'warehouses';
 
 export interface SavedView {
   id: string;
