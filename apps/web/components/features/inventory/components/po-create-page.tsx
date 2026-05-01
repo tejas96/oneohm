@@ -6,8 +6,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { Button, IconButton } from '@mui/material';
 import { PaymentStatus, ProductStatus, PurchaseOrderType } from '@oneohm-epc/shared/types';
-import { useRouter } from 'next/navigation';
-import { useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -57,7 +57,17 @@ const PO_TYPE_OPTIONS = [
 
 export function PoCreatePage(): React.JSX.Element {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { create } = usePurchaseOrderMutations();
+  // Deep-link seed: alerts page passes ?warehouseId=&productId=&quantity=&source=low-stock-alert.
+  // We only seed once; further user edits must not be overwritten by the
+  // ref's stale snapshot when products/warehouses arrive late.
+  const seedRef = useRef({
+    warehouseId: searchParams.get('warehouseId') ?? '',
+    productId: searchParams.get('productId') ?? '',
+    quantity: Number(searchParams.get('quantity') ?? 0) || 0,
+    seeded: false,
+  });
 
   const { items: vendors, isLoading: vendorsLoading } = useVendors({
     syncToUrl: false,
@@ -124,17 +134,44 @@ export function PoCreatePage(): React.JSX.Element {
     resolver: zodResolver(poCreateSchema),
     defaultValues: {
       vendorId: '',
-      warehouseId: '',
+      warehouseId: seedRef.current.warehouseId,
       projectId: '',
       poType: PurchaseOrderType.STOCK,
       expectedDeliveryDate: '',
       paymentTerms: '',
       notes: '',
-      items: [{ productId: '', orderedQuantity: 1, unitPrice: 0 }],
+      items: [
+        {
+          productId: seedRef.current.productId,
+          orderedQuantity: seedRef.current.quantity || 1,
+          unitPrice: 0,
+        },
+      ],
     },
   });
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'items' });
+
+  // Once products/warehouses load, validate the seeded ids resolve to
+  // real options. If the seeded warehouse / product no longer exists
+  // (deleted between alert and PO create), clear the field so the user
+  // gets the friendly "select…" placeholder instead of an invisible id.
+  useEffect(() => {
+    if (seedRef.current.seeded || warehouses.length === 0 || products.length === 0) return;
+    seedRef.current.seeded = true;
+    if (
+      seedRef.current.warehouseId &&
+      !warehouses.some((w) => w.id === seedRef.current.warehouseId)
+    ) {
+      form.setValue('warehouseId', '');
+    }
+    if (
+      seedRef.current.productId &&
+      !products.some((p) => p.id === seedRef.current.productId)
+    ) {
+      form.setValue('items.0.productId', '');
+    }
+  }, [warehouses, products, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     const itemsPayload = values.items.map((row) => {

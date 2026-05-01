@@ -88,10 +88,13 @@ export class InventoryTransactionRepository {
       query.andWhere('txn.transactionDate <= :toDate', { toDate: filters.toDate });
     }
 
-    if (filters?.referenceType && filters.referenceId) {
+    if (filters?.referenceType) {
       query.andWhere('txn.referenceType = :referenceType', {
         referenceType: filters.referenceType,
       });
+    }
+
+    if (filters?.referenceId) {
       query.andWhere('txn.referenceId = :referenceId', { referenceId: filters.referenceId });
     }
 

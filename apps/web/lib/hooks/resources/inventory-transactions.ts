@@ -25,8 +25,14 @@ export interface InventoryTransaction {
   referenceId?: string;
   notes?: string;
   transactionDate: string;
-  warehouse?: { id: string; name: string };
-  product?: { id: string; name: string; code: string };
+  fromWarehouseId?: string | null;
+  toWarehouseId?: string | null;
+  fromWarehouse?: { id: string; name: string; code?: string } | null;
+  toWarehouse?: { id: string; name: string; code?: string } | null;
+  batchNumber?: string | null;
+  serialNumber?: string | null;
+  warehouse?: { id: string; name: string; code?: string };
+  product?: { id: string; name: string; code: string; unit?: string };
   creator?: { id: string; name: string };
   createdAt: string;
 }
