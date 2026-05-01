@@ -32,6 +32,21 @@ export const PO_STATUS_LABEL: Record<string, string> = {
   cancelled: 'Cancelled',
 };
 
+export const PAYMENT_STATUS_LABEL: Record<string, string> = {
+  pending: 'Pending',
+  partial: 'Partial',
+  paid: 'Paid',
+};
+
+export const PAYMENT_STATUS_COLOR: Record<
+  string,
+  'default' | 'warning' | 'info' | 'success' | 'error'
+> = {
+  pending: 'warning',
+  partial: 'info',
+  paid: 'success',
+};
+
 export const PO_STATUS_COLOR: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> =
   {
     draft: 'default',

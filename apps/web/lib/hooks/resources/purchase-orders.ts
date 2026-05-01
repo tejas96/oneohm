@@ -37,8 +37,10 @@ export interface PurchaseOrder {
   paidAmount: number;
   /** Computed = totalAmount - paidAmount; sent by the backend response DTO. */
   outstandingAmount?: number;
-  vendor?: { id: string; name: string };
-  warehouse?: { id: string; name: string };
+  vendor?: { id: string; name: string; code?: string };
+  warehouse?: { id: string; name: string; code?: string };
+  project?: { id: string; name?: string; projectNumber?: string };
+  termsConditions?: string;
   items?: PurchaseOrderItem[];
   createdAt: string;
   updatedAt: string;

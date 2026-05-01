@@ -1,16 +1,16 @@
 'use client';
 
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { Button, IconButton, Menu, MenuItem, Skeleton } from '@mui/material';
-import { useParams, useRouter } from 'next/navigation';
+import { Menu, MenuItem, Skeleton } from '@mui/material';
+import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
-import { PO_STATUS_COLOR, PO_STATUS_LABEL } from '../constants';
 import { PoReceiveDialog } from './po-receive-dialog';
+import { PoDetailHeader } from './po/po-detail-header';
+import { PoDetailKpi } from './po/po-detail-kpi';
 
 import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
 import { ErrorState } from '@/components/shared/feedback';
+import { ProgressBarCell } from '@/components/shared/inventory/progress-bar-cell';
 import {
   Button as MUIButton,
   MUIDialog,
@@ -20,9 +20,7 @@ import {
   MUIDialogTitle,
   MUIInput,
 } from '@/components/ui';
-import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
-import { ROUTES } from '@/lib/config/routes';
 import {
   usePurchaseOrder,
   usePurchaseOrderMutations,
@@ -48,10 +46,12 @@ const ITEM_COLUMNS: ColumnConfig<ItemRow>[] = [
   },
   {
     field: 'orderedQuantity',
-    headerName: 'Qty',
-    width: 100,
+    headerName: 'Ordered',
+    width: 90,
     renderCell: ({ row }) => (
-      <span className="text-sm text-foreground">{Number(row.orderedQuantity)}</span>
+      <span className="block text-right text-sm tabular-nums text-foreground">
+        {Number(row.orderedQuantity)}
+      </span>
     ),
   },
   {
@@ -59,23 +59,39 @@ const ITEM_COLUMNS: ColumnConfig<ItemRow>[] = [
     headerName: 'Unit price',
     width: 120,
     renderCell: ({ row }) => (
-      <span className="text-sm text-foreground">{formatCurrency(Number(row.unitPrice))}</span>
+      <span className="block text-right text-sm tabular-nums text-foreground">
+        {formatCurrency(Number(row.unitPrice))}
+      </span>
     ),
   },
   {
-    field: 'receivedQuantity',
+    field: 'lineProgress',
     headerName: 'Received',
-    width: 100,
-    renderCell: ({ row }) => (
-      <span className="text-sm text-foreground">{Number(row.receivedQuantity)}</span>
-    ),
+    width: 180,
+    sortable: false,
+    renderCell: ({ row }) => {
+      const ordered = Number(row.orderedQuantity ?? 0);
+      const received = Number(row.receivedQuantity ?? 0);
+      if (ordered <= 0) {
+        return <span className="text-xs text-foreground-tertiary">—</span>;
+      }
+      const intent: 'success' | 'info' = received >= ordered ? 'success' : 'info';
+      return (
+        <ProgressBarCell
+          numerator={received}
+          denominator={ordered}
+          label={`${received} / ${ordered}`}
+          intent={intent}
+        />
+      );
+    },
   },
   {
     field: 'lineTotal',
     headerName: 'Line total',
     width: 130,
     renderCell: ({ row }) => (
-      <span className="text-sm font-medium text-foreground">
+      <span className="block text-right text-sm font-medium tabular-nums text-foreground">
         {formatCurrency(Number(row.lineTotal))}
       </span>
     ),
@@ -104,7 +120,6 @@ function canCancel(status: string): boolean {
 
 export function PoDetailPage(): React.JSX.Element {
   const params = useParams();
-  const router = useRouter();
   const id = useMemo(() => {
     const raw = params?.id;
     if (typeof raw === 'string') return raw;
@@ -162,38 +177,13 @@ export function PoDetailPage(): React.JSX.Element {
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <IconButton
-            aria-label="Back"
-            size="small"
-            onClick={() => router.push(ROUTES.INVENTORY.PURCHASE_ORDERS)}
-          >
-            <ArrowBackIcon fontSize="small" />
-          </IconButton>
-          <div>
-            <MUITypography variant="drawerTitle">{po.poNumber}</MUITypography>
-            <MUITypography variant="timestamp" className="text-foreground-secondary mt-0.5">
-              {po.vendor?.name ?? '—'} · {po.warehouse?.name ?? 'No warehouse'}
-            </MUITypography>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <MUIStatusChip
-            label={PO_STATUS_LABEL[status] ?? status}
-            color={PO_STATUS_COLOR[status] ?? 'default'}
-          />
-          <Button
-            variant="outlined"
-            size="small"
-            endIcon={<MoreVertIcon />}
-            disabled={busy}
-            onClick={(e) => setMenuAnchor(e.currentTarget)}
-          >
-            Actions
-          </Button>
-        </div>
-      </div>
+      <PoDetailHeader
+        po={po}
+        busy={busy}
+        onActionsClick={(anchor) => setMenuAnchor(anchor)}
+      />
+
+      <PoDetailKpi po={po} />
 
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
         {canSubmit(status) ? (
@@ -277,23 +267,15 @@ export function PoDetailPage(): React.JSX.Element {
         </MUIDialogFooter>
       </MUIDialog>
 
-      <div className="grid gap-4 rounded-lg border border-border-light p-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 rounded-lg border border-border-light bg-background p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <MUITypography variant="finePrint" className="text-foreground-secondary">
+          <MUITypography variant="finePrint" className="text-foreground-tertiary">
             PO date
           </MUITypography>
           <MUITypography variant="bodyPrimary">{formatDate(po.poDate)}</MUITypography>
         </div>
         <div>
-          <MUITypography variant="finePrint" className="text-foreground-secondary">
-            Expected delivery
-          </MUITypography>
-          <MUITypography variant="bodyPrimary">
-            {po.expectedDeliveryDate ? formatDate(po.expectedDeliveryDate) : '—'}
-          </MUITypography>
-        </div>
-        <div>
-          <MUITypography variant="finePrint" className="text-foreground-secondary">
+          <MUITypography variant="finePrint" className="text-foreground-tertiary">
             Actual delivery
           </MUITypography>
           <MUITypography variant="bodyPrimary">
@@ -301,27 +283,33 @@ export function PoDetailPage(): React.JSX.Element {
           </MUITypography>
         </div>
         <div>
-          <MUITypography variant="finePrint" className="text-foreground-secondary">
-            Subtotal
+          <MUITypography variant="finePrint" className="text-foreground-tertiary">
+            Payment terms
           </MUITypography>
-          <MUITypography variant="bodyPrimary">{formatCurrency(Number(po.subtotal))}</MUITypography>
+          <MUITypography variant="bodyPrimary">{po.paymentTerms ?? '—'}</MUITypography>
         </div>
         <div>
-          <MUITypography variant="finePrint" className="text-foreground-secondary">
-            Tax
+          <MUITypography variant="finePrint" className="text-foreground-tertiary">
+            Subtotal · tax · total
           </MUITypography>
           <MUITypography variant="bodyPrimary">
-            {formatCurrency(Number(po.taxAmount))}
+            {formatCurrency(Number(po.subtotal))} ·{' '}
+            {formatCurrency(Number(po.taxAmount))} ·{' '}
+            <span className="font-semibold">
+              {formatCurrency(Number(po.totalAmount))}
+            </span>
           </MUITypography>
         </div>
-        <div>
-          <MUITypography variant="finePrint" className="text-foreground-secondary">
-            Total
-          </MUITypography>
-          <MUITypography variant="bodyPrimary">
-            {formatCurrency(Number(po.totalAmount))}
-          </MUITypography>
-        </div>
+        {po.notes ? (
+          <div className="sm:col-span-2 lg:col-span-4">
+            <MUITypography variant="finePrint" className="text-foreground-tertiary">
+              Notes
+            </MUITypography>
+            <MUITypography variant="body" className="text-foreground-secondary">
+              {po.notes}
+            </MUITypography>
+          </div>
+        ) : null}
       </div>
 
       <div>
