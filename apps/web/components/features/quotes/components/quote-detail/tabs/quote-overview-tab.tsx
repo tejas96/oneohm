@@ -5,7 +5,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Box, Divider, Paper, Tooltip, Typography } from '@mui/material';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import Link from 'next/link';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import { SYSTEM_TYPE_LABELS, PROJECT_TYPE_LABELS } from '../../../constants';
 import type { QuoteDetail } from '../../../hooks/types';
@@ -19,6 +19,7 @@ import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { PERMISSIONS } from '@/lib/constants/permissions';
 import { type Bom, type BomItem, useQuoteConfig } from '@/lib/hooks/resources';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
+import { useAuth } from '@/providers/auth-provider';
 
 interface QuoteOverviewTabProps {
   quote: QuoteDetail;
@@ -161,6 +162,46 @@ function buildCalculationFromBom(quote: QuoteDetail, bom: Bom): CalculateQuoteRe
 
 const round2 = (v: number): number => Math.round(v * 100) / 100;
 
+const splitMoneyEvenly = (total: number, count: number): number[] => {
+  if (count <= 0) return [];
+  const totalInPaise = Math.round(total * 100);
+  const baseShare = Math.trunc(totalInPaise / count);
+  let remainder = totalInPaise - baseShare * count;
+  const result = Array.from({ length: count }, () => baseShare);
+
+  for (let i = 0; i < result.length && remainder > 0; i += 1) {
+    const current = result[i];
+    if (current === undefined) break;
+    result[i] = current + 1;
+    remainder -= 1;
+  }
+
+  for (let i = 0; i < result.length && remainder < 0; i += 1) {
+    const current = result[i];
+    if (current === undefined) break;
+    result[i] = current - 1;
+    remainder += 1;
+  }
+
+  return result.map((value) => value / 100);
+};
+
+function expandBomRows(items: BomItem[]): BomItem[] {
+  return items.flatMap((item) => {
+    const quantity = Math.max(1, Math.trunc(item.quantity || 1));
+    if (quantity <= 1) return [item];
+
+    const splitTotals = splitMoneyEvenly(Number(item.totalPrice ?? 0), quantity);
+    return Array.from({ length: quantity }, (_, idx) => ({
+      ...item,
+      quantity: 1,
+      unitPrice: splitTotals[idx] ?? item.unitPrice,
+      totalPrice: splitTotals[idx] ?? item.totalPrice,
+      sortOrder: (item.sortOrder ?? 0) + idx,
+    }));
+  });
+}
+
 export function QuoteOverviewTab({
   quote,
   isActive: _isActive,
@@ -179,6 +220,10 @@ export function QuoteOverviewTab({
 
   const [pdfLoading, setPdfLoading] = useState(false);
   const { data: quoteConfig } = useQuoteConfig();
+  const { hasPermission, hasAnyRole } = useAuth();
+  const canViewEquipmentPricing =
+    hasPermission(PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN) ||
+    hasAnyRole(['admin', 'superadmin', 'super_admin', 'platform_admin']);
   const hasBomPanels = bom?.items?.some((i) => i.itemType === 'panel') ?? false;
 
   const activeSnapshot = quote.quoteSnapshot;
@@ -263,6 +308,16 @@ export function QuoteOverviewTab({
   const panelItems = bom?.items?.filter((i) => i.itemType === 'panel') ?? [];
   const inverterItems = bom?.items?.filter((i) => i.itemType === 'inverter') ?? [];
   const structureItem = bom?.items?.find((i) => i.itemType === 'structure');
+  const expandedPanelItems = useMemo(() => expandBomRows(panelItems), [panelItems]);
+  const expandedInverterItems = useMemo(() => expandBomRows(inverterItems), [inverterItems]);
+  const dcrPanelItems = useMemo(
+    () => expandedPanelItems.filter((item) => Boolean(item.specifications.isDcr)),
+    [expandedPanelItems],
+  );
+  const nonDcrPanelItems = useMemo(
+    () => expandedPanelItems.filter((item) => !item.specifications.isDcr),
+    [expandedPanelItems],
+  );
 
   interface SnapPanel {
     productId?: string;
@@ -297,6 +352,46 @@ export function QuoteOverviewTab({
   const snapStructure = calcObj?.structure as SnapStructure | undefined;
   const hasBomEquipment = panelItems.length > 0;
   const hasSnapEquipment = snapPanels.length > 0;
+  const expandedSnapPanels = useMemo(
+    () =>
+      snapPanels.flatMap((panel) => {
+        const quantity = Math.max(1, Math.trunc(panel.quantity ?? 1));
+        if (quantity <= 1) return [{ ...panel, quantity: 1 }];
+
+        const splitTotals = splitMoneyEvenly(Number(panel.lineTotal ?? 0), quantity);
+        return Array.from({ length: quantity }, (_, index) => ({
+          ...panel,
+          quantity: 1,
+          lineTotal: splitTotals[index] ?? panel.lineTotal ?? 0,
+          productId: `${panel.productId ?? panel.name ?? 'panel'}-${index + 1}`,
+        }));
+      }),
+    [snapPanels],
+  );
+  const expandedSnapInverters = useMemo(
+    () =>
+      snapInverters.flatMap((inverter) => {
+        const quantity = Math.max(1, Math.trunc(inverter.quantity ?? 1));
+        if (quantity <= 1) return [{ ...inverter, quantity: 1 }];
+
+        const splitTotals = splitMoneyEvenly(Number(inverter.lineTotal ?? 0), quantity);
+        return Array.from({ length: quantity }, (_, index) => ({
+          ...inverter,
+          quantity: 1,
+          lineTotal: splitTotals[index] ?? inverter.lineTotal ?? 0,
+          productId: `${inverter.productId ?? inverter.name ?? 'inverter'}-${index + 1}`,
+        }));
+      }),
+    [snapInverters],
+  );
+  const snapDcrPanels = useMemo(
+    () => expandedSnapPanels.filter((panel) => Boolean(panel.isDcr)),
+    [expandedSnapPanels],
+  );
+  const snapNonDcrPanels = useMemo(
+    () => expandedSnapPanels.filter((panel) => !panel.isDcr),
+    [expandedSnapPanels],
+  );
 
   return (
     <div className="mt-4 space-y-4">
@@ -513,34 +608,62 @@ export function QuoteOverviewTab({
                   >
                     Solar Panels
                   </Typography>
-                  {panelItems.map((panel) => (
-                    <Box
-                      key={panel.id}
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        py: 0.5,
-                      }}
+                  {dcrPanelItems.length > 0 && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: 'block', mb: 0.5 }}
                     >
-                      <Box>
-                        <Typography variant="body2" fontWeight={500}>
-                          {panel.brand ? `${panel.brand} ` : ''}
-                          {panel.name}
-                          {panel.specifications.isDcr ? ' (DCR)' : ''}
+                      DCR Panels
+                    </Typography>
+                  )}
+                  {dcrPanelItems.map((panel, index) => (
+                    <Box key={`${panel.id}-dcr-${index}`} sx={{ py: 0.5 }}>
+                      <Typography variant="body2" fontWeight={500}>
+                        {panel.brand ? `${panel.brand} ` : ''}
+                        {panel.name} (DCR)
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {panel.specifications.wattagePerPanel as number}W
+                        {panel.specifications.technology
+                          ? ` · ${panel.specifications.technology}`
+                          : ''}
+                        {' · '}Qty: 1
+                        {panel.warrantyYears ? ` · ${panel.warrantyYears}yr warranty` : ''}
+                      </Typography>
+                      {canViewEquipmentPricing && (
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                          Price: {formatCurrency(panel.totalPrice ?? 0)}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {panel.specifications.wattagePerPanel as number}W
-                          {panel.specifications.technology
-                            ? ` · ${panel.specifications.technology}`
-                            : ''}
-                          {' · '}Qty: {panel.quantity}
-                          {panel.warrantyYears ? ` · ${panel.warrantyYears}yr warranty` : ''}
-                        </Typography>
-                      </Box>
-                      {panel.totalPrice != null && (
-                        <Typography variant="body2" fontWeight={500}>
-                          {formatCurrency(panel.totalPrice)}
+                      )}
+                    </Box>
+                  ))}
+                  {nonDcrPanelItems.length > 0 && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: 'block', mt: dcrPanelItems.length > 0 ? 1 : 0, mb: 0.5 }}
+                    >
+                      Non-DCR Panels
+                    </Typography>
+                  )}
+                  {nonDcrPanelItems.map((panel, index) => (
+                    <Box key={`${panel.id}-non-dcr-${index}`} sx={{ py: 0.5 }}>
+                      <Typography variant="body2" fontWeight={500}>
+                        {panel.brand ? `${panel.brand} ` : ''}
+                        {panel.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {panel.specifications.wattagePerPanel as number}W
+                        {panel.specifications.technology
+                          ? ` · ${panel.specifications.technology}`
+                          : ''}
+                        {' · '}Qty: 1
+                        {panel.warrantyYears ? ` · ${panel.warrantyYears}yr warranty` : ''}
+                      </Typography>
+                      {canViewEquipmentPricing && (
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                          Price: {formatCurrency(panel.totalPrice ?? 0)}
                         </Typography>
                       )}
                     </Box>
@@ -562,29 +685,19 @@ export function QuoteOverviewTab({
                     >
                       Inverters
                     </Typography>
-                    {inverterItems.map((inv) => (
-                      <Box
-                        key={inv.id}
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          py: 0.5,
-                        }}
-                      >
-                        <Box>
-                          <Typography variant="body2" fontWeight={500}>
-                            {inv.brand ? `${inv.brand} ` : ''}
-                            {inv.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {inv.specifications.capacityKw as number} kW · Qty: {inv.quantity}
-                            {inv.warrantyYears ? ` · ${inv.warrantyYears}yr warranty` : ''}
-                          </Typography>
-                        </Box>
-                        {inv.totalPrice != null && (
-                          <Typography variant="body2" fontWeight={500}>
-                            {formatCurrency(inv.totalPrice)}
+                    {expandedInverterItems.map((inv, index) => (
+                      <Box key={`${inv.id}-inv-${index}`} sx={{ py: 0.5 }}>
+                        <Typography variant="body2" fontWeight={500}>
+                          {inv.brand ? `${inv.brand} ` : ''}
+                          {inv.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {inv.specifications.capacityKw as number} kW · Qty: 1
+                          {inv.warrantyYears ? ` · ${inv.warrantyYears}yr warranty` : ''}
+                        </Typography>
+                        {canViewEquipmentPricing && (
+                          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                            Price: {formatCurrency(inv.totalPrice ?? 0)}
                           </Typography>
                         )}
                       </Box>
@@ -608,26 +721,17 @@ export function QuoteOverviewTab({
                       >
                         Structure
                       </Typography>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          py: 0.5,
-                        }}
-                      >
-                        <Box>
-                          <Typography variant="body2" fontWeight={500}>
-                            {structureItem.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {structureItem.specifications.structureType as string} · Qty:{' '}
-                            {structureItem.quantity}
-                          </Typography>
-                        </Box>
-                        {structureItem.totalPrice != null && (
-                          <Typography variant="body2" fontWeight={500}>
-                            {formatCurrency(structureItem.totalPrice)}
+                      <Box sx={{ py: 0.5 }}>
+                        <Typography variant="body2" fontWeight={500}>
+                          {structureItem.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {structureItem.specifications.structureType as string} · Qty:{' '}
+                          {structureItem.quantity}
+                        </Typography>
+                        {canViewEquipmentPricing && (
+                          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                            Price: {formatCurrency(structureItem.totalPrice ?? 0)}
                           </Typography>
                         )}
                       </Box>
@@ -651,31 +755,56 @@ export function QuoteOverviewTab({
                   >
                     Solar Panels
                   </Typography>
-                  {snapPanels.map((p, i) => (
-                    <Box
-                      key={p.productId ?? i}
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        py: 0.5,
-                      }}
+                  {snapDcrPanels.length > 0 && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: 'block', mb: 0.5 }}
                     >
-                      <Box>
-                        <Typography variant="body2" fontWeight={500}>
-                          {p.brand ? `${p.brand} ` : ''}
-                          {p.name ?? ''}
-                          {p.isDcr ? ' (DCR)' : ''}
+                      DCR Panels
+                    </Typography>
+                  )}
+                  {snapDcrPanels.map((p, i) => (
+                    <Box key={p.productId ?? i} sx={{ py: 0.5 }}>
+                      <Typography variant="body2" fontWeight={500}>
+                        {p.brand ? `${p.brand} ` : ''}
+                        {p.name ?? ''} (DCR)
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {p.wattagePerPanel ?? 0}W{p.technology ? ` · ${p.technology}` : ''}
+                        {' · '}Qty: 1
+                        {p.productWarrantyYears ? ` · ${p.productWarrantyYears}yr warranty` : ''}
+                      </Typography>
+                      {canViewEquipmentPricing && (
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                          Price: {formatCurrency(p.lineTotal ?? 0)}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {p.wattagePerPanel ?? 0}W{p.technology ? ` · ${p.technology}` : ''}
-                          {' · '}Qty: {p.quantity ?? 0}
-                          {p.productWarrantyYears ? ` · ${p.productWarrantyYears}yr warranty` : ''}
-                        </Typography>
-                      </Box>
-                      {p.lineTotal != null && (
-                        <Typography variant="body2" fontWeight={500}>
-                          {formatCurrency(p.lineTotal)}
+                      )}
+                    </Box>
+                  ))}
+                  {snapNonDcrPanels.length > 0 && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: 'block', mt: snapDcrPanels.length > 0 ? 1 : 0, mb: 0.5 }}
+                    >
+                      Non-DCR Panels
+                    </Typography>
+                  )}
+                  {snapNonDcrPanels.map((p, i) => (
+                    <Box key={p.productId ?? i} sx={{ py: 0.5 }}>
+                      <Typography variant="body2" fontWeight={500}>
+                        {p.brand ? `${p.brand} ` : ''}
+                        {p.name ?? ''}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {p.wattagePerPanel ?? 0}W{p.technology ? ` · ${p.technology}` : ''}
+                        {' · '}Qty: 1
+                        {p.productWarrantyYears ? ` · ${p.productWarrantyYears}yr warranty` : ''}
+                      </Typography>
+                      {canViewEquipmentPricing && (
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                          Price: {formatCurrency(p.lineTotal ?? 0)}
                         </Typography>
                       )}
                     </Box>
@@ -698,31 +827,21 @@ export function QuoteOverviewTab({
                       >
                         Inverters
                       </Typography>
-                      {snapInverters.map((inv, i) => (
-                        <Box
-                          key={inv.productId ?? i}
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            py: 0.5,
-                          }}
-                        >
-                          <Box>
-                            <Typography variant="body2" fontWeight={500}>
-                              {inv.brand ? `${inv.brand} ` : ''}
-                              {inv.name ?? ''}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {inv.capacityKw ?? 0} kW · Qty: {inv.quantity ?? 0}
-                              {inv.productWarrantyYears
-                                ? ` · ${inv.productWarrantyYears}yr warranty`
-                                : ''}
-                            </Typography>
-                          </Box>
-                          {inv.lineTotal != null && (
-                            <Typography variant="body2" fontWeight={500}>
-                              {formatCurrency(inv.lineTotal)}
+                      {expandedSnapInverters.map((inv, i) => (
+                        <Box key={inv.productId ?? i} sx={{ py: 0.5 }}>
+                          <Typography variant="body2" fontWeight={500}>
+                            {inv.brand ? `${inv.brand} ` : ''}
+                            {inv.name ?? ''}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {inv.capacityKw ?? 0} kW · Qty: 1
+                            {inv.productWarrantyYears
+                              ? ` · ${inv.productWarrantyYears}yr warranty`
+                              : ''}
+                          </Typography>
+                          {canViewEquipmentPricing && (
+                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                              Price: {formatCurrency(inv.lineTotal ?? 0)}
                             </Typography>
                           )}
                         </Box>
@@ -747,28 +866,19 @@ export function QuoteOverviewTab({
                       >
                         Structure
                       </Typography>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          py: 0.5,
-                        }}
-                      >
-                        <Box>
-                          <Typography variant="body2" fontWeight={500}>
-                            {snapStructure.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {snapStructure.structureType
-                              ? snapStructure.structureType.replace(/_/g, ' ')
-                              : ''}{' '}
-                            · Qty: {snapStructure.quantity ?? 0}
-                          </Typography>
-                        </Box>
-                        {snapStructure.lineTotal != null && (
-                          <Typography variant="body2" fontWeight={500}>
-                            {formatCurrency(snapStructure.lineTotal)}
+                      <Box sx={{ py: 0.5 }}>
+                        <Typography variant="body2" fontWeight={500}>
+                          {snapStructure.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {snapStructure.structureType
+                            ? snapStructure.structureType.replace(/_/g, ' ')
+                            : ''}{' '}
+                          · Qty: {snapStructure.quantity ?? 0}
+                        </Typography>
+                        {canViewEquipmentPricing && (
+                          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                            Price: {formatCurrency(snapStructure.lineTotal ?? 0)}
                           </Typography>
                         )}
                       </Box>

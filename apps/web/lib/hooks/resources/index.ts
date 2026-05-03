@@ -212,10 +212,15 @@ export { useQuoteListResource, quoteResourceKeys, type QuoteListFilters } from '
 // BOM (FDAL resource)
 export {
   useEntityBom,
+  useUpdateBomItemSerial,
+  useBomSerialConflicts,
   useFinalizeBomAndAllocate,
+  useSyncProjectBom,
   bomResourceKeys,
   type Bom,
   type BomItem,
+  type BomSerialConflict,
+  type UpdateBomItemSerialPayload,
 } from './bom';
 
 // Inventory — Stock

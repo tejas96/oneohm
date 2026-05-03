@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, type ReactNode } from 'react';
 
 import { AnimatedWaveBackground } from '@/components/features/auth/components/animated-wave-background';
@@ -18,19 +18,26 @@ interface AuthLayoutProps {
 export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Element {
   const { isAuthenticated, isInitialized } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const shouldAllowOtpVerification =
+    pathname === '/otp-verify' && Boolean(searchParams.get('phone'));
+  const shouldRedirectAuthenticatedUser = isAuthenticated && !shouldAllowOtpVerification;
 
   useEffect(() => {
-    if (isInitialized && isAuthenticated) {
+    if (isInitialized && shouldRedirectAuthenticatedUser) {
       const params = new URLSearchParams(window.location.search);
       const redirectTo = params.get('redirect') || '/';
       router.replace(redirectTo);
     }
-  }, [isAuthenticated, isInitialized, router]);
+  }, [isInitialized, router, shouldRedirectAuthenticatedUser]);
 
-  if (!isInitialized || isAuthenticated) {
+  if (!isInitialized || shouldRedirectAuthenticatedUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <ZigzagLoader staticMessage={isAuthenticated ? 'Redirecting…' : undefined} />
+        <ZigzagLoader
+          staticMessage={shouldRedirectAuthenticatedUser ? 'Redirecting…' : undefined}
+        />
       </div>
     );
   }

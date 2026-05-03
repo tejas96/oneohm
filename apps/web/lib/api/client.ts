@@ -9,6 +9,7 @@ import { ROUTES } from '@/lib/config/routes';
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085/api/v1';
+const API_TIMEOUT_MS = 30000;
 
 // Create axios instance
 export const apiClient = axios.create({
@@ -16,7 +17,15 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds
+  timeout: API_TIMEOUT_MS,
+});
+
+const refreshClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: API_TIMEOUT_MS,
 });
 
 // Token keys
@@ -75,7 +84,7 @@ async function refreshAccessToken(): Promise<boolean> {
   }
 
   try {
-    const response = await axios.post(`${API_URL}/auth/refresh`, {
+    const response = await refreshClient.post('/auth/refresh', {
       refreshToken,
     });
 
@@ -122,21 +131,47 @@ const processQueue = (error: Error | null): void => {
   failedQueue = [];
 };
 
+function normalizeRequestPath(requestUrl?: string): string | null {
+  if (!requestUrl) return null;
+  try {
+    if (requestUrl.startsWith('http')) {
+      return new URL(requestUrl).pathname;
+    }
+  } catch {
+    // Fall through to normalize raw string below.
+  }
+  return requestUrl.startsWith('/') ? requestUrl : `/${requestUrl}`;
+}
+
 function shouldSkip401Recovery(requestUrl?: string): boolean {
-  if (!requestUrl) return false;
-  return (
-    requestUrl.includes('/auth/login') ||
-    requestUrl.includes('/auth/refresh') ||
-    requestUrl.includes('/auth/otp/request') ||
-    requestUrl.includes('/auth/otp/verify') ||
-    requestUrl.includes('/auth/forgot-password') ||
-    requestUrl.includes('/auth/reset-password')
-  );
+  const normalizedPath = normalizeRequestPath(requestUrl);
+  if (!normalizedPath) return false;
+
+  const skipPaths = [
+    '/auth/login',
+    '/auth/refresh',
+    '/auth/otp/request',
+    '/auth/otp/verify',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+  ];
+
+  return skipPaths.some((path) => normalizedPath.startsWith(path) || normalizedPath.includes(path));
 }
 
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      (error.code === 'ECONNABORTED' || error.message.toLowerCase().includes('timeout'))
+    ) {
+      const timeout = error.config?.timeout ?? API_TIMEOUT_MS;
+      console.warn(
+        `[apiClient timeout] ${error.config?.method?.toUpperCase() ?? 'REQUEST'} ${error.config?.url ?? 'unknown'} exceeded ${timeout}ms`,
+      );
+    }
+
     const originalRequest = error.config;
     const requestUrl = originalRequest?.url;
 

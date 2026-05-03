@@ -33,8 +33,14 @@ interface ProjectPick {
 
 const poLineSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
-  orderedQuantity: z.coerce.number().gt(0, 'Quantity must be positive'),
-  unitPrice: z.coerce.number().min(0, 'Unit price must be 0 or more'),
+  orderedQuantity: z.coerce
+    .number()
+    .gt(0, 'Quantity must be positive')
+    .max(1_000_000, 'Quantity must be 1,000,000 or less'),
+  unitPrice: z.coerce
+    .number()
+    .min(0, 'Unit price must be 0 or more')
+    .max(100_000_000, 'Unit price must be 100,000,000 or less'),
 });
 
 const poCreateSchema = z.object({

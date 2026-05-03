@@ -40,6 +40,7 @@ import {
   WorkflowEngineService,
   WorkflowStepService,
 } from './services';
+import { BomModule } from '../bom/bom.module';
 import { CustomersModule } from '../customers/customers.module';
 import { LookupsModule } from '../lookups/lookups.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
@@ -61,6 +62,7 @@ import { UsersModule } from '../users/users.module';
     CustomersModule,
     UsersModule,
     LookupsModule,
+    BomModule,
   ],
   controllers: [
     ProjectAnalyticsController, // registered before ProjectController — static 'analytics' segments resolve first

@@ -83,6 +83,11 @@ export function Step2ProjectDetails({ form }: Step2ProjectDetailsProps): React.J
 
   const selectedProperty = properties.find((p) => p.id === propertyId) ?? null;
   const selectedQuote = (quotesResponse?.data ?? []).find((q) => q.id === quoteId) ?? null;
+  const actualSystemSizeKw =
+    selectedQuote?.totalWattageWp && selectedQuote.totalWattageWp > 0
+      ? selectedQuote.totalWattageWp / 1000
+      : null;
+  const requestedSystemSizeKw = selectedQuote?.systemSizeKw;
 
   // Auto-generate project name
   const autoName = useMemo(() => {
@@ -162,13 +167,20 @@ export function Step2ProjectDetails({ form }: Step2ProjectDetailsProps): React.J
               </div>
               <div>
                 <MUITypography variant="timestamp" className="text-foreground-secondary mb-1">
-                  Requested Size
+                  Actual System Size
                 </MUITypography>
                 <MUITypography variant="bodyPrimary">
-                  {selectedQuote.systemSizeKw
-                    ? `${formatSystemSize(selectedQuote.systemSizeKw)}kW`
-                    : '—'}
+                  {actualSystemSizeKw != null
+                    ? `${formatSystemSize(actualSystemSizeKw)}kW`
+                    : requestedSystemSizeKw
+                      ? `${formatSystemSize(requestedSystemSizeKw)}kW`
+                      : '—'}
                 </MUITypography>
+                {actualSystemSizeKw != null && requestedSystemSizeKw ? (
+                  <MUITypography variant="timestamp" className="text-foreground-secondary">
+                    (req/sel {formatSystemSize(requestedSystemSizeKw)}kW)
+                  </MUITypography>
+                ) : null}
               </div>
               <div>
                 <MUITypography variant="timestamp" className="text-foreground-secondary mb-1">

@@ -1,12 +1,18 @@
 'use client';
 
-import { DocumentEntityType, LeadTemperature, QuoteStatus } from '@oneohm-epc/shared/types';
+import {
+  CustomerStatus,
+  DocumentEntityType,
+  LeadTemperature,
+  QuoteStatus,
+} from '@oneohm-epc/shared/types';
 import { Edit, FileText, MapPin, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useMemo } from 'react';
 
 import { QUOTE_STATUS_BADGE_VARIANT } from '../../customers/constants';
+import { useCustomer } from '../../customers/hooks';
 import {
   LEAD_TEMPERATURE_CONFIG,
   PROPERTY_DETAIL_TABS,
@@ -96,6 +102,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     : DEFAULT_TAB;
 
   const { data: property, isLoading, isError, error, refetch } = useProperty(propertyId);
+  const { data: customer } = useCustomer(property?.customerId ?? '');
   const updateProperty = useUpdateProperty();
 
   const { data: followupsData, isLoading: isLoadingFollowups } = useFollowups({
@@ -180,6 +187,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   }
 
   const quotes = quotesData?.data ?? [];
+  const isInactiveCustomer = customer?.status === CustomerStatus.INACTIVE;
 
   return (
     <div className="space-y-4">
@@ -425,7 +433,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
 
           {/* Site Activity Tab */}
           <TabsContent value="siteactivity">
-            <SiteActivityTab propertyId={propertyId} />
+            <SiteActivityTab propertyId={propertyId} customerInactive={isInactiveCustomer} />
           </TabsContent>
 
           {/* Quotes Tab */}
@@ -441,15 +449,23 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 <EmptyState
                   icon={<FileText className="w-full h-full" />}
                   title="No quotes created yet"
-                  description="Create a quote to start the proposal process for this property."
-                  action={{
-                    label: 'Create Quote',
-                    onClick: () =>
-                      router.push(
-                        `${ROUTES.QUOTES.NEW}?propertyId=${propertyId}&customerId=${property.customerId}`,
-                      ),
-                    icon: <FileText className="size-icon-sm" />,
-                  }}
+                  description={
+                    isInactiveCustomer
+                      ? 'Quote creation is blocked because the customer is inactive.'
+                      : 'Create a quote to start the proposal process for this property.'
+                  }
+                  action={
+                    isInactiveCustomer
+                      ? undefined
+                      : {
+                          label: 'Create Quote',
+                          onClick: () =>
+                            router.push(
+                              `${ROUTES.QUOTES.NEW}?propertyId=${propertyId}&customerId=${property.customerId}`,
+                            ),
+                          icon: <FileText className="size-icon-sm" />,
+                        }
+                  }
                 />
               ) : (
                 <div className="overflow-x-auto">

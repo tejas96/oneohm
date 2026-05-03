@@ -2,21 +2,19 @@ import { z } from 'zod';
 
 import { CustomerStatus, LeadSource } from '../types/enums';
 
+const indianMobileSchema = z
+  .string()
+  .length(10, 'Phone must be 10 digits')
+  .regex(/^[6-9]\d{9}$/, 'Enter a valid Indian mobile number');
+
 export const createCustomerProfileSchema = z
   .object({
     firstName: z.string().min(1, 'First name is required').max(100, 'First name too long'),
     middleName: z.string().max(100, 'Middle name too long').optional().or(z.literal('')),
     lastName: z.string().min(1, 'Last name is required').max(100, 'Last name too long'),
-    phone: z
-      .string()
-      .length(10, 'Phone must be 10 digits')
-      .regex(/^[6-9]\d{9}$/, 'Enter a valid Indian mobile number'),
+    phone: indianMobileSchema,
     email: z.union([z.string().email('Invalid email address'), z.literal('')]).optional(),
-    alternatePhone: z
-      .string()
-      .regex(/^\d{0,10}$/, 'Phone must contain only digits')
-      .optional()
-      .or(z.literal('')),
+    alternatePhone: z.union([z.literal(''), indianMobileSchema]).optional(),
     address: z.string().max(500, 'Address too long').optional().or(z.literal('')),
     city: z.string().min(1, 'City is required').max(100, 'City too long'),
     state: z.string().min(1, 'State is required').max(100, 'State too long'),

@@ -131,3 +131,7 @@ export enum BomStatus {
   ALLOCATED = 'allocated',
   CANCELLED = 'cancelled',
 }
+
+export const SERIALIZED_BOM_ITEM_TYPES = ['panel', 'inverter', 'battery'] as const;
+
+export type SerializedBomItemType = (typeof SERIALIZED_BOM_ITEM_TYPES)[number];

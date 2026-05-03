@@ -118,7 +118,11 @@ export class InventoryStockService {
   /**
    * Get stock summary by warehouse.
    */
-  async getStockSummaryByWarehouse(organizationId: string) {
+  async getStockSummaryByWarehouse(
+    organizationId: string,
+  ): Promise<
+    Array<{ warehouseId: string; warehouseName: string; totalItems: number; totalValue: number }>
+  > {
     return this.inventoryStockRepository.getStockSummaryByWarehouse(organizationId);
   }
 

@@ -145,3 +145,53 @@ export interface StockMovementSummary {
   count: number;
   totalQuantity: number;
 }
+
+/**
+ * BOM line item snapshot
+ */
+export interface BomItem {
+  id: string;
+  itemType: 'panel' | 'inverter' | 'battery' | 'structure' | string;
+  productId?: string;
+  name: string;
+  brand?: string;
+  specifications: Record<string, unknown>;
+  quantity: number;
+  unit: string;
+  unitPrice?: number;
+  totalPrice?: number;
+  gstRate?: number;
+  gstAmount?: number;
+  warrantyYears?: number;
+  serialNumber?: string;
+  groupKey?: string;
+  unitIndex?: number;
+  sortOrder: number;
+}
+
+/**
+ * BOM snapshot
+ */
+export interface Bom {
+  id: string;
+  bomNumber: string;
+  entityType: string;
+  entityId: string;
+  status: string;
+  /**
+   * Legacy count persisted in DB (row count for BOM lines)
+   */
+  totalItems: number;
+  /**
+   * Preferred semantic alias for row count
+   */
+  totalUnits?: number;
+  /**
+   * Distinct grouped line count (groupKey + non-grouped rows)
+   */
+  totalLineItems?: number;
+  totalCost: number;
+  items: BomItem[];
+  createdAt: string;
+  updatedAt: string;
+}

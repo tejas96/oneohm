@@ -5,8 +5,9 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { SiteActivityStatus } from '@oneohm-epc/shared/types';
+import { CustomerStatus, SiteActivityStatus } from '@oneohm-epc/shared/types';
 
+import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
 import { CreateSiteActivityDto } from '../dto/create-site-activity.dto';
 import { UpdateSiteActivityDto } from '../dto/update-site-activity.dto';
@@ -27,6 +28,7 @@ export class SiteActivityService {
   constructor(
     private readonly siteActivityRepository: SiteActivityRepository,
     private readonly propertyRepository: CustomerPropertyRepository,
+    private readonly customerRepository: CustomerProfileRepository,
   ) {}
 
   async create(
@@ -46,6 +48,13 @@ export class SiteActivityService {
     );
     if (!property) {
       throw new NotFoundException(`Property with ID '${createDto.propertyId}' not found`);
+    }
+    const customer = await this.customerRepository.findById(property.customerId);
+    if (customer?.organizationId !== organizationId) {
+      throw new NotFoundException(`Customer with ID '${property.customerId}' not found`);
+    }
+    if (customer.status === CustomerStatus.INACTIVE) {
+      throw new BadRequestException('Cannot perform this action: customer is inactive');
     }
 
     const existing = await this.siteActivityRepository.existsByPropertyId(

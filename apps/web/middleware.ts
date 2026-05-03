@@ -18,6 +18,16 @@ function isStaticOrApi(pathname: string): boolean {
   );
 }
 
+function shouldRedirectAuthenticatedAuthRoute(request: NextRequest, isAuthRoute: boolean): boolean {
+  if (!isAuthRoute) return false;
+
+  const { pathname, searchParams } = request.nextUrl;
+  const isOtpVerifyWithPhone =
+    pathname === ROUTES.AUTH.OTP_VERIFY && Boolean(searchParams.get('phone'));
+
+  return !isOtpVerifyWithPhone;
+}
+
 /**
  * Next.js Middleware
  * Handles server-side authentication routing:
@@ -47,7 +57,7 @@ export function middleware(request: NextRequest): NextResponse | undefined {
   const isAuthRoute = matchesRoute(pathname, AUTH_ROUTES);
 
   // Authenticated user trying to access auth routes -> redirect to home
-  if (hasAccessToken && isAuthRoute) {
+  if (hasAccessToken && shouldRedirectAuthenticatedAuthRoute(request, isAuthRoute)) {
     const redirectUrl = request.nextUrl.searchParams.get('redirect');
     const destination = redirectUrl || ROUTES.HOME;
     return NextResponse.redirect(new URL(destination, request.url));

@@ -6,6 +6,7 @@ import {
   TableBody,
   TableCell,
   TableContainer,
+  TableFooter,
   TableHead,
   TableRow,
   Typography,
@@ -46,6 +47,7 @@ export function QuotePaymentsTab({
   }
 
   const sorted = [...milestones].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const milestonesTotal = sorted.reduce((sum, milestone) => sum + (milestone.amount ?? 0), 0);
 
   return (
     <div className="space-y-4 mt-4">
@@ -98,6 +100,20 @@ export function QuotePaymentsTab({
                 </TableRow>
               ))}
             </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={4}>
+                  <Typography variant="body2" fontWeight={600}>
+                    Total
+                  </Typography>
+                </TableCell>
+                <TableCell align="right">
+                  <Typography variant="body2" fontWeight={600}>
+                    {formatCurrency(milestonesTotal)}
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            </TableFooter>
           </Table>
         </TableContainer>
       </Paper>

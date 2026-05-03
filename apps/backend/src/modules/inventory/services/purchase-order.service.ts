@@ -85,54 +85,85 @@ export class PurchaseOrderService {
       return { item, taxRate, lineTotal };
     });
 
-    const po = await this.dataSource.transaction(async (manager) => {
-      const poNumberTx = await this.purchaseOrderRepository.generatePoNumber(
-        organizationId,
-        manager,
+    if (!Number.isFinite(subtotal) || !Number.isFinite(totalAmount)) {
+      throw new BadRequestException(
+        'Computed PO totals exceed the supported numeric range. Please reduce quantity or unit price.',
       );
-      const poRepo = manager.getRepository(PurchaseOrderEntity);
-      const saved = await poRepo.save(
-        poRepo.create({
-          organizationId,
-          vendorId: createDto.vendorId,
-          warehouseId: createDto.warehouseId,
-          projectId: createDto.projectId,
-          poNumber: poNumberTx,
-          poDate: createDto.poDate ? new Date(createDto.poDate) : new Date(),
-          poType: createDto.poType,
-          expectedDeliveryDate: createDto.expectedDeliveryDate
-            ? new Date(createDto.expectedDeliveryDate)
-            : undefined,
-          subtotal,
-          taxAmount,
-          totalAmount,
-          paymentTerms: createDto.paymentTerms,
-          paymentStatus: PaymentStatus.PENDING,
-          status: PurchaseOrderStatus.DRAFT,
-          notes: createDto.notes,
-          termsConditions: createDto.termsConditions,
-          createdBy,
-        }),
-      );
+    }
 
-      const itemRepo = manager.getRepository(PurchaseOrderItemEntity);
-      const rows = lineItems.map(({ item, taxRate, lineTotal }) =>
-        itemRepo.create({
-          purchaseOrderId: saved.id,
-          productId: item.productId,
-          orderedQuantity: item.orderedQuantity,
-          receivedQuantity: 0,
-          unitPrice: item.unitPrice,
-          taxRate,
-          lineTotal,
-          notes: item.notes,
-        }),
-      );
-      await itemRepo.save(rows);
-      return saved;
-    });
+    const po = await this.runOrTranslateNumericError(() =>
+      this.dataSource.transaction(async (manager) => {
+        const poNumberTx = await this.purchaseOrderRepository.generatePoNumber(
+          organizationId,
+          manager,
+        );
+        const poRepo = manager.getRepository(PurchaseOrderEntity);
+        const saved = await poRepo.save(
+          poRepo.create({
+            organizationId,
+            vendorId: createDto.vendorId,
+            warehouseId: createDto.warehouseId,
+            projectId: createDto.projectId,
+            poNumber: poNumberTx,
+            poDate: createDto.poDate ? new Date(createDto.poDate) : new Date(),
+            poType: createDto.poType,
+            expectedDeliveryDate: createDto.expectedDeliveryDate
+              ? new Date(createDto.expectedDeliveryDate)
+              : undefined,
+            subtotal,
+            taxAmount,
+            totalAmount,
+            paymentTerms: createDto.paymentTerms,
+            paymentStatus: PaymentStatus.PENDING,
+            status: PurchaseOrderStatus.DRAFT,
+            notes: createDto.notes,
+            termsConditions: createDto.termsConditions,
+            createdBy,
+          }),
+        );
+
+        const itemRepo = manager.getRepository(PurchaseOrderItemEntity);
+        const rows = lineItems.map(({ item, taxRate, lineTotal }) =>
+          itemRepo.create({
+            purchaseOrderId: saved.id,
+            productId: item.productId,
+            orderedQuantity: item.orderedQuantity,
+            receivedQuantity: 0,
+            unitPrice: item.unitPrice,
+            taxRate,
+            lineTotal,
+            notes: item.notes,
+          }),
+        );
+        await itemRepo.save(rows);
+        return saved;
+      }),
+    );
 
     return this.purchaseOrderRepository.findById(po.id, organizationId);
+  }
+
+  /**
+   * Translate Postgres numeric overflow / out-of-range errors into a
+   * user-friendly 400 instead of a generic 500.
+   */
+  private async runOrTranslateNumericError<T>(fn: () => Promise<T>): Promise<T> {
+    try {
+      return await fn();
+    } catch (err) {
+      const code = (err as { code?: string })?.code;
+      const message = (err as { message?: string })?.message ?? '';
+      const isNumericOverflow =
+        code === '22003' ||
+        code === '22P02' ||
+        /numeric field overflow|out of range|value overflows/i.test(message);
+      if (isNumericOverflow) {
+        throw new BadRequestException(
+          'One or more values exceed the maximum allowed range. Please reduce quantity or unit price.',
+        );
+      }
+      throw err;
+    }
   }
 
   /**

@@ -1,5 +1,6 @@
 'use client';
 
+import { CustomerStatus } from '@oneohm-epc/shared/types';
 import { Building2, Clock, Edit, FileText, Mail, Phone, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -22,7 +23,7 @@ import { PropertyCard } from './property-card';
 import { PropertySelectModal } from './property-select-modal';
 
 import { useEmployees } from '@/components/features/employees';
-import { EditableField, EmptyState } from '@/components/shared';
+import { Alert, EditableField, EmptyState } from '@/components/shared';
 import {
   MUIUserAssigneeSelector,
   Badge,
@@ -34,6 +35,9 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
   Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   showToast,
   WhatsAppIcon,
 } from '@/components/ui';
@@ -59,6 +63,38 @@ interface CustomerDetailPageProps {
 }
 
 const DEFAULT_TAB: CustomerDetailTab = 'quotes';
+const INDIAN_MOBILE_PATTERN = /^[6-9]\d{9}$/;
+
+function normalizeIndianMobileInput(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (/^\+91[6-9]\d{9}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  if (digitsOnly.length === 10 && INDIAN_MOBILE_PATTERN.test(digitsOnly)) {
+    return `+91${digitsOnly}`;
+  }
+
+  if (
+    digitsOnly.length === 12 &&
+    digitsOnly.startsWith('91') &&
+    INDIAN_MOBILE_PATTERN.test(digitsOnly.slice(2))
+  ) {
+    return `+${digitsOnly}`;
+  }
+
+  return null;
+}
+
+function validateIndianMobile(value: string, optional = false): string | null {
+  if (!value.trim()) {
+    return optional ? null : 'Phone number is required';
+  }
+  return normalizeIndianMobileInput(value) ? null : 'Enter a valid Indian mobile number';
+}
 
 // ============================================================================
 // Skeleton Components
@@ -162,7 +198,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
   // Field save handler
   const handleFieldSave = useCallback(
-    (field: string, value: string) => {
+    (field: string, value: string | null) => {
       updateCustomerMutation.mutate(
         { id: customerId, data: { [field]: value } },
         {
@@ -216,10 +252,18 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   };
 
   const handleAddProperty = (): void => {
+    if (customer?.status === CustomerStatus.INACTIVE) {
+      showToast.error('Cannot perform this action: customer is inactive');
+      return;
+    }
     router.push(buildRoute(ROUTES.CUSTOMERS.ADD_PROPERTY, { id: customerId }));
   };
 
   const handleCreateQuote = (): void => {
+    if (customer?.status === CustomerStatus.INACTIVE) {
+      showToast.error('Cannot perform this action: customer is inactive');
+      return;
+    }
     if (properties && properties.length > 0) {
       setPropertySelectOpen(true);
     } else {
@@ -268,6 +312,8 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   const quotes = quotesData?.data || [];
   const customerFullName = `${customer.firstName} ${customer.lastName || ''}`.trim();
   const phoneForWhatsApp = customer.phone ? formatPhoneForWhatsApp(customer.phone) : '';
+  const isInactiveCustomer = customer.status === CustomerStatus.INACTIVE;
+  const inactiveTooltip = 'This customer is inactive. Reactivate to continue this action.';
 
   return (
     <div>
@@ -348,16 +394,42 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
             <Edit className="size-icon-xs mr-1.5" />
             Edit
           </Button>
-          <Button variant="outline" size="sm" onClick={handleAddProperty}>
-            <Building2 className="size-icon-xs mr-1.5" />
-            Add Property
-          </Button>
-          <Button size="sm" onClick={handleCreateQuote}>
-            <FileText className="size-icon-xs mr-1.5" />
-            Create Quote
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddProperty}
+                  disabled={isInactiveCustomer}
+                >
+                  <Building2 className="size-icon-xs mr-1.5" />
+                  Add Property
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {isInactiveCustomer && <TooltipContent>{inactiveTooltip}</TooltipContent>}
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button size="sm" onClick={handleCreateQuote} disabled={isInactiveCustomer}>
+                  <FileText className="size-icon-xs mr-1.5" />
+                  Create Quote
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {isInactiveCustomer && <TooltipContent>{inactiveTooltip}</TooltipContent>}
+          </Tooltip>
         </div>
       </div>
+
+      {isInactiveCustomer && (
+        <Alert variant="warning" className="mb-4">
+          This customer is inactive. Adding properties, creating quotes, and site activities are
+          blocked until reactivated.
+        </Alert>
+      )}
 
       {/* Three Column Layout */}
       <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -374,7 +446,12 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 showLabel
                 value={customer.phone || ''}
                 type="phone"
-                onSave={(v) => handleFieldSave('phone', v)}
+                validate={(v) => validateIndianMobile(v)}
+                onSave={(v) => {
+                  const normalized = normalizeIndianMobileInput(v);
+                  if (!normalized) return;
+                  handleFieldSave('phone', normalized);
+                }}
                 isLoading={updateCustomerMutation.isPending}
               />
               {/* Email */}
@@ -394,7 +471,11 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 value={customer.alternatePhone || ''}
                 type="phone"
                 placeholder="Add alternate phone"
-                onSave={(v) => handleFieldSave('alternatePhone', v)}
+                validate={(v) => validateIndianMobile(v, true)}
+                onSave={(v) => {
+                  const normalized = normalizeIndianMobileInput(v);
+                  handleFieldSave('alternatePhone', normalized);
+                }}
                 isLoading={updateCustomerMutation.isPending}
               />
 
@@ -514,12 +595,20 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                   ({properties?.length || 0})
                 </span>
               </h3>
-              <button
-                onClick={handleAddProperty}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                + Add Property
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <button
+                      onClick={handleAddProperty}
+                      className="text-sm font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:text-foreground-tertiary disabled:no-underline"
+                      disabled={isInactiveCustomer}
+                    >
+                      + Add Property
+                    </button>
+                  </span>
+                </TooltipTrigger>
+                {isInactiveCustomer && <TooltipContent>{inactiveTooltip}</TooltipContent>}
+              </Tooltip>
             </div>
             <div className="space-y-3 p-4">
               {isLoadingProperties ? (
@@ -547,10 +636,17 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                   <p className="mb-4 text-sm text-foreground-secondary">
                     Add your first property to get started
                   </p>
-                  <Button size="sm" onClick={handleAddProperty}>
-                    <Plus className="mr-1.5 size-icon-xs" />
-                    Add Property
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button size="sm" onClick={handleAddProperty} disabled={isInactiveCustomer}>
+                          <Plus className="mr-1.5 size-icon-xs" />
+                          Add Property
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {isInactiveCustomer && <TooltipContent>{inactiveTooltip}</TooltipContent>}
+                  </Tooltip>
                 </div>
               )}
             </div>
@@ -679,12 +775,20 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 <EmptyState
                   icon={<FileText className="w-full h-full" />}
                   title="No quotes yet"
-                  description="Create a quote to start the sales process."
-                  action={{
-                    label: 'Create Quote',
-                    onClick: handleCreateQuote,
-                    icon: <FileText className="size-icon-sm" />,
-                  }}
+                  description={
+                    isInactiveCustomer
+                      ? 'Quote creation is blocked because this customer is inactive.'
+                      : 'Create a quote to start the sales process.'
+                  }
+                  action={
+                    isInactiveCustomer
+                      ? undefined
+                      : {
+                          label: 'Create Quote',
+                          onClick: handleCreateQuote,
+                          icon: <FileText className="size-icon-sm" />,
+                        }
+                  }
                 />
               )}
             </div>

@@ -357,4 +357,23 @@ export class ProjectController {
   ): Promise<ReturnType<typeof this.projectService.getProjectProgress>> {
     return this.projectService.getProjectProgress(id, organizationId);
   }
+
+  /**
+   * Sync (rebuild) the project BOM from the quote calculation snapshot.
+   * Idempotent: replaces any existing project BOM.
+   */
+  @Post(':id/sync-bom')
+  @ApiOperation({
+    summary: 'Sync project BOM from quote snapshot',
+    description:
+      'Rebuilds the project BOM from the linked quote calculation snapshot. Use when BOM is missing or outdated.',
+  })
+  async syncBom(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ message: string }> {
+    await this.projectService.syncBomFromSnapshot(organizationId, id, currentUser.id);
+    return { message: 'BOM synced successfully' };
+  }
 }

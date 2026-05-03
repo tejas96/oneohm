@@ -35,7 +35,7 @@ export class BomController {
     @OrganizationContext() organizationId: string,
     @Query('entityType') entityType: string,
     @Query('entityId', ParseUUIDPipe) entityId: string,
-  ): Promise<BomResponseDto | { data: null }> {
+  ): Promise<BomResponseDto | null> {
     if (
       !entityType ||
       !ALLOWED_ENTITY_TYPES.includes(entityType as (typeof ALLOWED_ENTITY_TYPES)[number])
@@ -46,7 +46,7 @@ export class BomController {
     }
 
     const bom = await this.bomService.findByEntity(organizationId, entityType, entityId);
-    return bom ?? { data: null };
+    return bom;
   }
 
   /**

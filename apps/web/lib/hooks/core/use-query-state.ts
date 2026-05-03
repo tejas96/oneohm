@@ -285,7 +285,7 @@ export function useQueryState<F extends BaseFilters>(
   const replaceFilters = useCallback(
     (next: Partial<F>) => {
       markUserChange();
-      setFiltersRaw(next as Partial<F>);
+      setFiltersRaw(next);
       setPageRaw(1);
     },
     [markUserChange],

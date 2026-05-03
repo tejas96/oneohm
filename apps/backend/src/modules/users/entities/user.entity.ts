@@ -102,7 +102,7 @@ export class UserEntity extends BaseEntity {
   @BeforeUpdate()
   async hashPassword(): Promise<void> {
     // Only hash if password is being set/changed and is not already hashed
-    if (this.passwordHash && !this.passwordHash.startsWith('$2b$')) {
+    if (this.passwordHash && !/^\$2[aby]\$/.test(this.passwordHash)) {
       this.passwordHash = await bcrypt.hash(this.passwordHash, 10);
     }
   }

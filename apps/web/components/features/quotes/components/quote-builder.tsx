@@ -1,7 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { DcrPreference, ProjectType, type PaymentMilestone } from '@oneohm-epc/shared/types';
+import {
+  CustomerStatus,
+  DcrPreference,
+  ProjectType,
+  type PaymentMilestone,
+} from '@oneohm-epc/shared/types';
 import { isAxiosError } from 'axios';
 import {
   AlertCircle,
@@ -95,6 +100,7 @@ interface QuoteCustomer {
   lastName: string;
   phone: string;
   email?: string;
+  status?: CustomerStatus;
 }
 
 // ============================================================================
@@ -133,6 +139,7 @@ export function QuoteBuilder(): JSX.Element {
         lastName: c.lastName ?? '',
         phone: c.phone,
         email: c.email,
+        status: c.status,
       })),
     [customerList],
   );
@@ -148,6 +155,7 @@ export function QuoteBuilder(): JSX.Element {
         lastName: preselectedCustomerData.lastName ?? '',
         phone: preselectedCustomerData.phone,
         email: preselectedCustomerData.email,
+        status: preselectedCustomerData.status,
       });
     }
   }, [preselectedCustomerData, preselectedCustomerId]);
@@ -191,6 +199,7 @@ export function QuoteBuilder(): JSX.Element {
   const systemSizeKw = form.watch('systemSizeKw');
   const projectType = form.watch('projectType');
   const structureType = form.watch('structureType');
+  const isInactiveCustomer = selectedCustomer?.status === CustomerStatus.INACTIVE;
 
   const {
     transportRatePerKm,
@@ -237,6 +246,7 @@ export function QuoteBuilder(): JSX.Element {
     const hasMissingPricing =
       isPricingFetched && floorIncrementPercent == null && transportRatePerKm == null;
     const isDisabled =
+      isInactiveCustomer ||
       calculateMutation.isPending ||
       config.isLoading ||
       hasMissingFields ||
@@ -261,6 +271,8 @@ export function QuoteBuilder(): JSX.Element {
       message = parts.join('. ');
     } else if (calculateMutation.isPending) {
       message = 'Calculating quote...';
+    } else if (isInactiveCustomer) {
+      message = 'Quote creation is blocked because this customer is inactive';
     } else if (config.isLoading) {
       message = 'Loading configuration...';
     }
@@ -279,6 +291,7 @@ export function QuoteBuilder(): JSX.Element {
     floorIncrementPercent,
     transportRatePerKm,
     systemSizeKw,
+    isInactiveCustomer,
   ]);
 
   // Manual quantity adjusters
@@ -356,6 +369,16 @@ export function QuoteBuilder(): JSX.Element {
   const [savedMilestones, setSavedMilestones] = useState<PaymentMilestone[] | null>(null);
   const [paymentTermsModalOpen, setPaymentTermsModalOpen] = useState(false);
   const { generatePdf, isGenerating: isDownloading } = useQuotePdf();
+  const profitabilityAmount = calculation?.profitabilityAmount ?? 0;
+  const maxDiscountAmount = Math.max(0, profitabilityAmount * 0.5);
+  const isDiscountInputDisabled = !!calculation && profitabilityAmount <= 0;
+  const isDiscountOverLimit = !!calculation && discountAmount > maxDiscountAmount;
+
+  useEffect(() => {
+    if (isDiscountInputDisabled && discountAmount > 0) {
+      form.setValue('discountAmount', 0);
+    }
+  }, [discountAmount, form, isDiscountInputDisabled]);
 
   // ── Handlers ──
   const handleCustomerSelect = useCallback(
@@ -420,6 +443,10 @@ export function QuoteBuilder(): JSX.Element {
 
   const handleCalculate = useCallback(
     async (options?: { resetManualCounts?: boolean }) => {
+      if (isInactiveCustomer) {
+        showToast.error('Cannot perform this action: customer is inactive');
+        return;
+      }
       const gc = config.quoteConfig?.gstConfig;
       if (!gc?.rate1 || !gc.rate2) {
         showToast.error(
@@ -479,7 +506,13 @@ export function QuoteBuilder(): JSX.Element {
         },
       });
     },
-    [form, buildCalculateRequest, calculateMutation, config.quoteConfig?.gstConfig],
+    [
+      form,
+      buildCalculateRequest,
+      calculateMutation,
+      config.quoteConfig?.gstConfig,
+      isInactiveCustomer,
+    ],
   );
 
   const handleRecalculate = useCallback(() => {
@@ -497,12 +530,20 @@ export function QuoteBuilder(): JSX.Element {
 
   const handleSave = useCallback(() => {
     if (!calculation) return;
+    if (isInactiveCustomer) {
+      showToast.error('Cannot perform this action: customer is inactive');
+      return;
+    }
+    if (isDiscountOverLimit) {
+      showToast.error('Discount cannot exceed 50% of the margin');
+      return;
+    }
     if (!propertyId) {
       showToast.error('Please select a property before saving the quote');
       return;
     }
     setPaymentTermsModalOpen(true);
-  }, [calculation, propertyId]);
+  }, [calculation, propertyId, isInactiveCustomer, isDiscountOverLimit]);
 
   const handlePaymentTermsConfirm = useCallback(
     (milestones: PaymentMilestone[]) => {
@@ -626,7 +667,7 @@ export function QuoteBuilder(): JSX.Element {
       onRecalculate={handleRecalculate}
       isSaving={saveMutation.isPending}
       savedQuoteNumber={savedQuoteNumber}
-      isSaveDisabled={!propertyId}
+      isSaveDisabled={!propertyId || isInactiveCustomer || isDiscountOverLimit}
       onSave={handleSave}
       isDownloading={isDownloading}
       onDownload={() => void handleDownload()}
@@ -681,6 +722,15 @@ export function QuoteBuilder(): JSX.Element {
               section before creating quotes.
             </p>
           </div>
+        </div>
+      )}
+
+      {isInactiveCustomer && (
+        <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 p-4">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+          <p className="text-sm text-foreground-secondary">
+            This customer is inactive. Quote creation is blocked until the customer is reactivated.
+          </p>
         </div>
       )}
 
@@ -1482,6 +1532,7 @@ export function QuoteBuilder(): JSX.Element {
                   min="0"
                   className="pl-7 pr-8"
                   placeholder="0"
+                  disabled={isDiscountInputDisabled}
                   value={discountAmount || ''}
                   onChange={(e) => form.setValue('discountAmount', Number(e.target.value) || 0)}
                 />
@@ -1490,19 +1541,34 @@ export function QuoteBuilder(): JSX.Element {
                     type="button"
                     className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-foreground-tertiary hover:text-foreground"
                     onClick={() => form.setValue('discountAmount', 0)}
+                    disabled={isDiscountInputDisabled}
                   >
                     <X className="size-3.5" />
                   </button>
                 )}
               </div>
+              {calculation && (
+                <p
+                  className={cn(
+                    'text-xs',
+                    isDiscountOverLimit ? 'text-error' : 'text-foreground-secondary',
+                  )}
+                >
+                  {isDiscountInputDisabled
+                    ? 'Discount unavailable when margin is zero or negative.'
+                    : `Maximum discount allowed: ${formatCurrency(maxDiscountAmount)} (50% of margin)`}
+                </p>
+              )}
               <div className="flex flex-wrap gap-1.5">
                 {DISCOUNT_PRESETS.map((preset) => (
                   <button
                     key={preset}
                     type="button"
                     onClick={() => form.setValue('discountAmount', preset)}
+                    disabled={isDiscountInputDisabled}
                     className={cn(
                       'rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-fast',
+                      isDiscountInputDisabled && 'cursor-not-allowed opacity-50',
                       discountAmount === preset
                         ? 'bg-primary text-white'
                         : 'bg-muted text-foreground-secondary hover:bg-primary/10 hover:text-primary',

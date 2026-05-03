@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { PermissionGuard } from '../iam/guards/permission.guard';
 import { InventoryModule } from '../inventory/inventory.module';
+import { BomItemsController } from './controllers/bom-items.controller';
 import { BomController } from './controllers/bom.controller';
 import { BomEntity, BomItemEntity } from './entities';
 import { BomRepository } from './repositories/bom.repository';
@@ -13,7 +14,7 @@ import { BomService } from './services/bom.service';
     TypeOrmModule.forFeature([BomEntity, BomItemEntity]),
     forwardRef(() => InventoryModule),
   ],
-  controllers: [BomController],
+  controllers: [BomController, BomItemsController],
   providers: [BomService, BomRepository, PermissionGuard],
   exports: [BomService],
 })

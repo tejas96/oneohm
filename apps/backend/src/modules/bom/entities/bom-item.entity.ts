@@ -18,6 +18,12 @@ import { BaseEntity } from '../../../common/entities/base.entity';
  */
 @Entity('bom_items')
 @Index(['bomId'])
+@Index(['bomId', 'groupKey'])
+@Index(['serialNumber'])
+@Index(['bomId', 'serialNumber'], {
+  unique: true,
+  where: '"serial_number" IS NOT NULL',
+})
 export class BomItemEntity extends BaseEntity {
   // ==================== Parent ====================
   @Column({ name: 'bom_id', type: 'uuid' })
@@ -67,6 +73,16 @@ export class BomItemEntity extends BaseEntity {
   // ==================== Warranty ====================
   @Column({ name: 'warranty_years', type: 'integer', nullable: true })
   warrantyYears?: number;
+
+  // ==================== Serialization ====================
+  @Column({ name: 'serial_number', type: 'varchar', length: 100, nullable: true })
+  serialNumber?: string;
+
+  @Column({ name: 'group_key', type: 'varchar', length: 64, nullable: true })
+  groupKey?: string;
+
+  @Column({ name: 'unit_index', type: 'integer', nullable: true })
+  unitIndex?: number;
 
   // ==================== Ordering ====================
   @Column({ name: 'sort_order', type: 'integer', default: 0 })

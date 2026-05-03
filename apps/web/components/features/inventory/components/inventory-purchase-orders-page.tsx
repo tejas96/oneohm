@@ -7,9 +7,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
 import { PAYMENT_STATUS_LABEL, PO_STATUS_LABEL } from '../constants';
-import { hiddenSelectFilterColumn } from './shared/hidden-filter-column';
 import { buildPoColumns, type PoColumnRow } from './po/po-columns';
 import { PoKpiStrip } from './po/po-kpi-strip';
+import { hiddenSelectFilterColumn } from './shared/hidden-filter-column';
 
 import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
 import type { TableFilterModel, TableSortModel } from '@/components/shared/advanced-table/types';

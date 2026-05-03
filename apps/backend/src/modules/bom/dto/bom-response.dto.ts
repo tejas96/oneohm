@@ -12,6 +12,9 @@ export class BomItemResponseDto {
   gstRate?: number;
   gstAmount?: number;
   warrantyYears?: number;
+  serialNumber?: string;
+  groupKey?: string;
+  unitIndex?: number;
   sortOrder!: number;
 }
 
@@ -22,6 +25,8 @@ export class BomResponseDto {
   entityId!: string;
   status!: string;
   totalItems!: number;
+  totalUnits?: number;
+  totalLineItems?: number;
   totalCost!: number;
   notes?: string;
   items!: BomItemResponseDto[];

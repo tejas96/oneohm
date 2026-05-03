@@ -43,18 +43,34 @@ export interface CsvStreamSource<TRow> {
  */
 export function escapeCsvCell(value: unknown): string {
   if (value == null) return '';
-  let str: string;
-  if (value instanceof Date) {
-    str = value.toISOString();
-  } else if (typeof value === 'object') {
-    str = JSON.stringify(value);
-  } else {
-    str = String(value);
-  }
+  const str = stringifyCsvValue(value);
   if (/[",\n\r]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
   }
   return str;
+}
+
+function stringifyCsvValue(value: unknown): string {
+  if (value instanceof Date) return value.toISOString();
+
+  switch (typeof value) {
+    case 'undefined':
+      return '';
+    case 'string':
+      return value;
+    case 'number':
+    case 'boolean':
+    case 'bigint':
+      return String(value);
+    case 'symbol':
+      return value.description ? `Symbol(${value.description})` : 'Symbol()';
+    case 'function':
+      return value.name ? `[Function: ${value.name}]` : '[Function]';
+    case 'object':
+      return JSON.stringify(value);
+    default:
+      return '';
+  }
 }
 
 function buildHeaderLine<TRow>(columns: CsvColumn<TRow>[]): string {
