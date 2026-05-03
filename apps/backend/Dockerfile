@@ -3,26 +3,23 @@
 # Nx Monorepo with Shared Libraries
 # ============================================
 
-# Base stage - Install dependencies
+# Base stage — install ALL deps (dev + prod) for building.
+# package*.json and workspace config are copied BEFORE source so that
+# the npm ci layer is cached and only re-runs when dependencies change.
 FROM node:20-alpine AS base
 
-# Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
 WORKDIR /app
 
-# Copy workspace root files
+# --- dependency layer (cached unless package*.json changes) ---
 COPY package*.json ./
 COPY tsconfig.base.json ./nx.json ./jest.preset.js ./
-
-# Copy backend application
-COPY apps/backend ./apps/backend/
-
-# Copy shared libraries (required by backend)
-COPY libs ./libs/
-
-# Install all dependencies (including dev dependencies for build)
 RUN npm ci --ignore-scripts && npm cache clean --force
+
+# --- source layer (invalidates only the build, not the install) ---
+COPY apps/backend ./apps/backend/
+COPY libs ./libs/
 
 # ============================================
 # Development stage
@@ -42,19 +39,16 @@ FROM base AS builder
 
 WORKDIR /app
 
-# Build backend with all dependencies (Nx builds shared libs too)
 RUN npx nx build backend --configuration=production
 
-# Verify build outputs exist
 RUN ls -la apps/backend/dist/src/ && \
     test -f apps/backend/dist/src/main.js || (echo "Build failed: main.js not found" && exit 1)
 
 # ============================================
-# Production stage
+# Production stage — lean image, prod deps only
 # ============================================
 FROM node:20-alpine AS production
 
-# Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
 WORKDIR /app
@@ -62,23 +56,20 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8085
 
-# Copy package files
+# --- prod dependency layer (cached unless package*.json changes) ---
 COPY package*.json ./
-
-# Install production dependencies
 RUN npm ci --omit=dev --ignore-scripts && \
     npm cache clean --force && \
     rm -rf /root/.npm
 
-# Copy built backend application
+# --- built artefacts from builder ---
 COPY --from=builder /app/apps/backend/dist ./dist
 
-# Copy shared package to node_modules for proper resolution
+# Copy shared package for proper module resolution at runtime
 RUN mkdir -p node_modules/@oneohm-epc/shared
 COPY --from=builder /app/libs/shared/package.json ./node_modules/@oneohm-epc/shared/
 COPY --from=builder /app/libs/shared/dist ./node_modules/@oneohm-epc/shared/dist
 
-# Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001 -G nodejs && \
     chown -R nestjs:nodejs /app
@@ -87,7 +78,6 @@ USER nestjs
 
 EXPOSE 8085
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD node -e "require('http').get('http://localhost:8085/api/v1', (r) => { process.exit(r.statusCode >= 200 && r.statusCode < 400 ? 0 : 1); }).on('error', () => process.exit(1))"
 
