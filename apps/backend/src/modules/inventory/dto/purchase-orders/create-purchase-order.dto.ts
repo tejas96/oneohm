@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaymentStatus, PurchaseOrderStatus, PurchaseOrderType } from '@oneohm-epc/shared/types';
+import { PaymentStatus, PurchaseOrderType } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -106,15 +106,7 @@ export class CreatePurchaseOrderDto {
 
   // ==================== Status ====================
 
-  @ApiProperty({
-    enum: Object.values(PurchaseOrderStatus),
-    enumName: 'PurchaseOrderStatus',
-    example: PurchaseOrderStatus.DRAFT,
-    default: PurchaseOrderStatus.DRAFT,
-  })
-  @IsEnum(PurchaseOrderStatus)
-  @IsOptional()
-  status?: PurchaseOrderStatus;
+  // Note: status is NOT accepted from clients — service forces DRAFT on create.
 
   // ==================== Items ====================
 

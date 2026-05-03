@@ -91,6 +91,9 @@ export class WarehouseEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   state?: string;
 
+  @Column({ type: 'varchar', length: 100, default: 'India' })
+  country!: string;
+
   @Column({ type: 'varchar', length: 10, nullable: true })
   pincode?: string;
 
@@ -100,6 +103,7 @@ export class WarehouseEntity extends BaseEntity {
   // ==================== Type ====================
 
   @Column({
+    name: 'warehouse_type',
     type: 'enum',
     enum: WarehouseType,
     default: WarehouseType.OWN,
@@ -108,7 +112,7 @@ export class WarehouseEntity extends BaseEntity {
 
   // ==================== Contact ====================
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'contact_person', type: 'varchar', length: 255, nullable: true })
   contactPerson?: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true })

@@ -369,6 +369,7 @@ export const PROJECT_DETAIL_TABS = [
   { value: 'documents', label: 'Documents' },
   { value: 'payments', label: 'Payments' },
   { value: 'bom', label: 'BOM & Inventory' },
+  { value: 'allocations', label: 'Allocations' },
   { value: 'reports', label: 'Reports' },
   { value: 'surveys', label: 'Surveys' },
 ] as const;

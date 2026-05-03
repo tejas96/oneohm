@@ -113,6 +113,9 @@ export class PurchaseOrderEntity extends BaseEntity {
   })
   paymentStatus!: PaymentStatus;
 
+  @Column({ name: 'paid_amount', type: 'decimal', precision: 15, scale: 2, default: 0 })
+  paidAmount!: number;
+
   // ==================== Approval ====================
 
   @Column({ name: 'approval_request_id', type: 'uuid', nullable: true })

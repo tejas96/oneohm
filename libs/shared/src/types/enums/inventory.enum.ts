@@ -121,3 +121,17 @@ export enum MaterialDispatchStatus {
   PARTIALLY_DELIVERED = 'partially_delivered',
   CANCELLED = 'cancelled',
 }
+
+/**
+ * BOM Status (TS enum only — DB column stays VARCHAR + CHECK)
+ */
+export enum BomStatus {
+  DRAFT = 'draft',
+  FINALIZED = 'finalized',
+  ALLOCATED = 'allocated',
+  CANCELLED = 'cancelled',
+}
+
+export const SERIALIZED_BOM_ITEM_TYPES = ['panel', 'inverter', 'battery'] as const;
+
+export type SerializedBomItemType = (typeof SERIALIZED_BOM_ITEM_TYPES)[number];

@@ -1,20 +1,24 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { StockAllocationStatus } from '@oneohm-epc/shared/types';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { InventoryTransactionType, StockAllocationStatus } from '@oneohm-epc/shared/types';
+import { DataSource, EntityManager } from 'typeorm';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { ProjectRepository } from '../../projects/repositories/project.repository';
 import {
   CreateStockAllocationDto,
+  EditAllocationDetailsDto,
   FulfillStockAllocationDto,
-  UpdateStockAllocationDto,
 } from '../dto';
+import { InventoryStockEntity } from '../entities/inventory-stock.entity';
+import { InventoryTransactionEntity } from '../entities/inventory-transaction.entity';
 import { StockAllocationEntity } from '../entities/stock-allocation.entity';
 import { StockAllocationRepository, WarehouseRepository } from '../repositories';
-import { InventoryStockService } from './inventory-stock.service';
 
 /**
  * Stock Allocation Service
- * Business logic for allocating inventory to projects
+ * Business logic for allocating inventory to projects.
+ * All quantity-mutating methods are atomic (DataSource.transaction).
  */
 @Injectable()
 export class StockAllocationService {
@@ -23,52 +27,95 @@ export class StockAllocationService {
     private readonly warehouseRepository: WarehouseRepository,
     private readonly projectRepository: ProjectRepository,
     private readonly organizationRepository: OrganizationRepository,
-    private readonly inventoryStockService: InventoryStockService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
   /**
-   * Create a new stock allocation
+   * Create a new stock allocation — reserves stock atomically.
    */
   async create(
     organizationId: string,
     createDto: CreateStockAllocationDto,
     createdBy: string,
   ): Promise<StockAllocationEntity> {
-    // Verify dependencies
     await Promise.all([
       this.organizationRepository.findOneById(organizationId),
       this.projectRepository.findById(createDto.projectId, organizationId),
       this.warehouseRepository.findById(createDto.warehouseId, organizationId),
     ]);
 
-    // Reserve stock
-    await this.inventoryStockService.reserveStock(
-      createDto.warehouseId,
-      createDto.productId,
-      createDto.allocatedQuantity,
-    );
+    const allocationId = await this.dataSource.transaction(async (manager) => {
+      // Lock and reserve stock atomically
+      const stockRepo = manager.getRepository(
+        (await import('../entities/inventory-stock.entity')).InventoryStockEntity,
+      );
+      const stock = await stockRepo
+        .createQueryBuilder('stock')
+        .where('stock.warehouseId = :wid', { wid: createDto.warehouseId })
+        .andWhere('stock.productId = :pid', { pid: createDto.productId })
+        .setLock('pessimistic_write')
+        .getOne();
 
-    // Create allocation
-    const allocation = await this.stockAllocationRepository.create({
-      organizationId,
-      projectId: createDto.projectId,
-      warehouseId: createDto.warehouseId,
-      productId: createDto.productId,
-      allocatedQuantity: createDto.allocatedQuantity,
-      dispatchedQuantity: 0,
-      returnedQuantity: 0,
-      sourceType: createDto.sourceType,
-      status: StockAllocationStatus.ALLOCATED,
-      notes: createDto.notes,
-      createdBy,
+      if (!stock) {
+        throw new BadRequestException(
+          'No stock record found for this product/warehouse combination',
+        );
+      }
+      if (Number(stock.availableQuantity) < createDto.allocatedQuantity) {
+        throw new BadRequestException(
+          `Insufficient stock: available ${stock.availableQuantity}, requested ${createDto.allocatedQuantity}`,
+        );
+      }
+
+      stock.availableQuantity = Number(stock.availableQuantity) - createDto.allocatedQuantity;
+      stock.reservedQuantity = Number(stock.reservedQuantity) + createDto.allocatedQuantity;
+      stock.updatedAt = new Date();
+      await stockRepo.save(stock);
+
+      // Persist allocation record
+      const allocationRepo = manager.getRepository(StockAllocationEntity);
+      const allocation = allocationRepo.create({
+        organizationId,
+        projectId: createDto.projectId,
+        warehouseId: createDto.warehouseId,
+        productId: createDto.productId,
+        allocatedQuantity: createDto.allocatedQuantity,
+        dispatchedQuantity: 0,
+        returnedQuantity: 0,
+        sourceType: createDto.sourceType,
+        status: StockAllocationStatus.ALLOCATED,
+        notes: createDto.notes,
+        createdBy,
+      });
+      await allocationRepo.save(allocation);
+
+      // Write allocation transaction
+      const { InventoryTransactionEntity } = await import(
+        '../entities/inventory-transaction.entity'
+      );
+      const { InventoryTransactionType } = await import('@oneohm-epc/shared/types');
+      const txnRepo = manager.getRepository(InventoryTransactionEntity);
+      await txnRepo.save(
+        txnRepo.create({
+          organizationId,
+          warehouseId: createDto.warehouseId,
+          productId: createDto.productId,
+          transactionType: InventoryTransactionType.ALLOCATION,
+          quantity: createDto.allocatedQuantity,
+          transactionDate: new Date(),
+          referenceType: 'stock_allocation',
+          referenceId: allocation.id,
+          notes: 'Stock reserved for project allocation',
+          createdBy,
+        }),
+      );
+
+      return allocation.id;
     });
 
-    return this.stockAllocationRepository.findById(allocation.id, organizationId);
+    return this.stockAllocationRepository.findById(allocationId, organizationId);
   }
 
-  /**
-   * Find all allocations with filters
-   */
   async findAll(
     organizationId: string,
     page = 1,
@@ -83,44 +130,44 @@ export class StockAllocationService {
     return this.stockAllocationRepository.findAll(organizationId, page, limit, filters);
   }
 
-  /**
-   * Find allocation by ID
-   */
   async findById(id: string, organizationId: string): Promise<StockAllocationEntity> {
     return this.stockAllocationRepository.findById(id, organizationId);
   }
 
-  /**
-   * Find allocations by project
-   */
-  async findByProject(projectId: string): Promise<StockAllocationEntity[]> {
-    return this.stockAllocationRepository.findByProject(projectId);
+  async findByProject(projectId: string, organizationId: string): Promise<StockAllocationEntity[]> {
+    return this.stockAllocationRepository.findByProject(projectId, organizationId);
   }
 
   /**
-   * Update allocation
+   * Edit allocation metadata — only notes and expectedDispatchDate.
+   * Quantity changes must go through domain methods.
    */
   async update(
     id: string,
     organizationId: string,
-    updateDto: UpdateStockAllocationDto,
+    editDto: EditAllocationDetailsDto,
     updatedBy: string,
   ): Promise<StockAllocationEntity> {
     const allocation = await this.stockAllocationRepository.findById(id, organizationId);
 
-    // Only allow updates if allocation is not fulfilled
     if (allocation.status === StockAllocationStatus.DISPATCHED) {
-      throw new BadRequestException('Cannot update fulfilled allocation');
+      throw new BadRequestException('Cannot edit a fully dispatched allocation');
+    }
+    if (allocation.status === StockAllocationStatus.CANCELLED) {
+      throw new BadRequestException('Cannot edit a cancelled allocation');
     }
 
-    return this.stockAllocationRepository.update(id, organizationId, {
-      ...updateDto,
-      updatedBy,
-    });
+    const updateData: Record<string, unknown> = { updatedBy };
+    if (editDto.notes !== undefined) updateData.notes = editDto.notes;
+    if (editDto.expectedDispatchDate !== undefined) {
+      updateData.expectedDispatchDate = new Date(editDto.expectedDispatchDate);
+    }
+
+    return this.stockAllocationRepository.update(id, organizationId, updateData);
   }
 
   /**
-   * Fulfill allocation (full or partial)
+   * Fulfill allocation — deducts from RESERVED (not available), correct bucket.
    */
   async fulfill(
     id: string,
@@ -128,45 +175,83 @@ export class StockAllocationService {
     fulfillDto: FulfillStockAllocationDto,
     performedBy: string,
   ): Promise<StockAllocationEntity> {
-    const allocation = await this.stockAllocationRepository.findById(id, organizationId);
+    const updatedAllocationId = await this.dataSource.transaction(async (manager) => {
+      const allocationRepo = manager.getRepository(StockAllocationEntity);
+      const allocationRow = await allocationRepo
+        .createQueryBuilder('allocation')
+        .where('allocation.id = :id', { id })
+        .andWhere('allocation.organizationId = :organizationId', { organizationId })
+        .setLock('pessimistic_write')
+        .getOne();
 
-    if (allocation.status === StockAllocationStatus.CANCELLED) {
-      throw new BadRequestException('Cannot fulfill cancelled allocation');
-    }
+      if (!allocationRow) {
+        throw new NotFoundException(`Stock Allocation with ID ${id} not found`);
+      }
+      if (allocationRow.status === StockAllocationStatus.CANCELLED) {
+        throw new BadRequestException('Cannot fulfill cancelled allocation');
+      }
 
-    const newDispatchedQuantity = allocation.dispatchedQuantity + fulfillDto.fulfilledQuantity;
+      const newDispatchedQuantity =
+        Number(allocationRow.dispatchedQuantity) + fulfillDto.fulfilledQuantity;
+      if (newDispatchedQuantity > Number(allocationRow.allocatedQuantity)) {
+        throw new BadRequestException('Dispatched quantity cannot exceed allocated quantity');
+      }
 
-    if (newDispatchedQuantity > allocation.allocatedQuantity) {
-      throw new BadRequestException('Dispatched quantity cannot exceed allocated quantity');
-    }
+      const newStatus =
+        newDispatchedQuantity >= Number(allocationRow.allocatedQuantity)
+          ? StockAllocationStatus.DISPATCHED
+          : StockAllocationStatus.PARTIALLY_DISPATCHED;
 
-    // Update allocation
-    const newStatus =
-      newDispatchedQuantity >= allocation.allocatedQuantity
-        ? StockAllocationStatus.DISPATCHED
-        : StockAllocationStatus.PARTIALLY_DISPATCHED;
+      const stock = await this.lockInventoryStock(
+        manager,
+        organizationId,
+        allocationRow.warehouseId,
+        allocationRow.productId,
+      );
+      if (!stock) {
+        throw new BadRequestException(
+          'No stock record found for this product/warehouse combination',
+        );
+      }
+      if (Number(stock.reservedQuantity) < fulfillDto.fulfilledQuantity) {
+        throw new BadRequestException('Insufficient reserved stock for dispatch');
+      }
 
-    // Release allocated stock and remove from total
-    await this.inventoryStockService.removeStock(
-      organizationId,
-      allocation.warehouseId,
-      allocation.productId,
-      fulfillDto.fulfilledQuantity,
-      'stock_allocation',
-      allocation.id,
-      performedBy,
-      `Fulfilled allocation for project`,
-    );
+      stock.reservedQuantity = Number(stock.reservedQuantity) - fulfillDto.fulfilledQuantity;
+      stock.updatedAt = new Date();
+      await manager.getRepository(InventoryStockEntity).save(stock);
 
-    return this.stockAllocationRepository.update(id, organizationId, {
-      dispatchedQuantity: newDispatchedQuantity,
-      status: newStatus,
-      updatedBy: performedBy,
+      const txnRepo = manager.getRepository(InventoryTransactionEntity);
+      await txnRepo.save(
+        txnRepo.create({
+          organizationId,
+          warehouseId: allocationRow.warehouseId,
+          productId: allocationRow.productId,
+          transactionType: InventoryTransactionType.DISPATCH,
+          quantity: fulfillDto.fulfilledQuantity,
+          transactionDate: new Date(),
+          referenceType: 'stock_allocation',
+          referenceId: allocationRow.id,
+          notes: 'Fulfilled allocation for project',
+          createdBy: performedBy,
+        }),
+      );
+
+      Object.assign(allocationRow, {
+        dispatchedQuantity: newDispatchedQuantity,
+        status: newStatus,
+        updatedBy: performedBy,
+      });
+      await allocationRepo.save(allocationRow);
+
+      return allocationRow.id;
     });
+
+    return this.stockAllocationRepository.findById(updatedAllocationId, organizationId);
   }
 
   /**
-   * Cancel allocation
+   * Cancel allocation — releases reserved stock back to available.
    */
   async cancel(
     id: string,
@@ -174,46 +259,188 @@ export class StockAllocationService {
     reason: string,
     updatedBy: string,
   ): Promise<StockAllocationEntity> {
-    const allocation = await this.stockAllocationRepository.findById(id, organizationId);
+    const updatedAllocationId = await this.dataSource.transaction(async (manager) => {
+      // Pessimistic-lock the allocation row first so concurrent cancels serialize
+      // and the second one observes status=CANCELLED instead of racing to a
+      // double release of the reserved stock.
+      const allocationRepo = manager.getRepository(StockAllocationEntity);
+      const allocation = await allocationRepo
+        .createQueryBuilder('alloc')
+        .where('alloc.id = :id', { id })
+        .andWhere('alloc.organizationId = :organizationId', { organizationId })
+        .setLock('pessimistic_write')
+        .getOne();
+      if (!allocation) {
+        throw new NotFoundException(`Stock Allocation with ID ${id} not found`);
+      }
+      if (allocation.status === StockAllocationStatus.DISPATCHED) {
+        throw new BadRequestException('Cannot cancel a fully dispatched allocation');
+      }
+      if (allocation.status === StockAllocationStatus.CANCELLED) {
+        throw new BadRequestException('Allocation is already cancelled');
+      }
 
-    if (allocation.status === StockAllocationStatus.DISPATCHED) {
-      throw new BadRequestException('Cannot cancel fulfilled allocation');
-    }
+      const undispatchedQuantity =
+        Number(allocation.allocatedQuantity) - Number(allocation.dispatchedQuantity);
+      const newNotes = allocation.notes
+        ? `${allocation.notes}\nCancelled: ${reason}`
+        : `Cancelled: ${reason}`;
 
-    // Release reserved stock
-    const undispatchedQuantity = allocation.allocatedQuantity - allocation.dispatchedQuantity;
+      if (undispatchedQuantity > 0) {
+        const stock = await this.lockInventoryStock(
+          manager,
+          organizationId,
+          allocation.warehouseId,
+          allocation.productId,
+        );
+        if (!stock) {
+          throw new BadRequestException('Stock record not found');
+        }
+        if (Number(stock.reservedQuantity) < undispatchedQuantity) {
+          throw new BadRequestException('Insufficient reserved stock');
+        }
 
-    if (undispatchedQuantity > 0) {
-      await this.inventoryStockService.releaseStock(
-        allocation.warehouseId,
-        allocation.productId,
-        undispatchedQuantity,
-      );
-    }
+        stock.availableQuantity = Number(stock.availableQuantity) + undispatchedQuantity;
+        stock.reservedQuantity = Number(stock.reservedQuantity) - undispatchedQuantity;
+        stock.updatedAt = new Date();
+        await manager.getRepository(InventoryStockEntity).save(stock);
 
-    return this.stockAllocationRepository.update(id, organizationId, {
-      status: StockAllocationStatus.CANCELLED,
-      notes: `${allocation.notes || ''}\nCancelled: ${reason}`,
-      updatedBy,
+        const txnRepo = manager.getRepository(InventoryTransactionEntity);
+        await txnRepo.save(
+          txnRepo.create({
+            organizationId,
+            warehouseId: allocation.warehouseId,
+            productId: allocation.productId,
+            transactionType: InventoryTransactionType.ALLOCATION,
+            quantity: undispatchedQuantity,
+            transactionDate: new Date(),
+            referenceType: 'stock_allocation',
+            referenceId: allocation.id,
+            notes: 'Reserved stock released from allocation',
+            createdBy: updatedBy,
+          }),
+        );
+      }
+
+      Object.assign(allocation, {
+        status: StockAllocationStatus.CANCELLED,
+        notes: newNotes,
+        updatedBy,
+      });
+      await allocationRepo.save(allocation);
+
+      return allocation.id;
     });
+
+    return this.stockAllocationRepository.findById(updatedAllocationId, organizationId);
   }
 
   /**
-   * Get allocation statistics
+   * Return material to stock — increments returnedQuantity + adds back to available.
    */
+  async returnToStock(
+    id: string,
+    organizationId: string,
+    quantity: number,
+    reason: string,
+    performedBy: string,
+  ): Promise<StockAllocationEntity> {
+    const allocation = await this.stockAllocationRepository.findById(id, organizationId);
+
+    const maxReturnQty =
+      Number(allocation.dispatchedQuantity) - Number(allocation.returnedQuantity);
+    if (quantity > maxReturnQty) {
+      throw new BadRequestException(
+        `Return quantity ${quantity} exceeds returnable quantity ${maxReturnQty}`,
+      );
+    }
+
+    const newReturnedQuantity = Number(allocation.returnedQuantity) + quantity;
+
+    const updatedAllocationId = await this.dataSource.transaction(async (manager) => {
+      const stockRepo = manager.getRepository(InventoryStockEntity);
+      const stock = await this.lockInventoryStock(
+        manager,
+        organizationId,
+        allocation.warehouseId,
+        allocation.productId,
+      );
+
+      if (!stock) {
+        const newStock = stockRepo.create({
+          organizationId,
+          warehouseId: allocation.warehouseId,
+          productId: allocation.productId,
+          availableQuantity: quantity,
+          reservedQuantity: 0,
+          inTransitQuantity: 0,
+        });
+        await stockRepo.save(newStock);
+      } else {
+        stock.availableQuantity = Number(stock.availableQuantity) + quantity;
+        stock.updatedAt = new Date();
+        await stockRepo.save(stock);
+      }
+
+      const txnRepo = manager.getRepository(InventoryTransactionEntity);
+      await txnRepo.save(
+        txnRepo.create({
+          organizationId,
+          warehouseId: allocation.warehouseId,
+          productId: allocation.productId,
+          transactionType: InventoryTransactionType.RETURN,
+          quantity,
+          transactionDate: new Date(),
+          referenceType: 'stock_allocation_return',
+          referenceId: allocation.id,
+          notes: `[REASON: ${reason}] Return from project allocation`,
+          createdBy: performedBy,
+        }),
+      );
+
+      const allocationRepo = manager.getRepository(StockAllocationEntity);
+      const allocationRow = await allocationRepo.findOne({ where: { id, organizationId } });
+      if (!allocationRow) {
+        throw new NotFoundException(`Stock Allocation with ID ${id} not found`);
+      }
+      Object.assign(allocationRow, {
+        returnedQuantity: newReturnedQuantity,
+        returnedAt: new Date(),
+        updatedBy: performedBy,
+      });
+      await allocationRepo.save(allocationRow);
+
+      return allocationRow.id;
+    });
+
+    return this.stockAllocationRepository.findById(updatedAllocationId, organizationId);
+  }
+
   async getStatistics(organizationId: string) {
     const countByStatus = await this.stockAllocationRepository.countByStatus(organizationId);
-
     return {
-      total: Object.values(countByStatus).reduce((sum, count) => sum + count, 0),
+      total: Object.values(countByStatus).reduce((sum: number, count) => sum + count, 0),
       byStatus: countByStatus,
     };
   }
 
-  /**
-   * Get pending allocations
-   */
   async getPendingAllocations(organizationId: string): Promise<StockAllocationEntity[]> {
     return this.stockAllocationRepository.getPendingAllocations(organizationId);
+  }
+
+  private async lockInventoryStock(
+    manager: EntityManager,
+    organizationId: string,
+    warehouseId: string,
+    productId: string,
+  ): Promise<InventoryStockEntity | null> {
+    return manager
+      .getRepository(InventoryStockEntity)
+      .createQueryBuilder('stock')
+      .where('stock.warehouseId = :warehouseId', { warehouseId })
+      .andWhere('stock.productId = :productId', { productId })
+      .andWhere('stock.organizationId = :organizationId', { organizationId })
+      .setLock('pessimistic_write')
+      .getOne();
   }
 }

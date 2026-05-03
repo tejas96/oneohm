@@ -4,6 +4,34 @@ import { Expose, Type } from 'class-transformer';
 
 import { MaterialDispatchItemResponseDto } from './material-dispatch-item-response.dto';
 
+class DispatchProjectSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Residential Rooftop - Sharma' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'PRJ-2026-001', required: false })
+  @Expose()
+  projectNumber?: string;
+}
+
+class DispatchWarehouseSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Main Warehouse Mumbai' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'WH-MUM-001', required: false })
+  @Expose()
+  code?: string;
+}
+
 /**
  * Material Dispatch Response DTO
  * Represents material dispatch data returned from API
@@ -26,6 +54,16 @@ export class MaterialDispatchResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   warehouseId!: string;
+
+  @ApiProperty({ type: DispatchProjectSummaryDto, required: false })
+  @Expose()
+  @Type(() => DispatchProjectSummaryDto)
+  project?: DispatchProjectSummaryDto;
+
+  @ApiProperty({ type: DispatchWarehouseSummaryDto, required: false })
+  @Expose()
+  @Type(() => DispatchWarehouseSummaryDto)
+  warehouse?: DispatchWarehouseSummaryDto;
 
   // ==================== Dispatch Info ====================
 

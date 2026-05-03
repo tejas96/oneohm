@@ -289,6 +289,7 @@ function CustomerFormContent({
 
   const phoneError =
     form.formState.errors.phone?.message ?? availability.state.phoneError ?? undefined;
+  const alternatePhoneError = form.formState.errors.alternatePhone?.message;
   const emailError =
     form.formState.errors.email?.message ?? availability.state.emailError ?? undefined;
 
@@ -372,6 +373,7 @@ function CustomerFormContent({
                   type="tel"
                   inputMode="numeric"
                   placeholder="98765 43210"
+                  error={alternatePhoneError}
                   startIcon={<span className="text-sm text-foreground-secondary">+91</span>}
                   inputProps={{ maxLength: 10 }}
                   {...form.register('alternatePhone')}

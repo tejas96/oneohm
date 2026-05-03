@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ROUTES, useRoutes } from '@/lib/hooks';
 import { useAuth } from '@/providers/auth-provider';
@@ -38,10 +38,10 @@ export interface UseOtpVerifyReturn {
  */
 export function useOtpVerify(): UseOtpVerifyReturn {
   const { replace, getQueryParam } = useRoutes();
-  const { verifyOtp, requestOtp, isLoading, error, clearError, isAuthenticated, isInitialized } =
-    useAuth();
+  const { verifyOtp, requestOtp, isLoading, error, clearError, isInitialized } = useAuth();
 
   const phone = getQueryParam('phone') || '';
+  const hasCheckedMissingPhoneRef = useRef(false);
 
   const [otp, setOtp] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -49,21 +49,17 @@ export function useOtpVerify(): UseOtpVerifyReturn {
   const [isResending, setIsResending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Combined redirect logic - wait for initialization, then check auth/phone
+  // Wait for initialization before deciding whether the OTP route has enough context.
   useEffect(() => {
     if (!isInitialized) return;
 
-    // Priority 1: If already authenticated, redirect to home
-    if (isAuthenticated) {
-      replace(ROUTES.HOME);
-      return;
-    }
-
-    // Priority 2: If no phone provided, redirect to login
-    if (!phone) {
+    // If no phone provided on initial mount, redirect to login.
+    // Use ref to only check this once, preventing redirect during form interaction
+    if (!phone && !hasCheckedMissingPhoneRef.current) {
+      hasCheckedMissingPhoneRef.current = true;
       replace(ROUTES.AUTH.LOGIN);
     }
-  }, [isAuthenticated, isInitialized, phone, replace]);
+  }, [isInitialized, phone, replace]);
 
   // Start cooldown on mount
   useEffect(() => {
@@ -92,11 +88,13 @@ export function useOtpVerify(): UseOtpVerifyReturn {
       try {
         await verifyOtp({ phone, otp: otpValue });
         setIsSuccess(true);
+        replace(ROUTES.HOME);
       } catch {
-        // Error handled by context
+        // Error is already set in context by verifyOtp, no need to re-throw
+        // displayError will show it from the context
       }
     },
-    [phone, verifyOtp, clearError],
+    [phone, replace, verifyOtp, clearError],
   );
 
   const handleResend = useCallback(async () => {

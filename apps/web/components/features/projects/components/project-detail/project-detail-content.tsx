@@ -17,6 +17,7 @@ import { ProjectTasksTab } from './tabs/project-tasks-tab';
 import { PROJECT_DETAIL_TABS, type ProjectDetailTab } from '../../constants';
 import { useProject } from '../../hooks/use-project-detail';
 
+import { ProjectAllocationsTab } from '@/components/features/inventory';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TabsContent } from '@/components/ui/tabs';
@@ -149,7 +150,11 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
         </TabsContent>
 
         <TabsContent value="bom">
-          <ProjectBomTab materials={project.materials ?? []} />
+          <ProjectBomTab projectId={projectId} />
+        </TabsContent>
+
+        <TabsContent value="allocations">
+          <ProjectAllocationsTab projectId={projectId} isActive={activeTab === 'allocations'} />
         </TabsContent>
 
         <TabsContent value="reports">

@@ -51,6 +51,12 @@ export class UpdateWarehouseDto {
   @MaxLength(100)
   state?: string;
 
+  @ApiProperty({ example: 'India', required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  country?: string;
+
   @ApiProperty({ example: '400069', required: false })
   @IsString()
   @IsOptional()

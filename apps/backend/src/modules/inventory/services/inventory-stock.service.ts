@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { InventoryTransactionType } from '@oneohm-epc/shared/types';
+import { DataSource, EntityManager } from 'typeorm';
 
 import { ProductRepository } from '../../master-data/repositories/product.repository';
 import { UpdateStockDto } from '../dto';
@@ -9,10 +11,14 @@ import {
   InventoryTransactionRepository,
   WarehouseRepository,
 } from '../repositories';
+import { LowStockAlertService } from './low-stock-alert.service';
+import { ReservedStockService } from './reserved-stock.service';
+import { StockTransferService } from './stock-transfer.service';
 
 /**
  * Inventory Stock Service
- * Business logic for stock management and tracking
+ * Business logic for stock management and tracking.
+ * All multi-write methods that touch inventory_stock also write an inventory_transaction.
  */
 @Injectable()
 export class InventoryStockService {
@@ -21,32 +27,72 @@ export class InventoryStockService {
     private readonly inventoryTransactionRepository: InventoryTransactionRepository,
     private readonly warehouseRepository: WarehouseRepository,
     private readonly productRepository: ProductRepository,
+    private readonly lowStockAlertService: LowStockAlertService,
+    private readonly reservedStockService: ReservedStockService,
+    private readonly stockTransferService: StockTransferService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
+  // ==================== Read Methods ====================
+
   /**
-   * Get stock by warehouse and product
+   * Get stock by warehouse and product — validates warehouse belongs to org.
    */
-  async getStock(warehouseId: string, productId: string): Promise<InventoryStockEntity | null> {
-    return this.inventoryStockRepository.findByWarehouseAndProduct(warehouseId, productId);
+  async getStock(
+    organizationId: string,
+    warehouseId: string,
+    productId: string,
+  ): Promise<InventoryStockEntity | null> {
+    await this.warehouseRepository.findById(warehouseId, organizationId);
+    return this.inventoryStockRepository.findByWarehouseAndProduct(
+      warehouseId,
+      productId,
+      organizationId,
+    );
   }
 
   /**
-   * Get all stock for a warehouse
+   * Get stock by stock row id.
    */
-  async getStockByWarehouse(
-    warehouseId: string,
+  async getStockById(id: string, organizationId: string): Promise<InventoryStockEntity> {
+    return this.inventoryStockRepository.findById(id, organizationId);
+  }
+
+  /**
+   * Get stock across organization with optional filters.
+   */
+  async getAllStock(
+    organizationId: string,
     page = 1,
     limit = 50,
     filters?: {
+      warehouseId?: string;
+      productId?: string;
       lowStock?: boolean;
       search?: string;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
     },
   ): Promise<{ stocks: InventoryStockEntity[]; total: number }> {
+    return this.inventoryStockRepository.findAll(organizationId, page, limit, filters);
+  }
+
+  /**
+   * Get all stock for a warehouse — validates warehouse belongs to org.
+   */
+  async getStockByWarehouse(
+    organizationId: string,
+    warehouseId: string,
+    page = 1,
+    limit = 50,
+    filters?: { lowStock?: boolean; search?: string },
+  ): Promise<{ stocks: InventoryStockEntity[]; total: number }> {
+    await this.warehouseRepository.findById(warehouseId, organizationId);
     return this.inventoryStockRepository.findByWarehouse(warehouseId, page, limit, filters);
   }
 
   /**
-   * Get all stock for a product across warehouses
+   * Get all stock for a product across warehouses.
    */
   async getStockByProduct(
     productId: string,
@@ -56,48 +102,56 @@ export class InventoryStockService {
   }
 
   /**
-   * Get low stock alerts
+   * Get low stock alerts.
    */
   async getLowStockAlerts(organizationId: string): Promise<InventoryStockEntity[]> {
     return this.inventoryStockRepository.findLowStock(organizationId);
   }
 
   /**
-   * Update stock levels (generic method)
+   * Get total stock value.
+   */
+  async getTotalStockValue(organizationId: string): Promise<number> {
+    return this.inventoryStockRepository.getTotalStockValue(organizationId);
+  }
+
+  /**
+   * Get stock summary by warehouse.
+   */
+  async getStockSummaryByWarehouse(
+    organizationId: string,
+  ): Promise<
+    Array<{ warehouseId: string; warehouseName: string; totalItems: number; totalValue: number }>
+  > {
+    return this.inventoryStockRepository.getStockSummaryByWarehouse(organizationId);
+  }
+
+  // ==================== Mutation Methods ====================
+
+  /**
+   * Generic stock update — validates warehouse + product ownership, creates transaction record.
+   * All convenience methods delegate here.
    */
   async updateStock(updateDto: UpdateStockDto, performedBy: string): Promise<InventoryStockEntity> {
     if (!updateDto.organizationId) {
       throw new BadRequestException('Organization ID is required');
     }
 
-    // Verify warehouse exists
-    const warehouse = await this.warehouseRepository.findById(
-      updateDto.warehouseId,
-      updateDto.organizationId,
-    );
+    const [warehouse, product] = await Promise.all([
+      this.warehouseRepository.findById(updateDto.warehouseId, updateDto.organizationId),
+      this.productRepository.findById(updateDto.productId, updateDto.organizationId),
+    ]);
 
-    // Verify product exists
-    const product = await this.productRepository.findById(
-      updateDto.productId,
-      updateDto.organizationId,
-    );
+    if (!warehouse) throw new NotFoundException('Warehouse not found');
+    if (!product) throw new NotFoundException('Product not found');
 
-    if (!warehouse) {
-      throw new NotFoundException('Warehouse not found');
-    }
-
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
-    // Get or create stock record
     let stock = await this.inventoryStockRepository.findByWarehouseAndProduct(
       updateDto.warehouseId,
       updateDto.productId,
+      updateDto.organizationId,
     );
 
     if (!stock) {
-      // Create new stock record
       stock = await this.inventoryStockRepository.upsert({
         organizationId: updateDto.organizationId,
         warehouseId: updateDto.warehouseId,
@@ -105,34 +159,29 @@ export class InventoryStockService {
         availableQuantity: 0,
         reservedQuantity: 0,
         inTransitQuantity: 0,
-        minimumStockLevel: updateDto.minimumStockLevel || 0,
+        minimumStockLevel: updateDto.minimumStockLevel ?? 0,
         maximumStockLevel: updateDto.maximumStockLevel,
       });
     }
 
-    const quantityChange = updateDto.quantity;
-
-    // Calculate new quantities
-    const newAvailableQuantity = stock.availableQuantity + quantityChange;
-
+    const newAvailableQuantity = Number(stock.availableQuantity) + updateDto.quantity;
     if (newAvailableQuantity < 0) {
       throw new BadRequestException('Insufficient stock available');
     }
 
-    // Update stock
+    const prevAvailable = Number(stock.availableQuantity);
     const updatedStock = await this.inventoryStockRepository.updateQuantities(stock.id, {
       availableQuantity: newAvailableQuantity,
       minimumStockLevel: updateDto.minimumStockLevel,
       maximumStockLevel: updateDto.maximumStockLevel,
     });
 
-    // Create transaction record
     await this.inventoryTransactionRepository.create({
       organizationId: updateDto.organizationId,
       warehouseId: updateDto.warehouseId,
       productId: updateDto.productId,
       transactionType: updateDto.transactionType,
-      quantity: Math.abs(quantityChange),
+      quantity: Math.abs(updateDto.quantity),
       transactionDate: new Date(),
       referenceType: updateDto.referenceType,
       referenceId: updateDto.referenceId,
@@ -140,11 +189,21 @@ export class InventoryStockService {
       createdBy: performedBy,
     });
 
+    if (updateDto.quantity < 0) {
+      this.lowStockAlertService.checkAndFire(
+        updateDto.organizationId,
+        stock,
+        prevAvailable,
+        newAvailableQuantity,
+        performedBy,
+      );
+    }
+
     return updatedStock;
   }
 
   /**
-   * Add stock (convenience method)
+   * Add stock (e.g. on PO receive). Optionally accepts an EntityManager for transactional use.
    */
   async addStock(
     organizationId: string,
@@ -155,7 +214,21 @@ export class InventoryStockService {
     referenceId: string,
     performedBy: string,
     notes?: string,
+    manager?: EntityManager,
   ): Promise<InventoryStockEntity> {
+    if (manager) {
+      return this.reservedStockService.addStockWithManager(
+        manager,
+        organizationId,
+        warehouseId,
+        productId,
+        quantity,
+        referenceType,
+        referenceId,
+        performedBy,
+        notes,
+      );
+    }
     return this.updateStock(
       {
         organizationId,
@@ -172,7 +245,7 @@ export class InventoryStockService {
   }
 
   /**
-   * Remove stock (convenience method)
+   * Remove stock (convenience). Deducts from available.
    */
   async removeStock(
     organizationId: string,
@@ -199,9 +272,6 @@ export class InventoryStockService {
     );
   }
 
-  /**
-   * Transfer stock between warehouses
-   */
   async transferStock(
     organizationId: string,
     fromWarehouseId: string,
@@ -211,45 +281,19 @@ export class InventoryStockService {
     performedBy: string,
     notes?: string,
   ): Promise<void> {
-    // Verify both warehouses exist
-    await Promise.all([
-      this.warehouseRepository.findById(fromWarehouseId, organizationId),
-      this.warehouseRepository.findById(toWarehouseId, organizationId),
-    ]);
-
-    // Remove from source warehouse
-    await this.updateStock(
-      {
-        organizationId,
-        warehouseId: fromWarehouseId,
-        productId,
-        quantity: -quantity,
-        transactionType: InventoryTransactionType.TRANSFER_OUT,
-        referenceType: 'warehouse_transfer',
-        referenceId: toWarehouseId,
-        notes,
-      },
+    return this.stockTransferService.transferStock(
+      organizationId,
+      fromWarehouseId,
+      toWarehouseId,
+      productId,
+      quantity,
       performedBy,
-    );
-
-    // Add to destination warehouse
-    await this.updateStock(
-      {
-        organizationId,
-        warehouseId: toWarehouseId,
-        productId,
-        quantity,
-        transactionType: InventoryTransactionType.TRANSFER_IN,
-        referenceType: 'warehouse_transfer',
-        referenceId: fromWarehouseId,
-        notes,
-      },
-      performedBy,
+      notes,
     );
   }
 
   /**
-   * Adjust stock (for corrections)
+   * Adjust stock to a new absolute quantity.
    */
   async adjustStock(
     organizationId: string,
@@ -262,14 +306,11 @@ export class InventoryStockService {
     const stock = await this.inventoryStockRepository.findByWarehouseAndProduct(
       warehouseId,
       productId,
+      organizationId,
     );
+    if (!stock) throw new BadRequestException('Stock record not found');
 
-    if (!stock) {
-      throw new BadRequestException('Stock record not found');
-    }
-
-    const adjustment = newQuantity - stock.availableQuantity;
-
+    const adjustment = newQuantity - Number(stock.availableQuantity);
     return this.updateStock(
       {
         organizationId,
@@ -279,69 +320,180 @@ export class InventoryStockService {
         transactionType: InventoryTransactionType.ADJUSTMENT,
         referenceType: 'manual_adjustment',
         referenceId: stock.id,
-        notes: `Adjustment: ${reason}`,
+        notes: `[REASON: ${reason}]`,
       },
       performedBy,
     );
   }
 
   /**
-   * Get total stock value
+   * Reserve stock for allocation — moves available → reserved.
+   * Writes an ALLOCATION transaction.
    */
-  async getTotalStockValue(organizationId: string): Promise<number> {
-    return this.inventoryStockRepository.getTotalStockValue(organizationId);
+  async reserveStock(
+    organizationId: string,
+    warehouseId: string,
+    productId: string,
+    quantity: number,
+    performedBy: string,
+    referenceId?: string,
+  ): Promise<void> {
+    let stockForAlert: InventoryStockEntity | null = null;
+    let prevAvailable = 0;
+    let newAvailable = 0;
+
+    await this.dataSource.transaction(async (manager) => {
+      const stockRepo = manager.getRepository(InventoryStockEntity);
+      const stock = await stockRepo
+        .createQueryBuilder('stock')
+        .where('stock.warehouseId = :warehouseId', { warehouseId })
+        .andWhere('stock.productId = :productId', { productId })
+        .andWhere('stock.organizationId = :organizationId', { organizationId })
+        .setLock('pessimistic_write')
+        .getOne();
+
+      if (!stock) throw new BadRequestException('Stock record not found');
+      if (Number(stock.availableQuantity) < quantity)
+        throw new BadRequestException('Insufficient available stock');
+
+      prevAvailable = Number(stock.availableQuantity);
+      newAvailable = prevAvailable - quantity;
+
+      stock.availableQuantity = newAvailable;
+      stock.reservedQuantity = Number(stock.reservedQuantity) + quantity;
+      stock.updatedAt = new Date();
+      await stockRepo.save(stock);
+
+      const { InventoryTransactionEntity: TxnEntity } = await import(
+        '../entities/inventory-transaction.entity'
+      );
+      const txnRepo = manager.getRepository(TxnEntity);
+      await txnRepo.save(
+        txnRepo.create({
+          organizationId,
+          warehouseId,
+          productId,
+          transactionType: InventoryTransactionType.ALLOCATION,
+          quantity,
+          transactionDate: new Date(),
+          referenceType: 'stock_allocation',
+          referenceId,
+          notes: 'Stock reserved for allocation',
+          createdBy: performedBy,
+        }),
+      );
+
+      stockForAlert = stock;
+    });
+
+    if (stockForAlert) {
+      this.lowStockAlertService.checkAndFire(
+        organizationId,
+        stockForAlert,
+        prevAvailable,
+        newAvailable,
+        performedBy,
+      );
+    }
   }
 
   /**
-   * Get stock summary by warehouse
+   * Release reserved stock — moves reserved → available.
+   * Writes a reverse ALLOCATION transaction.
    */
-  async getStockSummaryByWarehouse(organizationId: string) {
-    return this.inventoryStockRepository.getStockSummaryByWarehouse(organizationId);
-  }
+  async releaseStock(
+    organizationId: string,
+    warehouseId: string,
+    productId: string,
+    quantity: number,
+    performedBy: string,
+    referenceId?: string,
+  ): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      const stockRepo = manager.getRepository(InventoryStockEntity);
+      const stock = await stockRepo
+        .createQueryBuilder('stock')
+        .where('stock.warehouseId = :warehouseId', { warehouseId })
+        .andWhere('stock.productId = :productId', { productId })
+        .andWhere('stock.organizationId = :organizationId', { organizationId })
+        .setLock('pessimistic_write')
+        .getOne();
 
-  /**
-   * Reserve stock (allocate for project)
-   */
-  async reserveStock(warehouseId: string, productId: string, quantity: number): Promise<void> {
-    const stock = await this.inventoryStockRepository.findByWarehouseAndProduct(
-      warehouseId,
-      productId,
-    );
+      if (!stock) throw new BadRequestException('Stock record not found');
+      if (Number(stock.reservedQuantity) < quantity)
+        throw new BadRequestException('Insufficient reserved stock');
 
-    if (!stock) {
-      throw new BadRequestException('Stock record not found');
-    }
+      stock.availableQuantity = Number(stock.availableQuantity) + quantity;
+      stock.reservedQuantity = Number(stock.reservedQuantity) - quantity;
+      stock.updatedAt = new Date();
+      await stockRepo.save(stock);
 
-    if (stock.availableQuantity < quantity) {
-      throw new BadRequestException('Insufficient available stock');
-    }
-
-    await this.inventoryStockRepository.updateQuantities(stock.id, {
-      availableQuantity: stock.availableQuantity - quantity,
-      reservedQuantity: stock.reservedQuantity + quantity,
+      const { InventoryTransactionEntity: TxnEntity } = await import(
+        '../entities/inventory-transaction.entity'
+      );
+      const txnRepo = manager.getRepository(TxnEntity);
+      await txnRepo.save(
+        txnRepo.create({
+          organizationId,
+          warehouseId,
+          productId,
+          transactionType: InventoryTransactionType.ALLOCATION,
+          quantity,
+          transactionDate: new Date(),
+          referenceType: 'stock_allocation',
+          referenceId,
+          notes: 'Reserved stock released from allocation',
+          createdBy: performedBy,
+        }),
+      );
     });
   }
 
-  /**
-   * Release reserved stock
-   */
-  async releaseStock(warehouseId: string, productId: string, quantity: number): Promise<void> {
-    const stock = await this.inventoryStockRepository.findByWarehouseAndProduct(
+  async restoreReservedStock(
+    organizationId: string,
+    warehouseId: string,
+    productId: string,
+    quantity: number,
+    referenceType: string,
+    referenceId: string,
+    performedBy: string,
+    notes?: string,
+    manager?: EntityManager,
+  ): Promise<void> {
+    return this.reservedStockService.restoreReservedStock(
+      organizationId,
       warehouseId,
       productId,
+      quantity,
+      referenceType,
+      referenceId,
+      performedBy,
+      notes,
+      manager,
     );
+  }
 
-    if (!stock) {
-      throw new BadRequestException('Stock record not found');
-    }
-
-    if (stock.reservedQuantity < quantity) {
-      throw new BadRequestException('Insufficient reserved stock');
-    }
-
-    await this.inventoryStockRepository.updateQuantities(stock.id, {
-      availableQuantity: stock.availableQuantity + quantity,
-      reservedQuantity: stock.reservedQuantity - quantity,
-    });
+  async deductReservedStock(
+    organizationId: string,
+    warehouseId: string,
+    productId: string,
+    quantity: number,
+    referenceType: string,
+    referenceId: string,
+    performedBy: string,
+    notes?: string,
+    manager?: EntityManager,
+  ): Promise<void> {
+    return this.reservedStockService.deductReservedStock(
+      organizationId,
+      warehouseId,
+      productId,
+      quantity,
+      referenceType,
+      referenceId,
+      performedBy,
+      notes,
+      manager,
+    );
   }
 }

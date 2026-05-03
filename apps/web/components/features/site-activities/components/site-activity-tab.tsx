@@ -39,6 +39,7 @@ import { formatDate } from '@/lib/utils';
 
 interface SiteActivityTabProps {
   propertyId: string;
+  customerInactive?: boolean;
 }
 
 const STATUS_CONFIG: Record<
@@ -51,7 +52,10 @@ const STATUS_CONFIG: Record<
   [SiteActivityStatus.CANCELLED]: { label: 'Cancelled', color: 'error' },
 };
 
-export function SiteActivityTab({ propertyId }: SiteActivityTabProps): JSX.Element {
+export function SiteActivityTab({
+  propertyId,
+  customerInactive = false,
+}: SiteActivityTabProps): JSX.Element {
   const router = useRouter();
   const { data: activity, isLoading } = useSiteActivityByProperty(propertyId);
   const completeVisitMutation = useCompleteVisit();
@@ -94,12 +98,20 @@ export function SiteActivityTab({ propertyId }: SiteActivityTabProps): JSX.Eleme
       <EmptyState
         icon={<CalendarTodayIcon sx={{ width: '100%', height: '100%' }} />}
         title="No site activity yet"
-        description="Create a site activity to begin the visit and survey process for this property."
-        action={{
-          label: 'Schedule Site Visit',
-          onClick: () => router.push(`${ROUTES.SITE_VISITS.NEW}?propertyId=${propertyId}`),
-          icon: <CalendarTodayIcon sx={{ fontSize: 16 }} />,
-        }}
+        description={
+          customerInactive
+            ? 'Site activity creation is blocked because the customer is inactive.'
+            : 'Create a site activity to begin the visit and survey process for this property.'
+        }
+        action={
+          customerInactive
+            ? undefined
+            : {
+                label: 'Schedule Site Visit',
+                onClick: () => router.push(`${ROUTES.SITE_VISITS.NEW}?propertyId=${propertyId}`),
+                icon: <CalendarTodayIcon sx={{ fontSize: 16 }} />,
+              }
+        }
       />
     );
   }

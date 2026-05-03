@@ -80,8 +80,18 @@ export const navigationConfig: NavigationConfig = {
       id: 'inventory',
       icon: Box,
       label: 'Inventory',
-      href: ROUTES.INVENTORY.LIST,
+      href: ROUTES.INVENTORY.STOCK,
       panelKey: 'inventory',
+      roles: [
+        'admin',
+        'super_admin',
+        'platform_admin',
+        'inventory_manager',
+        'store',
+        'project_manager',
+        'accounts_manager',
+      ],
+      permissions: ['inventory:read'],
     },
     {
       id: 'finance',
@@ -390,24 +400,70 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Stock',
           items: [
-            { id: 'all-inventory', icon: Box, label: 'All Items', href: ROUTES.INVENTORY.LIST },
+            {
+              id: 'inventory-dashboard',
+              icon: LayoutGrid,
+              label: 'Dashboard',
+              href: ROUTES.INVENTORY.LIST,
+              exactMatch: true,
+            },
+            {
+              id: 'all-inventory',
+              icon: Package,
+              label: 'All Stock',
+              href: ROUTES.INVENTORY.STOCK,
+            },
             {
               id: 'low-stock',
+              icon: Package,
+              label: 'Low Stock Alerts',
+              href: ROUTES.INVENTORY.ALERTS,
+            },
+            {
+              id: 'warehouses',
               icon: Box,
-              label: 'Low Stock',
-              href: `${ROUTES.INVENTORY.LIST}?filter=low-stock`,
+              label: 'Warehouses',
+              href: ROUTES.INVENTORY.WAREHOUSES,
             },
           ],
         },
         {
-          title: 'Management',
+          title: 'Procurement',
           items: [
-            { id: 'vendors', icon: Users, label: 'Vendors', href: ROUTES.VENDORS.LIST },
             {
               id: 'purchase-orders',
               icon: FileText,
               label: 'Purchase Orders',
               href: ROUTES.INVENTORY.PURCHASE_ORDERS,
+            },
+            {
+              id: 'vendors',
+              icon: Users,
+              label: 'Vendors',
+              href: ROUTES.INVENTORY.VENDORS,
+            },
+          ],
+        },
+        {
+          title: 'Operations',
+          items: [
+            {
+              id: 'allocations',
+              icon: Layers,
+              label: 'Allocations',
+              href: ROUTES.INVENTORY.ALLOCATIONS,
+            },
+            {
+              id: 'dispatches',
+              icon: Send,
+              label: 'Dispatches',
+              href: ROUTES.INVENTORY.DISPATCHES,
+            },
+            {
+              id: 'transactions',
+              icon: List,
+              label: 'Transactions',
+              href: ROUTES.INVENTORY.TRANSACTIONS,
             },
           ],
         },

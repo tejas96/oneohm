@@ -25,6 +25,13 @@ export interface UseQueryStateReturn<F extends BaseFilters> {
   filters: Partial<F>;
   setFilter: <K extends keyof F>(key: K, value: F[K]) => void;
   setFilters: (updates: Partial<F>) => void;
+  /**
+   * Replace the entire filter object (excluding pagination/sort keys, which
+   * live in their own state). Use with AdvancedTable's filter panel — it
+   * emits a full snapshot per change / clear, while `setFilters` only
+   * merges partial updates and cannot remove keys.
+   */
+  replaceFilters: (next: Partial<F>) => void;
   clearFilters: () => void;
   hasActiveFilters: boolean;
 
@@ -36,10 +43,23 @@ export interface UseQueryStateReturn<F extends BaseFilters> {
 
 const PAGINATION_KEYS = new Set(['page', 'limit', 'search', 'sortBy', 'sortOrder']);
 
+const SENSITIVE_KEYS = new Set(['token', 'password', 'secret', 'auth', 'key', 'credential']);
+
+function isSafeFilterKey(key: string): boolean {
+  const lower = key.toLowerCase();
+  return !SENSITIVE_KEYS.has(lower) && !Array.from(SENSITIVE_KEYS).some((s) => lower.includes(s));
+}
+
 function readPersistedState<F>(persistKey: string): Partial<F> | null {
   try {
     const stored = localStorage.getItem(persistKey);
-    return stored ? (JSON.parse(stored) as Partial<F>) : null;
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as Record<string, unknown>;
+    const safe: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (isSafeFilterKey(key)) safe[key] = value;
+    }
+    return safe as Partial<F>;
   } catch {
     return null;
   }
@@ -47,7 +67,11 @@ function readPersistedState<F>(persistKey: string): Partial<F> | null {
 
 function persistState<F>(persistKey: string, filters: Partial<F>): void {
   try {
-    localStorage.setItem(persistKey, JSON.stringify(filters));
+    const safeFilters: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(filters as Record<string, unknown>)) {
+      if (isSafeFilterKey(key)) safeFilters[key] = value;
+    }
+    localStorage.setItem(persistKey, JSON.stringify(safeFilters));
   } catch {
     // localStorage might be full or unavailable
   }
@@ -70,14 +94,21 @@ export function useQueryState<F extends BaseFilters>(
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
-  // Resolve initial state: URL > localStorage > defaults
+  // Resolve initial state: URL > localStorage > defaults.
+  // When syncToUrl is false (typical for "secondary" hooks like a
+  // warehouses dropdown that lives on a stock-list page), we MUST NOT
+  // read pagination/search/sort from the URL — those belong to the
+  // primary list. Otherwise a deep link such as
+  // /inventory/stock?search=foo would silently send `search=foo` to
+  // every secondary fetch on the page (warehouse picker, etc.) and
+  // break those queries.
   const initialState = useMemo(() => {
     const persisted = options?.persistKey ? readPersistedState<F>(options.persistKey) : null;
-    const urlPage = searchParams.get('page');
-    const urlLimit = searchParams.get('limit');
-    const urlSearch = searchParams.get('search');
-    const urlSortBy = searchParams.get('sortBy');
-    const urlSortOrder = searchParams.get('sortOrder');
+    const urlPage = syncToUrl ? searchParams.get('page') : null;
+    const urlLimit = syncToUrl ? searchParams.get('limit') : null;
+    const urlSearch = syncToUrl ? searchParams.get('search') : null;
+    const urlSortBy = syncToUrl ? searchParams.get('sortBy') : null;
+    const urlSortOrder = syncToUrl ? searchParams.get('sortOrder') : null;
 
     const initialFilters: Record<string, unknown> = {};
 
@@ -148,11 +179,8 @@ export function useQueryState<F extends BaseFilters>(
 
     const params = new URLSearchParams(window.location.search);
 
-    if (page > 1) params.set('page', String(page));
-    else params.delete('page');
-
-    if (pageSize !== defaultPageSize) params.set('limit', String(pageSize));
-    else params.delete('limit');
+    params.set('page', String(Math.max(page, 1)));
+    params.set('limit', String(pageSize));
 
     if (search) params.set('search', search);
     else params.delete('search');
@@ -271,6 +299,15 @@ export function useQueryState<F extends BaseFilters>(
     [markUserChange],
   );
 
+  const replaceFilters = useCallback(
+    (next: Partial<F>) => {
+      markUserChange();
+      setFiltersRaw(next);
+      setPageRaw(1);
+    },
+    [markUserChange],
+  );
+
   const clearFilters = useCallback(() => {
     markUserChange();
     setFiltersRaw((options?.defaults ?? {}) as Partial<F>);
@@ -354,8 +391,10 @@ export function useQueryState<F extends BaseFilters>(
   }, [markUserChange, options?.defaultSort]);
 
   const setMeta = useCallback((meta: { total: number; totalPages: number }) => {
+    const safeTotalPages = Math.max(meta.totalPages, 1);
     setTotal(meta.total);
-    setTotalPages(meta.totalPages);
+    setTotalPages(safeTotalPages);
+    setPageRaw((prev) => (prev > safeTotalPages ? safeTotalPages : Math.max(prev, 1)));
   }, []);
 
   const pagination: PaginationState = useMemo(
@@ -391,6 +430,7 @@ export function useQueryState<F extends BaseFilters>(
     filters,
     setFilter,
     setFilters: setFiltersCallback,
+    replaceFilters,
     clearFilters,
     hasActiveFilters,
     pagination,

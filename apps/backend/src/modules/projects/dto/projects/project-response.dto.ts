@@ -16,6 +16,10 @@ import { MilestoneResponseDto } from '../milestones/milestone-response.dto';
 const latestQuoteVersion = (obj: Record<string, unknown>) =>
   (obj.quote as { versions?: Array<Record<string, unknown>> } | undefined)?.versions?.[0];
 
+function getSnapshot(obj: Record<string, unknown>): QuoteSnapshot | undefined {
+  return latestQuoteVersion(obj)?.quoteSnapshot as QuoteSnapshot | undefined;
+}
+
 /**
  * Project Response DTO
  *
@@ -117,6 +121,91 @@ export class ProjectResponseDto {
   @Expose()
   @Transform(({ obj }) => toNum(obj.metadata?.actualCost) ?? null)
   actualCost?: number;
+
+  // ==================== Derived Spec Fields (from quote snapshot) ====================
+
+  @ApiPropertyOptional({
+    description: 'Panel configurations from quote snapshot (supports DCR + Non-DCR split)',
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    const panels = getSnapshot(obj)?.calculation?.panels;
+    if (!panels?.length) return undefined;
+    return panels.map((p) => ({
+      name: p.name,
+      brand: p.brand,
+      isDcr: p.isDcr,
+      wattagePerPanel: p.wattagePerPanel,
+      quantity: p.quantity,
+      technology: p.technology ?? undefined,
+      productWarrantyYears: p.productWarrantyYears ?? undefined,
+      performanceWarrantyYears: p.performanceWarrantyYears ?? undefined,
+    }));
+  })
+  panelConfigs?: Array<{
+    name: string;
+    brand: string;
+    isDcr: boolean;
+    wattagePerPanel: number;
+    quantity: number;
+    technology?: string;
+    productWarrantyYears?: number;
+    performanceWarrantyYears?: number;
+  }>;
+
+  @ApiPropertyOptional({ description: 'Total panel count across all configs' })
+  @Expose()
+  @Transform(({ obj }) => {
+    const panels = getSnapshot(obj)?.calculation?.panels;
+    if (!panels?.length) return undefined;
+    return panels.reduce((sum, p) => sum + (p.quantity ?? 0), 0);
+  })
+  panelCount?: number;
+
+  @ApiPropertyOptional({ description: 'Inverter configurations from quote snapshot' })
+  @Expose()
+  @Transform(({ obj }) => {
+    const inverters = getSnapshot(obj)?.calculation?.inverters?.inverters;
+    if (!inverters?.length) return undefined;
+    return inverters.map((i) => ({
+      name: i.name,
+      brand: i.brand,
+      capacityKw: i.capacityKw,
+      quantity: i.quantity,
+      productWarrantyYears: i.productWarrantyYears ?? undefined,
+    }));
+  })
+  inverterConfigs?: Array<{
+    name: string;
+    brand: string;
+    capacityKw: number;
+    quantity: number;
+    productWarrantyYears?: number;
+  }>;
+
+  @ApiPropertyOptional({ description: 'Total inverter count across all configs' })
+  @Expose()
+  @Transform(({ obj }) => {
+    const inverters = getSnapshot(obj)?.calculation?.inverters?.inverters;
+    if (!inverters?.length) return undefined;
+    return inverters.reduce((sum, i) => sum + (i.quantity ?? 0), 0);
+  })
+  inverterCount?: number;
+
+  @ApiPropertyOptional({ description: 'Structure / mounting type from quote snapshot' })
+  @Expose()
+  @Transform(({ obj }) => {
+    const structure = getSnapshot(obj)?.calculation?.structure;
+    return structure?.structureType ?? structure?.name ?? undefined;
+  })
+  structureType?: string;
+
+  @ApiPropertyOptional({ description: 'Phase type from quote snapshot inputs' })
+  @Expose()
+  @Transform(({ obj }) => getSnapshot(obj)?.inputs?.phaseType ?? undefined)
+  phaseType?: string;
+
+  // ==================== Metadata ====================
 
   @ApiPropertyOptional({ example: { tags: ['priority', 'referral'] } })
   @Expose()

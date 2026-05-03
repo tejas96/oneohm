@@ -108,7 +108,22 @@ export const ROUTES = {
   // Inventory
   INVENTORY: {
     LIST: '/inventory',
+    STOCK: '/inventory/stock',
+    STOCK_DETAIL: '/inventory/stock/[id]',
+    WAREHOUSES: '/inventory/warehouses',
+    WAREHOUSE_DETAIL: '/inventory/warehouses/[id]',
     PURCHASE_ORDERS: '/inventory/purchase-orders',
+    PURCHASE_ORDER_DETAIL: '/inventory/purchase-orders/[id]',
+    PURCHASE_ORDER_NEW: '/inventory/purchase-orders/new',
+    ALLOCATIONS: '/inventory/allocations',
+    ALLOCATION_DETAIL: '/inventory/allocations/[id]',
+    DISPATCHES: '/inventory/dispatches',
+    DISPATCH_DETAIL: '/inventory/dispatches/[id]',
+    DISPATCH_NEW: '/inventory/dispatches/new',
+    TRANSACTIONS: '/inventory/transactions',
+    VENDORS: '/inventory/vendors',
+    VENDOR_DETAIL: '/inventory/vendors/[id]',
+    ALERTS: '/inventory/alerts',
   },
 
   // Vendors
@@ -222,6 +237,7 @@ export interface RouteParamTypes {
   '/customers/[id]/properties/new': { id: string };
   '/quotes/[id]': { id: string };
   '/projects/[id]': { id: string };
+  '/inventory/stock/[id]': { id: string };
   '/properties/[id]': { id: string };
   '/properties/[id]/edit': { id: string };
   '/followups/[id]/edit': { id: string };
@@ -419,7 +435,22 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
 
   // Inventory routes
   [ROUTES.INVENTORY.LIST]: 'inventory',
+  [ROUTES.INVENTORY.STOCK]: 'inventory',
+  [ROUTES.INVENTORY.STOCK_DETAIL]: 'inventory',
+  [ROUTES.INVENTORY.WAREHOUSES]: 'inventory',
+  [ROUTES.INVENTORY.WAREHOUSE_DETAIL]: 'inventory',
   [ROUTES.INVENTORY.PURCHASE_ORDERS]: 'inventory',
+  [ROUTES.INVENTORY.PURCHASE_ORDER_DETAIL]: 'inventory',
+  [ROUTES.INVENTORY.PURCHASE_ORDER_NEW]: 'inventory',
+  [ROUTES.INVENTORY.ALLOCATIONS]: 'inventory',
+  [ROUTES.INVENTORY.ALLOCATION_DETAIL]: 'inventory',
+  [ROUTES.INVENTORY.DISPATCHES]: 'inventory',
+  [ROUTES.INVENTORY.DISPATCH_DETAIL]: 'inventory',
+  [ROUTES.INVENTORY.DISPATCH_NEW]: 'inventory',
+  [ROUTES.INVENTORY.TRANSACTIONS]: 'inventory',
+  [ROUTES.INVENTORY.VENDORS]: 'inventory',
+  [ROUTES.INVENTORY.VENDOR_DETAIL]: 'inventory',
+  [ROUTES.INVENTORY.ALERTS]: 'inventory',
 
   // Finance routes
   [ROUTES.FINANCE.HOME]: 'finance',

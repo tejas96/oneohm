@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaymentStatus, PurchaseOrderStatus, PurchaseOrderType } from '@oneohm-epc/shared/types';
-import { IsNull, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, Not, Repository } from 'typeorm';
 
 import { PurchaseOrderEntity } from '../entities/purchase-order.entity';
 
@@ -246,26 +246,44 @@ export class PurchaseOrderRepository {
   }
 
   /**
-   * Generate next PO number
+   * True if the vendor has any non-deleted PO in this org that is not cancelled or fully received.
    */
-  async generatePoNumber(organizationId: string, prefix = 'PO'): Promise<string> {
-    const year = new Date().getFullYear();
-    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  async hasActivePOs(vendorId: string, organizationId: string): Promise<boolean> {
+    const po = await this.repository.findOne({
+      where: {
+        vendorId,
+        organizationId,
+        deletedAt: IsNull(),
+        status: Not(In([PurchaseOrderStatus.CANCELLED, PurchaseOrderStatus.RECEIVED])),
+      },
+      select: ['id'],
+    });
 
-    // Find the last PO number for this organization
-    const lastPo = await this.repository
-      .createQueryBuilder('po')
-      .where('po.organizationId = :organizationId', { organizationId })
-      .andWhere('po.poNumber LIKE :pattern', { pattern: `${prefix}-${year}${month}%` })
-      .orderBy('po.poNumber', 'DESC')
-      .getOne();
+    return po !== null;
+  }
 
-    let sequence = 1;
-    if (lastPo?.poNumber) {
-      const lastSequence = parseInt(lastPo.poNumber.split('-').pop() ?? '0', 10);
-      sequence = lastSequence + 1;
-    }
+  /**
+   * Generate next PO number (concurrency-safe via numbering_sequences)
+   */
+  async generatePoNumber(organizationId: string, manager?: EntityManager): Promise<string> {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const sequenceKey = `po-${year}-${month}`;
+    const yyyymm = `${year}${month}`;
 
-    return `${prefix}-${year}${month}-${String(sequence).padStart(4, '0')}`;
+    const exec = manager ?? this.repository.manager;
+    const result = await exec.query(
+      `INSERT INTO numbering_sequences (organization_id, sequence_key, last_value)
+       VALUES ($1, $2, 1)
+       ON CONFLICT (organization_id, sequence_key)
+       DO UPDATE SET last_value = numbering_sequences.last_value + 1
+       RETURNING last_value`,
+      [organizationId, sequenceKey],
+    );
+
+    const raw = result[0]?.last_value;
+    const seq = typeof raw === 'string' ? parseInt(raw, 10) : (raw ?? 1);
+    return `PO-${yyyymm}-${String(seq).padStart(4, '0')}`;
   }
 }

@@ -171,12 +171,9 @@ export class QuoteCalculatorController {
     }
 
     const discountAmount = input.discountAmount || 0;
-
-    // BUG-8: Prevent discount exceeding the base price (would produce a $0 quote)
-    if (discountAmount > calculation.pricing.basePrice) {
-      throw new BadRequestException(
-        `Discount amount (${discountAmount}) cannot exceed the base price (${calculation.pricing.basePrice})`,
-      );
+    const maxAllowedDiscount = Math.max(0, calculation.profitabilityAmount * 0.5);
+    if (discountAmount > maxAllowedDiscount) {
+      throw new BadRequestException('Discount cannot exceed 50% of the margin');
     }
 
     let discounted: ReturnType<typeof applyPreGstDiscount>;
@@ -444,6 +441,7 @@ export class QuoteCalculatorController {
     userId: string,
   ): Promise<void> {
     try {
+      await this.bomService.deleteByEntity(organizationId, 'quote_version', versionId);
       await this.bomService.createFromCalculation(
         organizationId,
         'quote_version',

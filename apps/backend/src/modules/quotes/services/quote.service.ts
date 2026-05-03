@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  CustomerStatus,
   type CalculatorInputs,
   PaymentMilestone,
   type PaymentMilestoneConfig,
@@ -72,16 +73,20 @@ export class QuoteService {
       }
     }
 
-    const customerExists = await this.dataSource
+    const customer = await this.dataSource
       .getRepository('customer_profiles')
       .createQueryBuilder('c')
+      .select(['c.id AS id', 'c.status AS status'])
       .where('c.id = :id', { id: createDto.customerId })
       .andWhere('c.organization_id = :organizationId', { organizationId })
       .andWhere('c.deleted_at IS NULL')
-      .getCount();
+      .getRawOne<{ id: string; status: CustomerStatus }>();
 
-    if (!customerExists) {
+    if (!customer) {
       throw new NotFoundException(`Customer with ID ${createDto.customerId} not found`);
+    }
+    if (customer.status === CustomerStatus.INACTIVE) {
+      throw new BadRequestException('Cannot perform this action: customer is inactive');
     }
 
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
@@ -89,6 +94,7 @@ export class QuoteService {
     if (!createDto.quoteSnapshot?.pricing) {
       throw new BadRequestException('quoteSnapshot with pricing is required');
     }
+    this.assertDiscountWithinMargin(createDto.quoteSnapshot);
 
     const snapshot = createDto.quoteSnapshot;
     const pricingBreakdown = snapshot.pricing;
@@ -479,6 +485,17 @@ export class QuoteService {
       amount:
         Math.round(newTotal * (m.percentage / 100) * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR,
     }));
+  }
+
+  private assertDiscountWithinMargin(snapshot: QuoteSnapshot): void {
+    const discountAmount = Number(snapshot.discountAmount ?? snapshot.pricing?.discountAmount ?? 0);
+    const calc = snapshot.calculation as { profitabilityAmount?: number } | undefined;
+    const profitabilityAmount = Number(calc?.profitabilityAmount ?? 0);
+    const maxAllowedDiscount = Math.max(0, profitabilityAmount * 0.5);
+
+    if (discountAmount > maxAllowedDiscount) {
+      throw new BadRequestException('Discount cannot exceed 50% of the margin');
+    }
   }
 
   /**

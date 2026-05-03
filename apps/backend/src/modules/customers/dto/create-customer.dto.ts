@@ -45,25 +45,25 @@ export class CreateCustomerDto {
   @MaxLength(255)
   email?: string;
 
-  @ApiProperty({ example: '+91-9876543210', description: 'Primary phone number' })
+  @ApiProperty({ example: '+919876543210', description: 'Primary phone number' })
   @IsString()
   @IsNotEmpty()
-  @Matches(/^[\d\s\-+()]+$/, {
-    message: 'Phone must contain only digits, spaces, and +-() characters',
+  @Matches(/^\+91[6-9]\d{9}$/, {
+    message: 'Phone must be a valid Indian mobile number in +91XXXXXXXXXX format',
   })
-  @MaxLength(20)
+  @MaxLength(13)
   phone!: string;
 
   @ApiPropertyOptional({
-    example: '+91-9876543211',
+    example: '+919876543211',
     description: 'Alternate phone number',
   })
   @IsString()
   @IsOptional()
-  @Matches(/^[\d\s\-+()]+$/, {
-    message: 'Phone must contain only digits, spaces, and +-() characters',
+  @Matches(/^\+91[6-9]\d{9}$/, {
+    message: 'Alternate phone must be a valid Indian mobile number in +91XXXXXXXXXX format',
   })
-  @MaxLength(20)
+  @MaxLength(13)
   alternatePhone?: string;
 
   // ==================== Address (Billing/Mailing) ====================

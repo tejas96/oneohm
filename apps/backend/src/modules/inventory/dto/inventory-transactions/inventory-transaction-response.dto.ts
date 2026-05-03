@@ -4,6 +4,55 @@ import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';
 
+class TransactionWarehouseSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Main Warehouse Mumbai' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'WH-MUM-001', required: false })
+  @Expose()
+  code?: string;
+}
+
+class TransactionProductSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Mono PERC Solar Panel 550W' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'PNL-550W-001', required: false })
+  @Expose()
+  code?: string;
+}
+
+class TransactionCreatorSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Sanjay' })
+  @Expose()
+  firstName?: string;
+
+  @ApiProperty({ example: 'Patil' })
+  @Expose()
+  lastName?: string;
+
+  @ApiProperty({ example: 'Sanjay Patil', required: false })
+  @Expose()
+  @Transform(
+    ({ obj }) => [obj.firstName, obj.lastName].filter(Boolean).join(' ').trim() || undefined,
+  )
+  name?: string;
+}
+
 /**
  * Inventory Transaction Response DTO
  * Represents transaction data returned from API
@@ -26,6 +75,31 @@ export class InventoryTransactionResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   productId!: string;
+
+  @ApiProperty({ type: TransactionWarehouseSummaryDto, required: false })
+  @Expose()
+  @Type(() => TransactionWarehouseSummaryDto)
+  warehouse?: TransactionWarehouseSummaryDto;
+
+  @ApiProperty({ type: TransactionProductSummaryDto, required: false })
+  @Expose()
+  @Type(() => TransactionProductSummaryDto)
+  product?: TransactionProductSummaryDto;
+
+  @ApiProperty({ type: TransactionWarehouseSummaryDto, required: false })
+  @Expose()
+  @Type(() => TransactionWarehouseSummaryDto)
+  fromWarehouse?: TransactionWarehouseSummaryDto;
+
+  @ApiProperty({ type: TransactionWarehouseSummaryDto, required: false })
+  @Expose()
+  @Type(() => TransactionWarehouseSummaryDto)
+  toWarehouse?: TransactionWarehouseSummaryDto;
+
+  @ApiProperty({ type: TransactionCreatorSummaryDto, required: false })
+  @Expose()
+  @Type(() => TransactionCreatorSummaryDto)
+  creator?: TransactionCreatorSummaryDto;
 
   // ==================== Transaction Type ====================
 

@@ -56,6 +56,12 @@ export class CreateProjectVendorDto {
   @IsOptional()
   contractEndDate?: string;
 
+  @ApiProperty({ example: 'INR', required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(3)
+  currency?: string;
+
   // ==================== Status ====================
 
   @ApiProperty({

@@ -11,6 +11,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
+import type { SxProps, Theme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import type { RefObject } from 'react';
@@ -40,6 +41,7 @@ interface MyTasksFilterBarProps {
   allExpanded: boolean;
   onExpandAll: () => void;
   onCollapseAll: () => void;
+  sx?: SxProps<Theme>;
 }
 
 export function MyTasksFilterBar({
@@ -59,9 +61,10 @@ export function MyTasksFilterBar({
   allExpanded,
   onExpandAll,
   onCollapseAll,
+  sx,
 }: MyTasksFilterBarProps): React.JSX.Element {
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, ...sx }}>
       <TextField
         inputRef={searchInputRef}
         size="small"
@@ -160,7 +163,7 @@ export function MyTasksFilterBar({
         <IconButton
           size="small"
           onClick={allExpanded ? onCollapseAll : onExpandAll}
-          sx={{ ml: 'auto' }}
+          sx={{ ml: 'auto', borderLeft: '1px solid', borderColor: 'divider', pl: 1.5 }}
         >
           {allExpanded ? (
             <KeyboardArrowUpIcon fontSize="small" />

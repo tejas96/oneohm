@@ -11,6 +11,7 @@ import {
 } from '@oneohm-epc/shared/types';
 import { DataSource, type EntityManager } from 'typeorm';
 
+import { BomService } from '../../bom/services/bom.service';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteService } from '../../quotes/services/quote.service';
@@ -64,6 +65,7 @@ export class ProjectService {
     private readonly workflowStepRepository: WorkflowStepRepository,
     private readonly taskRepository: ProjectTaskRepository,
     private readonly teamRepository: ProjectTeamRepository,
+    private readonly bomService: BomService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -336,7 +338,7 @@ export class ProjectService {
           order: pm.order || i + 1,
         }));
 
-    return this.orchestrateProjectCreation({
+    const project = await this.orchestrateProjectCreation({
       projectData: {
         propertyId: quote.propertyId,
         quoteId,
@@ -363,6 +365,11 @@ export class ProjectService {
       taskAssignments: convertDto?.taskAssignments,
       taskMilestoneOverrides: convertDto?.taskMilestoneOverrides,
     });
+
+    // Copy BOM from quote version to project
+    await this.copyQuoteBomToProject(organizationId, latestVersion?.id, project.id, createdBy);
+
+    return project;
   }
 
   /**
@@ -962,6 +969,129 @@ export class ProjectService {
         task.id,
         { assignedToUserId: assignment.assignedToUserId },
         manager,
+      );
+    }
+  }
+
+  /**
+   * Sync (rebuild) the project BOM from the quote snapshot.
+   * Uses the calculation data persisted in quote_snapshot.calculation to regenerate
+   * the project BOM via BomService.createFromCalculation.
+   * Idempotent: deletes any existing project BOM before recreating.
+   */
+  async syncBomFromSnapshot(
+    organizationId: string,
+    projectId: string,
+    userId: string,
+  ): Promise<void> {
+    const project = await this.projectRepository.findById(projectId, organizationId);
+
+    const quote = await this.quoteService.findById(project.quoteId, organizationId);
+
+    const latestVersion =
+      [...(quote.versions ?? [])].sort((a, b) => {
+        const createdDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (createdDiff !== 0) return createdDiff;
+        return b.versionNumber - a.versionNumber;
+      })[0] ?? null;
+
+    if (!latestVersion?.quoteSnapshot?.calculation) {
+      throw new BadRequestException(
+        'Cannot sync BOM: quote has no calculation snapshot. Please re-calculate the quote first.',
+      );
+    }
+
+    const calculation = latestVersion.quoteSnapshot
+      .calculation as import('../../quotes/dto/calculator/calculate-quote-response.dto').CalculateQuoteResponseDto;
+
+    await this.bomService.deleteByEntity(organizationId, 'project', projectId);
+    await this.bomService.createFromCalculation(
+      organizationId,
+      'project',
+      projectId,
+      calculation,
+      userId,
+    );
+
+    this.logger.log(`Synced BOM for project ${projectId} from quote version ${latestVersion.id}`);
+  }
+
+  /**
+   * Copy BOM from quote version to project.
+   * This ensures project has its own BOM for stock allocation.
+   * If quote version has no BOM or copying fails, log warning but don't block project creation.
+   */
+  private async copyQuoteBomToProject(
+    organizationId: string,
+    quoteVersionId: string | undefined,
+    projectId: string,
+    createdBy: string,
+  ): Promise<void> {
+    if (!quoteVersionId) {
+      this.logger.warn(`Project ${projectId}: No quote version ID available, skipping BOM copy`);
+      return;
+    }
+
+    try {
+      // Check if project already has a BOM (idempotency)
+      const existingProjectBom = await this.bomService.findByEntity(
+        organizationId,
+        'project',
+        projectId,
+      );
+      if (existingProjectBom) {
+        this.logger.debug(`Project ${projectId} already has BOM ${existingProjectBom.bomNumber}`);
+        return;
+      }
+
+      // Find quote version BOM
+      const quoteBom = await this.bomService.findByEntity(
+        organizationId,
+        'quote_version',
+        quoteVersionId,
+      );
+
+      if (!quoteBom) {
+        this.logger.warn(
+          `Project ${projectId}: No BOM found for quote version ${quoteVersionId}, skipping BOM copy`,
+        );
+        return;
+      }
+
+      const clonedItems = (quoteBom.items || []).map((item) => ({
+        itemType: item.itemType,
+        productId: item.productId,
+        name: item.name,
+        brand: item.brand,
+        specifications: item.specifications ?? {},
+        quantity: item.quantity,
+        unit: item.unit,
+        unitPrice: Number(item.unitPrice ?? 0),
+        totalPrice: Number(item.totalPrice ?? 0),
+        gstRate: Number(item.gstRate ?? 0),
+        gstAmount: Number(item.gstAmount ?? 0),
+        warrantyYears: item.warrantyYears,
+        serialNumber: undefined,
+        groupKey: item.groupKey,
+        unitIndex: item.unitIndex,
+        sortOrder: item.sortOrder,
+      }));
+
+      await this.bomService.createFromItems(
+        organizationId,
+        'project',
+        projectId,
+        clonedItems,
+        createdBy,
+      );
+
+      this.logger.log(
+        `Successfully copied BOM from quote version ${quoteVersionId} to project ${projectId}`,
+      );
+    } catch (error) {
+      // Log error but don't fail project creation
+      this.logger.error(
+        `Failed to copy BOM from quote version ${quoteVersionId} to project ${projectId}: ${(error as Error).message}`,
       );
     }
   }

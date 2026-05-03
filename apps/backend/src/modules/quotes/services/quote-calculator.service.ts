@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Inject, Optional, forwardRef } from '@nestjs/common';
 import { PRODUCT_TYPE_INVERTER, PRODUCT_TYPE_SOLAR_PANEL } from '@oneohm-epc/shared/constants';
 import {
   ProjectType,
@@ -12,6 +12,7 @@ import {
   ValidationWarning,
 } from '@oneohm-epc/shared/types';
 
+import { InventoryStockService } from '../../inventory/services/inventory-stock.service';
 import { InstallationPricing } from '../../master-data/entities/installation-pricing.entity';
 import { ProductEntity } from '../../master-data/entities/product.entity';
 import { QuoteConfiguration } from '../../master-data/entities/quote-configuration.entity';
@@ -73,6 +74,9 @@ export class QuoteCalculatorService {
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
     private readonly installationPricingRepo: InstallationPricingRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
+    @Optional()
+    @Inject(forwardRef(() => InventoryStockService))
+    private readonly inventoryStockService?: InventoryStockService,
   ) {}
 
   /**
@@ -273,6 +277,41 @@ export class QuoteCalculatorService {
       input.manualInverterCount !== undefined
     );
 
+    // Populate inventoryStatus if showInventoryStock is enabled and warehouseId is provided
+    let inventoryStatus: CalculateQuoteResponseDto['inventoryStatus'] = undefined;
+    const warehouseId = input.warehouseId;
+    if (quoteConfig.showInventoryStock && this.inventoryStockService && warehouseId) {
+      const panelProductIds = panels
+        .map((p) => p.productId)
+        .filter((id): id is string => Boolean(id));
+      const inverterProductIds = inverters.inverters
+        .map((inv) => inv.productId)
+        .filter((id): id is string => Boolean(id));
+      const allProductIds = [
+        ...new Set([...panelProductIds, ...inverterProductIds, structure.productId]),
+      ];
+
+      inventoryStatus = await Promise.all(
+        allProductIds.map(async (productId) => {
+          const stock = await this.inventoryStockService!.getStock(
+            organizationId,
+            warehouseId,
+            productId,
+          );
+          return {
+            productId,
+            warehouseId,
+            availableQuantity: stock ? Number(stock.availableQuantity) : 0,
+            reservedQuantity: stock ? Number(stock.reservedQuantity) : 0,
+            minimumStockLevel: stock ? Number(stock.minimumStockLevel ?? 0) : 0,
+            isLowStock: stock
+              ? Number(stock.availableQuantity) <= Number(stock.minimumStockLevel ?? 0)
+              : true,
+          };
+        }),
+      );
+    }
+
     return {
       systemConfig: {
         totalSystemSizeKw: input.systemSizeKw,
@@ -297,6 +336,7 @@ export class QuoteCalculatorService {
       profitabilityPercent,
       profitabilityAmount,
       calculatedAt: new Date().toISOString(),
+      inventoryStatus,
     };
   }
 
@@ -967,19 +1007,33 @@ export class QuoteCalculatorService {
       );
     }
 
-    // Pre-fetch pricing for all available inverters
+    // Pre-fetch pricing; silently skip products that have no pricing configured
+    // so a single unpriced item does not fail the entire auto-pick flow.
     const inverterPricing = new Map<string, { basePrice: number; gstRate: number }>();
+    const pricedInverters: ProductEntity[] = [];
     await Promise.all(
       availableInverters.map(async (inv) => {
         const productPrice = await this.getProductPrice(organizationId, inv.id, projectType);
-        const validated = this.validateInverterPricing(productPrice, inv.name);
-        inverterPricing.set(inv.id, validated);
+        if (!productPrice) return;
+        try {
+          const validated = this.validateInverterPricing(productPrice, inv.name);
+          inverterPricing.set(inv.id, validated);
+          pricedInverters.push(inv);
+        } catch {
+          // Skip inverters with invalid pricing rather than failing the whole calculation
+        }
       }),
     );
 
+    if (pricedInverters.length === 0) {
+      throw new BadRequestException(
+        `No ${phaseType} inverters with configured pricing are available${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please configure prices in master data.`,
+      );
+    }
+
     // Find optimal combination based on COST
     const combination = this.findCostOptimalInverterCombination(
-      availableInverters,
+      pricedInverters,
       systemSizeKw,
       inverterPricing,
     );
@@ -1146,15 +1200,28 @@ export class QuoteCalculatorService {
     );
 
     const inverterPricing = new Map<string, { basePrice: number; gstRate: number }>();
+    const pricedInverters: ProductEntity[] = [];
     for (const inv of availableInverters) {
       const productPrice = productPricesMap.get(inv.id) ?? null;
-      const validated = this.validateInverterPricing(productPrice, inv.name);
-      inverterPricing.set(inv.id, validated);
+      if (!productPrice) continue;
+      try {
+        const validated = this.validateInverterPricing(productPrice, inv.name);
+        inverterPricing.set(inv.id, validated);
+        pricedInverters.push(inv);
+      } catch {
+        // Skip inverters with invalid pricing
+      }
+    }
+
+    if (pricedInverters.length === 0) {
+      throw new BadRequestException(
+        `No ${phaseType} inverters with configured pricing are available${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please configure prices in master data.`,
+      );
     }
 
     // Find combination with exactly targetQuantity units that meets capacity requirement
     const combination = this.findCombinationWithQuantity(
-      availableInverters,
+      pricedInverters,
       systemSizeKw,
       targetQuantity,
     );
@@ -1162,7 +1229,7 @@ export class QuoteCalculatorService {
     // If no valid combination found, suggest closest valid quantities
     if (!combination) {
       const validQuantities = this.findValidInverterQuantities(
-        availableInverters,
+        pricedInverters,
         systemSizeKw,
         targetQuantity,
       );

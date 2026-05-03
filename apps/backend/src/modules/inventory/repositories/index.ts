@@ -8,3 +8,8 @@ export * from './inventory-transaction.repository';
 export * from './stock-allocation.repository';
 export * from './material-dispatch.repository';
 export * from './material-dispatch-item.repository';
+export * from './inventory-stock-stats.repository';
+export * from './inventory-transaction-stats.repository';
+export * from './material-dispatch-stats.repository';
+export * from './purchase-order-stats.repository';
+export * from './stock-allocation-stats.repository';

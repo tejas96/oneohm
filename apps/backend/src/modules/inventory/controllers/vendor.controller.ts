@@ -16,6 +16,7 @@ import {
   VendorStatus,
   VendorType,
 } from '@oneohm-epc/shared/types';
+import { parsePaginationParams } from '@oneohm-epc/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -29,6 +30,8 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
+import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { CreateVendorDto, UpdateVendorDto, VendorResponseDto } from '../dto';
 import { VendorService } from '../services';
 
@@ -39,13 +42,27 @@ import { VendorService } from '../services';
 @ApiTags('Inventory - Vendors')
 @ApiBearerAuth()
 @Controller('vendors')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class VendorController {
   constructor(private readonly vendorService: VendorService) {}
 
   /**
+   * Get vendor statistics — MUST be before :id
+   */
+  @RequirePermission('inventory:read')
+  @Get('stats/summary')
+  @ApiOperation({ summary: 'Get vendor statistics' })
+  async getStatistics(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+  ): Promise<ExtendedStatisticsResponse<VendorStatus, VendorType>> {
+    return this.vendorService.getStatistics(organizationId);
+  }
+
+  /**
    * Create a new vendor
    */
+  @RequirePermission('inventory:write')
   @Post()
   @ApiCreate({
     summary: 'Create a new vendor',
@@ -67,6 +84,7 @@ export class VendorController {
   /**
    * Get all vendors with filters
    */
+  @RequirePermission('inventory:read')
   @Get()
   @ApiReadAll({
     summary: 'Get all vendors',
@@ -108,8 +126,7 @@ export class VendorController {
   async findAll(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query() query: Record<string, string>,
     @Query('status') status?: VendorStatus,
     @Query('vendorType') vendorType?: VendorType,
     @Query('search') search?: string,
@@ -117,7 +134,8 @@ export class VendorController {
     data: VendorResponseDto[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
-    const { vendors, total } = await this.vendorService.findAll(organizationId, page, limit, {
+    const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
+    const { vendors, total } = await this.vendorService.findAll(organizationId, pageNum, limitNum, {
       status,
       vendorType,
       search,
@@ -128,10 +146,10 @@ export class VendorController {
         excludeExtraneousValues: true,
       }),
       meta: {
-        page: page ?? 1,
-        limit: limit ?? 20,
+        page: pageNum,
+        limit: limitNum,
         total,
-        totalPages: Math.ceil(total / (limit ?? 20)),
+        totalPages: Math.ceil(total / limitNum),
       },
     };
   }
@@ -139,6 +157,7 @@ export class VendorController {
   /**
    * Get vendor by ID
    */
+  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({
     summary: 'Get vendor by ID',
@@ -160,6 +179,7 @@ export class VendorController {
   /**
    * Update vendor
    */
+  @RequirePermission('inventory:write')
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update vendor',
@@ -182,6 +202,7 @@ export class VendorController {
   /**
    * Delete vendor
    */
+  @RequirePermission('inventory:write')
   @Delete(':id')
   @ApiDelete({
     summary: 'Delete vendor',
@@ -198,23 +219,9 @@ export class VendorController {
   }
 
   /**
-   * Get vendor statistics
-   */
-  @Get('stats/summary')
-  @ApiOperation({
-    summary: 'Get vendor statistics',
-    description: 'Get vendor count by status and type',
-  })
-  async getStatistics(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<ExtendedStatisticsResponse<VendorStatus, VendorType>> {
-    return this.vendorService.getStatistics(organizationId);
-  }
-
-  /**
    * Change vendor status
    */
+  @RequirePermission('inventory:write')
   @Patch(':id/status')
   @ApiOperation({
     summary: 'Change vendor status',
@@ -241,6 +248,7 @@ export class VendorController {
   /**
    * Update vendor rating
    */
+  @RequirePermission('inventory:write')
   @Patch(':id/rating')
   @ApiOperation({
     summary: 'Update vendor rating',

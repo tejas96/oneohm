@@ -9,6 +9,7 @@ import {
   UserStatus,
 } from '@oneohm-epc/shared/types';
 import { normalizePhoneToE164 } from '@oneohm-epc/shared/utils';
+import * as bcrypt from 'bcrypt';
 import type ms from 'ms';
 import { MoreThan } from 'typeorm';
 
@@ -568,10 +569,12 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
-    user.passwordHash = newPassword;
-    user.passwordResetToken = null;
-    user.passwordResetExpires = null;
-    await this.userRepository.save(user);
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.update(user.id, {
+      passwordHash: hashedPassword,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+    });
 
     this.logger.log(`Password reset successfully for user: ${user.email}`);
 

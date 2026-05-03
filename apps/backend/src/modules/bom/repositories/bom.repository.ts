@@ -47,6 +47,14 @@ export class BomRepository {
     });
   }
 
+  async findByEntityId(id: string, organizationId: string): Promise<BomEntity | null> {
+    return this.repository.findOne({
+      where: { id, organizationId },
+      relations: ['items'],
+      order: { items: { sortOrder: 'ASC' } },
+    });
+  }
+
   /**
    * Delete the BOM for a given entity, scoped to the organization.
    * organizationId prevents cross-tenant deletion.

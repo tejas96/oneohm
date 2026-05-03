@@ -369,6 +369,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
         allExpanded={allExpanded}
         onExpandAll={expandAll}
         onCollapseAll={collapseAll}
+        sx={{ mt: 1 }}
       />
 
       {/* Error State */}

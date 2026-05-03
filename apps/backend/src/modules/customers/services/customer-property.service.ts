@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  CustomerStatus,
   LeadTemperature,
   LoanStatus,
   type PropertyDocument,
@@ -68,6 +69,9 @@ export class CustomerPropertyService {
     const customer = await this.customerRepository.findById(createDto.customerId);
     if (customer?.organizationId !== organizationId) {
       throw new NotFoundException(`Customer with ID '${createDto.customerId}' not found`);
+    }
+    if (customer.status === CustomerStatus.INACTIVE) {
+      throw new BadRequestException('Cannot perform this action: customer is inactive');
     }
 
     // Check for consumer number conflicts (if provided)

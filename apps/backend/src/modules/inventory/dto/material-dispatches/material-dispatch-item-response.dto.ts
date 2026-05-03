@@ -3,6 +3,20 @@ import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';
 
+class DispatchItemProductSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Mono PERC Solar Panel 550W' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'PNL-550W-001', required: false })
+  @Expose()
+  code?: string;
+}
+
 /**
  * Material Dispatch Item Response DTO
  * Represents dispatch item data returned from API
@@ -21,6 +35,15 @@ export class MaterialDispatchItemResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   productId!: string;
+
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000', required: false })
+  @Expose()
+  stockAllocationId?: string;
+
+  @ApiProperty({ type: DispatchItemProductSummaryDto, required: false })
+  @Expose()
+  @Type(() => DispatchItemProductSummaryDto)
+  product?: DispatchItemProductSummaryDto;
 
   // ==================== Quantity ====================
 

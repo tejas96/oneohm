@@ -10,19 +10,23 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { type PaginatedResponse } from '@oneohm-epc/shared/types';
+import { parsePaginationParams } from '@oneohm-epc/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import { ApiReadAll, OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
+import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
   InventoryStockResponseDto,
   StockAdjustmentDto,
   StockTransferDto,
   UpdateStockDto,
 } from '../dto';
-import { InventoryStockService } from '../services';
+import type { TopItemsResponse } from '../dto/common';
+import { InventoryStatsService, InventoryStockService } from '../services';
 
 /**
  * Inventory Stock Controller
@@ -31,23 +35,87 @@ import { InventoryStockService } from '../services';
 @ApiTags('Inventory - Stock Management')
 @ApiBearerAuth()
 @Controller('inventory-stock')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class InventoryStockController {
-  constructor(private readonly inventoryStockService: InventoryStockService) {}
+  constructor(
+    private readonly inventoryStockService: InventoryStockService,
+    private readonly inventoryStatsService: InventoryStatsService,
+  ) {}
+
+  /**
+   * Get all stock across organization
+   */
+  @RequirePermission('inventory:read')
+  @Get()
+  @ApiReadAll({
+    summary: 'Get all stock',
+    description: 'Retrieve stock levels across all warehouses in the organization',
+    responseType: InventoryStockResponseDto,
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'warehouseId', required: false, type: String })
+  @ApiQuery({ name: 'productId', required: false, type: String })
+  @ApiQuery({ name: 'lowStock', required: false, type: Boolean })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
+  async findAll(
+    @OrganizationContext() organizationId: string,
+    @Query() query: Record<string, string>,
+    @Query('warehouseId') warehouseId?: string,
+    @Query('productId') productId?: string,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+  ): Promise<PaginatedResponse<InventoryStockResponseDto>> {
+    const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
+    const lowStock =
+      query.lowStock === 'true' ? true : query.lowStock === 'false' ? false : undefined;
+    const normalizedOrder: 'ASC' | 'DESC' | undefined =
+      sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : undefined;
+    const { stocks, total } = await this.inventoryStockService.getAllStock(
+      organizationId,
+      pageNum,
+      limitNum,
+      {
+        warehouseId,
+        productId,
+        lowStock,
+        search,
+        sortBy,
+        sortOrder: normalizedOrder,
+      },
+    );
+
+    return {
+      data: plainToInstance(InventoryStockResponseDto, stocks, {
+        excludeExtraneousValues: true,
+      }),
+      meta: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum) || 1,
+      },
+    };
+  }
 
   /**
    * Get stock by warehouse and product
    */
+  @RequirePermission('inventory:read')
   @Get('warehouse/:warehouseId/product/:productId')
   @ApiOperation({
     summary: 'Get stock by warehouse and product',
     description: 'Retrieve stock level for a specific product in a specific warehouse',
   })
   async getStock(
+    @OrganizationContext() organizationId: string,
     @Param('warehouseId', ParseUUIDPipe) warehouseId: string,
     @Param('productId', ParseUUIDPipe) productId: string,
   ): Promise<InventoryStockResponseDto | null> {
-    const stock = await this.inventoryStockService.getStock(warehouseId, productId);
+    const stock = await this.inventoryStockService.getStock(organizationId, warehouseId, productId);
 
     return stock
       ? plainToInstance(InventoryStockResponseDto, stock, {
@@ -59,6 +127,7 @@ export class InventoryStockController {
   /**
    * Get all stock for a warehouse
    */
+  @RequirePermission('inventory:read')
   @Get('warehouse/:warehouseId')
   @ApiReadAll({
     summary: 'Get stock by warehouse',
@@ -92,6 +161,7 @@ export class InventoryStockController {
     description: 'Search by product name or code',
   })
   async getStockByWarehouse(
+    @OrganizationContext() organizationId: string,
     @Param('warehouseId', ParseUUIDPipe) warehouseId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -99,6 +169,7 @@ export class InventoryStockController {
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<InventoryStockResponseDto>> {
     const { stocks, total } = await this.inventoryStockService.getStockByWarehouse(
+      organizationId,
       warehouseId,
       page,
       limit,
@@ -124,6 +195,7 @@ export class InventoryStockController {
   /**
    * Get all stock for a product across warehouses
    */
+  @RequirePermission('inventory:read')
   @Get('product/:productId')
   @ApiOperation({
     summary: 'Get stock by product',
@@ -144,6 +216,7 @@ export class InventoryStockController {
   /**
    * Get low stock alerts
    */
+  @RequirePermission('inventory:read')
   @Get('alerts/low-stock')
   @ApiOperation({
     summary: 'Get low stock alerts',
@@ -163,6 +236,7 @@ export class InventoryStockController {
   /**
    * Update stock
    */
+  @RequirePermission('inventory:write')
   @Post('update')
   @ApiOperation({
     summary: 'Update stock',
@@ -189,6 +263,7 @@ export class InventoryStockController {
   /**
    * Transfer stock between warehouses
    */
+  @RequirePermission('stock:transfer')
   @Post('transfer')
   @ApiOperation({
     summary: 'Transfer stock between warehouses',
@@ -215,6 +290,7 @@ export class InventoryStockController {
   /**
    * Adjust stock (manual correction)
    */
+  @RequirePermission('stock:adjust')
   @Post('adjust')
   @ApiOperation({
     summary: 'Adjust stock',
@@ -242,6 +318,7 @@ export class InventoryStockController {
   /**
    * Get total stock value
    */
+  @RequirePermission('inventory:read')
   @Get('stats/total-value')
   @ApiOperation({
     summary: 'Get total stock value',
@@ -259,6 +336,7 @@ export class InventoryStockController {
   /**
    * Get stock summary by warehouse
    */
+  @RequirePermission('inventory:read')
   @Get('stats/by-warehouse')
   @ApiOperation({
     summary: 'Get stock summary by warehouse',
@@ -276,5 +354,36 @@ export class InventoryStockController {
     }>
   > {
     return this.inventoryStockService.getStockSummaryByWarehouse(organizationId);
+  }
+
+  @RequirePermission('inventory:read')
+  @Get('stats/top-low-stock')
+  @ApiOperation({ summary: 'Top items that have crossed their minimum stock level (deficit DESC)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async statsTopLowStock(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Query('limit') limit?: string,
+  ): Promise<TopItemsResponse> {
+    return this.inventoryStatsService.topLowStock(organizationId, limit);
+  }
+
+  /**
+   * Get stock by ID
+   */
+  @RequirePermission('inventory:read')
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Get stock by ID',
+    description: 'Retrieve a stock record by id',
+  })
+  async findOne(
+    @OrganizationContext() organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<InventoryStockResponseDto> {
+    const stock = await this.inventoryStockService.getStockById(id, organizationId);
+    return plainToInstance(InventoryStockResponseDto, stock, {
+      excludeExtraneousValues: true,
+    });
   }
 }

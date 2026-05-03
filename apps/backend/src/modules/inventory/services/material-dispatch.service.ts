@@ -1,6 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { MaterialDispatchStatus } from '@oneohm-epc/shared/types';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { MaterialDispatchStatus, StockAllocationStatus } from '@oneohm-epc/shared/types';
+import { DataSource } from 'typeorm';
 
+import { ProductRepository } from '../../master-data/repositories/product.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { ProjectRepository } from '../../projects/repositories/project.repository';
 import {
@@ -12,8 +15,11 @@ import { MaterialDispatchEntity } from '../entities/material-dispatch.entity';
 import {
   MaterialDispatchItemRepository,
   MaterialDispatchRepository,
+  StockAllocationRepository,
   WarehouseRepository,
 } from '../repositories';
+import { validateDispatchStatusTransition } from './helpers/dispatch-status-machine';
+import { InventoryStockService } from './inventory-stock.service';
 
 /**
  * Material Dispatch Service
@@ -24,9 +30,13 @@ export class MaterialDispatchService {
   constructor(
     private readonly materialDispatchRepository: MaterialDispatchRepository,
     private readonly materialDispatchItemRepository: MaterialDispatchItemRepository,
+    private readonly stockAllocationRepository: StockAllocationRepository,
     private readonly projectRepository: ProjectRepository,
     private readonly warehouseRepository: WarehouseRepository,
+    private readonly productRepository: ProductRepository,
     private readonly organizationRepository: OrganizationRepository,
+    private readonly inventoryStockService: InventoryStockService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -43,6 +53,65 @@ export class MaterialDispatchService {
       this.projectRepository.findById(createDto.projectId, organizationId),
       this.warehouseRepository.findById(createDto.warehouseId, organizationId),
     ]);
+
+    const uniqueProductIds = [...new Set(createDto.items.map((item) => item.productId))];
+    const productLookups = await Promise.all(
+      uniqueProductIds.map((productId) =>
+        this.productRepository.findById(productId, organizationId, { requireActive: true }),
+      ),
+    );
+    const invalidProductIds = uniqueProductIds.filter((_, index) => !productLookups[index]);
+    if (invalidProductIds.length > 0) {
+      throw new BadRequestException(
+        `Invalid or inactive product IDs in dispatch items: ${invalidProductIds.join(', ')}`,
+      );
+    }
+
+    const uniqueAllocationIds = [
+      ...new Set(
+        createDto.items
+          .map((item) => item.stockAllocationId)
+          .filter((allocationId): allocationId is string => Boolean(allocationId)),
+      ),
+    ];
+    if (uniqueAllocationIds.length > 0) {
+      const linkedAllocations = await Promise.all(
+        uniqueAllocationIds.map((allocationId) =>
+          this.stockAllocationRepository.findById(allocationId, organizationId),
+        ),
+      );
+      const allocationById = new Map(
+        linkedAllocations.map((allocation) => [allocation.id, allocation]),
+      );
+
+      for (const item of createDto.items) {
+        if (!item.stockAllocationId) continue;
+        const linkedAllocation = allocationById.get(item.stockAllocationId);
+        if (!linkedAllocation) {
+          throw new BadRequestException(`Invalid stock allocation ID: ${item.stockAllocationId}`);
+        }
+        if (linkedAllocation.status === StockAllocationStatus.CANCELLED) {
+          throw new BadRequestException(
+            `Stock allocation ${item.stockAllocationId} is cancelled and cannot be dispatched`,
+          );
+        }
+        if (linkedAllocation.projectId !== createDto.projectId) {
+          throw new BadRequestException(
+            `Stock allocation ${item.stockAllocationId} does not belong to the selected project`,
+          );
+        }
+        if (linkedAllocation.warehouseId !== createDto.warehouseId) {
+          throw new BadRequestException(
+            `Stock allocation ${item.stockAllocationId} does not belong to the selected warehouse`,
+          );
+        }
+        if (linkedAllocation.productId !== item.productId) {
+          throw new BadRequestException(
+            `Stock allocation ${item.stockAllocationId} does not match product ${item.productId}`,
+          );
+        }
+      }
+    }
 
     // Generate dispatch number
     const dispatchNumber =
@@ -62,7 +131,7 @@ export class MaterialDispatchService {
       driverName: createDto.driverName,
       driverPhone: createDto.driverPhone,
       transportCompany: createDto.transportCompany,
-      status: createDto.status || MaterialDispatchStatus.PREPARED,
+      status: MaterialDispatchStatus.PREPARED,
       notes: createDto.notes,
       createdBy,
     });
@@ -72,6 +141,7 @@ export class MaterialDispatchService {
       const items = createDto.items.map((item) => ({
         dispatchId: dispatch.id,
         productId: item.productId,
+        stockAllocationId: item.stockAllocationId,
         quantity: item.quantity,
         batchNumber: item.batchNumber,
         serialNumbers: item.serialNumbers,
@@ -113,8 +183,11 @@ export class MaterialDispatchService {
   /**
    * Find dispatches by project
    */
-  async findByProject(projectId: string): Promise<MaterialDispatchEntity[]> {
-    return this.materialDispatchRepository.findByProject(projectId);
+  async findByProject(
+    projectId: string,
+    organizationId: string,
+  ): Promise<MaterialDispatchEntity[]> {
+    return this.materialDispatchRepository.findByProject(projectId, organizationId);
   }
 
   /**
@@ -150,8 +223,7 @@ export class MaterialDispatchService {
   ): Promise<MaterialDispatchEntity> {
     const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
 
-    // Validate status transition
-    this.validateStatusTransition(dispatch.status, statusDto.status);
+    validateDispatchStatusTransition(dispatch.status, statusDto.status);
 
     const updateData: Record<string, unknown> = {
       status: statusDto.status,
@@ -180,6 +252,123 @@ export class MaterialDispatchService {
   }
 
   /**
+   * Mark dispatch as IN_TRANSIT — deducts reserved stock atomically.
+   * Transitions PREPARED → IN_TRANSIT.
+   */
+  async markDispatched(
+    id: string,
+    organizationId: string,
+    performedBy: string,
+  ): Promise<MaterialDispatchEntity> {
+    const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
+
+    if (dispatch.status !== MaterialDispatchStatus.PREPARED) {
+      throw new BadRequestException(
+        `Cannot mark dispatched — dispatch is in status ${dispatch.status}`,
+      );
+    }
+
+    // Deduct reserved stock for each line item atomically
+    await this.dataSource.transaction(async (manager) => {
+      for (const item of dispatch.items ?? []) {
+        await this.inventoryStockService.deductReservedStock(
+          organizationId,
+          dispatch.warehouseId,
+          item.productId,
+          Number(item.quantity),
+          'material_dispatch',
+          dispatch.id,
+          performedBy,
+          `Dispatched from ${dispatch.dispatchNumber}`,
+          manager,
+        );
+
+        // Update allocation dispatched quantity if linked
+        if (item.stockAllocationId) {
+          const { StockAllocationEntity } = await import('../entities/stock-allocation.entity');
+          const allocRepo = manager.getRepository(StockAllocationEntity);
+          const alloc = await allocRepo
+            .createQueryBuilder('alloc')
+            .where('alloc.id = :id', { id: item.stockAllocationId })
+            .setLock('pessimistic_write')
+            .getOne();
+          if (alloc) {
+            const nextDispatchedQuantity = Number(alloc.dispatchedQuantity) + Number(item.quantity);
+            alloc.dispatchedQuantity = nextDispatchedQuantity;
+            if (nextDispatchedQuantity <= 0) {
+              alloc.status = StockAllocationStatus.ALLOCATED;
+            } else if (nextDispatchedQuantity < Number(alloc.allocatedQuantity)) {
+              alloc.status = StockAllocationStatus.PARTIALLY_DISPATCHED;
+            } else {
+              alloc.status = StockAllocationStatus.DISPATCHED;
+            }
+            alloc.updatedBy = performedBy;
+            await allocRepo.save(alloc);
+          }
+        }
+      }
+    });
+
+    return this.materialDispatchRepository.update(id, organizationId, {
+      status: MaterialDispatchStatus.IN_TRANSIT,
+      updatedBy: performedBy,
+    });
+  }
+
+  /**
+   * Mark dispatch as DELIVERED. Transitions IN_TRANSIT → DELIVERED or
+   * PARTIALLY_DELIVERED → DELIVERED. Sets actualDeliveryDate and finalises
+   * linked allocations to COMPLETED when fully dispatched.
+   */
+  async markDelivered(
+    id: string,
+    organizationId: string,
+    performedBy: string,
+    actualDeliveryDate?: Date,
+    receivedById?: string,
+  ): Promise<MaterialDispatchEntity> {
+    const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
+
+    const allowed =
+      dispatch.status === MaterialDispatchStatus.IN_TRANSIT ||
+      dispatch.status === MaterialDispatchStatus.PARTIALLY_DELIVERED;
+    if (!allowed) {
+      throw new BadRequestException(
+        `Cannot mark delivered — dispatch is in status ${dispatch.status}`,
+      );
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const { StockAllocationEntity } = await import('../entities/stock-allocation.entity');
+      const allocRepo = manager.getRepository(StockAllocationEntity);
+      for (const item of dispatch.items ?? []) {
+        if (!item.stockAllocationId) continue;
+        const alloc = await allocRepo
+          .createQueryBuilder('alloc')
+          .where('alloc.id = :id', { id: item.stockAllocationId })
+          .setLock('pessimistic_write')
+          .getOne();
+        if (
+          alloc &&
+          alloc.status === StockAllocationStatus.DISPATCHED &&
+          Number(alloc.dispatchedQuantity) >= Number(alloc.allocatedQuantity)
+        ) {
+          alloc.status = StockAllocationStatus.COMPLETED;
+          alloc.updatedBy = performedBy;
+          await allocRepo.save(alloc);
+        }
+      }
+    });
+
+    return this.materialDispatchRepository.update(id, organizationId, {
+      status: MaterialDispatchStatus.DELIVERED,
+      actualDeliveryDate: actualDeliveryDate ?? new Date(),
+      receivedBy: receivedById,
+      updatedBy: performedBy,
+    });
+  }
+
+  /**
    * Cancel dispatch
    */
   async cancel(
@@ -192,6 +381,59 @@ export class MaterialDispatchService {
 
     if (dispatch.status === MaterialDispatchStatus.DELIVERED) {
       throw new BadRequestException('Cannot cancel a delivered dispatch');
+    }
+
+    const hasStockMovement =
+      dispatch.status === MaterialDispatchStatus.DISPATCHED ||
+      dispatch.status === MaterialDispatchStatus.IN_TRANSIT ||
+      dispatch.status === MaterialDispatchStatus.PARTIALLY_DELIVERED;
+
+    if (hasStockMovement) {
+      await this.dataSource.transaction(async (manager) => {
+        for (const item of dispatch.items ?? []) {
+          const itemQuantity = Number(item.quantity);
+          if (itemQuantity <= 0) continue;
+
+          await this.inventoryStockService.restoreReservedStock(
+            organizationId,
+            dispatch.warehouseId,
+            item.productId,
+            itemQuantity,
+            'material_dispatch_cancel',
+            dispatch.id,
+            updatedBy,
+            `Dispatch ${dispatch.dispatchNumber} cancelled: restored reserved stock`,
+            manager,
+          );
+
+          if (item.stockAllocationId) {
+            const { StockAllocationEntity } = await import('../entities/stock-allocation.entity');
+            const allocationRepo = manager.getRepository(StockAllocationEntity);
+            const allocation = await allocationRepo.findOne({
+              where: { id: item.stockAllocationId, organizationId },
+            });
+
+            if (allocation && allocation.status !== StockAllocationStatus.CANCELLED) {
+              const updatedDispatchedQuantity = Math.max(
+                0,
+                Number(allocation.dispatchedQuantity) - itemQuantity,
+              );
+              allocation.dispatchedQuantity = updatedDispatchedQuantity;
+
+              if (updatedDispatchedQuantity === 0) {
+                allocation.status = StockAllocationStatus.ALLOCATED;
+              } else if (updatedDispatchedQuantity < Number(allocation.allocatedQuantity)) {
+                allocation.status = StockAllocationStatus.PARTIALLY_DISPATCHED;
+              } else {
+                allocation.status = StockAllocationStatus.DISPATCHED;
+              }
+
+              allocation.updatedBy = updatedBy;
+              await allocationRepo.save(allocation);
+            }
+          }
+        }
+      });
     }
 
     return this.materialDispatchRepository.update(id, organizationId, {
@@ -239,41 +481,5 @@ export class MaterialDispatchService {
    */
   async getPendingDispatches(organizationId: string): Promise<MaterialDispatchEntity[]> {
     return this.materialDispatchRepository.getPendingDispatches(organizationId);
-  }
-
-  /**
-   * Validate status transition
-   */
-  private validateStatusTransition(
-    currentStatus: MaterialDispatchStatus,
-    newStatus: MaterialDispatchStatus,
-  ): void {
-    const validTransitions: Record<MaterialDispatchStatus, MaterialDispatchStatus[]> = {
-      [MaterialDispatchStatus.PREPARED]: [
-        MaterialDispatchStatus.DISPATCHED,
-        MaterialDispatchStatus.CANCELLED,
-      ],
-      [MaterialDispatchStatus.DISPATCHED]: [
-        MaterialDispatchStatus.IN_TRANSIT,
-        MaterialDispatchStatus.CANCELLED,
-      ],
-      [MaterialDispatchStatus.IN_TRANSIT]: [
-        MaterialDispatchStatus.DELIVERED,
-        MaterialDispatchStatus.PARTIALLY_DELIVERED,
-        MaterialDispatchStatus.CANCELLED,
-      ],
-      [MaterialDispatchStatus.DELIVERED]: [],
-      [MaterialDispatchStatus.PARTIALLY_DELIVERED]: [
-        MaterialDispatchStatus.DELIVERED,
-        MaterialDispatchStatus.CANCELLED,
-      ],
-      [MaterialDispatchStatus.CANCELLED]: [],
-    };
-
-    if (!validTransitions[currentStatus].includes(newStatus)) {
-      throw new BadRequestException(
-        `Invalid status transition from ${currentStatus} to ${newStatus}`,
-      );
-    }
   }
 }

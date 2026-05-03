@@ -3,6 +3,7 @@ import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne } from 'typeorm
 
 import { ProjectEntity } from './project.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { StockAllocationEntity } from '../../inventory/entities/stock-allocation.entity';
 import { ProductEntity } from '../../master-data/entities/product.entity';
 
 /**
@@ -25,6 +26,13 @@ export class ProjectMaterialEntity extends BaseEntity {
   @ManyToOne(() => ProductEntity, { nullable: true })
   @JoinColumn({ name: 'product_id' })
   product?: ProductEntity;
+
+  @Column({ name: 'stock_allocation_id', type: 'uuid', nullable: true })
+  stockAllocationId?: string;
+
+  @ManyToOne(() => StockAllocationEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'stock_allocation_id' })
+  stockAllocation?: StockAllocationEntity;
 
   // ==================== Material Details ====================
   @Column({ type: 'varchar', length: 255, name: 'material_name' })

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { AppController } from './app.controller';
@@ -21,12 +22,14 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import { MasterDataModule } from './modules/master-data/master-data.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { ResellersModule } from './modules/resellers/resellers.module';
+import { SavedViewsModule } from './modules/saved-views/saved-views.module';
 import { SecurityEventsModule } from './modules/security-events/security-events.module';
 import { ServiceMaintenanceModule } from './modules/service-maintenance/service-maintenance.module';
 import { SiteActivitiesModule } from './modules/site-activities/site-activities.module';
@@ -37,6 +40,7 @@ import { UsersModule } from './modules/users/users.module';
   imports: [
     ConfigModule,
     DatabaseModule,
+    ScheduleModule.forRoot(),
     // Global rate limiting - 100 requests per minute per IP
     ThrottlerModule.forRoot([
       {
@@ -60,6 +64,7 @@ import { UsersModule } from './modules/users/users.module';
     BomModule,
     ProjectsModule,
     InventoryModule,
+    NotificationsModule,
     ApprovalModule,
     PaymentsModule,
     CommentsModule,
@@ -72,6 +77,7 @@ import { UsersModule } from './modules/users/users.module';
     AuditModule,
     SiteActivitiesModule,
     StorageModule,
+    SavedViewsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -126,6 +126,15 @@ function formatBomPanelWarranty(panel: {
   return 'As per manufacturer';
 }
 
+function expandQuantityRows<T extends { quantity: number }>(rows: T[]): T[] {
+  return rows.flatMap((row) =>
+    Array.from({ length: Math.max(1, Math.trunc(row.quantity || 1)) }, () => ({
+      ...row,
+      quantity: 1,
+    })),
+  );
+}
+
 // ============================================================================
 // HTML GENERATION
 // ============================================================================
@@ -146,9 +155,10 @@ export function generateQuoteHtml(data: QuotePdfData): string {
 
   const co = resolvePdfCompany(companyInfo, normalizeOrgConfigForPdf(orgConfig));
 
-  const totalPanels = calculation.panels.reduce((sum, p) => sum + p.quantity, 0);
-  const dcrPanels = calculation.panels.filter((p) => p.isDcr);
-  const nonDcrPanels = calculation.panels.filter((p) => !p.isDcr);
+  const expandedPanels = expandQuantityRows(calculation.panels);
+  const totalPanels = expandedPanels.length;
+  const dcrPanels = expandedPanels.filter((p) => p.isDcr);
+  const nonDcrPanels = expandedPanels.filter((p) => !p.isDcr);
 
   const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount, gstConfig);
   const displayGst5Amount = discounted.gst5;
@@ -177,12 +187,13 @@ export function generateQuoteHtml(data: QuotePdfData): string {
                 </div>
                 <span class="bom-warranty">${formatBomPanelWarranty(panel)}</span>
               </td>
-              <td>${panel.quantity} nos</td>
+              <td>1 nos</td>
             </tr>`,
     )
     .join('');
 
-  const inverterRows = calculation.inverters.inverters
+  const expandedInverters = expandQuantityRows(calculation.inverters.inverters);
+  const inverterRows = expandedInverters
     .map(
       (inv) => `
             <tr>
@@ -198,7 +209,7 @@ export function generateQuoteHtml(data: QuotePdfData): string {
                     : 'As per manufacturer'
                 }</span>
               </td>
-              <td>${inv.quantity} nos</td>
+              <td>1 nos</td>
             </tr>`,
     )
     .join('');

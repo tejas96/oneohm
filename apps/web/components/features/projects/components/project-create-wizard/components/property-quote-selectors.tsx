@@ -61,10 +61,19 @@ export function PropertyQuoteSelectors({
     };
   });
 
-  const quoteOptions = filteredQuotes.map((q) => ({
-    value: q.id,
-    label: `${q.quoteNumber} · ${formatCurrency(q.effectivePrice ?? q.finalPrice ?? q.basePrice ?? 0)} · ${String(q.systemSizeKw ?? 0)}kW`,
-  }));
+  const quoteOptions = filteredQuotes.map((q) => {
+    const actualSystemSizeKw =
+      q.totalWattageWp && q.totalWattageWp > 0 ? q.totalWattageWp / 1000 : null;
+    const requestedSystemSize = q.systemSizeKw && q.systemSizeKw > 0 ? `${q.systemSizeKw}kW` : null;
+    const displaySize =
+      actualSystemSizeKw != null
+        ? `${actualSystemSizeKw.toFixed(2)}kW`
+        : (requestedSystemSize ?? '0kW');
+    return {
+      value: q.id,
+      label: `${q.quoteNumber} · ${formatCurrency(q.effectivePrice ?? q.finalPrice ?? q.basePrice ?? 0)} · ${displaySize}`,
+    };
+  });
 
   function handlePropertyChange(val: string): void {
     setValue('propertyId', val, { shouldValidate: true });
@@ -131,6 +140,10 @@ export function PropertyQuoteSelectors({
         (() => {
           const q = filteredQuotes.find((x) => x.id === selectedQuoteId);
           if (!q) return null;
+          const actualSystemSizeKw =
+            q.totalWattageWp && q.totalWattageWp > 0 ? q.totalWattageWp / 1000 : null;
+          const requestedSystemSize =
+            q.systemSizeKw && q.systemSizeKw > 0 ? `${q.systemSizeKw}kW` : null;
           return (
             <div className="p-3 border border-border-light rounded-lg bg-background-secondary">
               <MUITypography variant="finePrint" className="text-foreground-secondary mb-1">
@@ -145,9 +158,18 @@ export function PropertyQuoteSelectors({
                 </div>
                 <div>
                   <MUITypography variant="timestamp" className="text-foreground-secondary">
-                    Requested Size
+                    Actual System Size
                   </MUITypography>
-                  <MUITypography variant="bodyPrimary">{q.systemSizeKw ?? 0}kW</MUITypography>
+                  <MUITypography variant="bodyPrimary">
+                    {actualSystemSizeKw != null
+                      ? `${actualSystemSizeKw.toFixed(2)}kW`
+                      : (requestedSystemSize ?? '—')}
+                  </MUITypography>
+                  {actualSystemSizeKw != null && requestedSystemSize && (
+                    <MUITypography variant="timestamp" className="text-foreground-secondary">
+                      (req/sel {requestedSystemSize})
+                    </MUITypography>
+                  )}
                 </div>
                 <div>
                   <MUITypography variant="timestamp" className="text-foreground-secondary">

@@ -91,6 +91,9 @@ export class StockAllocationEntity extends BaseEntity {
   @Column({ name: 'dispatched_at', type: 'timestamp with time zone', nullable: true })
   dispatchedAt?: Date;
 
+  @Column({ name: 'returned_at', type: 'timestamptz', nullable: true })
+  returnedAt?: Date;
+
   // ==================== Notes ====================
 
   @Column({ type: 'text', nullable: true })

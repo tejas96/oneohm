@@ -12,6 +12,29 @@ import type {
 } from '@oneohm-epc/shared/types';
 
 // ============================================================================
+// Quote Snapshot Spec Types (derived from quote on GET /projects/:id)
+// ============================================================================
+
+export interface PanelConfig {
+  name: string;
+  brand: string;
+  isDcr: boolean;
+  wattagePerPanel: number;
+  quantity: number;
+  technology?: string;
+  productWarrantyYears?: number;
+  performanceWarrantyYears?: number;
+}
+
+export interface InverterConfig {
+  name: string;
+  brand: string;
+  capacityKw: number;
+  quantity: number;
+  productWarrantyYears?: number;
+}
+
+// ============================================================================
 // Project Detail Types
 // ============================================================================
 
@@ -54,6 +77,12 @@ export interface ProjectDetail {
   endDate?: string;
   estimatedCost?: number;
   actualCost?: number;
+  panelConfigs?: PanelConfig[];
+  panelCount?: number;
+  inverterConfigs?: InverterConfig[];
+  inverterCount?: number;
+  structureType?: string;
+  phaseType?: string;
   metadata?: ProjectMetadata;
   taskStatuses?: TaskStatusConfig[];
   milestones: ProjectMilestone[];

@@ -17,7 +17,12 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
-import { ConnectionType, DocumentEntityType, PropertyType } from '@oneohm-epc/shared/types';
+import {
+  ConnectionType,
+  CustomerStatus,
+  DocumentEntityType,
+  PropertyType,
+} from '@oneohm-epc/shared/types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
@@ -266,6 +271,7 @@ export function PropertyForm({
   const isSubmitting = form.formState.isSubmitting || activeMutation.isPending;
 
   const canSave = isEditMode ? form.formState.isDirty : true;
+  const isInactiveCustomer = !isEditMode && resolvedCustomer?.status === CustomerStatus.INACTIVE;
 
   // Navigation
   const backLink = isEditMode
@@ -306,6 +312,12 @@ export function PropertyForm({
           {pageSubtitle}
         </MUITypography>
       </div>
+
+      {isInactiveCustomer && (
+        <Alert variant="warning" className="mb-4">
+          This customer is inactive. Property creation is blocked until the customer is reactivated.
+        </Alert>
+      )}
 
       {/* ── Customer Card / Selector (create mode only) ───────────────── */}
       {!isEditMode && (
@@ -676,6 +688,7 @@ export function PropertyForm({
                   {...form.register('monthlyBill', {
                     setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
                   })}
+                  error={form.formState.errors.monthlyBill?.message}
                 />
               </div>
             </div>
@@ -796,7 +809,11 @@ export function PropertyForm({
                   type="submit"
                   variant="contained"
                   size="small"
-                  disabled={isSubmitting || (isEditMode ? !canSave : !effectiveCustomerId)}
+                  disabled={
+                    isSubmitting ||
+                    isInactiveCustomer ||
+                    (isEditMode ? !canSave : !effectiveCustomerId)
+                  }
                 >
                   {isSubmitting
                     ? isEditMode
@@ -820,6 +837,10 @@ export function PropertyForm({
 
   async function onSubmit(data: CreatePropertyFormData | EditPropertyFormData): Promise<void> {
     try {
+      if (isInactiveCustomer && !isEditMode) {
+        showToast.error('Cannot perform this action: customer is inactive');
+        return;
+      }
       if (isEditMode && propertyId) {
         await updatePropertyMutation.mutateAsync({ id: propertyId, data });
         showToast.success('Property updated successfully');

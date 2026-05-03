@@ -3,6 +3,38 @@ import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';
 
+class InventoryStockProductSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Mono PERC Solar Panel 550W' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'PNL-550W-001' })
+  @Expose()
+  code!: string;
+
+  @ApiProperty({ example: 'nos', required: false })
+  @Expose({ name: 'unitOfMeasure' })
+  unit?: string;
+}
+
+class InventoryStockWarehouseSummaryDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Main Warehouse Mumbai' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'WH-MUM-001' })
+  @Expose()
+  code!: string;
+}
+
 /**
  * Inventory Stock Response DTO
  * Represents stock data returned from API
@@ -25,6 +57,16 @@ export class InventoryStockResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   productId!: string;
+
+  @ApiProperty({ type: InventoryStockProductSummaryDto, required: false })
+  @Expose()
+  @Type(() => InventoryStockProductSummaryDto)
+  product?: InventoryStockProductSummaryDto;
+
+  @ApiProperty({ type: InventoryStockWarehouseSummaryDto, required: false })
+  @Expose()
+  @Type(() => InventoryStockWarehouseSummaryDto)
+  warehouse?: InventoryStockWarehouseSummaryDto;
 
   // ==================== Stock Levels ====================
 
