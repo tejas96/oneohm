@@ -16,6 +16,14 @@ interface AuthLayoutProps {
 
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for layouts
 export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Element {
+  return (
+    <Suspense fallback={<Spinner size="md" variant="primary" />}>
+      <AuthLayoutContent>{children}</AuthLayoutContent>
+    </Suspense>
+  );
+}
+
+function AuthLayoutContent({ children }: AuthLayoutProps): React.JSX.Element {
   const { isAuthenticated, isInitialized } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -86,7 +94,7 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
             />
           </div>
 
-          <Suspense fallback={<Spinner size="md" variant="primary" />}>{children}</Suspense>
+          {children}
 
           <div className="mt-6 text-center text-[11px] text-foreground-muted lg:hidden">
             <p>© {new Date().getFullYear()} OneOhm Solar. All rights reserved.</p>
