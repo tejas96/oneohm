@@ -43,10 +43,23 @@ export interface UseQueryStateReturn<F extends BaseFilters> {
 
 const PAGINATION_KEYS = new Set(['page', 'limit', 'search', 'sortBy', 'sortOrder']);
 
+const SENSITIVE_KEYS = new Set(['token', 'password', 'secret', 'auth', 'key', 'credential']);
+
+function isSafeFilterKey(key: string): boolean {
+  const lower = key.toLowerCase();
+  return !SENSITIVE_KEYS.has(lower) && !Array.from(SENSITIVE_KEYS).some((s) => lower.includes(s));
+}
+
 function readPersistedState<F>(persistKey: string): Partial<F> | null {
   try {
     const stored = localStorage.getItem(persistKey);
-    return stored ? (JSON.parse(stored) as Partial<F>) : null;
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as Record<string, unknown>;
+    const safe: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (isSafeFilterKey(key)) safe[key] = value;
+    }
+    return safe as Partial<F>;
   } catch {
     return null;
   }
@@ -54,7 +67,11 @@ function readPersistedState<F>(persistKey: string): Partial<F> | null {
 
 function persistState<F>(persistKey: string, filters: Partial<F>): void {
   try {
-    localStorage.setItem(persistKey, JSON.stringify(filters));
+    const safeFilters: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(filters as Record<string, unknown>)) {
+      if (isSafeFilterKey(key)) safeFilters[key] = value;
+    }
+    localStorage.setItem(persistKey, JSON.stringify(safeFilters));
   } catch {
     // localStorage might be full or unavailable
   }

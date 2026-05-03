@@ -97,7 +97,7 @@ export class BomService {
 
     // Map structure
     if (structure && typeof structure === 'object') {
-      sortOrder = this.appendBomLineItems(
+      this.appendBomLineItems(
         items,
         {
           itemType: 'structure',

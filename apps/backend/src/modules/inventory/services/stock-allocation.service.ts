@@ -359,7 +359,7 @@ export class StockAllocationService {
 
     const updatedAllocationId = await this.dataSource.transaction(async (manager) => {
       const stockRepo = manager.getRepository(InventoryStockEntity);
-      let stock = await this.lockInventoryStock(
+      const stock = await this.lockInventoryStock(
         manager,
         organizationId,
         allocation.warehouseId,
@@ -367,7 +367,7 @@ export class StockAllocationService {
       );
 
       if (!stock) {
-        stock = stockRepo.create({
+        const newStock = stockRepo.create({
           organizationId,
           warehouseId: allocation.warehouseId,
           productId: allocation.productId,
@@ -375,11 +375,11 @@ export class StockAllocationService {
           reservedQuantity: 0,
           inTransitQuantity: 0,
         });
-        stock = await stockRepo.save(stock);
+        await stockRepo.save(newStock);
       } else {
         stock.availableQuantity = Number(stock.availableQuantity) + quantity;
         stock.updatedAt = new Date();
-        stock = await stockRepo.save(stock);
+        await stockRepo.save(stock);
       }
 
       const txnRepo = manager.getRepository(InventoryTransactionEntity);

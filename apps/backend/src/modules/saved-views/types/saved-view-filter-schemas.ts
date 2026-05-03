@@ -96,18 +96,23 @@ export function validateSavedViewFilters(
   const unknownKeys: string[] = [];
   const invalidKeys: string[] = [];
 
-  for (const [key, value] of Object.entries(provided)) {
-    const guard = schema[key];
-    if (!guard) {
+  // Check for unknown keys first (keys in user input not in the schema allow-list)
+  for (const key of Object.keys(provided)) {
+    if (!Object.prototype.hasOwnProperty.call(schema, key)) {
       unknownKeys.push(key);
-      continue;
     }
+  }
+
+  // Iterate over the static schema allow-list — never over user-supplied keys —
+  // to prevent remote property injection via user-controlled property names.
+  for (const [allowedKey, guard] of Object.entries(schema)) {
+    const value = provided[allowedKey];
     if (value === null || value === undefined || value === '') continue;
     if (!guard(value)) {
-      invalidKeys.push(key);
+      invalidKeys.push(allowedKey);
       continue;
     }
-    cleaned[key] = value;
+    cleaned[allowedKey] = value;
   }
 
   if (unknownKeys.length > 0) {
