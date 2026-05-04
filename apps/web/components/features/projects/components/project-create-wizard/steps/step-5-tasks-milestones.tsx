@@ -7,6 +7,7 @@ import MuiButton from '@mui/material/Button';
 import { MilestoneType } from '@oneohm-epc/shared/types';
 import { useMemo } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
+import { v4 as uuidv4 } from 'uuid';
 
 import type { ProjectCreateFormData } from '../../../schemas/project-create.schema';
 import { getDisplayRoles, getEmployeeDisplayName } from '../../../utils';
@@ -153,7 +154,7 @@ export function Step5TasksMilestones({ form }: Step5TasksMilestonesProps): React
   function handleAddMilestone(): void {
     const maxOrder = Math.max(...milestones.map((m) => m.order), 0);
     const newMilestone: MilestoneGroup = {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       name: `Milestone ${maxOrder + 1}`,
       type: MilestoneType.CUSTOM,
       order: maxOrder + 1,

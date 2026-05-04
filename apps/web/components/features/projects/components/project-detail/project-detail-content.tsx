@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { ProjectDetailHeader } from './project-detail-header';
 import { ProjectDetailTabs } from './project-detail-tabs';
+import { EditProjectModal } from '../edit-project-modal';
 import { ProjectBomTab } from './tabs/project-bom-tab';
 import { ProjectDocumentsTab } from './tabs/project-documents-tab';
 import { ProjectOverviewTab } from './tabs/project-overview-tab';
@@ -15,7 +16,7 @@ import { ProjectSummaryTab } from './tabs/project-summary-tab';
 import { ProjectSurveysTab } from './tabs/project-surveys-tab';
 import { ProjectTasksTab } from './tabs/project-tasks-tab';
 import { PROJECT_DETAIL_TABS, type ProjectDetailTab } from '../../constants';
-import { useProject } from '../../hooks/use-project-detail';
+import { useProject, useProjectTeam } from '../../hooks/use-project-detail';
 
 import { ProjectAllocationsTab } from '@/components/features/inventory';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
@@ -66,7 +67,10 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
   }, [searchParams]);
 
   const { data: project, isLoading, isError, error, refetch } = useProject(projectId);
+  const { data: projectTeam = [], refetch: refetchTeam } = useProjectTeam(projectId);
   const { user } = useAuth();
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   useEffect(() => {
     if (project && user?.id) {
@@ -118,7 +122,7 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
 
   return (
     <div className="p-4 space-y-4">
-      <ProjectDetailHeader project={project} />
+      <ProjectDetailHeader project={project} onEdit={() => setEditModalOpen(true)} />
 
       <ProjectDetailTabs activeTab={activeTab} onTabChange={handleTabChange}>
         <TabsContent value="overview">
@@ -165,6 +169,17 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
           <ProjectSurveysTab propertyId={project.propertyId} />
         </TabsContent>
       </ProjectDetailTabs>
+
+      <EditProjectModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        project={project}
+        currentTeam={projectTeam}
+        onSuccess={() => {
+          void refetch();
+          void refetchTeam();
+        }}
+      />
     </div>
   );
 }

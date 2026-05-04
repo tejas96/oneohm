@@ -190,6 +190,7 @@ export const ProjectBomTab = React.memo(({ projectId }: ProjectBomTabProps): Rea
             startIcon={<CheckCircle />}
             onClick={() => setIsFinalizeDialogOpen(true)}
             disabled={isFinalizing || isSyncing || isAllocated || !bom?.id}
+            title="Finalizes the Bill of Materials and reserves the required stock from a selected warehouse."
           >
             {isAllocated ? 'BOM Allocated' : 'Finalize & Allocate BOM'}
           </Button>

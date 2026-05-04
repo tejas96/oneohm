@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { v4 as uuidv4 } from 'uuid';
 
 import {
   workflowStepSchema,
@@ -917,7 +918,7 @@ function ChecklistBuilder({ value, onChange }: ChecklistBuilderProps): React.JSX
     onChange([
       ...value,
       {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         title: '',
         isCompleted: false,
         order: value.length,

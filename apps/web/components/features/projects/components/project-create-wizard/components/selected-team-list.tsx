@@ -26,6 +26,10 @@ interface SelectedTeamListProps {
   workloadMap: Map<string, TeamWorkloadItem>;
   onRemove: (userId: string) => void;
   onTogglePm: (userId: string) => void;
+  /** When provided, returns true for userIds whose remove button should be disabled. */
+  disableRemove?: (userId: string) => boolean;
+  /** Tooltip shown when remove is disabled for a user. */
+  disableRemoveTooltip?: string;
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -37,6 +41,8 @@ export function SelectedTeamList({
   workloadMap,
   onRemove,
   onTogglePm,
+  disableRemove,
+  disableRemoveTooltip = 'Cannot remove this member',
 }: SelectedTeamListProps): React.JSX.Element {
   if (teamMembers.length === 0) {
     return (
@@ -57,6 +63,7 @@ export function SelectedTeamList({
         const emp = employees.find((e) => e.userId === member.userId);
         const isPm = projectManagerId === member.userId;
         const workload = workloadMap.get(member.userId);
+        const isRemoveDisabled = disableRemove?.(member.userId) ?? false;
 
         return (
           <div key={member.userId} className="p-3">
@@ -87,14 +94,17 @@ export function SelectedTeamList({
                       )}
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Remove member">
-                    <IconButton
-                      size="small"
-                      onClick={() => onRemove(member.userId)}
-                      aria-label="Remove team member"
-                    >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
+                  <Tooltip title={isRemoveDisabled ? disableRemoveTooltip : 'Remove member'}>
+                    <span>
+                      <IconButton
+                        size="small"
+                        onClick={() => !isRemoveDisabled && onRemove(member.userId)}
+                        aria-label="Remove team member"
+                        disabled={isRemoveDisabled}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </span>
                   </Tooltip>
                 </div>
               }

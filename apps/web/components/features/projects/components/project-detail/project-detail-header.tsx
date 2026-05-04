@@ -1,5 +1,7 @@
 'use client';
 
+import EditIcon from '@mui/icons-material/Edit';
+import Button from '@mui/material/Button';
 import Link from 'next/link';
 import React from 'react';
 
@@ -26,10 +28,11 @@ import { formatDate } from '@/lib/utils/format';
 
 interface ProjectDetailHeaderProps {
   project: ProjectDetail;
+  onEdit?: () => void;
 }
 
 export const ProjectDetailHeader = React.memo(
-  ({ project }: ProjectDetailHeaderProps): React.JSX.Element => {
+  ({ project, onEdit }: ProjectDetailHeaderProps): React.JSX.Element => {
     const statusLabel = PROJECT_STATUS_LABELS[project.status] ?? project.status;
     const statusVariant = PROJECT_STATUS_BADGE_VARIANT[project.status] ?? 'secondary';
     const priorityLabel = PROJECT_PRIORITY_LABELS[project.priority] ?? project.priority;
@@ -83,8 +86,23 @@ export const ProjectDetailHeader = React.memo(
               {project.startDate ? ` · Started ${formatDate(project.startDate, 'medium')}` : ''}
             </p>
           </div>
+
+          {onEdit && (
+            <div className="flex-shrink-0">
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<EditIcon fontSize="small" />}
+                onClick={onEdit}
+              >
+                Edit Project
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );
   },
 );
+
+ProjectDetailHeader.displayName = 'ProjectDetailHeader';
