@@ -9,6 +9,7 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import { Box, Button, Skeleton, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { DocumentCategory } from '@oneohm-epc/shared/types';
 import { useCallback, useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 import { DocumentGridItem } from './document-grid-item';
 import { DocumentListItem } from './document-list-item';
@@ -95,7 +96,7 @@ export function DocumentManager({
 
       if (isDraftMode) {
         const draft: DraftDocument = {
-          id: crypto.randomUUID(),
+          id: uuidv4(),
           file,
           fileName: file.name,
           fileUrl: uploadResult.publicUrl,

@@ -58,6 +58,16 @@ export type { ProjectReportsData } from './use-project-reports';
 export { useDocumentDownload } from './use-document-download';
 export { useCreateProjectTask, type CreateProjectTaskPayload } from './use-create-project-task';
 
+export { useEditProject, useProjectMemberTasks } from './use-edit-project';
+export type {
+  UpdateProjectPayload,
+  AddTeamMemberPayload,
+  UpdateTeamMemberPayload,
+  RemoveTeamMemberPayload,
+  ReassignTaskPayload,
+  UseEditProjectReturn,
+} from './use-edit-project';
+
 export {
   useProjectTaskStatuses,
   type UseProjectTaskStatusesResult,
