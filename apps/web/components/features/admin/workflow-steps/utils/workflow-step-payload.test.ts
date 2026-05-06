@@ -1,5 +1,3 @@
-import { MilestoneType } from '@oneohm-epc/shared/types';
-
 import { buildWorkflowStepPayload } from './workflow-step-payload';
 import { type WorkflowStepFormValues } from '../schemas/workflow-step.schema';
 
@@ -11,7 +9,8 @@ function makeFormValues(overrides: Partial<WorkflowStepFormValues> = {}): Workfl
     type: 'execution',
     defaultRoleCode: '',
     defaultDepartment: '',
-    defaultMilestoneType: MilestoneType.INSTALLATION,
+    defaultMilestoneName: 'Installation',
+    defaultMilestoneOrder: 4,
     sequenceOrder: 1,
     effortDays: '' as unknown as number,
     isMandatory: true,

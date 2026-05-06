@@ -21,7 +21,7 @@ export const createProjectTaskSchema = z
     status: z.nativeEnum(TaskStatus),
     priority: z.nativeEnum(TaskPriority),
     assignedToUserId: z.string().uuid().nullable().optional(),
-    milestoneId: z.union([z.string().uuid(), z.literal('')]).optional(),
+    milestoneName: z.string().max(255).nullable().optional(),
     startDate: optionalIsoDateField,
     endDate: optionalIsoDateField,
   })

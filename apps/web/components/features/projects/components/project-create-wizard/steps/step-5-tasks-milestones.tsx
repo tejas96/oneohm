@@ -4,10 +4,8 @@ import AddIcon from '@mui/icons-material/Add';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import Alert from '@mui/material/Alert';
 import MuiButton from '@mui/material/Button';
-import { MilestoneType } from '@oneohm-epc/shared/types';
 import { useMemo } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
-import { v4 as uuidv4 } from 'uuid';
 
 import type { ProjectCreateFormData } from '../../../schemas/project-create.schema';
 import { getDisplayRoles, getEmployeeDisplayName } from '../../../utils';
@@ -76,30 +74,31 @@ export function Step5TasksMilestones({ form }: Step5TasksMilestonesProps): React
     return map;
   }, [teamMembers, employees]);
 
-  // Group tasks by milestone based on overrides or default milestone type
+  // Group tasks by milestone based on overrides or default milestone name
   const milestoneToTasks = useMemo(() => {
     const map = new Map<string, typeof templates>();
-    milestones.forEach((m) => map.set(m.id, []));
+    milestones.forEach((m) => map.set(m.name, []));
 
     for (const step of templates) {
       const override = taskMilestoneOverrides.find((o) => o.workflowStepId === step.id);
-      if (override) {
-        const target = milestones.find((m) => m.order === override.milestoneOrder);
-        if (target) {
-          map.get(target.id)?.push(step);
+      if (override?.milestoneName) {
+        const bucket = map.get(override.milestoneName);
+        if (bucket) {
+          bucket.push(step);
           continue;
         }
       }
-      // Default: match by milestone type
+      // Default: match by defaultMilestoneName from workflow step
+      const defaultName = (step as { defaultMilestoneName?: string | null }).defaultMilestoneName;
       const milestone =
-        milestones.find((m) => m.type === step.defaultMilestoneType) ?? milestones[0];
-      if (milestone) map.get(milestone.id)?.push(step);
+        (defaultName ? milestones.find((m) => m.name === defaultName) : null) ?? milestones[0];
+      if (milestone) map.get(milestone.name)?.push(step);
     }
     return map;
   }, [templates, milestones, taskMilestoneOverrides]);
 
   const milestoneOptions = milestones.map((m) => ({
-    value: m.id,
+    value: m.name,
     label: m.name,
     order: m.order,
   }));
@@ -133,30 +132,75 @@ export function Step5TasksMilestones({ form }: Step5TasksMilestonesProps): React
     setValue('taskAssignments', updated);
   }
 
-  function handleMilestoneChange(stepId: string, order: number): void {
+  function handleMilestoneChange(
+    stepId: string,
+    milestoneName: string | null,
+    milestoneOrder: number | null,
+  ): void {
     const current = taskMilestoneOverrides.filter((o) => o.workflowStepId !== stepId);
+    // null or empty string both mean "No Milestone" — store a null override so the grouping
+    // logic correctly falls back to the default milestone for this step.
+    const resolvedName = milestoneName || null;
     const updated: TaskMilestoneOverride[] =
-      order === 0 ? current : [...current, { workflowStepId: stepId, milestoneOrder: order }];
+      resolvedName == null
+        ? current
+        : [...current, { workflowStepId: stepId, milestoneName: resolvedName, milestoneOrder }];
     setValue('taskMilestoneOverrides', updated);
   }
 
-  function handleDeleteMilestone(milestoneId: string): void {
+  function handleDeleteMilestone(milestoneName: string): void {
     if (milestones.length <= 1) return;
-    const updated = milestones.filter((m) => m.id !== milestoneId);
+    const updated = milestones.filter((m) => m.name !== milestoneName);
     setValue('milestones', updated);
+    // Clear overrides that pointed to the deleted milestone so tasks fall back to defaults
+    const cleanedOverrides = taskMilestoneOverrides.filter(
+      (o) => o.milestoneName !== milestoneName,
+    );
+    setValue('taskMilestoneOverrides', cleanedOverrides);
   }
 
-  function handleRenameMilestone(milestoneId: string, name: string): void {
-    const updated = milestones.map((m) => (m.id === milestoneId ? { ...m, name } : m));
-    setValue('milestones', updated);
+  function handleRenameMilestone(oldName: string, newName: string): void {
+    const renamedMilestone = milestones.find((m) => m.name === oldName);
+    if (!renamedMilestone) return;
+
+    const updatedMilestones = milestones.map((m) =>
+      m.name === oldName ? { ...m, name: newName } : m,
+    );
+
+    // 1. Update existing explicit overrides that pointed to the old name
+    const baseOverrides = taskMilestoneOverrides.map((o) =>
+      o.milestoneName === oldName ? { ...o, milestoneName: newName } : o,
+    );
+
+    // 2. Tasks that were in the renamed group via DEFAULT (no override) would lose their
+    //    membership because step.defaultMilestoneName still points to the old name.
+    //    Write explicit overrides for them now so they stay in the renamed group.
+    const overridesMap = new Map(baseOverrides.map((o) => [o.workflowStepId, o]));
+    for (const step of templates) {
+      if (overridesMap.has(step.id)) continue; // already has an explicit override
+      const defaultName = (step as { defaultMilestoneName?: string | null }).defaultMilestoneName;
+      // This task was in the old group either by exact default-name match or by first-milestone fallback
+      const wasInGroup =
+        defaultName === oldName ||
+        // first-milestone fallback: no default name match in old milestones list
+        (!milestones.some((m) => m.name === defaultName) && milestones[0]?.name === oldName);
+      if (wasInGroup) {
+        overridesMap.set(step.id, {
+          workflowStepId: step.id,
+          milestoneName: newName,
+          milestoneOrder: renamedMilestone.order,
+        });
+      }
+    }
+
+    setValue('milestones', updatedMilestones);
+    setValue('taskMilestoneOverrides', [...overridesMap.values()]);
   }
 
   function handleAddMilestone(): void {
     const maxOrder = Math.max(...milestones.map((m) => m.order), 0);
     const newMilestone: MilestoneGroup = {
-      id: uuidv4(),
       name: `Milestone ${maxOrder + 1}`,
-      type: MilestoneType.CUSTOM,
       order: maxOrder + 1,
     };
     setValue('milestones', [...milestones, newMilestone]);
@@ -204,9 +248,9 @@ export function Step5TasksMilestones({ form }: Step5TasksMilestonesProps): React
         <div className="flex flex-col gap-1">
           {milestones.map((milestone) => (
             <MilestoneTaskGroup
-              key={milestone.id}
+              key={milestone.order}
               milestone={milestone}
-              tasks={milestoneToTasks.get(milestone.id) ?? []}
+              tasks={milestoneToTasks.get(milestone.name) ?? []}
               excludedStepIds={excludedStepIds}
               taskAssignments={taskAssignments}
               taskMilestoneOverrides={taskMilestoneOverrides}

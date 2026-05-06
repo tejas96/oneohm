@@ -1,7 +1,6 @@
 import { PROJECT_TYPE_LABELS as _PROJECT_TYPE_LABELS } from '@oneohm-epc/shared/constants';
 import {
   MaterialStatus,
-  MilestoneType,
   PaymentTransactionStatus,
   ProjectPriority,
   ProjectStatus,
@@ -14,14 +13,14 @@ import {
 
 import { toTitleLabel } from '@/lib/utils';
 
-export const DEFAULT_MILESTONES = [
-  { name: 'Site Survey & Design', type: MilestoneType.SITE_SURVEY },
-  { name: 'Permits & Approvals', type: MilestoneType.PERMITS },
-  { name: 'Material Procurement', type: MilestoneType.MATERIAL_PROCUREMENT },
-  { name: 'Installation', type: MilestoneType.INSTALLATION },
-  { name: 'Commissioning & Testing', type: MilestoneType.COMMISSIONING },
-  { name: 'Handover', type: MilestoneType.HANDOVER },
-] as const;
+export const DEFAULT_MILESTONES: ReadonlyArray<{ name: string; order: number }> = [
+  { name: 'Site Survey & Design', order: 1 },
+  { name: 'Permits & Approvals', order: 2 },
+  { name: 'Material Procurement', order: 3 },
+  { name: 'Installation', order: 4 },
+  { name: 'Commissioning & Testing', order: 5 },
+  { name: 'Handover', order: 6 },
+];
 
 export const PROJECT_STATUS_LABELS: Record<string, string> = {
   [ProjectStatus.DRAFT]: 'Draft',
@@ -90,22 +89,14 @@ export const HEALTH_STATUS_PROGRESS_VARIANT: Record<
   delayed: 'error',
 };
 
-export const PHASE_LABELS: Record<string, string> = {
-  [MilestoneType.SITE_SURVEY]: 'Site Survey',
-  [MilestoneType.DESIGN]: 'Design',
-  [MilestoneType.PLANNING]: 'Planning',
-  [MilestoneType.APPROVAL]: 'Approval',
-  [MilestoneType.PERMITS]: 'Permits',
-  [MilestoneType.MATERIAL_PROCUREMENT]: 'Procurement',
-  [MilestoneType.ELECTRICAL]: 'Electrical',
-  [MilestoneType.INSTALLATION]: 'Installation',
-  [MilestoneType.INSPECTION]: 'Inspection',
-  [MilestoneType.TESTING]: 'Testing',
-  [MilestoneType.COMMISSIONING]: 'Commissioning',
-  [MilestoneType.MONITORING]: 'Monitoring',
-  [MilestoneType.HANDOVER]: 'Handover',
-  [MilestoneType.CUSTOM]: 'Custom',
-};
+/**
+ * Phase labels passthrough — currentPhase is now a free-text milestone name string,
+ * not a MilestoneType enum. This identity map is kept so any consumers that do
+ * `PHASE_LABELS[phase] ?? phase` continue to work without change.
+ */
+export function PHASE_LABELS(phase: string | null | undefined): string {
+  return phase ?? '';
+}
 
 /**
  * AdvancedTable select filterOptions — enum-driven, stays in sync automatically.
@@ -356,6 +347,14 @@ export const KANBAN_BOARD_LIMIT = 500;
  */
 export const PROJECT_TASKS_QUERY_KEY = (organizationId: string | undefined) =>
   ['project-tasks', organizationId] as const;
+
+/**
+ * Query key for the milestone aggregation endpoint.
+ * Invalidate alongside PROJECT_TASKS_QUERY_KEY whenever tasks change.
+ */
+export const PROJECT_MILESTONE_AGG_QUERY_KEY = (projectId: string | undefined) =>
+  ['project-milestones', projectId] as const;
+
 export const MS_PER_DAY = 86_400_000;
 
 // ---------------------------------------------------------------------------

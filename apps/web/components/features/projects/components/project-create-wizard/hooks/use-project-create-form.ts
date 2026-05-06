@@ -1,11 +1,10 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MilestoneType, ProjectPriority, type TaskStatusConfig } from '@oneohm-epc/shared/types';
+import { ProjectPriority, type TaskStatusConfig } from '@oneohm-epc/shared/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm, type UseFormReturn } from 'react-hook-form';
-import { v4 as uuidv4 } from 'uuid';
 
 import { DEFAULT_MILESTONES } from '../../../constants';
 import {
@@ -52,13 +51,7 @@ export function useProjectCreateForm(): UseProjectCreateFormReturn {
   })();
 
   const defaultMilestones = useMemo(
-    () =>
-      DEFAULT_MILESTONES.map((m, i) => ({
-        id: uuidv4(),
-        name: m.name,
-        type: m.type as MilestoneType,
-        order: i + 1,
-      })),
+    () => DEFAULT_MILESTONES.map((m) => ({ name: m.name, order: m.order })),
     [],
   );
 

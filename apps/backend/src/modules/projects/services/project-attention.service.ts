@@ -3,7 +3,6 @@ import {
   type AttentionItem,
   type AttentionSeverity,
   MaterialStatus,
-  MilestoneStatus,
   PaymentTransactionStatus,
   TaskStatus,
 } from '@oneohm-epc/shared/types';
@@ -12,12 +11,12 @@ import { DataSource } from 'typeorm';
 import { PaymentEntity } from '../../payments/entities';
 import type { AttentionResponseDto } from '../dto/attention-response.dto';
 import { MaterialRepository } from '../repositories/material.repository';
-import { MilestoneRepository } from '../repositories/milestone.repository';
 import { ProjectTaskRepository } from '../repositories/project-task.repository';
 import { ProjectRepository } from '../repositories/project.repository';
 
 const ATTENTION_SERVICE_CONSTANTS = {
   UPCOMING_DAYS: 7,
+  MILESTONE_DUE_SOON_DAYS: 3,
   MAX_ITEMS: 10,
   PAYMENT_SAMPLE_SIZE: 2,
   MATERIAL_SAMPLE_SIZE: 2,
@@ -29,12 +28,18 @@ const SEVERITY_ORDER: Record<AttentionSeverity, number> = {
   info: 2,
 };
 
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
+
 @Injectable()
 export class ProjectAttentionService {
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly projectTaskRepository: ProjectTaskRepository,
-    private readonly milestoneRepository: MilestoneRepository,
     private readonly materialRepository: MaterialRepository,
     private readonly dataSource: DataSource,
   ) {}
@@ -46,20 +51,20 @@ export class ProjectAttentionService {
     // Ownership validation first to guarantee org isolation for all downstream queries.
     await this.projectRepository.findById(projectId, organizationId);
 
-    const [tasks, milestones, materials, payments] = await Promise.all([
+    const [tasks, materials, payments] = await Promise.all([
       this.projectTaskRepository.findAllForBoard(projectId),
-      this.milestoneRepository.findByProject(projectId),
       this.materialRepository.findByProject(projectId),
       this.findPendingPayments(projectId, organizationId),
     ]);
 
     const now = new Date();
-    const dueSoonCutoff = new Date(
-      now.getTime() + ATTENTION_SERVICE_CONSTANTS.UPCOMING_DAYS * 24 * 60 * 60 * 1000,
+    const milestoneDueSoonCutoff = new Date(
+      now.getTime() + ATTENTION_SERVICE_CONSTANTS.MILESTONE_DUE_SOON_DAYS * 24 * 60 * 60 * 1000,
     );
 
     const items: AttentionItem[] = [];
 
+    // ── Per-task alerts (blocked / overdue) ────────────────────────────────
     for (const task of tasks) {
       const taskName = task.name ?? task.code;
       const assigneeName = task.assignee
@@ -112,9 +117,24 @@ export class ProjectAttentionService {
       });
     }
 
-    for (const milestone of milestones) {
-      if (!milestone.endDate || milestone.status === MilestoneStatus.COMPLETED) continue;
-      const endDate = new Date(milestone.endDate);
+    // ── Milestone alerts (derived from task due dates grouped by milestone_name) ─
+    const milestoneEndDateMap = new Map<string, Date>();
+    const terminalStatuses = new Set([TaskStatus.DONE, TaskStatus.CANCELLED]);
+
+    for (const task of tasks) {
+      if (!task.milestoneName) continue;
+      if (terminalStatuses.has(task.status)) continue;
+      if (!task.endDate) continue;
+
+      const taskEndDate = new Date(task.endDate);
+      const existing = milestoneEndDateMap.get(task.milestoneName);
+      if (!existing || taskEndDate > existing) {
+        milestoneEndDateMap.set(task.milestoneName, taskEndDate);
+      }
+    }
+
+    for (const [milestoneName, endDate] of milestoneEndDateMap.entries()) {
+      const slug = slugify(milestoneName);
 
       if (endDate < now) {
         const overdueDays = Math.max(
@@ -122,34 +142,35 @@ export class ProjectAttentionService {
           Math.floor((now.getTime() - endDate.getTime()) / (24 * 60 * 60 * 1000)),
         );
         items.push({
-          id: `milestone:${milestone.id}:late`,
+          id: `milestone:${slug}:late`,
           kind: 'milestone_late',
           severity: overdueDays >= 3 ? 'critical' : 'warning',
-          title: `${milestone.name} milestone is late`,
+          title: `${milestoneName} milestone is late`,
           subtitle: `${overdueDays} day${overdueDays === 1 ? '' : 's'} overdue`,
-          href: this.buildMilestoneTasksHref(projectId, milestone.id),
+          href: this.buildMilestoneTasksHref(projectId, milestoneName),
           dueDate: endDate.toISOString(),
         });
         continue;
       }
 
-      if (endDate <= dueSoonCutoff) {
+      if (endDate <= milestoneDueSoonCutoff) {
         const dueInDays = Math.max(
           1,
           Math.ceil((endDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)),
         );
         items.push({
-          id: `milestone:${milestone.id}:due_soon`,
+          id: `milestone:${slug}:due_soon`,
           kind: 'milestone_due_soon',
           severity: 'info',
-          title: `${milestone.name} milestone is due soon`,
+          title: `${milestoneName} milestone is due soon`,
           subtitle: `Due in ${dueInDays} day${dueInDays === 1 ? '' : 's'}`,
-          href: this.buildMilestoneTasksHref(projectId, milestone.id),
+          href: this.buildMilestoneTasksHref(projectId, milestoneName),
           dueDate: endDate.toISOString(),
         });
       }
     }
 
+    // ── Material pending alerts ────────────────────────────────────────────
     const pendingMaterials = materials
       .filter(
         (material) => ![MaterialStatus.ALLOCATED, MaterialStatus.USED].includes(material.status),
@@ -168,6 +189,7 @@ export class ProjectAttentionService {
       });
     }
 
+    // ── Payment due alerts ────────────────────────────────────────────────
     for (const payment of payments.slice(0, ATTENTION_SERVICE_CONSTANTS.PAYMENT_SAMPLE_SIZE)) {
       const pendingAmount = Math.max(
         0,
@@ -221,10 +243,10 @@ export class ProjectAttentionService {
     return `/projects/${projectId}?${params.toString()}`;
   }
 
-  private buildMilestoneTasksHref(projectId: string, milestoneId: string): string {
+  private buildMilestoneTasksHref(projectId: string, milestoneName: string): string {
     const params = new URLSearchParams({
       tab: 'tasks',
-      t_milestone: milestoneId,
+      t_milestone: milestoneName,
     });
     return `/projects/${projectId}?${params.toString()}`;
   }

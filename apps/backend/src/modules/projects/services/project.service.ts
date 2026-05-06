@@ -1,7 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
-  type MilestoneType,
-  MilestoneStatus,
   type PaymentMilestone,
   ProjectPriority,
   ProjectStatus,
@@ -18,19 +16,11 @@ import { QuoteService } from '../../quotes/services/quote.service';
 import { ConvertFromQuoteDto, UpdateProjectDto } from '../dto';
 import { ProjectEntity } from '../entities/project.entity';
 import {
-  MilestoneRepository,
   ProjectRepository,
   ProjectTaskRepository,
   ProjectTeamRepository,
   WorkflowStepRepository,
 } from '../repositories';
-const STAGE_TO_MILESTONE_TYPE: Record<string, MilestoneType> = {
-  material_procurement: 'material_procurement' as MilestoneType,
-  installation_start: 'installation' as MilestoneType,
-  installation_complete: 'installation' as MilestoneType,
-  commissioning: 'commissioning' as MilestoneType,
-  net_metering: 'handover' as MilestoneType,
-};
 
 const PROJECT_CONSTANTS = {
   ALL_TASKS_LIMIT: 10000,
@@ -58,7 +48,6 @@ export class ProjectService {
 
   constructor(
     private readonly projectRepository: ProjectRepository,
-    private readonly milestoneRepository: MilestoneRepository,
     private readonly organizationRepository: OrganizationRepository,
     private readonly quoteService: QuoteService,
     private readonly customerPropertyRepository: CustomerPropertyRepository,
@@ -107,13 +96,15 @@ export class ProjectService {
     const projectIds = projects.map((p) => p.id);
     const paymentMap = await this.projectRepository.getPaymentSummaries(projectIds);
 
-    const enriched = projects.map((project) => {
-      const currentPhase = this.computeCurrentPhase(project);
-      const healthStatus = this.computeHealthStatus(project);
-      const paymentSummary = paymentMap.get(project.id) ?? { totalExpected: 0, totalPaid: 0 };
+    const enriched = await Promise.all(
+      projects.map(async (project) => {
+        const currentPhase = await this.computeCurrentPhaseFromTasks(project.id);
+        const healthStatus = this.computeHealthStatus(project);
+        const paymentSummary = paymentMap.get(project.id) ?? { totalExpected: 0, totalPaid: 0 };
 
-      return Object.assign(project, { currentPhase, healthStatus, paymentSummary });
-    });
+        return Object.assign(project, { currentPhase, healthStatus, paymentSummary });
+      }),
+    );
 
     return { projects: enriched, total, page, limit };
   }
@@ -218,25 +209,15 @@ export class ProjectService {
   }
 
   /**
-   * Calculate and update project progress based on milestones
+   * Calculate and update project progress based on task completion ratio.
+   * Cancelled tasks are excluded from both numerator and denominator.
    */
   async calculateProgress(id: string, organizationId: string): Promise<ProjectEntity> {
-    const project = await this.projectRepository.findById(id, organizationId);
-    const milestones = await this.milestoneRepository.findByProject(project.id);
-
-    if (milestones.length === 0) {
-      return project;
-    }
-
-    // Calculate average progress from all milestones
-    const totalProgress = milestones.reduce(
-      (sum, milestone) => sum + milestone.progressPercentage,
-      0,
-    );
-    const averageProgress = Math.round(totalProgress / milestones.length);
+    const { done, total } = await this.taskRepository.computeProgress(id);
+    const progress = total > 0 ? Math.round((100 * done) / total) : 0;
 
     await this.projectRepository.update(id, organizationId, {
-      progressPercentage: averageProgress,
+      progressPercentage: progress,
     });
 
     return this.projectRepository.findById(id, organizationId);
@@ -326,15 +307,11 @@ export class ProjectService {
       `${customerName} - ${latestVersion?.systemSizeKw ?? ''}kW Solar Installation`.trim();
     const paymentMilestones: PaymentMilestone[] = latestVersion?.paymentMilestones || [];
 
-    const milestones = convertDto?.milestones?.length
-      ? convertDto.milestones.map((m) => ({
-          name: m.name,
-          type: m.type as MilestoneType,
-          order: m.order,
-        }))
+    // Build milestone list: prefer explicit input, else derive names from payment milestone names
+    const milestones: Array<{ name: string; order: number }> = convertDto?.milestones?.length
+      ? convertDto.milestones.map((m) => ({ name: m.name, order: m.order }))
       : paymentMilestones.map((pm, i) => ({
           name: pm.name,
-          type: STAGE_TO_MILESTONE_TYPE[pm.stage] || ('custom' as MilestoneType),
           order: pm.order || i + 1,
         }));
 
@@ -392,12 +369,7 @@ export class ProjectService {
       assignedToUserId?: string;
       completionPercentage: number;
     }>;
-    milestones: Array<{
-      id: string;
-      name: string;
-      dueDate?: Date;
-      status: string;
-    }>;
+    milestones: Array<Record<string, never>>;
   }> {
     const project = await this.findById(projectId, organizationId);
 
@@ -408,9 +380,6 @@ export class ProjectService {
       PROJECT_CONSTANTS.ALL_TASKS_LIMIT,
       {},
     );
-
-    // Get milestones
-    const milestones = await this.milestoneRepository.findByProject(projectId);
 
     return {
       project: {
@@ -430,12 +399,7 @@ export class ProjectService {
         assignedToUserId: task.assignedToUserId,
         completionPercentage: task.completionPercentage || 0,
       })),
-      milestones: milestones.map((m) => ({
-        id: m.id,
-        name: m.name,
-        dueDate: m.endDate,
-        status: m.status,
-      })),
+      milestones: [],
     };
   }
 
@@ -514,15 +478,31 @@ export class ProjectService {
   }
 
   private computeCurrentPhase(project: ProjectEntity): string | null {
-    if (!project.milestones || project.milestones.length === 0) return null;
+    // Current phase is now derived async from tasks; this synchronous helper is no longer used.
+    // Callers should use computeCurrentPhaseFromTasks instead.
+    void project;
+    return null;
+  }
 
-    const inProgress = project.milestones.find((m) => m.status === MilestoneStatus.IN_PROGRESS);
-    if (inProgress) return inProgress.milestoneType;
+  /**
+   * Derive current phase from tasks: the milestone group with lowest order
+   * that still has any non-done, non-cancelled task.
+   */
+  async computeCurrentPhaseFromTasks(projectId: string): Promise<string | null> {
+    const allTasks = await this.taskRepository.findAllForBoard(projectId);
+    const terminalStatuses = new Set([TaskStatus.DONE, TaskStatus.CANCELLED]);
 
-    const latest = [...project.milestones].sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-    );
-    return latest[0]?.milestoneType ?? null;
+    const activeTasks = allTasks.filter((t) => !terminalStatuses.has(t.status) && t.milestoneName);
+
+    if (activeTasks.length === 0) return null;
+
+    activeTasks.sort((a, b) => {
+      const orderA = a.milestoneOrder ?? 9999;
+      const orderB = b.milestoneOrder ?? 9999;
+      return orderA - orderB;
+    });
+
+    return activeTasks[0]?.milestoneName ?? null;
   }
 
   private computeHealthStatus(project: ProjectEntity): 'on_track' | 'at_risk' | 'delayed' | null {
@@ -608,13 +588,112 @@ export class ProjectService {
   }
 
   /**
-   * Auto-apply active workflow steps to a project.
-   * Filters out excluded templates, detects dependency cycles, and resolves dependencies.
+   * Shared orchestration for project creation (quote conversion flow).
+   * Wrapped in a database transaction for atomicity.
    */
-  private async applyWorkflowSteps(
+  private async orchestrateProjectCreation(params: {
+    projectData: Partial<ProjectEntity>;
+    propertyId: string;
+    organizationId: string;
+    orgCode: string;
+    createdBy: string;
+    milestones: Array<{ name: string; order: number }>;
+    teamConfig?: {
+      pmId?: string;
+      members?: Array<{ userId: string; roleName: string; isProjectManager?: boolean }>;
+    };
+    excludedStepIds?: string[];
+    taskAssignments?: Array<{ workflowStepId: string; assignedToUserId: string }>;
+    taskMilestoneOverrides?: Array<{
+      workflowStepId: string;
+      milestoneName: string | null;
+      milestoneOrder: number | null;
+    }>;
+  }): Promise<ProjectEntity> {
+    const {
+      projectData,
+      propertyId,
+      organizationId,
+      orgCode,
+      createdBy,
+      milestones,
+      teamConfig,
+      excludedStepIds,
+      taskAssignments,
+      taskMilestoneOverrides,
+    } = params;
+
+    // Build a lookup from milestone name → order for fast override resolution
+    const milestoneNameToOrder = new Map<string, number>(milestones.map((m) => [m.name, m.order]));
+
+    return this.dataSource.transaction(async (manager) => {
+      // 1. Generate project number inside transaction to avoid race conditions
+      if (!projectData.projectNumber) {
+        projectData.projectNumber = await this.generateProjectNumber(orgCode, manager);
+      }
+
+      // 2. Create project
+      const project = await this.projectRepository.create({ ...projectData, createdBy }, manager);
+
+      // 3. Update property to CONVERTED
+      await this.customerPropertyRepository.updateStatusById(
+        propertyId,
+        PropertyStatus.CONVERTED,
+        manager,
+      );
+
+      // 4. Set excluded steps on project
+      await this.projectRepository.updateById(
+        project.id,
+        { excludedStepIds: excludedStepIds ?? [] },
+        manager,
+      );
+
+      // 5. Apply workflow steps — milestone fields are set directly on each task
+      await this.applyWorkflowStepsWithMilestones(
+        project.id,
+        organizationId,
+        createdBy,
+        milestoneNameToOrder,
+        taskMilestoneOverrides ?? [],
+        excludedStepIds,
+        project.startDate,
+        manager,
+      );
+
+      // 6. Add PM + team members
+      await this.addTeamMembers(project.id, teamConfig, manager);
+
+      // 7. Apply explicit task assignments from API payload (sole assignment path)
+      await this.applyTaskAssignments(project.id, taskAssignments ?? [], manager);
+
+      // 8. Compute initial progress
+      const { done, total } = await this.taskRepository.computeProgress(project.id, manager);
+      const progress = total > 0 ? Math.round((100 * done) / total) : 0;
+      await this.projectRepository.updateById(
+        project.id,
+        { progressPercentage: progress },
+        manager,
+      );
+
+      return this.projectRepository.findById(project.id, organizationId, manager);
+    });
+  }
+
+  /**
+   * Apply workflow steps to a new project, setting milestone_name and milestone_order
+   * directly on each task. Overrides from the wizard take precedence over step defaults.
+   */
+  private async applyWorkflowStepsWithMilestones(
     projectId: string,
     organizationId: string,
     createdBy: string,
+    milestoneNameToOrder: Map<string, number>,
+    taskMilestoneOverrides: Array<{
+      workflowStepId: string;
+      milestoneName: string | null;
+      milestoneOrder: number | null;
+    }>,
     excludedStepIds?: string[],
     projectStartDate?: Date,
     manager?: EntityManager,
@@ -634,6 +713,10 @@ export class ProjectService {
 
     const org = await this.organizationRepository.findOneById(organizationId);
     const orgCode = org?.code || 'UNKNOWN';
+
+    // Build override lookup keyed by workflowStepId
+    const overrideMap = new Map(taskMilestoneOverrides.map((o) => [o.workflowStepId, o]));
+
     const codeToTaskId = new Map<string, string>();
     const baseDate = projectStartDate ? new Date(projectStartDate) : new Date();
     baseDate.setHours(0, 0, 0, 0);
@@ -646,6 +729,24 @@ export class ProjectService {
         taskCode = step.code;
       }
 
+      const override = overrideMap.get(step.id);
+
+      // Resolve milestone name: explicit override wins, then step default
+      let milestoneName: string | null = null;
+      let milestoneOrder: number | null = null;
+
+      if (override !== undefined) {
+        milestoneName = override.milestoneName;
+        milestoneOrder =
+          override.milestoneOrder ??
+          (milestoneName ? (milestoneNameToOrder.get(milestoneName) ?? null) : null);
+      } else {
+        milestoneName = step.defaultMilestoneName ?? null;
+        milestoneOrder =
+          step.defaultMilestoneOrder ??
+          (milestoneName ? (milestoneNameToOrder.get(milestoneName) ?? null) : null);
+      }
+
       const task = await this.taskRepository.create(
         {
           projectId,
@@ -654,6 +755,8 @@ export class ProjectService {
           kanbanOrder: step.sequenceOrder * PROJECT_CONSTANTS.KANBAN_ORDER_MULTIPLIER,
           endDate: step.effortDays != null ? addDays(baseDate, step.effortDays) : undefined,
           status: TaskStatus.BACKLOG,
+          milestoneName,
+          milestoneOrder,
           createdBy,
           updatedBy: createdBy,
         },
@@ -663,6 +766,7 @@ export class ProjectService {
       codeToTaskId.set(step.code, task.id);
     }
 
+    // Wire up task dependencies
     for (const step of steps) {
       if (step.dependsOnTaskCodes && step.dependsOnTaskCodes.length > 0) {
         const taskId = codeToTaskId.get(step.code);
@@ -683,200 +787,6 @@ export class ProjectService {
         if (dependsOnTaskIds.length > 0) {
           await this.taskRepository.updateById(taskId, { dependsOnTaskIds }, manager);
         }
-      }
-    }
-  }
-
-  /**
-   * Shared orchestration for project creation (quote conversion flow).
-   * Wrapped in a database transaction for atomicity.
-   */
-  private async orchestrateProjectCreation(params: {
-    projectData: Partial<ProjectEntity>;
-    propertyId: string;
-    organizationId: string;
-    orgCode: string;
-    createdBy: string;
-    milestones: Array<{ name: string; type: MilestoneType; order: number }>;
-    teamConfig?: {
-      pmId?: string;
-      members?: Array<{ userId: string; roleName: string; isProjectManager?: boolean }>;
-    };
-    excludedStepIds?: string[];
-    taskAssignments?: Array<{ workflowStepId: string; assignedToUserId: string }>;
-    taskMilestoneOverrides?: Array<{ workflowStepId: string; milestoneOrder: number }>;
-  }): Promise<ProjectEntity> {
-    const {
-      projectData,
-      propertyId,
-      organizationId,
-      orgCode,
-      createdBy,
-      milestones,
-      teamConfig,
-      excludedStepIds,
-      taskAssignments,
-      taskMilestoneOverrides,
-    } = params;
-
-    return this.dataSource.transaction(async (manager) => {
-      // 1. Generate project number inside transaction to avoid race conditions
-      if (!projectData.projectNumber) {
-        projectData.projectNumber = await this.generateProjectNumber(orgCode, manager);
-      }
-
-      // 2. Create project
-      const project = await this.projectRepository.create({ ...projectData, createdBy }, manager);
-
-      // 3. Update property to CONVERTED
-      await this.customerPropertyRepository.updateStatusById(
-        propertyId,
-        PropertyStatus.CONVERTED,
-        manager,
-      );
-
-      // 4. Create milestones
-      const { milestoneTypeMap, milestoneOrderMap } = await this.createProjectMilestones(
-        project.id,
-        milestones,
-        orgCode,
-        createdBy,
-        manager,
-      );
-
-      // 5. Set excluded steps on project (transitions are DB-driven, no hardcoded map)
-      await this.projectRepository.updateById(
-        project.id,
-        { excludedStepIds: excludedStepIds ?? [] },
-        manager,
-      );
-
-      // 6. Apply workflow steps (lean rows, no data copy)
-      await this.applyWorkflowSteps(
-        project.id,
-        organizationId,
-        createdBy,
-        excludedStepIds,
-        project.startDate,
-        manager,
-      );
-
-      // 7. Link tasks to milestones via step.defaultMilestoneType
-      await this.linkTasksToMilestones(project.id, organizationId, milestoneTypeMap, manager);
-
-      // 8. Apply milestone overrides from frontend
-      if (taskMilestoneOverrides?.length) {
-        await this.applyMilestoneOverrides(
-          project.id,
-          taskMilestoneOverrides,
-          milestoneOrderMap,
-          manager,
-        );
-      }
-
-      // 9. Add PM + team members
-      await this.addTeamMembers(project.id, teamConfig, manager);
-
-      // 10. Apply explicit task assignments from API payload (sole assignment path)
-      await this.applyTaskAssignments(project.id, taskAssignments ?? [], manager);
-
-      // 11. Compute initial progress
-      const { done, total } = await this.taskRepository.computeProgress(project.id, manager);
-      const progress = total > 0 ? Math.round((100 * done) / total) : 0;
-      await this.projectRepository.updateById(
-        project.id,
-        { progressPercentage: progress },
-        manager,
-      );
-      await this.milestoneRepository.updateProgressForProject(project.id, manager);
-
-      return this.projectRepository.findById(project.id, organizationId, manager);
-    });
-  }
-
-  private async createProjectMilestones(
-    projectId: string,
-    milestones: Array<{ name: string; type: MilestoneType; order: number }>,
-    orgCode: string,
-    createdBy: string,
-    manager: EntityManager,
-  ): Promise<{ milestoneTypeMap: Map<string, string>; milestoneOrderMap: Map<number, string> }> {
-    const milestoneTypeMap = new Map<string, string>();
-    const milestoneOrderMap = new Map<number, string>();
-
-    for (const ms of milestones) {
-      const milestone = await this.milestoneRepository.create(
-        {
-          projectId,
-          name: ms.name,
-          milestoneType: ms.type,
-          status: MilestoneStatus.PENDING,
-          sequenceOrder: ms.order,
-          createdBy,
-        },
-        manager,
-      );
-
-      try {
-        const milestoneCode = await this.milestoneRepository.generateMilestoneCode(
-          orgCode,
-          manager,
-        );
-        await this.milestoneRepository.updateById(milestone.id, { milestoneCode }, manager);
-      } catch (err) {
-        this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${String(err)}`);
-      }
-
-      milestoneTypeMap.set(ms.type, milestone.id);
-      milestoneOrderMap.set(ms.order, milestone.id);
-    }
-
-    return { milestoneTypeMap, milestoneOrderMap };
-  }
-
-  private async linkTasksToMilestones(
-    projectId: string,
-    organizationId: string,
-    milestoneTypeMap: Map<string, string>,
-    manager: EntityManager,
-  ): Promise<void> {
-    const allTasks = await this.taskRepository.findByProjectRaw(
-      projectId,
-      { relations: ['workflowStep'] },
-      manager,
-    );
-    const steps = await this.workflowStepRepository.findAllActive(organizationId, manager);
-    const stepMap = new Map(steps.map((s) => [s.id, s]));
-
-    for (const task of allTasks) {
-      if (!task.workflowStepId || task.milestoneId) continue;
-      const step = stepMap.get(task.workflowStepId);
-      if (!step?.defaultMilestoneType) continue;
-      const milestoneId = milestoneTypeMap.get(step.defaultMilestoneType);
-      if (milestoneId) {
-        await this.taskRepository.updateById(task.id, { milestoneId }, manager);
-      }
-    }
-  }
-
-  private async applyMilestoneOverrides(
-    projectId: string,
-    overrides: Array<{ workflowStepId: string; milestoneOrder: number }>,
-    milestoneOrderMap: Map<number, string>,
-    manager: EntityManager,
-  ): Promise<void> {
-    const tasks = await this.taskRepository.findByProjectRaw(projectId, undefined, manager);
-    for (const override of overrides) {
-      const task = tasks.find((t) => t.workflowStepId === override.workflowStepId);
-      if (!task) continue;
-      const milestoneId =
-        override.milestoneOrder === 0 ? null : milestoneOrderMap.get(override.milestoneOrder);
-      if (override.milestoneOrder === 0 || milestoneId) {
-        await this.taskRepository.updateById(
-          task.id,
-          { milestoneId: milestoneId ?? undefined },
-          manager,
-        );
       }
     }
   }

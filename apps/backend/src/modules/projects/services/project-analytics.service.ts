@@ -201,29 +201,54 @@ export class ProjectAnalyticsService {
     teamWorkload.push(...assignedEntries);
 
     // ── Milestone progress ───────────────────────────────────────────────────
-    const milestoneMap = new Map<string, { name: string; tasks: typeof allTasks }>();
+    // Aggregate directly from task fields (milestone_name, milestone_order).
+    // Cancelled tasks are excluded from both numerator and denominator.
+    const milestoneAggMap = new Map<
+      string,
+      {
+        name: string;
+        order: number;
+        totalTasks: number;
+        completedTasks: number;
+        inProgressTasks: number;
+        blockedTasks: number;
+      }
+    >();
+
     for (const task of allTasks) {
-      if (!task.milestoneId || !task.milestone) continue;
-      if (!milestoneMap.has(task.milestoneId)) {
-        milestoneMap.set(task.milestoneId, {
-          name: task.milestone.name,
-          tasks: [],
+      if (!task.milestoneName) continue;
+      if (task.status === TaskStatus.CANCELLED) continue;
+
+      const key = task.milestoneName;
+      if (!milestoneAggMap.has(key)) {
+        milestoneAggMap.set(key, {
+          name: task.milestoneName,
+          order: task.milestoneOrder ?? 9999,
+          totalTasks: 0,
+          completedTasks: 0,
+          inProgressTasks: 0,
+          blockedTasks: 0,
         });
       }
-      milestoneMap.get(task.milestoneId)!.tasks.push(task);
+      const entry = milestoneAggMap.get(key)!;
+      entry.totalTasks++;
+      if (task.status === TaskStatus.DONE) entry.completedTasks++;
+      if (task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.IN_REVIEW)
+        entry.inProgressTasks++;
+      if (task.status === TaskStatus.BLOCKED) entry.blockedTasks++;
     }
 
-    const milestoneProgress: MilestoneProgressEntryDto[] = [];
-    for (const [id, { name, tasks }] of milestoneMap.entries()) {
-      const completedCount = tasks.filter((t) => t.status === TaskStatus.DONE).length;
-      milestoneProgress.push({
-        id,
+    const milestoneProgress: MilestoneProgressEntryDto[] = [...milestoneAggMap.values()]
+      .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+      .map(({ name, order, totalTasks, completedTasks, inProgressTasks, blockedTasks }) => ({
         name,
-        totalTasks: tasks.length,
-        completedTasks: completedCount,
-        percent: tasks.length > 0 ? Math.round((completedCount / tasks.length) * 1000) / 10 : 0,
-      });
-    }
+        order,
+        totalTasks,
+        completedTasks,
+        inProgressTasks,
+        blockedTasks,
+        percent: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 1000) / 10 : 0,
+      }));
 
     return {
       metrics,
@@ -233,5 +258,96 @@ export class ProjectAnalyticsService {
       teamWorkload,
       milestoneProgress,
     };
+  }
+
+  /**
+   * Standalone milestone aggregation endpoint.
+   * Returns one row per distinct milestone_name, derived live from project_tasks.
+   * Cancelled tasks are excluded from all counts.
+   */
+  async ensureProjectAccess(projectId: string, organizationId: string): Promise<void> {
+    const project = await this.projectRepository.findById(projectId, organizationId);
+    if (!project) {
+      throw new NotFoundException(`Project ${projectId} not found`);
+    }
+  }
+
+  async getMilestoneAggregates(
+    projectId: string,
+    organizationId: string,
+  ): Promise<
+    {
+      name: string;
+      order: number;
+      totalTasks: number;
+      completedTasks: number;
+      inProgressTasks: number;
+      blockedTasks: number;
+      percent: number;
+      status: string;
+    }[]
+  > {
+    // Validates ownership
+    await this.projectRepository.findById(projectId, organizationId);
+
+    const allTasks = await this.taskRepository.findAllForBoard(projectId);
+
+    const aggMap = new Map<
+      string,
+      {
+        name: string;
+        order: number;
+        totalTasks: number;
+        completedTasks: number;
+        inProgressTasks: number;
+        blockedTasks: number;
+      }
+    >();
+
+    for (const task of allTasks) {
+      if (!task.milestoneName) continue;
+      if (task.status === TaskStatus.CANCELLED) continue;
+
+      const key = task.milestoneName;
+      if (!aggMap.has(key)) {
+        aggMap.set(key, {
+          name: task.milestoneName,
+          order: task.milestoneOrder ?? 9999,
+          totalTasks: 0,
+          completedTasks: 0,
+          inProgressTasks: 0,
+          blockedTasks: 0,
+        });
+      }
+
+      const entry = aggMap.get(key)!;
+      entry.totalTasks++;
+      if (task.status === TaskStatus.DONE) entry.completedTasks++;
+      if (task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.IN_REVIEW)
+        entry.inProgressTasks++;
+      if (task.status === TaskStatus.BLOCKED) entry.blockedTasks++;
+    }
+
+    return [...aggMap.values()]
+      .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+      .map((entry) => {
+        const { totalTasks, completedTasks, inProgressTasks, blockedTasks } = entry;
+        // totalTasks is always >= 1 here (aggMap only populated by non-cancelled tasks)
+        let status: string = 'pending';
+        if (blockedTasks > 0) status = 'blocked';
+        else if (completedTasks === totalTasks) status = 'completed';
+        else if (inProgressTasks > 0 || completedTasks > 0) status = 'in_progress';
+
+        return {
+          name: entry.name,
+          order: entry.order,
+          totalTasks,
+          completedTasks,
+          inProgressTasks,
+          blockedTasks,
+          percent: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 1000) / 10 : 0,
+          status,
+        };
+      });
   }
 }

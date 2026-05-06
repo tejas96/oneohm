@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { MilestoneType, ProjectPriority, TaskStatus } from '../types/enums';
+import { ProjectPriority, TaskStatus } from '../types/enums';
 
 const taskStatusConfigSchema = z.object({
   code: z.nativeEnum(TaskStatus),
@@ -43,19 +43,25 @@ export const projectCreateSchema = z
     taskMilestoneOverrides: z.array(
       z.object({
         workflowStepId: z.string().uuid(),
-        milestoneOrder: z.number().int().min(0),
+        milestoneName: z.string().max(255).nullable(),
+        milestoneOrder: z.number().int().min(0).nullable(),
       }),
     ),
     milestones: z
       .array(
         z.object({
-          id: z.string(),
           name: z.string().min(1, 'Milestone name is required').max(255),
-          type: z.nativeEnum(MilestoneType),
           order: z.number().int().min(1),
         }),
       )
-      .min(1, 'At least one milestone is required'),
+      .min(1, 'At least one milestone is required')
+      .refine(
+        (items) => {
+          const trimmed = items.map((m) => m.name.trim().toLowerCase());
+          return new Set(trimmed).size === trimmed.length;
+        },
+        { message: 'Milestone names must be unique within a project' },
+      ),
     taskStatuses: z.array(taskStatusConfigSchema).min(1, 'At least one task status is required'),
   })
   .refine((d) => !d.startDate || !d.endDate || new Date(d.endDate) >= new Date(d.startDate), {

@@ -93,7 +93,7 @@ export class ProjectTaskRepository {
         projectId,
         deletedAt: IsNull(),
       },
-      relations: ['assignee', 'milestone', 'workflowStep'],
+      relations: ['assignee', 'workflowStep'],
     });
     return task ? this.resolveTaskFields(task) : null;
   }
@@ -103,7 +103,7 @@ export class ProjectTaskRepository {
     page: number,
     limit: number,
     filters: {
-      milestoneId?: string;
+      milestoneName?: string;
       assignedToUserId?: string;
       status?: TaskStatus;
       priority?: string;
@@ -115,13 +115,12 @@ export class ProjectTaskRepository {
     const qb = this.repository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.assignee', 'assignee')
-      .leftJoinAndSelect('task.milestone', 'milestone')
       .leftJoinAndSelect('task.workflowStep', 'workflowStep')
       .where('task.project_id = :projectId', { projectId })
       .andWhere('task.deleted_at IS NULL');
 
-    if (filters.milestoneId) {
-      qb.andWhere('task.milestone_id = :milestoneId', { milestoneId: filters.milestoneId });
+    if (filters.milestoneName) {
+      qb.andWhere('task.milestone_name = :milestoneName', { milestoneName: filters.milestoneName });
     }
     if (filters.assignedToUserId) {
       if (filters.assignedToUserId === REPOSITORY_CONSTANTS.UNASSIGNED_TASK_FILTER) {
@@ -161,21 +160,6 @@ export class ProjectTaskRepository {
     return { data: this.resolveMany(data), total };
   }
 
-  async findByMilestone(projectId: string, milestoneId: string): Promise<ProjectTaskEntity[]> {
-    const tasks = await this.repository.find({
-      where: {
-        projectId,
-        milestoneId,
-        deletedAt: IsNull(),
-      },
-      relations: ['assignee', 'workflowStep'],
-      order: {
-        kanbanOrder: 'ASC',
-      },
-    });
-    return this.resolveMany(tasks);
-  }
-
   async findByAssignee(projectId: string, assignedToUserId: string): Promise<ProjectTaskEntity[]> {
     const tasks = await this.repository.find({
       where: {
@@ -183,7 +167,7 @@ export class ProjectTaskRepository {
         assignedToUserId,
         deletedAt: IsNull(),
       },
-      relations: ['milestone', 'workflowStep'],
+      relations: ['workflowStep'],
       order: {
         priority: 'DESC',
         startDate: 'ASC',
@@ -251,7 +235,7 @@ export class ProjectTaskRepository {
 
       const task = await taskRepo.findOne({
         where: { id, projectId, deletedAt: IsNull() },
-        relations: ['assignee', 'milestone', 'workflowStep'],
+        relations: ['assignee', 'workflowStep'],
       });
       return task ? this.resolveTaskFields(task) : null;
     });
@@ -326,7 +310,7 @@ export class ProjectTaskRepository {
   async findAllForBoard(projectId: string): Promise<ProjectTaskEntity[]> {
     const tasks = await this.repository.find({
       where: { projectId, deletedAt: IsNull() },
-      relations: ['assignee', 'workflowStep', 'milestone'],
+      relations: ['assignee', 'workflowStep'],
       order: { kanbanOrder: 'ASC', createdAt: 'DESC' },
     });
     return this.resolveMany(tasks);
@@ -496,7 +480,7 @@ export class ProjectTaskRepository {
 
       const task = await manager.findOne(ProjectTaskEntity, {
         where: { id, projectId, deletedAt: IsNull() },
-        relations: ['assignee', 'milestone', 'workflowStep'],
+        relations: ['assignee', 'workflowStep'],
       });
       return task ? this.resolveTaskFields(task) : null;
     });
@@ -538,7 +522,7 @@ export class ProjectTaskRepository {
 
     const [data, total] = await this.repository.findAndCount({
       where: whereConditions,
-      relations: ['project', 'milestone', 'workflowStep'],
+      relations: ['project', 'workflowStep'],
       order: {
         priority: 'DESC',
         endDate: 'ASC',
@@ -589,7 +573,6 @@ export class ProjectTaskRepository {
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('project.property', 'property')
-      .leftJoinAndSelect('task.milestone', 'milestone')
       .leftJoinAndSelect('task.workflowStep', 'workflowStep')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('task.deleted_at IS NULL')
@@ -685,7 +668,7 @@ export class ProjectTaskRepository {
 
     const task = await this.repository.findOne({
       where: whereConditions,
-      relations: ['project', 'milestone', 'assignee', 'workflowStep'],
+      relations: ['project', 'assignee', 'workflowStep'],
     });
     return task ? this.resolveTaskFields(task) : null;
   }
@@ -706,7 +689,6 @@ export class ProjectTaskRepository {
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.project', 'project')
       .leftJoinAndSelect('project.property', 'property')
-      .leftJoinAndSelect('task.milestone', 'milestone')
       .leftJoinAndSelect('task.workflowStep', 'workflowStep')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('task.id = :taskId', { taskId })
@@ -883,6 +865,39 @@ export class ProjectTaskRepository {
       task.labels = task.labelsOverride;
     }
     return task;
+  }
+
+  /**
+   * Rename all tasks in a milestone group from one name to another.
+   * Optionally updates the order for all tasks in the group.
+   * This is a single atomic UPDATE filtered by (project_id, milestone_name).
+   */
+  async renameMilestone(
+    projectId: string,
+    from: string,
+    to: string,
+    order?: number,
+  ): Promise<{ affected: number }> {
+    // TypeORM UpdateQueryBuilder.set() requires camelCase entity property names.
+    // Use Pick to only include the two scalar columns we're updating — avoids the deep-partial
+    // incompatibility that arises when using full Partial<ProjectTaskEntity> (relation fields).
+    const updateValues: Pick<ProjectTaskEntity, 'milestoneName'> &
+      Partial<Pick<ProjectTaskEntity, 'milestoneOrder'>> = { milestoneName: to };
+    if (order !== undefined) {
+      updateValues.milestoneOrder = order;
+    }
+
+    const result = await this.repository
+      .createQueryBuilder()
+      .update(ProjectTaskEntity)
+
+      .set(updateValues as any)
+      .where('project_id = :projectId', { projectId })
+      .andWhere('milestone_name = :from', { from })
+      .andWhere('deleted_at IS NULL')
+      .execute();
+
+    return { affected: result.affected ?? 0 };
   }
 
   private resolveMany(tasks: ProjectTaskEntity[]): ProjectTaskEntity[] {

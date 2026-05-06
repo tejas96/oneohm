@@ -21,8 +21,12 @@ export interface ConvertFromQuotePayload {
   priority?: ProjectPriority;
   excludedStepIds?: string[];
   taskAssignments?: Array<{ workflowStepId: string; assignedToUserId: string }>;
-  taskMilestoneOverrides?: Array<{ workflowStepId: string; milestoneOrder: number }>;
-  milestones?: Array<{ name: string; type: string; order: number }>;
+  taskMilestoneOverrides?: Array<{
+    workflowStepId: string;
+    milestoneName: string | null;
+    milestoneOrder: number | null;
+  }>;
+  milestones?: Array<{ name: string; order: number }>;
   taskStatuses?: TaskStatusConfig[];
 }
 

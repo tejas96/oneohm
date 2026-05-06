@@ -27,7 +27,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';
 
 import {
-  PHASE_LABELS,
   PROJECT_PRIORITY_LABELS,
   PROJECT_PRIORITY_OPTIONS,
   PROJECT_STATUS_LABELS,
@@ -354,7 +353,7 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     renderCell: ({ row }): JSX.Element => {
       const phase = (row as ProjectListItem).currentPhase;
       if (!phase) return <MUITypography variant="placeholder">-</MUITypography>;
-      const label = PHASE_LABELS[phase] ?? toTitleLabel(phase);
+      const label = phase;
       return (
         <Tooltip title={label} placement="top" enterDelay={400}>
           <span>

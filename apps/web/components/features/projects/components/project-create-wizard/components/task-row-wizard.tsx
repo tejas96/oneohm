@@ -22,7 +22,8 @@ export interface TaskAssignment {
 
 export interface TaskMilestoneOverride {
   workflowStepId: string;
-  milestoneOrder: number;
+  milestoneName: string | null;
+  milestoneOrder: number | null;
 }
 
 export interface MilestoneOption {
@@ -41,13 +42,20 @@ interface TaskRowWizardProps {
   isExcluded: boolean;
   assignment?: TaskAssignment;
   milestoneOverride?: TaskMilestoneOverride;
+  /** The milestone group this task currently belongs to (derived by the parent). Used as the
+   *  authoritative display value so renames never cause the dropdown to jump to a different group. */
+  currentGroupMilestoneName: string;
   milestoneOptions: MilestoneOption[];
   teamMemberOptions: TeamMemberOption[];
   memberRoleMap: Map<string, string>;
   userRoleLabelMap: Map<string, string>;
   onToggleExclude: (stepId: string) => void;
   onAssignmentChange: (stepId: string, userId: string) => void;
-  onMilestoneChange: (stepId: string, order: number) => void;
+  onMilestoneChange: (
+    stepId: string,
+    milestoneName: string | null,
+    milestoneOrder: number | null,
+  ) => void;
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -57,6 +65,7 @@ export function TaskRowWizard({
   isExcluded,
   assignment,
   milestoneOverride,
+  currentGroupMilestoneName,
   milestoneOptions,
   teamMemberOptions,
   memberRoleMap,
@@ -68,7 +77,18 @@ export function TaskRowWizard({
   const isMandatory = step.isMandatory ?? false;
   const hasRoleMatch =
     !step.defaultRoleCode || memberRoleMap.has(step.defaultRoleCode.toLowerCase());
-  const currentMilestoneOrder = milestoneOverride?.milestoneOrder ?? 0;
+
+  // The displayed value in the milestone select is determined by:
+  // 1. An explicit override (user manually moved this task) — use the override name
+  // 2. Otherwise use currentGroupMilestoneName (the group this task is actually in, as computed
+  //    by the parent). This ensures renames never cause the dropdown to jump to another milestone.
+  // Null/empty override means "No Milestone" was explicitly selected.
+  const currentMilestoneName: string = (() => {
+    if (milestoneOverride !== undefined) {
+      return milestoneOverride.milestoneName ?? '';
+    }
+    return currentGroupMilestoneName;
+  })();
   const currentAssigneeId = assignment?.assignedToUserId ?? '';
 
   // The userId auto-matched by role — shown when no manual assignment exists
@@ -80,8 +100,8 @@ export function TaskRowWizard({
   const displayedAssigneeId = currentAssigneeId || autoAssignedUserId;
 
   const milestoneSelectOptions = [
-    { value: '0', label: 'No Milestone' },
-    ...milestoneOptions.map((m) => ({ value: String(m.order), label: m.label })),
+    { value: '', label: 'No Milestone' },
+    ...milestoneOptions.map((m) => ({ value: m.value, label: m.label })),
   ];
 
   const assigneeOptions: AssigneeOption[] = teamMemberOptions.map((m) => ({
@@ -123,8 +143,11 @@ export function TaskRowWizard({
         <>
           <div className="w-36">
             <MUISelect
-              value={String(currentMilestoneOrder)}
-              onChange={(e) => onMilestoneChange(step.id, Number(e.target.value))}
+              value={currentMilestoneName}
+              onChange={(e) => {
+                const selected = milestoneOptions.find((m) => m.value === e.target.value);
+                onMilestoneChange(step.id, selected?.value ?? null, selected?.order ?? null);
+              }}
               options={milestoneSelectOptions}
               size="small"
               fullWidth

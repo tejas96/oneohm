@@ -9,7 +9,7 @@ import { ChevronDown, ChevronRight, Minus } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { TASK_PRIORITY_DOT_COLOR, TASK_PRIORITY_HEX_COLOR } from '../../../../constants';
-import type { ProjectDetail, ProjectMilestone, ProjectTaskItem } from '../../../../hooks/types';
+import type { ProjectTaskItem } from '../../../../hooks/types';
 import { ColorDotLabel, QuickSelect, type MUISelectOption } from '../../../quick-select';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -22,7 +22,6 @@ import { cn, formatDate, getDueDateColor, getInitials } from '@/lib/utils';
 interface TaskListTableProps {
   tasks: ProjectTaskItem[];
   taskStatuses: TaskStatusConfig[];
-  project: ProjectDetail;
   isLoading: boolean;
   onOpenTask: (taskId: string) => void;
   onStatusChange?: (
@@ -44,14 +43,6 @@ interface TaskGroup {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-
-function getMilestoneName(
-  milestoneId: string | undefined,
-  milestones: ProjectMilestone[],
-): string | null {
-  if (!milestoneId) return null;
-  return milestones.find((m) => m.id === milestoneId)?.name ?? null;
-}
 
 // ── Module-level constants ────────────────────────────────────────────────────
 
@@ -133,7 +124,6 @@ function TableHeader({ hasMilestones }: { hasMilestones: boolean }): React.JSX.E
 
 function TaskRow({
   task,
-  milestones,
   statusColor,
   statusLabel,
   hasMilestones,
@@ -143,7 +133,6 @@ function TaskRow({
   statusOptions,
 }: {
   task: ProjectTaskItem;
-  milestones: ProjectMilestone[];
   statusColor: string;
   statusLabel: string;
   hasMilestones: boolean;
@@ -157,7 +146,7 @@ function TaskRow({
   onPriorityChange?: (taskId: string, priority: string) => void;
   statusOptions: MUISelectOption[];
 }): React.JSX.Element {
-  const milestoneName = getMilestoneName(task.milestoneId, milestones);
+  const milestoneName = task.milestoneName ?? null;
   const priorityDot = TASK_PRIORITY_DOT_COLOR[task.priority] ?? 'bg-foreground-tertiary';
   const priorityColor = TASK_PRIORITY_HEX_COLOR[task.priority] ?? '#94a3b8';
   const priorityLabel = TASK_PRIORITY_LABELS[task.priority];
@@ -314,7 +303,6 @@ function TaskRow({
 
 function TaskGroupSection({
   group,
-  milestones,
   hasMilestones,
   onOpenTask,
   onStatusChange,
@@ -322,7 +310,6 @@ function TaskGroupSection({
   statusOptions,
 }: {
   group: TaskGroup;
-  milestones: ProjectMilestone[];
   hasMilestones: boolean;
   onOpenTask: (id: string) => void;
   onStatusChange?: (
@@ -372,7 +359,6 @@ function TaskGroupSection({
             <TaskRow
               key={task.id}
               task={task}
-              milestones={milestones}
               statusColor={group.color}
               statusLabel={group.label}
               hasMilestones={hasMilestones}
@@ -393,7 +379,6 @@ function TaskGroupSection({
 export function TaskListTable({
   tasks,
   taskStatuses,
-  project,
   isLoading,
   onOpenTask,
   onStatusChange,
@@ -401,8 +386,8 @@ export function TaskListTable({
   hasActiveFilters = false,
   onClearFilters,
 }: TaskListTableProps): React.JSX.Element {
-  const milestones = project.milestones;
-  const hasMilestones = milestones.length > 0;
+  // Tasks now carry milestoneName directly — check if any task has a milestone
+  const hasMilestones = tasks.some((t) => !!t.milestoneName);
 
   const statusOptions = useMemo<MUISelectOption[]>(
     () =>
@@ -475,7 +460,6 @@ export function TaskListTable({
         <TaskGroupSection
           key={group.code}
           group={group}
-          milestones={milestones}
           hasMilestones={hasMilestones}
           onOpenTask={onOpenTask}
           onStatusChange={onStatusChange}

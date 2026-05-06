@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { type MilestoneType, type TaskChecklist } from '@oneohm-epc/shared/types';
+import { type TaskChecklist } from '@oneohm-epc/shared/types';
 import { Expose, Transform } from 'class-transformer';
 
 export class WorkflowStepResponseDto {
@@ -35,9 +35,13 @@ export class WorkflowStepResponseDto {
   @Expose()
   defaultRoleCode?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Default milestone name for tasks from this step' })
   @Expose()
-  defaultMilestoneType?: MilestoneType | null;
+  defaultMilestoneName?: string | null;
+
+  @ApiPropertyOptional({ description: 'Default milestone order (sort key)' })
+  @Expose()
+  defaultMilestoneOrder?: number | null;
 
   @ApiProperty()
   @Expose()

@@ -71,27 +71,33 @@ export class TaskMilestoneOverrideDto {
   @IsUUID()
   workflowStepId!: string;
 
-  @ApiProperty({
-    description: 'Target milestone order (sequenceOrder) -- 0 means unmap from all milestones',
+  @ApiPropertyOptional({
+    description: 'Milestone name to assign to this task (null to clear)',
+    maxLength: 255,
   })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  milestoneName!: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Milestone order (sort key) — null to clear',
+    minimum: 0,
+  })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  milestoneOrder!: number;
+  milestoneOrder!: number | null;
 }
 
 export class MilestoneInputDto {
-  @ApiProperty({ description: 'Milestone name' })
+  @ApiProperty({ description: 'Milestone display name', example: 'Installation' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
   name!: string;
 
-  @ApiProperty({ description: 'Milestone type (MilestoneType enum value)' })
-  @IsString()
-  @IsNotEmpty()
-  type!: string;
-
-  @ApiProperty({ description: 'Sequence order (1-based)' })
+  @ApiProperty({ description: 'Sequence order (1-based)', example: 6 })
   @IsNumber()
   @Min(1)
   order!: number;

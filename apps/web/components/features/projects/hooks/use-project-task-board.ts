@@ -62,7 +62,7 @@ export function useProjectTaskBoard(
         filters.t_assignee === UNASSIGNED_TASK_FILTER
           ? UNASSIGNED_TASK_FILTER
           : filters.t_assignee || undefined,
-      milestoneId: filters.t_milestone || undefined,
+      milestoneName: filters.t_milestone || undefined,
       search: filters.t_search || undefined,
     },
     { enabled: isActive },

@@ -87,7 +87,6 @@ export function useProjectCreateSubmit(
       taskMilestoneOverrides: values.taskMilestoneOverrides,
       milestones: values.milestones.map((m) => ({
         name: m.name,
-        type: m.type,
         order: m.order,
       })),
       taskStatuses: values.taskStatuses,

@@ -59,7 +59,7 @@ export function MilestoneProgressPanel({
           {milestoneProgress!.map((milestone) => {
             const isComplete = milestone.percent >= 100;
             return (
-              <li key={milestone.id} className="space-y-2">
+              <li key={milestone.name} className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     {isComplete ? (

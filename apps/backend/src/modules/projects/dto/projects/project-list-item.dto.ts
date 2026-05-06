@@ -164,8 +164,9 @@ export class ProjectListItemDto {
   paymentSummary!: PaymentSummaryDto;
 
   @ApiPropertyOptional({
-    example: 'installation',
-    description: 'Current milestone phase (MilestoneType)',
+    example: 'Installation',
+    description:
+      'Current milestone phase name — the lowest-order milestone group with any non-done task',
   })
   @Expose()
   currentPhase!: string | null;

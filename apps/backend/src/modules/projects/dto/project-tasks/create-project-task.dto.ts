@@ -31,12 +31,23 @@ export class CreateProjectTaskDto {
   projectId?: string;
 
   @ApiPropertyOptional({
-    description: 'Milestone ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Milestone name (the group this task belongs to)',
+    maxLength: 255,
   })
-  @IsUUID()
+  @IsString()
   @IsOptional()
-  milestoneId?: string;
+  @MaxLength(255)
+  milestoneName?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Milestone order (sort key for display)',
+    minimum: 0,
+  })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  @Type(() => Number)
+  milestoneOrder?: number | null;
 
   @ApiPropertyOptional({
     description: 'Workflow Step ID (reference to shared workflow definition)',

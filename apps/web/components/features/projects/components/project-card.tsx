@@ -7,7 +7,6 @@ import Link from 'next/link';
 import {
   HEALTH_STATUS_BADGE_VARIANT,
   HEALTH_STATUS_LABELS,
-  PHASE_LABELS,
   PROJECT_STATUS_BADGE_VARIANT,
   PROJECT_STATUS_LABELS,
   PROJECT_TYPE_BADGE_VARIANT,
@@ -173,10 +172,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       {/* Row 5: Phase */}
       <div className="flex items-center text-sm text-foreground-secondary mb-3">
         <Badge variant="info" size="xs" shape="rounded">
-          Phase:{' '}
-          {project.currentPhase
-            ? (PHASE_LABELS[project.currentPhase] ?? project.currentPhase)
-            : 'Not started'}
+          Phase: {project.currentPhase ?? 'Not started'}
         </Badge>
       </div>
 

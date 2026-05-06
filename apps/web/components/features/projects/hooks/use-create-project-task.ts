@@ -17,7 +17,7 @@ export interface CreateProjectTaskPayload {
   status?: TaskStatus;
   priority?: TaskPriority;
   assignedToUserId?: string | null;
-  milestoneId?: string;
+  milestoneName?: string | null;
   startDate?: string;
   endDate?: string;
 }

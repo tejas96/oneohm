@@ -4,8 +4,13 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { useMemo } from 'react';
 
-import type { MilestoneWithPayment, PaymentSummaryDetail, ProjectPayment } from './types';
-import { useProject } from './use-project-detail';
+import type {
+  MilestoneAggregateItem,
+  MilestoneWithPayment,
+  PaymentSummaryDetail,
+  ProjectPayment,
+} from './types';
+import { PROJECT_MILESTONE_AGG_QUERY_KEY } from '../constants';
 
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
@@ -68,9 +73,34 @@ export function useProjectPaymentSummary(
 }
 
 /**
- * Derived hook: returns milestones from project response.
- * Payment-milestone linking has been removed; payment totals are now
- * fetched independently via useProjectPaymentSummary.
+ * Fetches aggregated milestone data for a project via the dedicated aggregation endpoint.
+ * Milestones are computed live from project_tasks — no dedicated milestone table.
+ */
+export function useProjectMilestones(
+  projectId: string,
+  options?: { enabled?: boolean },
+): UseQueryResult<MilestoneAggregateItem[], AxiosError> {
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useQuery({
+    queryKey: PROJECT_MILESTONE_AGG_QUERY_KEY(projectId),
+    queryFn: async (): Promise<MilestoneAggregateItem[]> => {
+      const { data } = await apiClient.get<MilestoneAggregateItem[]>(
+        `/projects/${projectId}/milestones`,
+        { headers: { 'X-Organization-Id': organizationId } },
+      );
+      return data;
+    },
+    enabled: !!projectId && !!organizationId && options?.enabled !== false,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * @deprecated Use useProjectMilestones instead.
+ * Kept for backward compatibility with overview financials.
+ * Wraps useProjectMilestones and attaches empty payment stubs.
  */
 export function usePaymentMilestones(
   projectId: string,
@@ -81,13 +111,12 @@ export function usePaymentMilestones(
   isError: boolean;
   error: Error | null;
 } {
-  const projectQuery = useProject(projectId, options);
+  const milestonesQuery = useProjectMilestones(projectId, options);
 
   const data = useMemo(() => {
-    const milestones = projectQuery.data?.milestones;
-    if (!milestones) return undefined;
+    if (!milestonesQuery.data) return undefined;
 
-    return milestones.map(
+    return milestonesQuery.data.map(
       (milestone): MilestoneWithPayment => ({
         ...milestone,
         payments: [],
@@ -96,12 +125,12 @@ export function usePaymentMilestones(
         paymentStatus: 'pending',
       }),
     );
-  }, [projectQuery.data?.milestones]);
+  }, [milestonesQuery.data]);
 
   return {
     data,
-    isLoading: projectQuery.isLoading,
-    isError: projectQuery.isError,
-    error: projectQuery.error || null,
+    isLoading: milestonesQuery.isLoading,
+    isError: milestonesQuery.isError,
+    error: milestonesQuery.error || null,
   };
 }

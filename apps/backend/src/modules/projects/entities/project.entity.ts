@@ -15,7 +15,6 @@ import {
 } from 'typeorm';
 
 import { ProjectMaterialEntity } from './project-material.entity';
-import { ProjectMilestoneEntity } from './project-milestone.entity';
 import { ProjectTaskEntity } from './project-task.entity';
 import { ProjectTeamMemberEntity } from './project-team-member.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
@@ -114,9 +113,6 @@ export class ProjectEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'updated_by' })
   updater?: UserEntity;
-
-  @OneToMany(() => ProjectMilestoneEntity, (milestone) => milestone.project)
-  milestones!: ProjectMilestoneEntity[];
 
   @OneToMany(() => ProjectTaskEntity, (task) => task.project)
   tasks!: ProjectTaskEntity[];

@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   MaterialController,
   ProjectAttentionController,
-  MilestoneController,
   ProjectAnalyticsController,
   ProjectController,
   ProjectTaskController,
@@ -15,7 +14,6 @@ import {
 import {
   ProjectEntity,
   ProjectMaterialEntity,
-  ProjectMilestoneEntity,
   ProjectTaskEntity,
   ProjectTeamMemberEntity,
   WorkflowStepEntity,
@@ -23,7 +21,6 @@ import {
 import { ProjectTeamGuard } from './guards';
 import {
   MaterialRepository,
-  MilestoneRepository,
   ProjectRepository,
   ProjectTaskRepository,
   ProjectTeamRepository,
@@ -31,7 +28,6 @@ import {
 } from './repositories';
 import {
   MaterialService,
-  MilestoneService,
   ProjectAttentionService,
   ProjectAnalyticsService,
   ProjectService,
@@ -51,7 +47,6 @@ import { UsersModule } from '../users/users.module';
   imports: [
     TypeOrmModule.forFeature([
       ProjectEntity,
-      ProjectMilestoneEntity,
       ProjectMaterialEntity,
       WorkflowStepEntity,
       ProjectTaskEntity,
@@ -68,7 +63,6 @@ import { UsersModule } from '../users/users.module';
     ProjectAnalyticsController, // registered before ProjectController — static 'analytics' segments resolve first
     ProjectAttentionController, // static ':id/attention' should resolve before generic ':id' routes
     ProjectController,
-    MilestoneController,
     MaterialController,
     WorkflowStepController,
     ProjectTaskController,
@@ -78,7 +72,6 @@ import { UsersModule } from '../users/users.module';
   providers: [
     // Repositories
     ProjectRepository,
-    MilestoneRepository,
     MaterialRepository,
     WorkflowStepRepository,
     ProjectTaskRepository,
@@ -86,7 +79,6 @@ import { UsersModule } from '../users/users.module';
     // Services
     ProjectService,
     ProjectAttentionService,
-    MilestoneService,
     MaterialService,
     WorkflowStepService,
     WorkflowEngineService,
@@ -98,14 +90,12 @@ import { UsersModule } from '../users/users.module';
   ],
   exports: [
     ProjectRepository,
-    MilestoneRepository,
     MaterialRepository,
     WorkflowStepRepository,
     ProjectTaskRepository,
     ProjectTeamRepository,
     ProjectService,
     ProjectAttentionService,
-    MilestoneService,
     MaterialService,
     WorkflowStepService,
     ProjectTaskService,

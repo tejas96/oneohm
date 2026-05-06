@@ -11,7 +11,6 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { toNum } from '../../../../common/utils';
 import { CustomerPropertyResponseDto } from '../../../customers/dto/customer-property-response.dto';
 import { MaterialResponseDto } from '../materials/material-response.dto';
-import { MilestoneResponseDto } from '../milestones/milestone-response.dto';
 
 const latestQuoteVersion = (obj: Record<string, unknown>) =>
   (obj.quote as { versions?: Array<Record<string, unknown>> } | undefined)?.versions?.[0];
@@ -217,10 +216,6 @@ export class ProjectResponseDto {
   taskStatuses?: TaskStatusConfig[];
 
   // ==================== Related Entities ====================
-  @ApiPropertyOptional({ type: [MilestoneResponseDto] })
-  @Expose()
-  @Type(() => MilestoneResponseDto)
-  milestones?: MilestoneResponseDto[];
 
   @ApiPropertyOptional({ type: [MaterialResponseDto] })
   @Expose()

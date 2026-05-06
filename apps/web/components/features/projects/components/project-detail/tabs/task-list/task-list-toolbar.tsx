@@ -10,7 +10,7 @@ import {
   type TaskViewMode,
 } from '../../../../constants';
 import type { TeamMemberSummary } from '../../../../hooks';
-import type { ProjectMilestone } from '../../../../hooks/types';
+import type { MilestoneAggregateItem } from '../../../../hooks/types';
 import { TeamAvatarGroup } from '../../../team-avatar-group';
 
 import { SearchInput } from '@/components/shared/search';
@@ -29,7 +29,7 @@ interface TaskListToolbarProps {
   taskStatuses: { code: string; label: string; color: string }[];
   priorityOptions: LookupOption[];
   avatarMembers: TeamMemberSummary[];
-  milestones: ProjectMilestone[];
+  milestones: Pick<MilestoneAggregateItem, 'name' | 'order'>[];
   totalTasks?: number;
   view: TaskViewMode;
   onViewChange: (view: TaskViewMode) => void;
@@ -161,7 +161,10 @@ export function TaskListToolbar({
     [priorityOptions, filters.t_priority],
   );
   const activeMilestoneLabel = useMemo(
-    () => milestones.find((m) => m.id === filters.t_milestone)?.name ?? 'Milestone',
+    () =>
+      milestones.find((m) => m.name === filters.t_milestone)?.name ??
+      filters.t_milestone ??
+      'Milestone',
     [milestones, filters.t_milestone],
   );
   const activeAssigneeName = useMemo(() => {
@@ -319,9 +322,9 @@ export function TaskListToolbar({
                 </FilterOption>
                 {milestones.map((m) => (
                   <FilterOption
-                    key={m.id}
-                    selected={filters.t_milestone === m.id}
-                    onClick={() => handleSetFilter('t_milestone', m.id)}
+                    key={m.name}
+                    selected={filters.t_milestone === m.name}
+                    onClick={() => handleSetFilter('t_milestone', m.name)}
                   >
                     {m.name}
                   </FilterOption>

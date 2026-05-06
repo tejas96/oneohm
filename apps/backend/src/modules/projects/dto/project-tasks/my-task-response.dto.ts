@@ -34,7 +34,7 @@ export class MyTaskResponseDto extends ProjectTaskResponseDto {
     description: 'Milestone name if task is linked to one',
   })
   @Expose()
-  milestoneName?: string;
+  override milestoneName?: string;
 
   @ApiPropertyOptional({
     description: "Task statuses configured for this task's project",
