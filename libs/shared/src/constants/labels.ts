@@ -81,6 +81,10 @@ export const DOCUMENT_TAG_LABELS: Record<DocumentTag, string> = {
   [DocumentTag.REPORT]: 'Report',
   [DocumentTag.CONTRACT]: 'Contract',
   [DocumentTag.INVOICE]: 'Invoice',
+  [DocumentTag.RECEIPT_PROOF]: 'Receipt Proof',
+  [DocumentTag.RECEIPT_PDF]: 'Receipt PDF',
+  [DocumentTag.EXPENSE_VOUCHER]: 'Expense Voucher',
+  [DocumentTag.EXPENSE_RECEIPT]: 'Expense Receipt',
   [DocumentTag.OTHER]: 'Other',
 };
 

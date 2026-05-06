@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
@@ -40,6 +40,7 @@ import { BomModule } from '../bom/bom.module';
 import { CustomersModule } from '../customers/customers.module';
 import { LookupsModule } from '../lookups/lookups.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
+import { PaymentTermsModule } from '../payment-terms/payment-terms.module';
 import { QuotesModule } from '../quotes/quotes.module';
 import { UsersModule } from '../users/users.module';
 
@@ -58,6 +59,7 @@ import { UsersModule } from '../users/users.module';
     UsersModule,
     LookupsModule,
     BomModule,
+    forwardRef(() => PaymentTermsModule),
   ],
   controllers: [
     ProjectAnalyticsController, // registered before ProjectController — static 'analytics' segments resolve first
