@@ -5,13 +5,10 @@ import { DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import type { JSX } from 'react';
 
-import {
-  useProjectMilestones,
-  useProjectPaymentSummary,
-  type ProjectDetail,
-} from '../../../../hooks';
+import { useProjectMilestones, type ProjectDetail } from '../../../../hooks';
 
 import { Button, Skeleton } from '@/components/ui';
+import { useProjectReceiptSummary } from '@/lib/hooks/resources';
 import { formatCurrency } from '@/lib/utils/format';
 
 interface OverviewFinancialsProps {
@@ -52,7 +49,7 @@ export function OverviewFinancials({
   projectPath,
   isActive,
 }: OverviewFinancialsProps): JSX.Element {
-  const { data: summary, isPending: summaryPending } = useProjectPaymentSummary(projectId, {
+  const { data: summary, isPending: summaryPending } = useProjectReceiptSummary(projectId, {
     enabled: isActive,
   });
   const { data: milestonesRaw } = useProjectMilestones(projectId, { enabled: isActive });
@@ -61,13 +58,21 @@ export function OverviewFinancials({
     return <Skeleton className="h-[340px] rounded-xl" />;
   }
 
-  const totalExpected = summary?.totalExpected ?? 0;
-  const totalPaid = summary?.totalPaid ?? 0;
-  const pendingAmount = summary?.pendingAmount ?? Math.max(totalExpected - totalPaid, 0);
+  const totalExpected = summary?.totals.totalExpected ?? 0;
+  const totalPaid = summary?.totals.totalReceived ?? 0;
+  const pendingAmount = summary?.totals.pending ?? Math.max(totalExpected - totalPaid, 0);
   const paidPct = totalExpected > 0 ? (totalPaid / totalExpected) * 100 : 0;
-  const paymentsTabHref = `${projectPath}?tab=payments`;
-  const paymentCount = summary?.paymentCount ?? 0;
+  const financeTabHref = `${projectPath}?tab=finance`;
+  const receiptsTabHref = `${projectPath}?tab=finance&sub=receipts`;
+  const paymentCount = summary?.totals.receiptCount ?? 0;
   const hasPaymentData = totalExpected > 0;
+  const overdueCount = summary?.overdueCount ?? 0;
+  // Next due term — server already orders terms by displayOrder ASC and
+  // tags `nextDueTermId` based on dueDate / status, so we can resolve it
+  // with a single lookup rather than re-implementing the ranking here.
+  const nextDueTerm = summary?.nextDueTermId
+    ? summary.terms.find((t) => t.id === summary.nextDueTermId)
+    : undefined;
 
   // Only include milestones that have tasks, sorted by order
   const sorted = milestonesRaw
@@ -179,35 +184,52 @@ export function OverviewFinancials({
               </p>
             </div>
 
-            {/* Due Now — show the next in-progress milestone amount context */}
+            {/* Due Now — driven by the next outstanding payment term so
+                this card now matches what the Finance tab shows. Falls
+                back to the active milestone for projects that don't yet
+                have any terms. */}
             <div className="rounded-lg border border-warning/30 p-3 bg-warning/5">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="size-1.5 rounded-full bg-warning" />
                 <span className="text-[10px] font-medium uppercase text-warning">Due Now</span>
               </div>
-              {(() => {
-                const activeMilestone = sorted.find((m) => m.status === 'in_progress');
-                if (activeMilestone) {
+              {nextDueTerm ? (
+                <>
+                  <p className="text-[17px] font-semibold text-warning leading-none">
+                    {formatCurrency(
+                      Math.max(0, nextDueTerm.expectedAmount - nextDueTerm.paidAmount),
+                    )}
+                  </p>
+                  <p className="mt-1 text-[10px] text-warning font-medium truncate">
+                    {nextDueTerm.name}
+                    {overdueCount > 0 ? ` · ${overdueCount} overdue` : ''}
+                  </p>
+                </>
+              ) : (
+                (() => {
+                  const activeMilestone = sorted.find((m) => m.status === 'in_progress');
+                  if (activeMilestone) {
+                    return (
+                      <>
+                        <p className="text-[17px] font-semibold text-warning leading-none">
+                          {activeMilestone.name}
+                        </p>
+                        <p className="mt-1 text-[10px] text-warning font-medium">In progress</p>
+                      </>
+                    );
+                  }
                   return (
                     <>
-                      <p className="text-[17px] font-semibold text-warning leading-none">
-                        {activeMilestone.name}
+                      <p className="text-[17px] font-semibold text-foreground-secondary leading-none">
+                        —
                       </p>
-                      <p className="mt-1 text-[10px] text-warning font-medium">In progress</p>
+                      <p className="mt-1 text-[10px] text-foreground-secondary">
+                        No active milestone
+                      </p>
                     </>
                   );
-                }
-                return (
-                  <>
-                    <p className="text-[17px] font-semibold text-foreground-secondary leading-none">
-                      —
-                    </p>
-                    <p className="mt-1 text-[10px] text-foreground-secondary">
-                      No active milestone
-                    </p>
-                  </>
-                );
-              })()}
+                })()
+              )}
             </div>
 
             {/* Pending */}
@@ -293,10 +315,10 @@ export function OverviewFinancials({
           )}
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
-              <Link href={paymentsTabHref}>Send Reminder</Link>
+              <Link href={financeTabHref}>View Terms</Link>
             </Button>
             <Button size="sm" asChild>
-              <Link href={paymentsTabHref}>Record Payment</Link>
+              <Link href={receiptsTabHref}>Record Receipt</Link>
             </Button>
           </div>
         </div>

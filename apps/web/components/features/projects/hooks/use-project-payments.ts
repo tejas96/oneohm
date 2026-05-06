@@ -4,12 +4,7 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { useMemo } from 'react';
 
-import type {
-  MilestoneAggregateItem,
-  MilestoneWithPayment,
-  PaymentSummaryDetail,
-  ProjectPayment,
-} from './types';
+import type { MilestoneAggregateItem, MilestoneWithPayment } from './types';
 import { PROJECT_MILESTONE_AGG_QUERY_KEY } from '../constants';
 
 import { apiClient } from '@/lib/api/client';
@@ -19,6 +14,14 @@ import { useAuth } from '@/providers/auth-provider';
 // Query Keys
 // ============================================================================
 
+/**
+ * Cache key namespace for the legacy `/payments` route. Retained because
+ * `useReceiptMutations` invalidates `['payments', orgId]` to keep older
+ * consumers (and any out-of-tree integrations) refreshed in lockstep
+ * with the receipts ledger. The list/summary fetchers themselves were
+ * removed when the Finance subsystem shipped; consumers should use
+ * `useProjectReceiptSummary` / `useProjectReceipts` from FDAL instead.
+ */
 export const paymentKeys = {
   all: (orgId?: string) => ['payments', orgId] as const,
   byProject: (orgId: string | undefined, projectId: string) =>
@@ -30,47 +33,6 @@ export const paymentKeys = {
 // ============================================================================
 // Hooks
 // ============================================================================
-
-export function useProjectPayments(
-  projectId: string,
-  options?: { enabled?: boolean },
-): UseQueryResult<ProjectPayment[], AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
-  return useQuery({
-    queryKey: paymentKeys.byProject(organizationId, projectId),
-    queryFn: async (): Promise<ProjectPayment[]> => {
-      const { data } = await apiClient.get<ProjectPayment[]>(`/payments/project/${projectId}`, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
-      return data;
-    },
-    enabled: !!projectId && !!organizationId && options?.enabled !== false,
-    staleTime: 30_000,
-  });
-}
-
-export function useProjectPaymentSummary(
-  projectId: string,
-  options?: { enabled?: boolean },
-): UseQueryResult<PaymentSummaryDetail, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
-  return useQuery({
-    queryKey: paymentKeys.summary(organizationId, projectId),
-    queryFn: async (): Promise<PaymentSummaryDetail> => {
-      const { data } = await apiClient.get<PaymentSummaryDetail>(
-        `/payments/project/${projectId}/summary`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
-      return data;
-    },
-    enabled: !!projectId && !!organizationId && options?.enabled !== false,
-    staleTime: 30_000,
-  });
-}
 
 /**
  * Fetches aggregated milestone data for a project via the dedicated aggregation endpoint.
