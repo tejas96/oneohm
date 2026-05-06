@@ -5,6 +5,7 @@ import { Button, IconButton, TextField } from '@mui/material';
 import { type BomItem, SERIALIZED_BOM_ITEM_TYPES } from '@oneohm-epc/shared/types';
 import React, { useMemo, useState } from 'react';
 
+import { ProcurementSection } from '@/components/features/finance';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -344,6 +345,10 @@ export const ProjectBomTab = React.memo(({ projectId }: ProjectBomTabProps): Rea
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="border-t border-border-light pt-6">
+        <ProcurementSection projectId={projectId} />
       </div>
 
       <MUIDialog
