@@ -99,11 +99,7 @@ export class ProjectExpenseService {
 
     return this.dataSource.transaction(async (manager) => {
       // Procurement guard runs inside the tx so concurrent inserts serialize.
-      if (
-        dto.category === ExpenseCategory.MATERIALS &&
-        dto.productLinks &&
-        !dto.override
-      ) {
+      if (dto.category === ExpenseCategory.MATERIALS && dto.productLinks && !dto.override) {
         await this.assertProcurementGuard({
           manager,
           projectId,
@@ -164,11 +160,7 @@ export class ProjectExpenseService {
     return expense;
   }
 
-  async list(
-    projectId: string,
-    organizationId: string,
-    query: ListExpensesQueryDto,
-  ) {
+  async list(projectId: string, organizationId: string, query: ListExpensesQueryDto) {
     await this.assertProjectInOrg(projectId, organizationId);
     return this.expenseRepository.list(projectId, organizationId, query);
   }
@@ -191,11 +183,7 @@ export class ProjectExpenseService {
     if (dto.expenseDate) this.assertExpenseDate(dto.expenseDate);
 
     return this.dataSource.transaction(async (manager) => {
-      const existing = await this.expenseRepository.findByIdForUpdate(
-        manager,
-        id,
-        organizationId,
-      );
+      const existing = await this.expenseRepository.findByIdForUpdate(manager, id, organizationId);
       if (!existing) throw new NotFoundException(`Expense ${id} not found`);
 
       // Reimbursement state-change is its own endpoint; reject indirect changes here.
@@ -204,9 +192,7 @@ export class ProjectExpenseService {
         dto.paidBy !== existing.paidBy &&
         existing.reimbursementStatus === ReimbursementStatus.REIMBURSED
       ) {
-        throw new ConflictException(
-          'Cannot change paidBy on a reimbursed expense',
-        );
+        throw new ConflictException('Cannot change paidBy on a reimbursed expense');
       }
 
       const nextCategory = dto.category ?? existing.category;
@@ -273,11 +259,7 @@ export class ProjectExpenseService {
 
   async delete(id: string, organizationId: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
-      const existing = await this.expenseRepository.findByIdForUpdate(
-        manager,
-        id,
-        organizationId,
-      );
+      const existing = await this.expenseRepository.findByIdForUpdate(manager, id, organizationId);
       if (!existing) throw new NotFoundException(`Expense ${id} not found`);
 
       if (existing.reimbursementStatus === ReimbursementStatus.REIMBURSED) {
@@ -305,17 +287,11 @@ export class ProjectExpenseService {
     updatedBy: string,
   ): Promise<ProjectExpenseEntity> {
     return this.dataSource.transaction(async (manager) => {
-      const existing = await this.expenseRepository.findByIdForUpdate(
-        manager,
-        id,
-        organizationId,
-      );
+      const existing = await this.expenseRepository.findByIdForUpdate(manager, id, organizationId);
       if (!existing) throw new NotFoundException(`Expense ${id} not found`);
 
       if (existing.paidBy !== ExpensePaidByType.EMPLOYEE) {
-        throw new BadRequestException(
-          'Reimbursement only applies to employee-paid expenses',
-        );
+        throw new BadRequestException('Reimbursement only applies to employee-paid expenses');
       }
       if (
         !(
@@ -354,9 +330,7 @@ export class ProjectExpenseService {
 
   private assertPaidByConsistency(dto: CreateExpenseDto): void {
     if (dto.paidBy === ExpensePaidByType.EMPLOYEE && !dto.paidByEmployeeId) {
-      throw new BadRequestException(
-        'paidByEmployeeId is required when paidBy=employee',
-      );
+      throw new BadRequestException('paidByEmployeeId is required when paidBy=employee');
     }
   }
 
@@ -370,9 +344,7 @@ export class ProjectExpenseService {
     links?: Array<unknown> | null,
   ): void {
     if (links && links.length > 0 && category !== ExpenseCategory.MATERIALS) {
-      throw new BadRequestException(
-        'productLinks are only allowed when category=materials',
-      );
+      throw new BadRequestException('productLinks are only allowed when category=materials');
     }
   }
 
@@ -413,7 +385,7 @@ export class ProjectExpenseService {
     if (productIds.length === 0) return;
 
     // Already-spent sum, optionally excluding the expense being edited.
-    const spentRows = (await manager.query(
+    const spentRows = await manager.query(
       `SELECT epl.product_id AS product_id,
               COALESCE(SUM(epl.quantity), 0)::numeric AS spent
          FROM expense_product_links epl
@@ -425,11 +397,9 @@ export class ProjectExpenseService {
           AND ($4::uuid IS NULL OR pe.id <> $4::uuid)
         GROUP BY epl.product_id`,
       [projectId, organizationId, productIds, excludeExpenseId],
-    )) as Array<{ product_id: string; spent: string }>;
-
-    const spentMap = new Map<string, number>(
-      spentRows.map((r) => [r.product_id, Number(r.spent)]),
     );
+
+    const spentMap = new Map<string, number>(spentRows.map((r) => [r.product_id, Number(r.spent)]));
 
     const bomTargets = await this.bomService.getBomTargetsForProject(
       projectId,

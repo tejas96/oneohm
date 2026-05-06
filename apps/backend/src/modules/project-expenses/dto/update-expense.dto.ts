@@ -1,9 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  ExpenseCategory,
-  ExpensePaidByType,
-  PaymentMethod,
-} from '@oneohm-epc/shared/types';
+import { ExpenseCategory, ExpensePaidByType, PaymentMethod } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,

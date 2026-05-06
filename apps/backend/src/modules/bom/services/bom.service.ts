@@ -574,7 +574,7 @@ export class BomService {
       filterSql = `AND bi.product_id = ANY($3::uuid[])`;
     }
 
-    const rows = (await this.dataSource.query(
+    const rows = await this.dataSource.query(
       `SELECT bi.product_id AS product_id,
               COALESCE(SUM(bi.quantity), 0)::numeric AS target
          FROM bom b
@@ -586,7 +586,7 @@ export class BomService {
           ${filterSql}
         GROUP BY bi.product_id`,
       params,
-    )) as Array<{ product_id: string; target: string }>;
+    );
 
     const out = new Map<string, number>();
     for (const r of rows) out.set(r.product_id, Number(r.target));
@@ -630,7 +630,7 @@ export class BomService {
       actualSpend: number;
     };
   }> {
-    const rows = (await this.dataSource.query(
+    const rows = await this.dataSource.query(
       `WITH bom_targets AS (
          SELECT bi.product_id,
                 MIN(bi.name)        AS name,
@@ -668,15 +668,7 @@ export class BomService {
          LEFT JOIN spent s ON s.product_id = t.product_id
         ORDER BY t.name`,
       [projectId, organizationId],
-    )) as Array<{
-      product_id: string;
-      name: string;
-      unit: string;
-      target_qty: string;
-      spent_qty: string;
-      unit_price: string | null;
-      actual_spend: string;
-    }>;
+    );
 
     const items = rows.map((r) => {
       const targetQty = Number(r.target_qty);

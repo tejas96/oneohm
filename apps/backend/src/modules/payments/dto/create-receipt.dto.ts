@@ -50,8 +50,7 @@ export class ReceiptProofDocumentDto {
   fileSize?: number;
 
   @ApiPropertyOptional({
-    description:
-      'Document category — defaults to IMAGE for image MIME types, DOCUMENT otherwise.',
+    description: 'Document category — defaults to IMAGE for image MIME types, DOCUMENT otherwise.',
     enum: DocumentCategory,
   })
   @IsEnum(DocumentCategory)
@@ -77,8 +76,7 @@ export class CreateReceiptDto {
   projectId!: string;
 
   @ApiPropertyOptional({
-    description:
-      'Planned payment term being fulfilled. Omit for advances / unallocated receipts.',
+    description: 'Planned payment term being fulfilled. Omit for advances / unallocated receipts.',
   })
   @IsUUID()
   @IsOptional()
@@ -86,7 +84,7 @@ export class CreateReceiptDto {
 
   @ApiPropertyOptional({
     description:
-      'Override the auto-filled customer (defaults to the project\'s quote customer). Must belong to the same organization.',
+      "Override the auto-filled customer (defaults to the project's quote customer). Must belong to the same organization.",
   })
   @IsUUID()
   @IsOptional()
@@ -125,7 +123,9 @@ export class CreateReceiptDto {
   @IsOptional()
   ifscCode?: string;
 
-  @ApiPropertyOptional({ description: 'Date of receipt (ISO date or datetime). Cannot be in the future.' })
+  @ApiPropertyOptional({
+    description: 'Date of receipt (ISO date or datetime). Cannot be in the future.',
+  })
   @IsDateString()
   @IsOptional()
   paidAt?: string;

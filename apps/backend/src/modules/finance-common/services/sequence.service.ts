@@ -46,14 +46,14 @@ export class SequenceService {
     const prefix = this.getPrefix(scope);
 
     const exec = manager ?? this.dataSource.manager;
-    const rows = (await exec.query(
+    const rows = await exec.query(
       `INSERT INTO numbering_sequences (organization_id, sequence_key, last_value)
        VALUES ($1, $2, 1)
        ON CONFLICT (organization_id, sequence_key)
        DO UPDATE SET last_value = numbering_sequences.last_value + 1, updated_at = CURRENT_TIMESTAMP
        RETURNING last_value`,
       [organizationId, sequenceKey],
-    )) as Array<{ last_value: number | string }>;
+    );
 
     const raw = rows[0]?.last_value;
     const seq = typeof raw === 'string' ? parseInt(raw, 10) : (raw ?? 1);

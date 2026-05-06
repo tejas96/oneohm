@@ -40,9 +40,7 @@ const COUNTED_STATUSES: PaymentTransactionStatus[] = [
  * transition is permitted iff the proposed status is in the array
  * keyed by the current status.
  */
-const STATUS_TRANSITIONS: Readonly<
-  Record<PaymentTransactionStatus, PaymentTransactionStatus[]>
-> = {
+const STATUS_TRANSITIONS: Readonly<Record<PaymentTransactionStatus, PaymentTransactionStatus[]>> = {
   [PaymentTransactionStatus.PENDING]: [
     PaymentTransactionStatus.RECEIVED,
     PaymentTransactionStatus.BOUNCED,
@@ -142,9 +140,7 @@ export class ReceiptService {
       );
 
       const receiptRepo = manager.getRepository(PaymentEntity);
-      const expectedAmount = lockedTerm
-        ? Number(lockedTerm.expectedAmount)
-        : dto.paidAmount;
+      const expectedAmount = lockedTerm ? Number(lockedTerm.expectedAmount) : dto.paidAmount;
 
       const receipt = receiptRepo.create({
         organizationId,
@@ -226,11 +222,7 @@ export class ReceiptService {
       // Lock the linked term (if any) before mutating the receipt so
       // re-aggregation sees a consistent snapshot.
       if (receipt.paymentTermId) {
-        await this.termRepository.findByIdForUpdate(
-          manager,
-          receipt.paymentTermId,
-          organizationId,
-        );
+        await this.termRepository.findByIdForUpdate(manager, receipt.paymentTermId, organizationId);
       }
 
       receipt.status = dto.status;
@@ -270,11 +262,7 @@ export class ReceiptService {
       }
 
       if (receipt.paymentTermId) {
-        await this.termRepository.findByIdForUpdate(
-          manager,
-          receipt.paymentTermId,
-          organizationId,
-        );
+        await this.termRepository.findByIdForUpdate(manager, receipt.paymentTermId, organizationId);
       }
 
       await repo.softDelete(id);
@@ -322,7 +310,7 @@ export class ReceiptService {
     const terms = await this.termRepository.findByProject(project.id, organizationId);
 
     const counted = COUNTED_STATUSES.map((s) => `'${s}'`).join(',');
-    const totalsRows = (await this.dataSource.query(
+    const totalsRows = await this.dataSource.query(
       `SELECT
          COUNT(*)::int                         AS receipt_count,
          COALESCE(SUM(paid_amount), 0)::numeric AS total_received
@@ -332,22 +320,19 @@ export class ReceiptService {
          AND deleted_at IS NULL
          AND status IN (${counted})`,
       [project.id, organizationId],
-    )) as Array<{ receipt_count: number; total_received: string }>;
+    );
 
     const totalReceived = Number(totalsRows[0]?.total_received ?? 0);
     const totalExpected = terms.reduce((sum, t) => sum + Number(t.expectedAmount), 0);
     const today = this.todayIso();
 
     const next = terms.find(
-      (t) =>
-        t.status === PaymentTermStatus.PENDING ||
-        t.status === PaymentTermStatus.PARTIAL,
+      (t) => t.status === PaymentTermStatus.PENDING || t.status === PaymentTermStatus.PARTIAL,
     );
 
     const overdueCount = terms.filter(
       (t) =>
-        (t.status === PaymentTermStatus.PENDING ||
-          t.status === PaymentTermStatus.PARTIAL) &&
+        (t.status === PaymentTermStatus.PENDING || t.status === PaymentTermStatus.PARTIAL) &&
         t.dueDate !== null &&
         t.dueDate !== undefined &&
         t.dueDate < today,
@@ -437,9 +422,7 @@ export class ReceiptService {
       return projectCustomerId;
     }
     if (projectCustomerId && explicit !== projectCustomerId) {
-      throw new ForbiddenException(
-        'Receipt customer does not match the project customer',
-      );
+      throw new ForbiddenException('Receipt customer does not match the project customer');
     }
     return explicit;
   }
@@ -456,9 +439,7 @@ export class ReceiptService {
 
     const category =
       proof.category ??
-      (proof.mimeType.startsWith('image/')
-        ? DocumentCategory.IMAGE
-        : DocumentCategory.DOCUMENT);
+      (proof.mimeType.startsWith('image/') ? DocumentCategory.IMAGE : DocumentCategory.DOCUMENT);
 
     const repo = manager.getRepository(DocumentEntity);
     const doc = repo.create({

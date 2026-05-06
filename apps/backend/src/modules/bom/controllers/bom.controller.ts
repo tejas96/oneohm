@@ -57,8 +57,7 @@ export class BomController {
   @RequirePermission('bom:read')
   @Get('project/:projectId/procurement-status')
   @ApiOperation({
-    summary:
-      'Per-product procurement status for a project (BOM target vs spent qty)',
+    summary: 'Per-product procurement status for a project (BOM target vs spent qty)',
   })
   async getProcurementStatus(
     @OrganizationContext() organizationId: string,

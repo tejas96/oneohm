@@ -103,7 +103,9 @@ export class CreateProjectExpensesTable1830000000003 implements MigrationInterfa
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TRIGGER IF EXISTS trg_project_expenses_updated_at ON project_expenses;`);
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS trg_project_expenses_updated_at ON project_expenses;`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS idx_project_expenses_employee_reimbursement;`);
     await queryRunner.query(`DROP INDEX IF EXISTS uq_project_expenses_org_number_active;`);
     await queryRunner.query(`DROP INDEX IF EXISTS idx_project_expenses_project_category;`);

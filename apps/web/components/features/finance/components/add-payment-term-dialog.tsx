@@ -6,6 +6,11 @@ import { type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
+  addPaymentTermSchema,
+  type AddPaymentTermFormValues,
+} from '../schemas/add-payment-term.schema';
+
+import {
   MUIDialog,
   MUIDialogBody,
   MUIDialogDescription,
@@ -15,16 +20,8 @@ import {
   MUIInput,
 } from '@/components/ui';
 import { useModalForm } from '@/lib/hooks/core';
-import {
-  type CreatePaymentTermPayload,
-  usePaymentTermMutations,
-} from '@/lib/hooks/resources';
+import { type CreatePaymentTermPayload, usePaymentTermMutations } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
-
-import {
-  addPaymentTermSchema,
-  type AddPaymentTermFormValues,
-} from '../schemas/add-payment-term.schema';
 
 interface AddPaymentTermDialogProps {
   open: boolean;
@@ -44,7 +41,7 @@ export function AddPaymentTermDialog({
     mode: 'onChange',
     defaultValues: {
       name: '',
-      stage: undefined,
+      stage: '',
       expectedAmount: undefined as unknown as number,
       dueDate: undefined,
       notes: undefined,
@@ -99,7 +96,8 @@ export function AddPaymentTermDialog({
             <MUIInput
               id="term-stage"
               fieldLabel="Stage"
-              placeholder="Optional grouping label"
+              required
+              placeholder="e.g. advance, milestone_2"
               error={form.formState.errors.stage?.message}
               {...form.register('stage')}
             />

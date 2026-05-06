@@ -15,9 +15,8 @@ export const addPaymentTermSchema = z.object({
   stage: z
     .string()
     .trim()
-    .max(80, 'Stage must be 80 characters or less')
-    .optional()
-    .transform((v) => (v ? v : undefined)),
+    .min(1, 'Stage is required')
+    .max(80, 'Stage must be 80 characters or less'),
   expectedAmount: z.coerce
     .number({ invalid_type_error: 'Amount is required' })
     .positive('Amount must be greater than 0')

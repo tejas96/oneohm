@@ -11,18 +11,9 @@ import {
   PaymentTermSource,
   PaymentTermStatus,
 } from '@oneohm-epc/shared/types';
-import {
-  DataSource,
-  EntityManager,
-  IsNull,
-  OptimisticLockVersionMismatchError,
-} from 'typeorm';
+import { DataSource, EntityManager, IsNull, OptimisticLockVersionMismatchError } from 'typeorm';
 
-import {
-  CreatePaymentTermDto,
-  UpdatePaymentTermDto,
-  WaivePaymentTermDto,
-} from '../dto';
+import { CreatePaymentTermDto, UpdatePaymentTermDto, WaivePaymentTermDto } from '../dto';
 import { PaymentTermEntity } from '../entities/payment-term.entity';
 import { PaymentTermRepository } from '../repositories/payment-term.repository';
 
@@ -63,10 +54,7 @@ export class PaymentTermService {
   // READ
   // ============================================
 
-  async listForProject(
-    projectId: string,
-    organizationId: string,
-  ): Promise<PaymentTermEntity[]> {
+  async listForProject(projectId: string, organizationId: string): Promise<PaymentTermEntity[]> {
     return this.termRepository.findByProject(projectId, organizationId);
   }
 
@@ -127,10 +115,7 @@ export class PaymentTermService {
   ): Promise<PaymentTermEntity> {
     const term = await this.findById(id, organizationId);
 
-    if (
-      term.status === PaymentTermStatus.WAIVED ||
-      term.status === PaymentTermStatus.CANCELLED
-    ) {
+    if (term.status === PaymentTermStatus.WAIVED || term.status === PaymentTermStatus.CANCELLED) {
       throw new BadRequestException(
         `Cannot edit a ${term.status} term. Create a new term instead.`,
       );
@@ -142,9 +127,7 @@ export class PaymentTermService {
     }
 
     if (dto.version !== undefined && dto.version !== term.version) {
-      throw new ConflictException(
-        'Term was modified by someone else; reload and try again.',
-      );
+      throw new ConflictException('Term was modified by someone else; reload and try again.');
     }
 
     const repo = this.dataSource.getRepository(PaymentTermEntity);
@@ -154,9 +137,7 @@ export class PaymentTermService {
       displayOrder: dto.displayOrder ?? term.displayOrder,
       expectedAmount: nextExpected,
       expectedPercentage:
-        dto.expectedPercentage !== undefined
-          ? dto.expectedPercentage
-          : term.expectedPercentage,
+        dto.expectedPercentage !== undefined ? dto.expectedPercentage : term.expectedPercentage,
       dueDate: dto.dueDate ?? term.dueDate,
       notes: dto.notes ?? term.notes,
       updatedBy,
@@ -166,9 +147,7 @@ export class PaymentTermService {
       return await repo.save(term);
     } catch (err) {
       if (err instanceof OptimisticLockVersionMismatchError) {
-        throw new ConflictException(
-          'Term was modified by someone else; reload and try again.',
-        );
+        throw new ConflictException('Term was modified by someone else; reload and try again.');
       }
       throw err;
     }
@@ -244,8 +223,7 @@ export class PaymentTermService {
     createdBy: string;
     manager: EntityManager;
   }): Promise<PaymentTermEntity[]> {
-    const { projectId, sourceVersionId, milestones, organizationId, createdBy, manager } =
-      params;
+    const { projectId, sourceVersionId, milestones, organizationId, createdBy, manager } = params;
 
     const repo = manager.getRepository(PaymentTermEntity);
 
@@ -374,9 +352,7 @@ export class PaymentTermService {
       displayOrder: typeof m.order === 'number' && m.order > 0 ? m.order : idx + 1,
       expectedAmount: amount,
       expectedPercentage:
-        typeof m.percentage === 'number' && Number.isFinite(m.percentage)
-          ? m.percentage
-          : null,
+        typeof m.percentage === 'number' && Number.isFinite(m.percentage) ? m.percentage : null,
       dueDate: m.dueDate ?? null,
     };
   }

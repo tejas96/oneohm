@@ -18,11 +18,7 @@ import { toDto } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import {
-  CreateReceiptDto,
-  PaymentResponseDto,
-  UpdateReceiptStatusDto,
-} from '../dto';
+import { CreateReceiptDto, PaymentResponseDto, UpdateReceiptStatusDto } from '../dto';
 import { ReceiptService } from '../services/receipt.service';
 
 /**
@@ -47,8 +43,7 @@ export class ReceiptController {
 
   @Post()
   @ApiOperation({
-    summary:
-      'Record a receipt against a project (optionally fulfilling a payment term)',
+    summary: 'Record a receipt against a project (optionally fulfilling a payment term)',
   })
   async create(
     @OrganizationContext() organizationId: string,
@@ -68,20 +63,14 @@ export class ReceiptController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: UpdateReceiptStatusDto,
   ): Promise<PaymentResponseDto> {
-    const receipt = await this.receiptService.updateStatus(
-      id,
-      organizationId,
-      dto,
-      currentUser.id,
-    );
+    const receipt = await this.receiptService.updateStatus(id, organizationId, dto, currentUser.id);
     return toDto(PaymentResponseDto, receipt);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary:
-      'Soft-delete a receipt (re-aggregates the parent term in same transaction)',
+    summary: 'Soft-delete a receipt (re-aggregates the parent term in same transaction)',
   })
   @ApiParam({ name: 'id', type: String })
   async delete(
@@ -93,8 +82,7 @@ export class ReceiptController {
 
   @Get('project/:projectId/summary')
   @ApiOperation({
-    summary:
-      'Project receipt summary: totals, per-term breakdown, next-due, overdue count',
+    summary: 'Project receipt summary: totals, per-term breakdown, next-due, overdue count',
   })
   @ApiParam({ name: 'projectId', type: String })
   async getProjectSummary(

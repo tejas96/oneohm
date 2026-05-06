@@ -1,9 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  ExpenseCategory,
-  ExpensePaidByType,
-  PaymentMethod,
-} from '@oneohm-epc/shared/types';
+import { ExpenseCategory, ExpensePaidByType, PaymentMethod } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -75,8 +71,7 @@ export class CreateExpenseDto {
 
   @ApiPropertyOptional({
     type: () => [ExpenseProductLinkDto],
-    description:
-      'Itemization. Only allowed when category=materials. Omit for lump-sum expenses.',
+    description: 'Itemization. Only allowed when category=materials. Omit for lump-sum expenses.',
   })
   @IsArray()
   @ArrayMinSize(1)

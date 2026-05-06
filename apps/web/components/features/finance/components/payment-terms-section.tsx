@@ -1,20 +1,19 @@
 'use client';
 
-import { Calendar, Plus, RefreshCw } from 'lucide-react';
+import AddIcon from '@mui/icons-material/Add';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { Button, Skeleton } from '@mui/material';
 import { type JSX, useState } from 'react';
-
-import { Button, Skeleton } from '@/components/ui';
-import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
-import {
-  type PaymentTerm,
-  usePaymentTermMutations,
-  usePaymentTerms,
-} from '@/lib/hooks/resources';
-import { getErrorMessage } from '@/lib/utils';
 
 import { AddPaymentTermDialog } from './add-payment-term-dialog';
 import { PaymentTermRow } from './payment-term-row';
 import { WaivePaymentTermDialog } from './waive-payment-term-dialog';
+
+import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
+import { MUITypography } from '@/components/ui';
+import { type PaymentTerm, usePaymentTermMutations, usePaymentTerms } from '@/lib/hooks/resources';
+import { getErrorMessage } from '@/lib/utils';
 
 interface PaymentTermsSectionProps {
   projectId: string;
@@ -35,8 +34,8 @@ export function PaymentTermsSection({
   if (isLoading) {
     return (
       <div className="space-y-2">
-        <Skeleton className="h-24 rounded-lg" />
-        <Skeleton className="h-24 rounded-lg" />
+        <Skeleton variant="rounded" height={96} />
+        <Skeleton variant="rounded" height={96} />
       </div>
     );
   }
@@ -57,24 +56,28 @@ export function PaymentTermsSection({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Planned Installments</h3>
-          <p className="text-2xs text-foreground-muted">
+          <MUITypography variant="sectionTitle">Planned Installments</MUITypography>
+          <MUITypography variant="finePrint" className="text-foreground-muted block">
             What you expect to receive from the customer, mapped to milestones.
-          </p>
+          </MUITypography>
         </div>
         <div className="flex items-center gap-2">
           <Button
-            size="sm"
-            variant="outline"
+            size="small"
+            variant="outlined"
+            startIcon={<RefreshIcon sx={{ fontSize: 16 }} />}
             onClick={() => resnapshot.mutate()}
             disabled={resnapshot.isPending}
             title="Re-snapshot from latest quote (only allowed when no receipts are linked)"
           >
-            <RefreshCw className="size-3.5 mr-1" />
             Re-snapshot
           </Button>
-          <Button size="sm" onClick={() => setAddOpen(true)}>
-            <Plus className="size-3.5 mr-1" />
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+            onClick={() => setAddOpen(true)}
+          >
             Add Term
           </Button>
         </div>
@@ -82,7 +85,7 @@ export function PaymentTermsSection({
 
       {list.length === 0 ? (
         <EmptyState
-          icon={<Calendar className="w-full h-full" />}
+          icon={<CalendarMonthOutlinedIcon style={{ width: '100%', height: '100%' }} />}
           iconColor="muted"
           title="No payment terms defined"
           description="Terms are usually snapshotted from the project's quote. Add manual installments for ad-hoc collections."

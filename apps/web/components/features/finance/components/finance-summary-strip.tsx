@@ -1,8 +1,9 @@
 'use client';
 
+import { Skeleton } from '@mui/material';
 import { type JSX } from 'react';
 
-import { Skeleton } from '@/components/ui';
+import { MUITypography } from '@/components/ui';
 import { type ReceiptProjectSummary } from '@/lib/hooks/resources';
 import { formatCurrency } from '@/lib/utils';
 
@@ -28,23 +29,24 @@ function SummaryCard({
   };
   return (
     <div className="rounded-lg border border-border-light bg-background-secondary p-3">
-      <p className="text-2xs text-foreground-secondary">{label}</p>
-      <p className={`text-sm font-semibold mt-0.5 ${toneClasses[tone]}`}>{value}</p>
+      <MUITypography variant="finePrint" className="text-foreground-secondary block">
+        {label}
+      </MUITypography>
+      <MUITypography variant="bodyPrimary" className={`block mt-0.5 ${toneClasses[tone]}`}>
+        {value}
+      </MUITypography>
     </div>
   );
 }
 
-export function FinanceSummaryStrip({
-  summary,
-  isLoading,
-}: FinanceSummaryStripProps): JSX.Element {
+export function FinanceSummaryStrip({ summary, isLoading }: FinanceSummaryStripProps): JSX.Element {
   if (isLoading || !summary) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Skeleton className="h-16 rounded-lg" />
-        <Skeleton className="h-16 rounded-lg" />
-        <Skeleton className="h-16 rounded-lg" />
-        <Skeleton className="h-16 rounded-lg" />
+        <Skeleton variant="rounded" height={64} />
+        <Skeleton variant="rounded" height={64} />
+        <Skeleton variant="rounded" height={64} />
+        <Skeleton variant="rounded" height={64} />
       </div>
     );
   }
@@ -54,7 +56,11 @@ export function FinanceSummaryStrip({
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <SummaryCard label="Total Expected" value={formatCurrency(totals.totalExpected)} />
-      <SummaryCard label="Total Received" value={formatCurrency(totals.totalReceived)} tone="success" />
+      <SummaryCard
+        label="Total Received"
+        value={formatCurrency(totals.totalReceived)}
+        tone="success"
+      />
       <SummaryCard
         label="Pending"
         value={formatCurrency(totals.pending)}

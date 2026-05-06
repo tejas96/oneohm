@@ -6,6 +6,11 @@ import { type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
+  waivePaymentTermSchema,
+  type WaivePaymentTermFormValues,
+} from '../schemas/waive-payment-term.schema';
+
+import {
   MUIDialog,
   MUIDialogBody,
   MUIDialogDescription,
@@ -17,11 +22,6 @@ import {
 import { useModalForm } from '@/lib/hooks/core';
 import { type PaymentTerm, usePaymentTermMutations } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
-
-import {
-  waivePaymentTermSchema,
-  type WaivePaymentTermFormValues,
-} from '../schemas/waive-payment-term.schema';
 
 interface WavePaymentTermDialogProps {
   open: boolean;

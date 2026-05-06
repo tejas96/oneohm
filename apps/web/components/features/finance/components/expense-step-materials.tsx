@@ -1,15 +1,16 @@
 'use client';
 
-import { Alert, Box, Button as MUIButton, FormControlLabel, Switch } from '@mui/material';
-import { Plus } from 'lucide-react';
+import AddIcon from '@mui/icons-material/Add';
+import { Alert, Box, Button, FormControlLabel, Switch } from '@mui/material';
 import { type JSX, useMemo } from 'react';
 import { Controller, useFieldArray, useFormContext } from 'react-hook-form';
 
+import { ExpenseProductLineRow } from './expense-product-line-row';
+import { type CreateExpenseFormValues } from '../schemas/create-expense.schema';
+
+import { MUITypography } from '@/components/ui';
 import { useBomProcurementStatus } from '@/lib/hooks/resources';
 import { formatCurrency } from '@/lib/utils';
-
-import { type CreateExpenseFormValues } from '../schemas/create-expense.schema';
-import { ExpenseProductLineRow } from './expense-product-line-row';
 
 interface ExpenseStepMaterialsProps {
   projectId: string;
@@ -65,11 +66,17 @@ export function ExpenseStepMaterials({ projectId }: ExpenseStepMaterialsProps): 
         Lines are optional — leave empty to record a single material expense.
       </Alert>
 
-      {bomLoading && <p className="text-xs text-foreground-muted">Loading BOM…</p>}
+      {bomLoading && (
+        <MUITypography variant="body" className="text-foreground-muted">
+          Loading BOM…
+        </MUITypography>
+      )}
 
       {fields.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border-light p-6 text-center text-sm text-foreground-muted">
-          No line items yet.
+        <div className="rounded-lg border border-dashed border-border-light p-6 text-center">
+          <MUITypography variant="body" className="text-foreground-muted">
+            No line items yet.
+          </MUITypography>
         </div>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -84,27 +91,28 @@ export function ExpenseStepMaterials({ projectId }: ExpenseStepMaterialsProps): 
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <MUIButton
+      <div className="flex items-center justify-between gap-2">
+        <Button
           variant="outlined"
           size="small"
-          startIcon={<Plus className="size-4" />}
+          startIcon={<AddIcon sx={{ fontSize: 16 }} />}
           onClick={() => append(EMPTY_LINE)}
         >
           Add line
-        </MUIButton>
-        <div className="text-2xs text-foreground-muted">
-          Lines total: <span className="font-mono text-foreground">{formatCurrency(lineTotal)}</span>
+        </Button>
+        <MUITypography variant="finePrint" className="text-foreground-muted">
+          Lines total:{' '}
+          <span className="font-mono text-foreground">{formatCurrency(lineTotal)}</span>
           {' / '}
           Expense amount: <span className="font-mono">{formatCurrency(expenseAmount)}</span>
-        </div>
-      </Box>
+        </MUITypography>
+      </div>
 
       {overProcuredLines.length > 0 && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Alert severity="warning" sx={{ py: 0.5 }}>
-            One or more line quantities exceed BOM remaining. Enable the procurement guard
-            override below to allow this expense.
+            One or more line quantities exceed BOM remaining. Enable the procurement guard override
+            below to allow this expense.
           </Alert>
           <Controller
             name="override"

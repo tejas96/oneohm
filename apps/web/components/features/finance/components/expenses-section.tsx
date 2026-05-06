@@ -1,10 +1,16 @@
 'use client';
 
-import { Receipt as ReceiptIcon, Plus } from 'lucide-react';
+import AddIcon from '@mui/icons-material/Add';
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import { Button, Skeleton } from '@mui/material';
 import { type JSX, useState } from 'react';
 
+import { ExpenseDrawer } from './expense-drawer';
+import { ExpenseFilters } from './expense-filters';
+import { ExpensesTable } from './expenses-table';
+
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
-import { Button, Skeleton } from '@/components/ui';
+import { MUITypography } from '@/components/ui';
 import {
   type ExpenseListFilters,
   type ProjectExpense,
@@ -12,10 +18,6 @@ import {
   useProjectExpenses,
 } from '@/lib/hooks/resources';
 import { formatCurrency, getErrorMessage } from '@/lib/utils';
-
-import { ExpenseDrawer } from './expense-drawer';
-import { ExpenseFilters } from './expense-filters';
-import { ExpensesTable } from './expenses-table';
 
 interface ExpensesSectionProps {
   projectId: string;
@@ -28,13 +30,7 @@ export function ExpensesSection({ projectId }: ExpensesSectionProps): JSX.Elemen
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<ProjectExpense | null>(null);
 
-  const {
-    data: list,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useProjectExpenses(projectId, filters);
+  const { data: list, isLoading, isError, error, refetch } = useProjectExpenses(projectId, filters);
   const { data: summary } = useProjectExpenseSummary(projectId);
 
   const expenses = list?.data ?? [];
@@ -61,17 +57,19 @@ export function ExpensesSection({ projectId }: ExpensesSectionProps): JSX.Elemen
     Boolean(filters.dateFrom) ||
     Boolean(filters.dateTo);
 
-  if (isLoading) {
+  const showInitialSkeleton = isLoading && !list;
+
+  if (showInitialSkeleton) {
     return (
       <div className="space-y-3">
-        <Skeleton className="h-12 rounded-lg" />
-        <Skeleton className="h-16 rounded-lg" />
-        <Skeleton className="h-48 rounded-lg" />
+        <Skeleton variant="rounded" height={48} />
+        <Skeleton variant="rounded" height={64} />
+        <Skeleton variant="rounded" height={192} />
       </div>
     );
   }
 
-  if (isError) {
+  if (isError && !list) {
     return (
       <ErrorState
         title="Failed to load expenses"
@@ -85,14 +83,18 @@ export function ExpensesSection({ projectId }: ExpensesSectionProps): JSX.Elemen
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Project Expenses</h3>
-          <p className="text-2xs text-foreground-muted">
-            Money spent on this project. Materials expenses can be itemized to BOM products to
-            keep procurement-status accurate.
-          </p>
+          <MUITypography variant="sectionTitle">Project Expenses</MUITypography>
+          <MUITypography variant="finePrint" className="text-foreground-muted block">
+            Money spent on this project. Materials expenses can be itemized to BOM products to keep
+            procurement-status accurate.
+          </MUITypography>
         </div>
-        <Button size="sm" onClick={openCreate}>
-          <Plus className="size-3.5 mr-1" />
+        <Button
+          size="small"
+          variant="contained"
+          startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+          onClick={openCreate}
+        >
           Record Expense
         </Button>
       </div>
@@ -100,34 +102,41 @@ export function ExpensesSection({ projectId }: ExpensesSectionProps): JSX.Elemen
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="rounded-lg border border-border-light bg-background-secondary p-3">
-            <p className="text-2xs text-foreground-secondary">Total Spent</p>
-            <p className="text-sm font-semibold text-foreground mt-0.5">
+            <MUITypography variant="finePrint" className="text-foreground-secondary block">
+              Total Spent
+            </MUITypography>
+            <MUITypography variant="bodyPrimary" className="block mt-0.5">
               {formatCurrency(summary.total)}
-            </p>
+            </MUITypography>
           </div>
           <div className="rounded-lg border border-border-light bg-background-secondary p-3">
-            <p className="text-2xs text-foreground-secondary">Pending Reimbursement</p>
-            <p
-              className={`text-sm font-semibold mt-0.5 ${
-                summary.pendingReimbursementAmount > 0 ? 'text-warning' : 'text-foreground'
-              }`}
+            <MUITypography variant="finePrint" className="text-foreground-secondary block">
+              Pending Reimbursement
+            </MUITypography>
+            <MUITypography
+              variant="bodyPrimary"
+              className={`block mt-0.5 ${summary.pendingReimbursementAmount > 0 ? 'text-warning' : ''}`}
             >
               {formatCurrency(summary.pendingReimbursementAmount)}
-            </p>
+            </MUITypography>
           </div>
           <div className="rounded-lg border border-border-light bg-background-secondary p-3 col-span-2">
-            <p className="text-2xs text-foreground-secondary mb-1">By Category</p>
+            <MUITypography variant="finePrint" className="text-foreground-secondary mb-1 block">
+              By Category
+            </MUITypography>
             <div className="flex flex-wrap gap-2">
               {summary.byCategory.length === 0 ? (
-                <span className="text-xs text-foreground-muted">No expenses yet</span>
+                <MUITypography variant="placeholder">No expenses yet</MUITypography>
               ) : (
                 summary.byCategory.map((c) => (
                   <span
                     key={c.category}
-                    className="text-2xs text-foreground bg-background px-2 py-0.5 rounded border border-border-light"
+                    className="text-foreground bg-background px-2 py-0.5 rounded border border-border-light"
                   >
-                    {c.category}: <span className="font-mono">{formatCurrency(c.amount)}</span>
-                    <span className="text-foreground-muted"> · {c.count}</span>
+                    <MUITypography variant="finePrint" component="span">
+                      {c.category}: <span className="font-mono">{formatCurrency(c.amount)}</span>
+                      <span className="text-foreground-muted"> · {c.count}</span>
+                    </MUITypography>
                   </span>
                 ))
               )}
@@ -140,7 +149,7 @@ export function ExpensesSection({ projectId }: ExpensesSectionProps): JSX.Elemen
 
       {expenses.length === 0 ? (
         <EmptyState
-          icon={<ReceiptIcon className="w-full h-full" />}
+          icon={<ReceiptLongOutlinedIcon style={{ width: '100%', height: '100%' }} />}
           iconColor="muted"
           title={filtersActive ? 'No expenses match these filters' : 'No expenses recorded'}
           description={
@@ -162,22 +171,22 @@ export function ExpensesSection({ projectId }: ExpensesSectionProps): JSX.Elemen
           <ExpensesTable expenses={expenses} projectId={projectId} onEdit={openEdit} />
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between text-xs text-foreground-muted">
-              <span>
+            <div className="flex items-center justify-between">
+              <MUITypography variant="finePrint" className="text-foreground-muted">
                 Page {page} of {totalPages} · {total} expense{total === 1 ? '' : 's'}
-              </span>
+              </MUITypography>
               <div className="flex gap-1">
                 <Button
-                  size="sm"
-                  variant="outline"
+                  size="small"
+                  variant="outlined"
                   disabled={page <= 1}
                   onClick={() => setFilters({ ...filters, page: page - 1 })}
                 >
                   Prev
                 </Button>
                 <Button
-                  size="sm"
-                  variant="outline"
+                  size="small"
+                  variant="outlined"
                   disabled={page >= totalPages}
                   onClick={() => setFilters({ ...filters, page: page + 1 })}
                 >

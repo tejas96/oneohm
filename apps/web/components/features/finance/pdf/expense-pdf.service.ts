@@ -6,10 +6,7 @@
  * present; otherwise renders a compact summary.
  */
 
-import {
-  generateExpenseVoucherHtml,
-  type ExpenseVoucherPdfData,
-} from './expense-pdf.template';
+import { generateExpenseVoucherHtml, type ExpenseVoucherPdfData } from './expense-pdf.template';
 
 const PAGE_W_MM = 210;
 const MARGIN_MM = 12;

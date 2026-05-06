@@ -6,12 +6,8 @@ import {
   EXPENSE_PAID_BY_LABELS,
   REIMBURSEMENT_STATUS_LABELS,
 } from '@oneohm-epc/shared/constants';
-import {
-  ExpenseCategory,
-  ExpensePaidByType,
-  ReimbursementStatus,
-} from '@oneohm-epc/shared/types';
-import { type JSX } from 'react';
+import { ExpenseCategory, ExpensePaidByType, ReimbursementStatus } from '@oneohm-epc/shared/types';
+import { type JSX, useEffect, useRef, useState } from 'react';
 
 import { MUIInput, MUISelect } from '@/components/ui';
 import { type ExpenseListFilters } from '@/lib/hooks/resources';
@@ -64,6 +60,31 @@ export function ExpenseFilters({ value, onChange }: ExpenseFiltersProps): JSX.El
     onChange(merged);
   };
 
+  // Local draft for vendor search, debounced to avoid one network
+  // request per keystroke (which would otherwise toggle isLoading and
+  // visually thrash the section). External `value.vendorSearch`
+  // changes (e.g. clear filters) sync back into the draft.
+  const [vendorDraft, setVendorDraft] = useState<string>(value.vendorSearch ?? '');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setVendorDraft(value.vendorSearch ?? '');
+  }, [value.vendorSearch]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, []);
+
+  const onVendorChange = (next: string): void => {
+    setVendorDraft(next);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      update('vendorSearch', next);
+    }, 300);
+  };
+
   return (
     <Box
       sx={{
@@ -77,8 +98,8 @@ export function ExpenseFilters({ value, onChange }: ExpenseFiltersProps): JSX.El
         id="exp-search"
         fieldLabel="Vendor"
         placeholder="Search vendor…"
-        value={value.vendorSearch ?? ''}
-        onChange={(e) => update('vendorSearch', e.target.value)}
+        value={vendorDraft}
+        onChange={(e) => onVendorChange(e.target.value)}
       />
       <MUISelect
         fieldLabel="Category"

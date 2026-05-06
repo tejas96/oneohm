@@ -1,14 +1,15 @@
 'use client';
 
-import type { MilestoneDisplayStatus } from '@oneohm-epc/shared/types';
+import { PAYMENT_TERM_STATUS_LABELS } from '@oneohm-epc/shared/constants';
+import { PaymentTermStatus } from '@oneohm-epc/shared/types';
 import { DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import type { JSX } from 'react';
 
-import { useProjectMilestones, type ProjectDetail } from '../../../../hooks';
+import { type ProjectDetail } from '../../../../hooks';
 
 import { Button, Skeleton } from '@/components/ui';
-import { useProjectReceiptSummary } from '@/lib/hooks/resources';
+import { type ReceiptSummaryTerm, useProjectReceiptSummary } from '@/lib/hooks/resources';
 import { formatCurrency } from '@/lib/utils/format';
 
 interface OverviewFinancialsProps {
@@ -18,29 +19,45 @@ interface OverviewFinancialsProps {
   isActive: boolean;
 }
 
-function segmentClasses(status: MilestoneDisplayStatus): { bg: string; text: string } {
-  switch (status) {
-    case 'completed':
+/**
+ * Visual classification per payment term, derived from backend status
+ * plus the paid-vs-expected ratio. We intentionally treat
+ * `paidAmount > 0 && status !== 'paid'` as "partial" so a term that is
+ * still pending but has received an under-amount receipt reads as
+ * in-progress on the bar.
+ */
+type TermDisplayKind = 'paid' | 'partial' | 'pending' | 'overdue' | 'waived' | 'cancelled';
+
+function classifyTerm(term: ReceiptSummaryTerm): TermDisplayKind {
+  if (term.status === PaymentTermStatus.PAID) return 'paid';
+  if (term.status === PaymentTermStatus.WAIVED) return 'waived';
+  if (term.status === PaymentTermStatus.CANCELLED) return 'cancelled';
+  const remaining = Math.max(0, term.expectedAmount - term.paidAmount);
+  const isOverdue =
+    term.dueDate != null && new Date(term.dueDate).getTime() < Date.now() && remaining > 0;
+  if (isOverdue) return 'overdue';
+  if (term.paidAmount > 0) return 'partial';
+  return 'pending';
+}
+
+function segmentClasses(kind: TermDisplayKind): { bg: string; text: string } {
+  switch (kind) {
+    case 'paid':
       return { bg: 'bg-success', text: 'text-white' };
-    case 'in_progress':
+    case 'partial':
       return {
         bg: 'bg-[repeating-linear-gradient(45deg,#fef3c7,#fef3c7_8px,#fde68a_8px,#fde68a_16px)]',
         text: 'text-amber-800',
       };
-    case 'blocked':
+    case 'overdue':
       return { bg: 'bg-error/70', text: 'text-white' };
-    case 'no_tasks':
+    case 'waived':
+    case 'cancelled':
+      return { bg: 'bg-gray-300/60', text: 'text-foreground-secondary line-through' };
     case 'pending':
     default:
       return { bg: 'bg-gray-200', text: 'text-foreground-secondary' };
   }
-}
-
-function segmentLabel(status: MilestoneDisplayStatus, pct: number): string {
-  if (pct < 10) return '';
-  const base = `${Math.round(pct)}%`;
-  if (status === 'in_progress' && pct > 16) return `${base} due`;
-  return base;
 }
 
 export function OverviewFinancials({
@@ -52,7 +69,6 @@ export function OverviewFinancials({
   const { data: summary, isPending: summaryPending } = useProjectReceiptSummary(projectId, {
     enabled: isActive,
   });
-  const { data: milestonesRaw } = useProjectMilestones(projectId, { enabled: isActive });
 
   if (isActive && summaryPending) {
     return <Skeleton className="h-[340px] rounded-xl" />;
@@ -74,14 +90,21 @@ export function OverviewFinancials({
     ? summary.terms.find((t) => t.id === summary.nextDueTermId)
     : undefined;
 
-  // Only include milestones that have tasks, sorted by order
-  const sorted = milestonesRaw
-    ? [...milestonesRaw].filter((m) => m.totalTasks > 0).sort((a, b) => a.order - b.order)
+  // Payment-term segments — each term gets a slice of the bar weighted
+  // by its expected amount so the visual total matches the contract
+  // value the user sees in the header. Equal-width fallback when totals
+  // are zero (shouldn't happen, but guards a div-by-zero).
+  const sortedTerms = summary?.terms
+    ? [...summary.terms].sort((a, b) => a.displayOrder - b.displayOrder)
     : [];
-  const msCount = sorted.length;
-  const segPct = msCount > 0 ? 100 / msCount : 0;
-
-  const incompleteMsCount = sorted.filter((m) => m.status !== 'completed').length;
+  const termCount = sortedTerms.length;
+  const equalSegPct = termCount > 0 ? 100 / termCount : 0;
+  const incompleteTermCount = sortedTerms.filter(
+    (t) =>
+      t.status !== PaymentTermStatus.PAID &&
+      t.status !== PaymentTermStatus.WAIVED &&
+      t.status !== PaymentTermStatus.CANCELLED,
+  ).length;
 
   const estimatedCost = project.estimatedCost;
   const actualCost = project.actualCost;
@@ -112,34 +135,64 @@ export function OverviewFinancials({
           )}
         </div>
 
-        {/* ── Multi-segment progress bar ── */}
-        {hasPaymentData && msCount > 0 ? (
+        {/* ── Payment-term progress bar ── one segment per term, width
+            weighted by the term's share of the contract value so the
+            bar visually mirrors the Finance tab. Falls back to a simple
+            paid-vs-remaining bar when no terms are defined. */}
+        {hasPaymentData && termCount > 0 ? (
           <div>
             <div className="flex h-10 overflow-hidden rounded-lg border border-border-light bg-muted">
-              {sorted.map((ms, idx) => {
-                const { bg, text } = segmentClasses(ms.status);
+              {sortedTerms.map((term, idx) => {
+                const kind = classifyTerm(term);
+                const { bg, text } = segmentClasses(kind);
+                const widthPct =
+                  totalExpected > 0 ? (term.expectedAmount / totalExpected) * 100 : equalSegPct;
+                const remaining = Math.max(0, term.expectedAmount - term.paidAmount);
+                const tooltip =
+                  `${term.name} — ${PAYMENT_TERM_STATUS_LABELS[term.status] ?? term.status}` +
+                  ` · ${formatCurrency(term.paidAmount)} / ${formatCurrency(term.expectedAmount)}${
+                    kind === 'overdue' ? ` · ${formatCurrency(remaining)} overdue` : ''
+                  }`;
+                const showLabel = widthPct >= 12;
                 return (
                   <div
-                    key={ms.name}
-                    className={`flex items-center justify-center text-[11px] font-semibold ${bg} ${text} ${idx < msCount - 1 ? 'border-r border-white/30' : ''}`}
-                    style={{ width: `${segPct}%` }}
-                    title={`${ms.name} — ${ms.status}`}
+                    key={term.id}
+                    className={`flex items-center justify-center text-[11px] font-semibold ${bg} ${text} ${idx < termCount - 1 ? 'border-r border-white/30' : ''}`}
+                    style={{ width: `${widthPct}%` }}
+                    title={tooltip}
                   >
-                    <span>{segmentLabel(ms.status, segPct)}</span>
+                    {showLabel && (
+                      <span>
+                        {kind === 'paid'
+                          ? '✓'
+                          : kind === 'partial'
+                            ? `${Math.round((term.paidAmount / term.expectedAmount) * 100)}%`
+                            : kind === 'overdue'
+                              ? 'Overdue'
+                              : kind === 'waived'
+                                ? 'Waived'
+                                : `${Math.round(widthPct)}%`}
+                      </span>
+                    )}
                   </div>
                 );
               })}
             </div>
             <div className="mt-1 flex text-[10px] text-foreground-tertiary px-0.5">
-              {sorted.map((ms) => (
-                <span
-                  key={ms.name}
-                  className="truncate text-center"
-                  style={{ width: `${segPct}%` }}
-                >
-                  {ms.name}
-                </span>
-              ))}
+              {sortedTerms.map((term) => {
+                const widthPct =
+                  totalExpected > 0 ? (term.expectedAmount / totalExpected) * 100 : equalSegPct;
+                return (
+                  <span
+                    key={term.id}
+                    className="truncate text-center"
+                    style={{ width: `${widthPct}%` }}
+                    title={term.name}
+                  >
+                    {term.name}
+                  </span>
+                );
+              })}
             </div>
           </div>
         ) : hasPaymentData ? (
@@ -206,29 +259,16 @@ export function OverviewFinancials({
                   </p>
                 </>
               ) : (
-                (() => {
-                  const activeMilestone = sorted.find((m) => m.status === 'in_progress');
-                  if (activeMilestone) {
-                    return (
-                      <>
-                        <p className="text-[17px] font-semibold text-warning leading-none">
-                          {activeMilestone.name}
-                        </p>
-                        <p className="mt-1 text-[10px] text-warning font-medium">In progress</p>
-                      </>
-                    );
-                  }
-                  return (
-                    <>
-                      <p className="text-[17px] font-semibold text-foreground-secondary leading-none">
-                        —
-                      </p>
-                      <p className="mt-1 text-[10px] text-foreground-secondary">
-                        No active milestone
-                      </p>
-                    </>
-                  );
-                })()
+                <>
+                  <p className="text-[17px] font-semibold text-foreground-secondary leading-none">
+                    —
+                  </p>
+                  <p className="mt-1 text-[10px] text-foreground-secondary">
+                    {totalPaid >= totalExpected && totalExpected > 0
+                      ? 'All terms collected'
+                      : 'No outstanding term'}
+                  </p>
+                </>
               )}
             </div>
 
@@ -244,9 +284,9 @@ export function OverviewFinancials({
                 {formatCurrency(pendingAmount)}
               </p>
               <p className="mt-1 text-[10px] text-foreground-secondary">
-                {incompleteMsCount > 0
-                  ? `${incompleteMsCount} milestone${incompleteMsCount !== 1 ? 's' : ''} left`
-                  : 'All complete'}
+                {incompleteTermCount > 0
+                  ? `${incompleteTermCount} term${incompleteTermCount !== 1 ? 's' : ''} left`
+                  : 'All terms cleared'}
               </p>
             </div>
 

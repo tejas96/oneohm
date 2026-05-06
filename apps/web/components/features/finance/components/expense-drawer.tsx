@@ -1,24 +1,23 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Alert, Box, Button, CircularProgress } from '@mui/material';
-import {
-  ExpenseCategory,
-  ExpensePaidByType,
-  PaymentMethod,
-} from '@oneohm-epc/shared/types';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CloseIcon from '@mui/icons-material/Close';
+import { Alert, Box, Button, CircularProgress, Drawer, IconButton } from '@mui/material';
+import { ExpenseCategory, ExpensePaidByType, PaymentMethod } from '@oneohm-epc/shared/types';
 import { type JSX, useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
+import { ExpenseStepEssentials } from './expense-step-essentials';
+import { ExpenseStepMaterials } from './expense-step-materials';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui';
+  createExpenseSchema,
+  type CreateExpenseFormValues,
+} from '../schemas/create-expense.schema';
+import { type ExpenseProductLineFormValues } from '../schemas/expense-product-line.schema';
+
+import { MUITypography } from '@/components/ui';
 import {
   type CreateExpensePayload,
   type ProjectExpense,
@@ -26,14 +25,6 @@ import {
   useProjectExpenseMutations,
 } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
-
-import {
-  createExpenseSchema,
-  type CreateExpenseFormValues,
-} from '../schemas/create-expense.schema';
-import { type ExpenseProductLineFormValues } from '../schemas/expense-product-line.schema';
-import { ExpenseStepEssentials } from './expense-step-essentials';
-import { ExpenseStepMaterials } from './expense-step-materials';
 
 interface ExpenseDrawerProps {
   open: boolean;
@@ -117,6 +108,10 @@ export function ExpenseDrawer({
     if (open) {
       form.reset(buildDefaults(expense));
       setStep('essentials');
+      // Clear any stale error/success state from a previous attempt so the
+      // alert doesn't linger across opens.
+      create.reset();
+      update.reset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, expense?.id]);
@@ -175,6 +170,17 @@ export function ExpenseDrawer({
       };
       await update.mutateAsync({ id: expense.id, payload });
     } else {
+      const links =
+        isMaterials && values.productLinks && values.productLinks.length > 0
+          ? values.productLinks.map((l: ExpenseProductLineFormValues) => ({
+              productId: l.productId,
+              itemName: l.itemName,
+              unit: l.unit,
+              quantity: l.quantity,
+              unitPrice: l.unitPrice,
+              notes: l.notes,
+            }))
+          : undefined;
       const payload: CreateExpensePayload = {
         category: values.category,
         vendorName: values.vendorName,
@@ -184,16 +190,9 @@ export function ExpenseDrawer({
         paidBy: values.paidBy,
         paidByEmployeeId: values.paidByEmployeeId,
         notes: values.notes,
-        productLinks: isMaterials
-          ? values.productLinks?.map((l: ExpenseProductLineFormValues) => ({
-              productId: l.productId,
-              itemName: l.itemName,
-              unit: l.unit,
-              quantity: l.quantity,
-              unitPrice: l.unitPrice,
-              notes: l.notes,
-            }))
-          : undefined,
+        // Omit productLinks entirely when empty — the backend's
+        // @ArrayMinSize(1) rejects [] but allows missing.
+        ...(links ? { productLinks: links } : {}),
         override: values.override,
         overrideReason: values.overrideReason,
       };
@@ -208,81 +207,131 @@ export function ExpenseDrawer({
   }, [isMaterials, step]);
 
   return (
-    <Sheet open={open} onOpenChange={(o) => (o ? onOpenChange(true) : handleClose())}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-[640px] flex flex-col p-0"
+    <Drawer
+      anchor="right"
+      open={open}
+      onClose={handleClose}
+      PaperProps={{
+        sx: {
+          width: { xs: '100%', sm: 640 },
+          maxWidth: '100vw',
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      }}
+    >
+      <Box
+        sx={{
+          px: 3,
+          py: 2,
+          borderBottom: 1,
+          borderColor: 'divider',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
       >
-        <SheetHeader className="p-6 pb-4 border-b border-border-light">
-          <SheetTitle>{isEdit ? 'Edit Expense' : 'Record Expense'}</SheetTitle>
-          <SheetDescription>{stepLabel}</SheetDescription>
-        </SheetHeader>
+        <div className="flex flex-col gap-1 min-w-0 flex-1">
+          <MUITypography variant="drawerTitle">
+            {isEdit ? 'Edit Expense' : 'Record Expense'}
+          </MUITypography>
+          <MUITypography variant="finePrint" className="text-foreground-muted">
+            {stepLabel}
+          </MUITypography>
+        </div>
+        <IconButton
+          aria-label="Close"
+          onClick={handleClose}
+          size="small"
+          sx={{ color: 'text.secondary' }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
 
-        <FormProvider {...form}>
-          <form onSubmit={(e) => void onSubmit(e)} className="flex-1 flex flex-col min-h-0">
-            <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
-              {Boolean(lastError) && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {getErrorMessage(lastError)}
-                </Alert>
-              )}
+      <FormProvider {...form}>
+        <form
+          onSubmit={(e) => void onSubmit(e)}
+          className="flex-1 flex flex-col min-h-0"
+          style={{ overflow: 'hidden' }}
+        >
+          <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+            {Boolean(lastError) && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {getErrorMessage(lastError)}
+              </Alert>
+            )}
 
-              {step === 'essentials' ? (
-                <ExpenseStepEssentials />
-              ) : (
-                <ExpenseStepMaterials projectId={projectId} />
-              )}
-            </Box>
+            {step === 'essentials' ? (
+              <ExpenseStepEssentials />
+            ) : (
+              <ExpenseStepMaterials projectId={projectId} />
+            )}
+          </Box>
 
-            <SheetFooter className="p-4 border-t border-border-light bg-background-secondary">
-              <Button variant="outlined" onClick={handleClose} disabled={submitting}>
-                Cancel
+          <Box
+            sx={{
+              p: 2,
+              borderTop: 1,
+              borderColor: 'divider',
+              backgroundColor: 'grey.50',
+              display: 'flex',
+              gap: 1.5,
+              justifyContent: 'flex-end',
+            }}
+          >
+            <Button variant="outlined" color="inherit" onClick={handleClose} disabled={submitting}>
+              Cancel
+            </Button>
+
+            {step === 'materials' && (
+              <Button
+                variant="text"
+                startIcon={<ArrowBackIcon sx={{ fontSize: 16 }} />}
+                onClick={() => {
+                  create.reset();
+                  update.reset();
+                  setStep('essentials');
+                }}
+                disabled={submitting}
+              >
+                Back
               </Button>
+            )}
 
-              {step === 'materials' && (
-                <Button
-                  variant="text"
-                  startIcon={<ArrowLeft className="size-4" />}
-                  onClick={() => setStep('essentials')}
-                  disabled={submitting}
-                >
-                  Back
-                </Button>
-              )}
-
-              {isMaterials && step === 'essentials' ? (
-                <Button
-                  variant="contained"
-                  endIcon={<ArrowRight className="size-4" />}
-                  onClick={() => void handleNext()}
-                  disabled={submitting}
-                >
-                  Next: Materials
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={submitting || !form.formState.isValid}
-                >
-                  {submitting ? (
-                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-                      <CircularProgress size={16} color="inherit" />
-                      Saving...
-                    </Box>
-                  ) : isEdit ? (
-                    'Save Changes'
-                  ) : showSaveOnStep1 ? (
-                    'Record Expense'
-                  ) : (
-                    'Record Expense'
-                  )}
-                </Button>
-              )}
-            </SheetFooter>
-          </form>
-        </FormProvider>
-      </SheetContent>
-    </Sheet>
+            {isMaterials && step === 'essentials' ? (
+              <Button
+                variant="contained"
+                endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                onClick={() => void handleNext()}
+                disabled={submitting}
+              >
+                Next: Materials
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={submitting || !form.formState.isValid}
+              >
+                {submitting ? (
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={16} color="inherit" />
+                    Saving…
+                  </Box>
+                ) : isEdit ? (
+                  'Save Changes'
+                ) : showSaveOnStep1 ? (
+                  'Record Expense'
+                ) : (
+                  'Record Expense'
+                )}
+              </Button>
+            )}
+          </Box>
+        </form>
+      </FormProvider>
+    </Drawer>
   );
 }

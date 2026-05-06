@@ -4,19 +4,11 @@ import {
   PaymentMethod,
   ReimbursementStatus,
 } from '@oneohm-epc/shared/types';
-import {
-  Column,
-  DeleteDateColumn,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-} from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
+import { ExpenseProductLinkEntity } from './expense-product-link.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
-import { ExpenseProductLinkEntity } from './expense-product-link.entity';
 
 /**
  * ProjectExpenseEntity

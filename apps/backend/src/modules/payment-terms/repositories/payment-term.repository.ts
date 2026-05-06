@@ -28,10 +28,7 @@ export class PaymentTermRepository {
     });
   }
 
-  async findById(
-    id: string,
-    organizationId: string,
-  ): Promise<PaymentTermEntity | null> {
+  async findById(id: string, organizationId: string): Promise<PaymentTermEntity | null> {
     return this.repository.findOne({
       where: { id, organizationId, deletedAt: IsNull() },
     });
@@ -90,10 +87,7 @@ export class PaymentTermRepository {
    * Returns true if the project has any term that has received any payment.
    * Used as a preflight check on resnapshot (plan §11).
    */
-  async projectHasReceivedPayments(
-    projectId: string,
-    organizationId: string,
-  ): Promise<boolean> {
+  async projectHasReceivedPayments(projectId: string, organizationId: string): Promise<boolean> {
     const row = await this.repository
       .createQueryBuilder('term')
       .select('1')
@@ -108,13 +102,13 @@ export class PaymentTermRepository {
 
   async countLinkedReceipts(termId: string, manager?: EntityManager): Promise<number> {
     const exec = manager ?? this.repository.manager;
-    const rows = (await exec.query(
+    const rows = await exec.query(
       `SELECT COUNT(*)::int AS count
          FROM payments
         WHERE payment_term_id = $1
           AND deleted_at IS NULL`,
       [termId],
-    )) as Array<{ count: number }>;
+    );
     return rows[0]?.count ?? 0;
   }
 
@@ -131,22 +125,22 @@ export class PaymentTermRepository {
     manager: EntityManager,
     termId: string,
   ): Promise<{ paidAmount: number; status: PaymentTermStatus; completedAt: Date | null }> {
-    const sumRows = (await manager.query(
+    const sumRows = await manager.query(
       `SELECT COALESCE(SUM(paid_amount), 0)::numeric AS total
          FROM payments
         WHERE payment_term_id = $1
           AND deleted_at IS NULL
           AND status IN ('received','verified','cleared')`,
       [termId],
-    )) as Array<{ total: string }>;
+    );
     const paidAmount = Number(sumRows[0]?.total ?? 0);
 
-    const termRows = (await manager.query(
+    const termRows = await manager.query(
       `SELECT expected_amount::numeric AS expected, status
          FROM project_payment_terms
         WHERE id = $1`,
       [termId],
-    )) as Array<{ expected: string; status: PaymentTermStatus }>;
+    );
     const expected = Number(termRows[0]?.expected ?? 0);
     const currentStatus = termRows[0]?.status ?? PaymentTermStatus.PENDING;
 

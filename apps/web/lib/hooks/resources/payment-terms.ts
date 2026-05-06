@@ -1,12 +1,7 @@
 'use client';
 
 import type { PaymentTermSource, PaymentTermStatus } from '@oneohm-epc/shared/types';
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseQueryResult,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import { useOrgContext } from '../core';
@@ -103,10 +98,10 @@ export function usePaymentTerms(
   return useQuery({
     queryKey: paymentTermKeys.byProject(organizationId, projectId),
     queryFn: async ({ signal }): Promise<PaymentTerm[]> => {
-      const { data } = await apiClient.get<PaymentTerm[]>(
-        `/projects/${projectId}/payment-terms`,
-        { headers: orgHeaders, signal },
-      );
+      const { data } = await apiClient.get<PaymentTerm[]>(`/projects/${projectId}/payment-terms`, {
+        headers: orgHeaders,
+        signal,
+      });
       return data;
     },
     enabled: isReady && !!projectId && options?.enabled !== false,
@@ -163,11 +158,9 @@ export function usePaymentTermMutations(projectId: string) {
     { id: string; payload: UpdatePaymentTermPayload }
   >({
     mutationFn: async ({ id, payload }) => {
-      const { data } = await apiClient.patch<PaymentTerm>(
-        `/payment-terms/${id}`,
-        payload,
-        { headers: orgHeaders },
-      );
+      const { data } = await apiClient.patch<PaymentTerm>(`/payment-terms/${id}`, payload, {
+        headers: orgHeaders,
+      });
       return data;
     },
     onSuccess: () => {
@@ -210,7 +203,7 @@ export function usePaymentTermMutations(projectId: string) {
    * quote-snapshot terms (preserving manual ones) and inserts fresh ones.
    * Rejected by the server when receipts are already linked to terms.
    */
-  const resnapshot = useMutation<PaymentTerm[], AxiosError, void>({
+  const resnapshot = useMutation<PaymentTerm[], AxiosError>({
     mutationFn: async () => {
       const { data } = await apiClient.post<PaymentTerm[]>(
         `/projects/${projectId}/payment-terms/resnapshot`,

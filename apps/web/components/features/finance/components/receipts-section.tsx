@@ -1,18 +1,17 @@
 'use client';
 
-import { Banknote, Plus } from 'lucide-react';
+import AddIcon from '@mui/icons-material/Add';
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
+import { Button, Skeleton } from '@mui/material';
 import { type JSX, useEffect, useState } from 'react';
-
-import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
-import { Button, Skeleton } from '@/components/ui';
-import {
-  usePaymentTerms,
-  useProjectReceipts,
-} from '@/lib/hooks/resources';
-import { getErrorMessage } from '@/lib/utils';
 
 import { ReceiptsTable } from './receipts-table';
 import { RecordReceiptDialog } from './record-receipt-dialog';
+
+import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
+import { MUITypography } from '@/components/ui';
+import { usePaymentTerms, useProjectReceipts } from '@/lib/hooks/resources';
+import { getErrorMessage } from '@/lib/utils';
 
 interface ReceiptsSectionProps {
   projectId: string;
@@ -26,13 +25,7 @@ export function ReceiptsSection({
   pendingTermId,
   onConsumePendingTerm,
 }: ReceiptsSectionProps): JSX.Element {
-  const {
-    data: receipts,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useProjectReceipts(projectId);
+  const { data: receipts, isLoading, isError, error, refetch } = useProjectReceipts(projectId);
   const { data: terms } = usePaymentTerms(projectId);
 
   const [recordOpen, setRecordOpen] = useState(false);
@@ -52,8 +45,8 @@ export function ReceiptsSection({
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <Skeleton className="h-10 rounded-lg" />
-        <Skeleton className="h-48 rounded-lg" />
+        <Skeleton variant="rounded" height={40} />
+        <Skeleton variant="rounded" height={192} />
       </div>
     );
   }
@@ -75,20 +68,24 @@ export function ReceiptsSection({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Receipt History</h3>
-          <p className="text-2xs text-foreground-muted">
+          <MUITypography variant="sectionTitle">Receipt History</MUITypography>
+          <MUITypography variant="finePrint" className="text-foreground-muted block">
             Money received from the customer. Linking to a term updates its paid amount atomically.
-          </p>
+          </MUITypography>
         </div>
-        <Button size="sm" onClick={() => setRecordOpen(true)}>
-          <Plus className="size-3.5 mr-1" />
+        <Button
+          size="small"
+          variant="contained"
+          startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+          onClick={() => setRecordOpen(true)}
+        >
           Record Receipt
         </Button>
       </div>
 
       {list.length === 0 ? (
         <EmptyState
-          icon={<Banknote className="w-full h-full" />}
+          icon={<PaymentsOutlinedIcon style={{ width: '100%', height: '100%' }} />}
           iconColor="muted"
           title="No receipts recorded"
           description="Receipts logged here update the linked payment term's paid amount automatically."

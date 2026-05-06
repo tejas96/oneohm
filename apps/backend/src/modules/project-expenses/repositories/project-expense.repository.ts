@@ -1,10 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import {
-  ExpenseCategory,
-  ExpensePaidByType,
-  ReimbursementStatus,
-} from '@oneohm-epc/shared/types';
+import { ExpenseCategory, ExpensePaidByType, ReimbursementStatus } from '@oneohm-epc/shared/types';
 import { Brackets, DataSource, EntityManager, IsNull, Repository } from 'typeorm';
 
 import { ExpenseProductLinkEntity } from '../entities/expense-product-link.entity';
@@ -96,7 +92,8 @@ export class ProjectExpenseRepository {
     if (filters.paidBy) qb.andWhere('e.paid_by = :paidBy', { paidBy: filters.paidBy });
     if (filters.reimbursementStatus)
       qb.andWhere('e.reimbursement_status = :rs', { rs: filters.reimbursementStatus });
-    if (filters.dateFrom) qb.andWhere('e.expense_date >= :dateFrom', { dateFrom: filters.dateFrom });
+    if (filters.dateFrom)
+      qb.andWhere('e.expense_date >= :dateFrom', { dateFrom: filters.dateFrom });
     if (filters.dateTo) qb.andWhere('e.expense_date <= :dateTo', { dateTo: filters.dateTo });
     if (filters.vendorSearch) {
       qb.andWhere(
@@ -128,16 +125,16 @@ export class ProjectExpenseRepository {
     byCategory: Array<{ category: ExpenseCategory; amount: number; count: number }>;
     pendingReimbursementAmount: number;
   }> {
-    const totalsRows = (await this.dataSource.query(
+    const totalsRows = await this.dataSource.query(
       `SELECT COALESCE(SUM(amount),0)::numeric AS total
          FROM project_expenses
         WHERE project_id = $1
           AND organization_id = $2
           AND deleted_at IS NULL`,
       [projectId, organizationId],
-    )) as Array<{ total: string }>;
+    );
 
-    const byCatRows = (await this.dataSource.query(
+    const byCatRows = await this.dataSource.query(
       `SELECT category,
               COALESCE(SUM(amount),0)::numeric AS amount,
               COUNT(*)::int                    AS count
@@ -148,9 +145,9 @@ export class ProjectExpenseRepository {
         GROUP BY category
         ORDER BY amount DESC`,
       [projectId, organizationId],
-    )) as Array<{ category: ExpenseCategory; amount: string; count: number }>;
+    );
 
-    const pendingRows = (await this.dataSource.query(
+    const pendingRows = await this.dataSource.query(
       `SELECT COALESCE(SUM(amount),0)::numeric AS pending
          FROM project_expenses
         WHERE project_id = $1
@@ -159,7 +156,7 @@ export class ProjectExpenseRepository {
           AND paid_by = 'employee'
           AND reimbursement_status = 'pending'`,
       [projectId, organizationId],
-    )) as Array<{ pending: string }>;
+    );
 
     return {
       total: Number(totalsRows[0]?.total ?? 0),
@@ -182,7 +179,7 @@ export class ProjectExpenseRepository {
     organizationId: string,
     manager?: EntityManager,
   ): Promise<Map<string, number>> {
-    const rows = (await (manager ?? this.dataSource).query(
+    const rows = await (manager ?? this.dataSource).query(
       `SELECT epl.product_id AS product_id,
               COALESCE(SUM(epl.quantity), 0)::numeric AS spent
          FROM expense_product_links epl
@@ -193,7 +190,7 @@ export class ProjectExpenseRepository {
           AND epl.product_id IS NOT NULL
         GROUP BY epl.product_id`,
       [projectId, organizationId],
-    )) as Array<{ product_id: string; spent: string }>;
+    );
     const out = new Map<string, number>();
     for (const r of rows) out.set(r.product_id, Number(r.spent));
     return out;

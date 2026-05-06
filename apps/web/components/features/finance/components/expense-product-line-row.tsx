@@ -1,15 +1,15 @@
 'use client';
 
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { Box, IconButton, type SelectChangeEvent } from '@mui/material';
-import { Trash2 } from 'lucide-react';
 import { type JSX, useMemo } from 'react';
 import { Controller, useFormContext, type UseFormReturn } from 'react-hook-form';
 
-import { MUIInput, MUISelect } from '@/components/ui';
+import { type CreateExpenseFormValues } from '../schemas/create-expense.schema';
+
+import { MUIInput, MUISelect, MUITypography } from '@/components/ui';
 import { type BomProcurementItem } from '@/lib/hooks/resources';
 import { formatCurrency } from '@/lib/utils';
-
-import { type CreateExpenseFormValues } from '../schemas/create-expense.schema';
 
 interface ExpenseProductLineRowProps {
   index: number;
@@ -48,7 +48,8 @@ export function ExpenseProductLineRow({
 
   const productId = form.watch(`${path}.productId`);
   const itemName = form.watch(`${path}.itemName`);
-  const showOffList = !productId && (itemName !== undefined || form.getFieldState(`${path}.itemName`).isTouched);
+  const showOffList =
+    !productId && (itemName !== undefined || form.getFieldState(`${path}.itemName`).isTouched);
 
   const errors = form.formState.errors.productLinks?.[index];
 
@@ -150,7 +151,7 @@ export function ExpenseProductLineRow({
           aria-label="Remove line"
           color="error"
         >
-          <Trash2 className="size-4" />
+          <DeleteOutlineIcon fontSize="small" />
         </IconButton>
       </Box>
 
@@ -163,14 +164,14 @@ export function ExpenseProductLineRow({
           if (!Number.isFinite(qty) || qty <= match.remaining) return null;
           return (
             <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
-              <p className="text-2xs text-warning">
-                Quantity ({qty}) exceeds remaining BOM target ({match.remaining}{' '}
-                {match.unit}). The procurement guard will require an override at the expense
-                level.
-              </p>
-              <p className="text-2xs text-foreground-muted">
-                Estimated line total: {formatCurrency(qty * Number(form.watch(`${path}.unitPrice`) ?? 0))}
-              </p>
+              <MUITypography variant="finePrint" className="text-warning block">
+                Quantity ({qty}) exceeds remaining BOM target ({match.remaining} {match.unit}). The
+                procurement guard will require an override at the expense level.
+              </MUITypography>
+              <MUITypography variant="finePrint" className="text-foreground-muted block">
+                Estimated line total:{' '}
+                {formatCurrency(qty * Number(form.watch(`${path}.unitPrice`) ?? 0))}
+              </MUITypography>
             </Box>
           );
         })()}

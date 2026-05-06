@@ -1,10 +1,13 @@
 'use client';
 
-import { Boxes, ShoppingBag, AlertTriangle } from 'lucide-react';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { LinearProgress, Skeleton } from '@mui/material';
 import { type JSX } from 'react';
 
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
-import { Badge, Progress, Skeleton } from '@/components/ui';
+import { MUIStatusChip, MUITypography, type StatusChipColor } from '@/components/ui';
 import {
   type BomProcurementItem,
   type BomProcurementItemStatus,
@@ -16,10 +19,10 @@ interface ProcurementSectionProps {
   projectId: string;
 }
 
-const STATUS_BADGE: Record<BomProcurementItemStatus, string> = {
-  pending: 'secondary',
-  partial: 'amber',
-  procured: 'green-subtle',
+const STATUS_COLOR: Record<BomProcurementItemStatus, StatusChipColor> = {
+  pending: 'default',
+  partial: 'warning',
+  procured: 'success',
 };
 
 const STATUS_LABEL: Record<BomProcurementItemStatus, string> = {
@@ -28,7 +31,7 @@ const STATUS_LABEL: Record<BomProcurementItemStatus, string> = {
   procured: 'Procured',
 };
 
-function progressVariant(item: BomProcurementItem): 'primary' | 'success' | 'warning' | 'error' {
+function progressColor(item: BomProcurementItem): 'primary' | 'success' | 'warning' | 'error' {
   if (item.over) return 'error';
   if (item.status === 'procured') return 'success';
   if (item.status === 'partial') return 'warning';
@@ -57,8 +60,12 @@ function SummaryCard({
   };
   return (
     <div className="rounded-lg border border-border-light bg-background-secondary p-3">
-      <p className="text-2xs text-foreground-secondary">{label}</p>
-      <p className={`text-sm font-semibold mt-0.5 ${toneClasses[tone]}`}>{String(value)}</p>
+      <MUITypography variant="finePrint" className="text-foreground-secondary block">
+        {label}
+      </MUITypography>
+      <MUITypography variant="bodyPrimary" className={`block mt-0.5 ${toneClasses[tone]}`}>
+        {String(value)}
+      </MUITypography>
     </div>
   );
 }
@@ -85,8 +92,8 @@ export function ProcurementSection({ projectId }: ProcurementSectionProps): JSX.
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <Skeleton className="h-16 rounded-lg" />
-        <Skeleton className="h-48 rounded-lg" />
+        <Skeleton variant="rounded" height={64} />
+        <Skeleton variant="rounded" height={192} />
       </div>
     );
   }
@@ -104,7 +111,7 @@ export function ProcurementSection({ projectId }: ProcurementSectionProps): JSX.
   if (!procurement || procurement.items.length === 0) {
     return (
       <EmptyState
-        icon={<Boxes className="w-full h-full" />}
+        icon={<Inventory2OutlinedIcon style={{ width: '100%', height: '100%' }} />}
         iconColor="muted"
         title="No procurement data yet"
         description="Procurement status appears once the BOM contains items. Materials expenses you record on the Finance tab will be aggregated here."
@@ -118,16 +125,17 @@ export function ProcurementSection({ projectId }: ProcurementSectionProps): JSX.
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Procurement Status</h3>
-          <p className="text-2xs text-foreground-muted">
+          <MUITypography variant="sectionTitle">Procurement Status</MUITypography>
+          <MUITypography variant="finePrint" className="text-foreground-muted block">
             Per-product spend versus BOM target. Updates live as materials expenses are recorded.
-          </p>
+          </MUITypography>
         </div>
         {totals.overProcuredProducts > 0 && (
-          <Badge variant="error" size="xs">
-            <AlertTriangle className="size-3 mr-1 inline" />
-            {totals.overProcuredProducts} over target
-          </Badge>
+          <MUIStatusChip
+            label={`${totals.overProcuredProducts} over target`}
+            color="error"
+            icon={<WarningAmberIcon sx={{ fontSize: 14 }} />}
+          />
         )}
       </div>
 
@@ -147,74 +155,98 @@ export function ProcurementSection({ projectId }: ProcurementSectionProps): JSX.
         <table className="w-full">
           <thead>
             <tr className="bg-muted/50">
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-left px-3 py-2">
-                Product
+              <th className="text-left px-3 py-2">
+                <MUITypography variant="finePrint" className="text-foreground-muted uppercase">
+                  Product
+                </MUITypography>
               </th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-right px-3 py-2">
-                Target
+              {(['Target', 'Spent', 'Remaining'] as const).map((l) => (
+                <th key={l} className="text-right px-3 py-2">
+                  <MUITypography variant="finePrint" className="text-foreground-muted uppercase">
+                    {l}
+                  </MUITypography>
+                </th>
+              ))}
+              <th className="text-left px-3 py-2 w-[200px]">
+                <MUITypography variant="finePrint" className="text-foreground-muted uppercase">
+                  Progress
+                </MUITypography>
               </th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-right px-3 py-2">
-                Spent
+              <th className="text-right px-3 py-2">
+                <MUITypography variant="finePrint" className="text-foreground-muted uppercase">
+                  Spend
+                </MUITypography>
               </th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-right px-3 py-2">
-                Remaining
-              </th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-left px-3 py-2 w-[200px]">
-                Progress
-              </th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-right px-3 py-2">
-                Spend
-              </th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-left px-3 py-2">
-                Status
+              <th className="text-left px-3 py-2">
+                <MUITypography variant="finePrint" className="text-foreground-muted uppercase">
+                  Status
+                </MUITypography>
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-light">
             {items.map((item) => {
               const value = progressValue(item);
-              const variant = progressVariant(item);
+              const color = progressColor(item);
               return (
                 <tr key={item.productId} className="hover:bg-muted/30 transition-colors">
-                  <td className="text-xs text-foreground font-medium px-3 py-2.5">{item.name}</td>
-                  <td className="text-xs text-foreground text-right px-3 py-2.5">
-                    {item.targetQty}
-                    {item.unit ? ` ${item.unit}` : ''}
+                  <td className="px-3 py-2.5">
+                    <MUITypography variant="bodyPrimary">{item.name}</MUITypography>
                   </td>
-                  <td className="text-xs text-foreground text-right px-3 py-2.5">
-                    {item.spentQty}
-                    {item.unit ? ` ${item.unit}` : ''}
+                  <td className="text-right px-3 py-2.5">
+                    <MUITypography variant="body">
+                      {item.targetQty}
+                      {item.unit ? ` ${item.unit}` : ''}
+                    </MUITypography>
                   </td>
-                  <td className="text-xs text-foreground text-right px-3 py-2.5">
-                    {item.remaining}
-                    {item.unit ? ` ${item.unit}` : ''}
+                  <td className="text-right px-3 py-2.5">
+                    <MUITypography variant="body">
+                      {item.spentQty}
+                      {item.unit ? ` ${item.unit}` : ''}
+                    </MUITypography>
+                  </td>
+                  <td className="text-right px-3 py-2.5">
+                    <MUITypography variant="body">
+                      {item.remaining}
+                      {item.unit ? ` ${item.unit}` : ''}
+                    </MUITypography>
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-2">
-                      <Progress value={value} variant={variant} />
-                      <span className="text-2xs text-foreground-muted font-mono w-10 text-right">
+                      <LinearProgress
+                        variant="determinate"
+                        value={value}
+                        color={color}
+                        sx={{ flex: 1, height: 6, borderRadius: 1 }}
+                      />
+                      <MUITypography
+                        variant="finePrint"
+                        className="text-foreground-muted font-mono w-10 text-right"
+                      >
                         {value}%
-                      </span>
+                      </MUITypography>
                     </div>
                   </td>
-                  <td className="text-xs text-foreground text-right px-3 py-2.5 font-mono">
-                    {formatCurrency(item.actualSpend)}
-                    {item.targetSpend != null && (
-                      <span className="text-foreground-muted">
-                        {' / '}
-                        {formatCurrency(item.targetSpend)}
-                      </span>
-                    )}
+                  <td className="text-right px-3 py-2.5">
+                    <MUITypography variant="body" className="font-mono">
+                      {formatCurrency(item.actualSpend)}
+                      {item.targetSpend != null && (
+                        <span className="text-foreground-muted">
+                          {' / '}
+                          {formatCurrency(item.targetSpend)}
+                        </span>
+                      )}
+                    </MUITypography>
                   </td>
                   <td className="px-3 py-2.5">
-                    <Badge variant={(STATUS_BADGE[item.status] ?? 'secondary') as 'success'} size="xs">
-                      {STATUS_LABEL[item.status] ?? item.status}
-                    </Badge>
-                    {item.over && (
-                      <Badge variant="error" size="xs" className="ml-1">
-                        Over
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <MUIStatusChip
+                        label={STATUS_LABEL[item.status] ?? item.status}
+                        color={STATUS_COLOR[item.status] ?? 'default'}
+                        colorSeed={item.status}
+                      />
+                      {item.over && <MUIStatusChip label="Over" color="error" />}
+                    </div>
                   </td>
                 </tr>
               );
@@ -223,11 +255,11 @@ export function ProcurementSection({ projectId }: ProcurementSectionProps): JSX.
         </table>
       </div>
 
-      <p className="text-2xs text-foreground-muted flex items-center gap-1">
-        <ShoppingBag className="size-3" />
+      <MUITypography variant="finePrint" className="text-foreground-muted flex items-center gap-1">
+        <ShoppingBagOutlinedIcon sx={{ fontSize: 12 }} />
         Spent quantities are aggregated from expense line items linked to BOM products via the
         Finance tab.
-      </p>
+      </MUITypography>
     </div>
   );
 }

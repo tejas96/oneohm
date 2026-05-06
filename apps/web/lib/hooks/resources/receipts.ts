@@ -5,12 +5,7 @@ import type {
   PaymentTermStatus,
   PaymentTransactionStatus,
 } from '@oneohm-epc/shared/types';
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseQueryResult,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import { paymentTermKeys } from './payment-terms';

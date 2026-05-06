@@ -5,44 +5,48 @@ import {
   ReimbursementStatus,
 } from '@oneohm-epc/shared/types';
 
+import { type StatusChipColor } from '@/components/ui';
+
 /**
- * Badge variants for the finance domain. Stays in lockstep with the
- * Tailwind tokens declared in tailwind.config.ts and the shared
- * status-chip component. When adding a new status, also add its label
- * in `@oneohm-epc/shared/constants/labels`.
+ * Semantic MUI palette colors for finance status chips. These feed
+ * `<MUIStatusChip color={...} />` so all finance status indicators stay
+ * in lockstep with the MUI theme. When adding a new status value, also
+ * add its label in `@oneohm-epc/shared/constants/labels`.
+ *
+ * For categories without an obvious semantic color (e.g. expense
+ * categories), we omit them from the map and let `MUIStatusChip`'s
+ * deterministic auto-color kick in via `colorSeed`.
  */
-export const PAYMENT_TERM_STATUS_BADGE_VARIANT: Record<PaymentTermStatus, string> = {
-  [PaymentTermStatus.PENDING]: 'secondary',
-  [PaymentTermStatus.PARTIAL]: 'amber',
-  [PaymentTermStatus.PAID]: 'green-subtle',
-  [PaymentTermStatus.WAIVED]: 'muted',
-  [PaymentTermStatus.CANCELLED]: 'red-subtle',
+export const PAYMENT_TERM_STATUS_COLOR: Record<PaymentTermStatus, StatusChipColor> = {
+  [PaymentTermStatus.PENDING]: 'default',
+  [PaymentTermStatus.PARTIAL]: 'warning',
+  [PaymentTermStatus.PAID]: 'success',
+  [PaymentTermStatus.WAIVED]: 'default',
+  [PaymentTermStatus.CANCELLED]: 'error',
 };
 
-export const RECEIPT_STATUS_BADGE_VARIANT: Record<PaymentTransactionStatus, string> = {
+export const RECEIPT_STATUS_COLOR: Record<PaymentTransactionStatus, StatusChipColor> = {
   [PaymentTransactionStatus.PENDING]: 'warning',
   [PaymentTransactionStatus.RECEIVED]: 'info',
-  [PaymentTransactionStatus.VERIFIED]: 'green-subtle',
+  [PaymentTransactionStatus.VERIFIED]: 'primary',
   [PaymentTransactionStatus.CLEARED]: 'success',
   [PaymentTransactionStatus.BOUNCED]: 'error',
-  [PaymentTransactionStatus.REFUNDED]: 'red-subtle',
+  [PaymentTransactionStatus.REFUNDED]: 'default',
 };
 
-export const REIMBURSEMENT_STATUS_BADGE_VARIANT: Record<ReimbursementStatus, string> = {
-  [ReimbursementStatus.NOT_APPLICABLE]: 'muted',
+export const REIMBURSEMENT_STATUS_COLOR: Record<ReimbursementStatus, StatusChipColor> = {
+  [ReimbursementStatus.NOT_APPLICABLE]: 'default',
   [ReimbursementStatus.PENDING]: 'warning',
   [ReimbursementStatus.REIMBURSED]: 'success',
 };
 
-export const EXPENSE_CATEGORY_BADGE_VARIANT: Record<ExpenseCategory, string> = {
-  [ExpenseCategory.MATERIALS]: 'blue-subtle',
-  [ExpenseCategory.LABOR]: 'teal',
-  [ExpenseCategory.TRAVEL]: 'amber',
-  [ExpenseCategory.EQUIPMENT]: 'purple',
-  [ExpenseCategory.SUBCONTRACTOR]: 'green-subtle',
-  [ExpenseCategory.PERMITS]: 'info',
-  [ExpenseCategory.MISC]: 'secondary',
-};
+/**
+ * Expense categories don't have semantic colors — they're business
+ * groupings, not states. We deliberately leave them as `undefined` so
+ * `MUIStatusChip` uses its deterministic hash-based color picker. The
+ * raw enum value is passed as `colorSeed` for stable color mapping.
+ */
+export const EXPENSE_CATEGORY_COLOR: Partial<Record<ExpenseCategory, StatusChipColor>> = {};
 
 /**
  * Sub-tabs shown inside the Finance project tab. Kept in this module so

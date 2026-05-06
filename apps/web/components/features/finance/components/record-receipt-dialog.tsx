@@ -7,6 +7,11 @@ import { type JSX, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import {
+  recordReceiptSchema,
+  type RecordReceiptFormValues,
+} from '../schemas/record-receipt.schema';
+
+import {
   MUIDialog,
   MUIDialogBody,
   MUIDialogDescription,
@@ -22,13 +27,7 @@ import {
   type PaymentTerm,
   useReceiptMutations,
 } from '@/lib/hooks/resources';
-import { formatCurrency } from '@/lib/utils';
-import { getErrorMessage } from '@/lib/utils';
-
-import {
-  recordReceiptSchema,
-  type RecordReceiptFormValues,
-} from '../schemas/record-receipt.schema';
+import { formatCurrency, getErrorMessage } from '@/lib/utils';
 
 interface RecordReceiptDialogProps {
   open: boolean;

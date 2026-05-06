@@ -115,8 +115,7 @@ export class ProjectExpenseController {
 
   @Get('projects/:projectId/expenses/summary')
   @ApiOperation({
-    summary:
-      'Aggregated totals: total spent, by-category breakdown, pending reimbursement amount',
+    summary: 'Aggregated totals: total spent, by-category breakdown, pending reimbursement amount',
   })
   @ApiParam({ name: 'projectId', type: String })
   async getProjectSummary(
@@ -197,9 +196,11 @@ export class ProjectExpenseController {
   private userHasPermission(user: CurrentUserType, key: string): boolean {
     const direct = (user as unknown as { permissions?: string[] }).permissions;
     if (Array.isArray(direct) && direct.includes(key)) return true;
-    const roles = (user as unknown as {
-      roles?: Array<{ permissions?: Array<string | { key?: string; permissionKey?: string }> }>;
-    }).roles;
+    const roles = (
+      user as unknown as {
+        roles?: Array<{ permissions?: Array<string | { key?: string; permissionKey?: string }> }>;
+      }
+    ).roles;
     if (Array.isArray(roles)) {
       for (const role of roles) {
         const perms = role.permissions ?? [];

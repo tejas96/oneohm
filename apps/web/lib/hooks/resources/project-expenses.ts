@@ -7,6 +7,7 @@ import {
   type PaymentMethod,
 } from '@oneohm-epc/shared/types';
 import {
+  keepPreviousData,
   useMutation,
   useQuery,
   useQueryClient,
@@ -163,6 +164,7 @@ export function useProjectExpenses(
     },
     enabled: isReady && !!projectId && options?.enabled !== false,
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 }
 
