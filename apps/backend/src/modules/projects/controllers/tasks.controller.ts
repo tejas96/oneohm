@@ -159,7 +159,7 @@ export class TasksController {
       ...task,
       projectNumber: task.project?.projectNumber ?? '',
       projectName: task.project?.name ?? '',
-      milestoneName: task.milestone?.name,
+      milestoneName: task.milestoneName ?? undefined,
     };
 
     return plainToInstance(MyTaskResponseDto, flat, {

@@ -1,11 +1,11 @@
 'use client';
 
-import { MilestoneStatus } from '@oneohm-epc/shared/types';
+import type { MilestoneDisplayStatus } from '@oneohm-epc/shared/types';
 import { Milestone } from 'lucide-react';
 
-import type { ProjectDetail, ProjectMilestone } from '../../../../hooks/types';
+import { useProjectMilestones } from '../../../../hooks';
+import type { ProjectDetail } from '../../../../hooks/types';
 
-import { useProjectSummary } from '@/lib/hooks/resources';
 import { formatDate } from '@/lib/utils/format';
 
 interface OverviewTimelineRailProps {
@@ -16,37 +16,16 @@ interface OverviewTimelineRailProps {
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-type MilestoneProgress = {
-  id: string;
-  name: string;
-  totalTasks: number;
-  completedTasks: number;
-  percent: number;
-};
-
-function deriveEffectiveStatus(
-  entityStatus: MilestoneStatus,
-  progress: MilestoneProgress | undefined,
-): MilestoneStatus {
-  if (entityStatus === MilestoneStatus.BLOCKED || entityStatus === MilestoneStatus.SKIPPED) {
-    return entityStatus;
-  }
-  if (!progress || progress.totalTasks === 0) return entityStatus;
-  if (progress.completedTasks >= progress.totalTasks) return MilestoneStatus.COMPLETED;
-  if (progress.completedTasks > 0) return MilestoneStatus.IN_PROGRESS;
-  return entityStatus;
-}
-
-function dotColor(status: MilestoneStatus): string {
+function dotColor(status: MilestoneDisplayStatus): string {
   switch (status) {
-    case MilestoneStatus.COMPLETED:
-    case MilestoneStatus.SKIPPED:
+    case 'completed':
       return 'bg-success';
-    case MilestoneStatus.IN_PROGRESS:
+    case 'in_progress':
       return 'bg-primary';
-    case MilestoneStatus.BLOCKED:
+    case 'blocked':
       return 'bg-error';
-    case MilestoneStatus.PENDING:
+    case 'no_tasks':
+    case 'pending':
     default:
       return 'bg-border';
   }
@@ -54,16 +33,16 @@ function dotColor(status: MilestoneStatus): string {
 
 type LabelKind = 'completed' | 'active' | 'upcoming' | 'blocked';
 
-function labelKind(status: MilestoneStatus): LabelKind {
+function labelKind(status: MilestoneDisplayStatus): LabelKind {
   switch (status) {
-    case MilestoneStatus.COMPLETED:
-    case MilestoneStatus.SKIPPED:
+    case 'completed':
       return 'completed';
-    case MilestoneStatus.IN_PROGRESS:
+    case 'in_progress':
       return 'active';
-    case MilestoneStatus.BLOCKED:
+    case 'blocked':
       return 'blocked';
-    case MilestoneStatus.PENDING:
+    case 'no_tasks':
+    case 'pending':
     default:
       return 'upcoming';
   }
@@ -102,10 +81,7 @@ export function OverviewTimelineRail({
   projectId,
   isActive,
 }: OverviewTimelineRailProps): React.ReactElement {
-  const { data: summary } = useProjectSummary(projectId, { enabled: isActive });
-  const progressMap = new Map(
-    (summary?.milestoneProgress ?? []).map((m) => [m.id, m] as [string, MilestoneProgress]),
-  );
+  const { data: milestonesRaw } = useProjectMilestones(projectId, { enabled: isActive });
 
   // Gate: need dates
   if (!project.startDate || !project.endDate) {
@@ -122,10 +98,10 @@ export function OverviewTimelineRail({
   const start = new Date(project.startDate);
   const end = new Date(project.endDate);
 
-  // Only milestones that have tasks (consistent with Summary tab).
-  const sorted = [...project.milestones]
-    .filter((m) => progressMap.has(m.id))
-    .sort((a, b) => a.sequenceOrder - b.sequenceOrder);
+  // Only milestones that have tasks, sorted by order
+  const sorted = milestonesRaw
+    ? [...milestonesRaw].filter((m) => m.totalTasks > 0).sort((a, b) => a.order - b.order)
+    : [];
 
   if (sorted.length === 0) {
     return (
@@ -141,28 +117,20 @@ export function OverviewTimelineRail({
     );
   }
 
-  // Derive effective statuses from task-completion data.
-  const statusOf = (m: ProjectMilestone): MilestoneStatus =>
-    deriveEffectiveStatus(m.status, progressMap.get(m.id));
-
-  const statuses = sorted.map(statusOf);
+  const statuses = sorted.map((m) => m.status);
   const positions = sorted.map((_, i) => slotPct(i, sorted.length));
 
   // ── Gradient computation ──
-  // Walk from left to right.  The green part covers all completed milestones.
-  // The primary part extends through any in-progress milestone.
-  // Everything else is the gray track.
-
-  let greenEnd = 0; // right edge of the solid green (completed) zone
-  let activeEnd = 0; // right edge of the primary (in-progress) zone
+  let greenEnd = 0;
+  let activeEnd = 0;
 
   let lastCompletedIdx = -1;
   let lastInProgressIdx = -1;
 
   for (let i = 0; i < sorted.length; i++) {
     const s = statuses[i]!;
-    if (s === MilestoneStatus.COMPLETED || s === MilestoneStatus.SKIPPED) lastCompletedIdx = i;
-    if (s === MilestoneStatus.IN_PROGRESS) lastInProgressIdx = i;
+    if (s === 'completed') lastCompletedIdx = i;
+    if (s === 'in_progress') lastInProgressIdx = i;
   }
 
   if (lastCompletedIdx >= 0) {
@@ -178,10 +146,7 @@ export function OverviewTimelineRail({
     activeEnd = greenEnd;
   }
 
-  // If everything is completed, fill entirely green.
-  const allCompleted = statuses.every(
-    (s) => s === MilestoneStatus.COMPLETED || s === MilestoneStatus.SKIPPED,
-  );
+  const allCompleted = statuses.every((s) => s === 'completed');
   if (allCompleted) {
     greenEnd = 100;
     activeEnd = 100;
@@ -192,13 +157,7 @@ export function OverviewTimelineRail({
       ? RAIL_COLORS.track
       : `linear-gradient(90deg, ${RAIL_COLORS.success} 0%, ${RAIL_COLORS.success} ${greenEnd}%, ${RAIL_COLORS.primary} ${greenEnd}%, ${RAIL_COLORS.primary} ${activeEnd}%, ${RAIL_COLORS.track} ${activeEnd}%, ${RAIL_COLORS.track} 100%)`;
 
-  // ── TODAY marker ──
-  // Position on the same sequence-based axis using the overall project
-  // progress percentage (which is already a 0-100 value the backend computes).
-  // Map it to the rail: 0% progress → left of first milestone,
-  // 100% progress → right of last milestone.
   const progressPct = Math.min(100, Math.max(0, project.progressPercentage));
-  const todayPct = progressPct;
 
   return (
     <section className="rounded-xl border border-border-light/70 bg-card p-5 shadow-card">
@@ -229,8 +188,8 @@ export function OverviewTimelineRail({
       </div>
 
       <div className="relative pb-11 pt-6">
-        {/* TODAY marker — positioned using project.progressPercentage */}
-        <div className="absolute top-0 z-10 -translate-x-1/2" style={{ left: `${todayPct}%` }}>
+        {/* TODAY marker */}
+        <div className="absolute top-0 z-10 -translate-x-1/2" style={{ left: `${progressPct}%` }}>
           <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
             TODAY
           </span>
@@ -240,10 +199,10 @@ export function OverviewTimelineRail({
         {/* Rail */}
         <div className="relative h-1.5 rounded-full" style={{ background: railBackground }}>
           {sorted.map((milestone, idx) => {
-            const st = statuses[idx] ?? MilestoneStatus.PENDING;
+            const st = statuses[idx] ?? 'pending';
             return (
               <div
-                key={milestone.id}
+                key={milestone.name}
                 className={`absolute -top-1.5 size-4 rounded-full border-2 border-white ${dotColor(st)}`}
                 style={{ left: `${positions[idx] ?? 0}%`, transform: 'translateX(-50%)' }}
                 title={`${milestone.name} — ${st}`}
@@ -258,15 +217,12 @@ export function OverviewTimelineRail({
           style={{ gridTemplateColumns: `repeat(${sorted.length}, 1fr)` }}
         >
           {sorted.map((milestone, idx) => {
-            const kind = labelKind(statuses[idx] ?? MilestoneStatus.PENDING);
+            const kind = labelKind(statuses[idx] ?? 'pending');
             const cls = LABEL_CLASSES[kind];
             return (
-              <div key={milestone.id} className="text-center min-w-0">
+              <div key={milestone.name} className="text-center min-w-0">
                 <p className={`truncate text-[11px] ${cls.name}`}>{milestone.name}</p>
-                <p className={`text-[10px] ${cls.date}`}>
-                  {milestone.endDate ? formatDate(milestone.endDate, 'short') : 'TBD'}
-                  {cls.suffix ?? ''}
-                </p>
+                <p className={`text-[10px] ${cls.date}`}>{cls.suffix ?? ''}</p>
               </div>
             );
           })}

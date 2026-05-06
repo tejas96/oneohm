@@ -56,7 +56,7 @@ export async function generateAndDownloadPdf(data: QuotePdfData): Promise<void> 
   try {
     // html2pdf.js type definitions are incomplete — 'pagebreak' is a real
     // runtime option not reflected in the bundled .d.ts file.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const pdfOptions: any = {
       margin: [MARGIN_MM, MARGIN_MM, MARGIN_MM, MARGIN_MM],
       filename,

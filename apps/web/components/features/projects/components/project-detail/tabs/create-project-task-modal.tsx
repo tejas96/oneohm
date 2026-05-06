@@ -13,7 +13,7 @@ import { TaskPriority, TaskStatus, type TaskStatusConfig } from '@oneohm-epc/sha
 import { type JSX, useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-import { useProjectTeam, type ProjectDetail, type ProjectTeamMember } from '../../../hooks';
+import { useProjectTeam, useProjectMilestones, type ProjectTeamMember } from '../../../hooks';
 import { useCreateProjectTask } from '../../../hooks/use-create-project-task';
 import {
   createProjectTaskSchema,
@@ -41,7 +41,6 @@ interface CreateProjectTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
-  project: ProjectDetail;
   taskStatuses: TaskStatusConfig[];
   /** If provided, the modal pre-selects this status when opening (e.g. from a board column footer). */
   preselectedStatus?: string | null;
@@ -71,7 +70,6 @@ export function CreateProjectTaskModal({
   open,
   onOpenChange,
   projectId,
-  project,
   taskStatuses,
   preselectedStatus,
 }: CreateProjectTaskModalProps): JSX.Element {
@@ -99,9 +97,13 @@ export function CreateProjectTaskModal({
     [teamMembers],
   );
 
+  const { data: milestonesData } = useProjectMilestones(projectId, { enabled: open });
   const milestoneOptions = useMemo(
-    () => project.milestones.map((milestone) => ({ value: milestone.id, label: milestone.name })),
-    [project.milestones],
+    () =>
+      (milestonesData ?? [])
+        .filter((m) => m.totalTasks > 0)
+        .map((milestone) => ({ value: milestone.name, label: milestone.name })),
+    [milestonesData],
   );
 
   const form = useForm<CreateProjectTaskFormData>({
@@ -113,7 +115,7 @@ export function CreateProjectTaskModal({
       status: defaultStatus,
       priority: TaskPriority.MEDIUM,
       assignedToUserId: null,
-      milestoneId: '',
+      milestoneName: null,
       startDate: '',
       endDate: '',
     },
@@ -146,7 +148,7 @@ export function CreateProjectTaskModal({
       status: data.status,
       priority: data.priority,
       assignedToUserId: data.assignedToUserId === null ? null : data.assignedToUserId || undefined,
-      milestoneId: data.milestoneId || undefined,
+      milestoneName: data.milestoneName || undefined,
       startDate: data.startDate || undefined,
       endDate: data.endDate || undefined,
     }),
@@ -257,18 +259,18 @@ export function CreateProjectTaskModal({
             />
 
             <Controller
-              name="milestoneId"
+              name="milestoneName"
               control={form.control}
               render={({ field }) => (
                 <MUISelect
                   fieldLabel="Milestone"
                   value={field.value ?? ''}
                   onChange={(event: SelectChangeEvent<unknown>) =>
-                    field.onChange(event.target.value)
+                    field.onChange(event.target.value || null)
                   }
                   options={milestoneOptions}
                   placeholder="Select milestone (optional)"
-                  error={form.formState.errors.milestoneId?.message}
+                  error={form.formState.errors.milestoneName?.message}
                 />
               )}
             />

@@ -93,7 +93,12 @@ export class ProjectTaskController {
   @ApiReadAll({ responseType: ProjectTaskResponseDto, summary: 'Get all project tasks' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
-  @ApiQuery({ name: 'milestoneId', required: false, type: String })
+  @ApiQuery({
+    name: 'milestoneName',
+    required: false,
+    type: String,
+    description: 'Filter by milestone name',
+  })
   @ApiQuery({ name: 'assignedToUserId', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, enum: TaskStatus })
   @ApiQuery({ name: 'priority', required: false, enum: TaskPriority })
@@ -102,14 +107,14 @@ export class ProjectTaskController {
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Query('page', new DefaultValuePipe(TASK_CONSTANTS.DEFAULT_PAGE), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(TASK_CONSTANTS.DEFAULT_LIMIT), ParseIntPipe) limit: number,
-    @Query('milestoneId') milestoneId?: string,
+    @Query('milestoneName') milestoneName?: string,
     @Query('assignedToUserId') assignedToUserId?: string,
     @Query('status') status?: TaskStatus,
     @Query('priority') priority?: string,
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<ProjectTaskResponseDto>> {
     const result = await this.taskService.findAll(projectId, page, limit, {
-      milestoneId,
+      milestoneName,
       assignedToUserId,
       status,
       priority,
@@ -192,18 +197,6 @@ export class ProjectTaskController {
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ProjectTaskResponseDto[]> {
     const tasks = await this.taskService.getOverdueTasks(projectId);
-    return plainToInstance(ProjectTaskResponseDto, tasks, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  @Get('milestone/:milestoneId')
-  @ApiOperation({ summary: 'Get tasks by milestone' })
-  async findByMilestone(
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-    @Param('milestoneId', ParseUUIDPipe) milestoneId: string,
-  ): Promise<ProjectTaskResponseDto[]> {
-    const tasks = await this.taskService.findByMilestone(projectId, milestoneId);
     return plainToInstance(ProjectTaskResponseDto, tasks, {
       excludeExtraneousValues: true,
     });

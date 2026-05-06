@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, LogOut, Moon, Settings, Sun, User } from 'lucide-react';
+import { ChevronDown, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -39,30 +39,18 @@ interface UserMenuProps {
 
 /**
  * UserMenu - Profile dropdown in header
- * Features: User info, quick links, theme toggle, sign out
+ * Features: User info, quick links, sign out
  * Note: Uses useRouter directly to avoid useSearchParams Suspense requirement
  */
 export function UserMenu({ className }: UserMenuProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
-  const [isDark, setIsDark] = useState(false);
 
   // Hydration safe - only render after mount
   useEffect(() => {
     setMounted(true);
-    // Check system preference or stored preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const storedTheme = localStorage.getItem('theme');
-    setIsDark(storedTheme === 'dark' || (!storedTheme && prefersDark));
   }, []);
-
-  const toggleTheme = () => {
-    const newTheme = !isDark;
-    setIsDark(newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-    document.documentElement.classList.toggle('dark', newTheme);
-  };
 
   const handleSignOut = useCallback((): void => {
     logout();
@@ -137,30 +125,7 @@ export function UserMenu({ className }: UserMenuProps) {
               <span>View Profile</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href={ROUTES.ACCOUNT.SETTINGS}>
-              <Settings className="mr-2" />
-              <span>Settings</span>
-            </Link>
-          </DropdownMenuItem>
         </DropdownMenuGroup>
-
-        <DropdownMenuSeparator />
-
-        {/* Theme Toggle */}
-        <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer">
-          {isDark ? (
-            <>
-              <Sun className="mr-2" />
-              <span>Light Mode</span>
-            </>
-          ) : (
-            <>
-              <Moon className="mr-2" />
-              <span>Dark Mode</span>
-            </>
-          )}
-        </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 

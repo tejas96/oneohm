@@ -17,9 +17,16 @@ export class ProjectTaskResponseDto {
   @Expose()
   projectId!: string;
 
-  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({
+    description: 'Milestone name this task belongs to',
+    example: 'Installation',
+  })
   @Expose()
-  milestoneId?: string;
+  milestoneName?: string | null;
+
+  @ApiPropertyOptional({ description: 'Milestone sort order', example: 6 })
+  @Expose()
+  milestoneOrder?: number | null;
 
   @ApiPropertyOptional({ description: 'Workflow step reference ID' })
   @Expose()

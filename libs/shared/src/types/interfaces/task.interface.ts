@@ -4,7 +4,7 @@ import type {
   TaskChecklist,
   TaskStatusConfig,
 } from './project.interface';
-import { type MilestoneType, type TaskPriority, TaskStatus } from '../enums/project.enum';
+import { type TaskPriority, TaskStatus } from '../enums/project.enum';
 
 // ============================================================================
 // Workflow Step
@@ -19,7 +19,8 @@ export interface WorkflowStep {
   type?: string;
   defaultDepartment?: string;
   defaultRoleCode?: string;
-  defaultMilestoneType?: MilestoneType | null;
+  defaultMilestoneName?: string | null;
+  defaultMilestoneOrder?: number | null;
   sequenceOrder: number;
   isMandatory: boolean;
   canRunParallel: boolean;
@@ -40,7 +41,8 @@ export interface WorkflowStep {
 export interface ProjectTask {
   id: string;
   projectId: string;
-  milestoneId?: string;
+  milestoneName?: string | null;
+  milestoneOrder?: number | null;
   workflowStepId?: string;
   name: string;
   code: string;

@@ -10,6 +10,7 @@ import {
   TASK_LIST_FILTER_DEFAULTS,
   TASKS_PAGE_SIZE,
   PROJECT_TASKS_QUERY_KEY,
+  PROJECT_MILESTONE_AGG_QUERY_KEY,
   UNASSIGNED_TASK_FILTER,
   TASK_VIEW_MODES,
   type TaskListFilters,
@@ -17,6 +18,7 @@ import {
 } from '../../../constants';
 import {
   type TeamMemberSummary,
+  useProjectMilestones,
   useProjectTaskList,
   useProjectTaskStatuses,
   useProjectTeam,
@@ -46,7 +48,7 @@ interface ProjectTasksTabProps {
 }
 
 export const ProjectTasksTab = React.memo(
-  ({ projectId, project, isActive }: ProjectTasksTabProps): React.JSX.Element => {
+  ({ projectId, project: _project, isActive }: ProjectTasksTabProps): React.JSX.Element => {
     const { user } = useAuth();
     const { organizationId } = useOrgContext();
     const queryClient = useQueryClient();
@@ -86,13 +88,18 @@ export const ProjectTasksTab = React.memo(
           filters.t_assignee === UNASSIGNED_TASK_FILTER
             ? UNASSIGNED_TASK_FILTER
             : filters.t_assignee || undefined,
-        milestoneId: filters.t_milestone || undefined,
+        milestoneName: filters.t_milestone || undefined,
         search: filters.t_search || undefined,
       },
       { enabled: isActive },
     );
 
     const { data: team } = useProjectTeam(projectId, { enabled: isActive });
+    const { data: milestonesData } = useProjectMilestones(projectId, { enabled: isActive });
+    const milestones = useMemo(
+      () => milestonesData?.filter((m) => m.totalTasks > 0) ?? [],
+      [milestonesData],
+    );
 
     // useUpdateTask handles toasts and myTaskKeys invalidation internally.
     // We only need to additionally bust the project-tasks list after success.
@@ -100,7 +107,8 @@ export const ProjectTasksTab = React.memo(
 
     const invalidateProjectTasks = useCallback(() => {
       void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY(organizationId) });
-    }, [queryClient, organizationId]);
+      void queryClient.invalidateQueries({ queryKey: PROJECT_MILESTONE_AGG_QUERY_KEY(projectId) });
+    }, [queryClient, organizationId, projectId]);
 
     const avatarMembers: TeamMemberSummary[] = useMemo(() => {
       if (!team) return [];
@@ -230,7 +238,7 @@ export const ProjectTasksTab = React.memo(
             taskStatuses={taskStatuses}
             priorityOptions={priorityOptions}
             avatarMembers={avatarMembers}
-            milestones={project.milestones ?? []}
+            milestones={milestones}
             totalTasks={meta?.total}
             view={view}
             onViewChange={handleViewChange}
@@ -243,7 +251,6 @@ export const ProjectTasksTab = React.memo(
               <TaskListTable
                 tasks={tasks}
                 taskStatuses={taskStatuses}
-                project={project}
                 isLoading={isLoading || statusesLoading}
                 onOpenTask={handleOpenTask}
                 onStatusChange={handleStatusChange}
@@ -290,7 +297,6 @@ export const ProjectTasksTab = React.memo(
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
           projectId={projectId}
-          project={project}
           taskStatuses={taskStatuses}
           preselectedStatus={createPreselectedStatus}
         />

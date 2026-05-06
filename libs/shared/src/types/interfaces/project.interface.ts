@@ -78,19 +78,6 @@ export interface SurveyData {
 }
 
 /**
- * Milestone Deliverable
- * Expected output from a milestone
- */
-export interface MilestoneDeliverable {
-  name: string;
-  description?: string;
-  type: 'document' | 'approval' | 'installation' | 'testing' | 'other';
-  isCompleted: boolean;
-  completionDate?: string;
-  fileUrl?: string;
-}
-
-/**
  * Photo/Document Attachment
  * Represents an uploaded file
  */

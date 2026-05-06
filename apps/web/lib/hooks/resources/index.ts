@@ -185,6 +185,16 @@ export {
   type EmployeeFilters,
 } from './employees';
 
+// Employee Profile (FDAL — current user's profile page)
+export {
+  useEmployeeProfile,
+  useCurrentUserEmployeeProfile,
+  useEmployeeProfileMutations,
+  type EmployeeProfile,
+  type EmployeeProfileUser,
+  type EmployeeProfileOrganization,
+} from './profile';
+
 // Team Workload (FDAL — flat array endpoint)
 export { useTeamWorkload, type TeamWorkloadItem } from './team-workload';
 

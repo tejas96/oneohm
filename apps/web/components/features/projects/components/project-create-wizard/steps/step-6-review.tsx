@@ -158,7 +158,7 @@ export function Step6Review({ form }: Step6ReviewProps): React.JSX.Element {
         >
           <div className="flex flex-col gap-2">
             {milestones.map((m) => (
-              <div key={m.id} className="flex items-center gap-3">
+              <div key={m.name} className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
                   {m.order}
                 </div>

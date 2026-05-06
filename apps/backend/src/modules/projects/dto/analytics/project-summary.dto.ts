@@ -41,10 +41,12 @@ export class TeamWorkloadEntryDto {
 }
 
 export class MilestoneProgressEntryDto {
-  id!: string;
   name!: string;
+  order!: number;
   totalTasks!: number;
   completedTasks!: number;
+  inProgressTasks!: number;
+  blockedTasks!: number;
   percent!: number;
 }
 

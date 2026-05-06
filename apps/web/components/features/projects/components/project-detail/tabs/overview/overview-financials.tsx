@@ -1,41 +1,18 @@
 'use client';
 
-import { MilestoneStatus } from '@oneohm-epc/shared/types';
+import type { MilestoneDisplayStatus } from '@oneohm-epc/shared/types';
 import { DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import type { JSX } from 'react';
 
 import {
-  usePaymentMilestones,
+  useProjectMilestones,
   useProjectPaymentSummary,
   type ProjectDetail,
-  type ProjectMilestone,
 } from '../../../../hooks';
 
 import { Button, Skeleton } from '@/components/ui';
-import { useProjectSummary } from '@/lib/hooks/resources';
-import { formatCurrency, formatDate } from '@/lib/utils/format';
-
-type MilestoneProgress = {
-  id: string;
-  name: string;
-  totalTasks: number;
-  completedTasks: number;
-  percent: number;
-};
-
-function deriveEffectiveStatus(
-  entityStatus: MilestoneStatus,
-  progress: MilestoneProgress | undefined,
-): MilestoneStatus {
-  if (entityStatus === MilestoneStatus.BLOCKED || entityStatus === MilestoneStatus.SKIPPED) {
-    return entityStatus;
-  }
-  if (!progress || progress.totalTasks === 0) return entityStatus;
-  if (progress.completedTasks >= progress.totalTasks) return MilestoneStatus.COMPLETED;
-  if (progress.completedTasks > 0) return MilestoneStatus.IN_PROGRESS;
-  return entityStatus;
-}
+import { formatCurrency } from '@/lib/utils/format';
 
 interface OverviewFinancialsProps {
   project: ProjectDetail;
@@ -44,28 +21,28 @@ interface OverviewFinancialsProps {
   isActive: boolean;
 }
 
-function segmentClasses(status: MilestoneStatus): { bg: string; text: string } {
+function segmentClasses(status: MilestoneDisplayStatus): { bg: string; text: string } {
   switch (status) {
-    case MilestoneStatus.COMPLETED:
-    case MilestoneStatus.SKIPPED:
+    case 'completed':
       return { bg: 'bg-success', text: 'text-white' };
-    case MilestoneStatus.IN_PROGRESS:
+    case 'in_progress':
       return {
         bg: 'bg-[repeating-linear-gradient(45deg,#fef3c7,#fef3c7_8px,#fde68a_8px,#fde68a_16px)]',
         text: 'text-amber-800',
       };
-    case MilestoneStatus.BLOCKED:
+    case 'blocked':
       return { bg: 'bg-error/70', text: 'text-white' };
-    case MilestoneStatus.PENDING:
+    case 'no_tasks':
+    case 'pending':
     default:
       return { bg: 'bg-gray-200', text: 'text-foreground-secondary' };
   }
 }
 
-function segmentLabel(status: MilestoneStatus, pct: number): string {
+function segmentLabel(status: MilestoneDisplayStatus, pct: number): string {
   if (pct < 10) return '';
   const base = `${Math.round(pct)}%`;
-  if (status === MilestoneStatus.IN_PROGRESS && pct > 16) return `${base} due`;
+  if (status === 'in_progress' && pct > 16) return `${base} due`;
   return base;
 }
 
@@ -78,8 +55,7 @@ export function OverviewFinancials({
   const { data: summary, isPending: summaryPending } = useProjectPaymentSummary(projectId, {
     enabled: isActive,
   });
-  const { data: milestones } = usePaymentMilestones(projectId, { enabled: isActive });
-  const { data: projectSummary } = useProjectSummary(projectId, { enabled: isActive });
+  const { data: milestonesRaw } = useProjectMilestones(projectId, { enabled: isActive });
 
   if (isActive && summaryPending) {
     return <Skeleton className="h-[340px] rounded-xl" />;
@@ -93,27 +69,14 @@ export function OverviewFinancials({
   const paymentCount = summary?.paymentCount ?? 0;
   const hasPaymentData = totalExpected > 0;
 
-  const progressByMilestone = new Map(
-    (projectSummary?.milestoneProgress ?? []).map((m) => [m.id, m] as [string, MilestoneProgress]),
-  );
-
-  // Only include milestones that have tasks (consistent with Summary tab).
-  const sorted: ProjectMilestone[] = milestones
-    ? [...milestones]
-        .filter((m) => progressByMilestone.has(m.id))
-        .sort((a, b) => a.sequenceOrder - b.sequenceOrder)
+  // Only include milestones that have tasks, sorted by order
+  const sorted = milestonesRaw
+    ? [...milestonesRaw].filter((m) => m.totalTasks > 0).sort((a, b) => a.order - b.order)
     : [];
   const msCount = sorted.length;
   const segPct = msCount > 0 ? 100 / msCount : 0;
 
-  const effectiveStatuses = new Map(
-    sorted.map((m) => [m.id, deriveEffectiveStatus(m.status, progressByMilestone.get(m.id))]),
-  );
-
-  const incompleteMsCount = sorted.filter((m) => {
-    const s = effectiveStatuses.get(m.id)!;
-    return s !== MilestoneStatus.COMPLETED && s !== MilestoneStatus.SKIPPED;
-  }).length;
+  const incompleteMsCount = sorted.filter((m) => m.status !== 'completed').length;
 
   const estimatedCost = project.estimatedCost;
   const actualCost = project.actualCost;
@@ -149,23 +112,26 @@ export function OverviewFinancials({
           <div>
             <div className="flex h-10 overflow-hidden rounded-lg border border-border-light bg-muted">
               {sorted.map((ms, idx) => {
-                const status = effectiveStatuses.get(ms.id) ?? ms.status;
-                const { bg, text } = segmentClasses(status);
+                const { bg, text } = segmentClasses(ms.status);
                 return (
                   <div
-                    key={ms.id}
+                    key={ms.name}
                     className={`flex items-center justify-center text-[11px] font-semibold ${bg} ${text} ${idx < msCount - 1 ? 'border-r border-white/30' : ''}`}
                     style={{ width: `${segPct}%` }}
-                    title={`${ms.name} — ${status}`}
+                    title={`${ms.name} — ${ms.status}`}
                   >
-                    <span>{segmentLabel(status, segPct)}</span>
+                    <span>{segmentLabel(ms.status, segPct)}</span>
                   </div>
                 );
               })}
             </div>
             <div className="mt-1 flex text-[10px] text-foreground-tertiary px-0.5">
               {sorted.map((ms) => (
-                <span key={ms.id} className="truncate text-center" style={{ width: `${segPct}%` }}>
+                <span
+                  key={ms.name}
+                  className="truncate text-center"
+                  style={{ width: `${segPct}%` }}
+                >
                   {ms.name}
                 </span>
               ))}
@@ -220,20 +186,14 @@ export function OverviewFinancials({
                 <span className="text-[10px] font-medium uppercase text-warning">Due Now</span>
               </div>
               {(() => {
-                const activeMilestone = sorted.find(
-                  (m) => effectiveStatuses.get(m.id) === MilestoneStatus.IN_PROGRESS,
-                );
+                const activeMilestone = sorted.find((m) => m.status === 'in_progress');
                 if (activeMilestone) {
                   return (
                     <>
                       <p className="text-[17px] font-semibold text-warning leading-none">
                         {activeMilestone.name}
                       </p>
-                      <p className="mt-1 text-[10px] text-warning font-medium">
-                        {activeMilestone.endDate
-                          ? formatDate(activeMilestone.endDate, 'short')
-                          : 'In progress'}
-                      </p>
+                      <p className="mt-1 text-[10px] text-warning font-medium">In progress</p>
                     </>
                   );
                 }

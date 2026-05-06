@@ -7,7 +7,6 @@ import {
 } from '@oneohm-epc/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
-import { ProjectMilestoneEntity } from './project-milestone.entity';
 import { ProjectEntity } from './project.entity';
 import { WorkflowStepEntity } from './workflow-step.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
@@ -15,7 +14,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 
 @Entity('project_tasks')
 @Index(['projectId', 'deletedAt'])
-@Index(['milestoneId', 'deletedAt'])
 @Index(['assignedToUserId', 'deletedAt'])
 @Index(['status', 'deletedAt'])
 @Index(['priority', 'deletedAt'])
@@ -28,10 +26,6 @@ export class ProjectTaskEntity extends BaseEntity {
   })
   @JoinColumn({ name: 'project_id' })
   project!: ProjectEntity;
-
-  @ManyToOne(() => ProjectMilestoneEntity, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'milestone_id' })
-  milestone?: ProjectMilestoneEntity;
 
   @ManyToOne(() => WorkflowStepEntity, (step) => step.tasks, {
     nullable: true,
@@ -49,14 +43,19 @@ export class ProjectTaskEntity extends BaseEntity {
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;
 
-  @Column({ name: 'milestone_id', type: 'uuid', nullable: true })
-  milestoneId?: string;
-
   @Column({ name: 'workflow_step_id', type: 'uuid', nullable: true })
   workflowStepId?: string;
 
   @Column({ name: 'assigned_to_user_id', type: 'uuid', nullable: true })
   assignedToUserId?: string;
+
+  // ==================== Milestone ====================
+
+  @Column({ name: 'milestone_name', type: 'varchar', length: 255, nullable: true })
+  milestoneName?: string | null;
+
+  @Column({ name: 'milestone_order', type: 'integer', nullable: true })
+  milestoneOrder?: number | null;
 
   // ==================== Task Info ====================
 

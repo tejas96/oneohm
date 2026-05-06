@@ -1,4 +1,4 @@
-import { type MilestoneType, type TaskChecklist } from '@oneohm-epc/shared/types';
+import { type TaskChecklist } from '@oneohm-epc/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 
 import { ProjectTaskEntity } from './project-task.entity';
@@ -32,8 +32,11 @@ export class WorkflowStepEntity extends BaseEntity {
   @Column({ name: 'default_role_code', type: 'varchar', length: 50, nullable: true })
   defaultRoleCode?: string;
 
-  @Column({ name: 'default_milestone_type', type: 'varchar', length: 50, nullable: true })
-  defaultMilestoneType?: MilestoneType;
+  @Column({ name: 'default_milestone_name', type: 'varchar', length: 255, nullable: true })
+  defaultMilestoneName?: string | null;
+
+  @Column({ name: 'default_milestone_order', type: 'integer', nullable: true })
+  defaultMilestoneOrder?: number | null;
 
   @Column({ name: 'sequence_order', type: 'integer' })
   sequenceOrder!: number;

@@ -29,7 +29,6 @@ import {
 import { ProjectTaskEntity } from '../entities';
 import { WorkflowEngineService } from './workflow-engine.service';
 import { WorkflowStepEntity } from '../entities/workflow-step.entity';
-import { MilestoneRepository } from '../repositories/milestone.repository';
 import { ProjectTaskRepository } from '../repositories/project-task.repository';
 import { ProjectTeamRepository } from '../repositories/project-team.repository';
 import { ProjectRepository } from '../repositories/project.repository';
@@ -57,7 +56,7 @@ type EnrichedMyTask = Record<string, unknown> & {
   assigneeName?: string;
   projectNumber: string;
   projectName: string;
-  milestoneName?: string;
+  milestoneName?: string | null;
 };
 
 @Injectable()
@@ -70,7 +69,6 @@ export class ProjectTaskService {
     private readonly organizationRepository: OrganizationRepository,
     private readonly workflowEngine: WorkflowEngineService,
     private readonly projectRepository: ProjectRepository,
-    private readonly milestoneRepository: MilestoneRepository,
     private readonly lookupRepository: LookupRepository,
     private readonly dataSource: DataSource,
   ) {}
@@ -173,7 +171,7 @@ export class ProjectTaskService {
     page: number,
     limit: number,
     filters: {
-      milestoneId?: string;
+      milestoneName?: string;
       assignedToUserId?: string;
       status?: TaskStatus;
       priority?: string;
@@ -206,10 +204,6 @@ export class ProjectTaskService {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
     return task;
-  }
-
-  async findByMilestone(projectId: string, milestoneId: string): Promise<ProjectTaskEntity[]> {
-    return this.taskRepository.findByMilestone(projectId, milestoneId);
   }
 
   async findByAssignee(projectId: string, assignedToUserId: string): Promise<ProjectTaskEntity[]> {
@@ -316,10 +310,10 @@ export class ProjectTaskService {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
-    // Trigger progress update if milestone changed
-    const oldMilestoneId = existingTask.milestoneId;
-    const newMilestoneId = updateDto.milestoneId;
-    if (newMilestoneId !== undefined && newMilestoneId !== oldMilestoneId) {
+    // Trigger progress update if milestone assignment changed
+    const oldMilestoneName = existingTask.milestoneName;
+    const newMilestoneName = (updateDto as { milestoneName?: string | null }).milestoneName;
+    if (newMilestoneName !== undefined && newMilestoneName !== oldMilestoneName) {
       await this.updateAllProgress(projectId);
     }
 
@@ -492,7 +486,7 @@ export class ProjectTaskService {
       const { done, total } = await this.taskRepository.computeProgress(projectId, manager);
       const progress = total > 0 ? Math.round((100 * done) / total) : 0;
       await this.projectRepository.updateProgressById(projectId, progress, manager);
-      await this.milestoneRepository.updateProgressForProject(projectId, manager);
+      // Milestone progress is now derived live from tasks — no separate update needed
     });
   }
 
@@ -662,7 +656,7 @@ export class ProjectTaskService {
     }>;
     filters: {
       team: Array<{ userId: string; name: string }>;
-      milestones: Array<{ id: string; name: string }>;
+      milestones: Array<{ name: string; order: number }>;
       labels: string[];
     };
   }> {
@@ -733,7 +727,7 @@ export class ProjectTaskService {
           .map((depId: string) => depCodeMap.get(depId))
           .filter(Boolean) as string[],
         version: t.version,
-        milestoneName: t.milestone?.name,
+        milestoneName: t.milestoneName ?? undefined,
         completionPercentage: t.completionPercentage,
         blockedReason: t.blockedReason,
       };
@@ -764,11 +758,14 @@ export class ProjectTaskService {
       }
     }
 
-    const milestonesSet = new Map<string, string>();
+    const milestonesSet = new Map<string, { name: string; order: number }>();
     const labelsSet = new Set<string>();
     for (const t of allTasks) {
-      if (t.milestoneId && t.milestone?.name) {
-        milestonesSet.set(t.milestoneId, t.milestone.name);
+      if (t.milestoneName && !milestonesSet.has(t.milestoneName)) {
+        milestonesSet.set(t.milestoneName, {
+          name: t.milestoneName,
+          order: t.milestoneOrder ?? 9999,
+        });
       }
       for (const l of t.labels ?? []) {
         labelsSet.add(l);
@@ -782,7 +779,7 @@ export class ProjectTaskService {
           userId: m.userId,
           name: [m.user?.firstName, m.user?.lastName].filter(Boolean).join(' ') || m.userId,
         })),
-        milestones: Array.from(milestonesSet.entries()).map(([id, name]) => ({ id, name })),
+        milestones: Array.from(milestonesSet.values()).sort((a, b) => a.order - b.order),
         labels: Array.from(labelsSet),
       },
     };
@@ -810,7 +807,6 @@ export class ProjectTaskService {
       ...task,
       projectNumber: task.project?.projectNumber ?? '',
       projectName: task.project?.name ?? '',
-      milestoneName: task.milestone?.name,
     }));
 
     return {
@@ -1393,7 +1389,7 @@ export class ProjectTaskService {
     const { done, total } = await this.taskRepository.computeProgress(projectId);
     const progress = total > 0 ? Math.round((100 * done) / total) : 0;
     await this.projectRepository.updateProgressById(projectId, progress);
-    await this.milestoneRepository.updateProgressForProject(projectId);
+    // Milestone progress is now derived live from tasks — no separate update needed
   }
 
   private async createActivityLog(
@@ -1508,7 +1504,6 @@ export class ProjectTaskService {
       ...task,
       projectNumber: task.project?.projectNumber ?? '',
       projectName: task.project?.name ?? '',
-      milestoneName: task.milestone?.name,
       assigneeName,
       urgencyScore,
       isOverdue,
@@ -1744,5 +1739,19 @@ export class ProjectTaskService {
   ): Promise<Map<string, { label: string; metadata: Record<string, unknown> }>> {
     const rows = await this.lookupRepository.findByTypeCodeRaw(typeCode);
     return new Map(rows.map((r) => [r.code, { label: r.label, metadata: r.metadata ?? {} }]));
+  }
+
+  /**
+   * Rename a milestone group within a project (atomic single UPDATE).
+   * Also optionally updates the order. Used by wizard "rename" and post-creation rename.
+   */
+  async renameMilestone(
+    projectId: string,
+    from: string,
+    to: string,
+    order?: number,
+  ): Promise<{ affected: number }> {
+    const result = await this.taskRepository.renameMilestone(projectId, from, to, order);
+    return result;
   }
 }

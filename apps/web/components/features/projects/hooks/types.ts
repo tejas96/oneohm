@@ -1,7 +1,6 @@
 import type {
   MaterialStatus,
-  MilestoneStatus,
-  MilestoneType,
+  MilestoneDisplayStatus,
   PaymentMethod,
   PaymentTransactionStatus,
   ProjectMetadata,
@@ -85,7 +84,6 @@ export interface ProjectDetail {
   phaseType?: string;
   metadata?: ProjectMetadata;
   taskStatuses?: TaskStatusConfig[];
-  milestones: ProjectMilestone[];
   materials: ProjectMaterial[];
   createdAt: string;
   updatedAt: string;
@@ -104,15 +102,19 @@ export interface ProjectTeamMember {
   user?: { firstName?: string; lastName?: string; email?: string };
 }
 
-export interface ProjectMilestone {
-  id: string;
+/**
+ * Aggregated milestone data returned by GET /projects/:id/milestones.
+ * Computed live from project_tasks — no dedicated milestone table.
+ */
+export interface MilestoneAggregateItem {
   name: string;
-  milestoneType: MilestoneType;
-  status: MilestoneStatus;
-  sequenceOrder: number;
-  progressPercentage: number;
-  startDate?: string;
-  endDate?: string;
+  order: number;
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  blockedTasks: number;
+  percent: number;
+  status: MilestoneDisplayStatus;
 }
 
 export interface ProjectMaterial {
@@ -173,7 +175,7 @@ export interface PaymentSummaryDetail {
   paymentCount: number;
 }
 
-export interface MilestoneWithPayment extends ProjectMilestone {
+export interface MilestoneWithPayment extends MilestoneAggregateItem {
   payments: ProjectPayment[];
   totalExpected: number;
   totalPaid: number;

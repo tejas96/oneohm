@@ -50,6 +50,7 @@ export {
   useProjectPayments,
   useProjectPaymentSummary,
   usePaymentMilestones,
+  useProjectMilestones,
 } from './use-project-payments';
 export { projectAttentionKeys, useProjectAttention } from './use-project-attention';
 export { projectReportKeys, useProjectReports } from './use-project-reports';
@@ -91,12 +92,12 @@ export {
 } from './use-task-board-dnd';
 
 export type {
+  MilestoneAggregateItem,
   MilestoneWithPayment,
   PaymentSummaryDetail,
   ProjectDetail,
   ProjectDetailProperty,
   ProjectMaterial,
-  ProjectMilestone,
   ProjectPayment,
   ProjectTeamMember,
   TaskStatsSummary,

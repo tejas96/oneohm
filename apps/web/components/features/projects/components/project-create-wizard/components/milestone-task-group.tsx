@@ -6,7 +6,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import IconButton from '@mui/material/IconButton';
 import InputBase from '@mui/material/InputBase';
 import Tooltip from '@mui/material/Tooltip';
-import { MilestoneType } from '@oneohm-epc/shared/types';
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
 import { useEffect, useRef, useState } from 'react';
 
@@ -18,16 +17,13 @@ import {
   type TeamMemberOption,
 } from './task-row-wizard';
 
-import { PHASE_LABELS } from '@/components/features/projects/constants';
-import { Accordion, AccordionContent, AccordionItem, MUIStatusChip } from '@/components/ui';
+import { Accordion, AccordionContent, AccordionItem } from '@/components/ui';
 import type { WorkflowStep } from '@/lib/hooks/resources';
 
 // ── Types ──────────────────────────────────────────────────────
 
 export interface MilestoneGroup {
-  id: string;
   name: string;
-  type: MilestoneType;
   order: number;
 }
 
@@ -44,9 +40,13 @@ interface MilestoneTaskGroupProps {
   canDelete: boolean;
   onToggleExclude: (stepId: string) => void;
   onAssignmentChange: (stepId: string, userId: string) => void;
-  onMilestoneChange: (stepId: string, order: number) => void;
-  onDelete: (milestoneId: string) => void;
-  onRename: (milestoneId: string, name: string) => void;
+  onMilestoneChange: (
+    stepId: string,
+    milestoneName: string | null,
+    milestoneOrder: number | null,
+  ) => void;
+  onDelete: (milestoneName: string) => void;
+  onRename: (oldName: string, newName: string) => void;
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -71,10 +71,21 @@ export function MilestoneTaskGroup({
   const includedCount = tasks.filter((t) => !excludedStepIds.includes(t.id)).length;
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(milestone.name);
+  // Track open state explicitly so a rename (which changes milestone.name used as AccordionItem
+  // value) doesn't collapse the accordion.
+  const [openItems, setOpenItems] = useState<string[]>([milestone.name]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Keep draft in sync if name changes externally
+  // Track the previous name so we can update openItems when a rename happens
+  const prevNameRef = useRef(milestone.name);
+
   useEffect(() => {
+    const prevName = prevNameRef.current;
+    if (prevName !== milestone.name) {
+      // Name changed (rename) — update openItems to use the new name, preserving open/closed state
+      setOpenItems((prev) => prev.map((v) => (v === prevName ? milestone.name : v)));
+      prevNameRef.current = milestone.name;
+    }
     if (!isEditing) setDraftName(milestone.name);
   }, [milestone.name, isEditing]);
 
@@ -92,7 +103,7 @@ export function MilestoneTaskGroup({
   function commitEdit(): void {
     const trimmed = draftName.trim();
     if (trimmed && trimmed !== milestone.name) {
-      onRename(milestone.id, trimmed);
+      onRename(milestone.name, trimmed);
     } else {
       setDraftName(milestone.name);
     }
@@ -111,12 +122,12 @@ export function MilestoneTaskGroup({
   }
 
   return (
-    <Accordion type="multiple" defaultValue={[milestone.id]}>
-      <AccordionItem value={milestone.id} className="border border-border-light rounded-lg mb-3">
+    <Accordion type="multiple" value={openItems} onValueChange={setOpenItems}>
+      <AccordionItem value={milestone.name} className="border border-border-light rounded-lg mb-3">
         {/* Custom header: trigger + action buttons as siblings to avoid button-in-button */}
         <AccordionPrimitive.Header className="flex items-center">
           <AccordionPrimitive.Trigger className="flex flex-1 items-center gap-3 px-4 py-3 text-left hover:bg-muted transition-colors [&[data-state=open]>svg:last-child]:rotate-180">
-            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-semibold shrink-0">
               {milestone.order}
             </div>
 
@@ -150,14 +161,6 @@ export function MilestoneTaskGroup({
               <span className="text-sm font-medium text-foreground">{milestone.name}</span>
             )}
 
-            {/* Hide type chip for CUSTOM milestones — it's user-defined and the label is meaningless */}
-            {milestone.type !== MilestoneType.CUSTOM && (
-              <MUIStatusChip
-                label={PHASE_LABELS[milestone.type] ?? milestone.type.replace(/_/g, ' ')}
-                color="default"
-                size="small"
-              />
-            )}
             <span className="text-xs text-foreground-secondary ml-auto">
               {includedCount}/{tasks.length} tasks
             </span>
@@ -183,7 +186,7 @@ export function MilestoneTaskGroup({
                 <IconButton
                   size="small"
                   disabled={!canDelete}
-                  onClick={() => onDelete(milestone.id)}
+                  onClick={() => onDelete(milestone.name)}
                   aria-label={`Delete ${milestone.name}`}
                 >
                   <DeleteOutlineIcon fontSize="small" />
@@ -209,6 +212,7 @@ export function MilestoneTaskGroup({
                   milestoneOverride={taskMilestoneOverrides.find(
                     (o) => o.workflowStepId === task.id,
                   )}
+                  currentGroupMilestoneName={milestone.name}
                   milestoneOptions={milestoneOptions}
                   teamMemberOptions={teamMemberOptions}
                   memberRoleMap={memberRoleMap}

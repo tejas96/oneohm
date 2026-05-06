@@ -92,7 +92,6 @@ export class ProjectRepository {
       .leftJoinAndSelect('property.organization', 'organization')
       .leftJoinAndSelect('project.creator', 'creator')
       .leftJoinAndSelect('project.updater', 'updater')
-      .leftJoinAndSelect('project.milestones', 'milestones')
       .leftJoinAndSelect('project.materials', 'materials')
       .where('project.id = :id', { id })
       .andWhere('property.organizationId = :organizationId', { organizationId })
@@ -134,7 +133,6 @@ export class ProjectRepository {
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.teamMembers', 'teamMember')
       .leftJoinAndSelect('teamMember.user', 'teamUser')
-      .leftJoinAndSelect('project.milestones', 'milestone')
       .where('property.organizationId = :organizationId', { organizationId })
       .andWhere('project.deletedAt IS NULL');
 
@@ -304,7 +302,6 @@ export class ProjectRepository {
       .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
-      .leftJoinAndSelect('project.milestones', 'milestones')
       .leftJoinAndSelect('project.materials', 'materials')
       .where('property.customerId = :customerId', { customerId })
       .andWhere('property.organizationId = :organizationId', { organizationId })
@@ -341,7 +338,6 @@ export class ProjectRepository {
       .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
-      .leftJoinAndSelect('project.milestones', 'milestones')
       .where('project.propertyId = :propertyId', { propertyId })
       .andWhere('property.organizationId = :organizationId', { organizationId })
       .andWhere('project.deletedAt IS NULL')

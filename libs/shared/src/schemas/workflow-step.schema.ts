@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-import { MilestoneType } from '../types/enums';
-
 const checklistItemSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -18,7 +16,8 @@ export const workflowStepSchema = z.object({
   type: z.string().optional(),
   defaultRoleCode: z.string().optional(),
   defaultDepartment: z.string().optional(),
-  defaultMilestoneType: z.nativeEnum(MilestoneType).nullable().optional(),
+  defaultMilestoneName: z.string().max(255).nullable().optional(),
+  defaultMilestoneOrder: z.coerce.number().int().min(0).nullable().optional(),
   sequenceOrder: z.coerce.number().int().min(1, 'Sequence order must be at least 1'),
   effortDays: z.coerce
     .number()

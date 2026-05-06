@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MilestoneType, type WorkflowStep } from '@oneohm-epc/shared/types';
+import type { WorkflowStep } from '@oneohm-epc/shared/types';
 import {
   CheckCircle2,
   ChevronDown,
@@ -62,22 +62,45 @@ import {
 
 const NONE_SENTINEL = '__none__';
 
-const MILESTONE_TYPE_LABELS: Record<string, string> = {
-  [MilestoneType.SITE_SURVEY]: 'Site Survey',
-  [MilestoneType.DESIGN]: 'Design',
-  [MilestoneType.PLANNING]: 'Planning',
-  [MilestoneType.APPROVAL]: 'Approval',
-  [MilestoneType.PERMITS]: 'Permits',
-  [MilestoneType.MATERIAL_PROCUREMENT]: 'Material Procurement',
-  [MilestoneType.ELECTRICAL]: 'Electrical',
-  [MilestoneType.INSTALLATION]: 'Installation',
-  [MilestoneType.INSPECTION]: 'Inspection',
-  [MilestoneType.TESTING]: 'Testing',
-  [MilestoneType.COMMISSIONING]: 'Commissioning',
-  [MilestoneType.MONITORING]: 'Monitoring',
-  [MilestoneType.HANDOVER]: 'Handover',
-  [MilestoneType.CUSTOM]: 'Custom',
-};
+// Suggest default milestone names for workflow steps (user can type any free-text name).
+// Grouped by phase to cover the full solar EPC lifecycle.
+const DEFAULT_MILESTONE_SUGGESTIONS = [
+  // Pre-construction
+  'Site Survey & Design',
+  'Feasibility Study',
+  'Structural Assessment',
+  'Shading Analysis',
+  // Approvals & compliance
+  'Permits & Approvals',
+  'DISCOM Application',
+  'Net Metering Application',
+  'Subsidy Application',
+  'Loan Processing',
+  // Procurement
+  'Material Procurement',
+  'Equipment Delivery',
+  // Construction
+  'Civil & Structural Work',
+  'Electrical Work',
+  'Installation',
+  'Earthing & Lightning Protection',
+  // Quality & commissioning
+  'Inspection & Testing',
+  'Commissioning & Testing',
+  'DISCOM Inspection',
+  'Net Meter Installation',
+  // Handover & post-sales
+  'Handover',
+  'Customer Training',
+  'Documentation',
+  'AMC / Warranty Registration',
+  // Payment-linked (for tracking tasks tied to payment terms)
+  'Payment 1',
+  'Payment 2',
+  'Payment 3',
+  'Payment 4',
+  'Payment 5',
+];
 
 // ── Page Component ─────────────────────────────────────────────
 
@@ -419,9 +442,8 @@ function WorkflowStepRow({
             </div>
             <div>
               <span className="text-foreground-secondary">Milestone:</span>{' '}
-              {step.defaultMilestoneType
-                ? (MILESTONE_TYPE_LABELS[step.defaultMilestoneType] ?? step.defaultMilestoneType)
-                : '—'}
+              {step.defaultMilestoneName ?? '—'}
+              {step.defaultMilestoneOrder != null ? ` (#${step.defaultMilestoneOrder})` : ''}
             </div>
             <div>
               <span className="text-foreground-secondary">Effort (days):</span>{' '}
@@ -479,7 +501,8 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
       type: '',
       defaultRoleCode: '',
       defaultDepartment: '',
-      defaultMilestoneType: null,
+      defaultMilestoneName: null,
+      defaultMilestoneOrder: null,
       sequenceOrder: 1,
       effortDays: '' as unknown as number,
       isMandatory: true,
@@ -500,7 +523,8 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         type: step.type ?? '',
         defaultRoleCode: step.defaultRoleCode ?? '',
         defaultDepartment: step.defaultDepartment ?? '',
-        defaultMilestoneType: step.defaultMilestoneType ?? null,
+        defaultMilestoneName: step.defaultMilestoneName ?? null,
+        defaultMilestoneOrder: step.defaultMilestoneOrder ?? null,
         sequenceOrder: step.sequenceOrder,
         effortDays: step.effortDays ?? ('' as unknown as number),
         isMandatory: step.isMandatory,
@@ -522,7 +546,8 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         type: '',
         defaultRoleCode: '',
         defaultDepartment: '',
-        defaultMilestoneType: null,
+        defaultMilestoneName: null,
+        defaultMilestoneOrder: null,
         sequenceOrder: 1,
         effortDays: '' as unknown as number,
         isMandatory: true,
@@ -672,33 +697,41 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Milestone Type</Label>
+                <Label>Default Milestone Name</Label>
                 <Controller
-                  name="defaultMilestoneType"
+                  name="defaultMilestoneName"
                   control={form.control}
-                  render={({ field }): React.JSX.Element => {
-                    const selectValue = field.value ?? NONE_SENTINEL;
-                    return (
-                      <Select
-                        value={selectValue}
-                        onValueChange={(v) => field.onChange(v === NONE_SENTINEL ? null : v)}
-                      >
-                        <SelectTrigger className="h-input-lg text-sm">
-                          <SelectValue placeholder="Select milestone" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={NONE_SENTINEL}>None</SelectItem>
-                          {Object.values(MilestoneType).map((mt) => (
-                            <SelectItem key={mt} value={mt}>
-                              {MILESTONE_TYPE_LABELS[mt] ?? mt}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    );
-                  }}
+                  render={({ field }): React.JSX.Element => (
+                    <Select
+                      value={field.value ?? NONE_SENTINEL}
+                      onValueChange={(v) => field.onChange(v === NONE_SENTINEL ? null : v)}
+                    >
+                      <SelectTrigger className="h-input-lg text-sm">
+                        <SelectValue placeholder="Select or leave blank" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE_SENTINEL}>None</SelectItem>
+                        {DEFAULT_MILESTONE_SUGGESTIONS.map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label>Milestone Order</Label>
+                <Input
+                  type="number"
+                  {...form.register('defaultMilestoneOrder', { valueAsNumber: true })}
+                  min={1}
+                  placeholder="e.g. 1"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Effort (days)</Label>
                 <Input

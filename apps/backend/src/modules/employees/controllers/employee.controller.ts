@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -105,13 +106,18 @@ export class EmployeeController {
     return this.employeeService.findByOrganization(organizationId, page, limit, status);
   }
 
-  @Get(':id')
+  @Get('me')
   @ApiReadOne({
-    summary: 'Get employee by ID',
+    summary: 'Get current user employee profile',
+    description:
+      'Returns the employee profile for the currently authenticated user in their organization',
     responseType: EmployeeResponseDto,
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<EmployeeResponseDto> {
-    return this.employeeService.findById(id);
+  async findMe(
+    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+  ): Promise<EmployeeResponseDto | null> {
+    return this.employeeService.findByUserAndOrganization(currentUser.id, organizationId);
   }
 
   @Get('user/:userId')
@@ -124,12 +130,34 @@ export class EmployeeController {
     return this.employeeService.findByUserId(userId);
   }
 
+  @Get(':id')
+  @ApiReadOne({
+    summary: 'Get employee by ID',
+    responseType: EmployeeResponseDto,
+  })
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<EmployeeResponseDto> {
+    return this.employeeService.findById(id);
+  }
+
   @Put(':id')
   @ApiUpdate({
-    summary: 'Update employee profile',
+    summary: 'Update employee profile (full update)',
     responseType: EmployeeResponseDto,
   })
   async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateDto: UpdateEmployeeDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<EmployeeResponseDto> {
+    return this.employeeService.update(id, updateDto, currentUser?.id);
+  }
+
+  @Patch(':id')
+  @ApiUpdate({
+    summary: 'Update employee profile (partial update)',
+    responseType: EmployeeResponseDto,
+  })
+  async partialUpdate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateEmployeeDto,
     @CurrentUser() currentUser: CurrentUserType,

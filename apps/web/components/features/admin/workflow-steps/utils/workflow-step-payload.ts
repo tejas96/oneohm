@@ -13,7 +13,8 @@ export function buildWorkflowStepPayload(data: WorkflowStepFormValues): Partial<
     type: data.type || undefined,
     defaultRoleCode: data.defaultRoleCode || undefined,
     defaultDepartment: data.defaultDepartment || undefined,
-    defaultMilestoneType: data.defaultMilestoneType || undefined,
+    defaultMilestoneName: data.defaultMilestoneName || undefined,
+    defaultMilestoneOrder: data.defaultMilestoneOrder ?? undefined,
     sequenceOrder: data.sequenceOrder,
     effortDays:
       data.effortDays !== '' && data.effortDays != null ? Number(data.effortDays) : undefined,

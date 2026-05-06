@@ -9,3 +9,4 @@ export * from './pagination';
 export * from './debounce';
 export * from './avatar';
 export * from './solar-impact';
+export * from './milestone';

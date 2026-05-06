@@ -25,37 +25,16 @@ export enum ProjectPriority {
   URGENT = 'urgent',
 }
 /**
- * Milestone Type
- * Defines the phase/stage of project execution
+ * Milestone Display Status
+ * Live-derived status for a milestone group, computed from its tasks.
+ * Replaces the old MilestoneStatus enum which was stored on a separate entity.
  */
-export enum MilestoneType {
-  SITE_SURVEY = 'site_survey',
-  DESIGN = 'design',
-  PLANNING = 'planning',
-  APPROVAL = 'approval',
-  PERMITS = 'permits',
-  MATERIAL_PROCUREMENT = 'material_procurement',
-  ELECTRICAL = 'electrical',
-  INSTALLATION = 'installation',
-  INSPECTION = 'inspection',
-  TESTING = 'testing',
-  COMMISSIONING = 'commissioning',
-  MONITORING = 'monitoring',
-  HANDOVER = 'handover',
-  CUSTOM = 'custom',
-}
-
-/**
- * Milestone Status
- * Tracks the completion state of a milestone
- */
-export enum MilestoneStatus {
-  PENDING = 'pending',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  SKIPPED = 'skipped',
-  BLOCKED = 'blocked',
-}
+export type MilestoneDisplayStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'completed'
+  | 'blocked'
+  | 'no_tasks';
 
 /**
  * @deprecated SiteSurveyStatus has been replaced by SiteActivityStatus from site-activity.enum.ts

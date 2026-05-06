@@ -83,7 +83,8 @@ export interface ProjectTaskItem {
   priority: TaskPriority;
   assignedToUserId?: string;
   assigneeName?: string;
-  milestoneId?: string;
+  milestoneName?: string | null;
+  milestoneOrder?: number | null;
   startDate?: string;
   endDate?: string;
   completionPercentage: number;
@@ -97,7 +98,7 @@ export interface ProjectTaskListParams {
   status?: string;
   priority?: string;
   assignedToUserId?: string;
-  milestoneId?: string;
+  milestoneName?: string;
   search?: string;
 }
 
@@ -189,7 +190,7 @@ export function useProjectTaskList(
       if (params.status) qs.set('status', params.status);
       if (params.priority) qs.set('priority', params.priority);
       if (params.assignedToUserId) qs.set('assignedToUserId', params.assignedToUserId);
-      if (params.milestoneId) qs.set('milestoneId', params.milestoneId);
+      if (params.milestoneName) qs.set('milestoneName', params.milestoneName);
       if (params.search) qs.set('search', params.search);
 
       const { data } = await apiClient.get<PaginatedResponse<ProjectTaskItem>>(
