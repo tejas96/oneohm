@@ -10,6 +10,7 @@ import {
   CheckCheck,
   ChevronDown,
   ChevronRight,
+  Download,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -35,6 +36,7 @@ import {
   EXPENSE_CATEGORY_BADGE_VARIANT,
   REIMBURSEMENT_STATUS_BADGE_VARIANT,
 } from '../constants';
+import { useFinancePdf } from '../hooks/use-finance-pdf';
 
 interface ExpensesTableProps {
   expenses: ProjectExpense[];
@@ -46,6 +48,7 @@ export function ExpensesTable({ expenses, projectId, onEdit }: ExpensesTableProp
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const { remove, markReimbursed } = useProjectExpenseMutations(projectId);
+  const { printExpenseVoucher, isReady: pdfReady } = useFinancePdf(projectId);
 
   const handleDelete = (id: string): void => {
     if (confirmDeleteId === id) {
@@ -162,6 +165,14 @@ export function ExpensesTable({ expenses, projectId, onEdit }: ExpensesTableProp
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          disabled={!pdfReady}
+                          onClick={() => void printExpenseVoucher(expense)}
+                        >
+                          <Download className="size-3.5 mr-2" />
+                          Download Voucher PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onEdit(expense)}>
                           <Pencil className="size-3.5 mr-2" />
                           Edit

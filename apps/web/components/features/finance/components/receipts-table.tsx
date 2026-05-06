@@ -1,7 +1,7 @@
 'use client';
 
 import { PaymentTransactionStatus } from '@oneohm-epc/shared/types';
-import { ChevronDown, ChevronRight, MoreHorizontal, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, MoreHorizontal, Trash2 } from 'lucide-react';
 import React, { useState, type JSX } from 'react';
 
 import {
@@ -18,6 +18,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 
 import { PAYMENT_STATUS_LABELS } from '../../projects/constants';
 import { RECEIPT_NEXT_STATUSES, RECEIPT_STATUS_BADGE_VARIANT } from '../constants';
+import { useFinancePdf } from '../hooks/use-finance-pdf';
 
 interface ReceiptsTableProps {
   receipts: Receipt[];
@@ -44,6 +45,7 @@ export function ReceiptsTable({ receipts, terms, projectId }: ReceiptsTableProps
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const { updateStatus, remove } = useReceiptMutations(projectId);
+  const { printReceipt, isReady: pdfReady } = useFinancePdf(projectId);
 
   const termById = new Map(terms.map((t) => [t.id, t]));
 
@@ -150,6 +152,14 @@ export function ReceiptsTable({ receipts, terms, projectId }: ReceiptsTableProps
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          disabled={!pdfReady}
+                          onClick={() => void printReceipt(receipt, linkedTerm ?? null)}
+                        >
+                          <Download className="size-3.5 mr-2" />
+                          Download PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         {nextStatuses.length === 0 && (
                           <DropdownMenuItem disabled>No transitions available</DropdownMenuItem>
                         )}
