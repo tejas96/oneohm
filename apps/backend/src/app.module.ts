@@ -28,6 +28,7 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
 import { PaymentTermsModule } from './modules/payment-terms/payment-terms.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PlatformModule } from './modules/platform/platform.module';
+import { ProjectExpensesModule } from './modules/project-expenses/project-expenses.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { ResellersModule } from './modules/resellers/resellers.module';
@@ -70,6 +71,7 @@ import { UsersModule } from './modules/users/users.module';
     ApprovalModule,
     FinanceCommonModule,
     PaymentTermsModule,
+    ProjectExpensesModule,
     PaymentsModule,
     CommentsModule,
     DocumentsModule,

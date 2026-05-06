@@ -549,4 +549,167 @@ export class BomService {
       throw error;
     }
   }
+
+  // ============================================================
+  // PROCUREMENT (plan §2.5 / §3.4)
+  // ============================================================
+
+  /**
+   * Sum BOM-target quantities per product for a project. Returns a map
+   * keyed by productId — products absent from the BOM are absent from
+   * the map (caller must treat that as 0).
+   *
+   * Multiple BOM rows for the same product (e.g. unitised serial rows)
+   * are summed. Pulls only the requested productIds when supplied.
+   */
+  async getBomTargetsForProject(
+    projectId: string,
+    organizationId: string,
+    productIdsFilter?: string[],
+  ): Promise<Map<string, number>> {
+    const params: unknown[] = [projectId, organizationId];
+    let filterSql = '';
+    if (productIdsFilter && productIdsFilter.length > 0) {
+      params.push(productIdsFilter);
+      filterSql = `AND bi.product_id = ANY($3::uuid[])`;
+    }
+
+    const rows = (await this.dataSource.query(
+      `SELECT bi.product_id AS product_id,
+              COALESCE(SUM(bi.quantity), 0)::numeric AS target
+         FROM bom b
+         JOIN bom_items bi ON bi.bom_id = b.id
+        WHERE b.entity_type = 'project'
+          AND b.entity_id = $1::uuid
+          AND b.organization_id = $2::uuid
+          AND bi.product_id IS NOT NULL
+          ${filterSql}
+        GROUP BY bi.product_id`,
+      params,
+    )) as Array<{ product_id: string; target: string }>;
+
+    const out = new Map<string, number>();
+    for (const r of rows) out.set(r.product_id, Number(r.target));
+    return out;
+  }
+
+  /**
+   * Procurement status for a project (plan §3.4). Joins BOM items
+   * (target qty + name + unit price for spend-budget) with the
+   * already-spent qty pulled from `expense_product_links`. Status is
+   * derived per row:
+   *   procured  : spent >= target
+   *   partial   : 0 < spent < target
+   *   pending   : spent == 0
+   * Rows where spent > target are flagged via the `over` boolean.
+   */
+  async getProcurementStatus(
+    projectId: string,
+    organizationId: string,
+  ): Promise<{
+    items: Array<{
+      productId: string;
+      name: string;
+      unit: string;
+      targetQty: number;
+      spentQty: number;
+      status: 'pending' | 'partial' | 'procured';
+      over: boolean;
+      remaining: number;
+      unitPrice: number | null;
+      targetSpend: number | null;
+      actualSpend: number;
+    }>;
+    totals: {
+      totalProducts: number;
+      pending: number;
+      partial: number;
+      procured: number;
+      overProcuredProducts: number;
+      targetSpend: number;
+      actualSpend: number;
+    };
+  }> {
+    const rows = (await this.dataSource.query(
+      `WITH bom_targets AS (
+         SELECT bi.product_id,
+                MIN(bi.name)        AS name,
+                MIN(bi.unit)        AS unit,
+                SUM(bi.quantity)    AS target_qty,
+                MAX(bi.unit_price)  AS unit_price
+           FROM bom b
+           JOIN bom_items bi ON bi.bom_id = b.id
+          WHERE b.entity_type = 'project'
+            AND b.entity_id = $1::uuid
+            AND b.organization_id = $2::uuid
+            AND bi.product_id IS NOT NULL
+          GROUP BY bi.product_id
+       ),
+       spent AS (
+         SELECT epl.product_id,
+                COALESCE(SUM(epl.quantity), 0) AS spent_qty,
+                COALESCE(SUM(epl.quantity * COALESCE(epl.unit_price, 0)), 0) AS actual_spend
+           FROM expense_product_links epl
+           JOIN project_expenses pe ON pe.id = epl.expense_id
+          WHERE pe.project_id = $1::uuid
+            AND pe.organization_id = $2::uuid
+            AND pe.deleted_at IS NULL
+            AND epl.product_id IS NOT NULL
+          GROUP BY epl.product_id
+       )
+       SELECT t.product_id,
+              t.name,
+              t.unit,
+              t.target_qty,
+              COALESCE(s.spent_qty, 0)        AS spent_qty,
+              t.unit_price,
+              COALESCE(s.actual_spend, 0)     AS actual_spend
+         FROM bom_targets t
+         LEFT JOIN spent s ON s.product_id = t.product_id
+        ORDER BY t.name`,
+      [projectId, organizationId],
+    )) as Array<{
+      product_id: string;
+      name: string;
+      unit: string;
+      target_qty: string;
+      spent_qty: string;
+      unit_price: string | null;
+      actual_spend: string;
+    }>;
+
+    const items = rows.map((r) => {
+      const targetQty = Number(r.target_qty);
+      const spentQty = Number(r.spent_qty);
+      const unitPrice = r.unit_price === null ? null : Number(r.unit_price);
+      const status: 'pending' | 'partial' | 'procured' =
+        spentQty <= 0 ? 'pending' : spentQty >= targetQty ? 'procured' : 'partial';
+      return {
+        productId: r.product_id,
+        name: r.name,
+        unit: r.unit,
+        targetQty,
+        spentQty,
+        status,
+        over: spentQty > targetQty + 1e-6,
+        remaining: Math.max(targetQty - spentQty, 0),
+        unitPrice,
+        targetSpend: unitPrice !== null ? unitPrice * targetQty : null,
+        actualSpend: Number(r.actual_spend),
+      };
+    });
+
+    return {
+      items,
+      totals: {
+        totalProducts: items.length,
+        pending: items.filter((i) => i.status === 'pending').length,
+        partial: items.filter((i) => i.status === 'partial').length,
+        procured: items.filter((i) => i.status === 'procured').length,
+        overProcuredProducts: items.filter((i) => i.over).length,
+        targetSpend: items.reduce((s, i) => s + (i.targetSpend ?? 0), 0),
+        actualSpend: items.reduce((s, i) => s + i.actualSpend, 0),
+      },
+    };
+  }
 }
