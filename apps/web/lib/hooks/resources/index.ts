@@ -233,6 +233,56 @@ export {
   type UpdateBomItemSerialPayload,
 } from './bom';
 
+// Finance — Payment Terms (planned receivables)
+export {
+  usePaymentTerms,
+  usePaymentTermMutations,
+  paymentTermKeys,
+  type PaymentTerm,
+  type CreatePaymentTermPayload,
+  type UpdatePaymentTermPayload,
+  type WaivePaymentTermPayload,
+} from './payment-terms';
+
+// Finance — Receipts (cash inflow ledger)
+export {
+  useProjectReceipts,
+  useProjectReceiptSummary,
+  useReceiptMutations,
+  receiptKeys,
+  type Receipt,
+  type CreateReceiptPayload,
+  type UpdateReceiptStatusPayload,
+  type ReceiptProofDocumentInput,
+  type ReceiptSummaryTerm,
+  type ReceiptProjectSummary,
+} from './receipts';
+
+// Finance — Project Expenses (cash outflow ledger)
+export {
+  useProjectExpenses,
+  useProjectExpenseSummary,
+  useProjectExpenseMutations,
+  projectExpenseKeys,
+  type ProjectExpense,
+  type ExpenseProductLink,
+  type ExpenseProductLinkInput,
+  type CreateExpensePayload,
+  type UpdateExpensePayload,
+  type ExpenseListFilters,
+  type ExpenseListResponse,
+  type ExpenseProjectSummary,
+} from './project-expenses';
+
+// Finance / BOM — Procurement Status
+export {
+  useBomProcurementStatus,
+  bomProcurementKeys,
+  type BomProcurementItem,
+  type BomProcurementStatus,
+  type BomProcurementItemStatus,
+} from './bom-procurement';
+
 // Inventory — Stock
 export {
   useInventoryStockList,
