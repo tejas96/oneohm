@@ -172,11 +172,11 @@ export class PaymentTermRepository {
 
     await manager.query(
       `UPDATE project_payment_terms
-          SET paid_amount = $1,
-              status      = $2,
-              completed_at = CASE WHEN $2 = 'paid' THEN COALESCE(completed_at, $3) ELSE NULL END,
-              updated_at  = CURRENT_TIMESTAMP
-        WHERE id = $4`,
+          SET paid_amount  = $1::numeric,
+              status       = $2::varchar,
+              completed_at = CASE WHEN $2::varchar = 'paid' THEN COALESCE(completed_at, $3::timestamptz) ELSE NULL END,
+              updated_at   = CURRENT_TIMESTAMP
+        WHERE id = $4::uuid`,
       [paidAmount, nextStatus, completedAt, termId],
     );
 

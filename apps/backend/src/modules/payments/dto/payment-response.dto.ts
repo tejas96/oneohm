@@ -31,6 +31,12 @@ export class PaymentResponseDto {
   @Expose()
   customerId!: string;
 
+  @ApiPropertyOptional({
+    description: 'Payment term this receipt fulfills (null for advances).',
+  })
+  @Expose()
+  paymentTermId?: string | null;
+
   // ============================================
   // PAYMENT INFO
   // ============================================

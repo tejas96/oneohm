@@ -51,10 +51,19 @@ export class PaymentEntity extends BaseEntity {
   @Column({ name: 'customer_id', type: 'uuid' })
   customerId!: string;
 
+  /**
+   * Optional link to the planned receivable installment this receipt
+   * fulfills. Null for advance / unallocated receipts. Backed by FK
+   * `fk_payments_payment_term` (ON DELETE RESTRICT) added in migration
+   * 1830000000001 — terms with linked receipts cannot be deleted.
+   */
+  @Column({ name: 'payment_term_id', type: 'uuid', nullable: true })
+  paymentTermId?: string | null;
+
   // ============================================
   // PAYMENT INFO
   // ============================================
-  @Column({ name: 'payment_number', type: 'varchar', length: 50, unique: true })
+  @Column({ name: 'payment_number', type: 'varchar', length: 50 })
   paymentNumber!: string;
 
   // ============================================
