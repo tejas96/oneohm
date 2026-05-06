@@ -121,8 +121,10 @@ export function useCurrentUserEmployeeProfile(): {
     data: query.data ?? null,
     isLoading: query.isLoading,
     isError: query.isError,
-    error: query.error,
-    refetch: query.refetch,
+    error: query.error as unknown,
+    refetch: () => {
+      void query.refetch();
+    },
   };
 }
 
