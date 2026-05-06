@@ -12,6 +12,7 @@ import {
   isFinanceSubTab,
   type FinanceSubTab,
 } from '../constants';
+import { ExpensesSection } from './expenses-section';
 import { FinanceSummaryStrip } from './finance-summary-strip';
 import { PaymentTermsSection } from './payment-terms-section';
 import { ReceiptsSection } from './receipts-section';
@@ -106,11 +107,7 @@ export const ProjectFinanceTab = React.memo(function ProjectFinanceTab({
         </TabsContent>
 
         <TabsContent value="expenses" className="mt-4">
-          {/* Wired up in slice 3 — the section component is intentionally not
-              imported yet so this slice stays scoped to terms + receipts. */}
-          <div className="rounded-lg border border-dashed border-border-light p-8 text-center text-sm text-foreground-muted">
-            Expenses arrive in the next slice.
-          </div>
+          <ExpensesSection projectId={projectId} />
         </TabsContent>
       </Tabs>
     </div>
