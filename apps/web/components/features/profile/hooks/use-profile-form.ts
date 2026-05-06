@@ -130,7 +130,6 @@ export function useProfileForm(): UseProfileFormReturn {
     });
 
     setAvatarUrl(profile.avatarUrl ?? null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
 
   // ── Personal Submit ──────────────────────────────────────────
