@@ -14,6 +14,7 @@ import {
 import { formatDate } from '@oneohm-epc/shared/utils';
 import * as React from 'react';
 
+import { ProjectFinanceDrawer } from '../drawers';
 import { OrgExpensesTable } from '../ledgers/org-expenses-table';
 import {
   CsvExportButton,
@@ -81,6 +82,11 @@ export function FinanceExpensesPage(): React.JSX.Element {
   const [reimbursement, setReimbursement] = React.useState('');
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
+  const [drawerProject, setDrawerProject] = React.useState<{
+    projectId: string;
+    projectNumber: string;
+    projectName: string;
+  } | null>(null);
 
   React.useEffect(() => {
     const t = window.setTimeout(() => setDebouncedVendor(vendorSearch.trim()), 220);
@@ -208,9 +214,27 @@ export function FinanceExpensesPage(): React.JSX.Element {
             }}
           />
         ) : (
-          <OrgExpensesTable items={items} isLoading={query.isLoading} />
+          <OrgExpensesTable
+            items={items}
+            isLoading={query.isLoading}
+            onRowClick={(e) =>
+              setDrawerProject({
+                projectId: e.projectId,
+                projectNumber: e.projectNumber,
+                projectName: e.projectName,
+              })
+            }
+          />
         )}
       </div>
+
+      <ProjectFinanceDrawer
+        open={drawerProject !== null}
+        onClose={() => setDrawerProject(null)}
+        projectId={drawerProject?.projectId ?? null}
+        projectNumber={drawerProject?.projectNumber}
+        projectName={drawerProject?.projectName}
+      />
 
       {meta && meta.totalPages > 1 && (
         <div className="border-border-light border-t px-6 py-3">

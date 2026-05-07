@@ -3,6 +3,7 @@
 import { type PaginatedResponse } from '@oneohm-epc/shared/types';
 import * as React from 'react';
 
+import { ProjectFinanceDrawer } from '../drawers';
 import { ProfitabilityTable } from '../insights/profitability-table';
 import {
   CsvExportButton,
@@ -49,6 +50,12 @@ export function FinanceProfitabilityPage(): React.JSX.Element {
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
   const [search, setSearch] = React.useState('');
+  const [drawerProject, setDrawerProject] = React.useState<{
+    projectId: string;
+    projectNumber: string;
+    projectName: string;
+    customerName: string;
+  } | null>(null);
 
   React.useEffect(() => {
     setPage(1);
@@ -148,9 +155,29 @@ export function FinanceProfitabilityPage(): React.JSX.Element {
             }}
           />
         ) : (
-          <ProfitabilityTable items={filtered} isLoading={query.isLoading} />
+          <ProfitabilityTable
+            items={filtered}
+            isLoading={query.isLoading}
+            onRowClick={(p) =>
+              setDrawerProject({
+                projectId: p.projectId,
+                projectNumber: p.projectNumber,
+                projectName: p.projectName,
+                customerName: p.customerName,
+              })
+            }
+          />
         )}
       </div>
+
+      <ProjectFinanceDrawer
+        open={drawerProject !== null}
+        onClose={() => setDrawerProject(null)}
+        projectId={drawerProject?.projectId ?? null}
+        projectNumber={drawerProject?.projectNumber}
+        projectName={drawerProject?.projectName}
+        customerName={drawerProject?.customerName}
+      />
 
       {meta && meta.totalPages > 1 && (
         <div className="border-border-light border-t px-6 py-3">

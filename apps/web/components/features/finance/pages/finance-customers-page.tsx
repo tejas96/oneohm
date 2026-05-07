@@ -3,6 +3,7 @@
 import { formatDate } from '@oneohm-epc/shared/utils';
 import * as React from 'react';
 
+import { CustomerFinanceDrawer } from '../drawers';
 import { CustomersArTable } from '../insights/customers-ar-table';
 import {
   CsvExportButton,
@@ -42,6 +43,7 @@ export function FinanceCustomersPage(): React.JSX.Element {
   const [asOfDate, setAsOfDate] = React.useState<string>(() => todayIsoDate());
   const [search, setSearch] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
+  const [drawerCustomer, setDrawerCustomer] = React.useState<CustomerAging | null>(null);
 
   React.useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 200);
@@ -142,9 +144,19 @@ export function FinanceCustomersPage(): React.JSX.Element {
             }}
           />
         ) : (
-          <CustomersArTable items={filtered} isLoading={query.isLoading} />
+          <CustomersArTable
+            items={filtered}
+            isLoading={query.isLoading}
+            onRowClick={(c) => setDrawerCustomer(c)}
+          />
         )}
       </div>
+
+      <CustomerFinanceDrawer
+        open={drawerCustomer !== null}
+        onClose={() => setDrawerCustomer(null)}
+        customer={drawerCustomer}
+      />
     </div>
   );
 }

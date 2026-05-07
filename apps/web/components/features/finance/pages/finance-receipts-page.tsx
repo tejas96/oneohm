@@ -5,6 +5,7 @@ import { formatDate } from '@oneohm-epc/shared/utils';
 import * as React from 'react';
 
 import { PAYMENT_STATUS_LABELS } from '../../projects/constants';
+import { ProjectFinanceDrawer } from '../drawers';
 import { OrgReceiptsTable } from '../ledgers/org-receipts-table';
 import {
   CsvExportButton,
@@ -59,6 +60,12 @@ export function FinanceReceiptsPage(): React.JSX.Element {
   const [status, setStatus] = React.useState<string>('');
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
+  const [drawerProject, setDrawerProject] = React.useState<{
+    projectId: string;
+    projectNumber: string;
+    projectName: string;
+    customerName: string;
+  } | null>(null);
 
   React.useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search.trim()), 220);
@@ -164,9 +171,29 @@ export function FinanceReceiptsPage(): React.JSX.Element {
             }}
           />
         ) : (
-          <OrgReceiptsTable items={items} isLoading={query.isLoading} />
+          <OrgReceiptsTable
+            items={items}
+            isLoading={query.isLoading}
+            onRowClick={(r) =>
+              setDrawerProject({
+                projectId: r.projectId,
+                projectNumber: r.projectNumber,
+                projectName: r.projectName,
+                customerName: r.customerName,
+              })
+            }
+          />
         )}
       </div>
+
+      <ProjectFinanceDrawer
+        open={drawerProject !== null}
+        onClose={() => setDrawerProject(null)}
+        projectId={drawerProject?.projectId ?? null}
+        projectNumber={drawerProject?.projectNumber}
+        projectName={drawerProject?.projectName}
+        customerName={drawerProject?.customerName}
+      />
 
       {meta && meta.totalPages > 1 && (
         <div className="border-border-light border-t px-6 py-3">

@@ -5,6 +5,7 @@ import { ExpenseCategory } from '@oneohm-epc/shared/types';
 import { formatDate } from '@oneohm-epc/shared/utils';
 import * as React from 'react';
 
+import { VendorFinanceDrawer } from '../drawers';
 import { VendorsSpendTable } from '../insights/vendors-spend-table';
 import {
   CsvExportButton,
@@ -55,6 +56,7 @@ export function FinanceVendorsPage(): React.JSX.Element {
   const [category, setCategory] = React.useState<string>('');
   const [search, setSearch] = React.useState('');
   const [debouncedSearch, setDebouncedSearch] = React.useState('');
+  const [drawerVendor, setDrawerVendor] = React.useState<VendorSpend | null>(null);
 
   React.useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 200);
@@ -157,9 +159,21 @@ export function FinanceVendorsPage(): React.JSX.Element {
             }}
           />
         ) : (
-          <VendorsSpendTable items={filtered} isLoading={query.isLoading} />
+          <VendorsSpendTable
+            items={filtered}
+            isLoading={query.isLoading}
+            onRowClick={(v) => setDrawerVendor(v)}
+          />
         )}
       </div>
+
+      <VendorFinanceDrawer
+        open={drawerVendor !== null}
+        onClose={() => setDrawerVendor(null)}
+        vendor={drawerVendor}
+        dateFrom={range.from}
+        dateTo={range.to}
+      />
     </div>
   );
 }

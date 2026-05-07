@@ -16,3 +16,10 @@ export { FinanceOutstandingPage } from './pages/finance-outstanding-page';
 export { FinanceCustomersPage } from './pages/finance-customers-page';
 export { FinanceVendorsPage } from './pages/finance-vendors-page';
 export { FinanceProfitabilityPage } from './pages/finance-profitability-page';
+
+// Drilldown drawers
+export {
+  ProjectFinanceDrawer,
+  CustomerFinanceDrawer,
+  VendorFinanceDrawer,
+} from './drawers';
