@@ -53,7 +53,16 @@ export class SecurityRateLimitGuard implements CanActivate {
     const trackingData = this.extractTrackingData(request, config.trackBy || ['ipAddress']);
 
     // Check if user/IP is blocked
-    const isBlocked = await this.checkIfBlocked(trackingData);
+    let isBlocked: boolean;
+    try {
+      isBlocked = await this.checkIfBlocked(trackingData);
+    } catch (error) {
+      // Fail open on transient DB errors (e.g. connection terminated) so a
+      // brief Postgres hiccup does not lock all users out of login.
+      this.logger.error('Failed to check block status, allowing request through', error);
+      return true;
+    }
+
     if (isBlocked) {
       throw new BadRequestException(
         'Access temporarily blocked due to excessive requests. Please try again later.',
@@ -62,7 +71,15 @@ export class SecurityRateLimitGuard implements CanActivate {
 
     // Check each rate limit window
     for (const limit of config.limits) {
-      await this.checkRateLimit(config.eventType, trackingData, limit, request);
+      try {
+        await this.checkRateLimit(config.eventType, trackingData, limit, request);
+      } catch (error) {
+        if (error instanceof BadRequestException) {
+          throw error;
+        }
+        // Fail open on transient DB errors for rate-limit counting as well
+        this.logger.error('Failed to check rate limit, allowing request through', error);
+      }
     }
 
     return true;
