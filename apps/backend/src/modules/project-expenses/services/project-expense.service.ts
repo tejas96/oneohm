@@ -31,7 +31,6 @@ import { ExpenseProductLinkEntity } from '../entities/expense-product-link.entit
 import { ProjectExpenseEntity } from '../entities/project-expense.entity';
 import { ProjectExpenseRepository } from '../repositories/project-expense.repository';
 
-const TXN_REFERENCE_TYPE = 'project_expense';
 
 /**
  * ProjectExpenseService
@@ -399,7 +398,9 @@ export class ProjectExpenseService {
       [projectId, organizationId, productIds, excludeExpenseId],
     );
 
-    const spentMap = new Map<string, number>(spentRows.map((r) => [r.product_id, Number(r.spent)]));
+    const spentMap = new Map<string, number>(
+      spentRows.map((r: { product_id: string; spent: string }) => [r.product_id, Number(r.spent)]),
+    );
 
     const bomTargets = await this.bomService.getBomTargetsForProject(
       projectId,

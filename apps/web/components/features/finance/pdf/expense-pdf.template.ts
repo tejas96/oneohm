@@ -77,6 +77,8 @@ function reimbursementBadgeClass(status: ReimbursementStatus): string {
       return 'badge ok';
     case RS.PENDING:
       return 'badge warn';
+    case RS.NOT_APPLICABLE:
+      return 'badge muted';
     default:
       return 'badge muted';
   }

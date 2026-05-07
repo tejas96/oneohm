@@ -194,6 +194,11 @@ export class DocumentService {
                ORDER BY is_primary DESC, created_at ASC
                LIMIT 1`;
         break;
+      case DocumentEntityType.PROJECT_EXPENSE:
+        sql = `SELECT p.property_id AS pid FROM project_expenses pe
+               JOIN projects p ON pe.project_id = p.id
+               WHERE pe.id = $1`;
+        break;
       default:
         return null;
     }

@@ -69,8 +69,8 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
   const [activeTab, setActiveTab] = useState<ProjectDetailTab>(initialTab);
 
   useEffect(() => {
-    setActiveTab(normalizeTab(searchParams.get('tab')));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const tab = searchParams.get('tab');
+    setActiveTab(normalizeTab(tab));
   }, [searchParams]);
 
   const { data: project, isLoading, isError, error, refetch } = useProject(projectId);

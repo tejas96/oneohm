@@ -113,8 +113,7 @@ export function ExpenseDrawer({
       create.reset();
       update.reset();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, expense?.id]);
+  }, [open, expense?.id, create, update]);
 
   const [step, setStep] = useState<Step>('essentials');
   const category = form.watch('category');

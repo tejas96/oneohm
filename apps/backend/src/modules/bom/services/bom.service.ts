@@ -670,37 +670,61 @@ export class BomService {
       [projectId, organizationId],
     );
 
-    const items = rows.map((r) => {
-      const targetQty = Number(r.target_qty);
-      const spentQty = Number(r.spent_qty);
-      const unitPrice = r.unit_price === null ? null : Number(r.unit_price);
-      const status: 'pending' | 'partial' | 'procured' =
-        spentQty <= 0 ? 'pending' : spentQty >= targetQty ? 'procured' : 'partial';
-      return {
-        productId: r.product_id,
-        name: r.name,
-        unit: r.unit,
-        targetQty,
-        spentQty,
-        status,
-        over: spentQty > targetQty + 1e-6,
-        remaining: Math.max(targetQty - spentQty, 0),
-        unitPrice,
-        targetSpend: unitPrice !== null ? unitPrice * targetQty : null,
-        actualSpend: Number(r.actual_spend),
-      };
-    });
+    interface ProcurementItem {
+      productId: string;
+      name: string;
+      unit: string;
+      targetQty: number;
+      spentQty: number;
+      status: 'pending' | 'partial' | 'procured';
+      over: boolean;
+      remaining: number;
+      unitPrice: number | null;
+      targetSpend: number | null;
+      actualSpend: number;
+    }
+
+    const items: ProcurementItem[] = rows.map(
+      (r: {
+        product_id: string;
+        name: string;
+        unit: string;
+        target_qty: string;
+        spent_qty: string;
+        unit_price: string | null;
+        actual_spend: string;
+      }) => {
+        const targetQty = Number(r.target_qty);
+        const spentQty = Number(r.spent_qty);
+        const unitPrice = r.unit_price === null ? null : Number(r.unit_price);
+        const status: 'pending' | 'partial' | 'procured' =
+          spentQty <= 0 ? 'pending' : spentQty >= targetQty ? 'procured' : 'partial';
+        return {
+          productId: r.product_id,
+          name: r.name,
+          unit: r.unit,
+          targetQty,
+          spentQty,
+          status,
+          over: spentQty > targetQty + 1e-6,
+          remaining: Math.max(targetQty - spentQty, 0),
+          unitPrice,
+          targetSpend: unitPrice !== null ? unitPrice * targetQty : null,
+          actualSpend: Number(r.actual_spend),
+        };
+      },
+    );
 
     return {
       items,
       totals: {
         totalProducts: items.length,
-        pending: items.filter((i) => i.status === 'pending').length,
-        partial: items.filter((i) => i.status === 'partial').length,
-        procured: items.filter((i) => i.status === 'procured').length,
-        overProcuredProducts: items.filter((i) => i.over).length,
-        targetSpend: items.reduce((s, i) => s + (i.targetSpend ?? 0), 0),
-        actualSpend: items.reduce((s, i) => s + i.actualSpend, 0),
+        pending: items.filter((i: ProcurementItem) => i.status === 'pending').length,
+        partial: items.filter((i: ProcurementItem) => i.status === 'partial').length,
+        procured: items.filter((i: ProcurementItem) => i.status === 'procured').length,
+        overProcuredProducts: items.filter((i: ProcurementItem) => i.over).length,
+        targetSpend: items.reduce((s: number, i: ProcurementItem) => s + (i.targetSpend ?? 0), 0),
+        actualSpend: items.reduce((s: number, i: ProcurementItem) => s + i.actualSpend, 0),
       },
     };
   }

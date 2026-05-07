@@ -77,15 +77,15 @@ const RECEIPT_STATUS_LABELS: Record<PaymentTransactionStatus, string> = {
 
 function statusBadgeClass(status: PaymentTransactionStatus): string {
   switch (status) {
-    case 'cleared':
-    case 'verified':
+    case PaymentTransactionStatus.CLEARED:
+    case PaymentTransactionStatus.VERIFIED:
       return 'badge ok';
-    case 'received':
+    case PaymentTransactionStatus.RECEIVED:
       return 'badge ok';
-    case 'pending':
+    case PaymentTransactionStatus.PENDING:
       return 'badge warn';
-    case 'bounced':
-    case 'refunded':
+    case PaymentTransactionStatus.BOUNCED:
+    case PaymentTransactionStatus.REFUNDED:
       return 'badge error';
     default:
       return 'badge muted';
