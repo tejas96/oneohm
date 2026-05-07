@@ -6,6 +6,7 @@ import {
 } from '@oneohm-epc/shared/types';
 
 import { type StatusChipColor } from '@/components/ui';
+import type { AgingBucket } from '@/lib/hooks/resources';
 
 /**
  * Semantic MUI palette colors for finance status chips. These feed
@@ -93,3 +94,73 @@ export const RECEIPT_NEXT_STATUSES: Readonly<
   [PaymentTransactionStatus.BOUNCED]: [],
   [PaymentTransactionStatus.REFUNDED]: [],
 };
+
+// ============================================================================
+// Org Finance Module — shared constants (slice 4 of finance_module_v1)
+// ============================================================================
+
+/**
+ * Bucket order matches the backend's CASE expression in
+ * FinanceAggregationService. The Customers AR table renders columns in
+ * this order; the Outstanding page filter chips use the same order.
+ */
+export const AGING_BUCKETS: readonly AgingBucket[] = [
+  'current',
+  '0-30',
+  '31-60',
+  '61-90',
+  '90+',
+] as const;
+
+export const AGING_BUCKET_COLOR: Record<AgingBucket, StatusChipColor> = {
+  current: 'success',
+  '0-30': 'info',
+  '31-60': 'warning',
+  '61-90': 'warning',
+  '90+': 'error',
+};
+
+export const AGING_BUCKET_LABEL: Record<AgingBucket, string> = {
+  current: 'Current',
+  '0-30': '0-30 days',
+  '31-60': '31-60 days',
+  '61-90': '61-90 days',
+  '90+': '90+ days',
+};
+
+/**
+ * FY-aware date-range presets. FY = April-March (Indian fiscal calendar).
+ * `custom` opens a pair of MUIDatePicker controls for a manual range.
+ */
+export const FY_PRESETS = [
+  'this-month',
+  'last-month',
+  'this-quarter',
+  'this-fy',
+  'last-fy',
+  'custom',
+] as const;
+export type FyPreset = (typeof FY_PRESETS)[number];
+
+export const FY_PRESET_LABEL: Record<FyPreset, string> = {
+  'this-month': 'This Month',
+  'last-month': 'Last Month',
+  'this-quarter': 'This Quarter',
+  'this-fy': 'This FY',
+  'last-fy': 'Last FY',
+  custom: 'Custom',
+};
+
+/**
+ * Panel-section grouping for the Finance rail panel. Used by
+ * lib/config/navigation.ts to render the OVERVIEW / LEDGERS / INSIGHTS
+ * sub-headers above the panel items. Just labels here — paths/icons
+ * live in navigation.ts so role/permission filtering stays centralized.
+ */
+export const FINANCE_PANEL_SECTIONS = [
+  { id: 'overview', label: 'OVERVIEW' },
+  { id: 'ledgers', label: 'LEDGERS' },
+  { id: 'insights', label: 'INSIGHTS' },
+] as const;
+
+export type FinancePanelSectionId = (typeof FINANCE_PANEL_SECTIONS)[number]['id'];
