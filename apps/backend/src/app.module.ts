@@ -17,6 +17,7 @@ import { CustomerFeedbackModule } from './modules/customer-feedback/customer-fee
 import { CustomersModule } from './modules/customers/customers.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EmployeesModule } from './modules/employees/employees.module';
+import { FinanceModule } from './modules/finance/finance.module';
 import { FinanceCommonModule } from './modules/finance-common/finance-common.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
@@ -70,6 +71,7 @@ import { UsersModule } from './modules/users/users.module';
     NotificationsModule,
     ApprovalModule,
     FinanceCommonModule,
+    FinanceModule,
     PaymentTermsModule,
     ProjectExpensesModule,
     PaymentsModule,
