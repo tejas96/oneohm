@@ -25,16 +25,29 @@ export function formatCurrencyDecimal(amount: number | null | undefined): string
 }
 
 /**
- * Format a number as compact Indian Rupees (e.g., "₹4.5L")
+ * Format a number as compact Indian Rupees using Indian-numeric units:
+ * K (thousand, 1e3), L (lakh, 1e5), Cr (crore, 1e7).
+ *
+ * We do NOT delegate to Intl.NumberFormat({ notation: 'compact' }) because
+ * V8's en-IN compact formatter emits "T" for thousand and other CLDR-derived
+ * units that look unfamiliar to Indian users. This implementation produces
+ * the conventional ₹/K/L/Cr sequence used in Indian finance UIs.
  */
 export function formatCurrencyCompact(amount: number | null | undefined): string {
   if (amount == null || Number.isNaN(Number(amount))) return '₹0';
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(Number(amount));
+  const n = Number(amount);
+  const sign = n < 0 ? '-' : '';
+  const abs = Math.abs(n);
+
+  const trim = (v: number): string => {
+    const fixed = v.toFixed(1);
+    return fixed.endsWith('.0') ? fixed.slice(0, -2) : fixed;
+  };
+
+  if (abs < 1_000) return `${sign}₹${Math.round(abs)}`;
+  if (abs < 1_00_000) return `${sign}₹${trim(abs / 1_000)}K`;
+  if (abs < 1_00_00_000) return `${sign}₹${trim(abs / 1_00_000)}L`;
+  return `${sign}₹${trim(abs / 1_00_00_000)}Cr`;
 }
 
 /**

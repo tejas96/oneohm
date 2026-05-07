@@ -5,11 +5,7 @@ import * as React from 'react';
 
 import { CustomerFinanceDrawer } from '../drawers';
 import { CustomersArTable } from '../insights/customers-ar-table';
-import {
-  CsvExportButton,
-  LedgerToolbar,
-  type CsvColumn,
-} from '../shared';
+import { CsvExportButton, LedgerToolbar, type CsvColumn } from '../shared';
 
 import { ErrorState } from '@/components/shared';
 import { MUIDatePicker, MUITypography } from '@/components/ui';

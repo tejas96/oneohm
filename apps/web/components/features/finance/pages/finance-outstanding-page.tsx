@@ -8,11 +8,7 @@ import * as React from 'react';
 import { AGING_BUCKETS, AGING_BUCKET_LABEL } from '../constants';
 import { ProjectFinanceDrawer } from '../drawers';
 import { OrgOutstandingTable } from '../ledgers/org-outstanding-table';
-import {
-  CsvExportButton,
-  LedgerToolbar,
-  type CsvColumn,
-} from '../shared';
+import { CsvExportButton, LedgerToolbar, type CsvColumn } from '../shared';
 
 import { ErrorState, TablePagination } from '@/components/shared';
 import { MUISelect, MUITypography } from '@/components/ui';
@@ -39,7 +35,10 @@ import {
  * `sort` enum.
  */
 
-const SORT_OPTIONS: ReadonlyArray<{ value: NonNullable<OutstandingFilters['sort']>; label: string }> = [
+const SORT_OPTIONS: ReadonlyArray<{
+  value: NonNullable<OutstandingFilters['sort']>;
+  label: string;
+}> = [
   { value: 'daysOverdue', label: 'Days Overdue (most first)' },
   { value: 'dueDate', label: 'Due Date (earliest first)' },
   { value: 'amount', label: 'Outstanding (largest first)' },

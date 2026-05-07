@@ -160,13 +160,11 @@ export class ProjectExpenseRepository {
 
     return {
       total: Number(totalsRows[0]?.total ?? 0),
-      byCategory: byCatRows.map(
-        (r: { category: string; amount: string; count: number }) => ({
-          category: r.category,
-          amount: Number(r.amount),
-          count: r.count,
-        }),
-      ),
+      byCategory: byCatRows.map((r: { category: string; amount: string; count: number }) => ({
+        category: r.category,
+        amount: Number(r.amount),
+        count: r.count,
+      })),
       pendingReimbursementAmount: Number(pendingRows[0]?.pending ?? 0),
     };
   }

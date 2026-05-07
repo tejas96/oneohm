@@ -28,10 +28,7 @@ export function FinanceComingSoon({
         <MUITypography variant="drawerTitle">{title}</MUITypography>
       </header>
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">
-        <HourglassTopOutlinedIcon
-          fontSize="large"
-          sx={{ color: 'text.disabled', fontSize: 56 }}
-        />
+        <HourglassTopOutlinedIcon fontSize="large" sx={{ color: 'text.disabled', fontSize: 56 }} />
         <MUITypography variant="sectionTitle">Coming soon</MUITypography>
         {description && (
           <MUITypography variant="body" className="text-foreground-secondary max-w-md">

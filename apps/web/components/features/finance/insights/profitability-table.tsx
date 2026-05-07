@@ -71,7 +71,7 @@ export function ProfitabilityTable({
           {!isLoading && items.length === 0 && (
             <tr>
               <td colSpan={8} className="text-foreground-tertiary px-3 py-8 text-center text-sm">
-                No projects found in the selected range.
+                No projects yet.
               </td>
             </tr>
           )}
@@ -122,10 +122,7 @@ export function ProfitabilityTable({
                     <AmountCell value={p.margin} className={`${tone} text-right tabular-nums`} />
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <MUITypography
-                      variant="bodyPrimary"
-                      className={`${tone} tabular-nums`}
-                    >
+                    <MUITypography variant="bodyPrimary" className={`${tone} tabular-nums`}>
                       {p.marginPct.toFixed(1)}%
                     </MUITypography>
                   </td>

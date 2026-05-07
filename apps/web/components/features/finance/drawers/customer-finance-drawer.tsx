@@ -9,11 +9,7 @@ import { ProjectFinanceDrawer } from './project-finance-drawer';
 
 import { MUITypography } from '@/components/ui';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  type CustomerAging,
-  useOrgOutstanding,
-  useOrgReceipts,
-} from '@/lib/hooks/resources';
+import { type CustomerAging, useOrgOutstanding, useOrgReceipts } from '@/lib/hooks/resources';
 import { formatCurrency } from '@/lib/utils';
 
 export interface CustomerFinanceDrawerProps {
@@ -80,10 +76,7 @@ export function CustomerFinanceDrawer({
     { customerId, sort: 'daysOverdue', sortOrder: 'DESC', page: 1, limit: 50 },
     { enabled },
   );
-  const receiptsQ = useOrgReceipts(
-    { customerId, page: 1, limit: 25 },
-    { enabled },
-  );
+  const receiptsQ = useOrgReceipts({ customerId, page: 1, limit: 25 }, { enabled });
 
   // Stacked project drawer state.
   const [projectDrawer, setProjectDrawer] = React.useState<{
@@ -97,7 +90,10 @@ export function CustomerFinanceDrawer({
 
   // Distinct projects across the customer's open terms (capped to 5).
   const distinctProjects = React.useMemo(() => {
-    const seen = new Map<string, { projectId: string; projectNumber: string; projectName: string }>();
+    const seen = new Map<
+      string,
+      { projectId: string; projectNumber: string; projectName: string }
+    >();
     for (const t of openTerms) {
       if (!seen.has(t.projectId)) {
         seen.set(t.projectId, {
@@ -119,7 +115,8 @@ export function CustomerFinanceDrawer({
         title={customer?.customerName ?? 'Customer'}
         subtitle={
           customer
-            ? [customer.customerPhone, customer.customerEmail].filter(Boolean).join(' · ') || undefined
+            ? [customer.customerPhone, customer.customerEmail].filter(Boolean).join(' · ') ||
+              undefined
             : undefined
         }
         variant="outer"
@@ -138,9 +135,7 @@ export function CustomerFinanceDrawer({
               <StatTile
                 label="Last Receipt"
                 value={
-                  customer.lastReceiptDate
-                    ? formatDate(customer.lastReceiptDate, 'medium')
-                    : '—'
+                  customer.lastReceiptDate ? formatDate(customer.lastReceiptDate, 'medium') : '—'
                 }
               />
               <StatTile
@@ -161,10 +156,7 @@ export function CustomerFinanceDrawer({
                 { label: '61-90 days', value: customer.bucket61to90, bucket: '61-90' as const },
                 { label: '90+ days', value: customer.bucket90plus, bucket: '90+' as const },
               ].map((row) => (
-                <div
-                  key={row.label}
-                  className="flex items-center justify-between gap-2 px-3 py-2"
-                >
+                <div key={row.label} className="flex items-center justify-between gap-2 px-3 py-2">
                   <AgingBucketChip bucket={row.bucket} />
                   <AmountCell value={row.value} muted={row.value === 0} />
                 </div>
@@ -234,10 +226,7 @@ export function CustomerFinanceDrawer({
               )}
               {!receiptsQ.isLoading &&
                 recentReceipts.map((r) => (
-                  <li
-                    key={r.id}
-                    className="flex items-center justify-between gap-2 px-3 py-2"
-                  >
+                  <li key={r.id} className="flex items-center justify-between gap-2 px-3 py-2">
                     <div className="min-w-0 flex-1">
                       <MUITypography variant="bodyPrimary" className="truncate">
                         {r.paymentNumber}

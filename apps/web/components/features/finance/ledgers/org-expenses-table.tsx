@@ -1,6 +1,10 @@
 'use client';
 
-import { EXPENSE_CATEGORY_LABELS, EXPENSE_PAID_BY_LABELS, REIMBURSEMENT_STATUS_LABELS } from '@oneohm-epc/shared/constants';
+import {
+  EXPENSE_CATEGORY_LABELS,
+  EXPENSE_PAID_BY_LABELS,
+  REIMBURSEMENT_STATUS_LABELS,
+} from '@oneohm-epc/shared/constants';
 import { formatDate } from '@oneohm-epc/shared/utils';
 import * as React from 'react';
 
@@ -127,7 +131,9 @@ export function OrgExpensesTable({
                   </td>
                   <td className="px-3 py-2.5">
                     <MUIStatusChip
-                      label={REIMBURSEMENT_STATUS_LABELS[e.reimbursementStatus] ?? e.reimbursementStatus}
+                      label={
+                        REIMBURSEMENT_STATUS_LABELS[e.reimbursementStatus] ?? e.reimbursementStatus
+                      }
                       color={REIMBURSEMENT_STATUS_COLOR[e.reimbursementStatus] ?? 'default'}
                       colorSeed={e.reimbursementStatus}
                     />

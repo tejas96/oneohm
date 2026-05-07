@@ -171,10 +171,7 @@ export function VendorFinanceDrawer({
                         </MUITypography>
                       </div>
                       <div className="bg-background-secondary border-border-light h-1.5 w-full overflow-hidden rounded border">
-                        <div
-                          className="bg-primary h-full"
-                          style={{ width: `${pct}%` }}
-                        />
+                        <div className="bg-primary h-full" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );

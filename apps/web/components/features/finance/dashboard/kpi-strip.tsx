@@ -4,7 +4,6 @@ import { formatCurrency, formatCurrencyCompact, formatNumber } from '@oneohm-epc
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-
 import { KpiStripe, type MetricTileProps } from '@/components/shared/inventory';
 import { ROUTES } from '@/lib/config/routes';
 import type { DashboardKpis } from '@/lib/hooks/resources';

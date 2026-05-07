@@ -485,14 +485,29 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'OVERVIEW',
           items: [
-            { id: 'finance-dashboard', icon: LayoutGrid, label: 'Dashboard', href: ROUTES.FINANCE.HOME },
+            {
+              id: 'finance-dashboard',
+              icon: LayoutGrid,
+              label: 'Dashboard',
+              href: ROUTES.FINANCE.HOME,
+            },
           ],
         },
         {
           title: 'LEDGERS',
           items: [
-            { id: 'finance-receipts', icon: Receipt, label: 'Receipts', href: ROUTES.FINANCE.RECEIPTS },
-            { id: 'finance-expenses', icon: Banknote, label: 'Expenses', href: ROUTES.FINANCE.EXPENSES },
+            {
+              id: 'finance-receipts',
+              icon: Receipt,
+              label: 'Receipts',
+              href: ROUTES.FINANCE.RECEIPTS,
+            },
+            {
+              id: 'finance-expenses',
+              icon: Banknote,
+              label: 'Expenses',
+              href: ROUTES.FINANCE.EXPENSES,
+            },
             {
               id: 'finance-outstanding',
               icon: AlertCircle,
@@ -510,8 +525,18 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'INSIGHTS',
           items: [
-            { id: 'finance-customers', icon: Users, label: 'Customers AR', href: ROUTES.FINANCE.CUSTOMERS },
-            { id: 'finance-vendors', icon: Truck, label: 'Vendors & Spend', href: ROUTES.FINANCE.VENDORS },
+            {
+              id: 'finance-customers',
+              icon: Users,
+              label: 'Customers AR',
+              href: ROUTES.FINANCE.CUSTOMERS,
+            },
+            {
+              id: 'finance-vendors',
+              icon: Truck,
+              label: 'Vendors & Spend',
+              href: ROUTES.FINANCE.VENDORS,
+            },
             {
               id: 'finance-profitability',
               icon: TrendingUp,

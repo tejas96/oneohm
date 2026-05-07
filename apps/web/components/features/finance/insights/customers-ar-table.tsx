@@ -115,10 +115,7 @@ export function CustomersArTable({
                         {c.customerName}
                       </MUITypography>
                       {c.customerPhone && (
-                        <MUITypography
-                          variant="finePrint"
-                          className="text-foreground-tertiary"
-                        >
+                        <MUITypography variant="finePrint" className="text-foreground-tertiary">
                           {c.customerPhone}
                         </MUITypography>
                       )}

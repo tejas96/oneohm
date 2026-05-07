@@ -153,8 +153,8 @@ export function FinanceExpensesPage(): React.JSX.Element {
       <header className="border-border-light border-b px-6 py-4">
         <MUITypography variant="drawerTitle">Expenses</MUITypography>
         <MUITypography variant="body" className="text-foreground-secondary mt-1">
-          Org-wide expenses ledger. Filter by category, paid-by, or
-          reimbursement status; search by vendor name.
+          Org-wide expenses ledger. Filter by category, paid-by, or reimbursement status; search by
+          vendor name.
         </MUITypography>
       </header>
 

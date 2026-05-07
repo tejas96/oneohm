@@ -376,7 +376,7 @@ export class FinanceAggregationService {
         case 'customer':
           return `LOWER(COALESCE(prof.first_name, '') || ' ' || COALESCE(prof.last_name, ''))`;
         case 'project':
-          return 'LOWER(COALESCE(p.name, \'\'))';
+          return "LOWER(COALESCE(p.name, ''))";
         case 'daysOverdue':
         case undefined:
         default:
@@ -621,21 +621,10 @@ export class FinanceAggregationService {
     const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
     const offset = (page - 1) * limit;
 
-    // Date range applies ONLY to receipts/expenses sums; quotedRevenue is
-    // always taken from the latest quote version regardless of range.
+    // Profitability = lifetime metric. Quoted revenue is always the latest
+    // quote, and received/spend are all-time totals so the comparison is
+    // apples-to-apples. (See ProfitabilityQueryDto comment.)
     const params: unknown[] = [organizationId];
-    let dateClauseReceipts = '';
-    let dateClauseExpenses = '';
-    if (query.from) {
-      params.push(query.from);
-      dateClauseReceipts += ` AND pay.created_at >= $${params.length}::timestamptz `;
-      dateClauseExpenses += ` AND e.expense_date >= $${params.length}::date `;
-    }
-    if (query.to) {
-      params.push(query.to);
-      dateClauseReceipts += ` AND pay.created_at < ($${params.length}::date + INTERVAL '1 day') `;
-      dateClauseExpenses += ` AND e.expense_date <= $${params.length}::date `;
-    }
 
     const countSql = `
       SELECT COUNT(*)::int AS total
@@ -677,14 +666,12 @@ export class FinanceAggregationService {
         WHERE pay.project_id = p.id
           AND pay.deleted_at IS NULL
           AND pay.status IN ('received','verified','cleared')
-          ${dateClauseReceipts}
       ) rcv ON TRUE
       LEFT JOIN LATERAL (
         SELECT COALESCE(SUM(e.amount), 0)::numeric AS spend
         FROM project_expenses e
         WHERE e.project_id = p.id
           AND e.deleted_at IS NULL
-          ${dateClauseExpenses}
       ) spd ON TRUE
       LEFT JOIN bom bm ON bm.entity_type = 'project' AND bm.entity_id = p.id
       WHERE p.deleted_at IS NULL

@@ -235,7 +235,11 @@ export interface ProjectProfitability {
   bomVariance: number;
 }
 
-export interface ProfitabilityFilters extends DateRangeFilter {
+/**
+ * Profitability is a project-lifetime metric (no date range — see backend
+ * ProfitabilityQueryDto comment). Only pagination is supported.
+ */
+export interface ProfitabilityFilters {
   page?: number;
   limit?: number;
 }

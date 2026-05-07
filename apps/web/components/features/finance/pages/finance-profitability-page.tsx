@@ -5,14 +5,7 @@ import * as React from 'react';
 
 import { ProjectFinanceDrawer } from '../drawers';
 import { ProfitabilityTable } from '../insights/profitability-table';
-import {
-  CsvExportButton,
-  DateRangePicker,
-  LedgerToolbar,
-  type CsvColumn,
-  type DateRangeValue,
-  resolveFyPresetRange,
-} from '../shared';
+import { CsvExportButton, LedgerToolbar, type CsvColumn } from '../shared';
 
 import { ErrorState, TablePagination } from '@/components/shared';
 import { MUITypography } from '@/components/ui';
@@ -27,26 +20,22 @@ import {
 /**
  * Org-wide Project Profitability insights page.
  *
+ * Profitability is a project-lifetime metric: latest quoted revenue vs
+ * all-time posted spend. Mixing a date-range filter with the unfiltered
+ * quoted revenue produced misleading "100% margin" rows for any project
+ * whose spend fell outside the range, so we removed the date picker
+ * entirely. Reviewers drill into individual periods via the per-project
+ * drawer (which still shows date-banded receipts/expenses).
+ *
  * Backend paginates this one because in established orgs there can be
- * hundreds of projects. We rely on the URL/state-driven page+pageSize
- * controls just like the Receipts/Expenses ledgers.
- *
- * Search is intentionally NOT included — the backend endpoint doesn't
- * support text search and a per-page client-side filter would feel
- * broken (it would only filter the visible page). The DateRangePicker
- * narrows down by project date range which is the primary slicing
- * dimension reviewers care about.
- *
- * V1: row click is a no-op until ProjectFinanceDrawer ships in slice
- * 9.
+ * hundreds of projects. The free-text input narrows the visible page
+ * client-side (search across all rows would require backend support
+ * we haven't added in V1).
  */
 
 const DEFAULT_PAGE_SIZE = 25;
 
 export function FinanceProfitabilityPage(): React.JSX.Element {
-  const [range, setRange] = React.useState<DateRangeValue>(
-    () => resolveFyPresetRange('this-fy') ?? {},
-  );
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(DEFAULT_PAGE_SIZE);
   const [search, setSearch] = React.useState('');
@@ -59,16 +48,14 @@ export function FinanceProfitabilityPage(): React.JSX.Element {
 
   React.useEffect(() => {
     setPage(1);
-  }, [range, pageSize]);
+  }, [pageSize]);
 
   const filters: ProfitabilityFilters = React.useMemo(
     () => ({
-      from: range.from,
-      to: range.to,
       page,
       limit: pageSize,
     }),
-    [range, page, pageSize],
+    [page, pageSize],
   );
 
   const query = useOrgProfitability(filters);
@@ -125,7 +112,7 @@ export function FinanceProfitabilityPage(): React.JSX.Element {
       <header className="border-border-light border-b px-6 py-4">
         <MUITypography variant="drawerTitle">Project Profitability</MUITypography>
         <MUITypography variant="body" className="text-foreground-secondary mt-1">
-          Per-project margin: latest quoted revenue minus total posted spend. Color highlights
+          Per-project margin: latest quoted revenue minus all-time posted spend. Color highlights
           margin band (≥20% green, 10-20% amber, &lt;10% red).
         </MUITypography>
       </header>
@@ -134,12 +121,11 @@ export function FinanceProfitabilityPage(): React.JSX.Element {
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Filter visible page by project / customer…"
-        filtersSlot={<DateRangePicker value={range} onChange={setRange} />}
         actionsSlot={
           <CsvExportButton
             fetchAll={fetchAllForCsv}
             columns={csvColumns}
-            filename={`profitability-${range.from ?? 'all'}-${range.to ?? 'all'}`}
+            filename="profitability-lifetime"
             disabled={data.length === 0}
           />
         }

@@ -8,7 +8,6 @@ import * as React from 'react';
 
 import { AmountCell } from '../shared';
 
-
 import { MUITypography } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import type { DashboardActivityItem } from '@/lib/hooks/resources';
@@ -63,9 +62,7 @@ export function RecentActivityFeed({
               <button
                 key={`${it.type}-${it.id}`}
                 type="button"
-                onClick={() =>
-                  router.push(ROUTES.PROJECTS.DETAIL.replace('[id]', it.projectId))
-                }
+                onClick={() => router.push(ROUTES.PROJECTS.DETAIL.replace('[id]', it.projectId))}
                 className="hover:bg-surface-secondary flex items-center gap-3 rounded-md px-2 py-2 text-left transition-colors"
               >
                 <span

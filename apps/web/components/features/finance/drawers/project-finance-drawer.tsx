@@ -82,7 +82,8 @@ function termToneFromStatus(
   isOverdue: boolean,
 ): 'default' | 'success' | 'warning' | 'error' {
   if (s === PaymentTermStatus.PAID) return 'success';
-  if (isOverdue && s !== PaymentTermStatus.WAIVED && s !== PaymentTermStatus.CANCELLED) return 'error';
+  if (isOverdue && s !== PaymentTermStatus.WAIVED && s !== PaymentTermStatus.CANCELLED)
+    return 'error';
   if (s === PaymentTermStatus.PARTIAL) return 'warning';
   return 'default';
 }
@@ -167,7 +168,8 @@ export function ProjectFinanceDrawer({
     onClose();
   }, [projectId, router, onClose]);
 
-  const subtitle = customerName ?? (projectName && projectName !== projectNumber ? projectName : undefined);
+  const subtitle =
+    customerName ?? (projectName && projectName !== projectNumber ? projectName : undefined);
   const title = projectNumber
     ? projectName && projectName !== projectNumber
       ? `${projectNumber} · ${projectName}`
@@ -243,11 +245,15 @@ export function ProjectFinanceDrawer({
                     {t.name}
                   </MUITypography>
                   <MUITypography variant="finePrint" className="text-foreground-tertiary">
-                    {t.dueDate ? `Due ${formatDate(t.dueDate, 'medium')}` : 'No due date'} · {t.status}
+                    {t.dueDate ? `Due ${formatDate(t.dueDate, 'medium')}` : 'No due date'} ·{' '}
+                    {t.status}
                   </MUITypography>
                 </div>
                 <div className="text-right">
-                  <AmountCell value={outstanding} className={`block text-right tabular-nums text-${tone === 'default' ? 'foreground' : tone}`} />
+                  <AmountCell
+                    value={outstanding}
+                    className={`block text-right tabular-nums text-${tone === 'default' ? 'foreground' : tone}`}
+                  />
                   <MUITypography variant="finePrint" className="text-foreground-tertiary">
                     of {formatCurrency(Number(t.expectedAmount))}
                   </MUITypography>
@@ -307,7 +313,8 @@ export function ProjectFinanceDrawer({
                   {e.expenseNumber}
                 </MUITypography>
                 <MUITypography variant="finePrint" className="text-foreground-tertiary truncate">
-                  {formatDate(e.expenseDate, 'medium')} · {e.vendorName ?? 'No vendor'} · {e.category}
+                  {formatDate(e.expenseDate, 'medium')} · {e.vendorName ?? 'No vendor'} ·{' '}
+                  {e.category}
                 </MUITypography>
               </div>
               <AmountCell value={Number(e.amount)} />

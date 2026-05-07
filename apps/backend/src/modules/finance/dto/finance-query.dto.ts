@@ -102,7 +102,10 @@ export class ReceiptsQueryDto extends PaginationQueryBase {
 }
 
 export class OutstandingQueryDto extends PaginationQueryBase {
-  @ApiPropertyOptional({ description: 'Aging bucket filter', enum: ['current', '0-30', '31-60', '61-90', '90+'] })
+  @ApiPropertyOptional({
+    description: 'Aging bucket filter',
+    enum: ['current', '0-30', '31-60', '61-90', '90+'],
+  })
   @IsOptional()
   @IsString()
   bucket?: 'current' | '0-30' | '31-60' | '61-90' | '90+';
@@ -117,7 +120,9 @@ export class OutstandingQueryDto extends PaginationQueryBase {
   @IsUUID()
   projectId?: string;
 
-  @ApiPropertyOptional({ description: 'Search across project name/number, customer name, term name' })
+  @ApiPropertyOptional({
+    description: 'Search across project name/number, customer name, term name',
+  })
   @IsOptional()
   @IsString()
   search?: string;
@@ -161,17 +166,14 @@ export class VendorsSpendQueryDto extends DateRangeQueryDto {
   category?: ExpenseCategory;
 }
 
-export class ProfitabilityQueryDto extends PaginationQueryBase {
-  @ApiPropertyOptional({ description: 'Inclusive start date (YYYY-MM-DD) for expenses & receipts' })
-  @IsOptional()
-  @IsDateString()
-  from?: string;
-
-  @ApiPropertyOptional({ description: 'Inclusive end date (YYYY-MM-DD) for expenses & receipts' })
-  @IsOptional()
-  @IsDateString()
-  to?: string;
-}
+/**
+ * Profitability is a project-lifetime metric: latest quoted revenue vs
+ * all-time posted spend. We intentionally do NOT accept a date range
+ * because mixing range-filtered spend with lifetime quoted revenue
+ * produces meaningless margins (projects with all spend outside the
+ * range appear as "100% margin" — see V1 QA note).
+ */
+export class ProfitabilityQueryDto extends PaginationQueryBase {}
 
 export class ExpensesQueryDto extends PaginationQueryBase {
   @ApiPropertyOptional({ enum: ExpenseCategory })

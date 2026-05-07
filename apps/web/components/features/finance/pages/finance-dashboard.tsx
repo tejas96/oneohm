@@ -12,11 +12,7 @@ import { SpeedDialActions } from '../dashboard/speed-dial-actions';
 import { SpendByCategoryDonut } from '../dashboard/spend-by-category-donut';
 import { TopCustomersOutstanding } from '../dashboard/top-customers-outstanding';
 import { TopVendorsSpend } from '../dashboard/top-vendors-spend';
-import {
-  DateRangePicker,
-  type DateRangeValue,
-  resolveFyPresetRange,
-} from '../shared';
+import { DateRangePicker, type DateRangeValue, resolveFyPresetRange } from '../shared';
 
 import { ErrorState } from '@/components/shared';
 import { MUITypography } from '@/components/ui';
@@ -88,8 +84,8 @@ export function FinanceDashboard(): React.JSX.Element {
         variant="outlined"
         sx={{ borderRadius: 2, py: 0.5, '& .MuiAlert-message': { fontSize: 12 } }}
       >
-        V1 caveats: open to all authenticated users (no permission gating yet); vendor
-        matching is by case-insensitive name (no vendor-master FK).
+        V1 caveats: open to all authenticated users (no permission gating yet); vendor matching is
+        by case-insensitive name (no vendor-master FK).
       </Alert>
 
       {dashboardQuery.isError ? (
@@ -102,10 +98,7 @@ export function FinanceDashboard(): React.JSX.Element {
         />
       ) : (
         <>
-          <FinanceKpiStrip
-            kpis={dashboardQuery.data?.kpis}
-            isLoading={dashboardQuery.isLoading}
-          />
+          <FinanceKpiStrip kpis={dashboardQuery.data?.kpis} isLoading={dashboardQuery.isLoading} />
 
           <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2">

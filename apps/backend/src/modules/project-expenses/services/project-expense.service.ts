@@ -31,7 +31,6 @@ import { ExpenseProductLinkEntity } from '../entities/expense-product-link.entit
 import { ProjectExpenseEntity } from '../entities/project-expense.entity';
 import { ProjectExpenseRepository } from '../repositories/project-expense.repository';
 
-
 /**
  * ProjectExpenseService
  *

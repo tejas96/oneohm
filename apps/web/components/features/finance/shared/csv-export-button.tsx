@@ -83,4 +83,3 @@ export function CsvExportButton<T>({
     </Button>
   );
 }
-

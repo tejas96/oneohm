@@ -64,7 +64,7 @@ interface ReportConfig {
   title: string;
   description: string;
   icon: React.ReactNode;
-  scope: 'date' | 'date+vendor' | 'date+customer' | 'asOfDate';
+  scope: 'date' | 'date+vendor' | 'date+customer' | 'asOfDate' | 'none';
   /** Async exporter; receives the selected scope, returns nothing once download fires. */
   run: (
     args: { from?: string; to?: string; scopeText?: string; asOfDate?: string },
@@ -80,13 +80,10 @@ async function exportReceipts(
   args: { from?: string; to?: string },
   headers: Record<string, string>,
 ): Promise<{ rows: number; truncated: boolean }> {
-  const { data } = await apiClient.get<PaginatedResponse<OrgReceiptListItem>>(
-    '/finance/receipts',
-    {
-      headers,
-      params: { dateFrom: args.from, dateTo: args.to, page: 1, limit: CSV_CAP },
-    },
-  );
+  const { data } = await apiClient.get<PaginatedResponse<OrgReceiptListItem>>('/finance/receipts', {
+    headers,
+    params: { dateFrom: args.from, dateTo: args.to, page: 1, limit: CSV_CAP },
+  });
   const cols: CsvColumn<OrgReceiptListItem>[] = [
     { header: 'Date', accessor: (r) => formatDate(r.createdAt, 'medium') },
     { header: 'Receipt #', accessor: (r) => r.paymentNumber },
@@ -105,13 +102,10 @@ async function exportExpenses(
   args: { from?: string; to?: string },
   headers: Record<string, string>,
 ): Promise<{ rows: number; truncated: boolean }> {
-  const { data } = await apiClient.get<PaginatedResponse<OrgExpenseListItem>>(
-    '/finance/expenses',
-    {
-      headers,
-      params: { dateFrom: args.from, dateTo: args.to, page: 1, limit: CSV_CAP },
-    },
-  );
+  const { data } = await apiClient.get<PaginatedResponse<OrgExpenseListItem>>('/finance/expenses', {
+    headers,
+    params: { dateFrom: args.from, dateTo: args.to, page: 1, limit: CSV_CAP },
+  });
   const cols: CsvColumn<OrgExpenseListItem>[] = [
     { header: 'Date', accessor: (e) => formatDate(e.expenseDate, 'medium') },
     { header: 'Expense #', accessor: (e) => e.expenseNumber },
@@ -156,10 +150,10 @@ async function exportOutstanding(
   headers: Record<string, string>,
 ): Promise<{ rows: number; truncated: boolean }> {
   // Outstanding endpoint doesn't take date range — it's "as of now".
-  const { data } = await apiClient.get<PaginatedResponse<OutstandingTerm>>(
-    '/finance/outstanding',
-    { headers, params: { page: 1, limit: CSV_CAP, sort: 'dueDate', sortOrder: 'ASC' } },
-  );
+  const { data } = await apiClient.get<PaginatedResponse<OutstandingTerm>>('/finance/outstanding', {
+    headers,
+    params: { page: 1, limit: CSV_CAP, sort: 'dueDate', sortOrder: 'ASC' },
+  });
   const cols: CsvColumn<OutstandingTerm>[] = [
     { header: 'Due Date', accessor: (t) => (t.dueDate ? formatDate(t.dueDate, 'medium') : '') },
     { header: 'Project #', accessor: (t) => t.projectNumber },
@@ -178,12 +172,11 @@ async function exportOutstanding(
 }
 
 async function exportProfitability(
-  args: { from?: string; to?: string },
   headers: Record<string, string>,
 ): Promise<{ rows: number; truncated: boolean }> {
   const { data } = await apiClient.get<PaginatedResponse<ProjectProfitability>>(
     '/finance/projects/profitability',
-    { headers, params: { from: args.from, to: args.to, page: 1, limit: CSV_CAP } },
+    { headers, params: { page: 1, limit: CSV_CAP } },
   );
   const cols: CsvColumn<ProjectProfitability>[] = [
     { header: 'Project #', accessor: (p) => p.projectNumber },
@@ -197,10 +190,7 @@ async function exportProfitability(
     { header: 'BOM Target', accessor: (p) => p.bomTarget },
     { header: 'BOM Variance', accessor: (p) => p.bomVariance },
   ];
-  downloadCsv(
-    buildCsv(data.data, cols),
-    `profitability-${args.from ?? 'all'}-${args.to ?? 'all'}.csv`,
-  );
+  downloadCsv(buildCsv(data.data, cols), 'profitability-lifetime.csv');
   return { rows: data.data.length, truncated: data.data.length === CSV_CAP };
 }
 
@@ -209,19 +199,16 @@ async function exportVendorStatement(
   headers: Record<string, string>,
 ): Promise<{ rows: number; truncated: boolean }> {
   // Reuses /finance/expenses with vendorSearch substring (case-insensitive on backend).
-  const { data } = await apiClient.get<PaginatedResponse<OrgExpenseListItem>>(
-    '/finance/expenses',
-    {
-      headers,
-      params: {
-        dateFrom: args.from,
-        dateTo: args.to,
-        vendorSearch: args.scopeText || undefined,
-        page: 1,
-        limit: CSV_CAP,
-      },
+  const { data } = await apiClient.get<PaginatedResponse<OrgExpenseListItem>>('/finance/expenses', {
+    headers,
+    params: {
+      dateFrom: args.from,
+      dateTo: args.to,
+      vendorSearch: args.scopeText || undefined,
+      page: 1,
+      limit: CSV_CAP,
     },
-  );
+  });
   const cols: CsvColumn<OrgExpenseListItem>[] = [
     { header: 'Date', accessor: (e) => formatDate(e.expenseDate, 'medium') },
     { header: 'Expense #', accessor: (e) => e.expenseNumber },
@@ -247,19 +234,16 @@ async function exportCustomerStatement(
 ): Promise<{ rows: number; truncated: boolean }> {
   // Reuses /finance/receipts with the existing free-text search param,
   // which the backend matches against paymentNumber/reference/customerName.
-  const { data } = await apiClient.get<PaginatedResponse<OrgReceiptListItem>>(
-    '/finance/receipts',
-    {
-      headers,
-      params: {
-        dateFrom: args.from,
-        dateTo: args.to,
-        search: args.scopeText || undefined,
-        page: 1,
-        limit: CSV_CAP,
-      },
+  const { data } = await apiClient.get<PaginatedResponse<OrgReceiptListItem>>('/finance/receipts', {
+    headers,
+    params: {
+      dateFrom: args.from,
+      dateTo: args.to,
+      search: args.scopeText || undefined,
+      page: 1,
+      limit: CSV_CAP,
     },
-  );
+  });
   const cols: CsvColumn<OrgReceiptListItem>[] = [
     { header: 'Date', accessor: (r) => formatDate(r.createdAt, 'medium') },
     { header: 'Receipt #', accessor: (r) => r.paymentNumber },
@@ -314,10 +298,11 @@ const REPORTS: ReportConfig[] = [
   {
     id: 'profitability',
     title: 'Project Profitability',
-    description: 'Per-project margin: quoted revenue, received, total spend, BOM variance.',
+    description:
+      'Lifetime per-project margin: latest quoted revenue, all-time received & spend, BOM variance.',
     icon: <TrendingUpOutlinedIcon />,
-    scope: 'date',
-    run: (args, headers) => exportProfitability({ from: args.from, to: args.to }, headers),
+    scope: 'none',
+    run: (_args, headers) => exportProfitability(headers),
   },
   {
     id: 'vendor',
@@ -349,8 +334,8 @@ export function FinanceReportsPage(): React.JSX.Element {
       <header className="border-border-light border-b px-6 py-4">
         <MUITypography variant="drawerTitle">Reports &amp; Exports</MUITypography>
         <MUITypography variant="body" className="text-foreground-secondary mt-1">
-          One-click CSV exports for the most common finance deliverables. Each report exports up
-          to {CSV_CAP.toLocaleString('en-IN')} rows; narrow the date range if your set is larger.
+          One-click CSV exports for the most common finance deliverables. Each report exports up to{' '}
+          {CSV_CAP.toLocaleString('en-IN')} rows; narrow the date range if your set is larger.
         </MUITypography>
       </header>
 
@@ -462,7 +447,7 @@ function ReportExportDialog({
       </MUIDialogHeader>
       <MUIDialogBody>
         <div className="flex flex-col gap-4">
-          {report.scope === 'asOfDate' ? (
+          {report.scope === 'asOfDate' && (
             <TextField
               type="date"
               label="As of date"
@@ -472,13 +457,21 @@ function ReportExportDialog({
               InputLabelProps={{ shrink: true }}
               fullWidth
             />
-          ) : (
+          )}
+          {(report.scope === 'date' ||
+            report.scope === 'date+vendor' ||
+            report.scope === 'date+customer') && (
             <div>
               <MUITypography variant="finePrint" className="text-foreground-secondary mb-1 block">
                 Date range
               </MUITypography>
               <DateRangePicker value={range} onChange={setRange} />
             </div>
+          )}
+          {report.scope === 'none' && (
+            <MUITypography variant="body" className="text-foreground-secondary">
+              No filters — exports all projects with their lifetime profitability.
+            </MUITypography>
           )}
 
           {report.scope === 'date+vendor' && (

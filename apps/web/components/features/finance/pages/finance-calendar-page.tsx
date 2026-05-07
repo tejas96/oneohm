@@ -143,10 +143,7 @@ export function FinanceCalendarPage(): React.JSX.Element {
     });
   }, [query.data, today]);
 
-  const grandTotal = React.useMemo(
-    () => buckets.reduce((s, b) => s + b.total, 0),
-    [buckets],
-  );
+  const grandTotal = React.useMemo(() => buckets.reduce((s, b) => s + b.total, 0), [buckets]);
 
   const fetchAllForCsv = React.useCallback(
     async (cap: number): Promise<OutstandingTerm[]> => {
@@ -190,8 +187,7 @@ export function FinanceCalendarPage(): React.JSX.Element {
       <header className="border-border-light border-b px-6 py-4">
         <MUITypography variant="drawerTitle">Dues Calendar</MUITypography>
         <MUITypography variant="body" className="text-foreground-secondary mt-1">
-          Every open payment term grouped by when it&apos;s due. Click any row for project
-          context.
+          Every open payment term grouped by when it&apos;s due. Click any row for project context.
         </MUITypography>
       </header>
 
@@ -330,10 +326,7 @@ function BucketSection({
               <MUITypography variant="bodyPrimary" className="truncate">
                 {t.projectNumber}
               </MUITypography>
-              <MUITypography
-                variant="finePrint"
-                className="text-foreground-tertiary truncate"
-              >
+              <MUITypography variant="finePrint" className="text-foreground-tertiary truncate">
                 {t.projectName}
               </MUITypography>
             </div>
@@ -341,10 +334,7 @@ function BucketSection({
               <MUITypography variant="body" className="truncate">
                 {t.customerName}
               </MUITypography>
-              <MUITypography
-                variant="finePrint"
-                className="text-foreground-tertiary truncate"
-              >
+              <MUITypography variant="finePrint" className="text-foreground-tertiary truncate">
                 {t.name}
               </MUITypography>
             </div>

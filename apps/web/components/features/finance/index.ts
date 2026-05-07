@@ -20,8 +20,4 @@ export { FinanceCalendarPage } from './pages/finance-calendar-page';
 export { FinanceReportsPage } from './pages/finance-reports-page';
 
 // Drilldown drawers
-export {
-  ProjectFinanceDrawer,
-  CustomerFinanceDrawer,
-  VendorFinanceDrawer,
-} from './drawers';
+export { ProjectFinanceDrawer, CustomerFinanceDrawer, VendorFinanceDrawer } from './drawers';
