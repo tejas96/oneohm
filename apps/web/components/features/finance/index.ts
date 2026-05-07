@@ -13,3 +13,6 @@ export { FinanceDashboard } from './pages/finance-dashboard';
 export { FinanceReceiptsPage } from './pages/finance-receipts-page';
 export { FinanceExpensesPage } from './pages/finance-expenses-page';
 export { FinanceOutstandingPage } from './pages/finance-outstanding-page';
+export { FinanceCustomersPage } from './pages/finance-customers-page';
+export { FinanceVendorsPage } from './pages/finance-vendors-page';
+export { FinanceProfitabilityPage } from './pages/finance-profitability-page';
