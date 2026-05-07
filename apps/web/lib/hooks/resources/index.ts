@@ -274,6 +274,39 @@ export {
   type ExpenseProjectSummary,
 } from './project-expenses';
 
+// Finance — Org Aggregations (Finance module pages)
+export {
+  useOrgFinanceDashboard,
+  useOrgReceipts,
+  useOrgExpenses,
+  useOrgOutstanding,
+  useOrgCustomersAr,
+  useOrgVendorsSpend,
+  useOrgProfitability,
+  orgFinanceKeys,
+  type AgingBucket,
+  type DateRangeFilter,
+  type DashboardData,
+  type DashboardKpis,
+  type DashboardCashFlowPoint,
+  type DashboardSpendByCategory,
+  type DashboardTopCustomer,
+  type DashboardTopVendor,
+  type DashboardActivityItem,
+  type OrgReceiptListItem,
+  type OrgReceiptsFilters,
+  type OrgExpenseListItem,
+  type OrgExpensesFilters,
+  type OutstandingTerm,
+  type OutstandingFilters,
+  type CustomerAging,
+  type VendorSpend,
+  type VendorSpendByCategory,
+  type VendorsSpendFilters,
+  type ProjectProfitability,
+  type ProfitabilityFilters,
+} from './finance-org';
+
 // Finance / BOM — Procurement Status
 export {
   useBomProcurementStatus,
