@@ -37,10 +37,16 @@ import {
 import { PaymentService } from '../services/payment.service';
 
 /**
- * Controller for Payment operations
+ * PaymentController
+ *
+ * @deprecated Permanent alias for `/receipts/*`. New integrations should
+ * use ReceiptController, which performs transactional create with
+ * payment-term FOR UPDATE locks, FSM-validated status transitions, and
+ * proof-document attachment in a single DB transaction. This controller
+ * remains available indefinitely so existing integrations do not break.
  */
 @Controller('payments')
-@ApiTags('Payments')
+@ApiTags('Payments (deprecated — use /receipts)')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export class PaymentController {

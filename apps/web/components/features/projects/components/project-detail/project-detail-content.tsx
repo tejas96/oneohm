@@ -10,7 +10,6 @@ import { EditProjectModal } from '../edit-project-modal';
 import { ProjectBomTab } from './tabs/project-bom-tab';
 import { ProjectDocumentsTab } from './tabs/project-documents-tab';
 import { ProjectOverviewTab } from './tabs/project-overview-tab';
-import { ProjectPaymentsTab } from './tabs/project-payments-tab';
 import { ProjectReportsTab } from './tabs/project-reports-tab';
 import { ProjectSummaryTab } from './tabs/project-summary-tab';
 import { ProjectSurveysTab } from './tabs/project-surveys-tab';
@@ -18,6 +17,7 @@ import { ProjectTasksTab } from './tabs/project-tasks-tab';
 import { PROJECT_DETAIL_TABS, type ProjectDetailTab } from '../../constants';
 import { useProject, useProjectTeam } from '../../hooks/use-project-detail';
 
+import { ProjectFinanceTab } from '@/components/features/finance';
 import { ProjectAllocationsTab } from '@/components/features/inventory';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -56,14 +56,21 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const tabParam = searchParams.get('tab') ?? 'overview';
-  const initialTab = VALID_TABS.has(tabParam) ? (tabParam as ProjectDetailTab) : 'overview';
+  // Backward-compat: the legacy "payments" tab was renamed to "finance"
+  // when the merged Finance subsystem shipped. Existing bookmarks /
+  // deep-links keep working by transparently mapping the old slug.
+  const normalizeTab = (raw: string | null): ProjectDetailTab => {
+    const value = raw ?? 'overview';
+    if (value === 'payments') return 'finance';
+    return VALID_TABS.has(value) ? (value as ProjectDetailTab) : 'overview';
+  };
+
+  const initialTab = normalizeTab(searchParams.get('tab'));
   const [activeTab, setActiveTab] = useState<ProjectDetailTab>(initialTab);
 
   useEffect(() => {
-    const param = searchParams.get('tab') ?? 'overview';
-    const tab = VALID_TABS.has(param) ? (param as ProjectDetailTab) : 'overview';
-    setActiveTab(tab);
+    const tab = searchParams.get('tab');
+    setActiveTab(normalizeTab(tab));
   }, [searchParams]);
 
   const { data: project, isLoading, isError, error, refetch } = useProject(projectId);
@@ -149,8 +156,8 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
           <ProjectDocumentsTab projectId={projectId} />
         </TabsContent>
 
-        <TabsContent value="payments">
-          <ProjectPaymentsTab projectId={projectId} isActive={activeTab === 'payments'} />
+        <TabsContent value="finance">
+          <ProjectFinanceTab projectId={projectId} isActive={activeTab === 'finance'} />
         </TabsContent>
 
         <TabsContent value="bom">

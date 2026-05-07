@@ -5,10 +5,10 @@ import { AlertTriangle, CalendarClock, CheckCircle2, FileText, Layers, Wallet } 
 import Link from 'next/link';
 import { type ElementType, type ReactElement, useMemo } from 'react';
 
-import { useProjectPaymentSummary, useProjectReports, type ProjectDetail } from '../../../../hooks';
+import { useProjectReports, type ProjectDetail } from '../../../../hooks';
 
 import { Skeleton } from '@/components/ui';
-import { useProjectSummary } from '@/lib/hooks/resources';
+import { useProjectReceiptSummary, useProjectSummary } from '@/lib/hooks/resources';
 import { buildTasksTabUrl, cn, formatNumber } from '@/lib/utils';
 
 interface OverviewInsightsStripProps {
@@ -38,7 +38,7 @@ export function OverviewInsightsStrip({
   const { data: summary, isLoading: summaryLoading } = useProjectSummary(projectId, {
     enabled: isActive,
   });
-  const { data: paymentSummary } = useProjectPaymentSummary(projectId, { enabled: isActive });
+  const { data: paymentSummary } = useProjectReceiptSummary(projectId, { enabled: isActive });
   const { data: reportsData } = useProjectReports(projectId, { enabled: isActive });
 
   const cards = useMemo<InsightCard[]>(() => {
@@ -50,8 +50,10 @@ export function OverviewInsightsStrip({
       totalMaterials > 0 ? Math.round((readyMaterials / totalMaterials) * 100) : 0;
 
     const paymentPct =
-      paymentSummary && paymentSummary.totalExpected > 0
-        ? Math.round((paymentSummary.totalPaid / paymentSummary.totalExpected) * 100)
+      paymentSummary && paymentSummary.totals.totalExpected > 0
+        ? Math.round(
+            (paymentSummary.totals.totalReceived / paymentSummary.totals.totalExpected) * 100,
+          )
         : 0;
 
     const daysRemaining = project.endDate
@@ -89,7 +91,7 @@ export function OverviewInsightsStrip({
         valueMain: String(paymentPct),
         valueSuffix: '%',
         icon: Wallet,
-        href: `${projectPath}?tab=payments`,
+        href: `${projectPath}?tab=finance`,
         accentClass: 'bg-success/8 text-success ring-success/15',
       },
       {

@@ -45,13 +45,7 @@ export {
   type ProjectTaskListParams,
 } from '@/lib/hooks/resources';
 
-export {
-  paymentKeys,
-  useProjectPayments,
-  useProjectPaymentSummary,
-  usePaymentMilestones,
-  useProjectMilestones,
-} from './use-project-payments';
+export { paymentKeys, usePaymentMilestones, useProjectMilestones } from './use-project-payments';
 export { projectAttentionKeys, useProjectAttention } from './use-project-attention';
 export { projectReportKeys, useProjectReports } from './use-project-reports';
 export type { ProjectReportsData } from './use-project-reports';
@@ -94,11 +88,9 @@ export {
 export type {
   MilestoneAggregateItem,
   MilestoneWithPayment,
-  PaymentSummaryDetail,
   ProjectDetail,
   ProjectDetailProperty,
   ProjectMaterial,
-  ProjectPayment,
   ProjectTeamMember,
   TaskStatsSummary,
 } from './types';

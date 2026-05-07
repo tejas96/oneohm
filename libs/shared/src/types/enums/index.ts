@@ -8,6 +8,7 @@ export * from './customer.enum';
 export * from './customer-feedback.enum';
 export * from './document.enum';
 export * from './file.enum';
+export * from './finance.enum';
 export * from './integration-provider.enum';
 export * from './inventory.enum';
 export * from './invitation.enum';

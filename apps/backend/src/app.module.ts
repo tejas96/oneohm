@@ -17,6 +17,8 @@ import { CustomerFeedbackModule } from './modules/customer-feedback/customer-fee
 import { CustomersModule } from './modules/customers/customers.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EmployeesModule } from './modules/employees/employees.module';
+import { FinanceModule } from './modules/finance/finance.module';
+import { FinanceCommonModule } from './modules/finance-common/finance-common.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
@@ -24,8 +26,10 @@ import { LookupsModule } from './modules/lookups/lookups.module';
 import { MasterDataModule } from './modules/master-data/master-data.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { PaymentTermsModule } from './modules/payment-terms/payment-terms.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PlatformModule } from './modules/platform/platform.module';
+import { ProjectExpensesModule } from './modules/project-expenses/project-expenses.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { ResellersModule } from './modules/resellers/resellers.module';
@@ -66,6 +70,10 @@ import { UsersModule } from './modules/users/users.module';
     InventoryModule,
     NotificationsModule,
     ApprovalModule,
+    FinanceCommonModule,
+    FinanceModule,
+    PaymentTermsModule,
+    ProjectExpensesModule,
     PaymentsModule,
     CommentsModule,
     DocumentsModule,

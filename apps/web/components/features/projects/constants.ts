@@ -366,7 +366,7 @@ export const PROJECT_DETAIL_TABS = [
   { value: 'summary', label: 'Summary' },
   { value: 'tasks', label: 'Tasks' },
   { value: 'documents', label: 'Documents' },
-  { value: 'payments', label: 'Payments' },
+  { value: 'finance', label: 'Finance' },
   { value: 'bom', label: 'BOM & Inventory' },
   { value: 'allocations', label: 'Allocations' },
   { value: 'reports', label: 'Reports' },

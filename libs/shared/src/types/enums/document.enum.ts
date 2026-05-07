@@ -21,6 +21,10 @@ export enum DocumentTag {
   REPORT = 'report',
   CONTRACT = 'contract',
   INVOICE = 'invoice',
+  RECEIPT_PROOF = 'receipt_proof',
+  RECEIPT_PDF = 'receipt_pdf',
+  EXPENSE_VOUCHER = 'expense_voucher',
+  EXPENSE_RECEIPT = 'expense_receipt',
   OTHER = 'other',
 }
 
@@ -39,6 +43,7 @@ export enum DocumentEntityType {
   LOAN = 'loan',
   QUOTE = 'quote',
   PAYMENT = 'payment',
+  PROJECT_EXPENSE = 'project_expense',
 }
 
 /**

@@ -1,4 +1,11 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import {
   type PaymentMilestone,
   ProjectPriority,
@@ -12,6 +19,7 @@ import { DataSource, type EntityManager } from 'typeorm';
 import { BomService } from '../../bom/services/bom.service';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
+import { PaymentTermService } from '../../payment-terms/services/payment-term.service';
 import { QuoteService } from '../../quotes/services/quote.service';
 import { ConvertFromQuoteDto, UpdateProjectDto } from '../dto';
 import { ProjectEntity } from '../entities/project.entity';
@@ -55,6 +63,8 @@ export class ProjectService {
     private readonly taskRepository: ProjectTaskRepository,
     private readonly teamRepository: ProjectTeamRepository,
     private readonly bomService: BomService,
+    @Inject(forwardRef(() => PaymentTermService))
+    private readonly paymentTermService: PaymentTermService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -341,6 +351,10 @@ export class ProjectService {
       excludedStepIds: convertDto?.excludedStepIds,
       taskAssignments: convertDto?.taskAssignments,
       taskMilestoneOverrides: convertDto?.taskMilestoneOverrides,
+      paymentTermSnapshot: {
+        sourceVersionId: latestVersion?.id ?? null,
+        milestones: paymentMilestones,
+      },
     });
 
     // Copy BOM from quote version to project
@@ -609,6 +623,10 @@ export class ProjectService {
       milestoneName: string | null;
       milestoneOrder: number | null;
     }>;
+    paymentTermSnapshot?: {
+      sourceVersionId: string | null;
+      milestones: PaymentMilestone[] | null | undefined;
+    };
   }): Promise<ProjectEntity> {
     const {
       projectData,
@@ -621,6 +639,7 @@ export class ProjectService {
       excludedStepIds,
       taskAssignments,
       taskMilestoneOverrides,
+      paymentTermSnapshot,
     } = params;
 
     // Build a lookup from milestone name → order for fast override resolution
@@ -675,6 +694,20 @@ export class ProjectService {
         { progressPercentage: progress },
         manager,
       );
+
+      // 9. Snapshot payment terms from the source quote version (plan §11).
+      // Idempotent — no-op if any term already exists for the project.
+      // Failure here rolls back the entire project-creation transaction.
+      if (paymentTermSnapshot) {
+        await this.paymentTermService.snapshotFromQuoteVersion({
+          projectId: project.id,
+          sourceVersionId: paymentTermSnapshot.sourceVersionId,
+          milestones: paymentTermSnapshot.milestones,
+          organizationId,
+          createdBy,
+          manager,
+        });
+      }
 
       return this.projectRepository.findById(project.id, organizationId, manager);
     });

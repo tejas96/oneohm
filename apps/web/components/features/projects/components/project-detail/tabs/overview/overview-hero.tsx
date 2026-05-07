@@ -12,11 +12,12 @@ import {
   PROJECT_TYPE_BADGE_VARIANT,
   PROJECT_TYPE_LABELS,
 } from '../../../../constants';
-import { useProjectAttention, useProjectPaymentSummary } from '../../../../hooks';
+import { useProjectAttention } from '../../../../hooks';
 import type { ProjectDetail } from '../../../../hooks/types';
 
 import { Badge, Card, CardContent, Skeleton } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useProjectReceiptSummary } from '@/lib/hooks/resources';
 import { buildTasksTabUrl, toTitleLabel } from '@/lib/utils';
 import {
   formatCurrency,
@@ -79,7 +80,7 @@ export function OverviewHero({ project, projectId, isActive }: OverviewHeroProps
   const { data: attention, isLoading: attentionLoading } = useProjectAttention(projectId, {
     enabled: isActive,
   });
-  const { data: paymentSummary } = useProjectPaymentSummary(projectId, { enabled: isActive });
+  const { data: paymentSummary } = useProjectReceiptSummary(projectId, { enabled: isActive });
 
   const healthKey = (project.metadata?.healthStatus as string | undefined) ?? 'on_track';
   const healthLabel = HEALTH_STATUS_LABELS[healthKey] ?? 'On Track';
@@ -95,8 +96,8 @@ export function OverviewHero({ project, projectId, isActive }: OverviewHeroProps
   const nextActionTitle = nextAttention?.title ?? 'Continue planned execution';
   const nextActionSubtitle =
     nextAttention?.subtitle ??
-    (paymentSummary?.pendingAmount
-      ? `${formatCurrency(paymentSummary.pendingAmount)} pending in payment pipeline`
+    (paymentSummary?.totals.pending
+      ? `${formatCurrency(paymentSummary.totals.pending)} pending in payment pipeline`
       : 'No urgent blockers detected');
   const nextActionHref = nextAttention?.href ?? buildTasksTabUrl(projectPath);
   const { label: ctaLabel, Icon: CtaIcon } = nextActionCta(nextAttention);

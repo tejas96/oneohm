@@ -50,6 +50,23 @@ export class BomController {
   }
 
   /**
+   * Procurement status for a project — per-product target vs spent
+   * derived from `expense_product_links`. Powers the "Procurement"
+   * section of the project's BOM tab (plan §3.4 / §6).
+   */
+  @RequirePermission('bom:read')
+  @Get('project/:projectId/procurement-status')
+  @ApiOperation({
+    summary: 'Per-product procurement status for a project (BOM target vs spent qty)',
+  })
+  async getProcurementStatus(
+    @OrganizationContext() organizationId: string,
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+  ): Promise<ReturnType<BomService['getProcurementStatus']>> {
+    return this.bomService.getProcurementStatus(projectId, organizationId);
+  }
+
+  /**
    * Finalize BOM and auto-create stock allocations for all product line items.
    * Idempotent: calling twice returns existing allocations without duplicating.
    */

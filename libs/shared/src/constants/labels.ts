@@ -1,10 +1,15 @@
 import {
   DocumentCategory,
   DocumentTag,
+  ExpenseCategory,
+  ExpensePaidByType,
   LoanDocumentType,
   LoanStatus,
+  PaymentTermSource,
+  PaymentTermStatus,
   ProjectType,
   DcrPreference,
+  ReimbursementStatus,
 } from '../types/enums';
 
 export const LOAN_DOCUMENT_TYPE_LABELS: Record<LoanDocumentType, string> = {
@@ -81,6 +86,10 @@ export const DOCUMENT_TAG_LABELS: Record<DocumentTag, string> = {
   [DocumentTag.REPORT]: 'Report',
   [DocumentTag.CONTRACT]: 'Contract',
   [DocumentTag.INVOICE]: 'Invoice',
+  [DocumentTag.RECEIPT_PROOF]: 'Receipt Proof',
+  [DocumentTag.RECEIPT_PDF]: 'Receipt PDF',
+  [DocumentTag.EXPENSE_VOUCHER]: 'Expense Voucher',
+  [DocumentTag.EXPENSE_RECEIPT]: 'Expense Receipt',
   [DocumentTag.OTHER]: 'Other',
 };
 
@@ -91,3 +100,41 @@ export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategory, string> = {
 };
 
 export { PANEL_TECHNOLOGY_LABELS } from '../types/enums/product.enum';
+
+// ============================================
+// FINANCE LABELS
+// ============================================
+
+export const PAYMENT_TERM_STATUS_LABELS: Record<PaymentTermStatus, string> = {
+  [PaymentTermStatus.PENDING]: 'Pending',
+  [PaymentTermStatus.PARTIAL]: 'Partial',
+  [PaymentTermStatus.PAID]: 'Paid',
+  [PaymentTermStatus.WAIVED]: 'Waived',
+  [PaymentTermStatus.CANCELLED]: 'Cancelled',
+};
+
+export const PAYMENT_TERM_SOURCE_LABELS: Record<PaymentTermSource, string> = {
+  [PaymentTermSource.QUOTE_SNAPSHOT]: 'From quote',
+  [PaymentTermSource.MANUAL]: 'Manual',
+};
+
+export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+  [ExpenseCategory.MATERIALS]: 'Materials',
+  [ExpenseCategory.LABOR]: 'Labor',
+  [ExpenseCategory.TRAVEL]: 'Travel',
+  [ExpenseCategory.EQUIPMENT]: 'Equipment',
+  [ExpenseCategory.SUBCONTRACTOR]: 'Subcontractor',
+  [ExpenseCategory.PERMITS]: 'Permits',
+  [ExpenseCategory.MISC]: 'Miscellaneous',
+};
+
+export const EXPENSE_PAID_BY_LABELS: Record<ExpensePaidByType, string> = {
+  [ExpensePaidByType.COMPANY]: 'Company',
+  [ExpensePaidByType.EMPLOYEE]: 'Employee',
+};
+
+export const REIMBURSEMENT_STATUS_LABELS: Record<ReimbursementStatus, string> = {
+  [ReimbursementStatus.NOT_APPLICABLE]: 'N/A',
+  [ReimbursementStatus.PENDING]: 'Pending',
+  [ReimbursementStatus.REIMBURSED]: 'Reimbursed',
+};
