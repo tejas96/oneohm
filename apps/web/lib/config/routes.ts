@@ -132,11 +132,18 @@ export const ROUTES = {
     DETAIL: '/vendors/[id]',
   },
 
-  // Finance
+  // Finance — org-wide module (slice 5 of finance_module_v1)
+  // Per-project Finance tab continues to live under /projects/[id]?tab=finance
+  // and is unaffected by these org-level routes.
   FINANCE: {
     HOME: '/finance',
-    INVOICES: '/finance/invoices',
-    PAYMENTS: '/finance/payments',
+    RECEIPTS: '/finance/receipts',
+    EXPENSES: '/finance/expenses',
+    OUTSTANDING: '/finance/outstanding',
+    CALENDAR: '/finance/calendar',
+    CUSTOMERS: '/finance/customers',
+    VENDORS: '/finance/vendors',
+    PROFITABILITY: '/finance/profitability',
     REPORTS: '/finance/reports',
   },
 
@@ -452,10 +459,16 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   [ROUTES.INVENTORY.VENDOR_DETAIL]: 'inventory',
   [ROUTES.INVENTORY.ALERTS]: 'inventory',
 
-  // Finance routes
+  // Finance routes (org-wide module)
   [ROUTES.FINANCE.HOME]: 'finance',
-  [ROUTES.FINANCE.INVOICES]: 'finance',
-  [ROUTES.FINANCE.PAYMENTS]: 'finance',
+  [ROUTES.FINANCE.RECEIPTS]: 'finance',
+  [ROUTES.FINANCE.EXPENSES]: 'finance',
+  [ROUTES.FINANCE.OUTSTANDING]: 'finance',
+  [ROUTES.FINANCE.CALENDAR]: 'finance',
+  [ROUTES.FINANCE.CUSTOMERS]: 'finance',
+  [ROUTES.FINANCE.VENDORS]: 'finance',
+  [ROUTES.FINANCE.PROFITABILITY]: 'finance',
+  [ROUTES.FINANCE.REPORTS]: 'finance',
 
   // Service routes
   [ROUTES.SERVICE.HOME]: 'service',

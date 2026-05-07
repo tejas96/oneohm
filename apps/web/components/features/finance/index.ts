@@ -6,3 +6,6 @@ export {
   isFinanceSubTab,
   type FinanceSubTab,
 } from './constants';
+
+// Org Finance Module — page entry points (slice 5)
+export { FinanceComingSoon } from './pages/finance-coming-soon';
