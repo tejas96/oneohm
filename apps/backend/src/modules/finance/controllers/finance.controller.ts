@@ -5,12 +5,20 @@ import { type PaginatedResponse } from '@oneohm-epc/shared/types';
 import { OrganizationContext } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import {
+  CustomerAgingDto,
+  CustomersArQueryDto,
   DashboardDto,
   DashboardQueryDto,
   ExpenseListItemDto,
   ExpensesQueryDto,
+  OutstandingQueryDto,
+  OutstandingTermDto,
+  ProfitabilityQueryDto,
+  ProjectProfitabilityDto,
   ReceiptListItemDto,
   ReceiptsQueryDto,
+  VendorsSpendQueryDto,
+  VendorSpendDto,
 } from '../dto';
 import { FinanceAggregationService } from '../services/finance-aggregation.service';
 
@@ -78,5 +86,75 @@ export class FinanceController {
     @Query() query: ExpensesQueryDto,
   ): Promise<PaginatedResponse<ExpenseListItemDto>> {
     return this.aggregationService.getExpenses(organizationId, query);
+  }
+
+  // ============================================
+  // 4. OUTSTANDING — unpaid payment terms
+  // ============================================
+  @Get('outstanding')
+  @ApiOperation({
+    summary: 'Org-wide unpaid payment terms (outstanding receivables)',
+    description:
+      'Paginated list of payment terms with paid_amount < expected_amount and ' +
+      'status NOT IN (waived, cancelled). Supports filter by aging bucket, ' +
+      'customer/project, and free-text search across project + customer + term name.',
+  })
+  async getOutstanding(
+    @OrganizationContext() organizationId: string,
+    @Query() query: OutstandingQueryDto,
+  ): Promise<PaginatedResponse<OutstandingTermDto>> {
+    return this.aggregationService.getOutstanding(organizationId, query);
+  }
+
+  // ============================================
+  // 5. CUSTOMERS AR — aging buckets per customer
+  // ============================================
+  @Get('customers/ar')
+  @ApiOperation({
+    summary: 'Per-customer AR aging buckets',
+    description:
+      'Returns one row per customer with totalOutstanding broken into 5 aging ' +
+      'buckets (current, 0-30, 31-60, 61-90, 90+). Optional asOfDate (default today).',
+  })
+  async getCustomersAr(
+    @OrganizationContext() organizationId: string,
+    @Query() query: CustomersArQueryDto,
+  ): Promise<CustomerAgingDto[]> {
+    return this.aggregationService.getCustomersAr(organizationId, query);
+  }
+
+  // ============================================
+  // 6. VENDORS SPEND
+  // ============================================
+  @Get('vendors/spend')
+  @ApiOperation({
+    summary: 'Per-vendor spend analytics',
+    description:
+      'Vendor analytics over a date range: total spend, expense count, ' +
+      'last expense, top category, reimbursed %, and per-category breakdown. ' +
+      'Vendor matching is case-insensitive on TRIM(vendor_name).',
+  })
+  async getVendorsSpend(
+    @OrganizationContext() organizationId: string,
+    @Query() query: VendorsSpendQueryDto,
+  ): Promise<VendorSpendDto[]> {
+    return this.aggregationService.getVendorsSpend(organizationId, query);
+  }
+
+  // ============================================
+  // 7. PROJECT PROFITABILITY
+  // ============================================
+  @Get('projects/profitability')
+  @ApiOperation({
+    summary: 'Project profitability table',
+    description:
+      'Per-project: quotedRevenue (latest quote_versions.final_price via LATERAL join), ' +
+      'receivedAmount, totalSpend, margin (₹ + %), bomTarget vs actual variance.',
+  })
+  async getProfitability(
+    @OrganizationContext() organizationId: string,
+    @Query() query: ProfitabilityQueryDto,
+  ): Promise<PaginatedResponse<ProjectProfitabilityDto>> {
+    return this.aggregationService.getProfitability(organizationId, query);
   }
 }

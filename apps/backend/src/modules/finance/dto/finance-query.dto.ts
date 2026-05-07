@@ -101,6 +101,78 @@ export class ReceiptsQueryDto extends PaginationQueryBase {
   search?: string;
 }
 
+export class OutstandingQueryDto extends PaginationQueryBase {
+  @ApiPropertyOptional({ description: 'Aging bucket filter', enum: ['current', '0-30', '31-60', '61-90', '90+'] })
+  @IsOptional()
+  @IsString()
+  bucket?: 'current' | '0-30' | '31-60' | '61-90' | '90+';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  customerId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  projectId?: string;
+
+  @ApiPropertyOptional({ description: 'Search across project name/number, customer name, term name' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({
+    description: 'Sort key',
+    enum: ['daysOverdue', 'dueDate', 'amount', 'customer', 'project'],
+    default: 'daysOverdue',
+  })
+  @IsOptional()
+  @IsString()
+  sort?: 'daysOverdue' | 'dueDate' | 'amount' | 'customer' | 'project';
+
+  @ApiPropertyOptional({ enum: ['ASC', 'DESC'], default: 'DESC' })
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+export class CustomersArQueryDto {
+  @ApiPropertyOptional({ description: 'Set automatically by OrganizationContext.' })
+  @IsOptional()
+  @IsUUID()
+  organizationId?: string;
+
+  @ApiPropertyOptional({ description: 'As-of date for aging calc (YYYY-MM-DD); defaults to today' })
+  @IsOptional()
+  @IsDateString()
+  asOfDate?: string;
+}
+
+export class VendorsSpendQueryDto extends DateRangeQueryDto {
+  @ApiPropertyOptional({ description: 'Set automatically by OrganizationContext.' })
+  @IsOptional()
+  @IsUUID()
+  organizationId?: string;
+
+  @ApiPropertyOptional({ enum: ExpenseCategory })
+  @IsOptional()
+  @IsEnum(ExpenseCategory)
+  category?: ExpenseCategory;
+}
+
+export class ProfitabilityQueryDto extends PaginationQueryBase {
+  @ApiPropertyOptional({ description: 'Inclusive start date (YYYY-MM-DD) for expenses & receipts' })
+  @IsOptional()
+  @IsDateString()
+  from?: string;
+
+  @ApiPropertyOptional({ description: 'Inclusive end date (YYYY-MM-DD) for expenses & receipts' })
+  @IsOptional()
+  @IsDateString()
+  to?: string;
+}
+
 export class ExpensesQueryDto extends PaginationQueryBase {
   @ApiPropertyOptional({ enum: ExpenseCategory })
   @IsOptional()

@@ -3,12 +3,21 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { type PaginatedResponse } from '@oneohm-epc/shared/types';
 import { DataSource } from 'typeorm';
 
+import { type AgingBucket } from '../constants';
 import {
+  type CustomerAgingDto,
+  type CustomersArQueryDto,
   DashboardDto,
   type ExpensesQueryDto,
   ExpenseListItemDto,
+  type OutstandingQueryDto,
+  type OutstandingTermDto,
+  type ProfitabilityQueryDto,
+  type ProjectProfitabilityDto,
   type ReceiptsQueryDto,
   ReceiptListItemDto,
+  type VendorsSpendQueryDto,
+  type VendorSpendDto,
 } from '../dto';
 
 /**
@@ -303,6 +312,422 @@ export class FinanceAggregationService {
   }
 
   // ============================================
+  // 4. OUTSTANDING — org-wide unpaid payment terms
+  // ============================================
+  async getOutstanding(
+    organizationId: string,
+    query: OutstandingQueryDto,
+  ): Promise<PaginatedResponse<OutstandingTermDto>> {
+    const page = query.page && query.page > 0 ? query.page : 1;
+    const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
+    const offset = (page - 1) * limit;
+
+    const params: unknown[] = [organizationId];
+    let where = `
+      t.organization_id = $1
+      AND t.deleted_at IS NULL
+      AND t.status NOT IN ('waived','cancelled')
+      AND t.expected_amount > t.paid_amount
+    `;
+
+    if (query.bucket) {
+      params.push(query.bucket);
+      where += ` AND ${AGING_BUCKET_SQL} = $${params.length} `;
+    }
+    if (query.customerId) {
+      params.push(query.customerId);
+      where += ` AND cp.customer_id = $${params.length}::uuid `;
+    }
+    if (query.projectId) {
+      params.push(query.projectId);
+      where += ` AND t.project_id = $${params.length}::uuid `;
+    }
+    if (query.search?.trim()) {
+      params.push(`%${query.search.trim().toLowerCase()}%`);
+      where += `
+        AND (
+          LOWER(COALESCE(p.name, '')) LIKE $${params.length}
+          OR LOWER(COALESCE(p.project_number, '')) LIKE $${params.length}
+          OR LOWER(COALESCE(prof.first_name, '') || ' ' || COALESCE(prof.last_name, '')) LIKE $${params.length}
+          OR LOWER(COALESCE(t.name, '')) LIKE $${params.length}
+        )
+      `;
+    }
+
+    const countSql = `
+      SELECT COUNT(*)::int AS total
+      FROM project_payment_terms t
+      JOIN projects p             ON p.id  = t.project_id
+      LEFT JOIN customer_properties cp ON cp.id = p.property_id
+      LEFT JOIN customer_profiles prof ON prof.id = cp.customer_id
+      WHERE ${where}
+    `;
+    const countRows = await this.dataSource.query<{ total: number }[]>(countSql, params);
+    const total = Number(countRows[0]?.total ?? 0);
+
+    // sort whitelist (avoid SQL injection from `sort` param)
+    const sortDir = query.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    const sortColumn = (() => {
+      switch (query.sort) {
+        case 'dueDate':
+          return 't.due_date';
+        case 'amount':
+          return '(t.expected_amount - t.paid_amount)';
+        case 'customer':
+          return `LOWER(COALESCE(prof.first_name, '') || ' ' || COALESCE(prof.last_name, ''))`;
+        case 'project':
+          return 'LOWER(COALESCE(p.name, \'\'))';
+        case 'daysOverdue':
+        case undefined:
+        default:
+          return `(CURRENT_DATE - t.due_date)`;
+      }
+    })();
+
+    const dataParams = [...params, limit, offset];
+    const dataSql = `
+      SELECT
+        t.id,
+        t.project_id                              AS "projectId",
+        p.project_number                          AS "projectNumber",
+        p.name                                    AS "projectName",
+        cp.customer_id                            AS "customerId",
+        TRIM(CONCAT(COALESCE(prof.first_name, ''), ' ', COALESCE(prof.last_name, ''))) AS "customerName",
+        t.stage,
+        t.name,
+        t.due_date                                AS "dueDate",
+        t.expected_amount                         AS "expectedAmount",
+        t.paid_amount                             AS "paidAmount",
+        (t.expected_amount - t.paid_amount)       AS "outstandingAmount",
+        t.status,
+        CASE WHEN t.due_date IS NULL THEN NULL ELSE (CURRENT_DATE - t.due_date) END AS "daysOverdue",
+        ${AGING_BUCKET_SQL}                       AS "agingBucket",
+        t.created_at                              AS "createdAt"
+      FROM project_payment_terms t
+      JOIN projects p             ON p.id  = t.project_id
+      LEFT JOIN customer_properties cp ON cp.id = p.property_id
+      LEFT JOIN customer_profiles prof ON prof.id = cp.customer_id
+      WHERE ${where}
+      ORDER BY ${sortColumn} ${sortDir} NULLS LAST, t.created_at DESC
+      LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}
+    `;
+    const rows = await this.dataSource.query<RawOutstandingRow[]>(dataSql, dataParams);
+
+    return {
+      data: rows.map((r) => ({
+        id: r.id,
+        projectId: r.projectId,
+        projectNumber: r.projectNumber,
+        projectName: r.projectName,
+        customerId: r.customerId,
+        customerName: r.customerName?.trim() || '',
+        stage: r.stage,
+        name: r.name,
+        dueDate: r.dueDate ? this.formatDateOnly(r.dueDate) : null,
+        expectedAmount: Number(r.expectedAmount ?? 0),
+        paidAmount: Number(r.paidAmount ?? 0),
+        outstandingAmount: Number(r.outstandingAmount ?? 0),
+        status: r.status,
+        daysOverdue: r.daysOverdue == null ? null : Number(r.daysOverdue),
+        agingBucket: r.agingBucket,
+        createdAt: new Date(r.createdAt),
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    };
+  }
+
+  // ============================================
+  // 5. CUSTOMERS AR — per-customer aging buckets
+  // ============================================
+  async getCustomersAr(
+    organizationId: string,
+    query: CustomersArQueryDto,
+  ): Promise<CustomerAgingDto[]> {
+    const asOf = query.asOfDate ?? this.todayLocal();
+
+    // The aging bucket expression here uses ($2::date) instead of CURRENT_DATE
+    // so the as-of-date filter is honoured. Open terms are those with
+    // expected > paid AND not waived/cancelled, evaluated as-of asOfDate.
+    const sql = `
+      WITH open_terms AS (
+        SELECT
+          cp.customer_id                          AS customer_id,
+          (t.expected_amount - t.paid_amount)     AS outstanding,
+          CASE
+            WHEN t.due_date IS NULL OR t.due_date >= $2::date THEN 'current'
+            WHEN ($2::date - t.due_date) BETWEEN 1  AND 30 THEN '0-30'
+            WHEN ($2::date - t.due_date) BETWEEN 31 AND 60 THEN '31-60'
+            WHEN ($2::date - t.due_date) BETWEEN 61 AND 90 THEN '61-90'
+            ELSE '90+'
+          END AS bucket
+        FROM project_payment_terms t
+        JOIN projects p             ON p.id = t.project_id
+        JOIN customer_properties cp ON cp.id = p.property_id
+        WHERE t.organization_id = $1
+          AND t.deleted_at IS NULL
+          AND t.status NOT IN ('waived','cancelled')
+          AND t.expected_amount > t.paid_amount
+      ),
+      last_receipt AS (
+        SELECT pay.customer_id, MAX(pay.created_at) AS last_at
+        FROM payments pay
+        WHERE pay.organization_id = $1
+          AND pay.deleted_at IS NULL
+          AND pay.status IN ('received','verified','cleared')
+        GROUP BY pay.customer_id
+      )
+      SELECT
+        c.id                                                              AS "customerId",
+        TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, ''))) AS "customerName",
+        c.phone                                                           AS "customerPhone",
+        c.email                                                           AS "customerEmail",
+        COALESCE(SUM(ot.outstanding), 0)::numeric                         AS "totalOutstanding",
+        COALESCE(SUM(ot.outstanding) FILTER (WHERE ot.bucket = 'current'), 0)::numeric AS current,
+        COALESCE(SUM(ot.outstanding) FILTER (WHERE ot.bucket = '0-30'),   0)::numeric AS "bucket0to30",
+        COALESCE(SUM(ot.outstanding) FILTER (WHERE ot.bucket = '31-60'),  0)::numeric AS "bucket31to60",
+        COALESCE(SUM(ot.outstanding) FILTER (WHERE ot.bucket = '61-90'),  0)::numeric AS "bucket61to90",
+        COALESCE(SUM(ot.outstanding) FILTER (WHERE ot.bucket = '90+'),    0)::numeric AS "bucket90plus",
+        lr.last_at                                                        AS "lastReceiptDate",
+        COUNT(ot.outstanding)::int                                        AS "openTermCount"
+      FROM open_terms ot
+      JOIN customer_profiles c ON c.id = ot.customer_id
+      LEFT JOIN last_receipt lr ON lr.customer_id = c.id
+      GROUP BY c.id, c.first_name, c.last_name, c.phone, c.email, lr.last_at
+      ORDER BY "totalOutstanding" DESC
+    `;
+    const rows = await this.dataSource.query<RawCustomerAgingRow[]>(sql, [organizationId, asOf]);
+
+    return rows.map((r) => ({
+      customerId: r.customerId,
+      customerName: r.customerName?.trim() || '',
+      customerPhone: r.customerPhone,
+      customerEmail: r.customerEmail,
+      totalOutstanding: Number(r.totalOutstanding ?? 0),
+      current: Number(r.current ?? 0),
+      bucket0to30: Number(r.bucket0to30 ?? 0),
+      bucket31to60: Number(r.bucket31to60 ?? 0),
+      bucket61to90: Number(r.bucket61to90 ?? 0),
+      bucket90plus: Number(r.bucket90plus ?? 0),
+      lastReceiptDate: r.lastReceiptDate ? new Date(r.lastReceiptDate) : null,
+      openTermCount: Number(r.openTermCount ?? 0),
+    }));
+  }
+
+  // ============================================
+  // 6. VENDORS SPEND — per-vendor analytics
+  // ============================================
+  async getVendorsSpend(
+    organizationId: string,
+    query: VendorsSpendQueryDto,
+  ): Promise<VendorSpendDto[]> {
+    const { from, to } = this.resolveDateRange(query.from, query.to);
+    const params: unknown[] = [organizationId, from, to];
+    let categoryFilter = '';
+    if (query.category) {
+      params.push(query.category);
+      categoryFilter = ` AND e.category = $${params.length} `;
+    }
+
+    const sql = `
+      WITH base AS (
+        SELECT
+          LOWER(TRIM(e.vendor_name)) AS vendor_key,
+          e.vendor_name              AS raw_name,
+          e.amount                   AS amount,
+          e.category                 AS category,
+          e.expense_date             AS expense_date,
+          e.created_at               AS created_at,
+          e.reimbursement_status     AS reimb,
+          e.paid_by                  AS paid_by
+        FROM project_expenses e
+        WHERE e.organization_id = $1
+          AND e.deleted_at IS NULL
+          AND e.vendor_name IS NOT NULL
+          AND TRIM(e.vendor_name) <> ''
+          AND e.expense_date BETWEEN $2::date AND $3::date
+          ${categoryFilter}
+      ),
+      per_vendor AS (
+        SELECT
+          vendor_key,
+          (ARRAY_AGG(raw_name ORDER BY created_at))[1]   AS vendor_name,
+          SUM(amount)::numeric                            AS total_spend,
+          COUNT(*)                                        AS expense_count,
+          MAX(expense_date)                               AS last_expense_date,
+          SUM(CASE WHEN paid_by = 'employee' THEN amount ELSE 0 END)::numeric AS employee_spend,
+          SUM(CASE WHEN paid_by = 'employee' AND reimb = 'reimbursed' THEN amount ELSE 0 END)::numeric AS reimbursed_spend
+        FROM base
+        GROUP BY vendor_key
+      ),
+      cat AS (
+        SELECT vendor_key, category, SUM(amount)::numeric AS total
+        FROM base
+        GROUP BY vendor_key, category
+      ),
+      top_cat AS (
+        SELECT DISTINCT ON (vendor_key) vendor_key, category AS top_category
+        FROM cat
+        ORDER BY vendor_key, total DESC
+      ),
+      cat_json AS (
+        SELECT vendor_key, JSONB_AGG(JSONB_BUILD_OBJECT('category', category, 'total', total) ORDER BY total DESC) AS by_category
+        FROM cat
+        GROUP BY vendor_key
+      )
+      SELECT
+        v.vendor_key                        AS "vendorKey",
+        v.vendor_name                       AS "vendorName",
+        v.total_spend                       AS "totalSpend",
+        v.expense_count::int                AS "expenseCount",
+        v.last_expense_date                 AS "lastExpenseDate",
+        COALESCE(tc.top_category, '')       AS "topCategory",
+        CASE WHEN v.employee_spend > 0 THEN (v.reimbursed_spend / v.employee_spend * 100.0) ELSE 0 END AS "reimbursedPercentage",
+        COALESCE(cj.by_category, '[]'::jsonb) AS "byCategory"
+      FROM per_vendor v
+      LEFT JOIN top_cat  tc ON tc.vendor_key = v.vendor_key
+      LEFT JOIN cat_json cj ON cj.vendor_key = v.vendor_key
+      ORDER BY v.total_spend DESC
+    `;
+    const rows = await this.dataSource.query<RawVendorSpendRow[]>(sql, params);
+
+    return rows.map((r) => ({
+      vendorKey: r.vendorKey,
+      vendorName: r.vendorName,
+      totalSpend: Number(r.totalSpend ?? 0),
+      expenseCount: Number(r.expenseCount ?? 0),
+      lastExpenseDate: r.lastExpenseDate ? this.formatDateOnly(r.lastExpenseDate) : null,
+      topCategory: r.topCategory,
+      reimbursedPercentage: Number(r.reimbursedPercentage ?? 0),
+      byCategory: (r.byCategory ?? []).map((c) => ({
+        category: c.category,
+        total: Number(c.total ?? 0),
+      })),
+    }));
+  }
+
+  // ============================================
+  // 7. PROJECT PROFITABILITY
+  // ============================================
+  async getProfitability(
+    organizationId: string,
+    query: ProfitabilityQueryDto,
+  ): Promise<PaginatedResponse<ProjectProfitabilityDto>> {
+    const page = query.page && query.page > 0 ? query.page : 1;
+    const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
+    const offset = (page - 1) * limit;
+
+    // Date range applies ONLY to receipts/expenses sums; quotedRevenue is
+    // always taken from the latest quote version regardless of range.
+    const params: unknown[] = [organizationId];
+    let dateClauseReceipts = '';
+    let dateClauseExpenses = '';
+    if (query.from) {
+      params.push(query.from);
+      dateClauseReceipts += ` AND pay.created_at >= $${params.length}::timestamptz `;
+      dateClauseExpenses += ` AND e.expense_date >= $${params.length}::date `;
+    }
+    if (query.to) {
+      params.push(query.to);
+      dateClauseReceipts += ` AND pay.created_at < ($${params.length}::date + INTERVAL '1 day') `;
+      dateClauseExpenses += ` AND e.expense_date <= $${params.length}::date `;
+    }
+
+    const countSql = `
+      SELECT COUNT(*)::int AS total
+      FROM projects p
+      WHERE p.deleted_at IS NULL
+        AND EXISTS (
+          SELECT 1 FROM customer_properties cp
+          WHERE cp.id = p.property_id AND cp.organization_id = $1
+        )
+    `;
+    const countRows = await this.dataSource.query<{ total: number }[]>(countSql, [organizationId]);
+    const total = Number(countRows[0]?.total ?? 0);
+
+    const dataParams = [...params, limit, offset];
+    const dataSql = `
+      SELECT
+        p.id                                       AS "projectId",
+        p.project_number                           AS "projectNumber",
+        p.name                                     AS "projectName",
+        c.id                                       AS "customerId",
+        TRIM(CONCAT(COALESCE(c.first_name, ''), ' ', COALESCE(c.last_name, ''))) AS "customerName",
+        COALESCE(qv.final_price, 0)::numeric       AS "quotedRevenue",
+        COALESCE(rcv.received, 0)::numeric         AS "receivedAmount",
+        COALESCE(spd.spend, 0)::numeric            AS "totalSpend",
+        COALESCE(bm.total_cost, 0)::numeric        AS "bomTarget"
+      FROM projects p
+      JOIN customer_properties cp ON cp.id = p.property_id
+      JOIN customer_profiles c    ON c.id  = cp.customer_id
+      LEFT JOIN LATERAL (
+        SELECT qv.final_price
+        FROM quote_versions qv
+        WHERE qv.quote_id = p.quote_id
+        ORDER BY qv.version_number DESC
+        LIMIT 1
+      ) qv ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(SUM(pay.paid_amount), 0)::numeric AS received
+        FROM payments pay
+        WHERE pay.project_id = p.id
+          AND pay.deleted_at IS NULL
+          AND pay.status IN ('received','verified','cleared')
+          ${dateClauseReceipts}
+      ) rcv ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(SUM(e.amount), 0)::numeric AS spend
+        FROM project_expenses e
+        WHERE e.project_id = p.id
+          AND e.deleted_at IS NULL
+          ${dateClauseExpenses}
+      ) spd ON TRUE
+      LEFT JOIN bom bm ON bm.entity_type = 'project' AND bm.entity_id = p.id
+      WHERE p.deleted_at IS NULL
+        AND cp.organization_id = $1
+      ORDER BY (COALESCE(qv.final_price, 0) - COALESCE(spd.spend, 0)) DESC, p.created_at DESC
+      LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}
+    `;
+    const rows = await this.dataSource.query<RawProfitabilityRow[]>(dataSql, dataParams);
+
+    const data = rows.map((r) => {
+      const quotedRevenue = Number(r.quotedRevenue ?? 0);
+      const totalSpend = Number(r.totalSpend ?? 0);
+      const bomTarget = Number(r.bomTarget ?? 0);
+      const margin = quotedRevenue - totalSpend;
+      const marginPct = quotedRevenue > 0 ? (margin / quotedRevenue) * 100 : 0;
+      return {
+        projectId: r.projectId,
+        projectNumber: r.projectNumber,
+        projectName: r.projectName,
+        customerId: r.customerId,
+        customerName: r.customerName?.trim() || '',
+        quotedRevenue,
+        receivedAmount: Number(r.receivedAmount ?? 0),
+        totalSpend,
+        margin,
+        marginPct: Math.round(marginPct * 100) / 100,
+        bomTarget,
+        bomVariance: totalSpend - bomTarget,
+      };
+    });
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
+      },
+    };
+  }
+
+  // ============================================
   // PRIVATE: dashboard sub-queries
   // ============================================
 
@@ -545,6 +970,12 @@ export class FinanceAggregationService {
   // PRIVATE: utilities
   // ============================================
 
+  /** Today as YYYY-MM-DD in the server's local timezone. */
+  private todayLocal(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
   /**
    * Default range = current month if either bound is missing. Strings are
    * already validated as YYYY-MM-DD by class-validator.
@@ -614,6 +1045,20 @@ export class FinanceAggregationService {
     projectName: r.projectName,
   });
 }
+
+/**
+ * Shared SQL fragment that maps `t.due_date` (or NULL) into one of the 5
+ * aging buckets, evaluated against CURRENT_DATE. Used by the outstanding
+ * endpoint. The customers-AR endpoint uses a parameterised variant so the
+ * "as-of" date is honoured.
+ */
+const AGING_BUCKET_SQL = `CASE
+  WHEN t.due_date IS NULL OR t.due_date >= CURRENT_DATE THEN 'current'
+  WHEN (CURRENT_DATE - t.due_date) BETWEEN 1  AND 30 THEN '0-30'
+  WHEN (CURRENT_DATE - t.due_date) BETWEEN 31 AND 60 THEN '31-60'
+  WHEN (CURRENT_DATE - t.due_date) BETWEEN 61 AND 90 THEN '61-90'
+  ELSE '90+'
+END`;
 
 // ============================================
 // Internal raw row types (untyped at SQL boundary)
@@ -695,4 +1140,61 @@ interface RawExpenseRow {
   projectId: string;
   projectNumber: string;
   projectName: string;
+}
+
+interface RawOutstandingRow {
+  id: string;
+  projectId: string;
+  projectNumber: string;
+  projectName: string;
+  customerId: string;
+  customerName: string;
+  stage: string;
+  name: string;
+  dueDate: string | Date | null;
+  expectedAmount: string | number;
+  paidAmount: string | number;
+  outstandingAmount: string | number;
+  status: OutstandingTermDto['status'];
+  daysOverdue: string | number | null;
+  agingBucket: AgingBucket;
+  createdAt: string;
+}
+
+interface RawCustomerAgingRow {
+  customerId: string;
+  customerName: string;
+  customerPhone: string | null;
+  customerEmail: string | null;
+  totalOutstanding: string | number;
+  current: string | number;
+  bucket0to30: string | number;
+  bucket31to60: string | number;
+  bucket61to90: string | number;
+  bucket90plus: string | number;
+  lastReceiptDate: string | Date | null;
+  openTermCount: string | number;
+}
+
+interface RawVendorSpendRow {
+  vendorKey: string;
+  vendorName: string;
+  totalSpend: string | number;
+  expenseCount: string | number;
+  lastExpenseDate: string | Date | null;
+  topCategory: string;
+  reimbursedPercentage: string | number;
+  byCategory: Array<{ category: string; total: string | number }> | null;
+}
+
+interface RawProfitabilityRow {
+  projectId: string;
+  projectNumber: string;
+  projectName: string;
+  customerId: string;
+  customerName: string;
+  quotedRevenue: string | number;
+  receivedAmount: string | number;
+  totalSpend: string | number;
+  bomTarget: string | number;
 }
