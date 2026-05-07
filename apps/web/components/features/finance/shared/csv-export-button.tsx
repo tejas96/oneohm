@@ -4,16 +4,13 @@ import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { Button } from '@mui/material';
 import * as React from 'react';
 
+import { CSV_CAP, buildCsv, downloadCsv, type CsvColumn } from './csv';
+
 import { showToast } from '@/components/ui/sonner';
 
-const CAP = 5000;
+const CAP = CSV_CAP;
 
-export interface CsvColumn<T> {
-  /** Header cell text. */
-  header: string;
-  /** Per-row value extractor. Return primitives; nullish ⇒ empty cell. */
-  accessor: (row: T) => string | number | boolean | null | undefined;
-}
+export type { CsvColumn };
 
 export interface CsvExportButtonProps<T> {
   /**
@@ -54,7 +51,7 @@ export function CsvExportButton<T>({
     showToast.info(`Exporting up to ${CAP.toLocaleString('en-IN')} rows…`);
     try {
       const rows = await fetchAll(CAP);
-      const csv = toCsv(rows, columns);
+      const csv = buildCsv(rows, columns);
       downloadCsv(csv, `${filename}.csv`);
 
       if (rows.length === CAP) {
@@ -87,40 +84,3 @@ export function CsvExportButton<T>({
   );
 }
 
-// ============================================================================
-// Internals
-// ============================================================================
-
-function toCsv<T>(rows: T[], columns: CsvColumn<T>[]): string {
-  const lines: string[] = [];
-  lines.push(columns.map((c) => csvCell(c.header)).join(','));
-  for (const row of rows) {
-    lines.push(columns.map((c) => csvCell(c.accessor(row))).join(','));
-  }
-  return lines.join('\n');
-}
-
-/**
- * Quote per RFC 4180 — wrap in double quotes if the value contains
- * comma, double-quote, CR, or LF; double-up any internal double quotes.
- * Booleans render as 'Yes'/'No' for human-readability in spreadsheets.
- */
-function csvCell(value: string | number | boolean | null | undefined): string {
-  if (value === null || value === undefined) return '';
-  const str = typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value);
-  if (/[,"\r\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
-  return str;
-}
-
-function downloadCsv(csv: string, filename: string): void {
-  // BOM ensures Excel reads UTF-8 (₹, ✓, etc.) without garbling.
-  const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}

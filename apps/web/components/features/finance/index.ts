@@ -16,6 +16,8 @@ export { FinanceOutstandingPage } from './pages/finance-outstanding-page';
 export { FinanceCustomersPage } from './pages/finance-customers-page';
 export { FinanceVendorsPage } from './pages/finance-vendors-page';
 export { FinanceProfitabilityPage } from './pages/finance-profitability-page';
+export { FinanceCalendarPage } from './pages/finance-calendar-page';
+export { FinanceReportsPage } from './pages/finance-reports-page';
 
 // Drilldown drawers
 export {
