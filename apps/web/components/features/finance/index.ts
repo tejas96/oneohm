@@ -7,5 +7,6 @@ export {
   type FinanceSubTab,
 } from './constants';
 
-// Org Finance Module — page entry points (slice 5)
+// Org Finance Module — page entry points
 export { FinanceComingSoon } from './pages/finance-coming-soon';
+export { FinanceDashboard } from './pages/finance-dashboard';
