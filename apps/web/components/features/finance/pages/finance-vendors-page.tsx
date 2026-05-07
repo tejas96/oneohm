@@ -65,8 +65,8 @@ export function FinanceVendorsPage(): React.JSX.Element {
 
   const filters: VendorsSpendFilters = React.useMemo(
     () => ({
-      dateFrom: range.from,
-      dateTo: range.to,
+      from: range.from,
+      to: range.to,
       category: (category || undefined) as ExpenseCategory | undefined,
     }),
     [range, category],

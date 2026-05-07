@@ -63,8 +63,8 @@ export function FinanceProfitabilityPage(): React.JSX.Element {
 
   const filters: ProfitabilityFilters = React.useMemo(
     () => ({
-      dateFrom: range.from,
-      dateTo: range.to,
+      from: range.from,
+      to: range.to,
       page,
       limit: pageSize,
     }),
