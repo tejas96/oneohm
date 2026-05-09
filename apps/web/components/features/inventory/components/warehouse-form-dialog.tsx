@@ -42,12 +42,20 @@ const warehouseFormSchema = z
   })
   .superRefine((data, ctx) => {
     const pin = data.pincode.trim();
-    if (pin.length > 0 && (pin.length < 6 || pin.length > 10)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'PIN must be 6–10 characters',
-        path: ['pincode'],
-      });
+    if (pin.length > 0) {
+      if (!/^\d+$/.test(pin)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'PIN code must contain only digits',
+          path: ['pincode'],
+        });
+      } else if (pin.length < 6 || pin.length > 10) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'PIN must be 6–10 digits',
+          path: ['pincode'],
+        });
+      }
     }
     const ph = data.phone.trim();
     if (ph.length > 0 && (ph.length < 10 || ph.length > 20)) {
@@ -57,11 +65,18 @@ const warehouseFormSchema = z
         path: ['phone'],
       });
     }
+    if (ph.length > 0 && !/^\+?[\d\s\-()]+$/.test(ph)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Phone must contain only numbers, spaces, and +()-',
+        path: ['phone'],
+      });
+    }
     const em = data.email.trim();
     if (em.length > 0 && !z.string().email().safeParse(em).success) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Invalid email',
+        message: 'Invalid email address',
         path: ['email'],
       });
     }
@@ -117,6 +132,7 @@ export function WarehouseFormDialog({
   const form = useForm<WarehouseFormValues>({
     resolver: zodResolver(warehouseFormSchema),
     defaultValues: getDefaultValues(warehouse),
+    mode: 'onBlur',
   });
 
   useEffect(() => {
@@ -185,6 +201,7 @@ export function WarehouseFormDialog({
                 required
                 error={form.formState.errors.name?.message}
                 {...form.register('name')}
+                variant="outlined"
               />
               <MUIInput
                 id="warehouse-code"

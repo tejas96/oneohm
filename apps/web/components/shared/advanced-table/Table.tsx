@@ -700,10 +700,12 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
                               sx={{
                                 // width takes precedence; flex expressed as a percentage width
                                 width: col.width ?? (col.flex ? `${col.flex * 10}%` : undefined),
+                                minWidth: col.width,
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 maxWidth: col.width ?? (col.flex ? undefined : 240),
+                                px: 2,
                                 // Per-column cell style overrides (e.g. allow wrapping)
                                 ...col.cellSx,
                               }}

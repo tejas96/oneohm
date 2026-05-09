@@ -25,6 +25,7 @@ export interface Vendor {
   contactPerson?: string;
   email?: string;
   phone?: string;
+  alternatePhone?: string;
   address?: string;
   city?: string;
   state?: string;
@@ -34,6 +35,9 @@ export interface Vendor {
   pan?: string;
   paymentTerms?: string;
   creditDays?: number;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
   rating?: number;
   notes?: string;
   totalOrders?: number;

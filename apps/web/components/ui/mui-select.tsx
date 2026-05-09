@@ -106,13 +106,13 @@ const MUISelectInner = (
         size={formControlProps?.size}
       >
         <Select
+          displayEmpty={displayEmpty ?? Boolean(placeholder)}
+          renderValue={resolvedRenderValue}
           {...selectProps}
           id={resolvedId}
           variant={variant}
           color={resolvedColor}
           inputRef={mergedRef}
-          displayEmpty={displayEmpty ?? Boolean(placeholder)}
-          renderValue={resolvedRenderValue}
           MenuProps={selectProps.MenuProps}
         >
           {resolvedChildren}

@@ -82,7 +82,7 @@ export function DashboardKpiStrip({ statsWindow }: DashboardKpiStripProps): Reac
   });
   const activeVendors = useVendors({
     resource: 'dashboard-vendors-active',
-    defaultFilters: { isActive: true } as Record<string, unknown>,
+    defaultFilters: { status: 'active' } as Record<string, unknown>,
     defaultPageSize: 1,
     syncToUrl: false,
   });

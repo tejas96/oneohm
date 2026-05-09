@@ -248,14 +248,20 @@ export function DcrForm({ fields, onChange, disabled }: ReportFormProps<DcrField
             name="signatory_phone"
             control={control}
             render={({ field }) => (
-              <MUIInput {...field} fieldLabel="Phone" disabled={disabled} size="small" />
+              <MUIInput {...field} fieldLabel="Phone" type="tel" disabled={disabled} size="small" />
             )}
           />
           <Controller
             name="signatory_email"
             control={control}
             render={({ field }) => (
-              <MUIInput {...field} fieldLabel="Email" disabled={disabled} size="small" />
+              <MUIInput
+                {...field}
+                fieldLabel="Email"
+                type="email"
+                disabled={disabled}
+                size="small"
+              />
             )}
           />
         </Box>

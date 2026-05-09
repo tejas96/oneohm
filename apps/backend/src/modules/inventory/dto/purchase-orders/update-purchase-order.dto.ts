@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PurchaseOrderType } from '@oneohm-epc/shared/types';
-import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 /**
  * DTO for updating a purchase order
@@ -52,27 +51,12 @@ export class UpdatePurchaseOrderDto {
   actualDeliveryDate?: string;
 
   // ==================== Financial ====================
-
-  @ApiProperty({ example: 100000.0, required: false })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @IsOptional()
-  @Min(0)
-  @Type(() => Number)
-  subtotal?: number;
-
-  @ApiProperty({ example: 18000.0, required: false })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @IsOptional()
-  @Min(0)
-  @Type(() => Number)
-  taxAmount?: number;
-
-  @ApiProperty({ example: 118000.0, required: false })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @IsOptional()
-  @Min(0)
-  @Type(() => Number)
-  totalAmount?: number;
+  //
+  // subtotal / taxAmount / totalAmount are intentionally NOT accepted
+  // here. Totals are server-derived from line items at create time and
+  // are immutable through generic update — preventing clients from
+  // editing the stored payable amount without changing the underlying
+  // lines.
 
   // ==================== Payment ====================
 

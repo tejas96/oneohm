@@ -41,6 +41,11 @@ const ITEM_COLUMNS: ColumnConfig<ItemRow>[] = [
         <span className="text-xs text-foreground-secondary">
           {row.product?.code ?? row.productId}
         </span>
+        {row.notes ? (
+          <span className="truncate text-xs text-foreground-tertiary" title={row.notes}>
+            {row.notes}
+          </span>
+        ) : null}
       </div>
     ),
   },
@@ -48,6 +53,7 @@ const ITEM_COLUMNS: ColumnConfig<ItemRow>[] = [
     field: 'orderedQuantity',
     headerName: 'Ordered',
     width: 90,
+    cellSx: { textAlign: 'right' },
     renderCell: ({ row }) => (
       <span className="block text-right text-sm tabular-nums text-foreground">
         {Number(row.orderedQuantity)}
@@ -58,9 +64,21 @@ const ITEM_COLUMNS: ColumnConfig<ItemRow>[] = [
     field: 'unitPrice',
     headerName: 'Unit price',
     width: 120,
+    cellSx: { textAlign: 'right' },
     renderCell: ({ row }) => (
       <span className="block text-right text-sm tabular-nums text-foreground">
         {formatCurrency(Number(row.unitPrice))}
+      </span>
+    ),
+  },
+  {
+    field: 'taxRate',
+    headerName: 'Tax %',
+    width: 80,
+    cellSx: { textAlign: 'right' },
+    renderCell: ({ row }) => (
+      <span className="block text-right text-sm tabular-nums text-foreground-secondary">
+        {row.taxRate != null ? `${Number(row.taxRate)}%` : '—'}
       </span>
     ),
   },
@@ -90,6 +108,7 @@ const ITEM_COLUMNS: ColumnConfig<ItemRow>[] = [
     field: 'lineTotal',
     headerName: 'Line total',
     width: 130,
+    cellSx: { textAlign: 'right' },
     renderCell: ({ row }) => (
       <span className="block text-right text-sm font-medium tabular-nums text-foreground">
         {formatCurrency(Number(row.lineTotal))}
@@ -300,6 +319,16 @@ export function PoDetailPage(): React.JSX.Element {
             </MUITypography>
             <MUITypography variant="body" className="text-foreground-secondary">
               {po.notes}
+            </MUITypography>
+          </div>
+        ) : null}
+        {po.termsConditions ? (
+          <div className="sm:col-span-2 lg:col-span-4">
+            <MUITypography variant="finePrint" className="text-foreground-tertiary">
+              Terms & conditions
+            </MUITypography>
+            <MUITypography variant="body" className="whitespace-pre-line text-foreground-secondary">
+              {po.termsConditions}
             </MUITypography>
           </div>
         ) : null}

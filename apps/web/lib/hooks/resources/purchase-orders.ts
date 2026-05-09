@@ -54,6 +54,7 @@ export interface PurchaseOrderItem {
   unitPrice: number;
   taxRate?: number;
   lineTotal: number;
+  notes?: string;
   product?: { id: string; name: string; code: string };
 }
 

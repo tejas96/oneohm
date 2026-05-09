@@ -69,21 +69,22 @@ export class PurchaseOrderService {
       }
     }
 
-    // Calculate totals
+    // Totals are server-derived from line items so client-supplied
+    // subtotal/taxAmount/totalAmount cannot tamper with stored values.
+    // The DTO still accepts them for backwards compatibility but they
+    // are intentionally ignored here.
     let subtotal = 0;
-    for (const item of createDto.items) {
-      const itemTotal = item.unitPrice * item.orderedQuantity;
-      subtotal += itemTotal;
-    }
-
-    const taxAmount = createDto.taxAmount ?? 0;
-    const totalAmount = subtotal + taxAmount;
-
+    let taxAmount = 0;
     const lineItems = createDto.items.map((item) => {
       const taxRate = item.taxRate ?? 0;
-      const lineTotal = item.unitPrice * item.orderedQuantity * (1 + taxRate / 100);
+      const itemSubtotal = item.unitPrice * item.orderedQuantity;
+      const itemTax = itemSubtotal * (taxRate / 100);
+      subtotal += itemSubtotal;
+      taxAmount += itemTax;
+      const lineTotal = itemSubtotal + itemTax;
       return { item, taxRate, lineTotal };
     });
+    const totalAmount = subtotal + taxAmount;
 
     if (!Number.isFinite(subtotal) || !Number.isFinite(totalAmount)) {
       throw new BadRequestException(

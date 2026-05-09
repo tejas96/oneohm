@@ -21,5 +21,6 @@ export { DispatchCreatePage } from './components/dispatch-create-page';
 export { ProductPicker } from './components/shared/product-picker';
 export { WarehousePicker } from './components/shared/warehouse-picker';
 export { VendorPicker } from './components/shared/vendor-picker';
+export { ProjectPicker } from './components/shared/project-picker';
 export { InventoryTransactionsPage } from './components/inventory-transactions-page';
 export { InventoryAlertsPage } from './components/inventory-alerts-page';

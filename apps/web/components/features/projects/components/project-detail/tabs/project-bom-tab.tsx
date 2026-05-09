@@ -17,7 +17,9 @@ import {
   MUIDialogTitle,
 } from '@/components/ui/mui-dialog';
 import { MUIInput } from '@/components/ui/mui-input';
+import { MUITypography } from '@/components/ui/mui-typography';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ROUTES } from '@/lib/config/routes';
 import {
   useEntityBom,
   useFinalizeBomAndAllocate,
@@ -367,16 +369,34 @@ export const ProjectBomTab = React.memo(({ projectId }: ProjectBomTabProps): Rea
           </MUIDialogDescription>
         </MUIDialogHeader>
         <MUIDialogBody>
-          <MUIInput
-            mode="select"
-            fieldLabel="Source warehouse"
-            required
-            value={selectedWarehouseId}
-            onChange={(event) => setSelectedWarehouseId(event.target.value as string)}
-            options={warehouseOptions}
-            placeholder={isWarehousesLoading ? 'Loading warehouses…' : 'Select a warehouse'}
-            disabled={isWarehousesLoading || isFinalizing}
-          />
+          {!isWarehousesLoading && warehouseOptions.length === 0 ? (
+            <div className="flex flex-col gap-1">
+              <MUITypography variant="bodyPrimary">Source warehouse</MUITypography>
+              <MUITypography variant="body">
+                No warehouses found.{' '}
+                <a
+                  href={ROUTES.INVENTORY.WAREHOUSES}
+                  className="text-primary underline underline-offset-2"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Add a warehouse
+                </a>{' '}
+                to continue.
+              </MUITypography>
+            </div>
+          ) : (
+            <MUIInput
+              mode="select"
+              fieldLabel="Source warehouse"
+              required
+              value={selectedWarehouseId}
+              onChange={(event) => setSelectedWarehouseId(event.target.value as string)}
+              options={warehouseOptions}
+              placeholder={isWarehousesLoading ? 'Loading warehouses…' : 'Select a warehouse'}
+              disabled={isWarehousesLoading || isFinalizing}
+            />
+          )}
         </MUIDialogBody>
         <MUIDialogFooter>
           <Button
@@ -391,7 +411,7 @@ export const ProjectBomTab = React.memo(({ projectId }: ProjectBomTabProps): Rea
             variant="contained"
             size="small"
             onClick={() => void handleConfirmFinalize()}
-            disabled={!selectedWarehouseId || isFinalizing}
+            disabled={!selectedWarehouseId || isFinalizing || warehouseOptions.length === 0}
           >
             {isFinalizing ? 'Allocating…' : 'Finalize & Allocate'}
           </Button>

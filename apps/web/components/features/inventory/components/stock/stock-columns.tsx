@@ -75,6 +75,7 @@ export function buildStockColumns(
       headerName: 'Available',
       width: 130,
       sortable: true,
+      cellSx: { textAlign: 'right' },
       renderCell: ({ row }) => {
         const low = isLowStock(row);
         return (
@@ -96,6 +97,7 @@ export function buildStockColumns(
       field: 'reservedQuantity',
       headerName: 'Reserved',
       width: 110,
+      cellSx: { textAlign: 'right' },
       renderCell: ({ row }) => (
         <span className="block text-right text-sm tabular-nums text-foreground-secondary">
           {Number(row.reservedQuantity ?? 0)}
@@ -106,6 +108,7 @@ export function buildStockColumns(
       field: 'inTransitQuantity',
       headerName: 'In transit',
       width: 110,
+      cellSx: { textAlign: 'right' },
       renderCell: ({ row }) => (
         <span className="block text-right text-sm tabular-nums text-foreground-secondary">
           {Number(row.inTransitQuantity ?? 0)}

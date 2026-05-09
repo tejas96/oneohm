@@ -4,16 +4,21 @@ import { useEffect, useMemo, useState } from 'react';
 import { type Control, Controller, type FieldValues, type Path } from 'react-hook-form';
 
 import { MUIInput } from '@/components/ui';
-import { useResourceDetail } from '@/lib/hooks/core';
-import { useWarehouses, type Warehouse } from '@/lib/hooks/resources/warehouses';
+import { useResourceDetail, useResourceList, type BaseFilters } from '@/lib/hooks/core';
 
-interface WarehouseOption {
+interface ProjectPick {
+  id: string;
+  name: string;
+  projectNumber?: string;
+}
+
+interface ProjectOption {
   value: string;
   label: string;
   [key: string]: unknown;
 }
 
-export interface WarehousePickerProps<T extends FieldValues> {
+export interface ProjectPickerProps<T extends FieldValues> {
   control: Control<T>;
   name: Path<T>;
   label?: string;
@@ -21,23 +26,25 @@ export interface WarehousePickerProps<T extends FieldValues> {
   placeholder?: string;
 }
 
-const toOption = (w: Pick<Warehouse, 'id' | 'name' | 'code'>): WarehouseOption => ({
-  value: w.id,
-  label: w.code ? `${w.name} (${w.code})` : w.name,
+const toOption = (p: ProjectPick): ProjectOption => ({
+  value: p.id,
+  label: p.projectNumber ? `${p.projectNumber} — ${p.name}` : p.name,
 });
 
-export function WarehousePicker<T extends FieldValues>({
+export function ProjectPicker<T extends FieldValues>({
   control,
   name,
-  label = 'Warehouse',
+  label = 'Project (Optional)',
   required = false,
-  placeholder = 'Search warehouses…',
-}: WarehousePickerProps<T>): React.JSX.Element {
+  placeholder = 'Search projects…',
+}: ProjectPickerProps<T>): React.JSX.Element {
   const [inputValue, setInputValue] = useState('');
 
-  const { items, isFetching, setSearch } = useWarehouses({
-    syncToUrl: false,
+  const { items, isFetching, setSearch } = useResourceList<ProjectPick, BaseFilters>({
+    resource: 'projects',
+    endpoint: '/projects',
     defaultPageSize: 25,
+    syncToUrl: false,
   });
 
   useEffect(() => {
@@ -51,7 +58,7 @@ export function WarehousePicker<T extends FieldValues>({
       control={control}
       name={name}
       render={({ field, fieldState }) => (
-        <WarehousePickerControlled
+        <ProjectPickerControlled
           value={typeof field.value === 'string' ? field.value : ''}
           onChange={(v) => field.onChange(v)}
           options={options}
@@ -71,7 +78,7 @@ export function WarehousePicker<T extends FieldValues>({
 interface ControlledProps {
   value: string;
   onChange: (next: string) => void;
-  options: WarehouseOption[];
+  options: ProjectOption[];
   loading: boolean;
   inputValue: string;
   onInputChange: (v: string) => void;
@@ -81,7 +88,7 @@ interface ControlledProps {
   error?: string;
 }
 
-function WarehousePickerControlled({
+function ProjectPickerControlled({
   value,
   onChange,
   options,
@@ -95,9 +102,9 @@ function WarehousePickerControlled({
 }: ControlledProps): React.JSX.Element {
   const pageHasMatch = options.some((o) => o.value === value);
 
-  const detail = useResourceDetail<Warehouse>({
-    resource: 'warehouses',
-    endpoint: '/warehouses',
+  const detail = useResourceDetail<ProjectPick>({
+    resource: 'projects',
+    endpoint: '/projects',
     id: value,
     enabled: Boolean(value) && !pageHasMatch,
   });
@@ -108,7 +115,7 @@ function WarehousePickerControlled({
     }
   }, [value, pageHasMatch, detail.isError, onChange]);
 
-  const preloaded: WarehouseOption | null = useMemo(() => {
+  const preloaded: ProjectOption | null = useMemo(() => {
     if (pageHasMatch || !value) return null;
     if (!detail.data) return null;
     return toOption(detail.data);
@@ -143,8 +150,8 @@ function WarehousePickerControlled({
       noOptionsText={inputValue ? 'No matches' : 'Type to search'}
       filterOptions={(x) => x}
       isOptionEqualToValue={(a, b) => {
-        const av = typeof a === 'object' && a !== null ? (a as WarehouseOption).value : a;
-        const bv = typeof b === 'object' && b !== null ? (b as WarehouseOption).value : b;
+        const av = typeof a === 'object' && a !== null ? (a as ProjectOption).value : a;
+        const bv = typeof b === 'object' && b !== null ? (b as ProjectOption).value : b;
         return av === bv;
       }}
       getOptionLabel={(option) =>

@@ -372,13 +372,27 @@ const MUIInputInner = (
   const mergedRef = mergeRefs<HTMLInputElement>(inputRef, ref, registerRef);
 
   const resolvedChildren =
-    mode === 'select' && selectOptions && selectOptions.length > 0 && !children
-      ? selectOptions.map((o) => (
+    mode === 'select' && !children
+      ? (selectOptions ?? []).map((o) => (
           <MenuItem key={o.value} value={o.value} disabled={o.disabled}>
             {o.label}
           </MenuItem>
         ))
       : children;
+
+  const selectProps =
+    mode === 'select' && textFieldProps.placeholder
+      ? {
+          displayEmpty: true,
+          renderValue: (selected: unknown) => {
+            if (selected === '' || selected === undefined || selected === null) {
+              return <span style={{ color: '#a1a1aa' }}>{textFieldProps.placeholder}</span>;
+            }
+            const opt = selectOptions?.find((o) => o.value === selected);
+            return opt ? opt.label : (selected as React.ReactNode);
+          },
+        }
+      : undefined;
 
   return (
     <div>
@@ -395,6 +409,7 @@ const MUIInputInner = (
         color={resolvedColor}
         error={hasError}
         helperText={resolvedHelper}
+        SelectProps={selectProps}
         InputProps={{
           ...inputProps,
           startAdornment: buildStart(inputProps?.startAdornment),
