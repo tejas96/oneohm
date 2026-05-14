@@ -161,7 +161,7 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
         </TabsContent>
 
         <TabsContent value="bom">
-          <ProjectBomTab projectId={projectId} />
+          <ProjectBomTab projectId={projectId} defaultWarehouseId={project.defaultWarehouseId} />
         </TabsContent>
 
         <TabsContent value="allocations">

@@ -53,6 +53,15 @@ export class PurchaseOrderItemEntity {
   @Column({ name: 'line_total', type: 'decimal', precision: 15, scale: 2 })
   lineTotal!: number;
 
+  /**
+   * Tracks whether unit_price was prefilled from the catalog (PricingService)
+   * or manually overridden by the buyer. Nullable so legacy rows and
+   * external creators stay valid. Used for downstream variance reporting
+   * (catalog vs. actual procurement price).
+   */
+  @Column({ name: 'unit_price_source', type: 'varchar', length: 20, nullable: true })
+  unitPriceSource?: 'suggested' | 'manual_override' | null;
+
   // ==================== Notes ====================
 
   @Column({ type: 'text', nullable: true })

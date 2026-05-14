@@ -143,9 +143,22 @@ export function buildStockColumns(
     {
       field: 'stockStatus',
       headerName: 'Status',
-      width: 120,
+      width: 140,
       renderCell: ({ row }) => {
+        const avail = Number(row.availableQuantity ?? 0);
+        const reserved = Number(row.reservedQuantity ?? 0);
         const low = isLowStock(row);
+
+        // No available stock, but has reservations
+        if (avail === 0 && reserved > 0) {
+          return <MUIStatusChip label="Fully Reserved" color="warning" />;
+        }
+
+        // Completely out of stock
+        if (avail === 0 && reserved === 0) {
+          return <MUIStatusChip label="Out of Stock" color="error" />;
+        }
+
         return (
           <MUIStatusChip
             label={low ? 'Low Stock' : 'In Stock'}

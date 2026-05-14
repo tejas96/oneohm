@@ -25,6 +25,7 @@ import {
   InstallationPricingRepository,
   QuoteConfigurationRepository,
 } from '../../master-data/repositories';
+import { PricingService } from '../../master-data/services/pricing.service';
 import {
   CalculateQuoteDto,
   CalculateQuoteResponseDto,
@@ -74,6 +75,7 @@ export class QuoteCalculatorService {
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
     private readonly installationPricingRepo: InstallationPricingRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
+    private readonly pricingService: PricingService,
     @Optional()
     @Inject(forwardRef(() => InventoryStockService))
     private readonly inventoryStockService?: InventoryStockService,
@@ -513,7 +515,7 @@ export class QuoteCalculatorService {
 
     // Batch query for all product prices to avoid N+1 queries
     const productIds = overrides.map((o) => o.productId);
-    const productPricesMap = await this.productPriceRepo.findActiveForProducts(
+    const productPricesMap = await this.getProductPricesBatch(
       organizationId,
       productIds,
       projectType,
@@ -1088,7 +1090,7 @@ export class QuoteCalculatorService {
 
     // Batch query for all product prices to avoid N+1 queries
     const productIds = overrides.map((o) => o.productId);
-    const productPricesMap = await this.productPriceRepo.findActiveForProducts(
+    const productPricesMap = await this.getProductPricesBatch(
       organizationId,
       productIds,
       projectType,
@@ -1193,7 +1195,7 @@ export class QuoteCalculatorService {
 
     // Pre-fetch pricing for all available inverters in a single batch query (N+1 optimization)
     const productIds = availableInverters.map((inv) => inv.id);
-    const productPricesMap = await this.productPriceRepo.findActiveForProducts(
+    const productPricesMap = await this.getProductPricesBatch(
       organizationId,
       productIds,
       projectType,
@@ -2159,12 +2161,53 @@ export class QuoteCalculatorService {
     return pt.id;
   }
 
+  /**
+   * Single-product price resolver. Routes through PricingService so basis +
+   * cost_multiplier logic stays centralized. Returns the legacy validator
+   * shape ({ unitPrice, gstRate, costMultiplier }) using the basis-native
+   * basePrice -- this keeps existing math (e.g. pricePerWatt × wattage)
+   * byte-identical while the resolver becomes the single source of truth.
+   */
   private async getProductPrice(
     organizationId: string,
     productId: string,
     projectType?: string,
   ): Promise<{ unitPrice: number; gstRate: number; costMultiplier: number } | null> {
-    return this.productPriceRepo.findActiveForProduct(organizationId, productId, projectType);
+    const resolved = await this.pricingService.getEffectiveUnitPrice(productId, organizationId, {
+      projectType,
+    });
+    if (resolved.source === 'none' || resolved.basePrice == null) return null;
+    return {
+      unitPrice: resolved.basePrice,
+      gstRate: resolved.gstRate ?? 0,
+      costMultiplier: resolved.costMultiplier ?? 1,
+    };
+  }
+
+  /**
+   * Batch variant. Mirrors ProductPriceRepository.findActiveForProducts but
+   * goes through PricingService. Returns the same Map<productId, { unitPrice,
+   * gstRate, costMultiplier }> shape that the existing batch call sites
+   * already consume, so swapping is a one-line change at each site.
+   */
+  private async getProductPricesBatch(
+    organizationId: string,
+    productIds: string[],
+    projectType?: string,
+  ): Promise<Map<string, { unitPrice: number; gstRate: number; costMultiplier: number }>> {
+    const resolved = await this.pricingService.getEffectiveUnitPrices(productIds, organizationId, {
+      projectType,
+    });
+    const out = new Map<string, { unitPrice: number; gstRate: number; costMultiplier: number }>();
+    for (const [productId, entry] of resolved.entries()) {
+      if (entry.source === 'none' || entry.basePrice == null) continue;
+      out.set(productId, {
+        unitPrice: entry.basePrice,
+        gstRate: entry.gstRate ?? 0,
+        costMultiplier: entry.costMultiplier ?? 1,
+      });
+    }
+    return out;
   }
 
   private validatePanelPricing(

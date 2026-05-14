@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductStatus } from '@oneohm-epc/shared/types';
-import { IsNull, Repository, SelectQueryBuilder, type FindOptionsWhere } from 'typeorm';
+import { In, IsNull, Repository, SelectQueryBuilder, type FindOptionsWhere } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { ProductEntity } from '../entities/product.entity';
@@ -110,6 +110,23 @@ export class ProductRepository {
       },
       relations: ['productType', 'brand'],
     });
+  }
+
+  /**
+   * Batch load products by ids in a single query. Includes soft-deleted rows
+   * so the caller can decide what to do (e.g. PricingService needs to be
+   * able to look up products that may have been deactivated). Returns a Map
+   * keyed by productId for O(1) lookup; missing ids are absent from the map.
+   */
+  async findManyByIds(ids: string[], organizationId: string): Promise<Map<string, ProductEntity>> {
+    const map = new Map<string, ProductEntity>();
+    if (ids.length === 0) return map;
+    const rows = await this.repository.find({
+      where: { id: In(ids), organizationId },
+      relations: ['productType', 'brand'],
+    });
+    for (const row of rows) map.set(row.id, row);
+    return map;
   }
 
   async findByCode(code: string, organizationId: string): Promise<ProductEntity | null> {

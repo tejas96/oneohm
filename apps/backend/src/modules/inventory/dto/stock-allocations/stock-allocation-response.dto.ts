@@ -44,6 +44,11 @@ class AllocationProductSummaryDto {
   @ApiProperty({ example: 'PNL-550W-001', required: false })
   @Expose()
   code?: string;
+
+  @ApiProperty({ example: 'pcs', required: false })
+  @Expose()
+  @Transform(({ obj }: { obj: { unitOfMeasure?: string } }) => obj.unitOfMeasure ?? null)
+  unit?: string;
 }
 
 /**

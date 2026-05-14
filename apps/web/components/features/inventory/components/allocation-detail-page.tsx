@@ -17,6 +17,7 @@ import {
   MUIDialogTitle,
   MUIInput,
   MUITypography,
+  showToast,
 } from '@/components/ui';
 import {
   useStockAllocation,
@@ -42,7 +43,10 @@ export function AllocationDetailPage(): React.JSX.Element {
 
   const remainingToFulfill = useMemo(() => {
     if (!data) return 0;
-    return Math.max(0, Number(data.allocatedQuantity) - Number(data.dispatchedQuantity));
+    // Net dispatched = dispatched - returned. Remaining = allocated - netDispatched.
+    // This allows re-dispatching previously returned items within the allocated budget.
+    const netDispatched = Number(data.dispatchedQuantity) - Number(data.returnedQuantity);
+    return Math.max(0, Number(data.allocatedQuantity) - netDispatched);
   }, [data]);
 
   const maxReturnable = useMemo(() => {
@@ -58,12 +62,19 @@ export function AllocationDetailPage(): React.JSX.Element {
   const canFulfill =
     data && data.status !== StockAllocationStatus.CANCELLED && remainingToFulfill > 0;
 
-  const canReturn = data && maxReturnable > 0;
+  const canReturn = data && data.status !== StockAllocationStatus.CANCELLED && maxReturnable > 0;
 
   const handleFulfill = async (): Promise<void> => {
     if (!data) return;
     const q = Number(fulfillQty);
-    if (!Number.isFinite(q) || q <= 0 || q > remainingToFulfill) return;
+    if (!Number.isFinite(q) || q <= 0) {
+      showToast.error('Please enter a valid quantity greater than zero.');
+      return;
+    }
+    if (q > remainingToFulfill) {
+      showToast.error(`Quantity cannot exceed remaining ${remainingToFulfill}.`);
+      return;
+    }
     setActionBusy(true);
     try {
       await action('fulfill', data.id, {
@@ -96,7 +107,18 @@ export function AllocationDetailPage(): React.JSX.Element {
   const handleReturn = async (): Promise<void> => {
     if (!data) return;
     const q = Number(returnQty);
-    if (!Number.isFinite(q) || q <= 0 || q > maxReturnable || !returnReason.trim()) return;
+    if (!Number.isFinite(q) || q <= 0) {
+      showToast.error('Please enter a valid quantity greater than zero.');
+      return;
+    }
+    if (q > maxReturnable) {
+      showToast.error(`Quantity cannot exceed returnable amount of ${maxReturnable}.`);
+      return;
+    }
+    if (!returnReason.trim()) {
+      showToast.error('Please provide a reason for the return.');
+      return;
+    }
     setActionBusy(true);
     try {
       await action('return', data.id, { quantity: q, reason: returnReason.trim() });

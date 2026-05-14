@@ -22,5 +22,8 @@ export * from './stock-allocations';
 // Material Dispatches
 export * from './material-dispatches';
 
+// Return Requests
+export * from './return-requests';
+
 // Common (bulk DTOs etc.)
 export * from './common';

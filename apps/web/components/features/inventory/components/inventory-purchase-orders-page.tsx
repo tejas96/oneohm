@@ -309,6 +309,7 @@ export function InventoryPurchaseOrdersPage(): React.JSX.Element {
       />
 
       <AdvancedTable<PoColumnRow>
+        key="purchase-orders-table"
         columns={columns}
         rows={rows}
         rowIdField="id"

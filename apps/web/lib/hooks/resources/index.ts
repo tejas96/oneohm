@@ -203,6 +203,7 @@ export {
   useProjectSummary,
   useProjectTaskList,
   useConvertFromQuote,
+  useUpdateProjectWarehouse,
   type UseConvertFromQuoteReturn,
   type ProjectSummary,
   type ProjectSummaryMetrics,
@@ -224,13 +225,14 @@ export {
   useEntityBom,
   useUpdateBomItemSerial,
   useBomSerialConflicts,
-  useFinalizeBomAndAllocate,
+  useAllocateBomPending,
   useSyncProjectBom,
   bomResourceKeys,
   type Bom,
   type BomItem,
   type BomSerialConflict,
   type UpdateBomItemSerialPayload,
+  type AllocateBomPendingResult,
 } from './bom';
 
 // Finance — Payment Terms (planned receivables)

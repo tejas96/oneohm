@@ -151,7 +151,10 @@ export class InventoryStockRepository {
 
     // Apply filters
     if (filters?.lowStock) {
-      query.andWhere('stock.availableQuantity <= stock.minimumStockLevel');
+      query
+        .andWhere('stock.minimumStockLevel IS NOT NULL')
+        .andWhere('stock.minimumStockLevel > 0')
+        .andWhere('stock.availableQuantity <= stock.minimumStockLevel');
     }
 
     if (filters?.search) {
@@ -208,7 +211,10 @@ export class InventoryStockRepository {
     }
 
     if (filters?.lowStock) {
-      query.andWhere('stock.availableQuantity <= stock.minimumStockLevel');
+      query
+        .andWhere('stock.minimumStockLevel IS NOT NULL')
+        .andWhere('stock.minimumStockLevel > 0')
+        .andWhere('stock.availableQuantity <= stock.minimumStockLevel');
     }
 
     if (filters?.search) {
@@ -267,6 +273,8 @@ export class InventoryStockRepository {
       .leftJoinAndSelect('stock.warehouse', 'warehouse')
       .leftJoinAndSelect('stock.product', 'product')
       .where('stock.organizationId = :organizationId', { organizationId })
+      .andWhere('stock.minimumStockLevel IS NOT NULL')
+      .andWhere('stock.minimumStockLevel > 0')
       .andWhere('stock.availableQuantity <= stock.minimumStockLevel')
       .andWhere('warehouse.deletedAt IS NULL')
       .orderBy('stock.availableQuantity', 'ASC')
@@ -297,23 +305,22 @@ export class InventoryStockRepository {
 
   /**
    * Get total stock value for organization
-   * Uses product_prices for unit price (ProductEntity no longer has unitPrice)
+   * Uses weighted average unit price from received PO items (per warehouse + product).
    */
   async getTotalStockValue(organizationId: string): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('stock')
       .select(
         `SUM(stock.available_quantity * COALESCE((
-          SELECT pp.unit_price::numeric
-          FROM product_prices pp
-          WHERE pp.product_id = stock.product_id
-            AND pp.organization_id = stock.organization_id
-            AND pp.is_active = true
-            AND pp.effective_from <= CURRENT_DATE
-            AND (pp.effective_to IS NULL OR pp.effective_to >= CURRENT_DATE)
-            AND pp.project_type IS NULL
-          ORDER BY pp.effective_from DESC
-          LIMIT 1
+          SELECT SUM(poi.received_quantity * poi.unit_price)
+                 / NULLIF(SUM(poi.received_quantity), 0)
+          FROM purchase_order_items poi
+          INNER JOIN purchase_orders po ON po.id = poi.purchase_order_id
+          WHERE poi.product_id = stock.product_id
+            AND po.organization_id = stock.organization_id
+            AND po.warehouse_id = stock.warehouse_id
+            AND po.deleted_at IS NULL
+            AND poi.received_quantity > 0
         ), 0))`,
         'totalValue',
       )
@@ -325,7 +332,7 @@ export class InventoryStockRepository {
 
   /**
    * Get stock summary by warehouse
-   * Uses product_prices for unit price (ProductEntity no longer has unitPrice)
+   * Uses weighted average unit price from received PO items (per warehouse + product).
    */
   async getStockSummaryByWarehouse(
     organizationId: string,
@@ -340,16 +347,15 @@ export class InventoryStockRepository {
       .addSelect('COUNT(DISTINCT stock.product_id)', 'totalItems')
       .addSelect(
         `SUM(stock.available_quantity * COALESCE((
-          SELECT pp.unit_price::numeric
-          FROM product_prices pp
-          WHERE pp.product_id = stock.product_id
-            AND pp.organization_id = stock.organization_id
-            AND pp.is_active = true
-            AND pp.effective_from <= CURRENT_DATE
-            AND (pp.effective_to IS NULL OR pp.effective_to >= CURRENT_DATE)
-            AND pp.project_type IS NULL
-          ORDER BY pp.effective_from DESC
-          LIMIT 1
+          SELECT SUM(poi.received_quantity * poi.unit_price)
+                 / NULLIF(SUM(poi.received_quantity), 0)
+          FROM purchase_order_items poi
+          INNER JOIN purchase_orders po ON po.id = poi.purchase_order_id
+          WHERE poi.product_id = stock.product_id
+            AND po.organization_id = stock.organization_id
+            AND po.warehouse_id = stock.warehouse_id
+            AND po.deleted_at IS NULL
+            AND poi.received_quantity > 0
         ), 0))`,
         'totalValue',
       )

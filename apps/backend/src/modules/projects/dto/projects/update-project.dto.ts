@@ -11,6 +11,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
   ValidateNested,
@@ -92,6 +93,16 @@ export class UpdateProjectDto {
   @IsOptional()
   @Type(() => Number)
   actualCost?: number;
+
+  // ==================== Inventory ====================
+  @ApiPropertyOptional({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description:
+      'Default warehouse for stock allocation. Locked once any active allocation exists.',
+  })
+  @IsUUID()
+  @IsOptional()
+  defaultWarehouseId?: string;
 
   // ==================== Additional Data ====================
   @ApiPropertyOptional({

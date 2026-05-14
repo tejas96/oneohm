@@ -132,6 +132,19 @@ export enum BomStatus {
   CANCELLED = 'cancelled',
 }
 
+/**
+ * BOM Allocation Status — tracks per-BOM stock reservation progress.
+ * Stored in the `allocation_status` column on the `bom` table.
+ *   pending          — no items have been reserved yet
+ *   partial          — some items reserved, some still pending stock
+ *   fully_allocated  — every product line is 100% reserved
+ */
+export enum BomAllocationStatus {
+  PENDING = 'pending',
+  PARTIAL = 'partial',
+  FULLY_ALLOCATED = 'fully_allocated',
+}
+
 export const SERIALIZED_BOM_ITEM_TYPES = ['panel', 'inverter', 'battery'] as const;
 
 export type SerializedBomItemType = (typeof SERIALIZED_BOM_ITEM_TYPES)[number];

@@ -175,3 +175,88 @@ export function pickBestProductPrice(prices: ProductPrice[] | undefined): Produc
     new Date(p.effectiveFrom) > new Date(latest.effectiveFrom) ? p : latest,
   );
 }
+
+// ============================================================================
+// Effective Unit Price (canonical ₹-per-piece resolver)
+// ============================================================================
+
+/**
+ * Response shape from `GET /products/:id/effective-price`. Mirrors backend
+ * EffectiveUnitPriceResponseDto. `unitPricePerPiece` is null when no active
+ * price exists for the product OR when required conversion input is missing
+ * (e.g. per_watt panel with no wattage in specs) -- consumers should fall
+ * back to manual entry in that case rather than treat null as an error.
+ */
+export interface EffectiveProductPrice {
+  productId: string;
+  unitPricePerPiece: number | null;
+  basePrice: number | null;
+  costMultiplier: number | null;
+  gstRate?: number;
+  currency: string;
+  basis: string;
+  source: 'product_prices' | 'none';
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+  wattage?: number | null;
+  systemSizeKw?: number | null;
+}
+
+export interface UseEffectiveProductPriceOptions {
+  projectType?: string;
+  /** ISO date string (e.g. PO date). Defaults to today on the backend. */
+  asOf?: string;
+  systemSizeKw?: number;
+  enabled?: boolean;
+}
+
+/**
+ * Fetches the canonical per-piece price for a product. Used by the PO create
+ * form so the suggested unit_price matches what the quote calculator and BOM
+ * use for the same product. Returns `null` data (not an error) when the
+ * catalog has no usable price -- the form falls back to manual entry then.
+ *
+ * Cache key includes projectType + asOf + systemSizeKw so different contexts
+ * (e.g. residential vs commercial PO, today vs historical) don't collide.
+ */
+export function useEffectiveProductPrice(
+  productId: string | undefined,
+  options: UseEffectiveProductPriceOptions = {},
+): {
+  data: EffectiveProductPrice | undefined;
+  isLoading: boolean;
+  isError: boolean;
+} {
+  const { orgHeaders, organizationId, isReady } = useOrgContext();
+  const { projectType, asOf, systemSizeKw, enabled } = options;
+
+  const query = useQuery<EffectiveProductPrice>({
+    queryKey: [
+      'product-prices',
+      organizationId,
+      'effective-price',
+      productId,
+      { projectType: projectType ?? null, asOf: asOf ?? null, systemSizeKw: systemSizeKw ?? null },
+    ],
+    queryFn: async ({ signal }) => {
+      const params = new URLSearchParams();
+      if (projectType) params.set('projectType', projectType);
+      if (asOf) params.set('asOf', asOf);
+      if (systemSizeKw != null) params.set('systemSizeKw', String(systemSizeKw));
+      const qs = params.toString();
+      const { data } = await apiClient.get<EffectiveProductPrice>(
+        `/products/${productId}/effective-price${qs ? `?${qs}` : ''}`,
+        { headers: orgHeaders, signal },
+      );
+      return data;
+    },
+    enabled: Boolean(productId) && isReady && (enabled ?? true),
+    staleTime: STALE_TIMES.standard,
+  });
+
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    isError: query.isError,
+  };
+}

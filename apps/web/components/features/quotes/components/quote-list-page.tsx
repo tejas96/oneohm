@@ -522,6 +522,7 @@ export function QuoteListPage(): JSX.Element {
 
       {/* ── Table ── */}
       <AdvancedTable<QuoteRow>
+        key="quotes-table"
         columns={COLUMNS}
         rows={tableRows}
         rowIdField="id"

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
@@ -138,6 +139,30 @@ export class ProjectService {
     updatedBy: string,
   ): Promise<ProjectEntity> {
     const project = await this.projectRepository.findById(id, organizationId);
+
+    // Warehouse-lock guard: once any active (non-cancelled) stock allocation exists for
+    // this project, the defaultWarehouseId cannot be changed. Changing it mid-allocation
+    // would split allocations across two warehouses, breaking dispatch.
+    if (
+      updateDto.defaultWarehouseId !== undefined &&
+      updateDto.defaultWarehouseId !== project.defaultWarehouseId
+    ) {
+      const { StockAllocationEntity } = await import(
+        '../../inventory/entities/stock-allocation.entity'
+      );
+      const { StockAllocationStatus } = await import('@oneohm-epc/shared/types');
+      const activeAllocCount = await this.dataSource.getRepository(StockAllocationEntity).count({
+        where: {
+          projectId: id,
+          status: (await import('typeorm')).Not(StockAllocationStatus.CANCELLED),
+        },
+      });
+      if (activeAllocCount > 0) {
+        throw new ConflictException(
+          'Cannot change default warehouse while active stock allocations exist. Cancel all allocations first.',
+        );
+      }
+    }
 
     const { actualCost, metadata: incomingMetadata, ...safeDto } = updateDto;
 
@@ -947,16 +972,20 @@ export class ProjectService {
     const calculation = latestVersion.quoteSnapshot
       .calculation as import('../../quotes/dto/calculator/calculate-quote-response.dto').CalculateQuoteResponseDto;
 
-    await this.bomService.deleteByEntity(organizationId, 'project', projectId);
-    await this.bomService.createFromCalculation(
+    // Non-destructive reconcile: diffs existing BOM rather than delete+create.
+    // If no project BOM exists yet, this creates it from the calculation.
+    const reconcileResult = await this.bomService.reconcileFromCalculation(
       organizationId,
-      'project',
       projectId,
       calculation,
       userId,
     );
 
-    this.logger.log(`Synced BOM for project ${projectId} from quote version ${latestVersion.id}`);
+    this.logger.log(
+      `Reconciled BOM for project ${projectId} from quote version ${latestVersion.id} ` +
+        `(added: ${reconcileResult.added.length}, removed: ${reconcileResult.removed.length}, ` +
+        `increased: ${reconcileResult.increased.length}, decreased: ${reconcileResult.decreased.length})`,
+    );
   }
 
   /**

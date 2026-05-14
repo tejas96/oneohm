@@ -159,6 +159,7 @@ export function DispatchCreatePage(): React.JSX.Element {
       return {
         productId: alloc.productId,
         quantity: line.quantity,
+        stockAllocationId: line.stockAllocationId,
       };
     });
 

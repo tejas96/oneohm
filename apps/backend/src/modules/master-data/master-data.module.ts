@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   BrandController,
   InstallationPricingController,
+  PricingController,
   ProductPriceController,
   ProductController,
   ProductTypeController,
@@ -34,6 +35,7 @@ import {
 import {
   BrandService,
   InstallationPricingService,
+  PricingService,
   ProductPriceService,
   ProductService,
   ProductTypeService,
@@ -63,6 +65,7 @@ import {
     QuoteConfigurationController,
     SubsidyConfigurationController,
     ProductPriceController,
+    PricingController,
   ],
   providers: [
     ProductTypeService,
@@ -80,12 +83,14 @@ import {
     InstallationPricingService,
     QuoteConfigurationRepository,
     QuoteConfigurationService,
+    PricingService,
   ],
   exports: [
     ProductTypeService,
     BrandService,
     ProductService,
     ProductPriceService,
+    PricingService,
     SubsidyConfigurationService,
     QuoteConfigurationService,
     ProductTypeRepository,

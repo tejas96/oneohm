@@ -242,7 +242,7 @@ export function InventoryWarehousesPage(): React.JSX.Element {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div key="warehouses-page-content" className="flex flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
         <div>
           <MUITypography variant="drawerTitle">Warehouses</MUITypography>
@@ -280,6 +280,7 @@ export function InventoryWarehousesPage(): React.JSX.Element {
       />
 
       <AdvancedTable<WarehouseColumnRow>
+        key="warehouses-table"
         columns={columns}
         rows={rows}
         rowIdField="id"

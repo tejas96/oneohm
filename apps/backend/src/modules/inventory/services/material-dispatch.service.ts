@@ -67,49 +67,86 @@ export class MaterialDispatchService {
       );
     }
 
-    const uniqueAllocationIds = [
-      ...new Set(
-        createDto.items
-          .map((item) => item.stockAllocationId)
-          .filter((allocationId): allocationId is string => Boolean(allocationId)),
-      ),
-    ];
-    if (uniqueAllocationIds.length > 0) {
-      const linkedAllocations = await Promise.all(
-        uniqueAllocationIds.map((allocationId) =>
-          this.stockAllocationRepository.findById(allocationId, organizationId),
-        ),
-      );
-      const allocationById = new Map(
-        linkedAllocations.map((allocation) => [allocation.id, allocation]),
-      );
+    const seenAllocationIds = new Set<string>();
+    for (const item of createDto.items) {
+      if (!item.stockAllocationId) {
+        throw new BadRequestException(
+          'Each dispatch line must include stockAllocationId so inventory and allocations stay in sync.',
+        );
+      }
+      if (seenAllocationIds.has(item.stockAllocationId)) {
+        throw new BadRequestException(
+          `Duplicate stockAllocationId ${item.stockAllocationId} in dispatch items. Combine quantities into a single line per allocation.`,
+        );
+      }
+      seenAllocationIds.add(item.stockAllocationId);
+    }
 
-      for (const item of createDto.items) {
-        if (!item.stockAllocationId) continue;
-        const linkedAllocation = allocationById.get(item.stockAllocationId);
-        if (!linkedAllocation) {
-          throw new BadRequestException(`Invalid stock allocation ID: ${item.stockAllocationId}`);
-        }
-        if (linkedAllocation.status === StockAllocationStatus.CANCELLED) {
-          throw new BadRequestException(
-            `Stock allocation ${item.stockAllocationId} is cancelled and cannot be dispatched`,
-          );
-        }
-        if (linkedAllocation.projectId !== createDto.projectId) {
-          throw new BadRequestException(
-            `Stock allocation ${item.stockAllocationId} does not belong to the selected project`,
-          );
-        }
-        if (linkedAllocation.warehouseId !== createDto.warehouseId) {
-          throw new BadRequestException(
-            `Stock allocation ${item.stockAllocationId} does not belong to the selected warehouse`,
-          );
-        }
-        if (linkedAllocation.productId !== item.productId) {
-          throw new BadRequestException(
-            `Stock allocation ${item.stockAllocationId} does not match product ${item.productId}`,
-          );
-        }
+    const uniqueAllocationIds = [...seenAllocationIds];
+
+    const linkedAllocations = await Promise.all(
+      uniqueAllocationIds.map((allocationId) =>
+        this.stockAllocationRepository.findById(allocationId, organizationId),
+      ),
+    );
+    const allocationById = new Map(
+      linkedAllocations.map((allocation) => [allocation.id, allocation]),
+    );
+
+    for (const item of createDto.items) {
+      const linkedAllocation = allocationById.get(item.stockAllocationId);
+      if (!linkedAllocation) {
+        throw new BadRequestException(`Invalid stock allocation ID: ${item.stockAllocationId}`);
+      }
+      if (linkedAllocation.status === StockAllocationStatus.CANCELLED) {
+        throw new BadRequestException(
+          `Stock allocation ${item.stockAllocationId} is cancelled and cannot be dispatched`,
+        );
+      }
+      if (linkedAllocation.projectId !== createDto.projectId) {
+        throw new BadRequestException(
+          `Stock allocation ${item.stockAllocationId} does not belong to the selected project`,
+        );
+      }
+      if (linkedAllocation.warehouseId !== createDto.warehouseId) {
+        throw new BadRequestException(
+          `Stock allocation ${item.stockAllocationId} does not belong to the selected warehouse`,
+        );
+      }
+      if (linkedAllocation.productId !== item.productId) {
+        throw new BadRequestException(
+          `Stock allocation ${item.stockAllocationId} does not match product ${item.productId}`,
+        );
+      }
+      const remaining =
+        Number(linkedAllocation.allocatedQuantity) - Number(linkedAllocation.dispatchedQuantity);
+      if (Number(item.quantity) > remaining) {
+        throw new BadRequestException(
+          `Dispatch quantity ${item.quantity} exceeds remaining allocation (${remaining}) on stock allocation ${item.stockAllocationId}.`,
+        );
+      }
+    }
+
+    // Fail fast if warehouse reserved stock cannot satisfy mark-dispatched (deducts reserved only).
+    const reservedNeededByProduct = new Map<string, number>();
+    for (const item of createDto.items) {
+      const q = Number(item.quantity);
+      reservedNeededByProduct.set(
+        item.productId,
+        (reservedNeededByProduct.get(item.productId) ?? 0) + q,
+      );
+    }
+    for (const [productId, requiredReserved] of reservedNeededByProduct) {
+      const stock = await this.inventoryStockService.getStock(
+        organizationId,
+        createDto.warehouseId,
+        productId,
+      );
+      const reserved = stock ? Number(stock.reservedQuantity) : 0;
+      if (reserved < requiredReserved) {
+        throw new BadRequestException(
+          `Cannot create dispatch: reserved stock in this warehouse for product ${productId} is ${reserved}, but line items require ${requiredReserved}. Ensure stock is reserved (allocated) for this warehouse before dispatching.`,
+        );
       }
     }
 

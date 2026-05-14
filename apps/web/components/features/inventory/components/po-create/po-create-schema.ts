@@ -27,6 +27,13 @@ export const poLineSchema = z.object({
     .string()
     .max(MAX_LINE_NOTES, `Notes must be ${MAX_LINE_NOTES} characters or less`)
     .optional(),
+  /**
+   * Audit flag set by the line row: 'suggested' when the unit price was
+   * prefilled from the catalog and untouched; 'manual_override' when the
+   * user typed or edited the price (or no catalog price existed). Never
+   * shown in the UI; passed straight to the backend for variance tracking.
+   */
+  unitPriceSource: z.enum(['suggested', 'manual_override']).optional(),
 });
 
 export const poCreateSchema = z

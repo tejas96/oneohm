@@ -19,6 +19,7 @@ import {
   InstallationPricingRepository,
   QuoteConfigurationRepository,
 } from '../../master-data/repositories';
+import { PricingService } from '../../master-data/services/pricing.service';
 import { CalculateQuoteDto } from '../dto/calculator';
 
 describe('QuoteCalculatorService', () => {
@@ -218,6 +219,87 @@ describe('QuoteCalculatorService', () => {
           useValue: {
             getOrCreateDefault: jest.fn(),
           },
+        },
+        {
+          // Adapter mock: forwards to ProductPriceRepository mock so legacy
+          // tests that mockResolvedValue on findActiveForProduct keep working.
+          // Returned shape matches the resolver contract; the calculator's
+          // internal helpers translate it back to { unitPrice, gstRate,
+          // costMultiplier } byte-identical to the pre-refactor path.
+          provide: PricingService,
+          useFactory: (priceRepo: ProductPriceRepository) => ({
+            getEffectiveUnitPrice: async (
+              productId: string,
+              organizationId: string,
+              opts: { projectType?: string } = {},
+            ) => {
+              const price: any = await priceRepo.findActiveForProduct(
+                organizationId,
+                productId,
+                opts.projectType,
+              );
+              if (!price) {
+                return {
+                  productId,
+                  unitPricePerPiece: null,
+                  basePrice: null,
+                  costMultiplier: null,
+                  currency: 'INR',
+                  basis: 'per_unit',
+                  source: 'none',
+                };
+              }
+              return {
+                productId,
+                unitPricePerPiece: Number(price.unitPrice),
+                basePrice: Number(price.unitPrice),
+                costMultiplier: Number(price.costMultiplier ?? 1),
+                gstRate: price.gstRate != null ? Number(price.gstRate) : undefined,
+                currency: 'INR',
+                basis: 'per_unit',
+                source: 'product_prices',
+              };
+            },
+            getEffectiveUnitPrices: async (
+              productIds: string[],
+              organizationId: string,
+              opts: { projectType?: string } = {},
+            ) => {
+              const map: Map<string, any> = await priceRepo.findActiveForProducts(
+                organizationId,
+                productIds,
+                opts.projectType,
+              );
+              const out = new Map<string, any>();
+              for (const id of productIds) {
+                const price: any = map?.get?.(id);
+                if (!price) {
+                  out.set(id, {
+                    productId: id,
+                    unitPricePerPiece: null,
+                    basePrice: null,
+                    costMultiplier: null,
+                    currency: 'INR',
+                    basis: 'per_unit',
+                    source: 'none',
+                  });
+                  continue;
+                }
+                out.set(id, {
+                  productId: id,
+                  unitPricePerPiece: Number(price.unitPrice),
+                  basePrice: Number(price.unitPrice),
+                  costMultiplier: Number(price.costMultiplier ?? 1),
+                  gstRate: price.gstRate != null ? Number(price.gstRate) : undefined,
+                  currency: 'INR',
+                  basis: 'per_unit',
+                  source: 'product_prices',
+                });
+              }
+              return out;
+            },
+          }),
+          inject: [ProductPriceRepository],
         },
       ],
     }).compile();

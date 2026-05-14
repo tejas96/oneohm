@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -23,6 +24,7 @@ import {
   InventoryStockResponseDto,
   StockAdjustmentDto,
   StockTransferDto,
+  UpdateInventoryStockDto,
   UpdateStockDto,
 } from '../dto';
 import type { TopItemsResponse } from '../dto/common';
@@ -383,6 +385,29 @@ export class InventoryStockController {
   ): Promise<InventoryStockResponseDto> {
     const stock = await this.inventoryStockService.getStockById(id, organizationId);
     return plainToInstance(InventoryStockResponseDto, stock, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Update stock settings (thresholds)
+   */
+  @RequirePermission('inventory:write')
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Update stock settings',
+    description: 'Update stock thresholds (minimum, maximum, reorder levels)',
+  })
+  async updateStockSettings(
+    @OrganizationContext() organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateDto: UpdateInventoryStockDto,
+  ): Promise<InventoryStockResponseDto> {
+    const stock = await this.inventoryStockService.getStockById(id, organizationId);
+
+    const updatedStock = await this.inventoryStockService.updateStockSettings(stock.id, updateDto);
+
+    return plainToInstance(InventoryStockResponseDto, updatedStock, {
       excludeExtraneousValues: true,
     });
   }

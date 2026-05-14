@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Get,
   Param,
@@ -67,24 +66,24 @@ export class BomController {
   }
 
   /**
-   * Finalize BOM and auto-create stock allocations for all product line items.
-   * Idempotent: calling twice returns existing allocations without duplicating.
+   * Reserve stock for all pending BOM product lines.
+   *
+   * Reads warehouse from project.defaultWarehouseId — no body required.
+   * Partial allocation is normal; items without sufficient stock are returned
+   * in the `pendingStock` array.  Idempotent: already-satisfied lines are skipped.
    */
   @RequirePermission('bom:finalize')
-  @Post(':id/finalize-and-allocate')
+  @Post(':id/allocate-pending')
   @ApiOperation({
-    summary: 'Finalize BOM and auto-allocate stock',
-    description: 'Creates stock allocations for each BOM product item. Idempotent.',
+    summary: 'Reserve stock for pending BOM lines',
+    description:
+      'Partially or fully reserves stock from the project default warehouse. Idempotent.',
   })
-  async finalizeAndAllocate(
+  async allocatePending(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('warehouseId') warehouseId: string,
   ) {
-    if (!warehouseId) {
-      throw new BadRequestException('warehouseId is required');
-    }
-    return this.bomService.finalizeAndAllocate(organizationId, id, warehouseId, currentUser.id);
+    return this.bomService.allocatePending(organizationId, id, currentUser.id);
   }
 }

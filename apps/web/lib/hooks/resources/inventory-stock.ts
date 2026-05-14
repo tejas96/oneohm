@@ -67,6 +67,12 @@ export interface TransferStockPayload {
   notes?: string;
 }
 
+export interface UpdateStockSettingsPayload {
+  minimumStockLevel?: number;
+  maximumStockLevel?: number;
+  reorderQuantity?: number;
+}
+
 // ============================================================================
 // Registry
 // ============================================================================
@@ -173,6 +179,36 @@ export function useTransferInventoryStock() {
   return {
     ...mutation,
     execute: (payload: TransferStockPayload) => mutation.mutateAsync(payload),
+  };
+}
+
+export function useUpdateStockSettings() {
+  const queryClient = useQueryClient();
+  const { orgHeaders } = useOrgContext();
+  const mutation = useMutation<
+    InventoryStock,
+    unknown,
+    { id: string; payload: UpdateStockSettingsPayload }
+  >({
+    mutationFn: async ({ id, payload }) => {
+      const { data } = await apiClient.patch<InventoryStock>(`/inventory-stock/${id}`, payload, {
+        headers: orgHeaders,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['inventory-stock'] });
+      showToast.success('Stock settings updated successfully');
+    },
+    onError: (err) => {
+      showToast.error(getErrorMessage(err));
+    },
+  });
+
+  return {
+    ...mutation,
+    execute: (id: string, payload: UpdateStockSettingsPayload) =>
+      mutation.mutateAsync({ id, payload }),
   };
 }
 

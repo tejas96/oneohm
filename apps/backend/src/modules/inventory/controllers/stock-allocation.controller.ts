@@ -32,6 +32,7 @@ import {
   CreateStockAllocationDto,
   EditAllocationDetailsDto,
   FulfillStockAllocationDto,
+  ReturnStockAllocationDto,
   StockAllocationResponseDto,
 } from '../dto';
 import type { FunnelResponse } from '../dto/common';
@@ -178,6 +179,13 @@ export class StockAllocationController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, enum: Object.values(StockAllocationStatus) })
+  @ApiQuery({
+    name: 'activeOnly',
+    required: false,
+    type: Boolean,
+    description:
+      'If true, exclude cancelled and completed allocations (inventory dashboard “active” count / Phase 9.3). Ignored when status is set.',
+  })
   @ApiQuery({ name: 'projectId', required: false, type: String })
   @ApiQuery({ name: 'warehouseId', required: false, type: String })
   @ApiQuery({ name: 'productId', required: false, type: String })
@@ -186,6 +194,7 @@ export class StockAllocationController {
     @CurrentUser() _currentUser: CurrentUserType,
     @Query() query: Record<string, string>,
     @Query('status') status?: StockAllocationStatus,
+    @Query('activeOnly') activeOnlyRaw?: string,
     @Query('projectId') projectId?: string,
     @Query('warehouseId') warehouseId?: string,
     @Query('productId') productId?: string,
@@ -194,11 +203,18 @@ export class StockAllocationController {
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
+    const activeOnly = activeOnlyRaw === 'true' || activeOnlyRaw === '1';
     const { allocations, total } = await this.stockAllocationService.findAll(
       organizationId,
       pageNum,
       limitNum,
-      { status, projectId, warehouseId, productId },
+      {
+        status,
+        activeOnly: status ? undefined : activeOnly,
+        projectId,
+        warehouseId,
+        productId,
+      },
     );
 
     return {
@@ -314,14 +330,13 @@ export class StockAllocationController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('quantity') quantity: number,
-    @Body('reason') reason: string,
+    @Body() returnDto: ReturnStockAllocationDto,
   ): Promise<StockAllocationResponseDto> {
     const allocation = await this.stockAllocationService.returnToStock(
       id,
       organizationId,
-      quantity,
-      reason,
+      returnDto.quantity,
+      returnDto.reason,
       currentUser.id,
     );
     return plainToInstance(StockAllocationResponseDto, allocation, {

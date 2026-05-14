@@ -50,7 +50,9 @@ const STOCK_COLUMNS: ColumnConfig<StockRow>[] = [
     width: 130,
     sortable: true,
     renderCell: ({ row }) => {
-      const isLow = Number(row.availableQuantity) <= Number(row.minimumStockLevel ?? 0);
+      const avail = Number(row.availableQuantity ?? 0);
+      const min = Number(row.minimumStockLevel ?? 0);
+      const isLow = min > 0 && avail <= min;
       return (
         <span
           className={`text-sm font-medium flex items-center gap-1 ${isLow ? 'text-warning' : 'text-foreground'}`}
@@ -80,9 +82,23 @@ const STOCK_COLUMNS: ColumnConfig<StockRow>[] = [
   {
     field: 'stockStatus',
     headerName: 'Status',
-    width: 120,
+    width: 140,
     renderCell: ({ row }) => {
-      const isLow = Number(row.availableQuantity) <= Number(row.minimumStockLevel ?? 0);
+      const avail = Number(row.availableQuantity ?? 0);
+      const reserved = Number(row.reservedQuantity ?? 0);
+      const min = Number(row.minimumStockLevel ?? 0);
+      const isLow = min > 0 && avail <= min;
+
+      // Fully reserved (no available stock but has reservations)
+      if (avail === 0 && reserved > 0) {
+        return <MUIStatusChip label="Fully Reserved" color="warning" />;
+      }
+
+      // Out of stock
+      if (avail === 0 && reserved === 0) {
+        return <MUIStatusChip label="Out of Stock" color="error" />;
+      }
+
       return (
         <MUIStatusChip
           label={isLow ? 'Low stock' : 'In stock'}
@@ -135,12 +151,18 @@ const TX_COLUMNS: ColumnConfig<TxRow>[] = [
     width: 100,
     sortable: true,
     renderCell: ({ row }) => {
-      const isPositive = ['inward', 'transfer_in', 'return'].includes(
-        row.transactionType as string,
-      );
+      const type = row.transactionType as string;
+      const isPositive = ['purchase', 'transfer_in', 'return'].includes(type);
+      const isNegative = ['dispatch', 'transfer_out', 'sale'].includes(type);
+      const sign = isPositive ? '+' : isNegative ? '-' : '±';
+      const tone = isPositive
+        ? 'text-success'
+        : isNegative
+          ? 'text-error'
+          : 'text-foreground-secondary';
       return (
-        <span className={`text-sm font-medium ${isPositive ? 'text-success' : 'text-error'}`}>
-          {isPositive ? '+' : '-'}
+        <span className={`text-sm font-medium ${tone}`}>
+          {sign}
           {row.quantity}
         </span>
       );

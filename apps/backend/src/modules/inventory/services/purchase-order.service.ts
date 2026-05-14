@@ -134,6 +134,7 @@ export class PurchaseOrderService {
             taxRate,
             lineTotal,
             notes: item.notes,
+            unitPriceSource: item.unitPriceSource ?? null,
           }),
         );
         await itemRepo.save(rows);

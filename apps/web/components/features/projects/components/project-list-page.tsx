@@ -657,6 +657,7 @@ export function ProjectListPage(): JSX.Element {
       {/* Table view */}
       {currentView === 'table' && (
         <AdvancedTable
+          key="projects-table"
           rows={tableRows}
           columns={COLUMNS}
           rowIdField="id"

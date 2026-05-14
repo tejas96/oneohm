@@ -104,6 +104,11 @@ export function PoCreatePage(): React.JSX.Element {
   const watchedItems = useWatch({ control: form.control, name: 'items' });
   const totals = useMemo(() => computeTotals(watchedItems ?? []), [watchedItems]);
 
+  // Watched poDate gets forwarded to each line row as the resolver's asOf,
+  // so historical / future POs price against the catalog row that was
+  // active on that date (not "today").
+  const watchedPoDate = useWatch({ control: form.control, name: 'poDate' });
+
   // PO type ↔ project: clearing on switch avoids stale ids re-failing validation.
   const watchedPoType = useWatch({ control: form.control, name: 'poType' });
   const lastPoTypeRef = useRef(watchedPoType);
@@ -131,6 +136,7 @@ export function PoCreatePage(): React.JSX.Element {
         taxRate: taxRate > 0 ? taxRate : undefined,
         notes: row.notes?.trim() || undefined,
         lineTotal,
+        unitPriceSource: row.unitPriceSource,
       };
     });
     const totalsPayload = computeTotals(values.items);
@@ -274,6 +280,7 @@ export function PoCreatePage(): React.JSX.Element {
                 index={index}
                 canRemove={fields.length > 1}
                 onRemove={() => remove(index)}
+                poDate={watchedPoDate}
               />
             ))}
           </div>

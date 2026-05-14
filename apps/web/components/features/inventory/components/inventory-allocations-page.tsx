@@ -253,6 +253,7 @@ export function InventoryAllocationsPage(): React.JSX.Element {
       />
 
       <AdvancedTable<AllocationColumnRow>
+        key="allocations-table"
         columns={columns}
         rows={rows}
         rowIdField="id"

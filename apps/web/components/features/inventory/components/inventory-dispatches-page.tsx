@@ -284,6 +284,7 @@ export function InventoryDispatchesPage(): React.JSX.Element {
       />
 
       <AdvancedTable<DispatchColumnRow>
+        key="dispatches-table"
         columns={columns}
         rows={rows}
         rowIdField="id"
