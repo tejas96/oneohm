@@ -89,10 +89,20 @@ export const createDataSourceOptions = (
     extra: {
       max: dbConfig.poolMax || 20,
       min: dbConfig.poolMin || 5,
-      idleTimeoutMillis: 30000,
+      // Evict idle connections after 55s — just under Fly.io's WireGuard NAT
+      // idle timeout (~60s). This proactively removes connections before the
+      // network layer silently drops them, preventing "Connection terminated
+      // unexpectedly" errors on the next query after a quiet period.
+      idleTimeoutMillis: 55000,
       connectionTimeoutMillis: 5000,
       statement_timeout: 30000,
       query_timeout: 30000,
+      // TCP keepalive: after 10s of socket inactivity, start probing every 5s.
+      // Fly.io's tcp_keepalives_idle is 7200s (2h) server-side — far too slow
+      // to catch WireGuard NAT drops. Client-side keepalive at 10s detects
+      // and discards dead connections before they are handed to a query.
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
     },
     cache: false,
     maxQueryExecutionTime: nodeEnv === 'development' ? 1000 : 5000,
