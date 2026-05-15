@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { StockAdjustDialog } from './stock/stock-adjust-dialog';
 import { StockDetailHeader } from './stock/stock-detail-header';
+import { StockSettingsDialog } from './stock/stock-settings-dialog';
 import { StockTransactionsCard } from './stock/stock-transactions-card';
 import { StockTransferDialog } from './stock/stock-transfer-dialog';
 
@@ -42,9 +43,11 @@ export function InventoryStockDetailPage(): React.JSX.Element {
 
   const canAdjust = hasPermission('stock:adjust') || hasPermission('inventory:write');
   const canTransfer = hasPermission('stock:transfer') || hasPermission('inventory:write');
+  const canEditSettings = hasPermission('inventory:write');
 
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   if (isError) {
     return <ErrorState title="Failed to load stock" description="Unable to load stock details." />;
@@ -112,26 +115,53 @@ export function InventoryStockDetailPage(): React.JSX.Element {
         isLow={isLow}
         canAdjust={canAdjust}
         canTransfer={canTransfer}
+        canEditSettings={canEditSettings}
         onAdjust={() => setAdjustOpen(true)}
         onTransfer={() => setTransferOpen(true)}
+        onSettings={() => setSettingsOpen(true)}
       />
 
       <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {tiles.map(({ label, value, secondary, color }) => (
-          <div
-            key={label}
-            className="flex flex-col gap-1 rounded-xl border border-border-light bg-white p-4"
-          >
-            <MUITypography
-              variant="body"
-              className="text-xs uppercase tracking-wide text-foreground-tertiary"
+        {tiles.map(({ label, value, secondary, color }) => {
+          const isThresholdTile = label === 'Min / Max';
+          const noThresholdSet = isThresholdTile && value === '—';
+
+          return (
+            <div
+              key={label}
+              className={cn(
+                'flex flex-col gap-1 rounded-xl border border-border-light bg-white p-4',
+                noThresholdSet && canEditSettings && 'cursor-pointer hover:border-primary',
+              )}
+              onClick={noThresholdSet && canEditSettings ? () => setSettingsOpen(true) : undefined}
+              role={noThresholdSet && canEditSettings ? 'button' : undefined}
+              tabIndex={noThresholdSet && canEditSettings ? 0 : undefined}
+              onKeyDown={
+                noThresholdSet && canEditSettings
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSettingsOpen(true);
+                      }
+                    }
+                  : undefined
+              }
             >
-              {label}
-            </MUITypography>
-            <p className={cn('text-2xl font-semibold tabular-nums', color)}>{value}</p>
-            {secondary ? <p className="text-xs text-foreground-tertiary">{secondary}</p> : null}
-          </div>
-        ))}
+              <MUITypography
+                variant="body"
+                className="text-xs uppercase tracking-wide text-foreground-tertiary"
+              >
+                {label}
+              </MUITypography>
+              <p className={cn('text-2xl font-semibold tabular-nums', color)}>{value}</p>
+              {secondary ? (
+                <p className="text-xs text-foreground-tertiary">
+                  {noThresholdSet && canEditSettings ? 'Click to set' : secondary}
+                </p>
+              ) : null}
+            </div>
+          );
+        })}
       </section>
 
       {min > 0 ? (
@@ -167,6 +197,7 @@ export function InventoryStockDetailPage(): React.JSX.Element {
 
       <StockAdjustDialog open={adjustOpen} onOpenChange={setAdjustOpen} stock={stock} />
       <StockTransferDialog open={transferOpen} onOpenChange={setTransferOpen} stock={stock} />
+      <StockSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} stock={stock} />
     </div>
   );
 }

@@ -575,6 +575,7 @@ export function CustomerListPage(): JSX.Element {
 
       {/* ── Table ── */}
       <AdvancedTable<Customer>
+        key="customers-table"
         columns={COLUMNS}
         rows={tableRows}
         rowIdField="id"

@@ -26,9 +26,12 @@ export function AllocationDetailKpi({ allocation }: AllocationDetailKpiProps): R
     const allocated = Number(allocation.allocatedQuantity ?? 0);
     const dispatched = Number(allocation.dispatchedQuantity ?? 0);
     const returned = Number(allocation.returnedQuantity ?? 0);
-    const remaining = Math.max(0, allocated - dispatched);
-    const pct = allocated > 0 ? (dispatched / allocated) * 100 : 0;
-    return { allocated, dispatched, returned, remaining, pct };
+    // Net dispatched accounts for items returned to stock; remaining reflects
+    // what still needs to physically reach the project site.
+    const netDispatched = Math.max(0, dispatched - returned);
+    const remaining = Math.max(0, allocated - netDispatched);
+    const pct = allocated > 0 ? (netDispatched / allocated) * 100 : 0;
+    return { allocated, dispatched, returned, netDispatched, remaining, pct };
   }, [allocation]);
 
   const intent: 'success' | 'warning' | 'info' =
@@ -78,9 +81,9 @@ export function AllocationDetailKpi({ allocation }: AllocationDetailKpiProps): R
         </div>
         {stats.allocated > 0 ? (
           <ProgressBarCell
-            numerator={stats.dispatched}
+            numerator={stats.netDispatched}
             denominator={stats.allocated}
-            label={`${fmt.number(stats.dispatched)} / ${fmt.number(stats.allocated)}${unit ? ` ${unit}` : ''} dispatched`}
+            label={`${fmt.number(stats.netDispatched)} / ${fmt.number(stats.allocated)}${unit ? ` ${unit}` : ''} at site`}
             intent={intent}
           />
         ) : (

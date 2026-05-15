@@ -487,6 +487,7 @@ export function AdminUsersListPage(): JSX.Element {
 
       {/* Table */}
       <AdvancedTable<UserRow>
+        key="admin-users-table"
         columns={columns}
         rows={tableRows}
         rowIdField="id"

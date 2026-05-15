@@ -84,6 +84,7 @@ export interface ProjectDetail {
   phaseType?: string;
   metadata?: ProjectMetadata;
   taskStatuses?: TaskStatusConfig[];
+  defaultWarehouseId?: string;
   materials: ProjectMaterial[];
   createdAt: string;
   updatedAt: string;

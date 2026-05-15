@@ -6,6 +6,7 @@ import {
   GlobalHeader,
   LayoutProvider,
   MainContent,
+  PageTransitionGuard,
   Panel,
   Rail,
   useLayout,
@@ -42,7 +43,9 @@ function DashboardLayoutContent({ children }: DashboardLayoutContentProps) {
       </Suspense>
 
       {/* Main Content - Responsive margins */}
-      <MainContent isPanelOpen={isPanelOpen}>{children}</MainContent>
+      <MainContent isPanelOpen={isPanelOpen}>
+        <PageTransitionGuard>{children}</PageTransitionGuard>
+      </MainContent>
     </>
   );
 }

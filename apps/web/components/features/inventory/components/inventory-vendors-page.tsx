@@ -237,6 +237,7 @@ export function InventoryVendorsPage(): React.JSX.Element {
       />
 
       <AdvancedTable<VendorColumnRow>
+        key="vendors-table"
         columns={columns}
         rows={rows}
         rowIdField="id"

@@ -4,7 +4,7 @@ import { InventoryTransactionType } from '@oneohm-epc/shared/types';
 import { DataSource, EntityManager } from 'typeorm';
 
 import { ProductRepository } from '../../master-data/repositories/product.repository';
-import { UpdateStockDto } from '../dto';
+import { UpdateInventoryStockDto, UpdateStockDto } from '../dto';
 import { InventoryStockEntity } from '../entities/inventory-stock.entity';
 import {
   InventoryStockRepository,
@@ -495,5 +495,21 @@ export class InventoryStockService {
       notes,
       manager,
     );
+  }
+
+  /**
+   * Update stock settings (thresholds only, no quantity changes)
+   */
+  async updateStockSettings(
+    stockId: string,
+    updateDto: UpdateInventoryStockDto,
+  ): Promise<InventoryStockEntity> {
+    const stock = await this.inventoryStockRepository.findById(stockId);
+
+    return this.inventoryStockRepository.updateQuantities(stock.id, {
+      minimumStockLevel: updateDto.minimumStockLevel,
+      maximumStockLevel: updateDto.maximumStockLevel,
+      reorderQuantity: updateDto.reorderQuantity,
+    });
   }
 }

@@ -40,6 +40,8 @@ export interface StockAllocation {
 
 export interface StockAllocationFilters extends BaseFilters {
   status?: string;
+  /** Exclude cancelled + completed (aligns with inventory KPI / Phase 9.3). Ignored when `status` is set. */
+  activeOnly?: boolean;
   projectId?: string;
   warehouseId?: string;
   productId?: string;

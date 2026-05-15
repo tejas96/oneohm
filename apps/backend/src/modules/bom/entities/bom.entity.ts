@@ -47,6 +47,24 @@ export class BomEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   notes?: string;
 
+  // ==================== Allocation Tracking ====================
+
+  /**
+   * Granular allocation progress for this BOM:
+   *   pending          — no items reserved yet
+   *   partial          — some items reserved, some pending stock
+   *   fully_allocated  — every product line 100% reserved
+   *
+   * Warehouse is stored on the project (projects.default_warehouse_id) — not here.
+   */
+  @Column({
+    name: 'allocation_status',
+    type: 'varchar',
+    length: 20,
+    default: 'pending',
+  })
+  allocationStatus!: string;
+
   // ==================== Line Items ====================
   @OneToMany(() => BomItemEntity, (item) => item.bom, { cascade: true, eager: false })
   items!: BomItemEntity[];

@@ -75,6 +75,7 @@ export function buildStockColumns(
       headerName: 'Available',
       width: 130,
       sortable: true,
+      cellSx: { textAlign: 'right' },
       renderCell: ({ row }) => {
         const low = isLowStock(row);
         return (
@@ -96,6 +97,7 @@ export function buildStockColumns(
       field: 'reservedQuantity',
       headerName: 'Reserved',
       width: 110,
+      cellSx: { textAlign: 'right' },
       renderCell: ({ row }) => (
         <span className="block text-right text-sm tabular-nums text-foreground-secondary">
           {Number(row.reservedQuantity ?? 0)}
@@ -106,6 +108,7 @@ export function buildStockColumns(
       field: 'inTransitQuantity',
       headerName: 'In transit',
       width: 110,
+      cellSx: { textAlign: 'right' },
       renderCell: ({ row }) => (
         <span className="block text-right text-sm tabular-nums text-foreground-secondary">
           {Number(row.inTransitQuantity ?? 0)}
@@ -140,9 +143,22 @@ export function buildStockColumns(
     {
       field: 'stockStatus',
       headerName: 'Status',
-      width: 120,
+      width: 140,
       renderCell: ({ row }) => {
+        const avail = Number(row.availableQuantity ?? 0);
+        const reserved = Number(row.reservedQuantity ?? 0);
         const low = isLowStock(row);
+
+        // No available stock, but has reservations
+        if (avail === 0 && reserved > 0) {
+          return <MUIStatusChip label="Fully Reserved" color="warning" />;
+        }
+
+        // Completely out of stock
+        if (avail === 0 && reserved === 0) {
+          return <MUIStatusChip label="Out of Stock" color="error" />;
+        }
+
         return (
           <MUIStatusChip
             label={low ? 'Low Stock' : 'In Stock'}

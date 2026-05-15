@@ -245,7 +245,7 @@ export function InventoryStockPage(): React.JSX.Element {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div key="stock-page-content" className="flex flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
         <div>
           <MUITypography variant="drawerTitle">
@@ -276,6 +276,7 @@ export function InventoryStockPage(): React.JSX.Element {
       />
 
       <AdvancedTable<StockRow>
+        key="stock-table"
         columns={columns}
         rows={rows}
         rowIdField="id"

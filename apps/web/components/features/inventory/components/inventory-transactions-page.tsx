@@ -376,6 +376,7 @@ export function InventoryTransactionsPage(): React.JSX.Element {
       />
 
       <AdvancedTable<TxRow>
+        key="transactions-table"
         columns={columns}
         rows={rows}
         rowIdField="id"

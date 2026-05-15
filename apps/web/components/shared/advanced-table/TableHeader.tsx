@@ -186,6 +186,7 @@ function AdvancedTableHeaderInner<TRow>({
                   ...headerCellSx,
                   ...(resolvedWidth ? { width: resolvedWidth, minWidth: resolvedWidth } : {}),
                   ...(col.flex && !resolvedWidth ? { flex: col.flex } : {}),
+                  ...(col.cellSx || {}),
                 }}
               >
                 {col.sortable ? (

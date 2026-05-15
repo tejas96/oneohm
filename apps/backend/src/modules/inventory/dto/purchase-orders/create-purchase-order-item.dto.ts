@@ -1,6 +1,15 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import {
+  IsIn,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 
 const MAX_QUANTITY = 1_000_000;
 const MAX_UNIT_PRICE = 100_000_000;
@@ -60,4 +69,19 @@ export class CreatePurchaseOrderItemDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  /**
+   * Audit flag: 'suggested' when the unit price came from the catalog
+   * (PricingService prefill) and was not edited; 'manual_override' when the
+   * buyer typed/edited the price (or no catalog price existed). Optional --
+   * external API clients without this concept simply omit it (NULL stored).
+   */
+  @ApiPropertyOptional({
+    enum: ['suggested', 'manual_override'],
+    description: 'Whether unitPrice was suggested by the catalog or manually overridden.',
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['suggested', 'manual_override'])
+  unitPriceSource?: 'suggested' | 'manual_override';
 }

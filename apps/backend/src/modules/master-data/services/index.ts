@@ -5,3 +5,4 @@ export * from './installation-pricing.service';
 export * from './quote-configuration.service';
 export * from './subsidy-configuration.service';
 export * from './product-price.service';
+export * from './pricing.service';

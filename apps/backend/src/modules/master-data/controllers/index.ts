@@ -5,3 +5,4 @@ export * from './installation-pricing.controller';
 export * from './quote-configuration.controller';
 export * from './subsidy-configuration.controller';
 export * from './product-price.controller';
+export * from './pricing.controller';

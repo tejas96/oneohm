@@ -49,6 +49,8 @@ export class StockAllocationRepository {
     limit = 20,
     filters?: {
       status?: StockAllocationStatus;
+      /** When true, count rows whose status is not cancelled or completed (matches inventory KPI / Phase 9.3). Ignored if `status` is set. */
+      activeOnly?: boolean;
       projectId?: string;
       warehouseId?: string;
       productId?: string;
@@ -64,6 +66,10 @@ export class StockAllocationRepository {
     // Apply filters
     if (filters?.status) {
       query.andWhere('allocation.status = :status', { status: filters.status });
+    } else if (filters?.activeOnly) {
+      query.andWhere('allocation.status NOT IN (:...terminalStatuses)', {
+        terminalStatuses: [StockAllocationStatus.CANCELLED, StockAllocationStatus.COMPLETED],
+      });
     }
 
     if (filters?.projectId) {

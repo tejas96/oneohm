@@ -713,6 +713,7 @@ export function PropertyListPage(): JSX.Element {
 
       {/* ── Table ── */}
       <AdvancedTable<PropertyRow>
+        key="properties-table"
         columns={columns}
         rows={tableRows}
         rowIdField="id"

@@ -246,6 +246,37 @@ export interface UseConvertFromQuoteReturn {
   error: unknown;
 }
 
+/**
+ * Update the project's default warehouse.
+ * Locked at the server side once any active allocation exists (returns 409).
+ */
+export function useUpdateProjectWarehouse() {
+  const queryClient = useQueryClient();
+  const { orgHeaders, organizationId } = useOrgContext();
+
+  const mutation = useMutation<void, unknown, { projectId: string; warehouseId: string | null }>({
+    mutationFn: async ({ projectId, warehouseId }) => {
+      await apiClient.patch(
+        `/projects/${projectId}`,
+        { defaultWarehouseId: warehouseId },
+        { headers: orgHeaders },
+      );
+    },
+    onSuccess: (_data, { projectId }) => {
+      void queryClient.invalidateQueries({ queryKey: projectResourceKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({
+        queryKey: [...projectResourceKeys.all(organizationId), projectId],
+      });
+    },
+  });
+
+  return {
+    ...mutation,
+    execute: (projectId: string, warehouseId: string | null) =>
+      mutation.mutateAsync({ projectId, warehouseId }),
+  };
+}
+
 export function useConvertFromQuote(): UseConvertFromQuoteReturn {
   const { orgHeaders, organizationId } = useOrgContext();
   const queryClient = useQueryClient();

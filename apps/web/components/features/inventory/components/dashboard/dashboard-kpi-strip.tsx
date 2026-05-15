@@ -30,6 +30,8 @@ import { useVendors } from '@/lib/hooks/resources/vendors';
  *      do NOT bind these to the time window — "how many vendors do we
  *      have" is not a time-bounded question and changing the picker
  *      shouldn't refetch them.
+ *      Active allocations use `activeOnly` (not a bogus `status: 'active'`)
+ *      because lifecycle values are allocated / partially_dispatched / dispatched, etc.
  *
  *   2. Stats endpoints (Part 10/12) for windowed financial metrics:
  *      Total PO Spend (sum of trend points) and Outstanding total
@@ -76,13 +78,13 @@ export function DashboardKpiStrip({ statsWindow }: DashboardKpiStripProps): Reac
   });
   const activeAllocations = useStockAllocations({
     resource: 'dashboard-alloc-active',
-    defaultFilters: { status: 'active' } as Record<string, unknown>,
+    defaultFilters: { activeOnly: true },
     defaultPageSize: 1,
     syncToUrl: false,
   });
   const activeVendors = useVendors({
     resource: 'dashboard-vendors-active',
-    defaultFilters: { isActive: true } as Record<string, unknown>,
+    defaultFilters: { status: 'active' } as Record<string, unknown>,
     defaultPageSize: 1,
     syncToUrl: false,
   });

@@ -35,8 +35,13 @@ export function useInfiniteResourceList<T, F extends BaseFilters = BaseFilters>(
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
   const baseFilters = { ...config.defaultFilters, ...filters } as F;
 
+  const endpointKey = config.endpoint !== `/${config.resource}` ? config.endpoint : undefined;
+
   const query = useInfiniteQuery({
-    queryKey: keys.infinite(organizationId, baseFilters as Record<string, unknown>),
+    queryKey: [
+      ...keys.infinite(organizationId, baseFilters as Record<string, unknown>),
+      ...(endpointKey ? [endpointKey] : []),
+    ],
     queryFn: async ({ pageParam, signal }) => {
       const params = buildQueryParams({ ...baseFilters, page: pageParam } as F, {
         minSearchLength: config.minSearchLength,

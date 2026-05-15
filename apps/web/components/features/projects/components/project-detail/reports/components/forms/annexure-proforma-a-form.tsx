@@ -71,7 +71,13 @@ export function AnnexureProformaForm({
             name="email"
             control={control}
             render={({ field }) => (
-              <MUIInput {...field} fieldLabel="Email" disabled={disabled} size="small" />
+              <MUIInput
+                {...field}
+                fieldLabel="Email"
+                type="email"
+                disabled={disabled}
+                size="small"
+              />
             )}
           />
           <Controller

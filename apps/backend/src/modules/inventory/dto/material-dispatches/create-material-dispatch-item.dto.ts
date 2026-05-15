@@ -24,12 +24,11 @@ export class CreateMaterialDispatchItemDto {
 
   @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Linked stock allocation ID',
-    required: false,
+    description: 'Linked stock allocation (required — ties dispatch qty to reserved stock)',
   })
   @IsUUID()
-  @IsOptional()
-  stockAllocationId?: string;
+  @IsNotEmpty()
+  stockAllocationId!: string;
 
   // ==================== Quantity ====================
 

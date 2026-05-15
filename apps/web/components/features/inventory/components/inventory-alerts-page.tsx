@@ -45,14 +45,14 @@ function buildCreatePoHref(row: InventoryStock): string {
  * Adds a KPI summary above the existing low-stock list and a per-row
  * "Create PO" action that deep-links to PO new with the warehouse,
  * product, and suggested quantity prefilled. The PO create page is
- * gated by purchaseOrder:write so we surface that action only when
- * the user has it (or `inventory:write` as an admin bypass).
+ * gated by purchase-order:write (same as PO list / resource registry) so we
+ * surface that action only when the user has it (or `inventory:write` as an admin bypass).
  */
 export function InventoryAlertsPage(): React.JSX.Element {
   const router = useRouter();
   const fmt = useFmt();
   const { hasPermission } = useAuth();
-  const canCreatePo = hasPermission('purchaseOrder:write') || hasPermission('inventory:write');
+  const canCreatePo = hasPermission('purchase-order:write') || hasPermission('inventory:write');
 
   const { items, pagination, search, setSearch, sorting, isLoading, isFetching, isError } =
     useInventoryStockList({
@@ -192,7 +192,7 @@ export function InventoryAlertsPage(): React.JSX.Element {
               onSelect: () => handleCreatePo(row),
               disabled: !canCreatePo,
               tooltip: !canCreatePo
-                ? 'You need purchaseOrder:write to create a purchase order.'
+                ? 'You need purchase-order:write to create a purchase order.'
                 : undefined,
             },
             {
@@ -307,6 +307,7 @@ export function InventoryAlertsPage(): React.JSX.Element {
       />
 
       <AdvancedTable<StockRow>
+        key="alerts-table"
         columns={columns}
         rows={rows}
         rowIdField="id"

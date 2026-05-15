@@ -43,6 +43,14 @@ export class StockAllocationEntity extends BaseEntity {
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;
 
+  /**
+   * Links this allocation back to the specific BOM that requested it.
+   * Nullable for legacy allocations that pre-date this column.
+   * ON DELETE RESTRICT at the DB layer: a BOM with active allocations cannot be deleted.
+   */
+  @Column({ name: 'bom_id', type: 'uuid', nullable: true })
+  bomId?: string;
+
   @Column({ name: 'warehouse_id', type: 'uuid' })
   warehouseId!: string;
 

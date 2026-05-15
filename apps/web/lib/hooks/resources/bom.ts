@@ -67,28 +67,43 @@ export function useEntityBom(entityType: string, entityId: string | undefined) {
   });
 }
 
-export function useFinalizeBomAndAllocate() {
+export interface AllocateBomPendingResult {
+  allocated: Array<{ productId: string; name: string; reserved: number }>;
+  pendingStock: Array<{ productId: string; name: string; shortfall: number }>;
+  alreadySatisfied: Array<{ productId: string; name: string }>;
+}
+
+/**
+ * Reserve stock for pending BOM lines.
+ * Warehouse is read from project.defaultWarehouseId — no dialog needed.
+ * Partial allocation is normal: items not fully covered appear in pendingStock.
+ */
+export function useAllocateBomPending() {
   const queryClient = useQueryClient();
   const { orgHeaders } = useOrgContext();
-  const mutation = useMutation<
-    { allocations: unknown[] },
-    unknown,
-    { bomId: string; warehouseId: string }
-  >({
-    mutationFn: async ({ bomId, warehouseId }) => {
-      const { data } = await apiClient.post<{ allocations: unknown[] }>(
-        `/bom/${bomId}/finalize-and-allocate`,
-        { warehouseId },
+
+  const mutation = useMutation<AllocateBomPendingResult, unknown, string>({
+    mutationFn: async (bomId: string) => {
+      const { data } = await apiClient.post<AllocateBomPendingResult>(
+        `/bom/${bomId}/allocate-pending`,
+        {},
         { headers: orgHeaders },
       );
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['stock-allocations'] });
       void queryClient.invalidateQueries({ queryKey: ['inventory-stock'] });
       void queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
       void queryClient.invalidateQueries({ queryKey: ['bom'] });
-      showToast.success('BOM finalized and stock allocated');
+
+      if (data.pendingStock.length === 0) {
+        showToast.success('Stock reserved successfully');
+      } else {
+        showToast.warning(
+          `Stock partially reserved. ${data.pendingStock.length} item(s) still pending.`,
+        );
+      }
     },
     onError: (err) => {
       showToast.error(getErrorMessage(err));
@@ -97,7 +112,7 @@ export function useFinalizeBomAndAllocate() {
 
   return {
     ...mutation,
-    execute: (bomId: string, warehouseId: string) => mutation.mutateAsync({ bomId, warehouseId }),
+    execute: (bomId: string) => mutation.mutateAsync(bomId),
   };
 }
 
@@ -170,7 +185,15 @@ export function useUpdateBomItemSerial() {
           queryClient.setQueryData<Bom | null>(queryKey, cachedBom ?? null);
         }
       }
-      showToast.error(getErrorMessage(err));
+      // 404 means the BOM item was deleted by a concurrent reconcile (e.g. qty reduction).
+      // Refetch silently and surface a gentle notice rather than a hard error.
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 404) {
+        void queryClient.invalidateQueries({ queryKey: ['bom'] });
+        showToast.warning('This unit was removed from the BOM; serial discarded.');
+      } else {
+        showToast.error(getErrorMessage(err));
+      }
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ['bom'] });
@@ -250,6 +273,10 @@ export function useBulkUpdateBomItemSerials() {
   };
 }
 
+/**
+ * Force-resync BOM from quote snapshot (admin/emergency path only).
+ * Not exposed in the main UI — kept for ops/admin use via direct API or admin panel.
+ */
 export function useSyncProjectBom(projectId: string) {
   const queryClient = useQueryClient();
   const { orgHeaders, organizationId } = useOrgContext();
@@ -268,7 +295,7 @@ export function useSyncProjectBom(projectId: string) {
         queryKey: [...bomResourceKeys.all(organizationId), 'project', projectId],
       });
       void queryClient.invalidateQueries({ queryKey: ['bom'] });
-      showToast.success('BOM synced successfully');
+      showToast.success('BOM resynced from quote');
     },
     onError: (err) => {
       showToast.error(getErrorMessage(err));

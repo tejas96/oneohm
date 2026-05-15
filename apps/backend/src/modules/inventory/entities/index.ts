@@ -6,5 +6,6 @@ export * from './purchase-order.entity';
 export * from './purchase-order-item.entity';
 export * from './inventory-transaction.entity';
 export * from './stock-allocation.entity';
+export * from './return-request.entity';
 export * from './material-dispatch.entity';
 export * from './material-dispatch-item.entity';

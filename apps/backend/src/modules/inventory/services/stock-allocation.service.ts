@@ -122,6 +122,7 @@ export class StockAllocationService {
     limit = 20,
     filters?: {
       status?: StockAllocationStatus;
+      activeOnly?: boolean;
       projectId?: string;
       warehouseId?: string;
       productId?: string;
@@ -193,12 +194,18 @@ export class StockAllocationService {
 
       const newDispatchedQuantity =
         Number(allocationRow.dispatchedQuantity) + fulfillDto.fulfilledQuantity;
-      if (newDispatchedQuantity > Number(allocationRow.allocatedQuantity)) {
-        throw new BadRequestException('Dispatched quantity cannot exceed allocated quantity');
+
+      // Net quantity that must be at site after this dispatch
+      // = newDispatched - alreadyReturned. This must not exceed the allocated budget.
+      const netDispatched = newDispatchedQuantity - Number(allocationRow.returnedQuantity);
+      if (netDispatched > Number(allocationRow.allocatedQuantity)) {
+        throw new BadRequestException(
+          'Net dispatched quantity (dispatched minus returned) cannot exceed allocated quantity',
+        );
       }
 
       const newStatus =
-        newDispatchedQuantity >= Number(allocationRow.allocatedQuantity)
+        netDispatched >= Number(allocationRow.allocatedQuantity)
           ? StockAllocationStatus.DISPATCHED
           : StockAllocationStatus.PARTIALLY_DISPATCHED;
 
@@ -213,11 +220,21 @@ export class StockAllocationService {
           'No stock record found for this product/warehouse combination',
         );
       }
-      if (Number(stock.reservedQuantity) < fulfillDto.fulfilledQuantity) {
-        throw new BadRequestException('Insufficient reserved stock for dispatch');
+
+      // If re-dispatching previously returned items, those items are in `available`
+      // (not `reserved`) because returnToStock moved them back to available.
+      // Deduct from reserved first; any shortfall comes from available.
+      const fromReserved = Math.min(fulfillDto.fulfilledQuantity, Number(stock.reservedQuantity));
+      const fromAvailable = fulfillDto.fulfilledQuantity - fromReserved;
+
+      if (fromAvailable > Number(stock.availableQuantity)) {
+        throw new BadRequestException(
+          'Insufficient stock (reserved + available) to fulfill this dispatch',
+        );
       }
 
-      stock.reservedQuantity = Number(stock.reservedQuantity) - fulfillDto.fulfilledQuantity;
+      stock.reservedQuantity = Number(stock.reservedQuantity) - fromReserved;
+      stock.availableQuantity = Number(stock.availableQuantity) - fromAvailable;
       stock.updatedAt = new Date();
       await manager.getRepository(InventoryStockEntity).save(stock);
 
@@ -337,6 +354,13 @@ export class StockAllocationService {
 
   /**
    * Return material to stock — increments returnedQuantity + adds back to available.
+   *
+   * Everything runs inside a single pessimistic-locked transaction so concurrent
+   * return requests cannot race past the maxReturnQty guard and over-return.
+   *
+   * Status transitions:
+   *  DISPATCHED / COMPLETED → PARTIALLY_DISPATCHED  (items no longer fully at site)
+   *  Any other non-cancelled status stays unchanged.
    */
   async returnToStock(
     id: string,
@@ -345,32 +369,61 @@ export class StockAllocationService {
     reason: string,
     performedBy: string,
   ): Promise<StockAllocationEntity> {
-    const allocation = await this.stockAllocationRepository.findById(id, organizationId);
-
-    const maxReturnQty =
-      Number(allocation.dispatchedQuantity) - Number(allocation.returnedQuantity);
-    if (quantity > maxReturnQty) {
-      throw new BadRequestException(
-        `Return quantity ${quantity} exceeds returnable quantity ${maxReturnQty}`,
-      );
-    }
-
-    const newReturnedQuantity = Number(allocation.returnedQuantity) + quantity;
-
     const updatedAllocationId = await this.dataSource.transaction(async (manager) => {
+      // Pessimistic-lock the allocation row first — serialises concurrent returns.
+      const allocationRepo = manager.getRepository(StockAllocationEntity);
+      const allocationRow = await allocationRepo
+        .createQueryBuilder('allocation')
+        .where('allocation.id = :id', { id })
+        .andWhere('allocation.organizationId = :organizationId', { organizationId })
+        .setLock('pessimistic_write')
+        .getOne();
+
+      if (!allocationRow) {
+        throw new NotFoundException(`Stock Allocation with ID ${id} not found`);
+      }
+      if (allocationRow.status === StockAllocationStatus.CANCELLED) {
+        throw new BadRequestException('Cannot return stock from a cancelled allocation');
+      }
+
+      // Max returnable = total ever dispatched minus total already returned.
+      const maxReturnQty =
+        Number(allocationRow.dispatchedQuantity) - Number(allocationRow.returnedQuantity);
+      if (maxReturnQty <= 0) {
+        throw new BadRequestException('No dispatched stock available to return');
+      }
+      if (quantity > maxReturnQty) {
+        throw new BadRequestException(
+          `Return quantity ${quantity} exceeds returnable quantity ${maxReturnQty}`,
+        );
+      }
+
+      const newReturnedQuantity = Number(allocationRow.returnedQuantity) + quantity;
+
+      // If the allocation was fully dispatched or completed, revert to PARTIALLY_DISPATCHED
+      // so the allocation is no longer considered complete (items are back in the warehouse).
+      const terminalForwardStatuses = [
+        StockAllocationStatus.DISPATCHED,
+        StockAllocationStatus.COMPLETED,
+      ];
+      const newStatus = terminalForwardStatuses.includes(allocationRow.status)
+        ? StockAllocationStatus.PARTIALLY_DISPATCHED
+        : allocationRow.status;
+
       const stockRepo = manager.getRepository(InventoryStockEntity);
       const stock = await this.lockInventoryStock(
         manager,
         organizationId,
-        allocation.warehouseId,
-        allocation.productId,
+        allocationRow.warehouseId,
+        allocationRow.productId,
       );
 
       if (!stock) {
+        // Edge case: stock row was deleted after allocation — recreate it.
         const newStock = stockRepo.create({
           organizationId,
-          warehouseId: allocation.warehouseId,
-          productId: allocation.productId,
+          warehouseId: allocationRow.warehouseId,
+          productId: allocationRow.productId,
           availableQuantity: quantity,
           reservedQuantity: 0,
           inTransitQuantity: 0,
@@ -386,26 +439,22 @@ export class StockAllocationService {
       await txnRepo.save(
         txnRepo.create({
           organizationId,
-          warehouseId: allocation.warehouseId,
-          productId: allocation.productId,
+          warehouseId: allocationRow.warehouseId,
+          productId: allocationRow.productId,
           transactionType: InventoryTransactionType.RETURN,
           quantity,
           transactionDate: new Date(),
           referenceType: 'stock_allocation_return',
-          referenceId: allocation.id,
+          referenceId: allocationRow.id,
           notes: `[REASON: ${reason}] Return from project allocation`,
           createdBy: performedBy,
         }),
       );
 
-      const allocationRepo = manager.getRepository(StockAllocationEntity);
-      const allocationRow = await allocationRepo.findOne({ where: { id, organizationId } });
-      if (!allocationRow) {
-        throw new NotFoundException(`Stock Allocation with ID ${id} not found`);
-      }
       Object.assign(allocationRow, {
         returnedQuantity: newReturnedQuantity,
         returnedAt: new Date(),
+        status: newStatus,
         updatedBy: performedBy,
       });
       await allocationRepo.save(allocationRow);

@@ -19,6 +19,7 @@ import { ProjectTaskEntity } from './project-task.entity';
 import { ProjectTeamMemberEntity } from './project-team-member.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
+import { WarehouseEntity } from '../../inventory/entities/warehouse.entity';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
@@ -73,6 +74,20 @@ export class ProjectEntity extends BaseEntity {
 
   @Column({ name: 'default_transitions', type: 'jsonb', nullable: true })
   defaultTransitions?: Record<string, string[]>;
+
+  // ==================== Inventory ====================
+
+  /**
+   * Default warehouse for stock allocation.
+   * Set once by the user; locked (service-layer 409) once any active allocation exists.
+   * Required before "Reserve Stock" can run on the BOM tab.
+   */
+  @Column({ name: 'default_warehouse_id', type: 'uuid', nullable: true })
+  defaultWarehouseId?: string;
+
+  @ManyToOne(() => WarehouseEntity, { nullable: true })
+  @JoinColumn({ name: 'default_warehouse_id' })
+  defaultWarehouse?: WarehouseEntity;
 
   // ==================== Metadata ====================
 

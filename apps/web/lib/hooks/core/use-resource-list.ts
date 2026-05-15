@@ -64,8 +64,17 @@ export function useResourceList<
     persistKey: config.persistFilters ? `${config.resource}-filters` : undefined,
   });
 
+  // Include the endpoint in the query key so hooks that share the same
+  // `resource` name but hit different endpoints (e.g. the global
+  // /inventory-stock list vs. /inventory-stock/warehouse/:id on the
+  // warehouse detail page) never share the same cache entry.
+  const endpointKey = config.endpoint !== `/${config.resource}` ? config.endpoint : undefined;
+
   const query = useQuery({
-    queryKey: keys.list(organizationId, queryState.activeFilters as Record<string, unknown>),
+    queryKey: [
+      ...keys.list(organizationId, queryState.activeFilters as Record<string, unknown>),
+      ...(endpointKey ? [endpointKey] : []),
+    ],
     queryFn: async ({ signal }) => {
       const params = buildQueryParams(queryState.activeFilters, {
         minSearchLength: config.minSearchLength,
@@ -106,8 +115,12 @@ export function useResourceList<
         string,
         unknown
       >;
+      const prefetchEndpointKey = cfg.endpoint !== `/${cfg.resource}` ? cfg.endpoint : undefined;
       void queryClient.prefetchQuery({
-        queryKey: keys.list(organizationId, prefetchFilters),
+        queryKey: [
+          ...keys.list(organizationId, prefetchFilters),
+          ...(prefetchEndpointKey ? [prefetchEndpointKey] : []),
+        ],
         queryFn: async ({ signal }) => {
           const params = buildQueryParams({ ...queryState.activeFilters, page } as F, {
             minSearchLength: cfg.minSearchLength,

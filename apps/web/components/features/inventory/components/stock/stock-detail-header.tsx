@@ -2,6 +2,7 @@
 
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import SwapHorizRoundedIcon from '@mui/icons-material/SwapHorizRounded';
 import { Button, IconButton } from '@mui/material';
 import Link from 'next/link';
@@ -24,8 +25,10 @@ export interface StockDetailHeaderProps {
   isLow: boolean;
   canAdjust: boolean;
   canTransfer: boolean;
+  canEditSettings: boolean;
   onAdjust: () => void;
   onTransfer: () => void;
+  onSettings: () => void;
 }
 
 export function StockDetailHeader({
@@ -33,8 +36,10 @@ export function StockDetailHeader({
   isLow,
   canAdjust,
   canTransfer,
+  canEditSettings,
   onAdjust,
   onTransfer,
+  onSettings,
 }: StockDetailHeaderProps): React.JSX.Element {
   return (
     <div className="sticky top-header z-10 -mx-6 flex items-start justify-between gap-4 border-b border-border-light bg-white/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -66,6 +71,18 @@ export function StockDetailHeader({
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<SettingsOutlinedIcon sx={{ fontSize: 16 }} />}
+          onClick={onSettings}
+          disabled={!canEditSettings}
+          title={
+            canEditSettings ? 'Edit stock thresholds' : 'You need inventory:write to edit settings.'
+          }
+        >
+          Settings
+        </Button>
         <Button
           size="small"
           variant="outlined"

@@ -57,6 +57,13 @@ export class ProjectResponseDto {
   @Expose()
   updatedBy?: string;
 
+  @ApiPropertyOptional({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Default warehouse for BOM stock allocation',
+  })
+  @Expose()
+  defaultWarehouseId?: string;
+
   @ApiProperty({ example: 'PRJ-ONEOHM-2025-0001' })
   @Expose()
   projectNumber!: string;

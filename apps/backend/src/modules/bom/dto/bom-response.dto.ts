@@ -24,6 +24,9 @@ export class BomResponseDto {
   entityType!: string;
   entityId!: string;
   status!: string;
+  allocationStatus!: string;
+  /** Per-product allocation status: productId → 'allocated' | 'partial' | 'pending' */
+  productAllocationStatus!: Record<string, 'allocated' | 'partial' | 'pending'>;
   totalItems!: number;
   totalUnits?: number;
   totalLineItems?: number;

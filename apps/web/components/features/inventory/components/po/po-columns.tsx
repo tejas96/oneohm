@@ -132,6 +132,7 @@ export function buildPoColumns(callbacks: PoRowActionCallbacks): ColumnConfig<Po
       headerName: 'Total',
       width: 130,
       sortable: true,
+      cellSx: { textAlign: 'right' },
       renderCell: ({ row }) => (
         <div className="flex flex-col gap-0.5 text-right">
           <span className="text-sm font-medium tabular-nums text-foreground">
