@@ -44,12 +44,29 @@ export function DocumentManager({
   readOnly = false,
   className,
   onDraftDocumentsChange,
-}: DocumentManagerProps): React.JSX.Element {
+  onPreview,
+  documents: externalDocuments,
+  viewMode: controlledViewMode,
+  onViewModeChange,
+}: DocumentManagerProps & {
+  onPreview?: (doc: DocumentRecord | DraftDocument) => void;
+}): React.JSX.Element {
   const isDraftMode = !entityId;
 
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [internalViewMode, setInternalViewMode] = useState<ViewMode>('grid');
+  const viewMode = controlledViewMode ?? internalViewMode;
   const [uploadOpen, setUploadOpen] = useState(false);
   const [draftDocs, setDraftDocs] = useState<DraftDocument[]>([]);
+
+  const handleViewModeChange = (_: React.MouseEvent<HTMLElement>, nextView: ViewMode | null) => {
+    if (nextView !== null) {
+      if (onViewModeChange) {
+        onViewModeChange(nextView);
+      } else {
+        setInternalViewMode(nextView);
+      }
+    }
+  };
 
   useEffect(() => {
     if (isDraftMode) {
@@ -57,10 +74,12 @@ export function DocumentManager({
     }
   }, [isDraftMode, draftDocs, onDraftDocumentsChange]);
 
-  const { data: apiDocuments, isLoading } = useDocuments(
+  const { data: apiDocuments, isLoading: isQueryLoading } = useDocuments(
     entityType,
-    isDraftMode ? undefined : entityId,
+    isDraftMode || !!externalDocuments ? undefined : entityId,
   );
+
+  const isLoading = !externalDocuments && isQueryLoading;
   const deleteMutation = useDeleteDocument();
   const uploadMutation = useUploadDocument();
 
@@ -74,7 +93,7 @@ export function DocumentManager({
     downloadDocument,
   } = useDocumentActions();
 
-  const documents = apiDocuments ?? [];
+  const documents = externalDocuments ?? apiDocuments ?? [];
 
   const handleUploadComplete = useCallback(
     async (params: {
@@ -184,6 +203,7 @@ export function DocumentManager({
           open={uploadOpen}
           onOpenChange={setUploadOpen}
           onUpload={handleUploadComplete}
+          showEntityTypeSelector={!entityId}
         />
       </Box>
     );
@@ -213,9 +233,7 @@ export function DocumentManager({
             <ToggleButtonGroup
               value={viewMode}
               exclusive
-              onChange={(_e, val) => {
-                if (val) setViewMode(val as ViewMode);
-              }}
+              onChange={handleViewModeChange}
               size="small"
             >
               <ToggleButton value="list" aria-label="List view" sx={{ px: 0.75, py: 0.5 }}>
@@ -246,7 +264,9 @@ export function DocumentManager({
               <DocumentListItem
                 key={item.id}
                 document={item}
-                onPreview={(doc: DocumentRecord | DraftDocument) => void openPreview(doc)}
+                onPreview={(doc: DocumentRecord | DraftDocument) =>
+                  onPreview ? onPreview(doc) : void openPreview(doc)
+                }
                 onDownload={(doc: DocumentRecord | DraftDocument) => void downloadDocument(doc)}
                 onDelete={readOnly ? undefined : requestDelete}
                 isDeleting={deleteMutation.isPending}
@@ -272,7 +292,9 @@ export function DocumentManager({
               <DocumentGridItem
                 key={item.id}
                 document={item}
-                onPreview={(doc: DocumentRecord | DraftDocument) => void openPreview(doc)}
+                onPreview={(doc: DocumentRecord | DraftDocument) =>
+                  onPreview ? onPreview(doc) : void openPreview(doc)
+                }
                 onDownload={(doc: DocumentRecord | DraftDocument) => void downloadDocument(doc)}
                 onDelete={readOnly ? undefined : requestDelete}
               />
@@ -287,6 +309,7 @@ export function DocumentManager({
           open={uploadOpen}
           onOpenChange={setUploadOpen}
           onUpload={handleUploadComplete}
+          showEntityTypeSelector={!entityId}
         />
       )}
 

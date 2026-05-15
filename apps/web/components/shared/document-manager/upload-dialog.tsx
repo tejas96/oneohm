@@ -2,7 +2,8 @@
 
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { Box, Button, LinearProgress, Typography } from '@mui/material';
-import { DocumentCategory, DocumentTag } from '@oneohm-epc/shared/types';
+import { DOCUMENT_ENTITY_TYPE_OPTIONS } from '@oneohm-epc/shared/constants';
+import { DocumentCategory, DocumentEntityType, DocumentTag } from '@oneohm-epc/shared/types';
 import { useCallback, useRef, useState } from 'react';
 
 import {
@@ -32,18 +33,26 @@ interface UploadDialogProps {
     file: File;
     tag: string;
     category: DocumentCategory;
+    entityType?: DocumentEntityType;
     onProgress: (percent: number) => void;
   }) => Promise<void>;
+  /** If true, shows the entity type selector */
+  showEntityTypeSelector?: boolean;
+  /** Default selected entity type if selector is shown */
+  defaultEntityType?: DocumentEntityType;
 }
 
 export function UploadDialog({
   open,
   onOpenChange,
   onUpload,
+  showEntityTypeSelector = false,
+  defaultEntityType,
 }: UploadDialogProps): React.JSX.Element {
   const [tag, setTag] = useState('');
   const [customTag, setCustomTag] = useState('');
   const [category, setCategory] = useState<string>(DocumentCategory.DOCUMENT);
+  const [entityType, setEntityType] = useState<DocumentEntityType | ''>(defaultEntityType ?? '');
   const [file, setFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -57,11 +66,12 @@ export function UploadDialog({
     setTag('');
     setCustomTag('');
     setCategory(DocumentCategory.DOCUMENT);
+    if (showEntityTypeSelector) setEntityType(defaultEntityType ?? '');
     setFile(null);
     setIsDragOver(false);
     setIsUploading(false);
     setProgress(0);
-  }, []);
+  }, [showEntityTypeSelector, defaultEntityType]);
 
   const handleClose = useCallback(
     (isOpen: boolean) => {
@@ -124,6 +134,7 @@ export function UploadDialog({
         file,
         tag: resolvedTag,
         category: category as DocumentCategory,
+        ...(showEntityTypeSelector && entityType ? { entityType: entityType } : {}),
         onProgress: (percent) => setProgress(percent),
       });
       setProgress(100);
@@ -133,10 +144,14 @@ export function UploadDialog({
     } finally {
       setIsUploading(false);
     }
-  }, [file, resolvedTag, category, onUpload, handleClose]);
+  }, [file, resolvedTag, category, entityType, showEntityTypeSelector, onUpload, handleClose]);
 
   const canUpload =
-    !!file && !!resolvedTag && !isUploading && (!isOtherTag || customTag.trim().length > 0);
+    !!file &&
+    !!resolvedTag &&
+    !isUploading &&
+    (!isOtherTag || customTag.trim().length > 0) &&
+    (!showEntityTypeSelector || !!entityType);
 
   return (
     <MUIDialog open={open} onOpenChange={handleClose} size="sm">
@@ -145,6 +160,19 @@ export function UploadDialog({
       </MUIDialogHeader>
 
       <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        {/* Entity Type Selector */}
+        {showEntityTypeSelector && (
+          <MUISelect
+            fieldLabel="Group (Entity Type)"
+            required
+            value={entityType}
+            onChange={(e) => setEntityType(e.target.value as DocumentEntityType)}
+            disabled={isUploading}
+            placeholder="Select a group..."
+            options={[...DOCUMENT_ENTITY_TYPE_OPTIONS]}
+          />
+        )}
+
         {/* Tag / Document Type */}
         <MUISelect
           fieldLabel="Document Type"

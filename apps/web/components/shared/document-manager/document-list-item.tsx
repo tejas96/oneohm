@@ -4,9 +4,10 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Box, Chip, CircularProgress, IconButton, Typography } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { FileTypeIcon } from './file-type-icon';
+import { MoveDocumentPopover } from './move-document-popover';
 import type { DraftDocument } from './types';
 import { formatBytes, formatDocDate, getTagLabel } from './utils';
 
@@ -31,7 +32,20 @@ function Thumbnail({ doc }: { doc: AnyDocItem }): React.JSX.Element {
   const isImage = isImageFile(doc.fileName);
 
   useEffect(() => {
-    if (!isImage) return;
+    if (!isImage || !doc.fileUrl) return;
+
+    // If it's already a blob or data URL, use it directly
+    if (doc.fileUrl.startsWith('blob:') || doc.fileUrl.startsWith('data:')) {
+      setViewUrl(doc.fileUrl);
+      return;
+    }
+
+    // If it already looks like a signed URL (has query params), try it first
+    if (doc.fileUrl.includes('?')) {
+      setViewUrl(doc.fileUrl);
+      return;
+    }
+
     setViewUrl(null);
     setImgError(false);
 
@@ -46,7 +60,7 @@ function Thumbnail({ doc }: { doc: AnyDocItem }): React.JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [doc.fileUrl, isImage]);
+  }, [doc.fileUrl, doc.fileName]);
 
   const handleError = useCallback(() => setImgError(true), []);
 
@@ -80,6 +94,7 @@ function Thumbnail({ doc }: { doc: AnyDocItem }): React.JSX.Element {
           alt={doc.fileName}
           onError={handleError}
           loading="lazy"
+          crossOrigin="anonymous"
           sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       </Box>
@@ -114,6 +129,7 @@ export function DocumentListItem({
 
   return (
     <Box
+      className="group"
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -123,7 +139,7 @@ export function DocumentListItem({
         border: 1,
         borderColor: 'divider',
         transition: 'background-color 0.15s',
-        '&:hover': { bgcolor: 'grey.50' },
+        '&:hover': { bgcolor: 'action.hover' },
       }}
     >
       {/* Left: Thumbnail + Info */}
@@ -132,13 +148,29 @@ export function DocumentListItem({
       >
         <Thumbnail doc={doc} />
         <Box sx={{ minWidth: 0 }}>
+          <Typography variant="body2" fontWeight={600} noWrap sx={{ mb: 0.25 }}>
+            {doc.fileName}
+          </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" fontWeight={500} noWrap>
-              {doc.fileName}
-            </Typography>
-            <Chip label={getTagLabel(doc.tag)} size="small" variant="outlined" />
+            <Chip
+              label={getTagLabel(doc.tag)}
+              size="small"
+              variant="outlined"
+              sx={{
+                height: 20,
+                fontSize: '0.65rem',
+                bgcolor: 'background.paper',
+                borderColor: 'divider',
+                fontWeight: 500,
+              }}
+            />
             {extraChip && (
-              <Chip label={extraChip} size="small" variant="outlined" sx={{ flexShrink: 0 }} />
+              <Chip
+                label={extraChip}
+                size="small"
+                variant="outlined"
+                sx={{ height: 20, fontSize: '0.65rem', flexShrink: 0 }}
+              />
             )}
           </Box>
           <Typography variant="caption" color="text.secondary">
@@ -155,6 +187,7 @@ export function DocumentListItem({
           size="small"
           onClick={() => onPreview(doc)}
           aria-label={`Preview ${doc.fileName}`}
+          sx={{ opacity: 0, '.group:hover &': { opacity: 1 }, transition: 'opacity 0.2s' }}
         >
           <VisibilityIcon fontSize="small" />
         </IconButton>
@@ -162,6 +195,7 @@ export function DocumentListItem({
           size="small"
           onClick={() => onDownload(doc)}
           aria-label={`Download ${doc.fileName}`}
+          sx={{ opacity: 0, '.group:hover &': { opacity: 1 }, transition: 'opacity 0.2s' }}
         >
           <DownloadIcon fontSize="small" />
         </IconButton>
@@ -171,10 +205,19 @@ export function DocumentListItem({
             onClick={() => onDelete(doc)}
             disabled={isDeleting}
             aria-label={`Delete ${doc.fileName}`}
-            sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' } }}
+            sx={{
+              opacity: 0,
+              '.group:hover &': { opacity: 1 },
+              transition: 'opacity 0.2s',
+              color: 'text.disabled',
+              '&:hover': { color: 'error.main' },
+            }}
           >
             <DeleteOutlineIcon fontSize="small" />
           </IconButton>
+        )}
+        {'id' in doc && 'entityType' in doc && (
+          <MoveDocumentPopover documentId={doc.id} currentEntityType={doc.entityType} />
         )}
       </Box>
     </Box>

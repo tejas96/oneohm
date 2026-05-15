@@ -112,6 +112,7 @@ export class DocumentService {
 
     const updateData: Record<string, unknown> = { updatedBy: userId };
     if (dto.propertyId !== undefined) updateData.propertyId = dto.propertyId;
+    if (dto.entityType !== undefined) updateData.entityType = dto.entityType;
     if (dto.tag !== undefined) updateData.tag = dto.tag;
     if (dto.category !== undefined) updateData.category = dto.category;
     if (dto.metadata !== undefined) updateData.metadata = dto.metadata;

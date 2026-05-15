@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { DocumentCategory } from '@oneohm-epc/shared/types';
+import { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
 import { Transform } from 'class-transformer';
 import { IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
@@ -8,6 +8,14 @@ export class UpdateDocumentDto {
   @IsOptional()
   @IsUUID()
   propertyId?: string;
+
+  @ApiPropertyOptional({
+    enum: DocumentEntityType,
+    description: 'Move document to a different entity type',
+  })
+  @IsOptional()
+  @IsEnum(DocumentEntityType)
+  entityType?: DocumentEntityType;
 
   @ApiPropertyOptional({ description: 'Update tag' })
   @IsOptional()

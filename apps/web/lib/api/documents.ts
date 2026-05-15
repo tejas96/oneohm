@@ -95,6 +95,7 @@ export async function updateDocument(
   payload: {
     tag?: string;
     category?: DocumentCategory;
+    entityType?: DocumentEntityType;
     metadata?: Record<string, unknown>;
     notes?: string;
   },

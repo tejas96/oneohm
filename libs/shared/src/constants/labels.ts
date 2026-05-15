@@ -1,5 +1,6 @@
 import {
   DocumentCategory,
+  DocumentEntityType,
   DocumentTag,
   ExpenseCategory,
   ExpensePaidByType,
@@ -98,6 +99,48 @@ export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategory, string> = {
   [DocumentCategory.IMAGE]: 'Image',
   [DocumentCategory.REPORT]: 'Report',
 };
+
+// ============================================
+// DOCUMENT ENTITY TYPE LABELS
+// ============================================
+
+export const DOCUMENT_ENTITY_TYPE_LABELS: Record<DocumentEntityType, string> = {
+  [DocumentEntityType.CUSTOMER]: 'Customer Documents',
+  [DocumentEntityType.PROPERTY]: 'Property Documents',
+  [DocumentEntityType.SITE_ACTIVITY]: 'Site Activity Documents',
+  [DocumentEntityType.LOAN]: 'Loan Documents',
+  [DocumentEntityType.QUOTE]: 'Quote Documents',
+  [DocumentEntityType.PROJECT]: 'Project Documents',
+  [DocumentEntityType.PAYMENT]: 'Payment Documents',
+  [DocumentEntityType.PROJECT_EXPENSE]: 'Expense Documents',
+};
+
+/** Ordered options for entity type selectors — used by upload dialogs and filters */
+export const DOCUMENT_ENTITY_TYPE_OPTIONS: ReadonlyArray<{
+  value: DocumentEntityType;
+  label: string;
+}> = [
+  { value: DocumentEntityType.CUSTOMER, label: 'Customer' },
+  { value: DocumentEntityType.PROPERTY, label: 'Property' },
+  { value: DocumentEntityType.SITE_ACTIVITY, label: 'Site Activity' },
+  { value: DocumentEntityType.LOAN, label: 'Loan' },
+  { value: DocumentEntityType.QUOTE, label: 'Quote' },
+  { value: DocumentEntityType.PROJECT, label: 'Project' },
+  { value: DocumentEntityType.PAYMENT, label: 'Payment' },
+  { value: DocumentEntityType.PROJECT_EXPENSE, label: 'Project Expense' },
+];
+
+/** Fixed display ordering for grouping documents by entity type */
+export const DOCUMENT_ENTITY_TYPE_ORDER: readonly DocumentEntityType[] = [
+  DocumentEntityType.CUSTOMER,
+  DocumentEntityType.PROPERTY,
+  DocumentEntityType.SITE_ACTIVITY,
+  DocumentEntityType.LOAN,
+  DocumentEntityType.QUOTE,
+  DocumentEntityType.PROJECT,
+  DocumentEntityType.PAYMENT,
+  DocumentEntityType.PROJECT_EXPENSE,
+];
 
 export { PANEL_TECHNOLOGY_LABELS } from '../types/enums/product.enum';
 
