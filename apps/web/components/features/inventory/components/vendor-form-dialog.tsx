@@ -347,7 +347,7 @@ export function VendorFormDialog({
       }
 
       handleClose();
-    } catch (error) {
+    } catch {
       // Error is already displayed via mutation error handling
       // Just prevent the dialog from closing
     }

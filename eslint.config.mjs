@@ -52,6 +52,7 @@ export default [
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
     plugins: {
+      '@typescript-eslint': tseslint.plugin,
       import: importPlugin,
       sonarjs,
       'unused-imports': unusedImports,

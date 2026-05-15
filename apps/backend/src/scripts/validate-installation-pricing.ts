@@ -11,7 +11,7 @@
 
 import { DataSource } from 'typeorm';
 
-async function validateInstallationPricing() {
+async function validateInstallationPricing(): Promise<void> {
   console.log('🔍 Starting Installation Pricing Data Quality Validation...\n');
 
   let dataSource: DataSource | undefined;

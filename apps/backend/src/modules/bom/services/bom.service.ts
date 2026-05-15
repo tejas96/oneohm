@@ -573,7 +573,7 @@ export class BomService {
 
       // Recompute BOM totals and allocation status
       await this.recomputeBomTotals(manager, existingBom);
-      await this.recomputeAllocationStatus(manager, existingBom, organizationId);
+      await this.recomputeAllocationStatus(manager, existingBom);
 
       return { added, removed, increased, decreased, pendingStock, overDispatched };
     });
@@ -679,7 +679,7 @@ export class BomService {
         }
       }
 
-      await this.recomputeAllocationStatus(manager, lockedBom, organizationId);
+      await this.recomputeAllocationStatus(manager, lockedBom);
       return { allocated, pendingStock, alreadySatisfied };
     });
 
@@ -895,11 +895,7 @@ export class BomService {
   }
 
   /** Recompute BOM.allocationStatus from live allocations. */
-  private async recomputeAllocationStatus(
-    manager: EntityManager,
-    bom: BomEntity,
-    organizationId: string,
-  ): Promise<void> {
+  private async recomputeAllocationStatus(manager: EntityManager, bom: BomEntity): Promise<void> {
     const itemRepo = manager.getRepository(BomItemEntity);
     const allocRepo = manager.getRepository(StockAllocationEntity);
 
