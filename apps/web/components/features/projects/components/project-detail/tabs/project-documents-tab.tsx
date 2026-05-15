@@ -3,20 +3,21 @@
 import { DocumentEntityType } from '@oneohm-epc/shared/types';
 import React from 'react';
 
-import { DocumentManager } from '@/components/shared/document-manager';
+import { PropertyDocumentHub } from '@/components/shared/document-manager';
 
 interface ProjectDocumentsTabProps {
   projectId: string;
+  propertyId: string;
 }
 
 export const ProjectDocumentsTab = React.memo(
-  ({ projectId }: ProjectDocumentsTabProps): React.JSX.Element => {
+  ({ projectId, propertyId }: ProjectDocumentsTabProps): React.JSX.Element => {
     return (
-      <DocumentManager
-        entityType={DocumentEntityType.PROJECT}
-        entityId={projectId}
-        title="Project Documents"
-        description="Upload project documents to keep everything organized."
+      <PropertyDocumentHub
+        propertyId={propertyId}
+        allowUpload
+        defaultUploadEntityType={DocumentEntityType.PROJECT}
+        defaultUploadEntityId={projectId}
       />
     );
   },

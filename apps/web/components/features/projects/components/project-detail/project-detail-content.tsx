@@ -153,7 +153,7 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
         </TabsContent>
 
         <TabsContent value="documents">
-          <ProjectDocumentsTab projectId={projectId} />
+          <ProjectDocumentsTab projectId={projectId} propertyId={project.propertyId} />
         </TabsContent>
 
         <TabsContent value="finance">

@@ -1,5 +1,7 @@
 import type { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
 
+import type { DocumentRecord } from '@/lib/api/documents';
+
 export type ViewMode = 'list' | 'grid';
 
 export interface DocumentManagerProps {
@@ -12,6 +14,9 @@ export interface DocumentManagerProps {
   /** When entityId is undefined, component operates in draft mode:
    *  files upload to S3 and are held locally until flush(entityId) is called. */
   onDraftDocumentsChange?: (docs: DraftDocument[]) => void;
+  documents?: DocumentRecord[];
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
 export interface DraftDocument {

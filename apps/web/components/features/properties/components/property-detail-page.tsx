@@ -27,7 +27,7 @@ import { PropertyFollowupsTab } from './property-followups-tab';
 import { useFollowups, useMarkFollowupComplete } from '@/components/features/followups/hooks';
 import { SiteActivityTab } from '@/components/features/site-activities/components';
 import { EmptyState, ErrorState } from '@/components/shared';
-import { DocumentManager } from '@/components/shared/document-manager';
+import { PropertyDocumentHub } from '@/components/shared/document-manager';
 import {
   Badge,
   Button,
@@ -548,11 +548,11 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
 
           {/* Documents Tab */}
           <TabsContent value="documents">
-            <DocumentManager
-              entityType={DocumentEntityType.PROPERTY}
-              entityId={property.id}
-              title="Property Documents"
-              description="Upload property documents like electricity bills, site photos, or loan paperwork."
+            <PropertyDocumentHub
+              propertyId={property.id}
+              allowUpload
+              defaultUploadEntityType={DocumentEntityType.PROPERTY}
+              defaultUploadEntityId={property.id}
             />
           </TabsContent>
 

@@ -24,7 +24,7 @@ import {
   useDocumentsByEntityBatch,
   useDeleteDocument,
 } from '@/components/features/documents/hooks';
-import { DocumentManager, type ViewMode } from '@/components/shared/document-manager';
+import { PropertyDocumentHub, type ViewMode } from '@/components/shared/document-manager';
 import { DocumentGridItem } from '@/components/shared/document-manager/document-grid-item';
 import { DocumentListItem } from '@/components/shared/document-manager/document-list-item';
 import { useDocumentActions } from '@/components/shared/document-manager/use-document-actions';
@@ -58,10 +58,11 @@ export function CustomerDocumentsTab({
           value={propertyFilter}
           onChange={onPropertyFilterChange}
         />
-        <DocumentManager
-          entityType={DocumentEntityType.PROPERTY}
-          entityId={propertyFilter}
-          title="Property Documents"
+        <PropertyDocumentHub
+          propertyId={propertyFilter}
+          allowUpload
+          defaultUploadEntityType={DocumentEntityType.PROPERTY}
+          defaultUploadEntityId={propertyFilter}
         />
       </Box>
     );

@@ -6,6 +6,7 @@ import {
   useQuery,
   useQueryClient,
   type UseMutationResult,
+  type UseQueryResult,
 } from '@tanstack/react-query';
 
 import { createResourceKeys, useOrgContext } from '../core';
@@ -28,8 +29,10 @@ const documentKeys = createResourceKeys('documents');
 
 // ── Query Hooks ────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/explicit-module-boundary-types
-export function useDocumentsByEntity(entityType: DocumentEntityType, entityId: string | undefined) {
+export function useDocumentsByEntity(
+  entityType: DocumentEntityType,
+  entityId: string | undefined,
+): UseQueryResult<DocumentRecord[]> {
   const { organizationId, isReady } = useOrgContext();
 
   return useQuery({
@@ -40,8 +43,9 @@ export function useDocumentsByEntity(entityType: DocumentEntityType, entityId: s
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/explicit-module-boundary-types
-export function useDocumentsByProperty(propertyId: string | undefined) {
+export function useDocumentsByProperty(
+  propertyId: string | undefined,
+): UseQueryResult<DocumentRecord[]> {
   const { organizationId, isReady } = useOrgContext();
 
   return useQuery({
@@ -49,11 +53,15 @@ export function useDocumentsByProperty(propertyId: string | undefined) {
     queryFn: (): Promise<DocumentRecord[]> =>
       getDocuments({ propertyId: propertyId!, organizationId }),
     enabled: !!propertyId && isReady,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/explicit-module-boundary-types
-export function useDocumentsByEntityBatch(entityType: DocumentEntityType, entityIds: string[]) {
+export function useDocumentsByEntityBatch(
+  entityType: DocumentEntityType,
+  entityIds: string[],
+): UseQueryResult<DocumentRecord[]> {
   const { organizationId, isReady } = useOrgContext();
 
   return useQuery({
@@ -105,6 +113,7 @@ interface UpdateDocumentPayload {
   tag?: string;
   notes?: string;
   category?: DocumentCategory;
+  entityType?: DocumentEntityType;
   metadata?: Record<string, unknown>;
 }
 

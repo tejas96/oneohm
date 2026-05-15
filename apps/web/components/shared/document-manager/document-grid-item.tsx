@@ -4,9 +4,10 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Box, Chip, CircularProgress, IconButton, Typography } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { FileTypeIcon } from './file-type-icon';
+import { MoveDocumentPopover } from './move-document-popover';
 import type { DraftDocument } from './types';
 import { formatBytes, getTagLabel } from './utils';
 
@@ -34,7 +35,20 @@ export function DocumentGridItem({
   const isImage = isImageFile(doc.fileName);
 
   useEffect(() => {
-    if (!isImage) return;
+    if (!isImage || !doc.fileUrl) return;
+
+    // If it's already a blob or data URL, use it directly
+    if (doc.fileUrl.startsWith('blob:') || doc.fileUrl.startsWith('data:')) {
+      setViewUrl(doc.fileUrl);
+      return;
+    }
+
+    // If it already looks like a signed URL (has query params), try it first
+    if (doc.fileUrl.includes('?')) {
+      setViewUrl(doc.fileUrl);
+      return;
+    }
+
     setViewUrl(null);
     setImgError(false);
 
@@ -49,7 +63,7 @@ export function DocumentGridItem({
     return () => {
       cancelled = true;
     };
-  }, [doc.fileUrl, isImage]);
+  }, [doc.fileUrl, doc.fileName]);
 
   const handleImageError = useCallback(() => setImgError(true), []);
 
@@ -57,6 +71,7 @@ export function DocumentGridItem({
 
   return (
     <Box
+      className="group"
       sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -72,8 +87,6 @@ export function DocumentGridItem({
     >
       {/* Preview Area */}
       <Box
-        component="button"
-        type="button"
         onClick={() => onPreview(doc)}
         aria-label={`Preview ${doc.fileName}`}
         sx={{
@@ -84,7 +97,6 @@ export function DocumentGridItem({
           height: 128,
           width: '100%',
           bgcolor: 'grey.100',
-          border: 'none',
           cursor: 'pointer',
           p: 0,
         }}
@@ -97,6 +109,7 @@ export function DocumentGridItem({
               alt={doc.fileName}
               onError={handleImageError}
               loading="lazy"
+              crossOrigin="anonymous"
               sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (
@@ -115,12 +128,54 @@ export function DocumentGridItem({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: 'rgba(0,0,0,0.3)',
+            bgcolor: 'rgba(0,0,0,0.4)',
             opacity: 0,
-            transition: 'opacity 0.15s',
+            transition: 'opacity 0.2s',
+            gap: 1,
+            zIndex: 1,
           }}
         >
-          <VisibilityIcon sx={{ color: 'common.white', fontSize: 24 }} />
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPreview(doc);
+            }}
+            sx={{
+              color: 'white',
+              bgcolor: 'rgba(255,255,255,0.1)',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+            }}
+            title="Preview"
+          >
+            <VisibilityIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDownload(doc);
+            }}
+            sx={{
+              color: 'white',
+              bgcolor: 'rgba(255,255,255,0.1)',
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+            }}
+            title="Download"
+          >
+            <DownloadIcon sx={{ fontSize: 20 }} />
+          </IconButton>
+          {'id' in doc && 'entityType' in doc && (
+            <MoveDocumentPopover
+              documentId={doc.id}
+              currentEntityType={doc.entityType}
+              sx={{
+                color: 'white',
+                bgcolor: 'rgba(255,255,255,0.1)',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+              }}
+            />
+          )}
         </Box>
       </Box>
 
@@ -157,13 +212,6 @@ export function DocumentGridItem({
           py: 0.5,
         }}
       >
-        <IconButton
-          size="small"
-          onClick={() => onDownload(doc)}
-          aria-label={`Download ${doc.fileName}`}
-        >
-          <DownloadIcon sx={{ fontSize: 16 }} />
-        </IconButton>
         {onDelete && (
           <IconButton
             size="small"
