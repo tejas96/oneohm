@@ -164,27 +164,31 @@ export function InventoryStockDetailPage(): React.JSX.Element {
         })}
       </section>
 
-      {min > 0 ? (
+      {min > 0 || max > 0 ? (
         <section className="flex flex-col gap-2 rounded-xl border border-border-light bg-white p-4">
           <div className="flex items-baseline justify-between">
-            <h3 className="text-sm font-semibold text-foreground">Buffer vs minimum</h3>
+            <h3 className="text-sm font-semibold text-foreground">
+              {min > 0 ? 'Buffer vs minimum' : 'Stock utilization'}
+            </h3>
             <span className="text-xs text-foreground-tertiary">
-              {available} of min {min}
+              {min > 0 ? `${available} of min ${min}` : `${available} units`}
               {max ? ` (max ${max})` : ''}
             </span>
           </div>
           <ProgressBarCell
-            numerator={Math.min(available, Math.max(min * 2, available))}
-            denominator={Math.max(min * 2, available)}
-            label={`${available} / min ${min}`}
+            numerator={available}
+            denominator={max > 0 ? max : Math.max(min * 2, available)}
+            label={max > 0 ? `${available} / max ${max}` : `${available} / min ${min}`}
             intent={isLow ? 'danger' : available <= min * 1.5 ? 'warning' : 'success'}
           />
           <p className="text-xs text-foreground-tertiary">
-            {isLow
-              ? 'Available quantity is at or below the minimum threshold — consider raising a Purchase Order.'
-              : available <= min * 1.5
-                ? 'Available is within 50% of the minimum threshold.'
-                : 'Healthy buffer above the minimum threshold.'}
+            {min > 0
+              ? isLow
+                ? 'Available quantity is at or below the minimum threshold — consider raising a Purchase Order.'
+                : available <= min * 1.5
+                  ? 'Available is within 50% of the minimum threshold.'
+                  : 'Healthy buffer above the minimum threshold.'
+              : 'Stock level monitored against maximum capacity.'}
           </p>
         </section>
       ) : null}

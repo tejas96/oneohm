@@ -70,7 +70,6 @@ export const PROPERTY_DETAIL_TABS = [
   { value: 'quotes', label: 'Quotes' },
   { value: 'followups', label: 'Followups' },
   { value: 'documents', label: 'Documents' },
-  { value: 'activity', label: 'Activity' },
 ] as const;
 
 export type PropertyDetailTab = (typeof PROPERTY_DETAIL_TABS)[number]['value'];

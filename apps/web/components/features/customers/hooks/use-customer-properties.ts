@@ -58,6 +58,7 @@ export interface CustomerPropertyResponse {
   status: PropertyStatus;
   // Notes
   notes?: string;
+  projectId?: string;
   // Audit Fields
   createdAt: string;
   updatedAt: string;

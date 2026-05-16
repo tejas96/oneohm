@@ -117,24 +117,25 @@ export function buildStockColumns(
     },
     {
       field: 'stockLevel',
-      headerName: 'vs Min level',
+      headerName: 'Stock Level',
       width: 180,
       sortable: false,
       renderCell: ({ row }) => {
         const avail = Number(row.availableQuantity ?? 0);
         const min = Number(row.minimumStockLevel ?? 0);
-        if (min <= 0) {
+        const max = Number(row.maximumStockLevel ?? 0);
+        if (min <= 0 && max <= 0) {
           return <span className="text-xs text-foreground-tertiary">No threshold set</span>;
         }
         // Show buffer above the minimum as a positive bar capped at 200%
         // of the minimum so a small min isn't misleading. Inverted intent
         // means low fill = bad.
-        const denom = Math.max(min * 2, avail);
+        const denom = max > 0 ? max : Math.max(min * 2, avail);
         return (
           <ProgressBarCell
-            numerator={Math.min(avail, denom)}
+            numerator={avail}
             denominator={denom}
-            label={`${avail} / min ${min}`}
+            label={max > 0 ? `${avail} / max ${max}` : `${avail} / min ${min}`}
             intent={avail <= min ? 'danger' : avail <= min * 1.5 ? 'warning' : 'success'}
           />
         );

@@ -121,6 +121,7 @@ export class ProjectRepository {
       fromDate?: string;
       toDate?: string;
       search?: string;
+      memberId?: string;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },
@@ -159,6 +160,20 @@ export class ProjectRepository {
 
     if (filters?.toDate) {
       query.andWhere('project.endDate <= :toDate', { toDate: filters.toDate });
+    }
+
+    if (filters?.memberId) {
+      // Use a subquery to find projects that have the specified member.
+      // We pass the parameter to the outer query so TypeORM can bind it correctly.
+      query.andWhere(
+        `project.id IN ${query
+          .subQuery()
+          .select('tm.project_id')
+          .from('project_team_members', 'tm')
+          .where('tm.user_id = :memberId')
+          .getQuery()}`,
+        { memberId: filters.memberId },
+      );
     }
 
     if (filters?.search) {

@@ -66,10 +66,6 @@ function parseDateLike(raw: unknown): Date | null {
 
 /**
  * Text filter with internal debouncing.
- * The input updates instantly (controlled local state) but `onChange` is only
- * called after the debounce delay so server-mode tables don't get an API call
- * on every keystroke.
- * Per-column delay is configurable via `column.filterDebounceMs` (default 400ms).
  */
 function TextFilterControl<TRow>({
   column,
@@ -79,18 +75,13 @@ function TextFilterControl<TRow>({
   const debounceMs = column.filterDebounceMs ?? 400;
   const externalValue = typeof value === 'string' ? value : '';
 
-  // Local state drives the input — prevents the cursor jumping on every parent re-render
   const [localValue, setLocalValue] = useState(externalValue);
 
-  // Sync local value when the external filter is cleared (e.g. "Reset all").
-  // Also cancels any in-flight debounce timer so a pending onChange call cannot
-  // overwrite the reset with stale data (rapid type → reset-all race condition).
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setLocalValue(externalValue);
   }, [externalValue]);
 
-  // Stable ref so the timer callback always calls the latest onChange
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
@@ -111,7 +102,6 @@ function TextFilterControl<TRow>({
     [column.field, debounceMs],
   );
 
-  // Clear the timer on unmount to avoid calling onChange on a dead component
   useEffect(
     () => () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -125,7 +115,6 @@ function TextFilterControl<TRow>({
       label={column.headerName}
       value={localValue}
       onChange={(e) => handleChange(e.target.value)}
-      placeholder={`Filter ${column.headerName}...`}
       sx={{ minWidth: 160 }}
     />
   );
@@ -172,7 +161,6 @@ function DateFilterControl<TRow>({
       label={column.headerName}
       value={parseDateLike(value)}
       onChange={(date) => {
-        // Keep date-only local value (YYYY-MM-DD) to avoid timezone day shifts.
         const emittedValue = date ? toLocalDate(date) : null;
         onChange(column.field, emittedValue);
       }}
@@ -220,6 +208,17 @@ function RangeFilterControl<TRow>({
 }
 
 function FilterControl<TRow>({ column, value, onChange }: FilterControlProps<TRow>): JSX.Element {
+  if (column.renderFilter) {
+    return (
+      <Box sx={{ display: 'flex' }}>
+        {column.renderFilter({
+          value,
+          onChange: (v) => onChange(column.field, v),
+        })}
+      </Box>
+    );
+  }
+
   const filterType: FilterType | undefined = column.filterType;
   switch (filterType) {
     case 'select':
@@ -235,7 +234,7 @@ function FilterControl<TRow>({ column, value, onChange }: FilterControlProps<TRo
 }
 
 // ============================================================================
-// Active filter chips (summary bar shown above the filter panel)
+// Active filter chips
 // ============================================================================
 
 interface ActiveFilterChipsProps<TRow> {
@@ -304,7 +303,7 @@ function ActiveFilterChips<TRow>({
 }
 
 // ============================================================================
-// TableFiltersToggle — the toolbar button that opens/closes the panel
+// TableFiltersToggle
 // ============================================================================
 
 interface TableFiltersToggleProps {
@@ -339,7 +338,7 @@ export function TableFiltersToggle({
 }
 
 // ============================================================================
-// Main export — the collapsible filter panel
+// Main export
 // ============================================================================
 
 function TableFiltersInner<TRow>({
@@ -350,7 +349,6 @@ function TableFiltersInner<TRow>({
 }: TableFiltersProps<TRow>): JSX.Element | null {
   const filterableColumns = allColumns.filter((c) => c.filterable);
 
-  // Stable ref so callbacks don't bust memo() when onFilterChange identity changes
   const onFilterChangeRef = useRef(onFilterChange);
   onFilterChangeRef.current = onFilterChange;
 
@@ -358,7 +356,6 @@ function TableFiltersInner<TRow>({
     (field: string, value: unknown): void => {
       onFilterChangeRef.current({ ...filters, [field]: value });
     },
-    // filters dep required to always spread the latest state
     [filters],
   );
 

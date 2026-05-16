@@ -110,6 +110,12 @@ export class ProjectController {
     description: 'Search by project number or name',
   })
   @ApiQuery({
+    name: 'memberId',
+    required: false,
+    type: String,
+    description: 'Filter by team member (user ID)',
+  })
+  @ApiQuery({
     name: 'sortBy',
     required: false,
     type: String,
@@ -142,6 +148,7 @@ export class ProjectController {
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('search') search?: string,
+    @Query('memberId') memberId?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ): Promise<PaginatedResponse<ProjectListItemDto>> {
@@ -156,6 +163,7 @@ export class ProjectController {
       fromDate,
       toDate,
       search,
+      memberId,
       sortBy,
       sortOrder,
     });

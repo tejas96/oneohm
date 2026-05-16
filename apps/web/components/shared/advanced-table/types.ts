@@ -62,6 +62,13 @@ export interface ColumnConfig<TRow = Record<string, unknown>> {
   defaultHidden?: boolean;
 
   /**
+   * Custom filter control renderer.
+   * Use this to provide specialized filter UI (e.g. Autocomplete)
+   * while keeping the shared TableFilters component generic.
+   */
+  renderFilter?: (params: { value: unknown; onChange: (value: unknown) => void }) => ReactNode;
+
+  /**
    * Extra sx props applied to the body TableCell for this column.
    * Use to override per-column cell styles (e.g. allow wrapping, custom padding).
    */

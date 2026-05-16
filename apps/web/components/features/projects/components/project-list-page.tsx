@@ -8,6 +8,7 @@ import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
+  Autocomplete,
   Box,
   Button,
   IconButton,
@@ -17,6 +18,7 @@ import {
   Menu,
   MenuItem,
   Stack,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
@@ -34,7 +36,7 @@ import {
   PROJECT_TYPE_LABELS,
   PROJECT_TYPE_OPTIONS,
 } from '../constants';
-import { type ProjectFilters, type ProjectListItem, useProjects } from '../hooks';
+import { type ProjectFilters, type ProjectListItem, useEmployees, useProjects } from '../hooks';
 import { ProjectCard } from './project-card';
 import { TeamAvatarGroup } from './team-avatar-group';
 
@@ -127,6 +129,12 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
   const projectType = raw.projectType;
   if (projectType && typeof projectType === 'string' && projectType !== 'all') {
     result.projectType = projectType;
+  }
+
+  // team filter -> backend memberId
+  const memberId = raw.team;
+  if (memberId && typeof memberId === 'string' && memberId !== 'all') {
+    result.memberId = memberId;
   }
 
   // endDate column date filter → backend fromDate/toDate (project.endDate range)
@@ -453,7 +461,8 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
   {
     field: 'team',
     headerName: 'Team',
-    width: 110,
+    width: 140,
+    filterable: true,
     renderCell: ({ row }): JSX.Element => (
       <TeamAvatarGroup members={(row as ProjectListItem).teamMembers} max={3} size="xs" />
     ),
@@ -518,6 +527,20 @@ export function ProjectListPage(): JSX.Element {
   // URL-synced table state — owned by this page (controlled AdvancedTable pattern)
   const urlState = useTableUrlState({ prefix: 'projects', defaultPageSize: 10 });
 
+  // Fetch employees for the filter
+  const { data: employeesData } = useEmployees({ limit: 100 });
+  const employeeOptions = useMemo(() => {
+    return (
+      employeesData?.items.map((emp) => ({
+        label:
+          `${emp.user?.firstName ?? ''} ${emp.user?.lastName ?? ''}`.trim() ||
+          emp.email ||
+          'Unknown',
+        value: emp.userId,
+      })) ?? []
+    );
+  }, [employeesData?.items]);
+
   // View toggle — also URL-synced for shareable links
   const [currentView, setCurrentView] = useState<'card' | 'table'>(() => {
     const v = searchParams.get('projects_view');
@@ -555,6 +578,56 @@ export function ProjectListPage(): JSX.Element {
     () => (data?.data as ProjectRow[] | undefined) ?? EMPTY_PROJECT_ROWS,
     [data?.data],
   );
+
+  // Memoize columns to include dynamic filter options
+  const columns = useMemo(() => {
+    return COLUMNS.map((col) => {
+      if (col.field === 'team') {
+        return {
+          ...col,
+          renderFilter: ({
+            value,
+            onChange,
+          }: {
+            value: unknown;
+            onChange: (v: unknown) => void;
+          }) => {
+            const selectedOption =
+              employeeOptions.find((o) => String(o.value) === String(value)) || null;
+            return (
+              <Autocomplete
+                size="small"
+                sx={{ minWidth: 200 }}
+                options={employeeOptions}
+                value={selectedOption}
+                disablePortal
+                getOptionLabel={(option) =>
+                  typeof option === 'string' ? option : option.label || ''
+                }
+                isOptionEqualToValue={(option, val) => option.value === val.value}
+                onChange={(_, val) => {
+                  onChange(val?.value ?? '');
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Team"
+                    placeholder="Search member..."
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                      },
+                    }}
+                  />
+                )}
+              />
+            );
+          },
+        };
+      }
+      return col;
+    });
+  }, [employeeOptions]);
 
   const renderEmptyState = useCallback(
     (hasFilters: boolean): JSX.Element => (
@@ -603,7 +676,7 @@ export function ProjectListPage(): JSX.Element {
             Manage and track all your solar installation projects
           </MUITypography>
         </Box>
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={2} alignItems="center">
           <ToggleButtonGroup
             value={currentView}
             exclusive
@@ -659,7 +732,7 @@ export function ProjectListPage(): JSX.Element {
         <AdvancedTable
           key="projects-table"
           rows={tableRows}
-          columns={COLUMNS}
+          columns={columns}
           rowIdField="id"
           loading={isLoading}
           refetching={isFetching && !isLoading}
