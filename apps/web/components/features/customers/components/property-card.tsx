@@ -158,6 +158,20 @@ export function PropertyCard({
               <FileText className="mr-2 size-4" />
               Create Quote
             </DropdownMenuItem>
+            {property.status === PropertyStatus.CONVERTED && property.projectId && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() =>
+                    router.push(buildRoute(ROUTES.PROJECTS.DETAIL, { id: property.projectId }))
+                  }
+                  className="text-primary font-medium"
+                >
+                  <Folder className="mr-2 size-4" />
+                  Go to Project
+                </DropdownMenuItem>
+              </>
+            )}
             {property.status !== PropertyStatus.CONVERTED && (
               <>
                 <DropdownMenuSeparator />

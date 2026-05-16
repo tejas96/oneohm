@@ -18,7 +18,6 @@ export const CUSTOMER_DETAIL_TABS = [
   { value: 'quotes', label: 'Quotes' },
   { value: 'documents', label: 'Documents' },
   { value: 'projects', label: 'Projects' },
-  { value: 'activity', label: 'All Activity' },
 ] as const;
 
 export type CustomerDetailTab = (typeof CUSTOMER_DETAIL_TABS)[number]['value'];

@@ -132,6 +132,11 @@ export class CustomerPropertyResponseDto {
   @Expose()
   notes?: string;
 
+  @ApiPropertyOptional()
+  @Expose()
+  @Transform(({ obj }) => obj.project?.id ?? undefined)
+  projectId?: string;
+
   // ==================== Audit Fields ====================
   @ApiProperty()
   @Expose()

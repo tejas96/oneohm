@@ -1,7 +1,7 @@
 'use client';
 
 import { CustomerStatus } from '@oneohm-epc/shared/types';
-import { Building2, Clock, Edit, FileText, Mail, Phone, Plus } from 'lucide-react';
+import { Building2, Edit, FileText, Mail, Phone, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useEffect, useState } from 'react';
@@ -586,7 +586,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         </div>
 
         {/* Center Column: Properties */}
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-9">
           <div className="rounded-lg border border-border bg-background">
             <div className="flex items-center justify-between border-b border-border p-4">
               <h3 className="font-semibold text-foreground">
@@ -649,22 +649,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                   </Tooltip>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Recent Activity */}
-        <div className="lg:col-span-4">
-          <div className="rounded-lg border border-border bg-background">
-            <div className="border-b border-border p-4">
-              <h3 className="text-sm font-medium text-foreground">Recent Activity</h3>
-            </div>
-            <div className="p-4">
-              <EmptyState
-                icon={<Clock className="w-full h-full" />}
-                title="Coming Soon"
-                description="Activity timeline is under development and will be available soon."
-              />
             </div>
           </div>
         </div>
@@ -809,15 +793,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
               icon={<Building2 className="w-full h-full" />}
               title="No projects yet"
               description="Projects will appear here once a quote is accepted."
-            />
-          </TabsContent>
-
-          {/* Activity Tab */}
-          <TabsContent value="activity">
-            <EmptyState
-              icon={<Clock className="w-full h-full" />}
-              title="Activity Coming Soon"
-              description="The activity tab is under development and will be available soon."
             />
           </TabsContent>
         </Tabs>

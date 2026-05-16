@@ -55,7 +55,7 @@ export class CustomerPropertyRepository {
   async findById(id: string): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['customer', 'organization'],
+      relations: ['customer', 'organization', 'project'],
     });
   }
 
@@ -65,7 +65,7 @@ export class CustomerPropertyRepository {
   ): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
       where: { id, organizationId, deletedAt: IsNull() },
-      relations: ['customer', 'creator'],
+      relations: ['customer', 'creator', 'project'],
     });
   }
 

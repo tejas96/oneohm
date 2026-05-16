@@ -26,6 +26,7 @@ export interface ProjectFilters {
   projectType?: string;
   fromDate?: string;
   toDate?: string;
+  memberId?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
   // Query control
@@ -125,6 +126,7 @@ export function useProjects(
       if (queryFilters.projectType) params.append('projectType', queryFilters.projectType);
       if (queryFilters.fromDate) params.append('fromDate', queryFilters.fromDate);
       if (queryFilters.toDate) params.append('toDate', queryFilters.toDate);
+      if (queryFilters.memberId) params.append('memberId', queryFilters.memberId);
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
       if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 

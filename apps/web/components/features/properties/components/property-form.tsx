@@ -21,6 +21,7 @@ import {
   ConnectionType,
   CustomerStatus,
   DocumentEntityType,
+  PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared/types';
 import Link from 'next/link';
@@ -767,21 +768,23 @@ export function PropertyForm({
         </Card>
 
         {/* Section 5: Documents */}
-        <Card variant="outlined">
-          <SectionHeader
-            icon={<DescriptionOutlinedIcon fontSize="small" />}
-            title="Documents"
-            subtitle="Upload property documents, identity proofs, and KYC documents"
-          />
-          <DocumentManager
-            entityType={DocumentEntityType.PROPERTY}
-            entityId={isEditMode && propertyId ? propertyId : undefined}
-            title="Property Documents"
-            description="Upload electricity bills, identity proofs, site photos, or other documents."
-            readOnly={isSubmitting}
-            onDraftDocumentsChange={!isEditMode ? handleDraftDocsChange : undefined}
-          />
-        </Card>
+        {(!isEditMode || initialData?.status !== PropertyStatus.CONVERTED) && (
+          <Card variant="outlined">
+            <SectionHeader
+              icon={<DescriptionOutlinedIcon fontSize="small" />}
+              title="Documents"
+              subtitle="Upload property documents, identity proofs, and KYC documents"
+            />
+            <DocumentManager
+              entityType={DocumentEntityType.PROPERTY}
+              entityId={isEditMode && propertyId ? propertyId : undefined}
+              title="Property Documents"
+              description="Upload electricity bills, identity proofs, site photos, or other documents."
+              readOnly={isSubmitting}
+              onDraftDocumentsChange={!isEditMode ? handleDraftDocsChange : undefined}
+            />
+          </Card>
+        )}
 
         {/* ── Sticky Footer ─────────────────────────────────────────── */}
         <div className="sticky bottom-0 z-10">

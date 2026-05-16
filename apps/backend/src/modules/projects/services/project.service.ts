@@ -84,6 +84,7 @@ export class ProjectService {
       fromDate?: string;
       toDate?: string;
       search?: string;
+      memberId?: string;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },

@@ -20,7 +20,6 @@ import {
 } from '../constants';
 import { useProperty, useUpdateProperty, usePropertyQuotes } from '../hooks';
 import { FollowupMiniList } from './followup-mini-list';
-import { PropertyActivityTab } from './property-activity-tab';
 import { PropertyDetailHeader } from './property-detail-header';
 import { PropertyFollowupsTab } from './property-followups-tab';
 
@@ -546,7 +545,6 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
             <PropertyFollowupsTab propertyId={propertyId} customerId={property.customerId} />
           </TabsContent>
 
-          {/* Documents Tab */}
           <TabsContent value="documents">
             <PropertyDocumentHub
               propertyId={property.id}
@@ -554,11 +552,6 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
               defaultUploadEntityType={DocumentEntityType.PROPERTY}
               defaultUploadEntityId={property.id}
             />
-          </TabsContent>
-
-          {/* Activity Tab */}
-          <TabsContent value="activity">
-            <PropertyActivityTab propertyId={propertyId} />
           </TabsContent>
         </Tabs>
       </div>

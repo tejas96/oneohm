@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@mui/material';
 import { PropertyStatus } from '@oneohm-epc/shared/types';
 import { Calendar, Edit, FileText, FolderOpen } from 'lucide-react';
 import Link from 'next/link';
@@ -17,7 +18,6 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-  Button,
 } from '@/components/ui';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -111,46 +111,59 @@ export const PropertyDetailHeader = React.memo(
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {property.status === PropertyStatus.CONVERTED && property.projectId && (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<FolderOpen className="size-icon-sm" />}
+                onClick={() =>
+                  router.push(buildRoute(ROUTES.PROJECTS.DETAIL, { id: property.projectId }))
+                }
+              >
+                Go to Project
+              </Button>
+            )}
             {property.status !== PropertyStatus.CONVERTED && (
               <Button
-                variant="outline"
-                size="sm"
+                variant="outlined"
+                size="small"
+                startIcon={<FolderOpen className="size-icon-sm" />}
                 onClick={() =>
                   router.push(
                     `${ROUTES.PROJECTS.NEW}?propertyId=${property.id}&customerId=${property.customerId}`,
                   )
                 }
               >
-                <FolderOpen className="mr-2 size-icon-sm" />
                 Convert to Project
               </Button>
             )}
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: property.id }))}
-            >
-              <Edit className="mr-2 size-icon-sm" />
-              Edit
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`${ROUTES.SITE_VISITS.NEW}?propertyId=${property.id}`)}
-            >
-              <Calendar className="mr-2 size-icon-sm" />
-              Schedule Visit
-            </Button>
-            <Button
-              size="sm"
+              variant="contained"
+              size="small"
+              startIcon={<FileText className="size-icon-sm" />}
               onClick={() =>
                 router.push(
                   `${ROUTES.QUOTES.NEW}?propertyId=${property.id}&customerId=${property.customerId}`,
                 )
               }
             >
-              <FileText className="mr-2 size-icon-sm" />
               Create Quote
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Calendar className="size-icon-sm" />}
+              onClick={() => router.push(`${ROUTES.SITE_VISITS.NEW}?propertyId=${property.id}`)}
+            >
+              Schedule Visit
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Edit className="size-icon-sm" />}
+              onClick={() => router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: property.id }))}
+            >
+              Edit
             </Button>
           </div>
         </div>
