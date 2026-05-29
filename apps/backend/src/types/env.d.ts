@@ -70,9 +70,15 @@ declare namespace NodeJS {
     STRIPE_WEBHOOK_SECRET?: string;
     GOOGLE_MAPS_API_KEY?: string;
 
+    FIREBASE_PROJECT_ID?: string;
+    FIREBASE_CLIENT_EMAIL?: string;
+    FIREBASE_PRIVATE_KEY?: string;
+    FIREBASE_SERVICE_ACCOUNT_PATH?: string;
+
     INTEGRATION_ENCRYPTION_KEY?: string;
     MSG91_AUTH_KEY?: string;
     MSG91_SENDER_ID?: string;
-    MSG91_DLT_TEMPLATE_ID?: string;
+    MSG91_LOGIN_TEMPLATE_ID?: string;
+    MSG91_PASSWORD_RESET_TEMPLATE_ID?: string;
   }
 }

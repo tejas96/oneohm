@@ -15,6 +15,7 @@ import { Request as ExpressRequest } from 'express';
 import { ApiCreate, ApiGet, SecurityRateLimit } from '../../../common/decorators';
 import { SecurityRateLimitGuard } from '../../security-events/guards';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
+import { ProfileService } from '../../users/services/profile.service';
 import { UserService } from '../../users/services/user.service';
 import { CurrentUser, Public } from '../decorators';
 import {
@@ -45,6 +46,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly userService: UserService,
     private readonly otpService: OtpService,
+    private readonly profileService: ProfileService,
   ) {}
 
   /**
@@ -128,9 +130,18 @@ export class AuthController {
   })
   async getCurrentUser(@CurrentUser() user: CurrentUserType): Promise<UserResponseDto> {
     const fullUser = await this.userService.findById(user.id);
-    return plainToInstance(UserResponseDto, fullUser, {
+    const profiles = await this.profileService.getUserProfileSummary(user.id);
+    const primaryProfile = profiles.profiles[0];
+
+    const userDto = plainToInstance(UserResponseDto, fullUser, {
       excludeExtraneousValues: true,
     });
+
+    if (primaryProfile) {
+      userDto.organizationId = primaryProfile.organizationId;
+    }
+
+    return userDto;
   }
 
   /**

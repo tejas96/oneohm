@@ -25,7 +25,8 @@ interface ProjectOverviewTabProps {
 
 export function ProjectOverviewTab({ project, isActive }: ProjectOverviewTabProps): JSX.Element {
   const projectPath = buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id });
-  const showEnergy = !!project.systemSizeKw && project.systemSizeKw > 0;
+  const effectiveSizeKw = project.actualSystemSizeKw ?? project.systemSizeKw;
+  const showEnergy = !!effectiveSizeKw && effectiveSizeKw > 0;
 
   return (
     <div className="space-y-4">

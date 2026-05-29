@@ -105,12 +105,19 @@ export interface ThirdPartyConfig {
   googleMapsApiKey?: string;
 }
 
+export interface FirebaseConfig {
+  projectId?: string;
+  clientEmail?: string;
+  privateKey?: string;
+  serviceAccountPath?: string;
+}
+
 export interface IntegrationsConfig {
   encryptionKey?: string;
   msg91AuthKey?: string;
   msg91SenderId?: string;
-  msg91DltTemplateId?: string;
-  msg91OtpTemplateId?: string;
+  msg91LoginTemplateId?: string;
+  msg91PasswordResetTemplateId?: string;
 }
 
 export interface SeedConfig {
@@ -135,6 +142,7 @@ export interface Configuration {
   featureFlags: FeatureFlagsConfig;
   monitoring: MonitoringConfig;
   thirdParty: ThirdPartyConfig;
+  firebase: FirebaseConfig;
   integrations: IntegrationsConfig;
   seed: SeedConfig;
 }

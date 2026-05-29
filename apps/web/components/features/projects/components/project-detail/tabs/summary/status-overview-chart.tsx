@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import React, { useCallback, useMemo } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LookupByTypeCode } from '@/lib/hooks/resources';
 import { buildTasksTabUrl } from '@/lib/utils';
@@ -79,7 +80,7 @@ export function StatusOverviewChart({
 
   if (isLoading) {
     return (
-      <div className="bg-surface border border-border-light rounded-xl p-5">
+      <Card className="p-5">
         <Skeleton className="h-4 w-32 mb-5" />
         <div className="flex items-center justify-center h-48">
           <Skeleton className="size-32 rounded-full" />
@@ -93,23 +94,23 @@ export function StatusOverviewChart({
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-surface border border-border-light rounded-xl p-5">
+      <Card className="p-5">
         <p className="text-sm font-semibold text-foreground mb-4">Status Overview</p>
         <div className="flex items-center justify-center h-48 text-foreground-tertiary text-xs">
           No tasks yet
         </div>
-      </div>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-surface border border-border-light rounded-xl p-5">
+    <Card className="p-5">
       <p className="text-sm font-semibold text-foreground mb-4">Status Overview</p>
 
       <div className="flex items-center gap-4">
@@ -180,6 +181,6 @@ export function StatusOverviewChart({
           })}
         </ul>
       </div>
-    </div>
+    </Card>
   );
 }

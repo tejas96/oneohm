@@ -3,6 +3,7 @@
 import { CheckCircle2, Milestone } from 'lucide-react';
 import React from 'react';
 
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { MilestoneProgressEntry } from '@/lib/hooks/resources';
 
@@ -39,7 +40,7 @@ export function MilestoneProgressPanel({
   }
 
   return (
-    <div className="bg-surface border border-border-light rounded-xl p-5 flex flex-col">
+    <Card className="p-5 flex flex-col">
       <p className="text-sm font-semibold text-foreground mb-4">Milestone Progress</p>
 
       {isLoading ? (
@@ -90,6 +91,6 @@ export function MilestoneProgressPanel({
           })}
         </ul>
       )}
-    </div>
+    </Card>
   );
 }

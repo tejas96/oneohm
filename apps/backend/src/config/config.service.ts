@@ -5,6 +5,7 @@ import {
   AppConfig,
   Configuration,
   DatabaseConfig,
+  FirebaseConfig,
   FeatureFlagsConfig,
   IntegrationsConfig,
   JwtConfig,
@@ -112,6 +113,13 @@ export class ConfigService {
   }
 
   /**
+   * Firebase Configuration
+   */
+  get firebase(): FirebaseConfig {
+    return this.nestConfigService.get<FirebaseConfig>('firebase')!;
+  }
+
+  /**
    * Integrations Configuration
    */
   get integrations(): IntegrationsConfig {
@@ -141,6 +149,7 @@ export class ConfigService {
       featureFlags: this.featureFlags,
       monitoring: this.monitoring,
       thirdParty: this.thirdParty,
+      firebase: this.firebase,
       integrations: this.integrations,
       seed: this.seed,
     };

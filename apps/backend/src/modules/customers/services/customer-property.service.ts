@@ -13,6 +13,7 @@ import {
   PropertyStatus,
   QuoteStatus,
 } from '@oneohm-epc/shared/types';
+import { Not, IsNull } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
@@ -172,7 +173,6 @@ export class CustomerPropertyService {
       organizationId,
     );
 
-    // Enrich properties with quote data
     const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
       return {
@@ -181,7 +181,10 @@ export class CustomerPropertyService {
         latestQuoteStatus: quoteInfo?.status,
         latestQuoteDate: quoteInfo?.quoteDate,
         latestQuoteFinalPrice: quoteInfo?.finalPrice,
-        latestQuoteSystemSizeKw: quoteInfo?.systemSizeKw,
+        latestQuoteSystemSizeKw:
+          quoteInfo?.totalWattageWp != null && quoteInfo.totalWattageWp > 0
+            ? Number(quoteInfo.totalWattageWp) / 1000
+            : quoteInfo?.systemSizeKw,
       };
     });
 
@@ -231,8 +234,42 @@ export class CustomerPropertyService {
         latestQuoteStatus: quoteInfo?.status,
         latestQuoteDate: quoteInfo?.quoteDate,
         latestQuoteFinalPrice: quoteInfo?.finalPrice,
-        latestQuoteSystemSizeKw: quoteInfo?.systemSizeKw,
+        latestQuoteSystemSizeKw:
+          quoteInfo?.totalWattageWp != null && quoteInfo.totalWattageWp > 0
+            ? Number(quoteInfo.totalWattageWp) / 1000
+            : quoteInfo?.systemSizeKw,
       };
+    });
+  }
+
+  /**
+   * Find all active properties for the logged-in customer user.
+   * Eagerly loads project, quotes, and versions in a single query.
+   * Enforces status != 'inactive' and deletedAt IS NULL.
+   */
+  async findMyProperties(
+    userId: string,
+    organizationId: string,
+  ): Promise<CustomerPropertyEntity[]> {
+    const customerProfile = await this.customerRepository.findByUserAndOrganization(
+      userId,
+      organizationId,
+    );
+    if (!customerProfile) {
+      return [];
+    }
+
+    return this.propertyRepository.repository.find({
+      where: {
+        customerId: customerProfile.id,
+        status: Not(PropertyStatus.INACTIVE),
+        deletedAt: IsNull(),
+      },
+      relations: ['project', 'quotes', 'quotes.versions', 'customer'],
+      order: {
+        isPrimary: 'DESC',
+        createdAt: 'DESC',
+      },
     });
   }
 

@@ -2,7 +2,7 @@
 
 import { Button } from '@mui/material';
 import { PropertyStatus } from '@oneohm-epc/shared/types';
-import { Calendar, Edit, FileText, FolderOpen } from 'lucide-react';
+import { Edit, FileText, FolderOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React from 'react';
@@ -149,14 +149,7 @@ export const PropertyDetailHeader = React.memo(
             >
               Create Quote
             </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Calendar className="size-icon-sm" />}
-              onClick={() => router.push(`${ROUTES.SITE_VISITS.NEW}?propertyId=${property.id}`)}
-            >
-              Schedule Visit
-            </Button>
+
             <Button
               variant="outlined"
               size="small"

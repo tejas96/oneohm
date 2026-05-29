@@ -10,6 +10,8 @@ interface Msg91OtpResponse {
   request_id?: string;
 }
 
+export type OtpSmsPurpose = 'login' | 'password-reset';
+
 @Injectable()
 export class PlatformSmsService {
   private readonly logger = new Logger(PlatformSmsService.name);
@@ -19,9 +21,9 @@ export class PlatformSmsService {
 
   constructor(private readonly configService: ConfigService) {}
 
-  async sendOtp(phone: string, otp: string): Promise<void> {
+  async sendOtp(phone: string, otp: string, purpose: OtpSmsPurpose = 'login'): Promise<void> {
     const authKey = this.configService.integrations.msg91AuthKey;
-    const templateId = this.configService.integrations.msg91OtpTemplateId;
+    const templateId = this.getTemplateId(purpose);
 
     if (!authKey || !templateId) {
       if (this.configService.isDevelopment) {
@@ -82,5 +84,13 @@ export class PlatformSmsService {
     const digits = phone.replace(/\D/g, '');
     if (digits.length < 4) return phone;
     return `+${digits.slice(0, 2)}${digits.slice(2, 4)}****${digits.slice(-2)}`;
+  }
+
+  private getTemplateId(purpose: OtpSmsPurpose): string | undefined {
+    const integrations = this.configService.integrations;
+    if (purpose === 'password-reset') {
+      return integrations.msg91PasswordResetTemplateId;
+    }
+    return integrations.msg91LoginTemplateId;
   }
 }

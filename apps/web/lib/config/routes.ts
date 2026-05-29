@@ -91,20 +91,6 @@ export const ROUTES = {
     EDIT: '/properties/[id]/edit',
   },
 
-  // Followups
-  FOLLOWUPS: {
-    LIST: '/followups',
-    NEW: '/followups/new',
-    EDIT: '/followups/[id]/edit',
-  },
-
-  // Site Visits
-  SITE_VISITS: {
-    LIST: '/site-visits',
-    DETAIL: '/site-visits/[id]',
-    NEW: '/site-visits/new',
-  },
-
   // Inventory
   INVENTORY: {
     LIST: '/inventory',
@@ -247,8 +233,7 @@ export interface RouteParamTypes {
   '/inventory/stock/[id]': { id: string };
   '/properties/[id]': { id: string };
   '/properties/[id]/edit': { id: string };
-  '/followups/[id]/edit': { id: string };
-  '/site-visits/[id]': { id: string };
+
   '/vendors/[id]': { id: string };
   '/service/[id]': { id: string };
   '/admin/users/[id]': { id: string };
@@ -429,8 +414,7 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   // CRM routes (all should show CRM panel)
   [ROUTES.CUSTOMERS.LIST]: 'crm',
   [ROUTES.PROPERTIES.LIST]: 'crm',
-  [ROUTES.SITE_VISITS.LIST]: 'crm',
-  [ROUTES.FOLLOWUPS.LIST]: 'crm',
+
   [ROUTES.PIPELINE.HOME]: 'crm',
   [ROUTES.CRM.HOME]: 'crm',
 

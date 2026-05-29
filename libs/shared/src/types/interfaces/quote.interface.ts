@@ -1,5 +1,5 @@
 import type { ProjectType } from '../enums/product.enum';
-import type { DcrPreference, QuoteCalculationMode } from '../enums/quote.enum';
+import type { DcrPreference, QuoteCalculationMode, QuoteStatus } from '../enums/quote.enum';
 import type { QuoteCalculationOutput } from './quote-calculator.interface';
 
 /**
@@ -136,4 +136,50 @@ export interface QuoteSnapshot {
   pricing: PricingBreakdown;
   /** Discount applied by the sales person */
   discountAmount: number;
+}
+
+/**
+ * Quote Interface
+ * Shared quote identity and state details
+ */
+export interface Quote {
+  id: string;
+  organizationId: string;
+  customerId: string;
+  propertyId?: string;
+  salesPersonId?: string;
+  resellerId?: string;
+  quoteNumber: string;
+  quoteDate: string;
+  validUntil: string;
+  status: QuoteStatus;
+  acceptedAt?: string;
+  rejectionReason?: string;
+  internalNotes?: string;
+  customerNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  versions?: QuoteVersion[];
+}
+
+/**
+ * Quote Version Interface
+ * Maintains individual versions of quotation calculations
+ */
+export interface QuoteVersion {
+  id: string;
+  quoteId: string;
+  versionNumber: number;
+  systemType: string;
+  systemSizeKw: number;
+  totalWattageWp: number;
+  projectType: string;
+  finalPrice: number;
+  effectivePrice?: number;
+  projectCompletionWeeks: number;
+  changeSummary?: string;
+  createdAt: string;
+  pricingBreakdown?: PricingBreakdown;
+  quoteSnapshot?: QuoteSnapshot;
+  paymentMilestones?: PaymentMilestone[];
 }

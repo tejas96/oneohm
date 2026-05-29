@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { UserProfileType } from '@oneohm-epc/shared/types';
 import {
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsPhoneNumber,
@@ -89,6 +91,15 @@ export class VerifyOtpDto {
   @Length(6, 6, { message: 'OTP must be exactly 6 digits' })
   @Matches(/^\d{6}$/, { message: 'OTP must contain only digits' })
   otp!: string;
+
+  @ApiProperty({
+    description: 'Login User Type (customer or employee)',
+    enum: UserProfileType,
+    example: UserProfileType.CUSTOMER,
+  })
+  @IsNotEmpty({ message: 'loginUserType is required' })
+  @IsEnum(UserProfileType, { message: 'loginUserType must be a valid UserProfileType' })
+  loginUserType!: UserProfileType;
 }
 
 /**

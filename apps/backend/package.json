@@ -23,6 +23,7 @@
     "seed:prod": "ts-node -r tsconfig-paths/register src/scripts/run-seeds-prod.ts"
   },
   "dependencies": {
-    "@nestjs/schedule": "^6.1.3"
+    "@nestjs/schedule": "^6.1.3",
+    "firebase-admin": "^13.10.0"
   }
 }

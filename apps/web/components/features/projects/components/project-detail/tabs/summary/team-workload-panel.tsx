@@ -7,6 +7,7 @@ import React, { useMemo } from 'react';
 import { UNASSIGNED_TASK_FILTER } from '../../../../constants';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TeamWorkloadEntry } from '@/lib/hooks/resources';
 import { buildTasksTabUrl, getInitials } from '@/lib/utils';
@@ -90,7 +91,7 @@ export function TeamWorkloadPanel({
   }, [teamWorkload, taskStatuses]);
 
   return (
-    <div className="bg-surface border border-border-light rounded-xl p-5">
+    <Card className="p-5">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-semibold text-foreground">Team Workload</p>
         {!isLoading && teamWorkload && teamWorkload.length > 0 && (
@@ -179,6 +180,6 @@ export function TeamWorkloadPanel({
           })}
         </ul>
       )}
-    </div>
+    </Card>
   );
 }

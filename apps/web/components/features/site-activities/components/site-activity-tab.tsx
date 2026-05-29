@@ -17,7 +17,6 @@ import {
   Typography,
 } from '@mui/material';
 import { DocumentEntityType, SiteActivityStatus } from '@oneohm-epc/shared/types';
-import { useRouter } from 'next/navigation';
 import { useCallback, useState, type JSX } from 'react';
 
 import { useSiteActivityByProperty, useCompleteVisit, useCompleteSurvey } from '../hooks';
@@ -34,12 +33,10 @@ import {
   showToast,
 } from '@/components/ui';
 import type { SiteActivity } from '@/lib/api/site-activities';
-import { ROUTES } from '@/lib/config/routes';
 import { formatDate } from '@/lib/utils';
 
 interface SiteActivityTabProps {
   propertyId: string;
-  customerInactive?: boolean;
 }
 
 const STATUS_CONFIG: Record<
@@ -52,11 +49,7 @@ const STATUS_CONFIG: Record<
   [SiteActivityStatus.CANCELLED]: { label: 'Cancelled', color: 'error' },
 };
 
-export function SiteActivityTab({
-  propertyId,
-  customerInactive = false,
-}: SiteActivityTabProps): JSX.Element {
-  const router = useRouter();
+export function SiteActivityTab({ propertyId }: SiteActivityTabProps): JSX.Element {
   const { data: activity, isLoading } = useSiteActivityByProperty(propertyId);
   const completeVisitMutation = useCompleteVisit();
   const completeSurveyMutation = useCompleteSurvey();
@@ -98,20 +91,7 @@ export function SiteActivityTab({
       <EmptyState
         icon={<CalendarTodayIcon sx={{ width: '100%', height: '100%' }} />}
         title="No site activity yet"
-        description={
-          customerInactive
-            ? 'Site activity creation is blocked because the customer is inactive.'
-            : 'Create a site activity to begin the visit and survey process for this property.'
-        }
-        action={
-          customerInactive
-            ? undefined
-            : {
-                label: 'Schedule Site Visit',
-                onClick: () => router.push(`${ROUTES.SITE_VISITS.NEW}?propertyId=${propertyId}`),
-                icon: <CalendarTodayIcon sx={{ fontSize: 16 }} />,
-              }
-        }
+        description="No site activity has been recorded for this property."
       />
     );
   }

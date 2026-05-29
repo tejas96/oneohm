@@ -62,8 +62,7 @@ export function PropertyQuoteSelectors({
   });
 
   const quoteOptions = filteredQuotes.map((q) => {
-    const actualSystemSizeKw =
-      q.totalWattageWp && q.totalWattageWp > 0 ? q.totalWattageWp / 1000 : null;
+    const actualSystemSizeKw = q.actualSystemSizeKw ?? null;
     const requestedSystemSize = q.systemSizeKw && q.systemSizeKw > 0 ? `${q.systemSizeKw}kW` : null;
     const displaySize =
       actualSystemSizeKw != null
@@ -71,7 +70,7 @@ export function PropertyQuoteSelectors({
         : (requestedSystemSize ?? '0kW');
     return {
       value: q.id,
-      label: `${q.quoteNumber} · ${formatCurrency(q.effectivePrice ?? q.finalPrice ?? q.basePrice ?? 0)} · ${displaySize}`,
+      label: `${q.quoteNumber} · ${formatCurrency(q.finalPrice ?? q.basePrice ?? 0)} · ${displaySize}`,
     };
   });
 
@@ -140,8 +139,7 @@ export function PropertyQuoteSelectors({
         (() => {
           const q = filteredQuotes.find((x) => x.id === selectedQuoteId);
           if (!q) return null;
-          const actualSystemSizeKw =
-            q.totalWattageWp && q.totalWattageWp > 0 ? q.totalWattageWp / 1000 : null;
+          const actualSystemSizeKw = q.actualSystemSizeKw ?? null;
           const requestedSystemSize =
             q.systemSizeKw && q.systemSizeKw > 0 ? `${q.systemSizeKw}kW` : null;
           return (
@@ -173,10 +171,10 @@ export function PropertyQuoteSelectors({
                 </div>
                 <div>
                   <MUITypography variant="timestamp" className="text-foreground-secondary">
-                    Effective Price
+                    Quote Value
                   </MUITypography>
                   <MUITypography variant="bodyPrimary">
-                    {formatCurrency(q.effectivePrice ?? q.finalPrice ?? q.basePrice ?? 0)}
+                    {formatCurrency(q.finalPrice ?? q.basePrice ?? 0)}
                   </MUITypography>
                 </div>
               </div>

@@ -99,6 +99,7 @@ export enum QuoteSortField {
   VALID_UNTIL = 'validUntil',
   SYSTEM_SIZE = 'systemSizeKw',
   EFFECTIVE_PRICE = 'effectivePrice',
+  FINAL_PRICE = 'finalPrice',
   STATUS = 'status',
   CUSTOMER_NAME = 'customerName',
 }

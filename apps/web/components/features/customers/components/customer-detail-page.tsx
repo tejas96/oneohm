@@ -40,6 +40,7 @@ import {
   TooltipTrigger,
   showToast,
   WhatsAppIcon,
+  SystemSizeDisplay,
 } from '@/components/ui';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -725,7 +726,12 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                             {quote.propertyName || '—'}
                           </td>
                           <td className="py-3 px-3 text-foreground-secondary">
-                            {quote.systemSizeKw} kW
+                            <SystemSizeDisplay
+                              actualKw={quote.actualSystemSizeKw}
+                              requestedKw={quote.systemSizeKw}
+                              size="sm"
+                              layout="inline"
+                            />
                           </td>
                           <td className="py-3 px-3 text-right font-medium">
                             {quote.finalPrice ? formatCurrency(quote.finalPrice) : '—'}

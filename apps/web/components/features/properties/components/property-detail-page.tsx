@@ -6,10 +6,10 @@ import {
   LeadTemperature,
   QuoteStatus,
 } from '@oneohm-epc/shared/types';
-import { Edit, FileText, MapPin, Plus } from 'lucide-react';
+import { Edit, FileText, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, useCallback, useMemo } from 'react';
+import { type JSX, useCallback } from 'react';
 
 import { QUOTE_STATUS_BADGE_VARIANT } from '../../customers/constants';
 import { useCustomer } from '../../customers/hooks';
@@ -19,23 +19,20 @@ import {
   type PropertyDetailTab,
 } from '../constants';
 import { useProperty, useUpdateProperty, usePropertyQuotes } from '../hooks';
-import { FollowupMiniList } from './followup-mini-list';
 import { PropertyDetailHeader } from './property-detail-header';
-import { PropertyFollowupsTab } from './property-followups-tab';
 
-import { useFollowups, useMarkFollowupComplete } from '@/components/features/followups/hooks';
 import { SiteActivityTab } from '@/components/features/site-activities/components';
 import { EmptyState, ErrorState } from '@/components/shared';
 import { PropertyDocumentHub } from '@/components/shared/document-manager';
 import {
   Badge,
-  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Skeleton,
   showToast,
+  SystemSizeDisplay,
 } from '@/components/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -104,16 +101,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   const { data: customer } = useCustomer(property?.customerId ?? '');
   const updateProperty = useUpdateProperty();
 
-  const { data: followupsData, isLoading: isLoadingFollowups } = useFollowups({
-    propertyId,
-    limit: 100,
-  });
-
   const { data: quotesData, isLoading: isLoadingQuotes } = usePropertyQuotes(propertyId);
-
-  const markFollowupComplete = useMarkFollowupComplete();
-
-  const followups = useMemo(() => followupsData?.data ?? [], [followupsData]);
 
   const handleTabChange = useCallback(
     (tab: string) => {
@@ -137,19 +125,6 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
       );
     },
     [property, propertyId, updateProperty],
-  );
-
-  const handleFollowupComplete = useCallback(
-    (followupId: string) => {
-      markFollowupComplete.mutate(
-        { id: followupId, propertyId },
-        {
-          onSuccess: () => showToast.success('Followup marked as completed'),
-          onError: (err) => showToast.error(getErrorMessage(err)),
-        },
-      );
-    },
-    [markFollowupComplete, propertyId],
   );
 
   // Loading state
@@ -318,17 +293,6 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Lead Status</CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() =>
-                  router.push(
-                    `${ROUTES.FOLLOWUPS.NEW}?propertyId=${propertyId}&customerId=${property.customerId}`,
-                  )
-                }
-              >
-                <Plus className="size-icon-sm" />
-              </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -378,39 +342,6 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 </div>
               </div>
             )}
-
-            {/* Followups Mini-List */}
-            <div className="border-t border-border-light pt-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <p className="text-2xs font-medium text-foreground-secondary uppercase">
-                    Followups
-                  </p>
-                  {followups.length > 0 && (
-                    <Badge variant="secondary" size="xs">
-                      {followups.filter((f) => f.status === 'pending').length}
-                    </Badge>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    router.push(
-                      `${ROUTES.FOLLOWUPS.NEW}?propertyId=${propertyId}&customerId=${property.customerId}`,
-                    )
-                  }
-                >
-                  <Plus className="size-icon-xs" />
-                </Button>
-              </div>
-              <FollowupMiniList
-                followups={followups}
-                isLoading={isLoadingFollowups}
-                onViewAll={() => handleTabChange('followups')}
-                onMarkComplete={handleFollowupComplete}
-              />
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -432,7 +363,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
 
           {/* Site Activity Tab */}
           <TabsContent value="siteactivity">
-            <SiteActivityTab propertyId={propertyId} customerInactive={isInactiveCustomer} />
+            <SiteActivityTab propertyId={propertyId} />
           </TabsContent>
 
           {/* Quotes Tab */}
@@ -501,7 +432,14 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                             {quote.quoteNumber}
                           </td>
                           <td className="py-3 px-3 text-foreground-secondary">
-                            {quote.systemType} · {quote.systemSizeKw} kW
+                            <span className="capitalize">{quote.systemType.replace('_', ' ')}</span>
+                            {' · '}
+                            <SystemSizeDisplay
+                              actualKw={quote.actualSystemSizeKw}
+                              requestedKw={quote.systemSizeKw}
+                              size="sm"
+                              layout="inline"
+                            />
                           </td>
                           <td className="py-3 px-3 text-right font-medium">
                             {quote.finalPrice
@@ -538,11 +476,6 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 </div>
               )}
             </div>
-          </TabsContent>
-
-          {/* Followups Tab */}
-          <TabsContent value="followups">
-            <PropertyFollowupsTab propertyId={propertyId} customerId={property.customerId} />
           </TabsContent>
 
           <TabsContent value="documents">

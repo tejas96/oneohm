@@ -4,6 +4,7 @@ import { ArrowRight, Edit2, Flag, MessageSquare, Plus, TrendingUp, User } from '
 import React from 'react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ActivityFeedItem, LookupByTypeCode, LookupOption } from '@/lib/hooks/resources';
 import { getInitials } from '@/lib/utils';
@@ -146,7 +147,7 @@ export function RecentActivityPanel({
   isLoading,
 }: RecentActivityPanelProps) {
   return (
-    <div className="bg-surface border border-border-light rounded-xl p-5 flex flex-col">
+    <Card className="p-5 flex flex-col">
       <p className="text-sm font-semibold text-foreground mb-4">Recent Activity</p>
 
       {isLoading ? (
@@ -211,6 +212,6 @@ export function RecentActivityPanel({
           })}
         </ul>
       )}
-    </div>
+    </Card>
   );
 }

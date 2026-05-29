@@ -10,6 +10,8 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { PropertyDocumentDto } from './property-document.dto';
 import { toNum } from '../../../common/utils';
+import { ProjectResponseDto } from '../../projects/dto/projects/project-response.dto';
+import { QuoteResponseDto } from '../../quotes/dto/quotes/quote-response.dto';
 
 /**
  * DTO for customer property response
@@ -242,4 +244,14 @@ export class CustomerPropertyResponseDto {
   @Expose()
   @Transform(({ value }) => toNum(value))
   latestQuoteSystemSizeKw?: number;
+
+  @ApiPropertyOptional({ type: () => ProjectResponseDto })
+  @Expose()
+  @Type(() => ProjectResponseDto)
+  project?: ProjectResponseDto;
+
+  @ApiPropertyOptional({ type: () => [QuoteResponseDto] })
+  @Expose()
+  @Type(() => QuoteResponseDto)
+  quotes?: QuoteResponseDto[];
 }

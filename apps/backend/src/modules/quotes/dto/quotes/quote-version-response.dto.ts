@@ -41,6 +41,14 @@ export class QuoteVersionResponseDto {
   @Expose()
   totalWattageWp!: number;
 
+  @ApiPropertyOptional({ example: 5.5 })
+  @Expose()
+  @Transform(({ obj }) => {
+    const wattage = toNum((obj as Record<string, unknown>).totalWattageWp);
+    return wattage != null && wattage > 0 ? wattage / 1000 : undefined;
+  })
+  actualSystemSizeKw?: number;
+
   @ApiProperty({ enum: Object.values(ProjectType), example: ProjectType.RESIDENTIAL })
   @Expose()
   projectType!: ProjectType;

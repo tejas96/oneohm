@@ -365,11 +365,10 @@ const config: Config = {
         '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
         inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
         none: 'none',
-        // Subtle "lifted" card shadow for panels and overview cards.
-        // Very soft gray shadow that gives panels a barely-noticeable lift
-        // while keeping borders near edgeless.
-        card: '0 1px 2px 0 rgb(16 24 40 / 0.04), 0 1px 3px 0 rgb(16 24 40 / 0.03)',
-        'card-hover': '0 4px 8px -2px rgb(16 24 40 / 0.06), 0 2px 4px -2px rgb(16 24 40 / 0.04)',
+        // Premium, soft layered card shadow for panels and overview cards.
+        card: '0 2px 4px 0 rgba(16, 24, 40, 0.02), 0 4px 12px 0 rgba(16, 24, 40, 0.04)',
+        'card-hover':
+          '0 8px 24px -4px rgba(16, 24, 40, 0.06), 0 4px 12px -2px rgba(16, 24, 40, 0.04)',
       },
       zIndex: {
         dropdown: '1000',

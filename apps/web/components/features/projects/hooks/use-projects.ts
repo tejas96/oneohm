@@ -58,6 +58,8 @@ export interface ProjectListItem {
   status: ProjectStatus;
   priority: ProjectPriority;
   progressPercentage: number;
+  totalTasks?: number;
+  completedTasks?: number;
   startDate?: string;
   endDate?: string;
   estimatedCost?: number | null;

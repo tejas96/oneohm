@@ -71,6 +71,10 @@ class TeamMemberUserDto {
   @ApiPropertyOptional({ example: 'vikram@example.com' })
   @Expose()
   email?: string;
+
+  @ApiPropertyOptional({ example: '+919876543210' })
+  @Expose()
+  phone?: string;
 }
 
 /**
@@ -106,6 +110,7 @@ export class TeamMemberResponseDto {
       firstName: obj.user.firstName ?? '',
       lastName: obj.user.lastName ?? undefined,
       email: obj.user.email ?? undefined,
+      phone: obj.user.phone ?? undefined,
     };
   })
   user?: TeamMemberUserDto;

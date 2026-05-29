@@ -126,11 +126,6 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
     result.priority = priority as ProjectPriority;
   }
 
-  const projectType = raw.projectType;
-  if (projectType && typeof projectType === 'string' && projectType !== 'all') {
-    result.projectType = projectType;
-  }
-
   // team filter -> backend memberId
   const memberId = raw.team;
   if (memberId && typeof memberId === 'string' && memberId !== 'all') {
@@ -194,22 +189,31 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     field: 'projectNumber',
     headerName: 'Project',
     sortable: true,
+    width: 180,
     cellSx: { verticalAlign: 'top', py: 1 },
     renderCell: ({ row }): JSX.Element => {
       const project = row as ProjectListItem;
-      const typeLabel =
-        PROJECT_TYPE_LABELS[project.projectType] ?? toTitleLabel(project.projectType);
+
       return (
         <Box sx={{ minWidth: 0 }}>
           <MuiLink
             component={NextLink}
             href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id })}
             underline="hover"
-            sx={{ display: 'block', fontWeight: 500, whiteSpace: 'nowrap' }}
+            sx={{ display: 'block', fontWeight: 500, whiteSpace: 'nowrap', mb: 0.5 }}
           >
             {project.projectNumber}
           </MuiLink>
-          <MUIStatusChip label={typeLabel} colorSeed={project.projectType} sx={{ mt: 0.375 }} />
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <MUIStatusChip
+              label={PROJECT_STATUS_LABELS[project.status] ?? toTitleLabel(project.status)}
+              colorSeed={project.status}
+            />
+            <MUIStatusChip
+              label={PROJECT_PRIORITY_LABELS[project.priority] ?? toTitleLabel(project.priority)}
+              colorSeed={project.priority}
+            />
+          </Stack>
         </Box>
       );
     },
@@ -337,9 +341,12 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     field: 'progressPercentage',
     headerName: 'Progress',
     sortable: true,
-    width: 130,
+    width: 180,
     renderCell: ({ row }): JSX.Element => {
-      const pct = Math.min(100, Math.max(0, (row as ProjectListItem).progressPercentage));
+      const project = row as ProjectListItem;
+      const pct = Math.min(100, Math.max(0, project.progressPercentage));
+      const completed = project.completedTasks ?? 0;
+      const total = project.totalTasks ?? 0;
       return (
         <Box sx={{ minWidth: 0, width: '100%' }}>
           <LinearProgress
@@ -348,7 +355,7 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
             sx={{ height: 6, borderRadius: 3, mb: 0.5 }}
           />
           <MUITypography variant="timestamp" sx={{ color: 'text.secondary' }}>
-            {pct}%
+            {pct}% · {completed}/{total} tasks
           </MUITypography>
         </Box>
       );
@@ -378,6 +385,7 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     filterable: true,
     filterType: 'select',
     filterOptions: PROJECT_STATUS_OPTIONS,
+    defaultHidden: true,
     width: 130,
     renderCell: ({ row }): JSX.Element => {
       const status = (row as ProjectListItem).status;
@@ -395,6 +403,7 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     filterable: true,
     filterType: 'select',
     filterOptions: PROJECT_PRIORITY_OPTIONS,
+    defaultHidden: true,
     width: 110,
     renderCell: ({ row }): JSX.Element => {
       const priority = (row as ProjectListItem).priority;
@@ -412,7 +421,6 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     filterable: true,
     filterType: 'select',
     filterOptions: PROJECT_TYPE_OPTIONS,
-    defaultHidden: true,
     width: 140,
     renderCell: ({ row }): JSX.Element => {
       const pt = (row as ProjectListItem).projectType;

@@ -139,6 +139,14 @@ export class QuoteResponseDto {
   @Transform(({ obj }) => toNum(cv(obj)?.totalWattageWp))
   totalWattageWp!: number;
 
+  @ApiPropertyOptional({ example: 5.5 })
+  @Expose()
+  @Transform(({ obj }) => {
+    const wattage = toNum(cv(obj)?.totalWattageWp);
+    return wattage != null && wattage > 0 ? wattage / 1000 : undefined;
+  })
+  actualSystemSizeKw?: number;
+
   @ApiProperty({
     enum: Object.values(ProjectType),
     enumName: 'ProjectType',

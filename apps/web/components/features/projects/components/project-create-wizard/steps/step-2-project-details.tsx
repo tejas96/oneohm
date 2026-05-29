@@ -83,10 +83,7 @@ export function Step2ProjectDetails({ form }: Step2ProjectDetailsProps): React.J
 
   const selectedProperty = properties.find((p) => p.id === propertyId) ?? null;
   const selectedQuote = (quotesResponse?.data ?? []).find((q) => q.id === quoteId) ?? null;
-  const actualSystemSizeKw =
-    selectedQuote?.totalWattageWp && selectedQuote.totalWattageWp > 0
-      ? selectedQuote.totalWattageWp / 1000
-      : null;
+  const actualSystemSizeKw = selectedQuote?.actualSystemSizeKw ?? null;
   const requestedSystemSizeKw = selectedQuote?.systemSizeKw;
 
   // Auto-generate project name
@@ -95,7 +92,7 @@ export function Step2ProjectDetails({ form }: Step2ProjectDetailsProps): React.J
       ? `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim()
       : '';
     const propName = selectedProperty?.propertyName || selectedProperty?.consumerName || '';
-    const sizeValue = selectedQuote?.systemSizeKw;
+    const sizeValue = selectedQuote?.actualSystemSizeKw ?? selectedQuote?.systemSizeKw;
     const size = sizeValue && sizeValue > 0 ? `${formatSystemSize(sizeValue)}kW` : '';
     const parts = [custName, propName, size].filter(Boolean);
     return parts.join(' - ');
@@ -187,12 +184,7 @@ export function Step2ProjectDetails({ form }: Step2ProjectDetailsProps): React.J
                   Estimated Cost
                 </MUITypography>
                 <MUITypography variant="bodyPrimary">
-                  {formatCurrency(
-                    selectedQuote.effectivePrice ??
-                      selectedQuote.finalPrice ??
-                      selectedQuote.basePrice ??
-                      0,
-                  )}
+                  {formatCurrency(selectedQuote.finalPrice ?? selectedQuote.basePrice ?? 0)}
                 </MUITypography>
               </div>
             </div>

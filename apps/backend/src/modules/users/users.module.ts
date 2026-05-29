@@ -3,9 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { UserController } from './controllers';
 import { InvitationController } from './controllers/invitation.controller';
-import { UserEntity, UserRoleEntity, InvitationEntity } from './entities';
-import { UserRepository, UserRoleRepository, InvitationRepository } from './repositories';
-import { UserService, ProfileService, InvitationService } from './services';
+import { UserEntity, UserRoleEntity, InvitationEntity, UserDeviceTokenEntity } from './entities';
+import {
+  UserRepository,
+  UserRoleRepository,
+  InvitationRepository,
+  UserDeviceTokenRepository,
+} from './repositories';
+import { UserService, ProfileService, InvitationService, DeviceTokenService } from './services';
 import { CustomersModule } from '../customers/customers.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
@@ -27,7 +32,7 @@ import { ResellersModule } from '../resellers/resellers.module';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, UserRoleEntity, InvitationEntity]),
+    TypeOrmModule.forFeature([UserEntity, UserRoleEntity, InvitationEntity, UserDeviceTokenEntity]),
     forwardRef(() => IamModule),
     forwardRef(() => CustomersModule),
     forwardRef(() => ResellersModule),
@@ -38,17 +43,21 @@ import { ResellersModule } from '../resellers/resellers.module';
     UserRepository,
     UserRoleRepository,
     InvitationRepository,
+    UserDeviceTokenRepository,
     UserService,
     ProfileService,
     InvitationService,
+    DeviceTokenService,
   ],
   exports: [
     UserService,
     ProfileService,
     InvitationService,
+    DeviceTokenService,
     UserRepository,
     UserRoleRepository,
     InvitationRepository,
+    UserDeviceTokenRepository,
   ],
 })
 export class UsersModule {}
