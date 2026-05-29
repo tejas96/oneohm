@@ -61,7 +61,7 @@ export function ProjectMix({ data, totalCount }: ProjectMixProps): React.JSX.Ele
                   borderRadius: '12px',
                   fontSize: 11,
                 }}
-                formatter={(v) => [`${v}%`, '']}
+                formatter={(v) => [typeof v === 'number' || typeof v === 'string' ? `${v}%` : '', '']}
               />
             </PieChart>
           </ResponsiveContainer>

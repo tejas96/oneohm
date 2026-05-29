@@ -85,7 +85,10 @@ export function RevenueTrend({ data }: RevenueTrendProps): React.JSX.Element {
                 boxShadow: '0 4px 12px -2px rgba(0,0,0,0.05)',
                 fontSize: 12,
               }}
-              formatter={(value) => [`₹${value}L`, '']}
+              formatter={(value) => [
+                typeof value === 'number' || typeof value === 'string' ? `₹${value}L` : '',
+                '',
+              ]}
             />
             <Area
               type="monotone"
