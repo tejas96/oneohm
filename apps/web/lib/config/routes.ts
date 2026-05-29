@@ -64,7 +64,8 @@ export const ROUTES = {
 
   // Quotes
   QUOTES: {
-    LIST: '/quotes',
+    DASHBOARD: '/quotes',
+    LIST: '/quotes/list',
     DETAIL: '/quotes/[id]',
     NEW: '/quotes/new',
   },
@@ -242,6 +243,7 @@ export interface RouteParamTypes {
 
   // Routes with query filters
   '/quotes': { status?: 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected' | 'expired' };
+  '/quotes/list': { status?: 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected' | 'expired' };
   '/projects/list': {
     status?:
       | 'draft'
@@ -419,6 +421,7 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   [ROUTES.CRM.HOME]: 'crm',
 
   // Quotes routes
+  [ROUTES.QUOTES.DASHBOARD]: 'quotes',
   [ROUTES.QUOTES.LIST]: 'quotes',
 
   // Projects routes

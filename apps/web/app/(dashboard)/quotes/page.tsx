@@ -1,10 +1,10 @@
-import { QuoteListPage } from '@/components/features/quotes';
+import { QuoteDashboardPage } from '@/components/features/quotes';
 
 /**
- * Quotes List Page
+ * Quotes Dashboard Page
  * Thin wrapper - all logic in feature component
  */
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for pages
 export default function QuotesPage(): React.JSX.Element {
-  return <QuoteListPage />;
+  return <QuoteDashboardPage />;
 }

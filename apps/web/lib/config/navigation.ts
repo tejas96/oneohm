@@ -70,7 +70,7 @@ export const navigationConfig: NavigationConfig = {
       id: 'quotes',
       icon: FileText,
       label: 'Quotations',
-      href: ROUTES.QUOTES.LIST,
+      href: ROUTES.QUOTES.DASHBOARD,
       panelKey: 'quotes',
     },
     {
@@ -257,8 +257,15 @@ export const navigationConfig: NavigationConfig = {
       title: 'Quotations',
       sections: [
         {
-          title: 'Quotes',
+          title: 'Overview',
           items: [
+            {
+              id: 'quotes-dashboard',
+              icon: LayoutGrid,
+              label: 'Dashboard',
+              href: ROUTES.QUOTES.DASHBOARD,
+              exactMatch: true,
+            },
             {
               id: 'all-quotes',
               icon: FileText,

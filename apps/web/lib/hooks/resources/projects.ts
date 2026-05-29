@@ -313,3 +313,47 @@ export function useConvertFromQuote(): UseConvertFromQuoteReturn {
     successMessage: 'Project created successfully',
   });
 }
+
+// ── Project List Hook (FDAL) ───────────────────────────────────
+
+export interface ProjectListItem {
+  id: string;
+  projectNumber: string;
+  name: string;
+  status: string;
+  quoteId?: string | null;
+  [key: string]: unknown;
+}
+
+export interface ProjectListFilters {
+  page?: number;
+  limit?: number;
+  status?: string;
+  [key: string]: unknown;
+}
+
+export function useProjectListResource(filters: ProjectListFilters = {}) {
+  const { organizationId, orgHeaders, isReady } = useOrgContext();
+
+  return useQuery({
+    queryKey: projectResourceKeys.list(organizationId, filters),
+    queryFn: async ({ signal }): Promise<PaginatedResponse<ProjectListItem>> => {
+      const params = new URLSearchParams();
+      params.set('page', String(filters.page || 1));
+      params.set('limit', String(filters.limit || 100)); // Standard limit for aggregation
+      if (filters.status) params.set('status', filters.status);
+
+      const { data } = await apiClient.get<PaginatedResponse<ProjectListItem>>(
+        `/projects?${params.toString()}`,
+        {
+          headers: orgHeaders,
+          signal,
+        },
+      );
+      return data;
+    },
+    enabled: isReady,
+    placeholderData: keepPreviousData,
+    staleTime: STALE_TIMES.fast,
+  });
+}

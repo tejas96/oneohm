@@ -204,6 +204,7 @@ export {
   useProjectTaskList,
   useConvertFromQuote,
   useUpdateProjectWarehouse,
+  useProjectListResource,
   type UseConvertFromQuoteReturn,
   type ProjectSummary,
   type ProjectSummaryMetrics,
