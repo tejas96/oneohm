@@ -25,7 +25,7 @@ const quickLinks = [
   {
     label: 'Quotes',
     description: 'Create and track quotes',
-    href: ROUTES.QUOTES.LIST,
+    href: ROUTES.QUOTES.DASHBOARD,
     icon: FileText,
   },
   {

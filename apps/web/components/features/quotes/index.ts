@@ -2,6 +2,7 @@
 
 // Components
 export { QuoteListPage } from './components/quote-list-page';
+export { QuoteDashboardPage } from './components/quote-dashboard-page';
 export { QuoteBuilder } from './components/quote-builder';
 export { QuotePreviewPanel } from './components/quote-preview-panel';
 export type { QuotePreviewPanelProps } from './components/quote-preview-panel';
