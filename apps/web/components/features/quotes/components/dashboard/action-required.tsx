@@ -1,10 +1,10 @@
 'use client';
 
+import Card from '@mui/material/Card';
 import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import Card from '@mui/material/Card';
 import { ROUTES } from '@/lib/config/routes';
 
 // ============================================================================

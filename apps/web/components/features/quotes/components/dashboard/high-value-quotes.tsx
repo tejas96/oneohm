@@ -1,10 +1,11 @@
 'use client';
 
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
+
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 // ============================================================================

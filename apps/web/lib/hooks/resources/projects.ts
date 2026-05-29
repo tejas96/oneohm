@@ -325,7 +325,14 @@ export interface ProjectListItem {
   [key: string]: unknown;
 }
 
-export function useProjectListResource(filters: Record<string, unknown> = {}) {
+export interface ProjectListFilters {
+  page?: number;
+  limit?: number;
+  status?: string;
+  [key: string]: unknown;
+}
+
+export function useProjectListResource(filters: ProjectListFilters = {}) {
   const { organizationId, orgHeaders, isReady } = useOrgContext();
 
   return useQuery({
@@ -334,7 +341,7 @@ export function useProjectListResource(filters: Record<string, unknown> = {}) {
       const params = new URLSearchParams();
       params.set('page', String(filters.page || 1));
       params.set('limit', String(filters.limit || 100)); // Standard limit for aggregation
-      if (filters.status) params.set('status', String(filters.status));
+      if (filters.status) params.set('status', filters.status);
 
       const { data } = await apiClient.get<PaginatedResponse<ProjectListItem>>(
         `/projects?${params.toString()}`,
@@ -350,3 +357,4 @@ export function useProjectListResource(filters: Record<string, unknown> = {}) {
     staleTime: STALE_TIMES.fast,
   });
 }
+
