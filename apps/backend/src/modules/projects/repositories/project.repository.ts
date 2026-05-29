@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared/types';
+import { ProjectPriority, ProjectStatus, TaskStatus } from '@oneohm-epc/shared/types';
 import { type EntityManager, IsNull, Repository } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
@@ -122,6 +122,7 @@ export class ProjectRepository {
       toDate?: string;
       search?: string;
       memberId?: string;
+      pendingWorkflowStepId?: string;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },
@@ -173,6 +174,23 @@ export class ProjectRepository {
           .where('tm.user_id = :memberId')
           .getQuery()}`,
         { memberId: filters.memberId },
+      );
+    }
+
+    if (filters?.pendingWorkflowStepId) {
+      query.andWhere(
+        `project.id IN ${query
+          .subQuery()
+          .select('pt.project_id')
+          .from('project_tasks', 'pt')
+          .where('pt.workflow_step_id = :pendingWorkflowStepId')
+          .andWhere('pt.status != :completedStatus')
+          .andWhere('pt.deleted_at IS NULL')
+          .getQuery()}`,
+        {
+          pendingWorkflowStepId: filters.pendingWorkflowStepId,
+          completedStatus: TaskStatus.DONE,
+        },
       );
     }
 
@@ -317,9 +335,21 @@ export class ProjectRepository {
     progressPercentage: number,
   ): Promise<ProjectEntity> {
     // Validate ownership first
-    await this.findById(id, organizationId);
+    const project = await this.findById(id, organizationId);
 
-    await this.repository.update({ id }, { progressPercentage });
+    const updateData: Record<string, any> = { progressPercentage };
+    if (
+      progressPercentage === 100 &&
+      project.status !== ProjectStatus.COMPLETED &&
+      project.status !== ProjectStatus.CANCELLED
+    ) {
+      updateData.status = ProjectStatus.COMPLETED;
+      if (!project.endDate) {
+        updateData.endDate = new Date();
+      }
+    }
+
+    await this.repository.update({ id }, updateData);
     return this.findById(id, organizationId);
   }
 
@@ -333,7 +363,22 @@ export class ProjectRepository {
     manager?: EntityManager,
   ): Promise<void> {
     const repo = this.getRepo(manager);
-    await repo.update({ id: projectId }, { progressPercentage });
+    const project = await repo.findOne({ where: { id: projectId } });
+
+    if (project) {
+      const updateData: Record<string, any> = { progressPercentage };
+      if (
+        progressPercentage === 100 &&
+        project.status !== ProjectStatus.COMPLETED &&
+        project.status !== ProjectStatus.CANCELLED
+      ) {
+        updateData.status = ProjectStatus.COMPLETED;
+        if (!project.endDate) {
+          updateData.endDate = new Date();
+        }
+      }
+      await repo.update({ id: projectId }, updateData);
+    }
   }
 
   /**

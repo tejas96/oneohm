@@ -50,7 +50,7 @@ export class ProjectEntity extends BaseEntity {
 
   // ==================== Status & Progress ====================
 
-  @Column({ type: 'varchar', length: 50, default: ProjectStatus.DRAFT })
+  @Column({ type: 'varchar', length: 50, default: ProjectStatus.ACTIVE })
   status!: ProjectStatus;
 
   @Column({ type: 'varchar', length: 20, default: ProjectPriority.NORMAL })

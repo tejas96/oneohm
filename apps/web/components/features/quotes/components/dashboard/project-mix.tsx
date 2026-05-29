@@ -4,6 +4,8 @@ import Card from '@mui/material/Card';
 import * as React from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
+import { MUITypography } from '@/components/ui';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -16,27 +18,34 @@ export interface ProjectMixItem {
   color: string;
 }
 
-interface ProjectMixProps {
+export interface ProjectMixProps {
   data: ProjectMixItem[];
   totalCount: number;
+  className?: string;
 }
 
 // ============================================================================
 // Component
 // ============================================================================
 
-export function ProjectMix({ data, totalCount }: ProjectMixProps): React.JSX.Element {
+export function ProjectMix({ data, totalCount, className }: ProjectMixProps): React.JSX.Element {
   return (
     <Card
       elevation={0}
-      className="flex-1 lg:w-1/2 p-6 rounded-[20px] border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between min-h-[360px]"
+      className={`flex-1 p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col justify-between min-h-[360px] ${
+        className || 'lg:w-1/2'
+      }`}
     >
       <div>
-        <h2 className="text-base font-semibold text-slate-900">Project Mix</h2>
-        <p className="text-xs text-slate-500 mt-0.5">Quotation distribution by target category</p>
+        <MUITypography variant="sectionTitle" className="font-semibold text-text-primary">
+          Project Mix
+        </MUITypography>
+        <MUITypography variant="finePrint" className="text-text-secondary mt-0.5">
+          Quotation distribution by target category
+        </MUITypography>
       </div>
 
-      <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-6 mt-6">
+      <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-6 mt-4">
         <div className="relative size-[180px] shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -68,12 +77,18 @@ export function ProjectMix({ data, totalCount }: ProjectMixProps): React.JSX.Ele
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <MUITypography
+              variant="finePrint"
+              className="font-semibold text-text-secondary uppercase tracking-wider"
+            >
               Total
-            </span>
-            <span className="text-2xl font-extrabold text-slate-800 leading-none mt-1">
+            </MUITypography>
+            <MUITypography
+              variant="drawerTitle"
+              className="font-semibold text-text-primary leading-none mt-1"
+            >
               {totalCount}
-            </span>
+            </MUITypography>
           </div>
         </div>
 
@@ -81,13 +96,17 @@ export function ProjectMix({ data, totalCount }: ProjectMixProps): React.JSX.Ele
           {data.map((entry) => (
             <div
               key={entry.id}
-              className="flex items-center justify-between text-xs py-1 border-b border-slate-50"
+              className="flex items-center justify-between text-xs py-1 border-b border-border-light"
             >
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-sm" style={{ backgroundColor: entry.color }} />
-                <span className="font-semibold text-slate-600">{entry.label}</span>
+                <MUITypography variant="body" className="font-semibold text-text-secondary">
+                  {entry.label}
+                </MUITypography>
               </div>
-              <span className="font-bold text-slate-800">{entry.value}%</span>
+              <MUITypography variant="bodyPrimary" className="font-semibold text-text-primary">
+                {entry.value}%
+              </MUITypography>
             </div>
           ))}
         </div>

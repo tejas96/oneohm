@@ -5,6 +5,7 @@ import Card from '@mui/material/Card';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
+import { MUITypography } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 // ============================================================================
@@ -19,7 +20,7 @@ export interface OpportunityItem {
   color: string;
 }
 
-interface HighValueQuotesProps {
+export interface HighValueQuotesProps {
   opps: OpportunityItem[];
   valueFormatter: (value: number) => string;
 }
@@ -34,46 +35,70 @@ export function HighValueQuotes({ opps, valueFormatter }: HighValueQuotesProps):
   return (
     <Card
       elevation={0}
-      className="p-6 rounded-[20px] border border-slate-200/80 bg-white shadow-sm flex flex-col gap-6"
+      className="p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col gap-4"
     >
       <div>
-        <h2 className="text-base font-semibold text-slate-900">High Value Quotes</h2>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <MUITypography variant="sectionTitle" className="font-semibold text-text-primary">
+          High Value Quotes
+        </MUITypography>
+        <MUITypography variant="finePrint" className="text-text-secondary mt-0.5">
           Top quotation opportunities currently active
-        </p>
+        </MUITypography>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-slate-100 text-slate-400 font-semibold">
-              <th className="pb-3 text-left pl-1">Customer</th>
-              <th className="pb-3 text-right">Quote Value</th>
-              <th className="pb-3 text-center">Status</th>
-              <th className="pb-3 text-right pr-1">Action</th>
+            <tr className="border-b border-border-light text-text-secondary font-semibold">
+              <th className="pb-3 text-left pl-1">
+                <MUITypography variant="finePrint" className="font-semibold text-text-secondary">
+                  Customer
+                </MUITypography>
+              </th>
+              <th className="pb-3 text-right">
+                <MUITypography variant="finePrint" className="font-semibold text-text-secondary">
+                  Quote Value
+                </MUITypography>
+              </th>
+              <th className="pb-3 text-center">
+                <MUITypography variant="finePrint" className="font-semibold text-text-secondary">
+                  Status
+                </MUITypography>
+              </th>
+              <th className="pb-3 text-right pr-1">
+                <MUITypography variant="finePrint" className="font-semibold text-text-secondary">
+                  Action
+                </MUITypography>
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-border-light">
             {opps.map((opp) => (
-              <tr key={opp.id} className="hover:bg-slate-50/50 transition-colors group">
-                <td className="py-4 font-bold text-slate-800 pl-1">{opp.customer}</td>
-                <td className="py-4 text-right font-semibold text-slate-900">
-                  {valueFormatter(opp.value)}
+              <tr key={opp.id} className="hover:bg-background-secondary transition-colors group">
+                <td className="py-3 pl-1">
+                  <MUITypography variant="bodyPrimary" className="font-semibold text-text-primary">
+                    {opp.customer}
+                  </MUITypography>
                 </td>
-                <td className="py-4 text-center">
+                <td className="py-3 text-right">
+                  <MUITypography variant="bodyPrimary" className="font-semibold text-text-primary">
+                    {valueFormatter(opp.value)}
+                  </MUITypography>
+                </td>
+                <td className="py-3 text-center">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-semibold border ${
                       opp.status === 'Viewed'
-                        ? 'text-cyan-700 bg-cyan-50 border border-cyan-100'
+                        ? 'text-cyan-700 bg-cyan-50 border-cyan-100'
                         : opp.status === 'Negotiation'
-                          ? 'text-amber-700 bg-amber-50 border border-amber-100'
-                          : 'text-blue-700 bg-blue-50 border border-blue-100'
+                          ? 'text-amber-700 bg-amber-50 border-amber-100'
+                          : 'text-blue-700 bg-blue-50 border-blue-100'
                     }`}
                   >
                     {opp.status}
                   </span>
                 </td>
-                <td className="py-4 text-right pr-1">
+                <td className="py-3 text-right pr-1">
                   <Button
                     variant="text"
                     size="small"
@@ -84,7 +109,7 @@ export function HighValueQuotes({ opps, valueFormatter }: HighValueQuotesProps):
                         router.push(buildRoute(ROUTES.QUOTES.DETAIL, { id: opp.id }));
                       }
                     }}
-                    className="rounded-lg text-primary hover:bg-primary/5 hover:text-primary-hover font-semibold normal-case min-w-0"
+                    className="rounded-lg text-primary hover:bg-primary/5 hover:text-primary-hover font-semibold normal-case min-w-0 px-2"
                   >
                     View Details
                   </Button>

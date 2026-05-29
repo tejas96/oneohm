@@ -2,13 +2,14 @@
 
 import type { MilestoneDisplayStatus } from '@oneohm-epc/shared/types';
 import { Milestone } from 'lucide-react';
+import * as React from 'react';
 
 import { useProjectMilestones } from '../../../../hooks';
 import type { ProjectDetail } from '../../../../hooks/types';
 
 import { formatDate } from '@/lib/utils/format';
 
-interface OverviewTimelineRailProps {
+export interface OverviewTimelineRailProps {
   project: ProjectDetail;
   projectId: string;
   isActive: boolean;
@@ -98,6 +99,66 @@ export function OverviewTimelineRail({
   const start = new Date(project.startDate);
   const end = new Date(project.endDate);
 
+  // Calculate duration in days
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const startNormalized = new Date(start);
+  startNormalized.setHours(0, 0, 0, 0);
+  const endNormalized = new Date(end);
+  endNormalized.setHours(0, 0, 0, 0);
+
+  const totalDays = Math.max(
+    1,
+    Math.round((endNormalized.getTime() - startNormalized.getTime()) / oneDayMs),
+  );
+
+  // TODAY calculations
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const elapsedDays = Math.round((today.getTime() - startNormalized.getTime()) / oneDayMs);
+  const todayPct = totalDays > 0 ? (elapsedDays / totalDays) * 100 : 0;
+  const progressPct = Math.min(100, Math.max(0, todayPct));
+
+  const monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  const formattedToday = `${today.getDate()} ${monthNames[today.getMonth()]}`;
+
+  let todayLabel = 'TODAY';
+  if (elapsedDays < 0) {
+    todayLabel = `TODAY (Starts in ${Math.abs(elapsedDays)}d)`;
+  } else if (elapsedDays > totalDays) {
+    todayLabel = `TODAY (Ended)`;
+  } else {
+    todayLabel = `TODAY (Day ${elapsedDays}/${totalDays} • ${formattedToday})`;
+  }
+
+  // Generate scale ticks at 0%, 25%, 50%, 75%, 100%
+  const scaleTicks = React.useMemo(() => {
+    const ticks = [0, 25, 50, 75, 100];
+    return ticks.map((pct) => {
+      const dayNum = Math.round((pct / 100) * totalDays);
+      const tickDate = new Date(startNormalized.getTime() + (pct / 100) * totalDays * oneDayMs);
+      const dateStr = `${tickDate.getDate()} ${monthNames[tickDate.getMonth()]}`;
+      return {
+        percent: pct,
+        dayNum,
+        dateStr,
+      };
+    });
+  }, [startNormalized, totalDays, oneDayMs]);
+
   // Only milestones that have tasks, sorted by order
   const sorted = milestonesRaw
     ? [...milestonesRaw].filter((m) => m.totalTasks > 0).sort((a, b) => a.order - b.order)
@@ -157,8 +218,6 @@ export function OverviewTimelineRail({
       ? RAIL_COLORS.track
       : `linear-gradient(90deg, ${RAIL_COLORS.success} 0%, ${RAIL_COLORS.success} ${greenEnd}%, ${RAIL_COLORS.primary} ${greenEnd}%, ${RAIL_COLORS.primary} ${activeEnd}%, ${RAIL_COLORS.track} ${activeEnd}%, ${RAIL_COLORS.track} 100%)`;
 
-  const progressPct = Math.min(100, Math.max(0, project.progressPercentage));
-
   return (
     <section className="rounded-xl border border-border-light/70 bg-card p-5 shadow-card">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -187,45 +246,70 @@ export function OverviewTimelineRail({
         </div>
       </div>
 
-      <div className="relative pb-11 pt-6">
-        {/* TODAY marker */}
-        <div className="absolute top-0 z-10 -translate-x-1/2" style={{ left: `${progressPct}%` }}>
-          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-            TODAY
-          </span>
-          <div className="mx-auto mt-1 h-8 w-0.5 bg-primary" />
-        </div>
+      {/* Outer padding container to prevent edge clipping */}
+      <div className="px-8 pb-6 pt-8">
+        <div className="relative">
+          {/* TODAY marker */}
+          <div className="absolute top-0 z-10 -translate-x-1/2" style={{ left: `${progressPct}%` }}>
+            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary whitespace-nowrap shadow-sm border border-primary/20">
+              {todayLabel}
+            </span>
+            <div className="mx-auto mt-1 h-20 w-0.5 bg-primary" />
+          </div>
 
-        {/* Rail */}
-        <div className="relative h-1.5 rounded-full" style={{ background: railBackground }}>
-          {sorted.map((milestone, idx) => {
-            const st = statuses[idx] ?? 'pending';
-            return (
+          {/* Scale Axis (Day Ticks above the rail) */}
+          <div className="relative h-6 select-none mb-4">
+            {scaleTicks.map((tick) => (
               <div
-                key={milestone.name}
-                className={`absolute -top-1.5 size-4 rounded-full border-2 border-white ${dotColor(st)}`}
-                style={{ left: `${positions[idx] ?? 0}%`, transform: 'translateX(-50%)' }}
-                title={`${milestone.name} — ${st}`}
-              />
-            );
-          })}
-        </div>
-
-        {/* Labels */}
-        <div
-          className="mt-4 grid gap-2"
-          style={{ gridTemplateColumns: `repeat(${sorted.length}, 1fr)` }}
-        >
-          {sorted.map((milestone, idx) => {
-            const kind = labelKind(statuses[idx] ?? 'pending');
-            const cls = LABEL_CLASSES[kind];
-            return (
-              <div key={milestone.name} className="text-center min-w-0">
-                <p className={`truncate text-[11px] ${cls.name}`}>{milestone.name}</p>
-                <p className={`text-[10px] ${cls.date}`}>{cls.suffix ?? ''}</p>
+                key={tick.percent}
+                className="absolute top-0 -translate-x-1/2 flex flex-col items-center"
+                style={{ left: `${tick.percent}%` }}
+              >
+                <span className="text-[9px] font-medium text-foreground-tertiary">
+                  D{tick.dayNum} ({tick.dateStr})
+                </span>
+                <div className="mt-1 h-1.5 w-px bg-border-light" />
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          {/* Rail */}
+          <div className="relative h-1.5 rounded-full" style={{ background: railBackground }}>
+            {sorted.map((milestone, idx) => {
+              const st = statuses[idx] ?? 'pending';
+              return (
+                <div
+                  key={milestone.name}
+                  className={`absolute -top-1.5 size-4 rounded-full border-2 border-white ${dotColor(st)}`}
+                  style={{ left: `${positions[idx] ?? 0}%`, transform: 'translateX(-50%)' }}
+                  title={`${milestone.name} — ${st}`}
+                />
+              );
+            })}
+          </div>
+
+          {/* Labels (below the rail) */}
+          <div className="relative mt-4 h-10 select-none">
+            {sorted.map((milestone, idx) => {
+              const kind = labelKind(statuses[idx] ?? 'pending');
+              const cls = LABEL_CLASSES[kind];
+              const pct = positions[idx] ?? 0;
+              return (
+                <div
+                  key={milestone.name}
+                  className="absolute top-0 -translate-x-1/2 text-center"
+                  style={{ left: `${pct}%`, width: '80px' }}
+                >
+                  <p
+                    className={`truncate text-[10px] sm:text-[11px] ${cls.name}`}
+                    title={milestone.name}
+                  >
+                    {milestone.name}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

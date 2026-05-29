@@ -121,6 +121,12 @@ export class ProjectController {
     description: 'Filter by team member (user ID)',
   })
   @ApiQuery({
+    name: 'pendingWorkflowStepId',
+    required: false,
+    type: String,
+    description: 'Filter by pending workflow step task',
+  })
+  @ApiQuery({
     name: 'sortBy',
     required: false,
     type: String,
@@ -154,6 +160,7 @@ export class ProjectController {
     @Query('toDate') toDate?: string,
     @Query('search') search?: string,
     @Query('memberId') memberId?: string,
+    @Query('pendingWorkflowStepId') pendingWorkflowStepId?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ): Promise<PaginatedResponse<ProjectListItemDto>> {
@@ -169,6 +176,7 @@ export class ProjectController {
       toDate,
       search,
       memberId,
+      pendingWorkflowStepId,
       sortBy,
       sortOrder,
     });

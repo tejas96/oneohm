@@ -64,8 +64,8 @@ export function ProjectSummaryTab({ project, projectId, isActive }: ProjectSumma
         projectPath={projectPath}
       />
 
-      {/* Row 2: Status donut + Priority bars — 2 equal columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Row 2: Status donut, Priority bars, and Team workload — 3 equal columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <StatusOverviewChart
           tasksByStatus={summary?.tasksByStatus}
           taskStatuses={project.taskStatuses}
@@ -79,15 +79,13 @@ export function ProjectSummaryTab({ project, projectId, isActive }: ProjectSumma
           isLoading={isLoading}
           projectPath={projectPath}
         />
+        <TeamWorkloadPanel
+          teamWorkload={summary?.teamWorkload}
+          taskStatuses={project.taskStatuses}
+          isLoading={isLoading}
+          projectPath={projectPath}
+        />
       </div>
-
-      {/* Row 3: Team workload — full width */}
-      <TeamWorkloadPanel
-        teamWorkload={summary?.teamWorkload}
-        taskStatuses={project.taskStatuses}
-        isLoading={isLoading}
-        projectPath={projectPath}
-      />
 
       {/* Row 4: Recent activity + Milestone progress — 2 columns; milestone hidden if empty */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

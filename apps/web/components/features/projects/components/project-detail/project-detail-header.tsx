@@ -5,13 +5,9 @@ import Button from '@mui/material/Button';
 import Link from 'next/link';
 import React from 'react';
 
-import {
-  PROJECT_STATUS_LABELS,
-  PROJECT_STATUS_BADGE_VARIANT,
-  PROJECT_PRIORITY_LABELS,
-  PROJECT_PRIORITY_BADGE_VARIANT,
-} from '../../constants';
+import { PROJECT_PRIORITY_LABELS, PROJECT_PRIORITY_BADGE_VARIANT } from '../../constants';
 import type { ProjectDetail } from '../../hooks/types';
+import { ProjectStatusDropdown } from '../project-status-dropdown';
 
 import { Badge } from '@/components/ui/badge';
 import {
@@ -33,8 +29,6 @@ interface ProjectDetailHeaderProps {
 
 export const ProjectDetailHeader = React.memo(
   ({ project, onEdit }: ProjectDetailHeaderProps): React.JSX.Element => {
-    const statusLabel = PROJECT_STATUS_LABELS[project.status] ?? project.status;
-    const statusVariant = PROJECT_STATUS_BADGE_VARIANT[project.status] ?? 'secondary';
     const priorityLabel = PROJECT_PRIORITY_LABELS[project.priority] ?? project.priority;
     const priorityVariant = PROJECT_PRIORITY_BADGE_VARIANT[project.priority] ?? 'secondary';
     return (
@@ -62,9 +56,7 @@ export const ProjectDetailHeader = React.memo(
               >
                 {project.name}
               </h1>
-              <Badge variant={statusVariant as 'success'} shape="pill" size="sm">
-                {statusLabel}
-              </Badge>
+              <ProjectStatusDropdown projectId={project.id} status={project.status} size="sm" />
               <Badge variant={priorityVariant as 'warning'} shape="pill" size="sm">
                 {priorityLabel}
               </Badge>

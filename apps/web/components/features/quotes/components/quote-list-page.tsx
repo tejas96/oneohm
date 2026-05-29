@@ -37,7 +37,7 @@ import { MUITypography } from '@/components/ui/mui-typography';
 import { showToast } from '@/components/ui/sonner';
 import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
+import { useTableUrlState, type TableUrlFilterRecord } from '@/lib/hooks';
 import { useQuoteListResource, type QuoteListFilters } from '@/lib/hooks/resources';
 import { formatCurrency, getErrorMessage } from '@/lib/utils';
 
@@ -120,7 +120,7 @@ function toQuoteFilters(filters: TableUrlFilterRecord): Partial<QuoteListFilters
         ? (filters.status as QuoteStatus)
         : undefined,
     fromDate: createdAtRange?.fromIso,
-    toDate: createdAtRange?.toIso,
+    toDate: (typeof filters.toDate === 'string' && filters.toDate) || createdAtRange?.toIso,
   };
 }
 
@@ -361,7 +361,14 @@ export function QuoteListPage(): JSX.Element {
   // (quotes_filters). We pass initialFilters so the very first render is already
   // filtered — no post-mount effect, no race condition, no hard-refresh needed.
   const rawStatusParam = searchParams.get('status');
-  const initialFilters = rawStatusParam ? { status: rawStatusParam } : undefined;
+  const rawToDateParam = searchParams.get('toDate');
+
+  const initialFilters = useMemo(() => {
+    const filters: TableUrlFilterRecord = {};
+    if (rawStatusParam) filters.status = rawStatusParam;
+    if (rawToDateParam) filters.toDate = rawToDateParam;
+    return Object.keys(filters).length > 0 ? filters : undefined;
+  }, [rawStatusParam, rawToDateParam]);
 
   // URL-synced table state — single source of truth for all pagination/sort/filter/search
   const urlState = useTableUrlState({ prefix: 'quotes', defaultPageSize: 10, initialFilters });

@@ -8,8 +8,6 @@ import { OverviewEnergyImpact } from './overview/overview-energy-impact';
 import { OverviewFinancials } from './overview/overview-financials';
 import { OverviewHero } from './overview/overview-hero';
 import { OverviewInsightsStrip } from './overview/overview-insights-strip';
-import { OverviewMilestonesFeed } from './overview/overview-milestones-feed';
-import { OverviewReportsCard } from './overview/overview-reports-card';
 import { OverviewSiteCard } from './overview/overview-site-card';
 import { OverviewSystemSpecs } from './overview/overview-system-specs';
 import { OverviewTeamPanel } from './overview/overview-team-panel';
@@ -18,7 +16,7 @@ import type { ProjectDetail } from '../../../hooks/types';
 
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 
-interface ProjectOverviewTabProps {
+export interface ProjectOverviewTabProps {
   project: ProjectDetail;
   isActive: boolean;
 }
@@ -41,60 +39,55 @@ export function ProjectOverviewTab({ project, isActive }: ProjectOverviewTabProp
 
       <OverviewTimelineRail project={project} projectId={project.id} isActive={isActive} />
 
-      {/* Energy + Site */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {showEnergy && (
-          <div className="lg:col-span-3">
-            <OverviewEnergyImpact project={project} />
-          </div>
-        )}
-        <div className={showEnergy ? 'lg:col-span-2' : 'lg:col-span-5'}>
+      {/* Row 1: Installation Site, Team, and System Specs */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+        {/* Column 1: Site */}
+        <div>
           <OverviewSiteCard project={project} />
         </div>
-      </div>
 
-      {/* Specs + Financials */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-2">
+        {/* Column 2: Team */}
+        <div>
+          <OverviewTeamPanel projectId={project.id} projectPath={projectPath} isActive={isActive} />
+        </div>
+
+        {/* Column 3: System Specifications */}
+        <div>
           <OverviewSystemSpecs project={project} projectPath={projectPath} />
         </div>
-        <div className="lg:col-span-3">
-          <OverviewFinancials
-            project={project}
-            projectId={project.id}
-            projectPath={projectPath}
-            isActive={isActive}
-          />
-        </div>
       </div>
 
-      {/* Team + Reports (stacked left) | Milestones (right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 space-y-4">
-          <OverviewTeamPanel projectId={project.id} projectPath={projectPath} isActive={isActive} />
-          <OverviewReportsCard projectId={project.id} isActive={isActive} />
-        </div>
-        <div className="lg:col-span-2">
-          <OverviewMilestonesFeed
-            projectId={project.id}
-            projectPath={projectPath}
-            isActive={isActive}
-          />
-        </div>
+      {/* Row 2: Needs Attention + Financials (equal width) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <OverviewAttentionPanel projectId={project.id} isActive={isActive} />
+        <OverviewFinancials
+          project={project}
+          projectId={project.id}
+          projectPath={projectPath}
+          isActive={isActive}
+        />
       </div>
 
-      {/* Activity (left) + Attention (right) — same height, scrollable */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-stretch">
-        <div className="lg:col-span-3 flex flex-col">
-          <OverviewActivityFeed
-            projectId={project.id}
-            projectPath={projectPath}
-            isActive={isActive}
-          />
-        </div>
-        <div className="lg:col-span-2 flex flex-col">
-          <OverviewAttentionPanel projectId={project.id} isActive={isActive} />
-        </div>
+      {/* Row 3: Energy Impact + Recent Activity (equal width) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {showEnergy ? (
+          <>
+            <OverviewEnergyImpact project={project} />
+            <OverviewActivityFeed
+              projectId={project.id}
+              projectPath={projectPath}
+              isActive={isActive}
+            />
+          </>
+        ) : (
+          <div className="lg:col-span-2">
+            <OverviewActivityFeed
+              projectId={project.id}
+              projectPath={projectPath}
+              isActive={isActive}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

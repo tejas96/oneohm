@@ -25,6 +25,7 @@ const STATUS_DOT_COLORS: Record<StatusDotColor, string> = {
   planning: 'bg-info',
   on_hold: 'bg-warning',
   completed_project: 'bg-foreground-tertiary',
+  cancelled: 'bg-error',
 };
 
 // Badge variant mapping
@@ -89,7 +90,33 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
 
     if (hasQueryParams) {
       // Filtered views: exact full URL match only
-      isActive = currentFullUrl === item.href;
+      if (item.href.startsWith('/projects')) {
+        // Extract status from item.href (e.g. ?status=active or ?status=planning)
+        const urlObj = new URL(item.href, 'http://localhost');
+        const targetStatus = urlObj.searchParams.get('status');
+
+        // Extract status from current URL (prefixed or unprefixed)
+        let currentStatus = searchParams.get('status');
+        if (!currentStatus) {
+          const prefFilters = searchParams.get('projects_filters');
+          if (prefFilters) {
+            try {
+              const parsedFilters = JSON.parse(prefFilters);
+              currentStatus = parsedFilters.status;
+            } catch (error) {
+              console.log(error);
+            }
+          }
+        }
+        // If neither exists, and targetStatus is 'active', then highlight it as default!
+        if (!currentStatus && targetStatus === 'active') {
+          isActive = true;
+        } else {
+          isActive = currentStatus === targetStatus;
+        }
+      } else {
+        isActive = currentFullUrl === item.href;
+      }
     } else if (item.exactMatch) {
       // Explicit exact match (for action items like "Add Customer")
       isActive = pathname === item.href;

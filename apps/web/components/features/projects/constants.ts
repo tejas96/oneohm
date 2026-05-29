@@ -23,25 +23,27 @@ export const DEFAULT_MILESTONES: ReadonlyArray<{ name: string; order: number }> 
 ];
 
 export const PROJECT_STATUS_LABELS: Record<string, string> = {
-  [ProjectStatus.DRAFT]: 'Draft',
   [ProjectStatus.PLANNING]: 'Planning',
-  [ProjectStatus.APPROVED]: 'Approved',
-  [ProjectStatus.IN_PROGRESS]: 'Active',
-  [ProjectStatus.TESTING]: 'Testing',
+  [ProjectStatus.ACTIVE]: 'Active',
   [ProjectStatus.ON_HOLD]: 'On Hold',
   [ProjectStatus.COMPLETED]: 'Completed',
   [ProjectStatus.CANCELLED]: 'Cancelled',
 };
 
 export const PROJECT_STATUS_BADGE_VARIANT: Record<string, string> = {
-  [ProjectStatus.DRAFT]: 'secondary',
   [ProjectStatus.PLANNING]: 'blue-subtle',
-  [ProjectStatus.APPROVED]: 'green-subtle',
-  [ProjectStatus.IN_PROGRESS]: 'green-subtle',
-  [ProjectStatus.TESTING]: 'purple',
+  [ProjectStatus.ACTIVE]: 'green-subtle',
   [ProjectStatus.ON_HOLD]: 'amber',
-  [ProjectStatus.COMPLETED]: 'blue-subtle',
+  [ProjectStatus.COMPLETED]: 'success',
   [ProjectStatus.CANCELLED]: 'red-subtle',
+};
+
+export const PROJECT_STATUS_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
+  [ProjectStatus.PLANNING]: [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED],
+  [ProjectStatus.ACTIVE]: [ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
+  [ProjectStatus.ON_HOLD]: [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED],
+  [ProjectStatus.COMPLETED]: [ProjectStatus.ACTIVE],
+  [ProjectStatus.CANCELLED]: [ProjectStatus.ACTIVE],
 };
 
 export const PROJECT_PRIORITY_LABELS: Record<string, string> = {

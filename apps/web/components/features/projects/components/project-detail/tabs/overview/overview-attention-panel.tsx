@@ -17,9 +17,11 @@ import { useProjectAttention } from '../../../../hooks';
 
 import { Skeleton } from '@/components/ui';
 
-interface OverviewAttentionPanelProps {
+export interface OverviewAttentionPanelProps {
   projectId: string;
   isActive: boolean;
+  className?: string;
+  listClassName?: string;
 }
 
 const KIND_ICON_MAP: Record<string, typeof AlertCircle> = {
@@ -41,13 +43,17 @@ const SEVERITY_CLASS_MAP: Record<string, string> = {
 export function OverviewAttentionPanel({
   projectId,
   isActive,
+  className = '',
+  listClassName = 'max-h-96 overflow-y-auto',
 }: OverviewAttentionPanelProps): JSX.Element {
   const { data, isLoading } = useProjectAttention(projectId, { enabled: isActive });
 
   const items = data ?? [];
 
   return (
-    <div className="flex-1 rounded-xl border border-error/20 bg-card shadow-card p-5 flex flex-col">
+    <div
+      className={`flex-1 rounded-xl border border-error/20 bg-card shadow-card p-5 flex flex-col ${className}`}
+    >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 min-w-0">
           <AlertTriangle className="size-4 text-error shrink-0" />
@@ -70,7 +76,7 @@ export function OverviewAttentionPanel({
           All clear — no items need attention.
         </div>
       ) : (
-        <div className="space-y-2 max-h-96 overflow-y-auto -mr-1 pr-1 flex-1 min-h-0">
+        <div className={`space-y-2 -mr-1 pr-1 flex-1 min-h-0 ${listClassName}`}>
           {items.map((item) => {
             const Icon = KIND_ICON_MAP[item.kind] ?? AlertCircle;
             const severityClass = SEVERITY_CLASS_MAP[item.severity] ?? SEVERITY_CLASS_MAP.info;

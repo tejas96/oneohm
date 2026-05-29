@@ -7,12 +7,11 @@ import {
   Box,
   Button,
   Chip,
-  Collapse,
-  Divider,
   FormControl,
-  InputLabel,
+  IconButton,
   MenuItem,
   OutlinedInput,
+  Popover,
   Select,
   Stack,
   TextField,
@@ -33,7 +32,8 @@ import { toSortableString } from './utils';
 interface TableFiltersProps<TRow> {
   columns: ColumnConfig<TRow>[];
   filters: FilterState;
-  open: boolean;
+  anchorEl: HTMLButtonElement | null;
+  onClose: () => void;
   onFilterChange: (filters: FilterState) => void;
 }
 
@@ -112,10 +112,15 @@ function TextFilterControl<TRow>({
   return (
     <TextField
       size="small"
-      label={column.headerName}
+      placeholder={`Search ${column.headerName}...`}
       value={localValue}
       onChange={(e) => handleChange(e.target.value)}
-      sx={{ minWidth: 160 }}
+      fullWidth
+      slotProps={{
+        input: {
+          className: 'rounded-lg text-xs bg-background',
+        },
+      }}
     />
   );
 }
@@ -125,22 +130,31 @@ function SelectFilterControl<TRow>({
   value,
   onChange,
 }: FilterControlProps<TRow>): JSX.Element {
-  const labelId = `filter-label-${column.field}`;
   return (
-    <FormControl size="small" sx={{ minWidth: 160 }}>
-      <InputLabel id={labelId}>{column.headerName}</InputLabel>
+    <FormControl size="small" fullWidth>
       <Select
-        labelId={labelId}
         value={typeof value === 'string' ? value : ''}
         onChange={(e) => onChange(column.field, e.target.value)}
-        input={<OutlinedInput label={column.headerName} />}
+        displayEmpty
+        input={<OutlinedInput className="rounded-lg text-xs bg-background" />}
+        renderValue={(selected) => {
+          if (!selected) {
+            return (
+              <span className="text-xs" style={{ color: '#a1a1aa' }}>
+                Select {column.headerName}
+              </span>
+            );
+          }
+          const opt = (column.filterOptions ?? []).find((o) => String(o.value) === selected);
+          return <span className="text-xs">{opt?.label ?? selected}</span>;
+        }}
       >
         <MenuItem value="">
-          <em>All</em>
+          <span className="text-xs italic">All</span>
         </MenuItem>
         {(column.filterOptions ?? []).map((opt) => (
           <MenuItem key={String(opt.value)} value={opt.value}>
-            {opt.label}
+            <span className="text-xs">{opt.label}</span>
           </MenuItem>
         ))}
       </Select>
@@ -158,13 +172,23 @@ function DateFilterControl<TRow>({
 
   return (
     <DatePicker
-      label={column.headerName}
       value={parseDateLike(value)}
       onChange={(date) => {
         const emittedValue = date ? toLocalDate(date) : null;
         onChange(column.field, emittedValue);
       }}
-      slotProps={{ textField: { size: 'small', sx: { minWidth: 160 } } }}
+      slotProps={{
+        textField: {
+          size: 'small',
+          fullWidth: true,
+          placeholder: `Select ${column.headerName}`,
+          slotProps: {
+            input: {
+              className: 'rounded-lg text-xs bg-background',
+            },
+          },
+        },
+      }}
     />
   );
 }
@@ -183,27 +207,35 @@ function RangeFilterControl<TRow>({
   };
 
   return (
-    <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 240 }}>
+    <div className="flex items-center gap-2 w-full">
       <TextField
         size="small"
-        label={`${column.headerName} min`}
+        placeholder="Min"
         type="number"
         value={range.min ?? ''}
         onChange={(e) => handleChange('min', e.target.value)}
-        sx={{ width: 110 }}
+        fullWidth
+        slotProps={{
+          input: {
+            className: 'rounded-lg text-xs bg-background',
+          },
+        }}
       />
-      <Typography variant="caption" color="text.secondary">
-        –
-      </Typography>
+      <span className="text-text-secondary text-xs">–</span>
       <TextField
         size="small"
-        label={`${column.headerName} max`}
+        placeholder="Max"
         type="number"
         value={range.max ?? ''}
         onChange={(e) => handleChange('max', e.target.value)}
-        sx={{ width: 110 }}
+        fullWidth
+        slotProps={{
+          input: {
+            className: 'rounded-lg text-xs bg-background',
+          },
+        }}
       />
-    </Stack>
+    </div>
   );
 }
 
@@ -309,7 +341,7 @@ function ActiveFilterChips<TRow>({
 interface TableFiltersToggleProps {
   filters: FilterState;
   open: boolean;
-  onToggle: () => void;
+  onToggle: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export function TableFiltersToggle({
@@ -321,18 +353,16 @@ export function TableFiltersToggle({
 
   return (
     <Tooltip title={open ? 'Hide filters' : 'Show filters'}>
-      <Badge badgeContent={activeCount} color="primary" max={9}>
-        <Button
-          size="small"
-          variant={activeCount > 0 ? 'contained' : 'outlined'}
-          color={activeCount > 0 ? 'primary' : 'inherit'}
-          onClick={onToggle}
-          startIcon={<FilterListIcon />}
-          sx={{ fontWeight: 500 }}
-        >
-          Filters
-        </Button>
-      </Badge>
+      <IconButton
+        size="small"
+        color={activeCount > 0 ? 'primary' : 'inherit'}
+        onClick={onToggle}
+        className="border border-border-light rounded-lg p-2.5 bg-background hover:bg-background-secondary"
+      >
+        <Badge badgeContent={activeCount} color="primary" max={9}>
+          <FilterListIcon className="size-4" />
+        </Badge>
+      </IconButton>
     </Tooltip>
   );
 }
@@ -344,7 +374,8 @@ export function TableFiltersToggle({
 function TableFiltersInner<TRow>({
   columns: allColumns,
   filters,
-  open,
+  anchorEl,
+  onClose,
   onFilterChange,
 }: TableFiltersProps<TRow>): JSX.Element | null {
   const filterableColumns = allColumns.filter((c) => c.filterable);
@@ -384,32 +415,52 @@ function TableFiltersInner<TRow>({
           onClearAll={handleClearAll}
         />
 
-        <Collapse in={open}>
-          <Divider />
-          <Box sx={{ px: 2, py: 2, backgroundColor: 'action.hover' }}>
-            <Stack direction="row" flexWrap="wrap" gap={2} alignItems="flex-end">
-              {filterableColumns.map((col) => (
-                <FilterControl
-                  key={col.field}
-                  column={col}
-                  value={filters[col.field]}
-                  onChange={handleChange}
-                />
-              ))}
+        <Popover
+          open={Boolean(anchorEl)}
+          anchorEl={anchorEl}
+          onClose={onClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+          slotProps={{
+            paper: {
+              className:
+                'p-4 rounded-xl shadow-card border border-border-light min-w-[320px] max-w-[400px]',
+            },
+          }}
+        >
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-border-light pb-2">
+              <Typography className="text-xs font-semibold text-text-primary">Filters</Typography>
               <Button
                 size="small"
                 variant="text"
                 color="inherit"
                 onClick={handleClearAll}
-                startIcon={<FilterListOffIcon />}
-                sx={{ color: 'text.secondary', alignSelf: 'center' }}
+                startIcon={<FilterListOffIcon className="size-3.5" />}
+                className="text-[11px] font-semibold text-text-secondary hover:text-error normal-case p-0 min-w-0"
               >
                 Reset
               </Button>
-            </Stack>
-          </Box>
-          <Divider />
-        </Collapse>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {filterableColumns.map((col) => (
+                <div key={col.field} className="flex flex-col gap-1">
+                  <span className="text-[11px] font-semibold text-text-secondary">
+                    {col.headerName}
+                  </span>
+                  <FilterControl column={col} value={filters[col.field]} onChange={handleChange} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </Popover>
       </>
     </LocalizationProvider>
   );

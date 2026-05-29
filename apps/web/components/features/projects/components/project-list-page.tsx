@@ -51,6 +51,7 @@ import { MUITypography } from '@/components/ui/mui-typography';
 import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
+import { useAllActiveWorkflowSteps } from '@/lib/hooks/resources';
 import {
   formatCurrency,
   formatDate,
@@ -132,6 +133,16 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
     result.memberId = memberId;
   }
 
+  // pending task filter -> backend pendingWorkflowStepId
+  const pendingWorkflowStepId = raw.pendingWorkflowStepId;
+  if (
+    pendingWorkflowStepId &&
+    typeof pendingWorkflowStepId === 'string' &&
+    pendingWorkflowStepId !== 'all'
+  ) {
+    result.pendingWorkflowStepId = pendingWorkflowStepId;
+  }
+
   // endDate column date filter → backend fromDate/toDate (project.endDate range)
   const endDateRaw = toLocalDateString(raw.endDate);
   if (endDateRaw) {
@@ -189,7 +200,7 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     field: 'projectNumber',
     headerName: 'Project',
     sortable: true,
-    width: 180,
+    width: 210,
     cellSx: { verticalAlign: 'top', py: 1 },
     renderCell: ({ row }): JSX.Element => {
       const project = row as ProjectListItem;
@@ -476,6 +487,14 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     ),
   },
   {
+    field: 'pendingWorkflowStepId',
+    headerName: 'Pending Task',
+    filterable: true,
+    defaultHidden: true,
+    width: 150,
+    renderCell: (): JSX.Element => <></>,
+  },
+  {
     field: 'payment',
     headerName: 'Payment',
     width: 140,
@@ -532,8 +551,16 @@ export function ProjectListPage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const statusParam = searchParams.get('status');
+
   // URL-synced table state — owned by this page (controlled AdvancedTable pattern)
-  const urlState = useTableUrlState({ prefix: 'projects', defaultPageSize: 10 });
+  const urlState = useTableUrlState({
+    prefix: 'projects',
+    defaultPageSize: 10,
+    initialFilters: {
+      status: statusParam || 'active',
+    },
+  });
 
   // Fetch employees for the filter
   const { data: employeesData } = useEmployees({ limit: 100 });
@@ -548,6 +575,17 @@ export function ProjectListPage(): JSX.Element {
       })) ?? []
     );
   }, [employeesData?.items]);
+
+  // Fetch active workflow steps for the task filter
+  const { items: workflowSteps } = useAllActiveWorkflowSteps();
+  const workflowStepOptions = useMemo(() => {
+    return (
+      workflowSteps?.map((step) => ({
+        label: step.name,
+        value: step.id,
+      })) ?? []
+    );
+  }, [workflowSteps]);
 
   // View toggle — also URL-synced for shareable links
   const [currentView, setCurrentView] = useState<'card' | 'table'>(() => {
@@ -605,22 +643,63 @@ export function ProjectListPage(): JSX.Element {
             return (
               <Autocomplete
                 size="small"
-                sx={{ minWidth: 200 }}
+                fullWidth
                 options={employeeOptions}
                 value={selectedOption}
                 disablePortal
                 getOptionLabel={(option) =>
                   typeof option === 'string' ? option : option.label || ''
                 }
-                isOptionEqualToValue={(option, val) => option.value === val.value}
+                isOptionEqualToValue={(option, val) => option.value === val?.value}
                 onChange={(_, val) => {
                   onChange(val?.value ?? '');
                 }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label="Team"
                     placeholder="Search member..."
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                      },
+                    }}
+                  />
+                )}
+              />
+            );
+          },
+        };
+      }
+      if (col.field === 'pendingWorkflowStepId') {
+        return {
+          ...col,
+          renderFilter: ({
+            value,
+            onChange,
+          }: {
+            value: unknown;
+            onChange: (v: unknown) => void;
+          }) => {
+            const selectedOption =
+              workflowStepOptions.find((o) => String(o.value) === String(value)) || null;
+            return (
+              <Autocomplete
+                size="small"
+                fullWidth
+                options={workflowStepOptions}
+                value={selectedOption}
+                disablePortal
+                getOptionLabel={(option) =>
+                  typeof option === 'string' ? option : option.label || ''
+                }
+                isOptionEqualToValue={(option, val) => option.value === val?.value}
+                onChange={(_, val) => {
+                  onChange(val?.value ?? '');
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Search workflow step..."
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 1.5,
@@ -635,7 +714,7 @@ export function ProjectListPage(): JSX.Element {
       }
       return col;
     });
-  }, [employeeOptions]);
+  }, [employeeOptions, workflowStepOptions]);
 
   const renderEmptyState = useCallback(
     (hasFilters: boolean): JSX.Element => (

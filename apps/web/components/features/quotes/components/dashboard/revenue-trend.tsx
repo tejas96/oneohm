@@ -4,6 +4,8 @@ import Card from '@mui/material/Card';
 import * as React from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
+import { MUITypography } from '@/components/ui';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -14,7 +16,7 @@ export interface TrendPoint {
   accepted: number; // in Lakhs
 }
 
-interface RevenueTrendProps {
+export interface RevenueTrendProps {
   data: TrendPoint[];
   isLoading?: boolean;
 }
@@ -27,26 +29,32 @@ export function RevenueTrend({ data }: RevenueTrendProps): React.JSX.Element {
   return (
     <Card
       elevation={0}
-      className="flex-1 lg:w-[70%] p-6 rounded-[20px] border border-slate-200/80 bg-white shadow-sm flex flex-col justify-between min-h-[420px]"
+      className="flex-1 lg:w-[70%] p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col justify-between min-h-[420px]"
     >
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Revenue Trend</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <MUITypography variant="sectionTitle" className="font-semibold text-text-primary">
+              Revenue Trend
+            </MUITypography>
+            <MUITypography variant="finePrint" className="text-text-secondary mt-0.5">
               Pipeline valuation and accepted revenue over time
-            </p>
+            </MUITypography>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-4 mb-6">
           <div className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-blue-500" />
-            <span className="text-xs font-medium text-slate-600">Pipeline Value</span>
+            <span className="size-2 rounded-sm bg-blue-500" />
+            <MUITypography variant="finePrint" className="font-medium text-text-secondary">
+              Pipeline Value
+            </MUITypography>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-teal-500" />
-            <span className="text-xs font-medium text-slate-600">Accepted Revenue</span>
+            <span className="size-2 rounded-sm bg-teal-500" />
+            <MUITypography variant="finePrint" className="font-medium text-text-secondary">
+              Accepted Revenue
+            </MUITypography>
           </div>
         </div>
       </div>

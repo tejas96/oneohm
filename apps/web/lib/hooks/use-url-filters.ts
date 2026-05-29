@@ -20,15 +20,19 @@ export function useUrlFilters<T extends Record<string, string>>(
   defaults: T,
 ): {
   filters: T;
-  setFilter: ((key: keyof T, value: string) => void) & ((updates: Partial<T>) => void);
+  setFilter: (keyOrUpdates: keyof T | Partial<T>, value?: string) => void;
   clearFilters: () => void;
 } {
   const searchParams = useSearchParams();
 
   const readFromUrl = useCallback((): T => {
     const result = { ...defaults };
-    for (const key of Object.keys(defaults)) {
-      result[key as keyof T] = (searchParams.get(key) ?? defaults[key]) as T[keyof T];
+    let key: keyof T;
+    for (key in defaults) {
+      const defaultValue = defaults[key];
+      const urlValue = searchParams.get(String(key));
+      const val = urlValue !== null ? urlValue : defaultValue;
+      Object.assign(result, { [key]: val });
     }
     return result;
   }, [searchParams, defaults]);
@@ -44,8 +48,12 @@ export function useUrlFilters<T extends Record<string, string>>(
     const handler = () => {
       const params = new URLSearchParams(window.location.search);
       const updated = { ...defaultsRef.current };
-      for (const key of Object.keys(defaultsRef.current)) {
-        updated[key as keyof T] = (params.get(key) ?? defaultsRef.current[key]) as T[keyof T];
+      let key: keyof T;
+      for (key in defaultsRef.current) {
+        const defaultValue = defaultsRef.current[key];
+        const urlValue = params.get(String(key));
+        const val = urlValue !== null ? urlValue : defaultValue;
+        Object.assign(updated, { [key]: val });
       }
       setFilters(updated);
     };
@@ -54,17 +62,40 @@ export function useUrlFilters<T extends Record<string, string>>(
     return () => window.removeEventListener('popstate', handler);
   }, []);
 
+  // Sync from URL when searchParams change (handles client-side Next.js Link / router navigation)
+  useEffect(() => {
+    if (userChangedRef.current) return;
+
+    const updated = { ...defaultsRef.current };
+    let hasChanges = false;
+    let key: keyof T;
+    for (key in defaultsRef.current) {
+      const defaultValue = defaultsRef.current[key];
+      const urlValue = searchParams.get(String(key));
+      const val = urlValue !== null ? urlValue : defaultValue;
+      if (filters[key] !== val) {
+        Object.assign(updated, { [key]: val });
+        hasChanges = true;
+      }
+    }
+    if (hasChanges) {
+      setFilters(updated);
+    }
+  }, [searchParams, filters]);
+
   // Sync filter state → URL after render (only for user-initiated changes)
   useEffect(() => {
     if (!userChangedRef.current) return;
     userChangedRef.current = false;
 
     const params = new URLSearchParams(window.location.search);
-    for (const [key, value] of Object.entries(filters)) {
-      if (value && value !== defaultsRef.current[key as keyof T]) {
-        params.set(key, value);
+    let key: keyof T;
+    for (key in filters) {
+      const value = filters[key];
+      if (value && value !== defaultsRef.current[key]) {
+        params.set(String(key), value);
       } else {
-        params.delete(key);
+        params.delete(String(key));
       }
     }
     const qs = params.toString();
@@ -74,15 +105,18 @@ export function useUrlFilters<T extends Record<string, string>>(
 
   const setFilter = useCallback((keyOrUpdates: keyof T | Partial<T>, value?: string) => {
     userChangedRef.current = true;
-    setFilters((prev) => {
-      const next: Record<string, string> = { ...prev };
-      if (typeof keyOrUpdates === 'string') {
-        next[keyOrUpdates] = value ?? '';
-      } else {
-        Object.assign(next, keyOrUpdates);
-      }
-      return next as T;
-    });
+    if (typeof keyOrUpdates === 'string') {
+      setFilters((prev) => {
+        const next = { ...prev };
+        Object.assign(next, { [keyOrUpdates]: value ?? '' });
+        return next;
+      });
+    } else if (typeof keyOrUpdates === 'object' && keyOrUpdates !== null) {
+      setFilters((prev) => ({
+        ...prev,
+        ...keyOrUpdates,
+      }));
+    }
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -90,5 +124,5 @@ export function useUrlFilters<T extends Record<string, string>>(
     setFilters(defaultsRef.current);
   }, []);
 
-  return { filters, setFilter: setFilter as never, clearFilters };
+  return { filters, setFilter, clearFilters };
 }

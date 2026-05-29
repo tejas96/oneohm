@@ -112,14 +112,14 @@ export function PriorityBreakdownChart({
 
   if (isLoading) {
     return (
-      <Card className="p-5">
-        <Skeleton className="h-4 w-36 mb-5" />
-        <div className="flex items-end gap-3 h-36 px-2">
+      <Card className="p-5 h-[340px] flex flex-col justify-between">
+        <Skeleton className="h-4 w-36 shrink-0" />
+        <div className="flex items-end gap-3 flex-1 h-32 px-2 my-3">
           {[60, 85, 45, 70, 30].map((h, i) => (
             <Skeleton key={i} className="flex-1 rounded-t" style={{ height: `${h}%` }} />
           ))}
         </div>
-        <div className="mt-3 flex gap-3">
+        <div className="flex gap-3 shrink-0">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-3 flex-1" />
           ))}
@@ -130,9 +130,9 @@ export function PriorityBreakdownChart({
 
   if (chartData.length === 0) {
     return (
-      <Card className="p-5">
-        <p className="text-sm font-semibold text-foreground mb-4">Priority Breakdown</p>
-        <div className="flex items-center justify-center h-36 text-foreground-tertiary text-xs">
+      <Card className="p-5 h-[340px] flex flex-col">
+        <p className="text-sm font-semibold text-foreground mb-4 shrink-0">Priority Breakdown</p>
+        <div className="flex items-center justify-center flex-1 text-foreground-tertiary text-xs">
           No tasks yet
         </div>
       </Card>
@@ -145,8 +145,8 @@ export function PriorityBreakdownChart({
   const yDomain: [number, number] = [0, Math.ceil(maxCount * 1.25)];
 
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between mb-4">
+    <Card className="p-5 h-[340px] flex flex-col justify-between">
+      <div className="flex items-center justify-between mb-2 shrink-0">
         <p className="text-sm font-semibold text-foreground">Priority Breakdown</p>
         <Link
           href={buildTasksTabUrl(projectPath)}
@@ -157,64 +157,66 @@ export function PriorityBreakdownChart({
       </div>
 
       {/* Vertical bar chart — bars are clickable */}
-      <ResponsiveContainer width="100%" height={180}>
-        <BarChart
-          data={chartData}
-          margin={{ top: 20, right: 4, left: -28, bottom: 0 }}
-          barCategoryGap="30%"
-        >
-          <XAxis
-            dataKey="name"
-            tick={{ fontSize: 11, fill: '#71717a' }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            domain={yDomain}
-            tick={{ fontSize: 11, fill: '#71717a' }}
-            tickLine={false}
-            axisLine={false}
-            allowDecimals={false}
-          />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-          <Bar
-            dataKey="count"
-            radius={[4, 4, 0, 0]}
-            maxBarSize={48}
-            isAnimationActive
-            onClick={handleBarClick}
-            style={{ cursor: 'pointer' }}
+      <div className="flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={chartData}
+            margin={{ top: 20, right: 4, left: -28, bottom: 0 }}
+            barCategoryGap="30%"
           >
-            {chartData.map((entry, index) => (
-              <Cell key={index} fill={entry.color} fillOpacity={0.9} />
-            ))}
-            <LabelList
-              dataKey="count"
-              position="top"
-              style={{ fontSize: 11, fontWeight: 600, fill: '#52525b' }}
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 11, fill: '#71717a' }}
+              tickLine={false}
+              axisLine={false}
             />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+            <YAxis
+              domain={yDomain}
+              tick={{ fontSize: 11, fill: '#71717a' }}
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+            <Bar
+              dataKey="count"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={40}
+              isAnimationActive
+              onClick={handleBarClick}
+              style={{ cursor: 'pointer' }}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={index} fill={entry.color} fillOpacity={0.9} />
+              ))}
+              <LabelList
+                dataKey="count"
+                position="top"
+                style={{ fontSize: 11, fontWeight: 600, fill: '#52525b' }}
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
 
       {/* Dot legend with percentages — each item is a link */}
-      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 pt-3 border-t border-border-light">
+      <div className="flex flex-wrap gap-x-2 gap-y-1 mt-2 pt-2 border-t border-border-light shrink-0">
         {chartData.map((row) => {
           const pct = total > 0 ? Math.round((row.count / total) * 100) : 0;
           return (
             <Link
               key={row.key}
               href={buildTasksTabUrl(projectPath, { priority: row.key })}
-              className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 hover:bg-muted transition-colors group"
+              className="flex items-center gap-1 rounded-md px-1 py-0.5 hover:bg-muted transition-colors group"
             >
               <span
                 className="size-2 rounded-full shrink-0"
                 style={{ backgroundColor: row.color }}
               />
-              <span className="text-xs text-foreground-secondary group-hover:text-primary transition-colors">
+              <span className="text-[11px] text-foreground-secondary group-hover:text-primary transition-colors">
                 {row.name}
               </span>
-              <span className="text-xs text-foreground-tertiary">({pct}%)</span>
+              <span className="text-[10px] text-foreground-tertiary">({pct}%)</span>
             </Link>
           );
         })}

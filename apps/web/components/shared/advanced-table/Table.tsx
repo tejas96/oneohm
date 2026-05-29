@@ -153,7 +153,7 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
-  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [filterAnchorEl, setFilterAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     () => new Set(columns.filter((c) => !c.defaultHidden).map((c) => c.field)),
   );
@@ -535,8 +535,8 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
           {enableFilters && hasFilterableColumns && (
             <TableFiltersToggle
               filters={filters}
-              open={filterPanelOpen}
-              onToggle={() => setFilterPanelOpen((v) => !v)}
+              open={Boolean(filterAnchorEl)}
+              onToggle={(e) => setFilterAnchorEl((prev) => (prev ? null : e.currentTarget))}
             />
           )}
 
@@ -581,7 +581,8 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
           <TableFilters
             columns={columns}
             filters={filters}
-            open={filterPanelOpen}
+            anchorEl={filterAnchorEl}
+            onClose={() => setFilterAnchorEl(null)}
             onFilterChange={stableHandleFilterChange}
           />
         )}
@@ -789,16 +790,13 @@ function ColumnVisibilityMenu<TRow>({
   return (
     <>
       <Tooltip title="Toggle columns">
-        <Button
+        <IconButton
           size="small"
-          variant="outlined"
-          color="inherit"
           onClick={(e) => setAnchorEl(e.currentTarget)}
-          startIcon={<ViewColumnIcon />}
-          sx={{ fontWeight: 500 }}
+          className="border border-border-light rounded-lg p-2.5 bg-background hover:bg-background-secondary"
         >
-          Columns
-        </Button>
+          <ViewColumnIcon className="size-4" />
+        </IconButton>
       </Tooltip>
       <Menu
         anchorEl={anchorEl}
