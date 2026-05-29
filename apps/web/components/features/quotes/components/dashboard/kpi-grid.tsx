@@ -4,7 +4,6 @@ import Card from '@mui/material/Card';
 import { Building2, CheckCircle2, Sparkles, TrendingUp } from 'lucide-react';
 import * as React from 'react';
 
-
 // ============================================================================
 // Types
 // ============================================================================

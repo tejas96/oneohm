@@ -357,4 +357,3 @@ export function useProjectListResource(filters: ProjectListFilters = {}) {
     staleTime: STALE_TIMES.fast,
   });
 }
-

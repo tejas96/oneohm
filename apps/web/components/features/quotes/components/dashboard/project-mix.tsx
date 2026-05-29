@@ -4,7 +4,6 @@ import Card from '@mui/material/Card';
 import * as React from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -61,7 +60,10 @@ export function ProjectMix({ data, totalCount }: ProjectMixProps): React.JSX.Ele
                   borderRadius: '12px',
                   fontSize: 11,
                 }}
-                formatter={(v) => [typeof v === 'number' || typeof v === 'string' ? `${v}%` : '', '']}
+                formatter={(v) => [
+                  typeof v === 'number' || typeof v === 'string' ? `${v}%` : '',
+                  '',
+                ]}
               />
             </PieChart>
           </ResponsiveContainer>
