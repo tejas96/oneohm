@@ -5,6 +5,7 @@ import {
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -26,11 +27,13 @@ import type { CurrentUserType } from '../../auth/types';
 import {
   CreateProfileDto,
   CreateUserDto,
+  RegisterDeviceTokenDto,
   UpdateUserDto,
   UpdateUserStatusDto,
   UserResponseDto,
 } from '../dto';
 import type { UserSortField, SortOrder } from '../repositories/user.repository';
+import { DeviceTokenService } from '../services/device-token.service';
 import { ProfileService } from '../services/profile.service';
 import { UserService } from '../services/user.service';
 
@@ -47,6 +50,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly profileService: ProfileService,
+    private readonly deviceTokenService: DeviceTokenService,
   ) {}
 
   @ApiCreate({
@@ -207,6 +211,14 @@ export class UserController {
     };
 
     return response;
+  }
+
+  @Post('device-token')
+  async registerDeviceToken(
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() dto: RegisterDeviceTokenDto,
+  ): Promise<{ registered: true }> {
+    return this.deviceTokenService.register(currentUser.id, dto);
   }
 
   @ApiReadOne({

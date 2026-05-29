@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -24,13 +25,16 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { hasAdminBypassRole } from '../../iam/constants';
 import {
   ConvertFromQuoteDto,
   ProjectResponseDto,
   UpdateProjectDto,
   UpdateProjectStatusDto,
 } from '../dto';
+import { TeamMemberResponseDto } from '../dto/project-team';
 import { ProjectListItemDto } from '../dto/projects/project-list-item.dto';
+import { ProjectRepository } from '../repositories';
 import { ProjectTeamService } from '../services/project-team.service';
 import { ProjectService } from '../services/project.service';
 
@@ -48,6 +52,7 @@ export class ProjectController {
   constructor(
     private readonly projectService: ProjectService,
     private readonly teamService: ProjectTeamService,
+    private readonly projectRepository: ProjectRepository,
   ) {}
 
   /**
@@ -383,5 +388,36 @@ export class ProjectController {
   ): Promise<{ message: string }> {
     await this.projectService.syncBomFromSnapshot(organizationId, id, currentUser.id);
     return { message: 'BOM synced successfully' };
+  }
+
+  /**
+   * Get project team for customer
+   */
+  @Get(':id/customer-team')
+  @ApiOperation({
+    summary: 'Get project team for customer',
+    description: 'Retrieve project team members for customer bypass, checking customer ownership',
+  })
+  async getCustomerTeam(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<TeamMemberResponseDto[]> {
+    const project = await this.projectRepository.repository.findOne({
+      where: { id },
+      relations: ['property', 'property.customer'],
+    });
+
+    const isCustomer = project?.property?.customer?.userId === currentUser.id;
+    const isSharedAdmin = hasAdminBypassRole(currentUser.roles || []);
+
+    if (!project || (!isCustomer && !isSharedAdmin)) {
+      throw new ForbiddenException('You are not the customer of this project');
+    }
+
+    const members = await this.teamService.getTeamMembers(id);
+
+    return plainToInstance(TeamMemberResponseDto, members, {
+      excludeExtraneousValues: true,
+    });
   }
 }

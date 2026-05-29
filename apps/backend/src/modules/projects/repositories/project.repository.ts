@@ -231,6 +231,36 @@ export class ProjectRepository {
   }
 
   /**
+   * Get task counts (completedTasks, totalTasks) for a list of project IDs.
+   * Excludes deleted tasks. Excludes cancelled tasks from total count.
+   */
+  async getTaskCounts(
+    projectIds: string[],
+  ): Promise<Map<string, { completedTasks: number; totalTasks: number }>> {
+    if (projectIds.length === 0) return new Map();
+
+    const results = await this.repository.manager
+      .createQueryBuilder()
+      .select('task.project_id', 'projectId')
+      .addSelect("COUNT(*) FILTER (WHERE task.status = 'done')", 'completedTasks')
+      .addSelect("COUNT(*) FILTER (WHERE task.status != 'cancelled')", 'totalTasks')
+      .from('project_tasks', 'task')
+      .where('task.project_id IN (:...projectIds)', { projectIds })
+      .andWhere('task.deleted_at IS NULL')
+      .groupBy('task.project_id')
+      .getRawMany<{ projectId: string; completedTasks: string; totalTasks: string }>();
+
+    const map = new Map<string, { completedTasks: number; totalTasks: number }>();
+    for (const row of results) {
+      map.set(row.projectId, {
+        completedTasks: parseInt(row.completedTasks, 10) || 0,
+        totalTasks: parseInt(row.totalTasks, 10) || 0,
+      });
+    }
+    return map;
+  }
+
+  /**
    * Update a project
    * Validates ownership via findById before updating
    */

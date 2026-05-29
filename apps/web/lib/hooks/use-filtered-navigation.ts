@@ -143,7 +143,7 @@ export function useFilteredNavigation(): UseFilteredNavigationReturn {
  * Use within components that already have useFilteredNavigation
  *
  * Uses ROUTE_TO_PANEL_MAP for accurate route-to-panel mapping.
- * This ensures routes like /properties, /site-visits, /followups
+ * This ensures routes like /properties
  * correctly show the CRM panel (not dashboard).
  */
 export function getFilteredPanelByPath(

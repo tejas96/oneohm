@@ -126,8 +126,7 @@ function AdvancedTableHeaderInner<TRow>({
 
   const headerCellSx = {
     // Opaque — prevents row content bleeding through on scroll.
-    // #f4f4f5 = zinc-100: subtle tint that distinguishes header from body rows.
-    backgroundColor: '#f4f4f5',
+    backgroundColor: '#fafafa',
     borderBottom: '2px solid',
     borderColor: 'divider',
     py: 1.25,

@@ -203,14 +203,8 @@ export function QuotePreviewPanel({
   const displayTotalGst = displayGst5 + displayGst18;
   const displayDiscountedBase = Math.round(discounted.discountedBase);
   const displayGrossTotal = displayDiscountedBase + displayTotalGst;
-  const adjustedEffectivePrice = Math.max(
-    0,
-    displayGrossTotal - Math.round(calculation.subsidy.amount),
-  );
   const pricePerWatt =
-    calculation.actualTotalWattage > 0
-      ? adjustedEffectivePrice / calculation.actualTotalWattage
-      : 0;
+    calculation.actualTotalWattage > 0 ? displayGrossTotal / calculation.actualTotalWattage : 0;
 
   const subsidySchemesList = Array.isArray(calculation.subsidy.schemes)
     ? calculation.subsidy.schemes
@@ -668,8 +662,8 @@ export function QuotePreviewPanel({
                     </div>
                   )}
                   <div className="mt-2 flex justify-between border-t border-success/20 pt-2 text-xs font-medium text-success">
-                    <span>Scheme total ({scheme.eligibleKw} kW eligible)</span>
-                    <span>-{formatCurrency(scheme.amount)}</span>
+                    <span>Eligible subsidy ({scheme.eligibleKw} kW eligible)</span>
+                    <span>{formatCurrency(scheme.amount)}</span>
                   </div>
                 </div>
               ))
@@ -700,13 +694,13 @@ export function QuotePreviewPanel({
             )}
             <div className="flex items-center justify-between rounded-lg border border-success/20 bg-success/5 px-3 py-2">
               <span className="text-xs font-medium text-success">
-                Total Subsidy
+                Eligible Government Subsidy
                 {!hasSubsidySchemes && calculation.subsidy.eligibleKw
                   ? ` (${calculation.subsidy.eligibleKw} kW eligible)`
                   : ''}
               </span>
               <span className="text-lg font-semibold text-success">
-                -{formatCurrency(calculation.subsidy.amount)}
+                {formatCurrency(calculation.subsidy.amount)}
               </span>
             </div>
           </div>
@@ -811,12 +805,12 @@ export function QuotePreviewPanel({
             </div>
             {calculation.subsidy.isApplicable && calculation.subsidy.amount > 0 && (
               <div className="flex items-center justify-between text-sm text-success">
-                <span>Subsidy</span>
+                <span>Eligible Government Subsidy</span>
                 <Can
                   permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
                   fallback={<span className="text-foreground-secondary">—</span>}
                 >
-                  <span>-{formatCurrency(calculation.subsidy.amount)}</span>
+                  <span>{formatCurrency(calculation.subsidy.amount)}</span>
                 </Can>
               </div>
             )}
@@ -832,9 +826,7 @@ export function QuotePreviewPanel({
                 <p className="text-xs text-white/60">₹{pricePerWatt.toFixed(2)}/Watt</p>
               </div>
               <p className="text-2xl font-semibold text-white">
-                {formatCurrency(
-                  calculation.subsidy.isApplicable ? adjustedEffectivePrice : displayGrossTotal,
-                )}
+                {formatCurrency(displayGrossTotal)}
               </p>
             </div>
           </div>

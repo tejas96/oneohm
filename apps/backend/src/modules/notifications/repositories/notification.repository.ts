@@ -46,14 +46,14 @@ export class NotificationRepository {
   }
 
   async markRead(id: string, userId: string): Promise<void> {
-    await this.repository.update({ id, userId }, { readAt: new Date() });
+    await this.repository.update({ id, userId }, { readAt: () => 'CURRENT_TIMESTAMP' });
   }
 
   async markAllRead(userId: string, organizationId: string): Promise<void> {
     await this.repository
       .createQueryBuilder()
       .update(NotificationEntity)
-      .set({ readAt: new Date() })
+      .set({ readAt: () => 'CURRENT_TIMESTAMP' })
       .where('user_id = :userId', { userId })
       .andWhere('organization_id = :organizationId', { organizationId })
       .andWhere('read_at IS NULL')

@@ -10,6 +10,10 @@ import { Column, CreateDateColumn, Entity, Index } from 'typeorm';
 @Index(['organizationId'])
 @Index(['userId', 'readAt'])
 @Index(['userId', 'createdAt'])
+@Index('uq_notifications_user_dedupe', ['userId', 'dedupeKey'], {
+  unique: true,
+  where: 'dedupe_key IS NOT NULL',
+})
 export class NotificationEntity {
   @Column({ type: 'uuid', primary: true, default: () => 'gen_random_uuid()' })
   id!: string;

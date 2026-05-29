@@ -79,6 +79,7 @@ export interface QuoteListItem {
   createdAt: string;
   updatedAt: string;
   createdBy: string;
+  actualSystemSizeKw?: number;
 }
 
 export interface PropertyQuoteVersionItem {
@@ -89,6 +90,7 @@ export interface PropertyQuoteVersionItem {
   quoteDate: string;
   systemSizeKw?: number;
   totalWattageWp?: number;
+  actualSystemSizeKw?: number;
   effectivePrice?: number;
 }
 

@@ -105,12 +105,19 @@ export default (): Configuration => ({
     googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
   },
 
+  firebase: {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY,
+    serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
+  },
+
   integrations: {
     encryptionKey: process.env.INTEGRATION_ENCRYPTION_KEY,
     msg91AuthKey: process.env.MSG91_AUTH_KEY,
     msg91SenderId: process.env.MSG91_SENDER_ID,
-    msg91DltTemplateId: process.env.MSG91_DLT_TEMPLATE_ID,
-    msg91OtpTemplateId: process.env.MSG91_PASSWORD_UPDATE_TEMPLATE_ID,
+    msg91LoginTemplateId: process.env.MSG91_LOGIN_TEMPLATE_ID,
+    msg91PasswordResetTemplateId: process.env.MSG91_PASSWORD_RESET_TEMPLATE_ID,
   },
 
   seed: {

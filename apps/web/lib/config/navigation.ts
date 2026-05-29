@@ -9,7 +9,6 @@ import {
   CalendarClock,
   CheckCircle,
   CheckSquare,
-  Clock,
   Edit,
   FileBarChart,
   FileText,
@@ -20,7 +19,6 @@ import {
   LayoutGrid,
   Layers,
   List,
-  MapPin,
   MoreHorizontal,
   Package,
   Plus,
@@ -239,12 +237,6 @@ export const navigationConfig: NavigationConfig = {
                 },
               ],
             },
-            {
-              id: 'site-visits',
-              icon: MapPin,
-              label: 'Site Visits',
-              href: ROUTES.SITE_VISITS.LIST,
-            },
           ],
         },
         {
@@ -255,33 +247,6 @@ export const navigationConfig: NavigationConfig = {
               icon: TrendingUp,
               label: 'Sales Funnel',
               href: ROUTES.PIPELINE.HOME,
-            },
-          ],
-        },
-        {
-          title: 'Follow-ups',
-          items: [
-            {
-              id: 'followups-today',
-              icon: Clock,
-              label: 'Today',
-              href: ROUTES.FOLLOWUPS.LIST,
-              // badge: dynamically set via useNavigationCounts (crm.followups.today)
-              badgeVariant: 'warning' as const,
-            },
-            {
-              id: 'followups-overdue',
-              icon: Clock,
-              label: 'Overdue',
-              href: `${ROUTES.FOLLOWUPS.LIST}?filter=overdue`,
-              // badge: dynamically set via useNavigationCounts (crm.followups.overdue)
-              badgeVariant: 'error' as const,
-            },
-            {
-              id: 'followups-upcoming',
-              icon: Calendar,
-              label: 'Upcoming',
-              href: `${ROUTES.FOLLOWUPS.LIST}?filter=upcoming`,
             },
           ],
         },

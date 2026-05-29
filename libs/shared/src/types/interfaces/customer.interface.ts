@@ -14,6 +14,8 @@ import {
   PropertyType,
 } from '../enums/customer.enum';
 import { QuoteStatus } from '../enums/quote.enum';
+import type { Project } from './project.interface';
+import type { Quote } from './quote.interface';
 
 // ============================================================================
 // Customer Property Interface
@@ -83,6 +85,10 @@ export interface CustomerProperty {
   createdBy?: string;
   /** User ID who last updated this property */
   updatedBy?: string;
+  /** Eagerly joined project details if any */
+  project?: Project;
+  /** Eagerly joined quotes list if any */
+  quotes?: Quote[];
 }
 
 // ============================================================================

@@ -93,6 +93,8 @@ export class ProjectService {
       currentPhase: string | null;
       healthStatus: string | null;
       paymentSummary: { totalExpected: number; totalPaid: number };
+      completedTasks: number;
+      totalTasks: number;
     })[];
     total: number;
     page: number;
@@ -107,14 +109,21 @@ export class ProjectService {
 
     const projectIds = projects.map((p) => p.id);
     const paymentMap = await this.projectRepository.getPaymentSummaries(projectIds);
+    const taskCountMap = await this.projectRepository.getTaskCounts(projectIds);
 
     const enriched = await Promise.all(
       projects.map(async (project) => {
         const currentPhase = await this.computeCurrentPhaseFromTasks(project.id);
         const healthStatus = this.computeHealthStatus(project);
         const paymentSummary = paymentMap.get(project.id) ?? { totalExpected: 0, totalPaid: 0 };
+        const taskCounts = taskCountMap.get(project.id) ?? { completedTasks: 0, totalTasks: 0 };
 
-        return Object.assign(project, { currentPhase, healthStatus, paymentSummary });
+        return Object.assign(project, {
+          currentPhase,
+          healthStatus,
+          paymentSummary,
+          ...taskCounts,
+        });
       }),
     );
 
@@ -339,8 +348,12 @@ export class ProjectService {
       property?.consumerName ||
       `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
       'Customer';
+    const actualKw = latestVersion?.totalWattageWp
+      ? Number(latestVersion.totalWattageWp) / 1000
+      : latestVersion?.systemSizeKw;
+    const actualKwFormatted = actualKw != null ? parseFloat(Number(actualKw).toFixed(2)) : '';
     const autoName =
-      `${customerName} - ${latestVersion?.systemSizeKw ?? ''}kW Solar Installation`.trim();
+      `${customerName} - ${actualKwFormatted ? `${actualKwFormatted}kW ` : ''}Solar Installation`.trim();
     const paymentMilestones: PaymentMilestone[] = latestVersion?.paymentMilestones || [];
 
     // Build milestone list: prefer explicit input, else derive names from payment milestone names

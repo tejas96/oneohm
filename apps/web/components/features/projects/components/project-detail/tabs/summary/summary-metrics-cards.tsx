@@ -37,7 +37,7 @@ function MetricCard({
   return (
     <Link
       href={href}
-      className="bg-surface border border-border rounded-xl p-4 flex items-center gap-3 hover:shadow-md hover:border-primary/30 hover:-translate-y-px transition-all duration-150 group"
+      className="bg-card border border-border-light/50 shadow-card hover:shadow-card-hover hover:border-primary/20 hover:-translate-y-px rounded-xl p-4 flex items-center gap-3 transition-all duration-150 group"
     >
       {/* Icon chip */}
       <div

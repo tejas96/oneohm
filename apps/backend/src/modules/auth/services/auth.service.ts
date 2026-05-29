@@ -113,6 +113,8 @@ export class AuthService {
 
     this.logger.log(`User logged in successfully: ${email}`);
 
+    const primaryProfile = profiles.find((p) => p.isPrimary) || profiles[0];
+
     const loginUser: LoginUserDto = {
       id: user.id,
       email: user.email ?? '',
@@ -126,6 +128,7 @@ export class AuthService {
       emailVerified: !!user.emailVerifiedAt,
       phoneVerified: !!user.phoneVerifiedAt,
       fullName: `${user.firstName} ${user.lastName || ''}`.trim(),
+      organizationId: primaryProfile?.organizationId,
     };
 
     return {
@@ -236,6 +239,8 @@ export class AuthService {
     const profiles = await this.fetchUserProfiles(user.id);
     const permissions = await this.iamService.getUserPermissions(user.id);
 
+    const primaryProfile = profiles.find((p) => p.isPrimary) || profiles[0];
+
     const loginUser: LoginUserDto = {
       id: user.id,
       email: user.email ?? '',
@@ -249,6 +254,7 @@ export class AuthService {
       emailVerified: !!user.emailVerifiedAt,
       phoneVerified: !!user.phoneVerifiedAt,
       fullName: `${user.firstName} ${user.lastName || ''}`.trim(),
+      organizationId: primaryProfile?.organizationId,
     };
 
     return {
@@ -378,6 +384,8 @@ export class AuthService {
     // Fetch permissions for all user's roles using IAM service
     const permissions = await this.iamService.getUserPermissions(user.id);
 
+    const primaryProfile = profiles.find((p) => p.isPrimary) || profiles[0];
+
     const loginUser: LoginUserDto = {
       id: user.id,
       email: user.email || '',
@@ -391,6 +399,7 @@ export class AuthService {
       emailVerified: !!user.emailVerifiedAt,
       phoneVerified: !!user.phoneVerifiedAt,
       fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+      organizationId: primaryProfile?.organizationId,
     };
 
     return {
@@ -480,7 +489,7 @@ export class AuthService {
       ipAddress,
       userAgent,
     });
-    await this.platformSmsService.sendOtp(normalizedPhone, otp);
+    await this.platformSmsService.sendOtp(normalizedPhone, otp, 'password-reset');
 
     this.logger.log(`Password reset OTP sent to phone: ${normalizedPhone}`);
     return { message: 'OTP sent successfully' };

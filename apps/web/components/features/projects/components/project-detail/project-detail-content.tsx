@@ -1,5 +1,6 @@
 'use client';
 
+import Box from '@mui/material/Box';
 import { FolderOpen } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -21,7 +22,6 @@ import { ProjectFinanceTab } from '@/components/features/finance';
 import { ProjectAllocationsTab } from '@/components/features/inventory';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TabsContent } from '@/components/ui/tabs';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { getErrorMessage } from '@/lib/utils/error';
 import { recordRecentView } from '@/lib/utils/recent-views';
@@ -131,51 +131,53 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
     <div className="p-4 space-y-4">
       <ProjectDetailHeader project={project} onEdit={() => setEditModalOpen(true)} />
 
-      <ProjectDetailTabs activeTab={activeTab} onTabChange={handleTabChange}>
-        <TabsContent value="overview">
-          <ProjectOverviewTab project={project} isActive={activeTab === 'overview'} />
-        </TabsContent>
+      <ProjectDetailTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-        <TabsContent value="summary">
+      <Box className="mt-4">
+        <Box sx={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+          <ProjectOverviewTab project={project} isActive={activeTab === 'overview'} />
+        </Box>
+
+        <Box sx={{ display: activeTab === 'summary' ? 'block' : 'none' }}>
           <ProjectSummaryTab
             project={project}
             projectId={projectId}
             isActive={activeTab === 'summary'}
           />
-        </TabsContent>
+        </Box>
 
-        <TabsContent value="tasks">
+        <Box sx={{ display: activeTab === 'tasks' ? 'block' : 'none' }}>
           <ProjectTasksTab
             projectId={projectId}
             project={project}
             isActive={activeTab === 'tasks'}
           />
-        </TabsContent>
+        </Box>
 
-        <TabsContent value="documents">
+        <Box sx={{ display: activeTab === 'documents' ? 'block' : 'none' }}>
           <ProjectDocumentsTab projectId={projectId} propertyId={project.propertyId} />
-        </TabsContent>
+        </Box>
 
-        <TabsContent value="finance">
+        <Box sx={{ display: activeTab === 'finance' ? 'block' : 'none' }}>
           <ProjectFinanceTab projectId={projectId} isActive={activeTab === 'finance'} />
-        </TabsContent>
+        </Box>
 
-        <TabsContent value="bom">
+        <Box sx={{ display: activeTab === 'bom' ? 'block' : 'none' }}>
           <ProjectBomTab projectId={projectId} defaultWarehouseId={project.defaultWarehouseId} />
-        </TabsContent>
+        </Box>
 
-        <TabsContent value="allocations">
+        <Box sx={{ display: activeTab === 'allocations' ? 'block' : 'none' }}>
           <ProjectAllocationsTab projectId={projectId} isActive={activeTab === 'allocations'} />
-        </TabsContent>
+        </Box>
 
-        <TabsContent value="reports">
+        <Box sx={{ display: activeTab === 'reports' ? 'block' : 'none' }}>
           <ProjectReportsTab projectId={projectId} />
-        </TabsContent>
+        </Box>
 
-        <TabsContent value="surveys">
+        <Box sx={{ display: activeTab === 'surveys' ? 'block' : 'none' }}>
           <ProjectSurveysTab propertyId={project.propertyId} />
-        </TabsContent>
-      </ProjectDetailTabs>
+        </Box>
+      </Box>
 
       <EditProjectModal
         open={editModalOpen}

@@ -1,7 +1,6 @@
 'use client';
 
 import AddIcon from '@mui/icons-material/Add';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import EditIcon from '@mui/icons-material/Edit';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -257,18 +256,6 @@ function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.El
             <NoteAddIcon fontSize="small" />
           </ListItemIcon>
           Create Quote
-        </MenuItem>
-
-        <MenuItem
-          onClick={() => {
-            handleClose();
-            void router.push(`${ROUTES.FOLLOWUPS.NEW}?propertyId=${property.id}`);
-          }}
-        >
-          <ListItemIcon>
-            <CalendarTodayIcon fontSize="small" />
-          </ListItemIcon>
-          Schedule Followup
         </MenuItem>
 
         <MenuItem

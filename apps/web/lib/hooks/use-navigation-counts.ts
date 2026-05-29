@@ -17,15 +17,6 @@ const MOCK_NAVIGATION_COUNTS: NavigationCounts = {
       warm: 18,
       cold: 24,
     },
-    followups: {
-      today: 8,
-      overdue: 3,
-      upcoming: 12,
-    },
-    siteVisits: {
-      scheduled: 4,
-      pending: 2,
-    },
   },
   quotes: {
     total: 42,
@@ -73,7 +64,7 @@ const MOCK_NAVIGATION_COUNTS: NavigationCounts = {
  * const { counts, isLoading, refetch } = useNavigationCounts();
  *
  * // Access specific counts
- * const overdueFollowups = counts.crm.followups.overdue;
+ * const totalCustomers = counts.crm.totalCustomers;
  * const hotProperties = counts.crm.properties.hot;
  * ```
  */
@@ -109,12 +100,12 @@ export function useNavigationCounts(): NavigationCountsState {
  * Helper to get a specific count value by path
  *
  * @param counts - Navigation counts object
- * @param path - Dot-notation path (e.g., 'crm.followups.overdue')
+ * @param path - Dot-notation path (e.g., 'crm.totalCustomers')
  * @returns The count value or undefined
  *
  * @example
  * ```tsx
- * const overdueCount = getCountByPath(counts, 'crm.followups.overdue');
+ * const customersCount = getCountByPath(counts, 'crm.totalCustomers');
  * ```
  */
 export function getCountByPath(counts: NavigationCounts, path: string): number | undefined {
@@ -131,14 +122,6 @@ export function getCountByPath(counts: NavigationCounts, path: string): number |
   }
 
   return typeof value === 'number' ? value : undefined;
-}
-
-/**
- * Get total CRM badge count (for rail item)
- * Shows sum of overdue followups + pending site visits
- */
-export function getCrmBadgeCount(counts: NavigationCounts): number {
-  return counts.crm.followups.overdue + counts.crm.siteVisits.pending;
 }
 
 /**

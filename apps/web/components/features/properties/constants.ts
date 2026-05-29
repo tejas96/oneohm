@@ -68,7 +68,6 @@ export const PROPERTY_ALERTS = {
 export const PROPERTY_DETAIL_TABS = [
   { value: 'siteactivity', label: 'Site Activity' },
   { value: 'quotes', label: 'Quotes' },
-  { value: 'followups', label: 'Followups' },
   { value: 'documents', label: 'Documents' },
 ] as const;
 

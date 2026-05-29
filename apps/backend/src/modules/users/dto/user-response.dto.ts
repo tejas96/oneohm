@@ -14,6 +14,10 @@ export class UserResponseDto {
   id!: string;
 
   @Expose()
+  @ApiPropertyOptional()
+  organizationId?: string;
+
+  @Expose()
   @ApiProperty()
   firstName!: string;
 

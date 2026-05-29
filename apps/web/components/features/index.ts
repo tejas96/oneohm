@@ -7,12 +7,6 @@ export * from './customers';
 // Properties
 export * from './properties';
 
-// Follow-ups
-export * from './followups';
-
-// Site Visits
-export * from './site-visits';
-
 // Documents (generic)
 export * from './documents';
 

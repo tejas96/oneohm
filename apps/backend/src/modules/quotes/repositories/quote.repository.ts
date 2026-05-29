@@ -16,6 +16,7 @@ export interface LatestQuoteInfo {
   quoteDate: Date;
   finalPrice?: number;
   systemSizeKw?: number;
+  totalWattageWp?: number;
 }
 
 const latestVersionJoinCondition = (quoteAlias: string): string => `cv.id = (
@@ -181,6 +182,8 @@ export class QuoteRepository {
           return dir * ((av?.systemSizeKw ?? 0) - (bv?.systemSizeKw ?? 0));
         case QuoteSortField.EFFECTIVE_PRICE:
           return dir * ((av?.effectivePrice ?? 0) - (bv?.effectivePrice ?? 0));
+        case QuoteSortField.FINAL_PRICE:
+          return dir * ((av?.finalPrice ?? 0) - (bv?.finalPrice ?? 0));
         case QuoteSortField.STATUS:
           return dir * a.status.localeCompare(b.status);
         case QuoteSortField.CUSTOMER_NAME: {
@@ -356,6 +359,7 @@ export class QuoteRepository {
         'cv.id',
         'cv.finalPrice',
         'cv.systemSizeKw',
+        'cv.totalWattageWp',
       ])
       .distinctOn(['quote.propertyId'])
       .where('quote.propertyId IN (:...propertyIds)', { propertyIds })
@@ -377,6 +381,7 @@ export class QuoteRepository {
           quoteDate: quote.quoteDate,
           finalPrice: cv?.finalPrice != null ? Number(cv.finalPrice) : undefined,
           systemSizeKw: cv?.systemSizeKw != null ? Number(cv.systemSizeKw) : undefined,
+          totalWattageWp: cv?.totalWattageWp != null ? Number(cv.totalWattageWp) : undefined,
         });
       }
     }

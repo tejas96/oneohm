@@ -15,6 +15,7 @@ import type { CalculateQuoteResponse, QuotePdfData } from '../../../types';
 import { Can } from '@/components/shared/guards';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { PERMISSIONS } from '@/lib/constants/permissions';
 import { type Bom, type BomItem, useQuoteConfig } from '@/lib/hooks/resources';
@@ -215,7 +216,6 @@ export function QuoteOverviewTab({
   const projectType = quote.projectType;
   const projectCompletionWeeks = quote.projectCompletionWeeks;
   const breakdown = quote.quoteSnapshot?.pricing ?? quote.pricingBreakdown;
-  const effectivePrice = quote.effectivePrice;
   const calcInputs = quote.quoteSnapshot?.inputs ?? quote.calculatorInputs;
 
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -529,17 +529,11 @@ export function QuoteOverviewTab({
             </Typography>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <LabelValue label="System Size">
-                {actualKw} kW
-                {showRequestedKw && (
-                  <Typography
-                    component="span"
-                    variant="caption"
-                    color="text.disabled"
-                    sx={{ ml: 0.5 }}
-                  >
-                    (requested {requestedKw} kW)
-                  </Typography>
-                )}
+                <SystemSizeDisplay
+                  actualKw={actualKw}
+                  requestedKw={showRequestedKw ? requestedKw : undefined}
+                  layout="inline"
+                />
               </LabelValue>
               <LabelValue label="Total Wattage">{totalWattageWp} Wp</LabelValue>
               <LabelValue label="System Type">
@@ -955,15 +949,7 @@ export function QuoteOverviewTab({
                       <Typography variant="body2" fontWeight={500}>
                         Gross Total
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        fontWeight={500}
-                        sx={
-                          effectivePrice != null && effectivePrice < breakdown.totalPrice
-                            ? { textDecoration: 'line-through', color: 'text.disabled' }
-                            : undefined
-                        }
-                      >
+                      <Typography variant="body2" fontWeight={500}>
                         {formatCurrency(breakdown.totalPrice)}
                       </Typography>
                     </div>
@@ -971,13 +957,13 @@ export function QuoteOverviewTab({
                 )}
                 {breakdown?.subsidyAmount != null && breakdown.subsidyAmount > 0 && (
                   <div className="flex justify-between text-success">
-                    <Typography variant="body2">Subsidy</Typography>
+                    <Typography variant="body2">Eligible Government Subsidy</Typography>
                     <Typography variant="body2">
-                      -{formatCurrency(breakdown.subsidyAmount)}
+                      {formatCurrency(breakdown.subsidyAmount)}
                     </Typography>
                   </div>
                 )}
-                {effectivePrice != null && (
+                {breakdown?.totalPrice != null && (
                   <>
                     <Divider />
                     <div className="flex justify-between">
@@ -985,7 +971,7 @@ export function QuoteOverviewTab({
                         You Pay
                       </Typography>
                       <Typography variant="body1" fontWeight={600} color="primary">
-                        {formatCurrency(effectivePrice)}
+                        {formatCurrency(breakdown.totalPrice)}
                       </Typography>
                     </div>
                   </>

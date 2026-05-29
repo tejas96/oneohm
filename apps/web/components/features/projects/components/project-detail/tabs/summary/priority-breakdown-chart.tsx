@@ -14,6 +14,7 @@ import {
   YAxis,
 } from 'recharts';
 
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LookupOption } from '@/lib/hooks/resources';
 import { buildTasksTabUrl } from '@/lib/utils';
@@ -111,7 +112,7 @@ export function PriorityBreakdownChart({
 
   if (isLoading) {
     return (
-      <div className="bg-surface border border-border-light rounded-xl p-5">
+      <Card className="p-5">
         <Skeleton className="h-4 w-36 mb-5" />
         <div className="flex items-end gap-3 h-36 px-2">
           {[60, 85, 45, 70, 30].map((h, i) => (
@@ -123,18 +124,18 @@ export function PriorityBreakdownChart({
             <Skeleton key={i} className="h-3 flex-1" />
           ))}
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-surface border border-border-light rounded-xl p-5">
+      <Card className="p-5">
         <p className="text-sm font-semibold text-foreground mb-4">Priority Breakdown</p>
         <div className="flex items-center justify-center h-36 text-foreground-tertiary text-xs">
           No tasks yet
         </div>
-      </div>
+      </Card>
     );
   }
 
@@ -144,7 +145,7 @@ export function PriorityBreakdownChart({
   const yDomain: [number, number] = [0, Math.ceil(maxCount * 1.25)];
 
   return (
-    <div className="bg-surface border border-border-light rounded-xl p-5">
+    <Card className="p-5">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-semibold text-foreground">Priority Breakdown</p>
         <Link
@@ -218,6 +219,6 @@ export function PriorityBreakdownChart({
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

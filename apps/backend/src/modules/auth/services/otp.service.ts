@@ -13,6 +13,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { MoreThan } from 'typeorm';
 
+import { PlatformSmsService } from './platform-sms.service';
 import { ConfigService } from '../../../config/config.service';
 import { SecurityEventRepository } from '../../security-events/repositories/security-event.repository';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
@@ -38,6 +39,7 @@ export class OtpService {
     private readonly securityEventService: SecurityEventService,
     private readonly securityEventRepository: SecurityEventRepository,
     private readonly configService: ConfigService,
+    private readonly platformSmsService: PlatformSmsService,
   ) {
     this.isDevelopment = this.configService.isDevelopment;
     if (this.isDevelopment) {
@@ -248,13 +250,14 @@ export class OtpService {
 
     // Generate and store OTP
     try {
-      await this.generateAndStoreOtp({
+      const { otp } = await this.generateAndStoreOtp({
         phone,
         ipAddress: undefined, // TODO: Extract from request context
         userAgent: undefined, // TODO: Extract from request context
       });
 
-      // OTP is sent via MSG91 inside generateAndStoreOtp
+      await this.platformSmsService.sendOtp(phone, otp, 'login');
+
       return {
         message: 'OTP sent successfully',
       };

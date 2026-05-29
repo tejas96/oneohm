@@ -185,8 +185,10 @@ export const muiTheme = createTheme({
     MuiTableCell: {
       styleOverrides: {
         root: {
-          fontSize: FONT_SIZE, // 13px — body cells
+          fontSize: '0.75rem', // 12px for better data density
           lineHeight: 1.4,
+          padding: '6px 12px',
+          verticalAlign: 'middle',
         },
         head: {
           // Header cells inherit from TableHeader.tsx which sets
@@ -196,6 +198,25 @@ export const muiTheme = createTheme({
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
           lineHeight: 1.4,
+          backgroundColor: '#fafafa', // clean light grey header background
+          color: '#52525b', // text.secondary
+          padding: '8px 12px',
+        },
+      },
+    },
+
+    MuiTableRow: {
+      styleOverrides: {
+        root: {
+          '&:hover': {
+            backgroundColor: '#fafafa !important', // clean hover row style
+          },
+          '&.Mui-selected': {
+            backgroundColor: 'rgba(118, 192, 68, 0.06) !important', // subtle brand primary tint
+            '&:hover': {
+              backgroundColor: 'rgba(118, 192, 68, 0.1) !important',
+            },
+          },
         },
       },
     },
@@ -286,6 +307,20 @@ export const muiTheme = createTheme({
           '&:hover': {
             color: '#4d7c0f', // primary.dark
           },
+        },
+      },
+    },
+
+    /* ---- Card ---- */
+    MuiCard: {
+      defaultProps: {
+        elevation: 0,
+      },
+      styleOverrides: {
+        root: {
+          border: '1px solid #f4f4f5', // border-light
+          boxShadow: '0 2px 4px 0 rgba(16, 24, 40, 0.02), 0 4px 12px 0 rgba(16, 24, 40, 0.04)',
+          borderRadius: 8,
         },
       },
     },

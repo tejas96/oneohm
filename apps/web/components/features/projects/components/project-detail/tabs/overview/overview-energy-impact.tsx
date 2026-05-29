@@ -27,8 +27,10 @@ export function OverviewEnergyImpact({
     return null;
   }
 
+  const actualSizeKw = project.actualSystemSizeKw ?? project.systemSizeKw;
+
   const impact = computeSolarImpact({
-    systemSizeKw: project.systemSizeKw,
+    systemSizeKw: actualSizeKw,
     estimatedCost: project.estimatedCost,
   });
   const monthlySeries = buildMonthlySeries(impact.monthlyKwh);
@@ -55,7 +57,7 @@ export function OverviewEnergyImpact({
             Energy & Environmental Impact
           </p>
           <p className="text-[11px] text-foreground-secondary mt-1">
-            Forecast for {formatSystemSize(project.systemSizeKw)} kW system
+            Forecast for {formatSystemSize(actualSizeKw)} kW system
           </p>
         </div>
 

@@ -19,7 +19,7 @@ export function MainContent({ isPanelOpen, children, className }: MainContentPro
     <main
       className={cn(
         'min-h-[calc(100vh-var(--header-height))]',
-        'mt-header bg-background-tertiary',
+        'mt-header bg-background',
         'transition-all duration-200 ease-out',
         // Mobile: no left margin
         'ml-0',

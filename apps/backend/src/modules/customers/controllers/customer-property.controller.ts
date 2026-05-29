@@ -127,6 +127,28 @@ export class CustomerPropertyController {
   }
 
   /**
+   * Get properties for the logged-in customer user
+   */
+  @Get('my-properties')
+  @ApiOperation({
+    summary: 'Get properties for the logged-in customer',
+    description:
+      'Retrieve all active properties, including quotes and project details, for the logged-in customer.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'List of customer properties',
+    type: [CustomerPropertyResponseDto],
+  })
+  async findMyProperties(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerPropertyResponseDto[]> {
+    const properties = await this.propertyService.findMyProperties(currentUser.id, organizationId);
+    return toDtoArray(CustomerPropertyResponseDto, properties);
+  }
+
+  /**
    * Get properties by customer
    */
   @Get('customer/:customerId')

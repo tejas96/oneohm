@@ -58,11 +58,7 @@ const TableBody = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <tbody
-    ref={ref}
-    className={cn('divide-y divide-border-light [&_tr:last-child]:border-0', className)}
-    {...props}
-  />
+  <tbody ref={ref} className={cn('divide-y divide-border-light', className)} {...props} />
 ));
 TableBody.displayName = 'TableBody';
 
@@ -170,7 +166,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      'px-table-cell-x py-table-cell-y align-top text-sm',
+      'px-table-cell-x py-table-cell-y align-middle text-xs',
       '[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
       className,
     )}

@@ -19,8 +19,6 @@ export { PropertyDetailHeader } from './components/property-detail-header';
 export { PropertyForm } from './components/property-form';
 export { PropertyFormPage } from './components/property-form-page';
 export { MarkAsLostModal } from './components/mark-as-lost-modal';
-export { FollowupMiniList } from './components/followup-mini-list';
-export { PropertyFollowupsTab } from './components/property-followups-tab';
 export { PropertyActivityTab } from './components/property-activity-tab';
 
 // Hooks

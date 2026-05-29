@@ -35,6 +35,7 @@ import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { showToast } from '@/components/ui/sonner';
+import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useQuoteListResource, type QuoteListFilters } from '@/lib/hooks/resources';
@@ -55,12 +56,26 @@ const STATUS_OPTIONS = Object.values(QuoteStatus).map((value) => ({
 // Adapter functions — pure, module-level, no React deps
 // ============================================================================
 
+// Maps AdvancedTable column field names → backend QuoteSortField enum values.
+// Required when the column field name differs from the backend enum value string.
+const COLUMN_TO_SORT_FIELD: Record<string, string> = {
+  finalPrice: 'finalPrice',
+  effectivePrice: 'effectivePrice',
+  systemSizeKw: 'systemSizeKw',
+  status: 'status',
+  quoteDate: 'quoteDate',
+  validUntil: 'validUntil',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  customerName: 'customerName',
+};
+
 function toApiSortField(
   model: { field: string; direction: 'asc' | 'desc' } | null,
 ): string | undefined {
   if (!model) return undefined;
-  // QuoteSortField enum values are camelCase and already match column field names
-  return model.field;
+  // Use explicit map to avoid sending unknown field names to the backend
+  return COLUMN_TO_SORT_FIELD[model.field] ?? undefined;
 }
 
 function toApiSortOrder(
@@ -247,45 +262,26 @@ const COLUMNS: ColumnConfig<QuoteRow>[] = [
     headerName: 'System',
     sortable: true,
     flex: 1,
-    renderCell: ({ row }) => {
-      const wattageWp = row.totalWattageWp as number | undefined;
-      const requested = row.systemSizeKw as number;
-      const actual = wattageWp ? Math.round((wattageWp / 1000) * 100) / 100 : requested;
-      const requestedRounded = Math.round(requested * 100) / 100;
-      const showRequested = actual !== requestedRounded;
-      return (
-        <Box>
-          <MUITypography variant="body">{actual} kW</MUITypography>
-          {showRequested && (
-            <MUITypography variant="timestamp" sx={{ color: 'text.disabled' }}>
-              (req. {requestedRounded} kW)
-            </MUITypography>
-          )}
-        </Box>
-      );
-    },
+    renderCell: ({ row }) => (
+      <SystemSizeDisplay
+        actualKw={row.actualSystemSizeKw}
+        requestedKw={row.systemSizeKw}
+        layout="stacked"
+      />
+    ),
   },
   {
-    field: 'effectivePrice',
+    field: 'finalPrice',
     headerName: 'Value',
     sortable: true,
     flex: 1.5,
     renderCell: ({ row }) => {
-      const effective = row.effectivePrice as number | undefined;
       const finalPrice = row.finalPrice as number | undefined;
       return (
         <Box>
           <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500 }}>
-            {effective != null ? formatCurrency(effective) : '-'}
+            {finalPrice != null ? formatCurrency(finalPrice) : '-'}
           </MUITypography>
-          {effective != null && finalPrice != null && effective < finalPrice && (
-            <MUITypography
-              variant="timestamp"
-              sx={{ color: 'text.disabled', textDecoration: 'line-through' }}
-            >
-              {formatCurrency(finalPrice)}
-            </MUITypography>
-          )}
         </Box>
       );
     },

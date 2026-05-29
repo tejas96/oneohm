@@ -5,3 +5,4 @@ export * from './user-response.dto';
 export * from './profile.dto';
 export * from './create-invitation.dto';
 export * from './invitation-response.dto';
+export * from './register-device-token.dto';

@@ -123,6 +123,14 @@ export class ProjectListItemDto {
   @Expose()
   progressPercentage!: number;
 
+  @ApiProperty({ example: 42 })
+  @Expose()
+  totalTasks!: number;
+
+  @ApiProperty({ example: 10 })
+  @Expose()
+  completedTasks!: number;
+
   @ApiPropertyOptional({ example: '2025-02-01' })
   @Expose()
   startDate?: Date;

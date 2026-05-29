@@ -15,17 +15,6 @@ export interface CrmCounts {
     warm: number;
     cold: number;
   };
-  /** Follow-up counts */
-  followups: {
-    today: number;
-    overdue: number;
-    upcoming: number;
-  };
-  /** Site visits counts */
-  siteVisits: {
-    scheduled: number;
-    pending: number;
-  };
 }
 
 /** Quotes-related counts */
@@ -122,8 +111,6 @@ export const DEFAULT_NAVIGATION_COUNTS: NavigationCounts = {
     totalCustomers: 0,
     totalProperties: 0,
     properties: { hot: 0, warm: 0, cold: 0 },
-    followups: { today: 0, overdue: 0, upcoming: 0 },
-    siteVisits: { scheduled: 0, pending: 0 },
   },
   quotes: {
     total: 0,
