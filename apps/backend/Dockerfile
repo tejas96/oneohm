@@ -62,7 +62,11 @@ ENV NODE_ENV=production
 ENV PORT=8085
 
 # --- prod dependency layer (cached unless package*.json changes) ---
+# Copy workspace package.json files so npm ci resolves workspace deps
+# (e.g. firebase-admin) correctly in the production image.
 COPY package*.json ./
+COPY apps/backend/package.json ./apps/backend/package.json
+COPY libs/shared/package.json ./libs/shared/package.json
 RUN npm ci --omit=dev --ignore-scripts && \
     npm cache clean --force && \
     rm -rf /root/.npm
