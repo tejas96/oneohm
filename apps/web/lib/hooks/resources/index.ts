@@ -216,6 +216,8 @@ export {
   type ProjectTaskListParams,
   type ProjectResponse,
   type ConvertFromQuotePayload,
+  type ProjectListItem,
+  type ProjectListFilters,
 } from './projects';
 
 // Quotes list (FDAL resource)

@@ -80,12 +80,12 @@ export function StatusOverviewChart({
 
   if (isLoading) {
     return (
-      <Card className="p-5">
-        <Skeleton className="h-4 w-32 mb-5" />
-        <div className="flex items-center justify-center h-48">
+      <Card className="p-5 h-[340px] flex flex-col justify-between">
+        <Skeleton className="h-4 w-32 shrink-0" />
+        <div className="flex items-center justify-center flex-1 my-2">
           <Skeleton className="size-32 rounded-full" />
         </div>
-        <div className="mt-4 space-y-2">
+        <div className="space-y-2 shrink-0">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-2">
               <Skeleton className="size-2 rounded-full" />
@@ -100,9 +100,9 @@ export function StatusOverviewChart({
 
   if (chartData.length === 0) {
     return (
-      <Card className="p-5">
-        <p className="text-sm font-semibold text-foreground mb-4">Status Overview</p>
-        <div className="flex items-center justify-center h-48 text-foreground-tertiary text-xs">
+      <Card className="p-5 h-[340px] flex flex-col">
+        <p className="text-sm font-semibold text-foreground mb-4 shrink-0">Status Overview</p>
+        <div className="flex items-center justify-center flex-1 text-foreground-tertiary text-xs">
           No tasks yet
         </div>
       </Card>
@@ -110,20 +110,20 @@ export function StatusOverviewChart({
   }
 
   return (
-    <Card className="p-5">
-      <p className="text-sm font-semibold text-foreground mb-4">Status Overview</p>
+    <Card className="p-5 h-[340px] flex flex-col">
+      <p className="text-sm font-semibold text-foreground mb-4 shrink-0">Status Overview</p>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-1 min-h-0">
         {/* Donut chart — slices are clickable */}
-        <div className="relative shrink-0" style={{ width: 160, height: 160 }}>
+        <div className="relative shrink-0" style={{ width: 150, height: 150 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={52}
-                outerRadius={72}
+                innerRadius={48}
+                outerRadius={68}
                 paddingAngle={2}
                 dataKey="value"
                 strokeWidth={0}
@@ -153,7 +153,7 @@ export function StatusOverviewChart({
         </div>
 
         {/* Legend — each row is a link filtered by status */}
-        <ul className="flex-1 space-y-1.5 overflow-y-auto max-h-[160px]">
+        <ul className="flex-1 space-y-1.5 overflow-y-auto max-h-[190px] pr-1 scrollbar-thin">
           {chartData.map((entry) => {
             const pct = total > 0 ? Math.round((entry.value / total) * 100) : 0;
             return (

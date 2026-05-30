@@ -1,12 +1,14 @@
 'use client';
 
+import Add from '@mui/icons-material/Add';
+import Article from '@mui/icons-material/Article';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Skeleton from '@mui/material/Skeleton';
-import { FileText, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
+import { useQuoteStatusCounts } from '../hooks';
 import {
   ActionRequired,
   ConversionFunnel,
@@ -15,8 +17,8 @@ import {
   ProjectMix,
   RevenueTrend,
 } from './dashboard';
-import { useQuoteStatusCounts } from '../hooks';
 
+import { MUITypography } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import { useQuoteListResource, useProjectListResource } from '@/lib/hooks/resources';
 import { useAuth } from '@/providers/auth-provider';
@@ -256,6 +258,8 @@ export function QuoteDashboardPage(): React.JSX.Element {
       { id: 'act-4', text: `${counts.rejected > 0 ? counts.rejected : 2} negotiations stalled` },
     ];
 
+    const followUpCount = (counts.sent || 0) + (counts.viewed || 0) + (counts.draft || 0);
+
     return {
       pipeline: formatIndianRupeesCompact(activePipelineSum),
       accepted: formatIndianRupeesCompact(acceptedRevenueSum),
@@ -278,24 +282,34 @@ export function QuoteDashboardPage(): React.JSX.Element {
       projectMixItems,
       opps: highValueOpps,
       actionItems: actionRequiredItems,
+      followUpCount,
     };
   }, [quoteListData, statusCounts, projectListData]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50/50 to-slate-100/30 p-4 sm:p-6 lg:p-8 flex flex-col gap-8">
+    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
       {/* ── Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+          <MUITypography variant="drawerTitle" className="font-semibold text-text-primary">
             {greetingText}, {firstName} 👋
-          </h1>
-          <p className="text-sm font-medium text-slate-500 mt-1.5 flex flex-wrap items-center gap-1.5">
-            You currently have
-            <span className="text-primary font-semibold">{dashboardStats.pipeline}</span>
-            in active quotation pipeline.
-            <span className="inline-block size-1 bg-slate-300 rounded-full mx-1" />
-            <span className="text-amber-600 font-semibold">12 quotations</span> require follow-up.
-          </p>
+          </MUITypography>
+          <MUITypography variant="body" className="text-text-secondary mt-1 block">
+            You currently have{' '}
+            <span className="text-primary font-semibold">{dashboardStats.pipeline}</span> in active
+            quotation pipeline.
+            {dashboardStats.followUpCount > 0 && (
+              <>
+                {' '}
+                •{' '}
+                <span className="text-amber-600 font-semibold">
+                  {dashboardStats.followUpCount} quotation
+                  {dashboardStats.followUpCount !== 1 ? 's' : ''}
+                </span>{' '}
+                require{dashboardStats.followUpCount === 1 ? 's' : ''} follow-up.
+              </>
+            )}
+          </MUITypography>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
@@ -303,18 +317,18 @@ export function QuoteDashboardPage(): React.JSX.Element {
             variant="outlined"
             size="small"
             onClick={() => router.push(ROUTES.QUOTES.LIST)}
-            className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 normal-case font-semibold px-4 py-2"
+            className="rounded-lg border border-border-light bg-background hover:bg-background-secondary text-text-primary normal-case font-semibold px-4 py-2"
           >
-            <FileText className="size-4 mr-2 text-slate-500" />
+            <Article className="size-4 mr-2 text-text-secondary" />
             All Quotes
           </Button>
           <Button
             variant="contained"
             size="small"
             onClick={() => router.push(ROUTES.QUOTES.NEW)}
-            className="rounded-xl shadow-sm hover:shadow bg-primary text-white hover:bg-primary/95 normal-case font-semibold px-4 py-2"
+            className="rounded-lg shadow-sm hover:shadow bg-primary text-white hover:bg-primary/95 normal-case font-semibold px-4 py-2"
           >
-            <Plus className="size-4 mr-2" />
+            <Add className="size-4 mr-2" />
             Create Quote
           </Button>
         </div>
@@ -327,10 +341,10 @@ export function QuoteDashboardPage(): React.JSX.Element {
             <Card
               key={i}
               elevation={0}
-              className="p-6 rounded-[20px] border border-slate-200/50 min-h-[140px] flex flex-col justify-between bg-white"
+              className="p-4 rounded-lg border border-border-light min-h-[130px] flex flex-col justify-between bg-background shadow-card"
             >
               <Skeleton variant="rectangular" className="h-4 w-1/2 rounded" />
-              <Skeleton variant="rectangular" className="h-8 w-2/3 rounded mt-4" />
+              <Skeleton variant="rectangular" className="h-6 w-2/3 rounded mt-4" />
             </Card>
           ))}
         </div>
@@ -351,6 +365,7 @@ export function QuoteDashboardPage(): React.JSX.Element {
             <ProjectMix
               data={dashboardStats.projectMixItems}
               totalCount={dashboardStats.overallCount}
+              className="lg:w-1/2"
             />
           </div>
 

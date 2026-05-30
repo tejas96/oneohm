@@ -118,10 +118,10 @@ export function OverviewSystemSpecs({
   );
 
   return (
-    <Card className="rounded-xl">
-      <CardContent className="p-5">
+    <Card className="rounded-xl h-[500px] flex flex-col">
+      <CardContent className="p-5 flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4 gap-2">
+        <div className="flex items-center justify-between mb-4 gap-2 shrink-0">
           <p className="text-sm font-semibold text-foreground flex items-center gap-2">
             <ElectricBoltOutlined className="text-amber-500" style={{ fontSize: 16 }} />
             System Specifications
@@ -137,7 +137,7 @@ export function OverviewSystemSpecs({
         </div>
 
         {/* Installed capacity hero */}
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-3 flex items-start justify-between gap-3">
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-3 flex items-start justify-between gap-3 shrink-0">
           <div>
             <p className="text-[11px] text-foreground-secondary">Installed Capacity</p>
             <SystemSizeDisplay
@@ -153,7 +153,7 @@ export function OverviewSystemSpecs({
         </div>
 
         {/* Spec rows */}
-        <div className="divide-y divide-border-light text-xs">
+        <div className="divide-y divide-border-light text-xs flex-1 overflow-y-auto pr-1 scrollbar-thin">
           {/* Panel rows — one per config to distinguish DCR vs Non-DCR */}
           {panels.length === 0 ? (
             <SpecRow label="Panel" value={undefined} dotColor="bg-indigo-400" />
@@ -188,76 +188,69 @@ export function OverviewSystemSpecs({
           <SpecRow label="Mounting" value={project.structureType} dotColor="bg-purple-400" />
           <SpecRow label="Phase" value={phase} dotColor="bg-amber-400" />
           <SpecRow label="Warranty" value={warranty} dotColor="bg-gray-400" />
-        </div>
 
-        {/* Materials / BOM section */}
-        <div className="mt-4 pt-3 border-t border-border-light">
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-              <InventoryOutlined className="text-foreground-muted" style={{ fontSize: 14 }} />
-              Materials
-            </p>
-            <Link
-              href={bomHref}
-              className="text-[11px] font-medium text-primary hover:underline shrink-0"
-            >
-              View full BOM →
-            </Link>
-          </div>
+          {/* Materials / BOM section */}
+          {materials.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-border-light">
+              <div className="flex items-center justify-between mb-3 gap-2">
+                <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <InventoryOutlined className="text-foreground-muted" style={{ fontSize: 14 }} />
+                  Materials
+                </p>
+                <Link
+                  href={bomHref}
+                  className="text-[11px] font-medium text-primary hover:underline shrink-0"
+                >
+                  View full BOM →
+                </Link>
+              </div>
 
-          {pendingCount > 0 && (
-            <div className="rounded-lg bg-warning/10 border border-warning/20 p-2.5 mb-3">
-              <p className="text-[11px] text-warning font-medium">
-                {pendingCount} material{pendingCount === 1 ? '' : 's'} pending allocation
-              </p>
-            </div>
-          )}
-
-          {materials.length === 0 ? (
-            <div className="rounded-lg border border-border-light bg-background-secondary p-4 flex flex-col items-center gap-1.5 text-center">
-              <InventoryOutlined className="text-foreground-muted" style={{ fontSize: 20 }} />
-              <p className="text-xs font-medium text-foreground-secondary">
-                No materials added yet
-              </p>
-              <p className="text-[11px] text-foreground-tertiary leading-snug">
-                Bill of materials will appear here once items are linked to this project.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border-light">
-              {previewMaterials.map((material) => (
-                <div key={material.id} className="flex items-center justify-between py-2 gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-foreground truncate">
-                      {material.materialName}
-                    </p>
-                    <p className="text-[11px] text-foreground-secondary">
-                      {[
-                        material.category,
-                        `${material.quantityRequired}${material.unit ? ` ${material.unit}` : ''}`,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={
-                      (MATERIAL_STATUS_BADGE_VARIANT[material.status] ?? 'secondary') as 'success'
-                    }
-                    size="xs"
-                  >
-                    {MATERIAL_STATUS_LABELS[material.status] ?? material.status}
-                  </Badge>
+              {pendingCount > 0 && (
+                <div className="rounded-lg bg-warning/10 border border-warning/20 p-2.5 mb-3">
+                  <p className="text-[11px] text-warning font-medium">
+                    {pendingCount} material{pendingCount === 1 ? '' : 's'} pending allocation
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {hasOverflow && (
-            <div className="mt-2 text-right">
-              <Link href={bomHref} className="text-[11px] font-medium text-primary hover:underline">
-                View all {materials.length} materials →
-              </Link>
+              <div className="divide-y divide-border-light">
+                {previewMaterials.map((material) => (
+                  <div key={material.id} className="flex items-center justify-between py-2 gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-foreground truncate">
+                        {material.materialName}
+                      </p>
+                      <p className="text-[11px] text-foreground-secondary">
+                        {[
+                          material.category,
+                          `${material.quantityRequired}${material.unit ? ` ${material.unit}` : ''}`,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={
+                        (MATERIAL_STATUS_BADGE_VARIANT[material.status] ?? 'secondary') as 'success'
+                      }
+                      size="xs"
+                    >
+                      {MATERIAL_STATUS_LABELS[material.status] ?? material.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+
+              {hasOverflow && (
+                <div className="mt-2 text-right">
+                  <Link
+                    href={bomHref}
+                    className="text-[11px] font-medium text-primary hover:underline"
+                  >
+                    View all {materials.length} materials →
+                  </Link>
+                </div>
+              )}
             </div>
           )}
         </div>

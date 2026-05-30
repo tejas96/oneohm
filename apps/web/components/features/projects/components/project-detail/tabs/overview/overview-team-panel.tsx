@@ -53,8 +53,8 @@ export function OverviewTeamPanel({
   );
 
   return (
-    <div className="rounded-xl border border-border-light/70 bg-card shadow-card p-5">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-xl border border-border-light/70 bg-card shadow-card p-5 h-[500px] flex flex-col">
+      <div className="flex items-center justify-between mb-4 shrink-0">
         <div>
           <p className="text-sm font-semibold text-foreground">Team</p>
           <p className="text-[11px] text-foreground-secondary">
@@ -63,16 +63,16 @@ export function OverviewTeamPanel({
         </div>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2.5 flex-1 overflow-y-auto pr-1 scrollbar-thin">
         {sortedMembers.length === 0 && (
           <p className="text-xs text-foreground-secondary py-2">No team members assigned yet.</p>
         )}
         {sortedMembers.map((member) => {
           const fullName = getFullName(member.user?.firstName, member.user?.lastName) || 'Unknown';
           const workload = workloadByUser.get(member.userId);
-          const workloadPct = Math.min(100, Math.max(0, workload?.workloadPercent ?? 0));
           const totalTasks = workload?.totalTasks ?? 0;
           const dueCount = countNonCompletedTasks(workload?.tasksByStatus);
+          const workloadPct = Math.min(100, Math.max(0, workload?.workloadPercent ?? 0));
 
           return (
             <Link
@@ -96,14 +96,17 @@ export function OverviewTeamPanel({
                   <p className="text-[11px] text-foreground-secondary">{member.roleName}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 shrink-0">
                 <div className="text-right">
-                  <div className="text-[11px] text-gray-500">Workload</div>
-                  <div className="text-[12px] font-medium text-foreground">
-                    {totalTasks} tasks · {dueCount} due
-                  </div>
+                  <p className="text-[12px] font-medium text-foreground">
+                    {totalTasks} task{totalTasks !== 1 ? 's' : ''}{' '}
+                    {dueCount > 0 && `· ${dueCount} pending`}
+                  </p>
+                  <p className="text-[10px] text-foreground-tertiary mt-0.5">
+                    Workload: {workloadPct}%
+                  </p>
                 </div>
-                <div className="w-16 h-1.5 bg-border-light rounded-full overflow-hidden">
+                <div className="w-12 h-1 bg-border-light rounded-full overflow-hidden shrink-0">
                   <div className="h-full bg-primary" style={{ width: `${workloadPct}%` }} />
                 </div>
               </div>

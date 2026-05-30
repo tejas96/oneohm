@@ -3,11 +3,8 @@
  * Represents the current state of a project
  */
 export enum ProjectStatus {
-  DRAFT = 'draft',
   PLANNING = 'planning',
-  APPROVED = 'approved',
-  IN_PROGRESS = 'in_progress',
-  TESTING = 'testing',
+  ACTIVE = 'active',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
   ON_HOLD = 'on_hold',

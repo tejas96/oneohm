@@ -6,6 +6,8 @@ import importPlugin from 'eslint-plugin-import';
 // @ts-expect-error - SonarJS types may not be available
 import sonarjs from 'eslint-plugin-sonarjs';
 import unusedImports from 'eslint-plugin-unused-imports';
+// @ts-expect-error - react-hooks types may not be available
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
   // ===============================
@@ -56,6 +58,7 @@ export default [
       import: importPlugin,
       sonarjs,
       'unused-imports': unusedImports,
+      'react-hooks': reactHooks,
     },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -184,6 +187,12 @@ export default [
       '@typescript-eslint/require-await': 'warn',
       // Path alias resolution can cause false positives with type constituents
       '@typescript-eslint/no-redundant-type-constituents': 'warn',
+
+      // ------------------------------
+      // ⚛️ React Hooks
+      // ------------------------------
+      'react-hooks/rules-of-hooks': 'off',
+      'react-hooks/exhaustive-deps': 'off',
 
       // ------------------------------
       // 🧩 SonarJS Specific Tweaks

@@ -38,7 +38,8 @@ export type StatusDotColor =
   | 'active'
   | 'planning'
   | 'on_hold'
-  | 'completed_project';
+  | 'completed_project'
+  | 'cancelled';
 
 /** Base navigation item */
 export interface NavItem {

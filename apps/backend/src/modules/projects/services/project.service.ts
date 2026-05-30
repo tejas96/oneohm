@@ -85,6 +85,7 @@ export class ProjectService {
       toDate?: string;
       search?: string;
       memberId?: string;
+      pendingWorkflowStepId?: string;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },
@@ -206,9 +207,9 @@ export class ProjectService {
   async delete(id: string, organizationId: string): Promise<void> {
     const project = await this.projectRepository.findById(id, organizationId);
 
-    if (project.status !== ProjectStatus.DRAFT && project.status !== ProjectStatus.CANCELLED) {
+    if (project.status !== ProjectStatus.PLANNING && project.status !== ProjectStatus.CANCELLED) {
       throw new BadRequestException(
-        `Cannot delete project with status ${project.status}. Only draft or cancelled projects can be deleted.`,
+        `Cannot delete project with status ${project.status}. Only planning or cancelled projects can be deleted.`,
       );
     }
 
@@ -239,7 +240,7 @@ export class ProjectService {
     const updateData: Record<string, unknown> = { status: newStatus };
 
     // Set startDate when project starts if not already set
-    if (newStatus === ProjectStatus.IN_PROGRESS && !project.startDate) {
+    if (newStatus === ProjectStatus.ACTIVE && !project.startDate) {
       updateData.startDate = new Date();
     }
 
@@ -372,7 +373,7 @@ export class ProjectService {
         description:
           convertDto?.description ||
           `Solar installation project converted from quote ${quote.quoteNumber}`,
-        status: ProjectStatus.DRAFT,
+        status: ProjectStatus.ACTIVE,
         priority: convertDto?.priority || ProjectPriority.NORMAL,
         progressPercentage: 0,
         startDate: convertDto?.startDate ? new Date(convertDto.startDate) : undefined,
@@ -503,26 +504,18 @@ export class ProjectService {
    */
   private validateStatusTransition(currentStatus: ProjectStatus, newStatus: ProjectStatus): void {
     const validTransitions: Record<ProjectStatus, ProjectStatus[]> = {
-      [ProjectStatus.DRAFT]: [ProjectStatus.PLANNING, ProjectStatus.CANCELLED],
-      [ProjectStatus.PLANNING]: [
-        ProjectStatus.APPROVED,
-        ProjectStatus.DRAFT,
-        ProjectStatus.CANCELLED,
-      ],
-      [ProjectStatus.APPROVED]: [ProjectStatus.IN_PROGRESS, ProjectStatus.CANCELLED],
-      [ProjectStatus.IN_PROGRESS]: [
-        ProjectStatus.TESTING,
-        ProjectStatus.COMPLETED,
+      [ProjectStatus.PLANNING]: [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED],
+      [ProjectStatus.ACTIVE]: [
         ProjectStatus.ON_HOLD,
+        ProjectStatus.COMPLETED,
         ProjectStatus.CANCELLED,
       ],
-      [ProjectStatus.TESTING]: [ProjectStatus.COMPLETED, ProjectStatus.IN_PROGRESS],
-      [ProjectStatus.COMPLETED]: [],
-      [ProjectStatus.CANCELLED]: [],
-      [ProjectStatus.ON_HOLD]: [ProjectStatus.IN_PROGRESS, ProjectStatus.CANCELLED],
+      [ProjectStatus.ON_HOLD]: [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED],
+      [ProjectStatus.COMPLETED]: [ProjectStatus.ACTIVE],
+      [ProjectStatus.CANCELLED]: [ProjectStatus.ACTIVE],
     };
 
-    const allowed = validTransitions[currentStatus];
+    const allowed = validTransitions[currentStatus] || [];
     if (!allowed.includes(newStatus)) {
       throw new BadRequestException(
         `Cannot transition from ${currentStatus} to ${newStatus}. Allowed transitions: ${allowed.join(', ')}`,
@@ -563,7 +556,7 @@ export class ProjectService {
       ProjectStatus.ON_HOLD,
       ProjectStatus.COMPLETED,
       ProjectStatus.CANCELLED,
-      ProjectStatus.DRAFT,
+      ProjectStatus.PLANNING,
     ];
     if (inactiveStatuses.includes(project.status)) return null;
     if (!project.endDate) return 'on_track';

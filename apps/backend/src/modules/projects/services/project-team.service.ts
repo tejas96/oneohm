@@ -166,7 +166,11 @@ export class ProjectTeamService {
         'notCompletedTaskCount',
       )
       .innerJoin('users', 'u', 'u.id = tm.userId')
-      .innerJoin('projects', 'p', 'p.id = tm.projectId AND p.deleted_at IS NULL')
+      .innerJoin(
+        'projects',
+        'p',
+        "p.id = tm.projectId AND p.deleted_at IS NULL AND p.status NOT IN ('completed', 'cancelled')",
+      )
       .innerJoin(
         'customer_properties',
         'cp',

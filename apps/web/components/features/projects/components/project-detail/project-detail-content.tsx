@@ -1,6 +1,7 @@
 'use client';
 
 import Box from '@mui/material/Box';
+import { ProjectStatus } from '@oneohm-epc/shared/types';
 import { FolderOpen } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -20,6 +21,7 @@ import { useProject, useProjectTeam } from '../../hooks/use-project-detail';
 
 import { ProjectFinanceTab } from '@/components/features/finance';
 import { ProjectAllocationsTab } from '@/components/features/inventory';
+import { Alert } from '@/components/shared/alerts/alert';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -33,7 +35,28 @@ interface ProjectDetailContentProps {
 
 const VALID_TABS = new Set<string>(PROJECT_DETAIL_TABS.map((t) => t.value));
 
-function LoadingSkeleton() {
+const STATUS_BANNERS = {
+  [ProjectStatus.PLANNING]: {
+    variant: 'info' as const,
+    title: 'Project in Planning Phase',
+    description:
+      'This project is currently in the planning stage. Standard operations and schedules are not yet active.',
+  },
+  [ProjectStatus.ON_HOLD]: {
+    variant: 'warning' as const,
+    title: 'Project On Hold',
+    description:
+      'This project is currently on hold. Normal construction and execution activities are paused.',
+  },
+  [ProjectStatus.CANCELLED]: {
+    variant: 'error' as const,
+    title: 'Project Cancelled',
+    description:
+      'This project has been cancelled. No further actions or transactions should be processed.',
+  },
+};
+
+function LoadingSkeleton(): React.JSX.Element {
   return (
     <div className="p-4 space-y-4">
       <Skeleton className="h-6 w-48" />
@@ -127,9 +150,22 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
     );
   }
 
+  const showStatusBanner =
+    project.status !== ProjectStatus.ACTIVE && project.status !== ProjectStatus.COMPLETED;
+
+  const statusBannerConfig = showStatusBanner
+    ? STATUS_BANNERS[project.status as keyof typeof STATUS_BANNERS]
+    : null;
+
   return (
     <div className="p-4 space-y-4">
       <ProjectDetailHeader project={project} onEdit={() => setEditModalOpen(true)} />
+
+      {showStatusBanner && statusBannerConfig && (
+        <Alert variant={statusBannerConfig.variant} title={statusBannerConfig.title}>
+          {statusBannerConfig.description}
+        </Alert>
+      )}
 
       <ProjectDetailTabs activeTab={activeTab} onTabChange={handleTabChange} />
 

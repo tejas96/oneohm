@@ -44,8 +44,8 @@ export function OverviewSiteCard({ project }: OverviewSiteCardProps): React.Reac
     : undefined;
 
   return (
-    <Card className="rounded-xl overflow-hidden">
-      <div className="h-32 bg-gradient-to-br from-success/15 via-info/10 to-primary/10 relative">
+    <Card className="rounded-xl overflow-hidden h-[500px] flex flex-col">
+      <div className="h-32 bg-gradient-to-br from-success/15 via-info/10 to-primary/10 relative shrink-0">
         {hasCoords && (
           <div className="absolute top-2 left-2 text-[10px] font-medium px-2 py-1 rounded-md bg-card/95 border border-border-light shadow-sm text-foreground">
             {formatLatLng(property.latitude!, property.longitude!)}
@@ -66,7 +66,7 @@ export function OverviewSiteCard({ project }: OverviewSiteCardProps): React.Reac
         )}
       </div>
 
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-4 space-y-3 flex-1 overflow-y-auto pr-1 scrollbar-thin">
         <div>
           <p className="text-sm font-semibold text-foreground">Installation Site</p>
           {streetLine ? (

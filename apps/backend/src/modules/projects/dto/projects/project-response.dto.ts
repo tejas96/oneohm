@@ -98,7 +98,7 @@ export class ProjectResponseDto {
   @Transform(({ obj }) => latestQuoteVersion(obj)?.projectType)
   projectType!: string;
 
-  @ApiProperty({ enum: Object.values(ProjectStatus), example: ProjectStatus.IN_PROGRESS })
+  @ApiProperty({ enum: Object.values(ProjectStatus), example: ProjectStatus.ACTIVE })
   @Expose()
   status!: ProjectStatus;
 

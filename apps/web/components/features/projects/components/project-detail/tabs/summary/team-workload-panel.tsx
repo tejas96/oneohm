@@ -22,7 +22,7 @@ interface WorkloadBarProps {
 
 function WorkloadBar({ tasksByStatus, totalTasks, taskStatuses }: WorkloadBarProps) {
   if (totalTasks === 0) {
-    return <div className="h-3 w-full rounded-full bg-border-light/60" />;
+    return <div className="h-1.5 w-full rounded-full bg-border-light/60" />;
   }
 
   const segments = Object.entries(tasksByStatus)
@@ -38,7 +38,7 @@ function WorkloadBar({ tasksByStatus, totalTasks, taskStatuses }: WorkloadBarPro
     });
 
   return (
-    <div className="h-3 w-full rounded-full overflow-hidden flex bg-border-light">
+    <div className="h-1.5 w-full rounded-full overflow-hidden flex bg-border-light">
       {segments.map(({ status, count, color, widthPct }) => (
         <div
           key={status}
@@ -91,15 +91,17 @@ export function TeamWorkloadPanel({
   }, [teamWorkload, taskStatuses]);
 
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-semibold text-foreground">Team Workload</p>
+    <Card className="p-5 h-[340px] flex flex-col overflow-hidden">
+      <div className="flex flex-col gap-2 mb-3 shrink-0">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-foreground">Team Workload</p>
+        </div>
         {!isLoading && teamWorkload && teamWorkload.length > 0 && (
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
+          <div className="flex flex-wrap gap-x-2.5 gap-y-1 border-b border-border-light pb-2">
             {statusLegend.map((s) => (
-              <div key={s.code} className="flex items-center gap-1.5">
+              <div key={s.code} className="flex items-center gap-1 shrink-0">
                 <span className="size-2 rounded-full" style={{ backgroundColor: s.color }} />
-                <span className="text-[11px] text-foreground-secondary">{s.label}</span>
+                <span className="text-[10px] text-foreground-secondary">{s.label}</span>
               </div>
             ))}
           </div>
@@ -107,8 +109,8 @@ export function TeamWorkloadPanel({
       </div>
 
       {isLoading ? (
-        <div className="space-y-5">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="space-y-4 flex-1 overflow-hidden my-1">
+          {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3">
               <Skeleton className="size-8 rounded-full shrink-0" />
               <div className="flex-1 space-y-1.5">
@@ -123,11 +125,11 @@ export function TeamWorkloadPanel({
           ))}
         </div>
       ) : !teamWorkload || teamWorkload.length === 0 ? (
-        <div className="flex items-center justify-center min-h-[80px] text-foreground-tertiary text-xs">
+        <div className="flex items-center justify-center flex-1 text-foreground-tertiary text-xs">
           No tasks assigned yet
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-2.5 flex-1 overflow-y-auto pr-1 scrollbar-thin my-1">
           {teamWorkload.map((member) => {
             const relativeWidth =
               maxTasks > 0 ? Math.round((member.totalTasks / maxTasks) * 100) : 0;
@@ -158,7 +160,7 @@ export function TeamWorkloadPanel({
                       </span>
                     </div>
                     {/* Outer track scoped to this member's relative share */}
-                    <div className="relative h-3 w-full rounded-full bg-border-light/60 overflow-hidden">
+                    <div className="relative h-1.5 w-full rounded-full bg-border-light/60 overflow-hidden">
                       <div
                         className="absolute inset-y-0 left-0 rounded-full overflow-hidden"
                         style={{ width: `${relativeWidth}%` }}

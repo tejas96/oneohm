@@ -1,9 +1,9 @@
 'use client';
 
-import AutoAwesome from '@mui/icons-material/AutoAwesome';
-import Business from '@mui/icons-material/Business';
 import CheckCircle from '@mui/icons-material/CheckCircle';
+import People from '@mui/icons-material/People';
 import TrendingUp from '@mui/icons-material/TrendingUp';
+import Warning from '@mui/icons-material/Warning';
 import Card from '@mui/material/Card';
 import * as React from 'react';
 
@@ -14,17 +14,16 @@ import { MUITypography } from '@/components/ui';
 // ============================================================================
 
 export interface KPICardData {
-  pipeline: string;
-  accepted: string;
-  winRate: string;
-  avgDeal: string;
+  activeProjects: number;
+  overallHealth: string;
+  criticalBlockers: number;
+  activeWorkers: number;
 }
 
-export interface KPICardProps {
+interface KPICardProps {
   title: string;
-  value: string;
-  change: string;
-  isPositive: boolean;
+  value: string | number;
+  subtitle: string;
   icon: React.ReactNode;
 }
 
@@ -32,7 +31,9 @@ export interface KPICardProps {
 // Presentational Sub-component
 // ============================================================================
 
-function KPICard({ title, value, change, isPositive, icon }: KPICardProps): React.JSX.Element {
+// BUG-4 FIX: Removed hardcoded fake trend percentages (↑ 8%, ↓ 12% etc.).
+// Now shows a contextual subtitle instead of misleading trend data.
+function KPICard({ title, value, subtitle, icon }: KPICardProps): React.JSX.Element {
   return (
     <Card
       elevation={0}
@@ -53,14 +54,8 @@ function KPICard({ title, value, change, isPositive, icon }: KPICardProps): Reac
         <MUITypography variant="drawerTitle" className="font-semibold text-text-primary">
           {value}
         </MUITypography>
-        <span
-          className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-            isPositive
-              ? 'text-emerald-700 bg-emerald-50 border border-emerald-100'
-              : 'text-rose-700 bg-rose-50 border border-rose-100'
-          }`}
-        >
-          {isPositive ? '↑' : '↓'} {change}
+        <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full text-text-secondary bg-background-secondary border border-border-light">
+          {subtitle}
         </span>
       </div>
     </Card>
@@ -72,35 +67,37 @@ function KPICard({ title, value, change, isPositive, icon }: KPICardProps): Reac
 // ============================================================================
 
 export function KPIGrid({ data }: { data: KPICardData }): React.JSX.Element {
+  // Compute contextual subtitles based on actual data
+  const blockerLabel =
+    data.criticalBlockers === 0 ? 'All clear' : `${data.criticalBlockers} on hold`;
+  const healthLabel = data.overallHealth === '0%' ? 'No projects' : 'Avg progress';
+  const workerLabel = data.activeWorkers === 0 ? 'No team data' : 'Team members';
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       <KPICard
-        title="Active Pipeline"
-        value={data.pipeline}
-        change="12%"
-        isPositive={true}
+        title="Active Projects"
+        value={data.activeProjects}
+        subtitle="Across all phases"
         icon={<TrendingUp className="size-5 text-blue-500" />}
       />
       <KPICard
-        title="Accepted Revenue"
-        value={data.accepted}
-        change="18%"
-        isPositive={true}
+        title="Overall Health"
+        value={data.overallHealth}
+        subtitle={healthLabel}
         icon={<CheckCircle className="size-5 text-emerald-500" />}
       />
       <KPICard
-        title="Win Rate"
-        value={data.winRate}
-        change="↑ 5%"
-        isPositive={true}
-        icon={<AutoAwesome className="size-5 text-violet-500" />}
+        title="Critical Blockers"
+        value={data.criticalBlockers}
+        subtitle={blockerLabel}
+        icon={<Warning className="size-5 text-rose-500" />}
       />
       <KPICard
-        title="Average Deal"
-        value={data.avgDeal}
-        change="0%"
-        isPositive={true}
-        icon={<Business className="size-5 text-amber-500" />}
+        title="Active Workers"
+        value={data.activeWorkers}
+        subtitle={workerLabel}
+        icon={<People className="size-5 text-violet-500" />}
       />
     </div>
   );

@@ -332,7 +332,7 @@ export const navigationConfig: NavigationConfig = {
                 {
                   id: 'projects-active',
                   label: 'Active',
-                  href: `${ROUTES.PROJECTS.LIST}?status=in_progress`,
+                  href: `${ROUTES.PROJECTS.LIST}?status=active`,
                   statusDot: 'active' as const,
                 },
                 {
@@ -352,6 +352,12 @@ export const navigationConfig: NavigationConfig = {
                   label: 'Completed',
                   href: `${ROUTES.PROJECTS.LIST}?status=completed`,
                   statusDot: 'completed_project' as const,
+                },
+                {
+                  id: 'projects-cancelled',
+                  label: 'Cancelled',
+                  href: `${ROUTES.PROJECTS.LIST}?status=cancelled`,
+                  statusDot: 'cancelled' as const,
                 },
               ],
             },
