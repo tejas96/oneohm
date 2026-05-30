@@ -135,7 +135,7 @@ export function OverviewTimelineRail({
   ];
   const formattedToday = `${today.getDate()} ${monthNames[today.getMonth()]}`;
 
-  let todayLabel = 'TODAY';
+  let todayLabel: string;
   if (elapsedDays < 0) {
     todayLabel = `TODAY (Starts in ${Math.abs(elapsedDays)}d)`;
   } else if (elapsedDays > totalDays) {

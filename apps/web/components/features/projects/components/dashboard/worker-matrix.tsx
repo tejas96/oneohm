@@ -53,11 +53,10 @@ export function WorkerMatrix({ workers }: WorkerMatrixProps): React.JSX.Element 
             const projects = worker.activeProjects;
             const tasks = worker.activeTasks;
 
-            let capacityText = 'Optimal';
-            let capacityColor =
-              'text-emerald-600 bg-emerald-50 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30';
-            let barColor = 'bg-emerald-500';
-            let fillWidth = '40%';
+            let capacityText: string;
+            let capacityColor: string;
+            let barColor: string;
+            let fillWidth: string;
 
             if (tasks === 0) {
               capacityText = 'Available';
