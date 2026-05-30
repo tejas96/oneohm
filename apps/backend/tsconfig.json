@@ -8,7 +8,6 @@
     "typeRoots": ["../../node_modules/@types", "./src/types"],
     "outDir": "./dist",
     "incremental": true,
-
     /* Relax only what's necessary for TypeORM entities and NestJS decorators */
     "strictPropertyInitialization": false, // TypeORM entities don't initialize in constructor
     "noUnusedLocals": false, // NestJS decorators sometimes create unused parameters

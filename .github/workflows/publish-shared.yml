@@ -52,9 +52,13 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
-          # Try to fetch the specific version — exit code 0 means already published
-          if npm view "${PACKAGE_NAME}@${CURRENT_VERSION}" version \
-               --registry https://npm.pkg.github.com 2>/dev/null | grep -q "^${CURRENT_VERSION}$"; then
+          # Capture output directly (no pipe) so npm's exit code is not swallowed.
+          # The old `npm view ... | grep -q` pattern set already_published=false
+          # whenever npm failed silently — causing a 409 Conflict on re-publish.
+          PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${CURRENT_VERSION}" version \
+            --registry https://npm.pkg.github.com 2>/dev/null || echo "")
+
+          if [ "$PUBLISHED_VERSION" = "$CURRENT_VERSION" ]; then
             echo "already_published=true" >> $GITHUB_OUTPUT
             echo "Version ${CURRENT_VERSION} is already published"
           else

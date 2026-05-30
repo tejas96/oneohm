@@ -13,11 +13,16 @@ RUN apk add --no-cache dumb-init
 WORKDIR /app
 
 # --- dependency layer (cached unless package*.json changes) ---
+# Copy ALL workspace package.json files before npm ci so that npm resolves
+# workspace dependencies (e.g. firebase-admin in apps/backend) correctly.
+# Without these, npm ci skips workspace packages and their deps are missing.
 COPY package*.json ./
-COPY tsconfig.base.json ./nx.json ./jest.preset.js ./
+COPY apps/backend/package.json ./apps/backend/package.json
+COPY libs/shared/package.json ./libs/shared/package.json
 RUN npm ci --ignore-scripts && npm cache clean --force
 
 # --- source layer (invalidates only the build, not the install) ---
+COPY tsconfig.base.json ./nx.json ./jest.preset.js ./
 COPY apps/backend ./apps/backend/
 COPY libs ./libs/
 
