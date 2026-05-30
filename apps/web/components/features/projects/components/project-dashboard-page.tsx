@@ -114,7 +114,6 @@ export function ProjectDashboardPage(): React.JSX.Element {
   // useQueries returns a NEW array every render, so we extract just the data we need.
   const bomDataSnapshot = React.useMemo(() => {
     return bomQueries.map((q) => q.data ?? null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally tracking only data changes
   }, [bomQueries.map((q) => q.dataUpdatedAt).join(',')]);
 
   const isPageLoading = activeLoading || onHoldLoading || activeListLoading || teamWorkloadLoading;
