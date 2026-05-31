@@ -1,25 +1,22 @@
 'use client';
 
-import { FormControl, MenuItem, Paper, Select, Typography } from '@mui/material';
 import { QuoteStatus } from '@oneohm-epc/shared/types';
 import { FileText } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { QuoteDetailHeader } from './quote-detail-header';
-import { QuoteDetailTabs } from './quote-detail-tabs';
 import { QuoteOverviewTab } from './tabs/quote-overview-tab';
-import { QuotePaymentsTab } from './tabs/quote-payments-tab';
-import { QUOTE_DETAIL_TABS, type QuoteDetailTab } from '../../constants';
+import type { QuoteDetail } from '../../hooks/types';
 import { useQuoteDetail } from '../../hooks/use-quote-detail';
 import { usePropertyQuoteVersions } from '../../hooks/use-quotes';
+import { generateAndDownloadPdf } from '../../services/quote-pdf.service';
+import type { CalculateQuoteResponse, QuotePdfData } from '../../types';
 
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TabsContent } from '@/components/ui/tabs';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { useEntityBom } from '@/lib/hooks/resources';
+import { type Bom, type BomItem, useEntityBom, useQuoteConfig } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils/error';
 import { recordRecentView } from '@/lib/utils/recent-views';
 import { useAuth } from '@/providers/auth-provider';
@@ -28,7 +25,121 @@ interface QuoteDetailContentProps {
   quoteId: string;
 }
 
-const VALID_TABS = new Set<string>(QUOTE_DETAIL_TABS.map((t) => t.value));
+function buildCalculationFromBom(quote: QuoteDetail, bom: Bom): CalculateQuoteResponse {
+  const calcInputs = quote.calculatorInputs;
+  const breakdown = quote.pricingBreakdown;
+  const systemSizeKw = quote.systemSizeKw;
+  const totalWattageWp = quote.totalWattageWp;
+
+  const panelItems = bom.items.filter((i) => i.itemType === 'panel');
+  const inverterItems = bom.items.filter((i) => i.itemType === 'inverter');
+  const structureItem = bom.items.find((i) => i.itemType === 'structure');
+
+  const panels = panelItems.map((p: BomItem) => ({
+    productId: p.productId ?? '',
+    name: p.name,
+    brand: p.brand ?? '',
+    isDcr: (p.specifications.isDcr as boolean) ?? false,
+    technology: p.specifications.technology as string | undefined,
+    wattagePerPanel: (p.specifications.wattagePerPanel as number) ?? 0,
+    quantity: p.quantity,
+    totalWattage: ((p.specifications.wattagePerPanel as number) ?? 0) * p.quantity,
+    pricePerWatt: (p.specifications.pricePerWatt as number) ?? 0,
+    lineTotal: p.totalPrice ?? 0,
+    gstAmount: p.gstAmount ?? 0,
+    gstRate: p.gstRate,
+    productWarrantyYears: p.warrantyYears,
+    performanceWarrantyYears: p.specifications.performanceWarrantyYears as number | undefined,
+  }));
+
+  const inverters = inverterItems.map((inv: BomItem) => ({
+    productId: inv.productId ?? '',
+    name: inv.name,
+    brand: inv.brand ?? '',
+    capacityKw: (inv.specifications.capacityKw as number) ?? 0,
+    quantity: inv.quantity,
+    unitPrice: inv.unitPrice ?? 0,
+    lineTotal: inv.totalPrice ?? 0,
+    gstAmount: inv.gstAmount ?? 0,
+    gstRate: inv.gstRate,
+    productWarrantyYears: inv.warrantyYears,
+  }));
+
+  const structure = structureItem
+    ? {
+        productId: structureItem.productId ?? '',
+        name: structureItem.name,
+        structureType: (structureItem.specifications.structureType as string) ?? '',
+        quantity: structureItem.quantity,
+        unitPrice: structureItem.unitPrice ?? 0,
+        lineTotal: structureItem.totalPrice ?? 0,
+        gstAmount: structureItem.gstAmount ?? 0,
+        gstRate: structureItem.gstRate,
+      }
+    : {
+        productId: '',
+        name: 'N/A',
+        structureType: '',
+        quantity: 0,
+        unitPrice: 0,
+        lineTotal: 0,
+        gstAmount: 0,
+      };
+
+  return {
+    systemConfig: {
+      totalSystemSizeKw: systemSizeKw,
+      dcrSizeKw: calcInputs?.dcrSystemSizeKw ?? systemSizeKw,
+      nonDcrSizeKw: calcInputs?.nonDcrSystemSizeKw ?? 0,
+      phaseType: calcInputs?.phaseType ?? '',
+    },
+    panels,
+    inverters: {
+      inverters,
+      totalCapacityKw: inverters.reduce((s, i) => s + i.capacityKw * i.quantity, 0),
+      totalCost: inverters.reduce((s, i) => s + i.lineTotal, 0),
+      totalGst: inverters.reduce((s, i) => s + i.gstAmount, 0),
+    },
+    structure,
+    installation: {
+      electricalWork: 0,
+      fixedMaterial: 0,
+      variableFloor: 0,
+      structureCost: 0,
+      installationLabor: 0,
+      loadingUnloading: 0,
+      msedclCharges: 0,
+      supervision: 0,
+      transport: 0,
+      totalBeforeTax: 0,
+      gstAmount: 0,
+      totalWithGst: 0,
+    },
+    pricing: {
+      basePrice: breakdown?.basePrice ?? 0,
+      gst5Amount: breakdown?.gst5OnEquipment ?? 0,
+      gst18Amount: breakdown?.gst18OnServices ?? 0,
+      totalGst: breakdown?.totalGst ?? 0,
+      totalPrice: breakdown?.totalPrice ?? 0,
+      discountAmount: breakdown?.discountAmount ?? 0,
+      finalPrice: breakdown?.totalPrice ?? 0,
+    },
+    subsidy: {
+      isApplicable: breakdown?.isSubsidyApplicable ?? false,
+      amount: breakdown?.subsidyAmount ?? 0,
+    },
+    effectivePrice: quote.effectivePrice ?? 0,
+    completionWeeks: quote.projectCompletionWeeks ?? 4,
+    hasOverrides: false,
+    actualTotalWattage: totalWattageWp,
+    actualSystemSizeKw: totalWattageWp / 1000,
+    actualDcrSizeKw: calcInputs?.actualDcrSizeKw ?? calcInputs?.dcrSystemSizeKw ?? systemSizeKw,
+    actualNonDcrSizeKw: calcInputs?.actualNonDcrSizeKw ?? calcInputs?.nonDcrSystemSizeKw ?? 0,
+    profitabilityPercent: 0,
+    profitabilityAmount: 0,
+    calculatedAt: quote.createdAt,
+  };
+}
 
 function LoadingSkeleton() {
   return (
@@ -60,18 +171,10 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const tabParam = searchParams.get('tab') ?? 'overview';
-  const initialTab = VALID_TABS.has(tabParam) ? (tabParam as QuoteDetailTab) : 'overview';
-  const [activeTab, setActiveTab] = useState<QuoteDetailTab>(initialTab);
-
-  useEffect(() => {
-    const param = searchParams.get('tab') ?? 'overview';
-    const tab = VALID_TABS.has(param) ? (param as QuoteDetailTab) : 'overview';
-    setActiveTab(tab);
-  }, [searchParams]);
-
   const { data: quote, isLoading, isError, error, refetch } = useQuoteDetail(quoteId);
   const { user } = useAuth();
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const { data: quoteConfig } = useQuoteConfig();
 
   useEffect(() => {
     if (quote && user?.id) {
@@ -83,16 +186,6 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
       });
     }
   }, [quote, user?.id]);
-
-  const handleTabChange = useCallback(
-    (tab: QuoteDetailTab) => {
-      setActiveTab(tab);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('tab', tab);
-      router.replace(`?${params.toString()}`, { scroll: false });
-    },
-    [router, searchParams],
-  );
 
   const handlePropertyQuoteSelect = useCallback(
     (targetQuoteId: string) => {
@@ -114,6 +207,63 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
   const bomVersionId = latestInternalVersion?.id;
   const { data: bom, isLoading: isBomLoading } = useEntityBom('quote_version', bomVersionId);
   const { data: propertyQuoteVersions } = usePropertyQuoteVersions(quote?.propertyId);
+
+  const activeSnapshot = quote?.quoteSnapshot;
+  const isOldData = useMemo(() => {
+    if (!activeSnapshot?.calculation) return true;
+    return (
+      typeof activeSnapshot.calculation !== 'object' ||
+      Object.keys(activeSnapshot.calculation).length === 0 ||
+      !Array.isArray((activeSnapshot.calculation as unknown as Record<string, unknown>).panels)
+    );
+  }, [activeSnapshot]);
+
+  const hasBomPanels = bom?.items?.some((i) => i.itemType === 'panel') ?? false;
+  const hasStoredCalc = !isOldData;
+  const canDownloadPdf = hasStoredCalc || hasBomPanels;
+
+  const defaultGstConfig = { rate1: 12, rate1Percentage: 70, rate2: 18, rate2Percentage: 30 };
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!quote) return;
+    let calculation: CalculateQuoteResponse;
+    if (hasStoredCalc && activeSnapshot?.calculation) {
+      calculation = activeSnapshot.calculation as unknown as CalculateQuoteResponse;
+    } else if (bom) {
+      calculation = buildCalculationFromBom(quote, bom);
+    } else {
+      return;
+    }
+
+    setPdfLoading(true);
+    try {
+      const pdfData: QuotePdfData = {
+        calculation,
+        customer: {
+          name: quote.customerName ?? '',
+          phone: quote.customerPhone ?? '',
+          email: quote.customerEmail ?? '',
+        },
+        property: {
+          propertyName: quote.propertyName ?? '',
+          address: quote.propertyAddress ?? '',
+        },
+        quoteNumber: quote.quoteNumber,
+        validityDays: Math.ceil(
+          (new Date(quote.validUntil).getTime() - new Date(quote.quoteDate).getTime()) / 86400000,
+        ),
+        paymentMilestones: quote.paymentMilestones,
+        discountAmount:
+          quote.quoteSnapshot?.pricing?.discountAmount ?? quote.pricingBreakdown?.discountAmount,
+        gstConfig: quoteConfig?.gstConfig ?? defaultGstConfig,
+      };
+      await generateAndDownloadPdf(pdfData);
+    } catch (err) {
+      console.error('PDF generation error:', err);
+    } finally {
+      setPdfLoading(false);
+    }
+  }, [bom, quote, quoteConfig, hasStoredCalc, activeSnapshot]);
 
   if (isLoading) return <LoadingSkeleton />;
 
@@ -170,57 +320,56 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
     : true;
 
   return (
-    <div className="p-4 space-y-4">
-      <QuoteDetailHeader quote={quote} isLatestPropertyQuote={isPrimaryPropertyQuote} />
+    <div className="space-y-6">
+      <QuoteDetailHeader
+        quote={quote}
+        isLatestPropertyQuote={isPrimaryPropertyQuote}
+        canDownloadPdf={canDownloadPdf}
+        pdfLoading={pdfLoading}
+        handleDownloadPdf={() => {
+          void handleDownloadPdf();
+        }}
+      />
 
-      {quote.propertyId && orderedPropertyQuotes.length > 0 && (
-        <Paper
-          variant="outlined"
-          sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}
-        >
-          <Typography variant="body2" fontWeight={500}>
-            Property Quotes:
-          </Typography>
-          <FormControl size="small" sx={{ minWidth: 260 }}>
-            <Select
-              value={quote.id}
-              onChange={(e) => handlePropertyQuoteSelect(e.target.value)}
-              size="small"
-              sx={{ fontSize: '0.875rem' }}
+      <main className="max-w-7xl mx-auto px-4 lg:px-6 space-y-6 pb-12">
+        {quote.propertyId && orderedPropertyQuotes.length > 0 && (
+          <div className="bg-white border border-border rounded-xl p-4.5 flex items-center gap-3 flex-wrap shadow-sm">
+            <span className="text-xs font-bold text-foreground">Property Quotes:</span>
+            <div className="relative min-w-[260px]">
+              <select
+                value={quote.id}
+                onChange={(e) => handlePropertyQuoteSelect(e.target.value)}
+                className="w-full bg-white border border-border rounded-lg px-3 py-1.5 pr-8 text-xs text-foreground-secondary font-medium focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer"
+              >
+                {orderedPropertyQuotes.map((propertyQuote, idx) => (
+                  <option key={propertyQuote.id} value={propertyQuote.id}>
+                    {propertyQuote.quoteNumber}
+                    {idx === 0 ? ' (Current Version)' : ' (Historical)'}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-2.5 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-foreground-secondary pointer-events-none" />
+            </div>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold ${
+                isPrimaryPropertyQuote
+                  ? 'bg-primary/10 text-primary-dark border border-primary/20'
+                  : 'bg-gray-100 text-gray-700 border border-gray-200'
+              }`}
             >
-              {orderedPropertyQuotes.map((propertyQuote, idx) => (
-                <MenuItem
-                  key={propertyQuote.id}
-                  value={propertyQuote.id}
-                  sx={{ fontSize: '0.875rem' }}
-                >
-                  {propertyQuote.quoteNumber}
-                  {idx === 0 ? ' (Current)' : ''}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Badge variant={isPrimaryPropertyQuote ? 'success' : 'muted'} size="xs" shape="pill">
-            {isPrimaryPropertyQuote ? 'Current' : 'Historical'}
-          </Badge>
-        </Paper>
-      )}
+              {isPrimaryPropertyQuote ? 'Current Active Version' : 'Historical Version'}
+            </span>
+          </div>
+        )}
 
-      <QuoteDetailTabs activeTab={activeTab} onTabChange={handleTabChange}>
-        <TabsContent value="overview">
-          <QuoteOverviewTab
-            quote={quote}
-            isActive={activeTab === 'overview'}
-            bom={bom ?? undefined}
-            isBomLoading={isBomLoading}
-            isLatestPropertyQuote={isPrimaryPropertyQuote}
-          />
-        </TabsContent>
-
-        <TabsContent value="payments">
-          <QuotePaymentsTab quote={quote} isActive={activeTab === 'payments'} />
-        </TabsContent>
-      </QuoteDetailTabs>
+        <QuoteOverviewTab
+          quote={quote}
+          isActive={true}
+          bom={bom ?? undefined}
+          isBomLoading={isBomLoading}
+          isLatestPropertyQuote={isPrimaryPropertyQuote}
+        />
+      </main>
     </div>
   );
 }

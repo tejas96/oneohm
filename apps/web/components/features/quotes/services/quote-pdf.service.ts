@@ -65,7 +65,6 @@ export async function generateAndDownloadPdf(data: QuotePdfData): Promise<void> 
         scale: 2,
         useCORS: true,
         letterRendering: true,
-        windowWidth: CONTENT_PX,
         scrollX: 0,
         scrollY: 0,
       },
