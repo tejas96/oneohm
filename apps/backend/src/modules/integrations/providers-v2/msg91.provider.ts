@@ -73,7 +73,7 @@ export class Msg91Provider extends BaseMessagingProvider {
   /**
    * Send OTP using MSG91 Dedicated OTP API
    */
-  async sendOtp(message: IOtpMessage): Promise<IMessageResponse> {
+  override async sendOtp(message: IOtpMessage): Promise<IMessageResponse> {
     try {
       const response = await this.http.post('/otp', {
         template_id: this.otpTemplateId,
@@ -100,7 +100,7 @@ export class Msg91Provider extends BaseMessagingProvider {
   /**
    * Send text message via MSG91 SMS API
    */
-  async sendText(message: ITextMessage): Promise<IMessageResponse> {
+  override async sendText(message: ITextMessage): Promise<IMessageResponse> {
     try {
       const response = await this.http.post('/flow', {
         sender: this.senderId || 'MSGIND',

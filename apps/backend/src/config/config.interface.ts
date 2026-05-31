@@ -118,6 +118,25 @@ export interface IntegrationsConfig {
   msg91SenderId?: string;
   msg91LoginTemplateId?: string;
   msg91PasswordResetTemplateId?: string;
+  whatsappAccessToken?: string;
+  whatsappPhoneNumberId?: string;
+  whatsappBusinessAccountId?: string;
+  whatsappApiVersion: string;
+  whatsappWebhookVerifyToken?: string;
+}
+
+export interface MobileAppVersionConfig {
+  minVersion: string;
+  recommendedVersion: string;
+  playStoreUrl: string;
+  appStoreUrl: string;
+}
+
+export interface MobileAppConfig {
+  consumer: MobileAppVersionConfig;
+  business: MobileAppVersionConfig;
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
 }
 
 export interface SeedConfig {
@@ -144,5 +163,6 @@ export interface Configuration {
   thirdParty: ThirdPartyConfig;
   firebase: FirebaseConfig;
   integrations: IntegrationsConfig;
+  mobileApp: MobileAppConfig;
   seed: SeedConfig;
 }

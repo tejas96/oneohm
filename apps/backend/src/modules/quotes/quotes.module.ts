@@ -6,6 +6,8 @@ import { QuoteEntity, QuoteVersionEntity } from './entities';
 import { QuoteRepository } from './repositories';
 import { QuoteService, QuoteCalculatorService } from './services';
 import { BomModule } from '../bom/bom.module';
+import { DocumentsModule } from '../documents/documents.module';
+import { IntegrationsModule } from '../integrations/integrations.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
@@ -20,6 +22,8 @@ import { OrganizationsModule } from '../organizations/organizations.module';
     TypeOrmModule.forFeature([QuoteEntity, QuoteVersionEntity]),
     OrganizationsModule,
     MasterDataModule,
+    DocumentsModule,
+    IntegrationsModule,
     forwardRef(() => BomModule),
     forwardRef(() => InventoryModule),
   ],

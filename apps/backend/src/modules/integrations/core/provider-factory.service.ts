@@ -11,6 +11,7 @@ import {
 import { IntegrationEntity } from '../entities';
 import type { IBaseIntegration } from '../interfaces';
 import { ProviderRegistry } from './provider-registry.service';
+import { ConfigService } from '../../../config';
 import { IntegrationCredentialService } from '../services/integration-credential.service';
 
 /**
@@ -26,6 +27,7 @@ export class ProviderFactory {
   constructor(
     private readonly providerRegistry: ProviderRegistry,
     private readonly credentialService: IntegrationCredentialService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -50,10 +52,13 @@ export class ProviderFactory {
     // 2. Create empty instance
     const instance = new ProviderClass() as unknown as Record<string, unknown>;
 
-    // 3. Decrypt credentials
-    const decryptedCredentials = this.credentialService.decrypt(
-      integrationEntity.credentials.encrypted,
-    );
+    // 3. Resolve credentials.
+    // For WhatsApp production, prefer environment variables so local/prod runtime
+    // credentials are controlled by deployment config, not mutable DB rows.
+    const decryptedCredentials =
+      providerName === IntegrationProvider.WHATSAPP_BUSINESS
+        ? this.getRequiredWhatsAppEnvCredentials()
+        : this.credentialService.decrypt(integrationEntity.credentials.encrypted);
 
     // 4. Inject credentials
     this.injectCredentials(instance, ProviderClass, decryptedCredentials);
@@ -187,5 +192,27 @@ export class ProviderFactory {
     // Inject into instance
     instance[propertyKey] = httpClient;
     this.logger.debug(`  ✓ Injected HTTP client: ${propertyKey} → ${providerMetadata.baseUrl}`);
+  }
+
+  private getRequiredWhatsAppEnvCredentials(): Record<string, unknown> {
+    const { integrations } = this.configService;
+
+    if (!integrations.whatsappAccessToken || !integrations.whatsappPhoneNumberId) {
+      throw new BadRequestException(
+        'WhatsApp env credentials are required. Configure WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID.',
+      );
+    }
+
+    /*
+     * DB credential path kept for later multi-tenant/admin-console credential storage:
+     *
+     * return this.credentialService.decrypt(integrationEntity.credentials.encrypted);
+     */
+
+    return {
+      accessToken: integrations.whatsappAccessToken,
+      phoneNumberId: integrations.whatsappPhoneNumberId,
+      businessAccountId: integrations.whatsappBusinessAccountId,
+    };
   }
 }

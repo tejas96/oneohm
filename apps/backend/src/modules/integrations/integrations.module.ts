@@ -2,7 +2,11 @@ import { Module } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { AdminIntegrationController, MessagingController } from './controllers';
+import {
+  AdminIntegrationController,
+  MessagingController,
+  WhatsappWebhookController,
+} from './controllers';
 import { ProviderRegistry, ProviderFactory, ProviderResolver } from './core';
 import { IntegrationEntity } from './entities';
 import { Msg91Provider, WhatsAppBusinessProvider } from './providers-v2';
@@ -21,7 +25,7 @@ import { ConfigModule } from '../../config';
     ConfigModule,
     DiscoveryModule, // Required for auto-discovery
   ],
-  controllers: [AdminIntegrationController, MessagingController],
+  controllers: [AdminIntegrationController, MessagingController, WhatsappWebhookController],
   providers: [
     // Repositories
     IntegrationRepository,

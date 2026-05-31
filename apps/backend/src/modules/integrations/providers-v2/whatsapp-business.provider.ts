@@ -29,7 +29,7 @@ import {
   category: IntegrationCategory.MESSAGING,
   displayName: 'WhatsApp Business API',
   description: 'Send messages via WhatsApp Business API',
-  baseUrl: 'https://graph.facebook.com/v18.0',
+  baseUrl: 'https://graph.facebook.com',
   icon: 'message-square',
 })
 export class WhatsAppBusinessProvider extends BaseMessagingProvider {
@@ -50,7 +50,7 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
   // 🎯 Auto-Injected Configuration
   // ============================================
 
-  @InjectConfig('apiVersion', { default: 'v18.0' })
+  @InjectConfig('apiVersion', { default: 'v25.0' })
   private readonly apiVersion!: string;
 
   // ============================================
@@ -69,11 +69,11 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
   /**
    * Send text message
    */
-  async sendText(message: ITextMessage): Promise<IMessageResponse> {
+  override async sendText(message: ITextMessage): Promise<IMessageResponse> {
     try {
       // Manually set auth header (temporary until factory supports dynamic headers)
       const response = await this.http.post(
-        `/${this.phoneNumberId}/messages`,
+        `/${this.apiVersion}/${this.phoneNumberId}/messages`,
         {
           messaging_product: 'whatsapp',
           to: this.cleanPhone(message.to),
@@ -103,28 +103,34 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
   /**
    * Send template message
    */
-  async sendTemplate(message: ITemplateMessage): Promise<IMessageResponse> {
+  override async sendTemplate(message: ITemplateMessage): Promise<IMessageResponse> {
     try {
-      // Build template components (WhatsApp API format)
-      const components: Array<{
-        type: string;
-        parameters?: Array<{ type: string; text: string }>;
-      }> = [];
+      const components: Array<Record<string, unknown>> = [];
 
       if (message.templateParameters) {
-        const parameters = Object.values(message.templateParameters).map((value) => ({
-          type: 'text',
-          text: String(value),
-        }));
+        const header = message.templateParameters.header;
+        if (this.isRecord(header)) {
+          components.push({
+            type: 'header',
+            parameters: [this.buildTemplateParameter(header)],
+          });
+        }
 
-        components.push({
-          type: 'body',
-          parameters,
-        });
+        const body = message.templateParameters.body;
+        const bodyParameters = this.buildBodyTemplateParameters(
+          this.isRecord(body) || Array.isArray(body) ? body : message.templateParameters,
+        );
+
+        if (bodyParameters.length > 0) {
+          components.push({
+            type: 'body',
+            parameters: bodyParameters,
+          });
+        }
       }
 
       const response = await this.http.post(
-        `/${this.phoneNumberId}/messages`,
+        `/${this.apiVersion}/${this.phoneNumberId}/messages`,
         {
           messaging_product: 'whatsapp',
           to: this.cleanPhone(message.to),
@@ -158,7 +164,7 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
   /**
    * Send media message (image, document, video, audio)
    */
-  async sendMedia(message: IMediaMessage): Promise<IMessageResponse> {
+  override async sendMedia(message: IMediaMessage): Promise<IMessageResponse> {
     try {
       const mediaType = message.type.toLowerCase(); // Convert enum to lowercase string for WhatsApp API
 
@@ -179,11 +185,15 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
         [mediaType]: mediaPayload,
       };
 
-      const response = await this.http.post(`/${this.phoneNumberId}/messages`, payload, {
-        headers: {
-          Authorization: `Bearer ${this.accessToken}`,
+      const response = await this.http.post(
+        `/${this.apiVersion}/${this.phoneNumberId}/messages`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+          },
         },
-      });
+      );
 
       const messageId = response.data.messages?.[0]?.id || `whatsapp-${Date.now()}`;
 
@@ -208,7 +218,7 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
    */
   async validateCredentials(): Promise<{ valid: boolean; error?: string }> {
     try {
-      const response = await this.http.get(`/${this.phoneNumberId}`, {
+      const response = await this.http.get(`/${this.apiVersion}/${this.phoneNumberId}`, {
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
         },
@@ -236,5 +246,52 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
    */
   protected getProviderName(): IntegrationProvider {
     return IntegrationProvider.WHATSAPP_BUSINESS;
+  }
+
+  private buildBodyTemplateParameters(
+    parameters: Record<string, unknown> | unknown[],
+  ): Array<Record<string, unknown>> {
+    if (Array.isArray(parameters)) {
+      return parameters.map((value) => this.buildTemplateParameter(value));
+    }
+
+    return Object.entries(parameters)
+      .filter(([key]) => key !== 'header')
+      .map(([parameterName, value]) => ({
+        ...this.buildTemplateParameter(value),
+        parameter_name: parameterName,
+      }));
+  }
+
+  private buildTemplateParameter(value: unknown): Record<string, unknown> {
+    if (this.isRecord(value)) {
+      const type = typeof value.type === 'string' ? value.type.toLowerCase() : 'text';
+      if (type === 'document') {
+        const document: Record<string, unknown> = {};
+        if (typeof value.id === 'string') document.id = value.id;
+        if (typeof value.link === 'string') document.link = value.link;
+        if (typeof value.filename === 'string') document.filename = value.filename;
+
+        return { type: 'document', document };
+      }
+
+      if (type === 'image' || type === 'video') {
+        const media: Record<string, unknown> = {};
+        if (typeof value.id === 'string') media.id = value.id;
+        if (typeof value.link === 'string') media.link = value.link;
+
+        return { type, [type]: media };
+      }
+
+      if (typeof value.text === 'string') {
+        return { type: 'text', text: value.text };
+      }
+    }
+
+    return { type: 'text', text: String(value) };
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 }
