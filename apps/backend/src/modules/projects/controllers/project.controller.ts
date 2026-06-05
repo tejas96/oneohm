@@ -32,7 +32,7 @@ import {
   UpdateProjectDto,
   UpdateProjectStatusDto,
 } from '../dto';
-import { TeamMemberResponseDto } from '../dto/project-team';
+import { TeamMemberResponseDto, SubmitTeamFeedbackDto } from '../dto/project-team';
 import { ProjectListItemDto } from '../dto/projects/project-list-item.dto';
 import { ProjectRepository } from '../repositories';
 import { ProjectTeamService } from '../services/project-team.service';
@@ -427,5 +427,29 @@ export class ProjectController {
     return plainToInstance(TeamMemberResponseDto, members, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Submit feedback for a project team member
+   */
+  @Post(':id/team/feedback')
+  @ApiOperation({
+    summary: 'Submit feedback for a project team member',
+    description: 'Allows project customer to rate and review an assigned team member',
+  })
+  async submitFeedback(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() dto: SubmitTeamFeedbackDto,
+  ): Promise<{ success: boolean }> {
+    await this.teamService.submitFeedback(
+      id,
+      dto.memberId,
+      currentUser.id,
+      currentUser.roles || [],
+      dto.rating,
+      dto.comment,
+    );
+    return { success: true };
   }
 }

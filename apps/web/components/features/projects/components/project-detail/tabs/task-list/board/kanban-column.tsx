@@ -135,6 +135,7 @@ export function KanbanColumn({
               onOpenTask={onOpenTask}
               onMoveToStatus={onMoveToStatus}
               isDraggingThis={draggingTaskId === task.id}
+              hasDependencyBlockers={task.hasDependencyBlockers}
             />
           ))
         )}

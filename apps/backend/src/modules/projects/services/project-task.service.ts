@@ -187,6 +187,24 @@ export class ProjectTaskService {
       filters,
     );
 
+    if (data.length > 0) {
+      const allProjectTasks = await this.taskRepository.findByProjectRaw(projectId);
+      const depStatusMap = new Map<string, TaskStatus>(
+        allProjectTasks.map((t) => [t.id, t.status]),
+      );
+      const statusMap = await this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS);
+
+      for (const task of data) {
+        (task as any).hasDependencyBlockers = (task.dependsOnTaskIds ?? []).some(
+          (depId: string) => {
+            const s = depStatusMap.get(depId);
+            if (!s) return false;
+            return statusMap.get(s)?.metadata.blocksDependents !== false;
+          },
+        );
+      }
+    }
+
     return {
       data,
       meta: {
@@ -203,6 +221,17 @@ export class ProjectTaskService {
     if (!task) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
+
+    const allProjectTasks = await this.taskRepository.findByProjectRaw(projectId);
+    const depStatusMap = new Map<string, TaskStatus>(allProjectTasks.map((t) => [t.id, t.status]));
+    const statusMap = await this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS);
+
+    (task as any).hasDependencyBlockers = (task.dependsOnTaskIds ?? []).some((depId: string) => {
+      const s = depStatusMap.get(depId);
+      if (!s) return false;
+      return statusMap.get(s)?.metadata.blocksDependents !== false;
+    });
+
     return task;
   }
 

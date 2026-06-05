@@ -11,7 +11,6 @@ import {
   SecurityEventStatus,
 } from '@oneohm-epc/shared/types';
 import * as bcrypt from 'bcrypt';
-import { MoreThan } from 'typeorm';
 
 import { PlatformSmsService } from './platform-sms.service';
 import { ConfigService } from '../../../config/config.service';
@@ -137,14 +136,14 @@ export class OtpService {
     }
 
     // 2. Find the most recent pending OTP for this phone
-    const otpEvent = await this.securityEventRepository.repository.findOne({
-      where: {
-        eventType: SecurityEventType.OTP_SENT,
-        status: SecurityEventStatus.PENDING,
-        expiresAt: MoreThan(new Date()),
-      },
-      order: { createdAt: 'DESC' },
-    });
+    const otpEvent = await this.securityEventRepository.repository
+      .createQueryBuilder('event')
+      .where('event.eventType = :eventType', { eventType: SecurityEventType.OTP_SENT })
+      .andWhere('event.status = :status', { status: SecurityEventStatus.PENDING })
+      .andWhere('event.expiresAt > :now', { now: new Date() })
+      .andWhere('event.metadata @> :metadata', { metadata: { phone } })
+      .orderBy('event.createdAt', 'DESC')
+      .getOne();
 
     if (!otpEvent || otpEvent.metadata?.phone !== phone) {
       // Log failed verification

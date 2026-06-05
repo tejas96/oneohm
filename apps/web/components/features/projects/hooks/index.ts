@@ -95,3 +95,6 @@ export type {
   ProjectTeamMember,
   TaskStatsSummary,
 } from './types';
+
+export { useProjectChatMessages, useSendProjectChatMessage } from './use-project-chat';
+export type { ProjectChatMessage } from './use-project-chat';

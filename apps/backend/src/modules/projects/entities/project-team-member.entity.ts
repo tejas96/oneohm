@@ -37,6 +37,12 @@ export class ProjectTeamMemberEntity extends BaseEntity {
   @Column({ name: 'is_project_manager', type: 'boolean', default: false })
   isProjectManager!: boolean;
 
+  @Column({ name: 'rating', type: 'integer', nullable: true })
+  rating?: number;
+
+  @Column({ name: 'comment', type: 'text', nullable: true })
+  comment?: string;
+
   // ==================== Timestamps ====================
 
   @Column({ name: 'joined_at', type: 'timestamp with time zone', default: () => 'NOW()' })

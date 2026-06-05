@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type TaskActivityEntry, TaskStatus, ProjectStatus } from '@oneohm-epc/shared/types';
+import {
+  type TaskActivityEntry,
+  TaskStatus,
+  ProjectStatus,
+  LookupTypeCode,
+} from '@oneohm-epc/shared/types';
 import {
   DataSource,
   type EntityManager,
@@ -540,17 +545,31 @@ export class ProjectTaskRepository {
   }> {
     if (!dependsOnTaskIds?.length) return { resolved: true, blockers: [] };
 
-    const tasks = await this.repository.find({
-      where: { id: In(dependsOnTaskIds) },
-      relations: ['workflowStep'],
-      withDeleted: true,
-    });
+    const [tasks, statusRows] = await Promise.all([
+      this.repository.find({
+        where: { id: In(dependsOnTaskIds) },
+        relations: ['workflowStep'],
+        withDeleted: true,
+      }),
+      this.repository.manager.query(
+        `SELECT code, metadata FROM lookups WHERE type_code = $1 AND deleted_at IS NULL`,
+        [LookupTypeCode.DEFAULT_TASK_STATUS],
+      ),
+    ]);
+
+    const statusMap = new Map<string, any>(
+      statusRows.map((r: { code: string; metadata: any }) => [
+        r.code,
+        typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata,
+      ]),
+    );
 
     const blockers: Array<{ name: string; status: string }> = [];
     for (const dep of tasks) {
       if (dep.deletedAt) continue;
-      if (dep.status === TaskStatus.CANCELLED) continue;
-      if (dep.status === TaskStatus.DONE) continue;
+      const blocks = statusMap.get(dep.status)?.blocksDependents !== false;
+      if (!blocks) continue;
+
       const name = dep.nameOverride ?? dep.workflowStep?.name ?? dep.code;
       blockers.push({ name, status: dep.status });
     }

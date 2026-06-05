@@ -14,6 +14,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { BomModule } from './modules/bom/bom.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
+import { ConsumerModule } from './modules/consumer/consumer.module';
 import { CustomerFeedbackModule } from './modules/customer-feedback/customer-feedback.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { DocumentsModule } from './modules/documents/documents.module';
@@ -61,6 +62,7 @@ import { UsersModule } from './modules/users/users.module';
     AppConfigModule,
     // Profile modules
     CustomersModule,
+    ConsumerModule,
     ResellersModule,
     EmployeesModule,
     // Other modules

@@ -1,7 +1,7 @@
 'use client';
 
 import { TaskStatus } from '@oneohm-epc/shared/types';
-import { Crown } from 'lucide-react';
+import { Crown, Star } from 'lucide-react';
 import Link from 'next/link';
 import type { JSX } from 'react';
 
@@ -85,15 +85,30 @@ export function OverviewTeamPanel({
               }
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="relative">
+                <div className="relative shrink-0">
                   <MUIAvatar name={fullName} size="md" />
                   {member.isProjectManager && (
                     <Crown className="absolute -top-1 -right-1 size-3.5 text-amber-500" />
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[13px] font-medium text-foreground truncate">{fullName}</p>
-                  <p className="text-[11px] text-foreground-secondary">{member.roleName}</p>
+                  <p className="text-[13px] font-medium text-foreground truncate flex items-center gap-1.5">
+                    {fullName}
+                    {member.rating !== undefined && member.rating > 0 && (
+                      <span className="inline-flex items-center text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-100 px-1 rounded gap-0.5 shrink-0">
+                        <Star className="size-2.5 fill-amber-500 text-amber-500" />
+                        {member.rating}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-[11px] text-foreground-secondary truncate max-w-[180px]">
+                    {member.roleName}
+                  </p>
+                  {member.comment && (
+                    <p className="text-[10px] text-foreground-tertiary italic font-normal truncate max-w-[180px] mt-0.5">
+                      "{member.comment}"
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">

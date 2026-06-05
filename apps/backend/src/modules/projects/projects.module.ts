@@ -8,6 +8,7 @@ import {
   ProjectController,
   ProjectTaskController,
   ProjectTeamController,
+  ProjectChatController,
   TasksController,
   WorkflowStepController,
 } from './controllers';
@@ -16,6 +17,7 @@ import {
   ProjectMaterialEntity,
   ProjectTaskEntity,
   ProjectTeamMemberEntity,
+  ProjectChatMessageEntity,
   WorkflowStepEntity,
 } from './entities';
 import { ProjectTeamGuard } from './guards';
@@ -24,6 +26,7 @@ import {
   ProjectRepository,
   ProjectTaskRepository,
   ProjectTeamRepository,
+  ProjectChatRepository,
   WorkflowStepRepository,
 } from './repositories';
 import {
@@ -33,6 +36,7 @@ import {
   ProjectService,
   ProjectTaskService,
   ProjectTeamService,
+  ProjectChatService,
   WorkflowEngineService,
   WorkflowStepService,
 } from './services';
@@ -52,6 +56,7 @@ import { UsersModule } from '../users/users.module';
       WorkflowStepEntity,
       ProjectTaskEntity,
       ProjectTeamMemberEntity,
+      ProjectChatMessageEntity,
     ]),
     OrganizationsModule,
     QuotesModule,
@@ -69,6 +74,7 @@ import { UsersModule } from '../users/users.module';
     WorkflowStepController,
     ProjectTaskController,
     ProjectTeamController,
+    ProjectChatController,
     TasksController,
   ],
   providers: [
@@ -78,6 +84,7 @@ import { UsersModule } from '../users/users.module';
     WorkflowStepRepository,
     ProjectTaskRepository,
     ProjectTeamRepository,
+    ProjectChatRepository,
     // Services
     ProjectService,
     ProjectAttentionService,
@@ -86,6 +93,7 @@ import { UsersModule } from '../users/users.module';
     WorkflowEngineService,
     ProjectTaskService,
     ProjectTeamService,
+    ProjectChatService,
     ProjectAnalyticsService,
     // Guards
     ProjectTeamGuard,
@@ -96,12 +104,14 @@ import { UsersModule } from '../users/users.module';
     WorkflowStepRepository,
     ProjectTaskRepository,
     ProjectTeamRepository,
+    ProjectChatRepository,
     ProjectService,
     ProjectAttentionService,
     MaterialService,
     WorkflowStepService,
     ProjectTaskService,
     ProjectTeamService,
+    ProjectChatService,
     ProjectAnalyticsService,
     ProjectTeamGuard,
   ],

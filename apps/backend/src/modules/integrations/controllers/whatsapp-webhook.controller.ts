@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Logger,
@@ -23,6 +25,7 @@ export class WhatsappWebhookController {
   constructor(private readonly integrationService: IntegrationService) {}
 
   @Get('webhook/:organizationId')
+  @Header('Content-Type', 'text/plain')
   @ApiOperation({ summary: 'Verify WhatsApp webhook callback URL' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Webhook challenge accepted' })
   async verifyWebhook(
@@ -35,6 +38,10 @@ export class WhatsappWebhookController {
 
     if (mode !== 'subscribe' || !expectedToken || verifyToken !== expectedToken) {
       throw new UnauthorizedException('Invalid WhatsApp webhook verification token');
+    }
+
+    if (!challenge || !/^[a-zA-Z0-9_-]+$/.test(challenge)) {
+      throw new BadRequestException('Invalid challenge parameter');
     }
 
     return challenge;

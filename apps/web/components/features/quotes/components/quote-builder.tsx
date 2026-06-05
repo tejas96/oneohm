@@ -85,7 +85,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui';
-import { ROUTES } from '@/lib/config/routes';
+import { ROUTES, buildRoute } from '@/lib/config/routes';
 import { cn } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/utils/error';
 import { formatCurrency, formatCurrencyDecimal } from '@/lib/utils/format';
@@ -568,6 +568,11 @@ export function QuoteBuilder(): JSX.Element {
           setSavedQuoteNumber(data.quoteNumber);
           setSavedMilestones(milestones);
           showToast.success(`Quote ${data.quoteNumber} saved`);
+          if (data.quoteId) {
+            router.push(buildRoute(ROUTES.QUOTES.DETAIL, { id: data.quoteId }));
+          } else {
+            showToast.error('Quote saved, but unable to redirect: quote ID is missing.');
+          }
         },
         onError: (error: unknown) => {
           showToast.error(getErrorMessage(error));
