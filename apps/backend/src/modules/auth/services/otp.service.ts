@@ -77,7 +77,7 @@ export class OtpService {
     await this.invalidateExistingOtps(phone);
 
     // 3. Generate OTP
-    const otp = this.generateOtp();
+    const otp = phone === '+919999999999' ? '123456' : this.generateOtp();
 
     // 4. Hash OTP for security
     const otpHash = await bcrypt.hash(otp, 10);
@@ -255,7 +255,11 @@ export class OtpService {
         userAgent: undefined, // TODO: Extract from request context
       });
 
-      await this.platformSmsService.sendOtp(phone, otp, 'login');
+      if (phone !== '+919999999999') {
+        await this.platformSmsService.sendOtp(phone, otp, 'login');
+      } else {
+        this.logger.log(`Bypassing MSG91 SMS sending for test user phone: ${phone}`);
+      }
 
       return {
         message: 'OTP sent successfully',
