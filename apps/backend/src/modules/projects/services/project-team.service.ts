@@ -1,9 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { TaskStatus } from '@oneohm-epc/shared/types';
 
+import { hasAdminBypassRole } from '../../iam/constants';
 import { type AddTeamMemberDto, type UpdateTeamMemberDto } from '../dto/project-team';
 import { type ProjectTeamMemberEntity } from '../entities';
 import { ProjectTeamRepository } from '../repositories/project-team.repository';
+import { ProjectRepository } from '../repositories/project.repository';
 
 /**
  * Internal input type that extends DTO with projectId from URL
@@ -19,7 +26,10 @@ interface AddTeamMemberInput extends AddTeamMemberDto {
  */
 @Injectable()
 export class ProjectTeamService {
-  constructor(private readonly teamRepository: ProjectTeamRepository) {}
+  constructor(
+    private readonly teamRepository: ProjectTeamRepository,
+    private readonly projectRepository: ProjectRepository,
+  ) {}
 
   /**
    * Add a new team member to a project
@@ -198,5 +208,48 @@ export class ProjectTeamService {
       inProgressTaskCount: parseInt(r.inProgressTaskCount, 10),
       notCompletedTaskCount: parseInt(r.notCompletedTaskCount, 10),
     }));
+  }
+
+  /**
+   * Submit feedback/rating for a team member
+   */
+  async submitFeedback(
+    projectId: string,
+    memberId: string,
+    customerId: string,
+    userRoles: string[],
+    rating: number,
+    comment: string,
+  ): Promise<ProjectTeamMemberEntity> {
+    // 1. Verify project exists and customer owns it (or has admin bypass)
+    const project = await this.projectRepository.repository.findOne({
+      where: { id: projectId },
+      relations: ['property', 'property.customer'],
+    });
+
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+
+    const isCustomer = project.property?.customer?.userId === customerId;
+    const isAdmin = hasAdminBypassRole(userRoles);
+
+    if (!isCustomer && !isAdmin) {
+      throw new ForbiddenException('You are not authorized to submit feedback for this project');
+    }
+
+    // 2. Validate memberId is assigned to this project
+    const member = await this.teamRepository.findById(memberId, projectId);
+    if (!member) {
+      throw new NotFoundException(
+        `Team member assignment with ID ${memberId} not found in this project`,
+      );
+    }
+
+    // 3. Update rating and comment
+    member.rating = rating;
+    member.comment = comment;
+
+    return this.teamRepository.repository.save(member);
   }
 }

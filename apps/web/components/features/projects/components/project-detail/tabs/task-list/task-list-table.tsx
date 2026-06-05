@@ -5,7 +5,7 @@ import {
   type TaskStatusConfig,
   TASK_PRIORITY_LABELS,
 } from '@oneohm-epc/shared/types';
-import { ChevronDown, ChevronRight, Minus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Lock, Minus } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { TASK_PRIORITY_DOT_COLOR, TASK_PRIORITY_HEX_COLOR } from '../../../../constants';
@@ -175,12 +175,14 @@ function TaskRow({
       {/* Summary */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="text-xs font-medium text-foreground truncate flex-1 min-w-0 group-hover:text-primary transition-colors">
+          <span className="text-xs font-medium text-foreground truncate flex-1 min-w-0 group-hover:text-primary transition-colors flex items-center gap-1.5">
             {task.name}
+            {task.hasDependencyBlockers && <Lock className="h-3 w-3 text-amber-500 shrink-0" />}
           </span>
         </TooltipTrigger>
         <TooltipContent side="top" variant="dark" className="max-w-[280px]">
           {task.code}: {task.name}
+          {task.hasDependencyBlockers ? ' (Blocked by incomplete dependencies)' : ''}
         </TooltipContent>
       </Tooltip>
 
@@ -277,6 +279,7 @@ function TaskRow({
             label={statusLabel}
             options={statusOptions}
             onChange={(v) => onStatusChange(task.id, v, task.status, task.completionPercentage)}
+            disabled={Boolean(task.hasDependencyBlockers)}
           />
         ) : (
           <span

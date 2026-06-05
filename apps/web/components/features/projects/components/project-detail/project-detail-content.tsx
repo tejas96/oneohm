@@ -6,6 +6,7 @@ import { FolderOpen } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 
+import { ProjectChatWidget } from './project-chat-widget';
 import { ProjectDetailHeader } from './project-detail-header';
 import { ProjectDetailTabs } from './project-detail-tabs';
 import { EditProjectModal } from '../edit-project-modal';
@@ -225,6 +226,8 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
           void refetchTeam();
         }}
       />
+
+      <ProjectChatWidget projectId={projectId} />
     </div>
   );
 }

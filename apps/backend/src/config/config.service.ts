@@ -11,6 +11,7 @@ import {
   JwtConfig,
   LoggingConfig,
   MailConfig,
+  MobileAppConfig,
   MonitoringConfig,
   RedisConfig,
   SecurityConfig,
@@ -127,6 +128,13 @@ export class ConfigService {
   }
 
   /**
+   * Mobile App Version Configuration
+   */
+  get mobileApp(): MobileAppConfig {
+    return this.nestConfigService.get<MobileAppConfig>('mobileApp')!;
+  }
+
+  /**
    * Seed Configuration
    */
   get seed(): SeedConfig {
@@ -151,6 +159,7 @@ export class ConfigService {
       thirdParty: this.thirdParty,
       firebase: this.firebase,
       integrations: this.integrations,
+      mobileApp: this.mobileApp,
       seed: this.seed,
     };
   }

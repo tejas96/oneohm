@@ -4,6 +4,7 @@ import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { disableNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/disable-native-drag-preview';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import OpenWithIcon from '@mui/icons-material/OpenWith';
 import {
   Box,
@@ -46,6 +47,7 @@ interface KanbanTaskCardProps {
   onMoveToStatus: (taskId: string, newStatus: string, currentCompletionPct: number) => void;
   /** Whether a drag is currently in progress globally (used to show ghost). */
   isDraggingThis: boolean;
+  hasDependencyBlockers?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -65,6 +67,7 @@ export function KanbanTaskCard({
   onOpenTask,
   onMoveToStatus,
   isDraggingThis,
+  hasDependencyBlockers = false,
 }: KanbanTaskCardProps): React.JSX.Element {
   const cardRef = useRef<HTMLDivElement>(null);
   const [previewContainer, setPreviewContainer] = useState<HTMLElement | null>(null);
@@ -339,6 +342,25 @@ export function KanbanTaskCard({
             >
               {code}
             </Typography>
+            {hasDependencyBlockers && (
+              <Tooltip title="Blocked by incomplete dependencies" placement="top">
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: 'warning.main',
+                    bgcolor: 'warning.50',
+                    border: '1px solid',
+                    borderColor: 'warning.light',
+                    borderRadius: 0.5,
+                    px: 0.5,
+                    py: 0.1,
+                  }}
+                >
+                  <LockOutlinedIcon sx={{ fontSize: 9 }} />
+                </Box>
+              </Tooltip>
+            )}
           </Box>
 
           {/* Right: assignee + move button */}

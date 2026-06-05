@@ -157,7 +157,7 @@ export class PaymentTermRepository {
       nextStatus = currentStatus;
     } else if (paidAmount <= 0) {
       nextStatus = PaymentTermStatus.PENDING;
-    } else if (paidAmount < expected) {
+    } else if (expected - paidAmount >= 1.0) {
       nextStatus = PaymentTermStatus.PARTIAL;
     } else {
       nextStatus = PaymentTermStatus.PAID;

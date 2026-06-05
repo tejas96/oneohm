@@ -90,6 +90,7 @@ export interface ProjectTaskItem {
   completionPercentage: number;
   labels?: string[];
   blockedReason?: string;
+  hasDependencyBlockers?: boolean;
 }
 
 export interface ProjectTaskListParams {

@@ -203,6 +203,7 @@ export function QuotePreviewPanel({
   const displayTotalGst = displayGst5 + displayGst18;
   const displayDiscountedBase = Math.round(discounted.discountedBase);
   const displayGrossTotal = displayDiscountedBase + displayTotalGst;
+
   const pricePerWatt =
     calculation.actualTotalWattage > 0 ? displayGrossTotal / calculation.actualTotalWattage : 0;
 

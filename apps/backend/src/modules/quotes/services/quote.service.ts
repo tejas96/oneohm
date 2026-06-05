@@ -7,9 +7,12 @@ import {
 import {
   CustomerStatus,
   type CalculatorInputs,
+  IntegrationStatus,
   PaymentMilestone,
   type PaymentMilestoneConfig,
   type PricingBreakdown,
+  DocumentEntityType,
+  MessageType,
   ProjectType,
   type QuoteCalculationOutput,
   type QuoteSnapshot,
@@ -17,12 +20,20 @@ import {
 } from '@oneohm-epc/shared/types';
 import { DataSource } from 'typeorm';
 
+import { DocumentService } from '../../documents/services';
+import { IntegrationService } from '../../integrations/services';
 import {
   QuoteConfigurationRepository,
   SubsidyConfigurationRepository,
 } from '../../master-data/repositories';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
-import { CreateQuoteDto, QuoteQueryDto, UpdateQuoteDto, UpdateQuoteStatusDto } from '../dto';
+import {
+  CreateQuoteDto,
+  QuoteQueryDto,
+  ShareQuoteWhatsappDto,
+  UpdateQuoteDto,
+  UpdateQuoteStatusDto,
+} from '../dto';
 import { QuoteVersionEntity } from '../entities/quote-version.entity';
 import { QuoteEntity } from '../entities/quote.entity';
 import { QuoteRepository } from '../repositories';
@@ -40,6 +51,8 @@ export class QuoteService {
     private readonly organizationRepository: OrganizationRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
+    private readonly documentService: DocumentService,
+    private readonly integrationService: IntegrationService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -189,6 +202,81 @@ export class QuoteService {
    */
   async findById(id: string, organizationId: string): Promise<QuoteEntity> {
     return this.quoteRepository.findById(id, organizationId);
+  }
+
+  async shareOnWhatsapp(
+    id: string,
+    organizationId: string,
+    dto: ShareQuoteWhatsappDto,
+    updatedBy: string,
+  ) {
+    const quote = await this.quoteRepository.findById(id, organizationId);
+    const recipient = dto.to || quote.customer?.phone;
+
+    if (!recipient) {
+      throw new BadRequestException('Recipient phone number is required');
+    }
+
+    const document = dto.documentId
+      ? await this.documentService.findById(dto.documentId, organizationId)
+      : await this.findLatestQuotePdf(id, organizationId);
+
+    const documentUrl = dto.documentUrl || document?.fileUrl;
+    if (!documentUrl) {
+      throw new BadRequestException('A public quote PDF URL is required');
+    }
+
+    const filename = dto.filename || document?.fileName || `${quote.quoteNumber}.pdf`;
+    const validUntil = quote.validUntil
+      ? new Date(quote.validUntil).toLocaleDateString('en-IN')
+      : '';
+    const customerName = [quote.customer?.firstName, quote.customer?.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    const result = await this.integrationService.sendTemplateMessage(organizationId, {
+      to: recipient,
+      type: MessageType.TEMPLATE,
+      templateName: 'quotation_pdf',
+      templateLanguage: 'en',
+      templateParameters: {
+        header: {
+          type: 'document',
+          link: documentUrl,
+          filename,
+        },
+        body: {
+          customer_name: customerName || 'Customer',
+          quot_no: quote.quoteNumber,
+          valid_date: validUntil,
+        },
+      },
+      metadata: {
+        quoteId: id,
+        quoteNumber: quote.quoteNumber,
+        documentId: document?.id,
+      },
+    });
+
+    if (quote.status === QuoteStatus.DRAFT && result.status !== IntegrationStatus.FAILED) {
+      await this.quoteRepository.update(id, organizationId, {
+        status: QuoteStatus.SENT,
+        updatedBy,
+      });
+    }
+
+    return result;
+  }
+
+  private async findLatestQuotePdf(id: string, organizationId: string) {
+    const documents = await this.documentService.findByEntity(
+      DocumentEntityType.QUOTE,
+      id,
+      organizationId,
+    );
+
+    return documents.find((document) => document.mimeType === 'application/pdf') || documents[0];
   }
 
   async findAllByPropertyId(propertyId: string, organizationId: string): Promise<QuoteEntity[]> {

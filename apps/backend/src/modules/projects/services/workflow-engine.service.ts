@@ -24,9 +24,6 @@ export class WorkflowEngineService {
   async checkDependencies(task: ProjectTaskEntity, newStatus: string): Promise<void> {
     if (!task.dependsOnTaskIds?.length) return;
 
-    // Determine which statuses require all dependencies to be resolved first.
-    // This comes entirely from DB metadata: statuses with blocksDependents=true
-    // cannot be entered if any dependency is still in an active (non-final) state.
     const statusRows = await this.lookupRepository.findByTypeCodeRaw(
       LookupTypeCode.DEFAULT_TASK_STATUS,
     );
@@ -34,8 +31,15 @@ export class WorkflowEngineService {
     const targetRow = statusRows.find((r) => r.code === newStatus);
     const targetMeta = targetRow?.metadata ?? {};
 
-    // Only block transitions INTO statuses that themselves mark blocksDependents=true
-    if (!targetMeta.blocksDependents) return;
+    // Determine which statuses require all dependencies to be resolved first.
+    // Transition requires resolved dependencies if:
+    //   - it is an active status that blocks other tasks (blocksDependents === true) AND is not 'blocked' itself
+    //   - it is a completed final status (isFinal === true AND autoCompletePct === 100)
+    const requiresResolved =
+      (targetMeta.blocksDependents === true && newStatus !== 'blocked') ||
+      (targetMeta.isFinal === true && targetMeta.autoCompletePct === 100);
+
+    if (!requiresResolved) return;
 
     const { resolved, blockers } = await this.taskRepository.areAllDependenciesResolved(
       task.dependsOnTaskIds,

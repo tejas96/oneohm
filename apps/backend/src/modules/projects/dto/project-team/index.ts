@@ -101,6 +101,14 @@ export class TeamMemberResponseDto {
   @Expose()
   isProjectManager!: boolean;
 
+  @ApiPropertyOptional({ example: 5 })
+  @Expose()
+  rating?: number;
+
+  @ApiPropertyOptional({ example: 'Great customer service' })
+  @Expose()
+  comment?: string;
+
   @ApiPropertyOptional({ type: TeamMemberUserDto })
   @Expose()
   @Type(() => TeamMemberUserDto)
@@ -126,4 +134,33 @@ export class TeamMemberResponseDto {
   @ApiProperty({ example: '2024-01-01T00:00:00Z' })
   @Expose()
   updatedAt!: Date;
+}
+
+/**
+ * DTO for customer submitting feedback for a team member
+ */
+export class SubmitTeamFeedbackDto {
+  @ApiProperty({
+    description: 'Team member assignment ID (project_team_members.id)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  memberId!: string;
+
+  @ApiProperty({
+    description: 'Star rating (1 to 5)',
+    example: 5,
+  })
+  @Type(() => Number)
+  @IsNotEmpty()
+  rating!: number;
+
+  @ApiProperty({
+    description: 'Text review / comment',
+    example: 'Very polite and helpful!',
+  })
+  @IsString()
+  @IsNotEmpty()
+  comment!: string;
 }

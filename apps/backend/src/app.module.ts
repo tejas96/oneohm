@@ -7,12 +7,14 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from './config';
 import { DatabaseModule } from './database/database.module';
+import { AppConfigModule } from './modules/app-config/app-config.module';
 import { ApprovalModule } from './modules/approvals/approval.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BomModule } from './modules/bom/bom.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
+import { ConsumerModule } from './modules/consumer/consumer.module';
 import { CustomerFeedbackModule } from './modules/customer-feedback/customer-feedback.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { DocumentsModule } from './modules/documents/documents.module';
@@ -57,8 +59,10 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     OrganizationsModule,
     PlatformModule,
+    AppConfigModule,
     // Profile modules
     CustomersModule,
+    ConsumerModule,
     ResellersModule,
     EmployeesModule,
     // Other modules

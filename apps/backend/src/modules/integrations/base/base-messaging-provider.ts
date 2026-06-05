@@ -1,4 +1,13 @@
-import { IntegrationStatus, type IMessageResponse } from '@oneohm-epc/shared/types';
+import {
+  IntegrationStatus,
+  type IAlertMessage,
+  type IMediaMessage,
+  type IMessage,
+  type IMessageResponse,
+  type IOtpMessage,
+  type ITemplateMessage,
+  type ITextMessage,
+} from '@oneohm-epc/shared/types';
 
 import { BaseIntegrationProvider } from './base-integration-provider';
 
@@ -15,6 +24,50 @@ import { BaseIntegrationProvider } from './base-integration-provider';
  * when integration system refactor is complete
  */
 export abstract class BaseMessagingProvider extends BaseIntegrationProvider {
+  async sendTextMessage(message: ITextMessage): Promise<IMessageResponse> {
+    return this.sendText(message);
+  }
+
+  async sendTemplateMessage(message: ITemplateMessage): Promise<IMessageResponse> {
+    return this.sendTemplate(message);
+  }
+
+  async sendMediaMessage(message: IMediaMessage): Promise<IMessageResponse> {
+    return this.sendMedia(message);
+  }
+
+  async sendOtpMessage(message: IOtpMessage): Promise<IMessageResponse> {
+    return this.sendOtp(message);
+  }
+
+  async sendAlertMessage(message: IAlertMessage): Promise<IMessageResponse> {
+    return this.sendAlert(message);
+  }
+
+  sendText(_message: ITextMessage): Promise<IMessageResponse> {
+    return Promise.resolve(this.createUnsupportedResponse('sendText'));
+  }
+
+  sendTemplate(_message: ITemplateMessage): Promise<IMessageResponse> {
+    return Promise.resolve(this.createUnsupportedResponse('sendTemplate'));
+  }
+
+  sendMedia(_message: IMediaMessage): Promise<IMessageResponse> {
+    return Promise.resolve(this.createUnsupportedResponse('sendMedia'));
+  }
+
+  sendOtp(_message: IOtpMessage): Promise<IMessageResponse> {
+    return Promise.resolve(this.createUnsupportedResponse('sendOtp'));
+  }
+
+  sendAlert(_message: IAlertMessage): Promise<IMessageResponse> {
+    return Promise.resolve(this.createUnsupportedResponse('sendAlert'));
+  }
+
+  sendMessage(_message: IMessage): Promise<IMessageResponse> {
+    return Promise.resolve(this.createUnsupportedResponse('sendMessage'));
+  }
+
   /**
    * Create a success response
    */
@@ -43,6 +96,19 @@ export abstract class BaseMessagingProvider extends BaseIntegrationProvider {
       provider: this.getProviderName(),
       timestamp: new Date(),
       ...errorData,
+    };
+  }
+
+  private createUnsupportedResponse(operation: string): IMessageResponse {
+    return {
+      messageId: `unsupported-${Date.now()}`,
+      status: IntegrationStatus.FAILED,
+      provider: this.getProviderName(),
+      timestamp: new Date(),
+      error: {
+        code: 'UNSUPPORTED_OPERATION',
+        message: `${operation} is not supported by ${this.getProviderName()}`,
+      },
     };
   }
 }

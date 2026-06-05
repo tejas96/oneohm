@@ -24,11 +24,10 @@ interface QuotePricingCardProps {
 
 export function QuotePricingCard({
   breakdown,
-  effectivePrice,
   profitPercent,
   profitAmount,
 }: QuotePricingCardProps): React.JSX.Element {
-  const finalPrice = breakdown?.totalPrice ?? effectivePrice ?? 0;
+  const finalPrice = breakdown?.totalPrice ?? 0;
   const basePrice = breakdown?.basePrice ?? 0;
   const hasProfit = profitAmount != null && profitPercent != null && profitAmount > 0;
   const rawComponentCost = basePrice - (profitAmount ?? 0);

@@ -140,8 +140,8 @@ export function OverviewHero({ project, projectId, isActive }: OverviewHeroProps
   return (
     <Card className="hero-gradient rounded-xl border border-gray-100">
       <CardContent className="p-5">
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12 xl:items-center">
-          <div className="flex min-w-0 items-center gap-4 xl:col-span-5">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-center">
+          <div className="flex min-w-0 items-center gap-4 lg:col-span-5">
             <div className="relative shrink-0">
               <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-lg font-semibold text-white shadow-md">
                 {initials}
@@ -219,11 +219,11 @@ export function OverviewHero({ project, projectId, isActive }: OverviewHeroProps
             </div>
           </div>
 
-          <div className="hidden justify-center xl:col-span-1 xl:flex">
+          <div className="hidden justify-center lg:col-span-1 lg:flex">
             <div className="h-14 w-px bg-gray-200" />
           </div>
 
-          <div className="flex items-center gap-3 xl:col-span-3">
+          <div className="flex items-center gap-3 lg:col-span-3">
             <div className="relative shrink-0">
               <svg className="progress-ring size-20" viewBox="0 0 36 36" aria-hidden>
                 <path d={RING_PATH} fill="none" stroke="#f1f5f9" strokeWidth={3} />
@@ -264,7 +264,7 @@ export function OverviewHero({ project, projectId, isActive }: OverviewHeroProps
             </div>
           </div>
 
-          <div className="rounded-xl border border-amber-100 bg-white p-3 shadow-sm xl:col-span-3">
+          <div className="rounded-xl border border-amber-100 bg-white p-3 shadow-sm lg:col-span-3">
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-amber-600">
               Next Action
             </p>

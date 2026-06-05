@@ -101,6 +101,8 @@ export interface ProjectTeamMember {
   isProjectManager: boolean;
   joinedAt: string;
   user?: { firstName?: string; lastName?: string; email?: string };
+  rating?: number;
+  comment?: string;
 }
 
 /**

@@ -301,6 +301,14 @@ export class ReceiptService {
       paidAmount: number;
       status: PaymentTermStatus;
       dueDate: string | null;
+      payments: Array<{
+        id: string;
+        paymentNumber: string;
+        paidAmount: number;
+        paymentMethod: string;
+        status: string;
+        createdAt: string;
+      }>;
     }>;
     nextDueTermId: string | null;
     overdueCount: number;
@@ -338,6 +346,24 @@ export class ReceiptService {
         t.dueDate < today,
     ).length;
 
+    const paymentsRows = await this.dataSource.query(
+      `SELECT
+         id,
+         payment_number AS "paymentNumber",
+         paid_amount    AS "paidAmount",
+         payment_method AS "paymentMethod",
+         status,
+         created_at     AS "createdAt",
+         payment_term_id AS "paymentTermId"
+       FROM payments
+       WHERE project_id = $1
+         AND organization_id = $2
+         AND deleted_at IS NULL
+         AND status IN (${counted})
+       ORDER BY created_at DESC`,
+      [project.id, organizationId],
+    );
+
     return {
       totals: {
         totalExpected,
@@ -353,6 +379,26 @@ export class ReceiptService {
         paidAmount: Number(t.paidAmount),
         status: t.status,
         dueDate: t.dueDate ?? null,
+        payments: (
+          paymentsRows as Array<{
+            id: string;
+            paymentNumber: string;
+            paidAmount: string | number;
+            paymentMethod: string;
+            status: string;
+            createdAt: Date | string;
+            paymentTermId: string;
+          }>
+        )
+          .filter((p) => p.paymentTermId === t.id)
+          .map((p) => ({
+            id: p.id,
+            paymentNumber: p.paymentNumber,
+            paidAmount: Number(p.paidAmount),
+            paymentMethod: p.paymentMethod,
+            status: p.status,
+            createdAt: p.createdAt instanceof Date ? p.createdAt.toISOString() : p.createdAt,
+          })),
       })),
       nextDueTermId: next?.id ?? null,
       overdueCount,

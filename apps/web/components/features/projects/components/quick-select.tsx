@@ -30,12 +30,14 @@ export function QuickSelect({
   label,
   options,
   onChange,
+  disabled,
 }: {
   value: string;
   color: string;
   label: string;
   options: MUISelectOption[];
   onChange: (value: string) => void;
+  disabled?: boolean;
 }): JSX.Element {
   return (
     <MUISelect
@@ -43,6 +45,7 @@ export function QuickSelect({
       onChange={(e) => onChange(e.target.value as string)}
       size="small"
       variant="outlined"
+      disabled={disabled}
       formControlProps={{
         size: 'small',
         sx: {

@@ -30,6 +30,7 @@ import {
   CreateQuoteDto,
   QuoteQueryDto,
   QuoteResponseDto,
+  ShareQuoteWhatsappDto,
   UpdateQuoteDto,
   UpdateQuoteStatusDto,
 } from '../dto';
@@ -212,6 +213,23 @@ export class QuoteController {
     return plainToInstance(QuoteResponseDto, quote, {
       excludeExtraneousValues: true,
     });
+  }
+
+  @Post(':id/share/whatsapp')
+  @ApiOperation({
+    summary: 'Share quote PDF on WhatsApp',
+    description:
+      'Sends the approved quotation_pdf WhatsApp template with a quote PDF document header. ' +
+      'This is a business-initiated WhatsApp message.',
+  })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'WhatsApp message accepted by Meta' })
+  async shareOnWhatsapp(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ShareQuoteWhatsappDto,
+  ) {
+    return this.quoteService.shareOnWhatsapp(id, organizationId, dto, currentUser.id);
   }
 
   /**

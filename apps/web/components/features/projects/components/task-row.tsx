@@ -1,5 +1,6 @@
 'use client';
 
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
@@ -165,6 +166,11 @@ export function TaskRow({
           >
             {task.name || task.code || 'Untitled'}
           </Typography>
+          {task.hasDependencyBlockers && (
+            <Tooltip title="Blocked by incomplete dependencies" placement="top">
+              <LockOutlinedIcon sx={{ fontSize: 13, color: 'warning.main', flexShrink: 0 }} />
+            </Tooltip>
+          )}
           {isStale && (
             <Tooltip title={`No updates in ${daysStale} days`} placement="top">
               <Typography
@@ -309,6 +315,7 @@ export function TaskRow({
             label={statusLabel}
             options={statusOptions}
             onChange={(v) => onStatusChange(task.id, v, task.status, task.completionPercentage)}
+            disabled={Boolean(task.hasDependencyBlockers)}
           />
         ) : (
           <Box
