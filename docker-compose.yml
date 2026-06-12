@@ -1,7 +1,7 @@
+# Compose-local stack: production-built images with dev env overlays (not identical to Fly prod).
+# Backend: run `npm run docker:build:backend` (prunes dist/) before first build.
 services:
   # Backend API Service (NestJS)
-  # NOTE: Run `npx nx run backend:prune` before `docker compose up --build`
-  # to generate the pruned dist/ folder that the Dockerfile requires.
   backend:
     build:
       context: apps/backend
@@ -29,7 +29,7 @@ services:
           'CMD',
           'node',
           '-e',
-          "require('http').get('http://localhost:8085', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+          "require('http').get('http://localhost:8085/api/v1', (r) => { process.exit(r.statusCode >= 200 && r.statusCode < 400 ? 0 : 1); }).on('error', () => process.exit(1))",
         ]
       interval: 30s
       timeout: 3s
@@ -41,6 +41,9 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://backend:8085/api/v1
+        NEXT_PUBLIC_APP_NAME: OneOhm EPC
     container_name: oneohm-epc-web-dev
     env_file:
       - ./apps/web/.env.local
@@ -59,14 +62,9 @@ services:
       test:
         [
           'CMD',
-          'wget',
-          '--no-verbose',
-          '--tries=1',
-          '--spider',
-          'http://localhost:3001',
-          '||',
-          'exit',
-          '1',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3001/api/health', (r) => { process.exit(r.statusCode >= 200 && r.statusCode < 400 ? 0 : 1); }).on('error', () => process.exit(1))",
         ]
       interval: 30s
       timeout: 10s

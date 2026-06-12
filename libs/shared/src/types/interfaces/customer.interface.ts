@@ -5,6 +5,8 @@
  * @module shared/types/interfaces/customer
  */
 
+import type { Project } from './project.interface';
+import type { Quote } from './quote.interface';
 import {
   FollowupPriority,
   FollowupStatus,
@@ -14,8 +16,6 @@ import {
   PropertyType,
 } from '../enums/customer.enum';
 import { QuoteStatus } from '../enums/quote.enum';
-import type { Project } from './project.interface';
-import type { Quote } from './quote.interface';
 
 // ============================================================================
 // Customer Property Interface

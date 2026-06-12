@@ -7,6 +7,12 @@ yarn-error.log
 dist
 build
 coverage
+**/.next
+apps/backend/dist
+libs/shared/dist
+
+# Source (not needed in web Docker build when using nx from copied tree)
+apps/backend/src
 
 # Tests
 test

@@ -14,9 +14,15 @@
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "command": "eslint libs/shared/src/**/*.ts --config eslint.config.mjs"
+        "lintFilePatterns": ["libs/shared/src/**/*.ts"]
+      },
+      "configurations": {
+        "ci": {
+          "maxWarnings": 0
+        }
       }
     },
     "typecheck": {

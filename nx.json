@@ -45,17 +45,6 @@
   "plugins": [
     {
       "plugin": "@nx/js"
-    },
-    {
-      "plugin": "@nx/docker",
-      "options": {
-        "buildTarget": {
-          "name": "docker:build"
-        },
-        "runTarget": {
-          "name": "docker:run"
-        }
-      }
     }
   ],
   "generators": {
@@ -89,7 +78,7 @@
     "default": {
       "runner": "nx/tasks-runners/default",
       "options": {
-        "cacheableOperations": ["build", "lint", "test", "test:e2e", "format:check"]
+        "cacheableOperations": ["build", "lint", "test", "test:e2e", "format:check", "typecheck"]
       }
     }
   }

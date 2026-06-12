@@ -32,7 +32,8 @@ primary_region = 'bom'  # Mumbai region
   DATABASE_POOL_MAX = '20'
   
   # Features
-  ENABLE_SWAGGER = 'true'
+  ENABLE_SWAGGER = 'false'
+  NODE_OPTIONS = '--max-old-space-size=768'
   ENABLE_CACHING = 'false'
   ENABLE_RATE_LIMITING = 'true'
   ENABLE_COMPRESSION = 'true'
@@ -99,11 +100,6 @@ primary_region = 'bom'  # Mumbai region
 # Graceful Shutdown
 [processes]
   app = 'node src/main.js'
-
-# Statics (if any)
-[[statics]]
-  guest_path = '/app/public'
-  url_prefix = '/public'
 
 # Kill signal for graceful shutdown
 kill_signal = 'SIGTERM'

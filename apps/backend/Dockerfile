@@ -1,7 +1,7 @@
 # Optimized Production Dockerfile for NestJS backend using Nx Pruning
 FROM node:20-alpine
 
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init python3 make g++
 
 # Create non-root user BEFORE copying files — avoids a separate chown layer
 RUN addgroup -g 1001 -S nodejs && \

@@ -35,13 +35,18 @@
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "command": "eslint apps/backend/src apps/backend/test apps/backend/package.json --config eslint.config.mjs"
+        "lintFilePatterns": [
+          "apps/backend/src/**/*.ts",
+          "apps/backend/test/**/*.ts",
+          "apps/backend/package.json"
+        ]
       },
       "configurations": {
         "ci": {
-          "command": "eslint apps/backend/src apps/backend/test apps/backend/package.json --config eslint.config.mjs --max-warnings 1000"
+          "maxWarnings": 650
         }
       }
     },
@@ -108,12 +113,16 @@
         "outputPath": "apps/backend/dist"
       }
     },
+    "prune-clean": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["prune-lockfile", "copy-workspace-modules"],
+      "options": {
+        "command": "node apps/backend/scripts/prune-clean.mjs"
+      }
+    },
     "prune": {
       "executor": "nx:noop",
-      "dependsOn": ["prune-lockfile", "copy-workspace-modules"]
-    },
-    "docker:build": {
-      "dependsOn": ["prune"]
+      "dependsOn": ["prune-clean"]
     },
     "deploy": {
       "executor": "nx:run-commands",

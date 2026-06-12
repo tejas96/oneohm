@@ -64,7 +64,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: .nx/cache
-          key: ${{ runner.os }}-nx-${{ github.sha }}
+          key: ${{ runner.os }}-nx-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nx-
 
@@ -106,7 +106,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: .nx/cache
-          key: ${{ runner.os }}-nx-${{ github.sha }}
+          key: ${{ runner.os }}-nx-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nx-
 
@@ -154,7 +154,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: .nx/cache
-          key: ${{ runner.os }}-nx-${{ github.sha }}
+          key: ${{ runner.os }}-nx-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nx-
 
@@ -199,7 +199,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: .nx/cache
-          key: ${{ runner.os }}-nx-${{ github.sha }}
+          key: ${{ runner.os }}-nx-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nx-
 
@@ -251,7 +251,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: .nx/cache
-          key: ${{ runner.os }}-nx-${{ github.sha }}
+          key: ${{ runner.os }}-nx-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-nx-
 
@@ -265,10 +265,21 @@ jobs:
         env:
           NODE_OPTIONS: '--max-old-space-size=4096'
 
-      - name: Prune backend (generate pruned lockfile + workspace modules)
-        # Must run AFTER build. Produces apps/backend/dist/package-lock.json
-        # and apps/backend/dist/workspace_modules/ required by the Dockerfile.
+      - name: Check if backend prune is needed
+        id: check-prune
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          AFFECTED=$(npx nx show projects --affected --json 2>/dev/null || echo "[]")
+          if echo "$AFFECTED" | grep -qE '"backend"|"shared"'; then
+            echo "needed=true" >> $GITHUB_OUTPUT
+            echo "✅ Backend prune needed (backend or shared affected)"
+          else
+            echo "needed=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Backend prune not needed"
+          fi
+
+      - name: Prune backend (generate pruned lockfile + workspace modules)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check-prune.outputs.needed == 'true'
         run: npx nx run backend:prune
 
       - name: Upload build artifacts
@@ -333,8 +344,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts-${{ github.sha }}
-          # Restores apps/backend/dist (with pruned lockfile + workspace_modules)
-          # into the same relative path so the Dockerfile COPY dist/ . works.
+
+      - name: Validate backend artifact
+        if: steps.check-backend.outputs.affected == 'true'
+        run: |
+          test -f apps/backend/dist/package-lock.json
+          test -f apps/backend/dist/src/main.js
+          echo "✅ Backend artifact validated"
 
       - name: Setup Fly CLI
         if: steps.check-backend.outputs.affected == 'true'
@@ -403,6 +419,18 @@ jobs:
             echo "⏭️ Web is not affected"
           fi
 
+      - name: Download build artifacts
+        if: steps.check-web.outputs.affected == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-${{ github.sha }}
+
+      - name: Validate web artifact
+        if: steps.check-web.outputs.affected == 'true'
+        run: |
+          test -d apps/web/.next/standalone
+          echo "✅ Web artifact validated"
+
       - name: Setup Fly CLI
         if: steps.check-web.outputs.affected == 'true'
         uses: superfly/flyctl-actions/setup-flyctl@master
@@ -411,9 +439,7 @@ jobs:
 
       - name: Deploy Web to Fly.io
         if: steps.check-web.outputs.affected == 'true'
-        run: |
-          flyctl deploy --config apps/web/fly.toml --local-only || \
-          flyctl deploy --config apps/web/fly.toml --remote-only --depot=false
+        run: flyctl deploy --config apps/web/fly.toml --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
@@ -427,3 +453,83 @@ jobs:
           else
             echo "⏭️ Web not affected, skipped" >> $GITHUB_STEP_SUMMARY
           fi
+
+  docker-verify-backend:
+    name: Docker Verify (Backend)
+    needs: [build, setup]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v5
+        with:
+          path: node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      - name: Set NX SHAs
+        uses: nrwl/nx-set-shas@v5
+        with:
+          main-branch-name: 'main'
+
+      - name: Build and prune backend for Docker
+        run: |
+          npx nx run backend:build --configuration=production
+          npx nx run backend:prune
+
+      - name: Validate pruned dist
+        run: |
+          test -f apps/backend/dist/package-lock.json
+          test -f apps/backend/dist/src/main.js
+
+      - name: Build backend Docker image
+        run: docker build -t oneohm-backend-test apps/backend
+
+      - name: Check image size
+        run: |
+          SIZE=$(docker image inspect oneohm-backend-test --format='{{.Size}}')
+          echo "Image size: $SIZE bytes"
+          if [ "$SIZE" -gt 300000000 ]; then
+            echo "❌ Image exceeds 300MB limit"
+            exit 1
+          fi
+
+  docker-verify-web:
+    name: Docker Verify (Web)
+    needs: [build, setup]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v5
+        with:
+          path: node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      - name: Build web Docker image
+        run: |
+          docker build -f apps/web/Dockerfile . \
+            --build-arg NEXT_PUBLIC_API_URL=https://oneohm-epc-backend.fly.dev/api/v1 \
+            --build-arg NEXT_PUBLIC_APP_NAME="OneOhm EPC" \
+            -t oneohm-web-test

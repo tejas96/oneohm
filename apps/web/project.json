@@ -45,9 +45,22 @@
       }
     },
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "command": "eslint apps/web/app apps/web/components apps/web/lib apps/web/providers apps/web/types apps/web/middleware.ts --config eslint.config.mjs"
+        "lintFilePatterns": [
+          "apps/web/app/**/*.{ts,tsx}",
+          "apps/web/components/**/*.{ts,tsx}",
+          "apps/web/lib/**/*.{ts,tsx}",
+          "apps/web/providers/**/*.{ts,tsx}",
+          "apps/web/types/**/*.{ts,tsx}",
+          "apps/web/middleware.ts"
+        ]
+      },
+      "configurations": {
+        "ci": {
+          "maxWarnings": 1500
+        }
       }
     },
     "test": {
