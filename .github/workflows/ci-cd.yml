@@ -282,14 +282,20 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check-prune.outputs.needed == 'true'
         run: npx nx run backend:prune
 
-      - name: Upload build artifacts
+      - name: Upload backend dist artifact
         uses: actions/upload-artifact@v7
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
-          name: build-artifacts-${{ github.sha }}
-          path: |
-            apps/backend/dist
-            apps/web/.next
+          name: backend-dist-${{ github.sha }}
+          path: apps/backend/dist
+          retention-days: 7
+
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v7
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: web-next-${{ github.sha }}
+          path: apps/web/.next
           retention-days: 7
 
       - name: Generate Summary
@@ -339,11 +345,12 @@ jobs:
             echo "⏭️ Backend is not affected"
           fi
 
-      - name: Download build artifacts
+      - name: Download backend dist artifact
         if: steps.check-backend.outputs.affected == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: build-artifacts-${{ github.sha }}
+          name: backend-dist-${{ github.sha }}
+          path: apps/backend
 
       - name: Validate backend artifact
         if: steps.check-backend.outputs.affected == 'true'
@@ -419,11 +426,12 @@ jobs:
             echo "⏭️ Web is not affected"
           fi
 
-      - name: Download build artifacts
+      - name: Download web build artifact
         if: steps.check-web.outputs.affected == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: build-artifacts-${{ github.sha }}
+          name: web-next-${{ github.sha }}
+          path: apps/web
 
       - name: Validate web artifact
         if: steps.check-web.outputs.affected == 'true'
