@@ -44,15 +44,7 @@
   },
   "plugins": [
     {
-      "plugin": "@nx/webpack/plugin",
-      "options": {
-        "buildTargetName": "build",
-        "serveTargetName": "serve",
-        "previewTargetName": "preview",
-        "buildDepsTargetName": "build-deps",
-        "watchDepsTargetName": "watch-deps",
-        "serveStaticTargetName": "serve-static"
-      }
+      "plugin": "@nx/js"
     }
   ],
   "generators": {
@@ -86,7 +78,7 @@
     "default": {
       "runner": "nx/tasks-runners/default",
       "options": {
-        "cacheableOperations": ["build", "lint", "test", "test:e2e", "format:check"]
+        "cacheableOperations": ["build", "lint", "test", "test:e2e", "format:check", "typecheck"]
       }
     }
   }

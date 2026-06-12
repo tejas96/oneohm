@@ -22,8 +22,8 @@ The project uses a **unified CI/CD workflow** powered by NX that intelligently r
 
 **Triggers:**
 
-- Push to `main` or `develop` branches
-- Pull requests to `main` or `develop` branches
+- Push to `main` or `dev` branches
+- Pull requests to `main` or `dev` branches
 
 **Jobs:**
 
@@ -54,27 +54,31 @@ The project uses a **unified CI/CD workflow** powered by NX that intelligently r
 #### Job 5: Deploy Backend (main only)
 
 - Checks if backend is affected
-- Builds Docker image if affected
-- Deploys to production
+- Downloads pruned `apps/backend/dist` artifact
+- Deploys to **Fly.io** (`flyctl deploy apps/backend`)
 
 #### Job 6: Deploy Web (main only)
 
 - Checks if web is affected
-- Builds Next.js application
-- Deploys to production (Vercel, Netlify, etc.)
+- Downloads `apps/web/.next` artifact
+- Deploys to **Fly.io** via thin `Dockerfile.runtime`
+
+#### PR: Docker Verify
+
+- `docker-verify-backend` — prune + `docker build` + `/app` filesystem size check (500MB limit; Docker layer total is logged for reference only)
+- `docker-verify-web` — full multi-stage build smoke test
 
 ---
 
-### 2. UX Deployment Workflow (`ux-deploy.yml`)
+### 2. Publish Shared (`publish-shared.yml`)
 
-**Location**: `.github/workflows/ux-deploy.yml`
+**Location**: `.github/workflows/publish-shared.yml`
 
-**Purpose**: Deploys design documentation to GitHub Pages
+**Purpose**: Build and publish `@oneohm-epc/shared` to GitHub Packages on `libs/shared` changes.
 
-**Triggers:**
+### 3. UX Deployment (inactive)
 
-- Push to `main` branch (changes in `apps/ux/`)
-- Manual workflow dispatch
+**Location**: `.github/workflows/ux-deploy.yml.comment.out` (disabled)
 
 **Jobs:**
 

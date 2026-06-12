@@ -12,9 +12,14 @@ async function bootstrap(): Promise<void> {
   // Get ConfigService
   const configService = app.get(ConfigService);
 
-  // Enable CORS
+  // Enable CORS — honour CORS_ORIGIN env (comma-separated); allow all in development
+  const corsOrigins = configService.app.corsOrigin
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: true,
+    origin: configService.isDevelopment ? true : corsOrigins,
     credentials: true,
   });
 

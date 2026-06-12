@@ -1,6 +1,6 @@
+import type { QuoteCalculationOutput } from './quote-calculator.interface';
 import type { ProjectType } from '../enums/product.enum';
 import type { DcrPreference, QuoteCalculationMode, QuoteStatus } from '../enums/quote.enum';
-import type { QuoteCalculationOutput } from './quote-calculator.interface';
 
 /**
  * Payment Milestone Interface

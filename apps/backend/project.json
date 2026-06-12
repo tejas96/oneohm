@@ -12,7 +12,8 @@
         "outputPath": "apps/backend/dist",
         "main": "apps/backend/src/main.ts",
         "tsConfig": "apps/backend/tsconfig.build.json",
-        "assets": []
+        "assets": [],
+        "generatePackageJson": true
       },
       "configurations": {
         "production": {
@@ -37,11 +38,15 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/backend/src/**/*.ts", "apps/backend/test/**/*.ts"]
+        "lintFilePatterns": [
+          "apps/backend/src/**/*.ts",
+          "apps/backend/test/**/*.ts",
+          "apps/backend/package.json"
+        ]
       },
       "configurations": {
         "ci": {
-          "maxWarnings": 1000
+          "maxWarnings": 650
         }
       }
     },
@@ -90,6 +95,40 @@
       "options": {
         "command": "ts-node -r tsconfig-paths/register src/database/seeds/platform-admin.seed.ts",
         "cwd": "apps/backend"
+      }
+    },
+    "prune-lockfile": {
+      "executor": "@nx/js:prune-lockfile",
+      "dependsOn": ["build"],
+      "options": {
+        "projectName": "backend",
+        "outputPath": "apps/backend/dist"
+      }
+    },
+    "copy-workspace-modules": {
+      "executor": "@nx/js:copy-workspace-modules",
+      "dependsOn": ["build"],
+      "options": {
+        "projectName": "backend",
+        "outputPath": "apps/backend/dist"
+      }
+    },
+    "prune-clean": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["prune-lockfile", "copy-workspace-modules"],
+      "options": {
+        "command": "node apps/backend/scripts/prune-clean.mjs"
+      }
+    },
+    "prune": {
+      "executor": "nx:noop",
+      "dependsOn": ["prune-clean"]
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["prune"],
+      "options": {
+        "command": "flyctl deploy apps/backend --config apps/backend/fly.toml"
       }
     }
   }

@@ -6,6 +6,12 @@ primary_region = 'bom'  # Mumbai region
 
 [build]
   dockerfile = 'Dockerfile'
+  # IMPORTANT: This Dockerfile expects its build context to be apps/backend/
+  # (so COPY dist/ . finds the pre-built pruned output).
+  # Deploy using: flyctl deploy apps/backend --config apps/backend/fly.toml
+  # OR simply: cd apps/backend && flyctl deploy
+  # Do NOT run: flyctl deploy --config apps/backend/fly.toml from the repo root
+  # (that sets the build context to the repo root and dist/ won't be found)
 
 # Non-sensitive environment variables
 # Sensitive ones MUST be set via: fly secrets set KEY=value
@@ -26,7 +32,8 @@ primary_region = 'bom'  # Mumbai region
   DATABASE_POOL_MAX = '20'
   
   # Features
-  ENABLE_SWAGGER = 'true'
+  ENABLE_SWAGGER = 'false'
+  NODE_OPTIONS = '--max-old-space-size=768'
   ENABLE_CACHING = 'false'
   ENABLE_RATE_LIMITING = 'true'
   ENABLE_COMPRESSION = 'true'
@@ -86,18 +93,13 @@ primary_region = 'bom'  # Mumbai region
 # Deployment Configuration
 [deploy]
   # Run migrations before starting new version (like Heroku release phase)
-  release_command = 'node dist/src/scripts/run-migrations.js'
+  release_command = 'node src/scripts/run-migrations.js'
   # Rolling deployment strategy
   strategy = 'rolling'
 
 # Graceful Shutdown
 [processes]
-  app = 'node dist/src/main.js'
-
-# Statics (if any)
-[[statics]]
-  guest_path = '/app/public'
-  url_prefix = '/public'
+  app = 'node src/main.js'
 
 # Kill signal for graceful shutdown
 kill_signal = 'SIGTERM'

@@ -21,7 +21,10 @@ The project uses Docker Compose to orchestrate:
 ### Start All Services
 
 ```bash
-# Production mode
+# Build images (backend requires pruned dist first)
+npm run docker:build
+# Or: npm run docker:build:backend && npm run docker:build:web
+
 docker compose up -d
 
 # View logs
@@ -57,18 +60,22 @@ docker compose up -d web
 - **web**: http://localhost:3001
 - **postgres**: localhost:5436
 
-### 2. Development (`docker-compose.dev.yml`)
-
-Development setup with hot reload:
+### 2. Local development (without Docker)
 
 ```bash
-# Start development environment
-docker compose -f docker-compose.dev.yml up -d
-
-# View logs with hot reload
-docker compose -f docker-compose.dev.yml logs -f backend
-docker compose -f docker-compose.dev.yml logs -f web
+npm ci
+npx nx serve backend   # port 8085
+npx nx serve web       # port 3001
 ```
+
+Copy `apps/backend/.env.example` → `apps/backend/.env` and `apps/web/.env.example` → `apps/web/.env.local`.
+
+### Build context rules
+
+| Service | Docker context | Notes |
+|---------|----------------|-------|
+| Backend | `apps/backend/` | Run `nx run backend:prune` before build — Dockerfile copies `dist/` |
+| Web | **Repo root** | `docker build -f apps/web/Dockerfile .` |
 
 ## 🔧 Service Details
 

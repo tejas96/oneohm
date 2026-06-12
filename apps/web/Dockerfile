@@ -1,66 +1,47 @@
-# Multi-stage build for Next.js
+# Multi-stage build for Next.js (full build from monorepo root context)
 FROM node:20-alpine AS base
 
-# Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
 
-# Copy workspace root files
 COPY package*.json ./
 COPY tsconfig.base.json ./nx.json ./
 
-# Copy web app package.json (if exists)
-COPY apps/web/package*.json ./apps/web/
+COPY apps/backend/package.json ./apps/backend/
+COPY apps/web/package.json ./apps/web/
+COPY apps/ux/package.json ./apps/ux/
+COPY libs/shared/package.json ./libs/shared/
 
-# Install dependencies
 RUN npm ci
 
-# Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 
-# Build-time arguments for NEXT_PUBLIC_* variables
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_APP_NAME=OneOhm EPC
 
-# Set them as environment variables for the build
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
 
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copy workspace files
 COPY package*.json ./
-COPY tsconfig.base.json ./nx.json ./
-
-# Copy web application
+COPY tsconfig.base.json ./nx.json ./jest.preset.js ./
 COPY apps/web ./apps/web/
-
-# Copy shared libraries (if web uses them)
+COPY apps/ux/package.json ./apps/ux/package.json
 COPY libs ./libs/
 
-# Build Next.js application
-WORKDIR /app/apps/web
-RUN npm run build
+RUN npx nx build web --configuration=production
 
-# Production image
 FROM base AS production
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Automatically leverage output traces to reduce image size
-# Copy the standalone build (preserves monorepo structure)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-
-# Copy static files to the correct location (relative to server.js in monorepo)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
-
-# Copy public folder to the correct location
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 
 USER nextjs
