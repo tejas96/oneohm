@@ -1,0 +1,41 @@
+# ===============================================================
+# Docker build context for apps/backend/
+# Build context root: apps/backend/
+# The Dockerfile only needs `dist/` — everything else is noise.
+# ===============================================================
+
+# TypeScript source (compiled output is in dist/)
+src/
+test/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# TypeScript config (not needed at runtime)
+tsconfig*.json
+jest.config.ts
+
+# Nx / workspace config (not needed inside image)
+project.json
+
+# Lock files (npm ci uses the pruned package-lock.json inside dist/)
+pnpm-lock.yaml
+
+# Sensitive — never send env files or secrets to Docker daemon
+.env
+.env.*
+secrets/
+
+# Fly.io config
+fly*.toml
+
+# Docs
+README.md
+*.md
+
+# OS artefacts
+.DS_Store
+*.log
+
+# dist/tsconfig.tsbuildinfo is a TS incremental cache — not needed at runtime
+dist/tsconfig.tsbuildinfo

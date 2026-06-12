@@ -1,10 +1,11 @@
 services:
   # Backend API Service (NestJS)
+  # NOTE: Run `npx nx run backend:prune` before `docker compose up --build`
+  # to generate the pruned dist/ folder that the Dockerfile requires.
   backend:
     build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
-      target: development
+      context: apps/backend
+      dockerfile: Dockerfile
     container_name: oneohm-epc-backend-dev
     env_file:
       - ./apps/backend/.env
@@ -40,7 +41,6 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-      target: development
     container_name: oneohm-epc-web-dev
     env_file:
       - ./apps/web/.env.local

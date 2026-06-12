@@ -8,6 +8,8 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import unusedImports from 'eslint-plugin-unused-imports';
 // @ts-expect-error - react-hooks types may not be available
 import reactHooks from 'eslint-plugin-react-hooks';
+import nxPlugin from '@nx/eslint-plugin';
+import jsoncParser from 'jsonc-eslint-parser';
 
 export default [
   // ===============================
@@ -207,5 +209,38 @@ export default [
   {
     files: ['libs/**/*.ts'],
     ...tseslint.configs.disableTypeChecked,
+  },
+
+  // ===============================
+  // 5️⃣ Nx Dependency Checks — Backend only
+  // Automatically validates that apps/backend/package.json stays in sync
+  // with what the backend source code actually imports.
+  // After installing a new package: nx lint backend --fix  ← auto-updates package.json
+  // ===============================
+  {
+    files: ['apps/backend/package.json'],
+    plugins: { '@nx': nxPlugin },
+    languageOptions: {
+      parser: jsoncParser,
+    },
+    rules: {
+      '@nx/dependency-checks': [
+        'error',
+        {
+          buildTargets: ['build'],
+          checkMissingDependencies: true,
+          checkObsoleteDependencies: true,
+          checkVersionMismatches: true,
+          // Packages that are legitimate runtime deps but not directly imported
+          // (loaded internally by NestJS, TypeORM, or Passport adapters)
+          ignoredDependencies: [
+            'tslib',
+            '@nestjs/platform-express', // NestJS bootstraps this internally
+            'passport',                  // passport-jwt loads this as peer dep
+            'pg',                        // TypeORM loads this as the postgres driver
+          ],
+        },
+      ],
+    },
   },
 ];
