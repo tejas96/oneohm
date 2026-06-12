@@ -3,6 +3,8 @@
 
 app = 'oneohm-epc-backend'
 primary_region = 'bom'  # Mumbai region
+kill_signal = 'SIGTERM'
+kill_timeout = '30s'
 
 [build]
   dockerfile = 'Dockerfile'
@@ -98,10 +100,5 @@ primary_region = 'bom'  # Mumbai region
   # Rolling deployment strategy
   strategy = 'rolling'
 
-# Graceful Shutdown
 [processes]
   app = 'node src/main.js'
-
-# Kill signal for graceful shutdown
-kill_signal = 'SIGTERM'
-kill_timeout = '30s'
