@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 import { hasAdminBypassRole } from '../../iam/constants';
+import {
+  CONSUMER_EVENTS,
+  ChatMessageEvent,
+} from '../../notifications/events/consumer-notification.events';
 import { ProjectChatMessageEntity } from '../entities/project-chat-message.entity';
 import { ProjectChatRepository } from '../repositories/project-chat.repository';
 import { ProjectTeamRepository } from '../repositories/project-team.repository';
@@ -8,10 +13,13 @@ import { ProjectRepository } from '../repositories/project.repository';
 
 @Injectable()
 export class ProjectChatService {
+  private readonly logger = new Logger(ProjectChatService.name);
+
   constructor(
     private readonly chatRepository: ProjectChatRepository,
     private readonly teamRepository: ProjectTeamRepository,
     private readonly projectRepository: ProjectRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -63,10 +71,37 @@ export class ProjectChatService {
     messageText: string,
   ): Promise<ProjectChatMessageEntity> {
     await this.validateChatAccess(projectId, userId, roles);
-    return this.chatRepository.create({
+    const message = await this.chatRepository.create({
       projectId,
       senderId: userId,
       messageText,
     });
+
+    // Notify the consumer if the sender is NOT the customer (avoid self-notification)
+    try {
+      const project = await this.projectRepository.repository.findOne({
+        where: { id: projectId },
+        relations: ['property', 'property.customer'],
+      });
+
+      const customerUserId = project?.property?.customer?.userId;
+      if (customerUserId && customerUserId !== userId && project?.property) {
+        this.eventEmitter.emit(
+          CONSUMER_EVENTS.CHAT_MESSAGE,
+          new ChatMessageEvent(
+            project.property.organizationId,
+            projectId,
+            project.propertyId,
+            message.id,
+            userId,
+            messageText.substring(0, 100),
+          ),
+        );
+      }
+    } catch (error) {
+      this.logger.error('Failed to emit chat message notification event', error);
+    }
+
+    return message;
   }
 }

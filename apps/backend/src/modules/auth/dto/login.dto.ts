@@ -56,6 +56,15 @@ export class RequestOtpDto {
   @IsNotEmpty({ message: 'Either phone or email must be provided' })
   @IsEmail()
   email?: string;
+
+  @ApiPropertyOptional({
+    description: 'Login User Type (customer, reseller, or employee)',
+    enum: UserProfileType,
+    example: UserProfileType.CUSTOMER,
+  })
+  @IsOptional()
+  @IsEnum(UserProfileType, { message: 'loginUserType must be a valid UserProfileType' })
+  loginUserType?: UserProfileType;
 }
 
 /**

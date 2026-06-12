@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
@@ -47,6 +48,7 @@ import { UsersModule } from './modules/users/users.module';
     ConfigModule,
     DatabaseModule,
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     // Global rate limiting - 100 requests per minute per IP
     ThrottlerModule.forRoot([
       {

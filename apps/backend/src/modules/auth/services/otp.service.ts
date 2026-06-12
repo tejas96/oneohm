@@ -9,13 +9,22 @@ import {
   SecurityEventType,
   SecurityEventCategory,
   SecurityEventStatus,
+  UserProfileType,
 } from '@oneohm-epc/shared/types';
+import { normalizePhoneToE164 } from '@oneohm-epc/shared/utils';
 import * as bcrypt from 'bcrypt';
+import { IsNull } from 'typeorm';
 
 import { PlatformSmsService } from './platform-sms.service';
 import { ConfigService } from '../../../config/config.service';
+import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
+import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
+import { ResellerProfileRepository } from '../../resellers/repositories/reseller-profile.repository';
 import { SecurityEventRepository } from '../../security-events/repositories/security-event.repository';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
+
+const TEST_NUMBERS = ['+919999999999', '+919999999992', '+919999999991'];
+
 /**
  * OTP Service
  * Handles OTP generation, storage, and verification
@@ -39,6 +48,9 @@ export class OtpService {
     private readonly securityEventRepository: SecurityEventRepository,
     private readonly configService: ConfigService,
     private readonly platformSmsService: PlatformSmsService,
+    private readonly customerProfileRepository: CustomerProfileRepository,
+    private readonly employeeProfileRepository: EmployeeProfileRepository,
+    private readonly resellerProfileRepository: ResellerProfileRepository,
   ) {
     this.isDevelopment = this.configService.isDevelopment;
     if (this.isDevelopment) {
@@ -77,7 +89,7 @@ export class OtpService {
     await this.invalidateExistingOtps(phone);
 
     // 3. Generate OTP
-    const otp = phone === '+919999999999' ? '123456' : this.generateOtp();
+    const otp = TEST_NUMBERS.includes(phone) ? '123456' : this.generateOtp();
 
     // 4. Hash OTP for security
     const otpHash = await bcrypt.hash(otp, 10);
@@ -227,15 +239,12 @@ export class OtpService {
     };
   }
 
-  /**
-   * Request OTP - Public endpoint
-   * Creates user if doesn't exist (Firebase-like)
-   */
   async requestOtp(data: {
     phone?: string;
     email?: string;
+    loginUserType?: UserProfileType;
   }): Promise<{ message: string; retryAfter?: number }> {
-    const { phone } = data;
+    const { phone, loginUserType } = data;
 
     // DTO validation already ensures:
     // 1. At least one of phone/email is provided
@@ -247,6 +256,35 @@ export class OtpService {
       throw new BadRequestException('Email OTP not yet implemented. Please use phone OTP.');
     }
 
+    // Validate profile existence if loginUserType is provided
+    if (loginUserType && !TEST_NUMBERS.includes(phone)) {
+      const normalizedPhone = normalizePhoneToE164(phone);
+      if (loginUserType === UserProfileType.CUSTOMER) {
+        const customerExists = await this.customerProfileRepository.repository.findOne({
+          where: { phone: normalizedPhone, deletedAt: IsNull() },
+        });
+        if (!customerExists) {
+          throw new BadRequestException(
+            'This mobile number is not registered. Please contact support.',
+          );
+        }
+      } else if (loginUserType === UserProfileType.EMPLOYEE) {
+        const employeeExists = await this.employeeProfileRepository.repository.findOne({
+          where: { phone: normalizedPhone, deletedAt: IsNull() },
+        });
+        if (!employeeExists) {
+          throw new BadRequestException('This mobile number is not registered as an employee.');
+        }
+      } else if (loginUserType === UserProfileType.RESELLER) {
+        const resellerExists = await this.resellerProfileRepository.repository.findOne({
+          where: { phone: normalizedPhone, deletedAt: IsNull() },
+        });
+        if (!resellerExists) {
+          throw new BadRequestException('This mobile number is not registered as a reseller.');
+        }
+      }
+    }
+
     // Generate and store OTP
     try {
       const { otp } = await this.generateAndStoreOtp({
@@ -255,7 +293,7 @@ export class OtpService {
         userAgent: undefined, // TODO: Extract from request context
       });
 
-      if (phone !== '+919999999999') {
+      if (!TEST_NUMBERS.includes(phone)) {
         await this.platformSmsService.sendOtp(phone, otp, 'login');
       } else {
         this.logger.log(`Bypassing MSG91 SMS sending for test user phone: ${phone}`);
