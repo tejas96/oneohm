@@ -35,18 +35,13 @@
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
+      "executor": "nx:run-commands",
       "options": {
-        "lintFilePatterns": [
-          "apps/backend/src/**/*.ts",
-          "apps/backend/test/**/*.ts",
-          "apps/backend/package.json"
-        ]
+        "command": "eslint apps/backend/src apps/backend/test apps/backend/package.json --config eslint.config.mjs"
       },
       "configurations": {
         "ci": {
-          "maxWarnings": 1000
+          "command": "eslint apps/backend/src apps/backend/test apps/backend/package.json --config eslint.config.mjs --max-warnings 1000"
         }
       }
     },
