@@ -1,6 +1,10 @@
 node_modules
 npm-debug.log*
-.next
+.next/*
+!.next/standalone
+!.next/standalone/**
+!.next/static
+!.next/static/**
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts

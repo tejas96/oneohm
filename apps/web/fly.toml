@@ -1,14 +1,13 @@
 # Fly.io configuration for OneOhm EPC Web
-# IMPORTANT: Deploy from the REPO ROOT (not apps/web/).
-# The Dockerfile expects monorepo context: package.json, libs/, apps/web/.
-# Deploy using: flyctl deploy --config apps/web/fly.toml
-# Do NOT run: cd apps/web && flyctl deploy
+# IMPORTANT: Deploy from apps/web/.
+# The runtime Dockerfile expects pre-built .next output inside apps/web/.
+# Deploy using: cd apps/web && flyctl deploy --config fly.toml
 
 app = 'oneohm-epc-web'
 primary_region = 'bom'
 
 [build]
-  dockerfile = 'apps/web/Dockerfile.runtime'
+  dockerfile = 'Dockerfile.runtime'
   [build.args]
     NEXT_PUBLIC_API_URL = 'https://oneohm-epc-backend.fly.dev/api/v1'
     NEXT_PUBLIC_APP_NAME = 'OneOhm EPC'
