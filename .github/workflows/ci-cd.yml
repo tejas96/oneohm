@@ -288,6 +288,7 @@ jobs:
         with:
           name: backend-dist-${{ github.sha }}
           path: apps/backend/dist
+          if-no-files-found: error
           retention-days: 7
 
       - name: Upload web build artifact
@@ -296,6 +297,8 @@ jobs:
         with:
           name: web-next-${{ github.sha }}
           path: apps/web/.next
+          include-hidden-files: true
+          if-no-files-found: error
           retention-days: 7
 
       - name: Generate Summary
@@ -350,7 +353,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-dist-${{ github.sha }}
-          path: apps/backend
+          path: apps/backend/dist
 
       - name: Validate backend artifact
         if: steps.check-backend.outputs.affected == 'true'
@@ -431,7 +434,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: web-next-${{ github.sha }}
-          path: apps/web
+          path: apps/web/.next
 
       - name: Validate web artifact
         if: steps.check-web.outputs.affected == 'true'
