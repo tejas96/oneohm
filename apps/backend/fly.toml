@@ -8,9 +8,10 @@ primary_region = 'bom'  # Mumbai region
   dockerfile = 'Dockerfile'
   # IMPORTANT: This Dockerfile expects its build context to be apps/backend/
   # (so COPY dist/ . finds the pre-built pruned output).
-  # Deploy using: flyctl deploy apps/backend --config apps/backend/fly.toml
-  # OR simply: cd apps/backend && flyctl deploy
-  # Do NOT run: flyctl deploy --config apps/backend/fly.toml from the repo root
+  # Deploy using: cd apps/backend && flyctl deploy --config fly.toml
+  # Do NOT run: flyctl deploy apps/backend --config apps/backend/fly.toml
+  # (Fly changes build context to apps/backend and then cannot resolve that config path)
+  # Also do NOT run: flyctl deploy --config apps/backend/fly.toml from the repo root
   # (that sets the build context to the repo root and dist/ won't be found)
 
 # Non-sensitive environment variables

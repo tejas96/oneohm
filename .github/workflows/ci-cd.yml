@@ -370,10 +370,10 @@ jobs:
 
       - name: Deploy Backend to Fly.io
         if: steps.check-backend.outputs.affected == 'true'
-        # Pass apps/backend as the [WORKING_DIRECTORY] so the Docker build
-        # context is apps/backend/ — required because the Dockerfile does
-        # COPY dist/ . and expects dist/ relative to apps/backend/.
-        run: flyctl deploy apps/backend --config apps/backend/fly.toml
+        working-directory: apps/backend
+        # Backend Dockerfile expects apps/backend as build context, so run
+        # flyctl from apps/backend and use the local fly.toml path.
+        run: flyctl deploy --config fly.toml --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
@@ -450,7 +450,8 @@ jobs:
 
       - name: Deploy Web to Fly.io
         if: steps.check-web.outputs.affected == 'true'
-        run: flyctl deploy --config apps/web/fly.toml --remote-only
+        # Web runtime Dockerfile expects repo root as build context.
+        run: flyctl deploy . --config apps/web/fly.toml --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
