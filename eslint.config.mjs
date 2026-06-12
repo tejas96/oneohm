@@ -238,6 +238,8 @@ export default [
             '@nestjs/platform-express', // NestJS bootstraps this internally
             'passport',                  // passport-jwt loads this as peer dep
             'pg',                        // TypeORM loads this as the postgres driver
+            '@nestjs/testing',           // only imported in test/ files, not in build target
+            'supertest',                 // only imported in test/ files, not in build target
           ],
         },
       ],
