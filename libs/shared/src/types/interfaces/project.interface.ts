@@ -44,6 +44,21 @@ export interface ElectricalDetails {
 }
 
 /**
+ * Survey Electrical Details
+ * Information about the electrical system captured during site survey
+ */
+export interface SurveyElectricalDetails {
+  panelType?: string;
+  panelCapacity?: number;
+  voltage?: number;
+  phaseType?: 'single_phase' | 'three_phase';
+  distanceToPanel?: number;
+  existingInverter?: boolean;
+  gridConnectionType?: string;
+  notes?: string;
+}
+
+/**
  * Shading Analysis
  * Results of site shading assessment
  */
@@ -61,7 +76,15 @@ export interface ShadingAnalysis {
 export interface SurveyData {
   roofType?: string;
   roofCondition?: RoofCondition;
+  roofOrientation?: RoofOrientation;
+  roofTiltAngle?: number;
+  availableAreaSqm?: number;
   shadingAnalysis?: ShadingAnalysis;
+  electricalDetails?: SurveyElectricalDetails;
+  structuralAssessment?: string;
+  siteAccess?: string;
+  safetyConcerns?: string;
+  recommendations?: string;
   notes?: string;
   isMaterialUnloadingAreaSafe?: boolean;
 }
