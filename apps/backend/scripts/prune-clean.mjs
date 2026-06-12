@@ -3,7 +3,7 @@
  * Post-prune cleanup: strip non-runtime files from apps/backend/dist
  * Run after prune-lockfile + copy-workspace-modules (via backend:prune target).
  */
-import { readFileSync, writeFileSync, rmSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, renameSync, rmSync, existsSync, readdirSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
 
 const distRoot = join(process.cwd(), 'apps/backend/dist');
@@ -25,6 +25,30 @@ for (const junk of ['tsconfig.tsbuildinfo', 'apps']) {
   }
 }
 
+/** Remove TypeScript emit artifacts not needed at runtime (JS + .js.map already stripped from src). */
+function stripCompileArtifacts(dir) {
+  if (!existsSync(dir)) {
+    return;
+  }
+
+  for (const name of readdirSync(dir)) {
+    const target = join(dir, name);
+    const stat = statSync(target);
+
+    if (stat.isDirectory()) {
+      stripCompileArtifacts(target);
+      continue;
+    }
+
+    if (name.endsWith('.map') || name.endsWith('.d.ts') || name.endsWith('.d.ts.map')) {
+      unlinkSync(target);
+    }
+  }
+}
+
+stripCompileArtifacts(join(distRoot, 'src'));
+stripCompileArtifacts(join(sharedModule, 'dist'));
+
 const pkgPath = join(distRoot, 'package.json');
 if (existsSync(pkgPath)) {
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
@@ -44,7 +68,10 @@ if (existsSync(pkgPath)) {
     pkg.scripts = keep;
   }
 
-  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+  const content = `${JSON.stringify(pkg, null, 2)}\n`;
+  const tmpPath = `${pkgPath}.${process.pid}.tmp`;
+  writeFileSync(tmpPath, content);
+  renameSync(tmpPath, pkgPath);
 }
 
 console.log('✅ backend dist pruned and cleaned');

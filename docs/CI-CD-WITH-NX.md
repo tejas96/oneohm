@@ -65,7 +65,7 @@ The project uses a **unified CI/CD workflow** powered by NX that intelligently r
 
 #### PR: Docker Verify
 
-- `docker-verify-backend` — prune + `docker build` + image size check
+- `docker-verify-backend` — prune + `docker build` + `/app` filesystem size check (500MB limit; Docker layer total is logged for reference only)
 - `docker-verify-web` — full multi-stage build smoke test
 
 ---
