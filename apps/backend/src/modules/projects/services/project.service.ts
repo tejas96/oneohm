@@ -7,6 +7,7 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   type PaymentMilestone,
   ProjectPriority,
@@ -19,6 +20,11 @@ import { DataSource, type EntityManager } from 'typeorm';
 
 import { BomService } from '../../bom/services/bom.service';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
+import {
+  CONSUMER_EVENTS,
+  ProjectCompletedEvent,
+  ProjectOnboardedEvent,
+} from '../../notifications/events/consumer-notification.events';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { PaymentTermService } from '../../payment-terms/services/payment-term.service';
 import { QuoteService } from '../../quotes/services/quote.service';
@@ -67,6 +73,7 @@ export class ProjectService {
     @Inject(forwardRef(() => PaymentTermService))
     private readonly paymentTermService: PaymentTermService,
     private readonly dataSource: DataSource,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -236,6 +243,15 @@ export class ProjectService {
     // Validate status transition
     this.validateStatusTransition(project.status, newStatus);
 
+    if (newStatus === ProjectStatus.COMPLETED) {
+      const { done, total } = await this.taskRepository.computeProgress(id);
+      if (done < total) {
+        throw new BadRequestException(
+          `Cannot mark project as completed. There are still active tasks that are not done (${done}/${total} completed).`,
+        );
+      }
+    }
+
     // Update dates based on status
     const updateData: Record<string, unknown> = { status: newStatus };
 
@@ -251,7 +267,25 @@ export class ProjectService {
     }
 
     await this.projectRepository.update(id, organizationId, updateData);
-    return this.projectRepository.findById(id, organizationId);
+    const updatedProject = await this.projectRepository.findById(id, organizationId);
+
+    // Notify consumer when project is completed (manual status change)
+    if (newStatus === ProjectStatus.COMPLETED) {
+      this.logger.debug(
+        `Project status changed to COMPLETED. Emitting CONSUMER_EVENTS.PROJECT_COMPLETED event. orgId=${organizationId}, projectId=${id}, propertyId=${updatedProject.propertyId}, projectName=${updatedProject.name}`,
+      );
+      this.eventEmitter.emit(
+        CONSUMER_EVENTS.PROJECT_COMPLETED,
+        new ProjectCompletedEvent(
+          organizationId,
+          id,
+          updatedProject.propertyId,
+          updatedProject.name,
+        ),
+      );
+    }
+
+    return updatedProject;
   }
 
   /**
@@ -399,6 +433,18 @@ export class ProjectService {
 
     // Copy BOM from quote version to project
     await this.copyQuoteBomToProject(organizationId, latestVersion?.id, project.id, createdBy);
+
+    // Notify consumer about project onboarding (fire-and-forget)
+    this.eventEmitter.emit(
+      CONSUMER_EVENTS.PROJECT_ONBOARDED,
+      new ProjectOnboardedEvent(
+        organizationId,
+        project.id,
+        project.propertyId,
+        project.name,
+        project.projectNumber,
+      ),
+    );
 
     return project;
   }

@@ -5,6 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   CustomerStatus,
   LeadTemperature,
@@ -17,6 +18,10 @@ import { Not, IsNull } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
+import {
+  CONSUMER_EVENTS,
+  PropertyCreatedEvent,
+} from '../../notifications/events/consumer-notification.events';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { StorageService } from '../../storage/services/storage.service';
@@ -54,6 +59,7 @@ export class CustomerPropertyService {
     private readonly quoteRepository: QuoteRepository,
     private readonly loanApplicationRepository: LoanApplicationRepository,
     private readonly storageService: StorageService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -128,6 +134,18 @@ export class CustomerPropertyService {
     }
 
     this.logger.log(`✅ Property created: ${property.id}`);
+
+    // Notify consumer about new property (fire-and-forget)
+    this.eventEmitter.emit(
+      CONSUMER_EVENTS.PROPERTY_CREATED,
+      new PropertyCreatedEvent(
+        organizationId,
+        property.id,
+        createDto.customerId,
+        property.propertyName,
+      ),
+    );
+
     return property;
   }
 

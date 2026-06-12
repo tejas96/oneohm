@@ -8,6 +8,12 @@ export enum NotificationType {
   ALLOCATION_CANCELLED = 'allocation_cancelled',
   DISPATCH_DELAYED = 'dispatch_delayed',
   SYSTEM = 'system',
+  // Consumer-facing events
+  PROPERTY_CREATED = 'property_created',
+  QUOTATION_CREATED = 'quotation_created',
+  PROJECT_ONBOARDED = 'project_onboarded',
+  PROJECT_COMPLETED = 'project_completed',
+  CHAT_MESSAGE = 'chat_message',
 }
 
 /**

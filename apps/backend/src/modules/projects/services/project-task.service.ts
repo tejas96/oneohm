@@ -7,10 +7,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   type ChecklistProgress,
   LookupTypeCode,
   type PaginatedResponse,
+  ProjectStatus,
   type StatisticsResponse,
   type TaskActivityEntry,
   type TaskActivityType,
@@ -20,6 +22,10 @@ import {
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
 import { LookupRepository } from '../../lookups/repositories/lookup.repository';
+import {
+  CONSUMER_EVENTS,
+  ProjectCompletedEvent,
+} from '../../notifications/events/consumer-notification.events';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import {
   type CreateProjectTaskDto,
@@ -71,6 +77,7 @@ export class ProjectTaskService {
     private readonly projectRepository: ProjectRepository,
     private readonly lookupRepository: LookupRepository,
     private readonly dataSource: DataSource,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(
@@ -1417,7 +1424,40 @@ export class ProjectTaskService {
   private async updateAllProgress(projectId: string): Promise<void> {
     const { done, total } = await this.taskRepository.computeProgress(projectId);
     const progress = total > 0 ? Math.round((100 * done) / total) : 0;
+
+    // Check if this will trigger auto-completion
+    const project = await this.projectRepository.findOneById(projectId);
+    const wasNotCompleted =
+      project &&
+      project.status !== ProjectStatus.COMPLETED &&
+      project.status !== ProjectStatus.CANCELLED;
+
     await this.projectRepository.updateProgressById(projectId, progress);
+
+    // If auto-completed (progress hit 100%), emit completed event
+    if (wasNotCompleted && progress === 100) {
+      const updatedProject = await this.projectRepository.findOneById(projectId);
+      if (updatedProject && updatedProject.status === ProjectStatus.COMPLETED) {
+        // Resolve organizationId from the property
+        const orgRows = await this.dataSource.query(
+          `SELECT organization_id AS "organizationId" FROM customer_properties WHERE id = $1 LIMIT 1`,
+          [updatedProject.propertyId],
+        );
+        const organizationId = (orgRows[0]?.organizationId as string) ?? '';
+
+        if (organizationId) {
+          this.eventEmitter.emit(
+            CONSUMER_EVENTS.PROJECT_COMPLETED,
+            new ProjectCompletedEvent(
+              organizationId,
+              projectId,
+              updatedProject.propertyId,
+              updatedProject.name,
+            ),
+          );
+        }
+      }
+    }
     // Milestone progress is now derived live from tasks — no separate update needed
   }
 

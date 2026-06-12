@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   CustomerStatus,
   type CalculatorInputs,
@@ -26,6 +27,10 @@ import {
   QuoteConfigurationRepository,
   SubsidyConfigurationRepository,
 } from '../../master-data/repositories';
+import {
+  CONSUMER_EVENTS,
+  QuotationCreatedEvent,
+} from '../../notifications/events/consumer-notification.events';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import {
   CreateQuoteDto,
@@ -54,6 +59,7 @@ export class QuoteService {
     private readonly documentService: DocumentService,
     private readonly integrationService: IntegrationService,
     private readonly dataSource: DataSource,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -264,6 +270,20 @@ export class QuoteService {
         status: QuoteStatus.SENT,
         updatedBy,
       });
+
+      // Notify consumer that quotation is ready (guard propertyId)
+      if (quote.propertyId && quote.customerId) {
+        this.eventEmitter.emit(
+          CONSUMER_EVENTS.QUOTATION_CREATED,
+          new QuotationCreatedEvent(
+            organizationId,
+            id,
+            quote.propertyId,
+            quote.customerId,
+            quote.quoteNumber,
+          ),
+        );
+      }
     }
 
     return result;
@@ -471,7 +491,25 @@ export class QuoteService {
       updateData.rejectionReason = statusDto.rejectionReason;
     }
 
-    return this.quoteRepository.update(id, organizationId, updateData);
+    const result = await this.quoteRepository.update(id, organizationId, updateData);
+
+    if (statusDto.status === QuoteStatus.SENT) {
+      // Notify consumer that quotation is ready (guard propertyId)
+      if (quote.propertyId && quote.customerId) {
+        this.eventEmitter.emit(
+          CONSUMER_EVENTS.QUOTATION_CREATED,
+          new QuotationCreatedEvent(
+            organizationId,
+            id,
+            quote.propertyId,
+            quote.customerId,
+            quote.quoteNumber,
+          ),
+        );
+      }
+    }
+
+    return result;
   }
 
   /**

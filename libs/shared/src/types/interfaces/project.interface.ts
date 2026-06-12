@@ -34,14 +34,13 @@ export interface GpsCoordinates {
  * Information about the site's electrical system
  */
 export interface ElectricalDetails {
-  panelType?: string;
-  panelCapacity?: number; // In amps
-  voltage?: number; // In volts
-  phaseType?: 'single_phase' | 'three_phase';
-  distanceToPanel?: number; // In meters
-  existingInverter?: boolean;
-  gridConnectionType?: string;
-  notes?: string;
+  cableLengthACInMtrs?: number;
+  cableLengthDCInMtrs?: number;
+  conduitLengthInMtrs?: number;
+  earthingCableLengthInMtrs?: number;
+  elbo?: number;
+  inverterCanopy?: boolean;
+  elcb?: number;
 }
 
 /**
@@ -51,9 +50,6 @@ export interface ElectricalDetails {
 export interface ShadingAnalysis {
   hasShading: boolean;
   shadingPercentage?: number;
-  shadingSource?: string[]; // trees, buildings, etc.
-  shadingTimes?: string[]; // Time periods when shading occurs
-  mitigationRequired?: boolean;
   notes?: string;
 }
 
@@ -65,16 +61,9 @@ export interface ShadingAnalysis {
 export interface SurveyData {
   roofType?: string;
   roofCondition?: RoofCondition;
-  roofOrientation?: RoofOrientation;
-  roofTiltAngle?: number;
-  availableAreaSqm?: number;
   shadingAnalysis?: ShadingAnalysis;
-  electricalDetails?: ElectricalDetails;
-  structuralAssessment?: string;
-  siteAccess?: string;
-  safetyConcerns?: string;
-  recommendations?: string;
   notes?: string;
+  isMaterialUnloadingAreaSafe?: boolean;
 }
 
 /**

@@ -513,7 +513,7 @@ async function assignRole(
   const existing = await queryRunner.query(
     `SELECT 1 FROM user_roles ur
      JOIN roles r ON r.id = ur.role_id
-     WHERE ur.user_id = $1 AND r.code = $2 AND r.organization_id = $3
+     WHERE ur.user_id = $1 AND r.code = $2::varchar AND r.organization_id = $3
      LIMIT 1`,
     [userId, roleCode, orgId],
   );
@@ -522,9 +522,9 @@ async function assignRole(
 
   await queryRunner.query(
     `INSERT INTO user_roles (user_id, role, role_id, organization_id, created_by)
-     SELECT $1, $2, r.id, $3, $1
+     SELECT $1, $2::varchar, r.id, $3, $1
      FROM roles r
-     WHERE r.code = $2 AND r.organization_id = $3 AND r.deleted_at IS NULL
+     WHERE r.code = $2::varchar AND r.organization_id = $3 AND r.deleted_at IS NULL
      LIMIT 1`,
     [userId, roleCode, orgId],
   );

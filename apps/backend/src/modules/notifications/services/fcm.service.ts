@@ -44,6 +44,9 @@ export class FcmService {
       data: this.serializeData(input.data),
       android: {
         priority: 'high',
+        notification: {
+          channelId: 'default',
+        },
       },
       apns: {
         payload: {
