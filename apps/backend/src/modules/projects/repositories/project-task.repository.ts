@@ -877,6 +877,8 @@ export class ProjectTaskRepository {
       task.checklist = task.checklistOverride ?? task.workflowStep.checklistTemplate;
       task.labels =
         task.labelsOverride ?? (task.workflowStep.type ? [task.workflowStep.type] : undefined);
+      task.milestoneName = task.milestoneName ?? task.workflowStep.defaultMilestoneName;
+      task.milestoneOrder = task.milestoneOrder ?? task.workflowStep.defaultMilestoneOrder;
     } else {
       task.name = task.nameOverride ?? '';
       task.description = task.descriptionOverride;

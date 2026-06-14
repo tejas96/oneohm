@@ -58,6 +58,24 @@ class PaymentSummaryDto {
   totalPaid!: number;
 }
 
+class ProjectListItemNextTaskDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  id!: string;
+
+  @ApiProperty({ example: 'Perform Site Audit' })
+  @Expose()
+  name!: string;
+
+  @ApiProperty({ example: 'site_audit' })
+  @Expose()
+  code!: string;
+
+  @ApiPropertyOptional({ example: '2025-03-15' })
+  @Expose()
+  endDate?: Date;
+}
+
 /**
  * Lightweight DTO for the project list view.
  * Avoids loading full milestones/surveys/materials.
@@ -186,6 +204,15 @@ export class ProjectListItemDto {
   })
   @Expose()
   healthStatus!: 'on_track' | 'at_risk' | 'delayed' | null;
+
+  @ApiPropertyOptional({ type: ProjectListItemNextTaskDto })
+  @Expose()
+  @Type(() => ProjectListItemNextTaskDto)
+  nextTask?: ProjectListItemNextTaskDto | null;
+
+  @ApiPropertyOptional({ example: 2 })
+  @Expose()
+  userOverdueTasks?: number;
 
   @ApiProperty({ example: '2025-01-15T10:30:00Z' })
   @Expose()

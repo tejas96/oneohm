@@ -92,6 +92,7 @@ export class ProjectService {
       toDate?: string;
       search?: string;
       memberId?: string;
+      currentUserId?: string;
       pendingWorkflowStepId?: string;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
@@ -103,6 +104,8 @@ export class ProjectService {
       paymentSummary: { totalExpected: number; totalPaid: number };
       completedTasks: number;
       totalTasks: number;
+      nextTask?: { id: string; name: string; code: string; endDate?: Date } | null;
+      userOverdueTasks?: number;
     })[];
     total: number;
     page: number;
@@ -119,6 +122,61 @@ export class ProjectService {
     const paymentMap = await this.projectRepository.getPaymentSummaries(projectIds);
     const taskCountMap = await this.projectRepository.getTaskCounts(projectIds);
 
+    const nextTaskMap = new Map<
+      string,
+      { id: string; name: string; code: string; endDate?: Date } | null
+    >();
+    const overdueTaskCountMap = new Map<string, number>();
+
+    const sortingUserId = filters?.memberId || filters?.currentUserId;
+    if (sortingUserId && projectIds.length > 0) {
+      const incompleteTasks = await this.taskRepository.repository
+        .createQueryBuilder('task')
+        .leftJoinAndSelect('task.workflowStep', 'workflowStep')
+        .where('task.projectId IN (:...projectIds)', { projectIds })
+        .andWhere('task.assignedToUserId = :sortingUserId', { sortingUserId })
+        .andWhere('task.status NOT IN (:...terminalStatuses)', {
+          terminalStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
+        })
+        .andWhere('task.deletedAt IS NULL')
+        .orderBy('task.endDate', 'ASC')
+        .addOrderBy('task.createdAt', 'ASC')
+        .getMany();
+
+      for (const task of incompleteTasks) {
+        if (!nextTaskMap.has(task.projectId)) {
+          nextTaskMap.set(task.projectId, {
+            id: task.id,
+            name: task.nameOverride ?? task.workflowStep?.name ?? task.code,
+            code: task.code,
+            endDate: task.endDate,
+          });
+        }
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      const overdueCountRows = await this.taskRepository.repository
+        .createQueryBuilder('task')
+        .select('task.projectId', 'projectId')
+        .addSelect('COUNT(task.id)', 'count')
+        .where('task.projectId IN (:...projectIds)', { projectIds })
+        .andWhere('task.assignedToUserId = :sortingUserId', { sortingUserId })
+        .andWhere('task.status NOT IN (:...terminalStatuses)', {
+          terminalStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
+        })
+        .andWhere('task.endDate < :todayStr', { todayStr })
+        .andWhere('task.deletedAt IS NULL')
+        .groupBy('task.projectId')
+        .getRawMany<{ projectId: string; count: string }>();
+
+      for (const row of overdueCountRows) {
+        overdueTaskCountMap.set(row.projectId, parseInt(row.count, 10) || 0);
+      }
+    }
+
     const enriched = await Promise.all(
       projects.map(async (project) => {
         const currentPhase = await this.computeCurrentPhaseFromTasks(project.id);
@@ -126,10 +184,15 @@ export class ProjectService {
         const paymentSummary = paymentMap.get(project.id) ?? { totalExpected: 0, totalPaid: 0 };
         const taskCounts = taskCountMap.get(project.id) ?? { completedTasks: 0, totalTasks: 0 };
 
+        const nextTask = nextTaskMap.get(project.id) ?? null;
+        const userOverdueTasks = overdueTaskCountMap.get(project.id) ?? 0;
+
         return Object.assign(project, {
           currentPhase,
           healthStatus,
           paymentSummary,
+          nextTask,
+          userOverdueTasks,
           ...taskCounts,
         });
       }),

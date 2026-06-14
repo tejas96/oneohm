@@ -122,6 +122,7 @@ export class ProjectRepository {
       toDate?: string;
       search?: string;
       memberId?: string;
+      currentUserId?: string;
       pendingWorkflowStepId?: string;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
@@ -177,6 +178,79 @@ export class ProjectRepository {
       );
     }
 
+    const isSmartSort = filters?.sortBy === 'smartSort';
+    const sortingUserId = filters?.memberId || filters?.currentUserId;
+    const hasSortingUser = !!sortingUserId;
+
+    if (isSmartSort && hasSortingUser) {
+      query.leftJoin(
+        (subQuery) =>
+          subQuery
+            .select('pt.project_id', 'project_id')
+            .addSelect(
+              "COUNT(pt.id) FILTER (WHERE pt.status NOT IN ('done', 'cancelled') AND pt.end_date < CURRENT_DATE)",
+              'overdue_count',
+            )
+            .addSelect(
+              "MIN(pt.end_date) FILTER (WHERE pt.status NOT IN ('done', 'cancelled'))",
+              'next_due_date',
+            )
+            .addSelect(
+              `MIN(CASE pt.priority 
+                WHEN 'urgent' THEN 1 
+                WHEN 'high' THEN 2 
+                WHEN 'normal' THEN 3 
+                WHEN 'medium' THEN 3 
+                WHEN 'low' THEN 4 
+                ELSE 5 
+              END)`,
+              'max_task_priority',
+            )
+            .from('project_tasks', 'pt')
+            .where('pt.assigned_to_user_id = :sortingUserId')
+            .andWhere('pt.deleted_at IS NULL')
+            .groupBy('pt.project_id'),
+        'member_tasks',
+        'member_tasks.project_id = project.id',
+        { sortingUserId },
+      );
+
+      query
+        .addSelect('COALESCE(member_tasks.overdue_count, 0)', 'overdue_tasks')
+        .addSelect('member_tasks.next_due_date', 'next_due')
+        .addSelect(
+          `CASE
+            WHEN COALESCE(member_tasks.overdue_count, 0) > 0 THEN 1
+            WHEN member_tasks.next_due_date = CURRENT_DATE THEN 2
+            WHEN member_tasks.next_due_date > CURRENT_DATE AND member_tasks.next_due_date <= CURRENT_DATE + 7 THEN 3
+            WHEN member_tasks.next_due_date > CURRENT_DATE + 7 THEN 4
+            ELSE 5
+          END`,
+          'urgency_tier',
+        )
+        .addSelect('COALESCE(member_tasks.max_task_priority, 5)', 'max_task_priority')
+        .addSelect(
+          `CASE project.priority 
+            WHEN 'urgent' THEN 1 
+            WHEN 'high' THEN 2 
+            WHEN 'normal' THEN 3 
+            WHEN 'low' THEN 4 
+            ELSE 5 
+          END`,
+          'priority_order',
+        )
+        .addSelect(
+          `CASE 
+            WHEN project.status IN ('on_hold', 'completed', 'cancelled', 'planning') THEN 3
+            WHEN project.end_date IS NULL THEN 3
+            WHEN project.end_date < CURRENT_DATE THEN 1
+            WHEN project.end_date < CURRENT_DATE + 14 AND project.progress_percentage < 80 THEN 2
+            ELSE 3
+          END`,
+          'health_order',
+        );
+    }
+
     if (filters?.pendingWorkflowStepId) {
       query.andWhere(
         `project.id IN ${query
@@ -203,13 +277,24 @@ export class ProjectRepository {
 
     const total = await query.getCount();
 
-    // Sort with whitelist validation
-    const sortColumn =
-      ProjectRepository.SORT_WHITELIST[filters?.sortBy ?? ''] ?? 'project.createdAt';
-    const sortOrder = filters?.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    if (isSmartSort && hasSortingUser) {
+      query
+        .orderBy('urgency_tier', 'ASC')
+        .addOrderBy('max_task_priority', 'ASC')
+        .addOrderBy('priority_order', 'ASC')
+        .addOrderBy('health_order', 'ASC')
+        .addOrderBy('next_due', 'ASC', 'NULLS LAST')
+        .addOrderBy('project.endDate', 'ASC', 'NULLS LAST')
+        .addOrderBy('project.createdAt', 'DESC');
+    } else {
+      // Sort with whitelist validation
+      const sortColumn =
+        ProjectRepository.SORT_WHITELIST[filters?.sortBy ?? ''] ?? 'project.createdAt';
+      const sortOrder = filters?.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+      query.orderBy(sortColumn, sortOrder);
+    }
 
     const projects = await query
-      .orderBy(sortColumn, sortOrder)
       .skip((page - 1) * limit)
       .take(limit)
       .getMany();
