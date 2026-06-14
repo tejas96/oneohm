@@ -138,6 +138,7 @@ export class ProjectController {
       'estimatedCost',
       'progressPercentage',
       'status',
+      'smartSort',
     ],
     description: 'Sort field',
   })
@@ -154,18 +155,22 @@ export class ProjectController {
     @Query('limit') limit?: string,
     @Query('status') status?: ProjectStatus,
     @Query('priority') priority?: ProjectPriority,
-    @Query('customerId') customerId?: string,
+    @Query('customerId', new ParseUUIDPipe({ optional: true })) customerId?: string,
     @Query('projectType') projectType?: string,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('search') search?: string,
-    @Query('memberId') memberId?: string,
-    @Query('pendingWorkflowStepId') pendingWorkflowStepId?: string,
+    @Query('memberId', new ParseUUIDPipe({ optional: true })) memberId?: string,
+    @Query('pendingWorkflowStepId', new ParseUUIDPipe({ optional: true }))
+    pendingWorkflowStepId?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ): Promise<PaginatedResponse<ProjectListItemDto>> {
     const pageNum = Math.max(1, page ? parseInt(page, 10) || 1 : 1);
     const limitNum = Math.min(100, Math.max(1, limit ? parseInt(limit, 10) || 20 : 20));
+
+    const isAdmin = hasAdminBypassRole(currentUser.roles || []);
+    const effectiveMemberId = isAdmin ? memberId : currentUser.id;
 
     const result = await this.projectService.findAll(organizationId, pageNum, limitNum, {
       status,
@@ -175,7 +180,8 @@ export class ProjectController {
       fromDate,
       toDate,
       search,
-      memberId,
+      memberId: effectiveMemberId,
+      currentUserId: currentUser.id,
       pendingWorkflowStepId,
       sortBy,
       sortOrder,

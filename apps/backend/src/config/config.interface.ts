@@ -135,6 +135,7 @@ export interface MobileAppVersionConfig {
 export interface MobileAppConfig {
   consumer: MobileAppVersionConfig;
   business: MobileAppVersionConfig;
+  'field-worker': MobileAppVersionConfig;
   maintenanceMode: boolean;
   maintenanceMessage: string;
 }

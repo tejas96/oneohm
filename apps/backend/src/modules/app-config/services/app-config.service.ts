@@ -20,7 +20,7 @@ export class AppConfigService {
    * Check the app version and return update status
    */
   checkVersion(
-    appType: 'consumer' | 'business',
+    appType: 'consumer' | 'business' | 'field-worker',
     platform: 'android' | 'ios',
     currentVersion: string,
   ): VersionCheckResponseDto {
@@ -74,6 +74,9 @@ export class AppConfigService {
    * No external dependencies needed for simple three-part semver.
    */
   private isVersionLessThan(versionA: string, versionB: string): boolean {
+    if (!versionA || !versionB) {
+      return false;
+    }
     const partsA = versionA.split('.').map(Number);
     const partsB = versionB.split('.').map(Number);
 

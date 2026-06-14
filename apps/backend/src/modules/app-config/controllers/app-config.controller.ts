@@ -35,7 +35,7 @@ export class AppConfigController {
         name: 'appType',
         required: true,
         description: 'Which app is checking',
-        enum: ['consumer', 'business'],
+        enum: ['consumer', 'business', 'field-worker'],
       },
       {
         name: 'platform',
