@@ -7,13 +7,13 @@ import { IsIn, IsString, Matches } from 'class-validator';
  */
 export class VersionCheckQueryDto {
   @ApiProperty({
-    description: 'Which app is checking: consumer, business, or field-worker',
-    enum: ['consumer', 'business', 'field-worker'],
+    description: 'Which app is checking: consumer or business',
+    enum: ['consumer', 'business'],
     example: 'business',
   })
   @IsString()
-  @IsIn(['consumer', 'business', 'field-worker'])
-  appType!: 'consumer' | 'business' | 'field-worker';
+  @IsIn(['consumer', 'business'])
+  appType!: 'consumer' | 'business';
 
   @ApiProperty({
     description: 'Mobile platform',

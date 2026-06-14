@@ -138,12 +138,6 @@ export default (): Configuration => ({
       playStoreUrl: process.env.BUSINESS_APP_PLAY_STORE_URL!,
       appStoreUrl: process.env.BUSINESS_APP_APP_STORE_URL!,
     },
-    'field-worker': {
-      minVersion: process.env.FIELD_WORKER_APP_MIN_VERSION!,
-      recommendedVersion: process.env.FIELD_WORKER_APP_RECOMMENDED_VERSION!,
-      playStoreUrl: process.env.FIELD_WORKER_APP_PLAY_STORE_URL!,
-      appStoreUrl: process.env.FIELD_WORKER_APP_APP_STORE_URL!,
-    },
     maintenanceMode: process.env.MAINTENANCE_MODE === 'true',
     maintenanceMessage: process.env.MAINTENANCE_MESSAGE!,
   },

@@ -20,7 +20,7 @@ export class AppConfigService {
    * Check the app version and return update status
    */
   checkVersion(
-    appType: 'consumer' | 'business' | 'field-worker',
+    appType: 'consumer' | 'business',
     platform: 'android' | 'ios',
     currentVersion: string,
   ): VersionCheckResponseDto {
