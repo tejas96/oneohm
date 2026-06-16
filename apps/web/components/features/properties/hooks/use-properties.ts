@@ -36,6 +36,7 @@ export interface PropertyFilters {
   leadTemperature?: LeadTemperature;
   propertyType?: PropertyType;
   status?: PropertyStatus;
+  connectionType?: ConnectionType;
   city?: string;
   state?: string;
   createdBy?: string;
@@ -80,7 +81,9 @@ export interface Property {
   updatedBy?: string;
   customerName?: string;
   customerPhone?: string;
+  customerEmail?: string;
   creatorName?: string;
+  latestQuoteId?: string;
   latestQuoteNumber?: string;
   latestQuoteStatus?: QuoteStatus;
   latestQuoteDate?: string;
@@ -215,6 +218,7 @@ export function useProperties(
       if (filters.leadTemperature) params.append('leadTemperature', filters.leadTemperature);
       if (filters.propertyType) params.append('propertyType', filters.propertyType);
       if (filters.status) params.append('status', filters.status);
+      if (filters.connectionType) params.append('connectionType', filters.connectionType);
       if (filters.city) params.append('city', filters.city);
       if (filters.state) params.append('state', filters.state);
       if (filters.createdBy) params.append('createdBy', filters.createdBy);

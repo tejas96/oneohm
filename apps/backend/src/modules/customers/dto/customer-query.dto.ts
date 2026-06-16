@@ -2,6 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
 import { Transform, Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -84,15 +85,6 @@ export class CustomerQueryDto {
   city?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by state (partial match, case-insensitive)',
-    example: 'Maharashtra',
-  })
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }: { value: string }) => value?.trim())
-  state?: string;
-
-  @ApiPropertyOptional({
     description: 'Filter by lead source',
     enum: LeadSource,
     example: LeadSource.REFERRAL,
@@ -117,6 +109,28 @@ export class CustomerQueryDto {
   @IsOptional()
   @IsString()
   createdBy?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by assignee ID - use "me" for current user or provide userId',
+    example: 'me',
+  })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }: { value: string }) => value?.trim())
+  assigneeId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by whether customer has properties (true) or none (false)',
+    example: true,
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @IsBoolean()
+  hasProperty?: boolean;
 
   @ApiPropertyOptional({
     description: 'Filter from date (ISO 8601 format)',

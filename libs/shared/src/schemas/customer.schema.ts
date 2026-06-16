@@ -10,7 +10,7 @@ const indianMobileSchema = z
 export const createCustomerProfileSchema = z
   .object({
     firstName: z.string().min(1, 'First name is required').max(100, 'First name too long'),
-    middleName: z.string().max(100, 'Middle name too long').optional().or(z.literal('')),
+    middleName: z.string().min(1, 'Middle name is required').max(100, 'Middle name too long'),
     lastName: z.string().min(1, 'Last name is required').max(100, 'Last name too long'),
     phone: indianMobileSchema,
     email: z.union([z.string().email('Invalid email address'), z.literal('')]).optional(),

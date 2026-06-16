@@ -419,6 +419,9 @@ function TableFiltersInner<TRow>({
           open={Boolean(anchorEl)}
           anchorEl={anchorEl}
           onClose={onClose}
+          disableAutoFocus
+          disableEnforceFocus
+          disableRestoreFocus
           anchorOrigin={{
             vertical: 'bottom',
             horizontal: 'right',
@@ -431,6 +434,10 @@ function TableFiltersInner<TRow>({
             paper: {
               className:
                 'p-4 rounded-xl shadow-card border border-border-light min-w-[320px] max-w-[400px]',
+              sx: {
+                maxHeight: 480,
+                overflowY: 'auto',
+              },
             },
           }}
         >

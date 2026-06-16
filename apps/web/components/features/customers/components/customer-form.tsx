@@ -299,6 +299,7 @@ function CustomerFormContent({
     : 'Add a new customer to your database';
 
   const isLeadSourceLocked = isEditMode && !!customer?.leadSource;
+  const isLeadSourceOtherDisabled = isLeadSourceLocked && !!defaultFormValues.leadSourceOther;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -338,6 +339,7 @@ function CustomerFormContent({
                 <MUIInput
                   id="middleName"
                   fieldLabel="Middle Name"
+                  required
                   placeholder="Enter middle name"
                   error={form.formState.errors.middleName?.message}
                   {...form.register('middleName')}
@@ -356,7 +358,7 @@ function CustomerFormContent({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <MUIInput
                   id="phone"
-                  fieldLabel="Phone Number"
+                  fieldLabel="Phone Number(whatsapp)"
                   required
                   type="tel"
                   inputMode="numeric"
@@ -483,7 +485,7 @@ function CustomerFormContent({
                       fieldLabel="Specify Source"
                       required
                       placeholder="e.g. Newspaper, Radio"
-                      disabled={isLeadSourceLocked}
+                      disabled={isLeadSourceOtherDisabled}
                       error={form.formState.errors.leadSourceOther?.message}
                       inputProps={{ maxLength: 50 }}
                       {...form.register('leadSourceOther')}

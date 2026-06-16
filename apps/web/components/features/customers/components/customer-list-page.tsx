@@ -9,9 +9,9 @@ import HouseOutlinedIcon from '@mui/icons-material/HouseOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PhoneIcon from '@mui/icons-material/Phone';
-import UploadIcon from '@mui/icons-material/Upload';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
+  Autocomplete,
   Box,
   Button,
   Divider,
@@ -21,6 +21,7 @@ import {
   Menu,
   MenuItem,
   Stack,
+  TextField,
   Tooltip,
 } from '@mui/material';
 import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
@@ -28,13 +29,14 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';
 
-import { ImportCustomersModal } from './import-customers-modal';
 import {
   Customer as CustomerBase,
   type CustomerFilters,
   useCustomers,
+  useCustomerGroups,
 } from '../hooks/use-customers';
 
+import { useEmployees } from '@/components/features/employees';
 import {
   AdvancedTable,
   type BulkAction,
@@ -132,6 +134,22 @@ function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilte
         ? filters.toDate
         : createdAtUtcRange?.toIso,
     city: typeof filters.city === 'string' && filters.city ? filters.city : undefined,
+    hasProperty:
+      filters.name === 'true' ||
+      filters.name === true ||
+      filters.hasProperty === 'true' ||
+      filters.hasProperty === true
+        ? true
+        : filters.name === 'false' ||
+            filters.name === false ||
+            filters.hasProperty === 'false' ||
+            filters.hasProperty === false
+          ? false
+          : undefined,
+    createdBy:
+      typeof filters.createdBy === 'string' && filters.createdBy ? filters.createdBy : undefined,
+    assigneeId:
+      typeof filters.assigneeId === 'string' && filters.assigneeId ? filters.assigneeId : undefined,
   };
 }
 
@@ -245,6 +263,12 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     field: 'name',
     headerName: 'Customer',
     sortable: true,
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { label: 'Yes', value: 'true' },
+      { label: 'No', value: 'false' },
+    ],
     flex: 3,
     renderCell: ({ row }) => {
       const fullName = `${row.firstName} ${row.lastName ?? ''}`.trim();
@@ -339,10 +363,30 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     filterable: true,
     filterType: 'text',
     filterDebounceMs: 400,
-    flex: 1,
-    renderCell: ({ row }) => (
-      <MUITypography variant="body">{(row.city as string | undefined) ?? '-'}</MUITypography>
-    ),
+    flex: 1.2,
+    renderCell: ({ row }) => {
+      const city = row.city as string | undefined;
+      const pincode = row.pincode as string | undefined;
+
+      if (!city && !pincode) {
+        return <MUITypography variant="placeholder">-</MUITypography>;
+      }
+
+      if (!city && pincode) {
+        return <MUITypography variant="body">PIN: {pincode}</MUITypography>;
+      }
+
+      return (
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          <MUITypography variant="body">{city}</MUITypography>
+          {pincode && (
+            <MUITypography variant="timestamp" sx={{ mt: 0.25 }}>
+              {pincode}
+            </MUITypography>
+          )}
+        </Box>
+      );
+    },
   },
   {
     field: 'leadSource',
@@ -377,8 +421,7 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     field: 'groupSearch',
     headerName: 'Group',
     filterable: true,
-    filterType: 'text',
-    filterDebounceMs: 400,
+    filterType: 'select',
     defaultHidden: true,
     hideable: false,
   },
@@ -404,8 +447,9 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     },
   },
   {
-    field: 'creatorName',
+    field: 'createdBy',
     headerName: 'Created By',
+    filterable: true,
     flex: 1,
     renderCell: ({ row }) => {
       const name = (row.creatorName as string | undefined) ?? '';
@@ -419,6 +463,24 @@ const COLUMNS: ColumnConfig<Customer>[] = [
             color={name === 'Self' ? 'primary.main' : undefined}
             sx={name === 'Self' ? { fontWeight: 600 } : undefined}
           >
+            {name}
+          </MUITypography>
+        </Box>
+      );
+    },
+  },
+  {
+    field: 'assigneeId',
+    headerName: 'Assigned To',
+    filterable: true,
+    flex: 1,
+    renderCell: ({ row }) => {
+      const name = (row.assigneeName as string | undefined) ?? '';
+      if (!name) return <MUITypography variant="placeholder">-</MUITypography>;
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <MUIAvatar name={name} size="sm" sx={{ flexShrink: 0 }} />
+          <MUITypography variant="body" noWrap>
             {name}
           </MUITypography>
         </Box>
@@ -444,8 +506,227 @@ export function CustomerListPage(): JSX.Element {
   // URL-synced table state — single source of truth for all pagination/sort/filter/search
   const urlState = useTableUrlState({ prefix: 'customers', defaultPageSize: 10 });
 
-  // Modal state
-  const [importModalOpen, setImportModalOpen] = useState(false);
+  // Fetch active employees
+  const { data: employees = [] } = useEmployees();
+
+  // Fetch customer groups
+  const { data: groups = [] } = useCustomerGroups();
+
+  // Memoize sorted base employee options
+  const baseEmployeeOptions = useMemo(() => {
+    const list = employees.map((emp) => {
+      const name = `${emp.user?.firstName ?? ''} ${emp.user?.lastName ?? ''}`.trim();
+      return {
+        label: name || emp.user?.email || 'Unknown Employee',
+        value: emp.userId,
+      };
+    });
+    return list.sort((a, b) => a.label.localeCompare(b.label));
+  }, [employees]);
+
+  // Options for 'Created By' filter (includes 'Self-Registered')
+  const creatorOptions = useMemo(
+    () => [
+      { label: 'Current User (Me)', value: 'me' },
+      { label: 'Self-Registered', value: 'self' },
+      ...baseEmployeeOptions,
+    ],
+    [baseEmployeeOptions],
+  );
+
+  // Options for 'Assigned To' filter (excludes 'Self-Registered')
+  const assigneeOptions = useMemo(
+    () => [{ label: 'Current User (Me)', value: 'me' }, ...baseEmployeeOptions],
+    [baseEmployeeOptions],
+  );
+
+  // Memoize customer group options
+  const groupOptions = useMemo(() => {
+    return groups.map((g) => ({
+      label: g.groupName ? `${g.groupName} (${g.groupCode})` : g.groupCode,
+      value: g.groupCode,
+    }));
+  }, [groups]);
+
+  // Memoize columns to include dynamic filter options
+  const columns = useMemo(() => {
+    return COLUMNS.map((col) => {
+      if (col.field === 'name') {
+        const hasPropertyOptions = [
+          { label: 'Yes', value: 'true' },
+          { label: 'No', value: 'false' },
+        ];
+        return {
+          ...col,
+          renderFilter: ({
+            value,
+            onChange,
+          }: {
+            value: unknown;
+            onChange: (v: unknown) => void;
+          }) => {
+            const selectedOption =
+              hasPropertyOptions.find((o) => String(o.value) === String(value)) || null;
+            return (
+              <Autocomplete
+                size="small"
+                fullWidth
+                options={hasPropertyOptions}
+                value={selectedOption}
+                disablePortal
+                getOptionLabel={(option) =>
+                  typeof option === 'string' ? option : option.label || ''
+                }
+                isOptionEqualToValue={(option, val) => option.value === val?.value}
+                onChange={(_, val) => {
+                  onChange(val?.value ?? '');
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Has property?"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                      },
+                    }}
+                  />
+                )}
+              />
+            );
+          },
+        };
+      }
+      if (col.field === 'groupSearch') {
+        return {
+          ...col,
+          filterOptions: groupOptions,
+          renderFilter: ({
+            value,
+            onChange,
+          }: {
+            value: unknown;
+            onChange: (v: unknown) => void;
+          }) => {
+            const selectedOption =
+              groupOptions.find((o) => String(o.value) === String(value)) || null;
+            return (
+              <Autocomplete
+                size="small"
+                fullWidth
+                options={groupOptions}
+                value={selectedOption}
+                disablePortal
+                getOptionLabel={(option) =>
+                  typeof option === 'string' ? option : option.label || ''
+                }
+                isOptionEqualToValue={(option, val) => option.value === val?.value}
+                onChange={(_, val) => {
+                  onChange(val?.value ?? '');
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Search group..."
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                      },
+                    }}
+                  />
+                )}
+              />
+            );
+          },
+        };
+      }
+      if (col.field === 'createdBy') {
+        return {
+          ...col,
+          renderFilter: ({
+            value,
+            onChange,
+          }: {
+            value: unknown;
+            onChange: (v: unknown) => void;
+          }) => {
+            const selectedOption =
+              creatorOptions.find((o) => String(o.value) === String(value)) || null;
+            return (
+              <Autocomplete
+                size="small"
+                fullWidth
+                options={creatorOptions}
+                value={selectedOption}
+                disablePortal
+                getOptionLabel={(option) =>
+                  typeof option === 'string' ? option : option.label || ''
+                }
+                isOptionEqualToValue={(option, val) => option.value === val?.value}
+                onChange={(_, val) => {
+                  onChange(val?.value ?? '');
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Search creator..."
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                      },
+                    }}
+                  />
+                )}
+              />
+            );
+          },
+        };
+      }
+      if (col.field === 'assigneeId') {
+        return {
+          ...col,
+          renderFilter: ({
+            value,
+            onChange,
+          }: {
+            value: unknown;
+            onChange: (v: unknown) => void;
+          }) => {
+            const selectedOption =
+              assigneeOptions.find((o) => String(o.value) === String(value)) || null;
+            return (
+              <Autocomplete
+                size="small"
+                fullWidth
+                options={assigneeOptions}
+                value={selectedOption}
+                disablePortal
+                getOptionLabel={(option) =>
+                  typeof option === 'string' ? option : option.label || ''
+                }
+                isOptionEqualToValue={(option, val) => option.value === val?.value}
+                onChange={(_, val) => {
+                  onChange(val?.value ?? '');
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Search assignee..."
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                      },
+                    }}
+                  />
+                )}
+              />
+            );
+          },
+        };
+      }
+      return col;
+    });
+  }, [creatorOptions, assigneeOptions, groupOptions]);
 
   const renderEmptyState = useCallback(
     (hasActiveFilters: boolean): JSX.Element =>
@@ -520,15 +801,6 @@ export function CustomerListPage(): JSX.Element {
         </Box>
 
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<UploadIcon />}
-            onClick={() => setImportModalOpen(true)}
-          >
-            Import
-          </Button>
-
           <Button variant="outlined" size="small" startIcon={<DownloadIcon />} disabled>
             Export
           </Button>
@@ -576,7 +848,7 @@ export function CustomerListPage(): JSX.Element {
       {/* ── Table ── */}
       <AdvancedTable<Customer>
         key="customers-table"
-        columns={COLUMNS}
+        columns={columns}
         rows={tableRows}
         rowIdField="id"
         paginationMode="server"
@@ -605,9 +877,6 @@ export function CustomerListPage(): JSX.Element {
         itemLabel="customers"
         renderEmptyState={renderEmptyState}
       />
-
-      {/* ── Modals ── */}
-      <ImportCustomersModal open={importModalOpen} onOpenChange={setImportModalOpen} />
     </Box>
   );
 }

@@ -267,6 +267,14 @@ export class CustomerService {
       throw new NotFoundException(`Customer with ID '${id}' not found`);
     }
 
+    // Sync names to the core user record
+    if (profileUpdateFields.firstName !== undefined || profileUpdateFields.lastName !== undefined) {
+      await this.profileService.updateUserBasicInfo(updated.userId, {
+        firstName: profileUpdateFields.firstName,
+        lastName: profileUpdateFields.lastName,
+      });
+    }
+
     // Resolve group assignment if group fields were provided in update
     if (updateDto.groupCode !== undefined || updateDto.groupName !== undefined) {
       // Treat empty strings the same as null for group clearing
