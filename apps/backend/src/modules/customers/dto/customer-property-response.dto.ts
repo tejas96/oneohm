@@ -208,6 +208,12 @@ export class CustomerPropertyResponseDto {
 
   // ==================== Quote Info (enriched from quotes table) ====================
   @ApiPropertyOptional({
+    description: 'Latest quote ID for this property',
+  })
+  @Expose()
+  latestQuoteId?: string;
+
+  @ApiPropertyOptional({
     description: 'Latest quote number for this property',
     example: 'QT-ONEOHM-2026-0001',
   })

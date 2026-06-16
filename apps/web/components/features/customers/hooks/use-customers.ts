@@ -39,9 +39,10 @@ export interface CustomerFilters {
   // Filters
   status?: CustomerStatus;
   city?: string;
-  state?: string;
   leadSource?: LeadSource;
   createdBy?: string; // 'me' for field workers or actual userId
+  assigneeId?: string; // 'me' or actual userId
+  hasProperty?: boolean;
   fromDate?: string; // ISO date string (YYYY-MM-DD)
   toDate?: string; // ISO date string (YYYY-MM-DD)
   groupSearch?: string; // filter by group name or code (partial match)
@@ -145,9 +146,11 @@ export function useCustomers(
       // Filters
       if (queryFilters.status) params.append('status', queryFilters.status);
       if (queryFilters.city) params.append('city', queryFilters.city);
-      if (queryFilters.state) params.append('state', queryFilters.state);
       if (queryFilters.leadSource) params.append('leadSource', queryFilters.leadSource);
       if (queryFilters.createdBy) params.append('createdBy', queryFilters.createdBy);
+      if (queryFilters.assigneeId) params.append('assigneeId', queryFilters.assigneeId);
+      if (queryFilters.hasProperty !== undefined)
+        params.append('hasProperty', String(queryFilters.hasProperty));
       if (queryFilters.fromDate) params.append('fromDate', queryFilters.fromDate);
       if (queryFilters.toDate) params.append('toDate', queryFilters.toDate);
       if (queryFilters.groupSearch) params.append('groupSearch', queryFilters.groupSearch);

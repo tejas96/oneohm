@@ -108,6 +108,11 @@ export class CustomerController {
       query.createdBy = currentUser.id;
     }
 
+    // Substitute 'me' with actual user ID for assigneeId filter
+    if (query.assigneeId === 'me') {
+      query.assigneeId = currentUser.id;
+    }
+
     // Use unified findAll with query DTO
     const result = await this.customerService.findAll(organizationId, query);
     return toPaginatedResponse(

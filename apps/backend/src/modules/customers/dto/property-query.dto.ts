@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ConnectionType,
   LeadTemperature,
   PropertySortField,
   PropertyStatus,
@@ -100,6 +101,15 @@ export class PropertyQueryDto {
   @IsOptional()
   @IsEnum(PropertyStatus)
   status?: PropertyStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter by connection type',
+    enum: ConnectionType,
+    example: ConnectionType.SINGLE_PHASE,
+  })
+  @IsOptional()
+  @IsEnum(ConnectionType)
+  connectionType?: ConnectionType;
 
   @ApiPropertyOptional({
     description: 'Filter by city (partial match, case-insensitive)',

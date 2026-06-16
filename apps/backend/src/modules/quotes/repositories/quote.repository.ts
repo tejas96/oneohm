@@ -11,6 +11,7 @@ import { QuoteEntity } from '../entities/quote.entity';
  * Latest quote info for property enrichment
  */
 export interface LatestQuoteInfo {
+  id: string;
   quoteNumber: string;
   status: QuoteStatus;
   quoteDate: Date;
@@ -352,6 +353,7 @@ export class QuoteRepository {
       .createQueryBuilder('quote')
       .leftJoinAndSelect('quote.versions', 'cv', latestVersionJoinCondition('quote'))
       .select([
+        'quote.id',
         'quote.propertyId',
         'quote.quoteNumber',
         'quote.status',
@@ -376,6 +378,7 @@ export class QuoteRepository {
       if (quote.propertyId) {
         const cv = quote.versions[0];
         result.set(quote.propertyId, {
+          id: quote.id,
           quoteNumber: quote.quoteNumber,
           status: quote.status,
           quoteDate: quote.quoteDate,

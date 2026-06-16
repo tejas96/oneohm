@@ -37,6 +37,7 @@ import { CustomerPropertyRepository } from '../repositories/customer-property.re
  * Extended type for properties with quote info
  */
 type PropertyWithQuoteInfo = CustomerPropertyEntity & {
+  latestQuoteId?: string;
   latestQuoteNumber?: string;
   latestQuoteStatus?: QuoteStatus;
   latestQuoteDate?: Date;
@@ -195,6 +196,7 @@ export class CustomerPropertyService {
       const quoteInfo = quoteMap.get(property.id);
       return {
         ...property,
+        latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
         latestQuoteStatus: quoteInfo?.status,
         latestQuoteDate: quoteInfo?.quoteDate,
@@ -248,6 +250,7 @@ export class CustomerPropertyService {
       const quoteInfo = quoteMap.get(property.id);
       return {
         ...property,
+        latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
         latestQuoteStatus: quoteInfo?.status,
         latestQuoteDate: quoteInfo?.quoteDate,

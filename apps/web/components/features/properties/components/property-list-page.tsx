@@ -5,10 +5,12 @@ import EditIcon from '@mui/icons-material/Edit';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import PhoneIcon from '@mui/icons-material/Phone';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
+  Autocomplete,
   Box,
   Button,
   IconButton,
@@ -16,40 +18,38 @@ import {
   ListItemIcon,
   Menu,
   MenuItem,
+  Stack,
+  TextField,
   Tooltip,
 } from '@mui/material';
-import { PropertySortField, SortOrder } from '@oneohm-epc/shared/types';
+import { PropertySortField, SortOrder, ConnectionType } from '@oneohm-epc/shared/types';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { MarkAsLostModal } from './mark-as-lost-modal';
 import {
-  LEAD_TEMPERATURE_OPTIONS,
   PROPERTY_STATUS_OPTIONS,
   PROPERTY_TYPE_LABELS,
   PROPERTY_TYPE_OPTIONS,
   QUOTE_STATUS_OPTIONS,
   TEMP_DOT_MUI_COLOR,
 } from '../constants';
-import {
-  type Property as PropertyBase,
-  type PropertyFilters,
-  useProperties,
-  usePropertyTemperatureStats,
-} from '../hooks';
+import { type Property as PropertyBase, type PropertyFilters, useProperties } from '../hooks';
 
+import { useEmployees } from '@/components/features/employees';
 import {
   AdvancedTable,
   type BulkAction,
   type ColumnConfig,
 } from '@/components/shared/advanced-table';
+import { WhatsAppIcon } from '@/components/ui';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
-import { formatCurrency, getErrorMessage, toTitleLabel } from '@/lib/utils';
+import { formatCurrency, formatPhoneForWhatsApp, getErrorMessage, toTitleLabel } from '@/lib/utils';
 
 // ============================================================================
 // Types
@@ -59,6 +59,11 @@ import { formatCurrency, getErrorMessage, toTitleLabel } from '@/lib/utils';
 // PropertyBase has explicit typed fields, so we widen it here for table usage only.
 type PropertyRow = PropertyBase & Record<string, unknown>;
 const EMPTY_PROPERTY_ROWS: PropertyRow[] = [];
+
+const CONNECTION_TYPE_OPTIONS = Object.values(ConnectionType).map((value) => ({
+  value,
+  label: toTitleLabel(value),
+}));
 
 // ============================================================================
 // Adapter functions — pure, module-level, no React deps
@@ -127,8 +132,11 @@ function toPropertyFilters(filters: TableUrlFilterRecord): Partial<PropertyFilte
   if (typeof raw.status === 'string' && raw.status !== 'all') {
     result.status = raw.status as PropertyFilters['status'];
   }
-  if (typeof raw.quoteStatus === 'string' && raw.quoteStatus !== 'all') {
-    result.quoteStatus = raw.quoteStatus as PropertyFilters['quoteStatus'];
+  if (typeof raw.connectionType === 'string' && raw.connectionType !== 'all') {
+    result.connectionType = raw.connectionType as PropertyFilters['connectionType'];
+  }
+  if (typeof raw.latestQuoteStatus === 'string' && raw.latestQuoteStatus !== 'all') {
+    result.quoteStatus = raw.latestQuoteStatus as PropertyFilters['quoteStatus'];
   }
   if (typeof raw.city === 'string' && raw.city) result.city = raw.city;
   if (typeof raw.state === 'string' && raw.state) result.state = raw.state;
@@ -244,6 +252,20 @@ function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.El
           Edit Property
         </MenuItem>
 
+        {property.latestQuoteId && (
+          <MenuItem
+            onClick={() => {
+              handleClose();
+              void router.push(buildRoute(ROUTES.QUOTES.DETAIL, { id: property.latestQuoteId }));
+            }}
+          >
+            <ListItemIcon>
+              <VisibilityIcon fontSize="small" />
+            </ListItemIcon>
+            View Quote
+          </MenuItem>
+        )}
+
         <MenuItem
           onClick={() => {
             handleClose();
@@ -282,16 +304,13 @@ function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.El
 
 interface BuildColumnsArgs {
   onMarkAsLost: (property: PropertyRow) => void;
-  tempStats: Record<string, number> | undefined;
+  creatorOptions: { value: string; label: string }[];
 }
 
-function buildColumns({ onMarkAsLost, tempStats }: BuildColumnsArgs): ColumnConfig<PropertyRow>[] {
-  // Augment lead temperature options with live counts from the stats API
-  const leadTempOptions = LEAD_TEMPERATURE_OPTIONS.map(({ value, label }) => {
-    const count = tempStats?.[value];
-    return { value, label: count !== undefined ? `${label} (${count})` : label };
-  });
-
+function buildColumns({
+  onMarkAsLost,
+  creatorOptions,
+}: BuildColumnsArgs): ColumnConfig<PropertyRow>[] {
   return [
     {
       field: 'propertyCode',
@@ -301,8 +320,7 @@ function buildColumns({ onMarkAsLost, tempStats }: BuildColumnsArgs): ColumnConf
       cellSx: { whiteSpace: 'normal', verticalAlign: 'top', py: 1 },
       renderCell: ({ row }) => {
         const address = (row.address as string | undefined) ?? '';
-        const customer = (row.customerName as string | undefined) ?? '';
-        const tooltipText = [address, customer].filter(Boolean).join('\n') || '-';
+        const tooltipText = address || '-';
 
         return (
           <Box>
@@ -359,14 +377,14 @@ function buildColumns({ onMarkAsLost, tempStats }: BuildColumnsArgs): ColumnConf
               )}
             </Box>
 
-            {/* Address (up to 2 lines) + customer name (always visible below) */}
+            {/* Address (up to 2 lines) */}
             <Tooltip
               title={<span style={{ whiteSpace: 'pre-line' }}>{tooltipText}</span>}
               placement="bottom-start"
               enterDelay={500}
             >
               <Box sx={{ mt: 0.25, minWidth: 0 }}>
-                {address && (
+                {address ? (
                   <MUITypography
                     variant="timestamp"
                     sx={{
@@ -381,19 +399,79 @@ function buildColumns({ onMarkAsLost, tempStats }: BuildColumnsArgs): ColumnConf
                   >
                     {address}
                   </MUITypography>
+                ) : (
+                  <MUITypography variant="placeholder">-</MUITypography>
                 )}
-                {customer && (
-                  <MUITypography
-                    variant="timestamp"
-                    noWrap
-                    sx={{ color: 'text.disabled', fontStyle: 'italic', mt: 0.125 }}
-                  >
-                    {customer}
-                  </MUITypography>
-                )}
-                {!address && !customer && <MUITypography variant="placeholder">-</MUITypography>}
               </Box>
             </Tooltip>
+          </Box>
+        );
+      },
+    },
+    {
+      field: 'customerName',
+      headerName: 'Customer',
+      flex: 2.5,
+      renderCell: ({ row }) => {
+        const name = row.customerName as string | undefined;
+        const phone = row.customerPhone as string | undefined;
+        const email = row.customerEmail as string | undefined;
+        if (!name) return <MUITypography variant="placeholder">-</MUITypography>;
+        const whatsappNumber = phone ? formatPhoneForWhatsApp(phone) : '';
+
+        return (
+          <Box>
+            <MuiLink
+              component={NextLink}
+              href={buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.customerId })}
+              underline="none"
+              color="inherit"
+              sx={{
+                fontWeight: 500,
+                display: 'block',
+                '&:hover': { color: 'primary.main' },
+              }}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            >
+              {name}
+            </MuiLink>
+            <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.25 }}>
+              {email && (
+                <MUITypography variant="timestamp" noWrap sx={{ maxWidth: 150 }}>
+                  {email}
+                </MUITypography>
+              )}
+              {phone && (
+                <>
+                  {email && <MUITypography variant="timestamp">·</MUITypography>}
+                  <MUITypography variant="timestamp">{phone}</MUITypography>
+                  <Tooltip title="Call">
+                    <IconButton
+                      size="small"
+                      component="a"
+                      href={`tel:${phone}`}
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      sx={{ p: 0.25 }}
+                    >
+                      <PhoneIcon sx={{ fontSize: 12, color: 'text.disabled' }} />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="WhatsApp">
+                    <IconButton
+                      size="small"
+                      component="a"
+                      href={`https://wa.me/${whatsappNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      sx={{ p: 0.25 }}
+                    >
+                      <WhatsAppIcon style={{ fontSize: 12, color: '#25D366' }} />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
+            </Stack>
           </Box>
         );
       },
@@ -431,21 +509,59 @@ function buildColumns({ onMarkAsLost, tempStats }: BuildColumnsArgs): ColumnConf
       flex: 1,
       renderCell: ({ row }) => {
         const status = row.latestQuoteStatus as string | undefined;
+        const quoteId = row.latestQuoteId as string | undefined;
         if (!status) return <MUITypography variant="placeholder">None</MUITypography>;
-        return <MUIStatusChip label={toTitleLabel(status)} colorSeed={status} />;
+
+        const chip = <MUIStatusChip label={toTitleLabel(status)} colorSeed={status} />;
+
+        if (quoteId) {
+          return (
+            <MuiLink
+              component={NextLink}
+              href={buildRoute(ROUTES.QUOTES.DETAIL, { id: quoteId })}
+              underline="none"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              sx={{ display: 'inline-flex' }}
+            >
+              {chip}
+            </MuiLink>
+          );
+        }
+        return chip;
       },
     },
     {
-      field: 'leadTemperature',
-      headerName: 'Temperature',
+      field: 'connectionType',
+      headerName: 'Discom / Load',
       filterable: true,
       filterType: 'select',
-      filterOptions: leadTempOptions,
-      flex: 1,
+      filterOptions: CONNECTION_TYPE_OPTIONS,
+      flex: 2,
       renderCell: ({ row }) => {
-        const temp = row.leadTemperature as string;
-        const color = temp === 'hot' ? 'error' : temp === 'warm' ? 'warning' : ('info' as const);
-        return <MUIStatusChip label={toTitleLabel(temp)} color={color} autoColor={false} />;
+        const discom = row.discomName as string | undefined;
+        const load = row.sanctionedLoad !== undefined ? Number(row.sanctionedLoad) : undefined;
+        const connection = row.connectionType as string | undefined;
+
+        if (!discom && load === undefined && !connection) {
+          return <MUITypography variant="placeholder">-</MUITypography>;
+        }
+
+        const subtitleParts: string[] = [];
+        if (load !== undefined) subtitleParts.push(`${load.toFixed(2)} kW`);
+        if (connection) subtitleParts.push(toTitleLabel(connection));
+
+        return (
+          <Box>
+            <MUITypography variant="body" noWrap sx={{ fontWeight: 500 }}>
+              {discom ?? '-'}
+            </MUITypography>
+            {subtitleParts.length > 0 && (
+              <MUITypography variant="timestamp" sx={{ mt: 0.25 }}>
+                {subtitleParts.join(' · ')}
+              </MUITypography>
+            )}
+          </Box>
+        );
       },
     },
     {
@@ -497,11 +613,40 @@ function buildColumns({ onMarkAsLost, tempStats }: BuildColumnsArgs): ColumnConf
       },
     },
     {
-      field: 'creatorName',
+      field: 'createdBy',
       headerName: 'Created By',
       filterable: true,
-      filterType: 'text',
+      filterType: 'select',
       flex: 1,
+      renderFilter: ({ value, onChange }) => {
+        const selectedOption =
+          creatorOptions.find((o) => String(o.value) === String(value)) || null;
+        return (
+          <Autocomplete
+            size="small"
+            fullWidth
+            options={creatorOptions}
+            value={selectedOption}
+            disablePortal
+            getOptionLabel={(option) => (typeof option === 'string' ? option : option.label || '')}
+            isOptionEqualToValue={(option, val) => option.value === val?.value}
+            onChange={(_, val) => {
+              onChange(val?.value ?? '');
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Search creator..."
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                  },
+                }}
+              />
+            )}
+          />
+        );
+      },
       renderCell: ({ row }) => {
         const name = (row.creatorName as string | undefined) ?? '';
         if (!name) return <MUITypography variant="placeholder">-</MUITypography>;
@@ -564,9 +709,6 @@ export function PropertyListPage(): JSX.Element {
     }
   }, [searchParams]);
 
-  // Temperature stats for filter option count labels (e.g. "Hot (12)")
-  const { stats } = usePropertyTemperatureStats();
-
   // Server-side data fetch — driven entirely by URL state
   const {
     data: propertyData,
@@ -598,13 +740,27 @@ export function PropertyListPage(): JSX.Element {
     setLostModalOpen(true);
   }, []);
 
+  const { data: employees = [] } = useEmployees();
+
+  const creatorOptions = useMemo(() => {
+    const baseOptions = employees.map((emp) => {
+      const name = `${emp.user?.firstName ?? ''} ${emp.user?.lastName ?? ''}`.trim();
+      return {
+        value: emp.userId,
+        label: name || emp.user?.email || 'Unknown Employee',
+      };
+    });
+    const list = [{ label: 'Current User (Me)', value: 'me' }, ...baseOptions];
+    return list.sort((a, b) => a.label.localeCompare(b.label));
+  }, [employees]);
+
   const columns = useMemo(
     (): ColumnConfig<PropertyRow>[] =>
       buildColumns({
         onMarkAsLost: handleMarkAsLost,
-        tempStats: stats as Record<string, number> | undefined,
+        creatorOptions,
       }),
-    [handleMarkAsLost, stats],
+    [handleMarkAsLost, creatorOptions],
   );
 
   const renderEmptyState = useCallback(

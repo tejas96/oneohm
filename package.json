@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "backend:dev": "nx serve backend",
-    "backend:dev:watch": "cd apps/backend && NODE_ENV=development ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/main.ts",
+    "backend:dev:watch": "cd apps/backend && NODE_ENV=development ts-node-dev --tree-kill --respawn --transpile-only -r tsconfig-paths/register src/main.ts",
     "backend:build": "nx build backend",
     "backend:start": "nx serve backend --configuration=production",
     "backend:test": "nx test backend",

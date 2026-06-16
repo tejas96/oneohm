@@ -9,6 +9,9 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
+  // Enable graceful shutdown hooks
+  app.enableShutdownHooks();
+
   // Get ConfigService
   const configService = app.get(ConfigService);
 
@@ -97,8 +100,9 @@ async function bootstrap(): Promise<void> {
 
   // Start server
   const port = configService.app.port;
+  const host = configService.app.host || '0.0.0.0';
   const baseUrl = configService.app.baseUrl;
-  await app.listen(port);
+  await app.listen(port, host);
 
   logger.log(`🚀 Application is running on: ${baseUrl}`);
   logger.log(`📝 API Documentation: ${baseUrl}/api-docs`);

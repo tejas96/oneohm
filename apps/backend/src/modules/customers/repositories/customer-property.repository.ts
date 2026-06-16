@@ -203,7 +203,7 @@ export class CustomerPropertyRepository {
         `cv.id = (
           SELECT qv.id
           FROM quote_versions qv
-          WHERE qv.quote_id = latestQuote.id
+          WHERE qv.quote_id = "latestQuote".id
           ORDER BY qv.created_at DESC, qv.version_number DESC, qv.id DESC
           LIMIT 1
         )`,
@@ -247,6 +247,12 @@ export class CustomerPropertyRepository {
 
     if (query.status) {
       qb.andWhere('property.status = :status', { status: query.status });
+    }
+
+    if (query.connectionType) {
+      qb.andWhere('property.connectionType = :connectionType', {
+        connectionType: query.connectionType,
+      });
     }
 
     if (query.city) {

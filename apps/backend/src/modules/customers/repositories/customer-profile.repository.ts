@@ -302,10 +302,6 @@ export class CustomerProfileRepository {
       qb.andWhere('LOWER(customer.city) LIKE LOWER(:city)', { city: `%${query.city}%` });
     }
 
-    if (query.state) {
-      qb.andWhere('LOWER(customer.state) LIKE LOWER(:state)', { state: `%${query.state}%` });
-    }
-
     if (query.leadSource) {
       if (String(query.leadSource) === String(LeadSource.OTHER)) {
         // "Other" means any lead_source that is not one of the standard enum values
@@ -330,10 +326,34 @@ export class CustomerProfileRepository {
     }
 
     if (query.createdBy) {
-      // Return customers where user is the creator OR the assignee (for field worker "my leads" view)
-      qb.andWhere('(customer.createdBy = :createdBy OR customer.assigneeId = :createdBy)', {
-        createdBy: query.createdBy,
+      if (query.createdBy === 'self') {
+        qb.andWhere('customer.createdBy = customer.userId');
+      } else {
+        qb.andWhere('customer.createdBy = :createdBy', {
+          createdBy: query.createdBy,
+        });
+      }
+    }
+
+    if (query.assigneeId) {
+      qb.andWhere('customer.assigneeId = :assigneeId', {
+        assigneeId: query.assigneeId,
       });
+    }
+
+    if (query.hasProperty !== undefined) {
+      const subQuery = qb
+        .subQuery()
+        .select('prop.id')
+        .from('customer_properties', 'prop')
+        .where('prop.customerId = customer.id')
+        .andWhere('prop.deletedAt IS NULL');
+
+      if (query.hasProperty) {
+        qb.andWhere(`EXISTS (${subQuery.getQuery()})`);
+      } else {
+        qb.andWhere(`NOT EXISTS (${subQuery.getQuery()})`);
+      }
     }
 
     if (query.fromDate) {
