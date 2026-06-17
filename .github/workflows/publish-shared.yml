@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@oneohm-epc'
+          scope: '@tejas96'
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
@@ -104,8 +104,8 @@ jobs:
           VERSION=$(node -p "require('./libs/shared/package.json').version")
           if [ "${{ steps.version-check.outputs.already_published }}" == "true" ]; then
             echo "## Shared Package" >> $GITHUB_STEP_SUMMARY
-            echo "✅ Auto-bumped and published @oneohm-epc/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Auto-bumped and published @tejas96/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
           else
             echo "## Shared Package" >> $GITHUB_STEP_SUMMARY
-            echo "✅ Published @oneohm-epc/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Published @tejas96/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
           fi
