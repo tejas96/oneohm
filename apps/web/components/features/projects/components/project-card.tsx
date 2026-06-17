@@ -1,6 +1,6 @@
 'use client';
 
-import { ProjectStatus } from '@oneohm-epc/shared/types';
+import { ProjectStatus } from '@tejas96/shared/types';
 import { MapPin, User, Zap } from 'lucide-react';
 import Link from 'next/link';
 

@@ -3,7 +3,7 @@ import {
   PaymentTermStatus,
   PaymentTransactionStatus,
   ReimbursementStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 import { type StatusChipColor } from '@/components/ui';
 import type { AgingBucket } from '@/lib/hooks/resources';
@@ -12,7 +12,7 @@ import type { AgingBucket } from '@/lib/hooks/resources';
  * Semantic MUI palette colors for finance status chips. These feed
  * `<MUIStatusChip color={...} />` so all finance status indicators stay
  * in lockstep with the MUI theme. When adding a new status value, also
- * add its label in `@oneohm-epc/shared/constants/labels`.
+ * add its label in `@tejas96/shared/constants/labels`.
  *
  * For categories without an obvious semantic color (e.g. expense
  * categories), we omit them from the map and let `MUIStatusChip`'s

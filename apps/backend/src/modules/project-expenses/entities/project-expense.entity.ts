@@ -3,7 +3,7 @@ import {
   ExpensePaidByType,
   PaymentMethod,
   ReimbursementStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { ExpenseProductLinkEntity } from './expense-product-link.entity';

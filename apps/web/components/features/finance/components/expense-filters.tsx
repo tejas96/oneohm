@@ -5,8 +5,8 @@ import {
   EXPENSE_CATEGORY_LABELS,
   EXPENSE_PAID_BY_LABELS,
   REIMBURSEMENT_STATUS_LABELS,
-} from '@oneohm-epc/shared/constants';
-import { ExpenseCategory, ExpensePaidByType, ReimbursementStatus } from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/constants';
+import { ExpenseCategory, ExpensePaidByType, ReimbursementStatus } from '@tejas96/shared/types';
 import { type JSX, useEffect, useRef, useState } from 'react';
 
 import { MUIInput, MUISelect } from '@/components/ui';

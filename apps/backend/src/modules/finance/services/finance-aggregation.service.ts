@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { type PaginatedResponse } from '@oneohm-epc/shared/types';
+import { type PaginatedResponse } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import { type AgingBucket } from '../constants';

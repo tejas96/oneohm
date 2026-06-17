@@ -1,6 +1,6 @@
 'use client';
 
-import { TaskStatus } from '@oneohm-epc/shared/types';
+import { TaskStatus } from '@tejas96/shared/types';
 import { Crown, Star } from 'lucide-react';
 import Link from 'next/link';
 import type { JSX } from 'react';

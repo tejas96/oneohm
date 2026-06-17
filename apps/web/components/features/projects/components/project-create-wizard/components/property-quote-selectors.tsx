@@ -3,7 +3,7 @@
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import Alert from '@mui/material/Alert';
-import { QuoteStatus, PropertyStatus } from '@oneohm-epc/shared/types';
+import { QuoteStatus, PropertyStatus } from '@tejas96/shared/types';
 import type { UseFormReturn } from 'react-hook-form';
 
 import type { ProjectCreateFormData } from '../../../schemas/project-create.schema';

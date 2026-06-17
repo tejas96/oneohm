@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Box, Button, CircularProgress, type SelectChangeEvent } from '@mui/material';
-import { PaymentMethod, PaymentTermStatus } from '@oneohm-epc/shared/types';
+import { PaymentMethod, PaymentTermStatus } from '@tejas96/shared/types';
 import { type JSX, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 

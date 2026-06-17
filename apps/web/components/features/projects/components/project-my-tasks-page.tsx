@@ -9,7 +9,7 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
-import { LookupTypeCode, TaskPriority, TaskStatus } from '@oneohm-epc/shared/types';
+import { LookupTypeCode, TaskPriority, TaskStatus } from '@tejas96/shared/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {

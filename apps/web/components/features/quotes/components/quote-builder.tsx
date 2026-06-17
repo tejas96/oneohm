@@ -6,7 +6,7 @@ import {
   DcrPreference,
   ProjectType,
   type PaymentMilestone,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { isAxiosError } from 'axios';
 import {
   AlertCircle,

@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InputAdornment, TextField } from '@mui/material';
-import { LookupDataType, LookupScopeType } from '@oneohm-epc/shared/types';
+import { LookupDataType, LookupScopeType } from '@tejas96/shared/types';
 import { Loader2 } from 'lucide-react';
 import { type JSX, useEffect, useRef } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';

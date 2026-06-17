@@ -15,7 +15,7 @@ import {
   PropertyStatus,
   QuoteStatus,
   TaskStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { BomService } from '../../bom/services/bom.service';
@@ -231,7 +231,7 @@ export class ProjectService {
       const { StockAllocationEntity } = await import(
         '../../inventory/entities/stock-allocation.entity'
       );
-      const { StockAllocationStatus } = await import('@oneohm-epc/shared/types');
+      const { StockAllocationStatus } = await import('@tejas96/shared/types');
       const activeAllocCount = await this.dataSource.getRepository(StockAllocationEntity).count({
         where: {
           projectId: id,
@@ -247,12 +247,31 @@ export class ProjectService {
 
     const { actualCost, metadata: incomingMetadata, ...safeDto } = updateDto;
 
-    const updateData: Record<string, unknown> = {
-      ...safeDto,
-      updatedBy,
-      startDate: safeDto.startDate ? new Date(safeDto.startDate) : undefined,
-      endDate: safeDto.endDate ? new Date(safeDto.endDate) : undefined,
-    };
+    // Prepare update data (whitelisted to prevent prototype pollution and remote property injection)
+    const allowedKeys: (keyof typeof safeDto)[] = [
+      'name',
+      'description',
+      'priority',
+      'progressPercentage',
+      'defaultWarehouseId',
+      'taskStatuses',
+    ];
+
+    const updateData: Record<string, unknown> = {};
+    for (const key of allowedKeys) {
+      if (safeDto[key] !== undefined) {
+        updateData[key] = safeDto[key];
+      }
+    }
+
+    updateData.updatedBy = updatedBy;
+
+    if (safeDto.startDate !== undefined) {
+      updateData.startDate = safeDto.startDate ? new Date(safeDto.startDate) : null;
+    }
+    if (safeDto.endDate !== undefined) {
+      updateData.endDate = safeDto.endDate ? new Date(safeDto.endDate) : null;
+    }
 
     if (actualCost !== undefined || incomingMetadata !== undefined) {
       updateData.metadata = {
@@ -261,12 +280,6 @@ export class ProjectService {
         ...(actualCost !== undefined ? { actualCost } : {}),
       };
     }
-
-    Object.keys(updateData).forEach((key) => {
-      if (updateData[key] === undefined) {
-        delete updateData[key];
-      }
-    });
 
     return this.projectRepository.update(id, organizationId, updateData);
   }

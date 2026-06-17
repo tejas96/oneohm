@@ -4,7 +4,7 @@ import {
   TaskStatus,
   type TaskChecklist,
   type FileAttachment,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,

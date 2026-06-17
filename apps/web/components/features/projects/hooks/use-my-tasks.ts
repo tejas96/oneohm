@@ -1,6 +1,13 @@
 'use client';
 
 import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+  type UseQueryResult,
+} from '@tanstack/react-query';
+import {
   TaskStatus,
   type GroupByMode,
   type GroupedMyTasksResponse,
@@ -9,14 +16,7 @@ import {
   type MyTasksGroup,
   type MyTasksProject,
   type MyTasksSummary,
-} from '@oneohm-epc/shared/types';
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-  type UseQueryResult,
-} from '@tanstack/react-query';
+} from '@tejas96/shared/types';
 
 import { myTasksSummaryKeys } from '@/components/features/tasks/hooks/use-my-tasks-summary';
 import { showToast } from '@/components/ui/sonner';

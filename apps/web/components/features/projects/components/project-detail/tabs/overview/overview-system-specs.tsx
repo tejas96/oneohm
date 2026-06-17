@@ -1,7 +1,7 @@
 'use client';
 
 import { ElectricBoltOutlined, InventoryOutlined } from '@mui/icons-material';
-import { MaterialStatus } from '@oneohm-epc/shared/types';
+import { MaterialStatus } from '@tejas96/shared/types';
 import Link from 'next/link';
 
 import { MATERIAL_STATUS_BADGE_VARIANT, MATERIAL_STATUS_LABELS } from '../../../../constants';

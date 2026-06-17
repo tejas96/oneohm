@@ -11,8 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { type PaginatedResponse, LookupScopeType } from '@oneohm-epc/shared/types';
-import { parsePaginationParams } from '@oneohm-epc/shared/utils';
+import { type PaginatedResponse, LookupScopeType } from '@tejas96/shared/types';
+import { parsePaginationParams } from '@tejas96/shared/utils';
 
 import {
   ApiAction,

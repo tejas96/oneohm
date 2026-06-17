@@ -3,7 +3,7 @@ import {
   type GpsCoordinates,
   type ShadingAnalysis,
   type SurveyData,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';

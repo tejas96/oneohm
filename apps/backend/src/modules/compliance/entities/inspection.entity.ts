@@ -1,4 +1,4 @@
-import { InspectionStatus } from '@oneohm-epc/shared/types';
+import { InspectionStatus } from '@tejas96/shared/types';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';

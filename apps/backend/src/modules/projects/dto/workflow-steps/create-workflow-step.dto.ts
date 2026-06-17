@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { type TaskChecklist } from '@oneohm-epc/shared/types';
+import { type TaskChecklist } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,

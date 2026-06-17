@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ApprovalRequestPriority } from '@oneohm-epc/shared/types';
+import { ApprovalRequestPriority } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsEnum,

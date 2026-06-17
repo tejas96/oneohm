@@ -28,11 +28,11 @@
       "@/lib/*": ["./lib/*"],
       "@/providers": ["./providers/index.tsx"],
       "@/providers/*": ["./providers/*"],
-      "@oneohm-epc/shared": ["../../libs/shared/src/index.ts"],
-      "@oneohm-epc/shared/types": ["../../libs/shared/src/types/index.ts"],
-      "@oneohm-epc/shared/utils": ["../../libs/shared/src/utils/index.ts"],
-      "@oneohm-epc/shared/schemas": ["../../libs/shared/src/schemas/index.ts"],
-      "@oneohm-epc/shared/constants": ["../../libs/shared/src/constants/index.ts"]
+      "@tejas96/shared": ["../../libs/shared/src/index.ts"],
+      "@tejas96/shared/types": ["../../libs/shared/src/types/index.ts"],
+      "@tejas96/shared/utils": ["../../libs/shared/src/utils/index.ts"],
+      "@tejas96/shared/schemas": ["../../libs/shared/src/schemas/index.ts"],
+      "@tejas96/shared/constants": ["../../libs/shared/src/constants/index.ts"]
     }
   },
   "include": [

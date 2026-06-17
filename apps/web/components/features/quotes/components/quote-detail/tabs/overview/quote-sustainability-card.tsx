@@ -1,7 +1,7 @@
 'use client';
 
 import { Paper } from '@mui/material';
-import { computeSolarImpact } from '@oneohm-epc/shared/utils';
+import { computeSolarImpact } from '@tejas96/shared/utils';
 import { Leaf, PiggyBank, TrendingUp } from 'lucide-react';
 import React, { useMemo } from 'react';
 

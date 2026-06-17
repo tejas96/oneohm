@@ -1,6 +1,6 @@
 'use client';
 
-import { type PaginatedResponse } from '@oneohm-epc/shared/types';
+import { type PaginatedResponse } from '@tejas96/shared/types';
 import * as React from 'react';
 
 import { ProjectFinanceDrawer } from '../drawers';

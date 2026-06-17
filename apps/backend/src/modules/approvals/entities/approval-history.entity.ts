@@ -1,4 +1,4 @@
-import { ApprovalAction, ApprovalDecision } from '@oneohm-epc/shared/types';
+import { ApprovalAction, ApprovalDecision } from '@tejas96/shared/types';
 import {
   Column,
   CreateDateColumn,

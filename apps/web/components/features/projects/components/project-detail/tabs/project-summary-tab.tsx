@@ -1,6 +1,6 @@
 'use client';
 
-import { LookupTypeCode } from '@oneohm-epc/shared/types';
+import { LookupTypeCode } from '@tejas96/shared/types';
 import React, { useMemo } from 'react';
 
 import { MilestoneProgressPanel } from './summary/milestone-progress-panel';

@@ -1,7 +1,7 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import { ProjectStatus } from '@oneohm-epc/shared/types';
+import { ProjectStatus } from '@tejas96/shared/types';
 import { FolderOpen } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';

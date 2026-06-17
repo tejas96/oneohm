@@ -1,4 +1,4 @@
-import { UserStatus } from '@oneohm-epc/shared/types';
+import { UserStatus } from '@tejas96/shared/types';
 import * as bcrypt from 'bcrypt';
 import { BeforeInsert, BeforeUpdate, Column, DeleteDateColumn, Entity, Index } from 'typeorm';
 

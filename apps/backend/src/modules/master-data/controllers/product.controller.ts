@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { type PaginatedResponse, ProductStatus } from '@oneohm-epc/shared/types';
+import { type PaginatedResponse, ProductStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

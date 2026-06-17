@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { MaterialDispatchStatus } from '@oneohm-epc/shared/types';
+import { MaterialDispatchStatus } from '@tejas96/shared/types';
 
 const VALID_DISPATCH_TRANSITIONS: Record<MaterialDispatchStatus, MaterialDispatchStatus[]> = {
   [MaterialDispatchStatus.PREPARED]: [

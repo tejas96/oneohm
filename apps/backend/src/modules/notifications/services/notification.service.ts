@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { NotificationSeverity, NotificationType } from '@oneohm-epc/shared/types';
+import { NotificationSeverity, NotificationType } from '@tejas96/shared/types';
 
 import { FcmService } from './fcm.service';
 import { NotificationEntity } from '../entities/notification.entity';

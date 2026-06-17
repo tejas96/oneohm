@@ -1,4 +1,4 @@
-import { extractApiErrorMessage } from '@oneohm-epc/shared/utils';
+import { extractApiErrorMessage } from '@tejas96/shared/utils';
 
 /**
  * Extract error message from API error response.

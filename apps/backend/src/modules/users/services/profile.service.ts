@@ -5,7 +5,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { UserProfileType } from '@oneohm-epc/shared/types';
+import { UserProfileType } from '@tejas96/shared/types';
 
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';

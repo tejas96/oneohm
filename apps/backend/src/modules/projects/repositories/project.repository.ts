@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProjectPriority, ProjectStatus, TaskStatus } from '@oneohm-epc/shared/types';
+import { ProjectPriority, ProjectStatus, TaskStatus } from '@tejas96/shared/types';
 import { type EntityManager, IsNull, Repository } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';

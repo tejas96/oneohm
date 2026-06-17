@@ -4,7 +4,7 @@ import {
   ExpensePaidByType,
   PaymentMethod,
   ReimbursementStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 /**

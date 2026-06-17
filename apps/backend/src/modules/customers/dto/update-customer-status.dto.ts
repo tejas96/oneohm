@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CustomerStatus } from '@oneohm-epc/shared/types';
+import { CustomerStatus } from '@tejas96/shared/types';
 import { IsEnum } from 'class-validator';
 
 /**

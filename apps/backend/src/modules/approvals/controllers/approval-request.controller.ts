@@ -14,7 +14,7 @@ import {
   type PaginatedResponse,
   type StatisticsResponse,
   ApprovalRequestStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

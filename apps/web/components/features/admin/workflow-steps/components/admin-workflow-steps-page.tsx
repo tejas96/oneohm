@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { WorkflowStep } from '@oneohm-epc/shared/types';
+import type { WorkflowStep } from '@tejas96/shared/types';
 import {
   CheckCircle2,
   ChevronDown,

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ProjectType } from '@oneohm-epc/shared/types';
+import { ProjectType } from '@tejas96/shared/types';
 
 import { CreateProductPriceDto, UpdateProductPriceDto } from '../dto/product-prices';
 import { ProductPriceEntity } from '../entities/product-price.entity';

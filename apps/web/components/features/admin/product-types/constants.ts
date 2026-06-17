@@ -1,4 +1,4 @@
-import { UnitOfMeasure } from '@oneohm-epc/shared/types';
+import { UnitOfMeasure } from '@tejas96/shared/types';
 
 import type { FilterTab } from '@/components/shared';
 

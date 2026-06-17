@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { MaterialDispatchStatus, StockAllocationStatus } from '@oneohm-epc/shared/types';
+import { MaterialDispatchStatus, StockAllocationStatus } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import { ProductRepository } from '../../master-data/repositories/product.repository';

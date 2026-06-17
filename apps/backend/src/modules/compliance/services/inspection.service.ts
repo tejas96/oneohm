@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InspectionStatus } from '@oneohm-epc/shared/types';
+import { InspectionStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import { CreateInspectionDto, UpdateInspectionDto, InspectionResponseDto } from '../dto';

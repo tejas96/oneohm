@@ -82,7 +82,7 @@ oneohm-epc/
 │   └── ux/                 # Design assets
 │
 ├── libs/                    # Shared libraries
-│   └── shared/             # Unified shared package (@oneohm-epc/shared)
+│   └── shared/             # Unified shared package (@tejas96/shared)
 │
 ├── nx.json                  # NX configuration
 ├── tsconfig.base.json       # Shared TypeScript config
@@ -101,10 +101,10 @@ oneohm-epc/
 
 | Sub-path                        | Purpose                    | Used By     |
 | ------------------------------- | -------------------------- | ----------- |
-| `@oneohm-epc/shared/types`     | Enums, interfaces & types  | All apps    |
-| `@oneohm-epc/shared/utils`     | Utility functions          | All apps    |
-| `@oneohm-epc/shared/schemas`   | Zod validation schemas     | Web, Mobile |
-| `@oneohm-epc/shared/constants` | Label maps & config values | All apps    |
+| `@tejas96/shared/types`     | Enums, interfaces & types  | All apps    |
+| `@tejas96/shared/utils`     | Utility functions          | All apps    |
+| `@tejas96/shared/schemas`   | Zod validation schemas     | Web, Mobile |
+| `@tejas96/shared/constants` | Label maps & config values | All apps    |
 
 ---
 
@@ -193,31 +193,31 @@ npm run format:check
 // In any app (backend, web, mobile)
 
 // Import types & enums
-import { UserRole, QuoteStatus, ProjectStatus } from '@oneohm-epc/shared/types';
+import { UserRole, QuoteStatus, ProjectStatus } from '@tejas96/shared/types';
 
 // Import utilities
-import { formatDate, formatCurrency, debounce } from '@oneohm-epc/shared/utils';
+import { formatDate, formatCurrency, debounce } from '@tejas96/shared/utils';
 
 // Import Zod schemas
-import { loginSchema, customerSchema } from '@oneohm-epc/shared/schemas';
+import { loginSchema, customerSchema } from '@tejas96/shared/schemas';
 
 // Import constants
-import { PROJECT_TYPE_LABELS, DISCOUNT_PRESETS } from '@oneohm-epc/shared/constants';
+import { PROJECT_TYPE_LABELS, DISCOUNT_PRESETS } from '@tejas96/shared/constants';
 ```
 
 ### Example: Using Shared Types in Backend
 
 ```typescript
 // apps/backend/src/modules/users/controllers/users.controller.ts
-import { UserRole, UserStatus } from '@oneohm-epc/shared/types';
-import { parsePaginationParams } from '@oneohm-epc/shared/utils';
+import { UserRole, UserStatus } from '@tejas96/shared/types';
+import { parsePaginationParams } from '@tejas96/shared/utils';
 ```
 
 ### Example: Using Shared Schema in Web
 
 ```typescript
 // apps/web/components/features/auth/LoginForm.tsx
-import { loginSchema, type LoginFormData } from '@oneohm-epc/shared/schemas';
+import { loginSchema, type LoginFormData } from '@tejas96/shared/schemas';
 ```
 
 ### Adding New Shared Code
@@ -665,8 +665,8 @@ utils, constants, schemas  (depend on types only)
 **Good:**
 
 ```typescript
-import { UserRole } from '@oneohm-epc/shared/types';
-import { formatCurrency } from '@oneohm-epc/shared/utils';
+import { UserRole } from '@tejas96/shared/types';
+import { formatCurrency } from '@tejas96/shared/utils';
 ```
 
 **Bad:**
@@ -786,7 +786,7 @@ npm install -D @swc-node/register @swc/core
 
 ### Import Errors
 
-**Problem**: Cannot find module '@oneohm-epc/shared/\*'
+**Problem**: Cannot find module '@tejas96/shared/\*'
 
 **Solution**:
 

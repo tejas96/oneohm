@@ -19,8 +19,8 @@ import {
   QuoteCalculationMode,
   type QuoteSnapshot,
   SystemType,
-} from '@oneohm-epc/shared/types';
-import { applyPreGstDiscount, GstSplitPercentagesInvalidError } from '@oneohm-epc/shared/utils';
+} from '@tejas96/shared/types';
+import { applyPreGstDiscount, GstSplitPercentagesInvalidError } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import { OrganizationContext } from '../../../common/decorators';

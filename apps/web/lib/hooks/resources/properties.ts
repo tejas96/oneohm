@@ -8,7 +8,7 @@ import {
   type PropertyStatus,
   type PropertyType,
   type QuoteStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 import {
   defineResource,

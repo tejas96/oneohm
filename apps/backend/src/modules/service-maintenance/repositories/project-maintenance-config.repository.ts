@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MaintenanceConfigStatus } from '@oneohm-epc/shared/types';
+import { MaintenanceConfigStatus } from '@tejas96/shared/types';
 import { IsNull, LessThanOrEqual, Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 

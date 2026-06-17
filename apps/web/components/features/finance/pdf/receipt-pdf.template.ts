@@ -1,4 +1,4 @@
-import { PaymentMethod, PaymentTransactionStatus } from '@oneohm-epc/shared/types';
+import { PaymentMethod, PaymentTransactionStatus } from '@tejas96/shared/types';
 
 import {
   PDF_DEFAULT_COMPANY,

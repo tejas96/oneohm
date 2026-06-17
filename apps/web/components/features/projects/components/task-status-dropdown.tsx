@@ -1,6 +1,6 @@
 'use client';
 
-import { TaskStatus, type TaskStatusConfig } from '@oneohm-epc/shared/types';
+import { TaskStatus, type TaskStatusConfig } from '@tejas96/shared/types';
 import { Lock, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 

@@ -1,9 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  WarehouseStatus,
-  WarehouseType,
-  type WarehouseCoordinates,
-} from '@oneohm-epc/shared/types';
+import { WarehouseStatus, WarehouseType, type WarehouseCoordinates } from '@tejas96/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 /**

@@ -1,7 +1,7 @@
 'use client';
 
-import { LookupTypeCode, TaskStatus, type TaskPriority } from '@oneohm-epc/shared/types';
 import { useQueryClient } from '@tanstack/react-query';
+import { LookupTypeCode, TaskStatus, type TaskPriority } from '@tejas96/shared/types';
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { CreateProjectTaskModal } from './create-project-task-modal';

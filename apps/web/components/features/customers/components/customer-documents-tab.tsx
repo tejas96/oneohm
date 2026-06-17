@@ -14,7 +14,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DocumentEntityType } from '@tejas96/shared/types';
 import { useCallback, useMemo, useState } from 'react';
 
 import type { CustomerPropertyResponse } from '../hooks';

@@ -5,7 +5,7 @@
  * Uses web-side types and local formatting helpers for PDF-specific control.
  */
 
-import { PHASE_TYPE_LABELS } from '@oneohm-epc/shared/constants';
+import { PHASE_TYPE_LABELS } from '@tejas96/shared/constants';
 
 import { applyPreGstDiscount } from '../pricing-utils';
 import type { PdfCompanyInfo, QuotePdfData, QuotePdfOrgConfig } from '../types';

@@ -8,8 +8,8 @@ import {
   type SxProps,
   type Theme,
 } from '@mui/material';
-import { DOCUMENT_ENTITY_TYPE_OPTIONS } from '@oneohm-epc/shared/constants';
-import { DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DOCUMENT_ENTITY_TYPE_OPTIONS } from '@tejas96/shared/constants';
+import { DocumentEntityType } from '@tejas96/shared/types';
 import { Loader2 } from 'lucide-react';
 import React, { useState } from 'react';
 

@@ -1,1 +1,1 @@
-export { applyPreGstDiscount } from '@oneohm-epc/shared/utils';
+export { applyPreGstDiscount } from '@tejas96/shared/utils';

@@ -7,8 +7,8 @@ import {
   SecurityEventStatus,
   SecurityEventType,
   UserStatus,
-} from '@oneohm-epc/shared/types';
-import { normalizePhoneToE164 } from '@oneohm-epc/shared/utils';
+} from '@tejas96/shared/types';
+import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import * as bcrypt from 'bcrypt';
 import type ms from 'ms';
 import { MoreThan } from 'typeorm';

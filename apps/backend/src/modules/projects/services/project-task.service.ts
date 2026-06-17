@@ -18,7 +18,7 @@ import {
   type TaskActivityType,
   TaskStatus,
   type TaskStatusConfig,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
 import { LookupRepository } from '../../lookups/repositories/lookup.repository';

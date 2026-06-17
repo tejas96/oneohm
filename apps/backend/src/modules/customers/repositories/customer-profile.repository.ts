@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
+import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@tejas96/shared/types';
 import { IsNull, Repository } from 'typeorm';
 
 import { CustomerQueryDto } from '../dto/customer-query.dto';

@@ -4,8 +4,8 @@ import {
   EXPENSE_CATEGORY_LABELS,
   EXPENSE_PAID_BY_LABELS,
   REIMBURSEMENT_STATUS_LABELS,
-} from '@oneohm-epc/shared/constants';
-import { formatDate } from '@oneohm-epc/shared/utils';
+} from '@tejas96/shared/constants';
+import { formatDate } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { REIMBURSEMENT_STATUS_COLOR } from '../constants';

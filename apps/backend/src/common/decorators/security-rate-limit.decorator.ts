@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import type { SecurityEventType } from '@oneohm-epc/shared/types';
+import type { SecurityEventType } from '@tejas96/shared/types';
 
 /**
  * Security Rate Limit Configuration

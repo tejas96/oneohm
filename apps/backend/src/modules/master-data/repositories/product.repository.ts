@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProductStatus } from '@oneohm-epc/shared/types';
+import { ProductStatus } from '@tejas96/shared/types';
 import { In, IsNull, Repository, SelectQueryBuilder, type FindOptionsWhere } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 

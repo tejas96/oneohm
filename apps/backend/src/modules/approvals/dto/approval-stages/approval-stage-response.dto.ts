@@ -1,9 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  ApprovalRequirementType,
-  ApproverType,
-  AutoActionOnTimeout,
-} from '@oneohm-epc/shared/types';
+import { ApprovalRequirementType, ApproverType, AutoActionOnTimeout } from '@tejas96/shared/types';
 import { Expose } from 'class-transformer';
 
 /**

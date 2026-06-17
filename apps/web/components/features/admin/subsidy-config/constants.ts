@@ -1,4 +1,4 @@
-import { ProjectType, SubsidySchemeType } from '@oneohm-epc/shared/types';
+import { ProjectType, SubsidySchemeType } from '@tejas96/shared/types';
 
 import type { FilterTab } from '@/components/shared';
 

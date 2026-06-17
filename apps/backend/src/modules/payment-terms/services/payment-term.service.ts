@@ -10,7 +10,7 @@ import {
   PaymentTerm as PaymentTermType,
   PaymentTermSource,
   PaymentTermStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { DataSource, EntityManager, IsNull, OptimisticLockVersionMismatchError } from 'typeorm';
 
 import { CreatePaymentTermDto, UpdatePaymentTermDto, WaivePaymentTermDto } from '../dto';

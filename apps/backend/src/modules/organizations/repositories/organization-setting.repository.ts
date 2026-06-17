@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SettingDataType } from '@oneohm-epc/shared/types';
+import { SettingDataType } from '@tejas96/shared/types';
 import { Repository } from 'typeorm';
 
 import { CreateOrganizationSettingDto } from '../dto/create-organization-setting.dto';

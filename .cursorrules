@@ -12,7 +12,7 @@ Solar EPC platform — CRM, project management, quoting, and field ops for solar
 |-------|-------|
 | Backend | NestJS 10 · TypeORM · PostgreSQL |
 | Web | Next.js 15 · React 19 · MUI 6 · Tailwind CSS · TanStack Query |
-| Shared | `@oneohm-epc/shared` (`/types`, `/utils`, `/schemas`, `/constants`) |
+| Shared | `@tejas96/shared` (`/types`, `/utils`, `/schemas`, `/constants`) |
 | Monorepo | Nx |
 
 ## Architecture Principles
@@ -24,7 +24,7 @@ Solar EPC platform — CRM, project management, quoting, and field ops for solar
 5. **Multi-org isolation** — every query filters by `organizationId`.
 6. **Soft delete** — always check `deletedAt IS NULL`; never hard-delete.
 7. **Pagination required** — never return unbounded result sets.
-8. **Shared types** — cross-app types go in `@oneohm-epc/shared/types`; app-specific types stay in that app.
+8. **Shared types** — cross-app types go in `@tejas96/shared/types`; app-specific types stay in that app.
 
 ## Design System
 

@@ -3,7 +3,7 @@
 import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import { Card, CardContent, Chip, ToggleButton, ToggleButtonGroup } from '@mui/material';
-import { ConnectionType } from '@oneohm-epc/shared/types';
+import { ConnectionType } from '@tejas96/shared/types';
 import * as React from 'react';
 import { useFormContext } from 'react-hook-form';
 

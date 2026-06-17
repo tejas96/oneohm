@@ -4,7 +4,7 @@ import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import DownloadIcon from '@mui/icons-material/Download';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { Box, Button, Card, CardContent, Skeleton } from '@mui/material';
-import { DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DocumentEntityType } from '@tejas96/shared/types';
 
 import { useReportDownload } from '../hooks/use-report-download';
 import type { ReportTemplate } from '../types/report.types';

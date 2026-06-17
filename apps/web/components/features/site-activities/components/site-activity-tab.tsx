@@ -16,7 +16,7 @@ import {
   Skeleton,
   Typography,
 } from '@mui/material';
-import { DocumentEntityType, SiteActivityStatus } from '@oneohm-epc/shared/types';
+import { DocumentEntityType, SiteActivityStatus } from '@tejas96/shared/types';
 import { useCallback, useState, type JSX } from 'react';
 
 import { useSiteActivityByProperty, useCompleteVisit, useCompleteSurvey } from '../hooks';

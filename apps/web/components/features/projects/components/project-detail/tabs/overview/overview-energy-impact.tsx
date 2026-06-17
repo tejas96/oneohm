@@ -1,6 +1,6 @@
 'use client';
 
-import { computeSolarImpact } from '@oneohm-epc/shared/utils';
+import { computeSolarImpact } from '@tejas96/shared/utils';
 import { SunMedium } from 'lucide-react';
 
 import type { ProjectDetail } from '../../../../hooks/types';

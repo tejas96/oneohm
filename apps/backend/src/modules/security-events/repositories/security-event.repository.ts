@@ -5,7 +5,7 @@ import {
   SecurityEventCategory,
   SecurityEventStatus,
   SecurityEventSeverity,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Repository, LessThan, MoreThanOrEqual } from 'typeorm';
 
 import { SecurityEventEntity } from '../entities';

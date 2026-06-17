@@ -1,5 +1,5 @@
 {
-  "name": "@oneohm-epc/shared",
+  "name": "@tejas96/shared",
   "version": "1.6.2",
   "description": "Shared types, utilities, and schemas for OneOhm EPC apps",
   "main": "./dist/index.js",

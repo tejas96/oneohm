@@ -1,7 +1,7 @@
 'use client';
 
-import { EXPENSE_CATEGORY_LABELS } from '@oneohm-epc/shared/constants';
-import { formatCurrency, formatCurrencyCompact } from '@oneohm-epc/shared/utils';
+import { EXPENSE_CATEGORY_LABELS } from '@tejas96/shared/constants';
+import { formatCurrency, formatCurrencyCompact } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { DonutChart, type TopItem } from '@/components/shared/inventory';

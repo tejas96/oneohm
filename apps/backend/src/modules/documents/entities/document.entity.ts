@@ -1,4 +1,4 @@
-import { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';

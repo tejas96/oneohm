@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PurchaseOrderStatus } from '@oneohm-epc/shared/types';
+import { PurchaseOrderStatus } from '@tejas96/shared/types';
 import { Repository } from 'typeorm';
 
 import { PurchaseOrderEntity } from '../entities/purchase-order.entity';

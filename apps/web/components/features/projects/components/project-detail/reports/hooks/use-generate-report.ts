@@ -1,6 +1,6 @@
 'use client';
 
-import { DocumentCategory, DocumentEntityType, FileCategory } from '@oneohm-epc/shared/types';
+import { DocumentCategory, DocumentEntityType, FileCategory } from '@tejas96/shared/types';
 import { useCallback, useRef, useState } from 'react';
 
 import type { GenerateStatus, ReportTemplate } from '../types/report.types';

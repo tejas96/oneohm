@@ -1,4 +1,4 @@
-import { FollowupPriority, FollowupStatus, FollowupType } from '@oneohm-epc/shared/types';
+import { FollowupPriority, FollowupStatus, FollowupType } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { CustomerProfileEntity } from './customer-profile.entity';

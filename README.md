@@ -136,7 +136,7 @@ oneohm-epc/
 │       └── data/               # Mock data for prototypes
 │
 ├── libs/
-│   └── shared/                 # Unified shared package (@oneohm-epc/shared)
+│   └── shared/                 # Unified shared package (@tejas96/shared)
 │       └── src/
 │           ├── types/          # Enums & interfaces
 │           ├── utils/          # Pure utility functions
@@ -245,21 +245,21 @@ HTML/CSS mockups and interactive prototypes for both mobile and web applications
 
 ## 📦 Shared Package
 
-A single unified package `@oneohm-epc/shared` (published to GitHub Packages as `@tejas96/shared`) provides types, utilities, schemas, and constants across all apps. Import via sub-path exports:
+A single unified package `@tejas96/shared` (published to GitHub Packages as `@tejas96/shared`) provides types, utilities, schemas, and constants across all apps. Import via sub-path exports:
 
 ```typescript
-import { QuoteStatus, ProjectStatus, UserRole } from '@oneohm-epc/shared/types';
-import { formatCurrency, parsePaginationParams } from '@oneohm-epc/shared/utils';
-import { loginSchema, customerSchema } from '@oneohm-epc/shared/schemas';
-import { PROJECT_TYPE_LABELS, DISCOUNT_PRESETS } from '@oneohm-epc/shared/constants';
+import { QuoteStatus, ProjectStatus, UserRole } from '@tejas96/shared/types';
+import { formatCurrency, parsePaginationParams } from '@tejas96/shared/utils';
+import { loginSchema, customerSchema } from '@tejas96/shared/schemas';
+import { PROJECT_TYPE_LABELS, DISCOUNT_PRESETS } from '@tejas96/shared/constants';
 ```
 
 | Sub-path | Contents |
 |----------|----------|
-| `@oneohm-epc/shared/types` | Enums, interfaces, and type definitions |
-| `@oneohm-epc/shared/utils` | Pure utility functions (formatters, validators, pricing, pagination) |
-| `@oneohm-epc/shared/schemas` | Zod validation schemas |
-| `@oneohm-epc/shared/constants` | Label maps and configuration constants |
+| `@tejas96/shared/types` | Enums, interfaces, and type definitions |
+| `@tejas96/shared/utils` | Pure utility functions (formatters, validators, pricing, pagination) |
+| `@tejas96/shared/schemas` | Zod validation schemas |
+| `@tejas96/shared/constants` | Label maps and configuration constants |
 
 > See [`libs/shared/README.md`](./libs/shared/README.md) for full developer setup and publishing docs.
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type {
   ExpenseCategory,
   ExpensePaidByType,
@@ -8,8 +9,7 @@ import type {
   PaymentTermStatus,
   PaymentTransactionStatus,
   ReimbursementStatus,
-} from '@oneohm-epc/shared/types';
-import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
+} from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { useOrgContext } from '../core';

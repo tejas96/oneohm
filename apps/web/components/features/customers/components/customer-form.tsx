@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CustomerStatus, LeadSource } from '@oneohm-epc/shared/types';
+import { CustomerStatus, LeadSource } from '@tejas96/shared/types';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

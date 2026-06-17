@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,

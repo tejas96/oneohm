@@ -1,6 +1,6 @@
 'use client';
 
-import { LeadTemperature } from '@oneohm-epc/shared/types';
+import { LeadTemperature } from '@tejas96/shared/types';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';

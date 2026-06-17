@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { WarehouseStatus, WarehouseType } from '@oneohm-epc/shared/types';
+import { WarehouseStatus, WarehouseType } from '@tejas96/shared/types';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';

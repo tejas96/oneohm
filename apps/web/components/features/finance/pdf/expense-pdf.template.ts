@@ -2,7 +2,7 @@ import {
   EXPENSE_CATEGORY_LABELS,
   EXPENSE_PAID_BY_LABELS,
   REIMBURSEMENT_STATUS_LABELS,
-} from '@oneohm-epc/shared/constants';
+} from '@tejas96/shared/constants';
 import {
   type ExpenseCategory,
   type ExpensePaidByType,
@@ -10,7 +10,7 @@ import {
   PaymentMethod as PM,
   type ReimbursementStatus,
   ReimbursementStatus as RS,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 import {
   PDF_DEFAULT_COMPANY,

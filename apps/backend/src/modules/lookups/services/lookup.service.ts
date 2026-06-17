@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { type PaginatedResponse, LookupScopeType } from '@oneohm-epc/shared/types';
+import { type PaginatedResponse, LookupScopeType } from '@tejas96/shared/types';
 
 import { toDtoArray, toPaginatedResponse, toDto } from '../../../common/utils';
 import {

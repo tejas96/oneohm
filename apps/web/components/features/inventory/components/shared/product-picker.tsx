@@ -1,6 +1,6 @@
 'use client';
 
-import { ProductStatus } from '@oneohm-epc/shared/types';
+import { ProductStatus } from '@tejas96/shared/types';
 import { useEffect, useMemo, useState } from 'react';
 import { type Control, Controller, type FieldValues, type Path } from 'react-hook-form';
 

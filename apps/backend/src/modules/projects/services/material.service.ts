@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { MaterialStatus } from '@oneohm-epc/shared/types';
+import { MaterialStatus } from '@tejas96/shared/types';
 
 import { CreateMaterialDto, UpdateMaterialDto } from '../dto';
 import { ProjectMaterialEntity } from '../entities/project-material.entity';
@@ -109,20 +109,41 @@ export class MaterialService {
       }
     }
 
-    // Prepare update data
-    const updateData: Record<string, unknown> = {
-      ...updateDto,
-      totalCost,
-      procurementDate: updateDto.procurementDate ? new Date(updateDto.procurementDate) : undefined,
-      allocationDate: updateDto.allocationDate ? new Date(updateDto.allocationDate) : undefined,
-    };
+    // Prepare update data (whitelisted to prevent prototype pollution and remote property injection)
+    const allowedKeys: (keyof UpdateMaterialDto)[] = [
+      'productId',
+      'materialName',
+      'category',
+      'quantityRequired',
+      'quantityAllocated',
+      'quantityUsed',
+      'unit',
+      'unitCost',
+    ];
 
-    // Remove undefined values
-    Object.keys(updateData).forEach((key) => {
-      if (updateData[key] === undefined) {
-        delete updateData[key];
+    const updateData: Record<string, unknown> = {};
+    for (const key of allowedKeys) {
+      if (updateDto[key] !== undefined) {
+        updateData[key] = updateDto[key];
       }
-    });
+    }
+
+    if (totalCost !== undefined) {
+      updateData.totalCost = totalCost;
+    } else if (updateDto.totalCost !== undefined) {
+      updateData.totalCost = updateDto.totalCost;
+    }
+
+    if (updateDto.procurementDate !== undefined) {
+      updateData.procurementDate = updateDto.procurementDate
+        ? new Date(updateDto.procurementDate)
+        : null;
+    }
+    if (updateDto.allocationDate !== undefined) {
+      updateData.allocationDate = updateDto.allocationDate
+        ? new Date(updateDto.allocationDate)
+        : null;
+    }
 
     return this.materialRepository.update(id, projectId, updateData);
   }

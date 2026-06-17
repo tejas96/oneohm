@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ApprovalRequestPriority, ApprovalRequestStatus } from '@oneohm-epc/shared/types';
+import { ApprovalRequestPriority, ApprovalRequestStatus } from '@tejas96/shared/types';
 import { Repository } from 'typeorm';
 
 import { ApprovalRequestEntity } from '../entities';

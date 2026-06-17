@@ -1,7 +1,7 @@
 'use client';
 
-import type { ProjectPriority, TaskStatusConfig } from '@oneohm-epc/shared/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ProjectPriority, TaskStatusConfig } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { projectKeys } from './use-projects';

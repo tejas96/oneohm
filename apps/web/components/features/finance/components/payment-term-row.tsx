@@ -15,11 +15,8 @@ import {
   ListItemText,
   Divider,
 } from '@mui/material';
-import {
-  PAYMENT_TERM_SOURCE_LABELS,
-  PAYMENT_TERM_STATUS_LABELS,
-} from '@oneohm-epc/shared/constants';
-import { PaymentTermStatus } from '@oneohm-epc/shared/types';
+import { PAYMENT_TERM_SOURCE_LABELS, PAYMENT_TERM_STATUS_LABELS } from '@tejas96/shared/constants';
+import { PaymentTermStatus } from '@tejas96/shared/types';
 import { type JSX, useState } from 'react';
 
 import { PAYMENT_TERM_STATUS_COLOR } from '../constants';

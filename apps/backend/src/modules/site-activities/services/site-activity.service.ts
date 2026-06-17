@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { CustomerStatus, SiteActivityStatus } from '@oneohm-epc/shared/types';
+import { CustomerStatus, SiteActivityStatus } from '@tejas96/shared/types';
 
 import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';

@@ -1,4 +1,4 @@
-import { PaymentMilestone, QuoteSnapshot } from '@oneohm-epc/shared/types';
+import { PaymentMilestone, QuoteSnapshot } from '@tejas96/shared/types';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { QuoteEntity } from './quote.entity';

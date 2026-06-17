@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectType, QuoteSnapshot, SystemType } from '@oneohm-epc/shared/types';
+import { ProjectType, QuoteSnapshot, SystemType } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,

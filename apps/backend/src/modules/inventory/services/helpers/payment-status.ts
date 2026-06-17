@@ -1,4 +1,4 @@
-import { PaymentStatus } from '@oneohm-epc/shared/types';
+import { PaymentStatus } from '@tejas96/shared/types';
 
 /**
  * Derive PO payment status from cumulative paid_amount vs total_amount.

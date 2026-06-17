@@ -1,4 +1,4 @@
-import type { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
+import type { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 
 import type { DocumentRecord } from '@/lib/api/documents';
 

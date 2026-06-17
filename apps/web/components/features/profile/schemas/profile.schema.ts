@@ -1,4 +1,4 @@
-import { UserGender } from '@oneohm-epc/shared/types';
+import { UserGender } from '@tejas96/shared/types';
 import { z } from 'zod';
 
 // ── Phone validation helpers ───────────────────────────────────

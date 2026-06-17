@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { ExpenseCategory, ExpensePaidByType, ReimbursementStatus } from '@oneohm-epc/shared/types';
+import { ExpenseCategory, ExpensePaidByType, ReimbursementStatus } from '@tejas96/shared/types';
 import { Brackets, DataSource, EntityManager, IsNull, Repository } from 'typeorm';
 
 import { ExpenseProductLinkEntity } from '../entities/expense-product-link.entity';

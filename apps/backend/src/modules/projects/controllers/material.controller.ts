@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { MaterialStatus } from '@oneohm-epc/shared/types';
+import { MaterialStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

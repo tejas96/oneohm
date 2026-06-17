@@ -1,7 +1,7 @@
 'use client';
 
-import { PAYMENT_TERM_STATUS_LABELS } from '@oneohm-epc/shared/constants';
-import { PaymentTermStatus } from '@oneohm-epc/shared/types';
+import { PAYMENT_TERM_STATUS_LABELS } from '@tejas96/shared/constants';
+import { PaymentTermStatus } from '@tejas96/shared/types';
 import { DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import type { JSX } from 'react';

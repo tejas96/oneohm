@@ -2,9 +2,9 @@
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Alert } from '@mui/material';
-import { EXPENSE_CATEGORY_LABELS } from '@oneohm-epc/shared/constants';
-import { type ExpenseCategory } from '@oneohm-epc/shared/types';
-import { formatDate } from '@oneohm-epc/shared/utils';
+import { EXPENSE_CATEGORY_LABELS } from '@tejas96/shared/constants';
+import { type ExpenseCategory } from '@tejas96/shared/types';
+import { formatDate } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { AmountCell } from '../shared';

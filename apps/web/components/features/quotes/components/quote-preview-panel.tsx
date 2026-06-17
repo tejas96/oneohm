@@ -1,6 +1,6 @@
 'use client';
 
-import { PANEL_TECHNOLOGY_LABELS } from '@oneohm-epc/shared/types';
+import { PANEL_TECHNOLOGY_LABELS } from '@tejas96/shared/types';
 import {
   AlertTriangle,
   Calendar,

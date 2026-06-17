@@ -1,8 +1,8 @@
 'use client';
 
-import { EXPENSE_CATEGORY_LABELS } from '@oneohm-epc/shared/constants';
-import { ExpenseCategory } from '@oneohm-epc/shared/types';
-import { formatDate } from '@oneohm-epc/shared/utils';
+import { EXPENSE_CATEGORY_LABELS } from '@tejas96/shared/constants';
+import { ExpenseCategory } from '@tejas96/shared/types';
+import { formatDate } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { VendorFinanceDrawer } from '../drawers';

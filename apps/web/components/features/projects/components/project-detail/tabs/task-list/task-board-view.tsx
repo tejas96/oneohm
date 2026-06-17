@@ -5,8 +5,8 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import LinearProgress from '@mui/material/LinearProgress';
 import Skeleton from '@mui/material/Skeleton';
-import { TaskStatus } from '@oneohm-epc/shared/types';
 import { useQueryClient } from '@tanstack/react-query';
+import { TaskStatus } from '@tejas96/shared/types';
 import React, { useCallback, useRef } from 'react';
 
 import { KanbanColumn } from './board/kanban-column';

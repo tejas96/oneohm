@@ -5,7 +5,7 @@ import {
   MaterialStatus,
   PaymentTransactionStatus,
   TaskStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import { PaymentEntity } from '../../payments/entities';

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 import { Transform } from 'class-transformer';
 import { IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 

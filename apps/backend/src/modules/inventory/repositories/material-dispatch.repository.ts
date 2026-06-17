@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MaterialDispatchStatus } from '@oneohm-epc/shared/types';
+import { MaterialDispatchStatus } from '@tejas96/shared/types';
 import { EntityManager, Repository } from 'typeorm';
 
 import { MaterialDispatchEntity } from '../entities/material-dispatch.entity';

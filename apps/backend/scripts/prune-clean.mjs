@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, renameSync, rmSync, existsSync, readdirSyn
 import { join } from 'path';
 
 const distRoot = join(process.cwd(), 'apps/backend/dist');
-const sharedModule = join(distRoot, 'workspace_modules/@oneohm-epc/shared');
+const sharedModule = join(distRoot, 'workspace_modules/@tejas96/shared');
 
 const sharedStrip = ['src', 'README.md', 'CHANGELOG.md', 'project.json', 'tsup.config.ts', 'tsconfig.json'];
 

@@ -9,7 +9,7 @@
  * @module features/customers/hooks/use-document-upload
  */
 
-import { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 import { useCallback, useState } from 'react';
 
 import { useUploadDocument } from '@/components/features/documents/hooks';

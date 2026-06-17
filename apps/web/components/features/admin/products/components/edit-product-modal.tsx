@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ProductStatus, UnitOfMeasure } from '@oneohm-epc/shared/types';
+import { ProductStatus, UnitOfMeasure } from '@tejas96/shared/types';
 import { Loader2 } from 'lucide-react';
 import { type JSX, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';

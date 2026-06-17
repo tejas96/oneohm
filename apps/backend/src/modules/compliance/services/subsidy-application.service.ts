@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { SubsidyStatus } from '@oneohm-epc/shared/types';
+import { SubsidyStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

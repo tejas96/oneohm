@@ -18,7 +18,7 @@ import {
   type QuoteCalculationOutput,
   type QuoteSnapshot,
   QuoteStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import { DocumentService } from '../../documents/services';

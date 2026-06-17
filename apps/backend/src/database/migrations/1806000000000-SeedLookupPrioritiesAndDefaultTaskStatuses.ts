@@ -1,4 +1,4 @@
-import { LookupTypeCode, LookupScopeType } from '@oneohm-epc/shared/types';
+import { LookupTypeCode, LookupScopeType } from '@tejas96/shared/types';
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 type LookupSeed = {

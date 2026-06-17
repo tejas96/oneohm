@@ -1,4 +1,4 @@
-import { MaterialDispatchStatus } from '@oneohm-epc/shared/types';
+import { MaterialDispatchStatus } from '@tejas96/shared/types';
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { MaterialDispatchItemEntity } from './material-dispatch-item.entity';

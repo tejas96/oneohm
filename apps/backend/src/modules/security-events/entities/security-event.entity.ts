@@ -3,7 +3,7 @@ import {
   SecurityEventCategory,
   SecurityEventSeverity,
   SecurityEventStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';

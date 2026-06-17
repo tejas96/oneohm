@@ -1,5 +1,5 @@
 import { OmitType, PartialType } from '@nestjs/swagger';
-import { LoanStatus } from '@oneohm-epc/shared/types';
+import { LoanStatus } from '@tejas96/shared/types';
 import { IsEnum, IsNotEmpty } from 'class-validator';
 
 import { CreateLoanApplicationDto } from './create-loan-application.dto';

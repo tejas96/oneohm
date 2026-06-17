@@ -1,4 +1,4 @@
-import { ProjectVendorStatus } from '@oneohm-epc/shared/types';
+import { ProjectVendorStatus } from '@tejas96/shared/types';
 import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm';
 
 import { VendorEntity } from './vendor.entity';

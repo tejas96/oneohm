@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@mui/material';
-import { PropertyStatus } from '@oneohm-epc/shared/types';
+import { PropertyStatus } from '@tejas96/shared/types';
 import { Edit, FileText, FolderOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

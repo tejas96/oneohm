@@ -7,7 +7,7 @@ import {
   type IOtpMessage,
   type ITemplateMessage,
   type ITextMessage,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 import { BaseIntegrationProvider } from './base-integration-provider';
 

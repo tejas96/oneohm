@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Skeleton } from '@mui/material';
-import { StockAllocationStatus } from '@oneohm-epc/shared/types';
+import { StockAllocationStatus } from '@tejas96/shared/types';
 import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 

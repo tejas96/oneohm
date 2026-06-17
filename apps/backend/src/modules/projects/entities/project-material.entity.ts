@@ -1,4 +1,4 @@
-import { MaterialStatus } from '@oneohm-epc/shared/types';
+import { MaterialStatus } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { ProjectEntity } from './project.entity';

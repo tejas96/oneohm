@@ -1,4 +1,4 @@
-import { CommissionStatus } from '@oneohm-epc/shared/types';
+import { CommissionStatus } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { ResellerProfileEntity } from './reseller-profile.entity';

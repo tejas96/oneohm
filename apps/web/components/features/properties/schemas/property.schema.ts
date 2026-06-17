@@ -7,7 +7,7 @@ export {
   type EditPropertyFormData,
   markAsLostSchema,
   type MarkAsLostFormData,
-} from '@oneohm-epc/shared/schemas';
+} from '@tejas96/shared/schemas';
 
 // ============================================================================
 // Lost Reasons (web-only dropdown options)

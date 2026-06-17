@@ -5,7 +5,7 @@ import {
   getSchemaPath,
   PartialType,
 } from '@nestjs/swagger';
-import { UserProfileType, UserStatus } from '@oneohm-epc/shared/types';
+import { UserProfileType, UserStatus } from '@tejas96/shared/types';
 import {
   IsArray,
   IsEmail,

@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { PaymentTransactionStatus } from '@oneohm-epc/shared/types';
+import { PaymentTransactionStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

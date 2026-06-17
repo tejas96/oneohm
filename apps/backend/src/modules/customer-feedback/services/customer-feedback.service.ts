@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { NPSCategory } from '@oneohm-epc/shared/types';
+import { NPSCategory } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

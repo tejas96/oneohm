@@ -1,6 +1,6 @@
 'use client';
 
-import type { StatisticsResponse, WorkflowStep } from '@oneohm-epc/shared/types';
+import type { StatisticsResponse, WorkflowStep } from '@tejas96/shared/types';
 
 import {
   defineResource,

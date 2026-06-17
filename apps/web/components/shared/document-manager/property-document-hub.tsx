@@ -1,11 +1,8 @@
 'use client';
 
 import { Box, Chip, Skeleton, Typography } from '@mui/material';
-import {
-  DOCUMENT_ENTITY_TYPE_LABELS,
-  DOCUMENT_ENTITY_TYPE_ORDER,
-} from '@oneohm-epc/shared/constants';
-import { DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DOCUMENT_ENTITY_TYPE_LABELS, DOCUMENT_ENTITY_TYPE_ORDER } from '@tejas96/shared/constants';
+import { DocumentEntityType } from '@tejas96/shared/types';
 import React, { useMemo, useState } from 'react';
 
 import { DocumentManager } from './document-manager';

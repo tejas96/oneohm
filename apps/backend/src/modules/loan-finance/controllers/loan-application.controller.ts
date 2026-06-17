@@ -19,7 +19,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import type { PaginatedResponse } from '@oneohm-epc/shared/types';
+import type { PaginatedResponse } from '@tejas96/shared/types';
 
 import { OrganizationContext } from '../../../common/decorators';
 import { toPaginatedResponse } from '../../../common/utils';

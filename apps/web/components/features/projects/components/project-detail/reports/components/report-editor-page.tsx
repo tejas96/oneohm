@@ -2,7 +2,7 @@
 
 import DownloadIcon from '@mui/icons-material/Download';
 import { Alert, Box, Button, CircularProgress, Divider } from '@mui/material';
-import { DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DocumentEntityType } from '@tejas96/shared/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ReportPreviewPanel } from './report-preview-panel';
