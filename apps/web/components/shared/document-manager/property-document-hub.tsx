@@ -1,10 +1,7 @@
 'use client';
 
 import { Box, Chip, Skeleton, Typography } from '@mui/material';
-import {
-  DOCUMENT_ENTITY_TYPE_LABELS,
-  DOCUMENT_ENTITY_TYPE_ORDER,
-} from '@tejas96/shared/constants';
+import { DOCUMENT_ENTITY_TYPE_LABELS, DOCUMENT_ENTITY_TYPE_ORDER } from '@tejas96/shared/constants';
 import { DocumentEntityType } from '@tejas96/shared/types';
 import React, { useMemo, useState } from 'react';
 

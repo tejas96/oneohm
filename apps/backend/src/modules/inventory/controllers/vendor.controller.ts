@@ -11,11 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type ExtendedStatisticsResponse,
-  VendorStatus,
-  VendorType,
-} from '@tejas96/shared/types';
+import { type ExtendedStatisticsResponse, VendorStatus, VendorType } from '@tejas96/shared/types';
 import { parsePaginationParams } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 

@@ -1,8 +1,4 @@
-import {
-  ApprovalRequirementType,
-  ApproverType,
-  AutoActionOnTimeout,
-} from '@tejas96/shared/types';
+import { ApprovalRequirementType, ApproverType, AutoActionOnTimeout } from '@tejas96/shared/types';
 import {
   Column,
   CreateDateColumn,

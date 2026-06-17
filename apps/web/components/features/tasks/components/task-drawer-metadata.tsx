@@ -2,11 +2,7 @@
 
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { MenuItem, Box, Divider, Link as MuiLink, Skeleton } from '@mui/material';
-import {
-  type TaskPriority,
-  type TaskStatus,
-  type TaskStatusConfig,
-} from '@tejas96/shared/types';
+import { type TaskPriority, type TaskStatus, type TaskStatusConfig } from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { useMemo, useCallback } from 'react';
 

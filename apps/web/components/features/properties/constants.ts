@@ -6,12 +6,7 @@
  * so they stay in sync automatically when new enum members are added.
  */
 
-import {
-  LeadTemperature,
-  PropertyStatus,
-  PropertyType,
-  QuoteStatus,
-} from '@tejas96/shared/types';
+import { LeadTemperature, PropertyStatus, PropertyType, QuoteStatus } from '@tejas96/shared/types';
 
 import { toTitleLabel } from '@/lib/utils';
 

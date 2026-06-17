@@ -1,9 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  type GpsCoordinates,
-  type ShadingAnalysis,
-  type SurveyData,
-} from '@tejas96/shared/types';
+import { type GpsCoordinates, type ShadingAnalysis, type SurveyData } from '@tejas96/shared/types';
 import { IsNumber, IsObject, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateSiteActivityDto {

@@ -1,9 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  DocumentCategory,
-  PaymentMethod,
-  PaymentTransactionStatus,
-} from '@tejas96/shared/types';
+import { DocumentCategory, PaymentMethod, PaymentTransactionStatus } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsDateString,

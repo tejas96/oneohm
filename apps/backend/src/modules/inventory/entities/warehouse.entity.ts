@@ -1,8 +1,4 @@
-import {
-  WarehouseStatus,
-  WarehouseType,
-  type WarehouseCoordinates,
-} from '@tejas96/shared/types';
+import { WarehouseStatus, WarehouseType, type WarehouseCoordinates } from '@tejas96/shared/types';
 import {
   Column,
   DeleteDateColumn,
