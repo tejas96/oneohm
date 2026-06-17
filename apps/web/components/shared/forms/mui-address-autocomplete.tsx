@@ -1,15 +1,15 @@
 'use client';
 
+import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
+import SearchIcon from '@mui/icons-material/Search';
+import { Box, CircularProgress, Collapse } from '@mui/material';
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { useFormContext } from 'react-hook-form';
-import SearchIcon from '@mui/icons-material/Search';
-import MapOutlinedIcon from '@mui/icons-material/MapOutlined';
-import { Box, CircularProgress, Collapse } from '@mui/material';
 
-import { useGoogleMapsLoader } from '@/lib/hooks/use-google-maps-loader';
-import { MUIInput } from '@/components/ui';
 import { Alert } from '@/components/shared';
+import { MUIInput } from '@/components/ui';
+import { useGoogleMapsLoader } from '@/lib/hooks/use-google-maps-loader';
 
 // Parse Google address components into structured address parts
 function parseAddressComponents(components: google.maps.GeocoderAddressComponent[]): {
@@ -157,7 +157,7 @@ export function MUIAddressAutocomplete({
       if (!places || places.length === 0) return;
 
       const place = places[0];
-      if (!place || !place.address_components) return;
+      if (!place?.address_components) return;
 
       const parsed = parseAddressComponents(place.address_components);
 
@@ -284,7 +284,7 @@ export function MUIAddressAutocomplete({
 
         const geocoder = new window.google.maps.Geocoder();
         geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-          if (status === 'OK' && results && results[0]) {
+          if (status === 'OK' && results?.[0]) {
             const parsed = parseAddressComponents(results[0].address_components);
             const fullAddr = (results[0].formatted_address || '').replace(/, India$/, '');
 
@@ -414,7 +414,7 @@ export function MUIAddressAutocomplete({
 
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ address: currentAddress } as any, (results, status) => {
-      if (status === 'OK' && results && results[0]) {
+      if (status === 'OK' && results?.[0]) {
         const location = results[0].geometry.location;
         const lat = location.lat();
         const lng = location.lng();

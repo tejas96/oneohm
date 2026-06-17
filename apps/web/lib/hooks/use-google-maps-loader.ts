@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+
 import { config } from '@/lib/config/config';
 
 let scriptLoadingPromise: Promise<void> | null = null;
@@ -53,8 +54,8 @@ export function loadGoogleMapsScript(): Promise<void> {
           reject(new Error('Google Maps object is missing after script load.'));
         }
       };
-      script.onerror = (err) => {
-        reject(err);
+      script.onerror = () => {
+        reject(new Error('Failed to load Google Maps script.'));
       };
       document.head.appendChild(script);
     });
