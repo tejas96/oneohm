@@ -7,6 +7,8 @@ export type ViewMode = 'list' | 'grid';
 export interface DocumentManagerProps {
   entityType: DocumentEntityType;
   entityId: string | undefined;
+  propertyId?: string;
+  allowedTags?: string[];
   title?: string;
   description?: string;
   readOnly?: boolean;
@@ -17,6 +19,7 @@ export interface DocumentManagerProps {
   documents?: DocumentRecord[];
   viewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
+  disableEntityTypeSelector?: boolean;
 }
 
 export interface DraftDocument {
@@ -29,6 +32,7 @@ export interface DraftDocument {
   mimeType: string;
   tag: string;
   category: DocumentCategory;
+  entityType?: DocumentEntityType;
   status: 'uploading' | 'success' | 'error';
   progress: number;
   error?: string;

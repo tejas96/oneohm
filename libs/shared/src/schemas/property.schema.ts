@@ -17,6 +17,7 @@ export const createPropertySchema = z.object({
     .min(6, 'Pincode must be 6 digits')
     .max(6, 'Pincode must be 6 digits')
     .regex(/^\d{6}$/, 'Pincode must be 6 digits'),
+  country: z.string().min(1, 'Country is required').max(100, 'Country too long'),
   consumerNumber: z.string().max(50, 'Consumer number too long').optional().or(z.literal('')),
   discomName: z.string().max(100, 'DISCOM name too long').optional().or(z.literal('')),
   connectionType: z.nativeEnum(ConnectionType).optional(),

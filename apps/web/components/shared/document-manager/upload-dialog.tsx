@@ -4,7 +4,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { Box, Button, LinearProgress, Typography } from '@mui/material';
 import { DOCUMENT_ENTITY_TYPE_OPTIONS } from '@oneohm-epc/shared/constants';
 import { DocumentCategory, DocumentEntityType, DocumentTag } from '@oneohm-epc/shared/types';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   DOCUMENT_TAG_OPTIONS,
@@ -40,6 +40,9 @@ interface UploadDialogProps {
   showEntityTypeSelector?: boolean;
   /** Default selected entity type if selector is shown */
   defaultEntityType?: DocumentEntityType;
+  /** If true, disables the entity type selector from being changed */
+  disableEntityTypeSelector?: boolean;
+  allowedTags?: string[];
 }
 
 export function UploadDialog({
@@ -48,11 +51,24 @@ export function UploadDialog({
   onUpload,
   showEntityTypeSelector = false,
   defaultEntityType,
+  disableEntityTypeSelector = false,
+  allowedTags,
 }: UploadDialogProps): React.JSX.Element {
   const [tag, setTag] = useState('');
   const [customTag, setCustomTag] = useState('');
   const [category, setCategory] = useState<string>(DocumentCategory.DOCUMENT);
   const [entityType, setEntityType] = useState<DocumentEntityType | ''>(defaultEntityType ?? '');
+
+  // Synchronize entityType with defaultEntityType when the dialog opens
+  useEffect(() => {
+    if (open && defaultEntityType) {
+      setEntityType(defaultEntityType);
+    }
+  }, [open, defaultEntityType]);
+
+  const tagOptions = allowedTags
+    ? DOCUMENT_TAG_OPTIONS.filter((o) => allowedTags.includes(o.value))
+    : DOCUMENT_TAG_OPTIONS;
   const [file, setFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -167,7 +183,7 @@ export function UploadDialog({
             required
             value={entityType}
             onChange={(e) => setEntityType(e.target.value as DocumentEntityType)}
-            disabled={isUploading}
+            disabled={isUploading || disableEntityTypeSelector}
             placeholder="Select a group..."
             options={[...DOCUMENT_ENTITY_TYPE_OPTIONS]}
           />
@@ -181,7 +197,7 @@ export function UploadDialog({
           onChange={(e) => setTag(e.target.value as string)}
           disabled={isUploading}
           placeholder="Select document type"
-          options={DOCUMENT_TAG_OPTIONS}
+          options={tagOptions}
         />
 
         {/* Custom Tag Input (when "Other" selected) */}

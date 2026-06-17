@@ -25,6 +25,8 @@ export enum DocumentTag {
   RECEIPT_PDF = 'receipt_pdf',
   EXPENSE_VOUCHER = 'expense_voucher',
   EXPENSE_RECEIPT = 'expense_receipt',
+  ITR = 'itr',
+  BANK_STATEMENT = 'bank_statement',
   OTHER = 'other',
 }
 

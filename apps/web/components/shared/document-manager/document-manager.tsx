@@ -7,7 +7,7 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import { Box, Button, Skeleton, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { DocumentCategory } from '@oneohm-epc/shared/types';
+import { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -39,6 +39,8 @@ import { FileCategory, uploadFile } from '@/lib/api/storage';
 export function DocumentManager({
   entityType,
   entityId,
+  propertyId,
+  allowedTags,
   title,
   description,
   readOnly = false,
@@ -48,6 +50,7 @@ export function DocumentManager({
   documents: externalDocuments,
   viewMode: controlledViewMode,
   onViewModeChange,
+  disableEntityTypeSelector = false,
 }: DocumentManagerProps & {
   onPreview?: (doc: DocumentRecord | DraftDocument) => void;
 }): React.JSX.Element {
@@ -124,6 +127,7 @@ export function DocumentManager({
           mimeType: file.type,
           tag,
           category,
+          entityType,
           status: 'success',
           progress: 100,
         };
@@ -135,6 +139,8 @@ export function DocumentManager({
       await uploadMutation.mutateAsync({
         entityType,
         entityId: entityId,
+        propertyId:
+          propertyId ?? (entityType === DocumentEntityType.PROPERTY ? entityId : undefined),
         category,
         tag,
         fileName: uploadResult.fileName,
@@ -145,7 +151,7 @@ export function DocumentManager({
 
       showToast.success('Document uploaded');
     },
-    [entityType, entityId, isDraftMode, uploadMutation],
+    [entityType, entityId, propertyId, isDraftMode, uploadMutation],
   );
 
   const confirmDelete = useCallback(async () => {
@@ -204,6 +210,9 @@ export function DocumentManager({
           onOpenChange={setUploadOpen}
           onUpload={handleUploadComplete}
           showEntityTypeSelector={!entityId}
+          defaultEntityType={entityType}
+          disableEntityTypeSelector={disableEntityTypeSelector}
+          allowedTags={allowedTags}
         />
       </Box>
     );
@@ -310,6 +319,9 @@ export function DocumentManager({
           onOpenChange={setUploadOpen}
           onUpload={handleUploadComplete}
           showEntityTypeSelector={!entityId}
+          defaultEntityType={entityType}
+          disableEntityTypeSelector={disableEntityTypeSelector}
+          allowedTags={allowedTags}
         />
       )}
 
