@@ -1,5 +1,6 @@
 'use client';
 
+import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type {
   PaginationMeta,
   ProjectMetadata,
@@ -7,7 +8,6 @@ import type {
   ProjectStatus,
   TaskStatusConfig,
 } from '@tejas96/shared/types';
-import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';

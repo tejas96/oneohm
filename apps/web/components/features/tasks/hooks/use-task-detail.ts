@@ -1,7 +1,7 @@
 'use client';
 
-import type { MyTask } from '@tejas96/shared/types';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import type { MyTask } from '@tejas96/shared/types';
 
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';

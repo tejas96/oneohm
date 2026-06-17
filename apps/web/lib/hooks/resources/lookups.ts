@@ -1,7 +1,7 @@
 'use client';
 
-import { LookupDataType, LookupScopeType, LookupTypeCode } from '@tejas96/shared/types';
 import { useQuery } from '@tanstack/react-query';
+import { LookupDataType, LookupScopeType, LookupTypeCode } from '@tejas96/shared/types';
 import { useMemo } from 'react';
 
 import {

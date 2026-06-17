@@ -1,7 +1,7 @@
 'use client';
 
-import { QuoteStatus } from '@tejas96/shared/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { QuoteStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { quoteKeys } from './use-quotes';

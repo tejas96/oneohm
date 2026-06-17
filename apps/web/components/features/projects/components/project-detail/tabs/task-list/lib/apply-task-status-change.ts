@@ -1,7 +1,7 @@
 'use client';
 
-import { TaskStatus } from '@tejas96/shared/types';
 import type { QueryClient } from '@tanstack/react-query';
+import { TaskStatus } from '@tejas96/shared/types';
 
 import { PROJECT_TASKS_QUERY_KEY } from '../../../../../constants';
 

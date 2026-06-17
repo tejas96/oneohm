@@ -1,5 +1,5 @@
-import type { CustomerStatus, LeadTemperature } from '@tejas96/shared/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { CustomerStatus, LeadTemperature } from '@tejas96/shared/types';
 
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';

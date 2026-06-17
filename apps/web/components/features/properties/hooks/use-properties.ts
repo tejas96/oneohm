@@ -1,5 +1,12 @@
 'use client';
 
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+  type UseQueryResult,
+} from '@tanstack/react-query';
 import type {
   ConnectionType,
   LeadTemperature,
@@ -11,13 +18,6 @@ import type {
   QuoteStatus,
   SortOrder,
 } from '@tejas96/shared/types';
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseMutationResult,
-  type UseQueryResult,
-} from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import { customerKeys, propertyKeys } from './use-create-property';

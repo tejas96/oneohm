@@ -130,8 +130,8 @@ export class QuoteCalculatorService {
     // 4. Calculate panel configuration
     // Supports: auto-calculation, panelOverrides (specific products), or manual counts (quantity constraint)
     let panels: CalculatedPanelConfig[];
-    let actualDcrSizeKw = dcrSizeKw;
-    let actualNonDcrSizeKw = nonDcrSizeKw;
+    let actualDcrSizeKw: number;
+    let actualNonDcrSizeKw: number;
 
     if (input.manualDcrPanelCount !== undefined || input.manualNonDcrPanelCount !== undefined) {
       // Use quantity-constrained calculation

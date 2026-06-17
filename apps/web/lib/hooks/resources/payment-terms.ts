@@ -1,7 +1,7 @@
 'use client';
 
-import type { PaymentTermSource, PaymentTermStatus } from '@tejas96/shared/types';
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
+import type { PaymentTermSource, PaymentTermStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { useOrgContext } from '../core';

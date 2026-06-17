@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import {
   ConnectionType,
   LeadTemperature,
@@ -8,7 +9,6 @@ import {
   PropertyType,
   QuoteStatus,
 } from '@tejas96/shared/types';
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';

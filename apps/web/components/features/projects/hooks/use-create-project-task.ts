@@ -1,7 +1,7 @@
 'use client';
 
-import { type TaskPriority, type TaskStatus } from '@tejas96/shared/types';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
+import { type TaskPriority, type TaskStatus } from '@tejas96/shared/types';
 
 import { PROJECT_TASKS_QUERY_KEY } from '../constants';
 import { projectDetailKeys } from './use-project-detail';

@@ -1,7 +1,7 @@
 'use client';
 
-import { QuoteStatus } from '@tejas96/shared/types';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { QuoteStatus } from '@tejas96/shared/types';
 
 import {
   type BaseFilters,

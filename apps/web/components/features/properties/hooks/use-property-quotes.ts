@@ -1,7 +1,7 @@
 'use client';
 
-import { QuoteStatus } from '@tejas96/shared/types';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { QuoteStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import type { CustomerQuote, CustomerQuotesResponse } from '@/components/features/customers/hooks';

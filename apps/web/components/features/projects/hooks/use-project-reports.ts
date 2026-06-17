@@ -1,7 +1,7 @@
 'use client';
 
-import { DocumentEntityType, DocumentTag } from '@tejas96/shared/types';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { DocumentEntityType, DocumentTag } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { REPORT_REGISTRY } from '../components/project-detail/reports/registry/report-registry';
