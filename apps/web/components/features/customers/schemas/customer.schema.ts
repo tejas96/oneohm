@@ -3,7 +3,7 @@ import { z } from 'zod';
 export {
   createCustomerProfileSchema,
   type CreateCustomerProfileFormData,
-} from '@oneohm-epc/shared/schemas';
+} from '@tejas96/shared/schemas';
 
 // ============================================================================
 // Import Customers Schema (web-only -- uses browser File API)

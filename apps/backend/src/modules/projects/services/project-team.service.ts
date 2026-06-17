@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { TaskStatus } from '@oneohm-epc/shared/types';
+import { TaskStatus } from '@tejas96/shared/types';
 
 import { hasAdminBypassRole } from '../../iam/constants';
 import { type AddTeamMemberDto, type UpdateTeamMemberDto } from '../dto/project-team';

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared/types';
+import { ServiceRequestPriority, ServiceRequestStatus } from '@tejas96/shared/types';
 import { Between, In, IsNull, LessThanOrEqual, Like, Not, Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 

@@ -1,6 +1,6 @@
 import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { InventoryTransactionType } from '@oneohm-epc/shared/types';
+import { InventoryTransactionType } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import { ApiReadAll, ApiReadOne, OrganizationContext } from '../../../common/decorators';

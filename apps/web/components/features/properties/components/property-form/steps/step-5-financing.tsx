@@ -2,7 +2,7 @@
 
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import { Card, CardContent } from '@mui/material';
-import { DocumentEntityType, DocumentTag } from '@oneohm-epc/shared/types';
+import { DocumentEntityType, DocumentTag } from '@tejas96/shared/types';
 import * as React from 'react';
 import { useFormContext } from 'react-hook-form';
 

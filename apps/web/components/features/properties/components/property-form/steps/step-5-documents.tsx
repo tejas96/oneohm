@@ -2,7 +2,7 @@
 
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import { Card } from '@mui/material';
-import { DocumentEntityType, DocumentTag, PropertyStatus } from '@oneohm-epc/shared/types';
+import { DocumentEntityType, DocumentTag, PropertyStatus } from '@tejas96/shared/types';
 import * as React from 'react';
 
 import { type CustomerPropertyResponse } from '../../../hooks';

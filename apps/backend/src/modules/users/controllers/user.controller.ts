@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { UserStatus } from '@oneohm-epc/shared/types';
+import { UserStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

@@ -1,7 +1,7 @@
 'use client';
 
 import { Paper, Typography } from '@mui/material';
-import { QuoteStatus } from '@oneohm-epc/shared/types';
+import { QuoteStatus } from '@tejas96/shared/types';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 

@@ -1,4 +1,4 @@
-import { ProductStatus, UnitOfMeasure } from '@oneohm-epc/shared/types';
+import { ProductStatus, UnitOfMeasure } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BrandEntity } from './brand.entity';

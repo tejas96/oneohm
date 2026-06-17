@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { LookupDataType, LookupScopeType } from '@oneohm-epc/shared/types';
+import { LookupDataType, LookupScopeType } from '@tejas96/shared/types';
 import { Expose, Transform } from 'class-transformer';
 
 export class LookupResponseDto {

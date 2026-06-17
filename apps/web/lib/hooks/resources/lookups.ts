@@ -1,6 +1,6 @@
 'use client';
 
-import { LookupDataType, LookupScopeType, LookupTypeCode } from '@oneohm-epc/shared/types';
+import { LookupDataType, LookupScopeType, LookupTypeCode } from '@tejas96/shared/types';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 

@@ -1,4 +1,4 @@
-import { ApprovalWorkflowType } from '@oneohm-epc/shared/types';
+import { ApprovalWorkflowType } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 
 import { ApprovalRequestEntity } from './approval-request.entity';

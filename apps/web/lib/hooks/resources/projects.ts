@@ -1,6 +1,6 @@
 'use client';
 
-import type { PaginatedResponse, TaskPriority } from '@oneohm-epc/shared/types';
+import type { PaginatedResponse, TaskPriority } from '@tejas96/shared/types';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {

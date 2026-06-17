@@ -11,4 +11,4 @@ export {
   type ForgotPasswordByPhoneFormData,
   resetPasswordSchema,
   type ResetPasswordFormData,
-} from '@oneohm-epc/shared/schemas';
+} from '@tejas96/shared/schemas';

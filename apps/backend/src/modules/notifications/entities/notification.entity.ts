@@ -1,4 +1,4 @@
-import { NotificationSeverity, NotificationType } from '@oneohm-epc/shared/types';
+import { NotificationSeverity, NotificationType } from '@tejas96/shared/types';
 import { Column, CreateDateColumn, Entity, Index } from 'typeorm';
 
 /**

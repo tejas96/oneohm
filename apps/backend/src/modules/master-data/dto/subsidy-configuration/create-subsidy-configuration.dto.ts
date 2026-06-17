@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SubsidySchemeType, ProjectType } from '@oneohm-epc/shared/types';
+import { SubsidySchemeType, ProjectType } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,

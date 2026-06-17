@@ -7,7 +7,7 @@ import {
   forwardRef,
   Inject,
 } from '@nestjs/common';
-import { OrganizationStatus } from '@oneohm-epc/shared/types';
+import { OrganizationStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 import { DataSource, EntityManager } from 'typeorm';
 

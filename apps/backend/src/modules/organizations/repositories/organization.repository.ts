@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { OrganizationStatus } from '@oneohm-epc/shared/types';
+import { OrganizationStatus } from '@tejas96/shared/types';
 import { FindOptionsWhere, IsNull, Repository } from 'typeorm';
 
 import { OrganizationEntity } from '../entities/organization.entity';

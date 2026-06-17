@@ -15,7 +15,7 @@ import {
   PropertyStatus,
   QuoteStatus,
   TaskStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { BomService } from '../../bom/services/bom.service';
@@ -231,7 +231,7 @@ export class ProjectService {
       const { StockAllocationEntity } = await import(
         '../../inventory/entities/stock-allocation.entity'
       );
-      const { StockAllocationStatus } = await import('@oneohm-epc/shared/types');
+      const { StockAllocationStatus } = await import('@tejas96/shared/types');
       const activeAllocCount = await this.dataSource.getRepository(StockAllocationEntity).count({
         where: {
           projectId: id,

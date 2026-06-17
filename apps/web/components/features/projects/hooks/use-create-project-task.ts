@@ -1,6 +1,6 @@
 'use client';
 
-import { type TaskPriority, type TaskStatus } from '@oneohm-epc/shared/types';
+import { type TaskPriority, type TaskStatus } from '@tejas96/shared/types';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 
 import { PROJECT_TASKS_QUERY_KEY } from '../constants';

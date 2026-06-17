@@ -1,6 +1,6 @@
 'use client';
 
-import { DocumentTag } from '@oneohm-epc/shared/types';
+import { DocumentTag } from '@tejas96/shared/types';
 
 import { AnnexureProformaForm } from '../components/forms/annexure-proforma-a-form';
 import { DcrForm } from '../components/forms/dcr-form';

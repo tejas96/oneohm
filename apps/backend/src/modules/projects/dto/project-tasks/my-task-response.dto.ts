@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { type TaskStatusConfig } from '@oneohm-epc/shared/types';
+import { type TaskStatusConfig } from '@tejas96/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 import { ProjectTaskResponseDto } from './project-task-response.dto';

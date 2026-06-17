@@ -357,7 +357,7 @@ Sales Role
 
 ```typescript
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard, CurrentUser, CurrentUserType } from '@oneohm-epc/shared-auth';
+import { JwtAuthGuard, CurrentUser, CurrentUserType } from '@tejas96/shared-auth';
 import { RequirePermission } from '../iam/decorators/require-permission.decorator';
 import { PermissionGuard } from '../iam/guards/permission.guard';
 

@@ -15,7 +15,7 @@ import {
   MenuItem,
   Stack,
 } from '@mui/material';
-import { QuoteStatus } from '@oneohm-epc/shared/types';
+import { QuoteStatus } from '@tejas96/shared/types';
 import { FileText } from 'lucide-react';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';

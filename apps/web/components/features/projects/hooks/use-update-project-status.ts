@@ -1,6 +1,6 @@
 'use client';
 
-import type { ProjectStatus } from '@oneohm-epc/shared/types';
+import type { ProjectStatus } from '@tejas96/shared/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { projectDetailKeys } from './use-project-detail';

@@ -12,10 +12,10 @@ import type {
   CalculatedPanelConfig,
   CalculatedInstallationCost,
   GstConfig,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 // Re-export shared types that consumers already reference by local names
-export type { ProfitMarginTier } from '@oneohm-epc/shared/types';
+export type { ProfitMarginTier } from '@tejas96/shared/types';
 export type ValidationWarning = SharedValidationWarning;
 export type SubsidySchemeResult = SharedSubsidySchemeResult;
 export type SubsidyTier = SharedSubsidyTier;

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { LookupTypeCode } from '@oneohm-epc/shared/types';
+import { LookupTypeCode } from '@tejas96/shared/types';
 
 import { LookupRepository } from '../../lookups/repositories/lookup.repository';
 import { type ProjectTaskEntity } from '../entities/project-task.entity';

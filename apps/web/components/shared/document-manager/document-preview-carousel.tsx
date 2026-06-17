@@ -1,5 +1,5 @@
-import { DOCUMENT_ENTITY_TYPE_LABELS } from '@oneohm-epc/shared/constants';
-import { DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DOCUMENT_ENTITY_TYPE_LABELS } from '@tejas96/shared/constants';
+import { DocumentEntityType } from '@tejas96/shared/types';
 import { ChevronLeft, ChevronRight, Download, FileText, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 

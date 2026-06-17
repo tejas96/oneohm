@@ -1,6 +1,6 @@
 'use client';
 
-import { ProjectType, type AttentionItem } from '@oneohm-epc/shared/types';
+import { ProjectType, type AttentionItem } from '@tejas96/shared/types';
 import { AlertTriangle, ArrowRight, CalendarClock, FileText, Home, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactElement } from 'react';

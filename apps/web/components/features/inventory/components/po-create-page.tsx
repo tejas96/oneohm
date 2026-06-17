@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Button, Card, CardContent, CardHeader, IconButton } from '@mui/material';
-import { PaymentStatus, PurchaseOrderType } from '@oneohm-epc/shared/types';
+import { PaymentStatus, PurchaseOrderType } from '@tejas96/shared/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef } from 'react';
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';

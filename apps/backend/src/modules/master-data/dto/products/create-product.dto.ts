@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProductStatus, UnitOfMeasure } from '@oneohm-epc/shared/types';
+import { ProductStatus, UnitOfMeasure } from '@tejas96/shared/types';
 import {
   IsEnum,
   IsInt,

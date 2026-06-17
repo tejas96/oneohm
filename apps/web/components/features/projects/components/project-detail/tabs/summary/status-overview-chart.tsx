@@ -1,6 +1,6 @@
 'use client';
 
-import type { TaskStatus, TaskStatusConfig } from '@oneohm-epc/shared/types';
+import type { TaskStatus, TaskStatusConfig } from '@tejas96/shared/types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useMemo } from 'react';

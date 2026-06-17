@@ -6,7 +6,7 @@
 // Third-party imports
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PaymentTransactionStatus } from '@oneohm-epc/shared/types';
+import { PaymentTransactionStatus } from '@tejas96/shared/types';
 import { Repository, IsNull } from 'typeorm';
 
 // Local imports

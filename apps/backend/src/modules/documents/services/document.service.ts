@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DocumentEntityType } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import { CreateDocumentDto } from '../dto/create-document.dto';

@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDate } from '@oneohm-epc/shared/utils';
+import { formatDate } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { PAYMENT_STATUS_LABELS } from '../../projects/constants';

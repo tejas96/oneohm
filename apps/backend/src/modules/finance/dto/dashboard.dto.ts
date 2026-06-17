@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ExpenseCategory } from '@oneohm-epc/shared/types';
+import { ExpenseCategory } from '@tejas96/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 /**

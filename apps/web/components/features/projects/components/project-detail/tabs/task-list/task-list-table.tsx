@@ -4,7 +4,7 @@ import {
   type TaskPriority,
   type TaskStatusConfig,
   TASK_PRIORITY_LABELS,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { ChevronDown, ChevronRight, Lock, Minus } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 

@@ -4,7 +4,7 @@ import type {
   PaymentMethod,
   PaymentTermStatus,
   PaymentTransactionStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 

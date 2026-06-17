@@ -23,7 +23,7 @@ import {
   ToggleButtonGroup,
   Tooltip,
 } from '@mui/material';
-import { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared/types';
+import { ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';

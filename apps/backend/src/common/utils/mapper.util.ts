@@ -1,4 +1,4 @@
-import { type PaginatedResponse } from '@oneohm-epc/shared/types';
+import { type PaginatedResponse } from '@tejas96/shared/types';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 
 /**

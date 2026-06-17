@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { StockAllocationSourceType, StockAllocationStatus } from '@oneohm-epc/shared/types';
+import { StockAllocationSourceType, StockAllocationStatus } from '@tejas96/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';

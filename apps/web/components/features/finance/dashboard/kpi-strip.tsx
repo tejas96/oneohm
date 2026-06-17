@@ -1,6 +1,6 @@
 'use client';
 
-import { formatCurrency, formatCurrencyCompact, formatNumber } from '@oneohm-epc/shared/utils';
+import { formatCurrency, formatCurrencyCompact, formatNumber } from '@tejas96/shared/utils';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 

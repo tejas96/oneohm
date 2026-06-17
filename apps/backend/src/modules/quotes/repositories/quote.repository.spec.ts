@@ -8,7 +8,7 @@
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { QuoteSortField, SortOrder } from '@oneohm-epc/shared/types';
+import { QuoteSortField, SortOrder } from '@tejas96/shared/types';
 
 import { QuoteRepository } from './quote.repository';
 import { QuoteEntity } from '../entities/quote.entity';

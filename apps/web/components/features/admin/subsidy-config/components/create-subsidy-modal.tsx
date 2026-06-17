@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ProjectType, SubsidySchemeType } from '@oneohm-epc/shared/types';
+import { ProjectType, SubsidySchemeType } from '@tejas96/shared/types';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { type JSX } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';

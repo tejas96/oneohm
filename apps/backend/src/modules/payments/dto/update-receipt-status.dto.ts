@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentTransactionStatus } from '@oneohm-epc/shared/types';
+import { PaymentTransactionStatus } from '@tejas96/shared/types';
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 
 /**

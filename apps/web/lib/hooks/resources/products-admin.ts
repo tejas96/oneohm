@@ -1,6 +1,6 @@
 'use client';
 
-import { ProductStatus, type ProductSpecifications, UnitOfMeasure } from '@oneohm-epc/shared/types';
+import { ProductStatus, type ProductSpecifications, UnitOfMeasure } from '@tejas96/shared/types';
 import { useQuery } from '@tanstack/react-query';
 
 import {

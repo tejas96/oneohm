@@ -8,7 +8,7 @@ import type {
   ProjectStatus,
   TaskStatus,
   TaskStatusConfig,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 // ============================================================================
 // Quote Snapshot Spec Types (derived from quote on GET /projects/:id)

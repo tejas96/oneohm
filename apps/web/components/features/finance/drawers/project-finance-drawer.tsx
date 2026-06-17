@@ -1,7 +1,7 @@
 'use client';
 
-import { PaymentTermStatus } from '@oneohm-epc/shared/types';
-import { formatDate } from '@oneohm-epc/shared/utils';
+import { PaymentTermStatus } from '@tejas96/shared/types';
+import { formatDate } from '@tejas96/shared/utils';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 

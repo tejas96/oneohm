@@ -1,6 +1,6 @@
 'use client';
 
-import { UserStatus } from '@oneohm-epc/shared/types';
+import { UserStatus } from '@tejas96/shared/types';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 

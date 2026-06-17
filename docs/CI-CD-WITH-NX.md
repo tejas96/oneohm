@@ -74,7 +74,7 @@ The project uses a **unified CI/CD workflow** powered by NX that intelligently r
 
 **Location**: `.github/workflows/publish-shared.yml`
 
-**Purpose**: Build and publish `@oneohm-epc/shared` to GitHub Packages on `libs/shared` changes.
+**Purpose**: Build and publish `@tejas96/shared` to GitHub Packages on `libs/shared` changes.
 
 ### 3. UX Deployment (inactive)
 

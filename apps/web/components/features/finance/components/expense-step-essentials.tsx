@@ -1,8 +1,8 @@
 'use client';
 
 import { Alert, Box, type SelectChangeEvent } from '@mui/material';
-import { EXPENSE_CATEGORY_LABELS, EXPENSE_PAID_BY_LABELS } from '@oneohm-epc/shared/constants';
-import { ExpenseCategory, ExpensePaidByType, PaymentMethod } from '@oneohm-epc/shared/types';
+import { EXPENSE_CATEGORY_LABELS, EXPENSE_PAID_BY_LABELS } from '@tejas96/shared/constants';
+import { ExpenseCategory, ExpensePaidByType, PaymentMethod } from '@tejas96/shared/types';
 import { type JSX, useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 

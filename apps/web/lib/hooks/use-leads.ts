@@ -1,4 +1,4 @@
-import type { CustomerStatus, LeadTemperature } from '@oneohm-epc/shared/types';
+import type { CustomerStatus, LeadTemperature } from '@tejas96/shared/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/lib/api/client';

@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { MessageType } from '@oneohm-epc/shared/types';
+import { MessageType } from '@tejas96/shared/types';
 
 import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';

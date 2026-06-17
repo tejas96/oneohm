@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MaterialDispatchStatus } from '@oneohm-epc/shared/types';
+import { MaterialDispatchStatus } from '@tejas96/shared/types';
 import { Repository } from 'typeorm';
 
 import { MaterialDispatchEntity } from '../entities/material-dispatch.entity';

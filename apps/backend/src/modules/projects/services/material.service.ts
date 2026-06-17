@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { MaterialStatus } from '@oneohm-epc/shared/types';
+import { MaterialStatus } from '@tejas96/shared/types';
 
 import { CreateMaterialDto, UpdateMaterialDto } from '../dto';
 import { ProjectMaterialEntity } from '../entities/project-material.entity';

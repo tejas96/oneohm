@@ -6,7 +6,7 @@ import {
   LeadSource,
   type PaginationMeta,
   SortOrder,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import {
   useQuery,
   useMutation,

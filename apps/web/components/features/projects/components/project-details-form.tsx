@@ -1,6 +1,6 @@
 'use client';
 
-import { ProjectPriority } from '@oneohm-epc/shared/types';
+import { ProjectPriority } from '@tejas96/shared/types';
 import type { UseFormReturn } from 'react-hook-form';
 
 import { PROJECT_PRIORITY_LABELS } from '../constants';

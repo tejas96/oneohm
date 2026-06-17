@@ -1,4 +1,4 @@
-import { type TaskChecklist } from '@oneohm-epc/shared/types';
+import { type TaskChecklist } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 
 import { ProjectTaskEntity } from './project-task.entity';

@@ -1,4 +1,4 @@
-import { ProductStatus, UnitOfMeasure } from '@oneohm-epc/shared/types';
+import { ProductStatus, UnitOfMeasure } from '@tejas96/shared/types';
 import { z } from 'zod';
 
 // Coerces NaN (produced by valueAsNumber on empty input) and empty string to

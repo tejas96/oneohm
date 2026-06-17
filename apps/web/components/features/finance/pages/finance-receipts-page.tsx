@@ -1,7 +1,7 @@
 'use client';
 
-import { type PaginatedResponse, PaymentTransactionStatus } from '@oneohm-epc/shared/types';
-import { formatDate } from '@oneohm-epc/shared/utils';
+import { type PaginatedResponse, PaymentTransactionStatus } from '@tejas96/shared/types';
+import { formatDate } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { PAYMENT_STATUS_LABELS } from '../../projects/constants';

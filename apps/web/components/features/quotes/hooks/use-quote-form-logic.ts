@@ -1,6 +1,6 @@
 'use client';
 
-import { DcrPreference } from '@oneohm-epc/shared/types';
+import { DcrPreference } from '@tejas96/shared/types';
 import { useCallback, useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 

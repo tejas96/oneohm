@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { AttentionKind, AttentionSeverity } from '@oneohm-epc/shared/types';
+import type { AttentionKind, AttentionSeverity } from '@tejas96/shared/types';
 
 const ATTENTION_SEVERITIES: AttentionSeverity[] = ['critical', 'warning', 'info'];
 const ATTENTION_KINDS: AttentionKind[] = [

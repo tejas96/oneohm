@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CommentEntityType } from '@oneohm-epc/shared/types';
+import { CommentEntityType } from '@tejas96/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 /**

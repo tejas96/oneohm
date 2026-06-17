@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InventoryTransactionType } from '@oneohm-epc/shared/types';
-import { parsePaginationParams } from '@oneohm-epc/shared/utils';
+import { InventoryTransactionType } from '@tejas96/shared/types';
+import { parsePaginationParams } from '@tejas96/shared/utils';
 
 import { InventoryTransactionEntity } from '../entities/inventory-transaction.entity';
 import { InventoryTransactionRepository } from '../repositories';

@@ -3,7 +3,7 @@ import {
   type GpsCoordinates,
   type ShadingAnalysis,
   type SurveyData,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { IsNumber, IsObject, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateSiteActivityDto {

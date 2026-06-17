@@ -5,7 +5,7 @@ import {
   type ExpenseCategory,
   type ExpensePaidByType,
   type PaymentMethod,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import {
   keepPreviousData,
   useMutation,

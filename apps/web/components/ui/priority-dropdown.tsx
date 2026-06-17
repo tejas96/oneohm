@@ -1,6 +1,6 @@
 'use client';
 
-import { LookupTypeCode } from '@oneohm-epc/shared/types';
+import { LookupTypeCode } from '@tejas96/shared/types';
 import { useMemo } from 'react';
 
 import { MUISelect, type MUISelectOption, type MUISelectProps } from './mui-select';

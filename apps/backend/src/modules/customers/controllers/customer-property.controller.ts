@@ -22,7 +22,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { LeadTemperature, type PaginatedResponse } from '@oneohm-epc/shared/types';
+import { LeadTemperature, type PaginatedResponse } from '@tejas96/shared/types';
 
 import { OrganizationContext } from '../../../common/decorators';
 import { toDto, toDtoArray, toPaginatedResponse } from '../../../common/utils';

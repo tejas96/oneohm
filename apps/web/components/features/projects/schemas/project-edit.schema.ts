@@ -1,4 +1,4 @@
-import { ProjectPriority } from '@oneohm-epc/shared/types';
+import { ProjectPriority } from '@tejas96/shared/types';
 import { z } from 'zod';
 
 // ── Helpers ────────────────────────────────────────────────────

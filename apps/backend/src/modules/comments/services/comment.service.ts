@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { CommentEntityType } from '@oneohm-epc/shared/types';
+import { CommentEntityType } from '@tejas96/shared/types';
 
 import { CreateCommentDto, UpdateCommentDto } from '../dto';
 import { CommentEntity } from '../entities/comment.entity';

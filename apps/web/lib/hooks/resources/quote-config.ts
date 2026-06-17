@@ -1,6 +1,6 @@
 'use client';
 
-import type { GstConfig, PaymentMilestoneConfig, ProfitMarginTier } from '@oneohm-epc/shared/types';
+import type { GstConfig, PaymentMilestoneConfig, ProfitMarginTier } from '@tejas96/shared/types';
 
 import { useResourceDetail, useResourceMutations } from '../core';
 

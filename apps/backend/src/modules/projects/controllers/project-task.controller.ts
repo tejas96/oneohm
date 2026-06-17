@@ -27,7 +27,7 @@ import {
   type TaskActivityEntry,
   TaskPriority,
   TaskStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ProductStatus } from '@oneohm-epc/shared/types';
+import { ProductStatus } from '@tejas96/shared/types';
 import { QueryFailedError } from 'typeorm';
 
 import type { CreateProductDto, UpdateProductDto } from '../dto/products';

@@ -1,4 +1,4 @@
-import type { DocumentTag } from '@oneohm-epc/shared/types';
+import type { DocumentTag } from '@tejas96/shared/types';
 import type React from 'react';
 
 export type GenerateStatus = 'idle' | 'generating' | 'uploading' | 'saving' | 'success' | 'error';

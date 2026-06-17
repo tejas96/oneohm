@@ -1,6 +1,6 @@
 'use client';
 
-import { type InstallationCostComponents } from '@oneohm-epc/shared/types';
+import { type InstallationCostComponents } from '@tejas96/shared/types';
 
 import {
   type BaseFilters,

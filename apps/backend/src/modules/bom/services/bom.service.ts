@@ -15,7 +15,7 @@ import {
   SERIALIZED_BOM_ITEM_TYPES,
   StockAllocationSourceType,
   StockAllocationStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { DataSource, EntityManager, In, IsNull, Not, QueryFailedError } from 'typeorm';
 
 import { InventoryStockEntity } from '../../inventory/entities/inventory-stock.entity';
@@ -781,7 +781,7 @@ export class BomService {
     const { InventoryTransactionEntity } = await import(
       '../../inventory/entities/inventory-transaction.entity'
     );
-    const { InventoryTransactionType } = await import('@oneohm-epc/shared/types');
+    const { InventoryTransactionType } = await import('@tejas96/shared/types');
     const txnRepo = manager.getRepository(InventoryTransactionEntity);
 
     if (existingAlloc) {
@@ -876,7 +876,7 @@ export class BomService {
     const { InventoryTransactionEntity } = await import(
       '../../inventory/entities/inventory-transaction.entity'
     );
-    const { InventoryTransactionType } = await import('@oneohm-epc/shared/types');
+    const { InventoryTransactionType } = await import('@tejas96/shared/types');
     const txnRepo = manager.getRepository(InventoryTransactionEntity);
     await txnRepo.save(
       txnRepo.create({

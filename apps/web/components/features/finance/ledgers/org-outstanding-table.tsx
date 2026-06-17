@@ -1,7 +1,7 @@
 'use client';
 
-import { PAYMENT_TERM_STATUS_LABELS } from '@oneohm-epc/shared/constants';
-import { formatDate } from '@oneohm-epc/shared/utils';
+import { PAYMENT_TERM_STATUS_LABELS } from '@tejas96/shared/constants';
+import { formatDate } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { PAYMENT_TERM_STATUS_COLOR } from '../constants';

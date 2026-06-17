@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { FinanceSequenceScope } from '@oneohm-epc/shared/types';
+import { FinanceSequenceScope } from '@tejas96/shared/types';
 import { DataSource, EntityManager } from 'typeorm';
 
 /**

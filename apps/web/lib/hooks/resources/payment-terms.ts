@@ -1,6 +1,6 @@
 'use client';
 
-import type { PaymentTermSource, PaymentTermStatus } from '@oneohm-epc/shared/types';
+import type { PaymentTermSource, PaymentTermStatus } from '@tejas96/shared/types';
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 

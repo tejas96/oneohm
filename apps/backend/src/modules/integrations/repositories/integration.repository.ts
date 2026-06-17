@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IntegrationProvider, IntegrationCategory } from '@oneohm-epc/shared/types';
+import { IntegrationProvider, IntegrationCategory } from '@tejas96/shared/types';
 import { Repository } from 'typeorm';
 
 import { IntegrationEntity } from '../entities';

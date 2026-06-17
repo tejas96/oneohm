@@ -24,7 +24,7 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
-import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
+import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';

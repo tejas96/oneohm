@@ -8,7 +8,7 @@ import {
   CustomerStatus,
   DocumentEntityType,
   PropertyType,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';

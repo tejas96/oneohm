@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { InventoryTransactionType } from '@oneohm-epc/shared/types';
+import { InventoryTransactionType } from '@tejas96/shared/types';
 import { Repository } from 'typeorm';
 
 import { InventoryTransactionEntity } from '../entities/inventory-transaction.entity';

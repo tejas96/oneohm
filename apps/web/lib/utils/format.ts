@@ -9,9 +9,9 @@ export {
   getInitials,
   formatRoleCode,
   formatSystemSize,
-} from '@oneohm-epc/shared/utils';
+} from '@tejas96/shared/utils';
 
-import { formatSystemSize } from '@oneohm-epc/shared/utils';
+import { formatSystemSize } from '@tejas96/shared/utils';
 
 export function formatLabel(key: string): string {
   return key

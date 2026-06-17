@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDate } from '@oneohm-epc/shared/utils';
+import { formatDate } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { AgingBucketChip, AmountCell } from '../shared';

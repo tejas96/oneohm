@@ -1,4 +1,4 @@
-# @oneohm-epc/shared
+# @tejas96/shared
 
 ## 1.0.0
 

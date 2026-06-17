@@ -1,6 +1,6 @@
 'use client';
 
-import { formatCurrency, formatCurrencyCompact } from '@oneohm-epc/shared/utils';
+import { formatCurrency, formatCurrencyCompact } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { StackedBarChart, type TrendPoint } from '@/components/shared/inventory';

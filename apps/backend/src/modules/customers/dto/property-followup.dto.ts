@@ -1,12 +1,12 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { FollowupPriority, FollowupStatus, FollowupType } from '@oneohm-epc/shared/types';
+import { FollowupPriority, FollowupStatus, FollowupType } from '@tejas96/shared/types';
 import { Expose } from 'class-transformer';
 import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 /**
  * DTO for property followup validation
  * Used in CreateCustomerPropertyDto, UpdateCustomerPropertyDto, and responses
- * Matches PropertyFollowup interface from @oneohm-epc/shared/types
+ * Matches PropertyFollowup interface from @tejas96/shared/types
  */
 export class PropertyFollowupDto {
   @ApiPropertyOptional({ description: 'UUID - auto-generated if not provided' })

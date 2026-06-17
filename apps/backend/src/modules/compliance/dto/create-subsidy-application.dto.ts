@@ -1,4 +1,4 @@
-import { SubsidyStatus } from '@oneohm-epc/shared/types';
+import { SubsidyStatus } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsDate,

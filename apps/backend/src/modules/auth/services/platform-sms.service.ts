@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { formatPhoneForWhatsApp } from '@oneohm-epc/shared/utils';
+import { formatPhoneForWhatsApp } from '@tejas96/shared/utils';
 import axios from 'axios';
 
 import { ConfigService } from '../../../config/config.service';

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { InstallationCostComponents } from '@oneohm-epc/shared/types';
+import { InstallationCostComponents } from '@tejas96/shared/types';
 import { IsBoolean, IsDateString, IsNumber, IsObject, IsOptional, Min } from 'class-validator';
 
 export class UpdateInstallationPricingDto {

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { ProfitMarginTier } from '@oneohm-epc/shared/types';
+import type { ProfitMarginTier } from '@tejas96/shared/types';
 
 import {
   CreateQuoteConfigurationDto,

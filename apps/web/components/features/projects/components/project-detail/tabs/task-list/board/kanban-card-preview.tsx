@@ -5,7 +5,7 @@ import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrow
 import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { Box, Paper, Typography } from '@mui/material';
-import { TaskPriority } from '@oneohm-epc/shared/types';
+import { TaskPriority } from '@tejas96/shared/types';
 import React from 'react';
 
 export const PRIORITY_ICON: Record<string, React.ReactNode> = {

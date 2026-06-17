@@ -2,7 +2,7 @@
 
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Divider } from '@mui/material';
-import { TaskStatus, type TaskChecklist, type TaskPriority } from '@oneohm-epc/shared/types';
+import { TaskStatus, type TaskChecklist, type TaskPriority } from '@tejas96/shared/types';
 import { useCallback } from 'react';
 
 import { TaskDrawerChecklist } from './task-drawer-checklist';

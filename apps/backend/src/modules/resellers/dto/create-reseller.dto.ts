@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ResellerStatus } from '@oneohm-epc/shared/types';
+import { ResellerStatus } from '@tejas96/shared/types';
 import {
   IsDecimal,
   IsEmail,

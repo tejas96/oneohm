@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CommissionStatus } from '@oneohm-epc/shared/types';
+import { CommissionStatus } from '@tejas96/shared/types';
 
 import {
   ApiAction,

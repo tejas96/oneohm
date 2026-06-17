@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { SiteActivityStatus } from '@oneohm-epc/shared/types';
+import { SiteActivityStatus } from '@tejas96/shared/types';
 import { Transform } from 'class-transformer';
 import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 

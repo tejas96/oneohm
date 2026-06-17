@@ -1,6 +1,6 @@
 'use client';
 
-import { DocumentEntityType, DocumentTag } from '@oneohm-epc/shared/types';
+import { DocumentEntityType, DocumentTag } from '@tejas96/shared/types';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 

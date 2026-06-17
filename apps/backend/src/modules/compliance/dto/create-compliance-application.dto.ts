@@ -1,4 +1,4 @@
-import { ComplianceStatus } from '@oneohm-epc/shared/types';
+import { ComplianceStatus } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsDate,

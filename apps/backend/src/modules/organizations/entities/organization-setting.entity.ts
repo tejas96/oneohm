@@ -1,4 +1,4 @@
-import { SettingDataType } from '@oneohm-epc/shared/types';
+import { SettingDataType } from '@tejas96/shared/types';
 import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm';
 
 import { OrganizationEntity } from './organization.entity';

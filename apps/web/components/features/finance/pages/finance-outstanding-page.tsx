@@ -1,8 +1,8 @@
 'use client';
 
 import { Button } from '@mui/material';
-import { type PaginatedResponse } from '@oneohm-epc/shared/types';
-import { formatDate } from '@oneohm-epc/shared/utils';
+import { type PaginatedResponse } from '@tejas96/shared/types';
+import { formatDate } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { AGING_BUCKETS, AGING_BUCKET_LABEL } from '../constants';

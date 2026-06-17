@@ -1,12 +1,12 @@
-import { PROJECT_TYPE_LABELS as _PROJECT_TYPE_LABELS } from '@oneohm-epc/shared/constants';
-import { SYSTEM_SIZE_CONFIG, DISCOUNT_PRESETS, DISTANCE_CONFIG } from '@oneohm-epc/shared/schemas';
+import { PROJECT_TYPE_LABELS as _PROJECT_TYPE_LABELS } from '@tejas96/shared/constants';
+import { SYSTEM_SIZE_CONFIG, DISCOUNT_PRESETS, DISTANCE_CONFIG } from '@tejas96/shared/schemas';
 import {
   QuoteStatus,
   SystemType,
   ProjectType,
   DcrPreference,
   ItemCategory,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { type LucideIcon, Building2, Factory, Home, Landmark, Warehouse } from 'lucide-react';
 
 // ============================================================================

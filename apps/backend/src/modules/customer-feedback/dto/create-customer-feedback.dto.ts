@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { FeedbackMethod } from '@oneohm-epc/shared/types';
+import { FeedbackMethod } from '@tejas96/shared/types';
 import {
   IsBoolean,
   IsEnum,

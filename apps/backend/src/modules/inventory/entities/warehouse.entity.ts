@@ -2,7 +2,7 @@ import {
   WarehouseStatus,
   WarehouseType,
   type WarehouseCoordinates,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import {
   Column,
   DeleteDateColumn,

@@ -1,4 +1,4 @@
-import { type TaskChecklist, type WorkflowStep } from '@oneohm-epc/shared/types';
+import { type TaskChecklist, type WorkflowStep } from '@tejas96/shared/types';
 
 import { type WorkflowStepFormValues } from '../schemas/workflow-step.schema';
 

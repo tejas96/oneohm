@@ -1,6 +1,6 @@
 'use client';
 
-import type { MilestoneDisplayStatus } from '@oneohm-epc/shared/types';
+import type { MilestoneDisplayStatus } from '@tejas96/shared/types';
 import { Milestone } from 'lucide-react';
 import * as React from 'react';
 

@@ -1,5 +1,5 @@
-import { DOCUMENT_TAG_LABELS, DOCUMENT_CATEGORY_LABELS } from '@oneohm-epc/shared/constants';
-import { DocumentCategory } from '@oneohm-epc/shared/types';
+import { DOCUMENT_TAG_LABELS, DOCUMENT_CATEGORY_LABELS } from '@tejas96/shared/constants';
+import { DocumentCategory } from '@tejas96/shared/types';
 
 export const DOCUMENT_TAG_OPTIONS: { value: string; label: string }[] = Object.entries(
   DOCUMENT_TAG_LABELS,
