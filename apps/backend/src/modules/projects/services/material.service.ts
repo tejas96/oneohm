@@ -135,10 +135,14 @@ export class MaterialService {
     }
 
     if (updateDto.procurementDate !== undefined) {
-      updateData.procurementDate = updateDto.procurementDate ? new Date(updateDto.procurementDate) : null;
+      updateData.procurementDate = updateDto.procurementDate
+        ? new Date(updateDto.procurementDate)
+        : null;
     }
     if (updateDto.allocationDate !== undefined) {
-      updateData.allocationDate = updateDto.allocationDate ? new Date(updateDto.allocationDate) : null;
+      updateData.allocationDate = updateDto.allocationDate
+        ? new Date(updateDto.allocationDate)
+        : null;
     }
 
     return this.materialRepository.update(id, projectId, updateData);
