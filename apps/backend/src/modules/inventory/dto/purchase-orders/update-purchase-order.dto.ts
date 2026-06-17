@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PurchaseOrderType } from '@oneohm-epc/shared/types';
+import { PurchaseOrderType } from '@tejas96/shared/types';
 import { IsDateString, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 
 /**

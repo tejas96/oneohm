@@ -5,7 +5,7 @@ import {
   TaskStatus,
   ProjectStatus,
   LookupTypeCode,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import {
   DataSource,
   type EntityManager,

@@ -1,7 +1,7 @@
 'use client';
 
-import { QuoteStatus } from '@oneohm-epc/shared/types';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { QuoteStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { quoteKeys, type QuoteListItem } from '@/components/features/quotes';

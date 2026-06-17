@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { SettingDataType } from '@oneohm-epc/shared/types';
+import { SettingDataType } from '@tejas96/shared/types';
 
 import { CreateOrganizationSettingDto } from '../dto/create-organization-setting.dto';
 import { UpdateOrganizationSettingDto } from '../dto/update-organization-setting.dto';

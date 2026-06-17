@@ -1,6 +1,6 @@
 'use client';
 
-import type { TaskStatusConfig } from '@oneohm-epc/shared/types';
+import type { TaskStatusConfig } from '@tejas96/shared/types';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 

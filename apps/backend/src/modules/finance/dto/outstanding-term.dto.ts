@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentTermStatus } from '@oneohm-epc/shared/types';
+import { PaymentTermStatus } from '@tejas96/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 import { AGING_BUCKETS, type AgingBucket } from '../constants';

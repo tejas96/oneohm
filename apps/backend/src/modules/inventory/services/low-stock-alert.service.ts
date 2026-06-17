@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { NotificationSeverity, NotificationType } from '@oneohm-epc/shared/types';
+import { NotificationSeverity, NotificationType } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import { ADMIN_BYPASS_ROLES } from '../../iam/constants';

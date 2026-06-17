@@ -2,7 +2,7 @@
 
 import { CheckCircle, ExpandLess, ExpandMore, Inventory2, Warning } from '@mui/icons-material';
 import { Alert, Button, IconButton, TextField } from '@mui/material';
-import { type BomItem, SERIALIZED_BOM_ITEM_TYPES } from '@oneohm-epc/shared/types';
+import { type BomItem, SERIALIZED_BOM_ITEM_TYPES } from '@tejas96/shared/types';
 import React, { useMemo, useState } from 'react';
 
 import { ProjectWarehouseSelector } from './overview/project-warehouse-selector';

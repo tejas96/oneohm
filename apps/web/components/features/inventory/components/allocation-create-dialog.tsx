@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@mui/material';
-import { StockAllocationSourceType } from '@oneohm-epc/shared/types';
+import { StockAllocationSourceType } from '@tejas96/shared/types';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';

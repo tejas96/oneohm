@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { FeedbackMethod, NPSCategory } from '@oneohm-epc/shared/types';
+import { FeedbackMethod, NPSCategory } from '@tejas96/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 import { CustomerResponseDto } from '../../customers/dto/customer-response.dto';

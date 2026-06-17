@@ -15,8 +15,8 @@ import {
   type ExtendedStatisticsResponse,
   VendorStatus,
   VendorType,
-} from '@oneohm-epc/shared/types';
-import { parsePaginationParams } from '@oneohm-epc/shared/utils';
+} from '@tejas96/shared/types';
+import { parsePaginationParams } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import {

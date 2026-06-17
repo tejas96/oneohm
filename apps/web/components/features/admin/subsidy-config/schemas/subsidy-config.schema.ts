@@ -1,4 +1,4 @@
-import { ProjectType, SubsidySchemeType } from '@oneohm-epc/shared/types';
+import { ProjectType, SubsidySchemeType } from '@tejas96/shared/types';
 import { z } from 'zod';
 
 // Coerces NaN (produced by valueAsNumber on empty input) to undefined so

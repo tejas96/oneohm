@@ -5,7 +5,7 @@ import {
   DocumentEntityType,
   LeadTemperature,
   QuoteStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Edit, FileText, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';

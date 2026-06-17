@@ -1,4 +1,4 @@
-import { PaymentMethod } from '@oneohm-epc/shared/types';
+import { PaymentMethod } from '@tejas96/shared/types';
 import { z } from 'zod';
 
 /**

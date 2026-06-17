@@ -7,7 +7,7 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import { Box, Button, Skeleton, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 

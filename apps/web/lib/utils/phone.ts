@@ -4,4 +4,4 @@ export {
   isValidPhone,
   normalizePhoneToE164,
   stripPhoneCountryCode,
-} from '@oneohm-epc/shared/utils';
+} from '@tejas96/shared/utils';

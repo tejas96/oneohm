@@ -4,14 +4,14 @@ import {
   EXPENSE_CATEGORY_LABELS,
   EXPENSE_PAID_BY_LABELS,
   REIMBURSEMENT_STATUS_LABELS,
-} from '@oneohm-epc/shared/constants';
+} from '@tejas96/shared/constants';
 import {
   ExpenseCategory,
   ExpensePaidByType,
   type PaginatedResponse,
   ReimbursementStatus,
-} from '@oneohm-epc/shared/types';
-import { formatDate } from '@oneohm-epc/shared/utils';
+} from '@tejas96/shared/types';
+import { formatDate } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import { ProjectFinanceDrawer } from '../drawers';

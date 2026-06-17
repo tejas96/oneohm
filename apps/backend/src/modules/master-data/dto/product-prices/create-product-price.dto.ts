@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectType } from '@oneohm-epc/shared/types';
+import { ProjectType } from '@tejas96/shared/types';
 import {
   IsDateString,
   IsEnum,

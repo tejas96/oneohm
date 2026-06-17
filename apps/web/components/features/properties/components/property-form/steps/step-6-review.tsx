@@ -9,7 +9,7 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import PriceCheckOutlinedIcon from '@mui/icons-material/PriceCheckOutlined';
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import { Button, Card, CardContent, Chip } from '@mui/material';
-import { ConnectionType, LeadTemperature, DocumentEntityType } from '@oneohm-epc/shared/types';
+import { ConnectionType, LeadTemperature, DocumentEntityType } from '@tejas96/shared/types';
 import * as React from 'react';
 import { useFormContext } from 'react-hook-form';
 

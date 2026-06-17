@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import {
   IntegrationProvider as IntegrationProviderEnum,
   IntegrationCategory,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 /**
  * Integration Provider Metadata

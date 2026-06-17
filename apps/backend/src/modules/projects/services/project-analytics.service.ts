@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { TaskStatus } from '@oneohm-epc/shared/types';
+import { TaskStatus } from '@tejas96/shared/types';
 import { In } from 'typeorm';
 
 import { UserRepository } from '../../users/repositories/user.repository';

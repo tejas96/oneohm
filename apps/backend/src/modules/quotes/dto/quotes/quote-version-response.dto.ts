@@ -6,7 +6,7 @@ import {
   type QuoteSnapshot,
   ProjectType,
   SystemType,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Expose, Transform } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';

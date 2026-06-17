@@ -1,4 +1,4 @@
-import { OrganizationStatus } from '@oneohm-epc/shared/types';
+import { OrganizationStatus } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 
 import { OrganizationSettingEntity } from './organization-setting.entity';

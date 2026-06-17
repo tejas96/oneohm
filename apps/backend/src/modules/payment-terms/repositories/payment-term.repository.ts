@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PaymentTermStatus } from '@oneohm-epc/shared/types';
+import { PaymentTermStatus } from '@tejas96/shared/types';
 import { EntityManager, IsNull, Repository } from 'typeorm';
 
 import { PaymentTermEntity } from '../entities/payment-term.entity';

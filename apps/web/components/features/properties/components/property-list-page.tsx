@@ -22,7 +22,7 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
-import { PropertySortField, SortOrder, ConnectionType } from '@oneohm-epc/shared/types';
+import { PropertySortField, SortOrder, ConnectionType } from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';

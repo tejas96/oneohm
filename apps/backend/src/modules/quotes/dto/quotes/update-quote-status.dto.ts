@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { QuoteStatus } from '@oneohm-epc/shared/types';
+import { QuoteStatus } from '@tejas96/shared/types';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 /**

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { InventoryTransactionType, StockAllocationStatus } from '@oneohm-epc/shared/types';
+import { InventoryTransactionType, StockAllocationStatus } from '@tejas96/shared/types';
 import { DataSource, EntityManager } from 'typeorm';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
@@ -93,7 +93,7 @@ export class StockAllocationService {
       const { InventoryTransactionEntity } = await import(
         '../entities/inventory-transaction.entity'
       );
-      const { InventoryTransactionType } = await import('@oneohm-epc/shared/types');
+      const { InventoryTransactionType } = await import('@tejas96/shared/types');
       const txnRepo = manager.getRepository(InventoryTransactionEntity);
       await txnRepo.save(
         txnRepo.create({

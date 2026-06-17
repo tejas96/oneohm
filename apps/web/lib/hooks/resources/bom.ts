@@ -1,7 +1,7 @@
 'use client';
 
-import type { Bom, BomItem } from '@oneohm-epc/shared/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Bom, BomItem } from '@tejas96/shared/types';
 
 import { createResourceKeys, defineResource, useOrgContext } from '../core';
 

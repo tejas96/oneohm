@@ -13,7 +13,7 @@ import {
   type PropertyDocument,
   PropertyStatus,
   QuoteStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Not, IsNull } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';

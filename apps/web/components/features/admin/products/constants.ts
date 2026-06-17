@@ -1,4 +1,4 @@
-import { ProductStatus } from '@oneohm-epc/shared/types';
+import { ProductStatus } from '@tejas96/shared/types';
 
 import type { FilterTab } from '@/components/shared';
 

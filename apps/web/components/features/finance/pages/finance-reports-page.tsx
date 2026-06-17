@@ -9,8 +9,8 @@ import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import RequestPageOutlinedIcon from '@mui/icons-material/RequestPageOutlined';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
 import { Button, CircularProgress, TextField } from '@mui/material';
-import { type PaginatedResponse } from '@oneohm-epc/shared/types';
-import { formatDate } from '@oneohm-epc/shared/utils';
+import { type PaginatedResponse } from '@tejas96/shared/types';
+import { formatDate } from '@tejas96/shared/utils';
 import * as React from 'react';
 
 import {

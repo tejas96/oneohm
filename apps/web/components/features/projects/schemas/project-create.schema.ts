@@ -1,1 +1,1 @@
-export { projectCreateSchema, type ProjectCreateFormData } from '@oneohm-epc/shared/schemas';
+export { projectCreateSchema, type ProjectCreateFormData } from '@tejas96/shared/schemas';

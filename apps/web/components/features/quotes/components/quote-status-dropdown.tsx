@@ -2,7 +2,7 @@
 
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { Menu, MenuItem, Tooltip } from '@mui/material';
-import { QuoteStatus } from '@oneohm-epc/shared/types';
+import { QuoteStatus } from '@tejas96/shared/types';
 import { ChevronDown } from 'lucide-react';
 import React, { useState } from 'react';
 

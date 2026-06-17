@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { type InventoryTransactionType } from '@oneohm-epc/shared/types';
+import { type InventoryTransactionType } from '@tejas96/shared/types';
 
 import {
   type FunnelResponse,

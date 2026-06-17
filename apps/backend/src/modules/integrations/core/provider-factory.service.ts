@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { IntegrationProvider } from '@oneohm-epc/shared/types';
+import { IntegrationProvider } from '@tejas96/shared/types';
 import axios, { AxiosInstance } from 'axios';
 
 import {

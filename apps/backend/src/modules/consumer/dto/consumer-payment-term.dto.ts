@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentTermStatus } from '@oneohm-epc/shared/types';
+import { PaymentTermStatus } from '@tejas96/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../common/utils';

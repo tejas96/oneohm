@@ -1,4 +1,4 @@
-import { PROJECT_TYPE_LABELS as _PROJECT_TYPE_LABELS } from '@oneohm-epc/shared/constants';
+import { PROJECT_TYPE_LABELS as _PROJECT_TYPE_LABELS } from '@tejas96/shared/constants';
 import {
   MaterialStatus,
   PaymentTransactionStatus,
@@ -9,7 +9,7 @@ import {
   TASK_STATUS_LABELS,
   TaskPriority,
   TaskStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 import { toTitleLabel } from '@/lib/utils';
 
@@ -124,7 +124,7 @@ export const PROJECT_TYPE_OPTIONS: ReadonlyArray<{ value: ProjectType; label: st
 
 // ---------------------------------------------------------------------------
 // Task constants (for My Tasks)
-// Labels imported from @oneohm-epc/shared/types and re-exported for convenience
+// Labels imported from @tejas96/shared/types and re-exported for convenience
 // ---------------------------------------------------------------------------
 
 export { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS };

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IntegrationProvider, IntegrationStatus } from '@oneohm-epc/shared/types';
+import { IntegrationProvider, IntegrationStatus } from '@tejas96/shared/types';
 
 /**
  * Message Response DTO

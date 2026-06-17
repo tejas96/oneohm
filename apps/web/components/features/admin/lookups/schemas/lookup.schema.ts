@@ -1,4 +1,4 @@
-import { LookupDataType, LookupScopeType } from '@oneohm-epc/shared/types';
+import { LookupDataType, LookupScopeType } from '@tejas96/shared/types';
 import { z } from 'zod';
 
 export const lookupSchema = z

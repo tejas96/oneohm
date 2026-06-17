@@ -1,6 +1,6 @@
 'use client';
 
-import { QuoteStatus } from '@oneohm-epc/shared/types';
+import { QuoteStatus } from '@tejas96/shared/types';
 import { FileText } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';

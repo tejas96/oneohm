@@ -1,13 +1,13 @@
 'use client';
 
+import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type {
   PaginationMeta,
   ProjectMetadata,
   ProjectPriority,
   ProjectStatus,
   TaskStatusConfig,
-} from '@oneohm-epc/shared/types';
-import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
+} from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';

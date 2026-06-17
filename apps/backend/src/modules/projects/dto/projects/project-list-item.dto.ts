@@ -5,7 +5,7 @@ import {
   type ProjectMetadata,
   type QuoteSnapshot,
   type TaskStatusConfig,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';

@@ -1,7 +1,7 @@
 'use client';
 
-import type { ProjectPriority } from '@oneohm-epc/shared/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ProjectPriority } from '@tejas96/shared/types';
 
 import { projectDetailKeys } from './use-project-detail';
 import { projectKeys } from './use-projects';

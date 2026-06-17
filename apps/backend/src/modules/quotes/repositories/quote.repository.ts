@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QuoteSortField, QuoteStatus, SortOrder } from '@oneohm-epc/shared/types';
+import { QuoteSortField, QuoteStatus, SortOrder } from '@tejas96/shared/types';
 import { Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 

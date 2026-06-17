@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { FollowupStatus, type PaginatedResponse } from '@oneohm-epc/shared/types';
+import { FollowupStatus, type PaginatedResponse } from '@tejas96/shared/types';
 
 import {
   ApiAction,

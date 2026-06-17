@@ -1,4 +1,4 @@
-import { TaskStatus } from '@oneohm-epc/shared/types';
+import { TaskStatus } from '@tejas96/shared/types';
 
 export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
   status_changed: 'changed status',

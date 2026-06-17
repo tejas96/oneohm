@@ -1,4 +1,4 @@
-import { ApprovalRequestPriority, ApprovalRequestStatus } from '@oneohm-epc/shared/types';
+import { ApprovalRequestPriority, ApprovalRequestStatus } from '@tejas96/shared/types';
 import {
   Column,
   CreateDateColumn,

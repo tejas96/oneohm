@@ -1,4 +1,4 @@
-import { ProductStatus, ProjectType, SubsidySchemeType } from '@oneohm-epc/shared/types';
+import { ProductStatus, ProjectType, SubsidySchemeType } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 /**

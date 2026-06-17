@@ -1,6 +1,6 @@
 'use client';
 
-import type { GroupByMode } from '@oneohm-epc/shared/types';
+import type { GroupByMode } from '@tejas96/shared/types';
 import { useCallback, useState } from 'react';
 
 import { SMART_EXPAND_DEFAULTS } from '../constants';

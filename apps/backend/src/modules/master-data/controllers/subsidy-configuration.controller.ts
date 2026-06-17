@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ProjectType } from '@oneohm-epc/shared/types';
+import { ProjectType } from '@tejas96/shared/types';
 
 import {
   ApiCreate,

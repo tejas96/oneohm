@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, Inject, Optional, forwardRef } from '@nestjs/common';
-import { PRODUCT_TYPE_INVERTER, PRODUCT_TYPE_SOLAR_PANEL } from '@oneohm-epc/shared/constants';
+import { PRODUCT_TYPE_INVERTER, PRODUCT_TYPE_SOLAR_PANEL } from '@tejas96/shared/constants';
 import {
   ProjectType,
   DcrPreference,
@@ -10,7 +10,7 @@ import {
   ProfitMarginTier,
   SubsidySchemeResult,
   ValidationWarning,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 import { InventoryStockService } from '../../inventory/services/inventory-stock.service';
 import { InstallationPricing } from '../../master-data/entities/installation-pricing.entity';

@@ -1,4 +1,4 @@
-import { InspectionStatus } from '@oneohm-epc/shared/types';
+import { InspectionStatus } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsDate,

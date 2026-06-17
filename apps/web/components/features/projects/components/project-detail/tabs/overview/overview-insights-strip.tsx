@@ -1,6 +1,6 @@
 'use client';
 
-import { MaterialStatus, TaskStatus } from '@oneohm-epc/shared/types';
+import { MaterialStatus, TaskStatus } from '@tejas96/shared/types';
 import { AlertTriangle, CalendarClock, CheckCircle2, FileText, Layers, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { type ElementType, type ReactElement, useMemo } from 'react';

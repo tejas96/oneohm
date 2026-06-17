@@ -7,7 +7,7 @@
  * @module lib/api/storage
  */
 
-import { FileCategory } from '@oneohm-epc/shared/types';
+import { FileCategory } from '@tejas96/shared/types';
 
 import { apiClient } from './client';
 

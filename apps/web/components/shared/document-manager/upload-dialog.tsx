@@ -2,8 +2,8 @@
 
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { Box, Button, LinearProgress, Typography } from '@mui/material';
-import { DOCUMENT_ENTITY_TYPE_OPTIONS } from '@oneohm-epc/shared/constants';
-import { DocumentCategory, DocumentEntityType, DocumentTag } from '@oneohm-epc/shared/types';
+import { DOCUMENT_ENTITY_TYPE_OPTIONS } from '@tejas96/shared/constants';
+import { DocumentCategory, DocumentEntityType, DocumentTag } from '@tejas96/shared/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {

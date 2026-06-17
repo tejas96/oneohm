@@ -13,7 +13,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { IntegrationCategory, IntegrationProvider } from '@oneohm-epc/shared/types';
+import { IntegrationCategory, IntegrationProvider } from '@tejas96/shared/types';
 
 import { IntegrationService } from '../services';
 

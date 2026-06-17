@@ -1,6 +1,6 @@
 'use client';
 
-import { TaskStatus } from '@oneohm-epc/shared/types';
+import { TaskStatus } from '@tejas96/shared/types';
 import { AlertTriangle, CheckCircle2, Clock, ListTodo, UserX, Zap } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';

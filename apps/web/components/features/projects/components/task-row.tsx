@@ -10,7 +10,7 @@ import {
   TaskStatus,
   TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import Link from 'next/link';
 import type { JSX } from 'react';
 

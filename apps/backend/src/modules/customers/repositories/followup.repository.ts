@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FollowupStatus } from '@oneohm-epc/shared/types';
+import { FollowupStatus } from '@tejas96/shared/types';
 import { Between, IsNull, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 
 import { FollowupEntity } from '../entities/followup.entity';

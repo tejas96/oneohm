@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { GstConfig, PaymentMilestoneConfig, ProfitMarginTier } from '@oneohm-epc/shared/types';
+import { GstConfig, PaymentMilestoneConfig, ProfitMarginTier } from '@tejas96/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 /**

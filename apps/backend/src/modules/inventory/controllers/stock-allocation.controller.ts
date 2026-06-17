@@ -10,8 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { StockAllocationStatus } from '@oneohm-epc/shared/types';
-import { parsePaginationParams } from '@oneohm-epc/shared/utils';
+import { StockAllocationStatus } from '@tejas96/shared/types';
+import { parsePaginationParams } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import {

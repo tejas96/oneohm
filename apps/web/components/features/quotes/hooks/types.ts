@@ -5,7 +5,7 @@ import type {
   ProjectType,
   QuoteStatus,
   SystemType,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 import type { QuoteSnapshot } from '../types/calculator.types';
 

@@ -1,4 +1,4 @@
-import { InvitationStatus } from '@oneohm-epc/shared/types';
+import { InvitationStatus } from '@tejas96/shared/types';
 import {
   Column,
   CreateDateColumn,

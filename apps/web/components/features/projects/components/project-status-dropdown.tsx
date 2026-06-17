@@ -1,7 +1,7 @@
 'use client';
 
 import { Menu, MenuItem } from '@mui/material';
-import { ProjectStatus } from '@oneohm-epc/shared/types';
+import { ProjectStatus } from '@tejas96/shared/types';
 import { ChevronDown } from 'lucide-react';
 import React, { useState } from 'react';
 

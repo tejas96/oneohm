@@ -14,7 +14,7 @@ import {
  * DTO for property document validation
  * Used in CreateCustomerPropertyDto and UpdateCustomerPropertyDto
  *
- * Matches PropertyDocument interface from @oneohm-epc/shared/types
+ * Matches PropertyDocument interface from @tejas96/shared/types
  * Unified storage for all documents (loan and non-loan)
  */
 export class PropertyDocumentDto {

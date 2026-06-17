@@ -4,7 +4,7 @@ import {
   type GpsCoordinates,
   type ShadingAnalysis,
   type SurveyData,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../common/utils';

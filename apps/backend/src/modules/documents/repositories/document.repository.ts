@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DocumentEntityType } from '@oneohm-epc/shared/types';
+import { DocumentEntityType } from '@tejas96/shared/types';
 import { In, IsNull, Repository } from 'typeorm';
 
 import { DocumentEntity } from '../entities/document.entity';

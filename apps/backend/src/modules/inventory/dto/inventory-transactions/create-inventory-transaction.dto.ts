@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { InventoryTransactionType } from '@oneohm-epc/shared/types';
+import { InventoryTransactionType } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsDateString,

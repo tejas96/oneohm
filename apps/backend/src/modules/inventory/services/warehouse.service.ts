@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { WarehouseStatus, WarehouseType } from '@oneohm-epc/shared/types';
+import { WarehouseStatus, WarehouseType } from '@tejas96/shared/types';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateWarehouseDto, UpdateWarehouseDto } from '../dto';

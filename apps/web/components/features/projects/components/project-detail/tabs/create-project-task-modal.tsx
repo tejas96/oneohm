@@ -9,7 +9,7 @@ import {
   type SelectChangeEvent,
   Typography,
 } from '@mui/material';
-import { TaskPriority, TaskStatus, type TaskStatusConfig } from '@oneohm-epc/shared/types';
+import { TaskPriority, TaskStatus, type TaskStatusConfig } from '@tejas96/shared/types';
 import { type JSX, useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 

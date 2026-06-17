@@ -7,7 +7,7 @@ export {
   type AcceptQuoteFormData,
   rejectQuoteSchema,
   type RejectQuoteFormData,
-} from '@oneohm-epc/shared/schemas';
+} from '@tejas96/shared/schemas';
 
 export const REJECTION_REASONS = [
   { value: 'price_too_high', label: 'Price too high' },

@@ -1,6 +1,6 @@
 'use client';
 
-import { ProjectType, SubsidySchemeType, type SubsidyTier } from '@oneohm-epc/shared/types';
+import { ProjectType, SubsidySchemeType, type SubsidyTier } from '@tejas96/shared/types';
 
 import {
   type BaseFilters,

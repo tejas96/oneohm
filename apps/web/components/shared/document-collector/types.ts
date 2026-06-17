@@ -6,7 +6,7 @@
  * @module shared/document-collector/types
  */
 
-import { LoanDocumentType, type PropertyDocument } from '@oneohm-epc/shared/types';
+import { LoanDocumentType, type PropertyDocument } from '@tejas96/shared/types';
 
 export { LoanDocumentType };
 

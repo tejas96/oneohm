@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { SecurityEventType } from '@oneohm-epc/shared/types';
+import { SecurityEventType } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 import { Request as ExpressRequest } from 'express';
 

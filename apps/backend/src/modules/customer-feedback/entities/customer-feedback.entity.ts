@@ -1,4 +1,4 @@
-import { FeedbackMethod, NPSCategory } from '@oneohm-epc/shared/types';
+import { FeedbackMethod, NPSCategory } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';

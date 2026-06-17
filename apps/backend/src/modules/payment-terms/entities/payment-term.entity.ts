@@ -1,4 +1,4 @@
-import { PaymentTermSource, PaymentTermStatus } from '@oneohm-epc/shared/types';
+import { PaymentTermSource, PaymentTermStatus } from '@tejas96/shared/types';
 import {
   Column,
   DeleteDateColumn,

@@ -2,7 +2,7 @@
 
 import DescriptionIcon from '@mui/icons-material/Description';
 import LockIcon from '@mui/icons-material/Lock';
-import { ProjectPriority, QuoteStatus } from '@oneohm-epc/shared/types';
+import { ProjectPriority, QuoteStatus } from '@tejas96/shared/types';
 import { useEffect, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 

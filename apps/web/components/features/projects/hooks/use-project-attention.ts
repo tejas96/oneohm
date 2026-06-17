@@ -1,7 +1,7 @@
 'use client';
 
-import type { AttentionItem } from '@oneohm-epc/shared/types';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import type { AttentionItem } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';

@@ -1,4 +1,4 @@
-import { PurchaseOrderType } from '@oneohm-epc/shared/types';
+import { PurchaseOrderType } from '@tejas96/shared/types';
 import { z } from 'zod';
 
 const MAX_QUANTITY = 1_000_000;

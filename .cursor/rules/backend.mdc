@@ -151,14 +151,14 @@ await this.dataSource.transaction(async (manager) => {
 
 | Location | Use For |
 |----------|---------|
-| `@oneohm-epc/shared/types` | Interfaces, enums shared with frontend/mobile |
-| `@oneohm-epc/shared/utils` | Platform-agnostic helpers (pagination, formatting) |
-| `@oneohm-epc/shared/constants` | Shared label maps, config constants |
+| `@tejas96/shared/types` | Interfaces, enums shared with frontend/mobile |
+| `@tejas96/shared/utils` | Platform-agnostic helpers (pagination, formatting) |
+| `@tejas96/shared/constants` | Shared label maps, config constants |
 | `modules/[feature]/types/` | Backend-only types |
 | `common/decorators/` | NestJS-specific decorators |
 | `common/utils/` | Backend-specific helpers (toDto, toPaginatedResponse) |
 
-**Rule:** If frontend needs it → `@oneohm-epc/shared/types`. Always.
+**Rule:** If frontend needs it → `@tejas96/shared/types`. Always.
 
 ---
 

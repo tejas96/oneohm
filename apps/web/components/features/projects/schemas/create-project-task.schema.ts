@@ -1,4 +1,4 @@
-import { TaskPriority, TaskStatus } from '@oneohm-epc/shared/types';
+import { TaskPriority, TaskStatus } from '@tejas96/shared/types';
 import { z } from 'zod';
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;

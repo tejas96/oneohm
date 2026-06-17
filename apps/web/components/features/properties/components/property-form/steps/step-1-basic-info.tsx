@@ -7,12 +7,12 @@ import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import { Card, CardContent, Chip, Checkbox, FormControlLabel } from '@mui/material';
-import { PropertyType } from '@oneohm-epc/shared/types';
 import {
   Root as RadioGroupRoot,
   Item as RadioGroupItem,
   Indicator as RadioGroupIndicator,
 } from '@radix-ui/react-radio-group';
+import { PropertyType } from '@tejas96/shared/types';
 import * as React from 'react';
 import { useFormContext } from 'react-hook-form';
 

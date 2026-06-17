@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import {
   ConnectionType,
   LeadTemperature,
@@ -7,8 +8,7 @@ import {
   PropertyStatus,
   PropertyType,
   QuoteStatus,
-} from '@oneohm-epc/shared/types';
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+} from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';

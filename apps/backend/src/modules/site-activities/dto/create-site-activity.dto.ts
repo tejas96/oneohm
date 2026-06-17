@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { type GpsCoordinates, type ShadingAnalysis } from '@oneohm-epc/shared/types';
+import { type GpsCoordinates, type ShadingAnalysis } from '@tejas96/shared/types';
 import { IsNumber, IsObject, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class CreateSiteActivityDto {

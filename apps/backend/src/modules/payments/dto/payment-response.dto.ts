@@ -3,7 +3,7 @@
 // ============================================
 // Shared types
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMethod, PaymentTransactionStatus } from '@oneohm-epc/shared/types';
+import { PaymentMethod, PaymentTransactionStatus } from '@tejas96/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../common/utils';

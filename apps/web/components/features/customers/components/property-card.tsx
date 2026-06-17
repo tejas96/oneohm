@@ -1,6 +1,6 @@
 'use client';
 
-import { PropertyStatus, PropertyType } from '@oneohm-epc/shared/types';
+import { PropertyStatus, PropertyType } from '@tejas96/shared/types';
 import { CircleDollarSign, Eye, FileText, Folder, MoreVertical, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

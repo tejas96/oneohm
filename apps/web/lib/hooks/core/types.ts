@@ -1,5 +1,5 @@
-import type { PaginationMeta } from '@oneohm-epc/shared/types';
 import type { UseMutationResult } from '@tanstack/react-query';
+import type { PaginationMeta } from '@tejas96/shared/types';
 
 // ── Filter Types ──────────────────────────────────────────────
 

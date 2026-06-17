@@ -14,7 +14,7 @@ import {
   ExpensePaidByType,
   FinanceSequenceScope,
   ReimbursementStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { DataSource, EntityManager } from 'typeorm';
 
 import { BomService } from '../../bom/services/bom.service';

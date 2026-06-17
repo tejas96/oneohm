@@ -6,7 +6,7 @@
  * @module features/customers/constants
  */
 
-import type { QuoteStatus } from '@oneohm-epc/shared/types';
+import type { QuoteStatus } from '@tejas96/shared/types';
 
 import type { BadgeProps } from '@/components/ui/badge';
 

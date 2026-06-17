@@ -1,6 +1,6 @@
 import { Body, Controller, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ResellerStatus } from '@oneohm-epc/shared/types';
+import { ResellerStatus } from '@tejas96/shared/types';
 
 import {
   ApiAction,

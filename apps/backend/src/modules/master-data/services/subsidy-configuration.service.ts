@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ProjectType, type SubsidyTier } from '@oneohm-epc/shared/types';
+import { ProjectType, type SubsidyTier } from '@tejas96/shared/types';
 
 import {
   CreateSubsidyConfigurationDto,

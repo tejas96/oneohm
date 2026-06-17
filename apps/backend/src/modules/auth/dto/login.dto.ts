@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserProfileType } from '@oneohm-epc/shared/types';
+import { UserProfileType } from '@tejas96/shared/types';
 import {
   IsEmail,
   IsEnum,

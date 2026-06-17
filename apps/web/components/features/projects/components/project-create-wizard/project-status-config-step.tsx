@@ -11,7 +11,7 @@ import IconButton from '@mui/material/IconButton';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { LookupTypeCode, type TaskStatus, type TaskStatusConfig } from '@oneohm-epc/shared/types';
+import { LookupTypeCode, type TaskStatus, type TaskStatusConfig } from '@tejas96/shared/types';
 import { useEffect, useRef } from 'react';
 import { type UseFormReturn } from 'react-hook-form';
 

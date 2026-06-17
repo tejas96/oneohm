@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { PaymentStatus, PurchaseOrderStatus } from '@oneohm-epc/shared/types';
+import { PaymentStatus, PurchaseOrderStatus } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import { ProductRepository } from '../../master-data/repositories';

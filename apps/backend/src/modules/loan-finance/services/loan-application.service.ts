@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { LoanStatus } from '@oneohm-epc/shared/types';
+import { LoanStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

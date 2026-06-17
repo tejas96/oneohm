@@ -1,4 +1,4 @@
-import { ExpenseCategory, ExpensePaidByType, PaymentMethod } from '@oneohm-epc/shared/types';
+import { ExpenseCategory, ExpensePaidByType, PaymentMethod } from '@tejas96/shared/types';
 import { z } from 'zod';
 
 import { expenseProductLineSchema } from './expense-product-line.schema';

@@ -14,7 +14,7 @@ import {
   Menu,
   MenuItem,
 } from '@mui/material';
-import { PaymentTransactionStatus } from '@oneohm-epc/shared/types';
+import { PaymentTransactionStatus } from '@tejas96/shared/types';
 import React, { useState, type JSX } from 'react';
 
 import { PAYMENT_STATUS_LABELS } from '../../projects/constants';

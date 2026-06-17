@@ -5,7 +5,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import CommentIcon from '@mui/icons-material/Comment';
 import EditIcon from '@mui/icons-material/Edit';
 import { Box, Button, Chip, Divider, IconButton, TextField } from '@mui/material';
-import type { TaskActivityEntry } from '@oneohm-epc/shared/types';
+import type { TaskActivityEntry } from '@tejas96/shared/types';
 import { useCallback, useEffect, useState } from 'react';
 
 import { ACTIVITY_TYPE_LABELS } from '../constants';

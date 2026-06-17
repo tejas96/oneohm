@@ -1,6 +1,6 @@
 'use client';
 
-import { CustomerStatus } from '@oneohm-epc/shared/types';
+import { CustomerStatus } from '@tejas96/shared/types';
 import { Building2, Edit, FileText, Mail, Phone, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';

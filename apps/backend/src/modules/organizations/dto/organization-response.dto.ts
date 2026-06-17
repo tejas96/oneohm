@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { OrganizationStatus } from '@oneohm-epc/shared/types';
+import { OrganizationStatus } from '@tejas96/shared/types';
 import { Exclude, Expose, Type } from 'class-transformer';
 
 /**

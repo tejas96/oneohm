@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared/types';
+import { ServiceRequestPriority, ServiceRequestStatus } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,

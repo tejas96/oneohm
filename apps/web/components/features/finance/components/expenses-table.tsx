@@ -20,8 +20,8 @@ import {
   EXPENSE_CATEGORY_LABELS,
   EXPENSE_PAID_BY_LABELS,
   REIMBURSEMENT_STATUS_LABELS,
-} from '@oneohm-epc/shared/constants';
-import { ExpensePaidByType, ReimbursementStatus } from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/constants';
+import { ExpensePaidByType, ReimbursementStatus } from '@tejas96/shared/types';
 import React, { useState, type JSX } from 'react';
 
 import { EXPENSE_CATEGORY_COLOR, REIMBURSEMENT_STATUS_COLOR } from '../constants';

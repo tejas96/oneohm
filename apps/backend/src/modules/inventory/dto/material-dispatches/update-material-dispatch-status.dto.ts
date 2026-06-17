@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MaterialDispatchStatus } from '@oneohm-epc/shared/types';
+import { MaterialDispatchStatus } from '@tejas96/shared/types';
 import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 
 /**

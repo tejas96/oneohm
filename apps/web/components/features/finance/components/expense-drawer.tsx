@@ -5,7 +5,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloseIcon from '@mui/icons-material/Close';
 import { Alert, Box, Button, CircularProgress, Drawer, IconButton } from '@mui/material';
-import { ExpenseCategory, ExpensePaidByType, PaymentMethod } from '@oneohm-epc/shared/types';
+import { ExpenseCategory, ExpensePaidByType, PaymentMethod } from '@tejas96/shared/types';
 import { type JSX, useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 

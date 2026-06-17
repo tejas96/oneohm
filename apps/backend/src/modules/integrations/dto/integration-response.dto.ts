@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IntegrationProvider, IntegrationCategory } from '@oneohm-epc/shared/types';
+import { IntegrationProvider, IntegrationCategory } from '@tejas96/shared/types';
 
 export class IntegrationResponseDto {
   @ApiProperty({

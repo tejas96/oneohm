@@ -2,7 +2,7 @@
 
 import DeviceThermostatOutlinedIcon from '@mui/icons-material/DeviceThermostatOutlined';
 import { Card, CardContent } from '@mui/material';
-import { LeadTemperature } from '@oneohm-epc/shared/types';
+import { LeadTemperature } from '@tejas96/shared/types';
 import * as React from 'react';
 import { useFormContext } from 'react-hook-form';
 

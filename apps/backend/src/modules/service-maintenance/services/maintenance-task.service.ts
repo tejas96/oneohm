@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { MaintenanceTaskStatus } from '@oneohm-epc/shared/types';
+import { MaintenanceTaskStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

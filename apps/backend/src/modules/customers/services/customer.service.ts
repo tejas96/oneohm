@@ -7,8 +7,8 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { CustomerStatus, UserProfileType, UserStatus } from '@oneohm-epc/shared/types';
-import { normalizePhoneToE164 } from '@oneohm-epc/shared/utils';
+import { CustomerStatus, UserProfileType, UserStatus } from '@tejas96/shared/types';
+import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';

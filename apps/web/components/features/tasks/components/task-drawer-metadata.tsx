@@ -6,7 +6,7 @@ import {
   type TaskPriority,
   type TaskStatus,
   type TaskStatusConfig,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { useMemo, useCallback } from 'react';
 

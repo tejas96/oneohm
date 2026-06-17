@@ -5,13 +5,13 @@ Shared types, utilities, schemas, and constants for OneOhm EPC applications (bac
 ## Sub-path Imports
 
 ```ts
-import { ProjectType, QuoteStatus } from '@oneohm-epc/shared/types';
-import { formatCurrency, debounce } from '@oneohm-epc/shared/utils';
-import { quoteBuilderSchema } from '@oneohm-epc/shared/schemas';
-import { LOAN_STATUS_LABELS } from '@oneohm-epc/shared/constants';
+import { ProjectType, QuoteStatus } from '@tejas96/shared/types';
+import { formatCurrency, debounce } from '@tejas96/shared/utils';
+import { quoteBuilderSchema } from '@tejas96/shared/schemas';
+import { LOAN_STATUS_LABELS } from '@tejas96/shared/constants';
 ```
 
-> In the monorepo, `@oneohm-epc/shared` resolves locally via tsconfig path aliases.
+> In the monorepo, `@tejas96/shared` resolves locally via tsconfig path aliases.
 > The mobile app installs `@tejas96/shared` from GitHub Packages and aliases it via babel/tsconfig.
 
 ## Structure

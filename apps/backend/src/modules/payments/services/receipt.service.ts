@@ -13,7 +13,7 @@ import {
   FinanceSequenceScope,
   PaymentTermStatus,
   PaymentTransactionStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 import { DataSource, EntityManager } from 'typeorm';
 
 import { DocumentEntity } from '../../documents/entities/document.entity';

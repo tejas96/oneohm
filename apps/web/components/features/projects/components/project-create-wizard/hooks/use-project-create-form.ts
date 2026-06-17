@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ProjectPriority, type TaskStatusConfig } from '@oneohm-epc/shared/types';
+import { ProjectPriority, type TaskStatusConfig } from '@tejas96/shared/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm, type UseFormReturn } from 'react-hook-form';

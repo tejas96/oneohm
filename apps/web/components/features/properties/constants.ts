@@ -2,7 +2,7 @@
  * Property Feature Constants
  *
  * Static configuration for forms, detail page, label maps, and badge variants.
- * All enum-derived filter options use Object.values() from @oneohm-epc/shared/types
+ * All enum-derived filter options use Object.values() from @tejas96/shared/types
  * so they stay in sync automatically when new enum members are added.
  */
 
@@ -11,7 +11,7 @@ import {
   PropertyStatus,
   PropertyType,
   QuoteStatus,
-} from '@oneohm-epc/shared/types';
+} from '@tejas96/shared/types';
 
 import { toTitleLabel } from '@/lib/utils';
 
@@ -153,5 +153,5 @@ export const QUOTE_STATUS_OPTIONS: ReadonlyArray<{ value: QuoteStatus; label: st
   Object.values(QuoteStatus).map((value) => ({ value, label: toTitleLabel(value) }));
 
 // Re-export enums so callers can import from this feature barrel, avoiding
-// deep imports into @oneohm-epc/shared/types for property-specific usage.
+// deep imports into @tejas96/shared/types for property-specific usage.
 export { LeadTemperature, PropertyStatus, PropertyType, QuoteStatus };

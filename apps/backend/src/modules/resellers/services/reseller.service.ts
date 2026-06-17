@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { ResellerStatus } from '@oneohm-epc/shared/types';
+import { ResellerStatus } from '@tejas96/shared/types';
 
 import { CreateResellerDto } from '../dto/create-reseller.dto';
 import { UpdateResellerDto } from '../dto/update-reseller.dto';

@@ -8,7 +8,7 @@ Solar EPC platform — CRM, project management, quoting, and field ops for solar
 |-------|-------|
 | Backend | NestJS 10 · TypeORM · PostgreSQL |
 | Web | Next.js 15 · React 19 · MUI 6 · Tailwind CSS · TanStack Query |
-| Shared | `@oneohm-epc/shared` (`/types`, `/utils`, `/schemas`, `/constants`) |
+| Shared | `@tejas96/shared` (`/types`, `/utils`, `/schemas`, `/constants`) |
 | Monorepo | Nx |
 
 ---
@@ -22,7 +22,7 @@ Solar EPC platform — CRM, project management, quoting, and field ops for solar
 5. **Multi-org isolation** — every query filters by `organizationId`.
 6. **Soft delete** — always check `deletedAt IS NULL`; never hard-delete.
 7. **Pagination required** — never return unbounded result sets.
-8. **Shared types** — cross-app types go in `@oneohm-epc/shared/types`; app-specific types stay in that app.
+8. **Shared types** — cross-app types go in `@tejas96/shared/types`; app-specific types stay in that app.
 
 ---
 
@@ -512,28 +512,28 @@ Unhandled items must be added as `// TODO:` comments.
 
 ## Shared Libraries (`libs/**/*.ts`)
 
-The `@oneohm-epc/shared` package contains code shared across backend, web, and mobile apps.
+The `@tejas96/shared` package contains code shared across backend, web, and mobile apps.
 
 ### Sub-path Imports
 
 | Import Path | Contains | Example |
 |-------------|----------|---------|
-| `@oneohm-epc/shared/types` | Interfaces, enums, type guards | `ProjectStatus`, `UserRole`, `MilestoneStatus` |
-| `@oneohm-epc/shared/utils` | Pure functions — no platform deps | `formatCurrency`, `parsePaginationParams`, `computeSolarImpact` |
-| `@oneohm-epc/shared/schemas` | Zod schemas shared across apps | Validation schemas |
-| `@oneohm-epc/shared/constants` | Static maps, config constants | `SOLAR_IMPACT_CONSTANTS`, label maps |
+| `@tejas96/shared/types` | Interfaces, enums, type guards | `ProjectStatus`, `UserRole`, `MilestoneStatus` |
+| `@tejas96/shared/utils` | Pure functions — no platform deps | `formatCurrency`, `parsePaginationParams`, `computeSolarImpact` |
+| `@tejas96/shared/schemas` | Zod schemas shared across apps | Validation schemas |
+| `@tejas96/shared/constants` | Static maps, config constants | `SOLAR_IMPACT_CONSTANTS`, label maps |
 
 ### Where Types Live
 
 | Scope | Location |
 |-------|----------|
-| Shared across apps | `@oneohm-epc/shared/types` |
+| Shared across apps | `@tejas96/shared/types` |
 | Backend only | `apps/backend/src/modules/[feature]/types/` |
 | Frontend only | `apps/web/lib/types/` |
 | NestJS decorators | `apps/backend/src/common/decorators/` |
 | Backend utils | `apps/backend/src/common/utils/` |
 
-**Rule:** If frontend needs it → `@oneohm-epc/shared/types`. Always.
+**Rule:** If frontend needs it → `@tejas96/shared/types`. Always.
 
 ### Shared Library Rules
 

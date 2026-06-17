@@ -1,6 +1,5 @@
 'use client';
 
-import type { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
 import {
   useMutation,
   useQuery,
@@ -8,6 +7,7 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query';
+import type { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 
 import { createResourceKeys, useOrgContext } from '../core';
 

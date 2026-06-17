@@ -4,16 +4,16 @@ globs: libs/**/*.ts
 
 # Shared Libraries Rules
 
-The `@oneohm-epc/shared` package contains code shared across backend, web, and mobile apps.
+The `@tejas96/shared` package contains code shared across backend, web, and mobile apps.
 
 ## Sub-path Imports
 
 | Import Path | Contains | Example |
 |-------------|----------|---------|
-| `@oneohm-epc/shared/types` | Interfaces, enums, type guards | `ProjectStatus`, `UserRole`, `MilestoneStatus` |
-| `@oneohm-epc/shared/utils` | Pure functions — no platform deps | `formatCurrency`, `parsePaginationParams`, `computeSolarImpact` |
-| `@oneohm-epc/shared/schemas` | Zod schemas shared across apps | Validation schemas |
-| `@oneohm-epc/shared/constants` | Static maps, config constants | `SOLAR_IMPACT_CONSTANTS`, label maps |
+| `@tejas96/shared/types` | Interfaces, enums, type guards | `ProjectStatus`, `UserRole`, `MilestoneStatus` |
+| `@tejas96/shared/utils` | Pure functions — no platform deps | `formatCurrency`, `parsePaginationParams`, `computeSolarImpact` |
+| `@tejas96/shared/schemas` | Zod schemas shared across apps | Validation schemas |
+| `@tejas96/shared/constants` | Static maps, config constants | `SOLAR_IMPACT_CONSTANTS`, label maps |
 
 ## Rules
 
@@ -28,7 +28,7 @@ The `@oneohm-epc/shared` package contains code shared across backend, web, and m
 
 | Scope | Location |
 |-------|----------|
-| Shared across apps | `@oneohm-epc/shared/types` |
+| Shared across apps | `@tejas96/shared/types` |
 | Backend only | `apps/backend/src/modules/[feature]/types/` |
 | Frontend only | `apps/web/lib/types/` |
 | NestJS decorators | `apps/backend/src/common/decorators/` |

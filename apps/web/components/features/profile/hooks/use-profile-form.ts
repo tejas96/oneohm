@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { UserGender } from '@oneohm-epc/shared/types';
+import { UserGender } from '@tejas96/shared/types';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
