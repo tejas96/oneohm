@@ -165,7 +165,7 @@ export function DocumentGridItem({
           >
             <DownloadIcon sx={{ fontSize: 20 }} />
           </IconButton>
-          {'id' in doc && 'entityType' in doc && (
+          {'id' in doc && !('status' in doc) && (
             <MoveDocumentPopover
               documentId={doc.id}
               currentEntityType={doc.entityType}

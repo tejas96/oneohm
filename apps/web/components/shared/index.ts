@@ -49,6 +49,7 @@ export {
   LeadTemperatureSelector,
   NumberStepper,
   CreatableCombobox,
+  MUIAddressAutocomplete,
 } from './forms';
 export type {
   RadioCardProps,
@@ -60,6 +61,7 @@ export type {
   NumberStepperProps,
   CreatableComboboxProps,
   ComboboxOption,
+  MUIAddressAutocompleteProps,
 } from './forms';
 
 // Search

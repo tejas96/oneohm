@@ -19,3 +19,6 @@ export { FieldLabel } from './field-label';
 
 export { CreatableCombobox } from './creatable-combobox';
 export type { CreatableComboboxProps, ComboboxOption } from './creatable-combobox';
+
+export { MUIAddressAutocomplete } from './mui-address-autocomplete';
+export type { MUIAddressAutocompleteProps } from './mui-address-autocomplete';

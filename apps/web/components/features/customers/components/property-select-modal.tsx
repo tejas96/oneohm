@@ -117,6 +117,7 @@ export function PropertySelectModal({
               };
               const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] || 'Property';
               const displayName = property.propertyName || property.address || 'Unnamed Property';
+              const showAddressLine = Boolean(property.propertyName && property.address);
 
               return (
                 <button
@@ -140,7 +141,7 @@ export function PropertySelectModal({
                           </Badge>
                         )}
                       </div>
-                      {property.address && (
+                      {showAddressLine && (
                         <p className="mt-0.5 flex items-center gap-1 text-sm text-foreground-secondary">
                           <MapPin className="size-3" />
                           <span className="truncate">

@@ -216,7 +216,7 @@ export function DocumentListItem({
             <DeleteOutlineIcon fontSize="small" />
           </IconButton>
         )}
-        {'id' in doc && 'entityType' in doc && (
+        {'id' in doc && !('status' in doc) && (
           <MoveDocumentPopover documentId={doc.id} currentEntityType={doc.entityType} />
         )}
       </Box>

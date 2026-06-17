@@ -95,11 +95,37 @@ export function PropertyCard({
       }
     : null;
 
-  // Format property display name
-  const displayName = property.propertyName || property.address || 'Unnamed Property';
-  const displayAddress = property.address
-    ? `${property.address}${property.city ? `, ${property.city}` : ''}`
-    : property.city || '';
+  // Format address properly without duplication
+  const getFormattedAddress = (): string => {
+    const addr = property.address;
+    if (!addr) return property.city || '';
+
+    const addrLower = addr.toLowerCase();
+    let result = addr;
+
+    if (property.city && !addrLower.includes(property.city.toLowerCase())) {
+      result += `, ${property.city}`;
+    }
+
+    const hasState = property.state && addrLower.includes(property.state.toLowerCase());
+    const hasPincode = property.pincode && addrLower.includes(property.pincode.toLowerCase());
+
+    if (property.state && !hasState) {
+      if (property.pincode && !hasPincode) {
+        result += `, ${property.state} - ${property.pincode}`;
+      } else {
+        result += `, ${property.state}`;
+      }
+    } else if (property.pincode && !hasPincode) {
+      result += `, ${property.pincode}`;
+    }
+
+    return result;
+  };
+
+  const displayAddress = getFormattedAddress();
+  const displayName = property.propertyName || displayAddress || 'Unnamed Property';
+  const showAddressLine = Boolean(property.propertyName && displayAddress);
 
   // Format monthly bill
   const formattedMonthlyBill = property.monthlyBill
@@ -198,7 +224,7 @@ export function PropertyCard({
         <div className="mb-2 flex items-start justify-between pr-8">
           <div className="min-w-0 flex-1">
             <h4 className="truncate font-medium text-foreground">{displayName}</h4>
-            {displayAddress && (
+            {showAddressLine && (
               <p className="truncate text-sm text-foreground-secondary">{displayAddress}</p>
             )}
           </div>
