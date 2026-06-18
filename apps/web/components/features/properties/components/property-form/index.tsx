@@ -274,7 +274,7 @@ export function PropertyForm({
 
   const onSubmit = async (data: CreatePropertyFormData | EditPropertyFormData): Promise<void> => {
     try {
-      if (isInactiveCustomer && !isEditMode) {
+      if (isInactiveCustomer) {
         showToast.error('Cannot perform this action: customer is inactive');
         return;
       }
@@ -367,7 +367,7 @@ export function PropertyForm({
   const isLastStep = activeStep === WIZARD_STEPS.length - 1;
 
   // Active step rendering helper
-  const renderStepComponent = () => {
+  const renderStepComponent = (): React.JSX.Element | null => {
     switch (activeStep) {
       case 0:
         return (
