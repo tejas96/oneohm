@@ -11,6 +11,7 @@ import { Alert } from '@/components/shared';
 import { MUIInput } from '@/components/ui';
 import { config } from '@/lib/config/config';
 import { useDebounce } from '@/lib/hooks';
+import { useConfig } from '@/providers/config-provider';
 
 type SearchOption =
   | string
@@ -424,7 +425,7 @@ function AddressAutocompleteForm({
       </div>
 
       {/* Map Section */}
-      {showMap && mapVisible && (
+      {showMap && mapVisible && !mapsError && (
         <Collapse in={mapVisible}>
           <AddressMapViewer
             latitude={currentLat}
@@ -441,7 +442,8 @@ function AddressAutocompleteForm({
  * Main MUIAddressAutocomplete Component
  */
 export function MUIAddressAutocomplete(props: MUIAddressAutocompleteProps): React.JSX.Element {
-  const apiKey = config.thirdParty.googleMapsApiKey;
+  const { mapsApiKey } = useConfig();
+  const apiKey = mapsApiKey || config.thirdParty.googleMapsApiKey;
 
   if (!apiKey) {
     return (

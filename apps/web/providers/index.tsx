@@ -9,6 +9,7 @@ import { type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 
 import { AuthProvider } from './auth-provider';
+import { ConfigProvider } from './config-provider';
 import { QueryProvider } from './query-provider';
 
 import { ErrorBoundary } from '@/components/shared/feedback/error-boundary';
@@ -17,13 +18,14 @@ import { muiTheme } from '@/lib/theme/mui-theme';
 
 interface ProvidersProps {
   children: ReactNode;
+  mapsApiKey?: string;
 }
 
 /**
  * Root Providers
  * Wraps the application with all necessary providers
  */
-export function Providers({ children }: ProvidersProps) {
+export function Providers({ children, mapsApiKey }: ProvidersProps): React.JSX.Element {
   return (
     <ErrorBoundary>
       <AppRouterCacheProvider options={{ enableCssLayer: true }}>
@@ -32,20 +34,22 @@ export function Providers({ children }: ProvidersProps) {
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <TooltipProvider delayDuration={200}>
               <QueryProvider>
-                <AuthProvider>
-                  {children}
-                  <Toaster
-                    position="top-right"
-                    richColors
-                    closeButton
-                    toastOptions={{
-                      duration: 4000,
-                      style: {
-                        fontFamily: 'Inter, system-ui, sans-serif',
-                      },
-                    }}
-                  />
-                </AuthProvider>
+                <ConfigProvider value={{ mapsApiKey }}>
+                  <AuthProvider>
+                    {children}
+                    <Toaster
+                      position="top-right"
+                      richColors
+                      closeButton
+                      toastOptions={{
+                        duration: 4000,
+                        style: {
+                          fontFamily: 'Inter, system-ui, sans-serif',
+                        },
+                      }}
+                    />
+                  </AuthProvider>
+                </ConfigProvider>
               </QueryProvider>
             </TooltipProvider>
           </LocalizationProvider>
