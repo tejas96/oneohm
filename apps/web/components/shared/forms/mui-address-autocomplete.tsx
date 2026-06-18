@@ -15,7 +15,7 @@ import { useConfig } from '@/providers/config-provider';
 
 type SearchOption =
   | string
-  | { label?: string; value?: string; disabled?: boolean; [key: string]: unknown };
+  | { label?: string; value?: string; disabled?: boolean;[key: string]: unknown };
 
 interface AutocompleteSearchOption {
   label: string;

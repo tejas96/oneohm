@@ -8,5 +8,4 @@ export * from './use-navigation-counts';
 export * from './use-url-filters';
 export * from './use-table-url-state';
 export * from './use-body-scroll-lock';
-export * from './use-google-maps-loader';
 export * from './resources';
