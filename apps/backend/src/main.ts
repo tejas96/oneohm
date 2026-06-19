@@ -9,6 +9,10 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
+  // Trust proxy headers (e.g. from Fly.io) to correctly resolve client IP addresses
+  // Trusting '1' hop prevents IP spoofing by only trusting Fly.io's gateway header additions.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   // Enable graceful shutdown hooks
   app.enableShutdownHooks();
 
@@ -50,19 +54,19 @@ async function bootstrap(): Promise<void> {
   // Swagger API Documentation
   const swaggerDescription = configService.isDevelopment
     ? 'OneOhm EPC Management System API Documentation\n\n' +
-      '## Authentication\n' +
-      '1. Use `/auth/login` with email/password OR `/auth/otp/request` + `/auth/otp/verify` for OTP login\n' +
-      '2. Copy the `accessToken` from response\n' +
-      '3. Click "Authorize" button and paste the token\n\n' +
-      '## Test Credentials (dev only)\n' +
-      '- Email: `admin@oneohm.com`\n' +
-      '- Password: `Admin@123`\n' +
-      '- OTP (dev mode): `123456`'
+    '## Authentication\n' +
+    '1. Use `/auth/login` with email/password OR `/auth/otp/request` + `/auth/otp/verify` for OTP login\n' +
+    '2. Copy the `accessToken` from response\n' +
+    '3. Click "Authorize" button and paste the token\n\n' +
+    '## Test Credentials (dev only)\n' +
+    '- Email: `admin@oneohm.com`\n' +
+    '- Password: `Admin@123`\n' +
+    '- OTP (dev mode): `123456`'
     : 'OneOhm EPC Management System API Documentation\n\n' +
-      '## Authentication\n' +
-      '1. Use `/auth/login` with email/password OR `/auth/otp/request` + `/auth/otp/verify` for OTP login\n' +
-      '2. Copy the `accessToken` from response\n' +
-      '3. Click "Authorize" button and paste the token';
+    '## Authentication\n' +
+    '1. Use `/auth/login` with email/password OR `/auth/otp/request` + `/auth/otp/verify` for OTP login\n' +
+    '2. Copy the `accessToken` from response\n' +
+    '3. Click "Authorize" button and paste the token';
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('OneOhm EPC API')
