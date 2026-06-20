@@ -58,7 +58,7 @@ export class AuthController {
   @UseGuards(SecurityRateLimitGuard, LocalAuthGuard)
   @SecurityRateLimit({
     eventType: SecurityEventType.LOGIN_FAILED,
-    trackBy: ['ipAddress'],
+    trackBy: ['email', 'ipAddress'],
     limits: [
       {
         count: 5,
@@ -237,7 +237,7 @@ export class AuthController {
   @UseGuards(SecurityRateLimitGuard)
   @SecurityRateLimit({
     eventType: SecurityEventType.PASSWORD_RESET_REQUESTED,
-    trackBy: ['ipAddress'],
+    trackBy: ['email', 'ipAddress'],
     limits: [
       {
         count: 3,

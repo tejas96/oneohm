@@ -10,8 +10,8 @@ async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
 
   // Trust proxy headers (e.g. from Fly.io) to correctly resolve client IP addresses
-  // Trusting '1' hop prevents IP spoofing by only trusting Fly.io's gateway header additions.
-  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  // Trusting '2' hops prevents IP spoofing by only trusting Fly.io's local VM proxy + edge gateway proxy.
+  app.getHttpAdapter().getInstance().set('trust proxy', 2);
 
   // Enable graceful shutdown hooks
   app.enableShutdownHooks();
