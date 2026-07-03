@@ -32,7 +32,8 @@
       "@tejas96/shared/types": ["../../libs/shared/src/types/index.ts"],
       "@tejas96/shared/utils": ["../../libs/shared/src/utils/index.ts"],
       "@tejas96/shared/schemas": ["../../libs/shared/src/schemas/index.ts"],
-      "@tejas96/shared/constants": ["../../libs/shared/src/constants/index.ts"]
+      "@tejas96/shared/constants": ["../../libs/shared/src/constants/index.ts"],
+      "@tejas96/shared/reports": ["../../libs/shared/src/reports/index.ts"]
     }
   },
   "include": [

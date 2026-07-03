@@ -1,0 +1,414 @@
+<!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Annexure-I &amp; Proforma-A</title>
+      <style>
+        /* fonts via base-report.css */
+  
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+        body {
+          font-family: 'Open Sans', 'Noto Sans', Arial, sans-serif;
+          font-size: 9pt;
+          color: #1a1a1a;
+          background: #fff;
+        }
+  
+        .pdf-page {
+          page-break-inside: auto;
+          break-inside: auto;
+        }
+  
+        /* ── MAHAVITARAN HEADER ── */
+        .maha-header {
+          display: block;
+          text-align: center;
+          padding: 10px 16px;
+          border: 1px solid #ccc;
+          margin-bottom: 0;
+        }
+  
+        .maha-header .title-cell {
+          text-align: center;
+        }
+  
+        .maha-header .title-cell .org-name {
+          font-size: 12pt;
+          font-weight: 700;
+          letter-spacing: 4px;
+          color: #1a1a1a;
+          line-height: 1.6;
+        }
+  
+        /* ── DOC TITLE BLOCK ── */
+        .doc-title-block {
+          text-align: center;
+          margin: 14px 0 10px 0;
+        }
+  
+        .doc-title-block .main-title {
+          font-size: 13pt;
+          font-weight: 700;
+          color: #1a1a1a;
+        }
+  
+        .doc-title-block .sub-title {
+          font-size: 11pt;
+          font-weight: 700;
+          color: #1a1a1a;
+          margin-top: 2px;
+        }
+  
+        .doc-title-block .sub-sub-title {
+          font-size: 10pt;
+          font-weight: 400;
+          color: #444;
+          margin-top: 2px;
+        }
+  
+        /* ── MAIN TABLE ── */
+        table.main-table {
+          font-size: 8.5pt;
+        }
+  
+        /*
+         * Background is set on th/td (not tr) — html2canvas (used for client-side
+         * PDF export) unreliably paints background-color set on <tr>/<thead>
+         * elements, especially combined with border-collapse. Cell-level
+         * background is rendered correctly by both the browser preview and
+         * html2canvas.
+         */
+        table.main-table thead th {
+          padding: 7px 10px;
+          font-weight: 600;
+          text-align: left;
+          border: 1px solid #1a1a1a;
+          background: #1a1a1a;
+          color: #fff;
+        }
+  
+        table.main-table thead th:first-child {
+          width: 8%;
+          text-align: center;
+        }
+  
+        table.main-table thead th:nth-child(2) {
+          width: 42%;
+        }
+  
+        table.main-table tbody tr:nth-child(even) td { background: #f5f5f5; }
+        table.main-table tbody tr:nth-child(odd) td  { background: #ffffff; }
+  
+        table.main-table tbody td {
+          padding: 6px 10px;
+          border: 1px solid #cccccc;
+          vertical-align: top;
+          line-height: 1.5;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+  
+        table.main-table tbody td:first-child {
+          text-align: center;
+          font-weight: 600;
+        }
+  
+        table.main-table tbody td.label { font-weight: 600; }
+  
+        table.main-table tbody td.label-sub {
+          font-weight: 400;
+          color: #444;
+          padding-left: 22px;
+        }
+  
+        /* ── SIGNATURE BLOCK ── */
+        .sig-bottom {
+          margin-top: 40px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          align-items: end;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+  
+        .sig-bottom .date-block {
+          font-size: 10pt;
+          font-weight: 600;
+          color: #1a1a1a;
+        }
+  
+        .sig-bottom .sig-block {
+          text-align: center;
+          font-size: 10pt;
+        }
+  
+        .sig-bottom .sig-block .sig-label {
+          font-weight: 600;
+          color: #1a1a1a;
+        }
+  
+        .sig-bottom .sig-block .sig-name {
+          font-weight: 700;
+          color: #1a1a1a;
+          margin-top: 4px;
+        }
+  
+        /* ── PROFORMA-A ── */
+        .proforma-title-block {
+          text-align: center;
+          margin-bottom: 16px;
+        }
+  
+        .proforma-title-block .p-heading {
+          font-size: 11pt;
+          font-weight: 700;
+          color: #1a1a1a;
+          line-height: 1.5;
+        }
+  
+        .proforma-body {
+          font-size: 10pt;
+          line-height: 1.8;
+          color: #1a1a1a;
+          text-align: justify;
+          margin-bottom: 32px;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+  
+        .proforma-sig-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+          margin-top: 36px;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+
+        .proforma-sig-box .sig-line {
+          border-top: 1px solid #1a1a1a;
+          padding-top: 6px;
+          font-size: 10pt;
+          font-weight: 600;
+          color: #1a1a1a;
+        }
+  
+        .proforma-final {
+          margin-top: 32px;
+          font-size: 10pt;
+          line-height: 1.8;
+          color: #1a1a1a;
+          text-align: justify;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+  
+        .proforma-officer-sig {
+          margin-top: 36px;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+  
+        .proforma-officer-sig .sig-line {
+          border-top: 1px solid #1a1a1a;
+          padding-top: 6px;
+          font-size: 10pt;
+          font-weight: 600;
+          color: #1a1a1a;
+          display: inline-block;
+          min-width: 200px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="pdf-wrapper">
+  
+        <!-- ═══════════════════════════ PAGE 1 — ANNEXURE-I ═══════════════════════════ -->
+        <div class="pdf-page">
+  
+          <div class="maha-header">
+            <div class="title-cell">
+              <div class="org-name">Maharashtra State Electricity</div>
+              <div class="org-name">Distribution Co. Ltd.</div>
+            </div>
+          </div>
+  
+          <div class="doc-title-block">
+            <div class="main-title">Renewable Energy Generating System</div>
+            <div class="sub-title">Annexure- I</div>
+            <div class="sub-sub-title">(Commissioning Report for RE System)</div>
+          </div>
+  
+          <table class="main-table">
+            <colgroup>
+              <col style="width: 8%" />
+              <col style="width: 42%" />
+              <col style="width: 50%" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>S No</th>
+                <th>Particulars</th>
+                <th>As commissioned</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td class="label">Name of the Consumer</td>
+                <td>{{consumer_name}}</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td class="label">Consumer Number</td>
+                <td>{{consumer_number}}</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td class="label">Mobile Number</td>
+                <td>{{mobile_number}}</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td class="label">E-mail</td>
+                <td>{{email}}</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td class="label">Address of Installation</td>
+                <td>{{address_of_installation}}</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td class="label">RE Arrangement Type</td>
+                <td>{{re_arrangement_type}}</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td class="label">RE Source</td>
+                <td>{{re_source}}</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td class="label">Sanctioned Capacity(KW)</td>
+                <td>{{sanctioned_capacity_kw}}</td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td class="label">Capacity Type</td>
+                <td>{{capacity_type}}</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td class="label">Project Model</td>
+                <td>{{project_model}}</td>
+              </tr>
+              <tr>
+                <td>11</td>
+                <td class="label">RE installed Capacity(Rooftop)(KW)</td>
+                <td>{{re_installed_capacity_rooftop_kw}}</td>
+              </tr>
+              <tr>
+                <td>12</td>
+                <td class="label">RE installed Capacity(Rooftop + Ground)(KW)</td>
+                <td>{{re_installed_capacity_rooftop_ground_kw}}</td>
+              </tr>
+              <tr>
+                <td>13</td>
+                <td class="label">RE installed Capacity(Ground)(KW)</td>
+                <td>{{re_installed_capacity_ground_kw}}</td>
+              </tr>
+              <tr>
+                <td>14</td>
+                <td class="label">Installation date</td>
+                <td>{{installation_date}}</td>
+              </tr>
+              <tr>
+                <td>15</td>
+                <td class="label" colspan="2">Solar PV Details</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td class="label-sub">Inverter Capacity(KW)</td>
+                <td>{{inverter_capacity_kw}}</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td class="label-sub">Inverter Make</td>
+                <td>{{inverter_make}}</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td class="label-sub">No. of PV Modules</td>
+                <td>{{no_of_pv_modules}}</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td class="label-sub">Module Capacity (KW)</td>
+                <td>{{module_capacity_kw}}</td>
+              </tr>
+            </tbody>
+          </table>
+  
+          <div class="sig-bottom">
+            <div class="date-block">Date :- {{installation_date}}</div>
+            <div class="sig-block">
+              <div class="sig-label">Signature of Consumer</div>
+              <div class="sig-name">{{consumer_name}}</div>
+            </div>
+          </div>
+  
+        </div><!-- end page 1 -->
+  
+        <!-- hard page break — html2pdf cuts exactly here -->
+        <div class="pdf-page-break"></div>
+  
+        <!-- ═══════════════════════════ PAGE 2 — PROFORMA-A ═══════════════════════════ -->
+        <div class="pdf-page">
+
+          <div class="doc-title-block">
+            <div class="sub-title">Annexure- I (continued)</div>
+          </div>
+
+          <div class="proforma-title-block">
+            <div class="p-heading">Proforma-A</div>
+            <div class="p-heading">COMMISSIONING REPORT (PROVISIONAL) FOR GRID CONNECTED SOLAR</div>
+            <div class="p-heading">PHOTOVOLTAIC POWER PLANT (with Net-metering facility)</div>
+          </div>
+  
+          <p class="proforma-body">
+            {{#ifAll re_installed_capacity_rooftop_kw address_of_installation district state vendor_name installation_date}}
+            Certified that a Grid Connected SPV Power Plant of <strong>{{dash re_installed_capacity_rooftop_kw}} KWp</strong> capacity has been installed at the site <strong>{{dash address_of_installation}}</strong> District <strong>{{dash district}}</strong> of <strong>{{dash state}}</strong> which has been installed by M/S <strong>{{dash vendor_name}}</strong> On <strong>{{dash installation_date}}</strong> The system is as per BIS/MNRE specifications. The system has been checked for its performance and found in order for further commissioning.
+            {{else}}
+            Certified that a Grid Connected SPV Power Plant has been installed at the site and
+            commissioned as per BIS/MNRE specifications. The system has been checked for its
+            performance and found in order for further commissioning.
+            {{/ifAll}}
+          </p>
+  
+          <div class="proforma-sig-row">
+            <div class="proforma-sig-box">
+              <div class="sig-line">{{consumer_name}}</div>
+              <div style="font-size:9.5pt; margin-top:4px; color:#444;">Signature of the beneficiary</div>
+            </div>
+            <div class="proforma-sig-box">
+              <div class="sig-line">&nbsp;</div>
+              <div style="font-size:9.5pt; margin-top:4px; color:#444;">Signature of the agency with name, seal and date</div>
+            </div>
+          </div>
+  
+          <p class="proforma-final">
+            The above RTS installation has been inspected by me for Pre-Commissioning Testing of Roof Top Solar Connection on date as per guidelines issued by the office of The Chief Engineer vide letter no 21653 on dt. 18.08.2022 and found in order for commissioning.
+          </p>
+  
+          <div class="proforma-officer-sig">
+            <div class="sig-line">Signature of the MSEDCL Officer Name,</div>
+          </div>
+  
+        </div><!-- end page 2 -->
+  
+      </div><!-- end pdf-wrapper -->
+    </body>
+  </html>

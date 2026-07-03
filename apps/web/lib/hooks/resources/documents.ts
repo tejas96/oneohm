@@ -27,6 +27,8 @@ import { extractFileKey } from '@/lib/utils';
 
 const documentKeys = createResourceKeys('documents');
 
+export { documentKeys };
+
 // ── Query Hooks ────────────────────────────────────────────────
 
 export function useDocumentsByEntity(

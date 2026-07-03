@@ -6,4 +6,5 @@ export {
   useUploadDocumentsBulk,
   useUpdateDocument,
   useDeleteDocument,
+  documentKeys,
 } from './use-documents';

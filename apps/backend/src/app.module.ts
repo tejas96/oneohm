@@ -35,6 +35,7 @@ import { PlatformModule } from './modules/platform/platform.module';
 import { ProjectExpensesModule } from './modules/project-expenses/project-expenses.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { ResellersModule } from './modules/resellers/resellers.module';
 import { SavedViewsModule } from './modules/saved-views/saved-views.module';
 import { SecurityEventsModule } from './modules/security-events/security-events.module';
@@ -92,6 +93,7 @@ import { UsersModule } from './modules/users/users.module';
     SiteActivitiesModule,
     StorageModule,
     SavedViewsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [

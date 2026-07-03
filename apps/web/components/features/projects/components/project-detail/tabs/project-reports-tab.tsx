@@ -1,31 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 
-import { ReportEditorModal } from '../reports/components/report-editor-page';
-import { ReportTemplateGrid } from '../reports/components/report-template-grid';
-import type { ReportTemplate } from '../reports/types/report.types';
+import { ReportChecklist } from '../reports/components/report-checklist';
+import { ReportEditorDrawer } from '../reports/components/report-editor-drawer';
 
 interface ProjectReportsTabProps {
   projectId: string;
 }
 
 export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.JSX.Element {
-  const [activeTemplate, setActiveTemplate] = useState<ReportTemplate | null>(null);
+  const [activeReportId, setActiveReportId] = useState<string | null>(null);
 
   return (
     <>
-      <ReportTemplateGrid projectId={projectId} onSelectTemplate={setActiveTemplate} />
-
-      {activeTemplate && (
-        <ReportEditorModal
-          key={activeTemplate.id}
-          open={!!activeTemplate}
-          onClose={() => setActiveTemplate(null)}
-          template={activeTemplate}
-          projectId={projectId}
-        />
-      )}
+      <ReportChecklist projectId={projectId} onOpenReport={setActiveReportId} />
+      <ReportEditorDrawer
+        reportId={activeReportId}
+        projectId={projectId}
+        open={!!activeReportId}
+        onClose={() => setActiveReportId(null)}
+      />
     </>
   );
 }

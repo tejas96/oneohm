@@ -7,7 +7,8 @@
       "@tejas96/shared/types": ["libs/shared/dist/types/index.d.ts"],
       "@tejas96/shared/utils": ["libs/shared/dist/utils/index.d.ts"],
       "@tejas96/shared/schemas": ["libs/shared/dist/schemas/index.d.ts"],
-      "@tejas96/shared/constants": ["libs/shared/dist/constants/index.d.ts"]
+      "@tejas96/shared/constants": ["libs/shared/dist/constants/index.d.ts"],
+      "@tejas96/shared/reports": ["libs/shared/dist/reports/index.d.ts"]
     }
   },
   "include": ["src/**/*"],
