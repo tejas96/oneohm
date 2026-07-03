@@ -53,9 +53,9 @@ jobs:
             ${{ runner.os }}-node-${{ env.NODE_VERSION }}-
 
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
-          npm ci --prefer-offline --no-audit
+          npm ci --no-audit
+          node -e "require('lightningcss-linux-x64-gnu'); console.log('lightningcss native binding OK')"
         env:
           CYPRESS_INSTALL_BINARY: 0
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1

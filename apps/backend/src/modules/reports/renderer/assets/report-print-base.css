@@ -1,0 +1,88 @@
+/*
+ * Shared print layout for all report templates.
+ * Used by browser iframe preview and client-side html2pdf.js PDF generation.
+ */
+
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #fff;
+}
+
+body {
+  font-family: 'Open Sans', 'Noto Sans', Arial, Helvetica, sans-serif;
+  font-size: 9pt;
+  line-height: 1.45;
+  color: #1a1a1a;
+  padding: 12mm;
+}
+
+.pdf-wrapper,
+.pdf-page {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+}
+
+.pdf-page-break {
+  page-break-after: always;
+  break-after: page;
+  height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+thead {
+  display: table-header-group;
+}
+
+tbody tr {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+tbody td,
+thead th {
+  vertical-align: top;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.header-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 9px;
+}
+
+.header-table td {
+  border: none;
+  border-bottom: 2px solid #1a1a1a;
+  padding: 0 0 6px 0;
+  vertical-align: bottom;
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.header-table td.doc-title {
+  text-align: right;
+}

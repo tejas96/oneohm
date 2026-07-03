@@ -30,6 +30,11 @@
       "types": "./dist/constants/index.d.ts",
       "import": "./dist/constants/index.mjs",
       "require": "./dist/constants/index.js"
+    },
+    "./reports": {
+      "types": "./dist/reports/index.d.ts",
+      "import": "./dist/reports/index.mjs",
+      "require": "./dist/reports/index.js"
     }
   },
   "files": [

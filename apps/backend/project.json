@@ -12,7 +12,18 @@
         "outputPath": "apps/backend/dist",
         "main": "apps/backend/src/main.ts",
         "tsConfig": "apps/backend/tsconfig.build.json",
-        "assets": [],
+        "assets": [
+          {
+            "input": "apps/backend/src/modules/reports",
+            "glob": "**/*.{hbs,css}",
+            "output": "modules/reports"
+          },
+          {
+            "input": "apps/backend/src/modules/reports/renderer/assets",
+            "glob": "**/*",
+            "output": "modules/reports/renderer/assets"
+          }
+        ],
         "generatePackageJson": true
       },
       "configurations": {

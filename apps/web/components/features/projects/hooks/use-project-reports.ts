@@ -1,27 +1,19 @@
 'use client';
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { DocumentEntityType, DocumentTag } from '@tejas96/shared/types';
+import { REPORT_CATALOG, getReportDocumentTags } from '@tejas96/shared/reports';
+import { DocumentEntityType, type DocumentTag } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
-
-import { REPORT_REGISTRY } from '../components/project-detail/reports/registry/report-registry';
-import type { ReportTemplate } from '../components/project-detail/reports/types/report.types';
 
 import { getDocuments, type DocumentRecord } from '@/lib/api/documents';
 import { useAuth } from '@/providers/auth-provider';
 
-const REPORT_TAGS: DocumentTag[] = [
-  DocumentTag.WCR,
-  DocumentTag.DCR,
-  DocumentTag.ANNEXURE_PROFORMA_A,
-  DocumentTag.NET_METERING_AGREEMENT,
-];
-
-const GENERATED_REPORTS_LIMIT = 20;
+const REPORT_TAGS: DocumentTag[] = getReportDocumentTags();
 
 export interface ProjectReportsData {
-  generated: DocumentRecord[];
-  available: ReportTemplate[];
+  saved: DocumentRecord[];
+  savedCount: number;
+  totalCount: number;
 }
 
 export const projectReportKeys = {
@@ -48,17 +40,15 @@ export function useProjectReports(
       });
 
       const reportTagSet = new Set(REPORT_TAGS);
-      const generated = docs
-        .filter((doc) => reportTagSet.has(doc.tag as DocumentTag))
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, GENERATED_REPORTS_LIMIT);
+      const saved = docs.filter((doc) => reportTagSet.has(doc.tag as DocumentTag));
 
-      const generatedTags = new Set(generated.map((doc) => doc.tag as DocumentTag));
-      const available = REPORT_REGISTRY.filter(
-        (template) => !generatedTags.has(template.documentTag),
-      );
-
-      return { generated, available };
+      return {
+        saved,
+        savedCount: REPORT_CATALOG.filter((schema) =>
+          saved.some((doc) => doc.tag === schema.documentTag),
+        ).length,
+        totalCount: REPORT_CATALOG.length,
+      };
     },
     enabled: !!projectId && !!organizationId && options?.enabled !== false,
     staleTime: 30_000,

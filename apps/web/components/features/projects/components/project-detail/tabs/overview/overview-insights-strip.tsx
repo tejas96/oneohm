@@ -104,10 +104,8 @@ export function OverviewInsightsStrip({
       },
       {
         label: 'Documents',
-        valueMain: String(reportsData?.generated.length ?? 0),
-        valueSuffix: reportsData
-          ? `/${reportsData.generated.length + reportsData.available.length}`
-          : undefined,
+        valueMain: String(reportsData?.savedCount ?? 0),
+        valueSuffix: reportsData ? `/${reportsData.totalCount}` : undefined,
         icon: FileText,
         href: `${projectPath}?tab=reports`,
         accentClass: 'bg-primary/8 text-primary ring-primary/15',

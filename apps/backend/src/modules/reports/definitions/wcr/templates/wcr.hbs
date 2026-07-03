@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Completion Report for Solar Power Plant</title>
+    <style>
+      /* fonts via base-report.css */
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Open Sans', 'Noto Sans', Arial, sans-serif;
+        font-size: 9pt;
+        color: #1a1a1a;
+        background: #fff;
+      }
+
+      /*
+       * Layout margins/padding: report-print-base.css (injected at render time).
+       * Logical pages are separated by .pdf-page-break markers.
+       */
+      .pdf-page {
+        page-break-inside: auto;
+        break-inside: auto;
+      }
+
+      /* header-table styles: report-print-base.css */
+
+      table {
+        font-size: 8.5pt;
+      }
+
+      /*
+       * Background is set on th/td (not tr) — html2canvas (used for client-side
+       * PDF export) unreliably paints background-color set on <tr>/<thead>
+       * elements, especially combined with border-collapse. Cell-level
+       * background is rendered correctly by both the browser preview and
+       * html2canvas.
+       */
+      thead th {
+        padding: 5px 7px;
+        font-weight: 600;
+        font-size: 8.5pt;
+        text-align: left;
+        border: 1px solid #1a1a1a;
+        background-color: #1a1a1a;
+        color: #ffffff;
+      }
+
+      thead th:first-child {
+        width: 8%;
+        text-align: center;
+      }
+
+      thead th:nth-child(2) {
+        width: 36%;
+      }
+
+      thead th:nth-child(3) {
+        width: 56%;
+      }
+
+      tbody tr {
+        /* prevent any single row from splitting across pages */
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      tbody td {
+        padding: 4px 7px;
+        border: 1px solid #cccccc;
+        vertical-align: top;
+        line-height: 1.45;
+        background: #ffffff;
+      }
+
+      tbody tr:nth-child(even) td {
+        background: #f5f5f5;
+      }
+
+      tbody td:first-child {
+        text-align: center;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      tbody td.label {
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      tbody td.label-sub {
+        font-weight: 400;
+        color: #444444;
+        padding-left: 18px;
+      }
+
+      tbody td.no {
+        color: #888;
+      }
+
+      /* ── PARAGRAPHS BELOW TABLE ── */
+      .text-block {
+        font-size: 8.5pt;
+        line-height: 1.5;
+        color: #1a1a1a;
+        margin-top: 7px;
+        text-align: justify;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .text-block strong {
+        font-weight: 700;
+        color: #1a1a1a;
+      }
+
+      /* ── SIGNATURE ROW ── */
+      .sig-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .sig-table td {
+        width: 50%;
+        border: none;
+        padding: 0 12px 0 0;
+        vertical-align: top;
+      }
+
+      .sig-table td:last-child {
+        padding: 0 0 0 12px;
+      }
+
+      .sig-box .sig-line {
+        border-top: 1px solid #1a1a1a;
+        padding-top: 5px;
+        font-size: 8.5pt;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      /* ── GUARANTEE PAGE ── */
+      .guarantee-heading {
+        font-size: 10.5pt;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 12px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .guarantee-text {
+        font-size: 9pt;
+        line-height: 1.65;
+        color: #1a1a1a;
+        text-align: justify;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .guarantee-text strong {
+        font-weight: 700;
+        color: #1a1a1a;
+      }
+
+      .identity-block {
+        margin-top: 24px;
+        font-size: 9pt;
+        line-height: 1.9;
+        color: #1a1a1a;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .identity-block strong {
+        font-weight: 700;
+        color: #1a1a1a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="pdf-wrapper">
+
+      <!-- ═══════════════════════════ PAGE 1 ═══════════════════════════ -->
+      <div class="pdf-page">
+
+        <table class="header-table">
+          <tr>
+            <td>{{vendor_name}}</td>
+            <td class="doc-title">Work Completion Report for Solar Power Plant</td>
+          </tr>
+        </table>
+
+        <table>
+          <colgroup>
+            <col style="width: 8%" />
+            <col style="width: 36%" />
+            <col style="width: 56%" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Sr.No</th>
+              <th>Component</th>
+              <th>Observation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td class="label">Name</td>
+              <td><strong>{{consumer_name}}</strong></td>
+            </tr>
+
+            <tr>
+              <td>2</td>
+              <td class="label">Consumer number</td>
+              <td><strong>{{consumer_number}}</strong></td>
+            </tr>
+
+            <tr>
+              <td>3</td>
+              <td class="label">Site/Location With Complete Address</td>
+              <td><strong>{{site_address}}</strong></td>
+            </tr>
+
+            <tr>
+              <td>4</td>
+              <td class="label">Category: Govt/Private Sector</td>
+              <td><strong>{{category}}</strong></td>
+            </tr>
+
+            <tr>
+              <td>5</td>
+              <td class="label">Sanction number</td>
+              <td><strong>{{sanction_number}}</strong></td>
+            </tr>
+
+            <tr>
+              <td>6</td>
+              <td class="label">Sanctioned Capacity of solar PV system (KW)</td>
+              <td><strong>{{sanctioned_capacity_kw}}</strong></td>
+            </tr>
+
+            <tr>
+              <td class="no"></td>
+              <td class="label">Installed Capacity of solar PV system (KW)</td>
+              <td><strong>{{installed_capacity_kw}}</strong></td>
+            </tr>
+
+            <tr>
+              <td>7</td>
+              <td class="label" colspan="2">Specification of the Modules</td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">Make of Module</td>
+              <td><strong>{{module_make}}</strong></td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">ALMM Model Number</td>
+              <td><strong>{{module_model_number}}</strong></td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">Wattage per module</td>
+              <td><strong>{{module_wattage}}</strong></td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">No. of Module</td>
+              <td><strong>{{module_count}}</strong></td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">Total Capacity (KWP)</td>
+              <td><strong>{{total_capacity_kwp}}</strong></td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">Warrantee Details (Product + Performance)</td>
+              <td><strong>{{module_warranty}}</strong></td>
+            </tr>
+
+            <tr>
+              <td>8</td>
+              <td class="label" colspan="2">PCU</td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">Make &amp; Model number of Inverter</td>
+              <td><strong>{{inverter_make_model}}</strong></td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">Rating</td>
+              <td><strong>{{inverter_rating}}</strong></td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">Type of charge controller/ MPPT</td>
+              <td><strong>{{charge_controller_type}}</strong></td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">Capacity of Inverter</td>
+              <td><strong>{{inverter_capacity}}</strong></td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">HPD</td>
+              <td><strong>{{inverter_hpd}}</strong></td>
+            </tr>
+            <tr>
+              <td class="no"></td>
+              <td class="label-sub">Year of manufacturing</td>
+              <td><strong>{{inverter_year_of_manufacturing}}</strong></td>
+            </tr>
+
+            <tr>
+              <td>9</td>
+              <td class="label">No of Separate Earthings with earth Resistance</td>
+              <td><strong>{{earthing_details}}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div><!-- end page 1 — table -->
+
+      <div class="pdf-page-break"></div>
+
+      <!-- ═══════════════════════════ PAGE 2 — CERTIFICATIONS ═══════════════════════════ -->
+      <div class="pdf-page">
+
+        <table class="header-table">
+          <tr>
+            <td>{{vendor_name}}</td>
+            <td class="doc-title">Work Completion Report for Solar Power Plant</td>
+          </tr>
+        </table>
+
+        <p class="text-block">
+          It is certified that the Earth Resistance measure in presence of Licensed Electrical
+          Contractor/Supervisor and found in order i.e. &lt; 5 Ohms as per MNRE OM Dtd. 07.06.24
+          for CFA Component.
+        </p>
+
+        <p class="text-block"><strong>{{lightning_arrester_text}}</strong></p>
+
+        <p class="text-block">
+          {{#ifAll vendor_name consumer_name consumer_number}}
+          We <strong>{{dash vendor_name}}</strong> &amp; <strong>{{dash consumer_name}}</strong> Consumer
+          Number <strong>{{dash consumer_number}}</strong> Ensured structural stability of installed
+          solar power plant and obtained requisite permissions from the concerned authority.
+          {{else}}
+          We hereby declare that structural stability of the installed solar power plant has been
+          ensured and requisite permissions from the concerned authority have been obtained.
+          {{/ifAll}}
+        </p>
+
+        <p class="text-block">
+          If in future, by virtue of any means due to collapsing or damage to installed solar power
+          plant, MSEDCL will not be held responsible for any loss to property or human life, if any.
+        </p>
+
+        <p class="text-block">
+          This is to Certified above Installed Solar PV System is working properly with electrical
+          safety &amp; Islanding switch in case of any presence of backup inverter an arrangement
+          should be made in such way the backup inverter supply should never be synchronized with
+          solar inverter to avoid any electrical accident due to back feeding. We will be held
+          responsible for non-working of islanding mechanism and back feed to the de-energized grid.
+        </p>
+
+        <table class="sig-table">
+          <tr>
+            <td class="sig-box">
+              <div class="sig-line">Signature [Vendor]</div>
+            </td>
+            <td class="sig-box">
+              <div class="sig-line">Signature [Consumer]</div>
+            </td>
+          </tr>
+        </table>
+
+      </div><!-- end page 2 -->
+
+      <div class="pdf-page-break"></div>
+
+      <!-- ═══════════════════════════ PAGE 3 — GUARANTEE ═══════════════════════════ -->
+      <div class="pdf-page">
+
+        <table class="header-table">
+          <tr>
+            <td>{{vendor_name}}</td>
+            <td class="doc-title">Work Completion Report for Solar Power Plant</td>
+          </tr>
+        </table>
+
+        <p class="guarantee-heading">Guarantee Certificate Undertaking to be submitted by VENDOR</p>
+
+        <p class="guarantee-text">
+          The undersigned will provide the services to the consumers for repairs/maintenance of the
+          RTS plant free of cost for <strong>{{cmc_period_years}} years</strong> of the
+          comprehensive Maintenance Contract (CMC) period from the date of commissioning of the
+          plant. Non performing/under-performing system component will be replaced/repaired free of
+          cost in the CMC period.
+        </p>
+
+        <table class="sig-table" style="margin-top: 40px">
+          <tr>
+            <td class="sig-box" style="width: 200px">
+              <div class="sig-line">Signature [Vendor]</div>
+              <div style="font-size: 9pt; margin-top: 6px; color: #444">Stamp &amp; Seal</div>
+            </td>
+            <td></td>
+          </tr>
+        </table>
+
+        <div class="identity-block">
+          <div>Identity Details of Consumer: &nbsp;<strong>{{consumer_id_type}}</strong></div>
+          <div>Aadhar Number: &nbsp;<strong>{{consumer_aadhaar_number}}</strong></div>
+        </div>
+
+      </div><!-- end page 3 -->
+
+    </div><!-- end pdf-wrapper -->
+  </body>
+</html>
