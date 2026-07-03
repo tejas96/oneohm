@@ -1,4 +1,4 @@
-import { readFileSync, existsSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import Handlebars from 'handlebars';
@@ -9,20 +9,42 @@ import {
 } from './report-handlebars.helpers';
 import { resolveReportAsset } from '../utils/report.utils';
 
+function readTextFileOrThrow(fullPath: string, notFoundMessage: string): string {
+  try {
+    return readFileSync(fullPath, 'utf8');
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    if (err.code === 'ENOENT') {
+      throw new Error(notFoundMessage);
+    }
+    throw error;
+  }
+}
+
+function readTextFileOrEmpty(fullPath: string): string {
+  try {
+    return readFileSync(fullPath, 'utf8');
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    if (err.code === 'ENOENT') {
+      return '';
+    }
+    throw error;
+  }
+}
+
 @Injectable()
 export class TemplateRendererService implements OnModuleInit {
   private readonly logger = new Logger(TemplateRendererService.name);
   private readonly compiled = new Map<
     string,
-    { template: HandlebarsTemplateDelegate; mtimeMs: number }
+    { template: HandlebarsTemplateDelegate; source: string }
   >();
   private baseCss = '';
 
   onModuleInit(): void {
     const cssPath = resolveReportAsset('renderer', 'assets', 'base-report.css');
-    if (existsSync(cssPath)) {
-      this.baseCss = readFileSync(cssPath, 'utf8');
-    }
+    this.baseCss = readTextFileOrEmpty(cssPath);
     registerReportHandlebarsHelpers();
   }
 
@@ -37,10 +59,10 @@ export class TemplateRendererService implements OnModuleInit {
 
   private injectPrintBaseCss(html: string): string {
     const printCssPath = resolveReportAsset('renderer', 'assets', 'report-print-base.css');
-    if (!existsSync(printCssPath)) {
+    const printCss = readTextFileOrEmpty(printCssPath);
+    if (!printCss) {
       return html;
     }
-    const printCss = readFileSync(printCssPath, 'utf8');
     const tag = `<style data-report-print-base>${printCss}</style>`;
     if (html.includes('</head>')) {
       return html.replace('</head>', `${tag}</head>`);
@@ -50,19 +72,16 @@ export class TemplateRendererService implements OnModuleInit {
 
   private getCompiled(templateFile: string): HandlebarsTemplateDelegate {
     const fullPath = resolveReportAsset(templateFile);
-    if (!existsSync(fullPath)) {
-      throw new Error(`Report template not found: ${fullPath}`);
-    }
+    const source = readTextFileOrThrow(fullPath, `Report template not found: ${fullPath}`);
 
-    const mtimeMs = statSync(fullPath).mtimeMs;
     const cached = this.compiled.get(templateFile);
-    if (cached?.mtimeMs === mtimeMs) {
+    if (cached?.source === source) {
       return cached.template;
     }
 
-    const source = autoDashFieldPlaceholders(readFileSync(fullPath, 'utf8'));
-    const compiled = Handlebars.compile(source, { noEscape: false });
-    this.compiled.set(templateFile, { template: compiled, mtimeMs });
+    const processed = autoDashFieldPlaceholders(source);
+    const compiled = Handlebars.compile(processed, { noEscape: false });
+    this.compiled.set(templateFile, { template: compiled, source });
     this.logger.log(`Compiled report template: ${templateFile}`);
     return compiled;
   }
