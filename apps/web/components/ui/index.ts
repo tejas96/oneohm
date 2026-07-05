@@ -204,6 +204,8 @@ export type { MUISwitchProps } from './mui-switch';
 // MUI Date Picker
 export { MUIDatePicker } from './mui-date-picker';
 export type { MUIDatePickerProps } from './mui-date-picker';
+export { MUIDateRangePicker } from './mui-date-range-picker';
+export type { MUIDateRangePickerProps } from './mui-date-range-picker';
 
 // MUI Shared (labels, ref utils)
 export { MUIFieldLabel, mergeRefs } from './mui-shared';

@@ -1,0 +1,92 @@
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import {
+  SalesPipelineQueryDto,
+  SalesPipelineTrendQueryDto,
+  type SalesPipelineDashboardResponseDto,
+  type SalesPipelineFunnelResponseDto,
+  type SalesPipelineLeaderboardResponseDto,
+  type SalesPipelineStatsResponseDto,
+  type SalesPipelineTrendResponseDto,
+} from './dto';
+import { SalesPipelineService } from './sales-pipeline.service';
+import { OrganizationContext } from '../../../../common/decorators';
+
+@ApiTags('Analytics')
+@Controller('analytics/sales-pipeline')
+export class SalesPipelineController {
+  constructor(private readonly salesPipelineService: SalesPipelineService) {}
+
+  @Get('dashboard')
+  @ApiOperation({
+    summary: 'Combined sales pipeline dashboard',
+    description:
+      'Single endpoint returning funnel, stats, leaderboard, and trend for the page. ' +
+      'Uses SQL aggregations — one round-trip instead of four parallel cohort scans.',
+  })
+  async getDashboard(
+    @OrganizationContext() organizationId: string,
+    @Query() query: SalesPipelineTrendQueryDto,
+  ): Promise<SalesPipelineDashboardResponseDto> {
+    return this.salesPipelineService.getDashboard(
+      organizationId,
+      query.fromDate,
+      query.toDate,
+      query.salesPersonId,
+      query.granularity ?? 'week',
+    );
+  }
+
+  @Get('funnel')
+  @ApiOperation({ summary: 'Sales funnel stage counts and values' })
+  async getFunnel(
+    @OrganizationContext() organizationId: string,
+    @Query() query: SalesPipelineQueryDto,
+  ): Promise<SalesPipelineFunnelResponseDto> {
+    return this.salesPipelineService.getFunnel(
+      organizationId,
+      query.fromDate,
+      query.toDate,
+      query.salesPersonId,
+    );
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Sales pipeline KPI statistics' })
+  async getStats(
+    @OrganizationContext() organizationId: string,
+    @Query() query: SalesPipelineQueryDto,
+  ): Promise<SalesPipelineStatsResponseDto> {
+    return this.salesPipelineService.getStats(
+      organizationId,
+      query.fromDate,
+      query.toDate,
+      query.salesPersonId,
+    );
+  }
+
+  @Get('by-salesperson')
+  @ApiOperation({ summary: 'Salesperson leaderboard' })
+  async getLeaderboard(
+    @OrganizationContext() organizationId: string,
+    @Query() query: SalesPipelineQueryDto,
+  ): Promise<SalesPipelineLeaderboardResponseDto> {
+    return this.salesPipelineService.getLeaderboard(organizationId, query.fromDate, query.toDate);
+  }
+
+  @Get('trend')
+  @ApiOperation({ summary: 'Leads vs won trend over time' })
+  async getTrend(
+    @OrganizationContext() organizationId: string,
+    @Query() query: SalesPipelineTrendQueryDto,
+  ): Promise<SalesPipelineTrendResponseDto> {
+    return this.salesPipelineService.getTrend(
+      organizationId,
+      query.fromDate,
+      query.toDate,
+      query.granularity ?? 'week',
+      query.salesPersonId,
+    );
+  }
+}

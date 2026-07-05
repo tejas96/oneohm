@@ -8,6 +8,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from './config';
 import { DatabaseModule } from './database/database.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AppConfigModule } from './modules/app-config/app-config.module';
 import { ApprovalModule } from './modules/approvals/approval.module';
 import { AuditModule } from './modules/audit/audit.module';
@@ -94,6 +95,7 @@ import { UsersModule } from './modules/users/users.module';
     StorageModule,
     SavedViewsModule,
     ReportsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [

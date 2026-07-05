@@ -443,6 +443,14 @@ const config: Config = {
             height: '0',
           },
         },
+        'wave-drift': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-80px)' },
+        },
+        'wave-drift-reverse': {
+          '0%': { transform: 'translateX(40px)' },
+          '100%': { transform: 'translateX(-40px)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.4s ease forwards',
@@ -451,6 +459,8 @@ const config: Config = {
         'slide-out-right': 'slide-out-right 0.2s ease-in',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'wave-drift': 'wave-drift 12s linear infinite',
+        'wave-drift-reverse': 'wave-drift-reverse 16s linear infinite',
       },
     },
   },

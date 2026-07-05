@@ -416,6 +416,7 @@ export {
 // Inventory — Stats (Part 10)
 export {
   resolveStatsWindow,
+  STATS_MAX_WINDOW_DAYS,
   usePoSpendTrend,
   usePoTopVendors,
   usePoSpendByWarehouse,
@@ -477,3 +478,22 @@ export {
   type ExportInventoryOptions,
   type UseInventoryExportReturn,
 } from './inventory-export';
+
+// Sales Pipeline
+export {
+  usePipelineDashboard,
+  usePipelineFunnel,
+  usePipelineStats,
+  usePipelineLeaderboard,
+  usePipelineTrend,
+  type PipelineDashboardResponse,
+  type PipelineFunnelResponse,
+  type PipelineFunnelStage,
+  type PipelineStatsResponse,
+  type PipelineTrendMetric,
+  type PipelineLeaderboardResponse,
+  type PipelineLeaderboardEntry,
+  type PipelineTrendResponse,
+  type PipelineTrendPoint,
+  type PipelineQueryOptions,
+} from './pipeline';
