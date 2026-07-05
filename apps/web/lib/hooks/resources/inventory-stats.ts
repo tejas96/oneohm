@@ -121,6 +121,8 @@ export interface ResolvedStatsWindow {
   toDate: string;
 }
 
+export const STATS_MAX_WINDOW_DAYS = 365;
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const PRESET_DAYS: Record<Exclude<StatsRangePreset, 'custom'>, number> = {
   '7d': 7,
@@ -141,6 +143,12 @@ function isValidIsoDate(value: string): boolean {
   return ISO_DATE.test(value) && !Number.isNaN(new Date(`${value}T00:00:00Z`).getTime());
 }
 
+function spanDaysInclusive(fromDate: string, toDate: string): number {
+  const start = new Date(`${fromDate}T00:00:00Z`).getTime();
+  const end = new Date(`${toDate}T00:00:00Z`).getTime();
+  return Math.floor((end - start) / (24 * 60 * 60 * 1000)) + 1;
+}
+
 /**
  * Translate `<TimeWindowPicker />` URL state into a concrete (fromDate,
  * toDate) pair. Returns `null` if the input is malformed (invalid
@@ -155,6 +163,7 @@ export function resolveStatsWindow(input: StatsWindowInput): ResolvedStatsWindow
     if (!fromDate || !toDate) return null;
     if (!isValidIsoDate(fromDate) || !isValidIsoDate(toDate)) return null;
     if (fromDate > toDate) return null;
+    if (spanDaysInclusive(fromDate, toDate) > STATS_MAX_WINDOW_DAYS) return null;
     return { fromDate, toDate };
   }
 
