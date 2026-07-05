@@ -71,7 +71,6 @@ export function PipelinePage(): React.JSX.Element {
 
       <SalesFunnelChart
         stages={funnel?.stages ?? []}
-        totalPipelineValue={stats?.totalPipelineValue}
         lostCount={funnel?.lostCount ?? 0}
         lostValue={funnel?.lostValue ?? 0}
         isLoading={showLoading}

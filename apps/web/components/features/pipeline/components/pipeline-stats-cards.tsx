@@ -7,7 +7,7 @@ import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import { Skeleton } from '@mui/material';
 import * as React from 'react';
 
-import { MUITypography } from '@/components/ui';
+import { HelpTooltip, MUITypography } from '@/components/ui';
 import type { PipelineStatsResponse, PipelineTrendMetric } from '@/lib/hooks/resources/pipeline';
 import { formatCurrency } from '@/lib/utils';
 
@@ -23,6 +23,7 @@ interface StatCardConfig {
   value: string;
   trend?: PipelineTrendMetric;
   icon: React.ReactNode;
+  helpText?: string;
 }
 
 function TrendBadge({ trend }: { trend: PipelineTrendMetric }): React.JSX.Element {
@@ -41,7 +42,7 @@ function TrendBadge({ trend }: { trend: PipelineTrendMetric }): React.JSX.Elemen
   return <span className={`text-xs font-medium ${colorClass}`}>{label}</span>;
 }
 
-function StatCard({ title, value, trend, icon }: StatCardConfig): React.JSX.Element {
+function StatCard({ title, value, trend, icon, helpText }: StatCardConfig): React.JSX.Element {
   return (
     <div className="rounded-lg border border-border-light bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
@@ -53,9 +54,12 @@ function StatCard({ title, value, trend, icon }: StatCardConfig): React.JSX.Elem
       <MUITypography variant="sectionTitle" className="text-foreground">
         {value}
       </MUITypography>
-      <MUITypography variant="timestamp" className="mt-1 text-foreground-secondary">
-        {title}
-      </MUITypography>
+      <div className="mt-1 flex items-center gap-1">
+        <MUITypography variant="timestamp" className="text-foreground-secondary">
+          {title}
+        </MUITypography>
+        {helpText && <HelpTooltip content={helpText} />}
+      </div>
     </div>
   );
 }
@@ -101,28 +105,36 @@ export function PipelineStatsCards({
 
   const cards: StatCardConfig[] = [
     {
-      title: 'Total Pipeline Value',
+      title: 'Active Quote Value',
       value: formatCurrency(stats.totalPipelineValue),
       trend: stats.trendVsPreviousPeriod.totalPipelineValue,
       icon: <TrendingUpRoundedIcon className="text-primary" fontSize="small" />,
+      helpText:
+        'Sum of quotes currently sent to or viewed by customers, awaiting their decision. ' +
+        'Excludes draft quotes not yet sent, and deals already won or lost.',
     },
     {
       title: 'Average Deal Size',
       value: formatCurrency(stats.avgDealSize),
       trend: stats.trendVsPreviousPeriod.avgDealSize,
       icon: <AttachMoneyRoundedIcon className="text-info" fontSize="small" />,
+      helpText: 'Average final quote value across deals won in the selected period.',
     },
     {
       title: 'Win Rate',
       value: `${stats.winRate}%`,
       trend: stats.trendVsPreviousPeriod.winRate,
       icon: <EmojiEventsRoundedIcon className="text-success" fontSize="small" />,
+      helpText:
+        'Won deals as a percentage of all decided deals (won + lost). Open deals are excluded.',
     },
     {
       title: 'Avg. Sales Cycle',
       value: `${stats.avgSalesCycleDays} days`,
       trend: stats.trendVsPreviousPeriod.avgSalesCycleDays,
       icon: <AccessTimeRoundedIcon className="text-warning" fontSize="small" />,
+      helpText:
+        'Average days from lead creation to quote acceptance, for deals won in the selected period.',
     },
   ];
 

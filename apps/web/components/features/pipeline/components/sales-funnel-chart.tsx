@@ -17,7 +17,6 @@ import { formatCurrency } from '@/lib/utils';
 
 interface SalesFunnelChartProps {
   stages: PipelineFunnelStage[];
-  totalPipelineValue?: number;
   lostCount: number;
   lostValue: number;
   isLoading: boolean;
@@ -33,7 +32,6 @@ function buildStageColorMap(): Record<string, string> {
 
 export function SalesFunnelChart({
   stages,
-  totalPipelineValue,
   lostCount,
   lostValue,
   isLoading,
@@ -48,7 +46,9 @@ export function SalesFunnelChart({
     [stages],
   );
 
-  const headerValue = totalPipelineValue ?? stages[0]?.value ?? 0;
+  // Matches the "NEW LEADS" row value directly below — total quote value across
+  // all leads in the cohort, regardless of quote status (draft, sent, won, etc.).
+  const headerValue = stages[0]?.value ?? 0;
 
   if (isLoading) {
     return <Skeleton variant="rounded" height={480} className="rounded-lg" />;

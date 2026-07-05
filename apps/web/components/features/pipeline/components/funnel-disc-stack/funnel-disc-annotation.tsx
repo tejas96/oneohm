@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import { discCenterPercent, type FunnelDiscGeometry } from './funnel-disc-stack.utils';
 
-import { MUITypography } from '@/components/ui';
+import { HelpTooltip, MUITypography } from '@/components/ui';
 import { cn, formatCurrency } from '@/lib/utils';
 
 interface FunnelDiscAnnotationProps {
@@ -54,6 +54,9 @@ export function FunnelDiscAnnotation({
           <MUITypography variant="bodyPrimary" className="font-semibold uppercase tracking-wide">
             {stage.label}
           </MUITypography>
+          {index === 0 && (
+            <HelpTooltip content="Includes value from all quotes for these leads, including drafts not yet sent to the customer. This differs from the 'Active Quote Value' card above, which only counts quotes currently sent/viewed." />
+          )}
           {stage.conversionRateFromPrevious !== null && index > 0 && (
             <span className="rounded-full bg-background-secondary px-1.5 py-0.5 text-[10px] font-medium text-foreground-secondary">
               {stage.conversionRateFromPrevious}% conv.
