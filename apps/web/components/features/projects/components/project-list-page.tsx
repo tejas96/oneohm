@@ -119,7 +119,14 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
 
   const status = raw.status;
   if (status && typeof status === 'string' && status !== 'all') {
-    result.status = status as ProjectStatus;
+    // Composite health status values from the status dropdown (e.g. 'health:delayed')
+    if (status.startsWith('health:')) {
+      const healthValue = status.slice('health:'.length);
+      result.status = ProjectStatus.ACTIVE;
+      result.healthStatus = healthValue;
+    } else {
+      result.status = status as ProjectStatus;
+    }
   }
 
   const priority = raw.priority;
@@ -552,13 +559,16 @@ export function ProjectListPage(): JSX.Element {
   const searchParams = useSearchParams();
 
   const statusParam = searchParams.get('status');
+  const healthStatusParam = searchParams.get('healthStatus');
 
   // URL-synced table state — owned by this page (controlled AdvancedTable pattern)
   const urlState = useTableUrlState({
     prefix: 'projects',
     defaultPageSize: 10,
     initialFilters: {
-      status: statusParam || 'active',
+      // Sidebar Overdue/At Risk links use ?status=active&healthStatus=delayed
+      // Encode as composite value so the filter dropdown shows the correct label
+      status: healthStatusParam ? `health:${healthStatusParam}` : statusParam || 'active',
     },
   });
 

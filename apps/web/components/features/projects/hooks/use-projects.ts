@@ -28,6 +28,7 @@ export interface ProjectFilters {
   toDate?: string;
   memberId?: string;
   pendingWorkflowStepId?: string;
+  healthStatus?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
   // Query control
@@ -132,6 +133,7 @@ export function useProjects(
       if (queryFilters.memberId) params.append('memberId', queryFilters.memberId);
       if (queryFilters.pendingWorkflowStepId)
         params.append('pendingWorkflowStepId', queryFilters.pendingWorkflowStepId);
+      if (queryFilters.healthStatus) params.append('healthStatus', queryFilters.healthStatus);
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
       if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 

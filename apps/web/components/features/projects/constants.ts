@@ -103,12 +103,18 @@ export function PHASE_LABELS(phase: string | null | undefined): string {
 /**
  * AdvancedTable select filterOptions — enum-driven, stays in sync automatically.
  * Use these in ColumnConfig.filterOptions for the project list AdvancedTable.
+ *
+ * Health-based filters use composite values ('health:delayed', 'health:at_risk')
+ * which are decoded in toProjectFilters() to set both status and healthStatus.
  */
-export const PROJECT_STATUS_OPTIONS: ReadonlyArray<{ value: ProjectStatus; label: string }> =
-  Object.values(ProjectStatus).map((v) => ({
+export const PROJECT_STATUS_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+  ...Object.values(ProjectStatus).map((v) => ({
     value: v,
     label: PROJECT_STATUS_LABELS[v] ?? toTitleLabel(v),
-  }));
+  })),
+  { value: 'health:delayed', label: 'Overdue' },
+  { value: 'health:at_risk', label: 'At Risk' },
+];
 
 export const PROJECT_PRIORITY_OPTIONS: ReadonlyArray<{ value: ProjectPriority; label: string }> =
   Object.values(ProjectPriority).map((v) => ({

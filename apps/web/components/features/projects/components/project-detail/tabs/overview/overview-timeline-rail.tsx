@@ -288,20 +288,50 @@ export function OverviewTimelineRail({
             })}
           </div>
 
-          {/* Labels (below the rail) */}
-          <div className="relative mt-4 h-10 select-none">
+          {/* Labels (below the rail) — staggered into two rows */}
+          <div
+            className="relative mt-0 select-none"
+            style={{ height: sorted.length > 6 ? '80px' : '48px' }}
+          >
             {sorted.map((milestone, idx) => {
               const kind = labelKind(statuses[idx] ?? 'pending');
               const cls = LABEL_CLASSES[kind];
               const pct = positions[idx] ?? 0;
+              // Stagger: even index → row 1 (closer), odd index → row 2 (further)
+              const isTopRow = idx % 2 === 0;
+              const connectorHeight = isTopRow ? 8 : 28;
               return (
                 <div
                   key={milestone.name}
-                  className="absolute top-0 -translate-x-1/2 text-center"
-                  style={{ left: `${pct}%`, width: '80px' }}
+                  className="absolute -translate-x-1/2 flex flex-col items-center"
+                  style={{ left: `${pct}%`, top: 0 }}
                 >
+                  {/* Connector line from dot to label */}
+                  <div
+                    className="w-px shrink-0"
+                    style={{
+                      height: `${connectorHeight}px`,
+                      backgroundColor:
+                        kind === 'completed'
+                          ? RAIL_COLORS.success
+                          : kind === 'active'
+                            ? RAIL_COLORS.primary
+                            : kind === 'blocked'
+                              ? 'rgb(239,68,68)'
+                              : RAIL_COLORS.track,
+                      opacity: 0.5,
+                    }}
+                  />
+                  {/* Label */}
                   <p
-                    className={`truncate text-[10px] sm:text-[11px] ${cls.name}`}
+                    className={`text-center text-[10px] leading-tight sm:text-[11px] ${cls.name}`}
+                    style={{
+                      width: '80px',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
                     title={milestone.name}
                   >
                     {milestone.name}

@@ -26,6 +26,8 @@ const STATUS_DOT_COLORS: Record<StatusDotColor, string> = {
   on_hold: 'bg-warning',
   completed_project: 'bg-foreground-tertiary',
   cancelled: 'bg-error',
+  overdue: 'bg-error',
+  at_risk: 'bg-warning',
 };
 
 // Badge variant mapping
@@ -91,28 +93,34 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
     if (hasQueryParams) {
       // Filtered views: exact full URL match only
       if (item.href.startsWith('/projects')) {
-        // Extract status from item.href (e.g. ?status=active or ?status=planning)
+        // Extract status and healthStatus from item.href
         const urlObj = new URL(item.href, 'http://localhost');
         const targetStatus = urlObj.searchParams.get('status');
+        const targetHealth = urlObj.searchParams.get('healthStatus');
 
-        // Extract status from current URL (prefixed or unprefixed)
+        // Extract status and healthStatus from current URL (prefixed or unprefixed)
         let currentStatus = searchParams.get('status');
+        let currentHealth = searchParams.get('healthStatus');
         if (!currentStatus) {
           const prefFilters = searchParams.get('projects_filters');
           if (prefFilters) {
             try {
               const parsedFilters = JSON.parse(prefFilters);
               currentStatus = parsedFilters.status;
+              currentHealth = parsedFilters.healthStatus ?? null;
             } catch (error) {
               console.log(error);
             }
           }
         }
-        // If neither exists, and targetStatus is 'active', then highlight it as default!
-        if (!currentStatus && targetStatus === 'active') {
+        // If neither exists, and targetStatus is 'active' with no healthStatus, highlight as default!
+        if (!currentStatus && targetStatus === 'active' && !targetHealth) {
           isActive = true;
         } else {
-          isActive = currentStatus === targetStatus;
+          const statusMatch = currentStatus === targetStatus;
+          // Both must match: items without healthStatus only match when current also has none
+          const healthMatch = (targetHealth ?? null) === (currentHealth ?? null);
+          isActive = statusMatch && healthMatch;
         }
       } else {
         isActive = currentFullUrl === item.href;
