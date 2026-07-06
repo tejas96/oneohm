@@ -39,7 +39,9 @@ export type StatusDotColor =
   | 'planning'
   | 'on_hold'
   | 'completed_project'
-  | 'cancelled';
+  | 'cancelled'
+  | 'overdue'
+  | 'at_risk';
 
 /** Base navigation item */
 export interface NavItem {

@@ -336,6 +336,18 @@ export const navigationConfig: NavigationConfig = {
                   statusDot: 'active' as const,
                 },
                 {
+                  id: 'projects-overdue',
+                  label: 'Overdue',
+                  href: `${ROUTES.PROJECTS.LIST}?status=active&healthStatus=delayed`,
+                  statusDot: 'overdue' as const,
+                },
+                {
+                  id: 'projects-at-risk',
+                  label: 'At Risk',
+                  href: `${ROUTES.PROJECTS.LIST}?status=active&healthStatus=at_risk`,
+                  statusDot: 'at_risk' as const,
+                },
+                {
                   id: 'projects-planning',
                   label: 'Planning',
                   href: `${ROUTES.PROJECTS.LIST}?status=planning`,

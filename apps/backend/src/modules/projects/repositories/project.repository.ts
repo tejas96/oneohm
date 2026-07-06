@@ -124,6 +124,7 @@ export class ProjectRepository {
       memberId?: string;
       currentUserId?: string;
       pendingWorkflowStepId?: string;
+      healthStatus?: string;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },
@@ -162,6 +163,19 @@ export class ProjectRepository {
 
     if (filters?.toDate) {
       query.andWhere('project.endDate <= :toDate', { toDate: filters.toDate });
+    }
+
+    // Health status filter — mirrors computeHealthStatus() logic in project.service.ts
+    if (filters?.healthStatus === 'delayed') {
+      query.andWhere("project.status NOT IN ('on_hold', 'completed', 'cancelled', 'planning')");
+      query.andWhere('project.endDate IS NOT NULL');
+      query.andWhere('project.endDate < CURRENT_DATE');
+    } else if (filters?.healthStatus === 'at_risk') {
+      query.andWhere("project.status NOT IN ('on_hold', 'completed', 'cancelled', 'planning')");
+      query.andWhere('project.endDate IS NOT NULL');
+      query.andWhere('project.endDate >= CURRENT_DATE');
+      query.andWhere("project.endDate < CURRENT_DATE + INTERVAL '14 days'");
+      query.andWhere('COALESCE(project.progressPercentage, 0) < 80');
     }
 
     if (filters?.memberId) {

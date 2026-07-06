@@ -94,6 +94,7 @@ export class ProjectService {
       memberId?: string;
       currentUserId?: string;
       pendingWorkflowStepId?: string;
+      healthStatus?: string;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },

@@ -127,6 +127,12 @@ export class ProjectController {
     description: 'Filter by pending workflow step task',
   })
   @ApiQuery({
+    name: 'healthStatus',
+    required: false,
+    enum: ['delayed', 'at_risk'],
+    description: 'Filter by computed health status (overdue or at-risk projects)',
+  })
+  @ApiQuery({
     name: 'sortBy',
     required: false,
     type: String,
@@ -163,11 +169,16 @@ export class ProjectController {
     @Query('memberId', new ParseUUIDPipe({ optional: true })) memberId?: string,
     @Query('pendingWorkflowStepId', new ParseUUIDPipe({ optional: true }))
     pendingWorkflowStepId?: string,
+    @Query('healthStatus') healthStatusRaw?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ): Promise<PaginatedResponse<ProjectListItemDto>> {
     const pageNum = Math.max(1, page ? parseInt(page, 10) || 1 : 1);
     const limitNum = Math.min(100, Math.max(1, limit ? parseInt(limit, 10) || 20 : 20));
+
+    // Validate healthStatus to only accept known values
+    const healthStatus =
+      healthStatusRaw === 'delayed' || healthStatusRaw === 'at_risk' ? healthStatusRaw : undefined;
 
     const isAdmin = hasAdminBypassRole(currentUser.roles || []);
     const effectiveMemberId = isAdmin ? memberId : currentUser.id;
@@ -183,6 +194,7 @@ export class ProjectController {
       memberId: effectiveMemberId,
       currentUserId: currentUser.id,
       pendingWorkflowStepId,
+      healthStatus,
       sortBy,
       sortOrder,
     });
