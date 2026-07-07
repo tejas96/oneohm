@@ -1,6 +1,38 @@
 import { z } from 'zod';
 
 import { ConnectionType, LeadTemperature, PropertyType } from '../types/enums';
+import {
+  CONSUMER_NUMBER_MESSAGE,
+  CONSUMER_NUMBER_REGEX,
+  normalizeConsumerNumber,
+} from '../utils/validation';
+
+const consumerNumberSchema = z
+  .string()
+  .transform(normalizeConsumerNumber)
+  .pipe(
+    z
+      .string()
+      .min(1, 'Consumer number is required')
+      .regex(CONSUMER_NUMBER_REGEX, CONSUMER_NUMBER_MESSAGE),
+  );
+
+const consumerNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Consumer name is required')
+  .max(255, 'Consumer name too long');
+
+const discomNameSchema = z
+  .string()
+  .min(1, 'Please select a DISCOM provider')
+  .max(100, 'DISCOM name too long');
+
+const connectionTypeSchema = z.nativeEnum(ConnectionType, {
+  errorMap: () => ({ message: 'Please select connection type' }),
+});
+
+const currentLoadSchema = z.string().max(50, 'Current load too long').optional().or(z.literal(''));
 
 export const createPropertySchema = z.object({
   customerId: z.string().uuid('Please select a customer'),
@@ -18,16 +50,17 @@ export const createPropertySchema = z.object({
     .max(6, 'Pincode must be 6 digits')
     .regex(/^\d{6}$/, 'Pincode must be 6 digits'),
   country: z.string().min(1, 'Country is required').max(100, 'Country too long'),
-  consumerNumber: z.string().max(50, 'Consumer number too long').optional().or(z.literal('')),
-  discomName: z.string().max(100, 'DISCOM name too long').optional().or(z.literal('')),
-  connectionType: z.nativeEnum(ConnectionType).optional(),
+  consumerNumber: consumerNumberSchema,
+  consumerName: consumerNameSchema,
+  discomName: discomNameSchema,
+  connectionType: connectionTypeSchema,
   sanctionedLoad: z
     .number({ coerce: true })
     .min(0.1, 'Sanctioned load must be greater than 0')
     .max(1000, 'Sanctioned load too high')
     .optional(),
+  currentLoad: currentLoadSchema,
   meterNumber: z.string().max(50, 'Meter number too long').optional().or(z.literal('')),
-  monthlyBill: z.number({ coerce: true }).min(0, 'Monthly bill cannot be negative').optional(),
   leadTemperature: z.nativeEnum(LeadTemperature, {
     errorMap: () => ({ message: 'Please select lead temperature' }),
   }),
@@ -43,6 +76,10 @@ export type AddPropertyFormData = z.infer<typeof addPropertySchema>;
 
 export const editPropertySchema = addPropertySchema.partial().extend({
   propertyName: z.string().min(1, 'Property name is required'),
+  consumerNumber: consumerNumberSchema,
+  consumerName: consumerNameSchema,
+  discomName: discomNameSchema,
+  connectionType: connectionTypeSchema,
 });
 export type EditPropertyFormData = z.infer<typeof editPropertySchema>;
 

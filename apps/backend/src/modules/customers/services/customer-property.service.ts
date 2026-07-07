@@ -32,6 +32,7 @@ import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
+import { assertUtilityDetailsComplete, hasUtilityFieldUpdate } from '../utils/utility-details.util';
 
 /**
  * Extended type for properties with quote info
@@ -110,6 +111,8 @@ export class CustomerPropertyService {
       status: createDto.status || PropertyStatus.ACTIVE,
       createdBy,
     });
+
+    assertUtilityDetailsComplete(property);
 
     // If this property is primary, unset other properties
     if (isPrimary && existingProperties > 0) {
@@ -369,6 +372,10 @@ export class CustomerPropertyService {
 
     if (!updated) {
       throw new NotFoundException(`Property with ID '${id}' not found`);
+    }
+
+    if (hasUtilityFieldUpdate(updateDto)) {
+      assertUtilityDetailsComplete(updated);
     }
 
     this.logger.log(`Property updated successfully: ${id}`);

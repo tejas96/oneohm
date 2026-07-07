@@ -396,14 +396,14 @@ async function seed(): Promise<void> {
          customer_id, organization_id, property_code, property_name,
          property_type, address, city, state, country, pincode,
          consumer_number, consumer_name, current_load,
-         connection_type, sanctioned_load, monthly_bill,
+         connection_type, sanctioned_load,
          lead_temperature, is_primary, status, created_by
        ) VALUES (
          $1, $2, 'PROP-001', 'Sunshine Apartments',
          'residential', '101 Sunshine Apartments, MG Road',
          'Pune', 'Maharashtra', 'India', '411001',
-         'MH12345678', 'AMIT PATEL', '5 KW',
-         'single_phase', 5.00, 2500.00,
+         '279692003475', 'AMIT PATEL', '5 KW',
+         'single_phase', 5.00,
          'warm', true, 'active', $3
        )
        ON CONFLICT (property_code) DO NOTHING`,

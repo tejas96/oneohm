@@ -61,10 +61,12 @@ export interface CustomerProperty {
   state?: string;
   /** Postal code */
   pincode?: string;
+  /** Name on electricity bill */
+  consumerName?: string;
   /** Lead temperature indicating conversion likelihood */
   leadTemperature: LeadTemperature;
-  /** Average monthly electricity bill in INR */
-  monthlyBill?: number;
+  /** Current electricity load (e.g. "5 KW") */
+  currentLoad?: string;
   /** Whether customer wants loan financing for this property */
   wantsLoan: boolean;
   /** Whether this is the primary property for the customer */

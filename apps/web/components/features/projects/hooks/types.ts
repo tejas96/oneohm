@@ -48,7 +48,7 @@ export interface ProjectDetailProperty {
   discomName?: string;
   connectionType?: string;
   sanctionedLoad?: number;
-  monthlyBill?: number;
+  currentLoad?: string;
   propertyName?: string;
   address?: string;
   city?: string;

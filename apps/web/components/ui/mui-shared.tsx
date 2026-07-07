@@ -15,6 +15,7 @@ export interface MUIFieldLabelProps {
   required?: boolean;
   tooltip?: React.ReactNode;
   htmlFor?: string;
+  id?: string;
 }
 
 export function MUIFieldLabel({
@@ -22,6 +23,7 @@ export function MUIFieldLabel({
   required,
   tooltip,
   htmlFor,
+  id,
 }: MUIFieldLabelProps): React.JSX.Element | null {
   if (!fieldLabel) return null;
   return (
@@ -36,6 +38,7 @@ export function MUIFieldLabel({
     >
       <Typography
         component="label"
+        id={id}
         htmlFor={htmlFor}
         sx={{
           fontSize: MUI_LABEL_FONT_SIZE,

@@ -3,6 +3,9 @@
 export { RadioCard, RadioCardGroup } from './radio-card';
 export type { RadioCardProps, RadioCardGroupProps } from './radio-card';
 
+export { ConnectionTypeSelector } from './connection-type-selector';
+export type { ConnectionTypeSelectorProps } from './connection-type-selector';
+
 export { PropertySelector } from './property-selector';
 export type { Property, PropertySelectorProps } from './property-selector';
 

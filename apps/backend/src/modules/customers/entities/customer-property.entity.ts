@@ -122,10 +122,6 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ name: 'meter_number', type: 'varchar', length: 50, nullable: true })
   meterNumber?: string;
 
-  // ==================== SITE DETAILS ====================
-  @Column({ name: 'monthly_bill', type: 'decimal', precision: 10, scale: 2, nullable: true })
-  monthlyBill?: number;
-
   // ==================== LEAD TRACKING ====================
   @Column({
     name: 'lead_temperature',

@@ -45,8 +45,6 @@ export interface CustomerPropertyResponse {
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
-  // Site Details
-  monthlyBill?: number;
   // Lead Tracking
   leadTemperature: LeadTemperature;
   // Flags

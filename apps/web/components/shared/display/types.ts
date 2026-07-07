@@ -53,11 +53,12 @@ export type ConnectionType = 'single' | 'three';
 
 export interface ConnectionData {
   consumerNumber?: string;
+  consumerName?: string;
   meterNumber?: string;
   connectionType?: ConnectionType;
   sanctionedLoad?: string;
   discom?: string;
-  avgMonthlyBill?: number;
+  currentLoad?: string;
 }
 
 // Loan interest display

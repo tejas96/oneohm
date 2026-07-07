@@ -69,7 +69,6 @@ export interface Property {
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
-  monthlyBill?: number;
   leadTemperature: LeadTemperature;
   isPrimary: boolean;
   wantsLoan: boolean;
@@ -116,7 +115,7 @@ export interface UpdatePropertyData {
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
-  monthlyBill?: number;
+  currentLoad?: string;
   leadTemperature?: LeadTemperature;
   wantsLoan?: boolean;
   status?: PropertyStatus;

@@ -21,6 +21,10 @@ export const REQUIRED_FIELD_KEYS = [
   'address',
   'city',
   'pincode',
+  'discomName',
+  'consumerName',
+  'consumerNumber',
+  'connectionType',
   'leadTemperature',
 ] as const;
 
@@ -38,11 +42,6 @@ export const PROPERTY_ALERTS = {
   },
   addressPrefill: {
     message: 'Address pre-filled from customer profile. You can modify it for this property.',
-  },
-  electricityTip: {
-    title: "Don't have the electricity bill?",
-    message:
-      'No worries \u2014 all fields here are optional. You can fill these details during the Site Visit.',
   },
   loanBenefits: {
     title: 'Loan Benefits',

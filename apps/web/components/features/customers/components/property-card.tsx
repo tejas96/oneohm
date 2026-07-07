@@ -1,6 +1,7 @@
 'use client';
 
 import { PropertyStatus, PropertyType } from '@tejas96/shared/types';
+import { formatCurrentLoadLabel } from '@tejas96/shared/utils';
 import { CircleDollarSign, Eye, FileText, Folder, MoreVertical, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -127,13 +128,9 @@ export function PropertyCard({
   const displayName = property.propertyName || displayAddress || 'Unnamed Property';
   const showAddressLine = Boolean(property.propertyName && displayAddress);
 
-  // Format monthly bill
-  const formattedMonthlyBill = property.monthlyBill
-    ? `₹${property.monthlyBill.toLocaleString('en-IN')}/month`
-    : null;
-
-  // Estimate system size based on monthly bill (rough estimate: 1kW per ₹1500/month)
-  const estimatedSystemSize = property.monthlyBill ? Math.round(property.monthlyBill / 1500) : null;
+  const loadLabel =
+    formatCurrentLoadLabel(property.currentLoad) ??
+    (property.sanctionedLoad ? `${property.sanctionedLoad} kW` : null);
 
   const handleViewDetails = (): void => {
     router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id }));
@@ -242,9 +239,10 @@ export function PropertyCard({
           </span>
 
           {/* System Size Badge */}
-          {estimatedSystemSize ? (
+          {loadLabel ? (
             <span className="flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              <Zap className="size-3" />~{estimatedSystemSize} kW (est.)
+              <Zap className="size-3" />
+              {loadLabel}
             </span>
           ) : null}
 
@@ -259,9 +257,7 @@ export function PropertyCard({
 
         {/* Footer Row: Monthly Bill + Quote Status */}
         <div className="flex items-center justify-between text-sm">
-          <span className="text-foreground-secondary">
-            {formattedMonthlyBill || 'Bill not set'}
-          </span>
+          <span className="text-foreground-secondary">{loadLabel || 'Load not set'}</span>
           {quoteStatusConfig ? (
             <span
               className={cn(
