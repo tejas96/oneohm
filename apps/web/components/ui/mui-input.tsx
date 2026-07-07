@@ -120,6 +120,21 @@ const defaultGetOptionLabel = (option: SearchOption): string => {
   return option.label ?? option.value ?? '';
 };
 
+/** Prevent scroll-wheel from changing focused native number inputs. */
+const mergeNumberInputWheelHandler = (
+  type: TextFieldProps['type'] | undefined,
+  onWheel?: React.WheelEventHandler<HTMLInputElement>,
+): React.WheelEventHandler<HTMLInputElement> | undefined => {
+  if (type !== 'number') return onWheel;
+
+  return (e) => {
+    onWheel?.(e);
+    if (!e.defaultPrevented) {
+      e.currentTarget.blur();
+    }
+  };
+};
+
 /* -------------------------------------------------------------------------- */
 /*  Component                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -221,6 +236,7 @@ const MUIInputInner = (
     /* eslint-enable @typescript-eslint/no-unused-vars */
 
     const tfProps = textFieldProps ?? {};
+    const tfNativeInputProps = tfProps.inputProps;
     const color: TextFieldProps['color'] =
       tfProps.color ?? (hasError ? 'error' : success ? 'success' : 'primary');
     const helperText = tfProps.helperText ?? errorMsg ?? successMsg;
@@ -304,6 +320,14 @@ const MUIInputInner = (
               color={color}
               error={hasError}
               helperText={helperText}
+              inputProps={{
+                ...params.inputProps,
+                ...tfNativeInputProps,
+                onWheel: mergeNumberInputWheelHandler(
+                  tfProps.type,
+                  tfNativeInputProps?.onWheel ?? params.inputProps?.onWheel,
+                ),
+              }}
               InputProps={{
                 ...params.InputProps,
                 ...tfProps.InputProps,
@@ -415,7 +439,13 @@ const MUIInputInner = (
           startAdornment: buildStart(inputProps?.startAdornment),
           endAdornment: buildEnd(inputProps?.endAdornment, showClear),
         }}
-        inputProps={{ ...nativeInputProps, step, min, max }}
+        inputProps={{
+          ...nativeInputProps,
+          step,
+          min,
+          max,
+          onWheel: mergeNumberInputWheelHandler(textFieldProps.type, nativeInputProps?.onWheel),
+        }}
       >
         {resolvedChildren}
       </TextField>

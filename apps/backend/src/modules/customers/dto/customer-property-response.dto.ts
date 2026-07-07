@@ -95,12 +95,6 @@ export class CustomerPropertyResponseDto {
   @Expose()
   meterNumber?: string;
 
-  // ==================== Site Details ====================
-  @ApiPropertyOptional()
-  @Expose()
-  @Transform(({ value }) => toNum(value))
-  monthlyBill?: number;
-
   // ==================== Lead Tracking ====================
   @ApiProperty({ enum: LeadTemperature })
   @Expose()

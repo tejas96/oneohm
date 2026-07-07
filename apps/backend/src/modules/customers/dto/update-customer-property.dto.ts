@@ -1,15 +1,19 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ConnectionType, LeadTemperature, PropertyType } from '@tejas96/shared/types';
-import { Type } from 'class-transformer';
+import { CONSUMER_NUMBER_REGEX } from '@tejas96/shared/utils';
+import { Type, Transform } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -74,11 +78,13 @@ export class UpdateCustomerPropertyDto {
 
   // ==================== Electricity/Consumer Details ====================
   @ApiPropertyOptional({
-    example: 'CN123456789',
-    description: 'Electricity consumer number',
+    example: '279692003475',
+    description: 'Electricity consumer number (10–12 digits)',
   })
+  @ValidateIf((o: UpdateCustomerPropertyDto) => o.consumerNumber !== undefined)
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
+  @Matches(CONSUMER_NUMBER_REGEX, { message: 'Consumer number must be 10–12 digits' })
   @MaxLength(50)
   consumerNumber?: string;
 
@@ -86,8 +92,10 @@ export class UpdateCustomerPropertyDto {
     example: 'Rajesh Kumar',
     description: 'Name on electricity bill',
   })
+  @ValidateIf((o: UpdateCustomerPropertyDto) => o.consumerName !== undefined)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   @MaxLength(255)
   consumerName?: string;
 
@@ -104,8 +112,9 @@ export class UpdateCustomerPropertyDto {
     example: 'MSEDCL',
     description: 'Electricity distribution company',
   })
+  @ValidateIf((o: UpdateCustomerPropertyDto) => o.discomName !== undefined)
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   @MaxLength(100)
   discomName?: string;
 
@@ -114,8 +123,9 @@ export class UpdateCustomerPropertyDto {
     example: ConnectionType.SINGLE_PHASE,
     description: 'Electricity connection type',
   })
+  @ValidateIf((o: UpdateCustomerPropertyDto) => o.connectionType !== undefined)
   @IsEnum(ConnectionType)
-  @IsOptional()
+  @IsNotEmpty()
   connectionType?: ConnectionType;
 
   @ApiPropertyOptional({
@@ -135,16 +145,6 @@ export class UpdateCustomerPropertyDto {
   @IsOptional()
   @MaxLength(50)
   meterNumber?: string;
-
-  // ==================== Site Details ====================
-  @ApiPropertyOptional({
-    example: 3500,
-    description: 'Average monthly electricity bill in INR',
-  })
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  monthlyBill?: number;
 
   // ==================== Lead Tracking ====================
   @ApiPropertyOptional({

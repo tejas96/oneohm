@@ -5,7 +5,6 @@ import { MapPin } from 'lucide-react';
 import type { ProjectDetail } from '../../../../hooks/types';
 
 import { Card, CardContent } from '@/components/ui';
-import { formatCurrency } from '@/lib/utils/format';
 
 interface OverviewSiteCardProps {
   project: ProjectDetail;
@@ -97,10 +96,12 @@ export function OverviewSiteCard({ project }: OverviewSiteCardProps): React.Reac
             </p>
           </div>
           <div>
-            <p className="text-[10px] text-foreground-tertiary uppercase">Avg Bill</p>
-            <p className="font-medium text-foreground">
-              {property.monthlyBill ? `${formatCurrency(property.monthlyBill)}/mo` : '—'}
-            </p>
+            <p className="text-[10px] text-foreground-tertiary uppercase">Current Load</p>
+            <p className="font-medium text-foreground">{property.currentLoad ?? '—'}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-foreground-tertiary uppercase">Consumer Name</p>
+            <p className="font-medium text-foreground">{property.consumerName ?? '—'}</p>
           </div>
           <div className="col-span-2">
             <p className="text-[10px] text-foreground-tertiary uppercase">Consumer Number</p>

@@ -72,11 +72,12 @@ const WIZARD_STEPS: StepConfig[] = [
     description: 'Electricity & DISCOM info',
     fields: [
       'discomName',
+      'consumerName',
       'consumerNumber',
       'connectionType',
       'sanctionedLoad',
+      'currentLoad',
       'meterNumber',
-      'monthlyBill',
     ],
   },
   {
@@ -171,14 +172,20 @@ export function PropertyForm({
     defaultValues: isEditMode
       ? {
           propertyName: '',
+          propertyType: PropertyType.RESIDENTIAL,
           address: '',
           city: '',
           state: '',
           pincode: '',
           country: '',
           consumerNumber: '',
+          consumerName: '',
           discomName: '',
+          connectionType: undefined,
+          sanctionedLoad: undefined,
+          currentLoad: '',
           meterNumber: '',
+          leadTemperature: undefined,
           notes: '',
           wantsLoan: false,
         }
@@ -193,11 +200,12 @@ export function PropertyForm({
           pincode: resolvedCustomer?.pincode || '',
           country: resolvedCustomer?.country || 'India',
           consumerNumber: '',
+          consumerName: '',
           discomName: '',
           connectionType: undefined,
           sanctionedLoad: undefined,
+          currentLoad: '',
           meterNumber: '',
-          monthlyBill: undefined,
           leadTemperature: undefined,
           wantsLoan: false,
           notes: '',
@@ -216,17 +224,32 @@ export function PropertyForm({
         pincode: initialData.pincode || '',
         country: initialData.country || '',
         consumerNumber: initialData.consumerNumber || '',
+        consumerName: initialData.consumerName || '',
         discomName: initialData.discomName ?? '',
         connectionType: initialData.connectionType as ConnectionType | undefined,
         sanctionedLoad: initialData.sanctionedLoad ?? undefined,
+        currentLoad: initialData.currentLoad || '',
         meterNumber: initialData.meterNumber || '',
-        monthlyBill: initialData.monthlyBill ?? undefined,
         leadTemperature: initialData.leadTemperature,
         wantsLoan: initialData.wantsLoan || false,
         notes: initialData.notes || '',
       });
     }
   }, [isEditMode, initialData, form]);
+
+  // Prefill consumer name from customer profile on create (do not overwrite user input)
+  React.useEffect(() => {
+    if (isEditMode || !resolvedCustomer) return;
+    const current = form.getValues('consumerName');
+    if (current?.trim()) return;
+    const fullName = [resolvedCustomer.firstName, resolvedCustomer.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    if (fullName) {
+      form.setValue('consumerName', fullName, { shouldDirty: false });
+    }
+  }, [isEditMode, resolvedCustomer, form]);
 
   // Sync customerId into form when it changes (create mode)
   React.useEffect(() => {

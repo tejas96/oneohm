@@ -5,7 +5,8 @@ import {
   PropertyStatus,
   PropertyType,
 } from '@tejas96/shared/types';
-import { Type } from 'class-transformer';
+import { CONSUMER_NUMBER_REGEX } from '@tejas96/shared/utils';
+import { Type, Transform } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -15,6 +16,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
   Min,
   ValidateNested,
@@ -88,23 +90,25 @@ export class CreateCustomerPropertyDto {
   pincode?: string;
 
   // ==================== Electricity/Consumer Details ====================
-  @ApiPropertyOptional({
-    example: 'CN123456789',
-    description: 'Electricity consumer number',
+  @ApiProperty({
+    example: '279692003475',
+    description: 'Electricity consumer number (10–12 digits)',
   })
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
+  @Matches(CONSUMER_NUMBER_REGEX, { message: 'Consumer number must be 10–12 digits' })
   @MaxLength(50)
-  consumerNumber?: string;
+  consumerNumber!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 'Rajesh Kumar',
     description: 'Name on electricity bill',
   })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   @MaxLength(255)
-  consumerName?: string;
+  consumerName!: string;
 
   @ApiPropertyOptional({
     example: '5 KW',
@@ -115,23 +119,23 @@ export class CreateCustomerPropertyDto {
   @MaxLength(50)
   currentLoad?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 'MSEDCL',
     description: 'Electricity distribution company',
   })
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   @MaxLength(100)
-  discomName?: string;
+  discomName!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     enum: ConnectionType,
     example: ConnectionType.SINGLE_PHASE,
     description: 'Electricity connection type',
   })
   @IsEnum(ConnectionType)
-  @IsOptional()
-  connectionType?: ConnectionType;
+  @IsNotEmpty()
+  connectionType!: ConnectionType;
 
   @ApiPropertyOptional({
     example: 5.0,
@@ -150,16 +154,6 @@ export class CreateCustomerPropertyDto {
   @IsOptional()
   @MaxLength(50)
   meterNumber?: string;
-
-  // ==================== Site Details ====================
-  @ApiPropertyOptional({
-    example: 3500,
-    description: 'Average monthly electricity bill in INR',
-  })
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  monthlyBill?: number;
 
   // ==================== Lead Tracking ====================
   @ApiPropertyOptional({

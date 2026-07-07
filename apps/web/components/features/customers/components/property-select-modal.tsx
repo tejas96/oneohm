@@ -1,6 +1,7 @@
 'use client';
 
 import { PropertyType } from '@tejas96/shared/types';
+import { formatCurrentLoadLabel } from '@tejas96/shared/utils';
 import { Building2, MapPin, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -161,10 +162,10 @@ export function PropertySelectModal({
                     <span className="rounded bg-white px-1.5 py-0.5 border border-border-light">
                       {typeLabel}
                     </span>
-                    {property.monthlyBill && (
+                    {formatCurrentLoadLabel(property.currentLoad) && (
                       <span className="flex items-center gap-1 text-foreground-secondary">
-                        <Zap className="size-3" />₹{property.monthlyBill.toLocaleString('en-IN')}
-                        /month
+                        <Zap className="size-3" />
+                        {formatCurrentLoadLabel(property.currentLoad)}
                       </span>
                     )}
                   </div>

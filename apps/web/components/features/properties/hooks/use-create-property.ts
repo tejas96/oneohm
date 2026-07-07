@@ -55,7 +55,7 @@ export interface PropertyResponse {
   sanctionedLoad?: number;
   consumerNumber?: string;
   meterNumber?: string;
-  monthlyBill?: number;
+  currentLoad?: string;
   leadTemperature: string;
   isPrimary: boolean;
   wantsLoan: boolean;

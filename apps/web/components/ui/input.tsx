@@ -114,6 +114,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       value,
       id,
       disabled,
+      onWheel,
       ...props
     },
     ref,
@@ -171,6 +172,16 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           value={value}
           disabled={disabled}
+          onWheel={
+            type === 'number'
+              ? (e) => {
+                  onWheel?.(e);
+                  if (!e.defaultPrevented) {
+                    e.currentTarget.blur();
+                  }
+                }
+              : onWheel
+          }
           className={cn(
             inputVariants({ size, variant: hasError ? 'error' : variant }),
             leftIcon && !prefix && 'pl-9',

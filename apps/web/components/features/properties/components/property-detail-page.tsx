@@ -272,18 +272,16 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
               </div>
               <div>
                 <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
+                  Current Load
+                </p>
+                <p className="text-sm text-foreground mt-0.5">{property.currentLoad || '-'}</p>
+              </div>
+              <div>
+                <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
                   Meter No.
                 </p>
                 <p className="text-sm text-foreground mt-0.5">{property.meterNumber || '-'}</p>
               </div>
-            </div>
-            <div className="border-t border-border-light pt-3">
-              <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
-                Average Monthly Bill
-              </p>
-              <p className="text-xl font-semibold text-foreground mt-1">
-                {property.monthlyBill ? formatCurrency(property.monthlyBill) : '-'}
-              </p>
             </div>
           </CardContent>
         </Card>

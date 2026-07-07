@@ -60,6 +60,13 @@ export const muiTheme = createTheme({
           padding: '6px 10px',
           height: 'auto',
           '&:focus-visible': { outline: 'none' },
+          '&[type=number]': {
+            MozAppearance: 'textfield',
+          },
+          '&[type=number]::-webkit-outer-spin-button, &[type=number]::-webkit-inner-spin-button': {
+            WebkitAppearance: 'none',
+            margin: 0,
+          },
           '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active':
             {
               WebkitBoxShadow: '0 0 0 30px #ffffff inset !important',

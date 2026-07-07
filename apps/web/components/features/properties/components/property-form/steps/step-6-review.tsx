@@ -76,11 +76,12 @@ export function Step6Review({
   const pincode = watch('pincode') as string;
 
   const discomName = watch('discomName') as string;
+  const consumerName = watch('consumerName') as string;
   const consumerNumber = watch('consumerNumber') as string;
   const connectionType = watch('connectionType') as ConnectionType | undefined;
   const sanctionedLoad = watch('sanctionedLoad') as number | undefined;
+  const currentLoad = watch('currentLoad') as string;
   const meterNumber = watch('meterNumber') as string;
-  const monthlyBill = watch('monthlyBill') as number | undefined;
 
   const leadTemperature = watch('leadTemperature') as LeadTemperature | undefined;
   const wantsLoan = Boolean(watch('wantsLoan'));
@@ -234,6 +235,14 @@ export function Step6Review({
                 </div>
                 <div>
                   <MUITypography variant="timestamp" className="text-foreground-secondary">
+                    Consumer Name
+                  </MUITypography>
+                  <MUITypography variant="bodyPrimary" className="font-medium mt-0.5">
+                    {consumerName || '—'}
+                  </MUITypography>
+                </div>
+                <div>
+                  <MUITypography variant="timestamp" className="text-foreground-secondary">
                     Consumer Number
                   </MUITypography>
                   <MUITypography variant="bodyPrimary" className="font-medium mt-0.5">
@@ -262,18 +271,18 @@ export function Step6Review({
                 </div>
                 <div>
                   <MUITypography variant="timestamp" className="text-foreground-secondary">
-                    Meter Number
+                    Current Load
                   </MUITypography>
                   <MUITypography variant="bodyPrimary" className="font-medium mt-0.5">
-                    {meterNumber || '—'}
+                    {currentLoad || '—'}
                   </MUITypography>
                 </div>
                 <div>
                   <MUITypography variant="timestamp" className="text-foreground-secondary">
-                    Avg. Monthly Bill
+                    Meter Number
                   </MUITypography>
                   <MUITypography variant="bodyPrimary" className="font-medium mt-0.5">
-                    {monthlyBill !== undefined ? `₹${monthlyBill}` : '—'}
+                    {meterNumber || '—'}
                   </MUITypography>
                 </div>
               </div>

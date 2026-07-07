@@ -178,3 +178,15 @@ export function formatSystemSize(kw: number | string): string {
   if (Number.isNaN(n)) return '0';
   return n % 1 === 0 ? String(Math.round(n)) : String(parseFloat(n.toFixed(2)));
 }
+
+/**
+ * Format current load varchar for display (e.g. "5" → "5 KW", "5 kw" → "5 KW").
+ */
+export function formatCurrentLoadLabel(currentLoad?: string | null): string | undefined {
+  if (!currentLoad?.trim()) return undefined;
+  const trimmed = currentLoad.trim();
+  if (trimmed.toLowerCase().includes('kw')) {
+    return trimmed.toUpperCase();
+  }
+  return `${trimmed} KW`;
+}

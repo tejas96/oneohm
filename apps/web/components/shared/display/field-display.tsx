@@ -454,6 +454,14 @@ function ConnectionDisplay({ data, size, className }: ConnectionDisplayProps) {
             </div>
           </div>
         )}
+        {data.consumerName && (
+          <div>
+            <div className="text-xs text-foreground-tertiary uppercase tracking-wide">
+              Consumer Name
+            </div>
+            <div className="text-sm font-medium text-foreground">{data.consumerName}</div>
+          </div>
+        )}
         {data.meterNumber && (
           <div>
             <div className="text-xs text-foreground-tertiary uppercase tracking-wide">
@@ -492,14 +500,12 @@ function ConnectionDisplay({ data, size, className }: ConnectionDisplayProps) {
             <div className="text-sm font-medium text-foreground">{data.discom}</div>
           </div>
         )}
-        {data.avgMonthlyBill !== undefined && (
+        {data.currentLoad && (
           <div>
             <div className="text-xs text-foreground-tertiary uppercase tracking-wide">
-              Avg. Monthly Bill
+              Current Load
             </div>
-            <div className="text-sm font-medium text-primary">
-              {formatCurrency(data.avgMonthlyBill)}
-            </div>
+            <div className="text-sm font-medium text-primary">{data.currentLoad}</div>
           </div>
         )}
       </div>

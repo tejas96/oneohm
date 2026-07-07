@@ -41,7 +41,6 @@ export interface PropertyItem {
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
-  monthlyBill?: number;
   leadTemperature: LeadTemperature;
   isPrimary: boolean;
   wantsLoan: boolean;
