@@ -1,9 +1,4 @@
-import {
-  SiteActivityStatus,
-  type GpsCoordinates,
-  type ShadingAnalysis,
-  type SurveyData,
-} from '@tejas96/shared/types';
+import { SiteActivityStatus, type ShadingAnalysis, type SurveyData } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
@@ -62,10 +57,6 @@ export class SiteActivityEntity extends BaseEntity {
 
   @Column({ name: 'completed_at', type: 'timestamptz', nullable: true })
   completedAt?: Date;
-
-  // Visit Data (captured by field worker)
-  @Column({ name: 'gps_coordinates', type: 'jsonb', nullable: true })
-  gpsCoordinates?: GpsCoordinates;
 
   @Column({
     name: 'available_roof_area_sqft',

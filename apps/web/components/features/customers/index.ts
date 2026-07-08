@@ -3,8 +3,11 @@
 // Constants
 export {
   CUSTOMER_DETAIL_TABS,
+  CUSTOMER_DETAIL_DEFAULT_TAB,
   QUOTE_STATUS_BADGE_VARIANT,
   DOCUMENT_TYPE_LABELS,
+  LEAD_SOURCE_LABELS,
+  CUSTOMER_STATUS_CHIP_COLOR,
 } from './constants';
 export { getDocumentTypeLabel } from './utils';
 
@@ -14,7 +17,6 @@ export type { CustomerDetailTab } from './constants';
 export { CustomerListPage } from './components/customer-list-page';
 export { CustomerDetailPage } from './components/customer-detail-page';
 export { CustomerForm } from './components/customer-form';
-export { DeleteCustomerModal } from './components/delete-customer-modal';
 export { ImportCustomersModal } from './components/import-customers-modal';
 export { PropertyCard } from './components/property-card';
 export { PropertySelectModal } from './components/property-select-modal';

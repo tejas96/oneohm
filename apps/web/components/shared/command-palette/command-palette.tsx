@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, FileText, Folder, Loader2, Search, Users } from 'lucide-react';
+import { Clock, FileText, Folder, Home, Loader2, Search, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -33,12 +33,14 @@ const ENTITY_TYPE_ICON: Record<RecentViewType, typeof Users> = {
   customer: Users,
   quote: FileText,
   project: Folder,
+  property: Home,
 };
 
 const ENTITY_ICON_STYLES: Record<RecentViewType, string> = {
   customer: 'bg-blue-50 text-blue-600',
   quote: 'bg-violet-50 text-violet-600',
   project: 'bg-emerald-50 text-emerald-600',
+  property: 'bg-amber-50 text-amber-700',
 };
 
 function ActionIcon({ icon: Icon }: { icon: typeof Users }) {
@@ -128,6 +130,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         customer: ROUTES.CUSTOMERS.DETAIL,
         quote: ROUTES.QUOTES.DETAIL,
         project: ROUTES.PROJECTS.DETAIL,
+        property: ROUTES.PROPERTIES.DETAIL,
       } as const;
 
       const href = buildRoute(routeMap[type], { id });

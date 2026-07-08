@@ -5,6 +5,7 @@ export {
   PROPERTY_ALERTS,
   REQUIRED_FIELD_KEYS,
   REQUIRED_FIELDS_TOTAL,
+  PROPERTY_DETAIL_DEFAULT_TAB,
   PROPERTY_DETAIL_TABS,
   PROPERTY_TYPE_LABELS,
   LEAD_TEMPERATURE_CONFIG,
@@ -15,11 +16,10 @@ export type { PropertyDetailTab } from './constants';
 // Components
 export { PropertyListPage } from './components/property-list-page';
 export { PropertyDetailPage } from './components/property-detail-page';
-export { PropertyDetailHeader } from './components/property-detail-header';
 export { PropertyForm } from './components/property-form';
 export { PropertyFormPage } from './components/property-form-page';
 export { MarkAsLostModal } from './components/mark-as-lost-modal';
-export { PropertyActivityTab } from './components/property-activity-tab';
+export { PropertyPipelineStrip, FollowupDrawer, MarkAsLostDialog } from './property-detail';
 
 // Hooks
 export {
@@ -34,6 +34,10 @@ export {
   useProperties,
   useProperty,
   usePropertyQuotes,
+  usePropertyLoan,
+  usePropertyFollowups,
+  useCreatePropertyFollowup,
+  useCompletePropertyFollowup,
 } from './hooks';
 
 export type {

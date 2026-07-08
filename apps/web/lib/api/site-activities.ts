@@ -1,6 +1,5 @@
 import type {
   SiteActivityStatus,
-  GpsCoordinates,
   ShadingAnalysis,
   SurveyData,
   PaginatedResponse,
@@ -18,7 +17,6 @@ export interface SiteActivity {
   isSiteSurveyDone: boolean;
   completedBy?: string;
   completedAt?: string;
-  gpsCoordinates?: GpsCoordinates;
   availableRoofAreaSqft?: number;
   shadingAnalysis?: ShadingAnalysis;
   notes?: string;
@@ -48,14 +46,12 @@ export interface SiteActivity {
 
 export interface CreateSiteActivityPayload {
   propertyId: string;
-  gpsCoordinates?: GpsCoordinates;
   availableRoofAreaSqft?: number;
   shadingAnalysis?: ShadingAnalysis;
   notes?: string;
 }
 
 export interface UpdateSiteActivityPayload {
-  gpsCoordinates?: GpsCoordinates;
   availableRoofAreaSqft?: number;
   shadingAnalysis?: ShadingAnalysis;
   notes?: string;

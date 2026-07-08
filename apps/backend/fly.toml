@@ -95,10 +95,7 @@ kill_timeout = '30s'
 
 # Deployment Configuration
 [deploy]
-  # Run migrations before starting new version (like Heroku release phase)
-  release_command = 'node src/scripts/run-migrations.js'
-  # Rolling deployment strategy
   strategy = 'rolling'
 
 [processes]
-  app = 'node src/main.js'
+  app = 'sh -c "node src/scripts/run-migrations.js && exec node src/main.js"'

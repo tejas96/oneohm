@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ConnectionType,
   LeadTemperature,
+  type GpsCoordinates,
   PropertyStatus,
   PropertyType,
   QuoteStatus,
@@ -64,6 +65,11 @@ export class CustomerPropertyResponseDto {
   @ApiPropertyOptional()
   @Expose()
   pincode?: string;
+
+  @ApiPropertyOptional({ description: 'GPS coordinates of the installation site' })
+  @Expose()
+  @Transform(({ obj }) => obj.gpsCoordinates)
+  gpsCoordinates?: GpsCoordinates;
 
   // ==================== Electricity/Consumer Details ====================
   @ApiPropertyOptional()

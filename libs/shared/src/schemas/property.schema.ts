@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { gpsCoordinatesSchema } from './coordinates.schema';
 import { ConnectionType, LeadTemperature, PropertyType } from '../types/enums';
 import {
   CONSUMER_NUMBER_MESSAGE,
@@ -50,6 +51,9 @@ export const createPropertySchema = z.object({
     .max(6, 'Pincode must be 6 digits')
     .regex(/^\d{6}$/, 'Pincode must be 6 digits'),
   country: z.string().min(1, 'Country is required').max(100, 'Country too long'),
+  gpsCoordinates: gpsCoordinatesSchema.optional(),
+  latitude: z.number({ coerce: true }).optional(),
+  longitude: z.number({ coerce: true }).optional(),
   consumerNumber: consumerNumberSchema,
   consumerName: consumerNameSchema,
   discomName: discomNameSchema,

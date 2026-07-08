@@ -4,6 +4,7 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import {
   ConnectionType,
   LeadTemperature,
+  type GpsCoordinates,
   type PropertyDocument,
   PropertyStatus,
   PropertyType,
@@ -28,6 +29,7 @@ export interface CustomerPropertyResponse {
   id: string;
   customerId: string;
   organizationId: string;
+  propertyCode?: string;
   // Property Details
   propertyName?: string;
   propertyType: PropertyType;
@@ -37,6 +39,7 @@ export interface CustomerPropertyResponse {
   state?: string;
   country?: string;
   pincode?: string;
+  gpsCoordinates?: GpsCoordinates;
   // Electricity/Consumer Details
   consumerNumber?: string;
   consumerName?: string;
@@ -65,12 +68,21 @@ export interface CustomerPropertyResponse {
   // Enriched: customer info (populated from customer relation)
   customerName?: string;
   customerPhone?: string;
+  customerEmail?: string;
   // Enriched: creator info (populated from creator relation)
   creatorName?: string;
   // Quote Info (enriched from quotes table)
+  latestQuoteId?: string;
   latestQuoteNumber?: string;
   latestQuoteStatus?: QuoteStatus;
   latestQuoteDate?: string;
+  latestQuoteFinalPrice?: number;
+  latestQuoteSystemSizeKw?: number;
+  project?: {
+    id: string;
+    status: string;
+    name: string;
+  };
 }
 
 // ============================================================================
@@ -101,6 +113,7 @@ export const propertyKeys = {
  */
 export function useCustomerProperties(
   customerId: string,
+  options?: { enabled?: boolean },
 ): UseQueryResult<CustomerPropertyResponse[], AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
@@ -114,7 +127,7 @@ export function useCustomerProperties(
       );
       return data;
     },
-    enabled: !!customerId && !!organizationId,
+    enabled: !!customerId && !!organizationId && options?.enabled !== false,
   });
 }
 

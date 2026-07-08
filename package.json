@@ -63,6 +63,7 @@
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
     "@mui/material-nextjs": "^7.3.9",
+    "@mui/x-data-grid": "^9.8.0",
     "@mui/x-date-pickers": "^8.27.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",

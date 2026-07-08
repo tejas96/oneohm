@@ -174,7 +174,10 @@ export function useCustomers(
 /**
  * Hook to fetch a single customer by ID
  */
-export function useCustomer(id: string): UseQueryResult<Customer, AxiosError> {
+export function useCustomer(
+  id: string,
+  options?: { enabled?: boolean },
+): UseQueryResult<Customer, AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 
@@ -186,7 +189,7 @@ export function useCustomer(id: string): UseQueryResult<Customer, AxiosError> {
       });
       return data;
     },
-    enabled: !!id && !!organizationId,
+    enabled: !!id && !!organizationId && options?.enabled !== false,
   });
 }
 

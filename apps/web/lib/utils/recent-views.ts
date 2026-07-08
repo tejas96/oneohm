@@ -1,4 +1,4 @@
-export type RecentViewType = 'customer' | 'quote' | 'project';
+export type RecentViewType = 'customer' | 'quote' | 'project' | 'property';
 
 export interface RecentViewItem {
   id: string;

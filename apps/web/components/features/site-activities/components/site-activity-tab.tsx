@@ -2,7 +2,6 @@
 
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import LockIcon from '@mui/icons-material/Lock';
 import StraightenIcon from '@mui/icons-material/Straighten';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
@@ -251,16 +250,11 @@ function PhaseCard({
 }
 
 function VisitDataSummary({ activity }: { activity: SiteActivity }): JSX.Element {
-  const gps = activity.gpsCoordinates;
   const roofArea = activity.availableRoofAreaSqft;
   const shading = activity.shadingAnalysis;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-      <DataRow
-        icon={<GpsFixedIcon sx={{ fontSize: 16 }} />}
-        label={gps ? `${gps.latitude.toFixed(6)}, ${gps.longitude.toFixed(6)}` : 'GPS not captured'}
-      />
       <DataRow
         icon={<StraightenIcon sx={{ fontSize: 16 }} />}
         label={roofArea ? `${roofArea} sq ft` : 'Roof area not measured'}

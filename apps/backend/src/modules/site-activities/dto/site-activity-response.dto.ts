@@ -1,10 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  SiteActivityStatus,
-  type GpsCoordinates,
-  type ShadingAnalysis,
-  type SurveyData,
-} from '@tejas96/shared/types';
+import { SiteActivityStatus, type ShadingAnalysis, type SurveyData } from '@tejas96/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../common/utils';
@@ -45,11 +40,6 @@ export class SiteActivityResponseDto {
 
   @ApiPropertyOptional() @Expose() completedBy?: string;
   @ApiPropertyOptional() @Expose() completedAt?: Date;
-
-  @ApiPropertyOptional()
-  @Expose()
-  @Transform(({ obj }) => obj.gpsCoordinates)
-  gpsCoordinates?: GpsCoordinates;
 
   @ApiPropertyOptional()
   @Expose()

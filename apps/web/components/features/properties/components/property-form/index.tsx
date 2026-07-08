@@ -36,6 +36,7 @@ import {
   type CreatePropertyFormData,
   type EditPropertyFormData,
 } from '../../schemas/property.schema';
+import { buildPropertyApiPayload } from '../../utils';
 
 import { useUploadDocumentsBulk } from '@/components/features/documents/hooks';
 import { Alert } from '@/components/shared';
@@ -64,7 +65,7 @@ const WIZARD_STEPS: StepConfig[] = [
     id: 'location',
     label: 'Location',
     description: 'Address & city details',
-    fields: ['address', 'city', 'state', 'pincode', 'country'],
+    fields: ['address', 'city', 'state', 'pincode', 'country', 'latitude', 'longitude'],
   },
   {
     id: 'utility',
@@ -178,6 +179,8 @@ export function PropertyForm({
           state: '',
           pincode: '',
           country: '',
+          latitude: undefined,
+          longitude: undefined,
           consumerNumber: '',
           consumerName: '',
           discomName: '',
@@ -199,6 +202,8 @@ export function PropertyForm({
           state: customerStateMatch || '',
           pincode: resolvedCustomer?.pincode || '',
           country: resolvedCustomer?.country || 'India',
+          latitude: undefined,
+          longitude: undefined,
           consumerNumber: '',
           consumerName: '',
           discomName: '',
@@ -223,6 +228,8 @@ export function PropertyForm({
         state: initialData.state ?? '',
         pincode: initialData.pincode || '',
         country: initialData.country || '',
+        latitude: initialData.gpsCoordinates?.latitude,
+        longitude: initialData.gpsCoordinates?.longitude,
         consumerNumber: initialData.consumerNumber || '',
         consumerName: initialData.consumerName || '',
         discomName: initialData.discomName ?? '',
@@ -302,11 +309,14 @@ export function PropertyForm({
         return;
       }
       if (isEditMode && propertyId) {
-        await updatePropertyMutation.mutateAsync({ id: propertyId, data });
+        await updatePropertyMutation.mutateAsync({
+          id: propertyId,
+          data: buildPropertyApiPayload(data),
+        });
         showToast.success('Property updated successfully');
         router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId }));
       } else {
-        const createData = data as CreatePropertyFormData;
+        const createData = buildPropertyApiPayload(data as CreatePropertyFormData);
         const created = await createPropertyMutation.mutateAsync(createData);
 
         const wantsLoan = Boolean(form.getValues('wantsLoan'));

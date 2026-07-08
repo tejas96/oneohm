@@ -40,6 +40,7 @@ interface EmployeeListResponse {
 export interface UseEmployeesOptions {
   status?: UserStatus;
   limit?: number;
+  enabled?: boolean;
 }
 
 // ============================================================================
@@ -65,7 +66,7 @@ export function useEmployees(
 ): UseQueryResult<Employee[], AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
-  const { status = UserStatus.ACTIVE, limit = 200 } = options;
+  const { status = UserStatus.ACTIVE, limit = 200, enabled = true } = options;
 
   return useQuery({
     queryKey: employeeKeys.list(organizationId, { status, limit }),
@@ -80,7 +81,7 @@ export function useEmployees(
       );
       return data.items;
     },
-    enabled: !!organizationId,
+    enabled: !!organizationId && enabled,
     // Employees don't change often — cache for 5 minutes
     staleTime: 5 * 60 * 1000,
   });

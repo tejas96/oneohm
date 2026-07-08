@@ -1,6 +1,7 @@
 import {
   ConnectionType,
   LeadTemperature,
+  type GpsCoordinates,
   type PropertyDocument,
   PropertyStatus,
   PropertyType,
@@ -99,6 +100,9 @@ export class CustomerPropertyEntity extends BaseEntity {
 
   @Column({ type: 'varchar', length: 10, nullable: true })
   pincode?: string;
+
+  @Column({ name: 'gps_coordinates', type: 'jsonb', nullable: true })
+  gpsCoordinates?: GpsCoordinates;
 
   // ==================== ELECTRICITY/CONSUMER DETAILS ====================
   @Column({ name: 'consumer_number', type: 'varchar', length: 50, nullable: true })

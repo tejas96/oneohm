@@ -42,3 +42,18 @@ export type { CustomerPropertyResponse } from '@/components/features/customers/h
 // Property quotes hook
 export { usePropertyQuotes } from './use-property-quotes';
 export type { CustomerQuote, CustomerQuotesResponse } from './use-property-quotes';
+
+// Property loan and follow-up hooks
+export { usePropertyLoan, propertyLoanKeys } from './use-property-loan';
+export {
+  usePropertyFollowups,
+  useCreatePropertyFollowup,
+  useCompletePropertyFollowup,
+  propertyFollowupKeys,
+} from './use-property-followups';
+
+export {
+  usePropertyFinanceSnapshot,
+  type PropertyFinanceSnapshot,
+  type UsePropertyFinanceSnapshotResult,
+} from './use-property-finance-snapshot';
