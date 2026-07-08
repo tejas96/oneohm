@@ -892,57 +892,38 @@ export class ProjectTaskService {
       projects: Array<{ id: string; name: string; projectNumber: string }>;
     };
   }> {
-    const [tasks, completedThisWeek, projects, statusMap, priorityMap] = await Promise.all([
-      this.taskRepository.findAllByUserId(userId, organizationId, filters),
-      this.taskRepository.countCompletedThisWeek(userId, organizationId),
-      this.taskRepository.findUserTaskProjects(userId, organizationId),
-      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
-      this.getLookupMap(LookupTypeCode.PRIORITY),
-    ]);
+    const hasListFilters = Boolean(
+      filters.status ||
+        filters.priority ||
+        filters.projectId ||
+        filters.search ||
+        filters.dueDateFilter,
+    );
+
+    const filteredTasksQuery = this.taskRepository.findAllByUserId(userId, organizationId, filters);
+    const unfilteredTasksQuery = hasListFilters
+      ? this.taskRepository.findAllByUserId(userId, organizationId, {})
+      : filteredTasksQuery;
+
+    const [tasks, allTasksUnfiltered, completedThisWeek, statusMap, priorityMap] =
+      await Promise.all([
+        filteredTasksQuery,
+        unfilteredTasksQuery,
+        this.taskRepository.countCompletedThisWeek(userId, organizationId),
+        this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
+        this.getLookupMap(LookupTypeCode.PRIORITY),
+      ]);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const depNameMap = new Map<string, string>();
-    const depCodeMap = new Map<string, string>();
-    const depStatusMap = new Map<string, TaskStatus>();
+    const enrichedTasks = await this.resolveVisibleMyTasks(tasks, today, statusMap, priorityMap);
 
-    const projectIdsWithDeps = new Set<string>();
-    for (const task of tasks) {
-      depNameMap.set(task.id, task.nameOverride ?? task.workflowStep?.name ?? task.code);
-      depCodeMap.set(task.id, task.code);
-      depStatusMap.set(task.id, task.status);
-      if (task.dependsOnTaskIds?.length) {
-        projectIdsWithDeps.add(task.projectId);
-      }
-    }
+    const allVisibleTasks = hasListFilters
+      ? await this.resolveVisibleMyTasks(allTasksUnfiltered, today, statusMap, priorityMap)
+      : enrichedTasks;
 
-    if (projectIdsWithDeps.size > 0) {
-      const projectTaskLoads = Array.from(projectIdsWithDeps).map((pid) =>
-        this.taskRepository.findByProjectRaw(pid, { relations: ['workflowStep'] }),
-      );
-      const allProjectTasks = (await Promise.all(projectTaskLoads)).flat();
-      for (const pt of allProjectTasks) {
-        if (!depNameMap.has(pt.id)) {
-          depNameMap.set(pt.id, pt.nameOverride ?? pt.workflowStep?.name ?? pt.code);
-        }
-        if (!depCodeMap.has(pt.id)) {
-          depCodeMap.set(pt.id, pt.code);
-        }
-        if (!depStatusMap.has(pt.id)) {
-          depStatusMap.set(pt.id, pt.status);
-        }
-      }
-    }
-
-    const allEnrichedTasks = tasks.map((task) =>
-      this.enrichMyTask(task, today, depNameMap, depStatusMap, depCodeMap, statusMap, priorityMap),
-    );
-
-    // Exclude tasks that are blocked by unresolved dependencies — these cannot be actioned
-    // and must not appear in "My Tasks". hasDependencyBlockers is computed at runtime from
-    // dependency statuses, so this filter must happen here (not in SQL).
-    const enrichedTasks = allEnrichedTasks.filter((t) => !t.hasDependencyBlockers);
+    const projects = this.extractMyTaskProjects(allVisibleTasks);
 
     // Summary counts are derived from enrichedTasks (post-filter) rather than independent DB
     // queries. This is a deliberate exception to the "aggregate counts must be independent"
@@ -960,16 +941,14 @@ export class ProjectTaskService {
       (t) => (t.endDate as string | undefined) === todayStr,
     ).length;
 
-    // Only expose projects that have at least one visible task
-    const visibleProjectIds = new Set(enrichedTasks.map((t) => t.projectId as string));
-    const visibleProjects = projects.filter((p) => visibleProjectIds.has(p.id));
-
+    // Project filter dropdown: projects with at least one actionable (non-blocked) task,
+    // ignoring list filters so users can switch projects without clearing status/search first.
     const summary = {
       total: visibleTotal,
       overdue: visibleOverdue,
       dueToday: visibleDueToday,
       completedThisWeek,
-      projects: visibleProjects,
+      projects,
     };
 
     const groups = await this.buildGroups(enrichedTasks, groupBy, today, statusMap, priorityMap);
@@ -1528,6 +1507,68 @@ export class ProjectTaskService {
     }
 
     return entries;
+  }
+
+  private async resolveVisibleMyTasks(
+    tasks: ProjectTaskEntity[],
+    today: Date,
+    statusMap: Map<string, { label: string; metadata: Record<string, unknown> }>,
+    priorityMap: Map<string, { label: string; metadata: Record<string, unknown> }>,
+  ): Promise<EnrichedMyTask[]> {
+    const depNameMap = new Map<string, string>();
+    const depCodeMap = new Map<string, string>();
+    const depStatusMap = new Map<string, TaskStatus>();
+
+    const projectIdsWithDeps = new Set<string>();
+    for (const task of tasks) {
+      depNameMap.set(task.id, task.nameOverride ?? task.workflowStep?.name ?? task.code);
+      depCodeMap.set(task.id, task.code);
+      depStatusMap.set(task.id, task.status);
+      if (task.dependsOnTaskIds?.length) {
+        projectIdsWithDeps.add(task.projectId);
+      }
+    }
+
+    if (projectIdsWithDeps.size > 0) {
+      const projectTaskLoads = Array.from(projectIdsWithDeps).map((pid) =>
+        this.taskRepository.findByProjectRaw(pid, { relations: ['workflowStep'] }),
+      );
+      const allProjectTasks = (await Promise.all(projectTaskLoads)).flat();
+      for (const pt of allProjectTasks) {
+        if (!depNameMap.has(pt.id)) {
+          depNameMap.set(pt.id, pt.nameOverride ?? pt.workflowStep?.name ?? pt.code);
+        }
+        if (!depCodeMap.has(pt.id)) {
+          depCodeMap.set(pt.id, pt.code);
+        }
+        if (!depStatusMap.has(pt.id)) {
+          depStatusMap.set(pt.id, pt.status);
+        }
+      }
+    }
+
+    const allEnrichedTasks = tasks.map((task) =>
+      this.enrichMyTask(task, today, depNameMap, depStatusMap, depCodeMap, statusMap, priorityMap),
+    );
+
+    // Exclude tasks blocked by unresolved dependencies — not actionable in My Tasks.
+    return allEnrichedTasks.filter((t) => !t.hasDependencyBlockers);
+  }
+
+  private extractMyTaskProjects(
+    tasks: EnrichedMyTask[],
+  ): Array<{ id: string; name: string; projectNumber: string }> {
+    const byId = new Map<string, { id: string; name: string; projectNumber: string }>();
+    for (const task of tasks) {
+      const id = task.projectId as string | undefined;
+      if (!id || byId.has(id)) continue;
+      byId.set(id, {
+        id,
+        name: task.projectName || '',
+        projectNumber: task.projectNumber || '',
+      });
+    }
+    return Array.from(byId.values()).sort((a, b) => a.projectNumber.localeCompare(b.projectNumber));
   }
 
   private enrichMyTask(

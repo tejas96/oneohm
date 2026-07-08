@@ -107,6 +107,7 @@ export interface MyTasksSummary {
   overdue: number;
   dueToday: number;
   completedThisWeek: number;
+  /** Projects with actionable tasks for the filter dropdown (unfiltered by list filters). */
   projects: MyTasksProject[];
 }
 

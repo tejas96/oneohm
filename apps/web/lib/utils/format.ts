@@ -62,6 +62,29 @@ export function getDueDateMuiColor(endDate?: string): string {
   return 'text.secondary';
 }
 
+const MS_PER_DAY = 86_400_000;
+
+function getDueDateDayDiff(endDate: string): number {
+  const target = new Date(endDate);
+  if (Number.isNaN(target.getTime())) return Number.NaN;
+  target.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - now.getTime()) / MS_PER_DAY);
+}
+
+/**
+ * Compact pending-days label for task row due-date column.
+ * Returns "Today" | "3d late" | "in 5d".
+ */
+export function formatDueDatePendingLabel(endDate: string): string {
+  const diffDays = getDueDateDayDiff(endDate);
+  if (Number.isNaN(diffDays)) return '';
+  if (diffDays < 0) return `${Math.abs(diffDays)}d late`;
+  if (diffDays === 0) return 'Today';
+  return `in ${diffDays}d`;
+}
+
 /**
  * Plain-string fallback for contexts that cannot render JSX (e.g. subtitle string building).
  * Shows actual as primary. Appends "(sel. X kW)" only when actual differs from requested.
