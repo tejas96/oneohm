@@ -43,6 +43,7 @@ export function useCustomerQuotes(
     page?: number;
     limit?: number;
     status?: QuoteStatus;
+    enabled?: boolean;
   },
 ): UseQueryResult<CustomerQuotesResponse, AxiosError> {
   const { user } = useAuth();
@@ -69,6 +70,6 @@ export function useCustomerQuotes(
       });
       return data;
     },
-    enabled: !!customerId && !!organizationId,
+    enabled: !!customerId && !!organizationId && options?.enabled !== false,
   });
 }

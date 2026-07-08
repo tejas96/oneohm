@@ -1,11 +1,6 @@
 import { z } from 'zod';
 
-const gpsCoordinatesSchema = z.object({
-  latitude: z.number(),
-  longitude: z.number(),
-  accuracy: z.number().optional(),
-  altitude: z.number().optional(),
-});
+import { gpsCoordinatesSchema } from './coordinates.schema';
 
 const shadingAnalysisSchema = z.object({
   hasShading: z.boolean(),
@@ -51,7 +46,6 @@ export const createSiteActivitySchema = z.object({
 export type CreateSiteActivityFormData = z.infer<typeof createSiteActivitySchema>;
 
 export const updateSiteActivitySchema = z.object({
-  gpsCoordinates: gpsCoordinatesSchema.optional(),
   availableRoofAreaSqft: z.number().positive().optional(),
   shadingAnalysis: shadingAnalysisSchema.optional(),
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
@@ -61,7 +55,6 @@ export const updateSiteActivitySchema = z.object({
 export type UpdateSiteActivityFormData = z.infer<typeof updateSiteActivitySchema>;
 
 export const completeVisitSchema = z.object({
-  gpsCoordinates: gpsCoordinatesSchema,
   availableRoofAreaSqft: z.number().positive('Roof area must be greater than 0'),
   notes: z.string().max(2000).optional().or(z.literal('')),
 });

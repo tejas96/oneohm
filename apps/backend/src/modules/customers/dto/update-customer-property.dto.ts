@@ -17,6 +17,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { GpsCoordinatesDto } from './gps-coordinates.dto';
 import { PropertyDocumentDto } from './property-document.dto';
 
 /**
@@ -75,6 +76,12 @@ export class UpdateCustomerPropertyDto {
   @IsOptional()
   @MaxLength(10)
   pincode?: string;
+
+  @ApiPropertyOptional({ description: 'GPS coordinates of the installation site' })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GpsCoordinatesDto)
+  gpsCoordinates?: GpsCoordinatesDto;
 
   // ==================== Electricity/Consumer Details ====================
   @ApiPropertyOptional({

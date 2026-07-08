@@ -60,12 +60,18 @@ export const PROPERTY_ALERTS = {
 // ---------------------------------------------------------------------------
 
 export const PROPERTY_DETAIL_TABS = [
+  { value: 'overview', label: 'Overview' },
   { value: 'siteactivity', label: 'Site Activity' },
   { value: 'quotes', label: 'Quotes' },
   { value: 'documents', label: 'Documents' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'project', label: 'Project' },
+  { value: 'followups', label: 'Follow-ups' },
+  { value: 'activity', label: 'Activity' },
 ] as const;
 
 export type PropertyDetailTab = (typeof PROPERTY_DETAIL_TABS)[number]['value'];
+export const PROPERTY_DETAIL_DEFAULT_TAB: PropertyDetailTab = 'overview';
 
 // ---------------------------------------------------------------------------
 // Detail Page: Property Type Labels

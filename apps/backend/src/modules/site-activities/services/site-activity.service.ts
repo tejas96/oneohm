@@ -17,7 +17,6 @@ import { SiteActivityRepository } from '../repositories/site-activity.repository
 @Injectable()
 export class SiteActivityService {
   private static readonly VISIT_DATA_FIELDS = [
-    'gpsCoordinates',
     'availableRoofAreaSqft',
     'shadingAnalysis',
     'notes',
@@ -73,7 +72,6 @@ export class SiteActivityService {
       overallStatus: SiteActivityStatus.PENDING,
       isSiteVisitDone: false,
       isSiteSurveyDone: false,
-      gpsCoordinates: createDto.gpsCoordinates,
       availableRoofAreaSqft: createDto.availableRoofAreaSqft,
       shadingAnalysis: createDto.shadingAnalysis,
       notes: createDto.notes,
@@ -163,8 +161,6 @@ export class SiteActivityService {
 
     const updateData: Partial<SiteActivityEntity> = {};
 
-    if (updateDto.gpsCoordinates !== undefined)
-      updateData.gpsCoordinates = updateDto.gpsCoordinates;
     if (updateDto.availableRoofAreaSqft !== undefined)
       updateData.availableRoofAreaSqft = updateDto.availableRoofAreaSqft;
     if (updateDto.shadingAnalysis !== undefined)
@@ -209,9 +205,6 @@ export class SiteActivityService {
     }
 
     // Validate required visit data
-    if (!activity.gpsCoordinates) {
-      throw new BadRequestException('GPS coordinates are required to complete the visit');
-    }
     if (!activity.availableRoofAreaSqft || Number(activity.availableRoofAreaSqft) <= 0) {
       throw new BadRequestException('Available roof area must be greater than 0');
     }

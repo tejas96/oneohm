@@ -1,8 +1,8 @@
 /**
  * Migration Runner Script
  *
- * This script is executed during Fly.io deployment (release_command)
- * to run pending database migrations before the new version starts.
+ * This script runs pending database migrations on container startup
+ * before the NestJS app starts (see apps/backend/fly.toml [processes]).
  *
  * Features:
  * - Connection retry logic with exponential backoff
