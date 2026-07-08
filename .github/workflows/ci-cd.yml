@@ -372,7 +372,7 @@ jobs:
 
       - name: Download backend dist artifact
         if: steps.check-backend.outputs.affected == 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: backend-dist-${{ github.sha }}
           path: apps/backend/dist
@@ -453,7 +453,7 @@ jobs:
 
       - name: Download web build artifact
         if: steps.check-web.outputs.affected == 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: web-next-${{ github.sha }}
           path: apps/web/.next
