@@ -85,7 +85,7 @@ type AutocompleteModeProps = CommonExtras &
     onChange: (value: SearchOption | null) => void;
     inputValue?: string;
     onInputChange?: (value: string) => void;
-    textFieldProps?: Omit<TextFieldProps, 'value' | 'onChange' | 'label'>;
+    textFieldProps?: Omit<TextFieldProps, 'value' | 'onChange'>;
     disableClearable?: boolean;
     /**
      * When true each dropdown option renders a MUIAvatar beside the label.

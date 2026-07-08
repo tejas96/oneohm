@@ -121,7 +121,16 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   const summary = data?.summary;
   const groups = data?.groups ?? [];
-  const projects = summary?.projects ?? [];
+  const projectsForFilter = summary?.projects ?? [];
+
+  // Clear stale deep-linked projectId once data loads and the id is not actionable.
+  useEffect(() => {
+    if (!projectFilter || isLoading) return;
+    const isKnownProject = projectsForFilter.some((p) => p.id === projectFilter);
+    if (!isKnownProject) {
+      setFilter('projectId', '');
+    }
+  }, [projectFilter, projectsForFilter, isLoading, setFilter]);
 
   // All tasks flat for keyboard nav indexing
   const allTasks = useMemo(() => groups.flatMap((g) => g.tasks), [groups]);
@@ -137,9 +146,9 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const projectFilterOptions = useMemo(
     () => [
       { value: '', label: 'All Projects' },
-      ...projects.map((p) => ({ value: p.id, label: `${p.projectNumber}: ${p.name}` })),
+      ...projectsForFilter.map((p) => ({ value: p.id, label: `${p.projectNumber}: ${p.name}` })),
     ],
-    [projects],
+    [projectsForFilter],
   );
 
   const statusFilterOptions = useMemo((): Array<{ value: string; label: string }> => {

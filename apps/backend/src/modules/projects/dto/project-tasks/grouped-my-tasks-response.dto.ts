@@ -36,7 +36,8 @@ export class MyTasksSummaryDto {
 
   @ApiProperty({
     type: [MyTasksProjectDto],
-    description: 'All projects user has incomplete tasks in (always unfiltered)',
+    description:
+      'Projects with at least one actionable task for this user (unfiltered by list filters; excludes dependency-blocked-only projects)',
   })
   @Expose()
   @Type(() => MyTasksProjectDto)

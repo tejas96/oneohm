@@ -17,9 +17,15 @@ import type { JSX } from 'react';
 import { STALE_THRESHOLDS, TASK_PRIORITY_HEX_COLOR } from '../constants';
 import type { MyTask } from '../hooks';
 import { ColorDotLabel, QuickSelect, type MUISelectOption } from './quick-select';
+import { collapseCommentPreview, getLatestTaskComment } from '../utils/task-activity';
 
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { formatDate, getDueDateMuiColor } from '@/lib/utils';
+import {
+  formatDate,
+  formatDueDatePendingLabel,
+  formatRelativeDate,
+  getDueDateMuiColor,
+} from '@/lib/utils';
 
 // ── Module-level constants ──────────────────────────────────────────────────
 
@@ -89,6 +95,9 @@ export function TaskRow({
   const statusLabel = currentStatusCfg?.label ?? TASK_STATUS_LABELS[task.status] ?? task.status;
 
   const dueDateMuiColor = task.endDate ? getDueDateMuiColor(task.endDate) : 'text.disabled';
+  const dueDatePendingLabel = task.endDate ? formatDueDatePendingLabel(task.endDate) : '';
+  const latestComment = getLatestTaskComment(task.activityLog);
+  const commentPreview = latestComment ? collapseCommentPreview(latestComment) : null;
 
   return (
     <Box
@@ -109,7 +118,7 @@ export function TaskRow({
           xs: '72px 1fr',
           md: '72px 1fr 112px 96px 80px 80px 104px',
         },
-        alignItems: 'center',
+        alignItems: 'start',
         gap: { xs: 1, md: 1.5 },
         px: 1.5,
         py: 1,
@@ -154,7 +163,7 @@ export function TaskRow({
 
       {/* Col 2 — Summary */}
       <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
           {isOverdue && (
             <WarningAmberIcon sx={{ fontSize: 13, color: 'error.main', flexShrink: 0 }} />
           )}
@@ -162,10 +171,45 @@ export function TaskRow({
             variant="body2"
             fontWeight={500}
             noWrap
-            sx={{ color: 'text.primary', lineHeight: 1.4 }}
+            sx={{
+              color: 'text.primary',
+              lineHeight: 1.4,
+              flexShrink: 1,
+              minWidth: 0,
+              maxWidth: latestComment ? '42%' : '100%',
+            }}
           >
             {task.name || task.code || 'Untitled'}
           </Typography>
+          {latestComment && (
+            <Tooltip
+              title={
+                <Box component="span" sx={{ whiteSpace: 'pre-wrap' }}>
+                  {latestComment}
+                </Box>
+              }
+              placement="top"
+              describeChild
+              slotProps={{ tooltip: { sx: { maxWidth: 360 } } }}
+            >
+              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'flex-end' }}>
+                <Typography
+                  variant="caption"
+                  noWrap
+                  aria-hidden="true"
+                  sx={{
+                    color: 'text.disabled',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    lineHeight: 1.4,
+                    maxWidth: '100%',
+                  }}
+                >
+                  {commentPreview}
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
           {task.hasDependencyBlockers && (
             <Tooltip title="Blocked by incomplete dependencies" placement="top">
               <LockOutlinedIcon sx={{ fontSize: 13, color: 'warning.main', flexShrink: 0 }} />
@@ -257,18 +301,36 @@ export function TaskRow({
       </Box>
 
       {/* Col 5 — Due date (desktop only) */}
-      <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
+      <Box sx={{ display: { xs: 'none', md: 'flex' }, flexDirection: 'column', gap: 0.25 }}>
         {task.endDate ? (
-          <Typography
-            variant="caption"
-            sx={{
-              whiteSpace: 'nowrap',
-              fontWeight: isOverdue ? 600 : 400,
-              color: dueDateMuiColor,
-            }}
-          >
-            {formatDate(task.endDate, 'short')}
-          </Typography>
+          <Tooltip title={formatRelativeDate(task.endDate)} placement="top">
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  whiteSpace: 'nowrap',
+                  fontWeight: isOverdue ? 600 : 400,
+                  color: dueDateMuiColor,
+                }}
+              >
+                {formatDate(task.endDate, 'short')}
+              </Typography>
+              {dueDatePendingLabel ? (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: 'block',
+                    whiteSpace: 'nowrap',
+                    fontSize: '0.625rem',
+                    fontWeight: isOverdue ? 500 : 400,
+                    color: dueDateMuiColor,
+                  }}
+                >
+                  {dueDatePendingLabel}
+                </Typography>
+              ) : null}
+            </Box>
+          </Tooltip>
         ) : (
           <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
             —

@@ -87,6 +87,7 @@ export function useAddComment() {
     },
     onSuccess: (_data, variables) => {
       showToast.success('Comment added');
+      void queryClient.invalidateQueries({ queryKey: myTaskKeys.all(organizationId) });
       void queryClient.invalidateQueries({
         queryKey: taskDetailKeys.detail(organizationId, variables.taskId),
       });

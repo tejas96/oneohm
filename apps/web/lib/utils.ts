@@ -23,6 +23,7 @@ export {
   formatCurrencyCompact,
   formatCurrencyDecimal,
   formatDate,
+  formatDueDatePendingLabel,
   formatLabel,
   formatNumber,
   getDueDateColor,
