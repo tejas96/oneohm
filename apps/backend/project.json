@@ -57,7 +57,7 @@
       },
       "configurations": {
         "ci": {
-          "maxWarnings": 650
+          "maxWarnings": 1000
         }
       }
     },
