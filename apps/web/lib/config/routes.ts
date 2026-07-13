@@ -141,13 +141,6 @@ export const ROUTES = {
     DETAIL: '/service/[id]',
   },
 
-  // Analytics
-  ANALYTICS: {
-    HOME: '/analytics',
-    SALES: '/analytics/sales',
-    PROJECTS: '/analytics/projects',
-  },
-
   // User Account
   ACCOUNT: {
     PROFILE: '/profile',
@@ -191,11 +184,6 @@ export const ROUTES = {
     HOME: '/help',
     DOCS: '/help/docs',
     SUPPORT: '/help/support',
-  },
-
-  // More (overflow menu)
-  MORE: {
-    HOME: '/more',
   },
 } as const;
 
@@ -460,13 +448,6 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   // Service routes
   [ROUTES.SERVICE.HOME]: 'service',
   [ROUTES.SERVICE.AMC]: 'service',
-
-  // Analytics routes
-  [ROUTES.ANALYTICS.HOME]: 'analytics',
-
-  // More/Settings routes
-  [ROUTES.ACCOUNT.SETTINGS]: 'more',
-  [ROUTES.MORE.HOME]: 'more',
 
   // Help routes
   [ROUTES.HELP.HOME]: 'help',

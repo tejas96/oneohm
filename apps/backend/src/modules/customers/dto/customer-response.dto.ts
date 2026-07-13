@@ -110,6 +110,13 @@ export class CustomerResponseDto {
   @Transform(({ obj }) => obj.properties?.length ?? 0)
   propertyCount!: number;
 
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Reasons this customer cannot be permanently deleted (empty when deletable)',
+  })
+  @Expose()
+  deleteBlockReasons?: string[];
+
   // ==================== Audit Fields ====================
   @ApiProperty()
   @Expose()

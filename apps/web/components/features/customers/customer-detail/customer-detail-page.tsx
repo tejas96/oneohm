@@ -27,7 +27,12 @@ import {
   CUSTOMER_DETAIL_TABS,
   type CustomerDetailTab,
 } from '../constants';
-import { useCustomer, useCustomerFollowups, useCustomerProperties } from '../hooks';
+import {
+  useCustomer,
+  useCustomerFollowups,
+  useCustomerProperties,
+  useDeleteCustomer,
+} from '../hooks';
 import { CustomerAttentionPanel, type AttentionItem } from './attention-panel';
 import { CustomerEditDrawer } from './customer-edit-drawer';
 import { FollowupDrawer } from './followup-drawer';
@@ -38,9 +43,16 @@ import { PageSkeleton, TabSkeleton } from './tab-skeleton';
 import { getCustomerDisplayName, isValidUuid } from './utils';
 import { PropertySelectModal } from '../components/property-select-modal';
 
+import {
+  formatDeleteBlockTooltip,
+  getCustomerDeleteBlockReasons,
+  ORG_ADMIN_ROLES,
+} from '@/components/features/properties/utils/delete-eligibility';
 import { EmptyState } from '@/components/shared';
+import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
 import { showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useOrgCustomersAr } from '@/lib/hooks/resources';
 import { formatCurrency, formatDate, recordRecentView } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -97,7 +109,16 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, hasAnyRole } = useAuth();
+  const isOrgAdmin = hasAnyRole([...ORG_ADMIN_ROLES]);
+  const deleteCustomerMutation = useDeleteCustomer();
+  const deleteConfirmation = useDeleteConfirmation({
+    mutation: deleteCustomerMutation,
+    getId: (item: { id: string }) => item.id,
+    onSuccess: () => {
+      void router.push(ROUTES.CUSTOMERS.LIST);
+    },
+  });
 
   const rawTab = searchParams.get('tab');
   const activeTab: CustomerDetailTab = isValidTab(rawTab) ? rawTab : CUSTOMER_DETAIL_DEFAULT_TAB;
@@ -316,6 +337,12 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
   const isInactive = customer.status === CustomerStatus.INACTIVE;
   const customerName = getCustomerDisplayName(customer);
+  const customerDeleteReasons = getCustomerDeleteBlockReasons({
+    propertyCount: customer.propertyCount ?? properties.length,
+    deleteBlockReasons: customer.deleteBlockReasons,
+  });
+  const customerDeleteDisabled = customerDeleteReasons.length > 0;
+  const customerDeleteTooltip = formatDeleteBlockTooltip(customerDeleteReasons);
   const isTabEnabled = (tab: CustomerDetailTab): boolean => activeTab === tab;
 
   return (
@@ -342,6 +369,10 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         onAddProperty={handleAddProperty}
         onCreateQuote={handleCreateQuote}
         onLogFollowup={() => setFollowupDrawerOpen(true)}
+        showDelete={isOrgAdmin}
+        deleteDisabled={customerDeleteDisabled}
+        deleteTooltip={customerDeleteTooltip}
+        onDelete={() => deleteConfirmation.requestDelete(customer)}
       />
 
       <CustomerDetailKpiStrip items={kpiItems} />
@@ -531,6 +562,15 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           />
         </SpeedDial>
       </Box>
+
+      <DeleteConfirmationDialog
+        open={deleteConfirmation.isOpen}
+        title="Delete Customer"
+        itemName={customerName}
+        isPending={deleteConfirmation.isPending}
+        onCancel={deleteConfirmation.cancel}
+        onConfirm={() => void deleteConfirmation.confirm()}
+      />
     </Box>
   );
 }

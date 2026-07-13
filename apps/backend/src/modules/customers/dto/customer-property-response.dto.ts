@@ -136,7 +136,7 @@ export class CustomerPropertyResponseDto {
 
   @ApiPropertyOptional()
   @Expose()
-  @Transform(({ obj }) => obj.project?.id ?? undefined)
+  @Transform(({ obj }) => obj.projectId ?? obj.project?.id ?? undefined)
   projectId?: string;
 
   // ==================== Audit Fields ====================
@@ -250,6 +250,12 @@ export class CustomerPropertyResponseDto {
   @Expose()
   @Transform(({ value }) => toNum(value))
   latestQuoteSystemSizeKw?: number;
+
+  @ApiPropertyOptional({
+    description: 'Whether the property has an active (initiated/applied) loan application',
+  })
+  @Expose()
+  hasActiveLoan?: boolean;
 
   @ApiPropertyOptional({ type: () => ProjectResponseDto })
   @Expose()

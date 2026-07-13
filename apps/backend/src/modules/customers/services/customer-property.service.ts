@@ -14,9 +14,10 @@ import {
   PropertyStatus,
   QuoteStatus,
 } from '@tejas96/shared/types';
-import { Not, IsNull } from 'typeorm';
+import { DataSource, IsNull, Not, type EntityManager } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { DocumentEntity } from '../../documents/entities/document.entity';
 import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
 import {
   CONSUMER_EVENTS,
@@ -34,10 +35,18 @@ import { CustomerProfileRepository } from '../repositories/customer-profile.repo
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
 import { assertUtilityDetailsComplete, hasUtilityFieldUpdate } from '../utils/utility-details.util';
 
+const TERMINAL_LOAN_STATUSES: LoanStatus[] = [
+  LoanStatus.APPROVED,
+  LoanStatus.REJECTED,
+  LoanStatus.CANCELLED,
+];
+
 /**
  * Extended type for properties with quote info
  */
 type PropertyWithQuoteInfo = CustomerPropertyEntity & {
+  projectId?: string;
+  hasActiveLoan?: boolean;
   latestQuoteId?: string;
   latestQuoteNumber?: string;
   latestQuoteStatus?: QuoteStatus;
@@ -62,6 +71,7 @@ export class CustomerPropertyService {
     private readonly loanApplicationRepository: LoanApplicationRepository,
     private readonly storageService: StorageService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -194,11 +204,19 @@ export class CustomerPropertyService {
       propertyIds,
       organizationId,
     );
+    const projectIdMap = await this.propertyRepository.findProjectIdsByPropertyIds(propertyIds);
+    const activeLoanPropertyIds =
+      await this.loanApplicationRepository.findPropertyIdsWithActiveLoans(
+        propertyIds,
+        organizationId,
+      );
 
     const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
       return {
         ...property,
+        projectId: projectIdMap.get(property.id),
+        hasActiveLoan: activeLoanPropertyIds.has(property.id),
         latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
         latestQuoteStatus: quoteInfo?.status,
@@ -435,16 +453,104 @@ export class CustomerPropertyService {
   }
 
   /**
-   * Delete property (soft delete)
+   * Permanently delete property when it has no quotes, project, or active loan.
    */
-  async delete(id: string, organizationId: string, deletedBy?: string): Promise<void> {
-    this.logger.log(`Deleting property: ${id}`);
+  async delete(id: string, organizationId: string, _deletedBy?: string): Promise<void> {
+    this.logger.log(`Permanently deleting property: ${id}`);
 
-    await this.findById(id, organizationId);
+    const property = await this.findById(id, organizationId);
+    const fileUrls = await this.collectPropertyFileUrls(property, organizationId);
 
-    await this.propertyRepository.softDelete(id, deletedBy);
+    await this.dataSource.transaction(async (manager) => {
+      const locked = await manager.findOne(CustomerPropertyEntity, {
+        where: { id, organizationId, deletedAt: IsNull() },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked) {
+        throw new NotFoundException(`Property with ID '${id}' not found`);
+      }
 
-    this.logger.log(`Property deleted successfully: ${id}`);
+      await this.assertDeletable(id, organizationId, manager);
+
+      await manager.delete(DocumentEntity, { propertyId: id, organizationId });
+      const deleted = await this.propertyRepository.hardDelete(id, organizationId, manager);
+      if (!deleted) {
+        throw new NotFoundException(`Property with ID '${id}' not found`);
+      }
+    });
+
+    await this.cleanupStorageFiles(fileUrls);
+
+    this.logger.log(`Property permanently deleted: ${id}`);
+  }
+
+  private async assertDeletable(
+    propertyId: string,
+    organizationId: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    const projectMap = await this.propertyRepository.findProjectIdsByPropertyIds(
+      [propertyId],
+      manager,
+    );
+    if (projectMap.has(propertyId)) {
+      throw new ConflictException('Cannot delete: property has been converted to a project');
+    }
+
+    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(
+      [propertyId],
+      organizationId,
+      manager,
+    );
+    if (quoteMap.has(propertyId)) {
+      throw new ConflictException('Cannot delete: property has quotations');
+    }
+
+    const loan = await this.loanApplicationRepository.findByProperty(
+      propertyId,
+      organizationId,
+      manager,
+    );
+    if (loan && !TERMINAL_LOAN_STATUSES.includes(loan.status)) {
+      throw new ConflictException(
+        'Cannot delete: property has an active loan application in progress',
+      );
+    }
+  }
+
+  private async collectPropertyFileUrls(
+    property: CustomerPropertyEntity,
+    organizationId: string,
+  ): Promise<string[]> {
+    const urls = new Set<string>();
+
+    for (const doc of property.documents ?? []) {
+      if (doc.url) urls.add(doc.url);
+    }
+
+    const documents = await this.dataSource.getRepository(DocumentEntity).find({
+      where: { propertyId: property.id, organizationId },
+      select: ['fileUrl'],
+    });
+    for (const doc of documents) {
+      urls.add(doc.fileUrl);
+    }
+
+    return [...urls];
+  }
+
+  private async cleanupStorageFiles(fileUrls: string[]): Promise<void> {
+    for (const url of fileUrls) {
+      const fileKey = this.storageService.extractFileKeyFromUrl(url);
+      if (!fileKey) continue;
+
+      try {
+        await this.storageService.deleteFile(fileKey);
+        this.logger.log(`Deleted file from storage: ${fileKey}`);
+      } catch (error) {
+        this.logger.warn(`Failed to delete file from storage: ${fileKey}`, error);
+      }
+    }
   }
 
   /**

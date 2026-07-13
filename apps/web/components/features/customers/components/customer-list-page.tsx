@@ -34,21 +34,30 @@ import {
   type CustomerFilters,
   useCustomers,
   useCustomerGroups,
+  useDeleteCustomer,
 } from '../hooks/use-customers';
 
 import { useEmployees } from '@/components/features/employees';
+import {
+  formatDeleteBlockTooltip,
+  getCustomerDeleteBlockReasons,
+  ORG_ADMIN_ROLES,
+} from '@/components/features/properties/utils/delete-eligibility';
 import {
   AdvancedTable,
   type BulkAction,
   type ColumnConfig,
 } from '@/components/shared/advanced-table';
+import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
 import { WhatsAppIcon } from '@/components/ui';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
+import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { formatPhoneForWhatsApp, getErrorMessage, toTitleLabel } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 
 // AdvancedTable requires TRow extends Record<string, unknown>.
 // Customer has explicit typed fields, so we widen it here for table usage only.
@@ -157,11 +166,22 @@ function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilte
 // Row Actions Menu (private sub-component)
 // ============================================================================
 
-function RowActionsMenu({ customer }: { customer: Customer }): JSX.Element {
+function RowActionsMenu({
+  customer,
+  showDelete = false,
+  onRequestDelete,
+}: {
+  customer: Customer;
+  showDelete?: boolean;
+  onRequestDelete?: (customer: Customer) => void;
+}): JSX.Element {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const handleClose = (): void => setAnchorEl(null);
+  const deleteReasons = getCustomerDeleteBlockReasons(customer);
+  const deleteDisabled = deleteReasons.length > 0;
+  const deleteTooltip = formatDeleteBlockTooltip(deleteReasons);
 
   return (
     <>
@@ -223,12 +243,26 @@ function RowActionsMenu({ customer }: { customer: Customer }): JSX.Element {
 
         <Divider />
 
-        <MenuItem disabled sx={{ color: 'error.main' }}>
-          <ListItemIcon>
-            <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
-          </ListItemIcon>
-          Delete
-        </MenuItem>
+        {showDelete ? (
+          <Tooltip title={deleteTooltip ?? ''}>
+            <span>
+              <MenuItem
+                disabled={deleteDisabled}
+                onClick={() => {
+                  if (deleteDisabled) return;
+                  handleClose();
+                  onRequestDelete?.(customer);
+                }}
+                sx={{ color: 'error.main' }}
+              >
+                <ListItemIcon>
+                  <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
+                </ListItemIcon>
+                Delete Customer
+              </MenuItem>
+            </span>
+          </Tooltip>
+        ) : null}
       </Menu>
     </>
   );
@@ -492,7 +526,9 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     headerName: '',
     hideable: false,
     width: 48,
-    actions: (row) => <RowActionsMenu customer={row} />,
+    actions: (row) => (
+      <RowActionsMenu customer={row} showDelete={false} onRequestDelete={undefined} />
+    ),
   },
 ];
 
@@ -502,6 +538,13 @@ const COLUMNS: ColumnConfig<Customer>[] = [
 
 export function CustomerListPage(): JSX.Element {
   const router = useRouter();
+  const { hasAnyRole } = useAuth();
+  const isOrgAdmin = hasAnyRole([...ORG_ADMIN_ROLES]);
+  const deleteCustomerMutation = useDeleteCustomer();
+  const deleteConfirmation = useDeleteConfirmation<Customer>({
+    mutation: deleteCustomerMutation,
+    getId: (customer) => customer.id,
+  });
 
   // URL-synced table state — single source of truth for all pagination/sort/filter/search
   const urlState = useTableUrlState({ prefix: 'customers', defaultPageSize: 10 });
@@ -551,6 +594,18 @@ export function CustomerListPage(): JSX.Element {
   // Memoize columns to include dynamic filter options
   const columns = useMemo(() => {
     return COLUMNS.map((col) => {
+      if (col.field === 'actions') {
+        return {
+          ...col,
+          actions: (row: Customer) => (
+            <RowActionsMenu
+              customer={row}
+              showDelete={isOrgAdmin}
+              onRequestDelete={deleteConfirmation.requestDelete}
+            />
+          ),
+        };
+      }
       if (col.field === 'name') {
         const hasPropertyOptions = [
           { label: 'Yes', value: 'true' },
@@ -726,7 +781,7 @@ export function CustomerListPage(): JSX.Element {
       }
       return col;
     });
-  }, [creatorOptions, assigneeOptions, groupOptions]);
+  }, [creatorOptions, assigneeOptions, groupOptions, isOrgAdmin, deleteConfirmation.requestDelete]);
 
   const renderEmptyState = useCallback(
     (hasActiveFilters: boolean): JSX.Element =>
@@ -876,6 +931,19 @@ export function CustomerListPage(): JSX.Element {
         searchPlaceholder="Search by name, phone, email, city..."
         itemLabel="customers"
         renderEmptyState={renderEmptyState}
+      />
+
+      <DeleteConfirmationDialog
+        open={deleteConfirmation.isOpen}
+        title="Delete Customer"
+        itemName={
+          [deleteConfirmation.target?.firstName, deleteConfirmation.target?.lastName]
+            .filter(Boolean)
+            .join(' ') || 'this customer'
+        }
+        isPending={deleteConfirmation.isPending}
+        onCancel={deleteConfirmation.cancel}
+        onConfirm={() => void deleteConfirmation.confirm()}
       />
     </Box>
   );

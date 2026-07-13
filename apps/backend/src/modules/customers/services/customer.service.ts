@@ -9,10 +9,14 @@ import {
 } from '@nestjs/common';
 import { CustomerStatus, UserProfileType, UserStatus } from '@tejas96/shared/types';
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
+import { DataSource, In, IsNull } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { DocumentEntity } from '../../documents/entities/document.entity';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
+import { QuoteEntity } from '../../quotes/entities/quote.entity';
+import { StorageService } from '../../storage/services/storage.service';
 import { UserRepository } from '../../users/repositories/user.repository';
 import { ProfileService } from '../../users/services/profile.service';
 import { AvailabilityResponseDto } from '../dto/check-availability.dto';
@@ -20,7 +24,12 @@ import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
+import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
+
+type CustomerWithDeleteInfo = CustomerProfileEntity & {
+  deleteBlockReasons?: string[];
+};
 
 /** Normalize email to lowercase, trimmed. Returns undefined for empty/whitespace-only input. */
 function normalizeEmail(raw: string): string | undefined {
@@ -44,6 +53,8 @@ export class CustomerService {
     @Inject(forwardRef(() => UserRepository))
     private readonly userRepository: UserRepository,
     private readonly employeeProfileRepository: EmployeeProfileRepository,
+    private readonly storageService: StorageService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -115,14 +126,19 @@ export class CustomerService {
   /**
    * Find customer by ID
    */
-  async findById(id: string, organizationId: string): Promise<CustomerProfileEntity> {
+  async findById(id: string, organizationId: string): Promise<CustomerWithDeleteInfo> {
     const customer = await this.customerRepository.findById(id);
 
     if (customer?.organizationId !== organizationId) {
       throw new NotFoundException(`Customer with ID '${id}' not found`);
     }
 
-    return customer;
+    const deleteBlockReasons = await this.customerRepository.getCustomerDeleteBlockers(
+      id,
+      organizationId,
+    );
+
+    return { ...customer, deleteBlockReasons };
   }
 
   /**
@@ -152,7 +168,7 @@ export class CustomerService {
         organizationId,
         pageOrQuery,
       );
-      return { data, total };
+      return this.enrichWithDeleteBlockers(data, total, organizationId);
     }
 
     // Legacy approach - convert to query DTO
@@ -163,7 +179,26 @@ export class CustomerService {
       organizationId,
       legacyQuery,
     );
-    return { data, total };
+    return this.enrichWithDeleteBlockers(data, total, organizationId);
+  }
+
+  private async enrichWithDeleteBlockers(
+    data: CustomerProfileEntity[],
+    total: number,
+    organizationId: string,
+  ): Promise<{ data: CustomerWithDeleteInfo[]; total: number }> {
+    const blockerMap = await this.customerRepository.getCustomerDeleteBlockersBatch(
+      data.map((customer) => customer.id),
+      organizationId,
+    );
+
+    return {
+      data: data.map((customer) => ({
+        ...customer,
+        deleteBlockReasons: blockerMap.get(customer.id) ?? [],
+      })),
+      total,
+    };
   }
 
   /**
@@ -321,17 +356,111 @@ export class CustomerService {
   }
 
   /**
-   * Delete customer (soft delete)
+   * Permanently delete customer when it has no properties, quotes, or financial records.
    */
-  async delete(id: string, organizationId: string, deletedBy?: string): Promise<void> {
-    this.logger.log(`Deleting customer: ${id}`);
+  async delete(id: string, organizationId: string, _deletedBy?: string): Promise<void> {
+    this.logger.log(`Permanently deleting customer: ${id}`);
 
-    // Verify customer exists and belongs to organization
     await this.findById(id, organizationId);
 
-    await this.customerRepository.softDelete(id, deletedBy);
+    let fileUrls: string[] = [];
 
-    this.logger.log(`Customer deleted successfully: ${id}`);
+    await this.dataSource.transaction(async (manager) => {
+      const locked = await manager.findOne(CustomerProfileEntity, {
+        where: { id, organizationId, deletedAt: IsNull() },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!locked) {
+        throw new NotFoundException(`Customer with ID '${id}' not found`);
+      }
+
+      const blockers = await this.customerRepository.getCustomerDeleteBlockers(
+        id,
+        organizationId,
+        manager,
+      );
+      if (blockers.length > 0) {
+        throw new ConflictException(blockers[0]);
+      }
+
+      const properties = await manager
+        .getRepository(CustomerPropertyEntity)
+        .createQueryBuilder('property')
+        .where('property.customerId = :customerId', { customerId: id })
+        .andWhere('property.organizationId = :organizationId', { organizationId })
+        .withDeleted()
+        .getMany();
+
+      fileUrls = await this.collectCustomerPropertyFileUrls(properties, organizationId);
+
+      const propertyIds = properties.map((property) => property.id);
+      if (propertyIds.length > 0) {
+        await manager.delete(DocumentEntity, {
+          organizationId,
+          propertyId: In(propertyIds),
+        });
+      }
+
+      await manager
+        .createQueryBuilder()
+        .delete()
+        .from(QuoteEntity)
+        .where('customer_id = :customerId', { customerId: id })
+        .andWhere('organization_id = :organizationId', { organizationId })
+        .andWhere('deleted_at IS NOT NULL')
+        .execute();
+
+      const deleted = await this.customerRepository.hardDelete(id, organizationId, manager);
+      if (!deleted) {
+        throw new NotFoundException(`Customer with ID '${id}' not found`);
+      }
+    });
+
+    await this.cleanupStorageFiles(fileUrls);
+
+    this.logger.log(`Customer permanently deleted: ${id}`);
+  }
+
+  private async collectCustomerPropertyFileUrls(
+    properties: CustomerPropertyEntity[],
+    organizationId: string,
+  ): Promise<string[]> {
+    const urls = new Set<string>();
+
+    for (const property of properties) {
+      for (const doc of property.documents ?? []) {
+        if (doc.url) urls.add(doc.url);
+      }
+    }
+
+    const propertyIds = properties.map((property) => property.id);
+    if (propertyIds.length === 0) {
+      return [];
+    }
+
+    const documents = await this.dataSource.getRepository(DocumentEntity).find({
+      where: { propertyId: In(propertyIds), organizationId },
+      select: ['fileUrl'],
+    });
+    for (const doc of documents) {
+      urls.add(doc.fileUrl);
+    }
+
+    return [...urls];
+  }
+
+  private async cleanupStorageFiles(fileUrls: string[]): Promise<void> {
+    for (const url of fileUrls) {
+      const fileKey = this.storageService.extractFileKeyFromUrl(url);
+      if (!fileKey) continue;
+
+      try {
+        await this.storageService.deleteFile(fileKey);
+        this.logger.log(`Deleted file from storage: ${fileKey}`);
+      } catch (error) {
+        this.logger.warn(`Failed to delete file from storage: ${fileKey}`, error);
+      }
+    }
   }
 
   /**

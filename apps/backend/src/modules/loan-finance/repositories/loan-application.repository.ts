@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { LoanStatus } from '@tejas96/shared/types';
+import { IsNull, Repository, type EntityManager } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { LoanApplicationEntity } from '../entities/loan-application.entity';
@@ -73,8 +74,10 @@ export class LoanApplicationRepository {
   async findByProperty(
     propertyId: string,
     organizationId?: string,
+    manager?: EntityManager,
   ): Promise<LoanApplicationEntity | null> {
-    return this.repository.findOne({
+    const repo = manager ? manager.getRepository(LoanApplicationEntity) : this.repository;
+    return repo.findOne({
       where: {
         propertyId,
         deletedAt: IsNull(),
@@ -82,6 +85,31 @@ export class LoanApplicationRepository {
       },
       relations: ['property', 'customer'],
     });
+  }
+
+  async findPropertyIdsWithActiveLoans(
+    propertyIds: string[],
+    organizationId: string,
+    manager?: EntityManager,
+  ): Promise<Set<string>> {
+    if (propertyIds.length === 0) {
+      return new Set();
+    }
+
+    const rows = await (manager ?? this.repository.manager)
+      .getRepository(LoanApplicationEntity)
+      .createQueryBuilder('loan')
+      .select('loan.propertyId', 'propertyId')
+      .innerJoin('loan.property', 'property')
+      .where('loan.propertyId IN (:...propertyIds)', { propertyIds })
+      .andWhere('loan.deletedAt IS NULL')
+      .andWhere('property.organizationId = :organizationId', { organizationId })
+      .andWhere('loan.status IN (:...statuses)', {
+        statuses: [LoanStatus.INITIATED, LoanStatus.APPLIED],
+      })
+      .getRawMany<{ propertyId: string }>();
+
+    return new Set(rows.map((row) => row.propertyId));
   }
 
   async findByCustomer(

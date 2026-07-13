@@ -29,6 +29,8 @@ import { toDto, toDtoArray, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
+import { RequireRole } from '../../iam/decorators/require-role.decorator';
+import { RoleGuard } from '../../iam/guards/role.guard';
 import { CreateSiteActivityDto } from '../../site-activities/dto/create-site-activity.dto';
 import { SiteActivityResponseDto } from '../../site-activities/dto/site-activity-response.dto';
 import { UpdateSiteActivityDto } from '../../site-activities/dto/update-site-activity.dto';
@@ -370,14 +372,19 @@ export class CustomerPropertyController {
    * Delete property
    */
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @RequireRole('admin', 'super_admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete property',
-    description: 'Soft delete a property.',
+    description:
+      'Permanently delete a property when it has no quotations, project, or active loan. Admin or super admin only.',
   })
   @ApiParam({ name: 'id', type: String, description: 'Property ID' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Property deleted successfully' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Insufficient role' })
+  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Property cannot be deleted' })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
     @OrganizationContext() organizationId: string,

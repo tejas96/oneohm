@@ -14,6 +14,7 @@ import { CustomerPropertyService } from './services/customer-property.service';
 import { CustomerService } from './services/customer.service';
 import { FollowupService } from './services/followup.service';
 import { EmployeesModule } from '../employees/employees.module';
+import { IamModule } from '../iam/iam.module';
 import { LoanFinanceModule } from '../loan-finance/loan-finance.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QuotesModule } from '../quotes/quotes.module';
@@ -36,6 +37,7 @@ import { UsersModule } from '../users/users.module';
     LoanFinanceModule,
     StorageModule,
     forwardRef(() => SiteActivitiesModule),
+    IamModule,
   ],
   controllers: [CustomerController, CustomerPropertyController, FollowupController],
   providers: [

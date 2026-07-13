@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@tejas96/shared/types';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, Repository, type EntityManager } from 'typeorm';
 
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
@@ -91,6 +91,12 @@ export class CustomerProfileRepository {
         updatedBy: deletedBy,
       },
     );
+    return (result.affected ?? 0) > 0;
+  }
+
+  async hardDelete(id: string, organizationId: string, manager?: EntityManager): Promise<boolean> {
+    const repo = manager ? manager.getRepository(CustomerProfileEntity) : this.repository;
+    const result = await repo.delete({ id, organizationId });
     return (result.affected ?? 0) > 0;
   }
 
@@ -448,5 +454,212 @@ export class CustomerProfileRepository {
       where: { organizationId, groupCode, deletedAt: IsNull() },
     });
     return count > 0;
+  }
+
+  /**
+   * Returns human-readable reasons why a customer cannot be permanently deleted.
+   */
+  async getCustomerDeleteBlockers(
+    customerId: string,
+    organizationId: string,
+    manager?: EntityManager,
+  ): Promise<string[]> {
+    const flags = await this.queryDeleteBlockerFlags([customerId], organizationId, manager);
+    return this.mapDeleteBlockerFlags(flags.get(customerId));
+  }
+
+  async getCustomerDeleteBlockersBatch(
+    customerIds: string[],
+    organizationId: string,
+  ): Promise<Map<string, string[]>> {
+    const flags = await this.queryDeleteBlockerFlags(customerIds, organizationId);
+    const result = new Map<string, string[]>();
+    for (const customerId of customerIds) {
+      result.set(customerId, this.mapDeleteBlockerFlags(flags.get(customerId)));
+    }
+    return result;
+  }
+
+  private mapDeleteBlockerFlags(row?: {
+    hasProperties: boolean;
+    hasProjects: boolean;
+    hasQuotes: boolean;
+    hasPayments: boolean;
+    hasServiceRequests: boolean;
+    hasLoans: boolean;
+    hasSubsidies: boolean;
+    hasFeedback: boolean;
+  }): string[] {
+    const reasons: string[] = [];
+
+    if (row?.hasProperties) {
+      reasons.push('Remove all properties before deleting this customer.');
+    }
+    if (row?.hasProjects) {
+      reasons.push('Cannot delete: customer has projects linked to properties');
+    }
+    if (row?.hasQuotes) {
+      reasons.push('Cannot delete: customer has quotations');
+    }
+    if (row?.hasPayments) {
+      reasons.push('Cannot delete: customer has payment records');
+    }
+    if (row?.hasServiceRequests) {
+      reasons.push('Cannot delete: customer has service requests');
+    }
+    if (row?.hasLoans) {
+      reasons.push('Cannot delete: customer has loan applications');
+    }
+    if (row?.hasSubsidies) {
+      reasons.push('Cannot delete: customer has subsidy applications');
+    }
+    if (row?.hasFeedback) {
+      reasons.push('Cannot delete: customer has feedback records');
+    }
+
+    return reasons;
+  }
+
+  private async queryDeleteBlockerFlags(
+    customerIds: string[],
+    organizationId: string,
+    manager?: EntityManager,
+  ): Promise<
+    Map<
+      string,
+      {
+        hasProperties: boolean;
+        hasProjects: boolean;
+        hasQuotes: boolean;
+        hasPayments: boolean;
+        hasServiceRequests: boolean;
+        hasLoans: boolean;
+        hasSubsidies: boolean;
+        hasFeedback: boolean;
+      }
+    >
+  > {
+    const result = new Map<
+      string,
+      {
+        hasProperties: boolean;
+        hasProjects: boolean;
+        hasQuotes: boolean;
+        hasPayments: boolean;
+        hasServiceRequests: boolean;
+        hasLoans: boolean;
+        hasSubsidies: boolean;
+        hasFeedback: boolean;
+      }
+    >();
+
+    if (customerIds.length === 0) {
+      return result;
+    }
+
+    const repo = manager ? manager.getRepository(CustomerProfileEntity) : this.repository;
+
+    const rows = await repo
+      .createQueryBuilder('customer')
+      .select('customer.id', 'customerId')
+      .addSelect(
+        `EXISTS(
+          SELECT 1 FROM customer_properties cp
+          WHERE cp.customer_id = customer.id
+            AND cp.organization_id = :organizationId
+            AND cp.deleted_at IS NULL
+        )`,
+        'hasProperties',
+      )
+      .addSelect(
+        `EXISTS(
+          SELECT 1 FROM projects p
+          INNER JOIN customer_properties cp ON cp.id = p.property_id
+          WHERE cp.customer_id = customer.id
+            AND cp.organization_id = :organizationId
+            AND p.deleted_at IS NULL
+        )`,
+        'hasProjects',
+      )
+      .addSelect(
+        `EXISTS(
+          SELECT 1 FROM quotes q
+          WHERE q.customer_id = customer.id
+            AND q.organization_id = :organizationId
+            AND q.deleted_at IS NULL
+        )`,
+        'hasQuotes',
+      )
+      .addSelect(
+        `EXISTS(
+          SELECT 1 FROM payments p
+          WHERE p.customer_id = customer.id
+            AND p.organization_id = :organizationId
+            AND p.deleted_at IS NULL
+        )`,
+        'hasPayments',
+      )
+      .addSelect(
+        `EXISTS(
+          SELECT 1 FROM service_requests sr
+          WHERE sr.customer_id = customer.id
+            AND sr.organization_id = :organizationId
+            AND sr.deleted_at IS NULL
+        )`,
+        'hasServiceRequests',
+      )
+      .addSelect(
+        `EXISTS(
+          SELECT 1 FROM loan_applications la
+          WHERE la.customer_id = customer.id
+            AND la.deleted_at IS NULL
+        )`,
+        'hasLoans',
+      )
+      .addSelect(
+        `EXISTS(
+          SELECT 1 FROM subsidy_applications sa
+          WHERE sa.customer_id = customer.id
+            AND sa.deleted_at IS NULL
+        )`,
+        'hasSubsidies',
+      )
+      .addSelect(
+        `EXISTS(
+          SELECT 1 FROM customer_feedback cf
+          WHERE cf.customer_id = customer.id
+            AND cf.deleted_at IS NULL
+        )`,
+        'hasFeedback',
+      )
+      .where('customer.id IN (:...customerIds)', { customerIds })
+      .andWhere('customer.organizationId = :organizationId', { organizationId })
+      .setParameters({ organizationId })
+      .getRawMany<{
+        customerId: string;
+        hasProperties: boolean;
+        hasProjects: boolean;
+        hasQuotes: boolean;
+        hasPayments: boolean;
+        hasServiceRequests: boolean;
+        hasLoans: boolean;
+        hasSubsidies: boolean;
+        hasFeedback: boolean;
+      }>();
+
+    for (const row of rows) {
+      result.set(row.customerId, {
+        hasProperties: row.hasProperties,
+        hasProjects: row.hasProjects,
+        hasQuotes: row.hasQuotes,
+        hasPayments: row.hasPayments,
+        hasServiceRequests: row.hasServiceRequests,
+        hasLoans: row.hasLoans,
+        hasSubsidies: row.hasSubsidies,
+        hasFeedback: row.hasFeedback,
+      });
+    }
+
+    return result;
   }
 }

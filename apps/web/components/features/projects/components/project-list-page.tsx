@@ -79,6 +79,7 @@ const SORT_FIELD_MAP: Record<string, string> = {
   systemSizeKw: 'systemSizeKw',
   estimatedCost: 'estimatedCost',
   progressPercentage: 'progressPercentage',
+  startDate: 'startDate',
   endDate: 'endDate',
   status: 'status',
   createdAt: 'createdAt',
@@ -150,12 +151,18 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
     result.pendingWorkflowStepId = pendingWorkflowStepId;
   }
 
-  // endDate column date filter → backend fromDate/toDate (project.endDate range)
+  const startDateRaw = toLocalDateString(raw.startDate);
+  if (startDateRaw) {
+    const { fromIso, toIso } = localDateToUtcDayRange(startDateRaw);
+    result.startDateFrom = fromIso;
+    result.startDateTo = toIso;
+  }
+
   const endDateRaw = toLocalDateString(raw.endDate);
   if (endDateRaw) {
     const { fromIso, toIso } = localDateToUtcDayRange(endDateRaw);
-    result.fromDate = fromIso;
-    result.toDate = toIso;
+    result.endDateFrom = fromIso;
+    result.endDateTo = toIso;
   }
 
   return result;
@@ -443,6 +450,27 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     renderCell: ({ row }): JSX.Element => {
       const pt = (row as ProjectListItem).projectType;
       return <MUIStatusChip label={PROJECT_TYPE_LABELS[pt] ?? toTitleLabel(pt)} colorSeed={pt} />;
+    },
+  },
+  {
+    field: 'startDate',
+    headerName: 'Start Date',
+    sortable: true,
+    filterable: true,
+    filterType: 'date',
+    renderCell: ({ row }): JSX.Element => {
+      const project = row as ProjectListItem;
+      if (!project.startDate) return <MUITypography variant="placeholder">-</MUITypography>;
+      return (
+        <Box sx={{ minWidth: 0 }}>
+          <MUITypography variant="body" sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>
+            {formatDate(project.startDate, 'short')}
+          </MUITypography>
+          <MUITypography variant="timestamp" sx={{ color: 'text.disabled', whiteSpace: 'nowrap' }}>
+            {formatDate(project.startDate, 'long')}
+          </MUITypography>
+        </Box>
+      );
     },
   },
   {

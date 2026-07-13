@@ -20,6 +20,7 @@ export class ProjectRepository {
   private static readonly SORT_WHITELIST: Record<string, string> = {
     name: 'project.name',
     createdAt: 'project.createdAt',
+    startDate: 'project.startDate',
     endDate: 'project.endDate',
     systemSizeKw: 'cv.systemSizeKw',
     estimatedCost: 'cv.finalPrice',
@@ -120,6 +121,10 @@ export class ProjectRepository {
       projectType?: string;
       fromDate?: string;
       toDate?: string;
+      startDateFrom?: string;
+      startDateTo?: string;
+      endDateFrom?: string;
+      endDateTo?: string;
       search?: string;
       memberId?: string;
       currentUserId?: string;
@@ -163,6 +168,24 @@ export class ProjectRepository {
 
     if (filters?.toDate) {
       query.andWhere('project.endDate <= :toDate', { toDate: filters.toDate });
+    }
+
+    if (filters?.startDateFrom) {
+      query.andWhere('project.startDate >= :startDateFrom', {
+        startDateFrom: filters.startDateFrom,
+      });
+    }
+
+    if (filters?.startDateTo) {
+      query.andWhere('project.startDate <= :startDateTo', { startDateTo: filters.startDateTo });
+    }
+
+    if (filters?.endDateFrom) {
+      query.andWhere('project.endDate >= :endDateFrom', { endDateFrom: filters.endDateFrom });
+    }
+
+    if (filters?.endDateTo) {
+      query.andWhere('project.endDate <= :endDateTo', { endDateTo: filters.endDateTo });
     }
 
     // Health status filter — mirrors computeHealthStatus() logic in project.service.ts

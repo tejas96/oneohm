@@ -109,6 +109,30 @@ export class ProjectController {
     description: 'Filter by end date (to)',
   })
   @ApiQuery({
+    name: 'startDateFrom',
+    required: false,
+    type: String,
+    description: 'Filter by project start date (from, inclusive)',
+  })
+  @ApiQuery({
+    name: 'startDateTo',
+    required: false,
+    type: String,
+    description: 'Filter by project start date (to, inclusive)',
+  })
+  @ApiQuery({
+    name: 'endDateFrom',
+    required: false,
+    type: String,
+    description: 'Filter by project due date (from, inclusive)',
+  })
+  @ApiQuery({
+    name: 'endDateTo',
+    required: false,
+    type: String,
+    description: 'Filter by project due date (to, inclusive)',
+  })
+  @ApiQuery({
     name: 'search',
     required: false,
     type: String,
@@ -139,6 +163,7 @@ export class ProjectController {
     enum: [
       'name',
       'createdAt',
+      'startDate',
       'endDate',
       'systemSizeKw',
       'estimatedCost',
@@ -165,6 +190,10 @@ export class ProjectController {
     @Query('projectType') projectType?: string,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
+    @Query('startDateFrom') startDateFrom?: string,
+    @Query('startDateTo') startDateTo?: string,
+    @Query('endDateFrom') endDateFrom?: string,
+    @Query('endDateTo') endDateTo?: string,
     @Query('search') search?: string,
     @Query('memberId', new ParseUUIDPipe({ optional: true })) memberId?: string,
     @Query('pendingWorkflowStepId', new ParseUUIDPipe({ optional: true }))
@@ -190,6 +219,10 @@ export class ProjectController {
       projectType,
       fromDate,
       toDate,
+      startDateFrom,
+      startDateTo,
+      endDateFrom,
+      endDateTo,
       search,
       memberId: effectiveMemberId,
       currentUserId: currentUser.id,

@@ -140,6 +140,12 @@ export class CustomerPropertyRepository {
     return (result.affected ?? 0) > 0;
   }
 
+  async hardDelete(id: string, organizationId: string, manager?: EntityManager): Promise<boolean> {
+    const repo = manager ? manager.getRepository(CustomerPropertyEntity) : this.repository;
+    const result = await repo.delete({ id, organizationId });
+    return (result.affected ?? 0) > 0;
+  }
+
   /**
    * Set a property as primary for a customer
    * Unsets all other properties as non-primary first
@@ -156,6 +162,29 @@ export class CustomerPropertyRepository {
     return this.repository.count({
       where: { customerId, deletedAt: IsNull() },
     });
+  }
+
+  /**
+   * Batch lookup active project IDs for a list of property IDs.
+   */
+  async findProjectIdsByPropertyIds(
+    propertyIds: string[],
+    manager?: EntityManager,
+  ): Promise<Map<string, string>> {
+    if (propertyIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await (manager ?? this.repository.manager)
+      .createQueryBuilder()
+      .select('project.property_id', 'propertyId')
+      .addSelect('project.id', 'projectId')
+      .from('projects', 'project')
+      .where('project.property_id IN (:...propertyIds)', { propertyIds })
+      .andWhere('project.deleted_at IS NULL')
+      .getRawMany<{ propertyId: string; projectId: string }>();
+
+    return new Map(rows.map((row) => [row.propertyId, row.projectId]));
   }
 
   async countByTemperature(organizationId: string, temperature: LeadTemperature): Promise<number> {

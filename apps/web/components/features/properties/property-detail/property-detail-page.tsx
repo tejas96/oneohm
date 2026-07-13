@@ -2,6 +2,7 @@
 
 import AddTaskOutlinedIcon from '@mui/icons-material/AddTaskOutlined';
 import CallOutlinedIcon from '@mui/icons-material/CallOutlined';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
@@ -14,6 +15,7 @@ import {
   Divider,
   IconButton,
   Link as MuiLink,
+  ListItemIcon,
   Menu,
   MenuItem,
   Paper,
@@ -37,11 +39,22 @@ import {
   PROPERTY_DETAIL_TABS,
   type PropertyDetailTab,
 } from '../constants';
-import { useProperty, usePropertyFinanceSnapshot, usePropertyFollowups } from '../hooks';
-import { getPropertyDisplayName } from '../utils';
+import {
+  useProperty,
+  usePropertyFinanceSnapshot,
+  usePropertyFollowups,
+  usePropertyLoan,
+} from '../hooks';
 import { FollowupDrawer } from './followup-drawer';
 import { MarkAsLostDialog } from './mark-as-lost-dialog';
+import { useDeleteProperty } from '../hooks/use-properties';
+import { getPropertyDisplayName } from '../utils';
 import { PageSkeleton, TabSkeleton } from './tab-skeleton';
+import {
+  formatDeleteBlockTooltip,
+  getPropertyDeleteBlockReasons,
+  ORG_ADMIN_ROLES,
+} from '../utils/delete-eligibility';
 
 import {
   CustomerAttentionPanel,
@@ -51,8 +64,10 @@ import { stickyHeaderPaperSx } from '@/components/features/customers/customer-de
 import { useCustomer } from '@/components/features/customers/hooks';
 import { usePropertyLockStatus } from '@/components/features/quotes/hooks/use-quotes';
 import { EmptyState } from '@/components/shared';
+import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
 import { showToast, WhatsAppIcon } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useDeleteConfirmation } from '@/lib/hooks/core';
 import {
   formatCurrency,
   formatDate,
@@ -117,7 +132,16 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, hasAnyRole } = useAuth();
+  const isOrgAdmin = hasAnyRole([...ORG_ADMIN_ROLES]);
+  const deletePropertyMutation = useDeleteProperty();
+  const deleteConfirmation = useDeleteConfirmation({
+    mutation: deletePropertyMutation,
+    getId: (item: { id: string }) => item.id,
+    onSuccess: () => {
+      void router.push(ROUTES.PROPERTIES.LIST);
+    },
+  });
 
   const rawTab = searchParams.get('tab');
   const activeTab: PropertyDetailTab = isValidTab(rawTab) ? rawTab : PROPERTY_DETAIL_DEFAULT_TAB;
@@ -143,6 +167,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     limit: 20,
   });
   const linkedProjectId = property?.project?.id ?? property?.projectId ?? null;
+  const { data: propertyLoan } = usePropertyLoan(property?.id ?? '', { enabled: propertyReady });
   const {
     snapshot: financeSnapshot,
     isLoading: financeLoading,
@@ -265,6 +290,9 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
       ? [customer?.firstName, customer?.lastName].filter(Boolean).join(' ')
       : property.customerName || 'Customer';
   const propertyName = getPropertyDisplayName(property);
+  const propertyDeleteReasons = getPropertyDeleteBlockReasons(property, propertyLoan);
+  const propertyDeleteDisabled = propertyDeleteReasons.length > 0;
+  const propertyDeleteTooltip = formatDeleteBlockTooltip(propertyDeleteReasons);
   const phoneForWhatsApp = customer?.phone ? formatPhoneForWhatsApp(customer.phone) : '';
   const kpiItems = [
     { label: 'Temperature', value: toTitleLabel(property.leadTemperature) },
@@ -529,7 +557,39 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         >
           Mark as Lost
         </MenuItem>
+        {isOrgAdmin ? (
+          <>
+            <Divider />
+            <Tooltip title={propertyDeleteTooltip ?? ''}>
+              <span>
+                <MenuItem
+                  disabled={propertyDeleteDisabled}
+                  onClick={() => {
+                    if (propertyDeleteDisabled) return;
+                    setMoreAnchor(null);
+                    deleteConfirmation.requestDelete(property);
+                  }}
+                  sx={{ color: 'error.main' }}
+                >
+                  <ListItemIcon>
+                    <DeleteOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />
+                  </ListItemIcon>
+                  Delete Property
+                </MenuItem>
+              </span>
+            </Tooltip>
+          </>
+        ) : null}
       </Menu>
+
+      <DeleteConfirmationDialog
+        open={deleteConfirmation.isOpen}
+        title="Delete Property"
+        itemName={propertyName}
+        isPending={deleteConfirmation.isPending}
+        onCancel={deleteConfirmation.cancel}
+        onConfirm={() => void deleteConfirmation.confirm()}
+      />
 
       <Box sx={{ display: { xs: 'block', md: 'none' } }}>
         <SpeedDial

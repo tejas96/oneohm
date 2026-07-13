@@ -2,7 +2,6 @@ import {
   AlertCircle,
   BadgePercent,
   Banknote,
-  BarChart3,
   Box,
   Building2,
   Calendar,
@@ -19,7 +18,6 @@ import {
   LayoutGrid,
   Layers,
   List,
-  MoreHorizontal,
   Package,
   Plus,
   Receipt,
@@ -110,20 +108,6 @@ export const navigationConfig: NavigationConfig = {
       label: 'Service & AMC',
       href: ROUTES.SERVICE.HOME,
       panelKey: 'service',
-    },
-    {
-      id: 'analytics',
-      icon: BarChart3,
-      label: 'Analytics',
-      href: ROUTES.ANALYTICS.HOME,
-      panelKey: 'analytics',
-    },
-    {
-      id: 'more',
-      icon: MoreHorizontal,
-      label: 'More',
-      href: ROUTES.MORE.HOME,
-      panelKey: 'more',
     },
   ],
 
@@ -562,60 +546,6 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Contracts',
           items: [{ id: 'amc', icon: FileText, label: 'AMC Contracts', href: ROUTES.SERVICE.AMC }],
-        },
-      ],
-    },
-
-    analytics: {
-      title: 'Analytics',
-      sections: [
-        {
-          title: 'Reports',
-          items: [
-            {
-              id: 'analytics-dashboard',
-              icon: BarChart3,
-              label: 'Dashboard',
-              href: ROUTES.ANALYTICS.HOME,
-            },
-            {
-              id: 'sales-report',
-              icon: TrendingUp,
-              label: 'Sales Report',
-              href: ROUTES.ANALYTICS.SALES,
-            },
-            {
-              id: 'projects-report',
-              icon: FileText,
-              label: 'Project Report',
-              href: ROUTES.ANALYTICS.PROJECTS,
-            },
-          ],
-        },
-      ],
-    },
-
-    more: {
-      title: 'More',
-      sections: [
-        {
-          title: 'Organization',
-          items: [
-            { id: 'employees', icon: Users, label: 'Employees', href: ROUTES.ORG.EMPLOYEES },
-            {
-              id: 'organizations',
-              icon: LayoutGrid,
-              label: 'Organizations',
-              href: ROUTES.ORG.ORGANIZATIONS,
-            },
-            { id: 'resellers', icon: Users, label: 'Resellers', href: ROUTES.ORG.RESELLERS },
-          ],
-        },
-        {
-          title: 'Documents',
-          items: [
-            { id: 'documents', icon: FileText, label: 'Documents', href: ROUTES.ORG.DOCUMENTS },
-          ],
         },
       ],
     },

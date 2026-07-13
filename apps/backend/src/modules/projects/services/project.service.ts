@@ -90,6 +90,10 @@ export class ProjectService {
       projectType?: string;
       fromDate?: string;
       toDate?: string;
+      startDateFrom?: string;
+      startDateTo?: string;
+      endDateFrom?: string;
+      endDateTo?: string;
       search?: string;
       memberId?: string;
       currentUserId?: string;

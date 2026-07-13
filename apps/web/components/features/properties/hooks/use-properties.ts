@@ -22,6 +22,7 @@ import type { AxiosError } from 'axios';
 
 import { customerKeys, propertyKeys } from './use-create-property';
 
+import { showToast } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -88,6 +89,8 @@ export interface Property {
   latestQuoteDate?: string;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;
+  projectId?: string;
+  hasActiveLoan?: boolean;
 }
 
 export type { PaginationMeta };
@@ -166,7 +169,7 @@ export function useUpdateProperty(): UseMutationResult<
 }
 
 /**
- * Hook to delete a property (soft delete)
+ * Hook to permanently delete a property (blocked when quotes/project/active loan exist)
  */
 export function useDeleteProperty(): UseMutationResult<void, AxiosError, string> {
   const queryClient = useQueryClient();
@@ -180,10 +183,16 @@ export function useDeleteProperty(): UseMutationResult<void, AxiosError, string>
       });
     },
     onSuccess: () => {
+      showToast.success('Property permanently deleted');
       void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
       void queryClient.invalidateQueries({
         queryKey: customerKeys.lists(organizationId),
       });
+    },
+    onError: (error: AxiosError<{ message?: string | string[] }>) => {
+      const message = error.response?.data?.message;
+      const text = Array.isArray(message) ? message[0] : message;
+      showToast.error(text || 'Failed to delete property');
     },
   });
 }
