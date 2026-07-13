@@ -26,6 +26,10 @@ export interface ProjectFilters {
   projectType?: string;
   fromDate?: string;
   toDate?: string;
+  startDateFrom?: string;
+  startDateTo?: string;
+  endDateFrom?: string;
+  endDateTo?: string;
   memberId?: string;
   pendingWorkflowStepId?: string;
   healthStatus?: string;
@@ -130,6 +134,10 @@ export function useProjects(
       if (queryFilters.projectType) params.append('projectType', queryFilters.projectType);
       if (queryFilters.fromDate) params.append('fromDate', queryFilters.fromDate);
       if (queryFilters.toDate) params.append('toDate', queryFilters.toDate);
+      if (queryFilters.startDateFrom) params.append('startDateFrom', queryFilters.startDateFrom);
+      if (queryFilters.startDateTo) params.append('startDateTo', queryFilters.startDateTo);
+      if (queryFilters.endDateFrom) params.append('endDateFrom', queryFilters.endDateFrom);
+      if (queryFilters.endDateTo) params.append('endDateTo', queryFilters.endDateTo);
       if (queryFilters.memberId) params.append('memberId', queryFilters.memberId);
       if (queryFilters.pendingWorkflowStepId)
         params.append('pendingWorkflowStepId', queryFilters.pendingWorkflowStepId);

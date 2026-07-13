@@ -19,6 +19,7 @@ import type { AxiosError } from 'axios';
 
 import { customerKeys } from './use-create-customer';
 
+import { showToast } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -73,6 +74,7 @@ export interface Customer {
   groupName?: string;
   status: CustomerStatus;
   propertyCount: number;
+  deleteBlockReasons?: string[];
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
@@ -314,7 +316,7 @@ export function useAssignCustomer(): UseMutationResult<
 }
 
 /**
- * Hook to delete a customer
+ * Hook to permanently delete a customer (blocked when properties/quotes/financial records exist)
  */
 export function useDeleteCustomer(): UseMutationResult<void, AxiosError, string> {
   const queryClient = useQueryClient();
@@ -328,11 +330,17 @@ export function useDeleteCustomer(): UseMutationResult<void, AxiosError, string>
       });
     },
     onSuccess: (_, id) => {
+      showToast.success('Customer permanently deleted');
       queryClient.removeQueries({ queryKey: customerKeys.detail(organizationId, id) });
       void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
       void queryClient.invalidateQueries({
         queryKey: [...customerKeys.all(organizationId), 'stats'],
       });
+    },
+    onError: (error: AxiosError<{ message?: string | string[] }>) => {
+      const message = error.response?.data?.message;
+      const text = Array.isArray(message) ? message[0] : message;
+      showToast.error(text || 'Failed to delete customer');
     },
   });
 }

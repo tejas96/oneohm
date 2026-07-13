@@ -25,9 +25,8 @@ import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
-// TODO: Re-enable permissions when IAM is fully configured
-// import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-// import { PermissionGuard } from '../../iam/guards/permission.guard';
+import { RequireRole } from '../../iam/decorators/require-role.decorator';
+import { RoleGuard } from '../../iam/guards/role.guard';
 import {
   AvailabilityResponseDto,
   CheckAvailabilityQueryDto,
@@ -352,11 +351,13 @@ export class CustomerController {
   /**
    * Delete customer
    */
-  // @RequirePermission('customers:delete') // TODO: Re-enable
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @RequireRole('admin', 'super_admin')
   @ApiDelete({
     summary: 'Delete customer',
     description:
-      'Soft delete a customer. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Permanently delete a customer when it has no properties, quotations, or financial records. Admin or super admin only. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+    additionalErrors: [{ status: HttpStatus.CONFLICT, description: 'Customer cannot be deleted' }],
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,

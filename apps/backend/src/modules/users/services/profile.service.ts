@@ -229,12 +229,42 @@ export class ProfileService {
   }
 
   /**
-   * Update basic user info (name, email)
+   * Update basic user info (name, email, phone).
+   *
+   * Keeps the core `users` record (login identity) in sync whenever a profile
+   * (customer/reseller/employee) changes its contact details. Without this,
+   * `users.phone`/`users.email` go stale and future lookups by the new contact
+   * info (duplicate checks, login, search) silently miss the user, while
+   * lookups by the old contact info incorrectly resolve back to this profile.
    */
   async updateUserBasicInfo(
     userId: string,
-    updates: { firstName?: string; lastName?: string; email?: string },
+    updates: { firstName?: string; lastName?: string; email?: string; phone?: string },
   ): Promise<void> {
+    if (updates.phone) {
+      const existingByPhone = await this.userRepository.findByPhoneIncludingDeleted(
+        updates.phone,
+        userId,
+      );
+      if (existingByPhone) {
+        throw new ConflictException(
+          `Phone '${updates.phone}' is already registered to another user`,
+        );
+      }
+    }
+
+    if (updates.email) {
+      const existingByEmail = await this.userRepository.findByEmailIncludingDeleted(
+        updates.email,
+        userId,
+      );
+      if (existingByEmail) {
+        throw new ConflictException(
+          `Email '${updates.email}' is already registered to another user`,
+        );
+      }
+    }
+
     await this.userRepository.update(userId, updates);
     this.logger.log(`Updated basic info for user ${userId}`);
   }

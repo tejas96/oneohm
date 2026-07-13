@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@oneohm-epc'
+          scope: '@tejas96'
 
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit

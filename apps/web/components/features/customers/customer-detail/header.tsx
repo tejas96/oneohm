@@ -1,9 +1,11 @@
 'use client';
 
 import AddBusinessOutlinedIcon from '@mui/icons-material/AddBusinessOutlined';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import PostAddOutlinedIcon from '@mui/icons-material/PostAddOutlined';
 import {
@@ -13,13 +15,16 @@ import {
   Chip,
   Divider,
   IconButton,
+  ListItemIcon,
+  Menu,
+  MenuItem,
   Paper,
   Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { CustomerStatus } from '@tejas96/shared/types';
-import type { JSX } from 'react';
+import { useState, type JSX } from 'react';
 
 import { CUSTOMER_STATUS_CHIP_COLOR } from '../constants';
 import { customerAvatarSx, stickyHeaderPaperSx } from './styles';
@@ -37,6 +42,10 @@ interface CustomerDetailHeaderProps {
   onAddProperty: () => void;
   onCreateQuote: () => void;
   onLogFollowup: () => void;
+  showDelete?: boolean;
+  deleteDisabled?: boolean;
+  deleteTooltip?: string;
+  onDelete?: () => void;
 }
 
 export function CustomerDetailHeader({
@@ -47,7 +56,12 @@ export function CustomerDetailHeader({
   onAddProperty,
   onCreateQuote,
   onLogFollowup,
+  showDelete = false,
+  deleteDisabled = false,
+  deleteTooltip,
+  onDelete,
 }: CustomerDetailHeaderProps): JSX.Element {
+  const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
   const fullName = getCustomerDisplayName(customer);
   const phoneForWhatsApp = customer.phone ? formatPhoneForWhatsApp(customer.phone) : '';
   const statusColor = CUSTOMER_STATUS_CHIP_COLOR[customer.status] ?? 'default';
@@ -165,8 +179,36 @@ export function CustomerDetailHeader({
           >
             Follow-up
           </Button>
+          {showDelete ? (
+            <IconButton size="small" onClick={(event) => setMoreAnchor(event.currentTarget)}>
+              <MoreVertOutlinedIcon fontSize="small" />
+            </IconButton>
+          ) : null}
         </Stack>
       </Stack>
+
+      {showDelete ? (
+        <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
+          <Tooltip title={deleteTooltip ?? ''}>
+            <span>
+              <MenuItem
+                disabled={deleteDisabled}
+                onClick={() => {
+                  if (deleteDisabled) return;
+                  setMoreAnchor(null);
+                  onDelete?.();
+                }}
+                sx={{ color: 'error.main' }}
+              >
+                <ListItemIcon>
+                  <DeleteOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />
+                </ListItemIcon>
+                Delete Customer
+              </MenuItem>
+            </span>
+          </Tooltip>
+        </Menu>
+      ) : null}
 
       {customer.status === CustomerStatus.INACTIVE && <AlertInactiveBanner />}
     </Paper>

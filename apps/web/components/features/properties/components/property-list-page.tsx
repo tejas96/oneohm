@@ -1,6 +1,7 @@
 'use client';
 
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -13,6 +14,7 @@ import {
   Autocomplete,
   Box,
   Button,
+  Divider,
   IconButton,
   Link as MuiLink,
   ListItemIcon,
@@ -35,7 +37,17 @@ import {
   QUOTE_STATUS_OPTIONS,
   TEMP_DOT_MUI_COLOR,
 } from '../constants';
-import { type Property as PropertyBase, type PropertyFilters, useProperties } from '../hooks';
+import {
+  type Property as PropertyBase,
+  type PropertyFilters,
+  useDeleteProperty,
+  useProperties,
+} from '../hooks';
+import {
+  formatDeleteBlockTooltip,
+  getPropertyDeleteBlockReasons,
+  ORG_ADMIN_ROLES,
+} from '../utils/delete-eligibility';
 
 import { useEmployees } from '@/components/features/employees';
 import {
@@ -43,13 +55,16 @@ import {
   type BulkAction,
   type ColumnConfig,
 } from '@/components/shared/advanced-table';
+import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
 import { WhatsAppIcon } from '@/components/ui';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
+import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { formatCurrency, formatPhoneForWhatsApp, getErrorMessage, toTitleLabel } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Types
@@ -198,13 +213,23 @@ const BULK_ACTIONS: BulkAction<PropertyRow>[] = [
 interface RowActionsMenuProps {
   property: PropertyRow;
   onMarkAsLost: (property: PropertyRow) => void;
+  onRequestDelete?: (property: PropertyRow) => void;
+  showDelete?: boolean;
 }
 
-function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.Element {
+function RowActionsMenu({
+  property,
+  onMarkAsLost,
+  onRequestDelete,
+  showDelete = false,
+}: RowActionsMenuProps): JSX.Element {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   const handleClose = (): void => setAnchorEl(null);
+  const deleteReasons = getPropertyDeleteBlockReasons(property);
+  const deleteDisabled = deleteReasons.length > 0;
+  const deleteTooltip = formatDeleteBlockTooltip(deleteReasons);
 
   return (
     <>
@@ -292,6 +317,30 @@ function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.El
           </ListItemIcon>
           Mark as Lost
         </MenuItem>
+
+        {showDelete ? (
+          <>
+            <Divider />
+            <Tooltip title={deleteTooltip ?? ''}>
+              <span>
+                <MenuItem
+                  disabled={deleteDisabled}
+                  onClick={() => {
+                    if (deleteDisabled) return;
+                    handleClose();
+                    onRequestDelete?.(property);
+                  }}
+                  sx={{ color: 'error.main' }}
+                >
+                  <ListItemIcon>
+                    <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
+                  </ListItemIcon>
+                  Delete Property
+                </MenuItem>
+              </span>
+            </Tooltip>
+          </>
+        ) : null}
       </Menu>
     </>
   );
@@ -304,11 +353,15 @@ function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.El
 
 interface BuildColumnsArgs {
   onMarkAsLost: (property: PropertyRow) => void;
+  onRequestDelete?: (property: PropertyRow) => void;
+  showDelete?: boolean;
   creatorOptions: { value: string; label: string }[];
 }
 
 function buildColumns({
   onMarkAsLost,
+  onRequestDelete,
+  showDelete,
   creatorOptions,
 }: BuildColumnsArgs): ColumnConfig<PropertyRow>[] {
   return [
@@ -665,7 +718,14 @@ function buildColumns({
       headerName: '',
       hideable: false,
       width: 48,
-      actions: (row) => <RowActionsMenu property={row} onMarkAsLost={onMarkAsLost} />,
+      actions: (row) => (
+        <RowActionsMenu
+          property={row}
+          onMarkAsLost={onMarkAsLost}
+          onRequestDelete={onRequestDelete}
+          showDelete={showDelete}
+        />
+      ),
     },
   ];
 }
@@ -677,6 +737,13 @@ function buildColumns({
 export function PropertyListPage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { hasAnyRole } = useAuth();
+  const isOrgAdmin = hasAnyRole([...ORG_ADMIN_ROLES]);
+  const deletePropertyMutation = useDeleteProperty();
+  const deleteConfirmation = useDeleteConfirmation<PropertyRow>({
+    mutation: deletePropertyMutation,
+    getId: (row) => row.id,
+  });
 
   // URL-synced table state — single source of truth for all table interactions
   const urlState = useTableUrlState({ prefix: 'properties', defaultPageSize: 10 });
@@ -758,9 +825,11 @@ export function PropertyListPage(): JSX.Element {
     (): ColumnConfig<PropertyRow>[] =>
       buildColumns({
         onMarkAsLost: handleMarkAsLost,
+        onRequestDelete: deleteConfirmation.requestDelete,
+        showDelete: isOrgAdmin,
         creatorOptions,
       }),
-    [handleMarkAsLost, creatorOptions],
+    [handleMarkAsLost, deleteConfirmation.requestDelete, isOrgAdmin, creatorOptions],
   );
 
   const renderEmptyState = useCallback(
@@ -897,6 +966,19 @@ export function PropertyListPage(): JSX.Element {
         open={lostModalOpen}
         onOpenChange={setLostModalOpen}
         property={selectedProperty}
+      />
+
+      <DeleteConfirmationDialog
+        open={deleteConfirmation.isOpen}
+        title="Delete Property"
+        itemName={
+          deleteConfirmation.target?.propertyName ||
+          deleteConfirmation.target?.propertyCode ||
+          'this property'
+        }
+        isPending={deleteConfirmation.isPending}
+        onCancel={deleteConfirmation.cancel}
+        onConfirm={() => void deleteConfirmation.confirm()}
       />
     </Box>
   );

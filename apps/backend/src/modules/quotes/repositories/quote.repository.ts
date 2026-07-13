@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QuoteSortField, QuoteStatus, SortOrder } from '@tejas96/shared/types';
-import { Repository } from 'typeorm';
+import { Repository, type EntityManager } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { QuoteQueryDto } from '../dto/quotes/quote-query.dto';
@@ -340,6 +340,7 @@ export class QuoteRepository {
   async findLatestByPropertyIds(
     propertyIds: string[],
     organizationId: string,
+    manager?: EntityManager,
   ): Promise<Map<string, LatestQuoteInfo>> {
     // Early return for empty array (no properties = no quotes to look up)
     if (propertyIds.length === 0) {
@@ -349,7 +350,8 @@ export class QuoteRepository {
     // PostgreSQL DISTINCT ON gives us the first row per property_id
     // Combined with ORDER BY createdAt DESC, we get the latest quote per property
     // Join latest quote version by creation date to get finalPrice/systemSizeKw
-    const quotes = await this.repository
+    const quotes = await (manager ?? this.repository.manager)
+      .getRepository(QuoteEntity)
       .createQueryBuilder('quote')
       .leftJoinAndSelect('quote.versions', 'cv', latestVersionJoinCondition('quote'))
       .select([
