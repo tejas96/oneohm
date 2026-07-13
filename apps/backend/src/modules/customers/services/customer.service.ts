@@ -283,6 +283,33 @@ export class CustomerService {
       }
     }
 
+    // Guard the core users table too — the new phone/email will be synced to the
+    // linked user record below, so fail fast if another user already owns it
+    // (checked here, before mutating customer_profiles, to avoid a half-updated state).
+    const existingCustomer = await this.customerRepository.findById(id);
+    if (updateDto.phone && existingCustomer) {
+      const existingUserByPhone = await this.userRepository.findByPhoneIncludingDeleted(
+        updateDto.phone,
+        existingCustomer.userId,
+      );
+      if (existingUserByPhone) {
+        throw new ConflictException(
+          `Phone '${updateDto.phone}' is already registered to another user`,
+        );
+      }
+    }
+    if (updateDto.email && existingCustomer) {
+      const existingUserByEmail = await this.userRepository.findByEmailIncludingDeleted(
+        updateDto.email,
+        existingCustomer.userId,
+      );
+      if (existingUserByEmail) {
+        throw new ConflictException(
+          `Email '${updateDto.email}' is already registered to another user`,
+        );
+      }
+    }
+
     // Strip group fields from the base update — group assignment is handled below
     // to ensure validation (code exists) happens before any DB write
     const {
@@ -302,11 +329,20 @@ export class CustomerService {
       throw new NotFoundException(`Customer with ID '${id}' not found`);
     }
 
-    // Sync names to the core user record
-    if (profileUpdateFields.firstName !== undefined || profileUpdateFields.lastName !== undefined) {
+    // Sync name/phone/email to the core user record — keeps the login identity
+    // (`users` table) consistent with the customer profile so future duplicate
+    // checks, search, and login by the new contact info resolve correctly.
+    if (
+      profileUpdateFields.firstName !== undefined ||
+      profileUpdateFields.lastName !== undefined ||
+      profileUpdateFields.phone !== undefined ||
+      profileUpdateFields.email !== undefined
+    ) {
       await this.profileService.updateUserBasicInfo(updated.userId, {
         firstName: profileUpdateFields.firstName,
         lastName: profileUpdateFields.lastName,
+        phone: profileUpdateFields.phone,
+        email: profileUpdateFields.email ?? undefined,
       });
     }
 
