@@ -48,12 +48,21 @@ export abstract class BaseIntegrationProvider implements IBaseIntegration {
     this.logger.error(`${operation} failed`, error);
 
     const err = error as {
-      response?: { data?: { message?: string }; status?: number };
+      response?: {
+        data?: {
+          message?: string;
+          error?: { message?: string; code?: number | string; type?: string };
+        };
+        status?: number;
+      };
       message?: string;
       code?: string;
     };
-    const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
-    const errorCode = err.response?.status?.toString() || err.code || 'UNKNOWN';
+    const metaError = err.response?.data?.error;
+    const errorMessage =
+      metaError?.message || err.response?.data?.message || err.message || 'Unknown error';
+    const errorCode =
+      metaError?.code?.toString() || err.response?.status?.toString() || err.code || 'UNKNOWN';
 
     return {
       error: {

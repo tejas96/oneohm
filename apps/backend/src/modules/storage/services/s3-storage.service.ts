@@ -16,7 +16,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 
 import { ConfigService } from '../../../config/config.service';
 import type {
@@ -81,6 +81,47 @@ export class S3StorageService implements StorageProvider, OnModuleInit {
     }
 
     this.logger.log(`S3 Storage initialized with bucket: ${this.bucket}`);
+  }
+
+  private ensureClientReady(): void {
+    if (!this.s3Client || !this.bucket) {
+      throw new BadRequestException(
+        'File storage is not configured. Set AWS/Tigris credentials and bucket.',
+      );
+    }
+  }
+
+  /**
+   * Upload a buffer directly to S3-compatible storage.
+   */
+  async uploadBuffer(options: {
+    fileKey: string;
+    buffer: Buffer;
+    contentType: string;
+    metadata?: Record<string, string>;
+  }): Promise<PresignedUrlResult> {
+    this.ensureClientReady();
+    const { fileKey, buffer, contentType, metadata } = options;
+
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: fileKey,
+      Body: buffer,
+      ContentType: contentType,
+      ContentLength: buffer.length,
+      Metadata: metadata,
+      ACL: 'public-read',
+    });
+
+    await this.s3Client.send(command);
+    this.logger.debug(`Uploaded buffer to: ${fileKey}`);
+
+    return {
+      url: `${this.publicUrlBase}/${fileKey}`,
+      fileKey,
+      publicUrl: `${this.publicUrlBase}/${fileKey}`,
+      expiresAt: new Date(),
+    };
   }
 
   /**

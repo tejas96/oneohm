@@ -1,15 +1,13 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { IntegrationCategory, IntegrationProvider } from '@tejas96/shared/types';
 
+import { IntegrationEntity } from '../entities';
 import type { IBaseIntegration } from '../interfaces';
 import { IntegrationRepository } from '../repositories';
 import { ProviderFactory } from './provider-factory.service';
 
 /**
- * Provider Resolver Service
- * Resolves and creates provider instances for specific organizations
- *
- * Implements the Resolver Pattern - finds active integration and creates provider
+ * Resolves active integrations (app-scoped) and creates configured provider instances.
  */
 @Injectable()
 export class ProviderResolver {
@@ -20,77 +18,77 @@ export class ProviderResolver {
     private readonly providerFactory: ProviderFactory,
   ) {}
 
-  /**
-   * Resolve and create a provider for an organization
-   * Finds the active integration and returns a configured provider instance
-   *
-   * @param organizationId - Organization ID
-   * @param category - Integration category (e.g., MESSAGING)
-   * @param providerName - Optional specific provider (e.g., MSG91)
-   * @returns Configured provider instance
-   */
   async resolve(
-    organizationId: string,
     category: IntegrationCategory,
     providerName?: IntegrationProvider,
   ): Promise<IBaseIntegration> {
     this.logger.debug(
-      `Resolving provider for org ${organizationId}, category: ${category}, provider: ${providerName || 'auto'}`,
+      `Resolving provider for category: ${category}, provider: ${providerName || 'auto'}`,
     );
 
-    // Find active integration
-    const integration = await this.findActiveIntegration(organizationId, category, providerName);
+    const integration = await this.findActiveIntegration(category, providerName);
 
     if (!integration) {
+      const providerMsg = providerName ? ` with provider ${providerName}` : '';
       throw new NotFoundException(
-        `No active ${category} integration found for organization ${organizationId}${providerName ? ` with provider ${providerName}` : ''}`,
+        `No active ${category} integration configured${providerMsg}. Contact your administrator.`,
       );
     }
 
-    // Create provider instance
     const provider = await this.providerFactory.create(
       integration.provider as IntegrationProvider,
       integration,
     );
 
-    this.logger.debug(`✅ Resolved provider: ${integration.provider} for org ${organizationId}`);
+    this.logger.debug(`Resolved provider: ${integration.provider}`);
 
     return provider;
   }
 
-  /**
-   * Check if an organization has an active integration
-   */
+  async getActiveIntegration(
+    category: IntegrationCategory,
+    providerName?: IntegrationProvider,
+  ): Promise<IntegrationEntity | null> {
+    return this.findActiveIntegration(category, providerName);
+  }
+
   async hasIntegration(
-    organizationId: string,
     category: IntegrationCategory,
     providerName?: IntegrationProvider,
   ): Promise<boolean> {
-    const integration = await this.findActiveIntegration(organizationId, category, providerName);
+    const integration = await this.findActiveIntegration(category, providerName);
     return !!integration;
   }
 
-  /**
-   * Find active integration from database
-   */
   private async findActiveIntegration(
-    organizationId: string,
     category: IntegrationCategory,
     providerName?: IntegrationProvider,
-  ) {
+  ): Promise<IntegrationEntity | null> {
     if (providerName) {
-      // Find specific provider
-      return this.integrationRepository.findByOrgProviderCategory(
-        organizationId,
+      const integration = await this.integrationRepository.findActiveByProviderAndCategory(
         providerName,
         category,
       );
+
+      const duplicates = await this.integrationRepository.findAllActiveByProviderAndCategory(
+        providerName,
+        category,
+      );
+      if (duplicates.length > 1) {
+        this.logger.warn(
+          `Multiple active ${providerName}/${category} integrations found (${duplicates.length}). Using newest.`,
+        );
+      }
+
+      return integration;
     }
-    // Find any active provider in category
-    const integrations = await this.integrationRepository.findByCategoryAndOrg(
-      category,
-      organizationId,
-    );
-    return integrations[0] || null; // Return first or null
+
+    const integrations = await this.integrationRepository.findAllActiveByCategory(category);
+    if (integrations.length > 1) {
+      this.logger.warn(
+        `Multiple active ${category} integrations found (${integrations.length}). Using newest.`,
+      );
+    }
+    return integrations[0] || null;
   }
 }

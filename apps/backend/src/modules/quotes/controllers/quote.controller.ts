@@ -8,10 +8,13 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { type PaginatedResponse } from '@tejas96/shared/types';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { IntegrationProvider, type PaginatedResponse } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -26,15 +29,18 @@ import { toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { IntegrationService } from '../../integrations/services';
 import {
   CreateQuoteDto,
   QuoteQueryDto,
   QuoteResponseDto,
   ShareQuoteWhatsappDto,
+  ShareQuoteWhatsappResponseDto,
   UpdateQuoteDto,
   UpdateQuoteStatusDto,
 } from '../dto';
 import { QuoteService } from '../services/quote.service';
+import type { UploadedPdfFile } from '../types/uploaded-pdf-file.interface';
 
 /**
  * Quote Controller
@@ -45,7 +51,10 @@ import { QuoteService } from '../services/quote.service';
 @Controller('quotes')
 @UseGuards(JwtAuthGuard)
 export class QuoteController {
-  constructor(private readonly quoteService: QuoteService) {}
+  constructor(
+    private readonly quoteService: QuoteService,
+    private readonly integrationService: IntegrationService,
+  ) {}
 
   /**
    * Create a new quote
@@ -129,6 +138,22 @@ export class QuoteController {
   ): Promise<QuoteResponseDto[]> {
     const quotes = await this.quoteService.findAllByPropertyId(propertyId, organizationId);
     return plainToInstance(QuoteResponseDto, quotes, { excludeExtraneousValues: true });
+  }
+
+  @Get('whatsapp/health')
+  @ApiOperation({
+    summary: 'WhatsApp messaging health',
+    description: 'Returns Meta can_send_message status for the active WhatsApp integration.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    schema: { example: { canSend: true, errors: [] } },
+  })
+  async getWhatsappHealth(): Promise<{
+    canSend: boolean;
+    errors: Array<{ code?: string | number; description?: string }>;
+  }> {
+    return this.integrationService.getMessagingHealth(IntegrationProvider.WHATSAPP_BUSINESS);
   }
 
   /**
@@ -216,20 +241,31 @@ export class QuoteController {
   }
 
   @Post(':id/share/whatsapp')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  @ApiConsumes('multipart/form-data', 'application/json')
   @ApiOperation({
     summary: 'Share quote PDF on WhatsApp',
     description:
-      'Sends the approved quotation_pdf WhatsApp template with a quote PDF document header. ' +
-      'This is a business-initiated WhatsApp message.',
+      'Upload a quote PDF (multipart) or resend using an existing documentId (JSON). ' +
+      'Sends the quotation_pdf WhatsApp template with the PDF as the header document.',
   })
-  @ApiResponse({ status: HttpStatus.CREATED, description: 'WhatsApp message accepted by Meta' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'WhatsApp message accepted by Meta',
+    type: ShareQuoteWhatsappResponseDto,
+  })
   async shareOnWhatsapp(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ShareQuoteWhatsappDto,
-  ) {
-    return this.quoteService.shareOnWhatsapp(id, organizationId, dto, currentUser.id);
+    @UploadedFile() file?: UploadedPdfFile,
+  ): Promise<ShareQuoteWhatsappResponseDto> {
+    return this.quoteService.shareOnWhatsapp(id, organizationId, dto, currentUser.id, file);
   }
 
   /**

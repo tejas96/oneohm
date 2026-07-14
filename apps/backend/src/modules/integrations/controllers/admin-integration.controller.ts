@@ -16,43 +16,26 @@ import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { CreateIntegrationDto, UpdateIntegrationDto, IntegrationResponseDto } from '../dto';
 import { IntegrationEntity } from '../entities';
 import { IntegrationService } from '../services';
 
-/**
- * Admin Integration Controller
- * Manages CRUD operations for integrations
- *
- * Access: Only org_super_admin role (per-org basis)
- */
 @ApiTags('Admin - Integrations')
 @ApiBearerAuth()
 @Controller('admin/integrations')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class AdminIntegrationController {
   constructor(private readonly integrationService: IntegrationService) {}
 
   @Post()
-  @ApiOperation({
-    summary: 'Create a new integration',
-    description:
-      'Create a new third-party integration for the organization. Requires org_super_admin role with integrations:create permission.',
-  })
+  @ApiOperation({ summary: 'Create a new integration' })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Integration created successfully',
     type: IntegrationResponseDto,
   })
-  @ApiResponse({
-    status: HttpStatus.CONFLICT,
-    description: 'Integration already exists',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Credential validation failed',
-  })
+  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Integration already exists' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Credential validation failed' })
   async createIntegration(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
@@ -63,15 +46,11 @@ export class AdminIntegrationController {
       dto,
       currentUser.id,
     );
-
     return this.toResponseDto(integration);
   }
 
   @Get()
-  @ApiOperation({
-    summary: 'Get all integrations',
-    description: 'Get all integrations for the organization. Requires org_super_admin role.',
-  })
+  @ApiOperation({ summary: 'Get all integrations' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of integrations',
@@ -86,24 +65,10 @@ export class AdminIntegrationController {
   }
 
   @Get(':id')
-  @ApiOperation({
-    summary: 'Get integration by ID',
-    description: 'Get a specific integration by its ID. Requires org_super_admin role.',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Integration ID',
-    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Integration details',
-    type: IntegrationResponseDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Integration not found',
-  })
+  @ApiOperation({ summary: 'Get integration by ID' })
+  @ApiParam({ name: 'id', description: 'Integration ID' })
+  @ApiResponse({ status: HttpStatus.OK, type: IntegrationResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Integration not found' })
   async getIntegrationById(
     @OrganizationContext() organizationId: string,
     @Param('id') id: string,
@@ -114,28 +79,11 @@ export class AdminIntegrationController {
   }
 
   @Put(':id')
-  @ApiOperation({
-    summary: 'Update integration',
-    description: 'Update an existing integration. Requires org_super_admin role.',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Integration ID',
-    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Integration updated successfully',
-    type: IntegrationResponseDto,
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Integration not found',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Credential validation failed',
-  })
+  @ApiOperation({ summary: 'Update integration' })
+  @ApiParam({ name: 'id', description: 'Integration ID' })
+  @ApiResponse({ status: HttpStatus.OK, type: IntegrationResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Integration not found' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Credential validation failed' })
   async updateIntegration(
     @OrganizationContext() organizationId: string,
     @Param('id') id: string,
@@ -148,33 +96,14 @@ export class AdminIntegrationController {
       dto,
       currentUser.id,
     );
-
     return this.toResponseDto(integration);
   }
 
   @Delete(':id')
-  @ApiOperation({
-    summary: 'Delete integration',
-    description: 'Delete an integration (soft delete). Requires org_super_admin role.',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Integration ID',
-    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Integration deleted successfully',
-    schema: {
-      example: {
-        message: 'Integration deleted successfully',
-      },
-    },
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Integration not found',
-  })
+  @ApiOperation({ summary: 'Delete integration' })
+  @ApiParam({ name: 'id', description: 'Integration ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Integration deleted successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Integration not found' })
   async deleteIntegration(
     @OrganizationContext() organizationId: string,
     @Param('id') id: string,
@@ -184,9 +113,6 @@ export class AdminIntegrationController {
     return { message: 'Integration deleted successfully' };
   }
 
-  /**
-   * Convert entity to response DTO (excludes encrypted credentials)
-   */
   private toResponseDto(integration: IntegrationEntity): IntegrationResponseDto {
     return {
       id: integration.id,

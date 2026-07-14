@@ -8,6 +8,7 @@ import {
 import {
   IntegrationProvider,
   IntegrationCategory,
+  IntegrationStatus,
   type ITextMessage,
   type ITemplateMessage,
   type IMediaMessage,
@@ -23,11 +24,13 @@ import type { IMessagingProvider, IBaseIntegration } from '../interfaces';
 import { IntegrationRepository } from '../repositories';
 import { IntegrationCredentialService } from './integration-credential.service';
 
-/**
- * Integration Service
- * Main service for managing and using integrations
- * Handles auto-resolution of integrations from database
- */
+type SendHandler = (provider: IMessagingProvider) => Promise<IMessageResponse>;
+
+export interface MessagingHealthResult {
+  canSend: boolean;
+  errors: Array<{ code?: string | number; description?: string }>;
+}
+
 @Injectable()
 export class IntegrationService {
   private readonly logger = new Logger(IntegrationService.name);
@@ -39,32 +42,22 @@ export class IntegrationService {
     private readonly providerResolver: ProviderResolver,
   ) {}
 
-  // ===== CRUD OPERATIONS =====
-
-  /**
-   * Create a new integration
-   * TODO: Refactor for new provider architecture
-   */
   async createIntegration(
     organizationId: string,
     dto: CreateIntegrationDto,
     userId: string,
   ): Promise<IntegrationEntity> {
-    // Check if integration already exists
-    const exists = await this.repository.exists(organizationId, dto.provider, dto.category);
+    const exists = await this.repository.existsByProviderAndCategory(dto.provider, dto.category);
     if (exists) {
       throw new ConflictException(
         `Integration for provider '${dto.provider}' in category '${dto.category}' already exists`,
       );
     }
 
-    // Encrypt credentials
+    await this.validateProviderCredentials(dto.provider, dto.credentials, dto.configuration);
+
     const encryptedCredentials = this.credentialService.encrypt(dto.credentials);
 
-    // TODO: Implement validation using new provider architecture
-    // For now, skip validation and create directly
-
-    // Create integration
     const integration = await this.repository.create({
       organizationId,
       name: dto.name,
@@ -77,18 +70,16 @@ export class IntegrationService {
       createdBy: userId,
       updatedBy: userId,
       lastValidatedAt: new Date(),
+      validationError: undefined,
     });
 
     this.logger.log(
-      `Created integration: ${integration.name} (${integration.provider}/${integration.category}) for org ${organizationId}`,
+      `Created integration: ${integration.name} (${integration.provider}/${integration.category})`,
     );
 
     return integration;
   }
 
-  /**
-   * Update an existing integration
-   */
   async updateIntegration(
     id: string,
     organizationId: string,
@@ -97,11 +88,7 @@ export class IntegrationService {
   ): Promise<IntegrationEntity> {
     const integration = await this.repository.findById(id);
 
-    if (!integration) {
-      throw new NotFoundException(`Integration with ID ${id} not found`);
-    }
-
-    if (integration.organizationId !== organizationId) {
+    if (integration?.organizationId !== organizationId) {
       throw new NotFoundException(`Integration with ID ${id} not found`);
     }
 
@@ -109,31 +96,32 @@ export class IntegrationService {
       updatedBy: userId,
     };
 
-    // Update name if provided
     if (dto.name) {
       updateData.name = dto.name;
     }
 
-    // Update credentials if provided
-    // TODO: Implement validation using new provider architecture
     if (dto.credentials) {
-      const encryptedCredentials = this.credentialService.encrypt(dto.credentials);
-      updateData.credentials = { encrypted: encryptedCredentials };
+      const configuration = dto.configuration ?? integration.configuration;
+      await this.validateProviderCredentials(
+        integration.provider as IntegrationProvider,
+        dto.credentials,
+        configuration,
+      );
+      updateData.credentials = {
+        encrypted: this.credentialService.encrypt(dto.credentials),
+      };
       updateData.lastValidatedAt = new Date();
       updateData.validationError = undefined;
     }
 
-    // Update auth type if provided
     if (dto.authType) {
       updateData.authType = dto.authType;
     }
 
-    // Update configuration if provided
     if (dto.configuration) {
       updateData.configuration = dto.configuration;
     }
 
-    // Update isActive if provided
     if (dto.isActive !== undefined) {
       updateData.isActive = dto.isActive;
     }
@@ -149,28 +137,17 @@ export class IntegrationService {
     return updated;
   }
 
-  /**
-   * Delete an integration
-   */
   async deleteIntegration(id: string, organizationId: string): Promise<void> {
     const integration = await this.repository.findById(id);
 
-    if (!integration) {
-      throw new NotFoundException(`Integration with ID ${id} not found`);
-    }
-
-    if (integration.organizationId !== organizationId) {
+    if (integration?.organizationId !== organizationId) {
       throw new NotFoundException(`Integration with ID ${id} not found`);
     }
 
     await this.repository.softDelete(id);
-
     this.logger.log(`Deleted integration: ${integration.name} (${id})`);
   }
 
-  /**
-   * Get integration by ID
-   */
   async getIntegrationById(id: string, organizationId: string): Promise<IntegrationEntity> {
     const integration = await this.repository.findById(id);
 
@@ -181,152 +158,158 @@ export class IntegrationService {
     return integration;
   }
 
-  /**
-   * Get all integrations for an organization
-   */
   async getIntegrations(organizationId: string): Promise<IntegrationEntity[]> {
     return this.repository.findByOrganization(organizationId);
   }
 
-  /**
-   * Get active integrations by category
-   */
   async getIntegrationsByCategory(
     category: IntegrationCategory,
-    organizationId: string,
+    _organizationId?: string,
   ): Promise<IntegrationEntity[]> {
-    return this.repository.findByCategoryAndOrg(category, organizationId);
+    return this.repository.findAllActiveByCategory(category);
   }
 
-  // ===== MESSAGING OPERATIONS =====
+  async getActiveIntegration(
+    category: IntegrationCategory,
+    provider?: IntegrationProvider,
+  ): Promise<IntegrationEntity | null> {
+    return this.providerResolver.getActiveIntegration(category, provider);
+  }
 
-  /**
-   * Send text message (auto-resolves provider)
-   */
+  async getMessagingHealth(provider: IntegrationProvider): Promise<MessagingHealthResult> {
+    try {
+      const resolved = await this.providerResolver.resolve(IntegrationCategory.MESSAGING, provider);
+
+      if (this.hasMessagingHealth(resolved)) {
+        return resolved.getMessagingHealth();
+      }
+
+      const validation = await resolved.validateCredentials();
+      return {
+        canSend: validation.valid,
+        errors: validation.error ? [{ description: validation.error }] : [],
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Integration not configured';
+      return { canSend: false, errors: [{ description: message }] };
+    }
+  }
+
   async sendTextMessage(
-    organizationId: string,
+    _organizationId: string,
     message: ITextMessage,
     provider?: IntegrationProvider,
   ): Promise<IMessageResponse> {
-    const messagingProvider = await this.resolveProvider<IMessagingProvider>(
-      IntegrationCategory.MESSAGING,
-      organizationId,
-      provider,
+    return this.sendMessage(provider, (messagingProvider) =>
+      messagingProvider.sendTextMessage(message),
     );
-
-    return messagingProvider.sendTextMessage(message);
   }
 
-  /**
-   * Send template message
-   */
   async sendTemplateMessage(
-    organizationId: string,
+    _organizationId: string,
     message: ITemplateMessage,
     provider?: IntegrationProvider,
   ): Promise<IMessageResponse> {
-    const messagingProvider = await this.resolveProvider<IMessagingProvider>(
-      IntegrationCategory.MESSAGING,
-      organizationId,
-      provider,
+    return this.sendMessage(provider, (messagingProvider) =>
+      messagingProvider.sendTemplateMessage(message),
     );
-
-    return messagingProvider.sendTemplateMessage(message);
   }
 
-  /**
-   * Send media message
-   */
   async sendMediaMessage(
-    organizationId: string,
+    _organizationId: string,
     message: IMediaMessage,
     provider?: IntegrationProvider,
   ): Promise<IMessageResponse> {
-    const messagingProvider = await this.resolveProvider<IMessagingProvider>(
-      IntegrationCategory.MESSAGING,
-      organizationId,
-      provider,
+    return this.sendMessage(provider, (messagingProvider) =>
+      messagingProvider.sendMediaMessage(message),
     );
-
-    return messagingProvider.sendMediaMessage(message);
   }
 
-  /**
-   * Send OTP message
-   */
   async sendOtpMessage(
-    organizationId: string,
+    _organizationId: string,
     message: IOtpMessage,
     provider?: IntegrationProvider,
   ): Promise<IMessageResponse> {
-    const messagingProvider = await this.resolveProvider<IMessagingProvider>(
-      IntegrationCategory.MESSAGING,
-      organizationId,
-      provider,
+    return this.sendMessage(provider, (messagingProvider) =>
+      messagingProvider.sendOtpMessage(message),
     );
-
-    return messagingProvider.sendOtpMessage(message);
   }
 
-  /**
-   * Send alert message
-   */
   async sendAlertMessage(
-    organizationId: string,
+    _organizationId: string,
     message: IAlertMessage,
     provider?: IntegrationProvider,
   ): Promise<IMessageResponse> {
-    const messagingProvider = await this.resolveProvider<IMessagingProvider>(
-      IntegrationCategory.MESSAGING,
-      organizationId,
-      provider,
+    return this.sendMessage(provider, (messagingProvider) =>
+      messagingProvider.sendAlertMessage(message),
     );
-
-    return messagingProvider.sendAlertMessage(message);
   }
 
-  // ===== PROVIDER RESOLUTION =====
-
-  /**
-   * Resolve and build a provider instance from database
-   */
-  private async resolveProvider<T extends IBaseIntegration>(
-    category: IntegrationCategory,
-    organizationId: string,
-    provider?: IntegrationProvider,
-  ): Promise<T> {
-    let integration: IntegrationEntity | null;
-
-    if (provider) {
-      // Get specific provider
-      integration = await this.repository.findByOrgProviderCategory(
-        organizationId,
-        provider,
-        category,
-      );
-    } else {
-      // Auto-select first active provider for this category
-      const integrations = await this.repository.findByCategoryAndOrg(category, organizationId);
-      integration = integrations[0] || null;
-    }
-
-    if (!integration) {
-      const providerMsg = provider ? ` for provider '${provider}'` : '';
-      throw new NotFoundException(
-        `No active integration found for category '${category}'${providerMsg}`,
-      );
-    }
-
-    if (!integration.isActive) {
-      throw new BadRequestException(`Integration '${integration.name}' is not active`);
-    }
-
-    // Use new provider architecture
-    const resolvedProvider = await this.providerResolver.resolve(
-      organizationId,
-      integration.category as IntegrationCategory,
-      provider,
+  async getWebhookVerifyToken(): Promise<string | undefined> {
+    const integration = await this.providerResolver.getActiveIntegration(
+      IntegrationCategory.MESSAGING,
+      IntegrationProvider.WHATSAPP_BUSINESS,
     );
-    return resolvedProvider as unknown as T;
+    const token = integration?.configuration?.webhookVerifyToken;
+    return typeof token === 'string' ? token : undefined;
+  }
+
+  private async sendMessage(
+    provider: IntegrationProvider | undefined,
+    sendFn: SendHandler,
+  ): Promise<IMessageResponse> {
+    const messagingProvider = (await this.providerResolver.resolve(
+      IntegrationCategory.MESSAGING,
+      provider,
+    )) as IMessagingProvider;
+
+    try {
+      const result = await sendFn(messagingProvider);
+
+      if (result.status === IntegrationStatus.FAILED) {
+        throw new BadRequestException(
+          result.error?.message || 'Failed to send message. Please try again.',
+        );
+      }
+
+      return result;
+    } catch (error) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to send message. Please try again.',
+      );
+    }
+  }
+
+  private async validateProviderCredentials(
+    provider: IntegrationProvider,
+    credentials: Record<string, unknown>,
+    configuration?: Record<string, unknown>,
+  ): Promise<void> {
+    const tempEntity = {
+      provider,
+      category: IntegrationCategory.MESSAGING,
+      credentials: { encrypted: this.credentialService.encrypt(credentials) },
+      configuration,
+      isActive: true,
+    } as IntegrationEntity;
+
+    const instance = await this.providerFactory.create(provider, tempEntity);
+    const validation = await instance.validateCredentials();
+
+    if (!validation.valid) {
+      throw new BadRequestException(
+        validation.error || 'Credential validation failed. Check provider credentials.',
+      );
+    }
+  }
+
+  private hasMessagingHealth(
+    provider: IBaseIntegration,
+  ): provider is IBaseIntegration & { getMessagingHealth: () => Promise<MessagingHealthResult> } {
+    return typeof (provider as { getMessagingHealth?: unknown }).getMessagingHealth === 'function';
   }
 }

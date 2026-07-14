@@ -9,12 +9,17 @@ import { QuoteDetailHeader } from './quote-detail-header';
 import { QuoteOverviewTab } from './tabs/quote-overview-tab';
 import type { QuoteDetail } from '../../hooks/types';
 import { useQuoteDetail } from '../../hooks/use-quote-detail';
-import { usePropertyQuoteVersions } from '../../hooks/use-quotes';
+import {
+  usePropertyQuoteVersions,
+  useShareQuoteWhatsapp,
+  useWhatsappMessagingHealth,
+} from '../../hooks/use-quotes';
 import { generateAndDownloadPdf } from '../../services/quote-pdf.service';
 import type { CalculateQuoteResponse, QuotePdfData } from '../../types';
 
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { showToast } from '@/components/ui/sonner';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type Bom, type BomItem, useEntityBom, useQuoteConfig } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils/error';
@@ -174,6 +179,9 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
   const { data: quote, isLoading, isError, error, refetch } = useQuoteDetail(quoteId);
   const { user } = useAuth();
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
+  const shareWhatsappMutation = useShareQuoteWhatsapp();
+  const { data: whatsappHealth } = useWhatsappMessagingHealth();
   const { data: quoteConfig } = useQuoteConfig();
 
   useEffect(() => {
@@ -224,46 +232,95 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
 
   const defaultGstConfig = { rate1: 12, rate1Percentage: 70, rate2: 18, rate2Percentage: 30 };
 
-  const handleDownloadPdf = useCallback(async () => {
-    if (!quote) return;
+  const buildQuotePdfData = useCallback((): QuotePdfData | null => {
+    if (!quote) return null;
     let calculation: CalculateQuoteResponse;
     if (hasStoredCalc && activeSnapshot?.calculation) {
       calculation = activeSnapshot.calculation as unknown as CalculateQuoteResponse;
     } else if (bom) {
       calculation = buildCalculationFromBom(quote, bom);
     } else {
-      return;
+      return null;
     }
+
+    return {
+      calculation,
+      customer: {
+        name: quote.customerName ?? '',
+        phone: quote.customerPhone ?? '',
+        email: quote.customerEmail ?? '',
+      },
+      property: {
+        propertyName: quote.propertyName ?? '',
+        address: quote.propertyAddress ?? '',
+      },
+      quoteNumber: quote.quoteNumber,
+      validityDays: Math.ceil(
+        (new Date(quote.validUntil).getTime() - new Date(quote.quoteDate).getTime()) / 86400000,
+      ),
+      paymentMilestones: quote.paymentMilestones,
+      discountAmount:
+        quote.quoteSnapshot?.pricing?.discountAmount ?? quote.pricingBreakdown?.discountAmount,
+      gstConfig: quoteConfig?.gstConfig ?? defaultGstConfig,
+    };
+  }, [bom, quote, quoteConfig, hasStoredCalc, activeSnapshot]);
+
+  const handleDownloadPdf = useCallback(async () => {
+    const pdfData = buildQuotePdfData();
+    if (!pdfData) return;
 
     setPdfLoading(true);
     try {
-      const pdfData: QuotePdfData = {
-        calculation,
-        customer: {
-          name: quote.customerName ?? '',
-          phone: quote.customerPhone ?? '',
-          email: quote.customerEmail ?? '',
-        },
-        property: {
-          propertyName: quote.propertyName ?? '',
-          address: quote.propertyAddress ?? '',
-        },
-        quoteNumber: quote.quoteNumber,
-        validityDays: Math.ceil(
-          (new Date(quote.validUntil).getTime() - new Date(quote.quoteDate).getTime()) / 86400000,
-        ),
-        paymentMilestones: quote.paymentMilestones,
-        discountAmount:
-          quote.quoteSnapshot?.pricing?.discountAmount ?? quote.pricingBreakdown?.discountAmount,
-        gstConfig: quoteConfig?.gstConfig ?? defaultGstConfig,
-      };
       await generateAndDownloadPdf(pdfData);
     } catch (err) {
       console.error('PDF generation error:', err);
+      showToast.error('Failed to generate PDF');
     } finally {
       setPdfLoading(false);
     }
-  }, [bom, quote, quoteConfig, hasStoredCalc, activeSnapshot]);
+  }, [buildQuotePdfData]);
+
+  const handleSendWhatsapp = useCallback(async () => {
+    const pdfData = buildQuotePdfData();
+    if (!pdfData || !quote) return;
+
+    if (!quote.customerPhone) {
+      showToast.error('Customer phone number is required to send via WhatsApp');
+      return;
+    }
+
+    setWhatsappLoading(true);
+    try {
+      const result = await shareWhatsappMutation.mutateAsync({
+        quoteId: quote.id,
+        pdfData,
+        quoteStatus: quote.status,
+      });
+      const acceptedNote = result.messageId ? ` (ref: ${result.messageId.slice(-8)})` : '';
+      showToast.success(
+        quote.status === QuoteStatus.DRAFT
+          ? `Quotation sent on WhatsApp${acceptedNote}`
+          : `Quotation resent on WhatsApp${acceptedNote}`,
+      );
+    } catch (err) {
+      showToast.error(getErrorMessage(err));
+    } finally {
+      setWhatsappLoading(false);
+    }
+  }, [buildQuotePdfData, quote, shareWhatsappMutation]);
+
+  const canSendWhatsapp =
+    canDownloadPdf &&
+    !!quote?.customerPhone &&
+    quote?.status !== QuoteStatus.ACCEPTED &&
+    quote?.status !== QuoteStatus.REJECTED &&
+    !(whatsappHealth && !whatsappHealth.canSend);
+
+  const whatsappBlockedReason =
+    whatsappHealth && !whatsappHealth.canSend
+      ? whatsappHealth.errors[0]?.description ||
+        'WhatsApp messaging is blocked. Check billing or credentials in admin integrations.'
+      : undefined;
 
   if (isLoading) return <LoadingSkeleton />;
 
@@ -329,6 +386,16 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
         handleDownloadPdf={() => {
           void handleDownloadPdf();
         }}
+        canSendWhatsapp={canSendWhatsapp}
+        whatsappLoading={whatsappLoading}
+        whatsappBlockedReason={whatsappBlockedReason}
+        whatsappLabel={
+          quote.status === QuoteStatus.DRAFT ? 'Send via WhatsApp' : 'Resend via WhatsApp'
+        }
+        handleSendWhatsapp={() => {
+          void handleSendWhatsapp();
+        }}
+        onShareWhatsapp={handleSendWhatsapp}
       />
 
       <main className="max-w-7xl mx-auto px-4 lg:px-6 space-y-6 pb-12">

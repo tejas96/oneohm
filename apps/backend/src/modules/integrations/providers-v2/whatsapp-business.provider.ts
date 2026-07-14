@@ -59,6 +59,7 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
 
   @InjectHttpClient({
     timeout: 30000,
+    authBearerCredential: 'accessToken',
   })
   protected readonly http!: AxiosInstance;
 
@@ -71,25 +72,19 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
    */
   override async sendText(message: ITextMessage): Promise<IMessageResponse> {
     try {
-      // Manually set auth header (temporary until factory supports dynamic headers)
-      const response = await this.http.post(
-        `/${this.apiVersion}/${this.phoneNumberId}/messages`,
-        {
-          messaging_product: 'whatsapp',
-          to: this.cleanPhone(message.to),
-          type: 'text',
-          text: {
-            body: message.body,
-          },
+      const response = await this.http.post(`/${this.apiVersion}/${this.phoneNumberId}/messages`, {
+        messaging_product: 'whatsapp',
+        to: this.cleanPhone(message.to),
+        type: 'text',
+        text: {
+          body: message.body,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-          },
-        },
-      );
+      });
 
-      const messageId = response.data.messages?.[0]?.id || `whatsapp-${Date.now()}`;
+      const messageId = response.data.messages?.[0]?.id;
+      if (!messageId) {
+        throw new Error('WhatsApp API accepted the request but returned no message id');
+      }
 
       return this.createSuccessResponse(messageId, {
         phoneNumberId: this.phoneNumberId,
@@ -129,32 +124,33 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
         }
       }
 
-      const response = await this.http.post(
-        `/${this.apiVersion}/${this.phoneNumberId}/messages`,
-        {
-          messaging_product: 'whatsapp',
-          to: this.cleanPhone(message.to),
-          type: 'template',
-          template: {
-            name: message.templateName,
-            language: {
-              code: message.templateLanguage || 'en',
-            },
-            components,
+      const response = await this.http.post(`/${this.apiVersion}/${this.phoneNumberId}/messages`, {
+        messaging_product: 'whatsapp',
+        to: this.cleanPhone(message.to),
+        type: 'template',
+        template: {
+          name: message.templateName,
+          language: {
+            code: message.templateLanguage || 'en',
           },
+          components,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-          },
-        },
-      );
+      });
 
-      const messageId = response.data.messages?.[0]?.id || `whatsapp-${Date.now()}`;
+      const accepted = response.data.messages?.[0];
+      const messageId = accepted?.id;
+      if (!messageId) {
+        throw new Error('WhatsApp API accepted the request but returned no message id');
+      }
+
+      this.logger.log(
+        `WhatsApp template "${message.templateName}" accepted for ${message.to} (id: ${messageId}, status: ${accepted.message_status ?? 'unknown'})`,
+      );
 
       return this.createSuccessResponse(messageId, {
         templateName: message.templateName,
         to: message.to,
+        messageStatus: accepted.message_status,
       });
     } catch (error) {
       return this.createFailedResponse(error, 'sendTemplate');
@@ -188,14 +184,12 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
       const response = await this.http.post(
         `/${this.apiVersion}/${this.phoneNumberId}/messages`,
         payload,
-        {
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-          },
-        },
       );
 
-      const messageId = response.data.messages?.[0]?.id || `whatsapp-${Date.now()}`;
+      const messageId = response.data.messages?.[0]?.id;
+      if (!messageId) {
+        throw new Error('WhatsApp API accepted the request but returned no message id');
+      }
 
       return this.createSuccessResponse(messageId, {
         mediaType,
@@ -218,11 +212,7 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
    */
   async validateCredentials(): Promise<{ valid: boolean; error?: string }> {
     try {
-      const response = await this.http.get(`/${this.apiVersion}/${this.phoneNumberId}`, {
-        headers: {
-          Authorization: `Bearer ${this.accessToken}`,
-        },
-      });
+      const response = await this.http.get(`/${this.apiVersion}/${this.phoneNumberId}`);
 
       if (response.status === 200) {
         return { valid: true };
@@ -237,6 +227,42 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
       return {
         valid: false,
         error: err.response?.data?.error?.message || err.message,
+      };
+    }
+  }
+
+  async getMessagingHealth(): Promise<{
+    canSend: boolean;
+    errors: Array<{ code?: string | number; description?: string }>;
+  }> {
+    try {
+      const response = await this.http.get(
+        `/${this.apiVersion}/${this.phoneNumberId}?fields=health_status`,
+      );
+      const healthStatus = response.data?.health_status;
+      const canSend = healthStatus?.can_send_message === 'AVAILABLE';
+      const entities = Array.isArray(healthStatus?.entities) ? healthStatus.entities : [];
+      const errors = entities.flatMap((entity: Record<string, unknown>) => {
+        const entityErrors = Array.isArray(entity.errors) ? entity.errors : [];
+        return entityErrors.map((item: Record<string, unknown>) => ({
+          code: item.error_code as string | number | undefined,
+          description: item.error_description as string | undefined,
+        }));
+      });
+
+      return { canSend, errors };
+    } catch (error: unknown) {
+      const err = error as {
+        response?: { data?: { error?: { message?: string } } };
+        message?: string;
+      };
+      return {
+        canSend: false,
+        errors: [
+          {
+            description: err.response?.data?.error?.message || err.message || 'Health check failed',
+          },
+        ],
       };
     }
   }

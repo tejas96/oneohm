@@ -32,6 +32,7 @@ import {
   MUIDialogTitle,
 } from '@/components/ui/mui-dialog';
 import { showToast } from '@/components/ui/sonner';
+import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { formatDate } from '@/lib/utils/format';
 
@@ -41,6 +42,12 @@ interface QuoteDetailHeaderProps {
   canDownloadPdf: boolean;
   pdfLoading: boolean;
   handleDownloadPdf: () => void;
+  canSendWhatsapp?: boolean;
+  whatsappLoading?: boolean;
+  whatsappBlockedReason?: string;
+  whatsappLabel?: string;
+  handleSendWhatsapp?: () => void;
+  onShareWhatsapp?: () => Promise<void>;
 }
 
 export const QuoteDetailHeader = React.memo(
@@ -50,6 +57,12 @@ export const QuoteDetailHeader = React.memo(
     canDownloadPdf,
     pdfLoading,
     handleDownloadPdf,
+    canSendWhatsapp = false,
+    whatsappLoading = false,
+    whatsappBlockedReason,
+    whatsappLabel = 'Send via WhatsApp',
+    handleSendWhatsapp,
+    onShareWhatsapp,
   }: QuoteDetailHeaderProps): React.JSX.Element => {
     const router = useRouter();
     const isExpired = new Date(quote.validUntil) < new Date();
@@ -162,6 +175,8 @@ export const QuoteDetailHeader = React.memo(
                 size="sm"
                 disabled={!!isPropertyLocked}
                 disabledReason={lockReason}
+                onShareWhatsapp={onShareWhatsapp}
+                canShareWhatsapp={canSendWhatsapp}
               />
               <span
                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold ${
@@ -241,6 +256,26 @@ export const QuoteDetailHeader = React.memo(
             >
               <Download className="h-3.5 w-3.5" /> {pdfLoading ? 'Downloading...' : 'Download PDF'}
             </button>
+
+            {handleSendWhatsapp && (
+              <button
+                disabled={!canSendWhatsapp || whatsappLoading}
+                onClick={handleSendWhatsapp}
+                title={
+                  whatsappBlockedReason
+                    ? whatsappBlockedReason
+                    : !quote.customerPhone
+                      ? 'Customer phone number is required'
+                      : !canDownloadPdf
+                        ? 'Quote calculation required before sending'
+                        : whatsappLabel
+                }
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#25D366] text-white hover:bg-[#1ebe57] shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <WhatsAppIcon className="h-3.5 w-3.5" />
+                {whatsappLoading ? 'Sending...' : whatsappLabel}
+              </button>
+            )}
 
             <IconButton
               size="small"
