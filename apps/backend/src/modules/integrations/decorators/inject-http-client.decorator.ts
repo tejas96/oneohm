@@ -4,7 +4,8 @@ import 'reflect-metadata';
  * HTTP Client Injection Options
  */
 export interface InjectHttpClientOptions {
-  authHeader?: string; // e.g., 'authkey' - will use credential with this name
+  authHeader?: string;
+  authBearerCredential?: string;
   timeout?: number;
   additionalHeaders?: Record<string, string>;
 }

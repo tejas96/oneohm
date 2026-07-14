@@ -557,29 +557,27 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         >
           Mark as Lost
         </MenuItem>
-        {isOrgAdmin ? (
-          <>
-            <Divider />
-            <Tooltip title={propertyDeleteTooltip ?? ''}>
-              <span>
-                <MenuItem
-                  disabled={propertyDeleteDisabled}
-                  onClick={() => {
-                    if (propertyDeleteDisabled) return;
-                    setMoreAnchor(null);
-                    deleteConfirmation.requestDelete(property);
-                  }}
-                  sx={{ color: 'error.main' }}
-                >
-                  <ListItemIcon>
-                    <DeleteOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />
-                  </ListItemIcon>
-                  Delete Property
-                </MenuItem>
-              </span>
-            </Tooltip>
-          </>
-        ) : null}
+        {isOrgAdmin && <Divider />}
+        {isOrgAdmin && (
+          <Tooltip title={propertyDeleteTooltip ?? ''}>
+            <span>
+              <MenuItem
+                disabled={propertyDeleteDisabled}
+                onClick={() => {
+                  if (propertyDeleteDisabled) return;
+                  setMoreAnchor(null);
+                  deleteConfirmation.requestDelete(property);
+                }}
+                sx={{ color: 'error.main' }}
+              >
+                <ListItemIcon>
+                  <DeleteOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />
+                </ListItemIcon>
+                Delete Property
+              </MenuItem>
+            </span>
+          </Tooltip>
+        )}
       </Menu>
 
       <DeleteConfirmationDialog

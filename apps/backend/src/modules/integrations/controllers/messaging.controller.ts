@@ -14,49 +14,29 @@ import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { SendMessageDto, MessageResponseDto } from '../dto';
 import { IntegrationService } from '../services';
 
-/**
- * Messaging Controller
- * Handles messaging operations (auto-selects provider based on org config)
- * Uses a unified DTO for all message types
- *
- * Access: Users with 'messaging:send' permission
- */
 @ApiTags('Messaging')
 @ApiBearerAuth()
 @Controller('messaging')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class MessagingController {
   constructor(private readonly integrationService: IntegrationService) {}
 
   @Post('send')
-  @ApiOperation({
-    summary: 'Send message',
-    description:
-      'Send any type of message (text, template, media, OTP, alert). The system automatically uses the active messaging provider configured for your organization. Requires messaging:send permission.',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Message sent successfully',
-    type: MessageResponseDto,
-  })
+  @ApiOperation({ summary: 'Send message' })
+  @ApiResponse({ status: HttpStatus.OK, type: MessageResponseDto })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'No active messaging integration found',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid message data or missing required fields',
-  })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid message data' })
   async sendMessage(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: SendMessageDto,
   ): Promise<MessageResponseDto> {
-    // Route to appropriate service method based on message type
     const messageType: MessageType = dto.type;
     switch (messageType) {
       case MessageType.TEXT:

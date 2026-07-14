@@ -11,6 +11,7 @@ import { IntegrationsModule } from '../integrations/integrations.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
+import { StorageModule } from '../storage/storage.module';
 
 /**
  * Quotes Module
@@ -24,6 +25,7 @@ import { OrganizationsModule } from '../organizations/organizations.module';
     MasterDataModule,
     DocumentsModule,
     IntegrationsModule,
+    StorageModule,
     forwardRef(() => BomModule),
     forwardRef(() => InventoryModule),
   ],

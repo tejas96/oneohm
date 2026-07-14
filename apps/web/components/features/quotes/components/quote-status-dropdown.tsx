@@ -36,6 +36,8 @@ interface QuoteStatusDropdownProps {
   size?: 'xs' | 'sm' | 'default';
   disabled?: boolean;
   disabledReason?: string;
+  onShareWhatsapp?: () => Promise<void>;
+  canShareWhatsapp?: boolean;
 }
 
 export const QuoteStatusDropdown = React.memo(
@@ -45,6 +47,8 @@ export const QuoteStatusDropdown = React.memo(
     size = 'default',
     disabled,
     disabledReason,
+    onShareWhatsapp,
+    canShareWhatsapp = false,
   }: QuoteStatusDropdownProps): React.JSX.Element => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [acceptModalOpen, setAcceptModalOpen] = useState(false);
@@ -52,6 +56,7 @@ export const QuoteStatusDropdown = React.memo(
     const [sendModalOpen, setSendModalOpen] = useState(false);
     const [customerSignature, setCustomerSignature] = useState('');
     const [rejectionReason, setRejectionReason] = useState('');
+    const [isSharingWhatsapp, setIsSharingWhatsapp] = useState(false);
 
     const acceptMutation = useAcceptQuote();
     const rejectMutation = useRejectQuote();
@@ -96,6 +101,18 @@ export const QuoteStatusDropdown = React.memo(
     };
 
     const handleSend = (): void => {
+      if (onShareWhatsapp && canShareWhatsapp) {
+        setIsSharingWhatsapp(true);
+        void onShareWhatsapp()
+          .then(() => {
+            setSendModalOpen(false);
+          })
+          .finally(() => {
+            setIsSharingWhatsapp(false);
+          });
+        return;
+      }
+
       sendMutation.mutate(quoteId, {
         onSuccess: () => {
           showToast.success('Quote sent successfully');
@@ -225,23 +242,33 @@ export const QuoteStatusDropdown = React.memo(
         <MUIDialog open={sendModalOpen} onOpenChange={setSendModalOpen} size="sm">
           <MUIDialogHeader>
             <MUIDialogTitle>Send Quote</MUIDialogTitle>
-            <MUIDialogDescription>Send this quote to the customer.</MUIDialogDescription>
+            <MUIDialogDescription>
+              {onShareWhatsapp && canShareWhatsapp
+                ? 'Send the quotation PDF to the customer on WhatsApp.'
+                : 'Send this quote to the customer.'}
+            </MUIDialogDescription>
           </MUIDialogHeader>
           <MUIDialogBody>
             <p className="text-sm text-foreground-secondary">
-              This will change the quote status from Draft to Sent.
+              {onShareWhatsapp && canShareWhatsapp
+                ? 'This will generate the quote PDF, upload it, and send it via WhatsApp. Draft quotes will move to Sent.'
+                : 'This will change the quote status from Draft to Sent.'}
             </p>
           </MUIDialogBody>
           <MUIDialogFooter>
             <Button
               variant="outline"
               onClick={() => setSendModalOpen(false)}
-              disabled={sendMutation.isPending}
+              disabled={sendMutation.isPending || isSharingWhatsapp}
             >
               Cancel
             </Button>
-            <Button onClick={handleSend} disabled={sendMutation.isPending}>
-              {sendMutation.isPending ? 'Sending...' : 'Send Quote'}
+            <Button onClick={handleSend} disabled={sendMutation.isPending || isSharingWhatsapp}>
+              {sendMutation.isPending || isSharingWhatsapp
+                ? 'Sending...'
+                : onShareWhatsapp && canShareWhatsapp
+                  ? 'Send via WhatsApp'
+                  : 'Send Quote'}
             </Button>
           </MUIDialogFooter>
         </MUIDialog>

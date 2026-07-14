@@ -8,7 +8,9 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   CustomerStatus,
   type CalculatorInputs,
-  IntegrationStatus,
+  DocumentCategory,
+  IntegrationProvider,
+  type ITemplateMessage,
   PaymentMilestone,
   type PaymentMilestoneConfig,
   type PricingBreakdown,
@@ -19,8 +21,10 @@ import {
   type QuoteSnapshot,
   QuoteStatus,
 } from '@tejas96/shared/types';
+import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource } from 'typeorm';
 
+import type { DocumentEntity } from '../../documents/entities/document.entity';
 import { DocumentService } from '../../documents/services';
 import { IntegrationService } from '../../integrations/services';
 import {
@@ -32,16 +36,20 @@ import {
   QuotationCreatedEvent,
 } from '../../notifications/events/consumer-notification.events';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
+import { FileCategory } from '../../storage/dto';
+import { StorageService } from '../../storage/services';
 import {
   CreateQuoteDto,
   QuoteQueryDto,
   ShareQuoteWhatsappDto,
+  ShareQuoteWhatsappResponseDto,
   UpdateQuoteDto,
   UpdateQuoteStatusDto,
 } from '../dto';
 import { QuoteVersionEntity } from '../entities/quote-version.entity';
 import { QuoteEntity } from '../entities/quote.entity';
 import { QuoteRepository } from '../repositories';
+import type { UploadedPdfFile } from '../types/uploaded-pdf-file.interface';
 
 const CENTS_ROUNDING_FACTOR = 100;
 
@@ -58,6 +66,7 @@ export class QuoteService {
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
     private readonly documentService: DocumentService,
     private readonly integrationService: IntegrationService,
+    private readonly storageService: StorageService,
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -215,63 +224,50 @@ export class QuoteService {
     organizationId: string,
     dto: ShareQuoteWhatsappDto,
     updatedBy: string,
-  ) {
+    file?: UploadedPdfFile,
+  ): Promise<ShareQuoteWhatsappResponseDto> {
     const quote = await this.quoteRepository.findById(id, organizationId);
-    const recipient = dto.to || quote.customer?.phone;
 
-    if (!recipient) {
+    if (quote.status === QuoteStatus.ACCEPTED || quote.status === QuoteStatus.REJECTED) {
+      throw new BadRequestException(
+        `Cannot send quote with status ${quote.status}. Accepted and rejected quotes cannot be shared.`,
+      );
+    }
+
+    const rawRecipient = dto.to || quote.customer?.phone;
+    if (!rawRecipient) {
       throw new BadRequestException('Recipient phone number is required');
     }
 
-    const document = dto.documentId
-      ? await this.documentService.findById(dto.documentId, organizationId)
-      : await this.findLatestQuotePdf(id, organizationId);
-
-    const documentUrl = dto.documentUrl || document?.fileUrl;
-    if (!documentUrl) {
-      throw new BadRequestException('A public quote PDF URL is required');
+    const recipient = normalizePhoneToE164(rawRecipient);
+    if (!recipient) {
+      throw new BadRequestException('Recipient phone number is invalid');
     }
 
-    const filename = dto.filename || document?.fileName || `${quote.quoteNumber}.pdf`;
-    const validUntil = quote.validUntil
-      ? new Date(quote.validUntil).toLocaleDateString('en-IN')
-      : '';
-    const customerName = [quote.customer?.firstName, quote.customer?.lastName]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
+    const document = await this.resolveQuotePdfDocument(
+      quote,
+      organizationId,
+      updatedBy,
+      dto.documentId,
+      file,
+    );
 
-    const result = await this.integrationService.sendTemplateMessage(organizationId, {
-      to: recipient,
-      type: MessageType.TEMPLATE,
-      templateName: 'quotation_pdf',
-      templateLanguage: 'en',
-      templateParameters: {
-        header: {
-          type: 'document',
-          link: documentUrl,
-          filename,
-        },
-        body: {
-          customer_name: customerName || 'Customer',
-          quot_no: quote.quoteNumber,
-          valid_date: validUntil,
-        },
-      },
-      metadata: {
-        quoteId: id,
-        quoteNumber: quote.quoteNumber,
-        documentId: document?.id,
-      },
-    });
+    const message = this.buildQuoteShareMessage(quote, document, recipient);
+    const result = await this.integrationService.sendTemplateMessage(
+      organizationId,
+      message,
+      IntegrationProvider.WHATSAPP_BUSINESS,
+    );
 
-    if (quote.status === QuoteStatus.DRAFT && result.status !== IntegrationStatus.FAILED) {
+    let quoteStatus = quote.status;
+
+    if (quote.status === QuoteStatus.DRAFT) {
       await this.quoteRepository.update(id, organizationId, {
         status: QuoteStatus.SENT,
         updatedBy,
       });
+      quoteStatus = QuoteStatus.SENT;
 
-      // Notify consumer that quotation is ready (guard propertyId)
       if (quote.propertyId && quote.customerId) {
         this.eventEmitter.emit(
           CONSUMER_EVENTS.QUOTATION_CREATED,
@@ -286,17 +282,124 @@ export class QuoteService {
       }
     }
 
-    return result;
+    return {
+      messageId: result.messageId,
+      status: result.status,
+      documentId: document.id,
+      quoteStatus,
+    };
   }
 
-  private async findLatestQuotePdf(id: string, organizationId: string) {
-    const documents = await this.documentService.findByEntity(
-      DocumentEntityType.QUOTE,
-      id,
-      organizationId,
-    );
+  private async resolveQuotePdfDocument(
+    quote: QuoteEntity,
+    organizationId: string,
+    userId: string,
+    documentId: string | undefined,
+    file: UploadedPdfFile | undefined,
+  ): Promise<DocumentEntity> {
+    const quoteId = quote.id;
 
-    return documents.find((document) => document.mimeType === 'application/pdf') || documents[0];
+    if (file) {
+      if (file.mimetype !== 'application/pdf') {
+        throw new BadRequestException('Only PDF files are allowed');
+      }
+
+      if (!file.buffer?.length) {
+        throw new BadRequestException('PDF file is empty');
+      }
+
+      const fileName = file.originalname?.endsWith('.pdf')
+        ? file.originalname
+        : `${quote.quoteNumber}.pdf`;
+
+      const upload = await this.storageService.uploadBuffer({
+        buffer: file.buffer,
+        fileName,
+        contentType: 'application/pdf',
+        category: FileCategory.QUOTE,
+        entityId: quoteId,
+        entityType: DocumentEntityType.QUOTE,
+        propertyId: quote.propertyId,
+        subCategory: 'quote_pdf',
+      });
+
+      return this.documentService.create(
+        {
+          organizationId,
+          propertyId: quote.propertyId,
+          entityType: DocumentEntityType.QUOTE,
+          entityId: quoteId,
+          category: DocumentCategory.DOCUMENT,
+          tag: 'quote_pdf',
+          fileName: upload.fileName,
+          fileUrl: upload.publicUrl,
+          fileSizeBytes: file.buffer.length,
+          mimeType: 'application/pdf',
+          metadata: {
+            quoteNumber: quote.quoteNumber,
+            source: 'whatsapp_share',
+            storageKey: upload.fileKey,
+          },
+        },
+        userId,
+      );
+    }
+
+    if (documentId) {
+      const document = await this.documentService.findById(documentId, organizationId);
+
+      if (document.entityType !== DocumentEntityType.QUOTE || document.entityId !== quoteId) {
+        throw new ForbiddenException('Document does not belong to this quote');
+      }
+
+      if (document.mimeType !== 'application/pdf') {
+        throw new BadRequestException('Document must be a PDF');
+      }
+
+      return document;
+    }
+
+    throw new BadRequestException('PDF file is required');
+  }
+
+  private buildQuoteShareMessage(
+    quote: QuoteEntity,
+    document: DocumentEntity,
+    recipient: string,
+  ): ITemplateMessage {
+    const validUntil = quote.validUntil
+      ? new Date(quote.validUntil).toLocaleDateString('en-IN')
+      : 'N/A';
+    const customerName = [quote.customer?.firstName, quote.customer?.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    return {
+      to: recipient,
+      type: MessageType.TEMPLATE,
+      templateName: 'quotation_pdf',
+      templateLanguage: 'en',
+      templateParameters: {
+        header: {
+          type: 'document',
+          link: document.fileUrl,
+          filename: document.fileName,
+        },
+        body: {
+          customer_name: customerName || 'Customer',
+          quot_no: quote.quoteNumber,
+          valid_date: validUntil,
+        },
+      },
+      metadata: {
+        entityType: 'quote',
+        entityId: quote.id,
+        quoteId: quote.id,
+        quoteNumber: quote.quoteNumber,
+        documentId: document.id,
+      },
+    };
   }
 
   async findAllByPropertyId(propertyId: string, organizationId: string): Promise<QuoteEntity[]> {

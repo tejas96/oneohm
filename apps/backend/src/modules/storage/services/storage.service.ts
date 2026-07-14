@@ -58,6 +58,64 @@ export class StorageService {
   ) {}
 
   /**
+   * Upload a buffer directly to storage (server-side upload).
+   */
+  async uploadBuffer(options: {
+    buffer: Buffer;
+    fileName: string;
+    contentType: string;
+    category: FileCategory;
+    entityId?: string;
+    entityType?: string;
+    propertyId?: string;
+    subCategory?: string;
+  }): Promise<{ fileKey: string; publicUrl: string; fileName: string }> {
+    const allowedTypes = ALLOWED_MIME_TYPES[options.category];
+    if (!allowedTypes.includes(options.contentType)) {
+      throw new BadRequestException(
+        `Invalid file type '${options.contentType}' for category '${options.category}'. ` +
+          `Allowed types: ${allowedTypes.join(', ')}`,
+      );
+    }
+
+    const maxSize = MAX_FILE_SIZES[options.category];
+    if (options.buffer.length > maxSize) {
+      throw new BadRequestException(
+        `File size ${options.buffer.length} bytes exceeds maximum ${maxSize} bytes for category '${options.category}'`,
+      );
+    }
+
+    const fileKey = this.generateFileKey({
+      category: options.category,
+      fileName: options.fileName,
+      contentType: options.contentType,
+      entityId: options.entityId,
+      entityType: options.entityType,
+      subCategory: options.subCategory,
+    });
+
+    const result = await this.s3Storage.uploadBuffer({
+      fileKey,
+      buffer: options.buffer,
+      contentType: options.contentType,
+      metadata: {
+        originalFilename: options.fileName,
+        category: options.category,
+        entityId: options.entityId || '',
+        entityType: options.entityType || '',
+        propertyId: options.propertyId || '',
+        subCategory: options.subCategory || '',
+      },
+    });
+
+    return {
+      fileKey: result.fileKey,
+      publicUrl: result.publicUrl!,
+      fileName: options.fileName,
+    };
+  }
+
+  /**
    * Generate a presigned URL for uploading a file
    */
   async getUploadUrl(dto: RequestUploadUrlDto): Promise<PresignedUploadUrlResponseDto> {

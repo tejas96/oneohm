@@ -111,6 +111,49 @@ export class IntegrationRepository {
   }
 
   /**
+   * App-scoped: find the newest active integration for provider + category.
+   */
+  async findActiveByProviderAndCategory(
+    provider: IntegrationProvider,
+    category: IntegrationCategory,
+  ): Promise<IntegrationEntity | null> {
+    return this.repository.findOne({
+      where: { provider, category, isActive: true },
+      order: { updatedAt: 'DESC' },
+    });
+  }
+
+  async findAllActiveByProviderAndCategory(
+    provider: IntegrationProvider,
+    category: IntegrationCategory,
+  ): Promise<IntegrationEntity[]> {
+    return this.repository.find({
+      where: { provider, category, isActive: true },
+      order: { updatedAt: 'DESC' },
+    });
+  }
+
+  async findAllActiveByCategory(category: IntegrationCategory): Promise<IntegrationEntity[]> {
+    return this.repository.find({
+      where: { category, isActive: true },
+      order: { updatedAt: 'DESC' },
+    });
+  }
+
+  /**
+   * App-scoped: check if an active integration exists for provider + category.
+   */
+  async existsByProviderAndCategory(
+    provider: IntegrationProvider,
+    category: IntegrationCategory,
+  ): Promise<boolean> {
+    const count = await this.repository.count({
+      where: { provider, category, isActive: true },
+    });
+    return count > 0;
+  }
+
+  /**
    * Check if integration exists for org + provider + category
    */
   async exists(

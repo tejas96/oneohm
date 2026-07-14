@@ -118,11 +118,6 @@ export interface IntegrationsConfig {
   msg91SenderId?: string;
   msg91LoginTemplateId?: string;
   msg91PasswordResetTemplateId?: string;
-  whatsappAccessToken?: string;
-  whatsappPhoneNumberId?: string;
-  whatsappBusinessAccountId?: string;
-  whatsappApiVersion: string;
-  whatsappWebhookVerifyToken?: string;
 }
 
 export interface MobileAppVersionConfig {

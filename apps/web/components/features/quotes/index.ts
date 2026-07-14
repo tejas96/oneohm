@@ -16,6 +16,8 @@ export {
   useQuote,
   useQuoteStatusCounts,
   useSendQuote,
+  useShareQuoteWhatsapp,
+  useWhatsappMessagingHealth,
   useDeleteQuote,
   useAcceptQuote,
   useRejectQuote,

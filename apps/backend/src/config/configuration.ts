@@ -118,11 +118,6 @@ export default (): Configuration => ({
     msg91SenderId: process.env.MSG91_SENDER_ID,
     msg91LoginTemplateId: process.env.MSG91_LOGIN_TEMPLATE_ID,
     msg91PasswordResetTemplateId: process.env.MSG91_PASSWORD_RESET_TEMPLATE_ID,
-    whatsappAccessToken: process.env.WHATSAPP_ACCESS_TOKEN,
-    whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
-    whatsappBusinessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
-    whatsappApiVersion: process.env.WHATSAPP_API_VERSION || 'v25.0',
-    whatsappWebhookVerifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN,
   },
 
   mobileApp: {

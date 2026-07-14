@@ -9,6 +9,7 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import {
+  DocumentEntityType,
   type PaginationMeta,
   QuoteStatus,
   type QuoteSortField,
@@ -17,8 +18,26 @@ import {
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
+import { generatePdfBlob } from '../services/quote-pdf.service';
+import type { QuotePdfData } from '../types';
+
 import { apiClient } from '@/lib/api/client';
+import { getDocuments } from '@/lib/api/documents';
 import { useAuth } from '@/providers/auth-provider';
+
+const WHATSAPP_SHARE_TIMEOUT_MS = 120_000;
+
+interface ShareQuoteWhatsappResult {
+  messageId: string;
+  status: string;
+  documentId: string;
+  quoteStatus: string;
+}
+
+interface WhatsappMessagingHealth {
+  canSend: boolean;
+  errors: Array<{ code?: string | number; description?: string }>;
+}
 
 // ============================================================================
 // Types
@@ -263,6 +282,103 @@ export function useSendQuote(): UseMutationResult<unknown, AxiosError, string> {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
     },
+  });
+}
+
+interface ShareQuoteWhatsappInput {
+  quoteId: string;
+  pdfData: QuotePdfData;
+  quoteStatus: QuoteStatus;
+  to?: string;
+}
+
+async function shareQuoteOnWhatsapp(
+  input: ShareQuoteWhatsappInput,
+  organizationId?: string,
+): Promise<ShareQuoteWhatsappResult> {
+  const headers = organizationId ? { 'X-Organization-Id': organizationId } : {};
+  const requestConfig = { headers, timeout: WHATSAPP_SHARE_TIMEOUT_MS };
+
+  if (input.quoteStatus !== QuoteStatus.DRAFT) {
+    const documents = await getDocuments({
+      entityType: DocumentEntityType.QUOTE,
+      entityId: input.quoteId,
+      tag: 'quote_pdf',
+      organizationId,
+    });
+    const latestPdf = documents
+      .filter((doc) => doc.mimeType === 'application/pdf')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+
+    if (latestPdf) {
+      const { data } = await apiClient.post<ShareQuoteWhatsappResult>(
+        `/quotes/${input.quoteId}/share/whatsapp`,
+        {
+          documentId: latestPdf.id,
+          ...(input.to ? { to: input.to } : {}),
+        },
+        requestConfig,
+      );
+      return data;
+    }
+  }
+
+  const { blob, filename } = await generatePdfBlob(input.pdfData);
+  const formData = new FormData();
+  formData.append('file', new File([blob], filename, { type: 'application/pdf' }));
+  if (input.to) {
+    formData.append('to', input.to);
+  }
+
+  const { data } = await apiClient.post<ShareQuoteWhatsappResult>(
+    `/quotes/${input.quoteId}/share/whatsapp`,
+    formData,
+    requestConfig,
+  );
+  return data;
+}
+
+export function useShareQuoteWhatsapp(): UseMutationResult<
+  ShareQuoteWhatsappResult,
+  AxiosError,
+  ShareQuoteWhatsappInput
+> {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useMutation({
+    mutationFn: async ({ quoteId, pdfData, quoteStatus, to }: ShareQuoteWhatsappInput) => {
+      return shareQuoteOnWhatsapp({ quoteId, pdfData, quoteStatus, to }, organizationId);
+    },
+    onSuccess: (_, { quoteId }) => {
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.detail(organizationId, quoteId) });
+    },
+  });
+}
+
+export function useWhatsappMessagingHealth(): UseQueryResult<
+  WhatsappMessagingHealth | null,
+  AxiosError
+> {
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useQuery({
+    queryKey: ['whatsapp-messaging-health', organizationId],
+    queryFn: async (): Promise<WhatsappMessagingHealth | null> => {
+      try {
+        const { data } = await apiClient.get<WhatsappMessagingHealth>('/quotes/whatsapp/health', {
+          headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
+        });
+        return data;
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!organizationId,
+    staleTime: 60_000,
   });
 }
 
