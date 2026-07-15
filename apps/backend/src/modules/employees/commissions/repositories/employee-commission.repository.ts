@@ -3,23 +3,24 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CommissionStatus } from '@tejas96/shared/types';
 import { Repository } from 'typeorm';
 
-import { ResellerCommissionEntity } from '../entities/reseller-commission.entity';
+import { EmployeeCommissionEntity } from '../entities/employee-commission.entity';
 
 /**
- * Reseller Commission Repository
- * Handles database operations for reseller commissions
+ * Employee Commission Repository
+ * Handles database operations for employee (reseller-kind) commissions.
+ * Renamed from ResellerCommissionRepository.
  */
 @Injectable()
-export class ResellerCommissionRepository {
+export class EmployeeCommissionRepository {
   constructor(
-    @InjectRepository(ResellerCommissionEntity)
-    private readonly repository: Repository<ResellerCommissionEntity>,
+    @InjectRepository(EmployeeCommissionEntity)
+    private readonly repository: Repository<EmployeeCommissionEntity>,
   ) {}
 
   /**
    * Create a new commission record
    */
-  async create(data: Partial<ResellerCommissionEntity>): Promise<ResellerCommissionEntity> {
+  async create(data: Partial<EmployeeCommissionEntity>): Promise<EmployeeCommissionEntity> {
     const commission = this.repository.create(data);
     return this.repository.save(commission);
   }
@@ -27,30 +28,30 @@ export class ResellerCommissionRepository {
   /**
    * Find commission by ID (excluding soft-deleted records)
    */
-  async findById(id: string): Promise<ResellerCommissionEntity | null> {
+  async findById(id: string): Promise<EmployeeCommissionEntity | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['reseller'],
+      relations: ['employee'],
     });
   }
 
   /**
    * Find all commissions for an organization (excluding soft-deleted records)
    */
-  async findAll(organizationId: string): Promise<ResellerCommissionEntity[]> {
+  async findAll(organizationId: string): Promise<EmployeeCommissionEntity[]> {
     return this.repository.find({
       where: { organizationId },
-      relations: ['reseller'],
+      relations: ['employee'],
       order: { createdAt: 'DESC' },
     });
   }
 
   /**
-   * Find all commissions for a specific reseller
+   * Find all commissions for a specific employee (reseller-kind profile)
    */
-  async findByResellerId(resellerId: string): Promise<ResellerCommissionEntity[]> {
+  async findByEmployeeId(employeeId: string): Promise<EmployeeCommissionEntity[]> {
     return this.repository.find({
-      where: { resellerId },
+      where: { employeeId },
       order: { createdAt: 'DESC' },
     });
   }
@@ -61,10 +62,10 @@ export class ResellerCommissionRepository {
   async findByStatus(
     organizationId: string,
     status: CommissionStatus,
-  ): Promise<ResellerCommissionEntity[]> {
+  ): Promise<EmployeeCommissionEntity[]> {
     return this.repository.find({
       where: { organizationId, status },
-      relations: ['reseller'],
+      relations: ['employee'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -74,8 +75,8 @@ export class ResellerCommissionRepository {
    */
   async update(
     id: string,
-    data: Partial<ResellerCommissionEntity>,
-  ): Promise<ResellerCommissionEntity> {
+    data: Partial<EmployeeCommissionEntity>,
+  ): Promise<EmployeeCommissionEntity> {
     await this.repository.update(id, data);
     const updated = await this.findById(id);
     if (!updated) {
@@ -92,13 +93,13 @@ export class ResellerCommissionRepository {
   }
 
   /**
-   * Calculate total commission earned by a reseller
+   * Calculate total commission earned by an employee (reseller-kind profile)
    */
-  async getTotalCommissionEarned(resellerId: string, status: string): Promise<number> {
+  async getTotalCommissionEarned(employeeId: string, status: string): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('commission')
       .select('SUM(commission.commission_amount)', 'total')
-      .where('commission.reseller_id = :resellerId', { resellerId })
+      .where('commission.employee_id = :employeeId', { employeeId })
       .andWhere('commission.status = :status', { status })
       .andWhere('commission.deleted_at IS NULL')
       .getRawOne<{ total: string | null }>();

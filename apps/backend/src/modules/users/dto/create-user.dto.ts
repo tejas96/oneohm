@@ -21,12 +21,14 @@ import {
 
 import { CreateCustomerDto } from '../../customers/dto/create-customer.dto';
 import { CreateEmployeeDto } from '../../employees/dto/create-employee.dto';
-import { CreateResellerDto } from '../../resellers/dto/create-reseller.dto';
 
 // Partial versions for inline profile creation (all fields optional)
+// Reseller profiles are now employee_profiles rows (profileKind='reseller'),
+// so CreateEmployeeDto (which now carries the reseller-only fields) is reused
+// for both the employee and reseller partial DTOs below.
 export class PartialEmployeeProfileDto extends PartialType(CreateEmployeeDto) {}
 export class PartialCustomerProfileDto extends PartialType(CreateCustomerDto) {}
-export class PartialResellerProfileDto extends PartialType(CreateResellerDto) {}
+export class PartialResellerProfileDto extends PartialType(CreateEmployeeDto) {}
 
 // Union type for profileData
 export type ProfileDataType =

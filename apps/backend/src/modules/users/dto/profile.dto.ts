@@ -9,7 +9,7 @@ import { IsNotEmpty, IsString, IsEnum, IsOptional, IsObject } from 'class-valida
  *
  * Profile data structure depends on profileType:
  * - customer: See CreateCustomerDto in modules/customers/dto
- * - reseller: See CreateResellerDto in modules/resellers/dto
+ * - reseller: See CreateEmployeeDto in modules/employees/dto (reseller-only fields)
  * - employee: See CreateEmployeeDto in modules/employees/dto
  */
 export class CreateProfileDto {
@@ -40,7 +40,7 @@ export class CreateProfileDto {
       'Profile-specific data. Structure depends on profileType:\n' +
       '- employee: { employeeId, designation, department, joiningDate, email, phone, address, city, state, pincode }\n' +
       '- customer: See CreateCustomerDto\n' +
-      '- reseller: See CreateResellerDto',
+      '- reseller: See CreateEmployeeDto (reseller-only fields)',
     example: {
       employeeId: 'EMP001',
       designation: 'Sales Executive',

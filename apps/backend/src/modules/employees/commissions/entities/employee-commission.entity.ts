@@ -1,24 +1,26 @@
 import { CommissionStatus } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
-import { ResellerProfileEntity } from './reseller-profile.entity';
-import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
-import { UserEntity } from '../../users/entities/user.entity';
+import { BaseEntity } from '../../../../common/entities/base.entity';
+import { OrganizationEntity } from '../../../organizations/entities/organization.entity';
+import { UserEntity } from '../../../users/entities/user.entity';
+import { EmployeeProfileEntity } from '../../entities/employee-profile.entity';
 
 /**
- * Reseller Commission Entity
- * Tracks commission calculations and payments for resellers
+ * Employee Commission Entity
+ * Tracks commission calculations and payments for employee_profiles rows
+ * (reseller-kind profiles). Renamed from ResellerCommissionEntity /
+ * reseller_commissions as part of the reseller module merge into employees.
  */
-@Entity('reseller_commissions')
-@Index(['organizationId', 'resellerId', 'status'])
+@Entity('employee_commissions')
+@Index(['organizationId', 'employeeId', 'status'])
 @Index(['status'])
-export class ResellerCommissionEntity extends BaseEntity {
+export class EmployeeCommissionEntity extends BaseEntity {
   @Column({ name: 'organization_id', type: 'uuid' })
   organizationId!: string;
 
-  @Column({ name: 'reseller_id', type: 'uuid' })
-  resellerId!: string;
+  @Column({ name: 'employee_id', type: 'uuid' })
+  employeeId!: string;
 
   @Column({ name: 'project_id', type: 'uuid', nullable: true })
   projectId?: string;
@@ -90,9 +92,9 @@ export class ResellerCommissionEntity extends BaseEntity {
   @JoinColumn({ name: 'organization_id' })
   organization?: OrganizationEntity;
 
-  @ManyToOne(() => ResellerProfileEntity)
-  @JoinColumn({ name: 'reseller_id' })
-  reseller?: ResellerProfileEntity;
+  @ManyToOne(() => EmployeeProfileEntity)
+  @JoinColumn({ name: 'employee_id' })
+  employee?: EmployeeProfileEntity;
 
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'approved_by' })

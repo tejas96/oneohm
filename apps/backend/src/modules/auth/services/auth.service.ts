@@ -3,6 +3,7 @@ import * as crypto from 'crypto';
 import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import {
+  EmployeeProfileKind,
   SecurityEventCategory,
   SecurityEventStatus,
   SecurityEventType,
@@ -19,7 +20,6 @@ import { ConfigService } from '../../../config/config.service';
 import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
 import { IamService } from '../../iam/services/iam.service';
-import { ResellerProfileRepository } from '../../resellers/repositories/reseller-profile.repository';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
 import { UserEntity } from '../../users/entities/user.entity';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
@@ -52,7 +52,6 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly iamService: IamService,
     private readonly customerProfileRepository: CustomerProfileRepository,
-    private readonly resellerProfileRepository: ResellerProfileRepository,
     private readonly employeeProfileRepository: EmployeeProfileRepository,
     private readonly securityEventService: SecurityEventService,
     private readonly otpService: OtpService,
@@ -668,12 +667,20 @@ export class AuthService {
    */
   private async fetchUserProfiles(userId: string): Promise<ProfileSummaryDto[]> {
     try {
-      // Fetch all profile types in parallel
-      const [customerProfiles, resellerProfiles, employeeProfiles] = await Promise.all([
+      // Fetch all profile types in parallel. employee_profiles now holds both
+      // staff and reseller-kind rows (distinguished by profileKind), so a
+      // single fetch is partitioned client-side rather than issuing a second query.
+      const [customerProfiles, allEmployeeProfiles] = await Promise.all([
         this.customerProfileRepository.findByUserId(userId),
-        this.resellerProfileRepository.findByUserId(userId),
         this.employeeProfileRepository.findByUserId(userId),
       ]);
+
+      const resellerProfiles = allEmployeeProfiles.filter(
+        (p) => p.profileKind === EmployeeProfileKind.RESELLER,
+      );
+      const employeeProfiles = allEmployeeProfiles.filter(
+        (p) => p.profileKind === EmployeeProfileKind.STAFF,
+      );
 
       const profiles: ProfileSummaryDto[] = [];
 

@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CommissionStatus } from '@tejas96/shared/types';
 import { Exclude, Expose, Transform } from 'class-transformer';
 
-import { toNum } from '../../../common/utils';
+import { toNum } from '../../../../common/utils';
 
 /**
  * DTO for commission response
@@ -20,7 +20,7 @@ export class CommissionResponseDto {
 
   @ApiProperty()
   @Expose()
-  resellerId!: string;
+  employeeId!: string;
 
   @ApiPropertyOptional()
   @Expose()

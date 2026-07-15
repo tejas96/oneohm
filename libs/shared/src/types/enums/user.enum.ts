@@ -7,6 +7,7 @@ export enum UserStatus {
   SUSPENDED = 'suspended',
   PENDING = 'pending',
   ARCHIVED = 'archived',
+  BLOCKED = 'blocked',
 }
 
 /**

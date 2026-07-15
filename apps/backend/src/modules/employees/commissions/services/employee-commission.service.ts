@@ -1,23 +1,24 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CommissionStatus } from '@tejas96/shared/types';
 
-import { ResellerService } from './reseller.service';
+import { EmployeeService } from '../../services/employee.service';
 import { CreateCommissionDto } from '../dto/create-commission.dto';
 import { UpdateCommissionDto } from '../dto/update-commission.dto';
-import { ResellerCommissionEntity } from '../entities/reseller-commission.entity';
-import { ResellerCommissionRepository } from '../repositories/reseller-commission.repository';
+import { EmployeeCommissionEntity } from '../entities/employee-commission.entity';
+import { EmployeeCommissionRepository } from '../repositories/employee-commission.repository';
 
 /**
- * Reseller Commission Service
- * Business logic for commission management
+ * Employee Commission Service
+ * Business logic for commission management on employee_profiles
+ * (reseller-kind) rows. Renamed from ResellerCommissionService.
  */
 @Injectable()
-export class ResellerCommissionService {
-  private readonly logger = new Logger(ResellerCommissionService.name);
+export class EmployeeCommissionService {
+  private readonly logger = new Logger(EmployeeCommissionService.name);
 
   constructor(
-    private readonly commissionRepository: ResellerCommissionRepository,
-    private readonly resellerService: ResellerService,
+    private readonly commissionRepository: EmployeeCommissionRepository,
+    private readonly employeeService: EmployeeService,
   ) {}
 
   /**
@@ -27,11 +28,11 @@ export class ResellerCommissionService {
     organizationId: string,
     createDto: CreateCommissionDto,
     createdBy?: string,
-  ): Promise<ResellerCommissionEntity> {
-    this.logger.log(`Creating commission for reseller: ${createDto.resellerId}`);
+  ): Promise<EmployeeCommissionEntity> {
+    this.logger.log(`Creating commission for employee: ${createDto.employeeId}`);
 
-    // Verify reseller exists and belongs to organization
-    await this.resellerService.findById(createDto.resellerId, organizationId);
+    // Verify employee exists and belongs to organization
+    await this.employeeService.findByIdInOrganization(createDto.employeeId, organizationId);
 
     // Validate commission calculation
     const calculatedAmount = (createDto.projectValue * createDto.commissionPercentage) / 100;
@@ -57,7 +58,7 @@ export class ResellerCommissionService {
   /**
    * Find commission by ID
    */
-  async findById(id: string, organizationId: string): Promise<ResellerCommissionEntity> {
+  async findById(id: string, organizationId: string): Promise<EmployeeCommissionEntity> {
     const commission = await this.commissionRepository.findById(id);
 
     if (commission?.organizationId !== organizationId) {
@@ -70,21 +71,21 @@ export class ResellerCommissionService {
   /**
    * Find all commissions for an organization
    */
-  async findAll(organizationId: string): Promise<ResellerCommissionEntity[]> {
+  async findAll(organizationId: string): Promise<EmployeeCommissionEntity[]> {
     return this.commissionRepository.findAll(organizationId);
   }
 
   /**
-   * Find commissions by reseller ID
+   * Find commissions by employee ID
    */
-  async findByResellerId(
-    resellerId: string,
+  async findByEmployeeId(
+    employeeId: string,
     organizationId: string,
-  ): Promise<ResellerCommissionEntity[]> {
-    // Verify reseller exists and belongs to organization
-    await this.resellerService.findById(resellerId, organizationId);
+  ): Promise<EmployeeCommissionEntity[]> {
+    // Verify employee exists and belongs to organization
+    await this.employeeService.findByIdInOrganization(employeeId, organizationId);
 
-    return this.commissionRepository.findByResellerId(resellerId);
+    return this.commissionRepository.findByEmployeeId(employeeId);
   }
 
   /**
@@ -93,7 +94,7 @@ export class ResellerCommissionService {
   async findByStatus(
     organizationId: string,
     status: CommissionStatus,
-  ): Promise<ResellerCommissionEntity[]> {
+  ): Promise<EmployeeCommissionEntity[]> {
     return this.commissionRepository.findByStatus(organizationId, status);
   }
 
@@ -105,7 +106,7 @@ export class ResellerCommissionService {
     organizationId: string,
     updateDto: UpdateCommissionDto,
     updatedBy?: string,
-  ): Promise<ResellerCommissionEntity> {
+  ): Promise<EmployeeCommissionEntity> {
     this.logger.log(`Updating commission: ${id}`);
 
     // Verify commission exists and belongs to organization
@@ -156,7 +157,7 @@ export class ResellerCommissionService {
     organizationId: string,
     newStatus: CommissionStatus,
     updatedBy?: string,
-  ): Promise<ResellerCommissionEntity> {
+  ): Promise<EmployeeCommissionEntity> {
     this.logger.log(`Updating commission ${id} status to: ${newStatus}`);
 
     const commission = await this.findById(id, organizationId);
@@ -179,7 +180,7 @@ export class ResellerCommissionService {
       );
     }
 
-    const updateData: Partial<ResellerCommissionEntity> = {
+    const updateData: Partial<EmployeeCommissionEntity> = {
       status: newStatus,
       updatedBy,
     };
@@ -195,13 +196,13 @@ export class ResellerCommissionService {
       updateData.paidAt = new Date();
       updateData.paidBy = updatedBy;
 
-      // Update reseller's total commission earned
+      // Update employee's total commission earned
       const totalEarned = await this.commissionRepository.getTotalCommissionEarned(
-        commission.resellerId,
+        commission.employeeId,
         CommissionStatus.PAID,
       );
 
-      await this.resellerService.updatePerformanceMetrics(commission.resellerId, organizationId, {
+      await this.employeeService.updatePerformanceMetrics(commission.employeeId, organizationId, {
         totalCommissionEarned: totalEarned + commission.commissionAmount,
       });
     }
@@ -232,12 +233,12 @@ export class ResellerCommissionService {
   }
 
   /**
-   * Get total commission earned by a reseller
+   * Get total commission earned by an employee (reseller-kind profile)
    */
-  async getTotalCommissionEarned(resellerId: string, organizationId: string): Promise<number> {
-    // Verify reseller exists and belongs to organization
-    await this.resellerService.findById(resellerId, organizationId);
+  async getTotalCommissionEarned(employeeId: string, organizationId: string): Promise<number> {
+    // Verify employee exists and belongs to organization
+    await this.employeeService.findByIdInOrganization(employeeId, organizationId);
 
-    return this.commissionRepository.getTotalCommissionEarned(resellerId, CommissionStatus.PAID);
+    return this.commissionRepository.getTotalCommissionEarned(employeeId, CommissionStatus.PAID);
   }
 }

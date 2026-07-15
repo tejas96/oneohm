@@ -312,6 +312,7 @@ export function AdminUsersListPage(): JSX.Element {
         flex: 2,
         renderCell: ({ row }) => {
           const isDeleted = !!row.deletedAt;
+          const isReseller = (row.roles as string[] | undefined)?.includes('reseller');
           const inner = (
             <>
               <Avatar className={`size-8 shrink-0${isDeleted ? ' opacity-50' : ''}`}>
@@ -322,8 +323,19 @@ export function AdminUsersListPage(): JSX.Element {
                 </AvatarFallback>
               </Avatar>
               <div className={`min-w-0${isDeleted ? ' opacity-50' : ''}`}>
-                <div className="font-medium text-foreground leading-tight">
-                  {row.firstName} {row.lastName as string | undefined}
+                <div className="font-medium text-foreground leading-tight flex items-center gap-1.5">
+                  <span>
+                    {row.firstName} {row.lastName as string | undefined}
+                  </span>
+                  {isReseller && (
+                    <Badge
+                      variant="outline"
+                      size="xs"
+                      className="bg-amber-50 text-amber-700 border-amber-200 px-1 py-0 h-4 text-[10px] font-semibold"
+                    >
+                      Reseller
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-foreground-tertiary text-2xs leading-tight mt-0.5 truncate">
                   {(row.email as string | undefined) || '-'}
@@ -363,11 +375,21 @@ export function AdminUsersListPage(): JSX.Element {
           return (
             <div className="flex flex-wrap gap-1">
               {roles && roles.length > 0 ? (
-                roles.map((role) => (
-                  <Badge key={role} variant="secondary" size="xs">
-                    {formatRoleCode(role)}
-                  </Badge>
-                ))
+                roles.map((role) => {
+                  const isResellerRole = role === 'reseller';
+                  return (
+                    <Badge
+                      key={role}
+                      variant={isResellerRole ? 'outline' : 'secondary'}
+                      size="xs"
+                      className={
+                        isResellerRole ? 'bg-amber-50 text-amber-700 border-amber-200' : ''
+                      }
+                    >
+                      {formatRoleCode(role)}
+                    </Badge>
+                  );
+                })
               ) : (
                 <span className="text-foreground-tertiary">--</span>
               )}

@@ -1,16 +1,18 @@
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { UserStatus } from '@tejas96/shared/types';
+import { EmployeeProfileKind, UserStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
+import { ProfileService } from '../../users/services/profile.service';
 import { CreateEmployeeDto, EmployeeResponseDto, UpdateEmployeeDto } from '../dto';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
 import { EmployeeProfileRepository } from '../repositories/employee-profile.repository';
@@ -29,6 +31,8 @@ export class EmployeeService {
     private readonly userRepository: UserRepository,
     @Inject(forwardRef(() => UserRoleRepository))
     private readonly userRoleRepository: UserRoleRepository,
+    @Inject(forwardRef(() => ProfileService))
+    private readonly profileService: ProfileService,
   ) {}
 
   /**
@@ -47,9 +51,18 @@ export class EmployeeService {
       );
     }
 
+    const profileKind = dto.profileKind ?? EmployeeProfileKind.STAFF;
+    let commissionDefaults: Partial<CreateEmployeeDto> = {};
+
+    if (profileKind === EmployeeProfileKind.RESELLER) {
+      commissionDefaults = await this.validateResellerFields(dto.organizationId, dto);
+    }
+
     // Create profile
     const profile = await this.employeeRepository.create({
       ...dto,
+      ...commissionDefaults,
+      profileKind,
       joiningDate: dto.joiningDate ? new Date(dto.joiningDate) : undefined,
       dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
       status: dto.status ?? UserStatus.ACTIVE,
@@ -60,7 +73,48 @@ export class EmployeeService {
       `Created employee profile ${profile.id} for user ${dto.userId} in org ${dto.organizationId}`,
     );
 
+    // Auto-assign default role
+    const roleCode = profileKind === EmployeeProfileKind.RESELLER ? 'reseller' : 'employee_basic';
+    await this.profileService.assignDefaultRole(
+      dto.userId,
+      dto.organizationId,
+      roleCode,
+      createdBy,
+    );
+
     return this.toResponseDto(profile);
+  }
+
+  /**
+   * Validate reseller-kind fields on create (company code / email uniqueness)
+   * and return the default commission percentage. Ported from ResellerService.create.
+   */
+  private async validateResellerFields(
+    organizationId: string,
+    dto: Pick<CreateEmployeeDto, 'companyCode' | 'email' | 'commissionPercentage'>,
+  ): Promise<Partial<CreateEmployeeDto>> {
+    if (dto.companyCode) {
+      const existingByCode = await this.employeeRepository.findByCompanyCode(
+        organizationId,
+        dto.companyCode,
+      );
+      if (existingByCode) {
+        throw new ConflictException(
+          `Reseller with company code '${dto.companyCode}' already exists`,
+        );
+      }
+    }
+
+    if (dto.email) {
+      const existingByEmail = await this.employeeRepository.findByEmail(organizationId, dto.email);
+      if (existingByEmail) {
+        throw new ConflictException(`Reseller with email '${dto.email}' already exists`);
+      }
+    }
+
+    return {
+      commissionPercentage: dto.commissionPercentage ?? 4.0,
+    };
   }
 
   /**
@@ -150,6 +204,7 @@ export class EmployeeService {
     page = 1,
     limit = 20,
     status?: UserStatus,
+    profileKind?: EmployeeProfileKind,
   ): Promise<{
     items: EmployeeResponseDto[];
     total: number;
@@ -161,6 +216,7 @@ export class EmployeeService {
       page,
       limit,
       status,
+      profileKind,
     );
 
     const userIds = result.items.map((e) => e.userId);
@@ -210,6 +266,19 @@ export class EmployeeService {
 
     if (!existing) {
       throw new NotFoundException('Employee not found');
+    }
+
+    if (existing.profileKind === EmployeeProfileKind.RESELLER) {
+      // Check for email conflicts (if email is being updated)
+      if (dto.email) {
+        const existingByEmail = await this.employeeRepository.findByEmail(
+          existing.organizationId,
+          dto.email,
+        );
+        if (existingByEmail && existingByEmail.id !== id) {
+          throw new ConflictException(`Reseller with email '${dto.email}' already exists`);
+        }
+      }
     }
 
     const updates: Partial<EmployeeProfileEntity> = {
@@ -292,6 +361,45 @@ export class EmployeeService {
    */
   async getEntity(userId: string, organizationId: string): Promise<EmployeeProfileEntity | null> {
     return this.employeeRepository.findByUserAndOrganization(userId, organizationId);
+  }
+
+  /**
+   * Find employee by ID, verifying it belongs to the given organization.
+   * Used by the commissions submodule (ported from ResellerService.findById).
+   */
+  async findByIdInOrganization(id: string, organizationId: string): Promise<EmployeeProfileEntity> {
+    const employee = await this.employeeRepository.findById(id);
+
+    if (employee?.organizationId !== organizationId) {
+      throw new NotFoundException(`Employee with ID '${id}' not found`);
+    }
+
+    return employee;
+  }
+
+  /**
+   * Update reseller performance metrics.
+   * Called by the commission service when commissions are paid.
+   * Ported from ResellerService.updatePerformanceMetrics.
+   */
+  async updatePerformanceMetrics(
+    id: string,
+    organizationId: string,
+    metrics: {
+      totalLeadsGenerated?: number;
+      totalProjectsConverted?: number;
+      totalRevenueGenerated?: number;
+      totalCommissionEarned?: number;
+    },
+  ): Promise<void> {
+    this.logger.log(`Updating performance metrics for employee: ${id}`);
+
+    // Verify employee exists and belongs to organization
+    await this.findByIdInOrganization(id, organizationId);
+
+    await this.employeeRepository.updatePerformanceMetrics(id, metrics);
+
+    this.logger.log(`Performance metrics updated for employee: ${id}`);
   }
 
   /**

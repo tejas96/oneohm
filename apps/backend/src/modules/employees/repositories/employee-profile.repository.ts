@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserStatus } from '@tejas96/shared/types';
+import { EmployeeProfileKind, UserStatus } from '@tejas96/shared/types';
 import { IsNull, Repository } from 'typeorm';
 
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
@@ -41,6 +41,7 @@ export class EmployeeProfileRepository {
     page = 1,
     limit = 20,
     status?: UserStatus,
+    profileKind?: EmployeeProfileKind,
   ): Promise<{ items: EmployeeProfileEntity[]; total: number; page: number; limit: number }> {
     const whereCondition: Record<string, unknown> = {
       organizationId,
@@ -49,6 +50,10 @@ export class EmployeeProfileRepository {
 
     if (status) {
       whereCondition.status = status;
+    }
+
+    if (profileKind) {
+      whereCondition.profileKind = profileKind;
     }
 
     const [items, total] = await this.repository.findAndCount({
@@ -100,5 +105,57 @@ export class EmployeeProfileRepository {
       },
     );
     return (result.affected ?? 0) > 0;
+  }
+
+  /**
+   * Find by company code (reseller-kind profiles)
+   * Ported from ResellerProfileRepository.findByCompanyCode
+   */
+  async findByCompanyCode(
+    organizationId: string,
+    companyCode: string,
+  ): Promise<EmployeeProfileEntity | null> {
+    return this.repository.findOne({
+      where: { organizationId, companyCode, deletedAt: IsNull() },
+    });
+  }
+
+  /**
+   * Find by email within an organization (used for reseller-kind uniqueness checks)
+   * Ported from ResellerProfileRepository.findByEmail
+   */
+  async findByEmail(organizationId: string, email: string): Promise<EmployeeProfileEntity | null> {
+    return this.repository.findOne({
+      where: { organizationId, email, deletedAt: IsNull() },
+    });
+  }
+
+  /**
+   * Find by phone across all organizations (used by auth/OTP flows to verify
+   * a phone is registered as a given profile kind)
+   */
+  async findByPhoneAndKind(
+    phone: string,
+    profileKind: EmployeeProfileKind,
+  ): Promise<EmployeeProfileEntity | null> {
+    return this.repository.findOne({
+      where: { phone, profileKind, deletedAt: IsNull() },
+    });
+  }
+
+  /**
+   * Update reseller performance metrics
+   * Ported from ResellerProfileRepository.updatePerformanceMetrics
+   */
+  async updatePerformanceMetrics(
+    id: string,
+    metrics: {
+      totalLeadsGenerated?: number;
+      totalProjectsConverted?: number;
+      totalRevenueGenerated?: number;
+      totalCommissionEarned?: number;
+    },
+  ): Promise<void> {
+    await this.repository.update({ id }, metrics);
   }
 }

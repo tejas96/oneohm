@@ -8,10 +8,11 @@ import {
   QuoteStatus,
   SystemType,
 } from '@tejas96/shared/types';
-import { Expose, Transform } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 
 import { QuoteVersionResponseDto } from './quote-version-response.dto';
 import { toNum } from '../../../../common/utils';
+import { EmployeeResponseDto } from '../../../employees/dto';
 
 const toTimestamp = (value: unknown): number => {
   if (typeof value === 'string' || value instanceof Date) {
@@ -105,6 +106,11 @@ export class QuoteResponseDto {
   @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   resellerId?: string;
+
+  @ApiPropertyOptional({ type: () => EmployeeResponseDto })
+  @Expose()
+  @Type(() => EmployeeResponseDto)
+  reseller?: EmployeeResponseDto;
 
   @ApiProperty({ example: 'QT-ONEOHM-2025-0001' })
   @Expose()

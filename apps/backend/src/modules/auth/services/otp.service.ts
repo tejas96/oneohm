@@ -6,6 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import {
+  EmployeeProfileKind,
   SecurityEventType,
   SecurityEventCategory,
   SecurityEventStatus,
@@ -19,7 +20,6 @@ import { PlatformSmsService } from './platform-sms.service';
 import { ConfigService } from '../../../config/config.service';
 import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
-import { ResellerProfileRepository } from '../../resellers/repositories/reseller-profile.repository';
 import { SecurityEventRepository } from '../../security-events/repositories/security-event.repository';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
 
@@ -50,7 +50,6 @@ export class OtpService {
     private readonly platformSmsService: PlatformSmsService,
     private readonly customerProfileRepository: CustomerProfileRepository,
     private readonly employeeProfileRepository: EmployeeProfileRepository,
-    private readonly resellerProfileRepository: ResellerProfileRepository,
   ) {
     this.isDevelopment = this.configService.isDevelopment;
     if (this.isDevelopment) {
@@ -270,14 +269,22 @@ export class OtpService {
         }
       } else if (loginUserType === UserProfileType.EMPLOYEE) {
         const employeeExists = await this.employeeProfileRepository.repository.findOne({
-          where: { phone: normalizedPhone, deletedAt: IsNull() },
+          where: {
+            phone: normalizedPhone,
+            profileKind: EmployeeProfileKind.STAFF,
+            deletedAt: IsNull(),
+          },
         });
         if (!employeeExists) {
           throw new BadRequestException('This mobile number is not registered as an employee.');
         }
       } else if (loginUserType === UserProfileType.RESELLER) {
-        const resellerExists = await this.resellerProfileRepository.repository.findOne({
-          where: { phone: normalizedPhone, deletedAt: IsNull() },
+        const resellerExists = await this.employeeProfileRepository.repository.findOne({
+          where: {
+            phone: normalizedPhone,
+            profileKind: EmployeeProfileKind.RESELLER,
+            deletedAt: IsNull(),
+          },
         });
         if (!resellerExists) {
           throw new BadRequestException('This mobile number is not registered as a reseller.');
