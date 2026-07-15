@@ -10,7 +10,6 @@ import {
   createUserSchema,
   editUserSchema,
   type CreateUserFormData,
-  type EditUserFormData,
 } from '../schemas/user-form.schema';
 
 import {
@@ -50,7 +49,7 @@ interface UserFormModalProps {
   userId?: string;
 }
 
-type FormData = CreateUserFormData | EditUserFormData;
+type FormData = Omit<CreateUserFormData, 'password'> & { password?: string };
 
 export function UserFormModal({
   open,
@@ -70,7 +69,7 @@ export function UserFormModal({
   const schema = isEdit ? editUserSchema : createUserSchema;
 
   const form = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -405,9 +404,7 @@ export function UserFormModal({
                   <PasswordInput
                     id="password"
                     placeholder="Minimum 8 characters"
-                    {...(form as ReturnType<typeof useForm<CreateUserFormData>>).register(
-                      'password',
-                    )}
+                    {...form.register('password')}
                   />
                   {(form.formState.errors as Record<string, { message?: string }>).password && (
                     <p className="text-xs text-error">

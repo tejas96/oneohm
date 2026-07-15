@@ -176,7 +176,7 @@ export function useUserEmployeeProfile(userId: string): {
       const { data } = await apiClient.get<EmployeeProfile[]>(`/employees/user/${userId}`, {
         headers: orgHeaders,
       });
-      return data && data.length > 0 ? data[0] : null;
+      return data && data.length > 0 ? (data[0] ?? null) : null;
     },
     enabled: !!userId && isReady,
   });
