@@ -36,7 +36,8 @@ export interface PaymentMilestone {
  */
 export interface CalculatorInputs {
   phaseType: string;
-  dcrPreference: DcrPreference;
+  /** Historical quotes may contain 'auto_split' */
+  dcrPreference: DcrPreference | string;
   calculationMode: QuoteCalculationMode;
   dcrSystemSizeKw?: number;
   nonDcrSystemSizeKw?: number;

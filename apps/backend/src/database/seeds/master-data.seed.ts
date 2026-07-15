@@ -2473,8 +2473,8 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
   ]);
 
   await queryRunner.query(
-    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, auto_split_enabled, tiers, is_active, description, effective_from, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, tiers, is_active, description, effective_from, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
     ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
@@ -2485,7 +2485,6 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
       'residential',
       3,
       78000,
-      true,
       true,
       residentialTiers,
       true,
@@ -2498,8 +2497,8 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
   const apartmentTiers = JSON.stringify([{ fromKw: 0, toKw: 500, ratePerKw: 18000 }]);
 
   await queryRunner.query(
-    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, auto_split_enabled, tiers, is_active, description, effective_from, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, tiers, is_active, description, effective_from, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
     ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
@@ -2510,7 +2509,6 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
       'residential_apartment',
       500,
       9000000,
-      true,
       true,
       apartmentTiers,
       true,
@@ -2523,8 +2521,8 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
   const noSubsidyTiers = JSON.stringify([]);
 
   await queryRunner.query(
-    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, auto_split_enabled, tiers, is_active, description, effective_from, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, tiers, is_active, description, effective_from, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
     ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
@@ -2535,7 +2533,6 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
       'commercial',
       0,
       0,
-      false,
       false,
       noSubsidyTiers,
       true,

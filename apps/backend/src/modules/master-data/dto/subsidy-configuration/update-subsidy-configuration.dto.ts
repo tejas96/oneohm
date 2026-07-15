@@ -59,11 +59,6 @@ export class UpdateSubsidyConfigurationDto {
   @IsOptional()
   requiresDcr?: boolean;
 
-  @ApiPropertyOptional({ example: true })
-  @IsBoolean()
-  @IsOptional()
-  autoSplitEnabled?: boolean;
-
   @ApiPropertyOptional({ type: [SubsidyTierDto] })
   @IsArray()
   @ValidateNested({ each: true })

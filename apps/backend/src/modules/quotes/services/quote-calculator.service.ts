@@ -123,7 +123,7 @@ export class QuoteCalculatorService {
     const { dcrSizeKw, nonDcrSizeKw } = this.calculateSystemSplit(
       input.systemSizeKw,
       input.subsidyApplicable,
-      input.dcrPreference || DcrPreference.AUTO_SPLIT,
+      input.dcrPreference || DcrPreference.DCR_ONLY,
       subsidyConfigs,
     );
 
@@ -137,7 +137,7 @@ export class QuoteCalculatorService {
       // Use quantity-constrained calculation
       const panelResult = await this.calculatePanelsWithQuantityConstraint(
         organizationId,
-        input.dcrPreference || DcrPreference.AUTO_SPLIT,
+        input.dcrPreference || DcrPreference.DCR_ONLY,
         input.manualDcrPanelCount,
         input.manualNonDcrPanelCount,
         dcrSizeKw,
@@ -372,10 +372,9 @@ export class QuoteCalculatorService {
    * Validate that manual panel counts match the DCR preference
    * - DCR_ONLY: Only manualDcrPanelCount is valid
    * - NON_DCR_ONLY: Only manualNonDcrPanelCount is valid
-   * - AUTO_SPLIT: Both are valid
    */
   private validateDcrPreferenceManualCounts(input: CalculateQuoteDto): void {
-    const dcrPreference = input.dcrPreference || DcrPreference.AUTO_SPLIT;
+    const dcrPreference = input.dcrPreference || DcrPreference.DCR_ONLY;
 
     if (dcrPreference === DcrPreference.DCR_ONLY && input.manualNonDcrPanelCount !== undefined) {
       throw new BadRequestException(
@@ -393,40 +392,22 @@ export class QuoteCalculatorService {
   }
 
   /**
-   * Calculate DCR/Non-DCR system split based on subsidy eligibility
+   * Calculate DCR/Non-DCR system split based on DCR preference.
+   * DCR_ONLY: Entire system uses DCR panels.
+   * NON_DCR_ONLY: Entire system uses Non-DCR panels.
    */
   private calculateSystemSplit(
     systemSizeKw: number,
-    subsidyApplicable: boolean,
+    _subsidyApplicable: boolean,
     dcrPreference: DcrPreference,
-    subsidyConfigs: SubsidyConfiguration[],
+    _subsidyConfigs: SubsidyConfiguration[],
   ): { dcrSizeKw: number; nonDcrSizeKw: number } {
-    if (dcrPreference === DcrPreference.DCR_ONLY) {
-      return { dcrSizeKw: systemSizeKw, nonDcrSizeKw: 0 };
-    }
-
     if (dcrPreference === DcrPreference.NON_DCR_ONLY) {
       return { dcrSizeKw: 0, nonDcrSizeKw: systemSizeKw };
     }
 
-    if (!subsidyApplicable || subsidyConfigs.length === 0) {
-      return { dcrSizeKw: 0, nonDcrSizeKw: systemSizeKw };
-    }
-
-    const dcrConfigs = subsidyConfigs.filter((c) => c.requiresDcr && c.autoSplitEnabled);
-    if (dcrConfigs.length === 0) {
-      return { dcrSizeKw: systemSizeKw, nonDcrSizeKw: 0 };
-    }
-
-    const maxSubsidyKw = Math.max(...dcrConfigs.map((c) => Number(c.maxSubsidyKw)));
-    if (systemSizeKw <= maxSubsidyKw) {
-      return { dcrSizeKw: systemSizeKw, nonDcrSizeKw: 0 };
-    }
-
-    return {
-      dcrSizeKw: maxSubsidyKw,
-      nonDcrSizeKw: systemSizeKw - maxSubsidyKw,
-    };
+    // Default to DCR_ONLY
+    return { dcrSizeKw: systemSizeKw, nonDcrSizeKw: 0 };
   }
 
   /**

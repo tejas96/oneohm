@@ -57,10 +57,6 @@ export const PHASE_TYPE_LABELS: Record<string, string> = {
 
 export const DCR_PREFERENCE_LABELS: Record<DcrPreference, { label: string; description: string }> =
   {
-    [DcrPreference.AUTO_SPLIT]: {
-      label: 'Auto Split',
-      description: 'DCR for subsidy portion + Non-DCR for rest (Recommended)',
-    },
     [DcrPreference.DCR_ONLY]: {
       label: 'All DCR',
       description: '100% DCR panels - Full subsidy eligible',

@@ -37,7 +37,6 @@ export const subsidyConfigSchema = z
       ])
       .optional(),
     requiresDcr: z.boolean(),
-    autoSplitEnabled: z.boolean(),
     tiers: z.array(tierSchema).min(1, 'At least one tier is required'),
     effectiveFrom: z.string().optional(),
     effectiveTo: z.string().optional(),

@@ -102,10 +102,7 @@ export function useQuoteConfig() {
         { headers },
       );
       const rows = response.data as SubsidyConfigResponse[];
-      return rows.map((c) => ({
-        ...c,
-        autoSplitEnabled: c.autoSplitEnabled ?? false,
-      }));
+      return rows;
     },
     staleTime: FIVE_MINUTES,
     enabled: !!organizationId,

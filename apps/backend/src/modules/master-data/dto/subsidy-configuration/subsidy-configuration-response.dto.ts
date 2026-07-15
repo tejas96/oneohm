@@ -66,10 +66,6 @@ export class SubsidyConfigurationResponseDto {
   @Expose()
   requiresDcr!: boolean;
 
-  @ApiProperty({ example: true })
-  @Expose()
-  autoSplitEnabled!: boolean;
-
   @ApiProperty({
     type: [SubsidyTierResponseDto],
     example: [

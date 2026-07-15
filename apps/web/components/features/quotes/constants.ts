@@ -118,15 +118,10 @@ export interface DcrPreferenceOption {
 
 export const DCR_PREFERENCE_OPTIONS: DcrPreferenceOption[] = [
   {
-    value: DcrPreference.AUTO_SPLIT,
-    label: 'Auto Split',
-    description: 'DCR for subsidy portion + Non-DCR for rest',
-    recommended: true,
-  },
-  {
     value: DcrPreference.DCR_ONLY,
     label: 'All DCR',
     description: '100% DCR panels (subsidy eligible)',
+    recommended: true,
   },
   {
     value: DcrPreference.NON_DCR_ONLY,

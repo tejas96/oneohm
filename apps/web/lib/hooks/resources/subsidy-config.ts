@@ -24,7 +24,6 @@ export interface SubsidyConfigItem {
   maxSubsidyKw: number;
   maxSubsidyAmount?: number;
   requiresDcr: boolean;
-  autoSplitEnabled: boolean;
   tiers: SubsidyTier[];
   isActive: boolean;
   description?: string;

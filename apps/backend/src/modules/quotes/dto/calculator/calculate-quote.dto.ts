@@ -135,12 +135,12 @@ export class CalculateQuoteDto {
   @ApiProperty({
     enum: DcrPreference,
     description: 'Customer preference for DCR vs Non-DCR panels',
-    example: DcrPreference.AUTO_SPLIT,
-    default: DcrPreference.AUTO_SPLIT,
+    example: DcrPreference.DCR_ONLY,
+    default: DcrPreference.DCR_ONLY,
   })
   @IsEnum(DcrPreference)
   @IsOptional()
-  dcrPreference?: DcrPreference = DcrPreference.AUTO_SPLIT;
+  dcrPreference?: DcrPreference = DcrPreference.DCR_ONLY;
 
   @ApiPropertyOptional({
     description: 'Preferred solar panel brand (optional)',
@@ -280,7 +280,7 @@ export class CalculateQuoteDto {
       Target DCR panel count for manual adjustment.
       Backend finds suitable DCR panel wattage so that count * wattage >= required DCR capacity.
       Cannot be used together with panelOverrides.
-      Only valid when dcrPreference is DCR_ONLY or AUTO_SPLIT.
+      Only valid when dcrPreference is DCR_ONLY.
       Example: User wants 20 DCR panels instead of auto-calculated 18.
     `,
     example: 20,
@@ -296,7 +296,7 @@ export class CalculateQuoteDto {
       Target Non-DCR panel count for manual adjustment.
       Backend finds suitable Non-DCR panel wattage so that count * wattage >= required Non-DCR capacity.
       Cannot be used together with panelOverrides.
-      Only valid when dcrPreference is NON_DCR_ONLY or AUTO_SPLIT.
+      Only valid when dcrPreference is NON_DCR_ONLY.
       Example: User wants 15 Non-DCR panels instead of auto-calculated 12.
     `,
     example: 15,
