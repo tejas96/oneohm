@@ -14,7 +14,6 @@ import { UserService, ProfileService, InvitationService, DeviceTokenService } fr
 import { CustomersModule } from '../customers/customers.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
-import { ResellersModule } from '../resellers/resellers.module';
 
 /**
  * Users Module
@@ -22,20 +21,19 @@ import { ResellersModule } from '../resellers/resellers.module';
  *
  * Features:
  * - User CRUD
- * - Profile orchestration (delegates to Customers, Resellers, Employees modules)
+ * - Profile orchestration (delegates to Customers, Employees modules)
  * - Invitations
  *
  * Profile modules:
  * - CustomersModule: Customer profile management
- * - ResellersModule: Reseller profile management
- * - EmployeesModule: Employee profile management
+ * - EmployeesModule: Employee profile management (staff and reseller-kind
+ *   rows, distinguished by profileKind)
  */
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity, UserRoleEntity, InvitationEntity, UserDeviceTokenEntity]),
     forwardRef(() => IamModule),
     forwardRef(() => CustomersModule),
-    forwardRef(() => ResellersModule),
     forwardRef(() => EmployeesModule),
   ],
   controllers: [UserController, InvitationController],

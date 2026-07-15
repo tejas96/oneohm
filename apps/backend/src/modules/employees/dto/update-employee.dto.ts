@@ -4,8 +4,9 @@ import { CreateEmployeeDto } from './create-employee.dto';
 
 /**
  * DTO for updating an employee profile
- * Excludes userId and organizationId as they cannot be changed
+ * Excludes userId, organizationId, and companyCode as they cannot be changed
+ * (companyCode is immutable after creation, same as the original reseller module)
  */
 export class UpdateEmployeeDto extends PartialType(
-  OmitType(CreateEmployeeDto, ['userId', 'organizationId'] as const),
+  OmitType(CreateEmployeeDto, ['userId', 'organizationId', 'companyCode'] as const),
 ) {}

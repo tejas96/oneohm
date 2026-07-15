@@ -5,8 +5,8 @@ import { QuoteVersionEntity } from './quote-version.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
+import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
-import { ResellerProfileEntity } from '../../resellers/entities/reseller-profile.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -47,9 +47,9 @@ export class QuoteEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'reseller_id', nullable: true })
   resellerId?: string;
 
-  @ManyToOne(() => ResellerProfileEntity, { nullable: true })
+  @ManyToOne(() => EmployeeProfileEntity, { nullable: true })
   @JoinColumn({ name: 'reseller_id' })
-  reseller?: ResellerProfileEntity;
+  reseller?: EmployeeProfileEntity;
 
   // ==================== Quote Info ====================
   @Column({ type: 'varchar', length: 50, unique: true, name: 'quote_number' })

@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { UserStatus } from '@tejas96/shared/types';
+import { EmployeeProfileKind, UserStatus } from '@tejas96/shared/types';
 
 import {
   ApiCreate,
@@ -80,12 +80,20 @@ export class EmployeeController {
     required: false,
     description: 'Filter by department',
   })
+  @ApiQuery({
+    name: 'profileKind',
+    required: false,
+    enum: EmployeeProfileKind,
+    example: EmployeeProfileKind.RESELLER,
+    description: 'Filter by profile kind (staff or reseller)',
+  })
   async findAll(
     @OrganizationContext() organizationId: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
     @Query('status') status?: UserStatus,
     @Query('department') department?: string,
+    @Query('profileKind') profileKind?: EmployeeProfileKind,
   ): Promise<{
     items: EmployeeResponseDto[];
     total: number;
@@ -103,7 +111,13 @@ export class EmployeeController {
       };
     }
 
-    return this.employeeService.findByOrganization(organizationId, page, limit, status);
+    return this.employeeService.findByOrganization(
+      organizationId,
+      page,
+      limit,
+      status,
+      profileKind,
+    );
   }
 
   @Get('me')

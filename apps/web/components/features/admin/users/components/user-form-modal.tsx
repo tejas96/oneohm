@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, Info, Loader2 } from 'lucide-react';
 import { useEffect, useRef, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
@@ -34,6 +35,8 @@ import {
   useAdminUser,
   useAdminUserMutations,
   useCheckUserAvailability,
+  useUserEmployeeProfile,
+  useEmployeeProfileMutations,
   type AdminUser,
 } from '@/lib/hooks/resources';
 import { useDebounce } from '@/lib/hooks/use-debounce';
@@ -58,6 +61,7 @@ export function UserFormModal({
   const isEdit = mode === 'edit';
   const { user: currentUser } = useAuth();
   const { create: createUser, update: updateUser } = useAdminUserMutations();
+  const { update: updateEmployeeProfile } = useEmployeeProfileMutations();
   const availability = useCheckUserAvailability(
     isEdit ? userId : undefined,
     isEdit ? undefined : currentUser?.organizationId,
@@ -73,9 +77,20 @@ export function UserFormModal({
       email: '',
       phone: '',
       ...(isEdit ? {} : { password: '' }),
+      profileKind: 'staff',
       employeeId: '',
       department: '',
       designation: '',
+      companyName: '',
+      companyCode: '',
+      commissionPercentage: '',
+      gstin: '',
+      pan: '',
+      contactPersonName: '',
+      bankName: '',
+      accountNumber: '',
+      ifscCode: '',
+      accountHolderName: '',
       status: 'active',
     },
   });
@@ -89,11 +104,20 @@ export function UserFormModal({
     refetch: refetchUser,
   } = useAdminUser(userId ?? '', { enabled: isEdit && !!userId && open });
 
+  // Fetch employee profile details for edit mode
+  const {
+    data: employeeProfileData,
+    isLoading: isLoadingProfile,
+    isError: isProfileError,
+    refetch: refetchProfile,
+  } = useUserEmployeeProfile(isEdit && open ? (userId ?? '') : '');
+
   const hasPopulated = useRef(false);
   const originalValues = useRef<{ email: string; phone: string }>({ email: '', phone: '' });
 
   useEffect(() => {
-    if (isEdit && userData && !hasPopulated.current) {
+    const isProfileLoaded = !isEdit || employeeProfileData !== undefined;
+    if (isEdit && userData && isProfileLoaded && !hasPopulated.current) {
       const phone = stripPhoneCountryCode(userData.phone);
       const email = userData.email ?? '';
       form.reset({
@@ -101,15 +125,28 @@ export function UserFormModal({
         lastName: userData.lastName ?? '',
         email,
         phone,
-        employeeId: '',
-        department: '',
-        designation: '',
+        profileKind: employeeProfileData?.profileKind ?? 'staff',
+        employeeId: employeeProfileData?.employeeId ?? '',
+        department: employeeProfileData?.department ?? '',
+        designation: employeeProfileData?.designation ?? '',
+        companyName: employeeProfileData?.companyName ?? '',
+        companyCode: employeeProfileData?.companyCode ?? '',
+        commissionPercentage: employeeProfileData?.commissionPercentage
+          ? String(employeeProfileData.commissionPercentage)
+          : '',
+        gstin: employeeProfileData?.gstin ?? '',
+        pan: employeeProfileData?.pan ?? '',
+        contactPersonName: employeeProfileData?.contactPersonName ?? '',
+        bankName: employeeProfileData?.bankName ?? '',
+        accountNumber: employeeProfileData?.accountNumber ?? '',
+        ifscCode: employeeProfileData?.ifscCode ?? '',
+        accountHolderName: employeeProfileData?.accountHolderName ?? '',
         status: userData.status as 'active' | 'inactive' | 'suspended',
       });
       originalValues.current = { email, phone };
       hasPopulated.current = true;
     }
-  }, [isEdit, userData, form]);
+  }, [isEdit, userData, employeeProfileData, form]);
 
   useEffect(() => {
     hasPopulated.current = false;
@@ -135,6 +172,8 @@ export function UserFormModal({
     }
   }, [debouncedPhone, availability.checkPhone, availability.setContextPhone]);
 
+  const queryClient = useQueryClient();
+
   const handleClose = (isOpen: boolean): void => {
     if (!isOpen) {
       form.reset();
@@ -151,9 +190,24 @@ export function UserFormModal({
 
     try {
       const profileData: Record<string, unknown> = {};
-      if (data.employeeId) profileData.employeeId = data.employeeId;
-      if (data.department) profileData.department = data.department;
-      if (data.designation) profileData.designation = data.designation;
+      if (data.profileKind === 'reseller') {
+        if (data.companyName) profileData.companyName = data.companyName;
+        if (data.companyCode) profileData.companyCode = data.companyCode;
+        if (data.contactPersonName) profileData.contactPersonName = data.contactPersonName;
+        if (data.commissionPercentage) {
+          profileData.commissionPercentage = parseFloat(data.commissionPercentage);
+        }
+        if (data.gstin) profileData.gstin = data.gstin;
+        if (data.pan) profileData.pan = data.pan;
+        if (data.bankName) profileData.bankName = data.bankName;
+        if (data.accountNumber) profileData.accountNumber = data.accountNumber;
+        if (data.ifscCode) profileData.ifscCode = data.ifscCode;
+        if (data.accountHolderName) profileData.accountHolderName = data.accountHolderName;
+      } else {
+        if (data.employeeId) profileData.employeeId = data.employeeId;
+        if (data.department) profileData.department = data.department;
+        if (data.designation) profileData.designation = data.designation;
+      }
 
       if (isEdit && userId) {
         const payload: Record<string, unknown> = {
@@ -163,7 +217,19 @@ export function UserFormModal({
         };
         if (data.lastName) payload.lastName = data.lastName;
         if (data.email) payload.email = data.email;
+
+        // Update user core fields
         await updateUser.mutateAsync({ id: userId, data: payload as Partial<AdminUser> });
+
+        // Update profile fields
+        if (employeeProfileData?.id) {
+          const editProfileData = { ...profileData };
+          delete editProfileData.companyCode; // companyCode is immutable on edit
+          await updateEmployeeProfile.mutateAsync({
+            id: employeeProfileData.id,
+            data: editProfileData,
+          });
+        }
       } else {
         const createData = data as CreateUserFormData;
         const payload: Record<string, unknown> = {
@@ -177,7 +243,7 @@ export function UserFormModal({
 
         if (currentUser?.organizationId) {
           payload.organizationId = currentUser.organizationId;
-          payload.profileType = 'employee';
+          payload.profileType = data.profileKind === 'reseller' ? 'reseller' : 'employee';
           if (Object.keys(profileData).length > 0) {
             payload.profileData = profileData;
           }
@@ -185,6 +251,11 @@ export function UserFormModal({
 
         await createUser.mutateAsync(payload as Partial<AdminUser>);
       }
+
+      // Invalidate queries to trigger UI refresh
+      void queryClient.invalidateQueries({ queryKey: ['users'] });
+      void queryClient.invalidateQueries({ queryKey: ['employee-profile'] });
+
       handleClose(false);
     } catch (err) {
       const message = getErrorMessage(err);
@@ -197,6 +268,10 @@ export function UserFormModal({
         form.setError('employeeId', {
           message: 'This Employee ID already exists in your organization',
         });
+      } else if (lowerMsg.includes('company code') && lowerMsg.includes('already')) {
+        form.setError('companyCode', {
+          message: 'This Company Code already exists in your organization',
+        });
       }
     }
   };
@@ -205,7 +280,8 @@ export function UserFormModal({
     (form.formState.errors as Record<string, { message?: string }>).email?.message ||
     availability.errors.email;
   const phoneError = form.formState.errors.phone?.message || availability.errors.phone;
-  const isMutating = createUser.isPending || updateUser.isPending;
+  const isMutating =
+    createUser.isPending || updateUser.isPending || updateEmployeeProfile.isPending;
   const isSubmitDisabled = isMutating || availability.hasErrors || availability.isAnyChecking;
   const isSelf = isEdit && currentUser?.id === userId;
 
@@ -221,33 +297,42 @@ export function UserFormModal({
           </DialogDescription>
         </DialogHeader>
 
-        {isEdit && isLoadingUser && (
+        {isEdit && (isLoadingUser || isLoadingProfile) && (
           <DialogBody>
             <div className="flex items-center justify-center py-12">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="size-8 animate-spin text-primary" />
-                <p className="text-sm text-foreground-secondary">Loading user details...</p>
+                <p className="text-sm text-foreground-secondary">Loading details...</p>
               </div>
             </div>
           </DialogBody>
         )}
 
-        {isEdit && isUserError && (
+        {isEdit && (isUserError || isProfileError) && !isLoadingUser && !isLoadingProfile && (
           <DialogBody>
             <div className="flex items-center gap-3 p-4 rounded-lg border border-error/30 bg-error/5">
               <AlertCircle className="size-5 text-error shrink-0" />
               <div className="flex-1">
-                <p className="font-medium text-sm text-error">Failed to load user details</p>
-                <p className="text-xs text-foreground-secondary mt-0.5">{userError?.message}</p>
+                <p className="font-medium text-sm text-error">Failed to load details</p>
+                <p className="text-xs text-foreground-secondary mt-0.5">
+                  {userError?.message || 'Failed to load employee profile details.'}
+                </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => void refetchUser()}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  void refetchUser();
+                  void refetchProfile();
+                }}
+              >
                 Retry
               </Button>
             </div>
           </DialogBody>
         )}
 
-        {(!isEdit || (!isLoadingUser && !isUserError)) && (
+        {(!isEdit || (!isLoadingUser && !isLoadingProfile && !isUserError && !isProfileError)) && (
           <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
             <DialogBody className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -336,36 +421,165 @@ export function UserFormModal({
               )}
 
               <div className="border-t border-border-light pt-4 mt-2">
-                <p className="text-sm font-medium text-foreground-secondary mb-3">
-                  Employee Profile
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="employeeId">Employee ID</Label>
-                    <Input
-                      id="employeeId"
-                      placeholder="e.g., EMP001"
-                      {...form.register('employeeId')}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="department">Department</Label>
-                    <Input
-                      id="department"
-                      placeholder="e.g., Sales"
-                      {...form.register('department')}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5 mt-4">
-                  <Label htmlFor="designation">Designation</Label>
-                  <Input
-                    id="designation"
-                    placeholder="e.g., Sales Executive"
-                    {...form.register('designation')}
-                  />
+                <div className="space-y-1.5 mb-4">
+                  <Label htmlFor="profileKind">Profile Type</Label>
+                  <Select
+                    value={form.watch('profileKind') ?? 'staff'}
+                    onValueChange={(v) => form.setValue('profileKind', v as 'staff' | 'reseller')}
+                    disabled={isEdit}
+                  >
+                    <SelectTrigger id="profileKind">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="staff">Staff Employee</SelectItem>
+                      <SelectItem value="reseller">Reseller Partner</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+
+              {form.watch('profileKind') === 'staff' ? (
+                <div className="space-y-4">
+                  <p className="text-sm font-medium text-foreground-secondary">Employee Profile</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="employeeId">Employee ID</Label>
+                      <Input
+                        id="employeeId"
+                        placeholder="e.g., EMP001"
+                        {...form.register('employeeId')}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="department">Department</Label>
+                      <Input
+                        id="department"
+                        placeholder="e.g., Sales"
+                        {...form.register('department')}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="designation">Designation</Label>
+                    <Input
+                      id="designation"
+                      placeholder="e.g., Sales Executive"
+                      {...form.register('designation')}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm font-medium text-foreground-secondary">Reseller Profile</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="companyName">Company Name *</Label>
+                      <Input
+                        id="companyName"
+                        placeholder="e.g., QA Solar Partners"
+                        {...form.register('companyName')}
+                      />
+                      {form.formState.errors.companyName && (
+                        <p className="text-xs text-error">
+                          {(form.formState.errors.companyName as any).message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="companyCode">Company Code *</Label>
+                      <Input
+                        id="companyCode"
+                        placeholder="e.g., QA-RES-001"
+                        disabled={isEdit}
+                        {...form.register('companyCode')}
+                      />
+                      {form.formState.errors.companyCode && (
+                        <p className="text-xs text-error">
+                          {(form.formState.errors.companyCode as any).message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contactPersonName">Contact Person Name</Label>
+                      <Input
+                        id="contactPersonName"
+                        placeholder="e.g., Jane Doe"
+                        {...form.register('contactPersonName')}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="commissionPercentage">Commission Percentage *</Label>
+                      <Input
+                        id="commissionPercentage"
+                        placeholder="e.g., 5.0"
+                        {...form.register('commissionPercentage')}
+                      />
+                      {form.formState.errors.commissionPercentage && (
+                        <p className="text-xs text-error">
+                          {(form.formState.errors.commissionPercentage as any).message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="gstin">GSTIN</Label>
+                      <Input
+                        id="gstin"
+                        placeholder="e.g., 29ABCDE1234F1Z5"
+                        {...form.register('gstin')}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="pan">PAN</Label>
+                      <Input id="pan" placeholder="e.g., ABCDE1234F" {...form.register('pan')} />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-border-light pt-4 mt-2 space-y-4">
+                    <p className="text-sm font-medium text-foreground-secondary">Bank Details</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="bankName">Bank Name</Label>
+                        <Input
+                          id="bankName"
+                          placeholder="e.g., HDFC Bank"
+                          {...form.register('bankName')}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="accountNumber">Account Number</Label>
+                        <Input
+                          id="accountNumber"
+                          placeholder="e.g., 50100123456789"
+                          {...form.register('accountNumber')}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="ifscCode">IFSC Code</Label>
+                        <Input
+                          id="ifscCode"
+                          placeholder="e.g., HDFC0000123"
+                          {...form.register('ifscCode')}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="accountHolderName">Account Holder Name</Label>
+                        <Input
+                          id="accountHolderName"
+                          placeholder="e.g., QA Solar Partners"
+                          {...form.register('accountHolderName')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="status">Status</Label>
