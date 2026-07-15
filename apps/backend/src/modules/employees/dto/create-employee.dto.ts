@@ -1,14 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserGender, UserStatus } from '@tejas96/shared/types';
+import { EmployeeProfileKind, UserGender, UserStatus } from '@tejas96/shared/types';
 import {
   IsDateString,
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
+  Min,
 } from 'class-validator';
 
 /**
@@ -178,4 +180,109 @@ export class CreateEmployeeDto {
   @IsEnum(UserStatus)
   @IsOptional()
   status?: UserStatus;
+
+  // ==================== Profile Kind ====================
+  @ApiPropertyOptional({
+    enum: Object.values(EmployeeProfileKind),
+    enumName: 'EmployeeProfileKind',
+    example: EmployeeProfileKind.STAFF,
+    description: 'Sub-type of employee profile (staff or reseller). Defaults to staff.',
+  })
+  @IsEnum(EmployeeProfileKind)
+  @IsOptional()
+  profileKind?: EmployeeProfileKind;
+
+  // ==================== Reseller: Company Details ====================
+  @ApiPropertyOptional({
+    example: 'SolarTech Partners',
+    description: 'Company/firm name (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  companyName?: string;
+
+  @ApiPropertyOptional({
+    example: 'RESELLER-2024-001',
+    description: 'Unique company code (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  companyCode?: string;
+
+  @ApiPropertyOptional({
+    example: 'Amit Sharma',
+    description: 'Primary contact person name (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  contactPersonName?: string;
+
+  // ==================== Reseller: Business Details ====================
+  @ApiPropertyOptional({
+    example: '29ABCDE1234F1Z5',
+    description: 'GST identification number (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(15)
+  gstin?: string;
+
+  @ApiPropertyOptional({
+    example: 'ABCDE1234F',
+    description: 'PAN card number (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(10)
+  pan?: string;
+
+  // ==================== Reseller: Commission Structure ====================
+  @ApiPropertyOptional({
+    example: 4.0,
+    description: 'Default commission percentage (reseller profiles only)',
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsOptional()
+  @Min(0)
+  commissionPercentage?: number;
+
+  // ==================== Reseller: Bank Details ====================
+  @ApiPropertyOptional({
+    example: 'HDFC Bank',
+    description: 'Bank name (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  bankName?: string;
+
+  @ApiPropertyOptional({
+    example: '12345678901234',
+    description: 'Bank account number (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  accountNumber?: string;
+
+  @ApiPropertyOptional({
+    example: 'HDFC0001234',
+    description: 'IFSC code (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  ifscCode?: string;
+
+  @ApiPropertyOptional({
+    example: 'SolarTech Partners',
+    description: 'Name as per bank account (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  accountHolderName?: string;
 }

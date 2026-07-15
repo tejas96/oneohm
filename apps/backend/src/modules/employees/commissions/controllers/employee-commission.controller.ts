@@ -19,35 +19,38 @@ import {
   ApiReadOne,
   ApiUpdate,
   OrganizationContext,
-} from '../../../common/decorators';
-import { CurrentUser } from '../../auth/decorators';
-import { JwtAuthGuard } from '../../auth/guards';
-import type { CurrentUserType } from '../../auth/types';
+} from '../../../../common/decorators';
+import { CurrentUser } from '../../../auth/decorators';
+import { JwtAuthGuard } from '../../../auth/guards';
+import type { CurrentUserType } from '../../../auth/types';
 import {
   CommissionResponseDto,
   CreateCommissionDto,
   UpdateCommissionDto,
   UpdateCommissionStatusDto,
 } from '../dto';
-import { ResellerCommissionService } from '../services/reseller-commission.service';
+import { EmployeeCommissionService } from '../services/employee-commission.service';
 
 /**
- * Reseller Commission Controller
- * Handles HTTP requests for commission management
+ * Employee Commission Controller
+ * Handles HTTP requests for commission management.
+ * Renamed from ResellerCommissionController; route prefix stays `/commissions`
+ * (still a reasonable generic name), but the reseller sub-route now uses
+ * `employee` for consistency with the merge into the employees module.
  */
-@ApiTags('Reseller Commissions')
+@ApiTags('Employee Commissions')
 @ApiBearerAuth()
 @Controller('commissions')
 @UseGuards(JwtAuthGuard)
-export class ResellerCommissionController {
-  constructor(private readonly commissionService: ResellerCommissionService) {}
+export class EmployeeCommissionController {
+  constructor(private readonly commissionService: EmployeeCommissionService) {}
 
   /**
    * Create a new commission record
    */
   @ApiCreate({
     summary: 'Create a new commission',
-    description: 'Creates a new commission record for a reseller.',
+    description: 'Creates a new commission record for an employee (reseller-kind profile).',
     responseType: CommissionResponseDto,
     additionalErrors: [
       {
@@ -84,10 +87,10 @@ export class ResellerCommissionController {
         description: 'Filter by commission status',
       },
       {
-        name: 'resellerId',
+        name: 'employeeId',
         required: false,
         type: String,
-        description: 'Filter by reseller ID',
+        description: 'Filter by employee (reseller-kind profile) ID',
       },
     ],
   })
@@ -95,15 +98,15 @@ export class ResellerCommissionController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('status') status?: CommissionStatus,
-    @Query('resellerId') resellerId?: string,
+    @Query('employeeId') employeeId?: string,
   ): Promise<CommissionResponseDto[]> {
     if (status) {
       const commissions = await this.commissionService.findByStatus(organizationId, status);
       return commissions as CommissionResponseDto[];
     }
 
-    if (resellerId) {
-      const commissions = await this.commissionService.findByResellerId(resellerId, organizationId);
+    if (employeeId) {
+      const commissions = await this.commissionService.findByEmployeeId(employeeId, organizationId);
       return commissions as CommissionResponseDto[];
     }
 
@@ -203,19 +206,19 @@ export class ResellerCommissionController {
   }
 
   /**
-   * Get total commission earned by a reseller
+   * Get total commission earned by an employee (reseller-kind profile)
    */
-  @Get('reseller/:resellerId/total')
+  @Get('employee/:employeeId/total')
   @ApiOperation({ summary: 'Get total commission earned' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Total commission retrieved' })
   async getTotalCommissionEarned(
     @OrganizationContext() organizationId: string,
-    @Param('resellerId', ParseUUIDPipe) resellerId: string,
+    @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<{ resellerId: string; totalCommissionEarned: number }> {
-    const total = await this.commissionService.getTotalCommissionEarned(resellerId, organizationId);
+  ): Promise<{ employeeId: string; totalCommissionEarned: number }> {
+    const total = await this.commissionService.getTotalCommissionEarned(employeeId, organizationId);
     return {
-      resellerId,
+      employeeId,
       totalCommissionEarned: total,
     };
   }

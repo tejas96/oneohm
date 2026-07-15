@@ -12,7 +12,6 @@ import { CustomersModule } from '../customers/customers.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
-import { ResellersModule } from '../resellers/resellers.module';
 import { SecurityEventsModule } from '../security-events/security-events.module';
 import { UsersModule } from '../users/users.module';
 
@@ -49,7 +48,6 @@ import { UsersModule } from '../users/users.module';
     }),
     forwardRef(() => UsersModule),
     forwardRef(() => CustomersModule),
-    forwardRef(() => ResellersModule),
     forwardRef(() => EmployeesModule),
     forwardRef(() => IamModule),
     SecurityEventsModule,

@@ -49,6 +49,17 @@ export interface EmployeeProfile {
   country: string;
   pincode?: string;
   status: string;
+  profileKind?: 'staff' | 'reseller';
+  companyName?: string;
+  companyCode?: string;
+  contactPersonName?: string;
+  gstin?: string;
+  pan?: string;
+  commissionPercentage?: number;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  accountHolderName?: string;
   user?: EmployeeProfileUser;
   organization?: EmployeeProfileOrganization;
   roles?: string[];
@@ -143,4 +154,40 @@ export function useEmployeeProfileMutations(): ReturnType<
       update: { success: 'Profile updated successfully', error: 'Failed to update profile' },
     },
   });
+}
+
+/**
+ * Fetch a user's employee/reseller profile across organizations.
+ * Returns the first active profile or null.
+ */
+export function useUserEmployeeProfile(userId: string): {
+  data: EmployeeProfile | null;
+  isLoading: boolean;
+  isError: boolean;
+  error: unknown;
+  refetch: () => void;
+} {
+  const { organizationId, orgHeaders, isReady } = useOrgContext();
+  const keys = useMemo(() => createResourceKeys('employee-profile'), []);
+
+  const query = useQuery({
+    queryKey: keys.detail(organizationId, `user-${userId}`),
+    queryFn: async (): Promise<EmployeeProfile | null> => {
+      const { data } = await apiClient.get<EmployeeProfile[]>(`/employees/user/${userId}`, {
+        headers: orgHeaders,
+      });
+      return data && data.length > 0 ? (data[0] ?? null) : null;
+    },
+    enabled: !!userId && isReady,
+  });
+
+  return {
+    data: query.data ?? null,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error as unknown,
+    refetch: () => {
+      void query.refetch();
+    },
+  };
 }

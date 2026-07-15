@@ -190,6 +190,7 @@ export {
   useEmployeeProfile,
   useCurrentUserEmployeeProfile,
   useEmployeeProfileMutations,
+  useUserEmployeeProfile,
   type EmployeeProfile,
   type EmployeeProfileUser,
   type EmployeeProfileOrganization,

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsDecimal, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsDateString, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 /**
  * DTO for updating commission information
@@ -10,7 +10,7 @@ export class UpdateCommissionDto {
     example: 500000.0,
     description: 'Total project value in INR',
   })
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsOptional()
   @Min(0)
   projectValue?: number;
@@ -19,7 +19,7 @@ export class UpdateCommissionDto {
     example: 4.0,
     description: 'Commission percentage',
   })
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsOptional()
   @Min(0)
   commissionPercentage?: number;
@@ -28,7 +28,7 @@ export class UpdateCommissionDto {
     example: 20000.0,
     description: 'Calculated commission amount',
   })
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsOptional()
   @Min(0)
   commissionAmount?: number;

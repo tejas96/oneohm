@@ -5,15 +5,13 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { UserProfileType } from '@tejas96/shared/types';
+import { EmployeeProfileKind, UserProfileType } from '@tejas96/shared/types';
 
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
 import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
 import { RoleRepository } from '../../iam/repositories/role.repository';
-import { ResellerProfileEntity } from '../../resellers/entities/reseller-profile.entity';
-import { ResellerProfileRepository } from '../../resellers/repositories/reseller-profile.repository';
 import { UserRoleRepository } from '../repositories/user-role.repository';
 import { UserRepository } from '../repositories/user.repository';
 
@@ -53,7 +51,6 @@ export class ProfileService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly customerProfileRepository: CustomerProfileRepository,
-    private readonly resellerProfileRepository: ResellerProfileRepository,
     private readonly employeeProfileRepository: EmployeeProfileRepository,
     private readonly roleRepository: RoleRepository,
     private readonly userRoleRepository: UserRoleRepository,
@@ -68,12 +65,20 @@ export class ProfileService {
       throw new NotFoundException('User not found');
     }
 
-    // Fetch all profile types
-    const [customerProfiles, resellerProfiles, employeeProfiles] = await Promise.all([
+    // Fetch all profile types. employee_profiles now holds both staff and
+    // reseller-kind rows (distinguished by profileKind), so a single fetch
+    // is partitioned client-side rather than issuing a second query.
+    const [customerProfiles, allEmployeeProfiles] = await Promise.all([
       this.customerProfileRepository.findByUserId(userId),
-      this.resellerProfileRepository.findByUserId(userId),
       this.employeeProfileRepository.findByUserId(userId),
     ]);
+
+    const resellerProfiles = allEmployeeProfiles.filter(
+      (p) => p.profileKind === EmployeeProfileKind.RESELLER,
+    );
+    const employeeProfiles = allEmployeeProfiles.filter(
+      (p) => p.profileKind === EmployeeProfileKind.STAFF,
+    );
 
     const profiles: UserProfileSummary['profiles'] = [
       ...customerProfiles.map((p) => ({
@@ -113,7 +118,7 @@ export class ProfileService {
    */
   async createProfile(
     dto: CreateProfileDto,
-  ): Promise<CustomerProfileEntity | ResellerProfileEntity | EmployeeProfileEntity> {
+  ): Promise<CustomerProfileEntity | EmployeeProfileEntity> {
     const { userId, organizationId, profileType, profileData, createdBy, roleCode } = dto;
 
     // Verify user exists
@@ -130,7 +135,7 @@ export class ProfileService {
       );
     }
 
-    let profile: CustomerProfileEntity | ResellerProfileEntity | EmployeeProfileEntity;
+    let profile: CustomerProfileEntity | EmployeeProfileEntity;
     let defaultRoleCode: string;
 
     try {
@@ -147,10 +152,11 @@ export class ProfileService {
           break;
 
         case UserProfileType.RESELLER:
-          profile = await this.resellerProfileRepository.create({
+          profile = await this.employeeProfileRepository.create({
             userId,
             organizationId,
             ...profileData,
+            profileKind: EmployeeProfileKind.RESELLER,
             createdBy,
           });
           defaultRoleCode = 'reseller';
@@ -162,6 +168,7 @@ export class ProfileService {
             userId,
             organizationId,
             ...profileData,
+            profileKind: EmployeeProfileKind.STAFF,
             createdBy,
           });
           defaultRoleCode = 'employee_basic';
@@ -212,16 +219,29 @@ export class ProfileService {
     userId: string,
     organizationId: string,
     profileType: UserProfileType,
-  ): Promise<CustomerProfileEntity | ResellerProfileEntity | EmployeeProfileEntity | null> {
+  ): Promise<CustomerProfileEntity | EmployeeProfileEntity | null> {
     switch (profileType) {
       case UserProfileType.CUSTOMER:
         return this.customerProfileRepository.findByUserAndOrganization(userId, organizationId);
 
-      case UserProfileType.RESELLER:
-        return this.resellerProfileRepository.findByUserAndOrganization(userId, organizationId);
+      case UserProfileType.RESELLER: {
+        // employee_profiles now holds both staff and reseller-kind rows; a
+        // user can only have one row per (userId, organizationId), so filter
+        // by profileKind to avoid returning a staff row as a "reseller" profile.
+        const profile = await this.employeeProfileRepository.findByUserAndOrganization(
+          userId,
+          organizationId,
+        );
+        return profile?.profileKind === EmployeeProfileKind.RESELLER ? profile : null;
+      }
 
-      case UserProfileType.EMPLOYEE:
-        return this.employeeProfileRepository.findByUserAndOrganization(userId, organizationId);
+      case UserProfileType.EMPLOYEE: {
+        const profile = await this.employeeProfileRepository.findByUserAndOrganization(
+          userId,
+          organizationId,
+        );
+        return profile?.profileKind === EmployeeProfileKind.STAFF ? profile : null;
+      }
 
       default:
         throw new BadRequestException(`Invalid profile type: ${String(profileType)}`);
@@ -295,16 +315,20 @@ export class ProfileService {
   async getUserProfilesByType(
     userId: string,
     profileType: UserProfileType,
-  ): Promise<Array<CustomerProfileEntity | ResellerProfileEntity | EmployeeProfileEntity>> {
+  ): Promise<Array<CustomerProfileEntity | EmployeeProfileEntity>> {
     switch (profileType) {
       case UserProfileType.CUSTOMER:
         return this.customerProfileRepository.findByUserId(userId);
 
-      case UserProfileType.RESELLER:
-        return this.resellerProfileRepository.findByUserId(userId);
+      case UserProfileType.RESELLER: {
+        const profiles = await this.employeeProfileRepository.findByUserId(userId);
+        return profiles.filter((p) => p.profileKind === EmployeeProfileKind.RESELLER);
+      }
 
-      case UserProfileType.EMPLOYEE:
-        return this.employeeProfileRepository.findByUserId(userId);
+      case UserProfileType.EMPLOYEE: {
+        const profiles = await this.employeeProfileRepository.findByUserId(userId);
+        return profiles.filter((p) => p.profileKind === EmployeeProfileKind.STAFF);
+      }
 
       default:
         throw new BadRequestException(`Invalid profile type: ${String(profileType)}`);
@@ -359,7 +383,7 @@ export class ProfileService {
    * @param roleCode - Role code to assign (e.g., 'customer', 'reseller', 'employee_basic')
    * @param createdBy - User ID of creator (for audit)
    */
-  private async assignDefaultRole(
+  async assignDefaultRole(
     userId: string,
     organizationId: string,
     roleCode: string,

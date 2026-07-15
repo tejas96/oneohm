@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CommissionStatus } from '@tejas96/shared/types';
-import { IsDecimal, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 /**
  * DTO for creating a new commission record
@@ -8,11 +8,11 @@ import { IsDecimal, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from
 export class CreateCommissionDto {
   @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Reseller ID',
+    description: 'Employee (reseller-kind) profile ID',
   })
   @IsUUID()
   @IsNotEmpty()
-  resellerId!: string;
+  employeeId!: string;
 
   @ApiPropertyOptional({
     example: '123e4567-e89b-12d3-a456-426614174001',
@@ -26,7 +26,7 @@ export class CreateCommissionDto {
     example: 500000.0,
     description: 'Total project value in INR',
   })
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsNotEmpty()
   @Min(0)
   projectValue!: number;
@@ -35,7 +35,7 @@ export class CreateCommissionDto {
     example: 4.0,
     description: 'Commission percentage',
   })
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsNotEmpty()
   @Min(0)
   commissionPercentage!: number;
@@ -44,7 +44,7 @@ export class CreateCommissionDto {
     example: 20000.0,
     description: 'Calculated commission amount',
   })
-  @IsDecimal({ decimal_digits: '2' })
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsNotEmpty()
   @Min(0)
   commissionAmount!: number;

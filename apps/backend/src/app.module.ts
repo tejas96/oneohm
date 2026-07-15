@@ -37,7 +37,6 @@ import { ProjectExpensesModule } from './modules/project-expenses/project-expens
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { ReportsModule } from './modules/reports/reports.module';
-import { ResellersModule } from './modules/resellers/resellers.module';
 import { SavedViewsModule } from './modules/saved-views/saved-views.module';
 import { SecurityEventsModule } from './modules/security-events/security-events.module';
 import { ServiceMaintenanceModule } from './modules/service-maintenance/service-maintenance.module';
@@ -67,7 +66,6 @@ import { UsersModule } from './modules/users/users.module';
     // Profile modules
     CustomersModule,
     ConsumerModule,
-    ResellersModule,
     EmployeesModule,
     // Other modules
     MasterDataModule,

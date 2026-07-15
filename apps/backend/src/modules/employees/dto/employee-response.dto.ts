@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserGender, UserStatus } from '@tejas96/shared/types';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { EmployeeProfileKind, UserGender, UserStatus } from '@tejas96/shared/types';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../common/utils';
 
 /**
  * Nested User Response for Employee
@@ -127,6 +129,75 @@ export class EmployeeResponseDto {
   @Expose()
   @ApiProperty({ enum: UserStatus })
   status!: UserStatus;
+
+  // ==================== Profile Kind ====================
+  @Expose()
+  @ApiProperty({ enum: EmployeeProfileKind })
+  profileKind!: EmployeeProfileKind;
+
+  // ==================== Reseller: Company Details ====================
+  @Expose()
+  @ApiPropertyOptional()
+  companyName?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  companyCode?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  contactPersonName?: string;
+
+  // ==================== Reseller: Business Details ====================
+  @Expose()
+  @ApiPropertyOptional()
+  gstin?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  pan?: string;
+
+  // ==================== Reseller: Commission Structure ====================
+  @Expose()
+  @ApiPropertyOptional()
+  @Transform(({ value }) => toNum(value))
+  commissionPercentage?: number;
+
+  // ==================== Reseller: Bank Details ====================
+  @Expose()
+  @ApiPropertyOptional()
+  bankName?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  accountNumber?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  ifscCode?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  accountHolderName?: string;
+
+  // ==================== Reseller: Performance Tracking ====================
+  @Expose()
+  @ApiPropertyOptional()
+  totalLeadsGenerated?: number;
+
+  @Expose()
+  @ApiPropertyOptional()
+  totalProjectsConverted?: number;
+
+  @Expose()
+  @ApiPropertyOptional()
+  @Transform(({ value }) => toNum(value))
+  totalRevenueGenerated?: number;
+
+  @Expose()
+  @ApiPropertyOptional()
+  @Transform(({ value }) => toNum(value))
+  totalCommissionEarned?: number;
 
   // ==================== Relations ====================
   @Expose()
