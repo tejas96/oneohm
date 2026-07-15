@@ -480,9 +480,9 @@ export async function seedQuoteCalculatorData(
     await queryRunner.query(
       `INSERT INTO subsidy_configurations (
         organization_id, scheme_name, scheme_type, project_type,
-        max_subsidy_kw, requires_dcr, auto_split_enabled, is_active,
+        max_subsidy_kw, requires_dcr, is_active,
         tiers, description
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT DO NOTHING`,
       [
         organizationId,
@@ -490,7 +490,6 @@ export async function seedQuoteCalculatorData(
         SubsidySchemeType.PM_SURYA_GHAR,
         ProjectType.RESIDENTIAL,
         3,
-        true,
         true,
         true,
         JSON.stringify([
@@ -504,9 +503,9 @@ export async function seedQuoteCalculatorData(
     await queryRunner.query(
       `INSERT INTO subsidy_configurations (
         organization_id, scheme_name, scheme_type, project_type,
-        max_subsidy_kw, requires_dcr, auto_split_enabled, is_active,
+        max_subsidy_kw, requires_dcr, is_active,
         tiers, description
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT DO NOTHING`,
       [
         organizationId,
@@ -514,7 +513,6 @@ export async function seedQuoteCalculatorData(
         SubsidySchemeType.PM_SURYA_GHAR,
         ProjectType.COMMERCIAL,
         0,
-        false,
         false,
         true,
         JSON.stringify([]),

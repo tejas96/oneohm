@@ -84,7 +84,6 @@ export enum QuoteCalculationMode {
 export enum DcrPreference {
   DCR_ONLY = 'dcr_only',
   NON_DCR_ONLY = 'non_dcr_only',
-  AUTO_SPLIT = 'auto_split', // System decides based on subsidy eligibility
 }
 
 /**

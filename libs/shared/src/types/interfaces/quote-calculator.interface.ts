@@ -42,8 +42,6 @@ export interface SubsidyConfig {
   maxSubsidyKw: number;
   /** Whether DCR panels are required */
   requiresDcr: boolean;
-  /** Whether to auto-split system if size > maxSubsidyKw */
-  autoSplitEnabled: boolean;
   /** Tiered subsidy rates */
   tiers: SubsidyTier[];
   /** Whether this configuration is currently active */

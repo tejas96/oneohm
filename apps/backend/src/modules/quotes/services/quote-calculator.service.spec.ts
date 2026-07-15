@@ -117,7 +117,6 @@ describe('QuoteCalculatorService', () => {
     projectType: ProjectType.RESIDENTIAL,
     maxSubsidyKw: 3,
     requiresDcr: true,
-    autoSplitEnabled: true,
     tiers: [
       { fromKw: 0, toKw: 2, ratePerKw: 30000 },
       { fromKw: 2, toKw: 3, ratePerKw: 18000 },
@@ -352,7 +351,7 @@ describe('QuoteCalculatorService', () => {
         systemSizeKw: 5,
         phaseType: PhaseType.SINGLE_PHASE,
         subsidyApplicable: true,
-        dcrPreference: DcrPreference.AUTO_SPLIT,
+        dcrPreference: DcrPreference.DCR_ONLY,
         structureType: StructureType.ALUMINUM_RAIL,
         floorNumber: 0,
         distanceKm: 30,
@@ -360,10 +359,10 @@ describe('QuoteCalculatorService', () => {
 
       const result = await service.calculateQuote(mockOrganizationId, input);
 
-      // Verify system split (3KW DCR + 2KW Non-DCR)
+      // Verify system is all DCR (no split)
       expect(result.systemConfig.totalSystemSizeKw).toBe(5);
-      expect(result.systemConfig.dcrSizeKw).toBe(3);
-      expect(result.systemConfig.nonDcrSizeKw).toBe(2);
+      expect(result.systemConfig.dcrSizeKw).toBe(5);
+      expect(result.systemConfig.nonDcrSizeKw).toBe(0);
 
       // Verify panels calculated
       expect(result.panels.length).toBeGreaterThan(0);
@@ -420,7 +419,7 @@ describe('QuoteCalculatorService', () => {
       expect(result.systemConfig.nonDcrSizeKw).toBe(0);
     });
 
-    it('should use Non-DCR panels when subsidy is not applicable', async () => {
+    it('should use Non-DCR panels when NON_DCR_ONLY preference is set', async () => {
       jest.spyOn(quoteConfigRepo, 'getOrCreateDefault').mockResolvedValue(mockQuoteConfig as any);
       jest.spyOn(subsidyConfigRepo, 'findAllActiveByProjectType').mockResolvedValue([]);
       jest
@@ -451,12 +450,13 @@ describe('QuoteCalculatorService', () => {
         systemSizeKw: 5,
         phaseType: PhaseType.SINGLE_PHASE,
         subsidyApplicable: false,
+        dcrPreference: DcrPreference.NON_DCR_ONLY,
         structureType: StructureType.ALUMINUM_RAIL,
       };
 
       const result = await service.calculateQuote(mockOrganizationId, input);
 
-      // All Non-DCR when subsidy not applicable
+      // All Non-DCR when NON_DCR_ONLY preference is set
       expect(result.systemConfig.dcrSizeKw).toBe(0);
       expect(result.systemConfig.nonDcrSizeKw).toBe(5);
       expect(result.subsidy.isApplicable).toBe(false);

@@ -1110,7 +1110,6 @@ export function QuoteBuilder(): JSX.Element {
                                     Max {scheme.maxSubsidyKw} kW eligible &middot; Max subsidy{' '}
                                     {maxAmountLabel} &middot;{' '}
                                     {scheme.requiresDcr ? 'DCR required' : 'DCR not required'}
-                                    {scheme.autoSplitEnabled ? ' · Auto split on' : ''}
                                   </p>
                                 </div>
                               </label>

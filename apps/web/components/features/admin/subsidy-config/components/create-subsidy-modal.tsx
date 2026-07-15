@@ -50,7 +50,6 @@ export function CreateSubsidyModal({ open, onOpenChange }: CreateSubsidyModalPro
       maxSubsidyKw: 0,
       maxSubsidyAmount: undefined,
       requiresDcr: false,
-      autoSplitEnabled: false,
       tiers: [{ fromKw: 0, toKw: 1, ratePerKw: 0 }],
       effectiveFrom: '',
       effectiveTo: '',
@@ -214,22 +213,6 @@ export function CreateSubsidyModal({ open, onOpenChange }: CreateSubsidyModalPro
                         label="Requires DCR"
                         description="Only DCR panels eligible"
                         tooltip="Only DCR-compliant panels qualify."
-                        labelPosition="left"
-                      />
-                    )}
-                  />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-border-light p-3 flex-1 min-w-[220px]">
-                  <Controller
-                    name="autoSplitEnabled"
-                    control={form.control}
-                    render={({ field }) => (
-                      <MUISwitch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        label="Auto Split"
-                        description="Auto split DCR/Non-DCR"
-                        tooltip="Split DCR and non-DCR automatically."
                         labelPosition="left"
                       />
                     )}

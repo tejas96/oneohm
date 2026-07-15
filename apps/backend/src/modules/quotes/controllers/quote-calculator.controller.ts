@@ -198,7 +198,7 @@ export class QuoteCalculatorController {
 
     const calculatorInputs: CalculatorInputs = {
       phaseType: input.phaseType,
-      dcrPreference: input.dcrPreference ?? DcrPreference.AUTO_SPLIT,
+      dcrPreference: input.dcrPreference ?? DcrPreference.DCR_ONLY,
       calculationMode: QuoteCalculationMode.AUTO,
       dcrSystemSizeKw: calculation.systemConfig.dcrSizeKw,
       nonDcrSystemSizeKw: calculation.systemConfig.nonDcrSizeKw,

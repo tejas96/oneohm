@@ -116,19 +116,6 @@ export class SubsidyConfiguration extends BaseEntity {
   })
   requiresDcr!: boolean;
 
-  /**
-   * Whether to automatically split system into DCR + Non-DCR
-   * if system size exceeds max_subsidy_kw
-   *
-   * Example: 6KW system → 3KW DCR (with subsidy) + 3KW Non-DCR
-   */
-  @Column({
-    type: 'boolean',
-    name: 'auto_split_enabled',
-    default: true,
-  })
-  autoSplitEnabled!: boolean;
-
   // ==================== Calculation ====================
 
   /**

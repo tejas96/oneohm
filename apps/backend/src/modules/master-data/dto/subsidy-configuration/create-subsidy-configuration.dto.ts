@@ -84,11 +84,6 @@ export class CreateSubsidyConfigurationDto {
   @IsOptional()
   requiresDcr?: boolean;
 
-  @ApiPropertyOptional({ example: true, description: 'Whether to auto-split DCR/Non-DCR' })
-  @IsBoolean()
-  @IsOptional()
-  autoSplitEnabled?: boolean;
-
   @ApiProperty({
     type: [SubsidyTierDto],
     example: [
