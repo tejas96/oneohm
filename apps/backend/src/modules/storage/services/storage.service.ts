@@ -10,9 +10,10 @@
 import { randomUUID } from 'crypto';
 
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { FileCategory } from '@tejas96/shared/types';
 
 import { ConfigService } from '../../../config/config.service';
-import type { FileCategory, PresignedUploadUrlResponseDto, RequestUploadUrlDto } from '../dto';
+import type { PresignedUploadUrlResponseDto, RequestUploadUrlDto } from '../dto';
 import type { PresignedUrlResult } from '../interfaces';
 import { S3StorageService } from './s3-storage.service';
 
@@ -20,32 +21,30 @@ import { S3StorageService } from './s3-storage.service';
  * Allowed MIME types for upload
  */
 const ALLOWED_MIME_TYPES: Record<FileCategory, string[]> = {
-  'site-activity': ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'],
-  'site-visit': ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'],
-  document: [
+  [FileCategory.SITE]: ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'],
+  [FileCategory.DOCUMENT]: [
     'application/pdf',
     'image/jpeg',
     'image/png',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   ],
-  profile: ['image/jpeg', 'image/png', 'image/webp'],
-  quote: ['application/pdf', 'image/jpeg', 'image/png'],
-  project: ['image/jpeg', 'image/png', 'application/pdf'],
-  other: ['image/jpeg', 'image/png', 'application/pdf', 'application/octet-stream'],
+  [FileCategory.PROFILE]: ['image/jpeg', 'image/png', 'image/webp'],
+  [FileCategory.QUOTE]: ['application/pdf', 'image/jpeg', 'image/png'],
+  [FileCategory.PROJECT]: ['image/jpeg', 'image/png', 'application/pdf'],
+  [FileCategory.OTHER]: ['image/jpeg', 'image/png', 'application/pdf', 'application/octet-stream'],
 };
 
 /**
  * Max file sizes per category (in bytes)
  */
 const MAX_FILE_SIZES: Record<FileCategory, number> = {
-  'site-activity': 10 * 1024 * 1024, // 10MB
-  'site-visit': 10 * 1024 * 1024, // 10MB
-  document: 20 * 1024 * 1024, // 20MB
-  profile: 5 * 1024 * 1024, // 5MB
-  quote: 10 * 1024 * 1024, // 10MB
-  project: 20 * 1024 * 1024, // 20MB
-  other: 10 * 1024 * 1024, // 10MB
+  [FileCategory.SITE]: 10 * 1024 * 1024, // 10MB
+  [FileCategory.DOCUMENT]: 20 * 1024 * 1024, // 20MB
+  [FileCategory.PROFILE]: 5 * 1024 * 1024, // 5MB
+  [FileCategory.QUOTE]: 10 * 1024 * 1024, // 10MB
+  [FileCategory.PROJECT]: 20 * 1024 * 1024, // 20MB
+  [FileCategory.OTHER]: 10 * 1024 * 1024, // 10MB
 };
 
 @Injectable()

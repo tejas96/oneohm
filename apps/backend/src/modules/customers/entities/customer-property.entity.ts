@@ -5,6 +5,9 @@ import {
   type PropertyDocument,
   PropertyStatus,
   PropertyType,
+  type ShadingAnalysis,
+  SiteStatus,
+  type SurveyData,
 } from '@tejas96/shared/types';
 import {
   Column,
@@ -23,7 +26,6 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import type { ProjectEntity } from '../../projects/entities/project.entity';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
-import type { SiteActivityEntity } from '../../site-activities/entities/site-activity.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -54,10 +56,6 @@ export class CustomerPropertyEntity extends BaseEntity {
   @ManyToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })
   organization?: OrganizationEntity;
-
-  // ==================== SITE ACTIVITY (One-to-One) ====================
-  @OneToOne('SiteActivityEntity', 'customerProperty')
-  siteActivity?: SiteActivityEntity;
 
   // ==================== QUOTES (One-to-Many) ====================
   @OneToMany(() => QuoteEntity, (quote) => quote.property)
@@ -166,6 +164,54 @@ export class CustomerPropertyEntity extends BaseEntity {
   // ==================== NOTES ====================
   @Column({ type: 'text', nullable: true })
   notes?: string;
+
+  // ==================== SITE VISIT / SURVEY ====================
+  @Column({ name: 'site_status', type: 'varchar', length: 20, default: SiteStatus.PENDING })
+  siteStatus!: SiteStatus;
+
+  @Column({ name: 'site_visit_done', type: 'boolean', default: false })
+  siteVisitDone!: boolean;
+
+  @Column({
+    name: 'available_roof_area_sqft',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  availableRoofAreaSqft?: number;
+
+  @Column({ name: 'shading_analysis', type: 'jsonb', nullable: true })
+  shadingAnalysis?: ShadingAnalysis;
+
+  @Column({ name: 'site_notes', type: 'text', nullable: true })
+  siteNotes?: string;
+
+  @Column({ name: 'survey_done', type: 'boolean', default: false })
+  surveyDone!: boolean;
+
+  @Column({ name: 'survey_data', type: 'jsonb', nullable: true })
+  surveyData?: SurveyData;
+
+  @Column({ name: 'site_visit_assignee', type: 'uuid', nullable: true })
+  siteVisitAssignee?: string;
+
+  @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
+  @JoinColumn({ name: 'site_visit_assignee' })
+  siteVisitAssigneeUser?: UserEntity;
+
+  @Column({ name: 'site_survey_assignee', type: 'uuid', nullable: true })
+  siteSurveyAssignee?: string;
+
+  @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
+  @JoinColumn({ name: 'site_survey_assignee' })
+  siteSurveyAssigneeUser?: UserEntity;
+
+  @Column({ name: 'site_visit_completed_at', type: 'timestamptz', nullable: true })
+  siteVisitCompletedAt?: Date;
+
+  @Column({ name: 'site_survey_completed_at', type: 'timestamptz', nullable: true })
+  siteSurveyCompletedAt?: Date;
 
   // ==================== AUDIT FIELDS ====================
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })

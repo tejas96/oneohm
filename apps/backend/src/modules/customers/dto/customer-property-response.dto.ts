@@ -6,6 +6,9 @@ import {
   PropertyStatus,
   PropertyType,
   QuoteStatus,
+  type ShadingAnalysis,
+  SiteStatus,
+  type SurveyData,
 } from '@tejas96/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
@@ -134,6 +137,54 @@ export class CustomerPropertyResponseDto {
   @Expose()
   notes?: string;
 
+  // ==================== Site Visit / Survey ====================
+  @ApiProperty({ enum: SiteStatus })
+  @Expose()
+  siteStatus!: SiteStatus;
+
+  @ApiProperty()
+  @Expose()
+  siteVisitDone!: boolean;
+
+  @ApiPropertyOptional()
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  availableRoofAreaSqft?: number;
+
+  @ApiPropertyOptional()
+  @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
+  shadingAnalysis?: ShadingAnalysis;
+
+  @ApiPropertyOptional()
+  @Expose()
+  siteNotes?: string;
+
+  @ApiProperty()
+  @Expose()
+  surveyDone!: boolean;
+
+  @ApiPropertyOptional()
+  @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
+  surveyData?: SurveyData;
+
+  @ApiPropertyOptional()
+  @Expose()
+  siteVisitAssignee?: string;
+
+  @ApiPropertyOptional()
+  @Expose()
+  siteSurveyAssignee?: string;
+
+  @ApiPropertyOptional()
+  @Expose()
+  siteVisitCompletedAt?: Date;
+
+  @ApiPropertyOptional()
+  @Expose()
+  siteSurveyCompletedAt?: Date;
+
   @ApiPropertyOptional()
   @Expose()
   @Transform(({ obj }) => obj.projectId ?? obj.project?.id ?? undefined)
@@ -205,6 +256,35 @@ export class CustomerPropertyResponseDto {
     return `${firstName} ${lastName}`.trim() || undefined;
   })
   creatorName?: string;
+
+  // ==================== Assignee Names ====================
+  @ApiPropertyOptional({
+    description: 'Name of the user assigned to the site visit',
+    example: 'John Doe',
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    if (!obj.siteVisitAssignee) return undefined;
+    if (!obj.siteVisitAssigneeUser) return undefined;
+    const firstName = obj.siteVisitAssigneeUser.firstName || '';
+    const lastName = obj.siteVisitAssigneeUser.lastName || '';
+    return `${firstName} ${lastName}`.trim() || undefined;
+  })
+  siteVisitAssigneeName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Name of the user assigned to the site survey',
+    example: 'Jane Smith',
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    if (!obj.siteSurveyAssignee) return undefined;
+    if (!obj.siteSurveyAssigneeUser) return undefined;
+    const firstName = obj.siteSurveyAssigneeUser.firstName || '';
+    const lastName = obj.siteSurveyAssigneeUser.lastName || '';
+    return `${firstName} ${lastName}`.trim() || undefined;
+  })
+  siteSurveyAssigneeName?: string;
 
   // ==================== Quote Info (enriched from quotes table) ====================
   @ApiPropertyOptional({

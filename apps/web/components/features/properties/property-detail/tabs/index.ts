@@ -1,5 +1,4 @@
 export { OverviewTab } from './overview-tab';
-export { PropertySiteActivityTab } from './site-activity-tab';
 export { QuotesTab } from './quotes-tab';
 export { DocumentsTab } from './documents-tab';
 export { FinanceTab } from './finance-tab';

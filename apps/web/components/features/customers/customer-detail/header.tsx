@@ -229,7 +229,7 @@ function AlertInactiveBanner(): JSX.Element {
       }}
       role="alert"
     >
-      This customer is inactive. Adding properties, creating quotes, and site activities are blocked
+      This customer is inactive. Adding properties, creating quotes, and site visits are blocked
       until reactivated.
     </Box>
   );

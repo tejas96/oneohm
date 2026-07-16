@@ -172,9 +172,6 @@ export class DocumentService {
     let sql: string;
 
     switch (entityType) {
-      case DocumentEntityType.SITE_ACTIVITY:
-        sql = 'SELECT customer_property_id AS pid FROM site_activities WHERE id = $1';
-        break;
       case DocumentEntityType.LOAN:
         sql = 'SELECT property_id AS pid FROM loan_applications WHERE id = $1';
         break;

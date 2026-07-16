@@ -40,7 +40,6 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { SavedViewsModule } from './modules/saved-views/saved-views.module';
 import { SecurityEventsModule } from './modules/security-events/security-events.module';
 import { ServiceMaintenanceModule } from './modules/service-maintenance/service-maintenance.module';
-import { SiteActivitiesModule } from './modules/site-activities/site-activities.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -89,7 +88,6 @@ import { UsersModule } from './modules/users/users.module';
     LoanFinanceModule,
     ComplianceModule,
     AuditModule,
-    SiteActivitiesModule,
     StorageModule,
     SavedViewsModule,
     ReportsModule,

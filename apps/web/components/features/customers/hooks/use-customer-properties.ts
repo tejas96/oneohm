@@ -9,6 +9,9 @@ import {
   PropertyStatus,
   PropertyType,
   QuoteStatus,
+  SiteStatus,
+  type ShadingAnalysis,
+  type SurveyData,
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
@@ -57,9 +60,22 @@ export interface CustomerPropertyResponse {
   documents: PropertyDocument[];
   // Status
   status: PropertyStatus;
-  // Notes
   notes?: string;
   projectId?: string;
+  // Site Visit / Survey
+  siteStatus: SiteStatus;
+  siteVisitDone: boolean;
+  availableRoofAreaSqft?: number;
+  shadingAnalysis?: ShadingAnalysis;
+  siteNotes?: string;
+  surveyDone: boolean;
+  surveyData?: SurveyData;
+  siteVisitAssignee?: string;
+  siteSurveyAssignee?: string;
+  siteVisitAssigneeName?: string;
+  siteSurveyAssigneeName?: string;
+  siteVisitCompletedAt?: string;
+  siteSurveyCompletedAt?: string;
   // Audit Fields
   createdAt: string;
   updatedAt: string;

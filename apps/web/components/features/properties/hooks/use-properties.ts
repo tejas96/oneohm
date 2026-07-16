@@ -17,6 +17,8 @@ import type {
   PropertyType,
   QuoteStatus,
   SortOrder,
+  ShadingAnalysis,
+  SurveyData,
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
@@ -125,6 +127,12 @@ export interface UpdatePropertyData {
   notes?: string;
   isPrimary?: boolean;
   documents?: PropertyDocument[];
+  availableRoofAreaSqft?: number | null;
+  shadingAnalysis?: ShadingAnalysis | null;
+  siteNotes?: string | null;
+  surveyData?: SurveyData | null;
+  siteVisitAssignee?: string | null;
+  siteSurveyAssignee?: string | null;
 }
 
 // ============================================================================
@@ -249,5 +257,101 @@ export function useProperties(
       return data;
     },
     enabled: !!organizationId && filters.enabled !== false,
+  });
+}
+
+/**
+ * Hook to complete a site visit for a property
+ */
+export function useCompletePropertyVisit(): UseMutationResult<Property, AxiosError, string> {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useMutation({
+    mutationFn: async (propertyId: string): Promise<Property> => {
+      const { data } = await apiClient.post<Property>(
+        `/customer-properties/${propertyId}/complete-visit`,
+        {},
+        { headers: { 'X-Organization-Id': organizationId } },
+      );
+      return data;
+    },
+    onSuccess: (_, propertyId) => {
+      showToast.success('Site visit marked as completed');
+      void queryClient.invalidateQueries({
+        queryKey: propertyKeys.detail(organizationId, propertyId),
+      });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
+    },
+    onError: (error: AxiosError<{ message?: string | string[] }>) => {
+      const message = error.response?.data?.message;
+      const text = Array.isArray(message) ? message[0] : message;
+      showToast.error(text || 'Failed to complete site visit');
+    },
+  });
+}
+
+/**
+ * Hook to complete a site survey for a property
+ */
+export function useCompletePropertySurvey(): UseMutationResult<Property, AxiosError, string> {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useMutation({
+    mutationFn: async (propertyId: string): Promise<Property> => {
+      const { data } = await apiClient.post<Property>(
+        `/customer-properties/${propertyId}/complete-survey`,
+        {},
+        { headers: { 'X-Organization-Id': organizationId } },
+      );
+      return data;
+    },
+    onSuccess: (_, propertyId) => {
+      showToast.success('Site survey marked as completed');
+      void queryClient.invalidateQueries({
+        queryKey: propertyKeys.detail(organizationId, propertyId),
+      });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
+    },
+    onError: (error: AxiosError<{ message?: string | string[] }>) => {
+      const message = error.response?.data?.message;
+      const text = Array.isArray(message) ? message[0] : message;
+      showToast.error(text || 'Failed to complete site survey');
+    },
+  });
+}
+
+/**
+ * Hook to cancel a site activity for a property
+ */
+export function useCancelPropertySiteActivity(): UseMutationResult<Property, AxiosError, string> {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useMutation({
+    mutationFn: async (propertyId: string): Promise<Property> => {
+      const { data } = await apiClient.post<Property>(
+        `/customer-properties/${propertyId}/cancel-site-activity`,
+        {},
+        { headers: { 'X-Organization-Id': organizationId } },
+      );
+      return data;
+    },
+    onSuccess: (_, propertyId) => {
+      showToast.success('Site activity cancelled');
+      void queryClient.invalidateQueries({
+        queryKey: propertyKeys.detail(organizationId, propertyId),
+      });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
+    },
+    onError: (error: AxiosError<{ message?: string | string[] }>) => {
+      const message = error.response?.data?.message;
+      const text = Array.isArray(message) ? message[0] : message;
+      showToast.error(text || 'Failed to cancel site activity');
+    },
   });
 }

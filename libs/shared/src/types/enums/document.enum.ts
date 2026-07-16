@@ -41,7 +41,6 @@ export enum DocumentEntityType {
   PROJECT = 'project',
   PROPERTY = 'property',
   CUSTOMER = 'customer',
-  SITE_ACTIVITY = 'site_activity',
   LOAN = 'loan',
   QUOTE = 'quote',
   PAYMENT = 'payment',

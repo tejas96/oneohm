@@ -1,7 +1,5 @@
 export enum FileCategory {
-  SITE_ACTIVITY = 'site-activity',
-  /** @deprecated Use SITE_ACTIVITY instead. Kept for backward compat. */
-  SITE_VISIT = 'site-visit',
+  SITE = 'site',
   DOCUMENT = 'document',
   PROFILE = 'profile',
   QUOTE = 'quote',

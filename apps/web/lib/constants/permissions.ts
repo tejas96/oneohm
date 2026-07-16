@@ -27,12 +27,6 @@ export const PERMISSIONS = {
     UPDATE: 'documents:update',
     DELETE: 'documents:delete',
   },
-  SITE_ACTIVITIES: {
-    VIEW: 'site-activities:read',
-    CREATE: 'site-activities:create',
-    UPDATE: 'site-activities:update',
-    DELETE: 'site-activities:delete',
-  },
   IAM: {
     VIEW_ROLES: 'roles:read',
     MANAGE_ROLES: 'roles:create',

@@ -47,6 +47,9 @@ export interface PropertyItem {
   status: PropertyStatus;
   notes?: string;
   documents?: PropertyDocument[];
+  siteStatus?: string;
+  siteVisitDone?: boolean;
+  surveyDone?: boolean;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
@@ -70,6 +73,7 @@ export interface PropertyListFilters extends BaseFilters {
   createdBy?: string;
   fromDate?: string;
   toDate?: string;
+  siteStatus?: string;
 }
 
 // ── Resource Registration ──────────────────────────────────────

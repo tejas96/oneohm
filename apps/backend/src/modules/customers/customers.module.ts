@@ -18,14 +18,13 @@ import { IamModule } from '../iam/iam.module';
 import { LoanFinanceModule } from '../loan-finance/loan-finance.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QuotesModule } from '../quotes/quotes.module';
-import { SiteActivitiesModule } from '../site-activities/site-activities.module';
 import { StorageModule } from '../storage/storage.module';
 import { UsersModule } from '../users/users.module';
 
 /**
  * Customers Module
- * Manages customer profile, property, and followup entities and operations.
- * Site visit/activity logic has moved to SiteActivitiesModule.
+ * Manages customer profile, property, followup entities and operations.
+ * Site visit/survey logic is integrated into CustomerPropertyService.
  */
 @Module({
   imports: [
@@ -36,7 +35,6 @@ import { UsersModule } from '../users/users.module';
     forwardRef(() => QuotesModule),
     LoanFinanceModule,
     StorageModule,
-    forwardRef(() => SiteActivitiesModule),
     IamModule,
   ],
   controllers: [CustomerController, CustomerPropertyController, FollowupController],

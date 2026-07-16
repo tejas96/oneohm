@@ -56,7 +56,7 @@ export class RequestUploadUrlDto {
   @ApiProperty({
     description: 'Category for file organization',
     enum: FileCategory,
-    example: FileCategory.SITE_VISIT,
+    example: FileCategory.SITE,
   })
   @IsEnum(FileCategory)
   category!: FileCategory;

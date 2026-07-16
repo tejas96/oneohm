@@ -31,10 +31,6 @@ import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
 import { RequireRole } from '../../iam/decorators/require-role.decorator';
 import { RoleGuard } from '../../iam/guards/role.guard';
-import { CreateSiteActivityDto } from '../../site-activities/dto/create-site-activity.dto';
-import { SiteActivityResponseDto } from '../../site-activities/dto/site-activity-response.dto';
-import { UpdateSiteActivityDto } from '../../site-activities/dto/update-site-activity.dto';
-import { SiteActivityService } from '../../site-activities/services/site-activity.service';
 import {
   CreateCustomerPropertyDto,
   CustomerPropertyResponseDto,
@@ -57,10 +53,7 @@ import { CustomerPropertyService } from '../services/customer-property.service';
 @Controller('customer-properties')
 @UseGuards(JwtAuthGuard)
 export class CustomerPropertyController {
-  constructor(
-    private readonly propertyService: CustomerPropertyService,
-    private readonly siteActivityService: SiteActivityService,
-  ) {}
+  constructor(private readonly propertyService: CustomerPropertyService) {}
 
   /**
    * Create a new customer property
@@ -465,81 +458,59 @@ export class CustomerPropertyController {
     return toDto(CustomerPropertyResponseDto, property);
   }
 
-  // ==================== SITE ACTIVITY NESTED ROUTES (backward compat, M4) ====================
-  // @deprecated Use /site-activities endpoints instead. These proxies exist for one release cycle.
+  // ==================== SITE VISIT / SURVEY ENDPOINTS ====================
 
-  @Post(':id/site-visit')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: '[Deprecated] Create site activity for property', deprecated: true })
-  async createSiteVisit(
-    @Param('id', ParseUUIDPipe) propertyId: string,
-    @Body() createDto: CreateSiteActivityDto,
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<SiteActivityResponseDto> {
-    createDto.propertyId = propertyId;
-    const activity = await this.siteActivityService.create(
-      organizationId,
-      createDto,
-      currentUser.id,
-    );
-    return toDto(SiteActivityResponseDto, activity);
-  }
-
-  @Get(':id/site-visit')
-  @ApiOperation({ summary: '[Deprecated] Get site activity for property', deprecated: true })
-  async getSiteVisit(
-    @Param('id', ParseUUIDPipe) propertyId: string,
-    @OrganizationContext() organizationId: string,
-  ): Promise<SiteActivityResponseDto> {
-    const activity = await this.siteActivityService.findByPropertyId(propertyId, organizationId);
-    return toDto(SiteActivityResponseDto, activity);
-  }
-
-  @Patch(':id/site-visit')
-  @ApiOperation({ summary: '[Deprecated] Update site activity for property', deprecated: true })
-  async updateSiteVisit(
-    @Param('id', ParseUUIDPipe) propertyId: string,
-    @Body() updateDto: UpdateSiteActivityDto,
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<SiteActivityResponseDto> {
-    const activity = await this.siteActivityService.findByPropertyId(propertyId, organizationId);
-    const updated = await this.siteActivityService.update(
-      activity.id,
-      organizationId,
-      updateDto,
-      currentUser.id,
-    );
-    return toDto(SiteActivityResponseDto, updated);
-  }
-
-  @Post(':id/site-visit/complete')
+  @Post(':id/complete-visit')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '[Deprecated] Complete site visit for property', deprecated: true })
-  async completeSiteVisit(
+  @ApiOperation({ summary: 'Complete site visit for property' })
+  @ApiParam({ name: 'id', description: 'Property ID', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: CustomerPropertyResponseDto })
+  async completeVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<SiteActivityResponseDto> {
-    const activity = await this.siteActivityService.findByPropertyId(propertyId, organizationId);
-    const updated = await this.siteActivityService.completeVisit(
-      activity.id,
+  ): Promise<CustomerPropertyResponseDto> {
+    const updated = await this.propertyService.completeVisit(
+      propertyId,
       organizationId,
       currentUser.id,
     );
-    return toDto(SiteActivityResponseDto, updated);
+    return toDto(CustomerPropertyResponseDto, updated);
   }
 
-  @Delete(':id/site-visit')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: '[Deprecated] Delete site activity for property', deprecated: true })
-  async deleteSiteVisit(
+  @Post(':id/complete-survey')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Complete site survey for property' })
+  @ApiParam({ name: 'id', description: 'Property ID', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: CustomerPropertyResponseDto })
+  async completeSurvey(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<void> {
-    const activity = await this.siteActivityService.findByPropertyId(propertyId, organizationId);
-    await this.siteActivityService.delete(activity.id, organizationId, currentUser.id);
+  ): Promise<CustomerPropertyResponseDto> {
+    const updated = await this.propertyService.completeSurvey(
+      propertyId,
+      organizationId,
+      currentUser.id,
+    );
+    return toDto(CustomerPropertyResponseDto, updated);
+  }
+
+  @Post(':id/cancel-site-activity')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cancel site activity for property' })
+  @ApiParam({ name: 'id', description: 'Property ID', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: CustomerPropertyResponseDto })
+  async cancelSiteActivity(
+    @Param('id', ParseUUIDPipe) propertyId: string,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerPropertyResponseDto> {
+    const updated = await this.propertyService.cancelSiteActivity(
+      propertyId,
+      organizationId,
+      currentUser.id,
+    );
+    return toDto(CustomerPropertyResponseDto, updated);
   }
 }

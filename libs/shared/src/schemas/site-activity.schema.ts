@@ -11,32 +11,15 @@ const shadingAnalysisSchema = z.object({
   notes: z.string().optional(),
 });
 
-const electricalDetailsSchema = z.object({
-  panelType: z.string().optional(),
-  panelCapacity: z.number().optional(),
-  voltage: z.number().optional(),
-  phaseType: z.enum(['single_phase', 'three_phase']).optional(),
-  distanceToPanel: z.number().optional(),
-  existingInverter: z.boolean().optional(),
-  gridConnectionType: z.string().optional(),
-  notes: z.string().optional(),
-});
-
 const surveyDataSchema = z.object({
   roofType: z.string().optional(),
   roofCondition: z.enum(['excellent', 'good', 'fair', 'poor']).optional(),
   roofOrientation: z
     .enum(['north', 'south', 'east', 'west', 'northeast', 'northwest', 'southeast', 'southwest'])
     .optional(),
-  roofTiltAngle: z.number().optional(),
-  availableAreaSqm: z.number().optional(),
   shadingAnalysis: shadingAnalysisSchema.optional(),
-  electricalDetails: electricalDetailsSchema.optional(),
-  structuralAssessment: z.string().optional(),
-  siteAccess: z.string().optional(),
-  safetyConcerns: z.string().optional(),
-  recommendations: z.string().optional(),
   notes: z.string().optional(),
+  isMaterialUnloadingAreaSafe: z.boolean().optional(),
 });
 
 export const createSiteActivitySchema = z.object({
@@ -70,4 +53,4 @@ export const completeSurveySchema = z.object({
 
 export type CompleteSurveyFormData = z.infer<typeof completeSurveySchema>;
 
-export { gpsCoordinatesSchema, shadingAnalysisSchema, electricalDetailsSchema, surveyDataSchema };
+export { gpsCoordinatesSchema, shadingAnalysisSchema, surveyDataSchema };

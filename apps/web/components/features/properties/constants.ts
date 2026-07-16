@@ -61,7 +61,6 @@ export const PROPERTY_ALERTS = {
 
 export const PROPERTY_DETAIL_TABS = [
   { value: 'overview', label: 'Overview' },
-  { value: 'siteactivity', label: 'Site Activity' },
   { value: 'quotes', label: 'Quotes' },
   { value: 'documents', label: 'Documents' },
   { value: 'finance', label: 'Finance' },
