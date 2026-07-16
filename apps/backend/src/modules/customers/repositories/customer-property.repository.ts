@@ -55,7 +55,13 @@ export class CustomerPropertyRepository {
   async findById(id: string): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['customer', 'organization', 'project'],
+      relations: [
+        'customer',
+        'organization',
+        'project',
+        'siteVisitAssigneeUser',
+        'siteSurveyAssigneeUser',
+      ],
     });
   }
 
@@ -65,7 +71,13 @@ export class CustomerPropertyRepository {
   ): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
       where: { id, organizationId, deletedAt: IsNull() },
-      relations: ['customer', 'creator', 'project'],
+      relations: [
+        'customer',
+        'creator',
+        'project',
+        'siteVisitAssigneeUser',
+        'siteSurveyAssigneeUser',
+      ],
     });
   }
 
@@ -281,6 +293,12 @@ export class CustomerPropertyRepository {
     if (query.connectionType) {
       qb.andWhere('property.connectionType = :connectionType', {
         connectionType: query.connectionType,
+      });
+    }
+
+    if (query.siteStatus) {
+      qb.andWhere('property.siteStatus = :siteStatus', {
+        siteStatus: query.siteStatus,
       });
     }
 

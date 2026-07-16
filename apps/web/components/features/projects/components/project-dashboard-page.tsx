@@ -14,7 +14,7 @@ import {
   KPIGrid,
   ProgressTrend,
   ProjectMilestones,
-  SiteActivity,
+  SiteProgress,
   WorkerMatrix,
 } from './dashboard';
 
@@ -411,7 +411,7 @@ export function ProjectDashboardPage(): React.JSX.Element {
           {/* Resource Optimization & Site Activity */}
           <div className="flex flex-col lg:flex-row gap-6">
             <WorkerMatrix workers={dashboardData.workers} />
-            <SiteActivity />
+            <SiteProgress />
           </div>
 
           {/* Delivery Velocity Charts */}

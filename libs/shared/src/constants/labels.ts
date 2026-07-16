@@ -105,7 +105,6 @@ export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategory, string> = {
 export const DOCUMENT_ENTITY_TYPE_LABELS: Record<DocumentEntityType, string> = {
   [DocumentEntityType.CUSTOMER]: 'Customer Documents',
   [DocumentEntityType.PROPERTY]: 'Property Documents',
-  [DocumentEntityType.SITE_ACTIVITY]: 'Site Activity Documents',
   [DocumentEntityType.LOAN]: 'Loan Documents',
   [DocumentEntityType.QUOTE]: 'Quote Documents',
   [DocumentEntityType.PROJECT]: 'Project Documents',
@@ -120,7 +119,6 @@ export const DOCUMENT_ENTITY_TYPE_OPTIONS: ReadonlyArray<{
 }> = [
   { value: DocumentEntityType.CUSTOMER, label: 'Customer' },
   { value: DocumentEntityType.PROPERTY, label: 'Property' },
-  { value: DocumentEntityType.SITE_ACTIVITY, label: 'Site Activity' },
   { value: DocumentEntityType.LOAN, label: 'Loan' },
   { value: DocumentEntityType.QUOTE, label: 'Quote' },
   { value: DocumentEntityType.PROJECT, label: 'Project' },
@@ -132,7 +130,6 @@ export const DOCUMENT_ENTITY_TYPE_OPTIONS: ReadonlyArray<{
 export const DOCUMENT_ENTITY_TYPE_ORDER: readonly DocumentEntityType[] = [
   DocumentEntityType.CUSTOMER,
   DocumentEntityType.PROPERTY,
-  DocumentEntityType.SITE_ACTIVITY,
   DocumentEntityType.LOAN,
   DocumentEntityType.QUOTE,
   DocumentEntityType.PROJECT,

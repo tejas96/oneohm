@@ -141,9 +141,6 @@ export {
   useDeleteDocument,
 } from './documents';
 
-// Site Activities
-export { useSiteActivityByProperty, useCompleteVisit, useCompleteSurvey } from './site-activities';
-
 // Lookups
 export {
   useLookups,

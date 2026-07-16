@@ -6,6 +6,7 @@ import {
   PropertyStatus,
   PropertyType,
   QuoteStatus,
+  SiteStatus,
   SortOrder,
 } from '@tejas96/shared/types';
 import { Transform, Type } from 'class-transformer';
@@ -110,6 +111,15 @@ export class PropertyQueryDto {
   @IsOptional()
   @IsEnum(ConnectionType)
   connectionType?: ConnectionType;
+
+  @ApiPropertyOptional({
+    description: 'Filter by site status',
+    enum: SiteStatus,
+    example: SiteStatus.PENDING,
+  })
+  @IsOptional()
+  @IsEnum(SiteStatus)
+  siteStatus?: SiteStatus;
 
   @ApiPropertyOptional({
     description: 'Filter by city (partial match, case-insensitive)',

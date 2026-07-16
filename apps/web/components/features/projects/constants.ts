@@ -334,7 +334,7 @@ export const MATERIAL_STATUS_BADGE_VARIANT: Record<string, string> = {
   [MaterialStatus.USED]: 'success',
 };
 
-// Survey constants removed – survey data now accessed via SiteActivityEntity
+// Survey constants removed – survey data now accessed via CustomerPropertyEntity
 
 // ---------------------------------------------------------------------------
 // Display limits

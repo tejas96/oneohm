@@ -53,14 +53,12 @@ export function buildCohortCte(filters: SalesPipelineFilterParams): CohortQueryP
         c.assignee_id,
         au.first_name AS assignee_first_name,
         au.last_name AS assignee_last_name,
-        sa.is_site_visit_done,
-        sa.is_site_survey_done
+        p.site_visit_done AS is_site_visit_done,
+        p.survey_done AS is_site_survey_done
       FROM customer_properties p
       INNER JOIN customer_profiles c
         ON c.id = p.customer_id AND c.deleted_at IS NULL
       LEFT JOIN users au ON au.id = c.assignee_id
-      LEFT JOIN site_activities sa
-        ON sa.customer_property_id = p.id AND sa.deleted_at IS NULL
       WHERE p.deleted_at IS NULL
         AND p.organization_id = $1
         AND p.created_at >= $2::date

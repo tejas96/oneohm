@@ -122,7 +122,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
   const rawTab = searchParams.get('tab');
   const activeTab: CustomerDetailTab = isValidTab(rawTab) ? rawTab : CUSTOMER_DETAIL_DEFAULT_TAB;
-  const propertyFilter = searchParams.get('docProperty') || 'all';
+  const rawPropertyFilter = searchParams.get('docProperty') || 'all';
 
   const [propertySelectOpen, setPropertySelectOpen] = useState(false);
   const [followupDrawerOpen, setFollowupDrawerOpen] = useState(false);
@@ -144,6 +144,17 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     customerId,
     { enabled: customerReady },
   );
+
+  const defaultPropertyId = useMemo(() => {
+    if (!properties || properties.length === 0) return '';
+    return properties.find((p) => p.isPrimary)?.id ?? properties[0]?.id ?? '';
+  }, [properties]);
+
+  const propertyFilter = useMemo(() => {
+    if (!rawPropertyFilter || rawPropertyFilter === 'all') return defaultPropertyId;
+    const isValid = properties.some((p) => p.id === rawPropertyFilter);
+    return isValid ? rawPropertyFilter : defaultPropertyId;
+  }, [rawPropertyFilter, defaultPropertyId, properties]);
 
   const { data: followupsPreview } = useCustomerFollowups(customerId, {
     status: FollowupStatus.PENDING,

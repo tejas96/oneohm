@@ -80,10 +80,7 @@ import { useAuth } from '@/providers/auth-provider';
 const OverviewTab = dynamic(() => import('./tabs/overview-tab').then((m) => m.OverviewTab), {
   loading: () => <TabSkeleton />,
 });
-const SiteActivityTab = dynamic(
-  () => import('./tabs/site-activity-tab').then((m) => m.PropertySiteActivityTab),
-  { loading: () => <TabSkeleton /> },
-);
+
 const QuotesTab = dynamic(() => import('./tabs/quotes-tab').then((m) => m.QuotesTab), {
   loading: () => <TabSkeleton />,
 });
@@ -105,7 +102,6 @@ const ActivityTab = dynamic(() => import('./tabs/activity-tab').then((m) => m.Ac
 
 const TAB_MODULE_PRELOADERS: Record<PropertyDetailTab, () => Promise<unknown>> = {
   overview: () => import('./tabs/overview-tab'),
-  siteactivity: () => import('./tabs/site-activity-tab'),
   quotes: () => import('./tabs/quotes-tab'),
   documents: () => import('./tabs/documents-tab'),
   finance: () => import('./tabs/finance-tab'),
@@ -500,9 +496,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 onLogFollowup={() => setFollowupDrawerOpen(true)}
               />
             )}
-            {activeTab === 'siteactivity' && (
-              <SiteActivityTab propertyId={property.id} enabled={activeTab === 'siteactivity'} />
-            )}
+
             {activeTab === 'quotes' && (
               <QuotesTab
                 propertyId={property.id}

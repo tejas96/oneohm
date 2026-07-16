@@ -34,17 +34,6 @@ export type MilestoneDisplayStatus =
   | 'no_tasks';
 
 /**
- * @deprecated SiteSurveyStatus has been replaced by SiteActivityStatus from site-activity.enum.ts
- * Kept temporarily for backward compatibility during migration.
- */
-export enum SiteSurveyStatus {
-  SCHEDULED = 'scheduled',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-}
-
-/**
  * Roof Condition
  * Assessment of roof structural condition
  */

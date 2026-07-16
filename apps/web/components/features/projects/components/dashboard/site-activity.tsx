@@ -10,7 +10,7 @@ import { MUITypography } from '@/components/ui';
 // Component
 // ============================================================================
 
-export function SiteActivity(): React.JSX.Element {
+export function SiteProgress(): React.JSX.Element {
   return (
     <Card
       elevation={0}
@@ -19,7 +19,7 @@ export function SiteActivity(): React.JSX.Element {
       <div>
         <div className="flex items-center justify-between">
           <MUITypography variant="sectionTitle" className="font-semibold text-text-primary">
-            Live Site Activities
+            Live Site Progress
           </MUITypography>
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 animate-pulse">
             <AutoAwesome className="size-2.5" />
@@ -61,7 +61,7 @@ export function SiteActivity(): React.JSX.Element {
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-background/20 backdrop-blur-[4px] rounded-lg">
           <div className="p-3 bg-background border border-border-light rounded-lg shadow-sm text-center max-w-[200px]">
             <MUITypography variant="sectionTitle" className="font-semibold text-text-primary block">
-              Site Activities
+              Site Progress
             </MUITypography>
             <MUITypography variant="finePrint" className="text-text-secondary mt-1 block">
               Live field-checkins and time-stamped installer logs coming in the next release.

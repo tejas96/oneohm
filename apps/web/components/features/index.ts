@@ -10,9 +10,6 @@ export * from './properties';
 // Documents (generic)
 export * from './documents';
 
-// Site Activities
-export * from './site-activities';
-
 // Pipeline
 export * from './pipeline';
 

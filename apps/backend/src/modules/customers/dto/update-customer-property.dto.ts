@@ -1,5 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ConnectionType, LeadTemperature, PropertyType } from '@tejas96/shared/types';
+import {
+  ConnectionType,
+  LeadTemperature,
+  PropertyType,
+  type ShadingAnalysis,
+  type SurveyData,
+} from '@tejas96/shared/types';
 import { CONSUMER_NUMBER_REGEX } from '@tejas96/shared/utils';
 import { Type, Transform } from 'class-transformer';
 import {
@@ -8,8 +14,10 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   Min,
@@ -205,4 +213,36 @@ export class UpdateCustomerPropertyDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  // ==================== Site Visit / Survey ====================
+  @ApiPropertyOptional({ description: 'Available roof area in sqft' })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  availableRoofAreaSqft?: number;
+
+  @ApiPropertyOptional({ description: 'Shading analysis data' })
+  @IsObject()
+  @IsOptional()
+  shadingAnalysis?: ShadingAnalysis;
+
+  @ApiPropertyOptional({ description: 'Site visit notes/observations' })
+  @IsString()
+  @IsOptional()
+  siteNotes?: string;
+
+  @ApiPropertyOptional({ description: 'Survey assessment data (JSONB)' })
+  @IsObject()
+  @IsOptional()
+  surveyData?: SurveyData;
+
+  @ApiPropertyOptional({ description: 'User assigned to site visit' })
+  @IsUUID()
+  @IsOptional()
+  siteVisitAssignee?: string;
+
+  @ApiPropertyOptional({ description: 'User assigned to site survey' })
+  @IsUUID()
+  @IsOptional()
+  siteSurveyAssignee?: string;
 }

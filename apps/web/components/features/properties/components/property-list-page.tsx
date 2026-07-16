@@ -318,29 +318,27 @@ function RowActionsMenu({
           Mark as Lost
         </MenuItem>
 
-        {showDelete ? (
-          <>
-            <Divider />
-            <Tooltip title={deleteTooltip ?? ''}>
-              <span>
-                <MenuItem
-                  disabled={deleteDisabled}
-                  onClick={() => {
-                    if (deleteDisabled) return;
-                    handleClose();
-                    onRequestDelete?.(property);
-                  }}
-                  sx={{ color: 'error.main' }}
-                >
-                  <ListItemIcon>
-                    <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
-                  </ListItemIcon>
-                  Delete Property
-                </MenuItem>
-              </span>
-            </Tooltip>
-          </>
-        ) : null}
+        {showDelete && <Divider />}
+        {showDelete && (
+          <Tooltip title={deleteTooltip ?? ''}>
+            <span>
+              <MenuItem
+                disabled={deleteDisabled}
+                onClick={() => {
+                  if (deleteDisabled) return;
+                  handleClose();
+                  onRequestDelete?.(property);
+                }}
+                sx={{ color: 'error.main' }}
+              >
+                <ListItemIcon>
+                  <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
+                </ListItemIcon>
+                Delete Property
+              </MenuItem>
+            </span>
+          </Tooltip>
+        )}
       </Menu>
     </>
   );

@@ -13,6 +13,7 @@ import {
   type PropertyDocument,
   PropertyStatus,
   QuoteStatus,
+  SiteStatus,
 } from '@tejas96/shared/types';
 import { DataSource, IsNull, Not, type EntityManager } from 'typeorm';
 
@@ -636,6 +637,139 @@ export class CustomerPropertyService {
       }
     }
 
+    return updated;
+  }
+
+  // ==================== SITE VISIT / SURVEY WORKFLOW ====================
+
+  /**
+   * Complete a site visit for a property.
+   * Validates that the property is in a valid state before marking visit as done.
+   */
+  async completeVisit(
+    propertyId: string,
+    organizationId: string,
+    userId: string,
+  ): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findByIdAndOrganization(
+      propertyId,
+      organizationId,
+    );
+    if (!property) {
+      throw new NotFoundException(`Property ${propertyId} not found`);
+    }
+
+    if (property.siteVisitDone) {
+      throw new BadRequestException('Site visit is already completed');
+    }
+
+    if (property.siteStatus === SiteStatus.CANCELLED) {
+      throw new BadRequestException('Cannot complete visit for a cancelled site activity');
+    }
+
+    const updates: Partial<CustomerPropertyEntity> = {
+      siteVisitDone: true,
+      siteVisitCompletedAt: new Date(),
+      siteStatus: SiteStatus.IN_PROGRESS,
+      updatedBy: userId,
+    };
+
+    const updated = await this.propertyRepository.update(propertyId, updates);
+    if (!updated) {
+      throw new NotFoundException(`Property ${propertyId} not found after update`);
+    }
+
+    this.logger.log(`Site visit completed for property ${propertyId} by user ${userId}`);
+    return updated;
+  }
+
+  /**
+   * Complete a site survey for a property.
+   * Requires that the site visit has already been completed.
+   */
+  async completeSurvey(
+    propertyId: string,
+    organizationId: string,
+    userId: string,
+  ): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findByIdAndOrganization(
+      propertyId,
+      organizationId,
+    );
+    if (!property) {
+      throw new NotFoundException(`Property ${propertyId} not found`);
+    }
+
+    if (!property.siteVisitDone) {
+      throw new BadRequestException('Site visit must be completed before completing the survey');
+    }
+
+    if (property.surveyDone) {
+      throw new BadRequestException('Site survey is already completed');
+    }
+
+    if (property.siteStatus === SiteStatus.CANCELLED) {
+      throw new BadRequestException('Cannot complete survey for a cancelled site activity');
+    }
+
+    const survey = property.surveyData;
+    if (!survey?.roofType || !survey?.roofCondition) {
+      throw new BadRequestException(
+        'Roof type and roof condition are required in survey details before completing the survey',
+      );
+    }
+
+    const updates: Partial<CustomerPropertyEntity> = {
+      surveyDone: true,
+      siteSurveyCompletedAt: new Date(),
+      siteStatus: SiteStatus.COMPLETED,
+      updatedBy: userId,
+    };
+
+    const updated = await this.propertyRepository.update(propertyId, updates);
+    if (!updated) {
+      throw new NotFoundException(`Property ${propertyId} not found after update`);
+    }
+
+    this.logger.log(`Site survey completed for property ${propertyId} by user ${userId}`);
+    return updated;
+  }
+
+  /**
+   * Cancel the site activity for a property.
+   */
+  async cancelSiteActivity(
+    propertyId: string,
+    organizationId: string,
+    userId: string,
+  ): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findByIdAndOrganization(
+      propertyId,
+      organizationId,
+    );
+    if (!property) {
+      throw new NotFoundException(`Property ${propertyId} not found`);
+    }
+
+    if (property.siteStatus === SiteStatus.COMPLETED) {
+      throw new BadRequestException('Cannot cancel a completed site activity');
+    }
+
+    if (property.siteStatus === SiteStatus.CANCELLED) {
+      throw new BadRequestException('Site activity is already cancelled');
+    }
+
+    const updates: Partial<CustomerPropertyEntity> = {
+      siteStatus: SiteStatus.CANCELLED,
+      updatedBy: userId,
+    };
+
+    const updated = await this.propertyRepository.update(propertyId, updates);
+    if (!updated) {
+      throw new NotFoundException(`Property ${propertyId} not found after update`);
+    }
+
+    this.logger.log(`Site activity cancelled for property ${propertyId} by user ${userId}`);
     return updated;
   }
 
