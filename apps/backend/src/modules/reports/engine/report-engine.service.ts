@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { getReportCompleteness } from '@tejas96/shared/reports';
 import { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 
 import { FieldResolverService } from './field-resolver.service';
@@ -40,6 +41,97 @@ export class ReportEngineService {
     return this.registry.list();
   }
 
+  async getCompleteness(projectId: string, organizationId: string): Promise<any> {
+    const catalog = this.registry.list();
+    if (catalog.length === 0) {
+      return {
+        totalReports: 0,
+        savedReports: 0,
+        incompleteReports: 0,
+        unsavedReports: 0,
+        pendingCount: 0,
+        reports: [],
+        saved: [],
+      };
+    }
+
+    const plugins = catalog.map((entry) => this.registry.get(entry.id));
+
+    const ctx: ReportEngineContext = {
+      organizationId,
+      userId: '',
+      entityType: DocumentEntityType.PROJECT,
+      entityId: projectId,
+    };
+
+    const firstPlugin = plugins[0];
+    if (!firstPlugin) {
+      throw new Error('No plugins registered');
+    }
+    const raw = await firstPlugin.provider.fetch(ctx);
+
+    const reportTags = plugins.map((p) => p.schema.documentTag);
+    const docs = await this.documentService.findByEntity(
+      DocumentEntityType.PROJECT,
+      projectId,
+      organizationId,
+      { tags: reportTags },
+    );
+
+    const docsMap = new Map<string, any>();
+    for (const doc of docs) {
+      if (!docsMap.has(doc.tag)) {
+        docsMap.set(doc.tag, doc);
+      }
+    }
+
+    let savedReports = 0;
+    let incompleteReports = 0;
+    let unsavedReports = 0;
+
+    const reportsSummary = plugins.map((plugin) => {
+      const savedDoc = docsMap.get(plugin.schema.documentTag);
+      const isSaved = !!savedDoc;
+
+      if (isSaved) {
+        savedReports++;
+      } else {
+        unsavedReports++;
+      }
+
+      const defaults = plugin.mapper.toViewModel(raw);
+      let draft: Record<string, string> | undefined;
+      if (savedDoc?.metadata?.reportFields) {
+        draft = savedDoc.metadata.reportFields as Record<string, string>;
+      }
+
+      const mergedFields = this.fieldResolver.mergeFields(defaults, draft);
+      const completeness = getReportCompleteness(plugin.schema, mergedFields);
+
+      if (isSaved && !completeness.isComplete) {
+        incompleteReports++;
+      }
+
+      return {
+        ...completeness,
+        isSaved,
+        savedDocumentId: savedDoc?.id,
+      };
+    });
+
+    const pendingCount = unsavedReports + incompleteReports;
+
+    return {
+      totalReports: plugins.length,
+      savedReports,
+      incompleteReports,
+      unsavedReports,
+      pendingCount,
+      reports: reportsSummary,
+      saved: docs,
+    };
+  }
+
   async initialize(
     reportId: string,
     ctx: ReportEngineContext,
@@ -79,7 +171,7 @@ export class ReportEngineService {
   ): Promise<{ documentId: string; downloadUrl: string }> {
     const plugin = this.registry.get(reportId);
     await plugin.provider.fetch(ctx);
-    const sanitized = this.fieldResolver.validateFields(reportId, fields);
+    const sanitized = this.fieldResolver.validateFields(reportId, fields, { ignoreRequired: true });
     await this.validateUploadedFile(ctx, reportId, file);
 
     const document = await this.documentService.create(
@@ -112,7 +204,7 @@ export class ReportEngineService {
   ): Promise<{ html: string }> {
     const plugin = this.registry.get(reportId);
     await plugin.provider.fetch(ctx);
-    const sanitized = this.fieldResolver.validateFields(reportId, fields);
+    const sanitized = this.fieldResolver.validateFields(reportId, fields, { ignoreRequired: true });
     const html = this.templateRenderer.render(plugin.templateFile, sanitized);
     return { html };
   }

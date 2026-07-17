@@ -16,18 +16,26 @@ export const NET_METERING_AGREEMENT_SCHEMA: ReportSchema = {
   documentTag: DocumentTag.NET_METERING_AGREEMENT,
   sections: [...SECTIONS],
   fields: [
-    defineReportField('location', 'Location (City)', 'agreement', { autoFillSource: 'property' }),
+    defineReportField('location', 'Location (City)', 'agreement', {
+      autoFillSource: 'property',
+      required: true,
+    }),
     defineReportField('day', 'Day', 'agreement', { autoFillSource: 'manual' }),
     defineReportField('month', 'Month', 'agreement', { autoFillSource: 'manual' }),
     defineReportField('year', 'Year', 'agreement', { autoFillSource: 'manual' }),
-    defineReportField('consumer_name', 'Consumer Name', 'parties', { autoFillSource: 'property' }),
+    defineReportField('consumer_name', 'Consumer Name', 'parties', {
+      autoFillSource: 'property',
+      required: true,
+    }),
     defineReportField('consumer_address', 'Consumer Address', 'parties', {
       autoFillSource: 'property',
       type: 'textarea',
       colSpan: 2,
+      required: true,
     }),
     defineReportField('consumer_number', 'Consumer Number', 'parties', {
       autoFillSource: 'property',
+      required: true,
     }),
     defineReportField('licensee_address', 'Licensee Address', 'parties', {
       autoFillSource: 'manual',
@@ -37,6 +45,7 @@ export const NET_METERING_AGREEMENT_SCHEMA: ReportSchema = {
     defineReportField('installed_capacity_wp', 'Installed Capacity (Wp)', 'capacity', {
       autoFillSource: 'project',
       type: 'number',
+      required: true,
     }),
     defineReportField('witness_consumer_name', 'Witness (Consumer)', 'signatures', {
       autoFillSource: 'manual',
@@ -46,9 +55,11 @@ export const NET_METERING_AGREEMENT_SCHEMA: ReportSchema = {
     }),
     defineReportField('signatory_consumer_name', 'Signatory (Consumer)', 'signatures', {
       autoFillSource: 'manual',
+      required: true,
     }),
     defineReportField('signatory_licensee_name', 'Signatory (Licensee)', 'signatures', {
       autoFillSource: 'manual',
+      required: true,
     }),
   ],
 };

@@ -17,9 +17,11 @@ function toDisplayString(value: unknown): string {
 export function registerReportHandlebarsHelpers(): void {
   Handlebars.registerHelper('eq', (a, b) => a === b);
 
-  /** Empty / whitespace-only values render as an em dash. */
+  /** Empty / whitespace-only values render as an underline for physical fill-in. */
   Handlebars.registerHelper('dash', (value: unknown) =>
-    isBlank(value) ? '—' : toDisplayString(value),
+    isBlank(value)
+      ? new Handlebars.SafeString('<span class="blank-line"></span>')
+      : toDisplayString(value),
   );
 
   /** Renders block only when every argument is non-empty. */

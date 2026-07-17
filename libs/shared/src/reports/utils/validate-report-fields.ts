@@ -5,10 +5,18 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const PHONE_RE = /^[\d\s+\-()]{6,20}$/;
 
-function validateFieldValue(field: ReportFieldDefinition, value: string): string | null {
-  const trimmed = value.trim();
+function validateFieldValue(
+  field: ReportFieldDefinition,
+  value: unknown,
+  ignoreRequired = false,
+): string | null {
+  const strVal = typeof value === 'string' ? value : String(value ?? '');
+  const trimmed = strVal.trim();
 
   if (field.required && !trimmed) {
+    if (ignoreRequired) {
+      return null;
+    }
     return `${field.label} is required`;
   }
 
@@ -47,6 +55,7 @@ function validateFieldValue(field: ReportFieldDefinition, value: string): string
 export function validateAndSanitizeReportFields(
   reportId: string,
   fields: Record<string, string>,
+  options?: { ignoreRequired?: boolean },
 ): Record<string, string> {
   const schema = getReportSchema(reportId);
   const allowed = new Set(schema.fields.map((f) => f.key));
@@ -57,7 +66,7 @@ export function validateAndSanitizeReportFields(
     if (!allowed.has(key)) {
       throw new Error(`Invalid field key for report ${reportId}: ${key}`);
     }
-    sanitized[key] = value ?? '';
+    sanitized[key] = value !== undefined && value !== null ? String(value) : '';
   }
 
   for (const field of schema.fields) {
@@ -65,7 +74,7 @@ export function validateAndSanitizeReportFields(
       sanitized[field.key] = '';
     }
 
-    const message = validateFieldValue(field, sanitized[field.key] ?? '');
+    const message = validateFieldValue(field, sanitized[field.key] ?? '', options?.ignoreRequired);
     if (message) {
       errors.push(message);
     }

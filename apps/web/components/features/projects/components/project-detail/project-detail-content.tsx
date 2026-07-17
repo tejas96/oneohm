@@ -19,6 +19,7 @@ import { ProjectSurveysTab } from './tabs/project-surveys-tab';
 import { ProjectTasksTab } from './tabs/project-tasks-tab';
 import { PROJECT_DETAIL_TABS, type ProjectDetailTab } from '../../constants';
 import { useProject, useProjectTeam } from '../../hooks/use-project-detail';
+import { useProjectReports } from '../../hooks/use-project-reports';
 
 import { ProjectFinanceTab } from '@/components/features/finance';
 import { ProjectAllocationsTab } from '@/components/features/inventory';
@@ -99,6 +100,7 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
 
   const { data: project, isLoading, isError, error, refetch } = useProject(projectId);
   const { data: projectTeam = [], refetch: refetchTeam } = useProjectTeam(projectId);
+  const { data: reportsData } = useProjectReports(projectId);
   const { user } = useAuth();
 
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -168,7 +170,11 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
         </Alert>
       )}
 
-      <ProjectDetailTabs activeTab={activeTab} onTabChange={handleTabChange} />
+      <ProjectDetailTabs
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        reportsPendingCount={reportsData?.pendingCount}
+      />
 
       <Box className="mt-4">
         <Box sx={{ display: activeTab === 'overview' ? 'block' : 'none' }}>

@@ -16,19 +16,25 @@ export const ANNEXURE_PROFORMA_A_SCHEMA: ReportSchema = {
   documentTag: DocumentTag.ANNEXURE_PROFORMA_A,
   sections: [...SECTIONS],
   fields: [
-    defineReportField('consumer_name', 'Consumer Name', 'consumer', { autoFillSource: 'property' }),
+    defineReportField('consumer_name', 'Consumer Name', 'consumer', {
+      autoFillSource: 'property',
+      required: true,
+    }),
     defineReportField('consumer_number', 'Consumer Number', 'consumer', {
       autoFillSource: 'property',
+      required: true,
     }),
     defineReportField('mobile_number', 'Mobile Number', 'consumer', {
       autoFillSource: 'property',
       type: 'phone',
+      required: true,
     }),
     defineReportField('email', 'Email', 'consumer', { autoFillSource: 'property', type: 'email' }),
     defineReportField('address_of_installation', 'Address of Installation', 'consumer', {
       autoFillSource: 'property',
       type: 'textarea',
       colSpan: 2,
+      required: true,
     }),
     defineReportField('re_arrangement_type', 'RE Arrangement Type', 'installation', {
       autoFillSource: 'manual',
@@ -37,6 +43,7 @@ export const ANNEXURE_PROFORMA_A_SCHEMA: ReportSchema = {
     defineReportField('sanctioned_capacity_kw', 'Sanctioned Capacity (KW)', 'installation', {
       autoFillSource: 'property',
       type: 'number',
+      required: true,
     }),
     defineReportField('capacity_type', 'Capacity Type', 'installation', {
       autoFillSource: 'manual',
@@ -51,6 +58,7 @@ export const ANNEXURE_PROFORMA_A_SCHEMA: ReportSchema = {
       {
         autoFillSource: 'project',
         type: 'number',
+        required: true,
       },
     ),
     defineReportField(
@@ -75,11 +83,16 @@ export const ANNEXURE_PROFORMA_A_SCHEMA: ReportSchema = {
     defineReportField('inverter_capacity_kw', 'Inverter Capacity (KW)', 'capacity', {
       autoFillSource: 'project',
       type: 'number',
+      required: true,
     }),
-    defineReportField('inverter_make', 'Inverter Make', 'capacity', { autoFillSource: 'project' }),
+    defineReportField('inverter_make', 'Inverter Make', 'capacity', {
+      autoFillSource: 'project',
+      required: true,
+    }),
     defineReportField('no_of_pv_modules', 'No. of PV Modules', 'capacity', {
       autoFillSource: 'project',
       type: 'number',
+      required: true,
     }),
     defineReportField('module_capacity_kw', 'Module Capacity (KW)', 'capacity', {
       autoFillSource: 'project',
@@ -87,7 +100,10 @@ export const ANNEXURE_PROFORMA_A_SCHEMA: ReportSchema = {
     }),
     defineReportField('district', 'District', 'location', { autoFillSource: 'property' }),
     defineReportField('state', 'State', 'location', { autoFillSource: 'property' }),
-    defineReportField('vendor_name', 'Vendor Name', 'location', { autoFillSource: 'org' }),
+    defineReportField('vendor_name', 'Vendor Name', 'location', {
+      autoFillSource: 'org',
+      required: true,
+    }),
   ],
 };
 
