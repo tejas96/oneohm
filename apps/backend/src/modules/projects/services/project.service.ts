@@ -95,6 +95,7 @@ export class ProjectService {
       endDateFrom?: string;
       endDateTo?: string;
       search?: string;
+      address?: string;
       memberId?: string;
       currentUserId?: string;
       pendingWorkflowStepId?: string;

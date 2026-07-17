@@ -24,6 +24,12 @@ class ProjectListPropertyDto {
   city?: string;
 
   @Expose()
+  state?: string;
+
+  @Expose()
+  pincode?: string;
+
+  @Expose()
   @Transform(({ obj }) => {
     if (!obj.customer) return undefined;
     const firstName = obj.customer.firstName || '';

@@ -165,6 +165,11 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
     result.endDateTo = toIso;
   }
 
+  const address = raw.address;
+  if (address && typeof address === 'string') {
+    result.address = address;
+  }
+
   return result;
 }
 
@@ -568,6 +573,43 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     },
   },
   {
+    field: 'address',
+    headerName: 'Property Address',
+    filterable: true,
+    filterType: 'text',
+    filterPlaceholder: 'Pincode/City/Address',
+    filterDebounceMs: 800,
+    defaultHidden: true,
+    width: 240,
+    renderCell: ({ row }): JSX.Element => {
+      const project = row as ProjectListItem;
+      const addr = [
+        project.property.address,
+        project.property.city,
+        project.property.state,
+        project.property.pincode,
+      ]
+        .filter(Boolean)
+        .join(', ');
+      return (
+        <MUITypography
+          variant="body"
+          sx={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            lineHeight: 1.4,
+          }}
+        >
+          {addr || '-'}
+        </MUITypography>
+      );
+    },
+  },
+  {
     field: 'actions',
     headerName: '',
     hideable: false,
@@ -590,14 +632,19 @@ export function ProjectListPage(): JSX.Element {
   const healthStatusParam = searchParams.get('healthStatus');
 
   // URL-synced table state — owned by this page (controlled AdvancedTable pattern)
-  const urlState = useTableUrlState({
-    prefix: 'projects',
-    defaultPageSize: 10,
-    initialFilters: {
+  const initialFilters = useMemo(
+    () => ({
       // Sidebar Overdue/At Risk links use ?status=active&healthStatus=delayed
       // Encode as composite value so the filter dropdown shows the correct label
       status: healthStatusParam ? `health:${healthStatusParam}` : statusParam || 'active',
-    },
+    }),
+    [healthStatusParam, statusParam],
+  );
+
+  const urlState = useTableUrlState({
+    prefix: 'projects',
+    defaultPageSize: 10,
+    initialFilters,
   });
 
   // Fetch employees for the filter
