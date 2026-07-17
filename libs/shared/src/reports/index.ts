@@ -7,3 +7,4 @@ export * from './schemas/report-field.schema';
 export * from './schemas/wcr.schema';
 export * from './utils/empty-view-model';
 export * from './utils/validate-report-fields';
+export * from './utils/report-completeness';

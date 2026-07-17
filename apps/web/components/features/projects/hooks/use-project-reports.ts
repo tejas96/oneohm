@@ -1,19 +1,18 @@
 'use client';
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { REPORT_CATALOG, getReportDocumentTags } from '@tejas96/shared/reports';
-import { DocumentEntityType, type DocumentTag } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
-import { getDocuments, type DocumentRecord } from '@/lib/api/documents';
+import type { DocumentRecord } from '@/lib/api/documents';
+import { getReportCompleteness, type ReportCompletenessItem } from '@/lib/api/reports';
 import { useAuth } from '@/providers/auth-provider';
-
-const REPORT_TAGS: DocumentTag[] = getReportDocumentTags();
 
 export interface ProjectReportsData {
   saved: DocumentRecord[];
   savedCount: number;
   totalCount: number;
+  pendingCount: number;
+  reports: ReportCompletenessItem[];
 }
 
 export const projectReportKeys = {
@@ -32,22 +31,14 @@ export function useProjectReports(
   return useQuery({
     queryKey: projectReportKeys.byProject(organizationId, projectId),
     queryFn: async (): Promise<ProjectReportsData> => {
-      const docs = await getDocuments({
-        entityType: DocumentEntityType.PROJECT,
-        entityId: projectId,
-        tags: REPORT_TAGS.join(','),
-        organizationId,
-      });
-
-      const reportTagSet = new Set(REPORT_TAGS);
-      const saved = docs.filter((doc) => reportTagSet.has(doc.tag as DocumentTag));
+      const summary = await getReportCompleteness(projectId, organizationId);
 
       return {
-        saved,
-        savedCount: REPORT_CATALOG.filter((schema) =>
-          saved.some((doc) => doc.tag === schema.documentTag),
-        ).length,
-        totalCount: REPORT_CATALOG.length,
+        saved: summary.saved,
+        savedCount: summary.savedReports,
+        totalCount: summary.totalReports,
+        pendingCount: summary.pendingCount,
+        reports: summary.reports,
       };
     },
     enabled: !!projectId && !!organizationId && options?.enabled !== false,

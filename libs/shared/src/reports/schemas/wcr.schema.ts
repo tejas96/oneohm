@@ -21,14 +21,17 @@ export const WCR_SCHEMA: ReportSchema = {
     defineReportField('vendor_name', 'Vendor Name', 'vendor_consumer', {
       autoFillSource: 'org',
       placeholder: 'Company legal name',
+      required: true,
     }),
     defineReportField('consumer_name', 'Consumer Name', 'vendor_consumer', {
       autoFillSource: 'property',
       placeholder: 'Full name',
+      required: true,
     }),
     defineReportField('consumer_number', 'Consumer Number', 'vendor_consumer', {
       autoFillSource: 'property',
       placeholder: 'e.g. 279692003475',
+      required: true,
     }),
     defineReportField('category', 'Category', 'vendor_consumer', {
       autoFillSource: 'manual',
@@ -39,6 +42,7 @@ export const WCR_SCHEMA: ReportSchema = {
       type: 'textarea',
       colSpan: 2,
       placeholder: 'Complete address with PIN',
+      required: true,
     }),
     defineReportField('sanction_number', 'Sanction Number', 'vendor_consumer', {
       autoFillSource: 'manual',
@@ -47,13 +51,16 @@ export const WCR_SCHEMA: ReportSchema = {
     defineReportField('sanctioned_capacity_kw', 'Sanctioned Capacity (KW)', 'capacity', {
       autoFillSource: 'property',
       type: 'number',
+      required: true,
     }),
     defineReportField('installed_capacity_kw', 'Installed Capacity (KW)', 'capacity', {
       autoFillSource: 'project',
       type: 'number',
+      required: true,
     }),
     defineReportField('module_make', 'Make of Module', 'module', {
       autoFillSource: 'project',
+      required: true,
     }),
     defineReportField('module_model_number', 'ALMM Model Number', 'module', {
       autoFillSource: 'project',
@@ -61,10 +68,12 @@ export const WCR_SCHEMA: ReportSchema = {
     defineReportField('module_wattage', 'Wattage per Module (Wp)', 'module', {
       autoFillSource: 'project',
       type: 'number',
+      required: true,
     }),
     defineReportField('module_count', 'No. of Modules', 'module', {
       autoFillSource: 'project',
       type: 'number',
+      required: true,
     }),
     defineReportField('total_capacity_kwp', 'Total Capacity (KWp)', 'module', {
       autoFillSource: 'project',
@@ -77,10 +86,12 @@ export const WCR_SCHEMA: ReportSchema = {
     defineReportField('inverter_make_model', 'Make & Model Number', 'inverter', {
       autoFillSource: 'project',
       colSpan: 2,
+      required: true,
     }),
     defineReportField('inverter_rating', 'Rating (KW)', 'inverter', {
       autoFillSource: 'project',
       type: 'number',
+      required: true,
     }),
     defineReportField('charge_controller_type', 'Charge Controller Type', 'inverter', {
       autoFillSource: 'manual',
@@ -100,6 +111,7 @@ export const WCR_SCHEMA: ReportSchema = {
     defineReportField('earthing_details', 'Earthing Details', 'safety', {
       autoFillSource: 'manual',
       placeholder: 'e.g. 3 - 3Ω, 4Ω, 3Ω',
+      required: true,
     }),
     defineReportField('lightning_arrester_text', 'Lightning Arrester', 'safety', {
       autoFillSource: 'manual',

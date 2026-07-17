@@ -1,6 +1,7 @@
 import { DocumentEntityType } from '@tejas96/shared/types';
 
 import apiClient from './client';
+import type { DocumentRecord } from './documents';
 
 function orgHeader(orgId?: string): Record<string, string> {
   return orgId ? { 'X-Organization-Id': orgId } : {};
@@ -85,6 +86,44 @@ export async function saveReport(
 ): Promise<ReportSaveResponse> {
   const { data } = await apiClient.post<ReportSaveResponse>('/reports/save', payload, {
     timeout: 60_000,
+    headers: orgHeader(organizationId),
+  });
+  return data;
+}
+
+export interface ReportCompletenessField {
+  key: string;
+  label: string;
+}
+
+export interface ReportCompletenessItem {
+  reportId: string;
+  reportName: string;
+  totalRequired: number;
+  filledRequired: number;
+  missingRequired: number;
+  missingFields: ReportCompletenessField[];
+  isComplete: boolean;
+  isSaved: boolean;
+  savedDocumentId?: string;
+}
+
+export interface ReportsPendingSummary {
+  totalReports: number;
+  savedReports: number;
+  incompleteReports: number;
+  unsavedReports: number;
+  pendingCount: number;
+  reports: ReportCompletenessItem[];
+  saved: DocumentRecord[];
+}
+
+export async function getReportCompleteness(
+  projectId: string,
+  organizationId?: string,
+): Promise<ReportsPendingSummary> {
+  const { data } = await apiClient.get<ReportsPendingSummary>('/reports/completeness', {
+    params: { projectId },
     headers: orgHeader(organizationId),
   });
   return data;

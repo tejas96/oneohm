@@ -14,12 +14,16 @@ import { formatDate } from '@/lib/utils/format';
 interface ReportChecklistCompactRowProps {
   reportId: string;
   savedDoc: DocumentRecord | null;
+  isComplete?: boolean;
+  missingRequired?: number;
   onOpen: (reportId: string) => void;
 }
 
 export function ReportChecklistCompactRow({
   reportId,
   savedDoc,
+  isComplete,
+  missingRequired,
   onOpen,
 }: ReportChecklistCompactRowProps) {
   const schema = getReportSchema(reportId);
@@ -28,13 +32,31 @@ export function ReportChecklistCompactRow({
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
-      <Chip
-        label={savedDoc ? 'Saved' : 'Not saved'}
-        color={savedDoc ? 'success' : 'default'}
-        size="small"
-        variant={savedDoc ? 'filled' : 'outlined'}
-        sx={{ minWidth: 88 }}
-      />
+      {!savedDoc ? (
+        <Chip
+          label="Not saved"
+          color="default"
+          size="small"
+          variant="outlined"
+          sx={{ minWidth: 104 }}
+        />
+      ) : isComplete ? (
+        <Chip
+          label="Complete"
+          color="success"
+          size="small"
+          variant="filled"
+          sx={{ minWidth: 104 }}
+        />
+      ) : (
+        <Chip
+          label={`Incomplete (${missingRequired})`}
+          color="warning"
+          size="small"
+          variant="outlined"
+          sx={{ minWidth: 104 }}
+        />
+      )}
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <MUITypography variant="body" fontWeight={600} noWrap>
           {schema.name}

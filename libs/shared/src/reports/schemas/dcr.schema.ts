@@ -19,21 +19,26 @@ export const DCR_SCHEMA: ReportSchema = {
     defineReportField('vendor_name', 'Vendor / Company Name', 'vendor_project', {
       autoFillSource: 'org',
       colSpan: 2,
+      required: true,
     }),
     defineReportField('capacity_kw', 'Installed Capacity (KW)', 'vendor_project', {
       autoFillSource: 'project',
       type: 'number',
+      required: true,
     }),
     defineReportField('consumer_name', 'Consumer Name', 'vendor_project', {
       autoFillSource: 'property',
+      required: true,
     }),
     defineReportField('consumer_address', 'Consumer Address', 'vendor_project', {
       autoFillSource: 'property',
       type: 'textarea',
       colSpan: 2,
+      required: true,
     }),
     defineReportField('application_number', 'Application Number', 'application', {
       autoFillSource: 'manual',
+      required: true,
     }),
     defineReportField('application_date', 'Application Date', 'application', {
       autoFillSource: 'manual',
@@ -45,6 +50,7 @@ export const DCR_SCHEMA: ReportSchema = {
     defineReportField('number_of_pv_modules', 'Number of PV Modules', 'pv_modules', {
       autoFillSource: 'project',
       type: 'number',
+      required: true,
     }),
     defineReportField('pv_module_serial_numbers', 'PV Module Serial Numbers', 'pv_modules', {
       autoFillSource: 'bom',
@@ -53,6 +59,7 @@ export const DCR_SCHEMA: ReportSchema = {
     }),
     defineReportField('pv_module_make', 'PV Module Make', 'pv_modules', {
       autoFillSource: 'project',
+      required: true,
     }),
     defineReportField('cell_manufacturer_name', 'Cell Manufacturer Name', 'pv_modules', {
       autoFillSource: 'manual',
@@ -62,9 +69,11 @@ export const DCR_SCHEMA: ReportSchema = {
     }),
     defineReportField('signatory_name', 'Signatory Name', 'signatory', {
       autoFillSource: 'manual',
+      required: true,
     }),
     defineReportField('signatory_designation', 'Signatory Designation', 'signatory', {
       autoFillSource: 'manual',
+      required: true,
     }),
     defineReportField('signatory_phone', 'Signatory Phone', 'signatory', {
       autoFillSource: 'manual',

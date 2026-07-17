@@ -1,16 +1,15 @@
 'use client';
 
 import { REPORT_CATALOG } from '@tejas96/shared/reports';
-import { DocumentEntityType } from '@tejas96/shared/types';
 import { useMemo, useState } from 'react';
 
 import { useProjectReports } from '../../../../hooks';
 import { ReportChecklistCompactRow } from '../../reports/components/report-checklist-compact-row';
 import { ReportEditorDrawer } from '../../reports/components/report-editor-drawer';
 
-import { useDocuments } from '@/components/features/documents/hooks';
 import { Skeleton } from '@/components/ui';
 import type { DocumentRecord } from '@/lib/api/documents';
+import type { ReportCompletenessItem } from '@/lib/api/reports';
 
 interface OverviewReportsCardProps {
   projectId: string;
@@ -21,26 +20,34 @@ export function OverviewReportsCard({
   projectId,
   isActive,
 }: OverviewReportsCardProps): React.ReactElement {
-  const { isLoading } = useProjectReports(projectId, { enabled: isActive });
-  const { data: docs } = useDocuments(DocumentEntityType.PROJECT, isActive ? projectId : undefined);
+  const { data: reportsData, isLoading } = useProjectReports(projectId, { enabled: isActive });
   const [activeReportId, setActiveReportId] = useState<string | null>(null);
 
   const savedByTag = useMemo(() => {
     const map = new Map<string, DocumentRecord>();
-    for (const doc of docs ?? []) {
+    for (const doc of reportsData?.saved ?? []) {
       if (!map.has(doc.tag)) map.set(doc.tag, doc);
     }
     return map;
-  }, [docs]);
+  }, [reportsData?.saved]);
 
-  const savedCount = REPORT_CATALOG.filter((s) => savedByTag.has(s.documentTag)).length;
+  const completenessMap = useMemo(() => {
+    const map = new Map<string, ReportCompletenessItem>();
+    for (const r of reportsData?.reports ?? []) {
+      map.set(r.reportId, r);
+    }
+    return map;
+  }, [reportsData?.reports]);
+
+  const totalCount = reportsData?.totalCount ?? REPORT_CATALOG.length;
+  const completedCount = reportsData?.reports.filter((r) => r.isSaved && r.isComplete).length ?? 0;
 
   return (
     <div className="rounded-xl border border-border-light/70 bg-card shadow-card p-5">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-semibold text-foreground">Reports</p>
         <span className="text-[11px] text-foreground-secondary">
-          {savedCount} of {REPORT_CATALOG.length} saved
+          {completedCount} of {totalCount} complete
         </span>
       </div>
 
@@ -52,14 +59,19 @@ export function OverviewReportsCard({
         </div>
       ) : (
         <div className="space-y-1">
-          {REPORT_CATALOG.map((schema) => (
-            <ReportChecklistCompactRow
-              key={schema.id}
-              reportId={schema.id}
-              savedDoc={savedByTag.get(schema.documentTag) ?? null}
-              onOpen={setActiveReportId}
-            />
-          ))}
+          {REPORT_CATALOG.map((schema) => {
+            const completeness = completenessMap.get(schema.id);
+            return (
+              <ReportChecklistCompactRow
+                key={schema.id}
+                reportId={schema.id}
+                savedDoc={savedByTag.get(schema.documentTag) ?? null}
+                isComplete={completeness?.isComplete}
+                missingRequired={completeness?.missingRequired}
+                onOpen={setActiveReportId}
+              />
+            );
+          })}
         </div>
       )}
 

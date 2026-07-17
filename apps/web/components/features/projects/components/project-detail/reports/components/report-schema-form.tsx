@@ -85,6 +85,23 @@ interface ReportSchemaFormProps {
   disabled?: boolean;
 }
 
+const normalizeValue = (val: unknown): string => {
+  if (val === undefined || val === null) return '';
+  if (typeof val === 'string') return val.trim();
+  if (typeof val === 'number' || typeof val === 'boolean') return String(val).trim();
+  return '';
+};
+
+const areFieldsEqual = (a: Record<string, string>, b: Record<string, string>) => {
+  const allKeys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of allKeys) {
+    if (normalizeValue(a[key]) !== normalizeValue(b[key])) {
+      return false;
+    }
+  }
+  return true;
+};
+
 export function ReportSchemaForm({
   reportId,
   fields,
@@ -107,11 +124,13 @@ export function ReportSchemaForm({
   useEffect(() => {
     const subscription = watch((values) => {
       const next = values as Record<string, string>;
-      if (JSON.stringify(next) === JSON.stringify(serverFieldsRef.current)) return;
+      if (areFieldsEqual(next, fieldsRef.current)) return;
       onChange(next);
     });
     return () => subscription.unsubscribe();
   }, [watch, onChange]);
+
+  const formValues = watch();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -121,6 +140,9 @@ export function ReportSchemaForm({
           (f) => f.autoFillSource && f.autoFillSource !== 'manual',
         ).length;
 
+        const requiredFields = sectionFields.filter((f) => f.required);
+        const filledRequired = requiredFields.filter((f) => !!formValues[f.key]?.trim()).length;
+
         return (
           <Accordion key={section.id} defaultExpanded={index === 0}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -128,6 +150,12 @@ export function ReportSchemaForm({
                 <MUITypography variant="sectionTitle">{section.title}</MUITypography>
                 <MUITypography variant="finePrint" color="text.secondary">
                   {sectionFields.length} fields · {autoFilled} auto-filled
+                  {requiredFields.length > 0 && (
+                    <>
+                      {' · '}
+                      {filledRequired} of {requiredFields.length} required filled
+                    </>
+                  )}
                 </MUITypography>
               </Box>
             </AccordionSummary>
@@ -180,6 +208,11 @@ export function ReportSchemaForm({
                             disabled={disabled}
                             size="small"
                             required={fieldDef.required}
+                            error={
+                              fieldDef.required && !field.value?.trim()
+                                ? 'This field is required'
+                                : undefined
+                            }
                             multiline={fieldDef.type === 'textarea'}
                             rows={fieldDef.type === 'textarea' ? 2 : undefined}
                             type={

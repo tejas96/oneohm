@@ -1,10 +1,21 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  ParseUUIDPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { ReportsPendingSummaryDto } from '../dto/report-completeness-response.dto';
 import {
   ReportInitializeDto,
   ReportInitializeResponseDto,
@@ -27,6 +38,16 @@ export class ReportsController {
   @ApiOperation({ summary: 'List available report templates' })
   list() {
     return this.reportEngine.listCatalog();
+  }
+
+  @Get('completeness')
+  @ApiOperation({ summary: 'Get completeness summary for all reports of a project' })
+  @ApiResponse({ status: HttpStatus.OK, type: ReportsPendingSummaryDto })
+  async getCompleteness(
+    @OrganizationContext() organizationId: string,
+    @Query('projectId', ParseUUIDPipe) projectId: string,
+  ): Promise<ReportsPendingSummaryDto> {
+    return this.reportEngine.getCompleteness(projectId, organizationId);
   }
 
   @Post('initialize')

@@ -29,9 +29,13 @@ export class FieldResolverService {
     return merged;
   }
 
-  validateFields(reportId: string, fields: Record<string, string>): Record<string, string> {
+  validateFields(
+    reportId: string,
+    fields: Record<string, string>,
+    options?: { ignoreRequired?: boolean },
+  ): Record<string, string> {
     try {
-      return validateAndSanitizeReportFields(reportId, fields);
+      return validateAndSanitizeReportFields(reportId, fields, options);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Invalid report fields';
       throw new BadRequestException(message);

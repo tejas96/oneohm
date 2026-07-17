@@ -160,6 +160,18 @@ export function ReportEditorDrawer({
         <SheetContent
           side="right"
           hideClose
+          onPointerDownOutside={(e) => {
+            if (isDirty) {
+              e.preventDefault();
+              setConfirmAction('close');
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            if (isDirty) {
+              e.preventDefault();
+              setConfirmAction('close');
+            }
+          }}
           className="w-full max-w-full sm:max-w-[98vw] lg:max-w-[min(1440px,98vw)] p-0 flex flex-col h-full"
         >
           <SheetTitle className="sr-only">{schema.name}</SheetTitle>

@@ -15,23 +15,31 @@ import {
   TableRow,
 } from '@mui/material';
 import { getReportSchema, REPORT_CATALOG } from '@tejas96/shared/reports';
-import { DocumentEntityType } from '@tejas96/shared/types';
 import { useMemo, useState } from 'react';
 
 import { useReportDownload } from '../hooks/use-report-download';
 
-import { useDocuments } from '@/components/features/documents/hooks';
+import { useProjectReports } from '@/components/features/projects/hooks';
 import { MUITypography } from '@/components/ui/mui-typography';
 import type { DocumentRecord } from '@/lib/api/documents';
+import type { ReportCompletenessItem } from '@/lib/api/reports';
 import { formatDate } from '@/lib/utils/format';
 
 interface ReportChecklistRowProps {
   reportId: string;
   savedDoc: DocumentRecord | null;
+  isComplete?: boolean;
+  missingRequired?: number;
   onOpen: (reportId: string) => void;
 }
 
-export function ReportChecklistRow({ reportId, savedDoc, onOpen }: ReportChecklistRowProps) {
+export function ReportChecklistRow({
+  reportId,
+  savedDoc,
+  isComplete,
+  missingRequired,
+  onOpen,
+}: ReportChecklistRowProps) {
   const schema = getReportSchema(reportId);
   const { download, isDownloading } = useReportDownload();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -50,13 +58,32 @@ export function ReportChecklistRow({ reportId, savedDoc, onOpen }: ReportCheckli
         }
       }}
     >
-      <TableCell sx={{ width: 140 }}>
-        <Chip
-          label={savedDoc ? 'Saved to project' : 'Not saved'}
-          color={savedDoc ? 'success' : 'default'}
-          size="small"
-          variant={savedDoc ? 'filled' : 'outlined'}
-        />
+      <TableCell sx={{ width: 180 }}>
+        {!savedDoc ? (
+          <Chip
+            label="Not saved"
+            color="default"
+            size="small"
+            variant="outlined"
+            sx={{ minWidth: 92 }}
+          />
+        ) : isComplete ? (
+          <Chip
+            label="Complete"
+            color="success"
+            size="small"
+            variant="filled"
+            sx={{ minWidth: 92 }}
+          />
+        ) : (
+          <Chip
+            label={`Incomplete (${missingRequired} pending)`}
+            color="warning"
+            size="small"
+            variant="outlined"
+            sx={{ minWidth: 92 }}
+          />
+        )}
       </TableCell>
       <TableCell>
         <MUITypography variant="body" fontWeight={600}>
@@ -91,25 +118,29 @@ export function ReportChecklistRow({ reportId, savedDoc, onOpen }: ReportCheckli
           </IconButton>
         </Box>
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-          {savedDoc && (
+          {[
+            savedDoc && (
+              <MenuItem
+                key="download"
+                disabled={isDownloading}
+                onClick={() => {
+                  setAnchorEl(null);
+                  void download(savedDoc);
+                }}
+              >
+                Download saved PDF
+              </MenuItem>
+            ),
             <MenuItem
-              disabled={isDownloading}
+              key="open"
               onClick={() => {
                 setAnchorEl(null);
-                void download(savedDoc);
+                onOpen(reportId);
               }}
             >
-              Download saved PDF
-            </MenuItem>
-          )}
-          <MenuItem
-            onClick={() => {
-              setAnchorEl(null);
-              onOpen(reportId);
-            }}
-          >
-            {savedDoc ? 'Re-save from editor' : 'Open to save'}
-          </MenuItem>
+              {savedDoc ? 'Re-save from editor' : 'Open to save'}
+            </MenuItem>,
+          ].filter(Boolean)}
         </Menu>
       </TableCell>
     </TableRow>
@@ -122,24 +153,34 @@ interface ReportChecklistProps {
 }
 
 export function ReportChecklist({ projectId, onOpenReport }: ReportChecklistProps) {
-  const { data: docs } = useDocuments(DocumentEntityType.PROJECT, projectId);
+  const { data: reportsData } = useProjectReports(projectId);
 
   const savedByTag = useMemo(() => {
     const map = new Map<string, DocumentRecord>();
-    for (const doc of docs ?? []) {
+    for (const doc of reportsData?.saved ?? []) {
       if (!map.has(doc.tag)) map.set(doc.tag, doc);
     }
     return map;
-  }, [docs]);
+  }, [reportsData?.saved]);
 
-  const savedCount = REPORT_CATALOG.filter((s) => savedByTag.has(s.documentTag)).length;
+  const completenessMap = useMemo(() => {
+    const map = new Map<string, ReportCompletenessItem>();
+    for (const r of reportsData?.reports ?? []) {
+      map.set(r.reportId, r);
+    }
+    return map;
+  }, [reportsData?.reports]);
+
+  const totalCount = reportsData?.totalCount ?? REPORT_CATALOG.length;
+  const pendingCount = reportsData?.pendingCount ?? 0;
+  const completedCount = reportsData?.reports.filter((r) => r.isSaved && r.isComplete).length ?? 0;
 
   return (
     <Box>
       <Box sx={{ mb: 2 }}>
         <MUITypography variant="sectionTitle">Project Reports</MUITypography>
         <MUITypography variant="finePrint" color="text.secondary">
-          {savedCount} of {REPORT_CATALOG.length} saved to project
+          {completedCount} of {totalCount} reports complete · {pendingCount} pending
         </MUITypography>
       </Box>
 
@@ -153,14 +194,19 @@ export function ReportChecklist({ projectId, onOpenReport }: ReportChecklistProp
           </TableRow>
         </TableHead>
         <TableBody>
-          {REPORT_CATALOG.map((schema) => (
-            <ReportChecklistRow
-              key={schema.id}
-              reportId={schema.id}
-              savedDoc={savedByTag.get(schema.documentTag) ?? null}
-              onOpen={onOpenReport}
-            />
-          ))}
+          {REPORT_CATALOG.map((schema) => {
+            const completeness = completenessMap.get(schema.id);
+            return (
+              <ReportChecklistRow
+                key={schema.id}
+                reportId={schema.id}
+                savedDoc={savedByTag.get(schema.documentTag) ?? null}
+                isComplete={completeness?.isComplete}
+                missingRequired={completeness?.missingRequired}
+                onOpen={onOpenReport}
+              />
+            );
+          })}
         </TableBody>
       </Table>
     </Box>

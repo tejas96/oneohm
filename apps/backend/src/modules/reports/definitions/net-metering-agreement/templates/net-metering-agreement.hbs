@@ -173,16 +173,11 @@
         </div>
 
         <p class="clause-block">
-          {{#ifAll location day month year consumer_name consumer_address consumer_number}}
           This Agreement is made and entered into at <strong>{{dash location}}</strong> on this
           <strong>{{dash day}}</strong> day of <strong>{{dash month}}</strong> <strong>{{dash year}}</strong>
           between the Eligible Consumer <strong>{{dash consumer_name}}</strong> having premises at
           <strong>{{dash consumer_address}}</strong> and Consumer No. <strong>{{dash consumer_number}}</strong>
           as the first Party,
-          {{else}}
-          This Agreement is made and entered into between the Eligible Consumer (first Party)
-          and the Distribution Licensee (second Party), as detailed below.
-          {{/ifAll}}
         </p>
 
         <p class="and-separator">AND</p>

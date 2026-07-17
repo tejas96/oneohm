@@ -16,12 +16,12 @@
           {
             "input": "apps/backend/src/modules/reports",
             "glob": "**/*.{hbs,css}",
-            "output": "modules/reports"
+            "output": "src/modules/reports"
           },
           {
             "input": "apps/backend/src/modules/reports/renderer/assets",
             "glob": "**/*",
-            "output": "modules/reports/renderer/assets"
+            "output": "src/modules/reports/renderer/assets"
           }
         ],
         "generatePackageJson": true

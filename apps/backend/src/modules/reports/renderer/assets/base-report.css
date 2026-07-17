@@ -10,3 +10,12 @@ body {
   color: #1a1a1a;
   background: #fff;
 }
+
+.blank-line {
+  display: inline-block;
+  border-bottom: 1.5px solid #1a1a1a;
+  min-width: 130px;
+  height: 14px;
+  vertical-align: bottom;
+  margin: 0 4px;
+}
