@@ -126,6 +126,7 @@ export class ProjectRepository {
       endDateFrom?: string;
       endDateTo?: string;
       search?: string;
+      address?: string;
       memberId?: string;
       currentUserId?: string;
       pendingWorkflowStepId?: string;
@@ -309,6 +310,14 @@ export class ProjectRepository {
       query.andWhere(
         '(project.projectNumber ILIKE :search OR project.name ILIKE :search OR customer.firstName ILIKE :search OR customer.lastName ILIKE :search)',
         { search: `%${filters.search}%` },
+      );
+    }
+
+    const addressQuery = filters?.address?.trim();
+    if (addressQuery) {
+      query.andWhere(
+        '(property.address ILIKE :address OR property.city ILIKE :address OR property.pincode ILIKE :address OR property.state ILIKE :address)',
+        { address: `%${addressQuery}%` },
       );
     }
 

@@ -325,6 +325,14 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
     [],
   );
 
+  const stableCloseFilters = useCallback((): void => {
+    setFilterAnchorEl(null);
+  }, []);
+
+  const stableToggleFilters = useCallback((e: React.MouseEvent<HTMLButtonElement>): void => {
+    setFilterAnchorEl((prev) => (prev ? null : e.currentTarget));
+  }, []);
+
   // ── Pagination handlers ─────────────────────────────────────────────────────
 
   const handlePageChangeRef = useRef<(page: number) => void>(() => undefined);
@@ -536,7 +544,7 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
             <TableFiltersToggle
               filters={filters}
               open={Boolean(filterAnchorEl)}
-              onToggle={(e) => setFilterAnchorEl((prev) => (prev ? null : e.currentTarget))}
+              onToggle={stableToggleFilters}
             />
           )}
 
@@ -582,7 +590,7 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
             columns={columns}
             filters={filters}
             anchorEl={filterAnchorEl}
-            onClose={() => setFilterAnchorEl(null)}
+            onClose={stableCloseFilters}
             onFilterChange={stableHandleFilterChange}
           />
         )}

@@ -139,6 +139,12 @@ export class ProjectController {
     description: 'Search by project number or name',
   })
   @ApiQuery({
+    name: 'address',
+    required: false,
+    type: String,
+    description: 'Search by property pincode, city, state, or address',
+  })
+  @ApiQuery({
     name: 'memberId',
     required: false,
     type: String,
@@ -195,6 +201,7 @@ export class ProjectController {
     @Query('endDateFrom') endDateFrom?: string,
     @Query('endDateTo') endDateTo?: string,
     @Query('search') search?: string,
+    @Query('address') address?: string,
     @Query('memberId', new ParseUUIDPipe({ optional: true })) memberId?: string,
     @Query('pendingWorkflowStepId', new ParseUUIDPipe({ optional: true }))
     pendingWorkflowStepId?: string,
@@ -224,6 +231,7 @@ export class ProjectController {
       endDateFrom,
       endDateTo,
       search,
+      address,
       memberId: effectiveMemberId,
       currentUserId: currentUser.id,
       pendingWorkflowStepId,

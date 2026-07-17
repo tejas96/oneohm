@@ -76,10 +76,13 @@ function TextFilterControl<TRow>({
   const externalValue = typeof value === 'string' ? value : '';
 
   const [localValue, setLocalValue] = useState(externalValue);
+  const lastEmittedValueRef = useRef(externalValue);
 
   useEffect(() => {
+    if (externalValue === lastEmittedValueRef.current) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     setLocalValue(externalValue);
+    lastEmittedValueRef.current = externalValue;
   }, [externalValue]);
 
   const onChangeRef = useRef(onChange);
@@ -92,9 +95,11 @@ function TextFilterControl<TRow>({
       setLocalValue(raw);
       if (timerRef.current) clearTimeout(timerRef.current);
       if (debounceMs === 0) {
+        lastEmittedValueRef.current = raw;
         onChangeRef.current(column.field, raw);
       } else {
         timerRef.current = setTimeout(() => {
+          lastEmittedValueRef.current = raw;
           onChangeRef.current(column.field, raw);
         }, debounceMs);
       }
@@ -112,7 +117,7 @@ function TextFilterControl<TRow>({
   return (
     <TextField
       size="small"
-      placeholder={`Search ${column.headerName}...`}
+      placeholder={column.filterPlaceholder ?? `Search ${column.headerName}...`}
       value={localValue}
       onChange={(e) => handleChange(e.target.value)}
       fullWidth

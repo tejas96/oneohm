@@ -21,6 +21,7 @@ export interface ProjectFilters {
   page?: number;
   limit?: number;
   search?: string;
+  address?: string;
   status?: ProjectStatus;
   priority?: ProjectPriority;
   projectType?: string;
@@ -76,6 +77,8 @@ export interface ProjectListItem {
     id: string;
     address?: string;
     city?: string;
+    state?: string;
+    pincode?: string;
     customerName?: string;
   };
   teamMembers: TeamMemberSummary[];
@@ -128,6 +131,7 @@ export function useProjects(
       if (queryFilters.search && queryFilters.search.length >= 2) {
         params.append('search', queryFilters.search);
       }
+      if (queryFilters.address) params.append('address', queryFilters.address);
 
       if (queryFilters.status) params.append('status', queryFilters.status);
       if (queryFilters.priority) params.append('priority', queryFilters.priority);

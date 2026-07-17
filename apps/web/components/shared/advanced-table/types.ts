@@ -45,6 +45,9 @@ export interface ColumnConfig<TRow = Record<string, unknown>> {
   /** Options for 'select' filterType */
   filterOptions?: ReadonlyArray<{ label: string; value: string | number }>;
 
+  /** Custom placeholder for the filter input field */
+  filterPlaceholder?: string;
+
   /**
    * Debounce delay (ms) for 'text' filter controls.
    * Defaults to 400ms. Set to 0 to disable debouncing for that column.
