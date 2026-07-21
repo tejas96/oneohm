@@ -306,7 +306,7 @@ export function DispatchCreatePage(): React.JSX.Element {
             {fields.map((fieldRow, index) => (
               <div
                 key={fieldRow.id}
-                className="flex flex-col gap-3 rounded-lg border border-border-light p-4 sm:flex-row sm:items-start"
+                className="flex flex-col gap-3 rounded-lg shadow-e2 p-4 sm:flex-row sm:items-start"
               >
                 <div className="min-w-0 flex-1">
                   <MUISelect

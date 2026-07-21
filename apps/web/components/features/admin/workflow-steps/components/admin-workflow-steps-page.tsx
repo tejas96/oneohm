@@ -243,7 +243,7 @@ export function AdminWorkflowStepsPage(): React.JSX.Element {
         )}
       </div>
 
-      <div className="bg-white rounded-lg border border-border-light overflow-hidden">
+      <div className="bg-white rounded-lg shadow-e2 overflow-hidden">
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-sm text-foreground-secondary">No workflow steps configured yet.</p>
@@ -428,7 +428,7 @@ function WorkflowStepRow({
       </div>
 
       {isExpanded && (
-        <div className="px-4 pb-3 pt-0 border-t border-border-light space-y-2">
+        <div className="px-4 pb-3 pt-0 space-y-2">
           {step.description && (
             <p className="text-xs text-foreground-secondary">{step.description}</p>
           )}
@@ -589,7 +589,7 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
 
         <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6 mt-4">
           {/* ─── Section: Basic Info ─── */}
-          <fieldset className="space-y-4 rounded-lg border border-border-light p-4">
+          <fieldset className="space-y-4 rounded-lg shadow-e2 p-4">
             <legend className="px-2 text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
               Basic Information
             </legend>
@@ -638,7 +638,7 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
           </fieldset>
 
           {/* ─── Section: Assignment & Classification ─── */}
-          <fieldset className="space-y-4 rounded-lg border border-border-light p-4">
+          <fieldset className="space-y-4 rounded-lg shadow-e2 p-4">
             <legend className="px-2 text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
               Assignment & Classification
             </legend>
@@ -745,13 +745,13 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
           </fieldset>
 
           {/* ─── Section: Execution Rules ─── */}
-          <fieldset className="space-y-4 rounded-lg border border-border-light p-4">
+          <fieldset className="space-y-4 rounded-lg shadow-e2 p-4">
             <legend className="px-2 text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
               Execution Rules
             </legend>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-md border border-border-light p-3">
+              <div className="rounded-md p-3 shadow-e1">
                 <Checkbox
                   id="isMandatory"
                   checked={form.watch('isMandatory')}
@@ -760,7 +760,7 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
                   description="This step cannot be skipped during project execution."
                 />
               </div>
-              <div className="rounded-md border border-border-light p-3">
+              <div className="rounded-md p-3 shadow-e1">
                 <Checkbox
                   id="canRunParallel"
                   checked={form.watch('canRunParallel')}
@@ -773,7 +773,7 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
           </fieldset>
 
           {/* ─── Section: Dependencies ─── */}
-          <fieldset className="space-y-3 rounded-lg border border-border-light p-4">
+          <fieldset className="space-y-3 rounded-lg shadow-e2 p-4">
             <legend className="px-2 text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
               Dependencies
             </legend>
@@ -797,7 +797,7 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
           </fieldset>
 
           {/* ─── Section: Checklist Template ─── */}
-          <fieldset className="space-y-3 rounded-lg border border-border-light p-4">
+          <fieldset className="space-y-3 rounded-lg shadow-e2 p-4">
             <legend className="px-2 text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
               Checklist Template
             </legend>
@@ -881,7 +881,7 @@ function DependsOnSelector({
   return (
     <div className="space-y-2">
       {value.length > 0 && (
-        <div className="flex flex-wrap gap-1 rounded-md border border-border-light p-2">
+        <div className="flex flex-wrap gap-1 rounded-md p-2 shadow-e1">
           {value.map((code) => {
             const stepInfo = stepsMap.get(code);
             return (
@@ -908,7 +908,7 @@ function DependsOnSelector({
         size="sm"
       />
 
-      <div className="border border-border-light rounded-md max-h-[200px] overflow-y-auto">
+      <div className="rounded-md max-h-[200px] overflow-y-auto shadow-e1">
         {isLoading ? (
           <p className="text-sm text-foreground-tertiary p-3 text-center">Loading steps...</p>
         ) : availableSteps.length === 0 ? (

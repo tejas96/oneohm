@@ -44,7 +44,7 @@ function TrendBadge({ trend }: { trend: PipelineTrendMetric }): React.JSX.Elemen
 
 function StatCard({ title, value, trend, icon, helpText }: StatCardConfig): React.JSX.Element {
   return (
-    <div className="rounded-lg border border-border-light bg-white p-4 shadow-sm">
+    <div className="rounded-lg shadow-e2 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex size-container-md items-center justify-center rounded-lg bg-primary/10">
           {icon}
@@ -82,7 +82,7 @@ export function PipelineStatsCards({
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-border-light bg-white p-4 text-center">
+      <div className="rounded-lg shadow-e2 bg-white p-4 text-center">
         <MUITypography variant="body" className="text-foreground-secondary">
           Failed to load pipeline stats.
         </MUITypography>
@@ -95,7 +95,7 @@ export function PipelineStatsCards({
 
   if (!stats) {
     return (
-      <div className="rounded-lg border border-border-light bg-white p-4">
+      <div className="rounded-lg shadow-e2 bg-white p-4">
         <MUITypography variant="body" className="text-foreground-secondary">
           No stats available for the selected period.
         </MUITypography>

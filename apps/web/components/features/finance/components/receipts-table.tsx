@@ -166,7 +166,7 @@ export function ReceiptsTable({ receipts, terms, projectId }: ReceiptsTableProps
   const termById = new Map(terms.map((t) => [t.id, t]));
 
   return (
-    <div className="rounded-lg border border-border-light overflow-hidden">
+    <div className="rounded-lg shadow-e2 overflow-hidden">
       <table className="w-full">
         <thead>
           <tr className="bg-muted/50">

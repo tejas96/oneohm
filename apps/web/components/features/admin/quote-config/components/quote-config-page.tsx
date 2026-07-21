@@ -104,7 +104,7 @@ export function QuoteConfigPage(): JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="bg-background rounded-lg border border-border-light p-12 flex items-center justify-center">
+      <div className="bg-background rounded-lg shadow-e2 p-12 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="size-8 animate-spin text-primary" />
           <p className="text-sm text-foreground-secondary">Loading configuration...</p>
@@ -132,7 +132,7 @@ export function QuoteConfigPage(): JSX.Element {
 
   if (!data) {
     return (
-      <div className="bg-background rounded-lg border border-border-light p-8">
+      <div className="bg-background rounded-lg shadow-e2 p-8">
         <Typography variant="body">Quote configuration is not available yet.</Typography>
       </div>
     );
@@ -250,7 +250,7 @@ export function QuoteConfigPage(): JSX.Element {
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-border-light p-3">
+            <div className="flex items-center justify-between rounded-lg shadow-e2 p-3">
               <Controller
                 name="showInventoryStock"
                 control={form.control}
@@ -311,7 +311,7 @@ export function QuoteConfigPage(): JSX.Element {
                 />
               </div>
             </div>
-            <div className="rounded-lg border border-border-light p-3 text-sm text-foreground-secondary">
+            <div className="rounded-lg shadow-e2 p-3 text-sm text-foreground-secondary">
               Example: {gstSummary}
             </div>
           </TabsContent>
@@ -345,7 +345,7 @@ export function QuoteConfigPage(): JSX.Element {
             </div>
 
             {milestonesFieldArray.fields.map((field, index) => (
-              <div key={field.id} className="rounded-lg border border-border-light p-3">
+              <div key={field.id} className="rounded-lg shadow-e2 p-3">
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div>
                     <MUIInput
@@ -465,8 +465,8 @@ export function QuoteConfigPage(): JSX.Element {
                 </Typography>
               </div>
             ) : (
-              <div className="rounded-lg border border-border-light overflow-hidden">
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 px-3 py-2 bg-muted/40 text-xs font-medium text-foreground-secondary border-b border-border-light">
+              <div className="rounded-lg shadow-e2 overflow-hidden">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 px-3 py-2 bg-muted/40 text-xs font-medium text-foreground-secondary">
                   <span className="sm:col-span-3">Min size (kW)</span>
                   <span className="sm:col-span-3">Max size (kW)</span>
                   <span className="sm:col-span-3">Margin %</span>

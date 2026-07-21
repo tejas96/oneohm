@@ -28,7 +28,7 @@ function SummaryCard({
     error: 'text-error',
   };
   return (
-    <div className="rounded-lg border border-border-light bg-background-secondary p-3">
+    <div className="rounded-lg shadow-e2 bg-background-secondary p-3">
       <MUITypography variant="finePrint" className="text-foreground-secondary block">
         {label}
       </MUITypography>

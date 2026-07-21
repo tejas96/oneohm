@@ -1,60 +1,69 @@
-import { cva, type VariantProps } from 'class-variance-authority';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
 /**
- * Card Component - OneOhm Design System
+ * Card — OneOhm design system.
+ *
+ * The governing rule: **hierarchy comes from luminance and softness, never
+ * from lines.** A card separates from the canvas by being brighter than it
+ * and carrying a soft, wide, low-opacity shadow. Every variant here was
+ * previously `border border-border-light/50`; none carry a border now.
+ *
+ * Elevation ladder — `e2` at rest, `e3` on hover, plus a −1px lift. Hover
+ * raises exactly one step; it never jumps.
+ *
+ * Radius is 12px (`rounded-xl`), the DS *functional* card value, matching the
+ * density chosen for this app's data-heavy surfaces.
  *
  * Variants:
- * - default: Standard card with subtle border
- * - elevated: Card with shadow for prominence
- * - interactive: Clickable card with hover effects
- * - minimal: No border, just background
+ * - `default`     — resting card
+ * - `elevated`    — same, lifts on hover
+ * - `interactive` — clickable; lift + 2px accent ring on hover
+ * - `minimal`     — sits flush on the canvas, no shadow
  *
- * Padding:
- * - none: No padding
- * - sm: p-3 (compact)
- * - default: p-4 (standard - p-card per theme)
- * - lg: p-6 (spacious)
+ * Padding: `none` (default — sections handle their own) | `sm` | `default` | `lg`
  *
- * Reference: apps/ux/web/v2/components/cards.html
+ * Plain `<div>`s rather than MUI `Card`: this is a compound layout component
+ * and MUI's Card/CardHeader/CardContent impose their own DOM and padding,
+ * which would reflow every consumer. Tailwind-only is within the two-library
+ * constraint; `class-variance-authority` is what needed removing.
  */
 
-const cardVariants = cva(
-  // Base styles
-  'rounded-lg bg-card text-card-foreground transition-all duration-fast',
-  {
-    variants: {
-      variant: {
-        default: 'border border-border-light/50 shadow-card',
-        elevated: 'border border-border-light/50 shadow-card hover:shadow-card-hover',
-        interactive:
-          'border border-border-light/50 shadow-card cursor-pointer hover:border-primary hover:shadow-card-hover group',
-        minimal: 'bg-background-secondary',
-      },
-      padding: {
-        none: '',
-        sm: 'p-3',
-        default: 'p-card',
-        lg: 'p-6',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-      padding: 'none', // Individual sections handle padding
-    },
-  },
-);
+type CardVariant = 'default' | 'elevated' | 'interactive' | 'minimal';
+type CardPadding = 'none' | 'sm' | 'default' | 'lg';
 
-export interface CardProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof cardVariants> {}
+const CARD_BASE = 'rounded-xl bg-card text-card-foreground transition-all duration-fast';
+
+const CARD_VARIANT: Record<CardVariant, string> = {
+  default: 'shadow-e2',
+  elevated: 'shadow-e2 hover:shadow-e3 hover:-translate-y-px',
+  interactive:
+    'shadow-e2 cursor-pointer hover:shadow-e3 hover:-translate-y-px hover:ring-2 hover:ring-primary group',
+  // Flush with the canvas — the one surface that is *not* raised.
+  minimal: 'bg-background-secondary',
+};
+
+const CARD_PADDING: Record<CardPadding, string> = {
+  none: '',
+  sm: 'p-3',
+  default: 'p-card',
+  lg: 'p-6',
+};
+
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: CardVariant;
+  padding?: CardPadding;
+}
 
 const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant, padding, ...props }, ref) => (
-    <div ref={ref} className={cn(cardVariants({ variant, padding }), className)} {...props} />
+  ({ className, variant = 'default', padding = 'none', ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(CARD_BASE, CARD_VARIANT[variant], CARD_PADDING[padding], className)}
+      {...props}
+    />
   ),
 );
 Card.displayName = 'Card';
@@ -64,7 +73,9 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
     <div
       ref={ref}
       className={cn(
-        'flex items-center justify-between px-card py-4 border-b border-border-light',
+        // No rule under the header — spacing and type weight carry the
+        // separation, per the DS "no structural borders" rule.
+        'flex items-center justify-between px-card py-4',
         className,
       )}
       {...props}
@@ -103,7 +114,9 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
     <div
       ref={ref}
       className={cn(
-        'flex items-center px-card py-4 bg-background-secondary border-t border-border-light rounded-b-lg',
+        // The tinted background already separates the footer by luminance,
+        // so the top rule is redundant as well as off-spec.
+        'flex items-center px-card py-4 bg-background-secondary rounded-b-xl',
         className,
       )}
       {...props}
@@ -158,15 +171,6 @@ const StatsCard = React.forwardRef<HTMLDivElement, StatsCardProps>(
 );
 StatsCard.displayName = 'StatsCard';
 
-export {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  StatsCard,
-  cardVariants,
-};
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, StatsCard };
 
 export type { CardProps as CardPropsType };

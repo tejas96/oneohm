@@ -47,7 +47,7 @@ export function ReviewTeamChips({
         return (
           <div
             key={member.userId}
-            className="flex items-center gap-2 px-3 py-1.5 border border-border-light rounded-lg bg-background-secondary"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background-secondary"
           >
             <div className="relative">
               <MUIAvatar name={name} initials={initials} size="xs" />

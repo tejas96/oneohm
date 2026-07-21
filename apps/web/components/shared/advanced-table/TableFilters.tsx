@@ -145,7 +145,7 @@ function SelectFilterControl<TRow>({
         renderValue={(selected) => {
           if (!selected) {
             return (
-              <span className="text-xs" style={{ color: '#a1a1aa' }}>
+              <span className="text-xs" style={{ color: 'var(--ds-text-tertiary)' }}>
                 Select {column.headerName}
               </span>
             );
@@ -362,7 +362,7 @@ export function TableFiltersToggle({
         size="small"
         color={activeCount > 0 ? 'primary' : 'inherit'}
         onClick={onToggle}
-        className="border border-border-light rounded-lg p-2.5 bg-background hover:bg-background-secondary"
+        className="rounded-lg p-2.5 bg-background shadow-e1 hover:shadow-e2"
       >
         <Badge badgeContent={activeCount} color="primary" max={9}>
           <FilterListIcon className="size-4" />
@@ -437,8 +437,7 @@ function TableFiltersInner<TRow>({
           }}
           slotProps={{
             paper: {
-              className:
-                'p-4 rounded-xl shadow-card border border-border-light min-w-[320px] max-w-[400px]',
+              className: 'p-4 rounded-xl shadow-e3 min-w-[320px] max-w-[400px]',
               sx: {
                 maxHeight: 480,
                 overflowY: 'auto',
@@ -447,7 +446,7 @@ function TableFiltersInner<TRow>({
           }}
         >
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-border-light pb-2">
+            <div className="flex items-center justify-between pb-2">
               <Typography className="text-xs font-semibold text-text-primary">Filters</Typography>
               <Button
                 size="small"

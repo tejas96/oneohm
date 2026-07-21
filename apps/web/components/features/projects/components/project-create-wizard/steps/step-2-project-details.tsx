@@ -148,7 +148,7 @@ export function Step2ProjectDetails({ form }: Step2ProjectDetailsProps): React.J
 
         {/* System Specs (read-only from quote) */}
         {selectedQuote && (
-          <div className="p-4 border border-border-light rounded-lg bg-background-secondary">
+          <div className="p-4 rounded-lg bg-background-secondary">
             <div className="flex items-center gap-2 mb-3">
               <LockIcon fontSize="small" className="text-foreground-tertiary" />
               <MUITypography variant="metaLabel">From Quote</MUITypography>

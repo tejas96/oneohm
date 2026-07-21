@@ -1,73 +1,82 @@
 'use client';
 
-import { useTheme } from 'next-themes';
 import { Toaster as Sonner, toast } from 'sonner';
+
+import { color, radius, shadow } from '@/lib/theme/tokens';
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 /**
- * Toast styling configuration per UX design
- * Reference: apps/ux/web/v2/components/toasts.html
+ * App-wide toast host. Mount exactly once, in `providers/index.tsx`.
+ *
+ * Previously this file exported a styled `Toaster` that was never mounted —
+ * `providers/index.tsx` imported `Toaster` straight from `sonner` and
+ * configured it inline, so every `classNames` rule here was dead code and
+ * the two disagreed about position (`bottom-right` here, `top-right` there).
+ * Styling now lives here and the provider just mounts it.
+ *
+ * `next-themes` used to drive a `theme` prop, but no `ThemeProvider` was ever
+ * mounted, so `useTheme()` always returned the default. The design system is
+ * light-only, so the dependency is gone and the theme is pinned.
  */
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = 'system' } = useTheme();
-
-  return (
-    <Sonner
-      theme={theme as ToasterProps['theme']}
-      className="toaster group"
-      position="bottom-right"
-      toastOptions={{
-        duration: 4000,
-        classNames: {
-          // Default toast styling
-          toast:
-            'group toast group-[.toaster]:bg-foreground group-[.toaster]:text-background group-[.toaster]:border-none group-[.toaster]:shadow-lg group-[.toaster]:rounded-lg',
-          description: 'group-[.toast]:text-white/80',
-          actionButton:
-            'group-[.toast]:bg-white/20 group-[.toast]:text-white group-[.toast]:hover:bg-white/30 group-[.toast]:rounded group-[.toast]:text-sm group-[.toast]:font-medium',
-          cancelButton:
-            'group-[.toast]:bg-transparent group-[.toast]:text-white/60 group-[.toast]:hover:text-white',
-          closeButton:
-            'group-[.toast]:text-white/60 group-[.toast]:hover:text-white group-[.toast]:hover:bg-white/20',
-          // Type-specific styling
-          success:
-            'group-[.toaster]:bg-success group-[.toaster]:text-success-foreground group-[.toaster]:border-none',
-          error:
-            'group-[.toaster]:bg-error group-[.toaster]:text-error-foreground group-[.toaster]:border-none',
-          warning:
-            'group-[.toaster]:bg-warning group-[.toaster]:text-warning-foreground group-[.toaster]:border-none',
-          info: 'group-[.toaster]:bg-info group-[.toaster]:text-info-foreground group-[.toaster]:border-none',
-        },
-      }}
-      {...props}
-    />
-  );
-};
+const Toaster = (props: ToasterProps): React.JSX.Element => (
+  <Sonner
+    theme="light"
+    position="top-right"
+    closeButton
+    // Sonner's own semantic palette, which reads the CSS vars set below.
+    richColors
+    toastOptions={{
+      duration: 4000,
+      style: {
+        fontFamily: 'var(--font-geist-sans)',
+        // DS functional density: 12px card radius, e3 for a floating overlay.
+        borderRadius: radius['rf-lg'],
+        boxShadow: shadow.e3,
+        // No structural borders — separation comes from luminance + shadow.
+        border: 'none',
+      },
+    }}
+    style={
+      {
+        '--normal-bg': color.surface,
+        '--normal-text': color['text-primary'],
+        '--success-bg': color['success-bg'],
+        '--success-text': color.success,
+        '--error-bg': color['danger-bg'],
+        '--error-text': color.danger,
+        '--warning-bg': color['warning-bg'],
+        '--warning-text': color.warning,
+        '--info-bg': color['info-bg'],
+        '--info-text': color.info,
+      } as React.CSSProperties
+    }
+    {...props}
+  />
+);
 
 type ToastOptions = Parameters<typeof toast>[1];
 
 /**
- * Toast helper functions with UX styling
- * Usage: showToast.success('Message'), showToast.error('Message'), etc.
+ * Toast helpers — the app-facing API, used by ~50 files.
+ *
+ * Deliberately a thin wrapper over `toast` rather than a re-export: it is the
+ * seam that lets the underlying library be swapped (e.g. to MUI Snackbar)
+ * without touching call sites.
+ *
+ * Usage: `showToast.success('Quote sent')`
  */
 const showToast = {
   success: (message: string, options?: ToastOptions) => toast.success(message, options),
   error: (message: string, options?: ToastOptions) => toast.error(message, options),
   warning: (message: string, options?: ToastOptions) => toast.warning(message, options),
   info: (message: string, options?: ToastOptions) => toast.info(message, options),
-  // Default toast
   message: (message: string, options?: ToastOptions) => toast(message, options),
-  // Toast with undo action
   withUndo: (message: string, onUndo: () => void, options?: ToastOptions) =>
     toast(message, {
       ...options,
-      action: {
-        label: 'Undo',
-        onClick: onUndo,
-      },
+      action: { label: 'Undo', onClick: onUndo },
     }),
-  // Dismiss toast
   dismiss: toast.dismiss,
 };
 

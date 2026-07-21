@@ -744,9 +744,7 @@ export function ProjectListPage(): JSX.Element {
                     {...params}
                     placeholder="Search member..."
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                      },
+                      '& .MuiOutlinedInput-root': {},
                     }}
                   />
                 )}
@@ -786,9 +784,7 @@ export function ProjectListPage(): JSX.Element {
                     {...params}
                     placeholder="Search workflow step..."
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                      },
+                      '& .MuiOutlinedInput-root': {},
                     }}
                   />
                 )}

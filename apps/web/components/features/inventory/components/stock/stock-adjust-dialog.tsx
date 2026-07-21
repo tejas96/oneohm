@@ -105,7 +105,7 @@ export function StockAdjustDialog({
       </MUIDialogHeader>
       <MUIDialogBody dividers>
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-3 gap-2 rounded-lg border border-border-light p-3 text-sm">
+          <div className="grid grid-cols-3 gap-2 rounded-lg shadow-e2 p-3 text-sm">
             <div>
               <div className="text-xs uppercase tracking-wide text-foreground-tertiary">
                 Available

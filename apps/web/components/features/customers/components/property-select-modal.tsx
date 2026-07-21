@@ -159,9 +159,7 @@ export function PropertySelectModal({
                   </div>
 
                   <div className="mt-2 flex items-center gap-2 text-xs">
-                    <span className="rounded bg-white px-1.5 py-0.5 border border-border-light">
-                      {typeLabel}
-                    </span>
+                    <span className="rounded bg-white px-1.5 py-0.5 shadow-e1">{typeLabel}</span>
                     {formatCurrentLoadLabel(property.currentLoad) && (
                       <span className="flex items-center gap-1 text-foreground-secondary">
                         <Zap className="size-3" />

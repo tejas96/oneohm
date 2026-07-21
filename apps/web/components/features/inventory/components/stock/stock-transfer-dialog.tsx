@@ -132,7 +132,7 @@ export function StockTransferDialog({
       </MUIDialogHeader>
       <MUIDialogBody dividers>
         <div className="flex flex-col gap-4">
-          <div className="rounded-lg border border-border-light p-3 text-sm">
+          <div className="rounded-lg shadow-e2 p-3 text-sm">
             <div className="text-xs uppercase tracking-wide text-foreground-tertiary">
               Available at source
             </div>

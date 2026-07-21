@@ -689,9 +689,7 @@ function buildColumns({
                 {...params}
                 placeholder="Search creator..."
                 sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 1.5,
-                  },
+                  '& .MuiOutlinedInput-root': {},
                 }}
               />
             )}

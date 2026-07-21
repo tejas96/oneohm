@@ -127,7 +127,7 @@ export function FinanceOutstandingPage(): React.JSX.Element {
   // "All (0)" the filtered set would otherwise show.
   return (
     <div className="flex h-full flex-col">
-      <header className="border-border-light border-b px-6 py-4">
+      <header className="px-6 py-4">
         <MUITypography variant="drawerTitle">Outstanding Payment Terms</MUITypography>
         <MUITypography variant="body" className="text-foreground-secondary mt-1">
           Every unpaid term across the org. Click an aging chip to focus.
@@ -236,7 +236,7 @@ export function FinanceOutstandingPage(): React.JSX.Element {
       />
 
       {meta && meta.totalPages > 1 && (
-        <div className="border-border-light border-t px-6 py-3">
+        <div className="px-6 py-3">
           <TablePagination
             currentPage={meta.page}
             totalPages={meta.totalPages}

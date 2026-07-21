@@ -71,7 +71,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Link
       href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id })}
-      className="block bg-background rounded-lg border border-border-light p-4 cursor-pointer transition-all duration-150 hover:shadow-sm hover:-translate-y-px"
+      className="block bg-background rounded-lg shadow-e2 p-4 cursor-pointer transition-all duration-150 hover:shadow-sm hover:-translate-y-px"
     >
       {/* Row 1: Project number + type | Status + health */}
       <div className="flex items-start justify-between mb-2">
@@ -193,7 +193,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       </div>
 
       {/* Row 7: Team & Due date */}
-      <div className="flex items-center justify-between pt-3 border-t border-border-light">
+      <div className="flex items-center justify-between pt-3">
         <TeamAvatarGroup members={project.teamMembers} max={3} size="xs" />
         <div className="text-right">
           <div className="text-2xs text-foreground-tertiary">{dueDateDisplay.label}</div>
@@ -204,7 +204,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       </div>
 
       {/* Row 8: Payment */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border-light">
+      <div className="flex items-center justify-between mt-3 pt-3">
         <span className="text-2xs text-foreground-tertiary">Payment</span>
         <span className={`text-sm font-medium ${paymentDisplay.className}`}>
           {paymentDisplay.text}

@@ -216,10 +216,10 @@ export function DataTable<TData, TValue>({
   return (
     <div className={cn(className)}>
       {/* Table Container */}
-      <div className="rounded-lg border border-border-light overflow-hidden">
+      <div className="rounded-xl shadow-e2 overflow-hidden">
         {/* Toolbar - inside table container */}
         {(enableSearch || enableColumnVisibility || toolbarActions) && (
-          <div className="px-4 py-3 border-b border-border-light bg-background flex items-center justify-between gap-4">
+          <div className="px-4 py-3 bg-background flex items-center justify-between gap-4">
             {/* Search */}
             {enableSearch && (
               <div className="flex-1 max-w-md">

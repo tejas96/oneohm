@@ -75,7 +75,7 @@ export function ProductSpecificationsFields({
                 return (
                   <div
                     key={attr.attributeKey}
-                    className="flex items-center justify-between rounded-lg border border-border-light p-3"
+                    className="flex items-center justify-between rounded-lg shadow-e2 p-3"
                   >
                     <Controller
                       name={fieldName}

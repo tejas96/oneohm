@@ -58,7 +58,7 @@ export function CustomerSearchChip({
   if (selectedCustomer) {
     const fullName = `${selectedCustomer.firstName} ${selectedCustomer.lastName ?? ''}`.trim();
     return (
-      <div className="flex items-center gap-3 p-3 border border-border-light rounded-lg bg-background-secondary">
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-background-secondary">
         <MUIAvatar name={fullName} size="sm" />
         <div className="flex-1 min-w-0">
           <MUITypography variant="bodyPrimary" noWrap>

@@ -396,7 +396,7 @@ export function AdminLookupFormModal({
           </div>
 
           {/* Active toggle */}
-          <div className="border border-border-light rounded-lg px-4 py-3">
+          <div className="rounded-lg px-4 py-3 shadow-e1">
             <Controller
               name="isActive"
               control={form.control}

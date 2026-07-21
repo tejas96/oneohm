@@ -107,11 +107,9 @@ export function DashboardActivityRail({
 
   return (
     <div
-      className={`flex flex-col rounded-xl border border-border-light bg-surface${
-        className ? ` ${className}` : ''
-      }`}
+      className={`flex flex-col rounded-xl shadow-e2 bg-surface${className ? ` ${className}` : ''}`}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-border-light px-4 py-3">
+      <div className="flex items-center justify-between gap-2 px-4 py-3">
         <div className="min-w-0">
           <div className="text-sm font-semibold text-foreground">Recent activity</div>
           <div className="mt-0.5 text-xs text-foreground-tertiary">

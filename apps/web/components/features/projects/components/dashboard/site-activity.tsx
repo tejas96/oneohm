@@ -14,7 +14,7 @@ export function SiteProgress(): React.JSX.Element {
   return (
     <Card
       elevation={0}
-      className="flex-1 lg:w-[35%] p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col justify-between min-h-[360px] relative overflow-hidden"
+      className="flex-1 lg:w-[35%] p-4 rounded-lg shadow-e2 bg-background shadow-card flex flex-col justify-between min-h-[360px] relative overflow-hidden"
     >
       <div>
         <div className="flex items-center justify-between">
@@ -59,7 +59,7 @@ export function SiteProgress(): React.JSX.Element {
 
         {/* Glassmorphic Overlay Message Container */}
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-background/20 backdrop-blur-[4px] rounded-lg">
-          <div className="p-3 bg-background border border-border-light rounded-lg shadow-sm text-center max-w-[200px]">
+          <div className="p-3 bg-background rounded-lg shadow-sm text-center max-w-[200px]">
             <MUITypography variant="sectionTitle" className="font-semibold text-text-primary block">
               Site Progress
             </MUITypography>

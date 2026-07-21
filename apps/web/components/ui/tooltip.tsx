@@ -1,10 +1,10 @@
 'use client';
 
-import * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { HelpCircle } from 'lucide-react';
 import * as React from 'react';
 
+import { cva, type VariantProps } from '@/lib/cva';
+import * as TooltipPrimitive from '@/lib/tooltip';
 import { cn } from '@/lib/utils';
 
 /**
@@ -38,7 +38,8 @@ const tooltipContentVariants = cva(
     'data-[side=left]:slide-in-from-right-2',
     'data-[side=right]:slide-in-from-left-2',
     'data-[side=top]:slide-in-from-bottom-2',
-    'origin-[--radix-tooltip-content-transform-origin]',
+    // (was origin-[--radix-tooltip-content-transform-origin] — that CSS var is
+    // supplied by Radix's positioner and no longer exists under MUI Popper)
   ],
   {
     variants: {

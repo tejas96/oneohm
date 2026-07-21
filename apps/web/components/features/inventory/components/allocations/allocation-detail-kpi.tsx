@@ -75,7 +75,7 @@ export function AllocationDetailKpi({ allocation }: AllocationDetailKpiProps): R
           },
         ]}
       />
-      <div className="rounded-lg border border-border-light bg-background p-4">
+      <div className="rounded-lg shadow-e2 bg-background p-4">
         <div className="mb-2 text-xs font-medium uppercase tracking-wide text-foreground-tertiary">
           Fulfilment progress
         </div>

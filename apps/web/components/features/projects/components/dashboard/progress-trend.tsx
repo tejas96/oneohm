@@ -28,7 +28,7 @@ export function ProgressTrend({ data }: ProgressTrendProps): React.JSX.Element {
   return (
     <Card
       elevation={0}
-      className="flex-1 lg:w-[65%] p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col justify-between min-h-[360px]"
+      className="flex-1 lg:w-[65%] p-4 rounded-lg shadow-e2 bg-background shadow-card flex flex-col justify-between min-h-[360px]"
     >
       <div>
         <div className="flex items-center justify-between mb-2">

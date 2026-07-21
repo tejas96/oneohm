@@ -78,10 +78,7 @@ function TableSkeleton(): React.JSX.Element {
             <Skeleton className="h-4 w-6 rounded-full" />
           </div>
           {Array.from({ length: 3 }).map((_, rowIdx) => (
-            <div
-              key={rowIdx}
-              className="flex items-center gap-3 px-3 py-3 border-b border-border-light last:border-0"
-            >
+            <div key={rowIdx} className="flex items-center gap-3 px-3 py-3 even:bg-surface-alt">
               <Skeleton className="h-3 w-14 shrink-0" />
               <Skeleton className="h-3 flex-1 max-w-xs" />
               <Skeleton className="h-3 w-20 shrink-0" />
@@ -161,8 +158,11 @@ function TaskRow({
       onClick={() => onOpenTask(task.id)}
       onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onOpenTask(task.id)}
       className={cn(
-        'group flex items-center gap-3 px-3 py-2.5 border-b border-border-light last:border-0',
-        'cursor-pointer hover:bg-muted/40 transition-colors duration-fast',
+        // Zebra rather than a rule, matching the app's tables: rows separate
+        // by alternating luminance. Hover deepens to `canvas-sunken` so it
+        // still reads over the striped row, which `muted/40` did not.
+        'group flex items-center gap-3 px-3 py-2.5 even:bg-surface-alt',
+        'cursor-pointer hover:bg-background-tertiary transition-colors duration-fast',
         'md:grid md:gap-3',
         hasMilestones ? ROW_GRID_COLS_WITH_MILESTONES : ROW_GRID_COLS_WITHOUT_MILESTONES,
       )}

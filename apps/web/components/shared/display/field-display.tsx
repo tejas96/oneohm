@@ -288,7 +288,7 @@ function ShadingDisplay({ data, size, className }: ShadingDisplayProps) {
   }
 
   return (
-    <div className={cn('p-4 bg-background rounded-lg border border-border-light', className)}>
+    <div className={cn('p-4 bg-background rounded-lg shadow-e2', className)}>
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-sm font-semibold text-foreground">Shading Analysis</h4>
         <Badge className={cn(config.bgClass, config.textClass)}>{config.label}</Badge>
@@ -328,7 +328,7 @@ function ShadingDisplay({ data, size, className }: ShadingDisplayProps) {
 
       {/* Assessment info */}
       {data.assessedAt && (
-        <div className="mt-4 pt-3 border-t border-border-light">
+        <div className="mt-4 pt-3">
           <div className="flex items-center gap-2 text-xs text-foreground-tertiary">
             <Clock className="size-icon-sm" />
             Assessed{data.assessedBy && ` by ${data.assessedBy}`} on{' '}
@@ -387,7 +387,7 @@ function DocumentStatusDisplay({ data, size, className }: DocumentStatusDisplayP
   }
 
   return (
-    <div className={cn('p-4 bg-background rounded-lg border border-border-light', className)}>
+    <div className={cn('p-4 bg-background rounded-lg shadow-e2', className)}>
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-semibold text-foreground">Document Status</h4>
         <span className="text-sm font-medium text-foreground-secondary">
@@ -441,7 +441,7 @@ function ConnectionDisplay({ data, size, className }: ConnectionDisplayProps) {
   }
 
   return (
-    <div className={cn('p-4 bg-background rounded-lg border border-border-light', className)}>
+    <div className={cn('p-4 bg-background rounded-lg shadow-e2', className)}>
       <h4 className="text-sm font-semibold text-foreground mb-4">Connection Details</h4>
       <div className="grid grid-cols-2 gap-4">
         {data.consumerNumber && (

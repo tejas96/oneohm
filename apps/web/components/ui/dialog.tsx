@@ -1,12 +1,12 @@
 'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { X, HelpCircle, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import * as React from 'react';
 
 import { Button } from './button';
 
+import { cva, type VariantProps } from '@/lib/cva';
 import { cn } from '@/lib/utils';
 
 /**
@@ -51,7 +51,9 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-modal-backdrop bg-black/50 backdrop-blur-sm',
+      // DS: overlays blur the layer behind and fade it toward WHITE — never
+      // a dark scrim. 0.35 opacity, 8px blur, per the motion spec.
+      'fixed inset-0 z-modal-backdrop bg-white/35 backdrop-blur-[8px]',
       'data-[state=open]:animate-in data-[state=closed]:animate-out',
       'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className,
@@ -65,7 +67,8 @@ const dialogContentVariants = cva(
   [
     'fixed left-[50%] top-[50%] z-modal',
     'grid w-full translate-x-[-50%] translate-y-[-50%]',
-    'bg-background rounded-lg border border-border-light shadow-xl',
+    // Borderless; `e5` is the modal step of the elevation ladder.
+    'bg-background rounded-xl shadow-e5',
     'duration-normal',
     'data-[state=open]:animate-in data-[state=closed]:animate-out',
     'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',

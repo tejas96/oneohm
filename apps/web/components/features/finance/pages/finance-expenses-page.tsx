@@ -150,7 +150,7 @@ export function FinanceExpensesPage(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-border-light border-b px-6 py-4">
+      <header className="px-6 py-4">
         <MUITypography variant="drawerTitle">Expenses</MUITypography>
         <MUITypography variant="body" className="text-foreground-secondary mt-1">
           Org-wide expenses ledger. Filter by category, paid-by, or reimbursement status; search by
@@ -237,7 +237,7 @@ export function FinanceExpensesPage(): React.JSX.Element {
       />
 
       {meta && meta.totalPages > 1 && (
-        <div className="border-border-light border-t px-6 py-3">
+        <div className="px-6 py-3">
           <TablePagination
             currentPage={meta.page}
             totalPages={meta.totalPages}

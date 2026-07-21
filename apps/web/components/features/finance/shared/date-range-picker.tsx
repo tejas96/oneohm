@@ -66,15 +66,22 @@ export function DateRangePicker({
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className ?? ''}`}>
-      <div className="flex flex-wrap items-center gap-1">
+      {/**
+       * Segmented control, per the DS: a sunken track holding pill segments,
+       * with only the active one raised onto a surface. Previously these were
+       * individual contained/outlined buttons at 4px radius — the one place in
+       * the app still showing square controls and an outlined button.
+       */}
+      <div className="bg-background-tertiary flex flex-wrap items-center gap-0.5 rounded-full p-0.5">
         {FY_PRESETS.map((preset) => {
           const isActive = activePreset === preset;
           return (
             <Button
               key={preset}
               size="small"
-              variant={isActive ? 'contained' : 'outlined'}
-              color={isActive ? 'primary' : 'inherit'}
+              // `text` for both states — the active segment is distinguished by
+              // its raised surface, not by a different button variant.
+              variant="text"
               onClick={() => handlePreset(preset)}
               sx={{
                 textTransform: 'none',
@@ -83,7 +90,14 @@ export function DateRangePicker({
                 minWidth: 0,
                 px: 1.5,
                 py: 0.5,
-                borderRadius: 1,
+                height: 26,
+                borderRadius: 999,
+                color: isActive ? 'text.primary' : 'text.secondary',
+                backgroundColor: isActive ? 'background.paper' : 'transparent',
+                boxShadow: isActive ? 'var(--shadow-e1)' : 'none',
+                '&:hover': {
+                  backgroundColor: isActive ? 'background.paper' : 'var(--ds-canvas)',
+                },
               }}
             >
               {FY_PRESET_LABEL[preset]}

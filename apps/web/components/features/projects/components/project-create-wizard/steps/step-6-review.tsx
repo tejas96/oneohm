@@ -138,7 +138,7 @@ export function Step6Review({ form }: Step6ReviewProps): React.JSX.Element {
             {taskStatuses.map((s) => (
               <div
                 key={s.code}
-                className="flex items-center gap-2 px-3 py-1.5 border border-border-light rounded-lg"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-e1"
               >
                 <span
                   className="w-2.5 h-2.5 rounded-full flex-shrink-0"

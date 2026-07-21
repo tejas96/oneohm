@@ -121,7 +121,7 @@ export function CustomerSearchCombobox({
   if (disabled) {
     return (
       <div className={className}>
-        <div className="flex items-center gap-3 px-3 py-2 bg-background-secondary border border-border-light rounded-lg text-foreground-secondary">
+        <div className="flex items-center gap-3 px-3 py-2 bg-background-secondary rounded-lg text-foreground-secondary">
           <Users className="size-icon-sm" />
           <span>{value ? `${value.firstName} ${value.lastName}` : placeholder}</span>
         </div>

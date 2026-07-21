@@ -27,7 +27,7 @@ export function ReviewSection({
 }: ReviewSectionProps): React.JSX.Element {
   return (
     <Accordion type="multiple" defaultValue={[id]}>
-      <AccordionItem value={id} className="border border-border-light rounded-lg">
+      <AccordionItem value={id} className="rounded-lg shadow-e1">
         <AccordionTrigger className="px-4 py-3 hover:no-underline">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary flex-shrink-0">

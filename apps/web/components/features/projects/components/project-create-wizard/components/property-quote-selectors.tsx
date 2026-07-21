@@ -143,7 +143,7 @@ export function PropertyQuoteSelectors({
           const requestedSystemSize =
             q.systemSizeKw && q.systemSizeKw > 0 ? `${q.systemSizeKw}kW` : null;
           return (
-            <div className="p-3 border border-border-light rounded-lg bg-background-secondary">
+            <div className="p-3 rounded-lg bg-background-secondary">
               <MUITypography variant="finePrint" className="text-foreground-secondary mb-1">
                 Selected Quote
               </MUITypography>

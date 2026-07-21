@@ -42,9 +42,9 @@ export function ProfitabilityTable({
   onRowClick,
 }: ProfitabilityTableProps): React.JSX.Element {
   return (
-    <div className="border-border-light bg-surface w-full overflow-x-auto rounded-md border">
+    <div className="bg-surface w-full overflow-x-auto rounded-xl shadow-e2">
       <table className="w-full text-left">
-        <thead className="bg-background-secondary border-border-light border-b">
+        <thead className="bg-background-secondary-b">
           <tr className="text-foreground-tertiary text-2xs uppercase tracking-wide">
             <th className="px-3 py-2 font-medium">Project</th>
             <th className="px-3 py-2 font-medium">Customer</th>

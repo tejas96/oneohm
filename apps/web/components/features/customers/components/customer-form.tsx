@@ -621,7 +621,7 @@ function CustomerFormContent({
             )}
 
             {/* Actions Footer */}
-            <div className="flex items-center justify-end gap-4 pt-4 border-t border-border-light">
+            <div className="flex items-center justify-end gap-4 pt-4">
               <Button type="button" variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>

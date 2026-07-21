@@ -328,7 +328,7 @@ export function SearchInput({
               placeholder={placeholder}
               autoFocus={autoFocus}
               className={cn(
-                'w-full bg-background border border-border-light rounded-lg',
+                'w-full bg-surface-alt rounded-[10px] shadow-e1',
                 'focus:outline-none focus:border-primary focus:ring-focus focus:ring-primary/15',
                 'placeholder:text-foreground-tertiary',
                 'transition-all duration-fast',
@@ -359,7 +359,7 @@ export function SearchInput({
                 {shortcut.split('').map((char, i) => (
                   <kbd
                     key={i}
-                    className="px-1.5 py-0.5 bg-muted text-foreground-secondary text-xs font-medium rounded border border-border-light"
+                    className="px-1.5 py-0.5 bg-background-tertiary text-foreground-secondary text-xs font-medium rounded"
                   >
                     {char}
                   </kbd>
@@ -373,7 +373,7 @@ export function SearchInput({
         <PopoverContent
           id="search-results"
           role="listbox"
-          className="w-[var(--radix-popover-trigger-width)] p-0 border-border-light shadow-sm z-dropdown"
+          className="w-[var(--radix-popover-trigger-width)] p-0 shadow-e3 z-dropdown"
           align="start"
           sideOffset={4}
           onOpenAutoFocus={(e) => e.preventDefault()}
@@ -398,7 +398,7 @@ export function SearchInput({
 
                 return (
                   <div key={group.category}>
-                    <div className="p-2 text-2xs uppercase tracking-wider font-semibold text-foreground-tertiary border-b border-border-light">
+                    <div className="p-2 text-2xs uppercase tracking-wider font-semibold text-foreground-tertiary">
                       {group.category}
                     </div>
                     {group.results.map((result, resultIndex) => (
@@ -418,7 +418,7 @@ export function SearchInput({
 
           {/* View All Footer */}
           {onViewAll && hasResults && !isLoading && (
-            <div className="p-2 border-t border-border-light">
+            <div className="p-2">
               <button
                 type="button"
                 onClick={() => {
@@ -481,9 +481,9 @@ export function SearchTrigger({
       onClick={onClick}
       className={cn(
         'flex items-center gap-3 w-full px-3 py-2',
-        'bg-background border border-border-light rounded-lg',
+        'bg-surface-alt rounded-[10px] shadow-e1',
         'text-sm text-foreground-tertiary',
-        'hover:border-border hover:bg-muted',
+        'hover:shadow-e2',
         'transition-all duration-fast cursor-pointer',
         className,
       )}
@@ -494,7 +494,7 @@ export function SearchTrigger({
         {shortcut.split('').map((char, i) => (
           <kbd
             key={i}
-            className="px-1.5 py-0.5 bg-muted text-foreground-secondary text-xs font-medium rounded border border-border-light"
+            className="px-1.5 py-0.5 bg-background-tertiary text-foreground-secondary text-xs font-medium rounded"
           >
             {char}
           </kbd>

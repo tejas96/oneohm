@@ -32,7 +32,7 @@ export function Step5Financing({
   return (
     <div className="space-y-6">
       <Card variant="outlined">
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-border-light">
+        <div className="flex items-center gap-3 px-5 py-3">
           <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary">
             <CurrencyRupeeIcon fontSize="small" />
           </div>
@@ -42,7 +42,7 @@ export function Step5Financing({
           </div>
         </div>
         <CardContent className="p-5 space-y-5">
-          <div className="flex items-center justify-between p-4 border border-border-light rounded-lg bg-background-secondary/50">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-background-secondary/50">
             <div className="flex items-center gap-3">
               <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                 <CurrencyRupeeIcon sx={{ fontSize: 16 }} />

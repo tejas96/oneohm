@@ -264,7 +264,7 @@ export function Pagination({
 
     return (
       <nav aria-label="Pagination" className={cn('flex items-center justify-center', className)}>
-        <div className="inline-flex rounded-lg border border-border-light overflow-hidden">
+        <div className="inline-flex rounded-lg shadow-e1 overflow-hidden">
           <NavButton
             direction="prev"
             disabled={!canGoPrev}
@@ -432,12 +432,7 @@ export function TablePagination({
   // Handle edge case: no items
   if (totalItems === 0) {
     return (
-      <div
-        className={cn(
-          'px-4 py-3 border-t border-border-light flex items-center justify-center',
-          className,
-        )}
-      >
+      <div className={cn('px-4 py-3 flex items-center justify-center', className)}>
         <p className="text-sm text-foreground-tertiary">No results to display</p>
       </div>
     );
@@ -446,12 +441,7 @@ export function TablePagination({
   // Simple variant: matches UX reference - "Showing 1-5 of 5 properties"
   if (variant === 'simple') {
     return (
-      <div
-        className={cn(
-          'px-4 py-3 border-t border-border-light flex items-center justify-between',
-          className,
-        )}
-      >
+      <div className={cn('px-4 py-3 flex items-center justify-between', className)}>
         {/* Item Range - Left side */}
         <span className="text-sm text-foreground-secondary">
           Showing {startItem}-{endItem} of {totalItems} {itemLabel}

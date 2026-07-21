@@ -363,7 +363,7 @@ export function ProjectDashboardPage(): React.JSX.Element {
             variant="outlined"
             size="small"
             onClick={() => router.push(ROUTES.PROJECTS.LIST)}
-            className="rounded-lg border border-border-light bg-background hover:bg-background-secondary text-text-primary normal-case font-semibold px-4 py-2"
+            className="rounded-lg shadow-e2 bg-background hover:bg-background-secondary text-text-primary normal-case font-semibold px-4 py-2"
           >
             <Article className="size-4 mr-2 text-text-secondary" />
             All Projects
@@ -387,7 +387,7 @@ export function ProjectDashboardPage(): React.JSX.Element {
             <Card
               key={i}
               elevation={0}
-              className="p-4 rounded-lg border border-border-light min-h-[120px] flex flex-col justify-between bg-background shadow-card"
+              className="p-4 rounded-lg shadow-e2 min-h-[120px] flex flex-col justify-between bg-background shadow-card"
             >
               <Skeleton variant="rectangular" className="h-4 w-1/2 rounded" />
               <Skeleton variant="rectangular" className="h-6 w-2/3 rounded mt-4" />

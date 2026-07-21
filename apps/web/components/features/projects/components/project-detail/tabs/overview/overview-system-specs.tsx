@@ -191,7 +191,7 @@ export function OverviewSystemSpecs({
 
           {/* Materials / BOM section */}
           {materials.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-border-light">
+            <div className="mt-4 pt-3">
               <div className="flex items-center justify-between mb-3 gap-2">
                 <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                   <InventoryOutlined className="text-foreground-muted" style={{ fontSize: 14 }} />

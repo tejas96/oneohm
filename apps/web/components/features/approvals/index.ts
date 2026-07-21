@@ -1,2 +1,0 @@
-// Export approval components
-export {};

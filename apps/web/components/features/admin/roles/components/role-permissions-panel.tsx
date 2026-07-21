@@ -129,7 +129,7 @@ export function RolePermissionsPanel({
           )}
         </Button>
       </div>
-      <div className="border border-border-light rounded-lg overflow-x-auto">
+      <div className="rounded-lg overflow-x-auto shadow-e1">
         <table className="w-full text-sm min-w-[600px]">
           <thead>
             <tr className="bg-muted/30 border-b border-border-light">
@@ -148,7 +148,7 @@ export function RolePermissionsPanel({
           </thead>
           <tbody>
             {groups.map((group) => (
-              <tr key={group.feature} className="border-b border-border-light last:border-0">
+              <tr key={group.feature} className="even:bg-surface-alt">
                 <td className="px-4 py-2.5 font-medium whitespace-nowrap sticky left-0 bg-background z-10">
                   {group.feature}
                 </td>

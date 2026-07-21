@@ -1,2 +1,0 @@
-// Export compliance components
-export {};

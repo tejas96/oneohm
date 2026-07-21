@@ -59,7 +59,7 @@ function SummaryCard({
     error: 'text-error',
   };
   return (
-    <div className="rounded-lg border border-border-light bg-background-secondary p-3">
+    <div className="rounded-lg shadow-e2 bg-background-secondary p-3">
       <MUITypography variant="finePrint" className="text-foreground-secondary block">
         {label}
       </MUITypography>
@@ -151,7 +151,7 @@ export function ProcurementSection({ projectId }: ProcurementSectionProps): JSX.
         />
       </div>
 
-      <div className="rounded-lg border border-border-light overflow-hidden">
+      <div className="rounded-lg shadow-e2 overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="bg-muted/50">

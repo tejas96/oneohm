@@ -115,7 +115,7 @@ export function DrillDownDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className={cn('w-full sm:max-w-lg p-0 flex flex-col', className)}>
         {/* Header */}
-        <SheetHeader className="p-4 border-b border-border-light">
+        <SheetHeader className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <SheetTitle className="text-lg">{title}</SheetTitle>

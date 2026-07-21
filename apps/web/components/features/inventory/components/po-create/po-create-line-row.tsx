@@ -230,7 +230,7 @@ export function PoCreateLineRow({
             <MUITypography variant="finePrint" className="text-foreground-secondary">
               Line total
             </MUITypography>
-            <div className="flex h-10 items-center rounded-lg border border-border-light bg-background-tertiary px-3">
+            <div className="flex h-10 items-center rounded-lg shadow-e2 bg-background-tertiary px-3">
               <MUITypography variant="bodyPrimary">
                 {formatCurrency(computed.lineTotal)}
               </MUITypography>

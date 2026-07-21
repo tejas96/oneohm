@@ -130,7 +130,7 @@ export function InventoryStockDetailPage(): React.JSX.Element {
             <div
               key={label}
               className={cn(
-                'flex flex-col gap-1 rounded-xl border border-border-light bg-white p-4',
+                'flex flex-col gap-1 rounded-xl shadow-e2 bg-white p-4',
                 noThresholdSet && canEditSettings && 'cursor-pointer hover:border-primary',
               )}
               onClick={noThresholdSet && canEditSettings ? () => setSettingsOpen(true) : undefined}
@@ -165,7 +165,7 @@ export function InventoryStockDetailPage(): React.JSX.Element {
       </section>
 
       {min > 0 || max > 0 ? (
-        <section className="flex flex-col gap-2 rounded-xl border border-border-light bg-white p-4">
+        <section className="flex flex-col gap-2 rounded-xl shadow-e2 bg-white p-4">
           <div className="flex items-baseline justify-between">
             <h3 className="text-sm font-semibold text-foreground">
               {min > 0 ? 'Buffer vs minimum' : 'Stock utilization'}

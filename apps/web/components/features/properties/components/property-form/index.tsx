@@ -478,7 +478,7 @@ export function PropertyForm({
       )}
 
       {/* ── Mobile Progress Stepper Header ─────────────────────────────── */}
-      <div className="md:hidden mb-6 p-4 rounded-lg bg-background-secondary border border-border-light">
+      <div className="md:hidden mb-6 p-4 rounded-lg bg-background-secondary">
         <div className="flex justify-between items-center mb-2">
           <MUITypography variant="bodyPrimary" className="font-semibold text-sm">
             Step {activeStep + 1} of {WIZARD_STEPS.length}
@@ -566,7 +566,7 @@ export function PropertyForm({
               {/* Sticky Footer for Navigation */}
               <div className="sticky bottom-0 z-10">
                 <div className="absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-background-tertiary to-transparent pointer-events-none" />
-                <div className="bg-background border-t border-border-light py-4 px-4 rounded-lg shadow-card">
+                <div className="bg-background py-4 px-4 rounded-lg shadow-card">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 ml-auto">
                       {isFirstStep ? (

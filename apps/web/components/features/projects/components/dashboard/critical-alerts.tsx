@@ -33,7 +33,7 @@ export function CriticalAlerts({ items }: CriticalAlertsProps): React.JSX.Elemen
   return (
     <Card
       elevation={0}
-      className="flex-1 lg:w-1/2 p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col justify-between min-h-[350px]"
+      className="flex-1 lg:w-1/2 p-4 rounded-lg shadow-e2 bg-background shadow-card flex flex-col justify-between min-h-[350px]"
     >
       <div>
         <div className="flex items-center justify-between">
@@ -65,7 +65,7 @@ export function CriticalAlerts({ items }: CriticalAlertsProps): React.JSX.Elemen
               key={item.id}
               role="button"
               tabIndex={0}
-              className="flex items-center gap-3 p-3 rounded-lg border border-border-light bg-background-secondary hover:bg-border-light transition-colors cursor-pointer group"
+              className="flex items-center gap-3 p-3 rounded-lg shadow-e2 bg-background-secondary hover:bg-border-light transition-colors cursor-pointer group"
               onClick={() => router.push(item.targetPath)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {

@@ -26,7 +26,7 @@ export function LoginForm(): React.JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="rounded-2xl border border-border-light bg-card p-8 shadow-lg">
+    <div className="rounded-2xl bg-card p-8 shadow-lg">
       <div className="mb-8">
         <MUITypography variant="drawerTitle">Welcome back</MUITypography>
         <MUITypography variant="body" className="mt-1">

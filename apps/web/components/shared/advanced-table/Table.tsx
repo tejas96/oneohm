@@ -64,6 +64,7 @@ import {
 } from './utils';
 
 import { useDebounce, useTableUrlState } from '@/lib/hooks';
+import { radius, shadow } from '@/lib/theme/tokens';
 import { formatDate } from '@/lib/utils';
 
 // ============================================================================
@@ -486,12 +487,12 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
       <Paper
         elevation={0}
         sx={{
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: '6px',
+          // DS: the table surface floats on the canvas via elevation, with no
+          // border. 12px is the functional-density card radius.
+          boxShadow: shadow.e2,
+          borderRadius: radius['rf-lg'],
           // Do NOT set overflow:hidden here — it would clip the sticky thead.
-          // Border-radius is applied via Paper's own borderRadius above;
-          // clipping the corners is handled by the TableContainer below.
+          // Corner clipping is handled by the TableContainer below.
         }}
       >
         {/* ── Toolbar ── */}
@@ -503,9 +504,11 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
             alignItems: 'center',
             gap: 1.5,
             flexWrap: 'wrap',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
+            // No rule under the toolbar — the header row's own surface and
+            // the zebra rows below carry the separation.
             backgroundColor: 'background.paper',
+            borderTopLeftRadius: 'inherit',
+            borderTopRightRadius: 'inherit',
           }}
         >
           {enableSearch && (
@@ -534,7 +537,10 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
                   </InputAdornment>
                 ) : null,
               }}
-              sx={{ width: 240, '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+              // Radius comes from the theme (DS functional input, 10px) —
+              // overriding it here made the table's search field the one
+              // odd-shaped input in the app.
+              sx={{ width: 240 }}
             />
           )}
 
@@ -731,18 +737,15 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
 
                       {renderExpandedRow && isExpanded && (
                         <TableRow>
-                          <TableCell
-                            colSpan={totalColCount}
-                            sx={{ p: 0, borderBottom: '1px solid', borderColor: 'divider' }}
-                          >
+                          <TableCell colSpan={totalColCount} sx={{ p: 0 }}>
                             <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                               <Box
                                 sx={{
                                   px: 3,
                                   py: 2,
-                                  backgroundColor: 'action.hover',
-                                  borderTop: '1px solid',
-                                  borderColor: 'divider',
+                                  // Sunken well marks the expanded panel —
+                                  // no rule needed above it.
+                                  backgroundColor: 'var(--ds-canvas-sunken)',
                                 }}
                               >
                                 {renderExpandedRow(row)}
@@ -801,7 +804,7 @@ function ColumnVisibilityMenu<TRow>({
         <IconButton
           size="small"
           onClick={(e) => setAnchorEl(e.currentTarget)}
-          className="border border-border-light rounded-lg p-2.5 bg-background hover:bg-background-secondary"
+          className="rounded-lg p-2.5 bg-background shadow-e1 hover:shadow-e2"
         >
           <ViewColumnIcon className="size-4" />
         </IconButton>

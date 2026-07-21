@@ -417,7 +417,7 @@ export function UserFormModal({
                 </div>
               )}
 
-              <div className="border-t border-border-light pt-4 mt-2">
+              <div className="pt-4 mt-2">
                 <div className="space-y-1.5 mb-4">
                   <Label htmlFor="profileKind">Profile Type</Label>
                   <Select
@@ -536,7 +536,7 @@ export function UserFormModal({
                     </div>
                   </div>
 
-                  <div className="border-t border-border-light pt-4 mt-2 space-y-4">
+                  <div className="pt-4 mt-2 space-y-4">
                     <p className="text-sm font-medium text-foreground-secondary">Bank Details</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">

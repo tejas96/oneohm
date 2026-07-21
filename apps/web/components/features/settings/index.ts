@@ -1,2 +1,0 @@
-// Export settings components
-export {};

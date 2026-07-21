@@ -149,7 +149,7 @@ export function ProductPricesDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
       <SheetContent className="w-full sm:max-w-2xl p-0 flex flex-col">
-        <SheetHeader className="p-4 pr-12 border-b border-border-light">
+        <SheetHeader className="p-4 pr-12">
           <div className="flex items-start justify-between gap-3">
             <div>
               <SheetTitle>Pricing for {product?.name ?? 'Product'}</SheetTitle>
@@ -173,7 +173,7 @@ export function ProductPricesDrawer({
           )}
 
           {prices.isLoading ? (
-            <div className="bg-white rounded-lg border border-border-light p-10 flex items-center justify-center">
+            <div className="bg-white rounded-lg shadow-e2 p-10 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="size-8 animate-spin text-primary" />
                 <p className="text-sm text-foreground-secondary">Loading prices...</p>
@@ -195,7 +195,7 @@ export function ProductPricesDrawer({
               </div>
             </div>
           ) : prices.items.length > 0 ? (
-            <div className="bg-white rounded-lg border border-border-light overflow-hidden">
+            <div className="bg-white rounded-lg shadow-e2 overflow-hidden">
               <DataTable
                 columns={columns}
                 data={prices.items}
@@ -205,7 +205,7 @@ export function ProductPricesDrawer({
               />
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-border-light p-6">
+            <div className="bg-white rounded-lg shadow-e2 p-6">
               <EmptyState
                 title="No prices added"
                 description="Add a price row to make this product available for quotes."

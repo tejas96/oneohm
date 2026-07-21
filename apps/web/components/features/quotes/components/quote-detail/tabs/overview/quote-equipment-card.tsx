@@ -139,7 +139,7 @@ export function QuoteEquipmentCard({
             {groupedDcrPanels.map((panel, index) => (
               <div
                 key={`${panel.productId || panel.id}-dcr-${index}`}
-                className="flex items-start justify-between gap-4 py-1.5 border-b border-border/40 last:border-b-0"
+                className="flex items-start justify-between gap-4 py-1.5"
               >
                 <div>
                   <h4 className="font-semibold text-foreground text-xs">
@@ -171,7 +171,7 @@ export function QuoteEquipmentCard({
             {groupedNonDcrPanels.map((panel, index) => (
               <div
                 key={`${panel.productId || panel.id}-non-dcr-${index}`}
-                className="flex items-start justify-between gap-4 py-1.5 border-b border-border/40 last:border-b-0"
+                className="flex items-start justify-between gap-4 py-1.5"
               >
                 <div>
                   <h4 className="font-semibold text-foreground text-xs">
@@ -200,7 +200,7 @@ export function QuoteEquipmentCard({
               {groupedInverters.map((inv, index) => (
                 <div
                   key={`${inv.productId || inv.id}-inv-${index}`}
-                  className="flex items-start justify-between gap-4 py-1.5 border-b border-border/40 last:border-b-0"
+                  className="flex items-start justify-between gap-4 py-1.5"
                 >
                   <div>
                     <h4 className="font-semibold text-foreground text-xs">
@@ -255,10 +255,7 @@ export function QuoteEquipmentCard({
               </span>
             )}
             {groupedSnapDcrPanels.map((p, i) => (
-              <div
-                key={p.productId ?? i}
-                className="flex items-start justify-between gap-4 py-1.5 border-b border-border/40 last:border-b-0"
-              >
+              <div key={p.productId ?? i} className="flex items-start justify-between gap-4 py-1.5">
                 <div>
                   <h4 className="font-semibold text-foreground text-xs">
                     {formatEquipmentName(p.name, p.brand)} (DCR)
@@ -286,10 +283,7 @@ export function QuoteEquipmentCard({
               </span>
             )}
             {groupedSnapNonDcrPanels.map((p, i) => (
-              <div
-                key={p.productId ?? i}
-                className="flex items-start justify-between gap-4 py-1.5 border-b border-border/40 last:border-b-0"
-              >
+              <div key={p.productId ?? i} className="flex items-start justify-between gap-4 py-1.5">
                 <div>
                   <h4 className="font-semibold text-foreground text-xs">
                     {formatEquipmentName(p.name, p.brand)}
@@ -317,7 +311,7 @@ export function QuoteEquipmentCard({
                 {groupedSnapInverters.map((inv, i) => (
                   <div
                     key={inv.productId ?? i}
-                    className="flex items-start justify-between gap-4 py-1.5 border-b border-border/40 last:border-b-0"
+                    className="flex items-start justify-between gap-4 py-1.5"
                   >
                     <div>
                       <h4 className="font-semibold text-foreground text-xs">

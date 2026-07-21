@@ -1,2 +1,0 @@
-// Export vendor components
-export {};

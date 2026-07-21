@@ -152,7 +152,7 @@ export function ExpensesTable({ expenses, projectId, onEdit }: ExpensesTableProp
   const { printExpenseVoucher, isReady: pdfReady } = useFinancePdf(projectId);
 
   return (
-    <div className="rounded-lg border border-border-light overflow-hidden">
+    <div className="rounded-lg shadow-e2 overflow-hidden">
       <table className="w-full">
         <thead>
           <tr className="bg-muted/50">

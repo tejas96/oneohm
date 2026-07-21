@@ -14,7 +14,7 @@ export function ForgotPasswordForm(): React.JSX.Element {
   const { isLoading, displayError, form, onSubmit } = useForgotPassword();
 
   return (
-    <div className="rounded-2xl border border-border-light bg-card p-8 shadow-lg">
+    <div className="rounded-2xl bg-card p-8 shadow-lg">
       <div className="text-center mb-8">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
           <SmartphoneOutlinedIcon className="text-primary" fontSize="large" />
@@ -52,7 +52,7 @@ export function ForgotPasswordForm(): React.JSX.Element {
           }}
         />
 
-        <div className="rounded-xl border border-border-light bg-surface-primary p-4">
+        <div className="rounded-xl shadow-e2 bg-surface-primary p-4">
           <div className="flex items-start gap-3">
             <InfoOutlinedIcon fontSize="small" className="text-text-tertiary mt-0.5" />
             <MUITypography variant="body">
@@ -84,7 +84,7 @@ export function ForgotPasswordForm(): React.JSX.Element {
         </Button>
       </form>
 
-      <div className="mt-6 pt-4 border-t border-border-light text-center">
+      <div className="mt-6 pt-4 text-center">
         <Link href={ROUTES.AUTH.LOGIN} className="no-underline">
           <MUITypography variant="body" color="primary">
             ← Back to login

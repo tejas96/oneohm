@@ -37,7 +37,7 @@ function KPICard({ title, value, subtitle, icon }: KPICardProps): React.JSX.Elem
   return (
     <Card
       elevation={0}
-      className="p-4 rounded-lg border border-border-light bg-background shadow-card transition-all hover:shadow-sm flex flex-col justify-between min-h-[130px] relative overflow-hidden group"
+      className="p-4 rounded-lg shadow-e2 bg-background shadow-card transition-all hover:shadow-sm flex flex-col justify-between min-h-[130px] relative overflow-hidden group"
     >
       <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
         {icon}
@@ -54,7 +54,7 @@ function KPICard({ title, value, subtitle, icon }: KPICardProps): React.JSX.Elem
         <MUITypography variant="drawerTitle" className="font-semibold text-text-primary">
           {value}
         </MUITypography>
-        <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full text-text-secondary bg-background-secondary border border-border-light">
+        <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full text-text-secondary bg-background-secondary">
           {subtitle}
         </span>
       </div>

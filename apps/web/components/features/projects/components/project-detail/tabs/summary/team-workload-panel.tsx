@@ -97,7 +97,7 @@ export function TeamWorkloadPanel({
           <p className="text-sm font-semibold text-foreground">Team Workload</p>
         </div>
         {!isLoading && teamWorkload && teamWorkload.length > 0 && (
-          <div className="flex flex-wrap gap-x-2.5 gap-y-1 border-b border-border-light pb-2">
+          <div className="flex flex-wrap gap-x-2.5 gap-y-1 pb-2">
             {statusLegend.map((s) => (
               <div key={s.code} className="flex items-center gap-1 shrink-0">
                 <span className="size-2 rounded-full" style={{ backgroundColor: s.color }} />

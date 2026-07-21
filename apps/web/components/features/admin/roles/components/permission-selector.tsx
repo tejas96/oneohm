@@ -70,7 +70,7 @@ export function PermissionSelector({
       <Label className="text-sm font-medium">Permissions</Label>
 
       {selectedPermissions.length > 0 && (
-        <div className="space-y-2 rounded-md border border-border-light p-3 max-h-[160px] overflow-y-auto">
+        <div className="space-y-2 rounded-md p-3 max-h-[160px] overflow-y-auto shadow-e1">
           {Object.entries(groupedSelected)
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([feature, perms]) => (
@@ -117,7 +117,7 @@ export function PermissionSelector({
         )}
       </div>
 
-      <div className="border border-border-light rounded-md max-h-[200px] overflow-y-auto">
+      <div className="rounded-md max-h-[200px] overflow-y-auto shadow-e1">
         {isLoading ? (
           <p className="text-sm text-foreground-tertiary p-3 text-center">Loading permissions...</p>
         ) : Object.keys(grouped).length === 0 ? (

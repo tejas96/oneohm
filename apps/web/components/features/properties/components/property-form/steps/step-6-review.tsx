@@ -88,7 +88,7 @@ export function Step6Review({
   const notes = watch('notes') as string;
 
   const renderSectionHeader = (title: string, icon: React.ReactNode, stepIndex: number) => (
-    <div className="flex items-center justify-between border-b border-border-light pb-2 mb-3">
+    <div className="flex items-center justify-between pb-2 mb-3">
       <div className="flex items-center gap-2">
         <span className="text-primary flex items-center justify-center size-5">{icon}</span>
         <MUITypography variant="sectionTitle" className="font-semibold text-sm">
@@ -111,7 +111,7 @@ export function Step6Review({
   return (
     <div className="space-y-6">
       <Card variant="outlined">
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-border-light">
+        <div className="flex items-center gap-3 px-5 py-3">
           <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary">
             <RateReviewOutlinedIcon fontSize="small" />
           </div>
@@ -125,7 +125,7 @@ export function Step6Review({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Customer Info Section */}
             {resolvedCustomer && (
-              <div className="md:col-span-2 p-4 rounded-lg bg-background-secondary/40 border border-border-light">
+              <div className="md:col-span-2 p-4 rounded-lg bg-background-secondary/40">
                 {renderSectionHeader(
                   'Customer Information',
                   <PersonOutlineOutlinedIcon fontSize="small" />,
@@ -150,7 +150,7 @@ export function Step6Review({
             )}
 
             {/* Property Details & Location */}
-            <div className="p-4 rounded-lg bg-background-secondary/40 border border-border-light space-y-3">
+            <div className="p-4 rounded-lg bg-background-secondary/40 space-y-3">
               {renderSectionHeader('Property & Location', <HomeOutlinedIcon fontSize="small" />, 0)}
               <div className="grid grid-cols-2 gap-x-2 gap-y-3 text-xs">
                 <div>
@@ -222,7 +222,7 @@ export function Step6Review({
             </div>
 
             {/* Utility / Electricity */}
-            <div className="p-4 rounded-lg bg-background-secondary/40 border border-border-light space-y-3">
+            <div className="p-4 rounded-lg bg-background-secondary/40 space-y-3">
               {renderSectionHeader('Electricity Details', <BoltOutlinedIcon fontSize="small" />, 2)}
               <div className="grid grid-cols-2 gap-x-2 gap-y-3 text-xs">
                 <div>
@@ -289,7 +289,7 @@ export function Step6Review({
             </div>
 
             {/* Lead Details (Lead Temp + Notes) */}
-            <div className="p-4 rounded-lg bg-background-secondary/40 border border-border-light space-y-3">
+            <div className="p-4 rounded-lg bg-background-secondary/40 space-y-3">
               {renderSectionHeader(
                 'Lead Details',
                 <PersonOutlineOutlinedIcon fontSize="small" />,
@@ -345,7 +345,7 @@ export function Step6Review({
             </div>
 
             {/* Finance Details (Interested state + Financing Documents) */}
-            <div className="p-4 rounded-lg bg-background-secondary/40 border border-border-light space-y-3">
+            <div className="p-4 rounded-lg bg-background-secondary/40 space-y-3">
               {renderSectionHeader(
                 'Finance Details',
                 <PriceCheckOutlinedIcon fontSize="small" />,
@@ -368,7 +368,7 @@ export function Step6Review({
                   />
                 </div>
                 {wantsLoan && (
-                  <div className="border-t border-border-light/60 pt-3 space-y-2">
+                  <div className="/60 pt-3 space-y-2">
                     <MUITypography variant="timestamp" className="text-foreground-secondary block">
                       {isEditMode ? 'Uploaded Financing Documents' : 'Staged Financing Documents'}
                     </MUITypography>
@@ -400,7 +400,7 @@ export function Step6Review({
             </div>
 
             {/* Property Documents Checklist (Spanning full width) */}
-            <div className="md:col-span-2 p-4 rounded-lg bg-background-secondary/40 border border-border-light space-y-3">
+            <div className="md:col-span-2 p-4 rounded-lg bg-background-secondary/40 space-y-3">
               {renderSectionHeader(
                 'Property Documents',
                 <DescriptionOutlinedIcon fontSize="small" />,

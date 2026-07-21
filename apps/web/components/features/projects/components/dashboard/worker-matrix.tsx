@@ -30,7 +30,7 @@ export function WorkerMatrix({ workers }: WorkerMatrixProps): React.JSX.Element 
   return (
     <Card
       elevation={0}
-      className="flex-1 lg:w-[65%] p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col justify-between min-h-[350px]"
+      className="flex-1 lg:w-[65%] p-4 rounded-lg shadow-e2 bg-background shadow-card flex flex-col justify-between min-h-[350px]"
     >
       <div>
         <MUITypography variant="sectionTitle" className="font-semibold text-text-primary">
@@ -87,7 +87,7 @@ export function WorkerMatrix({ workers }: WorkerMatrixProps): React.JSX.Element 
             return (
               <div
                 key={worker.userId}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-border-light bg-background-secondary hover:bg-border-light transition-all"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg shadow-e2 bg-background-secondary hover:bg-border-light transition-all"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export function WorkerMatrix({ workers }: WorkerMatrixProps): React.JSX.Element 
         )}
       </div>
 
-      <div className="pt-3 border-t border-border-light flex items-center justify-between text-xs text-text-secondary mt-4">
+      <div className="pt-3 flex items-center justify-between text-xs text-text-secondary mt-4">
         <MUITypography variant="body" className="text-text-secondary">
           Active Team Size
         </MUITypography>

@@ -1,7 +1,7 @@
-import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
 import * as React from 'react';
 
+import { cva, type VariantProps } from '@/lib/cva';
 import { cn } from '@/lib/utils';
 
 /**
@@ -19,30 +19,33 @@ import { cn } from '@/lib/utils';
  * - Pill shape (rounded-full) by default
  */
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 w-fit border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  // No `border` in the base: the DS conveys chip identity through a tinted
+  // background, never an outline. Every variant below was already
+  // `border-transparent` except `outline`/`muted`, which now use a tint too.
+  'inline-flex items-center gap-1.5 w-fit font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary/10 text-primary',
-        secondary: 'border-transparent bg-muted text-foreground-secondary',
-        success: 'border-transparent bg-success/15 text-success',
-        warning: 'border-transparent bg-warning/15 text-warning',
-        error: 'border-transparent bg-error/15 text-error',
-        destructive: 'border-transparent bg-error/15 text-error',
-        info: 'border-transparent bg-info/15 text-info',
-        pending: 'border-transparent bg-warning/10 text-warning',
-        outline: 'border-border-medium bg-transparent text-foreground-secondary',
-        muted: 'border-muted bg-muted text-foreground-tertiary',
-        hot: 'border-transparent bg-error text-error-foreground',
-        warm: 'border-transparent bg-warning text-warning-foreground',
-        cold: 'border-transparent bg-info text-info-foreground',
-        count: 'border-transparent bg-primary text-white',
-        teal: 'border-transparent bg-info/10 text-info',
-        purple: 'border-transparent bg-primary/10 text-primary',
-        amber: 'border-transparent bg-warning/10 text-warning',
-        'green-subtle': 'border-transparent bg-success/10 text-success',
-        'red-subtle': 'border-transparent bg-destructive/10 text-destructive',
-        'blue-subtle': 'border-transparent bg-primary/10 text-primary',
+        default: 'bg-primary/10 text-primary',
+        secondary: 'bg-muted text-foreground-secondary',
+        success: 'bg-success/15 text-success',
+        warning: 'bg-warning/15 text-warning',
+        error: 'bg-error/15 text-error',
+        destructive: 'bg-error/15 text-error',
+        info: 'bg-info/15 text-info',
+        pending: 'bg-warning/10 text-warning',
+        outline: 'bg-muted text-foreground-secondary',
+        muted: 'bg-muted text-foreground-tertiary',
+        hot: 'bg-error text-error-foreground',
+        warm: 'bg-warning text-warning-foreground',
+        cold: 'bg-info text-info-foreground',
+        count: 'bg-primary text-white',
+        teal: 'bg-info/10 text-info',
+        purple: 'bg-primary/10 text-primary',
+        amber: 'bg-warning/10 text-warning',
+        'green-subtle': 'bg-success/10 text-success',
+        'red-subtle': 'bg-destructive/10 text-destructive',
+        'blue-subtle': 'bg-primary/10 text-primary',
       },
       size: {
         xs: 'px-1.5 py-0.5 text-section',

@@ -31,7 +31,7 @@ function SurveyDataRow({
     }
   }
   return (
-    <div className="flex justify-between py-2 border-b border-border-light last:border-0">
+    <div className="flex justify-between py-2">
       <span className="text-xs text-foreground-secondary">{label}</span>
       <span
         className={`text-xs font-medium ${displayValue === '—' ? 'text-foreground-muted/50' : 'text-foreground'}`}
@@ -90,7 +90,7 @@ export const ProjectSurveysTab = React.memo(
     return (
       <div className="space-y-6">
         {/* Header Summary */}
-        <div className="flex items-center justify-between bg-background-secondary p-4 rounded-lg border border-border-light shadow-2xs">
+        <div className="flex items-center justify-between bg-background-secondary p-4 rounded-lg shadow-e2 shadow-2xs">
           <div>
             <span className="text-2xs font-semibold tracking-wider text-foreground-secondary uppercase">
               Property Code
@@ -126,8 +126,8 @@ export const ProjectSurveysTab = React.memo(
         {/* 2x2 Grid of visual panels */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Card 1: Coordination & Timeline */}
-          <div className="bg-background-secondary p-5 rounded-lg border border-border-light shadow-2xs hover:shadow-xs transition duration-200">
-            <div className="flex items-center gap-2 mb-4 border-b border-border-light pb-2">
+          <div className="bg-background-secondary p-5 rounded-lg shadow-e2 shadow-2xs hover:shadow-xs transition duration-200">
+            <div className="flex items-center gap-2 mb-4 pb-2">
               <Clock className="w-4 h-4 text-primary" />
               <h4 className="text-xs font-semibold text-foreground">Coordination & Timeline</h4>
             </div>
@@ -154,8 +154,8 @@ export const ProjectSurveysTab = React.memo(
           </div>
 
           {/* Card 2: Roof & Structural Parameters */}
-          <div className="bg-background-secondary p-5 rounded-lg border border-border-light shadow-2xs hover:shadow-xs transition duration-200">
-            <div className="flex items-center gap-2 mb-4 border-b border-border-light pb-2">
+          <div className="bg-background-secondary p-5 rounded-lg shadow-e2 shadow-2xs hover:shadow-xs transition duration-200">
+            <div className="flex items-center gap-2 mb-4 pb-2">
               <Home className="w-4 h-4 text-primary" />
               <h4 className="text-xs font-semibold text-foreground">
                 Roof & Structural Parameters
@@ -187,8 +187,8 @@ export const ProjectSurveysTab = React.memo(
           </div>
 
           {/* Card 3: Solar Shading Analysis */}
-          <div className="bg-background-secondary p-5 rounded-lg border border-border-light shadow-2xs hover:shadow-xs transition duration-200">
-            <div className="flex items-center gap-2 mb-4 border-b border-border-light pb-2">
+          <div className="bg-background-secondary p-5 rounded-lg shadow-e2 shadow-2xs hover:shadow-xs transition duration-200">
+            <div className="flex items-center gap-2 mb-4 pb-2">
               <Sun className="w-4 h-4 text-primary" />
               <h4 className="text-xs font-semibold text-foreground">Solar Shading Analysis</h4>
             </div>
@@ -211,8 +211,8 @@ export const ProjectSurveysTab = React.memo(
           </div>
 
           {/* Card 4: General Notes & Observations */}
-          <div className="bg-background-secondary p-5 rounded-lg border border-border-light shadow-2xs hover:shadow-xs transition duration-200">
-            <div className="flex items-center gap-2 mb-4 border-b border-border-light pb-2">
+          <div className="bg-background-secondary p-5 rounded-lg shadow-e2 shadow-2xs hover:shadow-xs transition duration-200">
+            <div className="flex items-center gap-2 mb-4 pb-2">
               <FileText className="w-4 h-4 text-primary" />
               <h4 className="text-xs font-semibold text-foreground">Field Notes & Observations</h4>
             </div>
@@ -221,7 +221,7 @@ export const ProjectSurveysTab = React.memo(
                 <span className="text-2xs font-semibold text-foreground-secondary block mb-1">
                   Site Visit Notes
                 </span>
-                <p className="text-xs text-foreground bg-background-main p-2.5 rounded border border-border-light min-h-[50px]">
+                <p className="text-xs text-foreground bg-background-main p-2.5 rounded min-h-[50px] shadow-e1">
                   {property.siteNotes || '—'}
                 </p>
               </div>
@@ -229,7 +229,7 @@ export const ProjectSurveysTab = React.memo(
                 <span className="text-2xs font-semibold text-foreground-secondary block mb-1">
                   Technical Survey Notes
                 </span>
-                <p className="text-xs text-foreground bg-background-main p-2.5 rounded border border-border-light min-h-[50px]">
+                <p className="text-xs text-foreground bg-background-main p-2.5 rounded min-h-[50px] shadow-e1">
                   {data?.notes || '—'}
                 </p>
               </div>

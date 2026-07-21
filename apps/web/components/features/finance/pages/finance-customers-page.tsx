@@ -90,7 +90,7 @@ export function FinanceCustomersPage(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-border-light border-b px-6 py-4">
+      <header className="px-6 py-4">
         <MUITypography variant="drawerTitle">Customers · Accounts Receivable</MUITypography>
         <MUITypography variant="body" className="text-foreground-secondary mt-1">
           One row per customer with open receivables, bucketed by age. Pick any "as of" date to

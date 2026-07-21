@@ -76,13 +76,10 @@ export function TeamSplitPanel({
   }
 
   return (
-    <div
-      className="flex border border-border-light rounded-lg overflow-hidden"
-      style={{ height: 520 }}
-    >
+    <div className="flex rounded-lg overflow-hidden shadow-e1" style={{ height: 520 }}>
       {/* Left panel — selected team */}
       <div className="flex flex-col w-1/2 border-r border-border-light min-h-0">
-        <div className="flex-shrink-0 px-4 py-3 bg-background-secondary border-b border-border-light">
+        <div className="flex-shrink-0 px-4 py-3 bg-background-secondary">
           <div className="flex items-center gap-2">
             <GroupsIcon fontSize="small" className="text-foreground-secondary" />
             <MUITypography variant="sectionTitle">Selected Team</MUITypography>
@@ -107,7 +104,7 @@ export function TeamSplitPanel({
 
       {/* Right panel — available employees */}
       <div className="flex flex-col w-1/2 min-h-0">
-        <div className="flex-shrink-0 px-4 py-3 bg-background-secondary border-b border-border-light">
+        <div className="flex-shrink-0 px-4 py-3 bg-background-secondary">
           <MUITypography variant="sectionTitle">All Employees</MUITypography>
         </div>
         <div className="flex-1 overflow-hidden min-h-0">

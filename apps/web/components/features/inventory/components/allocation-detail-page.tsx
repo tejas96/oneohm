@@ -196,7 +196,7 @@ export function AllocationDetailPage(): React.JSX.Element {
 
       <AllocationDetailKpi allocation={data} />
 
-      <div className="grid gap-4 rounded-lg border border-border-light bg-background p-4 sm:grid-cols-3">
+      <div className="grid gap-4 rounded-lg shadow-e2 bg-background p-4 sm:grid-cols-3">
         <DetailItem label="Source type" value={sourceLabel} />
         <DetailItem
           label="Allocated on"
