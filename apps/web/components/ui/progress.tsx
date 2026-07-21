@@ -1,9 +1,8 @@
 'use client';
 
-import * as ProgressPrimitive from '@radix-ui/react-progress';
-import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
+import { cva, type VariantProps } from '@/lib/cva';
 import { cn } from '@/lib/utils';
 
 /**
@@ -49,28 +48,42 @@ const indicatorVariants = cva('h-full rounded-full transition-all', {
 });
 
 export interface ProgressProps
-  extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>,
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'color'>,
     VariantProps<typeof progressVariants>,
     VariantProps<typeof indicatorVariants> {
+  /** Completion percentage, 0–100. Came from Radix's Root props before. */
+  value?: number | null;
   /** Show percentage label */
   showLabel?: boolean;
   /** Indeterminate loading state */
   indeterminate?: boolean;
 }
 
-const Progress = React.forwardRef<React.ElementRef<typeof ProgressPrimitive.Root>, ProgressProps>(
+/**
+ * Native elements rather than `@radix-ui/react-progress`: that primitive
+ * contributed only the `progressbar` role and aria attributes — the fill width
+ * was already an inline style here. Those attributes are set explicitly below,
+ * including `aria-valuenow` being omitted while indeterminate, which is what
+ * signals "unknown progress" to assistive tech.
+ */
+const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
   ({ className, value, size, variant, showLabel, indeterminate, ...props }, ref) => (
     <div className="relative">
-      <ProgressPrimitive.Root
+      <div
         ref={ref}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={indeterminate ? undefined : (value ?? 0)}
+        data-state={indeterminate ? 'indeterminate' : 'loading'}
         className={cn(progressVariants({ size }), className)}
         {...props}
       >
-        <ProgressPrimitive.Indicator
+        <div
           className={cn(indicatorVariants({ variant }), indeterminate && 'animate-pulse w-1/3')}
           style={indeterminate ? undefined : { width: `${value || 0}%` }}
         />
-      </ProgressPrimitive.Root>
+      </div>
       {showLabel && size === 'xl' && !indeterminate && (
         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-white">
           {value}%
@@ -79,7 +92,7 @@ const Progress = React.forwardRef<React.ElementRef<typeof ProgressPrimitive.Root
     </div>
   ),
 );
-Progress.displayName = ProgressPrimitive.Root.displayName;
+Progress.displayName = 'Progress';
 
 /**
  * ProgressWithLabel Component
@@ -89,18 +102,17 @@ export interface ProgressWithLabelProps extends Omit<ProgressProps, 'showLabel'>
   label?: string;
 }
 
-const ProgressWithLabel = React.forwardRef<
-  React.ElementRef<typeof ProgressPrimitive.Root>,
-  ProgressWithLabelProps
->(({ label, value, className, ...props }, ref) => (
-  <div className={className}>
-    <div className="flex justify-between text-sm mb-2">
-      <span className="text-foreground-secondary">{label || 'Progress'}</span>
-      <span className="text-foreground font-medium">{value}%</span>
+const ProgressWithLabel = React.forwardRef<HTMLDivElement, ProgressWithLabelProps>(
+  ({ label, value, className, ...props }, ref) => (
+    <div className={className}>
+      <div className="flex justify-between text-sm mb-2">
+        <span className="text-foreground-secondary">{label || 'Progress'}</span>
+        <span className="text-foreground font-medium">{value}%</span>
+      </div>
+      <Progress ref={ref} value={value} {...props} />
     </div>
-    <Progress ref={ref} value={value} {...props} />
-  </div>
-));
+  ),
+);
 ProgressWithLabel.displayName = 'ProgressWithLabel';
 
 /**

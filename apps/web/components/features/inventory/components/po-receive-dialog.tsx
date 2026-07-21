@@ -146,10 +146,7 @@ export function PoReceiveDialog({
                 const label = item.product?.name ?? item.product?.code ?? item.productId;
 
                 return (
-                  <div
-                    key={item.id}
-                    className="flex flex-col gap-2 rounded-lg border border-border-light p-3"
-                  >
+                  <div key={item.id} className="flex flex-col gap-2 rounded-lg shadow-e2 p-3">
                     <MUITypography variant="bodyPrimary">{label}</MUITypography>
                     <div className="grid grid-cols-2 gap-2 text-sm text-foreground-secondary sm:grid-cols-4">
                       <span>Ordered: {ordered}</span>

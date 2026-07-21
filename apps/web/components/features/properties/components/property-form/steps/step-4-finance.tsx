@@ -26,7 +26,7 @@ export function Step4Finance({ isSubmitting }: Step4FinanceProps): React.JSX.Ele
   return (
     <div className="space-y-6">
       <Card variant="outlined">
-        <div className="flex items-center gap-3 px-5 py-3 border-b border-border-light">
+        <div className="flex items-center gap-3 px-5 py-3">
           <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary">
             <DeviceThermostatOutlinedIcon fontSize="small" />
           </div>

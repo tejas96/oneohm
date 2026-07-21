@@ -27,7 +27,7 @@ export function SalespersonLeaderboard({
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-border-light bg-white p-4 text-center">
+      <div className="rounded-lg shadow-e2 bg-white p-4 text-center">
         <MUITypography variant="body" className="text-foreground-secondary">
           Failed to load leaderboard.
         </MUITypography>
@@ -43,7 +43,7 @@ export function SalespersonLeaderboard({
 
   if (entries.length === 0) {
     return (
-      <div className="rounded-lg border border-border-light bg-white p-4">
+      <div className="rounded-lg shadow-e2 bg-white p-4">
         <MUITypography variant="sectionTitle" className="mb-2">
           Salesperson Leaderboard
         </MUITypography>
@@ -55,7 +55,7 @@ export function SalespersonLeaderboard({
   }
 
   return (
-    <div className="rounded-lg border border-border-light bg-white p-4 shadow-sm">
+    <div className="rounded-lg shadow-e2 bg-white p-4 shadow-sm">
       <MUITypography variant="sectionTitle" className="mb-4">
         Salesperson Leaderboard
       </MUITypography>

@@ -35,7 +35,7 @@ export function HighValueQuotes({ opps, valueFormatter }: HighValueQuotesProps):
   return (
     <Card
       elevation={0}
-      className="p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col gap-4"
+      className="p-4 rounded-lg shadow-e2 bg-background shadow-card flex flex-col gap-4"
     >
       <div>
         <MUITypography variant="sectionTitle" className="font-semibold text-text-primary">

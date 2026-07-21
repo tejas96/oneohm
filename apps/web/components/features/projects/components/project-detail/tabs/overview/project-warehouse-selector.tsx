@@ -54,7 +54,7 @@ export function ProjectWarehouseSelector({
   };
 
   return (
-    <div className="rounded-lg border border-border-light p-4 space-y-2">
+    <div className="rounded-lg shadow-e2 p-4 space-y-2">
       <div className="flex items-center gap-2">
         <Warehouse className="text-foreground-muted" fontSize="small" />
         <MUITypography variant="body" className="font-semibold text-foreground">

@@ -641,9 +641,7 @@ export function CustomerListPage(): JSX.Element {
                     {...params}
                     placeholder="Has property?"
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                      },
+                      '& .MuiOutlinedInput-root': {},
                     }}
                   />
                 )}
@@ -684,9 +682,7 @@ export function CustomerListPage(): JSX.Element {
                     {...params}
                     placeholder="Search group..."
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                      },
+                      '& .MuiOutlinedInput-root': {},
                     }}
                   />
                 )}
@@ -726,9 +722,7 @@ export function CustomerListPage(): JSX.Element {
                     {...params}
                     placeholder="Search creator..."
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                      },
+                      '& .MuiOutlinedInput-root': {},
                     }}
                   />
                 )}
@@ -768,9 +762,7 @@ export function CustomerListPage(): JSX.Element {
                     {...params}
                     placeholder="Search assignee..."
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 1.5,
-                      },
+                      '& .MuiOutlinedInput-root': {},
                     }}
                   />
                 )}

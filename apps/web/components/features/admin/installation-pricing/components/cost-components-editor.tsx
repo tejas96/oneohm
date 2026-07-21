@@ -84,7 +84,7 @@ export function CostComponentsEditor({ form }: CostComponentsEditorProps): JSX.E
         {entries.map(([key]) => (
           <div
             key={key}
-            className="flex flex-col gap-3 rounded-lg border border-border-light p-3 sm:flex-row sm:items-end"
+            className="flex flex-col gap-3 rounded-lg shadow-e2 p-3 sm:flex-row sm:items-end"
           >
             <div className="min-w-0 flex-1">
               <Typography variant="body" className="text-sm font-semibold">
@@ -123,7 +123,7 @@ export function CostComponentsEditor({ form }: CostComponentsEditorProps): JSX.E
             value={newKeyName}
             onChange={(e) => setNewKeyName(e.target.value)}
             placeholder="e.g. electrical_work"
-            className="h-9 min-w-[12rem] flex-1 rounded-md border border-border-light bg-background px-3 text-sm text-foreground"
+            className="h-9 min-w-[12rem] flex-1 rounded-md bg-background px-3 text-sm text-foreground shadow-e1"
             autoFocus
           />
           <Button type="button" variant="default" size="sm" onClick={confirmAddComponent}>

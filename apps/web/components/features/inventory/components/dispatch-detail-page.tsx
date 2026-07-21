@@ -139,8 +139,8 @@ export function DispatchDetailPage(): React.JSX.Element {
 
       <DispatchDetailKpi dispatch={data} />
 
-      <div className="rounded-lg border border-border-light bg-background">
-        <div className="border-b border-border-light p-4">
+      <div className="rounded-lg shadow-e2 bg-background">
+        <div className="p-4">
           <MUITypography variant="sectionTitle">Line items</MUITypography>
         </div>
         {items.length === 0 ? (

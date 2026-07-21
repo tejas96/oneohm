@@ -222,7 +222,7 @@ export function PaymentTermsModal({
           </button>
 
           {/* Summary */}
-          <div className="rounded-lg border border-border-light bg-background-secondary p-3 space-y-2">
+          <div className="rounded-lg shadow-e2 bg-background-secondary p-3 space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-foreground-secondary">Total Percentage</span>
               <span
@@ -247,7 +247,7 @@ export function PaymentTermsModal({
             </div>
 
             {/* Per-milestone preview */}
-            <div className="border-t border-border-light pt-2 space-y-1">
+            <div className="pt-2 space-y-1">
               {rows
                 .filter((r) => r.name.trim() && r.percentage > 0)
                 .map((r) => (

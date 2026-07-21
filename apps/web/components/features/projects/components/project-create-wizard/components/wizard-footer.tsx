@@ -29,7 +29,7 @@ export function WizardFooter({
   isNextDisabled = false,
 }: WizardFooterProps): React.JSX.Element {
   return (
-    <div className="flex items-center justify-between pt-4 mt-4 border-t border-border-light">
+    <div className="flex items-center justify-between pt-4 mt-4">
       <div className="flex items-center gap-2">
         {!isFirstStep && (
           <MuiButton

@@ -1,2 +1,0 @@
-// Export reseller components
-export {};

@@ -46,7 +46,7 @@ export function OverviewSiteCard({ project }: OverviewSiteCardProps): React.Reac
     <Card className="rounded-xl overflow-hidden h-[500px] flex flex-col">
       <div className="h-32 bg-gradient-to-br from-success/15 via-info/10 to-primary/10 relative shrink-0">
         {hasCoords && (
-          <div className="absolute top-2 left-2 text-[10px] font-medium px-2 py-1 rounded-md bg-card/95 border border-border-light shadow-sm text-foreground">
+          <div className="absolute top-2 left-2 text-[10px] font-medium px-2 py-1 rounded-md bg-card/95 shadow-sm text-foreground">
             {formatLatLng(property.latitude!, property.longitude!)}
           </div>
         )}
@@ -58,7 +58,7 @@ export function OverviewSiteCard({ project }: OverviewSiteCardProps): React.Reac
             href={mapsHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute bottom-2 right-2 text-[10px] font-medium px-2 py-1 rounded-md bg-card/95 border border-border-light shadow-sm hover:bg-card"
+            className="absolute bottom-2 right-2 text-[10px] font-medium px-2 py-1 rounded-md bg-card/95 shadow-sm hover:bg-card"
           >
             Open in Maps →
           </a>

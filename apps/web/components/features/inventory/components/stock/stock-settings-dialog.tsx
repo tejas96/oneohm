@@ -102,7 +102,7 @@ export function StockSettingsDialog({
       </MUIDialogHeader>
       <MUIDialogBody dividers>
         <div className="flex flex-col gap-4">
-          <div className="rounded-lg border border-border-light bg-background-secondary p-3 text-sm">
+          <div className="rounded-lg shadow-e2 bg-background-secondary p-3 text-sm">
             <p className="text-foreground-secondary">
               Configure thresholds for low-stock alerts and reordering. These settings don't affect
               actual inventory quantities.

@@ -125,10 +125,15 @@ function AdvancedTableHeaderInner<TRow>({
   // ── Styles ───────────────────────────────────────────────────────────────
 
   const headerCellSx = {
-    // Opaque — prevents row content bleeding through on scroll.
-    backgroundColor: '#fafafa',
-    borderBottom: '2px solid',
-    borderColor: 'divider',
+    /**
+     * Must stay opaque — rows scroll underneath the sticky header and would
+     * otherwise bleed through. `surface` (white) rather than the old
+     * `#fafafa`: body rows now alternate white / `surface-alt`, so a grey
+     * header would read as just another stripe.
+     */
+    backgroundColor: 'var(--ds-surface)',
+    // No rule beneath the header. The DS separates it from the body by
+    // luminance and the overline's wide tracking, never a line.
     py: 1.25,
     px: 2,
     whiteSpace: 'nowrap',
@@ -139,12 +144,13 @@ function AdvancedTableHeaderInner<TRow>({
     zIndex: 3,
   } as const;
 
+  /** The DS overline: 11px / 700 / 0.12em uppercase. */
   const headerTextSx = {
     fontSize: '0.6875rem',
-    fontWeight: 600,
+    fontWeight: 700,
     textTransform: 'uppercase' as const,
-    letterSpacing: '0.05em',
-    color: 'text.secondary',
+    letterSpacing: '0.12em',
+    color: 'var(--ds-text-secondary)',
   };
 
   return (

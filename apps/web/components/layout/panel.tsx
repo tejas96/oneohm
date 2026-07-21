@@ -211,7 +211,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
       )}
     >
       {/* Panel Header - 48px per UX spec */}
-      <div className="h-header px-4 flex items-center justify-between border-b border-border-light shrink-0">
+      <div className="h-header px-4 flex items-center justify-between shrink-0">
         <span className="text-base font-semibold text-foreground">{config.title}</span>
         <button
           onClick={onClose}

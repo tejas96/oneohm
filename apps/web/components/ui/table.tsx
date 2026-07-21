@@ -1,6 +1,6 @@
-import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
+import { cva, type VariantProps } from '@/lib/cva';
 import { cn } from '@/lib/utils';
 
 /**
@@ -16,18 +16,25 @@ import { cn } from '@/lib/utils';
  * Reference: apps/ux/web/v2/components/tables.html
  */
 
-const tableVariants = cva('w-full caption-bottom text-sm', {
-  variants: {
-    variant: {
-      default: '',
-      striped: '[&_tbody_tr:nth-child(even)]:bg-background-secondary',
-      compact: '[&_td]:py-2 [&_th]:py-2',
+const tableVariants = cva(
+  // Zebra striping is the DEFAULT, not opt-in: it is how the DS separates
+  // rows now that dividers are gone, and it must match the MUI table which
+  // stripes unconditionally. `tabular-nums` aligns ₹ / kWp / quantity columns.
+  'w-full caption-bottom text-sm tabular-nums [&_tbody_tr:nth-of-type(even)]:bg-surface-alt',
+  {
+    variants: {
+      variant: {
+        default: '',
+        // Retained for API compatibility — striping is now unconditional.
+        striped: '',
+        compact: '[&_td]:py-2 [&_th]:py-2',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
     },
   },
-  defaultVariants: {
-    variant: 'default',
-  },
-});
+);
 
 export interface TableProps
   extends React.HTMLAttributes<HTMLTableElement>,
@@ -46,34 +53,21 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead
-    ref={ref}
-    className={cn('bg-background-secondary border-b border-border-light', className)}
-    {...props}
-  />
+  <thead ref={ref} className={cn('bg-surface', className)} {...props} />
 ));
 TableHeader.displayName = 'TableHeader';
 
 const TableBody = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-  <tbody ref={ref} className={cn('divide-y divide-border-light', className)} {...props} />
-));
+>(({ className, ...props }, ref) => <tbody ref={ref} className={cn(className)} {...props} />);
 TableBody.displayName = 'TableBody';
 
 const TableFooter = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <tfoot
-    ref={ref}
-    className={cn(
-      'border-t border-border-light bg-background-secondary font-medium [&>tr]:last:border-b-0',
-      className,
-    )}
-    {...props}
-  />
+  <tfoot ref={ref} className={cn('bg-surface-alt font-medium', className)} {...props} />
 ));
 TableFooter.displayName = 'TableFooter';
 
@@ -83,8 +77,8 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
       ref={ref}
       className={cn(
         'min-h-table-row transition-colors duration-fast',
-        'hover:bg-background-secondary',
-        'data-[state=selected]:bg-primary/5',
+        'hover:bg-background-tertiary',
+        'data-[state=selected]:bg-accent-subtle',
         className,
       )}
       {...props}
@@ -109,7 +103,7 @@ const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
         aria-sort={sortable ? ariaSort : undefined}
         className={cn(
           'h-table-header px-table-cell-x py-table-cell-y',
-          'text-left align-middle text-2xs font-semibold text-foreground-secondary uppercase tracking-wider',
+          'text-left align-middle text-2xs font-bold text-foreground-secondary uppercase tracking-[0.12em]',
           '[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
           sortable && 'cursor-pointer select-none hover:bg-muted',
           className,

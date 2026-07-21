@@ -163,7 +163,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         value={query}
         onValueChange={setQuery}
         trailing={
-          <kbd className="shrink-0 rounded border border-border-light bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+          <kbd className="shrink-0 rounded bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
             ESC
           </kbd>
         }
@@ -342,25 +342,19 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       </CommandList>
 
       {/* Footer with keyboard hints */}
-      <div className="flex items-center justify-between border-t border-border-light bg-background-secondary px-3 py-2 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between bg-background-secondary px-3 py-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1">
-            <kbd className="rounded border border-border-light bg-background px-1.5 py-0.5 text-[10px]">
-              ↑↓
-            </kbd>
+            <kbd className="rounded bg-background px-1.5 py-0.5 text-[10px] shadow-e1">↑↓</kbd>
             Navigate
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="rounded border border-border-light bg-background px-1.5 py-0.5 text-[10px]">
-              ↵
-            </kbd>
+            <kbd className="rounded bg-background px-1.5 py-0.5 text-[10px] shadow-e1">↵</kbd>
             Select
           </span>
         </div>
         <span className="flex items-center gap-1">
-          <kbd className="rounded border border-border-light bg-background px-1.5 py-0.5 text-[10px]">
-            ESC
-          </kbd>
+          <kbd className="rounded bg-background px-1.5 py-0.5 text-[10px] shadow-e1">ESC</kbd>
           Close
         </span>
       </div>

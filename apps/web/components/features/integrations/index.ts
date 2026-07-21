@@ -1,2 +1,0 @@
-// Export integration components
-export {};

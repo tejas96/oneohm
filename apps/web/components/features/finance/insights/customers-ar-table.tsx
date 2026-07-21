@@ -61,9 +61,9 @@ export function CustomersArTable({
   const totals = React.useMemo(() => computeTotals(items), [items]);
 
   return (
-    <div className="border-border-light bg-surface w-full overflow-x-auto rounded-md border">
+    <div className="bg-surface w-full overflow-x-auto rounded-xl shadow-e2">
       <table className="w-full text-left">
-        <thead className="bg-background-secondary border-border-light border-b">
+        <thead className="bg-background-secondary-b">
           <tr className="text-foreground-tertiary text-2xs uppercase tracking-wide">
             <th className="px-3 py-2 font-medium">Customer</th>
             <th className="px-3 py-2 text-right font-medium">Total Outstanding</th>
@@ -154,7 +154,7 @@ export function CustomersArTable({
             })}
         </tbody>
         {!isLoading && items.length > 0 && (
-          <tfoot className="bg-background-secondary border-border-light border-t">
+          <tfoot className="bg-background-secondary-t">
             <tr>
               <td className="px-3 py-2.5">
                 <MUITypography variant="bodyPrimary">Total ({items.length})</MUITypography>

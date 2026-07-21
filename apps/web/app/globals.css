@@ -1,4 +1,26 @@
+/**
+ * Cascade layer order — MUST stay the first statement in this file.
+ *
+ * `AppRouterCacheProvider` is mounted with `enableCssLayer: true`, which
+ * wraps every Emotion insert (MUI defaults AND `sx`) in `@layer mui`. Without
+ * this declaration the `mui` layer is registered last, sorts last, and
+ * therefore BEATS every Tailwind utility — a `className="p-4"` on any MUI
+ * component silently did nothing. Declaring the order here puts `mui` ahead
+ * of `utilities`, so Tailwind wins, while still leaving `sx` able to override
+ * anything in `@layer components`.
+ *
+ * `properties` must be present and first: it is where Tailwind emits the
+ * `@property` fallback block, and if it sorts after `utilities` it zeroes out
+ * transform/gradient/shadow/ring utilities on browsers without native
+ * `@property` support.
+ *
+ * The layer name `mui` is not configurable — it is hardcoded in
+ * `@mui/material-nextjs/v13-appRouter/appRouterV13.js`.
+ */
+@layer properties, theme, base, components, mui, utilities;
+
 @import 'tailwindcss';
+@import '../lib/theme/tokens.generated.css';
 @config '../tailwind.config.ts';
 
 /**
@@ -29,9 +51,6 @@
   --content-offset: 248px;
   --rail-icon-height: 36px;
   --panel-item-height: 30px; /* synced with tailwind spacing.panel-item - per UX spec */
-
-  /* Shadcn radius variable */
-  --radius: 0.5rem;
 }
 
 /* ============================================================================
@@ -54,7 +73,7 @@
   /* Firefox */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #d4d4d8 transparent;
+    scrollbar-color: var(--ds-neutral-300) transparent;
   }
 
   /* Chromium / Safari */
@@ -68,17 +87,44 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background-color: #d4d4d8;
+    background-color: var(--ds-neutral-300);
     border-radius: 999px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: #a1a1aa;
+    background-color: var(--ds-neutral-400);
   }
 
   *::-webkit-scrollbar-corner {
     background: transparent;
   }
+}
+
+/* ============================================================================
+   AUTOFILL
+   Chrome paints its own background on autofilled inputs and ignores
+   `background-color`; a thick inset shadow is the only way to mask it. The
+   mask must match the field's own fill (`surface-alt`) — using white made
+   autofilled fields render as a pale block that did not match their
+   neighbours, and painted over the inner edge of the error ring.
+
+   Applies to the Tailwind/shadcn inputs; the MUI equivalent lives in
+   `lib/theme/mui-theme.ts` under MuiOutlinedInput.
+   ============================================================================ */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 40px var(--ds-surface-alt) inset !important;
+  -webkit-text-fill-color: var(--ds-text-primary) !important;
+  caret-color: var(--ds-text-primary);
+  border-radius: inherit;
+  /* Defers Chrome's own background repaint effectively indefinitely. */
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 /* ============================================================================
@@ -107,7 +153,7 @@
 
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: #a1a1aa transparent; /* gray-400 from tailwind.config.ts */
+  scrollbar-color: var(--ds-neutral-400) transparent;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -194,7 +240,7 @@
   background:
     radial-gradient(ellipse at top left, rgba(118, 192, 68, 0.1), transparent 55%),
     radial-gradient(ellipse at bottom right, rgba(13, 116, 184, 0.07), transparent 55%),
-    linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+    linear-gradient(180deg, var(--ds-surface) 0%, var(--ds-canvas) 100%);
 }
 
 /* Circular progress ring in project overview hero (starts at 12 o'clock) */

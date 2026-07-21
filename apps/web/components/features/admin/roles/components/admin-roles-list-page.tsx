@@ -182,7 +182,7 @@ export function AdminRolesListPage(): JSX.Element {
             <Plus className="mr-2 size-icon-sm" /> Create Role
           </Button>
         </div>
-        <div className="bg-white rounded-lg border border-border-light p-12 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-e2 p-12 flex items-center justify-center">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="size-8 animate-spin text-primary" />
             <p className="text-sm text-foreground-secondary">Loading roles...</p>
@@ -273,7 +273,7 @@ export function AdminRolesListPage(): JSX.Element {
         )}
       </div>
 
-      <div className="bg-white rounded-lg border border-border-light overflow-hidden">
+      <div className="bg-white rounded-lg shadow-e2 overflow-hidden">
         {isFetching || roles.length > 0 ? (
           <>
             <DataTable

@@ -69,7 +69,7 @@ export function ProductTypeAttributesEditor({
             const isSystemAttr = systemAttributeKeys?.has(field.attributeKey) === true;
 
             return (
-              <div key={field.id} className="rounded-lg border border-border-light p-4 space-y-4">
+              <div key={field.id} className="rounded-lg shadow-e2 p-4 space-y-4">
                 {isSystemAttr && (
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" size="xs" shape="rounded" className="gap-1">
@@ -284,7 +284,7 @@ export function ProductTypeAttributesEditor({
                 )}
 
                 <div className="flex flex-wrap gap-4">
-                  <div className="flex items-center justify-between rounded-lg border border-border-light p-3 flex-1 min-w-[220px]">
+                  <div className="flex items-center justify-between rounded-lg shadow-e2 p-3 flex-1 min-w-[220px]">
                     <Controller
                       name={`attributes.${index}.isRequired`}
                       control={control}
@@ -300,7 +300,7 @@ export function ProductTypeAttributesEditor({
                       )}
                     />
                   </div>
-                  <div className="flex items-center justify-between rounded-lg border border-border-light p-3 flex-1 min-w-[220px]">
+                  <div className="flex items-center justify-between rounded-lg shadow-e2 p-3 flex-1 min-w-[220px]">
                     <Controller
                       name={`attributes.${index}.isFilterable`}
                       control={control}

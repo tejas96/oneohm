@@ -241,7 +241,7 @@ export function CreatePricingTierModal({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-border-light p-3">
+              <div className="flex items-center justify-between rounded-lg shadow-e2 p-3">
                 <Controller
                   name="isActive"
                   control={form.control}

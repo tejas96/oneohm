@@ -82,7 +82,7 @@ export function AddressMapViewer({
       </div>
 
       <div
-        className="w-full h-64 rounded-lg border border-border-light overflow-hidden shadow-sm bg-background-elevated"
+        className="w-full h-64 rounded-lg shadow-e2 overflow-hidden shadow-sm bg-background-elevated"
         style={{ minHeight: '256px' }}
       >
         <Map

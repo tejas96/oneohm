@@ -143,7 +143,7 @@ export function TaskReassignmentDialog({
 
             {/* Bulk assign row */}
             {eligibleMembers.length > 0 && (
-              <div className="flex items-center gap-3 p-3 border border-border-light rounded-lg bg-background-secondary">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-background-secondary">
                 <MUITypography variant="bodyPrimary" className="shrink-0">
                   Reassign all to:
                 </MUITypography>
@@ -178,7 +178,7 @@ export function TaskReassignmentDialog({
               {activeTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="flex items-center justify-between gap-3 p-3 border border-border-light rounded-lg"
+                  className="flex items-center justify-between gap-3 p-3 rounded-lg shadow-e1"
                 >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <Chip

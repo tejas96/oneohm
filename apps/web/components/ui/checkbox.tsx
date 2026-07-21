@@ -1,10 +1,9 @@
 'use client';
 
-import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { Check, Minus } from 'lucide-react';
 import * as React from 'react';
 
+import { cva, type VariantProps } from '@/lib/cva';
 import { cn } from '@/lib/utils';
 
 const checkboxVariants = cva(
@@ -37,10 +36,12 @@ const CHECK_ICON_SIZES = {
 } as const;
 
 export interface CheckboxProps
-  extends Omit<React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>, 'checked'>,
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'checked' | 'onChange'>,
     VariantProps<typeof checkboxVariants> {
   /** Checked state */
   checked?: boolean;
+  /** Radix-compatible change handler, used by ~32 call sites. */
+  onCheckedChange?: (checked: boolean) => void;
   /** Indeterminate state (for "select all" partial selection) */
   indeterminate?: boolean;
   /** Label text */
@@ -51,7 +52,7 @@ export interface CheckboxProps
   error?: boolean;
 }
 
-const Checkbox = React.forwardRef<React.ElementRef<typeof CheckboxPrimitive.Root>, CheckboxProps>(
+const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(
   (
     {
       className,
@@ -62,18 +63,32 @@ const Checkbox = React.forwardRef<React.ElementRef<typeof CheckboxPrimitive.Root
       description,
       error,
       id,
+      onCheckedChange,
+      onClick,
       ...props
     },
     ref,
   ) => {
     const checkboxId = id || React.useId();
-    const checkState = indeterminate ? 'indeterminate' : checked;
 
     const checkboxElement = (
-      <CheckboxPrimitive.Root
+      /**
+       * A native button rather than MUI's `Checkbox`: MUI renders its own SVG
+       * control, which would replace the lucide Check/Minus glyphs and ignore
+       * the `data-[state=checked]` classes these variants are built on.
+       * `aria-checked="mixed"` is the correct ARIA value for indeterminate.
+       */
+      <button
         ref={ref}
+        type="button"
+        role="checkbox"
         id={checkboxId}
-        checked={checkState}
+        aria-checked={indeterminate ? 'mixed' : Boolean(checked)}
+        data-state={indeterminate ? 'indeterminate' : checked ? 'checked' : 'unchecked'}
+        onClick={(e) => {
+          onClick?.(e);
+          if (!props.disabled) onCheckedChange?.(!checked);
+        }}
         className={cn(
           checkboxVariants({ size }),
           error && 'border-error data-[state=checked]:bg-error data-[state=checked]:border-error',
@@ -81,14 +96,16 @@ const Checkbox = React.forwardRef<React.ElementRef<typeof CheckboxPrimitive.Root
         )}
         {...props}
       >
-        <CheckboxPrimitive.Indicator className="flex items-center justify-center text-current">
-          {indeterminate ? (
-            <Minus className={CHECK_ICON_SIZES[size ?? 'default']} strokeWidth={3} />
-          ) : (
-            <Check className={CHECK_ICON_SIZES[size ?? 'default']} strokeWidth={3} />
-          )}
-        </CheckboxPrimitive.Indicator>
-      </CheckboxPrimitive.Root>
+        {(checked || indeterminate) && (
+          <span className="flex items-center justify-center text-current">
+            {indeterminate ? (
+              <Minus className={CHECK_ICON_SIZES[size ?? 'default']} strokeWidth={3} />
+            ) : (
+              <Check className={CHECK_ICON_SIZES[size ?? 'default']} strokeWidth={3} />
+            )}
+          </span>
+        )}
+      </button>
     );
 
     if (!label && !description) {
@@ -116,6 +133,6 @@ const Checkbox = React.forwardRef<React.ElementRef<typeof CheckboxPrimitive.Root
     );
   },
 );
-Checkbox.displayName = CheckboxPrimitive.Root.displayName;
+Checkbox.displayName = 'Checkbox';
 
 export { Checkbox, checkboxVariants };

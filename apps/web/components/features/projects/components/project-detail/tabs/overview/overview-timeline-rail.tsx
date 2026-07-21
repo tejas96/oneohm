@@ -87,7 +87,7 @@ export function OverviewTimelineRail({
   // Gate: need dates
   if (!project.startDate || !project.endDate) {
     return (
-      <section className="rounded-xl border border-border-light/70 bg-card p-5 shadow-card">
+      <section className="rounded-xl shadow-e2/70 bg-card p-5 shadow-card">
         <p className="text-sm font-semibold text-foreground">Project Journey</p>
         <p className="mt-1 text-xs text-foreground-secondary">
           Timeline will appear once both start and end dates are set.
@@ -166,7 +166,7 @@ export function OverviewTimelineRail({
 
   if (sorted.length === 0) {
     return (
-      <section className="rounded-xl border border-border-light/70 bg-card p-5 shadow-card">
+      <section className="rounded-xl shadow-e2/70 bg-card p-5 shadow-card">
         <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Milestone className="size-4 text-primary" />
           Project Journey
@@ -219,7 +219,7 @@ export function OverviewTimelineRail({
       : `linear-gradient(90deg, ${RAIL_COLORS.success} 0%, ${RAIL_COLORS.success} ${greenEnd}%, ${RAIL_COLORS.primary} ${greenEnd}%, ${RAIL_COLORS.primary} ${activeEnd}%, ${RAIL_COLORS.track} ${activeEnd}%, ${RAIL_COLORS.track} 100%)`;
 
   return (
-    <section className="rounded-xl border border-border-light/70 bg-card p-5 shadow-card">
+    <section className="rounded-xl shadow-e2/70 bg-card p-5 shadow-card">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="flex items-center gap-2 text-sm font-semibold text-foreground">

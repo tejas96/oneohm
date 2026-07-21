@@ -101,7 +101,7 @@ export function ExpensesSection({ projectId }: ExpensesSectionProps): JSX.Elemen
 
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-lg border border-border-light bg-background-secondary p-3">
+          <div className="rounded-lg shadow-e2 bg-background-secondary p-3">
             <MUITypography variant="finePrint" className="text-foreground-secondary block">
               Total Spent
             </MUITypography>
@@ -109,7 +109,7 @@ export function ExpensesSection({ projectId }: ExpensesSectionProps): JSX.Elemen
               {formatCurrency(summary.total)}
             </MUITypography>
           </div>
-          <div className="rounded-lg border border-border-light bg-background-secondary p-3">
+          <div className="rounded-lg shadow-e2 bg-background-secondary p-3">
             <MUITypography variant="finePrint" className="text-foreground-secondary block">
               Pending Reimbursement
             </MUITypography>
@@ -120,7 +120,7 @@ export function ExpensesSection({ projectId }: ExpensesSectionProps): JSX.Elemen
               {formatCurrency(summary.pendingReimbursementAmount)}
             </MUITypography>
           </div>
-          <div className="rounded-lg border border-border-light bg-background-secondary p-3 col-span-2">
+          <div className="rounded-lg shadow-e2 bg-background-secondary p-3 col-span-2">
             <MUITypography variant="finePrint" className="text-foreground-secondary mb-1 block">
               By Category
             </MUITypography>
@@ -131,7 +131,7 @@ export function ExpensesSection({ projectId }: ExpensesSectionProps): JSX.Elemen
                 summary.byCategory.map((c) => (
                   <span
                     key={c.category}
-                    className="text-foreground bg-background px-2 py-0.5 rounded border border-border-light"
+                    className="text-foreground bg-background px-2 py-0.5 rounded shadow-e1"
                   >
                     <MUITypography variant="finePrint" component="span">
                       {c.category}: <span className="font-mono">{formatCurrency(c.amount)}</span>

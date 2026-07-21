@@ -127,7 +127,7 @@ function TimelineItemFull({ item, isLast }: TimelineItemFullProps) {
       {/* Card */}
       <div
         className={cn(
-          'bg-background rounded-lg border border-border-light p-4 shadow-sm',
+          'bg-background rounded-lg shadow-e2 p-4 shadow-sm',
           'transition-all duration-fast hover:shadow-sm hover:translate-x-1',
           !isLast && 'mb-6',
         )}

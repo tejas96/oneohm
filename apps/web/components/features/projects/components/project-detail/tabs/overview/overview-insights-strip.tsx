@@ -119,7 +119,7 @@ export function OverviewInsightsStrip({
         {Array.from({ length: 6 }).map((_, index) => (
           <div
             key={index}
-            className="info-card flex items-center gap-3 rounded-xl border border-border-light/70 bg-card p-3 shadow-card"
+            className="info-card flex items-center gap-3 rounded-xl shadow-e2/70 bg-card p-3 shadow-card"
           >
             <Skeleton className="size-10 shrink-0 rounded-lg" />
             <div className="min-w-0 flex-1 space-y-2">

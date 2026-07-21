@@ -1,0 +1,346 @@
+/**
+ * Oneohm Design System — the single source of truth for design tokens.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * THIS FILE IS THE ONLY PLACE A DESIGN VALUE IS AUTHORED.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Everything downstream is derived from it:
+ *   • `tokens.generated.css`  — emitted by the sync test, imported by
+ *     `app/globals.css`. Provides the `@theme` namespaces and `:root` vars.
+ *   • `lib/theme/mui-theme.ts` — imports these literals directly. MUI's
+ *     palette CANNOT take `var()` strings (createTheme runs lighten/darken/
+ *     getContrastRatio on palette entries and throws `Unsupported var(...)
+ *     color`), so MUI is fed resolved hex from here.
+ *   • `lib/charts/palette.ts`  — re-exports the chart ramp for recharts,
+ *     which needs string colours at render time for `fill`/`stroke`.
+ *   • `tailwind.config.ts`     — bridges its existing utility names to these
+ *     vars (`primary: { DEFAULT: 'var(--ds-primary)' }`), so the app's class
+ *     vocabulary is unchanged while the values come from one place.
+ *
+ * Do NOT hand-edit `tokens.generated.css`. Run `npm run tokens:gen`.
+ * `__tests__/tokens-sync.test.ts` fails the build if they diverge.
+ *
+ * Values transcribed from `~/Downloads/Oneohm Design System/tokens/*.css`.
+ * Note: that package's `readme.md` is STALE — it describes a violet accent
+ * and a near-black primary. `tokens/*.css` (green primary) is authoritative;
+ * `Palette Explorations.html` confirms the "Warm Sand" palette was adopted
+ * after the readme was written.
+ */
+
+/**
+ * Tokens emitted into `@theme`, i.e. ones Tailwind turns into utilities.
+ * Key = the Tailwind v4 theme namespace; emitting `--<namespace>-<name>`.
+ *
+ * ONLY namespaces with no counterpart in `tailwind.config.ts` belong here.
+ * `@theme` and `@config` share one namespace and `@theme` wins, so a name
+ * present in both is silently overridden. Verified the hard way: putting the
+ * colour ramp here hijacked `accent` (#fafafa → #76c044, which would have
+ * turned every dropdown focus state bright green), plus `success`
+ * (#22c55e → #15803d), `warning` and `info` — 393 live usages — because the
+ * DS names its readable-foreground variants `success`/`warning`/`info` while
+ * this config uses those names for the vivid fills.
+ *
+ * Colours and font-family therefore live in `root` under a `--ds-` prefix,
+ * where they cannot collide. Radius, shadow and easing have no config
+ * counterpart, so they are safe here and give us `rounded-pill`, `shadow-e2`
+ * and `ease-spring` as real utilities.
+ */
+const theme = {
+  /**
+   * `--radius-*` → `rounded-*`.
+   * `rf-*` is Functional density (the web app default — data tables, forms,
+   * admin). `r-*` is Expressive (auth, dashboard home, empty states, modals).
+   * Config's own scale (sm/DEFAULT/md/lg/xl/2xl/3xl) is untouched.
+   */
+  radius: {
+    // Functional
+    'rf-xs': '4px',
+    'rf-sm': '6px',
+    'rf-md': '8px',
+    'rf-lg': '12px',
+    'rf-xl': '16px',
+    // Expressive
+    'r-xs': '8px',
+    'r-sm': '12px',
+    'r-md': '16px',
+    'r-lg': '24px',
+    'r-xl': '32px',
+    'r-2xl': '40px',
+    // Assignments
+    'card-functional': '12px',
+    'card-expressive': '24px',
+    'input-functional': '10px',
+    'input-expressive': '14px',
+    'sheet-top': '32px',
+    /** Buttons and chips are ALWAYS this. Non-negotiable in the DS. */
+    pill: '999px',
+  },
+
+  /**
+   * `--shadow-*` → `shadow-*`.
+   * This ladder REPLACES borders entirely — the DS's governing rule is that
+   * hierarchy comes from luminance and softness, never from lines.
+   * canvas → e2 (card) → e3 (hover/dropdown) → e4 (popover/nav) → e5 (modal).
+   */
+  shadow: {
+    e0: 'none',
+    e1: '0 1px 2px rgba(16,24,40,0.04)',
+    e2: '0 2px 8px rgba(16,24,40,0.05)',
+    e3: '0 8px 24px rgba(16,24,40,0.06)',
+    e4: '0 16px 48px rgba(16,24,40,0.08)',
+    e5: '0 24px 72px rgba(16,24,40,0.10)',
+  },
+
+  /** `--ease-*` → `ease-*`. Extends Tailwind's built-in in/out/in-out. */
+  ease: {
+    standard: 'cubic-bezier(0.4,0,0.2,1)',
+    enter: 'cubic-bezier(0,0,0.2,1)',
+    exit: 'cubic-bezier(0.4,0,1,1)',
+    /** Sheets, FAB, radial menus. */
+    spring: 'cubic-bezier(0.34,1.56,0.64,1)',
+  },
+} as const;
+
+/**
+ * Plain `:root` custom properties — consumed by `tailwind.config.ts` (which
+ * remains the utility surface), by MUI, and by inline styles.
+ *
+ * The `--ds-` prefix on colours is deliberate: it guarantees a DS token can
+ * never silently override a config colour of the same name. See the note on
+ * `theme` above.
+ *
+ * Also here, and NOT in `@theme`, because Tailwind v4 has no matching theme
+ * namespace and because the app's spacing / font-size scales are frozen by
+ * the Functional-density decision (`text-sm` stays 13px so 67 data pages
+ * don't reflow): `dur`, `sp`, `text`.
+ *
+ * `gradient` is here because a gradient is not a colour — in `--color-*` it
+ * would generate `background-color: linear-gradient(…)`, which is invalid.
+ *
+ * Namespaces mirror the DS package's own variable names (`--sp-*`, `--dur-*`)
+ * so a token can be grepped straight from the DS spec. The one deliberate
+ * divergence is `--text-*`: the DS splits each step across `--fs-`/`--lh-`/
+ * `--tr-`, which is harder to read than keeping a step's size/line/track
+ * together.
+ *
+ * Note: JS orders integer-like object keys numerically and ahead of string
+ * keys, so `--sp-0-5` is emitted after `--sp-24` rather than after `--sp-0`.
+ * Deterministic and harmless — CSS custom property order is irrelevant.
+ */
+const root = {
+  ds: {
+    // ── Neutrals — warm stone ──────────────────────────────────────────
+    canvas: '#FAFAF9',
+    'canvas-sunken': '#F5F5F4',
+    surface: '#FFFFFF',
+    'surface-alt': '#FAF9F7',
+
+    /** 17.49:1 on white. */
+    'text-primary': '#1C1917',
+    /** 7.63:1 on white — the correct token for small secondary copy. */
+    'text-secondary': '#57534E',
+    /**
+     * ⚠ 2.52:1 on white — FAILS WCAG AA for text.
+     * Decorative, disabled, and large-text use ONLY. Small text that is
+     * currently `foreground-tertiary` (#71717a, 4.83:1) must map to
+     * `text-secondary`, NOT here, or the migration silently regresses
+     * accessibility. See the guardrail lint rule.
+     */
+    'text-tertiary': '#A8A29E',
+    /** 1.49:1 — disabled affordances only, never load-bearing text. */
+    'text-disabled': '#D6D3D1',
+
+    hairline: '#E7E5E4',
+    divider: '#E7E5E4',
+
+    /**
+     * ── Neutral ramp — app-level extension, NOT from the DS package ───────
+     *
+     * The DS defines only seven neutral steps, and by semantic role
+     * (`canvas`, `hairline`, `text-secondary`, …) rather than as a scale.
+     * The app also needs an 11-step ramp because `gray-50…950` is used
+     * directly in ~200 places, inherited from the shadcn config.
+     *
+     * Those seven DS values are exactly Tailwind's **stone** ramp, so this
+     * completes it with stone's remaining four steps. That is what makes the
+     * zinc→stone migration a true 1:1 swap: at every step the lightness
+     * matches the zinc value it replaces to within 0.27 contrast points, so
+     * no text/background pair changes its WCAG standing.
+     *
+     * Values that duplicate a DS token are noted; keep them in sync.
+     */
+    'neutral-50': '#FAFAF9', //  = canvas
+    'neutral-100': '#F5F5F4', // = canvas-sunken
+    'neutral-200': '#E7E5E4', // = hairline / divider
+    'neutral-300': '#D6D3D1', // = text-disabled
+    'neutral-400': '#A8A29E', // = text-tertiary
+    'neutral-500': '#78716C',
+    'neutral-600': '#57534E', // = text-secondary
+    'neutral-700': '#44403C',
+    'neutral-800': '#292524',
+    'neutral-900': '#1C1917', // = text-primary
+    'neutral-950': '#0C0A09',
+
+    // ── Brand — green primary, blue secondary (unchanged from today) ───
+    primary: '#76C044',
+    /**
+     * ⚠ Differs from today's Tailwind `primary.dark` (#5ea031) — a
+     * pre-existing three-way drift: config says #5ea031, `mui-theme.ts` and
+     * the DS both say #4D7C0F. Bridging this token shifts 19 usages, so it
+     * is deliberately NOT bridged in the plumbing phase.
+     */
+    'primary-dark': '#4D7C0F',
+    'primary-light': '#8FD35F',
+    'primary-contrast': '#FFFFFF',
+    secondary: '#0D74B8',
+    'secondary-dark': '#0A5C92',
+    'secondary-light': '#2B8FD4',
+
+    // ── Interactive accent — focus, selected, active tab, control fill ─
+    accent: '#76C044',
+    'accent-hover': '#4D7C0F',
+    'accent-subtle': '#EEF6E2',
+    /** 4.99:1 — the accent as text/icon on light. WCAG-safe. */
+    'accent-ink': '#4D7C0F',
+
+    // ── Actions ───────────────────────────────────────────────────────
+    /**
+     * ⚠ White on this is 2.24:1 — fails AA. Pre-existing (today's theme
+     * pairs the same two), but Phase 5 rebuilds every button and is the
+     * cheap moment to fix it. Pending decision: fill with `primary-dark`
+     * (4.99:1) instead.
+     */
+    'action-primary': '#76C044',
+    'action-primary-hover': '#6AAE3B',
+    'action-primary-pressed': '#4D7C0F',
+
+    // ── Semantic ──────────────────────────────────────────────────────
+    // Bare names are the READABLE FOREGROUND; `-main` is the vivid fill.
+    // Today's config uses the bare names for the fills — hence `--ds-`.
+    success: '#15803D',
+    'success-main': '#22C55E',
+    'success-bg': '#EAFBEF',
+    warning: '#A16207',
+    'warning-main': '#EAB308',
+    'warning-bg': '#FEF7E6',
+    danger: '#DC2626',
+    'danger-hover': '#B91C1C',
+    'danger-bg': '#FDECEC',
+    info: '#0369A1',
+    'info-main': '#0EA5E9',
+    'info-bg': '#E8F4FB',
+    neutral: '#57534E',
+    'neutral-bg': '#F5F5F4',
+
+    // ── Chart ramp — ordered, colourblind-safe ────────────────────────
+    'chart-1': '#76C044',
+    'chart-2': '#0D74B8',
+    'chart-3': '#EAB308',
+    'chart-4': '#0EA5E9',
+    'chart-5': '#4D7C0F',
+    'chart-6': '#2B8FD4',
+    'chart-7': '#A16207',
+    'chart-8': '#A8A29E',
+    'chart-gridline': '#F5F5F4',
+
+    // ── Links ─────────────────────────────────────────────────────────
+    link: '#0D74B8',
+    'link-hover': '#0A5C92',
+  },
+
+  /**
+   * Not in `@theme`: config already owns `fontFamily.sans`, and swapping
+   * Inter → Geist is its own isolated phase because it moves every metric
+   * in the app at once.
+   */
+  font: {
+    sans: '"Geist", "Inter", -apple-system, system-ui, sans-serif',
+    mono: '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+  },
+
+  /** Overlays blur and fade toward WHITE — never a dark scrim. */
+  gradient: {
+    brand: 'linear-gradient(135deg,#76C044 0%,#0D74B8 100%)',
+    glow: 'radial-gradient(circle,rgba(118,192,68,0.22) 0%,rgba(13,116,184,0.12) 45%,rgba(255,255,255,0) 72%)',
+  },
+
+  dur: {
+    micro: '120ms',
+    standard: '200ms',
+    emphasised: '320ms',
+    ambient: '500ms',
+  },
+
+  /** 4px base. */
+  sp: {
+    '0': '0',
+    '0-5': '2px',
+    '1': '4px',
+    '2': '8px',
+    '3': '12px',
+    '4': '16px',
+    '5': '20px',
+    '6': '24px',
+    '8': '32px',
+    '10': '40px',
+    '12': '48px',
+    '16': '64px',
+    '20': '80px',
+    '24': '96px',
+  },
+
+  /**
+   * DS desktop type scale. Headings are tightly tracked — that tracking is
+   * essential to the look, not a nicety.
+   * Weights: 400 and 700 in normal use; 500 for buttons, tabs and table
+   * headers ONLY.
+   */
+  text: {
+    'display-size': '40px',
+    'display-line': '44px',
+    'display-track': '-0.03em',
+    'h1-size': '32px',
+    'h1-line': '36px',
+    'h1-track': '-0.025em',
+    'h2-size': '24px',
+    'h2-line': '28px',
+    'h2-track': '-0.02em',
+    'h3-size': '20px',
+    'h3-line': '22px',
+    'h3-track': '-0.015em',
+    'h4-size': '17px',
+    'h4-line': '18px',
+    'h4-track': '-0.01em',
+    'body-lg-size': '17px',
+    'body-lg-line': '1.55',
+    'body-size': '15px',
+    'body-line': '1.55',
+    'body-sm-size': '13px',
+    'body-sm-line': '1.5',
+    'caption-size': '12px',
+    'caption-line': '1.4',
+    /** The signature overline device — 11px/700/0.12em, uppercase. */
+    'overline-size': '11px',
+    'overline-track': '0.12em',
+    'button-size': '15px',
+    'button-track': '-0.01em',
+    'table-size': '13px',
+    'table-line': '1.45',
+  },
+} as const;
+
+export const TOKENS = { theme, root } as const;
+
+/** Convenience aliases so consumers don't reach through `TOKENS`. */
+export const color = root.ds;
+export const radius = theme.radius;
+export const shadow = theme.shadow;
+export const ease = theme.ease;
+export const font = root.font;
+export const duration = root.dur;
+export const gradient = root.gradient;
+
+export type ColorToken = keyof typeof root.ds;
+export type RadiusToken = keyof typeof theme.radius;
+export type ShadowToken = keyof typeof theme.shadow;

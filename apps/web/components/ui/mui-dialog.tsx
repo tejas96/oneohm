@@ -70,9 +70,9 @@ function MUIDialog({
     () => ({
       maxWidth: SIZE_MAX_WIDTH[size],
       width: '100%',
-      borderRadius: 2,
-      border: 1,
-      borderColor: 'divider',
+      // DS functional card radius; no border — `e5` separates the modal.
+      borderRadius: 'var(--radius-rf-lg)',
+      boxShadow: 'var(--shadow-e5)',
       m: 2,
       maxHeight: 'calc(100vh - 32px)',
       ...((sx as Record<string, unknown>) ?? {}),
@@ -84,11 +84,17 @@ function MUIDialog({
 
   const mergedSlotProps = React.useMemo(
     () => ({
+      /**
+       * DS: overlays blur the layer behind and fade it toward WHITE — never a
+       * dark scrim. This local override was beating the `MuiBackdrop` theme
+       * rule, so it is corrected here rather than removed, to keep the
+       * component self-describing.
+       */
       backdrop: {
         sx: {
-          backgroundColor: 'rgba(0,0,0,0.45)',
-          backdropFilter: 'blur(2px)',
-          WebkitBackdropFilter: 'blur(2px)',
+          backgroundColor: 'rgba(255,255,255,0.35)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
         },
       },
       ...rest.slotProps,
@@ -143,8 +149,7 @@ function MUIDialogHeader({
         gap: 2,
         px: 3,
         py: 2,
-        borderBottom: 1,
-        borderColor: 'divider',
+
         ...((sx as Record<string, unknown>) ?? {}),
       }}
     >
@@ -251,8 +256,7 @@ function MUIDialogFooter({ children, sx }: MUIDialogFooterProps): React.JSX.Elem
         px: 3,
         py: 2,
         gap: 1.5,
-        borderTop: 1,
-        borderColor: 'divider',
+
         backgroundColor: 'grey.50',
         borderBottomLeftRadius: 'inherit',
         borderBottomRightRadius: 'inherit',

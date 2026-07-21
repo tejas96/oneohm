@@ -200,7 +200,7 @@ export function PriorityBreakdownChart({
       </div>
 
       {/* Dot legend with percentages — each item is a link */}
-      <div className="flex flex-wrap gap-x-2 gap-y-1 mt-2 pt-2 border-t border-border-light shrink-0">
+      <div className="flex flex-wrap gap-x-2 gap-y-1 mt-2 pt-2 shrink-0">
         {chartData.map((row) => {
           const pct = total > 0 ? Math.round((row.count / total) * 100) : 0;
           return (

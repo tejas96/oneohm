@@ -696,7 +696,7 @@ export function QuoteBuilder(): JSX.Element {
 
       {/* Config loading state */}
       {config.isLoading && (
-        <div className="flex items-center gap-2 rounded-lg border border-border-light bg-background p-4">
+        <div className="flex items-center gap-2 rounded-lg shadow-e2 bg-background p-4">
           <Spinner size="sm" />
           <span className="text-sm text-foreground-secondary">Loading configuration...</span>
         </div>
@@ -744,7 +744,7 @@ export function QuoteBuilder(): JSX.Element {
         {/* ── LEFT: Form ── */}
         <div className="space-y-5">
           {/* Section 1: Customer & Property */}
-          <section className="rounded-lg border border-border-light bg-background p-4">
+          <section className="rounded-lg shadow-e2 bg-background p-4">
             <div className="mb-4 flex items-center gap-2">
               <MapPin className="size-4 text-foreground-secondary" />
               <h2 className="text-sm font-semibold">Customer & Property</h2>
@@ -755,7 +755,7 @@ export function QuoteBuilder(): JSX.Element {
               <div className="space-y-2">
                 <Label>Customer *</Label>
                 {selectedCustomer ? (
-                  <div className="flex items-center justify-between rounded-md border border-border-light bg-background-secondary px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between rounded-md bg-background-secondary px-3 py-2 text-sm">
                     <div className="flex items-center gap-2">
                       <div className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-2xs font-medium text-primary">
                         {selectedCustomer.firstName.charAt(0)}
@@ -789,7 +789,7 @@ export function QuoteBuilder(): JSX.Element {
                       onFocus={() => setIsDropdownOpen(true)}
                     />
                     {isDropdownOpen && customerSearch.length >= 2 && (
-                      <div className="absolute z-10 mt-1 w-full rounded-lg border border-border-light bg-background shadow-sm">
+                      <div className="absolute z-10 mt-1 w-full rounded-lg shadow-e2 bg-background shadow-sm">
                         <div className="max-h-48 overflow-auto p-1">
                           {isCustomersLoading ? (
                             <div className="px-3 py-4 text-center text-sm text-foreground-tertiary">
@@ -867,7 +867,7 @@ export function QuoteBuilder(): JSX.Element {
           </section>
 
           {/* Section 2: System Configuration */}
-          <section className="rounded-lg border border-border-light bg-background p-4">
+          <section className="rounded-lg shadow-e2 bg-background p-4">
             <div className="mb-4 flex items-center gap-2">
               <Settings2 className="size-4 text-foreground-secondary" />
               <h2 className="text-sm font-semibold">System Configuration</h2>
@@ -917,7 +917,7 @@ export function QuoteBuilder(): JSX.Element {
                           }
                         }}
                         className={cn(
-                          'w-20 rounded-lg border border-border-light bg-background py-2 text-center text-lg font-semibold tabular-nums',
+                          'w-20 rounded-lg shadow-e2 bg-background py-2 text-center text-lg font-semibold tabular-nums',
                           'focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15',
                           '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
                         )}
@@ -1179,7 +1179,7 @@ export function QuoteBuilder(): JSX.Element {
           </section>
 
           {/* Section 3: Equipment */}
-          <section className="rounded-lg border border-border-light bg-background p-4">
+          <section className="rounded-lg shadow-e2 bg-background p-4">
             <div className="mb-4 flex items-center gap-2">
               <Wrench className="size-4 text-foreground-secondary" />
               <h2 className="text-sm font-semibold">Equipment Preferences</h2>
@@ -1336,7 +1336,7 @@ export function QuoteBuilder(): JSX.Element {
                       form.watch('preferredInverterBrand'),
                     );
                     return capacityOptions.length === 0 ? (
-                      <div className="flex items-center gap-2 rounded-md border border-border-light bg-background-secondary px-3 py-2">
+                      <div className="flex items-center gap-2 rounded-md bg-background-secondary px-3 py-2">
                         <Info className="size-3.5 shrink-0 text-foreground-tertiary" />
                         <p className="text-xs text-foreground-tertiary">
                           {config.inverterBrands.length === 0
@@ -1441,7 +1441,7 @@ export function QuoteBuilder(): JSX.Element {
           </section>
 
           {/* Section 4: Installation Details */}
-          <section className="rounded-lg border border-border-light bg-background p-4">
+          <section className="rounded-lg shadow-e2 bg-background p-4">
             <div className="mb-4 flex items-center gap-2">
               <Wrench className="size-4 text-foreground-secondary" />
               <h2 className="text-sm font-semibold">Installation Details</h2>
@@ -1520,7 +1520,7 @@ export function QuoteBuilder(): JSX.Element {
           </section>
 
           {/* Section 5: Discount */}
-          <section className="rounded-lg border border-border-light bg-background p-4">
+          <section className="rounded-lg shadow-e2 bg-background p-4">
             <div className="mb-4 flex items-center gap-2">
               <CircleDollarSign className="size-4 text-foreground-secondary" />
               <h2 className="text-sm font-semibold">Discount</h2>
@@ -1586,7 +1586,7 @@ export function QuoteBuilder(): JSX.Element {
           </section>
 
           {/* Section 6: Notes */}
-          <section className="rounded-lg border border-border-light bg-background p-4">
+          <section className="rounded-lg shadow-e2 bg-background p-4">
             <div className="mb-4 flex items-center gap-2">
               <StickyNote className="size-4 text-foreground-secondary" />
               <h2 className="text-sm font-semibold">Notes</h2>

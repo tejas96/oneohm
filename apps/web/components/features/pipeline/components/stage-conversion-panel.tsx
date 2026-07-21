@@ -33,7 +33,7 @@ export function StageConversionPanel({
 
   if (transitions.length === 0) {
     return (
-      <div className="rounded-lg border border-border-light bg-white p-4">
+      <div className="rounded-lg shadow-e2 bg-white p-4">
         <MUITypography variant="body" className="text-foreground-secondary">
           No conversion data available.
         </MUITypography>
@@ -42,7 +42,7 @@ export function StageConversionPanel({
   }
 
   return (
-    <div className="rounded-lg border border-border-light bg-white p-4 shadow-sm">
+    <div className="rounded-lg shadow-e2 bg-white p-4 shadow-sm">
       <MUITypography variant="sectionTitle" className="mb-4">
         Stage Conversion Rates
       </MUITypography>

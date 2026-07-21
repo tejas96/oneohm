@@ -240,7 +240,7 @@ export function QuotePreviewPanel({
             Solar Panels
           </p>
           {dcrPanels.map((panel) => (
-            <div key={panel.productId} className="rounded-lg border border-border-light p-2.5">
+            <div key={panel.productId} className="rounded-lg shadow-e2 p-2.5">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
@@ -287,7 +287,7 @@ export function QuotePreviewPanel({
             </div>
           ))}
           {nonDcrPanels.map((panel) => (
-            <div key={panel.productId} className="rounded-lg border border-border-light p-2.5">
+            <div key={panel.productId} className="rounded-lg shadow-e2 p-2.5">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
@@ -336,7 +336,7 @@ export function QuotePreviewPanel({
         </div>
 
         {/* ── Quantity Adjusters ── */}
-        <div className="rounded-lg border border-border-light p-3">
+        <div className="rounded-lg shadow-e2 p-3">
           <div className="mb-2 flex items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-md bg-primary/10">
               <Settings className="size-icon-xs inline text-primary" />
@@ -512,7 +512,7 @@ export function QuotePreviewPanel({
             Inverters
           </p>
           {calculation.inverters.inverters.map((inv) => (
-            <div key={inv.productId} className="rounded-lg border border-border-light p-2.5">
+            <div key={inv.productId} className="rounded-lg shadow-e2 p-2.5">
               <div className="flex items-start justify-between">
                 <div className="space-y-0.5">
                   <p className="text-sm font-medium">{inv.name}</p>
@@ -552,7 +552,7 @@ export function QuotePreviewPanel({
           <p className="text-xs font-medium uppercase tracking-wide text-foreground-secondary">
             Mounting Structure
           </p>
-          <div className="rounded-lg border border-border-light p-2.5">
+          <div className="rounded-lg shadow-e2 p-2.5">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium">{calculation.structure.name}</p>
@@ -587,7 +587,7 @@ export function QuotePreviewPanel({
           <p className="text-xs font-medium uppercase tracking-wide text-foreground-secondary">
             Installation & Services
           </p>
-          <div className="rounded-lg border border-border-light p-2.5">
+          <div className="rounded-lg shadow-e2 p-2.5">
             <div className="space-y-1.5">
               {Object.keys(calculation.installation.breakdown ?? {}).length === 0 ? (
                 <p className="text-xs text-foreground-tertiary">No line items</p>
@@ -614,7 +614,7 @@ export function QuotePreviewPanel({
                     );
                   })
               )}
-              <div className="flex justify-between border-t border-border-light pt-1.5 text-xs font-medium">
+              <div className="flex justify-between pt-1.5 text-xs font-medium">
                 <span>Installation (Before Tax)</span>
                 <Can
                   permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
@@ -740,7 +740,7 @@ export function QuotePreviewPanel({
                 </Can>
               </div>
             )}
-            <div className="flex items-center justify-between border-t border-border-light pt-1.5 text-sm font-medium">
+            <div className="flex items-center justify-between pt-1.5 text-sm font-medium">
               <span>Subtotal</span>
               <Can
                 permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
@@ -789,7 +789,7 @@ export function QuotePreviewPanel({
                 </span>
               </Can>
             </div>
-            <div className="flex items-center justify-between border-t border-border-light pt-1.5 text-sm font-medium">
+            <div className="flex items-center justify-between pt-1.5 text-sm font-medium">
               <span>Gross Total</span>
               <Can
                 permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
@@ -835,12 +835,12 @@ export function QuotePreviewPanel({
 
         {/* ── Timeline & Warranty ── */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col items-center rounded-lg border border-border-light p-3 text-center">
+          <div className="flex flex-col items-center rounded-lg shadow-e2 p-3 text-center">
             <Calendar className="mb-1 size-4 text-primary" />
             <p className="text-lg font-semibold">{calculation.completionWeeks} Weeks</p>
             <p className="text-2xs text-foreground-secondary">Est. Completion</p>
           </div>
-          <div className="flex flex-col items-center rounded-lg border border-border-light p-3 text-center">
+          <div className="flex flex-col items-center rounded-lg shadow-e2 p-3 text-center">
             <Shield className="mb-1 size-4 text-primary" />
             <p className="text-lg font-semibold">{formatPreviewPanelWarrantyLabel(calculation)}</p>
             <p className="text-2xs text-foreground-secondary">Panel Warranty</p>

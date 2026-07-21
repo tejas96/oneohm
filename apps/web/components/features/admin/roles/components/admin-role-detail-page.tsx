@@ -33,7 +33,7 @@ export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps): JSX.E
         >
           <ArrowLeft className="size-4" /> Back to Roles
         </Link>
-        <div className="bg-white rounded-lg border border-border-light p-12 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-e2 p-12 flex items-center justify-center">
           <Loader2 className="size-8 animate-spin text-primary" />
         </div>
       </div>
@@ -74,7 +74,7 @@ export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps): JSX.E
         <ArrowLeft className="size-4" /> Back to Roles
       </Link>
 
-      <div className="bg-white rounded-lg border border-border-light p-6">
+      <div className="bg-white rounded-lg shadow-e2 p-6">
         <div className="flex items-start justify-between">
           <div>
             <Typography variant="h3">{role.name}</Typography>

@@ -7,11 +7,6 @@ import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import { Card, CardContent, Chip, Checkbox, FormControlLabel } from '@mui/material';
-import {
-  Root as RadioGroupRoot,
-  Item as RadioGroupItem,
-  Indicator as RadioGroupIndicator,
-} from '@radix-ui/react-radio-group';
 import { PropertyType } from '@tejas96/shared/types';
 import * as React from 'react';
 import { useFormContext } from 'react-hook-form';
@@ -22,6 +17,11 @@ import { PROPERTY_ALERTS } from '../../../constants';
 
 import { MUIAvatar, MUIInput, MUITypography, MUIFieldLabel } from '@/components/ui';
 import { PROPERTY_TYPE_OPTIONS } from '@/lib/config/constants';
+import {
+  Root as RadioGroupRoot,
+  Item as RadioGroupItem,
+  Indicator as RadioGroupIndicator,
+} from '@/lib/radio-group';
 import { cn } from '@/lib/utils';
 
 interface Step1BasicInfoProps {
@@ -149,7 +149,7 @@ export function Step1BasicInfo({
 
   return (
     <Card variant="outlined">
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-border-light">
+      <div className="flex items-center gap-3 px-6 py-4">
         <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary">
           <HomeOutlinedIcon fontSize="small" />
         </div>

@@ -40,7 +40,7 @@ export function OverviewActivityFeed({
   const activityLogHref = `${projectPath}?tab=summary`;
 
   return (
-    <section className="flex-1 rounded-xl border border-border-light/70 bg-card p-5 shadow-card flex flex-col">
+    <section className="flex-1 rounded-xl shadow-e2/70 bg-card p-5 shadow-card flex flex-col">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground">Recent Activity</h3>
         <Link

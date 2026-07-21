@@ -81,7 +81,7 @@ export const ProjectFinanceTab = React.memo(
       <div className="space-y-4">
         {/* Sticky summary header — sits just under the project page tabs so
           users keep canonical totals visible while scrolling long lists. */}
-        <div className="sticky top-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur border-b border-border-light">
+        <div className="sticky top-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur shadow-e1">
           <FinanceSummaryStrip summary={summary} isLoading={summaryLoading && isActive} />
         </div>
 

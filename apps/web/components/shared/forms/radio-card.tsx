@@ -1,8 +1,8 @@
 'use client';
 
-import { Indicator, Item, Root } from '@radix-ui/react-radio-group';
 import * as React from 'react';
 
+import { Indicator, Item, Root } from '@/lib/radio-group';
 import { cn } from '@/lib/utils';
 
 export interface RadioCardProps {

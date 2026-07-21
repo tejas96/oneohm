@@ -184,7 +184,7 @@ export function FinanceCalendarPage(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-border-light border-b px-6 py-4">
+      <header className="px-6 py-4">
         <MUITypography variant="drawerTitle">Dues Calendar</MUITypography>
         <MUITypography variant="body" className="text-foreground-secondary mt-1">
           Every open payment term grouped by when it&apos;s due. Click any row for project context.

@@ -6,7 +6,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import IconButton from '@mui/material/IconButton';
 import InputBase from '@mui/material/InputBase';
 import Tooltip from '@mui/material/Tooltip';
-import * as AccordionPrimitive from '@radix-ui/react-accordion';
 import { useEffect, useRef, useState } from 'react';
 
 import {
@@ -18,6 +17,7 @@ import {
 } from './task-row-wizard';
 
 import { Accordion, AccordionContent, AccordionItem } from '@/components/ui';
+import * as AccordionPrimitive from '@/lib/accordion';
 import type { WorkflowStep } from '@/lib/hooks/resources';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ export function MilestoneTaskGroup({
 
   return (
     <Accordion type="multiple" value={openItems} onValueChange={setOpenItems}>
-      <AccordionItem value={milestone.name} className="border border-border-light rounded-lg mb-3">
+      <AccordionItem value={milestone.name} className="rounded-lg mb-3 shadow-e1">
         {/* Custom header: trigger + action buttons as siblings to avoid button-in-button */}
         <AccordionPrimitive.Header className="flex items-center">
           <AccordionPrimitive.Trigger className="flex flex-1 items-center gap-3 px-4 py-3 text-left hover:bg-muted transition-colors [&[data-state=open]>svg:last-child]:rotate-180">

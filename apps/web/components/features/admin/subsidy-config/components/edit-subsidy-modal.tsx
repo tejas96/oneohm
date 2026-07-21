@@ -227,7 +227,7 @@ export function EditSubsidyModal({
               </div>
 
               <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center justify-between rounded-lg border border-border-light p-3 flex-1 min-w-[220px]">
+                <div className="flex items-center justify-between rounded-lg shadow-e2 p-3 flex-1 min-w-[220px]">
                   <Controller
                     name="requiresDcr"
                     control={form.control}
@@ -274,7 +274,7 @@ export function EditSubsidyModal({
               </Alert>
               <div className="space-y-3">
                 {tiersFieldArray.fields.map((field, index) => (
-                  <div key={field.id} className="rounded-lg border border-border-light p-3">
+                  <div key={field.id} className="rounded-lg shadow-e2 p-3">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <MUIInput
@@ -392,7 +392,7 @@ export function EditSubsidyModal({
                 />
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-border-light p-3">
+              <div className="flex items-center justify-between rounded-lg shadow-e2 p-3">
                 <Controller
                   name="isActive"
                   control={form.control}

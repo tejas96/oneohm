@@ -47,7 +47,7 @@ export function PipelineTrendChart({
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-border-light bg-white p-4 text-center">
+      <div className="rounded-lg shadow-e2 bg-white p-4 text-center">
         <MUITypography variant="body" className="text-foreground-secondary">
           Failed to load trend data.
         </MUITypography>
@@ -60,7 +60,7 @@ export function PipelineTrendChart({
 
   if (chartData.length === 0) {
     return (
-      <div className="flex h-[280px] items-center justify-center rounded-lg border border-border-light bg-white p-4">
+      <div className="flex h-[280px] items-center justify-center rounded-lg shadow-e2 bg-white p-4">
         <MUITypography variant="body" className="text-foreground-secondary">
           No trend data for the selected period.
         </MUITypography>
@@ -69,7 +69,7 @@ export function PipelineTrendChart({
   }
 
   return (
-    <div className="rounded-lg border border-border-light bg-white p-4 shadow-sm">
+    <div className="rounded-lg shadow-e2 bg-white p-4 shadow-sm">
       <MUITypography variant="sectionTitle" className="mb-4">
         Leads vs Won Over Time
       </MUITypography>

@@ -10,11 +10,11 @@ export type {
 } from './avatar';
 
 // Badge
-export { Badge, badgeVariants, DotBadge, CountBadge } from './badge';
+export { Badge, DotBadge, CountBadge } from './badge';
 export type { BadgeProps, DotBadgeProps, CountBadgeProps } from './badge';
 
 // Button
-export { Button, buttonVariants } from './button';
+export { Button } from './button';
 export type { ButtonProps } from './button';
 
 // Card
@@ -26,12 +26,11 @@ export {
   CardDescription,
   CardContent,
   StatsCard,
-  cardVariants,
 } from './card';
 export type { CardProps, StatsCardProps, CardPropsType } from './card';
 
 // Checkbox
-export { Checkbox, checkboxVariants } from './checkbox';
+export { Checkbox } from './checkbox';
 export type { CheckboxProps } from './checkbox';
 
 // Command
@@ -61,7 +60,6 @@ export {
   DialogTitle,
   DialogDescription,
   ConfirmDialog,
-  dialogContentVariants,
 } from './dialog';
 export type { DialogContentProps, ConfirmDialogProps } from './dialog';
 
@@ -99,20 +97,8 @@ export {
   DropdownMenuRadioGroup,
 } from './dropdown-menu';
 
-// Form
-export {
-  useFormField,
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-  FormField,
-} from './form';
-
 // Input
-export { Input, inputVariants } from './input';
+export { Input } from './input';
 export type { InputProps } from './input';
 
 // MUI Input
@@ -131,28 +117,12 @@ export type { PasswordInputProps } from './password-input';
 export { OtpInput } from './otp-input';
 export type { OtpInputProps } from './otp-input';
 
-// FormFieldInput
-export { FormFieldInput } from './form-field';
-export type { FormFieldInputProps } from './form-field';
-
 // Label
-export { Label, labelVariants } from './label';
+export { Label } from './label';
 export type { LabelProps } from './label';
 
 // Popover
 export { Popover, PopoverTrigger, PopoverContent } from './popover';
-
-// Calendar
-export { Calendar } from './calendar';
-export type { CalendarProps } from './calendar';
-
-// DatePicker
-export { DatePicker } from './date-picker';
-export type { DatePickerProps } from './date-picker';
-
-// DateRangePicker
-export { DateRangePicker } from './date-range-picker';
-export type { DateRangePickerProps } from './date-range-picker';
 
 // Select
 export {
@@ -168,13 +138,6 @@ export {
   SelectScrollDownButton,
 } from './select';
 export type { SelectTriggerProps } from './select';
-
-// Radio Group
-export { RadioGroup, RadioGroupItem, radioItemVariants } from './radio-group';
-export type { RadioGroupItemProps } from './radio-group';
-
-// Separator
-export { Separator } from './separator';
 
 // Sheet
 export {
@@ -192,10 +155,6 @@ export {
 
 // Skeleton
 export { Skeleton } from './skeleton';
-
-// Switch
-export { Switch, switchVariants } from './switch';
-export type { SwitchProps } from './switch';
 
 // MUI Switch
 export { MUISwitch } from './mui-switch';
@@ -253,7 +212,6 @@ export {
   TableRow,
   TableCell,
   TableCaption,
-  tableVariants,
 } from './table';
 export type { TableProps, TableHeadProps } from './table';
 
@@ -266,13 +224,11 @@ export {
   VerticalTabsList,
   VerticalTabsTrigger,
   VerticalTabsContent,
-  tabsListVariants,
-  tabsTriggerVariants,
 } from './tabs';
 export type { TabsListProps, TabsTriggerProps } from './tabs';
 
 // Textarea
-export { Textarea, textareaVariants } from './textarea';
+export { Textarea } from './textarea';
 export type { TextareaProps } from './textarea';
 
 // Tooltip
@@ -283,7 +239,6 @@ export {
   TooltipProvider,
   RichTooltipContent,
   HelpTooltip,
-  tooltipContentVariants,
 } from './tooltip';
 export type { TooltipContentProps, HelpTooltipProps } from './tooltip';
 
@@ -309,14 +264,7 @@ export type {
 } from './breadcrumb';
 
 // Progress
-export {
-  Progress,
-  progressVariants,
-  indicatorVariants,
-  ProgressWithLabel,
-  CircularProgress,
-  SegmentedProgress,
-} from './progress';
+export { Progress, ProgressWithLabel, CircularProgress, SegmentedProgress } from './progress';
 export type {
   ProgressProps,
   ProgressWithLabelProps,
@@ -325,7 +273,7 @@ export type {
 } from './progress';
 
 // Spinner
-export { Spinner, spinnerVariants, LoadingDots, loadingDotsVariants } from './spinner';
+export { Spinner, LoadingDots } from './spinner';
 export type { SpinnerProps, LoadingDotsProps } from './spinner';
 
 // ZigzagLoader

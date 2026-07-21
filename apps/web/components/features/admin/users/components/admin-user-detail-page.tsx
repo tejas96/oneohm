@@ -157,7 +157,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
         >
           <ArrowLeft className="size-4" /> Back to Users
         </Link>
-        <div className="bg-white rounded-lg border border-border-light p-12 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-e2 p-12 flex items-center justify-center">
           <Loader2 className="size-8 animate-spin text-primary" />
         </div>
       </div>
@@ -209,7 +209,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
         <ArrowLeft className="size-4" /> Back to Users
       </Link>
 
-      <div className="bg-white rounded-lg border border-border-light p-6">
+      <div className="bg-white rounded-lg shadow-e2 p-6">
         <div className="flex items-start gap-4">
           <Avatar className="size-14">
             <AvatarFallback className="text-lg">{initials}</AvatarFallback>
@@ -260,7 +260,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border-light">
+        <div className="flex items-center gap-2 mt-4 pt-4">
           {user.status === 'active' ? (
             <>
               <Button
@@ -306,7 +306,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
             <Shield className="mr-2 size-4" /> Add Role
           </Button>
         </div>
-        <div className="bg-white rounded-lg border border-border-light overflow-hidden">
+        <div className="bg-white rounded-lg shadow-e2 overflow-hidden">
           {isUserRolesError ? (
             <div className="p-6">
               <div className="flex items-center gap-3 text-foreground-secondary">

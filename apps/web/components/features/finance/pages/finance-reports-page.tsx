@@ -331,7 +331,7 @@ export function FinanceReportsPage(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-border-light border-b px-6 py-4">
+      <header className="px-6 py-4">
         <MUITypography variant="drawerTitle">Reports &amp; Exports</MUITypography>
         <MUITypography variant="body" className="text-foreground-secondary mt-1">
           One-click CSV exports for the most common finance deliverables. Each report exports up to{' '}
@@ -346,7 +346,7 @@ export function FinanceReportsPage(): React.JSX.Element {
               key={r.id}
               type="button"
               onClick={() => setActiveReport(r)}
-              className="border-border-light bg-surface hover:border-primary hover:bg-surface-secondary group flex h-full flex-col items-start gap-2 rounded-md border p-4 text-left transition-colors"
+              className="bg-surface shadow-e2 hover:shadow-e3 hover:-translate-y-px group flex h-full flex-col items-start gap-2 rounded-md border p-4 text-left transition-colors"
             >
               <div className="text-foreground-secondary group-hover:text-primary flex h-9 w-9 items-center justify-center rounded-md bg-background-secondary transition-colors">
                 {r.icon}

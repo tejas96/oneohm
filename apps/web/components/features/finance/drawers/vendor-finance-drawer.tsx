@@ -149,7 +149,7 @@ export function VendorFinanceDrawer({
             <div className="mb-2 mt-4">
               <MUITypography variant="sectionTitle">Spend by Category</MUITypography>
             </div>
-            <div className="border-border-light bg-surface space-y-2 rounded-md border p-3">
+            <div className="bg-surface space-y-2 rounded-xl shadow-e2 p-3">
               {vendor.byCategory.length === 0 && (
                 <MUITypography variant="body" className="text-foreground-tertiary">
                   No category breakdown.

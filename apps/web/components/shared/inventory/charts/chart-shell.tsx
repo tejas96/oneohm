@@ -63,12 +63,7 @@ export function ChartShell({
 }: ChartShellProps): React.JSX.Element {
   const [helpOpen, setHelpOpen] = React.useState(false);
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-3 rounded-xl border border-border-light bg-surface p-card',
-        className,
-      )}
-    >
+    <div className={cn('flex flex-col gap-3 rounded-xl shadow-e2 bg-surface p-card', className)}>
       {(title || action) && (
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">

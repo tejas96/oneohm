@@ -234,7 +234,7 @@ export function PropertyCard({
         {/* Badges Row */}
         <div className="mb-3 flex flex-wrap gap-2">
           {/* Property Type Badge */}
-          <span className="rounded border border-border-light bg-white px-2 py-0.5 text-xs">
+          <span className="rounded bg-white px-2 py-0.5 text-xs shadow-e1">
             {propertyTypeLabel}
           </span>
 

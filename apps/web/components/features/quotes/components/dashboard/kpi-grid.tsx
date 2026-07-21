@@ -36,7 +36,7 @@ function KPICard({ title, value, change, isPositive, icon }: KPICardProps): Reac
   return (
     <Card
       elevation={0}
-      className="p-4 rounded-lg border border-border-light bg-background shadow-card transition-all hover:shadow-sm flex flex-col justify-between min-h-[130px] relative overflow-hidden group"
+      className="p-4 rounded-lg shadow-e2 bg-background shadow-card transition-all hover:shadow-sm flex flex-col justify-between min-h-[130px] relative overflow-hidden group"
     >
       <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
         {icon}

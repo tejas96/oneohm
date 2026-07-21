@@ -79,8 +79,8 @@ function AdvancedTablePaginationInner({
         justifyContent: 'space-between',
         px: 2,
         py: 0.75,
-        borderTop: '1px solid',
-        borderColor: 'divider',
+        // No rule above the pager — it sits inside the table's own elevated
+        // surface, which already separates it from the page.
         backgroundColor: 'background.paper',
         flexWrap: 'wrap',
         gap: 1,

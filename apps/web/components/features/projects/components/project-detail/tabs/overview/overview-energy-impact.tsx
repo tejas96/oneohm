@@ -103,7 +103,7 @@ export function OverviewEnergyImpact({
           </div>
         </div>
 
-        <div className="rounded-lg border border-border-light bg-white/70 p-3">
+        <div className="rounded-lg shadow-e2 bg-white/70 p-3">
           <div className="flex items-center justify-between mb-1.5">
             <p className="text-[11px] text-foreground-secondary">Expected monthly generation</p>
             <p className="text-[10px] text-foreground-tertiary">kWh</p>

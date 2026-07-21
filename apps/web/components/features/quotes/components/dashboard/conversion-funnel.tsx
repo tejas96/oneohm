@@ -54,7 +54,7 @@ export function ConversionFunnel({ data }: ConversionFunnelProps): React.JSX.Ele
   return (
     <Card
       elevation={0}
-      className="lg:w-[30%] p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col justify-between min-h-[420px]"
+      className="lg:w-[30%] p-4 rounded-lg shadow-e2 bg-background shadow-card flex flex-col justify-between min-h-[420px]"
     >
       <div>
         <MUITypography variant="sectionTitle" className="font-semibold text-text-primary">
@@ -99,7 +99,7 @@ export function ConversionFunnel({ data }: ConversionFunnelProps): React.JSX.Ele
         })}
       </div>
 
-      <div className="pt-3 border-t border-border-light flex items-center justify-between text-xs text-text-secondary mt-4">
+      <div className="pt-3 flex items-center justify-between text-xs text-text-secondary mt-4">
         <MUITypography variant="body" className="text-text-secondary">
           Overall Yield
         </MUITypography>

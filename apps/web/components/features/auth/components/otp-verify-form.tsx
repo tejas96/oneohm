@@ -116,7 +116,7 @@ export function OtpVerifyForm(): React.JSX.Element {
       </div>
 
       {/* Back to Login */}
-      <div className="mt-6 pt-4 border-t border-border-light text-center">
+      <div className="mt-6 pt-4 text-center">
         <Typography variant="link" size="sm" color="muted" asChild>
           <Link href={ROUTES.AUTH.LOGIN}>← Back to login</Link>
         </Typography>

@@ -56,7 +56,7 @@ export function SalesFunnelChart({
 
   if (isError) {
     return (
-      <div className="flex h-[480px] flex-col items-center justify-center rounded-lg border border-border-light bg-white p-4">
+      <div className="flex h-[480px] flex-col items-center justify-center rounded-lg shadow-e2 bg-white p-4">
         <MUITypography variant="body" className="text-foreground-secondary">
           Failed to load pipeline data.
         </MUITypography>
@@ -69,7 +69,7 @@ export function SalesFunnelChart({
 
   if (stages.length === 0 || stages.every((d) => d.count === 0)) {
     return (
-      <div className="flex h-[480px] items-center justify-center rounded-lg border border-border-light bg-white p-4">
+      <div className="flex h-[480px] items-center justify-center rounded-lg shadow-e2 bg-white p-4">
         <MUITypography variant="body" className="text-foreground-secondary">
           No pipeline data for the selected period.
         </MUITypography>
@@ -78,7 +78,7 @@ export function SalesFunnelChart({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border-light bg-gradient-to-b from-white to-background-secondary/30 p-5 shadow-sm sm:p-8">
+    <div className="overflow-hidden rounded-xl shadow-e2 bg-gradient-to-b from-white to-background-secondary/30 p-5 shadow-sm sm:p-8">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-3">
         <div>
           <MUITypography variant="sectionTitle">Pipeline Flow</MUITypography>

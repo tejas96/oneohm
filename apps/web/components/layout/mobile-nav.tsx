@@ -156,7 +156,7 @@ export function MobileNav() {
 
       <SheetContent side="left" className="w-sheet-mobile p-0">
         {/* Header */}
-        <SheetHeader className="px-4 py-3 border-b border-border-light">
+        <SheetHeader className="px-4 py-3">
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-baseline">
               <span className="text-lg font-semibold text-foreground">One</span>
@@ -168,7 +168,7 @@ export function MobileNav() {
         {/* Main Navigation */}
         <div className="flex flex-col h-[calc(100vh-var(--header-height))] overflow-y-auto">
           {/* Rail Items as Primary Nav */}
-          <div className="p-2 border-b border-border-light shrink-0">
+          <div className="p-2 shrink-0">
             <div className="text-2xs font-semibold text-foreground-tertiary uppercase tracking-wide px-3 py-2">
               Navigation
             </div>
@@ -202,7 +202,7 @@ export function MobileNav() {
 
           {/* Current Section Sub-Navigation */}
           {panelConfig && (
-            <div className="p-2 border-b border-border-light shrink-0">
+            <div className="p-2 shrink-0">
               <div className="text-2xs font-semibold text-foreground-tertiary uppercase tracking-wide px-3 py-2">
                 {panelConfig.title}
               </div>
@@ -223,7 +223,7 @@ export function MobileNav() {
           )}
 
           {/* Bottom Nav */}
-          <div className="p-2 mt-auto border-t border-border-light shrink-0">
+          <div className="p-2 mt-auto shrink-0">
             {navigation.railBottom.map((item) => {
               const isActive = isNavItemActive(pathname, item.href);
               const Icon = item.icon;

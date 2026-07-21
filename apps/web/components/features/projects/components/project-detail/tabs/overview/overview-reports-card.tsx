@@ -43,7 +43,7 @@ export function OverviewReportsCard({
   const completedCount = reportsData?.reports.filter((r) => r.isSaved && r.isComplete).length ?? 0;
 
   return (
-    <div className="rounded-xl border border-border-light/70 bg-card shadow-card p-5">
+    <div className="rounded-xl shadow-e2/70 bg-card shadow-card p-5">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-semibold text-foreground">Reports</p>
         <span className="text-[11px] text-foreground-secondary">

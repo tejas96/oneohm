@@ -26,12 +26,20 @@ import { cn } from '@/lib/utils';
 
 type Intent = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
 
-const INTENT_BORDER: Record<Intent, string> = {
-  neutral: 'border-border-light',
-  success: 'border-success/40',
-  warning: 'border-warning/50',
-  danger: 'border-error/50',
-  info: 'border-info/40',
+/**
+ * Intent was previously carried by the tile's border colour. The DS has no
+ * structural borders, but the signal is semantic — not decoration — so it is
+ * preserved as a tinted surface rather than dropped: the tile still reads as
+ * success/warning/danger at a glance, via luminance instead of a line.
+ *
+ * `neutral` stays on the plain surface so an ordinary metric doesn't shout.
+ */
+const INTENT_TINT: Record<Intent, string> = {
+  neutral: 'bg-surface',
+  success: 'bg-success/[0.06]',
+  warning: 'bg-warning/[0.08]',
+  danger: 'bg-error/[0.06]',
+  info: 'bg-info/[0.06]',
 };
 
 const INTENT_ACCENT: Record<Intent, string> = {
@@ -113,10 +121,10 @@ export function MetricTile({
       type={isInteractive ? 'button' : undefined}
       onClick={onClick}
       className={cn(
-        'group flex flex-col gap-1.5 rounded-xl border bg-surface p-card text-left transition-colors',
-        INTENT_BORDER[intent],
+        'group flex flex-col gap-1.5 rounded-xl p-card text-left shadow-e2 transition-all',
+        INTENT_TINT[intent],
         isInteractive &&
-          'cursor-pointer hover:border-foreground-muted/50 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+          'cursor-pointer hover:-translate-y-px hover:shadow-e3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
         className,
       )}
     >

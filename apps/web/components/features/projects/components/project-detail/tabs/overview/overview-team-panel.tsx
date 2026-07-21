@@ -53,7 +53,7 @@ export function OverviewTeamPanel({
   );
 
   return (
-    <div className="rounded-xl border border-border-light/70 bg-card shadow-card p-5 h-[500px] flex flex-col">
+    <div className="rounded-xl shadow-e2/70 bg-card shadow-card p-5 h-[500px] flex flex-col">
       <div className="flex items-center justify-between mb-4 shrink-0">
         <div>
           <p className="text-sm font-semibold text-foreground">Team</p>

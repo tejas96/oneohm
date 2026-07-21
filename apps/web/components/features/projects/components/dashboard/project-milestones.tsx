@@ -37,7 +37,7 @@ export function ProjectMilestones({
   return (
     <Card
       elevation={0}
-      className={`flex-1 p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col justify-between min-h-[360px] ${
+      className={`flex-1 p-4 rounded-lg shadow-e2 bg-background shadow-card flex flex-col justify-between min-h-[360px] ${
         className || 'lg:w-1/2'
       }`}
     >
@@ -61,7 +61,7 @@ export function ProjectMilestones({
           projects.slice(0, 3).map((project) => (
             <div
               key={project.id}
-              className="flex flex-col gap-2 p-3 rounded-lg border border-border-light bg-background-secondary hover:bg-border-light transition-all"
+              className="flex flex-col gap-2 p-3 rounded-lg shadow-e2 bg-background-secondary hover:bg-border-light transition-all"
             >
               <div className="flex items-center justify-between">
                 <div>

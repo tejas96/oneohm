@@ -150,6 +150,18 @@ export function useInventoryPaletteSearch(
     const data = query.data;
     if (!data) return [];
 
+    /**
+     * `hits` is typed as a required array, but the type describes the contract
+     * rather than what actually arrives — a malformed or partial response gets
+     * through `!data` and then throws `data.hits is not iterable`, which took
+     * down the whole dashboard via the layout-level ErrorBoundary. Search is a
+     * non-critical surface and must degrade to "no results", never crash the
+     * page it is mounted on.
+     *
+     * `degraded` is already defended the same way where it is read below.
+     */
+    if (!Array.isArray(data.hits)) return [];
+
     const byType = new Map<InventorySearchType, InventoryPaletteHit[]>();
     for (const hit of data.hits) {
       const enriched: InventoryPaletteHit = {

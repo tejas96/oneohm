@@ -117,7 +117,7 @@ export function OverviewFinancials({
   const margin = hasMarginData ? totalExpected - actualCost : undefined;
 
   return (
-    <section className="rounded-xl border border-border-light/70 bg-card p-5 shadow-card">
+    <section className="rounded-xl shadow-e2/70 bg-card p-5 shadow-card">
       <div className="space-y-4">
         {/* ── Header ── */}
         <div className="flex items-center justify-between mb-1">
@@ -141,7 +141,7 @@ export function OverviewFinancials({
             paid-vs-remaining bar when no terms are defined. */}
         {hasPaymentData && termCount > 0 ? (
           <div>
-            <div className="flex h-10 overflow-hidden rounded-lg border border-border-light bg-muted">
+            <div className="flex h-10 overflow-hidden rounded-lg shadow-e2 bg-muted">
               {sortedTerms.map((term, idx) => {
                 const kind = classifyTerm(term);
                 const { bg, text } = segmentClasses(kind);
@@ -197,7 +197,7 @@ export function OverviewFinancials({
           </div>
         ) : hasPaymentData ? (
           <div>
-            <div className="flex h-10 overflow-hidden rounded-lg border border-border-light bg-muted">
+            <div className="flex h-10 overflow-hidden rounded-lg shadow-e2 bg-muted">
               <div
                 className="flex items-center justify-center bg-success text-[11px] font-semibold text-white"
                 style={{ width: `${paidPct}%` }}
@@ -224,7 +224,7 @@ export function OverviewFinancials({
         {hasPaymentData && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {/* Received */}
-            <div className="rounded-lg border border-border-light p-3 bg-success/5">
+            <div className="rounded-lg shadow-e2 p-3 bg-success/5">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="size-1.5 rounded-full bg-success" />
                 <span className="text-[10px] font-medium uppercase text-success">Received</span>
@@ -273,7 +273,7 @@ export function OverviewFinancials({
             </div>
 
             {/* Pending */}
-            <div className="rounded-lg border border-border-light p-3">
+            <div className="rounded-lg shadow-e2 p-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="size-1.5 rounded-full bg-foreground-tertiary" />
                 <span className="text-[10px] font-medium uppercase text-foreground-secondary">
@@ -306,7 +306,7 @@ export function OverviewFinancials({
                 <p className="mt-1 text-[10px] text-secondary font-medium">Revenue − Cost</p>
               </div>
             ) : (
-              <div className="rounded-lg border border-border-light p-3">
+              <div className="rounded-lg shadow-e2 p-3">
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="size-1.5 rounded-full bg-info" />
                   <span className="text-[10px] font-medium uppercase text-info">Collected</span>
@@ -323,7 +323,7 @@ export function OverviewFinancials({
         )}
 
         {/* ── Footer: Cost facts + actions ── */}
-        <div className="flex items-center justify-between pt-3 border-t border-border-light">
+        <div className="flex items-center justify-between pt-3">
           {estimatedCost || actualCost ? (
             <div className="flex items-center gap-4 text-[11px]">
               {estimatedCost != null && estimatedCost > 0 && (

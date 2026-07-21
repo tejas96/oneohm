@@ -310,7 +310,7 @@ export function TaskDrawer({
             </Box>
 
             {canComplete && (
-              <SheetFooter className="border-t border-border-light p-4 bg-white">
+              <SheetFooter className="p-4 bg-white">
                 <Button className="w-full" onClick={handleComplete} disabled={updateTask.isPending}>
                   Complete Task
                 </Button>

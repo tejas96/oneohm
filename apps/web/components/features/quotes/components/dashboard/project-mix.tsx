@@ -32,7 +32,7 @@ export function ProjectMix({ data, totalCount, className }: ProjectMixProps): Re
   return (
     <Card
       elevation={0}
-      className={`flex-1 p-4 rounded-lg border border-border-light bg-background shadow-card flex flex-col justify-between min-h-[360px] ${
+      className={`flex-1 p-4 rounded-lg shadow-e2 bg-background shadow-card flex flex-col justify-between min-h-[360px] ${
         className || 'lg:w-1/2'
       }`}
     >
@@ -94,10 +94,7 @@ export function ProjectMix({ data, totalCount, className }: ProjectMixProps): Re
 
         <div className="flex flex-col gap-2.5 flex-1 w-full justify-center">
           {data.map((entry) => (
-            <div
-              key={entry.id}
-              className="flex items-center justify-between text-xs py-1 border-b border-border-light"
-            >
+            <div key={entry.id} className="flex items-center justify-between text-xs py-1">
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-sm" style={{ backgroundColor: entry.color }} />
                 <MUITypography variant="body" className="font-semibold text-text-secondary">

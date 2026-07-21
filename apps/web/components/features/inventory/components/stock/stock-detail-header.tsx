@@ -42,7 +42,7 @@ export function StockDetailHeader({
   onSettings,
 }: StockDetailHeaderProps): React.JSX.Element {
   return (
-    <div className="sticky top-header z-10 -mx-6 flex items-start justify-between gap-4 border-b border-border-light bg-white/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <div className="sticky top-header z-10 -mx-6 flex items-start justify-between gap-4 shadow-e1 bg-white/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="flex min-w-0 items-start gap-2">
         <IconButton
           component={Link}

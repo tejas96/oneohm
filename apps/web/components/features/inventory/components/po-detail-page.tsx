@@ -282,7 +282,7 @@ export function PoDetailPage(): React.JSX.Element {
         </MUIDialogFooter>
       </MUIDialog>
 
-      <div className="grid gap-4 rounded-lg border border-border-light bg-background p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 rounded-lg shadow-e2 bg-background p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <MUITypography variant="finePrint" className="text-foreground-tertiary">
             PO date

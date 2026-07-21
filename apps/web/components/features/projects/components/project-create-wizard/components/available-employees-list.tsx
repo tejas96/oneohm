@@ -73,7 +73,7 @@ export function AvailableEmployeesList({
   return (
     <div className="flex flex-col h-full">
       {/* Filter bar — search 70% + role 30% on one row */}
-      <div className="flex items-center gap-2 p-3 border-b border-border-light">
+      <div className="flex items-center gap-2 p-3">
         <div className="flex-[7]">
           <MUIInput
             placeholder="Search employees…"

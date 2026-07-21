@@ -263,7 +263,7 @@ export const ProjectBomTab = React.memo(
           </div>
         </div>
 
-        <div className="rounded-lg border border-border-light overflow-hidden">
+        <div className="rounded-lg shadow-e2 overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="bg-muted/50">
@@ -413,7 +413,7 @@ export const ProjectBomTab = React.memo(
           </table>
         </div>
 
-        <div className="border-t border-border-light pt-6">
+        <div className="pt-6">
           <ProcurementSection projectId={projectId} />
         </div>
       </div>

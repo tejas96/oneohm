@@ -88,7 +88,7 @@ export function StockTransactionsCard({
     `&warehouseId=${encodeURIComponent(warehouseId)}`;
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border-light bg-white p-4">
+    <section className="flex flex-col gap-3 rounded-xl shadow-e2 bg-white p-4">
       <header className="flex items-baseline justify-between">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Recent transactions</h3>

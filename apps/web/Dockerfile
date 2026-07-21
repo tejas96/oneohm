@@ -7,9 +7,11 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.base.json ./nx.json ./
 
+# Every workspace manifest must be present before `npm ci`, so that the
+# lockfile's workspace graph resolves. Keep this list in step with the
+# "workspaces" globs in the root package.json.
 COPY apps/backend/package.json ./apps/backend/
 COPY apps/web/package.json ./apps/web/
-COPY apps/ux/package.json ./apps/ux/
 COPY libs/shared/package.json ./libs/shared/
 
 RUN npm ci
@@ -29,7 +31,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package*.json ./
 COPY tsconfig.base.json ./nx.json ./jest.preset.js ./
 COPY apps/web ./apps/web/
-COPY apps/ux/package.json ./apps/ux/package.json
 COPY libs ./libs/
 
 RUN npx nx build web --configuration=production

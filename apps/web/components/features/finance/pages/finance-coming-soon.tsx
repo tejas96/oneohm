@@ -24,7 +24,7 @@ export function FinanceComingSoon({
 }: FinanceComingSoonProps): React.JSX.Element {
   return (
     <div className="flex h-full w-full flex-col">
-      <header className="border-border-light border-b px-6 py-4">
+      <header className="px-6 py-4">
         <MUITypography variant="drawerTitle">{title}</MUITypography>
       </header>
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-12 text-center">

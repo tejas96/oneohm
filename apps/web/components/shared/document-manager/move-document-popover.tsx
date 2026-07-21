@@ -105,7 +105,7 @@ export function MoveDocumentPopover({
           },
         }}
       >
-        <div className="px-3 py-2 border-b border-border-light mb-1">
+        <div className="px-3 py-2 mb-1">
           <Typography
             variant="caption"
             className="text-foreground-secondary font-medium uppercase tracking-wider text-[10px]"

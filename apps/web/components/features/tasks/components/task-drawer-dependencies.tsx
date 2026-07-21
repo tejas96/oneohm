@@ -160,7 +160,7 @@ export function TaskDrawerDependencies({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search tasks..."
-              className="w-full rounded-md border border-border-light bg-background py-1.5 pl-7 pr-3 text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-md bg-background py-1.5 pl-7 pr-3 text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-1 focus:ring-primary shadow-e1"
               autoFocus
             />
           </div>

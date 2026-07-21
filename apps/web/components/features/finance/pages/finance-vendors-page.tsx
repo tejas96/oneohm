@@ -113,7 +113,7 @@ export function FinanceVendorsPage(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="border-border-light border-b px-6 py-4">
+      <header className="px-6 py-4">
         <MUITypography variant="drawerTitle">Vendors &amp; Spend</MUITypography>
         <MUITypography variant="body" className="text-foreground-secondary mt-1">
           Org-wide vendor spend grouped by case-insensitive name (no vendor master in V1). Filter by

@@ -79,7 +79,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
         </nav>
 
         {/* Bottom Section */}
-        <div className="border-t border-border-light pb-1.5">
+        <div className="pb-1.5">
           {/* Panel Toggle */}
           <Tooltip>
             <TooltipTrigger asChild>

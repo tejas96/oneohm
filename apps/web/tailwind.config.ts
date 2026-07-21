@@ -26,117 +26,157 @@ const config: Config = {
           '200': '#c9e99a',
           '300': '#a7db5e',
           '400': '#8acd32',
-          '500': '#76c044',
+          '500': 'var(--ds-primary)',
           '600': '#5ea031',
           '700': '#477826',
           '800': '#3a5f20',
           '900': '#32511e',
           '950': '#1a2c0f',
-          DEFAULT: '#76c044',
-          dark: '#5ea031',
-          light: '#8fd35f',
+          DEFAULT: 'var(--ds-primary)',
+          /**
+           * Resolved: was #5ea031 here while `lib/theme/mui-theme.ts` and the
+           * DS both said #4D7C0F — a three-way drift.
+           *
+           * Adopting the DS value is not merely tidier, it fixes an
+           * accessibility failure: 14 of the 18 usages are `text-primary-dark`
+           * (or its hover), and #5ea031 on white is **3.21:1** — under the
+           * WCAG AA 4.5:1 floor for normal text. #4D7C0F reaches 4.99:1.
+           *
+           * Visibly darker in the sidebar active state and inline links.
+           */
+          dark: 'var(--ds-primary-dark)',
+          light: 'var(--ds-primary-light)',
         },
         secondary: {
-          DEFAULT: '#0d74b8',
-          dark: '#0a5c92',
-          light: '#2b8fd4',
+          DEFAULT: 'var(--ds-secondary)',
+          dark: 'var(--ds-secondary-dark)',
+          light: 'var(--ds-secondary-light)',
         },
+        // NOTE: these bare names are the VIVID FILLS in this config, which is
+        // the opposite of the DS convention (there, bare = readable
+        // foreground and `-main` = fill). Hence the `-main` tokens here.
         success: {
-          DEFAULT: '#22c55e',
+          DEFAULT: 'var(--ds-success-main)',
           foreground: '#ffffff',
         },
         warning: {
-          DEFAULT: '#eab308',
+          DEFAULT: 'var(--ds-warning-main)',
           foreground: '#ffffff',
         },
         error: {
-          DEFAULT: '#dc2626',
+          DEFAULT: 'var(--ds-danger)',
           foreground: '#ffffff',
         },
         info: {
-          DEFAULT: '#0ea5e9',
+          DEFAULT: 'var(--ds-info-main)',
           foreground: '#ffffff',
         },
+        /**
+         * Warm stone, replacing the previous cool zinc ramp. Step-for-step
+         * the lightness matches what it replaced (max contrast delta 0.27),
+         * so no existing text/background pair changes its WCAG standing.
+         */
         gray: {
-          '50': '#fafafa',
-          '100': '#f4f4f5',
-          '200': '#e4e4e7',
-          '300': '#d4d4d8',
-          '400': '#a1a1aa',
-          '500': '#71717a',
-          '600': '#52525b',
-          '700': '#3f3f46',
-          '800': '#27272a',
-          '900': '#18181b',
-          '950': '#09090b',
+          '50': 'var(--ds-neutral-50)',
+          '100': 'var(--ds-neutral-100)',
+          '200': 'var(--ds-neutral-200)',
+          '300': 'var(--ds-neutral-300)',
+          '400': 'var(--ds-neutral-400)',
+          '500': 'var(--ds-neutral-500)',
+          '600': 'var(--ds-neutral-600)',
+          '700': 'var(--ds-neutral-700)',
+          '800': 'var(--ds-neutral-800)',
+          '900': 'var(--ds-neutral-900)',
+          '950': 'var(--ds-neutral-950)',
         },
         background: {
-          DEFAULT: '#ffffff',
-          secondary: '#fafafa',
-          tertiary: '#f4f4f5',
+          DEFAULT: 'var(--ds-surface)',
+          secondary: 'var(--ds-canvas)',
+          tertiary: 'var(--ds-canvas-sunken)',
         },
         surface: {
-          DEFAULT: '#ffffff',
-          secondary: '#fafafa',
-          raised: '#ffffff',
+          DEFAULT: 'var(--ds-surface)',
+          secondary: 'var(--ds-canvas)',
+          raised: 'var(--ds-surface)',
+          // The zebra stripe tone — every other table row sits on this.
+          alt: 'var(--ds-surface-alt)',
         },
         foreground: {
-          DEFAULT: '#18181b',
-          secondary: '#52525b',
-          tertiary: '#71717a',
-          muted: '#a1a1aa',
+          DEFAULT: 'var(--ds-text-primary)',
+          secondary: 'var(--ds-text-secondary)',
+          /**
+           * Maps to the ramp's 500 step (#78716C, 4.80:1), NOT the DS
+           * `text-tertiary` (#A8A29E, 2.52:1). The names line up but the
+           * values do not: this token carries small copy like panel section
+           * headers, and taking the DS value would silently fail WCAG AA.
+           */
+          tertiary: 'var(--ds-neutral-500)',
+          /** Decorative/disabled only — 2.52:1, never load-bearing text. */
+          muted: 'var(--ds-text-tertiary)',
         },
         border: {
-          DEFAULT: '#e4e4e7',
-          light: '#f4f4f5',
-          medium: '#d4d4d8',
+          DEFAULT: 'var(--ds-hairline)',
+          light: 'var(--ds-canvas-sunken)',
+          medium: 'var(--ds-neutral-300)',
         },
         card: {
-          DEFAULT: '#ffffff',
-          foreground: '#18181b',
+          DEFAULT: 'var(--ds-surface)',
+          foreground: 'var(--ds-text-primary)',
         },
         popover: {
-          DEFAULT: '#ffffff',
-          foreground: '#18181b',
+          DEFAULT: 'var(--ds-surface)',
+          foreground: 'var(--ds-text-primary)',
         },
         muted: {
-          DEFAULT: '#fafafa',
-          foreground: '#71717a',
+          DEFAULT: 'var(--ds-canvas)',
+          foreground: 'var(--ds-neutral-500)',
         },
         accent: {
-          DEFAULT: '#fafafa',
-          foreground: '#18181b',
+          DEFAULT: 'var(--ds-canvas)',
+          foreground: 'var(--ds-text-primary)',
+          // Selected-row / selected-state tint, matching MUI's Mui-selected.
+          subtle: 'var(--ds-accent-subtle)',
         },
         destructive: {
-          DEFAULT: '#dc2626',
+          DEFAULT: 'var(--ds-danger)',
           foreground: '#ffffff',
         },
-        input: '#e4e4e7',
-        ring: '#76c044',
+        input: 'var(--ds-hairline)',
+        ring: 'var(--ds-accent)',
         chart: {
-          '1': '#76c044',
-          '2': '#0d74b8',
-          '3': '#eab308',
+          '1': 'var(--ds-chart-1)',
+          '2': 'var(--ds-chart-2)',
+          '3': 'var(--ds-chart-3)',
+          // NOT bridged: DS says chart-4 #0EA5E9 and chart-5 #4D7C0F. These
+          // change visibly, and `lib/charts/palette.ts` disagrees with BOTH
+          // today — the whole chart ramp is reconciled in one deliberate step.
           '4': '#9333ea',
           '5': '#f97316',
         },
         sidebar: {
-          DEFAULT: '#ffffff',
-          foreground: '#18181b',
-          primary: '#76c044',
+          DEFAULT: 'var(--ds-surface)',
+          foreground: 'var(--ds-text-primary)',
+          primary: 'var(--ds-primary)',
           'primary-foreground': '#ffffff',
-          accent: '#fafafa',
-          'accent-foreground': '#18181b',
-          border: '#e4e4e7',
-          ring: '#76c044',
+          accent: 'var(--ds-canvas)',
+          'accent-foreground': 'var(--ds-text-primary)',
+          border: 'var(--ds-hairline)',
+          ring: 'var(--ds-accent)',
         },
         highlight: {
           DEFAULT: '#fef08a',
           foreground: '#713f12',
         },
       },
+      /**
+       * next/font already bakes the full fallback chain into these variables
+       * (`geistSans, "geistSans Fallback", Inter, -apple-system, …`), so
+       * repeating the stack here only duplicates it in every computed style.
+       */
       fontFamily: {
-        sans: ['var(--font-inter)', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['var(--font-geist-sans)'],
+        /** Geist Mono — IDs, kWh readings, coordinates, invoice numbers. */
+        mono: ['var(--font-geist-mono)'],
       },
       fontSize: {
         nano: [
