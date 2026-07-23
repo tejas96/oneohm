@@ -124,7 +124,9 @@ export function ProductsListPage(): JSX.Element {
       return (
         <button
           type="button"
-          onClick={() => sorting.toggleSort(field)}
+          onClick={() => {
+            sorting.toggleSort(field);
+          }}
           className="flex items-center gap-1 font-semibold text-2xs uppercase tracking-wider hover:text-foreground transition-colors"
         >
           {label}

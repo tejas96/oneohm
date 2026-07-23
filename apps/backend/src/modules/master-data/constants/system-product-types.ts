@@ -122,14 +122,11 @@ export const SYSTEM_PRODUCT_TYPES: Record<string, SystemProductTypeDefinition> =
       {
         key: 'structure_type',
         label: 'Structure Type',
-        dataType: 'enum',
+        dataType: 'string',
         isRequired: true,
         isFilterable: true,
         group: 'core',
         sort: 1,
-        validation: {
-          options: ['aluminum_rail', 'rcc_3x6', 'elevated_6x9', 'super_elevated', 'ground_mount'],
-        },
       },
     ],
   },

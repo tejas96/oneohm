@@ -230,8 +230,10 @@ export function QuoteEquipmentCard({
                   <div>
                     <h4 className="font-semibold text-foreground text-xs">{structureItem.name}</h4>
                     <span className="text-[10px] text-foreground-tertiary mt-0.5 block leading-none">
-                      {structureItem.specifications.structureType as string} · Qty:{' '}
-                      {structureItem.quantity}
+                      {(structureItem.specifications.structure_type as string | undefined) ??
+                        (structureItem.specifications.structureType as string | undefined) ??
+                        ''}{' '}
+                      · Qty: {structureItem.quantity}
                     </span>
                   </div>
                   {canViewEquipmentPricing && (

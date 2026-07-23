@@ -4,6 +4,7 @@ export * from './validation';
 export * from './error';
 export * from './pricing';
 export * from './product-options';
+export * from './structure-type';
 export * from './enum-helpers';
 export * from './pagination';
 export * from './debounce';

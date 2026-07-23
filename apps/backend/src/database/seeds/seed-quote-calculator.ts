@@ -425,55 +425,6 @@ export async function seedQuoteCalculatorData(
     console.log(`✅ Created ${inverterData.length} inverters`);
 
     // =====================================================
-    // 5. SEED MOUNTING STRUCTURES
-    // =====================================================
-    console.log('🏗️ Creating mounting structures...');
-    const structureResult = await queryRunner.query(
-      `INSERT INTO products (
-        organization_id, product_type_id, brand_id, name, code, status,
-        specifications
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (organization_id, code) DO UPDATE SET
-        name = EXCLUDED.name,
-        specifications = EXCLUDED.specifications
-      RETURNING id`,
-      [
-        organizationId,
-        productTypeIds['mounting_structure'],
-        brandIds['Generic'],
-        'Aluminum Rail Mount',
-        'STRUCT-ALUM-RAIL',
-        ProductStatus.ACTIVE,
-        JSON.stringify({
-          structure_type: 'aluminum_rail',
-          material: 'Aluminum',
-          weight_kg: 15,
-        }),
-      ],
-    );
-
-    // Create product price for structure
-    await queryRunner.query(
-      `INSERT INTO product_prices (
-        organization_id, product_id, project_type, unit_price, cost_multiplier,
-        gst_rate, currency, effective_from, is_active, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-      ON CONFLICT DO NOTHING`,
-      [
-        organizationId,
-        structureResult[0].id,
-        null,
-        3500,
-        1.0,
-        18.0,
-        'INR',
-        new Date().toISOString().split('T')[0],
-        true,
-      ],
-    );
-    console.log('✅ Created mounting structure');
-
-    // =====================================================
     // 6. SEED SUBSIDY CONFIGURATION
     // =====================================================
     console.log('💰 Creating subsidy configurations...');

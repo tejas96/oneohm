@@ -1,3 +1,5 @@
+import { normalizeStructureTypeCode } from './structure-type';
+
 export interface ProductOptionInput {
   id: string;
   name: string;
@@ -159,19 +161,22 @@ export function deriveStructureTypes(products: ProductOptionInput[]): StructureT
   const structureMap = new Map<string, StructureTypeOption>();
 
   for (const product of products) {
-    const st = product.specifications?.structure_type;
-    // If no structure_type in specs, derive a value from the product name (snake_case)
-    const key = st || product.name.toLowerCase().replace(/\s+/g, '_');
-    if (!structureMap.has(key)) {
-      structureMap.set(key, {
-        value: st || key,
+    const raw = product.specifications?.structure_type;
+    if (typeof raw !== 'string' || !raw.trim()) continue;
+
+    const structureType = normalizeStructureTypeCode(raw);
+    if (!structureType) continue;
+
+    if (!structureMap.has(structureType)) {
+      structureMap.set(structureType, {
+        value: structureType,
         label: product.name,
         material: product.specifications?.material,
       });
     }
   }
 
-  return Array.from(structureMap.values());
+  return Array.from(structureMap.values()).sort((a, b) => a.label.localeCompare(b.label));
 }
 
 export function getInverterCapacities(

@@ -30,6 +30,7 @@ export type {
 interface ProductListFilters extends BaseFilters {
   type?: string;
   status?: string;
+  hasActivePrice?: boolean;
 }
 
 // ── Fetch-All Hooks (no pagination, no URL sync) ───────────────
@@ -63,7 +64,23 @@ export function useAllStructureProducts() {
     defaultPageSize: 500,
     syncToUrl: false,
     staleTime: STALE_TIMES.slow,
-    defaultFilters: { type: 'mounting_structure', status: 'active' } as Partial<ProductListFilters>,
+    defaultFilters: {
+      type: 'mounting_structure',
+      status: 'active',
+      hasActivePrice: true,
+    } as Partial<ProductListFilters>,
+  });
+}
+
+/** All mounting structure products (active + inactive) for admin structure type picker */
+export function useAllMountingStructureProductsForAdmin() {
+  return useResourceList<ProductOptionInput, ProductListFilters>({
+    resource: 'products-structures-admin',
+    endpoint: '/products',
+    defaultPageSize: 500,
+    syncToUrl: false,
+    staleTime: STALE_TIMES.slow,
+    defaultFilters: { type: 'mounting_structure' } as Partial<ProductListFilters>,
   });
 }
 

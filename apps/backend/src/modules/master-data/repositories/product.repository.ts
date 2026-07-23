@@ -34,6 +34,9 @@ export class ProductRepository {
       brandId?: string;
       brand?: string;
       search?: string;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
+      hasActivePrice?: boolean;
     },
   ): Promise<{ data: ProductEntity[]; total: number }> {
     const query = this.repository
@@ -71,11 +74,41 @@ export class ProductRepository {
       );
     }
 
+    if (filters?.hasActivePrice) {
+      query.andWhere(
+        `EXISTS (
+          SELECT 1 FROM product_prices pp
+          WHERE pp.product_id = product.id
+            AND pp.organization_id = :organizationId
+            AND pp.is_active = true
+            AND pp.effective_from <= CURRENT_DATE
+            AND (pp.effective_to IS NULL OR pp.effective_to >= CURRENT_DATE)
+        )`,
+      );
+    }
+
     // Split getCount + getMany to avoid TypeORM getManyAndCount crash
     // when leftJoinAndSelect is combined with orderBy on a joined alias.
+    const allowedSortFields: Record<string, string> = {
+      name: 'product.name',
+      code: 'product.code',
+      createdAt: 'product.createdAt',
+      updatedAt: 'product.updatedAt',
+      status: 'product.status',
+    };
+    const appliedOrderBy =
+      (filters?.sortBy && allowedSortFields[filters.sortBy]) ?? 'product.createdAt';
+    const appliedOrder = filters?.sortOrder ?? 'DESC';
     const total = await query.getCount();
-    const data = await query
-      .orderBy('product.name', 'ASC')
+    const dataQuery = query.orderBy(appliedOrderBy, appliedOrder);
+    // Avoid a second ORDER BY on the same column — TypeORM/SQL treats it as a
+    // tiebreaker and can force ASC, making name DESC appear identical to ASC.
+    if (appliedOrderBy !== 'product.name') {
+      dataQuery.addOrderBy('product.name', 'ASC');
+    } else {
+      dataQuery.addOrderBy('product.id', 'ASC');
+    }
+    const data = await dataQuery
       .skip((page - 1) * limit)
       .take(limit)
       .getMany();
@@ -332,6 +365,29 @@ export class ProductRepository {
     }
 
     query.orderBy('product.name', 'ASC');
+
+    return query.getOne();
+  }
+
+  async findActiveByStructureType(
+    organizationId: string,
+    productTypeId: string,
+    structureType: string,
+    excludeProductId?: string,
+  ): Promise<ProductEntity | null> {
+    const query = this.repository
+      .createQueryBuilder('product')
+      .where('product.organization_id = :organizationId', { organizationId })
+      .andWhere('product.product_type_id = :productTypeId', { productTypeId })
+      .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
+      .andWhere('product.deleted_at IS NULL')
+      .andWhere("product.specifications->>'structure_type' = :structureType", {
+        structureType,
+      });
+
+    if (excludeProductId) {
+      query.andWhere('product.id != :excludeProductId', { excludeProductId });
+    }
 
     return query.getOne();
   }

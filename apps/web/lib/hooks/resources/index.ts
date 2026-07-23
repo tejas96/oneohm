@@ -71,6 +71,7 @@ export {
   useAllPanelProducts,
   useAllInverterProducts,
   useAllStructureProducts,
+  useAllMountingStructureProductsForAdmin,
   type PanelBrandOption,
   type InverterBrandOption,
   type StructureTypeOption,
