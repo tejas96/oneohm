@@ -112,7 +112,12 @@ export function CreatableCombobox({
           />
         </div>
       </PopoverAnchor>
-      <PopoverContent align="start" className="p-0 w-(--radix-popover-trigger-width)">
+      <PopoverContent
+        align="start"
+        className="p-0 w-(--radix-popover-trigger-width)"
+        style={{ zIndex: 1500 }}
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <Command shouldFilter={false}>
           <CommandList>
             {showCreate && (

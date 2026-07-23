@@ -11,6 +11,7 @@ import {
   SubsidySchemeResult,
   ValidationWarning,
 } from '@tejas96/shared/types';
+import { normalizeStructureTypeCode } from '@tejas96/shared/utils';
 
 import { InventoryStockService } from '../../inventory/services/inventory-stock.service';
 import { InstallationPricing } from '../../master-data/entities/installation-pricing.entity';
@@ -1866,16 +1867,23 @@ export class QuoteCalculatorService {
     gstAmount: number;
     gstRate: number;
   }> {
+    const normalizedStructureType = normalizeStructureTypeCode(structureType);
+    if (!normalizedStructureType) {
+      throw new BadRequestException('Structure type is required and must be a valid code');
+    }
+
     // 1. Find structure product
     const productTypeId = await this.getProductTypeId(organizationId, 'mounting_structure');
     const structureProduct = await this.productRepo.findMountingStructure(
       organizationId,
       productTypeId,
-      structureType,
+      normalizedStructureType,
     );
 
     if (!structureProduct) {
-      throw new BadRequestException(`Mounting structure not found for type: ${structureType}`);
+      throw new BadRequestException(
+        `Mounting structure not found for type: ${normalizedStructureType}`,
+      );
     }
 
     // 2. Get pricing rule and validate
@@ -1895,7 +1903,7 @@ export class QuoteCalculatorService {
     return {
       productId: structureProduct.id,
       name: structureProduct.name,
-      structureType,
+      structureType: normalizedStructureType,
       quantity: 1,
       unitPrice: structureCost,
       lineTotal: structureCost,

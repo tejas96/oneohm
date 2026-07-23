@@ -75,6 +75,7 @@ export function useProductAdminMutations() {
   return useResourceMutations<ProductAdminItem>({
     resource: 'products-admin',
     endpoint: '/products',
+    invalidateRelated: ['products-structures', 'products-structures-admin'],
     toast: {
       create: { success: 'Product created', error: 'Failed to create product' },
       update: { success: 'Product updated', error: 'Failed to update product' },

@@ -2,12 +2,17 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductStatus, UnitOfMeasure } from '@tejas96/shared/types';
+import { deriveStructureTypes } from '@tejas96/shared/utils';
 import { Loader2 } from 'lucide-react';
 import { type JSX, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { ProductSpecificationsFields } from './product-specifications-fields';
 import { productSchema, type ProductFormData } from '../schemas/product.schema';
+import {
+  resolveProductSpecificationsForSubmit,
+  STRUCTURE_TYPE_FIELD,
+} from '../utils/product-form.utils';
 
 import { Alert, FieldLabel } from '@/components/shared';
 import {
@@ -25,12 +30,13 @@ import {
   Textarea,
   Typography,
 } from '@/components/ui';
-import { useModalForm } from '@/lib/hooks/core';
+import { FormTransformError, useModalForm } from '@/lib/hooks/core';
 import {
   useBrandList,
   useProductAdminMutations,
   useProductType,
   useProductTypeList,
+  useAllMountingStructureProductsForAdmin,
   type ProductAdminItem,
   type ProductTypeAttribute,
 } from '@/lib/hooks/resources';
@@ -109,6 +115,15 @@ export function EditProductModal({
     [resolvedProductType?.attributes],
   );
   const isSpecificationsLoading = productTypeDetail.isLoading && !!selectedProductTypeId;
+  const mountingStructures = useAllMountingStructureProductsForAdmin();
+  const structureTypeOptions = useMemo(
+    () =>
+      deriveStructureTypes(mountingStructures.items).map((option) => ({
+        value: option.value,
+        label: option.label,
+      })),
+    [mountingStructures.items],
+  );
 
   const buildSpecificationDefaults = useCallback(
     (attributes: ProductTypeAttribute[]): Record<string, unknown> => {
@@ -197,22 +212,29 @@ export function EditProductModal({
     form,
     mutation: productMutations.update,
     onOpenChange,
-    transformPayload: (data) => ({
-      id: target?.id ?? '',
-      data: {
-        name: data.name.trim(),
-        code: data.code.trim(),
-        productTypeId: data.productTypeId,
-        brandId: data.brandId,
-        description: data.description?.trim() || undefined,
-        modelNumber: data.modelNumber?.trim() || undefined,
-        specifications: data.specifications ?? {},
-        unitOfMeasure: data.unitOfMeasure,
-        productWarrantyYears: data.productWarrantyYears,
-        performanceWarrantyYears: data.performanceWarrantyYears,
-        status: data.status,
-      },
-    }),
+    transformPayload: (data) => {
+      const specsResult = resolveProductSpecificationsForSubmit(data, resolvedProductType?.code);
+      if (!specsResult.ok) {
+        throw new FormTransformError(STRUCTURE_TYPE_FIELD, specsResult.message);
+      }
+
+      return {
+        id: target?.id ?? '',
+        data: {
+          name: data.name.trim(),
+          code: data.code.trim(),
+          productTypeId: data.productTypeId,
+          brandId: data.brandId,
+          description: data.description?.trim() || undefined,
+          modelNumber: data.modelNumber?.trim() || undefined,
+          specifications: specsResult.specifications,
+          unitOfMeasure: data.unitOfMeasure,
+          productWarrantyYears: data.productWarrantyYears,
+          performanceWarrantyYears: data.performanceWarrantyYears,
+          status: data.status,
+        },
+      };
+    },
   });
 
   return (
@@ -438,6 +460,7 @@ export function EditProductModal({
                 <ProductSpecificationsFields
                   attributes={specificationAttributes}
                   control={form.control}
+                  structureTypeOptions={structureTypeOptions}
                 />
               ) : selectedProductTypeId ? (
                 <div className="rounded-lg border border-dashed border-border-light p-4 text-sm text-foreground-tertiary">

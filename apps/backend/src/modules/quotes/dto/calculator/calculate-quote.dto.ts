@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectType, DcrPreference, SystemType } from '@tejas96/shared/types';
-import { Type } from 'class-transformer';
+import { normalizeStructureTypeCode } from '@tejas96/shared/utils';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -193,8 +194,12 @@ export class CalculateQuoteDto {
     description: 'Type of mounting structure (e.g. aluminum_rail, rcc_3x6)',
     example: 'aluminum_rail',
   })
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    return normalizeStructureTypeCode(value) ?? '';
+  })
+  @IsNotEmpty({ message: 'Structure type is required and must be a valid code' })
   @IsString()
-  @IsNotEmpty()
   structureType!: string;
 
   @ApiPropertyOptional({

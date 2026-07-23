@@ -94,6 +94,12 @@ export class ProductController {
         type: String,
         description: 'Search in name, code, description',
       },
+      {
+        name: 'hasActivePrice',
+        required: false,
+        type: Boolean,
+        description: 'When true, only products with an active price effective today',
+      },
     ],
   })
   async findAll(
@@ -107,6 +113,9 @@ export class ProductController {
     @Query('brandId') brandId?: string,
     @Query('brand') brand?: string,
     @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+    @Query('hasActivePrice') hasActivePrice?: string,
   ): Promise<PaginatedResponse<ProductResponseDto>> {
     const result = await this.productService.findAll(organizationId, page, limit, {
       status,
@@ -115,6 +124,9 @@ export class ProductController {
       brandId,
       brand,
       search,
+      sortBy,
+      sortOrder: sortOrder === 'DESC' ? 'DESC' : sortOrder === 'ASC' ? 'ASC' : undefined,
+      hasActivePrice: hasActivePrice === 'true',
     });
 
     return {

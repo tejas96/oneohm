@@ -74,7 +74,10 @@ function buildCalculationFromBom(quote: QuoteDetail, bom: Bom): CalculateQuoteRe
     ? {
         productId: structureItem.productId ?? '',
         name: structureItem.name,
-        structureType: (structureItem.specifications.structureType as string) ?? '',
+        structureType:
+          (structureItem.specifications.structure_type as string | undefined) ??
+          (structureItem.specifications.structureType as string | undefined) ??
+          '',
         quantity: structureItem.quantity,
         unitPrice: structureItem.unitPrice ?? 0,
         lineTotal: structureItem.totalPrice ?? 0,

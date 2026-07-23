@@ -154,6 +154,11 @@ export function useQueryState<F extends BaseFilters>(
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
+  const sortByRef = useRef(sortBy);
+  const sortOrderRef = useRef(sortOrder);
+  sortByRef.current = sortBy;
+  sortOrderRef.current = sortOrder;
+
   const debouncedSearch = useDebounce(search, searchDebounceMs);
 
   // Auto-reset page to 1 when filters, search, or pageSize change
@@ -169,7 +174,7 @@ export function useQueryState<F extends BaseFilters>(
       return;
     }
     setPageRaw(1);
-  }, [debouncedSearch, pageSize, filters]);
+  }, [debouncedSearch, pageSize, filters, sortBy, sortOrder]);
 
   // URL sync via replaceState
   const userChangedRef = useRef(false);
@@ -374,14 +379,18 @@ export function useQueryState<F extends BaseFilters>(
   const toggleSort = useCallback(
     (field: string) => {
       markUserChange();
-      if (sortBy === field) {
-        setSortOrder((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'));
-      } else {
-        setSortBy(field);
-        setSortOrder('ASC');
-      }
+      const currentSortBy = sortByRef.current;
+      const currentSortOrder = sortOrderRef.current;
+      const sameField = currentSortBy === field;
+      const nextOrder: 'ASC' | 'DESC' = sameField
+        ? currentSortOrder === 'ASC'
+          ? 'DESC'
+          : 'ASC'
+        : 'ASC';
+      setSortBy(field);
+      setSortOrder(nextOrder);
     },
-    [markUserChange, sortBy],
+    [markUserChange],
   );
 
   const clearSort = useCallback(() => {

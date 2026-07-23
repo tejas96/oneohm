@@ -23,6 +23,16 @@ interface UseModalFormReturn<TForm extends FieldValues> {
   isError: boolean;
 }
 
+export class FormTransformError extends Error {
+  constructor(
+    public readonly field: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'FormTransformError';
+  }
+}
+
 export function useModalForm<
   TForm extends FieldValues,
   TPayload = TForm,
@@ -50,7 +60,14 @@ export function useModalForm<
         form.reset();
         onOpenChange(false);
         onSuccess?.();
-      } catch {
+      } catch (error) {
+        if (error instanceof FormTransformError) {
+          form.setError(error.field as Parameters<typeof form.setError>[0], {
+            type: 'manual',
+            message: error.message,
+          });
+          return;
+        }
         // Toast handled by useResourceMutations toast config
       }
     },

@@ -53,4 +53,9 @@ export type { ResourcePermissions } from './use-resource-permissions';
 export { useFieldAvailability } from './use-field-availability';
 
 // Companion hooks
-export { useMutationWithToast, useDeleteConfirmation, useModalForm } from './companions';
+export {
+  useMutationWithToast,
+  useDeleteConfirmation,
+  useModalForm,
+  FormTransformError,
+} from './companions';

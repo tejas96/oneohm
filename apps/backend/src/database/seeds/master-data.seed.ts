@@ -105,11 +105,6 @@ const productCodes = [
   'SOLAREDGE-5KW-1P',
   'SOLAREDGE-8KW-3P',
   'SOLAREDGE-10KW-3P',
-  'STRUCT-RAIL-MOUNT',
-  'STRUCT-RCC-3X6',
-  'STRUCT-ELEVATED-6X9',
-  'STRUCT-SUPER-ELEVATED',
-  'STRUCT-GROUND-MOUNT',
 ];
 
 productCodes.forEach((code) => {
@@ -461,12 +456,10 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
     {
       key: 'structure_type',
       label: 'Structure Type',
-      dataType: 'enum',
+      dataType: 'string',
       required: true,
       filterable: true,
-      validation: {
-        values: ['aluminum_rail', 'rcc_3x6', 'elevated_6x9', 'super_elevated', 'ground_mount'],
-      },
+      validation: null,
       group: 'specifications',
       sort: 1,
     },
@@ -1334,64 +1327,8 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
     );
   }
 
-  // Mounting Structures
-  const structures = [
-    {
-      code: 'STRUCT-RAIL-MOUNT',
-      name: 'Aluminum Rail Mount Structure',
-      type: 'aluminum_rail',
-      weight: 15,
-    },
-    { code: 'STRUCT-RCC-3X6', name: '3 feet X 6 Feet Structure', type: 'rcc_3x6', weight: 20 },
-    {
-      code: 'STRUCT-ELEVATED-6X9',
-      name: 'Elevated 6x9 Feet Structure',
-      type: 'elevated_6x9',
-      weight: 35,
-    },
-    {
-      code: 'STRUCT-SUPER-ELEVATED',
-      name: 'Super Elevated 10x14 Feet Structure',
-      type: 'super_elevated',
-      weight: 50,
-    },
-    {
-      code: 'STRUCT-GROUND-MOUNT',
-      name: 'Ground Mount Structure',
-      type: 'ground_mount',
-      weight: 40,
-    },
-  ];
-
-  for (const struct of structures) {
-    const specs = JSON.stringify({
-      structure_type: struct.type,
-      material: 'Aluminum',
-      weight_kg: struct.weight,
-    });
-    await queryRunner.query(
-      `INSERT INTO products (id, organization_id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING`,
-      [
-        PRODUCT_IDS[struct.code],
-        ORG_ID,
-        PRODUCT_TYPE_IDS.MOUNTING_STRUCTURE,
-        BRAND_IDS['Generic'],
-        struct.name,
-        struct.code,
-        `${struct.name} for solar installation`,
-        struct.code,
-        'set',
-        10,
-        'active',
-        specs,
-      ],
-    );
-  }
-
   console.log(
-    `  ✓ Inserted ${dcrPanels.length + nonDcrPanels.length + inverters1P.length + inverters3P.length + structures.length} products`,
+    `  ✓ Inserted ${dcrPanels.length + nonDcrPanels.length + inverters1P.length + inverters3P.length} products`,
   );
 }
 
@@ -1498,39 +1435,7 @@ async function insertProductPrices(queryRunner: QueryRunner): Promise<void> {
     );
   }
 
-  // Structure Prices
-  // Formula: unit_price × cost_multiplier × systemSizeKw
-  const structurePricing = [
-    { productCode: 'STRUCT-RAIL-MOUNT', unitPrice: 700, costMultiplier: 1.2 }, // 700 × 1.2 = ₹840/KW
-    { productCode: 'STRUCT-RCC-3X6', unitPrice: 700, costMultiplier: 4.0 }, // 700 × 4 = ₹2,800/KW
-    { productCode: 'STRUCT-ELEVATED-6X9', unitPrice: 700, costMultiplier: 8.0 }, // 700 × 8 = ₹5,600/KW
-    { productCode: 'STRUCT-SUPER-ELEVATED', unitPrice: 700, costMultiplier: 12.0 }, // 700 × 12 = ₹8,400/KW
-    { productCode: 'STRUCT-GROUND-MOUNT', unitPrice: 700, costMultiplier: 10.0 }, // 700 × 10 = ₹7,000/KW
-  ];
-
-  for (const price of structurePricing) {
-    await queryRunner.query(
-      `INSERT INTO product_prices (id, organization_id, product_id, project_type, unit_price, cost_multiplier, gst_rate, currency, effective_from, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-      ON CONFLICT DO NOTHING`,
-      [
-        uuidv4(),
-        ORG_ID,
-        PRODUCT_IDS[price.productCode],
-        null,
-        price.unitPrice,
-        price.costMultiplier,
-        18.0,
-        'INR',
-        '2024-01-01',
-        true,
-      ],
-    );
-  }
-
-  console.log(
-    `  ✓ Inserted ${panelPricing.length + inverterPricing.length + structurePricing.length} product prices`,
-  );
+  console.log(`  ✓ Inserted ${panelPricing.length + inverterPricing.length} product prices`);
 }
 
 // =====================================================
