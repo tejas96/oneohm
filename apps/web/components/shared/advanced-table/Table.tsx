@@ -5,7 +5,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import DownloadIcon from '@mui/icons-material/Download';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import {
@@ -680,9 +680,9 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
                           >
                             <IconButton size="small" tabIndex={-1} aria-label="Expand row">
                               {isExpanded ? (
-                                <KeyboardArrowDownIcon fontSize="small" />
+                                <KeyboardArrowUpIcon fontSize="small" />
                               ) : (
-                                <KeyboardArrowRightIcon fontSize="small" />
+                                <KeyboardArrowDownIcon fontSize="small" />
                               )}
                             </IconButton>
                           </TableCell>

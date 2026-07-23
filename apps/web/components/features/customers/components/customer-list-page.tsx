@@ -2,13 +2,10 @@
 
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DownloadIcon from '@mui/icons-material/Download';
 import EditIcon from '@mui/icons-material/Edit';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import HouseOutlinedIcon from '@mui/icons-material/HouseOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import PhoneIcon from '@mui/icons-material/Phone';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Autocomplete,
@@ -24,11 +21,18 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
-import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@tejas96/shared/types';
+import {
+  ConnectionType,
+  CustomerSortField,
+  CustomerStatus,
+  LeadSource,
+  SortOrder,
+} from '@tejas96/shared/types';
 import NextLink from 'next/link';
-import { useRouter } from 'next/navigation';
-import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { type JSX, useCallback, useMemo, useRef, useState } from 'react';
 
+import { CustomerPropertiesExpandedRow } from './customer-properties-expanded-row';
 import {
   Customer as CustomerBase,
   type CustomerFilters,
@@ -38,6 +42,12 @@ import {
 } from '../hooks/use-customers';
 
 import { useEmployees } from '@/components/features/employees';
+import {
+  LEAD_TEMPERATURE_OPTIONS,
+  PROPERTY_STATUS_OPTIONS,
+  PROPERTY_TYPE_OPTIONS,
+  QUOTE_STATUS_OPTIONS,
+} from '@/components/features/properties/constants';
 import {
   formatDeleteBlockTooltip,
   getCustomerDeleteBlockReasons,
@@ -49,14 +59,13 @@ import {
   type ColumnConfig,
 } from '@/components/shared/advanced-table';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
-import { WhatsAppIcon } from '@/components/ui';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
-import { formatPhoneForWhatsApp, getErrorMessage, toTitleLabel } from '@/lib/utils';
+import { getErrorMessage, toTitleLabel } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 // AdvancedTable requires TRow extends Record<string, unknown>.
@@ -70,6 +79,11 @@ const LEAD_SOURCE_OPTIONS = Object.values(LeadSource).map((value) => ({
 }));
 
 const STATUS_OPTIONS = Object.values(CustomerStatus).map((value) => ({
+  value,
+  label: toTitleLabel(value),
+}));
+
+const CONNECTION_TYPE_OPTIONS = Object.values(ConnectionType).map((value) => ({
   value,
   label: toTitleLabel(value),
 }));
@@ -116,11 +130,25 @@ function localDateToUtcDayRange(localDate: string): { fromIso: string; toIso: st
 }
 
 function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilters> {
+  const raw = filters as Record<string, unknown>;
   const createdAtLocalDate =
     typeof filters.createdAt === 'string' ? toLocalDateString(filters.createdAt) : undefined;
   const createdAtUtcRange = createdAtLocalDate
     ? localDateToUtcDayRange(createdAtLocalDate)
     : undefined;
+
+  const sizeRange = raw.latestQuoteSystemSizeKw as { min?: string; max?: string } | undefined;
+  let propertySystemSizeMin: number | undefined;
+  let propertySystemSizeMax: number | undefined;
+  if (sizeRange?.min !== undefined && sizeRange.min !== '') {
+    const n = Number(sizeRange.min);
+    if (!Number.isNaN(n)) propertySystemSizeMin = n;
+  }
+  if (sizeRange?.max !== undefined && sizeRange.max !== '') {
+    const n = Number(sizeRange.max);
+    if (!Number.isNaN(n)) propertySystemSizeMax = n;
+  }
+
   return {
     status:
       typeof filters.status === 'string' && filters.status
@@ -144,22 +172,131 @@ function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilte
         : createdAtUtcRange?.toIso,
     city: typeof filters.city === 'string' && filters.city ? filters.city : undefined,
     hasProperty:
-      filters.name === 'true' ||
-      filters.name === true ||
-      filters.hasProperty === 'true' ||
-      filters.hasProperty === true
+      filters.hasProperty === 'true' || filters.hasProperty === true
         ? true
-        : filters.name === 'false' ||
-            filters.name === false ||
-            filters.hasProperty === 'false' ||
-            filters.hasProperty === false
+        : filters.hasProperty === 'false' || filters.hasProperty === false
           ? false
-          : undefined,
+          : // legacy: has-property filter was previously stored on the name field
+            filters.name === 'true' || filters.name === true
+            ? true
+            : filters.name === 'false' || filters.name === false
+              ? false
+              : undefined,
     createdBy:
       typeof filters.createdBy === 'string' && filters.createdBy ? filters.createdBy : undefined,
     assigneeId:
       typeof filters.assigneeId === 'string' && filters.assigneeId ? filters.assigneeId : undefined,
+    propertyType:
+      typeof raw.propertyType === 'string' && raw.propertyType && raw.propertyType !== 'all'
+        ? (raw.propertyType as CustomerFilters['propertyType'])
+        : undefined,
+    propertyStatus:
+      typeof raw.propertyStatus === 'string' && raw.propertyStatus && raw.propertyStatus !== 'all'
+        ? (raw.propertyStatus as CustomerFilters['propertyStatus'])
+        : undefined,
+    connectionType:
+      typeof raw.connectionType === 'string' && raw.connectionType && raw.connectionType !== 'all'
+        ? (raw.connectionType as CustomerFilters['connectionType'])
+        : undefined,
+    leadTemperature:
+      typeof raw.leadTemperature === 'string' &&
+      raw.leadTemperature &&
+      raw.leadTemperature !== 'all'
+        ? (raw.leadTemperature as CustomerFilters['leadTemperature'])
+        : undefined,
+    quoteStatus:
+      typeof raw.quoteStatus === 'string' && raw.quoteStatus && raw.quoteStatus !== 'all'
+        ? (raw.quoteStatus as CustomerFilters['quoteStatus'])
+        : typeof raw.latestQuoteStatus === 'string' &&
+            raw.latestQuoteStatus &&
+            raw.latestQuoteStatus !== 'all'
+          ? (raw.latestQuoteStatus as CustomerFilters['quoteStatus'])
+          : undefined,
+    propertySystemSizeMin,
+    propertySystemSizeMax,
+    propertyCity:
+      typeof raw.propertyCity === 'string' && raw.propertyCity ? raw.propertyCity : undefined,
+    propertyState:
+      typeof raw.propertyState === 'string' && raw.propertyState ? raw.propertyState : undefined,
   };
+}
+
+const PROPERTY_LEVEL_FILTER_FIELDS = [
+  'propertyType',
+  'propertyStatus',
+  'connectionType',
+  'quoteStatus',
+  'leadTemperature',
+  'latestQuoteSystemSizeKw',
+  'propertyCity',
+  'propertyState',
+] as const;
+
+function hasActivePropertyLevelFilter(filters: TableUrlFilterRecord): boolean {
+  const raw = filters as Record<string, unknown>;
+  return PROPERTY_LEVEL_FILTER_FIELDS.some((field) => {
+    const value = raw[field];
+    if (value === '' || value == null) return false;
+    if (field === 'latestQuoteSystemSizeKw' && typeof value === 'object') {
+      const range = value as { min?: string | number; max?: string | number };
+      return (
+        (range.min !== undefined && range.min !== '') ||
+        (range.max !== undefined && range.max !== '')
+      );
+    }
+    return value !== 'all';
+  });
+}
+
+function isHasPropertyFalse(filters: TableUrlFilterRecord): boolean {
+  return (
+    filters.hasProperty === 'false' ||
+    filters.hasProperty === false ||
+    filters.name === 'false' ||
+    filters.name === false
+  );
+}
+
+function normalizeCustomerFilterState(filters: TableUrlFilterRecord): TableUrlFilterRecord {
+  const next = { ...filters };
+  const legacyHasProperty =
+    next.name === 'true' || next.name === true
+      ? 'true'
+      : next.name === 'false' || next.name === false
+        ? 'false'
+        : undefined;
+
+  if (legacyHasProperty && next.hasProperty == null) {
+    next.hasProperty = legacyHasProperty;
+  }
+  if (next.name === 'true' || next.name === 'false' || next.name === true || next.name === false) {
+    delete next.name;
+  }
+  return next;
+}
+
+function reconcileContradictoryCustomerFilters(
+  filters: TableUrlFilterRecord,
+  changedField?: string,
+): TableUrlFilterRecord {
+  const next = normalizeCustomerFilterState(filters);
+  // Only reconcile interactive changes; URL/deep-link loads keep both and backend returns 0.
+  if (changedField == null) {
+    return next;
+  }
+  if (!isHasPropertyFalse(next) || !hasActivePropertyLevelFilter(next)) {
+    return next;
+  }
+
+  if (changedField === 'hasProperty') {
+    for (const field of PROPERTY_LEVEL_FILTER_FIELDS) {
+      delete next[field];
+    }
+    return next;
+  }
+
+  delete next.hasProperty;
+  return next;
 }
 
 // ============================================================================
@@ -297,12 +434,6 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     field: 'name',
     headerName: 'Customer',
     sortable: true,
-    filterable: true,
-    filterType: 'select',
-    filterOptions: [
-      { label: 'Yes', value: 'true' },
-      { label: 'No', value: 'false' },
-    ],
     flex: 3,
     renderCell: ({ row }) => {
       const fullName = `${row.firstName} ${row.lastName ?? ''}`.trim();
@@ -326,17 +457,6 @@ const COLUMNS: ColumnConfig<Customer>[] = [
             <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 500 }}>
               {fullName}
             </MUITypography>
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <MUITypography variant="timestamp" noWrap sx={{ maxWidth: 160 }}>
-                {(row.email as string | undefined) ?? '-'}
-              </MUITypography>
-              <Tooltip title="Properties">
-                <Stack direction="row" spacing={0.25} alignItems="center">
-                  <HouseOutlinedIcon sx={{ fontSize: 11, color: 'text.disabled' }} />
-                  <MUITypography variant="timestamp">{row.propertyCount}</MUITypography>
-                </Stack>
-              </Tooltip>
-            </Stack>
             {row.groupCode && (
               <MUIStatusChip
                 label={
@@ -358,36 +478,7 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     renderCell: ({ row }) => {
       const phone = (row.phone as string | undefined) || (row.alternatePhone as string | undefined);
       if (!phone) return <MUITypography variant="placeholder">-</MUITypography>;
-      const whatsappNumber = formatPhoneForWhatsApp(phone);
-      return (
-        <Stack direction="row" spacing={0.5} alignItems="center">
-          <MUITypography variant="body">{phone}</MUITypography>
-          <Tooltip title="Call">
-            <IconButton
-              size="small"
-              component="a"
-              href={`tel:${phone}`}
-              onClick={(e: MouseEvent) => e.stopPropagation()}
-              sx={{ p: 0.5 }}
-            >
-              <PhoneIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="WhatsApp">
-            <IconButton
-              size="small"
-              component="a"
-              href={`https://wa.me/${whatsappNumber}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e: MouseEvent) => e.stopPropagation()}
-              sx={{ p: 0.5 }}
-            >
-              <WhatsAppIcon style={{ fontSize: 14, color: '#25D366' }} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      );
+      return <MUITypography variant="body">{phone}</MUITypography>;
     },
   },
   {
@@ -456,6 +547,89 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     headerName: 'Group',
     filterable: true,
     filterType: 'select',
+    defaultHidden: true,
+    hideable: false,
+  },
+  {
+    field: 'hasProperty',
+    headerName: 'Has property',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { label: 'Yes', value: 'true' },
+      { label: 'No', value: 'false' },
+    ],
+    defaultHidden: true,
+    hideable: false,
+  },
+  {
+    field: 'propertyType',
+    headerName: 'Property Type',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: PROPERTY_TYPE_OPTIONS,
+    defaultHidden: true,
+    hideable: false,
+  },
+  {
+    field: 'propertyStatus',
+    headerName: 'Property Status',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: PROPERTY_STATUS_OPTIONS,
+    defaultHidden: true,
+    hideable: false,
+  },
+  {
+    field: 'connectionType',
+    headerName: 'Connection Type',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: CONNECTION_TYPE_OPTIONS,
+    defaultHidden: true,
+    hideable: false,
+  },
+  {
+    field: 'quoteStatus',
+    headerName: 'Quote Status',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: QUOTE_STATUS_OPTIONS,
+    defaultHidden: true,
+    hideable: false,
+  },
+  {
+    field: 'leadTemperature',
+    headerName: 'Lead Temperature',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: LEAD_TEMPERATURE_OPTIONS,
+    defaultHidden: true,
+    hideable: false,
+  },
+  {
+    field: 'latestQuoteSystemSizeKw',
+    headerName: 'System Size (kW)',
+    filterable: true,
+    filterType: 'range',
+    defaultHidden: true,
+    hideable: false,
+  },
+  {
+    field: 'propertyCity',
+    headerName: 'Property City',
+    filterable: true,
+    filterType: 'text',
+    filterDebounceMs: 400,
+    defaultHidden: true,
+    hideable: false,
+  },
+  {
+    field: 'propertyState',
+    headerName: 'Property State',
+    filterable: true,
+    filterType: 'text',
+    filterDebounceMs: 400,
     defaultHidden: true,
     hideable: false,
   },
@@ -538,6 +712,7 @@ const COLUMNS: ColumnConfig<Customer>[] = [
 
 export function CustomerListPage(): JSX.Element {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { hasAnyRole } = useAuth();
   const isOrgAdmin = hasAnyRole([...ORG_ADMIN_ROLES]);
   const deleteCustomerMutation = useDeleteCustomer();
@@ -546,8 +721,29 @@ export function CustomerListPage(): JSX.Element {
     getId: (customer) => customer.id,
   });
 
+  const rawLeadTemperature = searchParams.get('leadTemperature');
+  const initialFilters = useMemo(() => {
+    if (!rawLeadTemperature || rawLeadTemperature === 'all') return undefined;
+    return normalizeCustomerFilterState({ leadTemperature: rawLeadTemperature });
+  }, [rawLeadTemperature]);
+
   // URL-synced table state — single source of truth for all pagination/sort/filter/search
-  const urlState = useTableUrlState({ prefix: 'customers', defaultPageSize: 10 });
+  const urlState = useTableUrlState({ prefix: 'customers', defaultPageSize: 10, initialFilters });
+
+  const filtersRef = useRef(urlState.state.filters);
+  filtersRef.current = urlState.state.filters;
+
+  const handleFilterChange = useCallback(
+    (nextFilters: TableUrlFilterRecord) => {
+      const normalizedNext = normalizeCustomerFilterState(nextFilters);
+      const prevFilters = filtersRef.current;
+      const changedField = Object.keys({ ...prevFilters, ...normalizedNext }).find(
+        (field) => prevFilters[field] !== normalizedNext[field],
+      );
+      urlState.setFilters(reconcileContradictoryCustomerFilters(normalizedNext, changedField));
+    },
+    [urlState.setFilters],
+  );
 
   // Fetch active employees
   const { data: employees = [] } = useEmployees();
@@ -604,50 +800,6 @@ export function CustomerListPage(): JSX.Element {
               onRequestDelete={deleteConfirmation.requestDelete}
             />
           ),
-        };
-      }
-      if (col.field === 'name') {
-        const hasPropertyOptions = [
-          { label: 'Yes', value: 'true' },
-          { label: 'No', value: 'false' },
-        ];
-        return {
-          ...col,
-          renderFilter: ({
-            value,
-            onChange,
-          }: {
-            value: unknown;
-            onChange: (v: unknown) => void;
-          }) => {
-            const selectedOption =
-              hasPropertyOptions.find((o) => String(o.value) === String(value)) || null;
-            return (
-              <Autocomplete
-                size="small"
-                fullWidth
-                options={hasPropertyOptions}
-                value={selectedOption}
-                disablePortal
-                getOptionLabel={(option) =>
-                  typeof option === 'string' ? option : option.label || ''
-                }
-                isOptionEqualToValue={(option, val) => option.value === val?.value}
-                onChange={(_, val) => {
-                  onChange(val?.value ?? '');
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    placeholder="Has property?"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {},
-                    }}
-                  />
-                )}
-              />
-            );
-          },
         };
       }
       if (col.field === 'groupSearch') {
@@ -848,10 +1000,6 @@ export function CustomerListPage(): JSX.Element {
         </Box>
 
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <Button variant="outlined" size="small" startIcon={<DownloadIcon />} disabled>
-            Export
-          </Button>
-
           <Button
             variant="contained"
             size="small"
@@ -909,7 +1057,7 @@ export function CustomerListPage(): JSX.Element {
         onPageChange={urlState.setPage}
         onPageSizeChange={urlState.setPageSize}
         onSortChange={urlState.setSortModel}
-        onFilterChange={urlState.setFilters}
+        onFilterChange={handleFilterChange}
         onSearchChange={urlState.setSearch}
         onRowClick={(row) => {
           void router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.id }));
@@ -922,6 +1070,7 @@ export function CustomerListPage(): JSX.Element {
         enableColumnVisibility
         searchPlaceholder="Search by name, phone, email, city..."
         itemLabel="customers"
+        renderExpandedRow={(row) => <CustomerPropertiesExpandedRow customerId={row.id} />}
         renderEmptyState={renderEmptyState}
       />
 

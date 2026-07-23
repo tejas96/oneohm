@@ -57,13 +57,7 @@ export {
 } from './workflow-steps';
 
 // Properties
-export {
-  usePropertyList,
-  usePropertyTemperatureStats,
-  usePropertyMutations,
-  type PropertyItem,
-  type PropertyListFilters,
-} from './properties';
+export { usePropertyMutations, type PropertyItem, type PropertyListFilters } from './properties';
 
 // Products
 export {

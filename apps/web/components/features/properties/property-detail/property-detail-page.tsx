@@ -124,6 +124,12 @@ function isValidTab(value: string | null): value is PropertyDetailTab {
   return PROPERTY_DETAIL_TABS.some((tab) => tab.value === value);
 }
 
+function getCustomerBackRoute(customerId?: string): string {
+  return customerId
+    ? buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: customerId })
+    : ROUTES.CUSTOMERS.LIST;
+}
+
 export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
@@ -131,13 +137,6 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   const { user, hasAnyRole } = useAuth();
   const isOrgAdmin = hasAnyRole([...ORG_ADMIN_ROLES]);
   const deletePropertyMutation = useDeleteProperty();
-  const deleteConfirmation = useDeleteConfirmation({
-    mutation: deletePropertyMutation,
-    getId: (item: { id: string }) => item.id,
-    onSuccess: () => {
-      void router.push(ROUTES.PROPERTIES.LIST);
-    },
-  });
 
   const rawTab = searchParams.get('tab');
   const activeTab: PropertyDetailTab = isValidTab(rawTab) ? rawTab : PROPERTY_DETAIL_DEFAULT_TAB;
@@ -153,6 +152,14 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     isLoading: isLoadingProperty,
     error: propertyError,
   } = useProperty(propertyId);
+
+  const deleteConfirmation = useDeleteConfirmation({
+    mutation: deletePropertyMutation,
+    getId: (item: { id: string }) => item.id,
+    onSuccess: () => {
+      void router.push(getCustomerBackRoute(property?.customerId));
+    },
+  });
 
   const propertyReady = isPropertyIdValid && !!property;
   const { data: customer } = useCustomer(property?.customerId ?? '', { enabled: propertyReady });
@@ -261,7 +268,10 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         iconColor="error"
         title="Property not found"
         description="The property ID is invalid."
-        action={{ label: 'Back to Properties', onClick: () => router.push(ROUTES.PROPERTIES.LIST) }}
+        action={{
+          label: 'Back to Customers',
+          onClick: () => router.push(ROUTES.CUSTOMERS.LIST),
+        }}
       />
     );
   }
@@ -276,7 +286,10 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         iconColor="error"
         title="Property not found"
         description="The property you're looking for doesn't exist or has been deleted."
-        action={{ label: 'Back to Properties', onClick: () => router.push(ROUTES.PROPERTIES.LIST) }}
+        action={{
+          label: 'Back to Customers',
+          onClick: () => router.push(ROUTES.CUSTOMERS.LIST),
+        }}
       />
     );
   }
@@ -327,11 +340,11 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
       <Breadcrumbs aria-label="Breadcrumb" sx={{ mb: 2, fontSize: '0.75rem' }}>
         <MuiLink
           component={NextLink}
-          href={ROUTES.PROPERTIES.LIST}
+          href={getCustomerBackRoute(property.customerId)}
           underline="hover"
           color="inherit"
         >
-          Properties
+          Customers
         </MuiLink>
         <Typography color="text.primary" variant="caption">
           {propertyName}

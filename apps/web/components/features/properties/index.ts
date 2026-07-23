@@ -14,11 +14,10 @@ export {
 export type { PropertyDetailTab } from './constants';
 
 // Components
-export { PropertyListPage } from './components/property-list-page';
 export { PropertyDetailPage } from './components/property-detail-page';
 export { PropertyForm } from './components/property-form';
 export { PropertyFormPage } from './components/property-form-page';
-export { MarkAsLostModal } from './components/mark-as-lost-modal';
+export { PropertyRowActionsMenu } from './components/property-row-actions-menu';
 export { PropertyPipelineStrip, FollowupDrawer, MarkAsLostDialog } from './property-detail';
 
 // Hooks
@@ -26,13 +25,11 @@ export {
   useCreateProperty,
   useCustomersList,
   useCustomerById,
-  usePropertyList,
-  usePropertyTemperatureStats,
   usePropertyMutations,
   useUpdateProperty,
   useDeleteProperty,
-  useProperties,
   useProperty,
+  useCustomerProperties,
   usePropertyQuotes,
   usePropertyLoan,
   usePropertyFollowups,

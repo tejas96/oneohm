@@ -114,7 +114,7 @@ export function PropertyFormPage({
         backHref={
           propertyId
             ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId })
-            : ROUTES.PROPERTIES.LIST
+            : ROUTES.CUSTOMERS.LIST
         }
       />
     );

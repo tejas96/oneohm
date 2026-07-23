@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
+import { propertyKeys } from './property-keys';
 import type { CreatePropertyFormData } from '../schemas/property.schema';
 
 import { apiClient } from '@/lib/api/client';
@@ -17,14 +18,7 @@ import { useAuth } from '@/providers/auth-provider';
 // Query Keys
 // ============================================================================
 
-export const propertyKeys = {
-  all: (orgId?: string) => ['properties', orgId] as const,
-  lists: (orgId?: string) => [...propertyKeys.all(orgId), 'list'] as const,
-  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
-    [...propertyKeys.lists(orgId), filters] as const,
-  details: (orgId?: string) => [...propertyKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) => [...propertyKeys.details(orgId), id] as const,
-};
+export { propertyKeys } from './property-keys';
 
 export const customerKeys = {
   all: (orgId?: string) => ['customers', orgId] as const,

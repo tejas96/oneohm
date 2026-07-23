@@ -1,11 +1,22 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@tejas96/shared/types';
+import {
+  ConnectionType,
+  CustomerSortField,
+  CustomerStatus,
+  LeadSource,
+  LeadTemperature,
+  PropertyStatus,
+  PropertyType,
+  QuoteStatus,
+  SortOrder,
+} from '@tejas96/shared/types';
 import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Max,
@@ -149,6 +160,98 @@ export class CustomerQueryDto {
   @ValidateIf((o: CustomerQueryDto) => !!o.toDate)
   @IsDateString({}, { message: 'toDate must be a valid ISO 8601 date (e.g., 2025-12-31)' })
   toDate?: string;
+
+  // ==================== Property-level filters (customer has matching property) ====================
+
+  @ApiPropertyOptional({
+    description: 'Filter customers who have at least one property with this type',
+    enum: PropertyType,
+    example: PropertyType.RESIDENTIAL,
+  })
+  @IsOptional()
+  @IsEnum(PropertyType)
+  propertyType?: PropertyType;
+
+  @ApiPropertyOptional({
+    description: 'Filter customers who have at least one property with this status',
+    enum: PropertyStatus,
+    example: PropertyStatus.ACTIVE,
+  })
+  @IsOptional()
+  @IsEnum(PropertyStatus)
+  propertyStatus?: PropertyStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter customers who have at least one property with this connection type',
+    enum: ConnectionType,
+    example: ConnectionType.SINGLE_PHASE,
+  })
+  @IsOptional()
+  @IsEnum(ConnectionType)
+  connectionType?: ConnectionType;
+
+  @ApiPropertyOptional({
+    description: 'Filter customers who have at least one property with this lead temperature',
+    enum: LeadTemperature,
+    example: LeadTemperature.HOT,
+  })
+  @IsOptional()
+  @IsEnum(LeadTemperature)
+  leadTemperature?: LeadTemperature;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter customers who have at least one property whose latest quote has this status',
+    enum: QuoteStatus,
+    example: QuoteStatus.ACCEPTED,
+  })
+  @IsOptional()
+  @IsEnum(QuoteStatus)
+  quoteStatus?: QuoteStatus;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter customers who have at least one property with minimum system size (kW, inclusive)',
+    example: 5,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  propertySystemSizeMin?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter customers who have at least one property with maximum system size (kW, inclusive)',
+    example: 100,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  propertySystemSizeMax?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter customers who have at least one property in this city (partial match, case-insensitive)',
+    example: 'Bangalore',
+  })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }: { value: string }) => value?.trim())
+  propertyCity?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter customers who have at least one property in this state (partial match, case-insensitive)',
+    example: 'Karnataka',
+  })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }: { value: string }) => value?.trim())
+  propertyState?: string;
 
   // ==================== Sorting ====================
 

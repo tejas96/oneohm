@@ -15,6 +15,7 @@ import {
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
+import { propertyKeys } from '@/components/features/properties/hooks/property-keys';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -105,14 +106,7 @@ export interface CustomerPropertyResponse {
 // Query Keys
 // ============================================================================
 
-export const propertyKeys = {
-  all: (orgId?: string) => ['properties', orgId] as const,
-  lists: (orgId?: string) => [...propertyKeys.all(orgId), 'list'] as const,
-  byCustomer: (orgId: string | undefined, customerId: string) =>
-    [...propertyKeys.all(orgId), 'customer', customerId] as const,
-  detail: (orgId: string | undefined, id: string) =>
-    [...propertyKeys.all(orgId), 'detail', id] as const,
-};
+export { propertyKeys } from '@/components/features/properties/hooks/property-keys';
 
 // ============================================================================
 // Hooks

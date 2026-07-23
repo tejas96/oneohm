@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@tejas96/shared/types';
-import { IsNull, Repository, type EntityManager } from 'typeorm';
+import {
+  hasAnyCustomerPropertyFilter,
+  hasContradictoryCustomerPropertyFilters,
+} from '@tejas96/shared/utils';
+import { IsNull, Repository, type EntityManager, type SelectQueryBuilder } from 'typeorm';
 
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
@@ -23,6 +27,102 @@ const SORT_FIELD_MAP: Record<CustomerSortField, string> = {
   [CustomerSortField.CITY]: 'customer.city',
   [CustomerSortField.STATUS]: 'customer.status',
 };
+
+function needsQuoteJoinForPropertyFilter(query: CustomerQueryDto): boolean {
+  return (
+    query.quoteStatus !== undefined ||
+    query.propertySystemSizeMin !== undefined ||
+    query.propertySystemSizeMax !== undefined
+  );
+}
+
+function applyMatchingPropertyFilter(
+  qb: SelectQueryBuilder<CustomerProfileEntity>,
+  organizationId: string,
+  query: CustomerQueryDto,
+): void {
+  if (!hasAnyCustomerPropertyFilter(query)) {
+    return;
+  }
+
+  const conditions: string[] = [
+    'prop.customer_id = customer.id',
+    'prop.deleted_at IS NULL',
+    'prop.organization_id = :propFilterOrgId',
+  ];
+  const params: Record<string, unknown> = { propFilterOrgId: organizationId };
+
+  if (query.propertyType) {
+    conditions.push('prop.property_type = :propertyType');
+    params.propertyType = query.propertyType;
+  }
+  if (query.propertyStatus) {
+    conditions.push('prop.status = :propertyStatus');
+    params.propertyStatus = query.propertyStatus;
+  }
+  if (query.connectionType) {
+    conditions.push('prop.connection_type = :connectionType');
+    params.connectionType = query.connectionType;
+  }
+  if (query.leadTemperature) {
+    conditions.push('prop.lead_temperature = :leadTemperature');
+    params.leadTemperature = query.leadTemperature;
+  }
+  if (query.propertyCity) {
+    conditions.push('LOWER(prop.city) LIKE LOWER(:propertyCity)');
+    params.propertyCity = `%${query.propertyCity}%`;
+  }
+  if (query.propertyState) {
+    conditions.push('LOWER(prop.state) LIKE LOWER(:propertyState)');
+    params.propertyState = `%${query.propertyState}%`;
+  }
+  if (query.quoteStatus !== undefined) {
+    conditions.push('latest_quote.status = :quoteStatus');
+    params.quoteStatus = query.quoteStatus;
+  }
+  if (query.propertySystemSizeMin !== undefined) {
+    conditions.push('cv.system_size_kw >= :propertySystemSizeMin');
+    params.propertySystemSizeMin = query.propertySystemSizeMin;
+  }
+  if (query.propertySystemSizeMax !== undefined) {
+    conditions.push('cv.system_size_kw <= :propertySystemSizeMax');
+    params.propertySystemSizeMax = query.propertySystemSizeMax;
+  }
+
+  const whereClause = conditions.join(' AND ');
+
+  if (needsQuoteJoinForPropertyFilter(query)) {
+    qb.andWhere(
+      `EXISTS (
+        SELECT 1 FROM customer_properties prop
+        LEFT JOIN quotes latest_quote ON latest_quote.id = (
+          SELECT q2.id FROM quotes q2
+          WHERE q2.property_id = prop.id
+            AND q2.organization_id = :propFilterOrgId
+            AND q2.deleted_at IS NULL
+          ORDER BY q2.created_at DESC, q2.id DESC
+          LIMIT 1
+        )
+        LEFT JOIN quote_versions cv ON cv.id = (
+          SELECT qv.id FROM quote_versions qv
+          WHERE qv.quote_id = latest_quote.id
+          ORDER BY qv.created_at DESC, qv.version_number DESC, qv.id DESC
+          LIMIT 1
+        )
+        WHERE ${whereClause}
+      )`,
+      params,
+    );
+  } else {
+    qb.andWhere(
+      `EXISTS (
+        SELECT 1 FROM customer_properties prop
+        WHERE ${whereClause}
+      )`,
+      params,
+    );
+  }
+}
 
 @Injectable()
 export class CustomerProfileRepository {
@@ -275,7 +375,12 @@ export class CustomerProfileRepository {
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.user', 'user')
       .leftJoinAndSelect('customer.organization', 'organization')
-      .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
+      .loadRelationCountAndMap(
+        'customer.propertyCount',
+        'customer.properties',
+        'propertyCountRel',
+        (qb) => qb.where('propertyCountRel.deletedAt IS NULL'),
+      )
       .leftJoinAndSelect('customer.creator', 'creator')
       .leftJoinAndSelect('customer.assignee', 'assignee')
       .where('customer.organizationId = :organizationId', { organizationId })
@@ -347,19 +452,26 @@ export class CustomerProfileRepository {
       });
     }
 
-    if (query.hasProperty !== undefined) {
-      const subQuery = qb
-        .subQuery()
-        .select('prop.id')
-        .from('customer_properties', 'prop')
-        .where('prop.customerId = customer.id')
-        .andWhere('prop.deletedAt IS NULL');
+    if (hasContradictoryCustomerPropertyFilters(query)) {
+      // Contradictory: "no properties" cannot match any property-level filter.
+      qb.andWhere('1 = 0');
+    } else {
+      if (query.hasProperty !== undefined && !hasAnyCustomerPropertyFilter(query)) {
+        const subQuery = qb
+          .subQuery()
+          .select('prop.id')
+          .from('customer_properties', 'prop')
+          .where('prop.customerId = customer.id')
+          .andWhere('prop.deletedAt IS NULL');
 
-      if (query.hasProperty) {
-        qb.andWhere(`EXISTS (${subQuery.getQuery()})`);
-      } else {
-        qb.andWhere(`NOT EXISTS (${subQuery.getQuery()})`);
+        if (query.hasProperty) {
+          qb.andWhere(`EXISTS (${subQuery.getQuery()})`);
+        } else {
+          qb.andWhere(`NOT EXISTS (${subQuery.getQuery()})`);
+        }
       }
+
+      applyMatchingPropertyFilter(qb, organizationId, query);
     }
 
     if (query.fromDate) {

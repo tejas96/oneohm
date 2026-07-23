@@ -376,13 +376,13 @@ export function PropertyForm({
     ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId! })
     : isContextAware
       ? buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: initialCustomerId })
-      : ROUTES.PROPERTIES.LIST;
+      : ROUTES.CUSTOMERS.LIST;
 
   const backLabel = isEditMode
     ? 'Back to Property'
     : isContextAware
       ? 'Back to Customer'
-      : 'Back to Properties';
+      : 'Back to Customers';
 
   const pageTitle = isEditMode
     ? 'Edit Property'

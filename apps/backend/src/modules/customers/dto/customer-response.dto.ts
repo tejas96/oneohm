@@ -107,7 +107,7 @@ export class CustomerResponseDto {
    */
   @ApiProperty({ description: 'Number of properties associated with this customer' })
   @Expose()
-  @Transform(({ obj }) => obj.properties?.length ?? 0)
+  @Transform(({ obj }) => obj.propertyCount ?? obj.properties?.length ?? 0)
   propertyCount!: number;
 
   @ApiPropertyOptional({

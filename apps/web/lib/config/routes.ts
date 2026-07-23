@@ -86,7 +86,6 @@ export const ROUTES = {
 
   // Properties
   PROPERTIES: {
-    LIST: '/properties',
     DETAIL: '/properties/[id]',
     NEW: '/properties/new',
     EDIT: '/properties/[id]/edit',
@@ -403,7 +402,7 @@ export function extractParams(pathname: string, pattern: RoutePath): Record<stri
 export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   // CRM routes (all should show CRM panel)
   [ROUTES.CUSTOMERS.LIST]: 'crm',
-  [ROUTES.PROPERTIES.LIST]: 'crm',
+  '/properties': 'crm',
 
   [ROUTES.PIPELINE.HOME]: 'crm',
   [ROUTES.CRM.HOME]: 'crm',
