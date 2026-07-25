@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
+import type { ChangeRequestItemFormData } from '@tejas96/shared/schemas';
 import type {
   ConnectionType,
   LeadTemperature,
@@ -17,6 +18,7 @@ import type {
 import type { AxiosError } from 'axios';
 
 import { customerKeys, propertyKeys } from './use-create-property';
+import type { DiscomResponse } from './use-discoms';
 
 import { showToast } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
@@ -62,7 +64,8 @@ export interface Property {
   consumerNumber?: string;
   consumerName?: string;
   currentLoad?: string;
-  discomName?: string;
+  discomId?: string;
+  discom?: DiscomResponse;
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
@@ -110,7 +113,7 @@ export interface UpdatePropertyData {
   state?: string;
   pincode?: string;
   consumerNumber?: string;
-  discomName?: string;
+  discomId?: string;
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
@@ -127,6 +130,7 @@ export interface UpdatePropertyData {
   surveyData?: SurveyData | null;
   siteVisitAssignee?: string | null;
   siteSurveyAssignee?: string | null;
+  changeRequests?: ChangeRequestItemFormData[];
 }
 
 // ============================================================================

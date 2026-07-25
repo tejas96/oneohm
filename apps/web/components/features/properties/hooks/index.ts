@@ -61,3 +61,5 @@ export {
   type PropertyFinanceSnapshot,
   type UsePropertyFinanceSnapshotResult,
 } from './use-property-finance-snapshot';
+
+export { useDiscoms, useDiscomById, type DiscomResponse } from './use-discoms';

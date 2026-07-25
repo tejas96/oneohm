@@ -11,11 +11,13 @@ import {
   QuoteStatus,
   SiteStatus,
   type ShadingAnalysis,
+  type StoredChangeRequest,
   type SurveyData,
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { propertyKeys } from '@/components/features/properties/hooks/property-keys';
+import type { DiscomResponse } from '@/components/features/properties/hooks/use-discoms';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -48,7 +50,8 @@ export interface CustomerPropertyResponse {
   consumerNumber?: string;
   consumerName?: string;
   currentLoad?: string;
-  discomName?: string;
+  discomId?: string;
+  discom?: DiscomResponse;
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
@@ -59,6 +62,7 @@ export interface CustomerPropertyResponse {
   wantsLoan: boolean;
   // Documents
   documents: PropertyDocument[];
+  changeRequests?: StoredChangeRequest[];
   // Status
   status: PropertyStatus;
   notes?: string;

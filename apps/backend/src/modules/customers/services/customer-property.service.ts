@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
+  ChangeRequestStatus,
   CustomerStatus,
   LeadTemperature,
   LoanStatus,
@@ -18,6 +19,7 @@ import {
 import { DataSource, IsNull, Not, type EntityManager } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { DiscomService } from '../../discoms/services/discom.service';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
 import {
@@ -34,6 +36,10 @@ import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
+import {
+  mergeChangeRequestsForUpdate,
+  normalizeChangeRequestsForStorage,
+} from '../utils/change-request.util';
 import { assertUtilityDetailsComplete, hasUtilityFieldUpdate } from '../utils/utility-details.util';
 
 const TERMINAL_LOAN_STATUSES: LoanStatus[] = [
@@ -68,6 +74,7 @@ export class CustomerPropertyService {
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly customerRepository: CustomerProfileRepository,
     private readonly organizationRepository: OrganizationRepository,
+    private readonly discomService: DiscomService,
     private readonly quoteRepository: QuoteRepository,
     private readonly loanApplicationRepository: LoanApplicationRepository,
     private readonly storageService: StorageService,
@@ -107,16 +114,20 @@ export class CustomerPropertyService {
       }
     }
 
+    // Validate discom exists and is active
+    await this.discomService.assertActiveDiscom(createDto.discomId);
+
     // Check if this is the first property for the customer - make it primary
     const existingProperties = await this.propertyRepository.countByCustomer(createDto.customerId);
     const isPrimary = createDto.isPrimary ?? existingProperties === 0;
 
     // Normalize documents to ensure required fields have defaults
-    const { documents, ...restCreateDto } = createDto;
+    const { documents, changeRequests, ...restCreateDto } = createDto;
 
     const property = await this.propertyRepository.create({
       ...restCreateDto,
       documents: this.normalizeDocuments(documents),
+      changeRequests: normalizeChangeRequestsForStorage(changeRequests, createdBy ?? ''),
       organizationId,
       isPrimary,
       status: createDto.status || PropertyStatus.ACTIVE,
@@ -150,18 +161,22 @@ export class CustomerPropertyService {
 
     this.logger.log(`✅ Property created: ${property.id}`);
 
+    const createdProperty =
+      (await this.propertyRepository.findByIdAndOrganization(property.id, organizationId)) ??
+      property;
+
     // Notify consumer about new property (fire-and-forget)
     this.eventEmitter.emit(
       CONSUMER_EVENTS.PROPERTY_CREATED,
       new PropertyCreatedEvent(
         organizationId,
-        property.id,
+        createdProperty.id,
         createDto.customerId,
-        property.propertyName,
+        createdProperty.propertyName,
       ),
     );
 
-    return property;
+    return createdProperty;
   }
 
   /**
@@ -374,20 +389,35 @@ export class CustomerPropertyService {
       }
     }
 
+    // Validate discom if being changed
+    if (updateDto.discomId !== undefined && updateDto.discomId !== property.discomId) {
+      await this.discomService.assertActiveDiscom(updateDto.discomId);
+    }
+
     // Handle primary flag change FIRST (before main update)
     if (updateDto.isPrimary === true && !property.isPrimary) {
       await this.propertyRepository.setPrimary(id, property.customerId, updatedBy);
     }
 
     // Prepare update data (exclude isPrimary since handled above, normalize documents)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructured to exclude from rest spread
-    const { isPrimary: unusedIsPrimary, documents, ...restDto } = updateDto;
 
-    const updated = await this.propertyRepository.update(id, {
+    const { isPrimary: unusedIsPrimary, documents, changeRequests, ...restDto } = updateDto;
+
+    const updatePayload: Record<string, unknown> = {
       ...restDto,
       documents: this.normalizeDocuments(documents),
       updatedBy,
-    });
+    };
+
+    if (changeRequests !== undefined) {
+      updatePayload.changeRequests = mergeChangeRequestsForUpdate(
+        property.changeRequests ?? [],
+        changeRequests,
+        updatedBy ?? '',
+      );
+    }
+
+    const updated = await this.propertyRepository.update(id, updatePayload);
 
     if (!updated) {
       throw new NotFoundException(`Property with ID '${id}' not found`);
@@ -516,6 +546,14 @@ export class CustomerPropertyService {
       throw new ConflictException(
         'Cannot delete: property has an active loan application in progress',
       );
+    }
+
+    const property = await manager.findOne(CustomerPropertyEntity, {
+      where: { id: propertyId, organizationId },
+      select: ['id', 'changeRequests'],
+    });
+    if (property?.changeRequests?.some((cr) => cr.status === ChangeRequestStatus.PENDING)) {
+      throw new ConflictException('Cannot delete: property has pending change requests');
     }
   }
 

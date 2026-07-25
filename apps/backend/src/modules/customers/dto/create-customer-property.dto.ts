@@ -8,6 +8,7 @@ import {
 import { CONSUMER_NUMBER_REGEX } from '@tejas96/shared/utils';
 import { Type, Transform } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsEnum,
@@ -22,8 +23,13 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { ChangeRequestItemDto } from './change-request.dto';
 import { GpsCoordinatesDto } from './gps-coordinates.dto';
 import { PropertyDocumentDto } from './property-document.dto';
+import {
+  HasUniqueChangeRequestTypes,
+  IsValidChangeRequestArray,
+} from '../validators/change-request.validator';
 
 /**
  * DTO for creating a new customer property (installation site)
@@ -127,13 +133,12 @@ export class CreateCustomerPropertyDto {
   currentLoad?: string;
 
   @ApiProperty({
-    example: 'MSEDCL',
-    description: 'Electricity distribution company',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'DISCOM hierarchy entry ID',
   })
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
-  @MaxLength(100)
-  discomName!: string;
+  discomId!: string;
 
   @ApiProperty({
     enum: ConnectionType,
@@ -224,4 +229,18 @@ export class CreateCustomerPropertyDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  // ==================== Change of Request ====================
+  @ApiPropertyOptional({
+    type: [ChangeRequestItemDto],
+    description: 'Change-of-request items captured at property creation',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(6, { message: 'Too many change requests' })
+  @ValidateNested({ each: true })
+  @Type(() => ChangeRequestItemDto)
+  @IsValidChangeRequestArray()
+  @HasUniqueChangeRequestTypes()
+  changeRequests?: ChangeRequestItemDto[];
 }

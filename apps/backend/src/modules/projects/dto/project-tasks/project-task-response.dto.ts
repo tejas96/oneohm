@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   TaskPriority,
   TaskStatus,
+  ChangeRequestType,
   type FileAttachment,
   type TaskActivityEntry,
   type TaskChecklist,
@@ -76,6 +77,21 @@ export class ProjectTaskResponseDto {
   @ApiProperty({ enum: TaskPriority, example: TaskPriority.HIGH })
   @Expose()
   priority!: TaskPriority;
+
+  @ApiProperty({ example: false, description: 'Whether this is a change-of-request special task' })
+  @Expose()
+  isSpecial!: boolean;
+
+  @ApiPropertyOptional({ enum: ChangeRequestType })
+  @Expose()
+  changeRequestType?: ChangeRequestType;
+
+  @ApiPropertyOptional({
+    description: 'Index into the property change_requests array',
+    example: 0,
+  })
+  @Expose()
+  sourceChangeRequestIndex?: number;
 
   @ApiPropertyOptional({ type: [String] })
   @Expose()

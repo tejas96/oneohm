@@ -176,6 +176,11 @@ function TaskRow({
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="text-xs font-medium text-foreground truncate flex-1 min-w-0 group-hover:text-primary transition-colors flex items-center gap-1.5">
+            {task.isSpecial && (
+              <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
+                Change Request
+              </span>
+            )}
             {task.name}
             {task.hasDependencyBlockers && <Lock className="h-3 w-3 text-amber-500 shrink-0" />}
           </span>
@@ -419,17 +424,30 @@ export function TaskListTable({
       }
     }
 
+    const sortSpecialFirst = (list: ProjectTaskItem[]) =>
+      [...list].sort((a, b) => Number(Boolean(b.isSpecial)) - Number(Boolean(a.isSpecial)));
+
     const result: TaskGroup[] = [];
     for (const s of taskStatuses) {
       const groupTasks = groupMap.get(s.code);
       if (groupTasks && groupTasks.length > 0) {
-        result.push({ code: s.code, label: s.label, color: s.color, tasks: groupTasks });
+        result.push({
+          code: s.code,
+          label: s.label,
+          color: s.color,
+          tasks: sortSpecialFirst(groupTasks),
+        });
       }
     }
 
     const other = groupMap.get('__other__');
     if (other && other.length > 0) {
-      result.push({ code: '__other__', label: 'Other', color: '#94a3b8', tasks: other });
+      result.push({
+        code: '__other__',
+        label: 'Other',
+        color: '#94a3b8',
+        tasks: sortSpecialFirst(other),
+      });
     }
 
     return result;

@@ -9,6 +9,7 @@ import {
 import type { AxiosError } from 'axios';
 
 import { propertyKeys } from './property-keys';
+import type { DiscomResponse } from './use-discoms';
 import type { CreatePropertyFormData } from '../schemas/property.schema';
 
 import { apiClient } from '@/lib/api/client';
@@ -44,7 +45,8 @@ export interface PropertyResponse {
   state?: string;
   pincode?: string;
   country?: string;
-  discomName?: string;
+  discomId?: string;
+  discom?: DiscomResponse;
   connectionType?: string;
   sanctionedLoad?: number;
   consumerNumber?: string;

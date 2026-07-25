@@ -1,5 +1,6 @@
 export * from './coordinates.schema';
 export * from './auth.schema';
+export * from './change-request.schema';
 export * from './customer.schema';
 export * from './property.schema';
 export * from './quote.schema';

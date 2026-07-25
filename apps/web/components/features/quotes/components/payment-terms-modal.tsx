@@ -152,7 +152,7 @@ export function PaymentTermsModal({
           </DialogDescription>
         </DialogHeader>
 
-        <DialogBody className="space-y-4 max-h-[60vh] overflow-y-auto">
+        <DialogBody className="space-y-4">
           {/* Column headers */}
           <div className="grid grid-cols-[1fr_120px_40px] gap-3 items-center px-1">
             <span className="text-2xs font-medium text-foreground-muted uppercase">Milestone</span>

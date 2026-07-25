@@ -33,6 +33,7 @@ import {
   type UpdateTaskCrossProjectDto,
 } from '../dto';
 import { ProjectTaskEntity } from '../entities';
+import { ChangeRequestTaskService } from './change-request-task.service';
 import { WorkflowEngineService } from './workflow-engine.service';
 import { WorkflowStepEntity } from '../entities/workflow-step.entity';
 import { ProjectTaskRepository } from '../repositories/project-task.repository';
@@ -78,6 +79,7 @@ export class ProjectTaskService {
     private readonly lookupRepository: LookupRepository,
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
+    private readonly changeRequestTaskService: ChangeRequestTaskService,
   ) {}
 
   async create(
@@ -406,6 +408,16 @@ export class ProjectTaskService {
 
     if (!updated) {
       throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+
+    if (meta.isFinal && updated.isSpecial) {
+      try {
+        await this.changeRequestTaskService.applyPropertyWriteBack(updated);
+      } catch (error) {
+        this.logger.warn(
+          `Change request write-back failed for task ${updated.id}: ${String(error)}`,
+        );
+      }
     }
 
     await this.updateAllProgress(projectId);

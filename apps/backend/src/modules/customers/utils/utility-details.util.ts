@@ -2,12 +2,12 @@ import { BadRequestException } from '@nestjs/common';
 import { isValidConsumerNumber } from '@tejas96/shared/utils';
 
 export const UTILITY_DETAILS_INCOMPLETE_MESSAGE =
-  'Consumer name, consumer number, DISCOM provider, and connection type are required with a valid 10–12 digit consumer number.';
+  'Consumer name, consumer number, DISCOM, and connection type are required with a valid 10–12 digit consumer number.';
 
 export interface UtilityDetailsFields {
   consumerNumber?: string | null;
   consumerName?: string | null;
-  discomName?: string | null;
+  discomId?: string | null;
   connectionType?: string | null;
 }
 
@@ -16,7 +16,7 @@ export function isUtilityDetailsComplete(property: UtilityDetailsFields): boolea
     property.consumerName?.trim() &&
       property.consumerNumber?.trim() &&
       isValidConsumerNumber(property.consumerNumber) &&
-      property.discomName?.trim() &&
+      property.discomId &&
       property.connectionType,
   );
 }
@@ -30,13 +30,13 @@ export function assertUtilityDetailsComplete(property: UtilityDetailsFields): vo
 export function hasUtilityFieldUpdate(updateDto: {
   consumerNumber?: unknown;
   consumerName?: unknown;
-  discomName?: unknown;
+  discomId?: unknown;
   connectionType?: unknown;
 }): boolean {
   return (
     updateDto.consumerNumber !== undefined ||
     updateDto.consumerName !== undefined ||
-    updateDto.discomName !== undefined ||
+    updateDto.discomId !== undefined ||
     updateDto.connectionType !== undefined
   );
 }

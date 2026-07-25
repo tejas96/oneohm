@@ -13,6 +13,7 @@ import { FollowupRepository } from './repositories/followup.repository';
 import { CustomerPropertyService } from './services/customer-property.service';
 import { CustomerService } from './services/customer.service';
 import { FollowupService } from './services/followup.service';
+import { DiscomsModule } from '../discoms/discoms.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
 import { LoanFinanceModule } from '../loan-finance/loan-finance.module';
@@ -36,6 +37,7 @@ import { UsersModule } from '../users/users.module';
     LoanFinanceModule,
     StorageModule,
     IamModule,
+    DiscomsModule,
   ],
   controllers: [CustomerController, CustomerPropertyController, FollowupController],
   providers: [

@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
+  DialogForm,
   DialogHeader,
   DialogTitle,
   Input,
@@ -66,7 +67,7 @@ export function InviteUserModal({ open, onOpenChange }: InviteUserModalProps): J
           <DialogTitle>Invite Employee</DialogTitle>
           <DialogDescription>Send an email invitation to onboard a new employee.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => void handleSubmit(e)}>
+        <DialogForm onSubmit={(e) => void handleSubmit(e)}>
           <DialogBody className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="invite-email">Email *</Label>
@@ -132,7 +133,7 @@ export function InviteUserModal({ open, onOpenChange }: InviteUserModalProps): J
               )}
             </Button>
           </DialogFooter>
-        </form>
+        </DialogForm>
       </DialogContent>
     </Dialog>
   );

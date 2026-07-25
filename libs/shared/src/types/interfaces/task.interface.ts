@@ -28,6 +28,8 @@ export interface WorkflowStep {
   effortDays?: number;
   checklistTemplate?: TaskChecklist;
   isActive: boolean;
+  isSpecial?: boolean;
+  changeRequestType?: string;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;

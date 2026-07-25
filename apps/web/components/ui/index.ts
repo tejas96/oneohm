@@ -57,6 +57,7 @@ export {
   DialogHeader,
   DialogFooter,
   DialogBody,
+  DialogForm,
   DialogTitle,
   DialogDescription,
   ConfirmDialog,

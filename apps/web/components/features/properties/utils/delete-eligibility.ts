@@ -1,4 +1,4 @@
-import { LoanStatus } from '@tejas96/shared/types';
+import { LoanStatus, ChangeRequestStatus } from '@tejas96/shared/types';
 
 export const ORG_ADMIN_ROLES = ['admin', 'super_admin'] as const;
 
@@ -10,6 +10,7 @@ export function getPropertyDeleteBlockReasons(
     latestQuoteId?: string;
     hasActiveLoan?: boolean;
     project?: { id?: string } | null;
+    changeRequests?: Array<{ status?: ChangeRequestStatus | string }>;
   },
   loan?: { status: LoanStatus | string } | null,
 ): string[] {
@@ -29,6 +30,13 @@ export function getPropertyDeleteBlockReasons(
 
   if (hasActiveLoan) {
     reasons.push('Cannot delete: property has an active loan application in progress');
+  }
+
+  const hasPendingChangeRequests = (property.changeRequests ?? []).some(
+    (cr) => cr.status === ChangeRequestStatus.PENDING || cr.status === 'pending',
+  );
+  if (hasPendingChangeRequests) {
+    reasons.push('Cannot delete: property has pending change requests');
   }
 
   return reasons;

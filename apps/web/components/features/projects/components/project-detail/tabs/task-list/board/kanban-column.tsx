@@ -131,6 +131,7 @@ export function KanbanColumn({
               completionPercentage={task.completionPercentage}
               labels={task.labels ?? []}
               blockedReason={task.blockedReason}
+              isSpecial={task.isSpecial}
               allColumns={allColumns}
               onOpenTask={onOpenTask}
               onMoveToStatus={onMoveToStatus}

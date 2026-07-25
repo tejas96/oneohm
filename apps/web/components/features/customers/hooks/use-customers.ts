@@ -70,6 +70,23 @@ export interface CustomerFilters {
   enabled?: boolean;
 }
 
+/**
+ * Server-computed roll-up of a customer's sites. Present on list responses
+ * only — it exists so the list's "Site portfolio" column renders from the page
+ * payload instead of firing one properties request per visible row.
+ *
+ * Mirrors `SitePortfolioDto`.
+ */
+export interface SitePortfolio {
+  siteCount: number;
+  /** Site counts keyed by `PropertyStatus` — drives the distribution bar. */
+  statusCounts: Record<string, number>;
+  convertedCount: number;
+  quotedSiteCount: number;
+  totalSystemSizeKw: number;
+  totalQuotedAmount: number;
+}
+
 export interface Customer {
   id: string;
   organizationId: string;
@@ -90,6 +107,8 @@ export interface Customer {
   groupName?: string;
   status: CustomerStatus;
   propertyCount: number;
+  /** List responses only; omitted on single-customer reads. */
+  sitePortfolio?: SitePortfolio;
   deleteBlockReasons?: string[];
   createdAt: string;
   updatedAt: string;
@@ -112,6 +131,22 @@ export interface CustomerStatsResponse {
   prospect: number;
   active: number;
   inactive: number;
+}
+
+/**
+ * Organisation-wide CRM roll-up backing the four KPI cards on the customer
+ * list. Mirrors `CustomerOverviewStatsDto`.
+ */
+export interface CustomerOverviewStats {
+  customers: number;
+  customersThisMonth: number;
+  sites: number;
+  sitesThisMonth: number;
+  /** Quoted value of sites still in play — quote sent/viewed, not yet converted. */
+  pipelineValue: number;
+  awaitingReply: number;
+  /** Of `awaitingReply`, unanswered for more than 7 days. */
+  awaitingAgeing: number;
 }
 
 export interface UpdateCustomerData {
@@ -252,6 +287,31 @@ export function useCustomerStats(): UseQueryResult<CustomerStatsResponse, AxiosE
       const { data } = await apiClient.get<CustomerStatsResponse>('/customers/statistics/status', {
         headers: { 'X-Organization-Id': organizationId },
       });
+      return data;
+    },
+    enabled: !!organizationId,
+  });
+}
+
+/**
+ * Hook to fetch the CRM overview roll-up for the customer list's KPI cards.
+ *
+ * Kept separate from `useCustomers` on purpose: these figures are
+ * organisation-wide and independent of the table's page, sort and filters, so
+ * folding them into the list query would refetch four unchanging numbers on
+ * every keystroke of the search box.
+ */
+export function useCustomerOverviewStats(): UseQueryResult<CustomerOverviewStats, AxiosError> {
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useQuery({
+    queryKey: [...customerKeys.all(organizationId), 'overview'] as const,
+    queryFn: async (): Promise<CustomerOverviewStats> => {
+      const { data } = await apiClient.get<CustomerOverviewStats>(
+        '/customers/statistics/overview',
+        { headers: { 'X-Organization-Id': organizationId } },
+      );
       return data;
     },
     enabled: !!organizationId,

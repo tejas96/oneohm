@@ -15,6 +15,10 @@ import { CustomerPropertyEntity } from '../entities/customer-property.entity';
  * Field mapping for safe sorting (prevents SQL injection via sortBy)
  * Maps enum values to entity property paths (camelCase) — TypeORM resolves these to DB columns.
  * Quote fields (cv.*) require conditional LEFT JOINs added in findWithFilters.
+ *
+ * SYSTEM_SIZE is a raw CASE expression, not a column path: sorting must use
+ * the same wattage-preferred size the response DTO displays, or "sort by
+ * system size" would order by a number the row next to it doesn't show.
  */
 const SORT_FIELD_MAP: Record<PropertySortField, string> = {
   [PropertySortField.CREATED_AT]: 'property.createdAt',
@@ -24,7 +28,8 @@ const SORT_FIELD_MAP: Record<PropertySortField, string> = {
   [PropertySortField.LEAD_TEMPERATURE]: 'property.leadTemperature',
   [PropertySortField.PROPERTY_TYPE]: 'property.propertyType',
   [PropertySortField.STATUS]: 'property.status',
-  [PropertySortField.SYSTEM_SIZE]: 'cv.systemSizeKw',
+  [PropertySortField.SYSTEM_SIZE]:
+    'CASE WHEN cv.totalWattageWp > 0 THEN cv.totalWattageWp / 1000.0 ELSE cv.systemSizeKw END',
   [PropertySortField.QUOTE_COST]: 'cv.finalPrice',
 };
 
@@ -59,6 +64,7 @@ export class CustomerPropertyRepository {
         'customer',
         'organization',
         'project',
+        'discom',
         'siteVisitAssigneeUser',
         'siteSurveyAssigneeUser',
       ],
@@ -75,6 +81,7 @@ export class CustomerPropertyRepository {
         'customer',
         'creator',
         'project',
+        'discom',
         'siteVisitAssigneeUser',
         'siteSurveyAssigneeUser',
       ],
@@ -84,6 +91,7 @@ export class CustomerPropertyRepository {
   async findByCustomer(customerId: string): Promise<CustomerPropertyEntity[]> {
     return this.repository.find({
       where: { customerId, deletedAt: IsNull() },
+      relations: ['discom'],
       order: { isPrimary: 'DESC', createdAt: 'DESC' },
     });
   }
@@ -226,7 +234,8 @@ export class CustomerPropertyRepository {
     const qb = this.repository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.customer', 'customer')
-      .leftJoinAndSelect('property.creator', 'creator');
+      .leftJoinAndSelect('property.creator', 'creator')
+      .leftJoinAndSelect('property.discom', 'discom');
 
     if (needsQuoteJoin) {
       qb.leftJoin(
@@ -329,12 +338,21 @@ export class CustomerPropertyRepository {
       qb.andWhere('latestQuote.status = :quoteStatus', { quoteStatus: query.quoteStatus });
     }
 
+    // Same wattage-preferred size the response DTO computes (see `findAll`'s
+    // enrichment step) — filtering on the raw `systemSizeKw` column would
+    // silently disagree with the value actually shown for the property.
     if (query.systemSizeMin !== undefined) {
-      qb.andWhere('cv.systemSizeKw >= :systemSizeMin', { systemSizeMin: query.systemSizeMin });
+      qb.andWhere(
+        '(CASE WHEN cv.totalWattageWp > 0 THEN cv.totalWattageWp / 1000.0 ELSE cv.systemSizeKw END) >= :systemSizeMin',
+        { systemSizeMin: query.systemSizeMin },
+      );
     }
 
     if (query.systemSizeMax !== undefined) {
-      qb.andWhere('cv.systemSizeKw <= :systemSizeMax', { systemSizeMax: query.systemSizeMax });
+      qb.andWhere(
+        '(CASE WHEN cv.totalWattageWp > 0 THEN cv.totalWattageWp / 1000.0 ELSE cv.systemSizeKw END) <= :systemSizeMax',
+        { systemSizeMax: query.systemSizeMax },
+      );
     }
 
     // ===== Sorting (using safe field mapping) =====

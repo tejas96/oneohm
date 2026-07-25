@@ -3,6 +3,83 @@ import { CustomerStatus } from '@tejas96/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { CustomerPropertyResponseDto } from './customer-property-response.dto';
+import { toNum } from '../../../common/utils';
+
+/**
+ * Aggregate view of a customer's installation sites.
+ *
+ * Computed server-side (`CustomerProfileRepository.getSitePortfolioSummaries`)
+ * so the CRM list can render the "Site portfolio" column — count, capacity,
+ * status distribution and quoted value — from the page payload alone, instead
+ * of firing one properties request per visible row.
+ */
+@Exclude()
+export class SitePortfolioDto {
+  @ApiProperty({ description: 'Non-deleted sites belonging to this customer' })
+  @Expose()
+  siteCount!: number;
+
+  @ApiProperty({
+    description: 'Site counts keyed by PropertyStatus — drives the distribution bar',
+    example: { active: 3, converted: 4 },
+  })
+  @Expose()
+  statusCounts!: Record<string, number>;
+
+  @ApiProperty({ description: 'Sites with status = converted' })
+  @Expose()
+  convertedCount!: number;
+
+  @ApiProperty({ description: 'Sites that have at least one quote' })
+  @Expose()
+  quotedSiteCount!: number;
+
+  @ApiProperty({
+    description:
+      'Total system size (kW) across each site’s current quote version. Prefers the ' +
+      'modules actually selected during quote calculation over the quote’s declared size.',
+    example: 27.5,
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value) ?? 0)
+  totalSystemSizeKw!: number;
+
+  @ApiProperty({
+    description: 'Total quoted value across each site’s current quote version',
+    example: 1845200,
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value) ?? 0)
+  totalQuotedAmount!: number;
+}
+
+/**
+ * Organisation-wide CRM roll-up for the customer list's KPI cards.
+ */
+export class CustomerOverviewStatsDto {
+  @ApiProperty()
+  customers!: number;
+
+  @ApiProperty({ description: 'Customers created since the start of the current month' })
+  customersThisMonth!: number;
+
+  @ApiProperty()
+  sites!: number;
+
+  @ApiProperty({ description: 'Sites created since the start of the current month' })
+  sitesThisMonth!: number;
+
+  @ApiProperty({
+    description: 'Quoted value of sites still in play — quote sent/viewed and not yet converted',
+  })
+  pipelineValue!: number;
+
+  @ApiProperty({ description: 'Sites whose latest quote is sent/viewed and unanswered' })
+  awaitingReply!: number;
+
+  @ApiProperty({ description: 'Of those, unanswered for more than 7 days' })
+  awaitingAgeing!: number;
+}
 
 /**
  * DTO for customer profile response
@@ -109,6 +186,18 @@ export class CustomerResponseDto {
   @Expose()
   @Transform(({ obj }) => obj.propertyCount ?? obj.properties?.length ?? 0)
   propertyCount!: number;
+
+  /**
+   * Present on list responses; omitted on single-customer reads, which have no
+   * portfolio column to fill and would pay for the aggregate for nothing.
+   */
+  @ApiPropertyOptional({
+    type: () => SitePortfolioDto,
+    description: 'Aggregate of this customer’s sites (list responses only)',
+  })
+  @Expose()
+  @Type(() => SitePortfolioDto)
+  sitePortfolio?: SitePortfolioDto;
 
   @ApiPropertyOptional({
     type: [String],

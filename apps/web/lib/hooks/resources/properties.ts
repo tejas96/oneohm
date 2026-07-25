@@ -11,6 +11,8 @@ import {
 
 import { defineResource, useResourceMutations, type BaseFilters } from '../core';
 
+import type { DiscomResponse } from '@/components/features/properties/hooks/use-discoms';
+
 // ── Types ──────────────────────────────────────────────────────
 
 export interface PropertyItem {
@@ -28,7 +30,8 @@ export interface PropertyItem {
   consumerNumber?: string;
   consumerName?: string;
   currentLoad?: string;
-  discomName?: string;
+  discomId?: string;
+  discom?: DiscomResponse;
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;

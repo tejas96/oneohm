@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
+  DialogForm,
   DialogHeader,
   DialogTitle,
   Input,
@@ -90,8 +91,8 @@ export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps):
             Update role details and permissions. System role codes cannot be changed.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
-          <DialogBody className="space-y-4 max-h-[60vh] overflow-y-auto">
+        <DialogForm onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
+          <DialogBody className="space-y-4">
             <div className="space-y-1.5">
               <Label>Name *</Label>
               <Input {...form.register('name')} />
@@ -151,7 +152,7 @@ export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps):
               )}
             </Button>
           </DialogFooter>
-        </form>
+        </DialogForm>
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -9,12 +10,23 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import PriceCheckOutlinedIcon from '@mui/icons-material/PriceCheckOutlined';
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import { Button, Card, CardContent, Chip } from '@mui/material';
-import { ConnectionType, LeadTemperature, DocumentEntityType } from '@tejas96/shared/types';
+import {
+  ConnectionType,
+  LeadTemperature,
+  DocumentEntityType,
+  type StoredChangeRequest,
+} from '@tejas96/shared/types';
 import * as React from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import { type CustomerResponse } from '../../../../customers';
 import { LEAD_TEMPERATURE_CONFIG, PROPERTY_TYPE_LABELS } from '../../../constants';
+import { useDiscomById } from '../../../hooks/use-discoms';
+import {
+  formatChangeRequestSummary,
+  getChangeRequestLabel,
+  type ChangeRequestFormItem,
+} from '../../../utils/change-request-display';
 
 import { useDocumentsByProperty } from '@/components/features/documents/hooks';
 import { type DraftDocument } from '@/components/shared/document-manager';
@@ -26,6 +38,7 @@ interface Step6ReviewProps {
   resolvedCustomer?: CustomerResponse;
   propertyDraftDocs: DraftDocument[];
   loanDraftDocs: DraftDocument[];
+  convertedChangeRequests?: StoredChangeRequest[];
   onJumpToStep: (stepIndex: number) => void;
 }
 
@@ -35,6 +48,7 @@ export function Step6Review({
   resolvedCustomer,
   propertyDraftDocs,
   loanDraftDocs,
+  convertedChangeRequests = [],
   onJumpToStep,
 }: Step6ReviewProps): React.JSX.Element {
   const { watch } = useFormContext();
@@ -75,13 +89,17 @@ export function Step6Review({
   const state = watch('state') as string;
   const pincode = watch('pincode') as string;
 
-  const discomName = watch('discomName') as string;
+  const discomId = watch('discomId') as string | undefined;
+  const { data: selectedDiscom } = useDiscomById(discomId);
   const consumerName = watch('consumerName') as string;
   const consumerNumber = watch('consumerNumber') as string;
   const connectionType = watch('connectionType') as ConnectionType | undefined;
   const sanctionedLoad = watch('sanctionedLoad') as number | undefined;
   const currentLoad = watch('currentLoad') as string;
   const meterNumber = watch('meterNumber') as string;
+
+  const changeRequests = (watch('changeRequests') as ChangeRequestFormItem[] | undefined) ?? [];
+  const totalChangeRequestCount = changeRequests.length + convertedChangeRequests.length;
 
   const leadTemperature = watch('leadTemperature') as LeadTemperature | undefined;
   const wantsLoan = Boolean(watch('wantsLoan'));
@@ -230,7 +248,7 @@ export function Step6Review({
                     DISCOM Provider
                   </MUITypography>
                   <MUITypography variant="bodyPrimary" className="font-medium mt-0.5">
-                    {discomName || '—'}
+                    {selectedDiscom?.label || '—'}
                   </MUITypography>
                 </div>
                 <div>
@@ -288,12 +306,71 @@ export function Step6Review({
               </div>
             </div>
 
+            {/* Change of Request */}
+            <div className="md:col-span-2 p-4 rounded-lg bg-background-secondary/40 space-y-3">
+              {renderSectionHeader(
+                'Change of Request',
+                <AssignmentOutlinedIcon fontSize="small" />,
+                3,
+              )}
+              <div className="text-xs space-y-2">
+                <div className="flex justify-between items-center bg-background-secondary p-2 rounded">
+                  <span className="text-foreground-secondary">Selected requests:</span>
+                  <span className="font-semibold">{totalChangeRequestCount}</span>
+                </div>
+                {convertedChangeRequests.length > 0 ? (
+                  <ul className="space-y-2">
+                    {convertedChangeRequests.map((item) => (
+                      <li
+                        key={`converted-${item.type}`}
+                        className="rounded-md border border-warning/30 bg-warning/5 p-3"
+                      >
+                        <MUITypography variant="bodyPrimary" className="font-medium text-sm">
+                          {getChangeRequestLabel(item.type)}
+                        </MUITypography>
+                        <MUITypography
+                          variant="body"
+                          className="mt-1 text-foreground-secondary leading-relaxed"
+                        >
+                          {formatChangeRequestSummary(item)} (converted)
+                        </MUITypography>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {changeRequests.length > 0 ? (
+                  <ul className="space-y-2">
+                    {changeRequests.map((item) => (
+                      <li
+                        key={item.type}
+                        className="rounded-md border border-border bg-background p-3"
+                      >
+                        <MUITypography variant="bodyPrimary" className="font-medium text-sm">
+                          {getChangeRequestLabel(item.type)}
+                        </MUITypography>
+                        <MUITypography
+                          variant="body"
+                          className="mt-1 text-foreground-secondary leading-relaxed"
+                        >
+                          {formatChangeRequestSummary(item)}
+                        </MUITypography>
+                      </li>
+                    ))}
+                  </ul>
+                ) : convertedChangeRequests.length === 0 ? (
+                  <MUITypography variant="body" className="text-foreground-secondary italic">
+                    No change requests selected.
+                  </MUITypography>
+                ) : null}
+              </div>
+            </div>
+
             {/* Lead Details (Lead Temp + Notes) */}
             <div className="p-4 rounded-lg bg-background-secondary/40 space-y-3">
               {renderSectionHeader(
                 'Lead Details',
                 <PersonOutlineOutlinedIcon fontSize="small" />,
-                3,
+                4,
               )}
               <div className="space-y-3 text-xs">
                 <div>
@@ -349,7 +426,7 @@ export function Step6Review({
               {renderSectionHeader(
                 'Finance Details',
                 <PriceCheckOutlinedIcon fontSize="small" />,
-                4,
+                5,
               )}
               <div className="space-y-4 text-xs">
                 <div>
@@ -404,7 +481,7 @@ export function Step6Review({
               {renderSectionHeader(
                 'Property Documents',
                 <DescriptionOutlinedIcon fontSize="small" />,
-                5,
+                6,
               )}
               <div className="text-xs space-y-2">
                 <div className="flex justify-between items-center bg-background-secondary p-2 rounded">

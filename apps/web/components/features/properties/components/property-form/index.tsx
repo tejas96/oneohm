@@ -18,6 +18,7 @@ import {
   Step1BasicInfo,
   Step2Location,
   Step3Utility,
+  StepChangeRequests,
   Step4Finance,
   Step5Financing,
   Step5Documents,
@@ -37,6 +38,10 @@ import {
   type EditPropertyFormData,
 } from '../../schemas/property.schema';
 import { buildPropertyApiPayload } from '../../utils';
+import {
+  getConvertedChangeRequests,
+  pendingChangeRequestsToFormItems,
+} from '../../utils/change-request-display';
 
 import { useUploadDocumentsBulk } from '@/components/features/documents/hooks';
 import { Alert } from '@/components/shared';
@@ -72,7 +77,7 @@ const WIZARD_STEPS: StepConfig[] = [
     label: 'Utility Details',
     description: 'Electricity & DISCOM info',
     fields: [
-      'discomName',
+      'discomId',
       'consumerName',
       'consumerNumber',
       'connectionType',
@@ -80,6 +85,12 @@ const WIZARD_STEPS: StepConfig[] = [
       'currentLoad',
       'meterNumber',
     ],
+  },
+  {
+    id: 'change-requests',
+    label: 'Change of Request',
+    description: 'Customer change requests',
+    fields: ['changeRequests'],
   },
   {
     id: 'lead-status',
@@ -183,7 +194,7 @@ export function PropertyForm({
           longitude: undefined,
           consumerNumber: '',
           consumerName: '',
-          discomName: '',
+          discomId: '',
           connectionType: undefined,
           sanctionedLoad: undefined,
           currentLoad: '',
@@ -206,7 +217,7 @@ export function PropertyForm({
           longitude: undefined,
           consumerNumber: '',
           consumerName: '',
-          discomName: '',
+          discomId: '',
           connectionType: undefined,
           sanctionedLoad: undefined,
           currentLoad: '',
@@ -214,8 +225,14 @@ export function PropertyForm({
           leadTemperature: undefined,
           wantsLoan: false,
           notes: '',
+          changeRequests: [],
         },
   });
+
+  const convertedChangeRequests = React.useMemo(
+    () => getConvertedChangeRequests(initialData?.changeRequests),
+    [initialData?.changeRequests],
+  );
 
   // Populate form when initialData loads (edit mode)
   React.useEffect(() => {
@@ -232,7 +249,7 @@ export function PropertyForm({
         longitude: initialData.gpsCoordinates?.longitude,
         consumerNumber: initialData.consumerNumber || '',
         consumerName: initialData.consumerName || '',
-        discomName: initialData.discomName ?? '',
+        discomId: initialData.discomId ?? '',
         connectionType: initialData.connectionType as ConnectionType | undefined,
         sanctionedLoad: initialData.sanctionedLoad ?? undefined,
         currentLoad: initialData.currentLoad || '',
@@ -240,6 +257,9 @@ export function PropertyForm({
         leadTemperature: initialData.leadTemperature,
         wantsLoan: initialData.wantsLoan || false,
         notes: initialData.notes || '',
+        changeRequests: pendingChangeRequestsToFormItems(
+          initialData.changeRequests,
+        ) as EditPropertyFormData['changeRequests'],
       });
     }
   }, [isEditMode, initialData, form]);
@@ -309,15 +329,23 @@ export function PropertyForm({
         return;
       }
       if (isEditMode && propertyId) {
+        const payload = buildPropertyApiPayload(data);
         await updatePropertyMutation.mutateAsync({
           id: propertyId,
-          data: buildPropertyApiPayload(data),
+          data: {
+            ...payload,
+            changeRequests: payload.changeRequests ?? [],
+          },
         });
         showToast.success('Property updated successfully');
         router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId }));
       } else {
         const createData = buildPropertyApiPayload(data as CreatePropertyFormData);
-        const created = await createPropertyMutation.mutateAsync(createData);
+        const payload = {
+          ...createData,
+          changeRequests: createData.changeRequests ?? [],
+        };
+        const created = await createPropertyMutation.mutateAsync(payload);
 
         const wantsLoan = Boolean(form.getValues('wantsLoan'));
         const successPropertyDrafts = propertyDraftDocs.filter((d) => d.status === 'success');
@@ -419,8 +447,10 @@ export function PropertyForm({
       case 2:
         return <Step3Utility />;
       case 3:
-        return <Step4Finance isSubmitting={isSubmitting} />;
+        return <StepChangeRequests convertedChangeRequests={convertedChangeRequests} />;
       case 4:
+        return <Step4Finance isSubmitting={isSubmitting} />;
+      case 5:
         return (
           <Step5Financing
             isEditMode={isEditMode}
@@ -429,7 +459,7 @@ export function PropertyForm({
             handleDraftDocsChange={handleLoanDraftDocsChange}
           />
         );
-      case 5:
+      case 6:
         return (
           <Step5Documents
             isEditMode={isEditMode}
@@ -439,7 +469,7 @@ export function PropertyForm({
             handleDraftDocsChange={handlePropertyDraftDocsChange}
           />
         );
-      case 6:
+      case 7:
         return (
           <Step6Review
             isEditMode={isEditMode}
@@ -447,6 +477,7 @@ export function PropertyForm({
             resolvedCustomer={resolvedCustomer}
             propertyDraftDocs={propertyDraftDocs}
             loanDraftDocs={loanDraftDocs}
+            convertedChangeRequests={convertedChangeRequests}
             onJumpToStep={handleStepClick}
           />
         );

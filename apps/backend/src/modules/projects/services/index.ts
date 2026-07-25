@@ -4,6 +4,7 @@ export * from './material.service';
 export * from './workflow-step.service';
 export * from './workflow-engine.service';
 export * from './project-task.service';
+export * from './change-request-task.service';
 export * from './project-team.service';
 export * from './project-chat.service';
 export * from './project-analytics.service';

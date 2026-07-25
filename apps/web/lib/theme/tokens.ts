@@ -328,6 +328,144 @@ const root = {
     'table-size': '13px',
     'table-line': '1.45',
   },
+
+  /**
+   * ── CRM data grid (`Customers v2`) ────────────────────────────────────
+   *
+   * The CRM list is the app's densest surface: a customer row, its site
+   * portfolio summary, and — when expanded — a nested sites sub-grid, all in
+   * one viewport. That density needs steps BETWEEN the DS type scale's
+   * `caption` (12px) and `overline` (11px), plus fixed column tracks and
+   * control heights that the DS scale has no opinion about.
+   *
+   * They live here rather than inline in the component for the same reason
+   * every other value does: the grid is pixel-matched to the design spec, and
+   * a spec change must be a one-line edit in this file, not a hunt through
+   * JSX. `crm-table/` reads these exclusively — it contains no raw px.
+   *
+   * `-size` values are lengths; `-columns` are full `grid-template-columns`
+   * strings (commas inside `minmax()` are legal in a custom property value).
+   */
+  crm: {
+    // ── Customer grid: column tracks ───────────────────────────────────
+    /**
+     * One `grid-template-columns` track per column, authored individually
+     * rather than as one composite string so hiding a column can rebuild the
+     * template from exactly the tracks that survive. The column defs in
+     * `customer-list-page.tsx` reference these by name; nothing concatenates
+     * them by hand.
+     *
+     * Below `grid-min-width` the grid scrolls horizontally rather than crushing
+     * the portfolio bar and the mono numerics.
+     */
+    'col-select': '38px',
+    'col-caret': '30px',
+    'col-customer': 'minmax(196px,1.6fr)',
+    'col-contact': '148px',
+    'col-location': 'minmax(102px,0.9fr)',
+    'col-source': '116px',
+    'col-portfolio': '178px',
+    'col-status': '106px',
+    'col-onboarded': '102px',
+    'col-owner': 'minmax(122px,1fr)',
+    /** "Created by" — hidden by default, same width as owner. */
+    'col-creator': 'minmax(122px,1fr)',
+    'col-actions': '40px',
+    'grid-min-width': '1280px',
+    'row-gutter': '16px',
+    'head-height': '40px',
+    /** Comfortable density — the default. */
+    'row-height': '64px',
+    'row-height-compact': '50px',
+    /** The gradient rail that marks an expanded row. */
+    'spine-width': '3px',
+    'spine-radius': '0 3px 3px 0',
+    'caret-size': '24px',
+    'avatar-size': '34px',
+    'owner-avatar-size': '22px',
+    'row-action-size': '30px',
+    'group-chip-height': '18px',
+    'group-chip-max-width': '150px',
+    'whatsapp-size': '22px',
+    'portfolio-bar-height': '4px',
+    'status-pill-height': '23px',
+    'status-dot-size': '5px',
+
+    // ── Toolbar ────────────────────────────────────────────────────────
+    'toolbar-pad-y': '12px',
+    'toolbar-gap': '12px',
+    'toolbar-search-width': '232px',
+    'toolbar-input-height': '38px',
+    'toolbar-control-size': '34px',
+    'toolbar-chip-height': '26px',
+    'toolbar-chip-gap': '7px',
+
+    // ── Footer / pagination ────────────────────────────────────────────
+    'footer-pad-y': '11px',
+    'footer-button-size': '30px',
+    'footer-page-min-width': '84px',
+
+    // ── Floating bulk-selection bar ────────────────────────────────────
+    /** Clears the pagination footer. */
+    'selection-bar-offset': '62px',
+    'selection-bar-pad': '7px 8px 7px 18px',
+
+    // ── Nested sites panel ─────────────────────────────────────────────
+    /** Aligns the panel's left edge with the customer-name column. */
+    'sites-indent': '68px',
+    /** Column tracks for the nested sites sub-grid. */
+    'sites-col-site': 'minmax(252px,1.7fr)',
+    'sites-col-type': '112px',
+    'sites-col-stage': '128px',
+    'sites-col-quote': '112px',
+    'sites-col-cost': '118px',
+    'sites-col-discom': 'minmax(132px,1fr)',
+    'sites-col-status': '100px',
+    'sites-col-added': '88px',
+    'sites-col-actions': '34px',
+    'sites-gutter': '12px',
+    'sites-head-height': '34px',
+    'sites-row-height': '46px',
+    'sites-row-pad-y': '9px',
+    'sites-panel-pad': '11px 12px 12px',
+    'sites-icon-size': '26px',
+    'sites-primary-chip-height': '15px',
+    'sites-summary-pill-height': '24px',
+    'sites-quote-pill-height': '22px',
+    'sites-status-pill-height': '21px',
+    'sites-stage-bar-height': '3px',
+    'sites-action-size': '26px',
+    /** The ambient brand glow behind the panel header. */
+    'sites-glow-size': '300px',
+
+    // ── Page shell ─────────────────────────────────────────────────────
+    'page-pad-x': '24px',
+    'page-pad-top': '22px',
+    'kpi-min-width': '196px',
+    'kpi-height': '102px',
+    'table-min-height': '460px',
+
+    // ── Micro type steps ───────────────────────────────────────────────
+    /** Page H1 — between the DS `h2` (24px) and `h1` (32px) steps. */
+    'text-page-title': '27px',
+    'text-page-title-track': '-0.03em',
+    /** Row primary (customer name, section headings). */
+    'text-row-title': '13.5px',
+    /** Row body — phone, city, portfolio counts, quoted cost. */
+    'text-row': '12.5px',
+    /** Row secondary — pills, discom, dates. */
+    'text-row-sm': '11.5px',
+    /** Row tertiary — site addresses, stage labels. */
+    'text-row-xs': '11px',
+    /** Mono sub-labels — pincode, load, quoted total. */
+    'text-row-2xs': '10.5px',
+    /** Sub-grid overline. */
+    'text-overline-sm': '10px',
+    /** The `Primary` site badge. */
+    'text-overline-xs': '9px',
+    'text-overline-sm-track': '0.1em',
+    'text-overline-xs-track': '0.06em',
+  },
 } as const;
 
 export const TOKENS = { theme, root } as const;
@@ -340,7 +478,14 @@ export const ease = theme.ease;
 export const font = root.font;
 export const duration = root.dur;
 export const gradient = root.gradient;
+/**
+ * CRM grid metrics. Consumers read these as `crm['row-height']` for MUI `sx`
+ * values, or as `var(--crm-row-height)` inside a template string — both
+ * resolve to the same authored value.
+ */
+export const crm = root.crm;
 
 export type ColorToken = keyof typeof root.ds;
 export type RadiusToken = keyof typeof theme.radius;
 export type ShadowToken = keyof typeof theme.shadow;
+export type CrmToken = keyof typeof root.crm;

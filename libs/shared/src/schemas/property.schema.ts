@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { changeRequestsSchema } from './change-request.schema';
 import { gpsCoordinatesSchema } from './coordinates.schema';
 import { ConnectionType, LeadTemperature, PropertyType } from '../types/enums';
 import {
@@ -24,10 +25,9 @@ const consumerNameSchema = z
   .min(1, 'Consumer name is required')
   .max(255, 'Consumer name too long');
 
-const discomNameSchema = z
-  .string()
-  .min(1, 'Please select a DISCOM provider')
-  .max(100, 'DISCOM name too long');
+const discomIdSchema = z
+  .string({ required_error: 'Please select a DISCOM' })
+  .uuid('Please select a valid DISCOM');
 
 const connectionTypeSchema = z.nativeEnum(ConnectionType, {
   errorMap: () => ({ message: 'Please select connection type' }),
@@ -56,7 +56,7 @@ export const createPropertySchema = z.object({
   longitude: z.number({ coerce: true }).optional(),
   consumerNumber: consumerNumberSchema,
   consumerName: consumerNameSchema,
-  discomName: discomNameSchema,
+  discomId: discomIdSchema,
   connectionType: connectionTypeSchema,
   sanctionedLoad: z
     .number({ coerce: true })
@@ -70,6 +70,7 @@ export const createPropertySchema = z.object({
   }),
   wantsLoan: z.boolean().optional(),
   notes: z.string().max(1000, 'Notes too long').optional().or(z.literal('')),
+  changeRequests: changeRequestsSchema,
 });
 
 export type CreatePropertyFormData = z.infer<typeof createPropertySchema>;
@@ -82,7 +83,7 @@ export const editPropertySchema = addPropertySchema.partial().extend({
   propertyName: z.string().min(1, 'Property name is required'),
   consumerNumber: consumerNumberSchema,
   consumerName: consumerNameSchema,
-  discomName: discomNameSchema,
+  discomId: discomIdSchema.optional(),
   connectionType: connectionTypeSchema,
 });
 export type EditPropertyFormData = z.infer<typeof editPropertySchema>;

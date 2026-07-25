@@ -83,7 +83,7 @@ export function OverviewSiteCard({ project }: OverviewSiteCardProps): React.Reac
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div>
             <p className="text-[10px] text-foreground-tertiary uppercase">DISCOM</p>
-            <p className="font-medium text-foreground">{property.discomName ?? '—'}</p>
+            <p className="font-medium text-foreground">{property.discom?.label ?? '—'}</p>
           </div>
           <div>
             <p className="text-[10px] text-foreground-tertiary uppercase">Connection</p>

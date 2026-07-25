@@ -198,7 +198,6 @@ const MUIInputInner = (
 
   /* ---- Autocomplete mode ---- */
   if (props.mode === 'autocomplete') {
-    /* eslint-disable @typescript-eslint/no-unused-vars -- strip CommonExtras from rest */
     const {
       mode,
       error: ce,
@@ -233,7 +232,6 @@ const MUIInputInner = (
       renderOption: callerRenderOption,
       ...autocompleteProps
     } = props;
-    /* eslint-enable @typescript-eslint/no-unused-vars */
 
     const tfProps = textFieldProps ?? {};
     const tfNativeInputProps = tfProps.inputProps;
@@ -249,7 +247,7 @@ const MUIInputInner = (
           option: SearchOption,
         ): React.ReactNode => {
           // Destructure key out so it is NOT spread — we set our own unique key below.
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
           const { key, ...liProps } = optionProps;
           const label = defaultGetOptionLabel(option);
           const optObj = typeof option === 'object' ? (option as Record<string, unknown>) : null;
@@ -354,7 +352,7 @@ const MUIInputInner = (
   }
 
   /* ---- Text / Select mode ---- */
-  /* eslint-disable @typescript-eslint/no-unused-vars -- strip label props from TextField rest */
+
   const {
     mode,
     options,
@@ -382,7 +380,6 @@ const MUIInputInner = (
     onClear: stripOnClear,
     ...textFieldProps
   } = props as BaseFieldProps & { ref?: React.Ref<HTMLInputElement> };
-  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   const selectOptions = mode === 'select' ? options : undefined;
   const resolvedColor: TextFieldProps['color'] =

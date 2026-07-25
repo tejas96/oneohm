@@ -172,9 +172,16 @@ export default [
       // 🧹 Unused Imports / Variables
       // ------------------------------
       'unused-imports/no-unused-imports': 'error',
+      // `ignoreRestSiblings` resolves a deadlock between this rule and
+      // `naming-convention` above: omitting fields via `const { a, ...rest } = x`
+      // leaves `a` unused, which this rule wants prefixed `_a`, while
+      // naming-convention rejects a leading underscore on a variable. There was
+      // no spelling of that idiom which satisfied both. Rest siblings are
+      // omissions by construction, so exempting them removes the contradiction
+      // without weakening the check on genuinely unused variables.
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
       ],
 
       // ------------------------------

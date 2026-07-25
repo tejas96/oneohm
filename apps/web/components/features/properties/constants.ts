@@ -21,7 +21,7 @@ export const REQUIRED_FIELD_KEYS = [
   'address',
   'city',
   'pincode',
-  'discomName',
+  'discomId',
   'consumerName',
   'consumerNumber',
   'connectionType',

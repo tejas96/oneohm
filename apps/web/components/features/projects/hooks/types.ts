@@ -10,6 +10,8 @@ import type {
   TaskStatusConfig,
 } from '@tejas96/shared/types';
 
+import type { DiscomResponse } from '@/components/features/properties/hooks/use-discoms';
+
 // ============================================================================
 // Quote Snapshot Spec Types (derived from quote on GET /projects/:id)
 // ============================================================================
@@ -45,7 +47,8 @@ export interface ProjectDetailProperty {
   customerEmail?: string;
   consumerNumber?: string;
   consumerName?: string;
-  discomName?: string;
+  discomId?: string;
+  discom?: DiscomResponse;
   connectionType?: string;
   sanctionedLoad?: number;
   currentLoad?: string;

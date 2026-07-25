@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
+import { normalizeBusinessIdentifier } from '@tejas96/shared/utils';
 import { AlertCircle, Info, Loader2 } from 'lucide-react';
 import { useEffect, useRef, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
@@ -19,6 +20,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
+  DialogForm,
   DialogHeader,
   DialogTitle,
   Input,
@@ -196,11 +198,11 @@ export function UserFormModal({
         if (data.commissionPercentage) {
           profileData.commissionPercentage = parseFloat(data.commissionPercentage);
         }
-        if (data.gstin) profileData.gstin = data.gstin;
-        if (data.pan) profileData.pan = data.pan;
+        if (data.gstin) profileData.gstin = normalizeBusinessIdentifier(data.gstin);
+        if (data.pan) profileData.pan = normalizeBusinessIdentifier(data.pan);
         if (data.bankName) profileData.bankName = data.bankName;
         if (data.accountNumber) profileData.accountNumber = data.accountNumber;
-        if (data.ifscCode) profileData.ifscCode = data.ifscCode;
+        if (data.ifscCode) profileData.ifscCode = normalizeBusinessIdentifier(data.ifscCode);
         if (data.accountHolderName) profileData.accountHolderName = data.accountHolderName;
       } else {
         if (data.employeeId) profileData.employeeId = data.employeeId;
@@ -332,7 +334,7 @@ export function UserFormModal({
         )}
 
         {(!isEdit || (!isLoadingUser && !isLoadingProfile && !isUserError && !isProfileError)) && (
-          <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
+          <DialogForm onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
             <DialogBody className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -529,10 +531,20 @@ export function UserFormModal({
                         placeholder="e.g., 29ABCDE1234F1Z5"
                         {...form.register('gstin')}
                       />
+                      {form.formState.errors.gstin && (
+                        <p className="text-xs text-error">
+                          {(form.formState.errors.gstin as { message?: string }).message}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="pan">PAN</Label>
                       <Input id="pan" placeholder="e.g., ABCDE1234F" {...form.register('pan')} />
+                      {form.formState.errors.pan && (
+                        <p className="text-xs text-error">
+                          {(form.formState.errors.pan as { message?: string }).message}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -564,6 +576,11 @@ export function UserFormModal({
                           placeholder="e.g., HDFC0000123"
                           {...form.register('ifscCode')}
                         />
+                        {form.formState.errors.ifscCode && (
+                          <p className="text-xs text-error">
+                            {(form.formState.errors.ifscCode as { message?: string }).message}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="accountHolderName">Account Holder Name</Label>
@@ -626,7 +643,7 @@ export function UserFormModal({
                 )}
               </Button>
             </DialogFooter>
-          </form>
+          </DialogForm>
         )}
       </DialogContent>
     </Dialog>

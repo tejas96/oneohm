@@ -1,3 +1,17 @@
+import {
+  GSTIN_FORMAT_MESSAGE,
+  GSTIN_LENGTH,
+  GSTIN_LENGTH_MESSAGE,
+  IFSC_FORMAT_MESSAGE,
+  IFSC_LENGTH,
+  IFSC_LENGTH_MESSAGE,
+  isValidGstin,
+  isValidIfscCode,
+  isValidPan,
+  PAN_FORMAT_MESSAGE,
+  PAN_LENGTH,
+  PAN_LENGTH_MESSAGE,
+} from '@tejas96/shared/utils';
 import { z } from 'zod';
 
 // Fields shared between create and edit (email and password intentionally excluded)
@@ -62,13 +76,74 @@ const validateProfileFields = (data: any, ctx: z.RefinementCtx) => {
   }
 };
 
+const validateOptionalBusinessIdentifiers = (
+  data: { gstin?: string; pan?: string; ifscCode?: string },
+  ctx: z.RefinementCtx,
+) => {
+  const gstin = (data.gstin ?? '').trim();
+  if (gstin.length > 0) {
+    if (gstin.length !== GSTIN_LENGTH) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: GSTIN_LENGTH_MESSAGE,
+        path: ['gstin'],
+      });
+    } else if (!isValidGstin(gstin)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: GSTIN_FORMAT_MESSAGE,
+        path: ['gstin'],
+      });
+    }
+  }
+
+  const pan = (data.pan ?? '').trim();
+  if (pan.length > 0) {
+    if (pan.length !== PAN_LENGTH) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: PAN_LENGTH_MESSAGE,
+        path: ['pan'],
+      });
+    } else if (!isValidPan(pan)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: PAN_FORMAT_MESSAGE,
+        path: ['pan'],
+      });
+    }
+  }
+
+  const ifscCode = (data.ifscCode ?? '').trim();
+  if (ifscCode.length > 0) {
+    if (ifscCode.length !== IFSC_LENGTH) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: IFSC_LENGTH_MESSAGE,
+        path: ['ifscCode'],
+      });
+    } else if (!isValidIfscCode(ifscCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: IFSC_FORMAT_MESSAGE,
+        path: ['ifscCode'],
+      });
+    }
+  }
+};
+
+const validateUserForm = (data: any, ctx: z.RefinementCtx) => {
+  validateProfileFields(data, ctx);
+  validateOptionalBusinessIdentifiers(data, ctx);
+};
+
 export const createUserSchema = z
   .object({
     ...baseUserFields,
     email: z.string().email('Invalid email address').max(255).min(1, 'Email is required'),
     password: z.string().min(8, 'Password must be at least 8 characters').max(50),
   })
-  .superRefine(validateProfileFields);
+  .superRefine(validateUserForm);
 
 // Edit mode: email is editable but optional (users may not have one), password is never changed here
 export const editUserSchema = z
@@ -76,7 +151,7 @@ export const editUserSchema = z
     ...baseUserFields,
     email: z.string().email('Invalid email address').max(255).optional().or(z.literal('')),
   })
-  .superRefine(validateProfileFields);
+  .superRefine(validateUserForm);
 
 export type CreateUserFormData = z.infer<typeof createUserSchema>;
 export type EditUserFormData = z.infer<typeof editUserSchema>;

@@ -93,11 +93,21 @@ export function useProjectTaskBoard(
       }
     }
 
-    const result = Array.from(columnMap.values());
+    const sortTasks = (list: ProjectTaskItem[]) =>
+      [...list].sort((a, b) => {
+        const specialDiff = Number(Boolean(b.isSpecial)) - Number(Boolean(a.isSpecial));
+        if (specialDiff !== 0) return specialDiff;
+        return 0;
+      });
+
+    const result = Array.from(columnMap.values()).map((column) => ({
+      ...column,
+      tasks: sortTasks(column.tasks),
+    }));
 
     // Only add "Other" column if there are unmapped tasks
     if (otherTasks.length > 0) {
-      result.push({ ...OTHER_COLUMN, tasks: otherTasks });
+      result.push({ ...OTHER_COLUMN, tasks: sortTasks(otherTasks) });
     }
 
     return result;

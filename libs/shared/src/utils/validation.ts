@@ -5,6 +5,21 @@ export const PINCODE_REGEX = /^\d{6}$/;
 export const CONSUMER_NUMBER_REGEX = /^\d{10,12}$/;
 export const CONSUMER_NUMBER_MESSAGE = 'Consumer number must be 10–12 digits';
 
+export const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+export const GSTIN_LENGTH = 15;
+export const GSTIN_LENGTH_MESSAGE = 'GSTIN must be 15 characters';
+export const GSTIN_FORMAT_MESSAGE = 'Invalid GSTIN format (e.g., 22AAAAA0000A1Z5)';
+
+export const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+export const PAN_LENGTH = 10;
+export const PAN_LENGTH_MESSAGE = 'PAN must be 10 characters';
+export const PAN_FORMAT_MESSAGE = 'Invalid PAN format (e.g., ABCDE1234F)';
+
+export const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+export const IFSC_LENGTH = 11;
+export const IFSC_LENGTH_MESSAGE = 'IFSC code must be 11 characters';
+export const IFSC_FORMAT_MESSAGE = 'Invalid IFSC code format (e.g., SBIN0001234)';
+
 /**
  * Validate phone number (international format: 10-15 digits, optional + prefix)
  */
@@ -45,4 +60,35 @@ export function normalizeConsumerNumber(raw: string): string {
  */
 export function isValidConsumerNumber(value: string): boolean {
   return CONSUMER_NUMBER_REGEX.test(normalizeConsumerNumber(value));
+}
+
+/**
+ * Normalize Indian business identifiers (GSTIN, PAN, IFSC) for storage.
+ */
+export function normalizeBusinessIdentifier(value: string): string {
+  return value.trim().toUpperCase();
+}
+
+/**
+ * Validate Indian GSTIN (15 characters).
+ */
+export function isValidGstin(value: string): boolean {
+  const gstin = value.trim().toUpperCase();
+  return gstin.length === GSTIN_LENGTH && GSTIN_REGEX.test(gstin);
+}
+
+/**
+ * Validate Indian PAN (10 characters).
+ */
+export function isValidPan(value: string): boolean {
+  const pan = value.trim().toUpperCase();
+  return pan.length === PAN_LENGTH && PAN_REGEX.test(pan);
+}
+
+/**
+ * Validate Indian bank IFSC code (11 characters).
+ */
+export function isValidIfscCode(value: string): boolean {
+  const ifsc = value.trim().toUpperCase();
+  return ifsc.length === IFSC_LENGTH && IFSC_REGEX.test(ifsc);
 }
