@@ -9,4 +9,5 @@ export * from './quote-config';
 export * from './subsidy-config';
 export * from './workflow-steps';
 export * from './lookups';
+export * from './discom';
 export * from './constants';

@@ -2,32 +2,53 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 
 import { CreateDiscomDto, UpdateDiscomDto } from '../dto';
 import { DiscomEntity } from '../entities/discom.entity';
-import { DiscomRepository } from '../repositories/discom.repository';
+import {
+  DiscomListFilters,
+  DiscomListStats,
+  DiscomRepository,
+} from '../repositories/discom.repository';
 
 export interface PaginatedDiscoms {
-  data: DiscomEntity[];
-  meta: { page: number; limit: number; total: number; totalPages: number };
+  data: (DiscomEntity & { linkedPropertiesCount: number })[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    stats?: DiscomListStats;
+    circleNames?: string[];
+  };
 }
 
 @Injectable()
 export class DiscomService {
   constructor(private readonly discomRepository: DiscomRepository) {}
 
-  async findAll(filters?: {
-    isActive?: boolean;
-    includeInactive?: boolean;
-    search?: string;
-    page?: number;
-    limit?: number;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC';
-  }): Promise<PaginatedDiscoms> {
+  async findAll(filters?: DiscomListFilters): Promise<PaginatedDiscoms> {
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
-    const { data, total } = await this.discomRepository.findAll(filters);
+    const [{ data, total }, stats, circleNames] = await Promise.all([
+      this.discomRepository.findAll(filters),
+      this.discomRepository.findListStats(filters),
+      filters?.includeInactive
+        ? this.discomRepository.findDistinctCircleNames({
+            includeInactive: true,
+            search: filters.search,
+            isActive: filters.isActive,
+          })
+        : Promise.resolve([] as string[]),
+    ]);
+
     return {
       data,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
+        stats,
+        ...(filters?.includeInactive ? { circleNames } : {}),
+      },
     };
   }
 

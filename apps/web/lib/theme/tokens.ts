@@ -371,6 +371,17 @@ const root = {
     /** "Created by" — hidden by default, same width as owner. */
     'col-creator': 'minmax(122px,1fr)',
     'col-actions': '40px',
+    // DISCOM admin grid (design min-width 1360px)
+    'col-discom-hierarchy': 'minmax(250px,1.7fr)',
+    'col-discom-circle': 'minmax(160px,1.1fr)',
+    'col-discom-officers': 'minmax(150px,1fr)',
+    'col-discom-contact': 'minmax(170px,1.1fr)',
+    'col-discom-sites': '118px',
+    'col-discom-status': '96px',
+    'col-discom-updated': '104px',
+    'col-discom-actions': '44px',
+    'grid-min-width-discom': '1360px',
+    'toolbar-search-width-discom': '250px',
     'grid-min-width': '1280px',
     'row-gutter': '16px',
     'head-height': '40px',

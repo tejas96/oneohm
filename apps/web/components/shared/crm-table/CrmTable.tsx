@@ -276,6 +276,10 @@ export function CrmTable<TRow>({
   activeQuickFilter,
   onQuickFilterChange,
 
+  secondaryQuickFilters,
+  activeSecondaryQuickFilter,
+  onSecondaryQuickFilterChange,
+
   filterColumns,
   filterModel,
   onFilterChange,
@@ -305,6 +309,8 @@ export function CrmTable<TRow>({
 
   itemLabel = 'rows',
   toolbarActions,
+  gridMinWidth,
+  searchWidth,
   sx,
 }: CrmTableProps<TRow>): JSX.Element {
   // ── Local UI state ───────────────────────────────────────────────────────
@@ -540,12 +546,16 @@ export function CrmTable<TRow>({
         quickFilters={quickFilters}
         activeQuickFilter={activeQuickFilter}
         onQuickFilterChange={onQuickFilterChange}
+        secondaryQuickFilters={secondaryQuickFilters}
+        activeSecondaryQuickFilter={activeSecondaryQuickFilter}
+        onSecondaryQuickFilterChange={onSecondaryQuickFilterChange}
         showFilters={hasFilterableColumns}
         filterModel={filters}
         filtersOpen={Boolean(filterAnchorEl)}
         onToggleFilters={handleToggleFilters}
         showColumnVisibility={columns.some((c) => c.hideable !== false && c.header !== '')}
         toolbarActions={toolbarActions}
+        searchWidth={searchWidth}
       />
 
       {/* Background-refetch indicator. Always mounted at zero opacity so
@@ -570,7 +580,7 @@ export function CrmTable<TRow>({
       ) : null}
 
       <Box sx={{ flex: 1, minHeight: 280, overflow: 'auto' }}>
-        <Box sx={{ minWidth: crm['grid-min-width'] }}>
+        <Box sx={{ minWidth: gridMinWidth ?? crm['grid-min-width'] }}>
           <CrmTableHead
             columns={visibleColumns}
             gridTemplate={gridTemplate}

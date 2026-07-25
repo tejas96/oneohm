@@ -156,6 +156,11 @@ export interface CrmTableProps<TRow> {
   activeQuickFilter?: string;
   onQuickFilterChange?: (key: string) => void;
 
+  /** Optional second chip row (e.g. circle filters) separated by a divider. */
+  secondaryQuickFilters?: CrmQuickFilter[];
+  activeSecondaryQuickFilter?: string;
+  onSecondaryQuickFilterChange?: (key: string) => void;
+
   // ── Column filters (shared AdvancedTable contract) ───────────────────────
   filterColumns?: ColumnConfig<TRow>[];
   filterModel?: FilterState;
@@ -206,6 +211,12 @@ export interface CrmTableProps<TRow> {
 
   /** Extra controls appended to the right of the toolbar. */
   toolbarActions?: ReactNode;
+
+  /** Override horizontal scroll min-width (defaults to `crm['grid-min-width']`). */
+  gridMinWidth?: string;
+
+  /** Override search field width (defaults to `crm['toolbar-search-width']`). */
+  searchWidth?: string;
 
   sx?: SxProps<Theme>;
 }
