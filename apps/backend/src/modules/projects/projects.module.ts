@@ -39,6 +39,7 @@ import {
   ProjectChatService,
   WorkflowEngineService,
   WorkflowStepService,
+  ChangeRequestTaskService,
 } from './services';
 import { BomModule } from '../bom/bom.module';
 import { CustomersModule } from '../customers/customers.module';
@@ -92,6 +93,7 @@ import { UsersModule } from '../users/users.module';
     WorkflowStepService,
     WorkflowEngineService,
     ProjectTaskService,
+    ChangeRequestTaskService,
     ProjectTeamService,
     ProjectChatService,
     ProjectAnalyticsService,
@@ -110,6 +112,7 @@ import { UsersModule } from '../users/users.module';
     MaterialService,
     WorkflowStepService,
     ProjectTaskService,
+    ChangeRequestTaskService,
     ProjectTeamService,
     ProjectChatService,
     ProjectAnalyticsService,

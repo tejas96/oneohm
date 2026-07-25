@@ -4,21 +4,14 @@ import {
   type ConnectionType,
   type LeadTemperature,
   type PropertyDocument,
-  PropertySortField,
   type PropertyStatus,
   type PropertyType,
   type QuoteStatus,
 } from '@tejas96/shared/types';
 
-import {
-  defineResource,
-  getResourceConfig,
-  useResourceList,
-  useResourceMutations,
-  useResourceStats,
-  type ResourceConfig,
-  type BaseFilters,
-} from '../core';
+import { defineResource, useResourceMutations, type BaseFilters } from '../core';
+
+import type { DiscomResponse } from '@/components/features/properties/hooks/use-discoms';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -37,7 +30,8 @@ export interface PropertyItem {
   consumerNumber?: string;
   consumerName?: string;
   currentLoad?: string;
-  discomName?: string;
+  discomId?: string;
+  discom?: DiscomResponse;
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
@@ -76,7 +70,7 @@ export interface PropertyListFilters extends BaseFilters {
   siteStatus?: string;
 }
 
-// ── Resource Registration ──────────────────────────────────────
+// ── Resource Registration (kept for usePropertyMutations) ────────
 
 defineResource<PropertyItem>('properties', {
   endpoint: '/customer-properties',
@@ -84,24 +78,9 @@ defineResource<PropertyItem>('properties', {
   searchDebounceMs: 550,
   minSearchLength: 2,
   syncToUrl: true,
-  defaultSort: { field: PropertySortField.CREATED_AT, order: 'DESC' },
-  defaultFilters: {
-    leadTemperature: 'all',
-    propertyType: 'all',
-  } as Partial<PropertyListFilters>,
 });
 
 // ── Hooks ──────────────────────────────────────────────────────
-
-export function usePropertyList(): ReturnType<
-  typeof useResourceList<PropertyItem, PropertyListFilters>
-> {
-  const config = getResourceConfig('properties') as ResourceConfig<
-    PropertyItem,
-    PropertyListFilters
-  >;
-  return useResourceList<PropertyItem, PropertyListFilters>(config);
-}
 
 export function usePropertyMutations(): ReturnType<typeof useResourceMutations<PropertyItem>> {
   return useResourceMutations<PropertyItem>({
@@ -111,12 +90,5 @@ export function usePropertyMutations(): ReturnType<typeof useResourceMutations<P
       update: { success: 'Property updated', error: 'Failed to update property' },
       delete: { success: 'Property deleted', error: 'Failed to delete property' },
     },
-  });
-}
-
-export function usePropertyTemperatureStats(): ReturnType<typeof useResourceStats> {
-  return useResourceStats({
-    resource: 'properties',
-    endpoint: '/customer-properties/statistics/temperature',
   });
 }

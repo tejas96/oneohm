@@ -21,7 +21,7 @@ export const REQUIRED_FIELD_KEYS = [
   'address',
   'city',
   'pincode',
-  'discomName',
+  'discomId',
   'consumerName',
   'consumerNumber',
   'connectionType',
@@ -132,7 +132,7 @@ export const TEMP_DOT_MUI_COLOR: Record<LeadTemperature, string> = {
 // No hardcoded value strings; stays in sync when enum members are added.
 // ---------------------------------------------------------------------------
 
-/** Filter options for lead temperature — augmented with live counts by PropertyListPage. */
+/** Filter options for lead temperature — used by customer list property filters. */
 export const LEAD_TEMPERATURE_OPTIONS: ReadonlyArray<{ value: LeadTemperature; label: string }> =
   Object.values(LeadTemperature).map((value) => ({ value, label: toTitleLabel(value) }));
 

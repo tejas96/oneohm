@@ -6,6 +6,7 @@ import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/el
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import OpenWithIcon from '@mui/icons-material/OpenWith';
+import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import {
   Box,
   Chip,
@@ -41,6 +42,7 @@ interface KanbanTaskCardProps {
   completionPercentage: number;
   labels?: string[];
   blockedReason?: string;
+  isSpecial?: boolean;
   /** Column data for the "Move to" keyboard/mobile menu. */
   allColumns: KanbanColumnData[];
   onOpenTask: (taskId: string) => void;
@@ -63,6 +65,7 @@ export function KanbanTaskCard({
   completionPercentage,
   labels = [],
   blockedReason,
+  isSpecial = false,
   allColumns,
   onOpenTask,
   onMoveToStatus,
@@ -177,16 +180,24 @@ export function KanbanTaskCard({
           mb: 1,
           borderRadius: 1.5,
           border: '1px solid',
-          borderColor: isDraggingThis ? 'primary.light' : isOverdue ? 'error.light' : 'divider',
-          borderLeft: isOverdue ? '3px solid' : isDueToday ? '3px solid' : '1px solid',
+          borderColor: isDraggingThis
+            ? 'primary.light'
+            : isSpecial
+              ? 'warning.light'
+              : isOverdue
+                ? 'error.light'
+                : 'divider',
+          borderLeft: isOverdue || isSpecial ? '3px solid' : isDueToday ? '3px solid' : '1px solid',
           borderLeftColor: isOverdue
             ? 'error.main'
-            : isDueToday
+            : isSpecial
               ? 'warning.main'
-              : isDraggingThis
-                ? 'primary.light'
-                : 'divider',
-          bgcolor: isDraggingThis ? 'action.hover' : 'background.paper',
+              : isDueToday
+                ? 'warning.main'
+                : isDraggingThis
+                  ? 'primary.light'
+                  : 'divider',
+          bgcolor: isDraggingThis ? 'action.hover' : isSpecial ? 'warning.50' : 'background.paper',
           opacity: isDraggingThis ? 0.5 : 1,
           cursor: 'grab',
           transition: 'box-shadow 0.15s ease, border-color 0.15s ease, opacity 0.15s ease',
@@ -204,6 +215,19 @@ export function KanbanTaskCard({
           },
         }}
       >
+        {/* Special change-request badge */}
+        {isSpecial && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+            <Chip
+              icon={<StarRoundedIcon sx={{ fontSize: '14px !important' }} />}
+              label="Change Request"
+              size="small"
+              color="warning"
+              sx={{ height: 22, fontSize: 10, fontWeight: 700 }}
+            />
+          </Box>
+        )}
+
         {/* Labels row */}
         {labels.length > 0 && (
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>

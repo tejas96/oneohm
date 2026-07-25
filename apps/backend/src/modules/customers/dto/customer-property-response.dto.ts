@@ -3,6 +3,7 @@ import {
   ConnectionType,
   LeadTemperature,
   type GpsCoordinates,
+  type StoredChangeRequest,
   PropertyStatus,
   PropertyType,
   QuoteStatus,
@@ -14,6 +15,7 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { PropertyDocumentDto } from './property-document.dto';
 import { toNum } from '../../../common/utils';
+import { DiscomResponseDto } from '../../discoms/dto/discom-response.dto';
 import { ProjectResponseDto } from '../../projects/dto/projects/project-response.dto';
 import { QuoteResponseDto } from '../../quotes/dto/quotes/quote-response.dto';
 
@@ -89,7 +91,12 @@ export class CustomerPropertyResponseDto {
 
   @ApiPropertyOptional()
   @Expose()
-  discomName?: string;
+  discomId?: string;
+
+  @ApiPropertyOptional({ type: () => DiscomResponseDto })
+  @Expose()
+  @Type(() => DiscomResponseDto)
+  discom?: DiscomResponseDto;
 
   @ApiPropertyOptional({ enum: ConnectionType })
   @Expose()
@@ -136,6 +143,14 @@ export class CustomerPropertyResponseDto {
   @ApiPropertyOptional()
   @Expose()
   notes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Change-of-request items captured at property creation',
+    type: 'array',
+  })
+  @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
+  changeRequests?: StoredChangeRequest[];
 
   // ==================== Site Visit / Survey ====================
   @ApiProperty({ enum: SiteStatus })

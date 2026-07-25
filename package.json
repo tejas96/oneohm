@@ -31,7 +31,7 @@
     "typecheck": "nx run-many --target=typecheck --all",
     "typecheck:backend": "tsc --noEmit -p apps/backend/tsconfig.json",
     "typecheck:web": "tsc --noEmit -p apps/web/tsconfig.json",
-    "typecheck:libs": "tsc --noEmit -p tsconfig.base.json",
+    "typecheck:libs": "tsc --noEmit -p libs/shared/tsconfig.json",
     "test": "nx run-many --target=test --all",
     "tokens:gen": "TOKENS_WRITE=1 nx test web --testPathPatterns=tokens-sync",
     "tokens:check": "nx test web --testPathPatterns=tokens-sync",

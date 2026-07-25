@@ -10,16 +10,20 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   type PaymentMilestone,
+  LookupTypeCode,
   ProjectPriority,
   ProjectStatus,
   PropertyStatus,
   QuoteStatus,
   TaskStatus,
+  type TaskStatusConfig,
 } from '@tejas96/shared/types';
 import { DataSource, type EntityManager } from 'typeorm';
 
+import { ChangeRequestTaskService } from './change-request-task.service';
 import { BomService } from '../../bom/services/bom.service';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
+import { LookupRepository } from '../../lookups/repositories/lookup.repository';
 import {
   CONSUMER_EVENTS,
   ProjectCompletedEvent,
@@ -70,6 +74,8 @@ export class ProjectService {
     private readonly taskRepository: ProjectTaskRepository,
     private readonly teamRepository: ProjectTeamRepository,
     private readonly bomService: BomService,
+    private readonly changeRequestTaskService: ChangeRequestTaskService,
+    private readonly lookupRepository: LookupRepository,
     @Inject(forwardRef(() => PaymentTermService))
     private readonly paymentTermService: PaymentTermService,
     private readonly dataSource: DataSource,
@@ -481,6 +487,10 @@ export class ProjectService {
           order: pm.order || i + 1,
         }));
 
+    const taskStatuses = convertDto?.taskStatuses?.length
+      ? convertDto.taskStatuses
+      : await this.resolveDefaultTaskStatuses();
+
     const project = await this.orchestrateProjectCreation({
       projectData: {
         propertyId: quote.propertyId,
@@ -494,7 +504,7 @@ export class ProjectService {
         progressPercentage: 0,
         startDate: convertDto?.startDate ? new Date(convertDto.startDate) : undefined,
         endDate: convertDto?.endDate ? new Date(convertDto.endDate) : undefined,
-        taskStatuses: convertDto?.taskStatuses?.length ? convertDto.taskStatuses : undefined,
+        taskStatuses: taskStatuses?.length ? taskStatuses : undefined,
       },
       propertyId: quote.propertyId,
       organizationId,
@@ -840,6 +850,15 @@ export class ProjectService {
         manager,
       );
 
+      await this.changeRequestTaskService.applyChangeRequestTasks({
+        projectId: project.id,
+        propertyId,
+        organizationId,
+        createdBy,
+        orgCode,
+        manager,
+      });
+
       // 6. Add PM + team members
       await this.addTeamMembers(project.id, teamConfig, manager);
 
@@ -899,6 +918,9 @@ export class ProjectService {
       const excludeSet = new Set(excludedStepIds);
       steps = steps.filter((s) => !excludeSet.has(s.id));
     }
+
+    // Change-request templates are only instantiated when property has pending requests.
+    steps = steps.filter((s) => !s.isSpecial && !s.changeRequestType);
 
     if (steps.length === 0) return;
 
@@ -1201,5 +1223,19 @@ export class ProjectService {
         `Failed to copy BOM from quote version ${quoteVersionId} to project ${projectId}: ${(error as Error).message}`,
       );
     }
+  }
+
+  private async resolveDefaultTaskStatuses(): Promise<TaskStatusConfig[] | undefined> {
+    const lookups = await this.lookupRepository.findByTypeCodeRaw(
+      LookupTypeCode.DEFAULT_TASK_STATUS,
+    );
+    if (!lookups.length) return undefined;
+
+    return lookups.map((row) => ({
+      code: row.code as TaskStatus,
+      label: row.label,
+      color: row.color ?? '#6B7280',
+      orderIndex: row.orderIndex,
+    }));
   }
 }

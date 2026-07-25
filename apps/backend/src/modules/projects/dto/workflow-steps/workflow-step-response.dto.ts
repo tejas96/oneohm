@@ -74,6 +74,14 @@ export class WorkflowStepResponseDto {
 
   @ApiProperty()
   @Expose()
+  isSpecial!: boolean;
+
+  @ApiPropertyOptional()
+  @Expose()
+  changeRequestType?: string;
+
+  @ApiProperty()
+  @Expose()
   createdAt!: Date;
 
   @ApiProperty()

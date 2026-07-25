@@ -31,6 +31,7 @@ import {
   AvailabilityResponseDto,
   CheckAvailabilityQueryDto,
   CreateCustomerDto,
+  CustomerOverviewStatsDto,
   CustomerQueryDto,
   CustomerResponseDto,
   UpdateAssigneeDto,
@@ -232,6 +233,32 @@ export class CustomerController {
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<Record<string, number>> {
     return this.customerService.getStatusStatistics(organizationId);
+  }
+
+  /**
+   * Get the CRM overview roll-up for the customer list's KPI cards.
+   * NOTE: This MUST be defined BEFORE :id routes to avoid route conflicts.
+   */
+  // @RequirePermission('customers:read') // TODO: Re-enable
+  @Get('statistics/overview')
+  @ApiOperation({
+    summary: 'Get CRM overview statistics',
+    description:
+      'Returns organisation-wide customer and site counts, open pipeline value and ' +
+      'awaiting-reply counts, with current-month deltas. Backs the four KPI cards on ' +
+      'the customer list. Organization ID must be provided via query parameter ' +
+      '(?organizationId=xxx) or header (X-Organization-Id).',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'CRM overview statistics',
+    type: CustomerOverviewStatsDto,
+  })
+  async getOverviewStatistics(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+  ): Promise<CustomerOverviewStatsDto> {
+    return this.customerService.getOverviewStats(organizationId);
   }
 
   /**

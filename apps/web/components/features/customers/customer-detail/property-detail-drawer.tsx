@@ -140,7 +140,7 @@ export function PropertyDetailDrawer({
                   <FieldRow label="Consumer Name" value={property.consumerName} />
                 </Grid>
                 <Grid size={{ xs: 6 }}>
-                  <FieldRow label="DISCOM" value={property.discomName} />
+                  <FieldRow label="DISCOM" value={property.discom?.label} />
                 </Grid>
                 <Grid size={{ xs: 6 }}>
                   <FieldRow

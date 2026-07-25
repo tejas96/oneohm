@@ -1,12 +1,7 @@
 'use client';
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseMutationResult,
-  type UseQueryResult,
-} from '@tanstack/react-query';
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
+import type { ChangeRequestItemFormData } from '@tejas96/shared/schemas';
 import type {
   ConnectionType,
   LeadTemperature,
@@ -23,6 +18,7 @@ import type {
 import type { AxiosError } from 'axios';
 
 import { customerKeys, propertyKeys } from './use-create-property';
+import type { DiscomResponse } from './use-discoms';
 
 import { showToast } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
@@ -68,7 +64,8 @@ export interface Property {
   consumerNumber?: string;
   consumerName?: string;
   currentLoad?: string;
-  discomName?: string;
+  discomId?: string;
+  discom?: DiscomResponse;
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
@@ -116,7 +113,7 @@ export interface UpdatePropertyData {
   state?: string;
   pincode?: string;
   consumerNumber?: string;
-  discomName?: string;
+  discomId?: string;
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
@@ -133,6 +130,7 @@ export interface UpdatePropertyData {
   surveyData?: SurveyData | null;
   siteVisitAssignee?: string | null;
   siteSurveyAssignee?: string | null;
+  changeRequests?: ChangeRequestItemFormData[];
 }
 
 // ============================================================================
@@ -202,61 +200,6 @@ export function useDeleteProperty(): UseMutationResult<void, AxiosError, string>
       const text = Array.isArray(message) ? message[0] : message;
       showToast.error(text || 'Failed to delete property');
     },
-  });
-}
-
-/**
- * Hook to list properties with server-side pagination, sorting, filtering and search.
- * Used by PropertyListPage (AdvancedTable controlled pattern).
- * Mirrors the useCustomers hook structure exactly.
- */
-export function useProperties(
-  filters: PropertyFilters = {},
-): UseQueryResult<PropertyListResponse, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
-  return useQuery({
-    queryKey: propertyKeys.list(organizationId, filters as Record<string, unknown>),
-    queryFn: async (): Promise<PropertyListResponse> => {
-      const params = new URLSearchParams();
-
-      // Pagination
-      if (filters.page) params.append('page', String(filters.page));
-      if (filters.limit) params.append('limit', String(filters.limit));
-
-      // Search — backend @MinLength(2) rejects shorter strings
-      if (filters.search && filters.search.length >= 2) {
-        params.append('search', filters.search);
-      }
-
-      // Filters — omit undefined/empty; 'all' is stripped by toPropertyFilters before calling here
-      if (filters.leadTemperature) params.append('leadTemperature', filters.leadTemperature);
-      if (filters.propertyType) params.append('propertyType', filters.propertyType);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.connectionType) params.append('connectionType', filters.connectionType);
-      if (filters.city) params.append('city', filters.city);
-      if (filters.state) params.append('state', filters.state);
-      if (filters.createdBy) params.append('createdBy', filters.createdBy);
-      if (filters.fromDate) params.append('fromDate', filters.fromDate);
-      if (filters.toDate) params.append('toDate', filters.toDate);
-      if (filters.quoteStatus) params.append('quoteStatus', filters.quoteStatus);
-      if (filters.systemSizeMin !== undefined)
-        params.append('systemSizeMin', String(filters.systemSizeMin));
-      if (filters.systemSizeMax !== undefined)
-        params.append('systemSizeMax', String(filters.systemSizeMax));
-
-      // Sorting
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
-
-      const { data } = await apiClient.get<PropertyListResponse>(
-        `/customer-properties?${params.toString()}`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
-      return data;
-    },
-    enabled: !!organizationId && filters.enabled !== false,
   });
 }
 

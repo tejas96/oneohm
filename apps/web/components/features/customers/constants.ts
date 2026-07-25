@@ -6,8 +6,14 @@
  * @module features/customers/constants
  */
 
-import type { CustomerStatus, QuoteStatus } from '@tejas96/shared/types';
+import {
+  PropertyStatus,
+  PropertyType,
+  type CustomerStatus,
+  type QuoteStatus,
+} from '@tejas96/shared/types';
 
+import type { CrmTone } from '@/components/shared/crm-table';
 import type { BadgeProps } from '@/components/ui/badge';
 import type { StatusChipColor } from '@/components/ui/mui-status-chip';
 
@@ -64,13 +70,131 @@ export const QUOTE_STATUS_BADGE_VARIANT: Record<QuoteStatus, BadgeProps['variant
 };
 
 // ============================================================================
-// Document Type Labels
+// CRM list: semantic tone maps
 // ============================================================================
 
 /**
- * Mapping of document tag values to human-readable labels.
- * Mapping of legacy document tag values to display labels.
+ * Customer status → DS tone.
+ *
+ * Status is an ordered ladder (lead → prospect → active, with inactive as the
+ * exit), so it maps to fixed semantic tones rather than to `MUIStatusChip`'s
+ * hashed palette. Two customers on the same rung must always read the same
+ * colour, on this page and every other.
  */
+export const CUSTOMER_STATUS_TONE: Record<CustomerStatus, CrmTone> = {
+  lead: 'neutral',
+  prospect: 'info',
+  active: 'success',
+  inactive: 'danger',
+};
+
+/**
+ * Lead source → DS tone.
+ *
+ * Grouped by how the lead reached us: inbound (info), earned (accent), paid
+ * (warning), and everything else neutral. Sources not listed — the enum allows
+ * free-text values under `other` — fall back to neutral.
+ */
+export const LEAD_SOURCE_TONE: Record<string, CrmTone> = {
+  website: 'info',
+  social_media: 'info',
+  referral: 'accent',
+  advertisement: 'warning',
+  exhibition: 'warning',
+  cold_call: 'warning',
+  walk_in: 'neutral',
+  reseller: 'neutral',
+  other: 'neutral',
+};
+
+/** Site (property) status → DS tone. */
+export const PROPERTY_STATUS_TONE: Record<PropertyStatus, CrmTone> = {
+  [PropertyStatus.ACTIVE]: 'info',
+  [PropertyStatus.CONVERTED]: 'success',
+  [PropertyStatus.PENDING_VERIFICATION]: 'warning',
+  [PropertyStatus.INACTIVE]: 'danger',
+};
+
+/**
+ * Order the site-status segments are stacked in the portfolio distribution bar.
+ * Fixed rather than derived from object key order so the bar's reading — won
+ * on the left, lost on the right — is stable across rows.
+ */
+export const PROPERTY_STATUS_BAR_ORDER: readonly PropertyStatus[] = [
+  PropertyStatus.CONVERTED,
+  PropertyStatus.ACTIVE,
+  PropertyStatus.PENDING_VERIFICATION,
+  PropertyStatus.INACTIVE,
+];
+
+/** Latest-quote status → DS tone. */
+export const QUOTE_STATUS_TONE: Record<QuoteStatus, CrmTone> = {
+  draft: 'neutral',
+  sent: 'warning',
+  viewed: 'warning',
+  accepted: 'success',
+  rejected: 'danger',
+  expired: 'neutral',
+};
+
+/** Property type → DS tone, used by the site type badge and its icon wash. */
+export const PROPERTY_TYPE_TONE: Record<PropertyType, CrmTone> = {
+  [PropertyType.RESIDENTIAL]: 'info',
+  [PropertyType.RESIDENTIAL_APARTMENT]: 'info',
+  [PropertyType.COMMERCIAL]: 'accent',
+  [PropertyType.INDUSTRIAL]: 'neutral',
+  [PropertyType.AGRICULTURAL]: 'success',
+  [PropertyType.INSTITUTIONAL]: 'warning',
+};
+
+// ============================================================================
+// CRM list: site pipeline stage
+// ============================================================================
+
+/**
+ * The site journey, in order. The expanded row shows the current rung plus a
+ * progress bar of `(index + 1) / length`.
+ */
+export const SITE_STAGES = [
+  'Lead captured',
+  'Survey done',
+  'Design ready',
+  'Quote sent',
+  'Converted',
+] as const;
+
+/** Quote states that mean the quote has actually gone out to the customer. */
+const QUOTE_SENT_STATUSES: readonly string[] = ['sent', 'viewed', 'accepted', 'rejected'];
+
+/**
+ * Derive a site's stage index from the facts already on the property record.
+ *
+ * There is no `stage` column — the stage IS the highest milestone the site has
+ * reached, so it is computed from converted status, quote state, and survey
+ * completion rather than stored and risked going stale. Checked highest-first:
+ * a converted site is converted regardless of what its quote says.
+ */
+export function getSiteStageIndex(property: {
+  status?: string;
+  latestQuoteId?: string;
+  latestQuoteStatus?: string;
+  surveyDone?: boolean;
+  siteVisitDone?: boolean;
+}): number {
+  if (property.status === PropertyStatus.CONVERTED) return 4;
+  if (property.latestQuoteStatus && QUOTE_SENT_STATUSES.includes(property.latestQuoteStatus)) {
+    return 3;
+  }
+  if (property.latestQuoteId) return 2;
+  if (property.surveyDone || property.siteVisitDone) return 1;
+  return 0;
+}
+
+// ============================================================================
+// Document Type Labels
+// ============================================================================
+
+/** Mapping of document tag values (including legacy ones) to display labels. */
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   electricity_bill: 'Electricity Bill',
   identity_proof: 'ID Proof',

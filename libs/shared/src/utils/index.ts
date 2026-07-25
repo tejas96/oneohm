@@ -11,3 +11,4 @@ export * from './debounce';
 export * from './avatar';
 export * from './solar-impact';
 export * from './milestone';
+export * from './customer-property-filters';

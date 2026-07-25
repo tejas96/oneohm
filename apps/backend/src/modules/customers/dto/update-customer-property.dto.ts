@@ -9,6 +9,7 @@ import {
 import { CONSUMER_NUMBER_REGEX } from '@tejas96/shared/utils';
 import { Type, Transform } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsEnum,
@@ -25,8 +26,13 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { ChangeRequestItemDto } from './change-request.dto';
 import { GpsCoordinatesDto } from './gps-coordinates.dto';
 import { PropertyDocumentDto } from './property-document.dto';
+import {
+  HasUniqueChangeRequestTypes,
+  IsValidChangeRequestArray,
+} from '../validators/change-request.validator';
 
 /**
  * DTO for updating a customer property (installation site)
@@ -124,14 +130,13 @@ export class UpdateCustomerPropertyDto {
   currentLoad?: string;
 
   @ApiPropertyOptional({
-    example: 'MSEDCL',
-    description: 'Electricity distribution company',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'DISCOM hierarchy entry ID',
   })
-  @ValidateIf((o: UpdateCustomerPropertyDto) => o.discomName !== undefined)
-  @IsString()
+  @ValidateIf((o: UpdateCustomerPropertyDto) => o.discomId !== undefined)
+  @IsUUID()
   @IsNotEmpty()
-  @MaxLength(100)
-  discomName?: string;
+  discomId?: string;
 
   @ApiPropertyOptional({
     enum: ConnectionType,
@@ -245,4 +250,19 @@ export class UpdateCustomerPropertyDto {
   @IsUUID()
   @IsOptional()
   siteSurveyAssignee?: string;
+
+  // ==================== Change of Request ====================
+  @ApiPropertyOptional({
+    type: [ChangeRequestItemDto],
+    description:
+      'Pending change-of-request items. Converted requests are preserved server-side and cannot be modified.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(6, { message: 'Too many change requests' })
+  @ValidateNested({ each: true })
+  @Type(() => ChangeRequestItemDto)
+  @IsValidChangeRequestArray()
+  @HasUniqueChangeRequestTypes()
+  changeRequests?: ChangeRequestItemDto[];
 }

@@ -9,12 +9,18 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import {
+  ConnectionType,
   CustomerSortField,
   CustomerStatus,
   LeadSource,
+  LeadTemperature,
   type PaginationMeta,
+  PropertyStatus,
+  PropertyType,
+  QuoteStatus,
   SortOrder,
 } from '@tejas96/shared/types';
+import { hasContradictoryCustomerPropertyFilters } from '@tejas96/shared/utils';
 import type { AxiosError } from 'axios';
 
 import { customerKeys } from './use-create-customer';
@@ -47,11 +53,38 @@ export interface CustomerFilters {
   fromDate?: string; // ISO date string (YYYY-MM-DD)
   toDate?: string; // ISO date string (YYYY-MM-DD)
   groupSearch?: string; // filter by group name or code (partial match)
+  // Property-level filters (customer has at least one matching property)
+  propertyType?: PropertyType;
+  propertyStatus?: PropertyStatus;
+  connectionType?: ConnectionType;
+  leadTemperature?: LeadTemperature;
+  quoteStatus?: QuoteStatus;
+  propertySystemSizeMin?: number;
+  propertySystemSizeMax?: number;
+  propertyCity?: string;
+  propertyState?: string;
   // Sorting
   sortBy?: CustomerSortField;
   sortOrder?: SortOrder;
   // Query control
   enabled?: boolean;
+}
+
+/**
+ * Server-computed roll-up of a customer's sites. Present on list responses
+ * only — it exists so the list's "Site portfolio" column renders from the page
+ * payload instead of firing one properties request per visible row.
+ *
+ * Mirrors `SitePortfolioDto`.
+ */
+export interface SitePortfolio {
+  siteCount: number;
+  /** Site counts keyed by `PropertyStatus` — drives the distribution bar. */
+  statusCounts: Record<string, number>;
+  convertedCount: number;
+  quotedSiteCount: number;
+  totalSystemSizeKw: number;
+  totalQuotedAmount: number;
 }
 
 export interface Customer {
@@ -74,6 +107,8 @@ export interface Customer {
   groupName?: string;
   status: CustomerStatus;
   propertyCount: number;
+  /** List responses only; omitted on single-customer reads. */
+  sitePortfolio?: SitePortfolio;
   deleteBlockReasons?: string[];
   createdAt: string;
   updatedAt: string;
@@ -96,6 +131,22 @@ export interface CustomerStatsResponse {
   prospect: number;
   active: number;
   inactive: number;
+}
+
+/**
+ * Organisation-wide CRM roll-up backing the four KPI cards on the customer
+ * list. Mirrors `CustomerOverviewStatsDto`.
+ */
+export interface CustomerOverviewStats {
+  customers: number;
+  customersThisMonth: number;
+  sites: number;
+  sitesThisMonth: number;
+  /** Quoted value of sites still in play — quote sent/viewed, not yet converted. */
+  pipelineValue: number;
+  awaitingReply: number;
+  /** Of `awaitingReply`, unanswered for more than 7 days. */
+  awaitingAgeing: number;
 }
 
 export interface UpdateCustomerData {
@@ -134,6 +185,20 @@ export function useCustomers(
   return useQuery({
     queryKey: customerKeys.list(organizationId, queryFilters as Record<string, unknown>),
     queryFn: async (): Promise<CustomerListResponse> => {
+      if (hasContradictoryCustomerPropertyFilters(queryFilters)) {
+        const page = queryFilters.page ?? 1;
+        const limit = queryFilters.limit ?? 20;
+        return {
+          data: [],
+          meta: {
+            total: 0,
+            page,
+            limit,
+            totalPages: 0,
+          },
+        };
+      }
+
       const params = new URLSearchParams();
 
       // Pagination
@@ -156,6 +221,20 @@ export function useCustomers(
       if (queryFilters.fromDate) params.append('fromDate', queryFilters.fromDate);
       if (queryFilters.toDate) params.append('toDate', queryFilters.toDate);
       if (queryFilters.groupSearch) params.append('groupSearch', queryFilters.groupSearch);
+      if (queryFilters.propertyType) params.append('propertyType', queryFilters.propertyType);
+      if (queryFilters.propertyStatus) params.append('propertyStatus', queryFilters.propertyStatus);
+      if (queryFilters.connectionType) params.append('connectionType', queryFilters.connectionType);
+      if (queryFilters.leadTemperature)
+        params.append('leadTemperature', queryFilters.leadTemperature);
+      if (queryFilters.quoteStatus) params.append('quoteStatus', queryFilters.quoteStatus);
+      if (queryFilters.propertySystemSizeMin !== undefined) {
+        params.append('propertySystemSizeMin', String(queryFilters.propertySystemSizeMin));
+      }
+      if (queryFilters.propertySystemSizeMax !== undefined) {
+        params.append('propertySystemSizeMax', String(queryFilters.propertySystemSizeMax));
+      }
+      if (queryFilters.propertyCity) params.append('propertyCity', queryFilters.propertyCity);
+      if (queryFilters.propertyState) params.append('propertyState', queryFilters.propertyState);
 
       // Sorting
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
@@ -208,6 +287,31 @@ export function useCustomerStats(): UseQueryResult<CustomerStatsResponse, AxiosE
       const { data } = await apiClient.get<CustomerStatsResponse>('/customers/statistics/status', {
         headers: { 'X-Organization-Id': organizationId },
       });
+      return data;
+    },
+    enabled: !!organizationId,
+  });
+}
+
+/**
+ * Hook to fetch the CRM overview roll-up for the customer list's KPI cards.
+ *
+ * Kept separate from `useCustomers` on purpose: these figures are
+ * organisation-wide and independent of the table's page, sort and filters, so
+ * folding them into the list query would refetch four unchanging numbers on
+ * every keystroke of the search box.
+ */
+export function useCustomerOverviewStats(): UseQueryResult<CustomerOverviewStats, AxiosError> {
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useQuery({
+    queryKey: [...customerKeys.all(organizationId), 'overview'] as const,
+    queryFn: async (): Promise<CustomerOverviewStats> => {
+      const { data } = await apiClient.get<CustomerOverviewStats>(
+        '/customers/statistics/overview',
+        { headers: { 'X-Organization-Id': organizationId } },
+      );
       return data;
     },
     enabled: !!organizationId,

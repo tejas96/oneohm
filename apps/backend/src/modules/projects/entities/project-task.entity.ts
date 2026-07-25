@@ -1,6 +1,7 @@
 import {
   TaskPriority,
   TaskStatus,
+  ChangeRequestType,
   type FileAttachment,
   type TaskActivityEntry,
   type TaskChecklist,
@@ -110,6 +111,15 @@ export class ProjectTaskEntity extends BaseEntity {
     default: TaskPriority.MEDIUM,
   })
   priority!: TaskPriority;
+
+  @Column({ name: 'is_special', type: 'boolean', default: false })
+  isSpecial!: boolean;
+
+  @Column({ name: 'change_request_type', type: 'varchar', length: 50, nullable: true })
+  changeRequestType?: ChangeRequestType;
+
+  @Column({ name: 'source_change_request_index', type: 'integer', nullable: true })
+  sourceChangeRequestIndex?: number;
 
   // ==================== Dependencies ====================
 

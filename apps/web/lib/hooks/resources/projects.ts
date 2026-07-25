@@ -91,6 +91,8 @@ export interface ProjectTaskItem {
   labels?: string[];
   blockedReason?: string;
   hasDependencyBlockers?: boolean;
+  isSpecial?: boolean;
+  changeRequestType?: string;
 }
 
 export interface ProjectTaskListParams {

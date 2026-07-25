@@ -19,6 +19,7 @@ import { ComplianceModule } from './modules/compliance/compliance.module';
 import { ConsumerModule } from './modules/consumer/consumer.module';
 import { CustomerFeedbackModule } from './modules/customer-feedback/customer-feedback.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { DiscomsModule } from './modules/discoms/discoms.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { FinanceModule } from './modules/finance/finance.module';
@@ -65,6 +66,7 @@ import { UsersModule } from './modules/users/users.module';
     // Profile modules
     CustomersModule,
     ConsumerModule,
+    DiscomsModule,
     EmployeesModule,
     // Other modules
     MasterDataModule,

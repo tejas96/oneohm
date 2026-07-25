@@ -156,7 +156,9 @@ export class ProjectTaskRepository {
       );
     }
 
-    qb.orderBy('task.kanbanOrder', 'ASC').addOrderBy('task.createdAt', 'DESC');
+    qb.orderBy('task.isSpecial', 'DESC')
+      .addOrderBy('task.kanbanOrder', 'ASC')
+      .addOrderBy('task.createdAt', 'DESC');
 
     // Split getCount + getMany to avoid TypeORM getManyAndCount crash
     // when leftJoinAndSelect is combined with addOrderBy on joined aliases.
@@ -873,7 +875,8 @@ export class ProjectTaskRepository {
   private resolveTaskFields(task: ProjectTaskEntity): ProjectTaskEntity {
     if (task.workflowStep) {
       task.name = task.nameOverride ?? task.workflowStep.name;
-      task.description = task.descriptionOverride ?? task.workflowStep.description;
+      task.description =
+        task.descriptionOverride ?? task.description ?? task.workflowStep.description;
       task.checklist = task.checklistOverride ?? task.workflowStep.checklistTemplate;
       task.labels =
         task.labelsOverride ?? (task.workflowStep.type ? [task.workflowStep.type] : undefined);

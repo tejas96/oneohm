@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
+  DialogForm,
   DialogHeader,
   DialogTitle,
   Input,
@@ -91,8 +92,8 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps): J
             Define a new role with a unique code, optional description, and permissions.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
-          <DialogBody className="space-y-4 max-h-[60vh] overflow-y-auto">
+        <DialogForm onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
+          <DialogBody className="space-y-4">
             <div className="space-y-1.5">
               <Label>Name *</Label>
               <Input {...form.register('name')} placeholder="e.g., Sales Executive" />
@@ -147,7 +148,7 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps): J
               )}
             </Button>
           </DialogFooter>
-        </form>
+        </DialogForm>
       </DialogContent>
     </Dialog>
   );

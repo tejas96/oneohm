@@ -3,6 +3,7 @@ import {
   LeadTemperature,
   type GpsCoordinates,
   type PropertyDocument,
+  type StoredChangeRequest,
   PropertyStatus,
   PropertyType,
   type ShadingAnalysis,
@@ -23,6 +24,7 @@ import {
 import { CustomerProfileEntity } from './customer-profile.entity';
 import type { FollowupEntity } from './followup.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { DiscomEntity } from '../../discoms/entities/discom.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import type { ProjectEntity } from '../../projects/entities/project.entity';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
@@ -112,8 +114,14 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ name: 'current_load', type: 'varchar', length: 50, nullable: true })
   currentLoad?: string;
 
-  @Column({ name: 'discom_name', type: 'varchar', length: 100, nullable: true })
-  discomName?: string;
+  @Column({ name: 'discom_id', type: 'uuid', nullable: true })
+  discomId?: string;
+
+  @ManyToOne(() => DiscomEntity, (discom) => discom.properties, {
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'discom_id' })
+  discom?: DiscomEntity;
 
   @Column({ name: 'connection_type', type: 'varchar', length: 20, nullable: true })
   connectionType?: ConnectionType;
@@ -156,6 +164,13 @@ export class CustomerPropertyEntity extends BaseEntity {
    */
   @Column({ type: 'jsonb', default: [] })
   documents!: PropertyDocument[];
+
+  /**
+   * Change-of-request items captured at property creation.
+   * Materialized as special project tasks when the property is converted to a project.
+   */
+  @Column({ name: 'change_requests', type: 'jsonb', default: [] })
+  changeRequests!: StoredChangeRequest[];
 
   // ==================== STATUS ====================
   @Column({ type: 'varchar', length: 20, default: PropertyStatus.ACTIVE })

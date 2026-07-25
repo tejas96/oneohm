@@ -25,10 +25,30 @@ import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
-import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
+import {
+  CustomerProfileRepository,
+  type CustomerOverviewStats,
+  type SitePortfolioSummary,
+} from '../repositories/customer-profile.repository';
 
 type CustomerWithDeleteInfo = CustomerProfileEntity & {
   deleteBlockReasons?: string[];
+  sitePortfolio?: SitePortfolioSummary;
+};
+
+/**
+ * Zero portfolio, used for customers the aggregate returned no row for (i.e. no
+ * sites at all). Returning this instead of `undefined` keeps the list response
+ * shape uniform, so the CRM table never has to branch on "field absent" vs
+ * "genuinely empty".
+ */
+const EMPTY_SITE_PORTFOLIO: SitePortfolioSummary = {
+  siteCount: 0,
+  statusCounts: {},
+  convertedCount: 0,
+  quotedSiteCount: 0,
+  totalSystemSizeKw: 0,
+  totalQuotedAmount: 0,
 };
 
 /** Normalize email to lowercase, trimmed. Returns undefined for empty/whitespace-only input. */
@@ -168,7 +188,7 @@ export class CustomerService {
         organizationId,
         pageOrQuery,
       );
-      return this.enrichWithDeleteBlockers(data, total, organizationId);
+      return this.enrichListPage(data, total, organizationId);
     }
 
     // Legacy approach - convert to query DTO
@@ -179,23 +199,41 @@ export class CustomerService {
       organizationId,
       legacyQuery,
     );
-    return this.enrichWithDeleteBlockers(data, total, organizationId);
+    return this.enrichListPage(data, total, organizationId);
   }
 
-  private async enrichWithDeleteBlockers(
+  /**
+   * Organisation-wide CRM roll-up behind the customer list's KPI cards.
+   */
+  async getOverviewStats(organizationId: string): Promise<CustomerOverviewStats> {
+    return this.customerRepository.getOverviewStats(organizationId);
+  }
+
+  /**
+   * Attach the per-row extras the list UI needs but the paged entity query does
+   * not carry: delete eligibility and the site-portfolio roll-up.
+   *
+   * Both are batched over the page's customer ids and run concurrently — they
+   * touch different tables and neither depends on the other, so serialising
+   * them would only add latency. Two fixed queries per page, never per row.
+   */
+  private async enrichListPage(
     data: CustomerProfileEntity[],
     total: number,
     organizationId: string,
   ): Promise<{ data: CustomerWithDeleteInfo[]; total: number }> {
-    const blockerMap = await this.customerRepository.getCustomerDeleteBlockersBatch(
-      data.map((customer) => customer.id),
-      organizationId,
-    );
+    const customerIds = data.map((customer) => customer.id);
+
+    const [blockerMap, portfolioMap] = await Promise.all([
+      this.customerRepository.getCustomerDeleteBlockersBatch(customerIds, organizationId),
+      this.customerRepository.getSitePortfolioSummaries(customerIds, organizationId),
+    ]);
 
     return {
       data: data.map((customer) => ({
         ...customer,
         deleteBlockReasons: blockerMap.get(customer.id) ?? [],
+        sitePortfolio: portfolioMap.get(customer.id) ?? EMPTY_SITE_PORTFOLIO,
       })),
       total,
     };

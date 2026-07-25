@@ -84,17 +84,16 @@ export class CustomerPropertyController {
 
   /**
    * Get all properties with filtering, sorting, and pagination
-   * Unified endpoint supporting search, filters, and sorting via query parameters
+   * @deprecated Standalone property list UI removed; prefer GET /customers with property filters
+   * or GET /customer-properties/customer/:customerId for nested views.
    */
   @Get()
   @ApiOperation({
-    summary: 'Get all properties',
+    summary: 'Get all properties (deprecated)',
     description:
-      'Retrieve properties with comprehensive filtering, sorting, and pagination. ' +
-      'Supports search (property name, address, city, consumer number, customer name), ' +
-      'lead temperature filter, property type filter, status filter, location filters (city, state), ' +
-      'date range, creator filter (createdBy=me), and sorting. ' +
-      'Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      '**Deprecated** — the standalone property list page was removed. Use GET /customers with ' +
+      'property-level filters, or GET /customer-properties/customer/:customerId for per-customer lists. ' +
+      'Retrieve properties with comprehensive filtering, sorting, and pagination.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -168,11 +167,13 @@ export class CustomerPropertyController {
 
   /**
    * Get properties by temperature
+   * @deprecated Prefer GET /customers?leadTemperature=... after property list merge.
    */
   @Get('temperature/:temperature')
   @ApiOperation({
-    summary: 'Get properties by lead temperature',
+    summary: 'Get properties by lead temperature (deprecated)',
     description:
+      '**Deprecated** — use GET /customers?leadTemperature=hot|warm|cold instead. ' +
       'Retrieve properties with a specific lead temperature (hot/warm/cold) with pagination.',
   })
   @ApiParam({
@@ -213,11 +214,13 @@ export class CustomerPropertyController {
 
   /**
    * Get temperature statistics
+   * @deprecated No active frontend consumer after property list page removal.
    */
   @Get('statistics/temperature')
   @ApiOperation({
-    summary: 'Get temperature statistics',
-    description: 'Returns count of properties grouped by lead temperature.',
+    summary: 'Get temperature statistics (deprecated)',
+    description:
+      '**Deprecated** — no active UI consumer. Returns count of properties grouped by lead temperature.',
   })
   @ApiResponse({
     status: HttpStatus.OK,

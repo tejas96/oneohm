@@ -1,10 +1,120 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@tejas96/shared/types';
-import { IsNull, Repository, type EntityManager } from 'typeorm';
+import {
+  CustomerSortField,
+  CustomerStatus,
+  LeadSource,
+  PropertyStatus,
+  QuoteStatus,
+  SortOrder,
+} from '@tejas96/shared/types';
+import {
+  hasAnyCustomerPropertyFilter,
+  hasContradictoryCustomerPropertyFilters,
+} from '@tejas96/shared/utils';
+import { IsNull, Repository, type EntityManager, type SelectQueryBuilder } from 'typeorm';
 
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
+
+/**
+ * Per-customer roll-up of the site portfolio, as rendered by the CRM list's
+ * "Site portfolio" column (count · capacity, status distribution bar, quoted
+ * total) and by the expanded row's summary pills.
+ */
+export interface SitePortfolioSummary {
+  siteCount: number;
+  /** Sites keyed by `PropertyStatus` — drives the stacked distribution bar. */
+  statusCounts: Record<string, number>;
+  convertedCount: number;
+  /** Sites that have at least one quote. */
+  quotedSiteCount: number;
+  /**
+   * Σ system size (kW) across each site's current quote version, preferring
+   * the modules actually selected (`total_wattage_wp / 1000`) over the quote's
+   * `system_size_kw` field. See `getSitePortfolioSummaries` for why.
+   */
+  totalSystemSizeKw: number;
+  /** Σ final price across each site's current quote version. */
+  totalQuotedAmount: number;
+}
+
+/** Organisation-wide CRM roll-up behind the four KPI cards on the list page. */
+export interface CustomerOverviewStats {
+  customers: number;
+  customersThisMonth: number;
+  sites: number;
+  sitesThisMonth: number;
+  /** Σ quoted value of sites still in play (quote sent/viewed, not converted). */
+  pipelineValue: number;
+  /** Sites whose latest quote is out and unanswered. */
+  awaitingReply: number;
+  /** Of those, unanswered for longer than `AWAITING_AGEING_DAYS`. */
+  awaitingAgeing: number;
+}
+
+/** A quote sitting unanswered longer than this is flagged as ageing. */
+const AWAITING_AGEING_DAYS = 7;
+
+/**
+ * Correlated-subquery joins resolving each property's latest quote (`latest_quote`)
+ * and that quote's current version (`cv`), for a query whose driving table is
+ * aliased `prop`.
+ *
+ * Shared verbatim by the portfolio roll-up and the overview stats so both read
+ * the same "latest quote" as the property list
+ * (`CustomerPropertyRepository.findWithFilters`) — three places computing
+ * "latest" differently is exactly how a KPI drifts from the table beneath it.
+ *
+ * @param orgParam positional placeholder (e.g. `'$1'`) already bound to the
+ *   organisation id by the caller.
+ */
+function latestQuoteJoins(orgParam: string): string {
+  return `
+    LEFT JOIN quotes latest_quote ON latest_quote.id = (
+      SELECT q2.id FROM quotes q2
+      WHERE q2.property_id = prop.id
+        AND q2.organization_id = ${orgParam}
+        AND q2.deleted_at IS NULL
+      ORDER BY q2.created_at DESC, q2.id DESC
+      LIMIT 1
+    )
+    LEFT JOIN quote_versions cv ON cv.id = (
+      SELECT qv.id FROM quote_versions qv
+      WHERE qv.quote_id = latest_quote.id
+      ORDER BY qv.created_at DESC, qv.version_number DESC, qv.id DESC
+      LIMIT 1
+    )
+  `;
+}
+
+/** Quote states that mean "sent to the customer, still unanswered". */
+const AWAITING_QUOTE_STATUSES: readonly string[] = [QuoteStatus.SENT, QuoteStatus.VIEWED];
+
+/**
+ * `PropertyStatus.CONVERTED` widened to `string`.
+ *
+ * Raw-SQL rows come back as plain strings, and comparing one directly against
+ * an enum member is a type error even though the values match. Widening once
+ * here beats an inline cast at the comparison, which would suppress the check
+ * rather than explain it.
+ */
+const CONVERTED_STATUS: string = PropertyStatus.CONVERTED;
+
+/** First instant of the current month, in server-local time. */
+function startOfCurrentMonth(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+}
+
+/** `AWAITING_AGEING_DAYS` ago, as a `YYYY-MM-DD` string for a `date` column. */
+function ageingCutoffDate(): string {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - AWAITING_AGEING_DAYS);
+  return `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(
+    cutoff.getDate(),
+  ).padStart(2, '0')}`;
+}
 
 /**
  * Known lead source enum values used to identify "other" / custom sources
@@ -23,6 +133,109 @@ const SORT_FIELD_MAP: Record<CustomerSortField, string> = {
   [CustomerSortField.CITY]: 'customer.city',
   [CustomerSortField.STATUS]: 'customer.status',
 };
+
+function needsQuoteJoinForPropertyFilter(query: CustomerQueryDto): boolean {
+  return (
+    query.quoteStatus !== undefined ||
+    query.propertySystemSizeMin !== undefined ||
+    query.propertySystemSizeMax !== undefined
+  );
+}
+
+function applyMatchingPropertyFilter(
+  qb: SelectQueryBuilder<CustomerProfileEntity>,
+  organizationId: string,
+  query: CustomerQueryDto,
+): void {
+  if (!hasAnyCustomerPropertyFilter(query)) {
+    return;
+  }
+
+  const conditions: string[] = [
+    'prop.customer_id = customer.id',
+    'prop.deleted_at IS NULL',
+    'prop.organization_id = :propFilterOrgId',
+  ];
+  const params: Record<string, unknown> = { propFilterOrgId: organizationId };
+
+  if (query.propertyType) {
+    conditions.push('prop.property_type = :propertyType');
+    params.propertyType = query.propertyType;
+  }
+  if (query.propertyStatus) {
+    conditions.push('prop.status = :propertyStatus');
+    params.propertyStatus = query.propertyStatus;
+  }
+  if (query.connectionType) {
+    conditions.push('prop.connection_type = :connectionType');
+    params.connectionType = query.connectionType;
+  }
+  if (query.leadTemperature) {
+    conditions.push('prop.lead_temperature = :leadTemperature');
+    params.leadTemperature = query.leadTemperature;
+  }
+  if (query.propertyCity) {
+    conditions.push('LOWER(prop.city) LIKE LOWER(:propertyCity)');
+    params.propertyCity = `%${query.propertyCity}%`;
+  }
+  if (query.propertyState) {
+    conditions.push('LOWER(prop.state) LIKE LOWER(:propertyState)');
+    params.propertyState = `%${query.propertyState}%`;
+  }
+  if (query.quoteStatus !== undefined) {
+    conditions.push('latest_quote.status = :quoteStatus');
+    params.quoteStatus = query.quoteStatus;
+  }
+  // Same wattage-preferred size as getSitePortfolioSummaries — filtering on
+  // the raw `system_size_kw` column would silently disagree with the value
+  // the "Site portfolio" column and "System Size" range filter both display.
+  if (query.propertySystemSizeMin !== undefined) {
+    conditions.push(
+      `(CASE WHEN cv.total_wattage_wp > 0 THEN cv.total_wattage_wp / 1000.0 ELSE cv.system_size_kw END) >= :propertySystemSizeMin`,
+    );
+    params.propertySystemSizeMin = query.propertySystemSizeMin;
+  }
+  if (query.propertySystemSizeMax !== undefined) {
+    conditions.push(
+      `(CASE WHEN cv.total_wattage_wp > 0 THEN cv.total_wattage_wp / 1000.0 ELSE cv.system_size_kw END) <= :propertySystemSizeMax`,
+    );
+    params.propertySystemSizeMax = query.propertySystemSizeMax;
+  }
+
+  const whereClause = conditions.join(' AND ');
+
+  if (needsQuoteJoinForPropertyFilter(query)) {
+    qb.andWhere(
+      `EXISTS (
+        SELECT 1 FROM customer_properties prop
+        LEFT JOIN quotes latest_quote ON latest_quote.id = (
+          SELECT q2.id FROM quotes q2
+          WHERE q2.property_id = prop.id
+            AND q2.organization_id = :propFilterOrgId
+            AND q2.deleted_at IS NULL
+          ORDER BY q2.created_at DESC, q2.id DESC
+          LIMIT 1
+        )
+        LEFT JOIN quote_versions cv ON cv.id = (
+          SELECT qv.id FROM quote_versions qv
+          WHERE qv.quote_id = latest_quote.id
+          ORDER BY qv.created_at DESC, qv.version_number DESC, qv.id DESC
+          LIMIT 1
+        )
+        WHERE ${whereClause}
+      )`,
+      params,
+    );
+  } else {
+    qb.andWhere(
+      `EXISTS (
+        SELECT 1 FROM customer_properties prop
+        WHERE ${whereClause}
+      )`,
+      params,
+    );
+  }
+}
 
 @Injectable()
 export class CustomerProfileRepository {
@@ -197,6 +410,169 @@ export class CustomerProfileRepository {
   }
 
   /**
+   * Roll up each customer's site portfolio in ONE query for a whole page of
+   * customers.
+   *
+   * Grouping by `(customer_id, status)` rather than `customer_id` alone is what
+   * lets a single pass produce both the per-status counts (the distribution
+   * bar) and the capacity/value totals — the alternative was two queries or a
+   * `jsonb_object_agg` that no longer explains itself. Folding the handful of
+   * status rows per customer happens in JS, which is free at page size.
+   *
+   * Sites with no quote contribute 0 to both sums (`SUM` skips NULL), so a
+   * customer with sites but no quotes reports real counts and a zero value
+   * rather than dropping out.
+   *
+   * System size prefers `total_wattage_wp / 1000` over `system_size_kw`: the
+   * former is derived from the modules actually selected during quote
+   * calculation (the real installed capacity); the latter is a user-entered
+   * field on the quote and can go stale relative to it. This mirrors the
+   * precedence `CustomerPropertyService.findByCustomer` already applies —
+   * this query must not silently disagree with the nested sites panel, which
+   * reads that service.
+   */
+  async getSitePortfolioSummaries(
+    customerIds: string[],
+    organizationId: string,
+  ): Promise<Map<string, SitePortfolioSummary>> {
+    const summaries = new Map<string, SitePortfolioSummary>();
+    if (customerIds.length === 0) {
+      return summaries;
+    }
+
+    const rows = await this.repository.manager.query<
+      {
+        customerId: string;
+        status: string;
+        count: string;
+        quotedCount: string;
+        systemSizeKw: string;
+        quotedAmount: string;
+      }[]
+    >(
+      `
+      SELECT prop.customer_id                            AS "customerId",
+             prop.status                                 AS "status",
+             COUNT(*)                                    AS "count",
+             COUNT(latest_quote.id)                      AS "quotedCount",
+             COALESCE(SUM(
+               CASE WHEN cv.total_wattage_wp > 0
+                    THEN cv.total_wattage_wp / 1000.0
+                    ELSE cv.system_size_kw
+               END
+             ), 0)                                       AS "systemSizeKw",
+             COALESCE(SUM(cv.final_price), 0)            AS "quotedAmount"
+      FROM customer_properties prop
+      ${latestQuoteJoins('$1')}
+      WHERE prop.organization_id = $1
+        AND prop.customer_id = ANY($2::uuid[])
+        AND prop.deleted_at IS NULL
+      GROUP BY prop.customer_id, prop.status
+      `,
+      [organizationId, customerIds],
+    );
+
+    for (const row of rows) {
+      const existing = summaries.get(row.customerId) ?? {
+        siteCount: 0,
+        statusCounts: {},
+        convertedCount: 0,
+        quotedSiteCount: 0,
+        totalSystemSizeKw: 0,
+        totalQuotedAmount: 0,
+      };
+
+      const count = Number(row.count);
+      existing.siteCount += count;
+      existing.statusCounts[row.status] = (existing.statusCounts[row.status] ?? 0) + count;
+      if (row.status === CONVERTED_STATUS) existing.convertedCount += count;
+      existing.quotedSiteCount += Number(row.quotedCount);
+      existing.totalSystemSizeKw += Number(row.systemSizeKw);
+      existing.totalQuotedAmount += Number(row.quotedAmount);
+
+      summaries.set(row.customerId, existing);
+    }
+
+    return summaries;
+  }
+
+  /**
+   * Organisation-wide CRM roll-up for the customer list's KPI cards.
+   *
+   * Two queries rather than one: the customer counts have no property join, and
+   * forcing them through the property aggregate would either miss customers
+   * with no sites or need a `COUNT(DISTINCT …)` that fights the same join.
+   *
+   * "Pipeline" deliberately counts only sites that are still in play — a quote
+   * is out, unanswered, and the site has not converted. Accepted and converted
+   * value belongs to revenue, not pipeline; draft value was never offered.
+   */
+  async getOverviewStats(organizationId: string): Promise<CustomerOverviewStats> {
+    const monthStart = startOfCurrentMonth();
+    const ageingCutoff = ageingCutoffDate();
+
+    const [customerRow] = await this.repository.manager.query<
+      { customers: string; customersThisMonth: string }[]
+    >(
+      `
+      SELECT COUNT(*)                                                  AS "customers",
+             COUNT(*) FILTER (WHERE c.created_at >= $2)                AS "customersThisMonth"
+      FROM customer_profiles c
+      WHERE c.organization_id = $1
+        AND c.deleted_at IS NULL
+      `,
+      [organizationId, monthStart],
+    );
+
+    const [siteRow] = await this.repository.manager.query<
+      {
+        sites: string;
+        sitesThisMonth: string;
+        pipelineValue: string;
+        awaitingReply: string;
+        awaitingAgeing: string;
+      }[]
+    >(
+      `
+      SELECT COUNT(*)                                     AS "sites",
+             COUNT(*) FILTER (WHERE prop.created_at >= $2) AS "sitesThisMonth",
+             COALESCE(SUM(cv.final_price) FILTER (
+               WHERE prop.status <> $3
+                 AND latest_quote.status = ANY($4::varchar[])
+             ), 0)                                        AS "pipelineValue",
+             COUNT(*) FILTER (
+               WHERE latest_quote.status = ANY($4::varchar[])
+             )                                            AS "awaitingReply",
+             COUNT(*) FILTER (
+               WHERE latest_quote.status = ANY($4::varchar[])
+                 AND latest_quote.quote_date < $5::date
+             )                                            AS "awaitingAgeing"
+      FROM customer_properties prop
+      ${latestQuoteJoins('$1')}
+      WHERE prop.organization_id = $1
+        AND prop.deleted_at IS NULL
+      `,
+      [
+        organizationId,
+        monthStart,
+        PropertyStatus.CONVERTED,
+        [...AWAITING_QUOTE_STATUSES],
+        ageingCutoff,
+      ],
+    );
+
+    return {
+      customers: Number(customerRow?.customers ?? 0),
+      customersThisMonth: Number(customerRow?.customersThisMonth ?? 0),
+      sites: Number(siteRow?.sites ?? 0),
+      sitesThisMonth: Number(siteRow?.sitesThisMonth ?? 0),
+      pipelineValue: Number(siteRow?.pipelineValue ?? 0),
+      awaitingReply: Number(siteRow?.awaitingReply ?? 0),
+      awaitingAgeing: Number(siteRow?.awaitingAgeing ?? 0),
+    };
+  }
+
+  /**
    * Search customers by name, phone, or email
    * Searches within the organization context
    *
@@ -275,7 +651,12 @@ export class CustomerProfileRepository {
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.user', 'user')
       .leftJoinAndSelect('customer.organization', 'organization')
-      .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
+      .loadRelationCountAndMap(
+        'customer.propertyCount',
+        'customer.properties',
+        'propertyCountRel',
+        (qb) => qb.where('propertyCountRel.deletedAt IS NULL'),
+      )
       .leftJoinAndSelect('customer.creator', 'creator')
       .leftJoinAndSelect('customer.assignee', 'assignee')
       .where('customer.organizationId = :organizationId', { organizationId })
@@ -347,19 +728,26 @@ export class CustomerProfileRepository {
       });
     }
 
-    if (query.hasProperty !== undefined) {
-      const subQuery = qb
-        .subQuery()
-        .select('prop.id')
-        .from('customer_properties', 'prop')
-        .where('prop.customerId = customer.id')
-        .andWhere('prop.deletedAt IS NULL');
+    if (hasContradictoryCustomerPropertyFilters(query)) {
+      // Contradictory: "no properties" cannot match any property-level filter.
+      qb.andWhere('1 = 0');
+    } else {
+      if (query.hasProperty !== undefined && !hasAnyCustomerPropertyFilter(query)) {
+        const subQuery = qb
+          .subQuery()
+          .select('prop.id')
+          .from('customer_properties', 'prop')
+          .where('prop.customerId = customer.id')
+          .andWhere('prop.deletedAt IS NULL');
 
-      if (query.hasProperty) {
-        qb.andWhere(`EXISTS (${subQuery.getQuery()})`);
-      } else {
-        qb.andWhere(`NOT EXISTS (${subQuery.getQuery()})`);
+        if (query.hasProperty) {
+          qb.andWhere(`EXISTS (${subQuery.getQuery()})`);
+        } else {
+          qb.andWhere(`NOT EXISTS (${subQuery.getQuery()})`);
+        }
       }
+
+      applyMatchingPropertyFilter(qb, organizationId, query);
     }
 
     if (query.fromDate) {

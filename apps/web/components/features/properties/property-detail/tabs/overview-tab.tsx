@@ -348,7 +348,7 @@ export function OverviewTab({
                     <FieldRow label="Current Load" value={property.currentLoad} />
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
-                    <FieldRow label="DISCOM" value={property.discomName} />
+                    <FieldRow label="DISCOM" value={property.discom?.label} />
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <FieldRow label="Consumer #" value={property.consumerNumber} />

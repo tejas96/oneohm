@@ -376,6 +376,11 @@ function WorkflowStepRow({
         <Badge variant="outline" className="text-xs">
           {step.code}
         </Badge>
+        {step.isSpecial ? (
+          <Badge variant="warning" className="text-xs">
+            Change Request
+          </Badge>
+        ) : null}
         {step.defaultRoleCode && (
           <Badge variant="secondary" className="text-xs">
             {step.defaultRoleCode}

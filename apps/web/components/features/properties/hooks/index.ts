@@ -1,9 +1,7 @@
 // Properties Feature - Hooks
 
-// FDAL resource hooks (list, stats, mutations)
+// FDAL resource hooks (mutations only — list/stats removed with property list page)
 export {
-  usePropertyList,
-  usePropertyTemperatureStats,
   usePropertyMutations,
   type PropertyItem,
   type PropertyListFilters,
@@ -27,7 +25,6 @@ export type {
 export {
   useUpdateProperty,
   useDeleteProperty,
-  useProperties,
   useCompletePropertyVisit,
   useCompletePropertySurvey,
   useCancelPropertySiteActivity,
@@ -64,3 +61,5 @@ export {
   type PropertyFinanceSnapshot,
   type UsePropertyFinanceSnapshotResult,
 } from './use-property-finance-snapshot';
+
+export { useDiscoms, useDiscomById, type DiscomResponse } from './use-discoms';

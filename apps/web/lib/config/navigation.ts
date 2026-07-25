@@ -3,7 +3,6 @@ import {
   BadgePercent,
   Banknote,
   Box,
-  Building2,
   Calendar,
   CalendarClock,
   CheckCircle,
@@ -174,52 +173,6 @@ export const navigationConfig: NavigationConfig = {
               label: 'All Customers',
               href: ROUTES.CUSTOMERS.LIST,
               // badge: dynamically set via useNavigationCounts (crm.totalCustomers)
-            },
-            {
-              id: 'new-customer',
-              icon: Plus,
-              label: 'Add Customer',
-              href: ROUTES.CUSTOMERS.NEW,
-              exactMatch: true, // Action route - don't match as child of /customers
-            },
-          ],
-        },
-        {
-          title: 'Properties',
-          items: [
-            {
-              id: 'properties',
-              icon: Building2,
-              label: 'All Properties',
-              href: ROUTES.PROPERTIES.LIST,
-              // badge: dynamically set via useNavigationCounts (crm.totalProperties)
-              // Sub-items for lead temperature filtering
-              children: [
-                {
-                  id: 'properties-hot',
-                  label: 'Hot',
-                  href: `${ROUTES.PROPERTIES.LIST}?leadTemperature=hot`,
-                  statusDot: 'hot' as const,
-                  // badge: dynamically set via useNavigationCounts (crm.properties.hot)
-                  badgeVariant: 'error' as const,
-                },
-                {
-                  id: 'properties-warm',
-                  label: 'Warm',
-                  href: `${ROUTES.PROPERTIES.LIST}?leadTemperature=warm`,
-                  statusDot: 'warm' as const,
-                  // badge: dynamically set via useNavigationCounts (crm.properties.warm)
-                  badgeVariant: 'warning' as const,
-                },
-                {
-                  id: 'properties-cold',
-                  label: 'Cold',
-                  href: `${ROUTES.PROPERTIES.LIST}?leadTemperature=cold`,
-                  statusDot: 'cold' as const,
-                  // badge: dynamically set via useNavigationCounts (crm.properties.cold)
-                  badgeVariant: 'default' as const,
-                },
-              ],
             },
           ],
         },

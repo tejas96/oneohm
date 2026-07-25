@@ -11,10 +11,13 @@ import {
   QuoteStatus,
   SiteStatus,
   type ShadingAnalysis,
+  type StoredChangeRequest,
   type SurveyData,
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
+import { propertyKeys } from '@/components/features/properties/hooks/property-keys';
+import type { DiscomResponse } from '@/components/features/properties/hooks/use-discoms';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -47,7 +50,8 @@ export interface CustomerPropertyResponse {
   consumerNumber?: string;
   consumerName?: string;
   currentLoad?: string;
-  discomName?: string;
+  discomId?: string;
+  discom?: DiscomResponse;
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
@@ -58,6 +62,7 @@ export interface CustomerPropertyResponse {
   wantsLoan: boolean;
   // Documents
   documents: PropertyDocument[];
+  changeRequests?: StoredChangeRequest[];
   // Status
   status: PropertyStatus;
   notes?: string;
@@ -105,14 +110,7 @@ export interface CustomerPropertyResponse {
 // Query Keys
 // ============================================================================
 
-export const propertyKeys = {
-  all: (orgId?: string) => ['properties', orgId] as const,
-  lists: (orgId?: string) => [...propertyKeys.all(orgId), 'list'] as const,
-  byCustomer: (orgId: string | undefined, customerId: string) =>
-    [...propertyKeys.all(orgId), 'customer', customerId] as const,
-  detail: (orgId: string | undefined, id: string) =>
-    [...propertyKeys.all(orgId), 'detail', id] as const,
-};
+export { propertyKeys } from '@/components/features/properties/hooks/property-keys';
 
 // ============================================================================
 // Hooks
