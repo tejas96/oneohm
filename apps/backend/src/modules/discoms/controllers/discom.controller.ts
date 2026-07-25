@@ -72,6 +72,12 @@ export class DiscomController {
         type: String,
         description: 'Search by circle, division, subdivision, or section',
       },
+      {
+        name: 'circleName',
+        required: false,
+        type: String,
+        description: 'Filter by circle name (exact match, case-insensitive)',
+      },
       { name: 'page', required: false, type: Number, description: 'Page number (default: 1)' },
       { name: 'limit', required: false, type: Number, description: 'Items per page (default: 20)' },
       {
@@ -92,18 +98,27 @@ export class DiscomController {
     @Query('isActive') isActive?: string,
     @Query('includeInactive') includeInactive?: string,
     @Query('search') search?: string,
+    @Query('circleName') circleName?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit = 20,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
   ): Promise<{
     data: DiscomResponseDto[];
-    meta: { page: number; limit: number; total: number; totalPages: number };
+    meta: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      stats?: { circles: number; active: number; linkedProperties: number };
+      circleNames?: string[];
+    };
   }> {
     const result = await this.discomService.findAll({
       ...(isActive !== undefined ? { isActive: isActive === 'true' } : {}),
       ...(includeInactive !== undefined ? { includeInactive: includeInactive === 'true' } : {}),
       search,
+      circleName,
       page,
       limit,
       sortBy,

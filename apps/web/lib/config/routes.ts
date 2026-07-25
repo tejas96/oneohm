@@ -167,6 +167,7 @@ export const ROUTES = {
     INTEGRATIONS: '/admin/integrations',
     AUDIT: '/admin/audit',
     LOOKUPS: '/admin/lookups',
+    DISCOM: '/admin/discom',
   },
 
   // Organization
@@ -292,6 +293,7 @@ export const ADMIN_ROUTES = [
   ROUTES.ADMIN.WORKFLOWS,
   ROUTES.ADMIN.INTEGRATIONS,
   ROUTES.ADMIN.AUDIT,
+  ROUTES.ADMIN.DISCOM,
 ] as const;
 
 // ============================================
@@ -458,6 +460,7 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   [ROUTES.ADMIN.SETTINGS]: 'admin',
   [ROUTES.ADMIN.WORKFLOW_STEPS]: 'admin',
   [ROUTES.ADMIN.HOME]: 'admin',
+  [ROUTES.ADMIN.DISCOM]: 'admin',
 
   // Dashboard (default)
   [ROUTES.DASHBOARD.HOME]: 'dashboard',

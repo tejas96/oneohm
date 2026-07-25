@@ -189,6 +189,10 @@ interface CrmTableToolbarProps<TRow> {
   activeQuickFilter?: string;
   onQuickFilterChange?: (key: string) => void;
 
+  secondaryQuickFilters?: CrmQuickFilter[];
+  activeSecondaryQuickFilter?: string;
+  onSecondaryQuickFilterChange?: (key: string) => void;
+
   /** Rendered only when the parent supplied filterable columns. */
   showFilters: boolean;
   filterModel: FilterState;
@@ -197,6 +201,7 @@ interface CrmTableToolbarProps<TRow> {
 
   showColumnVisibility: boolean;
   toolbarActions?: ReactNode;
+  searchWidth?: string;
 }
 
 /**
@@ -219,12 +224,16 @@ export function CrmTableToolbar<TRow>({
   quickFilters,
   activeQuickFilter,
   onQuickFilterChange,
+  secondaryQuickFilters,
+  activeSecondaryQuickFilter,
+  onSecondaryQuickFilterChange,
   showFilters,
   filterModel,
   filtersOpen,
   onToggleFilters,
   showColumnVisibility,
   toolbarActions,
+  searchWidth,
 }: CrmTableToolbarProps<TRow>): JSX.Element {
   return (
     <Box
@@ -266,7 +275,7 @@ export function CrmTableToolbar<TRow>({
           // Radius stays with the theme's functional input (10px); only the
           // design's width and control height are set here.
           sx={{
-            width: crm['toolbar-search-width'],
+            width: searchWidth ?? crm['toolbar-search-width'],
             '& .MuiOutlinedInput-root': { height: crm['toolbar-input-height'] },
           }}
         />
@@ -290,6 +299,36 @@ export function CrmTableToolbar<TRow>({
             />
           ))}
         </Box>
+      ) : null}
+
+      {secondaryQuickFilters && secondaryQuickFilters.length > 0 ? (
+        <>
+          <Box
+            sx={{
+              width: '1px',
+              height: 20,
+              backgroundColor: color['canvas-sunken'],
+              flexShrink: 0,
+            }}
+          />
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: crm['toolbar-chip-gap'],
+              flexWrap: 'wrap',
+            }}
+          >
+            {secondaryQuickFilters.map((filter) => (
+              <CrmQuickFilterChip
+                key={filter.key}
+                filter={filter}
+                active={(activeSecondaryQuickFilter ?? '') === filter.key}
+                onClick={() => onSecondaryQuickFilterChange?.(filter.key)}
+              />
+            ))}
+          </Box>
+        </>
       ) : null}
 
       <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1.25 }}>

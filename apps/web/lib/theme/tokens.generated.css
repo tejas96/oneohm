@@ -177,6 +177,16 @@
   --crm-col-owner: minmax(122px,1fr);
   --crm-col-creator: minmax(122px,1fr);
   --crm-col-actions: 40px;
+  --crm-col-discom-hierarchy: minmax(250px,1.7fr);
+  --crm-col-discom-circle: minmax(160px,1.1fr);
+  --crm-col-discom-officers: minmax(150px,1fr);
+  --crm-col-discom-contact: minmax(170px,1.1fr);
+  --crm-col-discom-sites: 118px;
+  --crm-col-discom-status: 96px;
+  --crm-col-discom-updated: 104px;
+  --crm-col-discom-actions: 44px;
+  --crm-grid-min-width-discom: 1360px;
+  --crm-toolbar-search-width-discom: 250px;
   --crm-grid-min-width: 1280px;
   --crm-row-gutter: 16px;
   --crm-head-height: 40px;

@@ -29,6 +29,7 @@ import {
   Users,
   Wallet,
   Wrench,
+  Zap,
 } from 'lucide-react';
 
 import { ROUTES, getPanelKeyForPath } from './routes';
@@ -545,6 +546,18 @@ export const navigationConfig: NavigationConfig = {
               icon: Key,
               label: 'Permissions',
               href: ROUTES.ADMIN.PERMISSIONS,
+            },
+          ],
+        },
+        {
+          title: 'Utility network',
+          roles: ['super_admin'],
+          items: [
+            {
+              id: 'admin-discom',
+              icon: Zap,
+              label: 'DISCOMs',
+              href: ROUTES.ADMIN.DISCOM,
             },
           ],
         },

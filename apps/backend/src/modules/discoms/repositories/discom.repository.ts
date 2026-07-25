@@ -5,6 +5,23 @@ import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialE
 
 import { DiscomEntity } from '../entities/discom.entity';
 
+export interface DiscomListFilters {
+  isActive?: boolean;
+  includeInactive?: boolean;
+  search?: string;
+  circleName?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface DiscomListStats {
+  circles: number;
+  active: number;
+  linkedProperties: number;
+}
+
 @Injectable()
 export class DiscomRepository {
   constructor(
@@ -12,16 +29,11 @@ export class DiscomRepository {
     private readonly repository: Repository<DiscomEntity>,
   ) {}
 
-  async findAll(filters?: {
-    isActive?: boolean;
-    includeInactive?: boolean;
-    search?: string;
-    page?: number;
-    limit?: number;
-    sortBy?: string;
-    sortOrder?: 'ASC' | 'DESC';
-  }): Promise<{ data: DiscomEntity[]; total: number }> {
-    const query = this.repository.createQueryBuilder('discom').where('discom.deleted_at IS NULL');
+  private applyListFilters(
+    query: ReturnType<Repository<DiscomEntity>['createQueryBuilder']>,
+    filters?: DiscomListFilters,
+  ): void {
+    query.where('discom.deleted_at IS NULL');
 
     if (!filters?.includeInactive) {
       query.andWhere('discom.is_active = :isActive', {
@@ -29,6 +41,12 @@ export class DiscomRepository {
       });
     } else if (filters?.isActive !== undefined) {
       query.andWhere('discom.is_active = :isActive', { isActive: filters.isActive });
+    }
+
+    if (filters?.circleName) {
+      query.andWhere('LOWER(discom.circle_name) = LOWER(:circleName)', {
+        circleName: filters.circleName,
+      });
     }
 
     if (filters?.search) {
@@ -45,6 +63,18 @@ export class DiscomRepository {
         { searchTerm },
       );
     }
+  }
+
+  async findAll(
+    filters?: DiscomListFilters,
+  ): Promise<{ data: (DiscomEntity & { linkedPropertiesCount: number })[]; total: number }> {
+    const query = this.repository.createQueryBuilder('discom').addSelect(
+      `(SELECT COUNT(*)::int FROM customer_properties p
+          WHERE p.discom_id = discom.id AND p.deleted_at IS NULL)`,
+      'linkedPropertiesCount',
+    );
+
+    this.applyListFilters(query, filters);
 
     const allowedSortFields: Record<string, string> = {
       circleName: 'discom.circle_name',
@@ -61,12 +91,55 @@ export class DiscomRepository {
 
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
-    const [data, total] = await query
+
+    const total = await query.getCount();
+
+    const { entities, raw } = await query
       .skip((page - 1) * limit)
       .take(limit)
-      .getManyAndCount();
+      .getRawAndEntities();
+
+    const data = entities.map((entity, index) => ({
+      ...entity,
+      linkedPropertiesCount: Number(raw[index]?.linkedPropertiesCount ?? 0),
+    }));
 
     return { data, total };
+  }
+
+  async findListStats(filters?: DiscomListFilters): Promise<DiscomListStats> {
+    const statsQuery = this.repository.createQueryBuilder('discom');
+    this.applyListFilters(statsQuery, filters);
+
+    const result = await statsQuery
+      .select('COUNT(DISTINCT discom.circle_name)', 'circles')
+      .addSelect('COUNT(*) FILTER (WHERE discom.is_active = true)', 'active')
+      .addSelect(
+        `COALESCE(SUM(
+          (SELECT COUNT(*)::int FROM customer_properties p
+           WHERE p.discom_id = discom.id AND p.deleted_at IS NULL)
+        ), 0)`,
+        'linkedProperties',
+      )
+      .getRawOne<{ circles: string; active: string; linkedProperties: string }>();
+
+    return {
+      circles: Number(result?.circles ?? 0),
+      active: Number(result?.active ?? 0),
+      linkedProperties: Number(result?.linkedProperties ?? 0),
+    };
+  }
+
+  async findDistinctCircleNames(filters?: DiscomListFilters): Promise<string[]> {
+    const query = this.repository
+      .createQueryBuilder('discom')
+      .select('DISTINCT discom.circle_name', 'circleName')
+      .orderBy('discom.circle_name', 'ASC');
+
+    this.applyListFilters(query, filters);
+
+    const rows = await query.getRawMany<{ circleName: string }>();
+    return rows.map((row) => row.circleName).filter(Boolean);
   }
 
   async findById(id: string): Promise<DiscomEntity | null> {

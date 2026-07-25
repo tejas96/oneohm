@@ -93,4 +93,9 @@ export class DiscomResponseDto {
   @ApiProperty()
   @Expose()
   updatedAt!: Date;
+
+  @ApiProperty({ description: 'Count of active customer properties linked to this DISCOM' })
+  @Expose()
+  @Transform(({ obj }) => Number((obj as Record<string, unknown>).linkedPropertiesCount ?? 0))
+  linkedPropertiesCount!: number;
 }
