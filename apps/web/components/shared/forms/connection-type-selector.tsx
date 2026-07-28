@@ -1,11 +1,14 @@
 'use client';
 
-import { FormControl, FormControlLabel, FormHelperText, Radio, RadioGroup } from '@mui/material';
+import { Box, Radio } from '@mui/material';
 import { ConnectionType } from '@tejas96/shared/types';
 import * as React from 'react';
 
+import { OptionCard } from './option-card';
+
 import { MUIFieldLabel } from '@/components/ui';
 import { CONNECTION_TYPE_OPTIONS } from '@/lib/config/constants';
+import { color } from '@/lib/theme/tokens';
 import { cn } from '@/lib/utils';
 
 export interface ConnectionTypeSelectorProps {
@@ -13,6 +16,8 @@ export interface ConnectionTypeSelectorProps {
   onChange: (value: ConnectionType) => void;
   error?: string;
   required?: boolean;
+  /** Hides the built-in label when the caller renders its own. */
+  hideLabel?: boolean;
   className?: string;
 }
 
@@ -21,32 +26,32 @@ export function ConnectionTypeSelector({
   onChange,
   error,
   required = false,
+  hideLabel = false,
   className,
 }: ConnectionTypeSelectorProps): React.JSX.Element {
-  const labelId = React.useId();
-
   return (
     <div className={cn(className)}>
-      <MUIFieldLabel fieldLabel="Connection Type" required={required} id={labelId} />
-      <FormControl error={!!error} component="fieldset" variant="standard">
-        <RadioGroup
-          row
-          aria-labelledby={labelId}
-          value={value ?? ''}
-          onChange={(e) => onChange(e.target.value as ConnectionType)}
-          className="gap-1"
-        >
-          {CONNECTION_TYPE_OPTIONS.map((option) => (
-            <FormControlLabel
-              key={option.value}
-              value={option.value}
-              control={<Radio size="small" />}
-              label={option.label}
-            />
-          ))}
-        </RadioGroup>
-        {error ? <FormHelperText>{error}</FormHelperText> : null}
-      </FormControl>
+      {!hideLabel && <MUIFieldLabel fieldLabel="Connection Type" required={required} />}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+          gap: 1.5,
+          mt: hideLabel ? 0 : 1,
+        }}
+      >
+        {CONNECTION_TYPE_OPTIONS.map((option) => (
+          <OptionCard
+            key={option.value}
+            active={value === option.value}
+            onClick={() => onChange(option.value)}
+            label={option.label}
+            meta={option.description}
+            leading={<Radio checked={value === option.value} size="small" sx={{ p: 0 }} />}
+          />
+        ))}
+      </Box>
+      {error ? <Box sx={{ fontSize: 12, color: color.danger, mt: 0.875 }}>{error}</Box> : null}
     </div>
   );
 }

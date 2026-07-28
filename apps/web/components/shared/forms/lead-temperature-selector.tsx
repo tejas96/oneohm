@@ -1,8 +1,12 @@
 'use client';
 
+import { Box } from '@mui/material';
 import { LeadTemperature } from '@tejas96/shared/types';
 import * as React from 'react';
 
+import { OptionCard } from './option-card';
+
+import { color } from '@/lib/theme/tokens';
 import { cn } from '@/lib/utils';
 
 export interface LeadTemperatureSelectorProps {
@@ -23,42 +27,36 @@ export interface LeadTemperatureSelectorProps {
 interface TemperatureOption {
   value: LeadTemperature;
   label: string;
+  /** Follow-up cadence the temperature implies. */
   description: string;
-  dotColor: string;
-  selectedBorder: string;
-  selectedBg: string;
+  dot: string;
 }
 
 const TEMPERATURE_OPTIONS: TemperatureOption[] = [
   {
     value: LeadTemperature.HOT,
     label: 'Hot',
-    description: 'High priority',
-    dotColor: 'bg-destructive',
-    selectedBorder: 'border-destructive',
-    selectedBg: 'bg-destructive/10',
+    description: 'Follow up within 3 days',
+    dot: color.danger,
   },
   {
     value: LeadTemperature.WARM,
     label: 'Warm',
-    description: 'Medium priority',
-    dotColor: 'bg-warning',
-    selectedBorder: 'border-warning',
-    selectedBg: 'bg-warning/10',
+    description: 'Follow up within 10 days',
+    dot: color['warning-main'],
   },
   {
     value: LeadTemperature.COLD,
     label: 'Cold',
-    description: 'Low priority',
-    dotColor: 'bg-info',
-    selectedBorder: 'border-info',
-    selectedBg: 'bg-info/10',
+    description: 'Follow up within 15 days',
+    dot: color.info,
   },
 ];
 
 /**
- * LeadTemperatureSelector - Color-coded temperature selection cards
- * Based on UX design with Hot (red), Warm (yellow), Cold (blue)
+ * Temperature selection cards. The colour dot carries the hot/warm/cold
+ * signal; selection itself reads as the standard accent fill + ring, so the
+ * two meanings never compete.
  */
 export function LeadTemperatureSelector({
   value,
@@ -68,87 +66,38 @@ export function LeadTemperatureSelector({
   disabled,
   className,
 }: LeadTemperatureSelectorProps): React.JSX.Element {
-  const handleSelect = (temp: LeadTemperature): void => {
-    if (!disabled) {
-      onChange?.(temp);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent, temp: LeadTemperature, index: number): void => {
-    if (disabled) return;
-
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleSelect(temp);
-    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      e.preventDefault();
-      const nextIndex = (index + 1) % TEMPERATURE_OPTIONS.length;
-      const nextOption = TEMPERATURE_OPTIONS[nextIndex] as TemperatureOption;
-      handleSelect(nextOption.value);
-      // Focus the next element
-      const nextElement = document.querySelector(
-        `[data-temp="${nextOption.value}"]`,
-      ) as HTMLElement;
-      nextElement?.focus();
-    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      const prevIndex = (index - 1 + TEMPERATURE_OPTIONS.length) % TEMPERATURE_OPTIONS.length;
-      const prevOption = TEMPERATURE_OPTIONS[prevIndex] as TemperatureOption;
-      handleSelect(prevOption.value);
-      // Focus the previous element
-      const prevElement = document.querySelector(
-        `[data-temp="${prevOption.value}"]`,
-      ) as HTMLElement;
-      prevElement?.focus();
-    }
-  };
-
   return (
-    <div className={cn('space-y-2', className)}>
-      <div
+    <div className={cn(className)}>
+      <Box
         role="radiogroup"
         aria-label="Lead Temperature"
-        className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: 1.5,
+        }}
       >
-        {TEMPERATURE_OPTIONS.map((option, index) => {
-          const isSelected = value === option.value;
-
-          return (
-            <div
-              key={option.value}
-              role="radio"
-              aria-checked={isSelected}
-              tabIndex={disabled ? -1 : isSelected || (!value && index === 0) ? 0 : -1}
-              data-temp={option.value}
-              onClick={() => handleSelect(option.value)}
-              onKeyDown={(e) => handleKeyDown(e, option.value, index)}
-              className={cn(
-                'p-4 rounded-lg border-2 cursor-pointer transition-all duration-fast',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
-                isSelected
-                  ? cn(option.selectedBorder, option.selectedBg)
-                  : 'border-border-light bg-background hover:border-border-medium',
-                disabled && 'opacity-50 cursor-not-allowed',
-                error && !isSelected && 'border-error/50',
-              )}
-            >
-              <div className="flex items-center gap-3">
-                {/* Color dot */}
-                <div className={cn('size-icon-sm rounded-full shrink-0', option.dotColor)} />
-
-                {/* Label and description */}
-                <div>
-                  <div className="font-medium text-foreground">{option.label}</div>
-                  <div className="text-xs text-foreground-tertiary">{option.description}</div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Error message */}
-      {error && errorMessage && <p className="text-xs text-error">{errorMessage}</p>}
+        {TEMPERATURE_OPTIONS.map((option) => (
+          <OptionCard
+            key={option.value}
+            layout="stacked"
+            active={value === option.value}
+            disabled={disabled}
+            onClick={() => onChange?.(option.value)}
+            label={option.label}
+            meta={option.description}
+            leading={
+              <Box
+                sx={{ width: 9, height: 9, borderRadius: '50%', background: option.dot }}
+                aria-hidden
+              />
+            }
+          />
+        ))}
+      </Box>
+      {error && errorMessage ? (
+        <Box sx={{ fontSize: 12, color: color.danger, mt: 0.875 }}>{errorMessage}</Box>
+      ) : null}
     </div>
   );
 }

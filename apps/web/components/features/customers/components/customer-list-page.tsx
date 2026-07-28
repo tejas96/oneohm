@@ -387,7 +387,9 @@ function RowActionsMenu({
         <MenuItem
           onClick={() => {
             handleClose();
-            void router.push(buildRoute(ROUTES.CUSTOMERS.ADD_PROPERTY, { id: customer.id }));
+            void router.push(
+              buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId: customer.id }),
+            );
           }}
         >
           <ListItemIcon>
@@ -1061,7 +1063,7 @@ export function CustomerListPage(): JSX.Element {
 
   const handleAddSite = useCallback(
     (customerId: string) => {
-      void router.push(buildRoute(ROUTES.CUSTOMERS.ADD_PROPERTY, { id: customerId }));
+      void router.push(buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId }));
     },
     [router],
   );
@@ -1247,7 +1249,7 @@ export function CustomerListPage(): JSX.Element {
             startIcon={<AddIcon />}
             sx={{ mt: 0.5 }}
             onClick={() => {
-              void router.push(ROUTES.CUSTOMERS.NEW);
+              void router.push(ROUTES.ONBOARDING.NEW);
             }}
           >
             Add customer
@@ -1347,7 +1349,7 @@ export function CustomerListPage(): JSX.Element {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => {
-              void router.push(ROUTES.CUSTOMERS.NEW);
+              void router.push(ROUTES.ONBOARDING.NEW);
             }}
           >
             Add customer

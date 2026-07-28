@@ -510,7 +510,7 @@ export function CustomerPropertiesExpandedRow({
   );
 
   const handleAddSite = useCallback((): void => {
-    void router.push(buildRoute(ROUTES.CUSTOMERS.ADD_PROPERTY, { id: customerId }));
+    void router.push(buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId }));
   }, [router, customerId]);
 
   const summary = useMemo(() => {

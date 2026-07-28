@@ -1,10 +1,11 @@
-import { CustomerForm } from '@/components/features/customers';
+import { OnboardingWizardPage } from '@/components/features/onboarding';
 
-export default async function EditCustomerPage({
-  params,
-}: {
+interface PageProps {
   params: Promise<{ id: string }>;
-}): Promise<React.ReactElement> {
+}
+
+// eslint-disable-next-line import/no-default-export -- Next.js requires default export for pages
+export default async function EditCustomerPage({ params }: PageProps): Promise<React.JSX.Element> {
   const { id } = await params;
-  return <CustomerForm mode="edit" customerId={id} />;
+  return <OnboardingWizardPage mode="edit-customer" customerId={id} />;
 }
