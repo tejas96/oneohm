@@ -57,9 +57,7 @@ export const ROUTES = {
   CUSTOMERS: {
     LIST: '/customers',
     DETAIL: '/customers/[id]',
-    NEW: '/customers/new',
     EDIT: '/customers/[id]/edit',
-    ADD_PROPERTY: '/customers/[id]/properties/new',
   },
 
   // Quotes
@@ -87,8 +85,12 @@ export const ROUTES = {
   // Properties
   PROPERTIES: {
     DETAIL: '/properties/[id]',
-    NEW: '/properties/new',
     EDIT: '/properties/[id]/edit',
+  },
+
+  // Onboarding — unified customer + property creation wizard
+  ONBOARDING: {
+    NEW: '/onboarding/new',
   },
 
   // Inventory
@@ -216,7 +218,6 @@ export interface RouteParamTypes {
   '/crm/leads/[id]': { id: string };
   '/customers/[id]': { id: string };
   '/customers/[id]/edit': { id: string };
-  '/customers/[id]/properties/new': { id: string };
   '/quotes/[id]': { id: string };
   '/projects/[id]': { id: string };
   '/inventory/stock/[id]': { id: string };
@@ -260,6 +261,7 @@ export interface RouteParamTypes {
   };
   '/inventory': { filter?: 'low-stock' };
   '/service': { status?: 'open' | 'closed' };
+  '/onboarding/new': { customerId?: string };
 }
 
 /** Get params for a route path (undefined if no params) */
@@ -405,6 +407,7 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   // CRM routes (all should show CRM panel)
   [ROUTES.CUSTOMERS.LIST]: 'crm',
   '/properties': 'crm',
+  [ROUTES.ONBOARDING.NEW]: 'crm',
 
   [ROUTES.PIPELINE.HOME]: 'crm',
   [ROUTES.CRM.HOME]: 'crm',

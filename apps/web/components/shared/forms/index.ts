@@ -6,6 +6,12 @@ export type { RadioCardProps, RadioCardGroupProps } from './radio-card';
 export { ConnectionTypeSelector } from './connection-type-selector';
 export type { ConnectionTypeSelectorProps } from './connection-type-selector';
 
+export { OptionCard } from './option-card';
+export type { OptionCardProps } from './option-card';
+
+export { SelectableChip } from './selectable-chip';
+export type { SelectableChipProps } from './selectable-chip';
+
 export { PropertySelector } from './property-selector';
 export type { Property, PropertySelectorProps } from './property-selector';
 

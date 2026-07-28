@@ -40,9 +40,6 @@ export const PROPERTY_ALERTS = {
     message:
       'Give a descriptive name like \u201CMain Residence\u201D or \u201CWarehouse \u2013 Andheri\u201D to easily identify this property later.',
   },
-  addressPrefill: {
-    message: 'Address pre-filled from customer profile. You can modify it for this property.',
-  },
   loanBenefits: {
     title: 'Loan Benefits',
     message:

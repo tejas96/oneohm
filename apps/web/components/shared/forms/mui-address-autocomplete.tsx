@@ -33,6 +33,8 @@ export interface MUIAddressAutocompleteProps {
   longitudeName?: string;
   showMap?: boolean;
   required?: boolean;
+  /** Renders every field read-only (e.g. a record already persisted upstream). */
+  disabled?: boolean;
 }
 
 interface AddressAutocompleteFormProps extends MUIAddressAutocompleteProps {
@@ -48,6 +50,20 @@ interface ParsedAddress {
 }
 
 /**
+ * Resolve a react-hook-form error by field path.
+ *
+ * Field names may be nested (`customer.address`), so a flat `errors[name]`
+ * lookup silently misses them — walk the path instead.
+ */
+function fieldError(errors: Record<string, unknown>, name: string): string | undefined {
+  const node = name
+    .split('.')
+    .reduce<unknown>((acc, key) => (acc as Record<string, unknown> | undefined)?.[key], errors);
+  const message = (node as { message?: unknown } | undefined)?.message;
+  return typeof message === 'string' ? message : undefined;
+}
+
+/**
  * AddressAutocompleteForm Component (descendant of APIProvider)
  */
 function AddressAutocompleteForm({
@@ -60,6 +76,7 @@ function AddressAutocompleteForm({
   longitudeName = 'longitude',
   showMap = false,
   required = false,
+  disabled = false,
   mapsError: externalMapsError = null,
 }: AddressAutocompleteFormProps): React.JSX.Element {
   const {
@@ -342,7 +359,7 @@ function AddressAutocompleteForm({
         mode="autocomplete"
         id="address-autocomplete-search"
         fieldLabel="Search Location"
-        disabled={!apiIsLoaded || Boolean(mapsError)}
+        disabled={disabled || !apiIsLoaded || Boolean(mapsError)}
         options={searchOptions}
         value={null}
         onChange={handleOptionSelect}
@@ -377,8 +394,9 @@ function AddressAutocompleteForm({
         size="small"
         multiline
         rows={3}
+        disabled={disabled}
         {...register(addressName)}
-        error={errors[addressName]?.message as string | undefined}
+        error={fieldError(errors, addressName)}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -388,8 +406,9 @@ function AddressAutocompleteForm({
           required={required}
           placeholder="Enter city"
           size="small"
+          disabled={disabled}
           {...register(cityName)}
-          error={errors[cityName]?.message as string | undefined}
+          error={fieldError(errors, cityName)}
         />
 
         <MUIInput
@@ -398,8 +417,9 @@ function AddressAutocompleteForm({
           required={required}
           placeholder="Enter state"
           size="small"
+          disabled={disabled}
           {...register(stateName)}
-          error={errors[stateName]?.message as string | undefined}
+          error={fieldError(errors, stateName)}
         />
 
         <MUIInput
@@ -409,8 +429,9 @@ function AddressAutocompleteForm({
           placeholder="123456"
           size="small"
           inputProps={{ maxLength: 6 }}
+          disabled={disabled}
           {...register(pincodeName)}
-          error={errors[pincodeName]?.message as string | undefined}
+          error={fieldError(errors, pincodeName)}
         />
 
         <MUIInput
@@ -419,8 +440,9 @@ function AddressAutocompleteForm({
           required={required}
           placeholder="Enter country"
           size="small"
+          disabled={disabled}
           {...register(countryName)}
-          error={errors[countryName]?.message as string | undefined}
+          error={fieldError(errors, countryName)}
         />
       </div>
 

@@ -220,7 +220,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
       showToast.error('Cannot perform this action: customer is inactive');
       return;
     }
-    router.push(buildRoute(ROUTES.CUSTOMERS.ADD_PROPERTY, { id: customerId }));
+    router.push(buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId }));
   };
 
   const handleCreateQuote = (): void => {

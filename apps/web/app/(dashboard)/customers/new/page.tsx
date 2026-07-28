@@ -1,10 +1,12 @@
-import { CustomerForm } from '@/components/features/customers';
+import { redirect } from 'next/navigation';
+
+import { ROUTES } from '@/lib/config/routes';
 
 /**
- * Create Customer Page
- * Thin wrapper - all logic in feature component
+ * Superseded by the unified onboarding wizard — kept as a redirect so
+ * existing bookmarks/links keep working.
  */
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for pages
-export default function CreateCustomerPage(): React.JSX.Element {
-  return <CustomerForm mode="create" />;
+export default function CreateCustomerPage(): never {
+  redirect(ROUTES.ONBOARDING.NEW);
 }

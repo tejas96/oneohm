@@ -5,12 +5,13 @@ import { normalizeConsumerNumber } from '@tejas96/shared/utils';
 import * as React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import { useDiscomById, useDiscoms } from '../../../hooks/use-discoms';
+import { useDiscomById, useDiscoms } from '../../hooks/use-discoms';
 
 import { ConnectionTypeSelector } from '@/components/shared/forms';
-import { MUIInput, MUITypography } from '@/components/ui';
+import { MUIInput } from '@/components/ui';
 
-export function Step3Utility(): React.JSX.Element {
+/** DISCOM + consumer fields. Card chrome is supplied by the wizard's StepCard. */
+export function UtilityFields(): React.JSX.Element {
   const {
     register,
     setValue,
@@ -45,14 +46,7 @@ export function Step3Utility(): React.JSX.Element {
   }, [discomId, discomOptions]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <MUITypography variant="sectionTitle">Electricity Details</MUITypography>
-        <MUITypography variant="body" className="mt-1 text-foreground-secondary">
-          Provide your DISCOM connection information
-        </MUITypography>
-      </div>
-
+    <div className="space-y-5">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Controller
           name="discomId"
@@ -90,37 +84,48 @@ export function Step3Utility(): React.JSX.Element {
         />
 
         <MUIInput
-          fieldLabel="Consumer Name"
+          fieldLabel="Consumer name"
           required
           id="consumerName"
-          placeholder="Name on electricity bill"
+          placeholder="Name printed on the bill"
           size="small"
           {...register('consumerName')}
           error={errors.consumerName?.message as string | undefined}
         />
       </div>
 
-      <MUIInput
-        fieldLabel="Consumer Number"
-        required
-        id="consumerNumber"
-        placeholder="10–12 digit consumer number"
-        size="small"
-        inputMode="numeric"
-        maxLength={12}
-        {...register('consumerNumber', {
-          onChange: (e) => {
-            const normalized = normalizeConsumerNumber(e.target.value);
-            if (normalized !== e.target.value) {
-              setValue('consumerNumber', normalized, {
-                shouldDirty: true,
-                shouldValidate: true,
-              });
-            }
-          },
-        })}
-        error={errors.consumerNumber?.message as string | undefined}
-      />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <MUIInput
+          fieldLabel="Consumer number"
+          required
+          id="consumerNumber"
+          placeholder="10–12 digits"
+          size="small"
+          inputMode="numeric"
+          maxLength={12}
+          {...register('consumerNumber', {
+            onChange: (e) => {
+              const normalized = normalizeConsumerNumber(e.target.value);
+              if (normalized !== e.target.value) {
+                setValue('consumerNumber', normalized, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }
+            },
+          })}
+          error={errors.consumerNumber?.message as string | undefined}
+        />
+
+        <MUIInput
+          fieldLabel="Meter number"
+          id="meterNumber"
+          placeholder="MTR123456"
+          size="small"
+          {...register('meterNumber')}
+          error={errors.meterNumber?.message as string | undefined}
+        />
+      </div>
 
       <Controller
         name="connectionType"
@@ -137,13 +142,13 @@ export function Step3Utility(): React.JSX.Element {
         )}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <MUIInput
-          fieldLabel="Sanctioned Load (kW)"
+          fieldLabel="Sanctioned load (kW)"
           id="sanctionedLoad"
           type="number"
           step="0.5"
-          placeholder="e.g. 5"
+          placeholder="5"
           size="small"
           {...register('sanctionedLoad', {
             setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
@@ -152,21 +157,12 @@ export function Step3Utility(): React.JSX.Element {
         />
 
         <MUIInput
-          fieldLabel="Current Load"
+          fieldLabel="Current load"
           id="currentLoad"
-          placeholder="e.g. 5 KW"
+          placeholder="e.g. 4.2 kW average"
           size="small"
           {...register('currentLoad')}
           error={errors.currentLoad?.message as string | undefined}
-        />
-
-        <MUIInput
-          fieldLabel="Meter Number"
-          id="meterNumber"
-          placeholder="Enter meter number"
-          size="small"
-          {...register('meterNumber')}
-          error={errors.meterNumber?.message as string | undefined}
         />
       </div>
     </div>

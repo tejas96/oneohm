@@ -41,8 +41,16 @@ export const PROPERTY_TYPE_OPTIONS = [
 // ============================================================================
 
 export const CONNECTION_TYPE_OPTIONS = [
-  { value: ConnectionType.SINGLE_PHASE, label: 'Single Phase' },
-  { value: ConnectionType.THREE_PHASE, label: 'Three Phase' },
+  {
+    value: ConnectionType.SINGLE_PHASE,
+    label: 'Single phase',
+    description: 'Most homes up to 5 kW',
+  },
+  {
+    value: ConnectionType.THREE_PHASE,
+    label: 'Three phase',
+    description: 'Larger homes, shops, industry',
+  },
 ] as const;
 
 // ============================================================================

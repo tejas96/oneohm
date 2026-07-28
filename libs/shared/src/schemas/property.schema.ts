@@ -75,7 +75,7 @@ export const createPropertySchema = z.object({
 
 export type CreatePropertyFormData = z.infer<typeof createPropertySchema>;
 
-/** @deprecated Use createPropertySchema instead */
+/** Property fields without `customerId` — used wherever the customer is resolved separately (e.g. the onboarding wizard). */
 export const addPropertySchema = createPropertySchema.omit({ customerId: true });
 export type AddPropertyFormData = z.infer<typeof addPropertySchema>;
 

@@ -19,7 +19,6 @@ export type { CustomerDetailTab } from './constants';
 // feature actually needs them; a one-line addition when that happens.
 export { CustomerListPage } from './components/customer-list-page';
 export { CustomerDetailPage } from './components/customer-detail-page';
-export { CustomerForm } from './components/customer-form';
 export { ImportCustomersModal } from './components/import-customers-modal';
 export { PropertyCard } from './components/property-card';
 export { PropertySelectModal } from './components/property-select-modal';
@@ -39,6 +38,11 @@ export {
   useCreateCustomer,
   useCheckAvailability,
   customerKeys,
+  useCustomers,
+  useCustomer,
+  useUpdateCustomer,
+  useUpdateCustomerStatus,
+  useCustomerGroups,
   useCustomerProperties,
   useProperty,
   propertyKeys,
@@ -49,6 +53,10 @@ export type {
   CustomerResponse,
   AvailabilityResponse,
   AvailabilityState,
+  Customer,
+  CustomerFilters,
+  CustomerListResponse,
+  CustomerGroup,
   CustomerPropertyResponse,
   PropertyDocument,
   CustomerQuote,

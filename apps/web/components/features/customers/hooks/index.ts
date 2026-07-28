@@ -18,6 +18,7 @@ export {
   useCustomerStats,
   useCustomerOverviewStats,
   useAssignCustomer,
+  useCustomerGroups,
 } from './use-customers';
 export type {
   Customer,
@@ -28,6 +29,7 @@ export type {
   PaginationMeta,
   SitePortfolio,
   UpdateCustomerData,
+  CustomerGroup,
 } from './use-customers';
 
 // Customer properties
