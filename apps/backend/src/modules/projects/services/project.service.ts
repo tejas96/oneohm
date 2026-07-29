@@ -23,6 +23,8 @@ import { DataSource, type EntityManager } from 'typeorm';
 import { ChangeRequestTaskService } from './change-request-task.service';
 import { BomService } from '../../bom/services/bom.service';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
+import { rupeesToPaise } from '../../ledger/domain/paise';
+import { MilestoneService } from '../../ledger/services/milestone.service';
 import { LookupRepository } from '../../lookups/repositories/lookup.repository';
 import {
   CONSUMER_EVENTS,
@@ -30,11 +32,13 @@ import {
   ProjectOnboardedEvent,
 } from '../../notifications/events/consumer-notification.events';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
-import { PaymentTermService } from '../../payment-terms/services/payment-term.service';
+import { QuoteVersionEntity } from '../../quotes/entities/quote-version.entity';
+import { QuoteEntity } from '../../quotes/entities/quote.entity';
 import { QuoteService } from '../../quotes/services/quote.service';
 import { ConvertFromQuoteDto, UpdateProjectDto } from '../dto';
 import { ProjectEntity } from '../entities/project.entity';
 import {
+  type ProjectPaymentSummary,
   ProjectRepository,
   ProjectTaskRepository,
   ProjectTeamRepository,
@@ -76,8 +80,8 @@ export class ProjectService {
     private readonly bomService: BomService,
     private readonly changeRequestTaskService: ChangeRequestTaskService,
     private readonly lookupRepository: LookupRepository,
-    @Inject(forwardRef(() => PaymentTermService))
-    private readonly paymentTermService: PaymentTermService,
+    @Inject(forwardRef(() => MilestoneService))
+    private readonly milestoneService: MilestoneService,
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -113,7 +117,7 @@ export class ProjectService {
     projects: (ProjectEntity & {
       currentPhase: string | null;
       healthStatus: string | null;
-      paymentSummary: { totalExpected: number; totalPaid: number };
+      paymentSummary: ProjectPaymentSummary;
       completedTasks: number;
       totalTasks: number;
       nextTask?: { id: string; name: string; code: string; endDate?: Date } | null;
@@ -193,7 +197,12 @@ export class ProjectService {
       projects.map(async (project) => {
         const currentPhase = await this.computeCurrentPhaseFromTasks(project.id);
         const healthStatus = this.computeHealthStatus(project);
-        const paymentSummary = paymentMap.get(project.id) ?? { totalExpected: 0, totalPaid: 0 };
+        const paymentSummary = paymentMap.get(project.id) ?? {
+          totalExpected: 0,
+          totalPaid: 0,
+          contractValue: 0,
+          outstanding: 0,
+        };
         const taskCounts = taskCountMap.get(project.id) ?? { completedTasks: 0, totalTasks: 0 };
 
         const nextTask = nextTaskMap.get(project.id) ?? null;
@@ -460,24 +469,24 @@ export class ProjectService {
       throw new NotFoundException(`Organization with ID ${organizationId} not found`);
     }
 
-    const latestVersion =
-      [...(quote.versions ?? [])].sort((a, b) => {
-        const createdDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        if (createdDiff !== 0) return createdDiff;
-        return b.versionNumber - a.versionNumber;
-      })[0] ?? null;
+    const contractVersion = this.pickContractQuoteVersion(quote);
+    if (!contractVersion) {
+      throw new BadRequestException(
+        `Quote ${quote.quoteNumber} has no versions; there is nothing to convert.`,
+      );
+    }
 
     const customerName =
       property?.consumerName ||
       `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
       'Customer';
-    const actualKw = latestVersion?.totalWattageWp
-      ? Number(latestVersion.totalWattageWp) / 1000
-      : latestVersion?.systemSizeKw;
+    const actualKw = contractVersion.totalWattageWp
+      ? Number(contractVersion.totalWattageWp) / 1000
+      : contractVersion.systemSizeKw;
     const actualKwFormatted = actualKw != null ? parseFloat(Number(actualKw).toFixed(2)) : '';
     const autoName =
       `${customerName} - ${actualKwFormatted ? `${actualKwFormatted}kW ` : ''}Solar Installation`.trim();
-    const paymentMilestones: PaymentMilestone[] = latestVersion?.paymentMilestones || [];
+    const paymentMilestones: PaymentMilestone[] = contractVersion.paymentMilestones || [];
 
     // Build milestone list: prefer explicit input, else derive names from payment milestone names
     const milestones: Array<{ name: string; order: number }> = convertDto?.milestones?.length
@@ -495,6 +504,10 @@ export class ProjectService {
       projectData: {
         propertyId: quote.propertyId,
         quoteId,
+        // Pin the signed version. Without this the contract silently follows
+        // whatever version happens to be newest, which is precisely the drift
+        // migration 1851000000001 exists to stop.
+        contractQuoteVersionId: contractVersion.id,
         name: convertDto?.name || autoName,
         description:
           convertDto?.description ||
@@ -518,13 +531,16 @@ export class ProjectService {
       taskAssignments: convertDto?.taskAssignments,
       taskMilestoneOverrides: convertDto?.taskMilestoneOverrides,
       paymentTermSnapshot: {
-        sourceVersionId: latestVersion?.id ?? null,
+        sourceVersionId: contractVersion.id,
         milestones: paymentMilestones,
+        // Gross contract, in paise. Subsidy is NOT deducted: the government
+        // pays the customer directly, so the customer owes the full amount.
+        contractPaise: rupeesToPaise(Number(contractVersion.finalPrice ?? 0)),
       },
     });
 
     // Copy BOM from quote version to project
-    await this.copyQuoteBomToProject(organizationId, latestVersion?.id, project.id, createdBy);
+    await this.copyQuoteBomToProject(organizationId, contractVersion.id, project.id, createdBy);
 
     // Notify consumer about project onboarding (fire-and-forget)
     this.eventEmitter.emit(
@@ -635,6 +651,49 @@ export class ProjectService {
         endDate: task.endDate!,
       })),
     };
+  }
+
+  /**
+   * The quote version the customer actually signed.
+   *
+   * Taking the plain latest version is the defect this exists to prevent: a
+   * quote revised after acceptance would silently move the contract, which is
+   * how 12 production projects came to disagree with their own milestones.
+   *
+   * ACCEPTED is a terminal status and `update()` refuses accepted quotes, so in
+   * practice no version should post-date acceptance — but nothing in the schema
+   * enforces that, so anchor on `acceptedAt` explicitly rather than trusting it.
+   *
+   * Sorts on `version_number` first: it is NOT NULL and unique per quote, while
+   * `quote_versions.created_at` is nullable and therefore an unsafe primary key
+   * for ordering. When acceptance tells us nothing, fall back to the EARLIEST
+   * version — the state at conversion — never the latest. That matches the
+   * deliberate choice in BACKFILL_CONTRACT_QUOTE_VERSION.
+   */
+  private pickContractQuoteVersion(quote: QuoteEntity): QuoteVersionEntity | null {
+    const versions = quote.versions ?? [];
+    if (versions.length === 0) return null;
+
+    const byVersionDesc = [...versions].sort((a, b) => {
+      const n = b.versionNumber - a.versionNumber;
+      if (n !== 0) return n;
+      return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+    });
+
+    const acceptedAt = quote.acceptedAt ? new Date(quote.acceptedAt).getTime() : null;
+    if (acceptedAt !== null) {
+      const signed = byVersionDesc.find(
+        (v) => !v.createdAt || new Date(v.createdAt).getTime() <= acceptedAt,
+      );
+      if (signed) return signed;
+    }
+
+    const earliest = byVersionDesc[byVersionDesc.length - 1]!;
+    this.logger.warn(
+      `Quote ${quote.quoteNumber}: no version resolvable from acceptedAt; ` +
+        `pinning earliest version ${earliest.versionNumber} (${earliest.id}) as the contract.`,
+    );
+    return earliest;
   }
 
   /**
@@ -796,6 +855,7 @@ export class ProjectService {
     paymentTermSnapshot?: {
       sourceVersionId: string | null;
       milestones: PaymentMilestone[] | null | undefined;
+      contractPaise: number;
     };
   }): Promise<ProjectEntity> {
     const {
@@ -878,11 +938,15 @@ export class ProjectService {
       // Idempotent — no-op if any term already exists for the project.
       // Failure here rolls back the entire project-creation transaction.
       if (paymentTermSnapshot) {
-        await this.paymentTermService.snapshotFromQuoteVersion({
+        await this.milestoneService.snapshotFromQuoteVersion({
           projectId: project.id,
+          organizationId,
           sourceVersionId: paymentTermSnapshot.sourceVersionId,
           milestones: paymentTermSnapshot.milestones,
-          organizationId,
+          // Lets the snapshot derive amounts from percentages when a milestone
+          // carries no explicit amount, rather than silently dropping it and
+          // leaving the schedule short of the contract.
+          contractPaise: paymentTermSnapshot.contractPaise,
           createdBy,
           manager,
         });

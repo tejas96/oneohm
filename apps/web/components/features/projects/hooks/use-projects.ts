@@ -47,9 +47,20 @@ export interface TeamMemberSummary {
   isProjectManager: boolean;
 }
 
+/**
+ * A project's money position, in rupees, straight from the ledger view.
+ *
+ * `contractValue` is the number to show anywhere a project's worth is quoted:
+ * the original quote plus every agreed change order. The list used to render
+ * `estimatedCost` (the quote alone) under the heading "Value" while the project's
+ * own Money tab showed this figure under "Contract" — both correct, neither
+ * reconcilable without opening the project.
+ */
 export interface PaymentSummary {
   totalExpected: number;
   totalPaid: number;
+  contractValue: number;
+  outstanding: number;
 }
 
 export interface ProjectListItem {

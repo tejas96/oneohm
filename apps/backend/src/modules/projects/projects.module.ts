@@ -43,9 +43,9 @@ import {
 } from './services';
 import { BomModule } from '../bom/bom.module';
 import { CustomersModule } from '../customers/customers.module';
+import { LedgerModule } from '../ledger/ledger.module';
 import { LookupsModule } from '../lookups/lookups.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
-import { PaymentTermsModule } from '../payment-terms/payment-terms.module';
 import { QuotesModule } from '../quotes/quotes.module';
 import { UsersModule } from '../users/users.module';
 
@@ -65,7 +65,7 @@ import { UsersModule } from '../users/users.module';
     UsersModule,
     LookupsModule,
     BomModule,
-    forwardRef(() => PaymentTermsModule),
+    forwardRef(() => LedgerModule),
   ],
   controllers: [
     ProjectAnalyticsController, // registered before ProjectController — static 'analytics' segments resolve first

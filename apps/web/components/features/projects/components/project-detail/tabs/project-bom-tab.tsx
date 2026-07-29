@@ -7,7 +7,7 @@ import React, { useMemo, useState } from 'react';
 
 import { ProjectWarehouseSelector } from './overview/project-warehouse-selector';
 
-import { ProcurementSection } from '@/components/features/finance';
+import { ProcurementSection } from '@/components/features/projects/components/procurement/procurement-section';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { MUITypography } from '@/components/ui/mui-typography';

@@ -40,6 +40,10 @@ export interface Receipt {
   ifscCode?: string | null;
   transactionId?: string | null;
   status: PaymentTransactionStatus;
+  /** Date the money actually moved (IST business date), not the data-entry date. */
+  paidAt: string;
+  /** True only for historical rows backfilled from createdAt. */
+  paidAtIsInferred: boolean;
   reconciledAt?: string | null;
   reconciledBy?: string | null;
   notes?: string | null;
@@ -119,11 +123,12 @@ export const receiptKeys = {
 // ============================================================================
 
 /**
- * List receipts for a project. We hit the legacy `/payments/project/:id`
- * endpoint because that's the only flat-list route the backend exposes
- * for receipts in v1 — `/receipts/*` only covers create/update/delete/
- * summary in this slice. The shape is identical (PaymentResponseDto), so
- * downstream consumers see Receipt[] either way.
+ * List receipts for a project.
+ *
+ * Uses `/receipts/project/:id`. The legacy `/payments/project/:id` route this
+ * previously called is not organization-scoped and belongs to the deprecated
+ * PaymentController surface; the replacement returns the same
+ * PaymentResponseDto shape.
  */
 export function useProjectReceipts(
   projectId: string,
@@ -133,7 +138,7 @@ export function useProjectReceipts(
   return useQuery({
     queryKey: receiptKeys.byProject(organizationId, projectId),
     queryFn: async ({ signal }): Promise<Receipt[]> => {
-      const { data } = await apiClient.get<Receipt[]>(`/payments/project/${projectId}`, {
+      const { data } = await apiClient.get<Receipt[]>(`/receipts/project/${projectId}`, {
         headers: orgHeaders,
         signal,
       });

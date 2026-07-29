@@ -48,6 +48,18 @@ export class ProjectEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'quote_id' })
   quoteId!: string;
 
+  /**
+   * The quote version this project's contract was struck from, pinned at
+   * conversion (migration 1851000000001).
+   *
+   * Without it, every reader re-derived contract value by taking the LATEST
+   * version of the quote — so revising a quote after conversion silently
+   * re-priced a signed deal. This is provenance, not a cached total: contract
+   * value itself stays derived as SUM(payment_milestones.amount_paise).
+   */
+  @Column({ type: 'uuid', name: 'contract_quote_version_id', nullable: true })
+  contractQuoteVersionId?: string | null;
+
   // ==================== Status & Progress ====================
 
   @Column({ type: 'varchar', length: 50, default: ProjectStatus.ACTIVE })

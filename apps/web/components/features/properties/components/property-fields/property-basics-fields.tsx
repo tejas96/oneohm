@@ -95,8 +95,12 @@ export function PropertyBasicsFields({
               {isPrimary ? 'Shows first on the customer record' : 'Filed as an additional site'}
             </Box>
           </Box>
+          {/* The switch renders as a bare input[role=switch] with no associated
+              label, so assistive tech announced only "switch, unchecked" — the
+              heading beside it is a plain Box, not a <label>. */}
           <MUISwitch
             id="isPrimary"
+            aria-label="Primary site for this customer"
             checked={isPrimary}
             onCheckedChange={(checked) => setValue('isPrimary', checked, { shouldDirty: true })}
           />

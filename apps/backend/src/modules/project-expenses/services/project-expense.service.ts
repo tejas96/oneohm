@@ -17,6 +17,7 @@ import {
 } from '@tejas96/shared/types';
 import { DataSource, EntityManager } from 'typeorm';
 
+import { assertMoneyWritesAllowed } from '../../../common/utils';
 import { BomService } from '../../bom/services/bom.service';
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { ProjectRepository } from '../../projects/repositories';
@@ -83,6 +84,7 @@ export class ProjectExpenseService {
     createdBy: string,
     permissions: { canOverrideProcurementGuard: boolean },
   ): Promise<ProjectExpenseEntity> {
+    assertMoneyWritesAllowed();
     this.assertExpenseDate(dto.expenseDate);
     this.assertPaidByConsistency(dto);
     this.assertItemizationCategory(dto.category, dto.productLinks);

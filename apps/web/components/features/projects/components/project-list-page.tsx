@@ -313,56 +313,70 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
   },
   {
     field: 'estimatedCost',
-    headerName: 'Value',
+    headerName: 'Contract',
     sortable: true,
-    width: 160,
+    width: 190,
     cellSx: { verticalAlign: 'top', py: 1 },
+    /**
+     * One number, one word, one source.
+     *
+     * This column read `estimatedCost` (`cv.finalPrice` — the quote) under the
+     * heading "Value", while the project's Money tab read `v_project_balance`
+     * under "Contract". A project with change orders therefore showed
+     * ₹2,58,568 here and ₹2,98,568.04 there, both correct, with nothing on
+     * either screen explaining the gap. It now reads the same ledger view the
+     * Money tab does, and says so with the same word.
+     *
+     * The second line answers the question a project list is actually for —
+     * "is this one collected?" — which previously required opening every row.
+     */
     renderCell: ({ row }): JSX.Element => {
       const project = row as ProjectListItem;
-      const estimated = project.estimatedCost ?? null;
-      const actual = project.actualCost ?? null;
-      if (estimated === null && actual === null) {
+      const contract = project.paymentSummary?.contractValue ?? null;
+      const outstanding = project.paymentSummary?.outstanding ?? 0;
+      const quoted = project.estimatedCost ?? null;
+
+      if (contract === null || contract === 0) {
         return <MUITypography variant="placeholder">-</MUITypography>;
       }
-      const quoteHref = buildRoute(ROUTES.QUOTES.DETAIL, { id: project.quoteId });
+
+      // Only worth mentioning when the contract has actually moved off the quote.
+      const changeOrders = quoted != null ? contract - quoted : 0;
+      const hasChangeOrders = Math.abs(changeOrders) >= 0.01;
+      const projectHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id });
+
       return (
         <Box>
-          {estimated != null && (
-            <MuiLink
-              component={NextLink}
-              href={quoteHref}
-              underline="hover"
-              onClick={(e: MouseEvent) => e.stopPropagation()}
-              sx={{ display: 'block', fontWeight: 500, fontSize: '0.875rem', whiteSpace: 'nowrap' }}
+          <MuiLink
+            component={NextLink}
+            href={`${projectHref}?tab=finance`}
+            underline="hover"
+            onClick={(e: MouseEvent) => e.stopPropagation()}
+            sx={{ display: 'block', fontWeight: 500, fontSize: '0.875rem', whiteSpace: 'nowrap' }}
+          >
+            {formatCurrency(contract)}
+          </MuiLink>
+
+          {hasChangeOrders && (
+            <MUITypography
+              variant="timestamp"
+              sx={{ display: 'block', color: 'text.disabled', whiteSpace: 'nowrap' }}
             >
-              {formatCurrency(estimated)}
-            </MuiLink>
+              {`quote ${formatCurrency(quoted ?? 0)} ${changeOrders > 0 ? '+' : '−'} ${formatCurrency(Math.abs(changeOrders))}`}
+            </MUITypography>
           )}
-          {actual != null && (
-            <Box sx={{ mt: estimated != null ? 0.5 : 0 }}>
-              <MUITypography variant="timestamp" sx={{ color: 'text.disabled' }}>
-                Actual
-              </MUITypography>
-              <MuiLink
-                component={NextLink}
-                href={quoteHref}
-                underline="hover"
-                onClick={(e: MouseEvent) => e.stopPropagation()}
-                sx={{
-                  display: 'block',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  whiteSpace: 'nowrap',
-                  color: actual > (estimated ?? 0) ? 'error.main' : 'success.main',
-                  '&:hover': {
-                    color: actual > (estimated ?? 0) ? 'error.dark' : 'success.dark',
-                  },
-                }}
-              >
-                {formatCurrency(actual)}
-              </MuiLink>
-            </Box>
-          )}
+
+          <MUITypography
+            variant="timestamp"
+            sx={{
+              display: 'block',
+              whiteSpace: 'nowrap',
+              fontWeight: 600,
+              color: outstanding > 0 ? 'warning.main' : 'success.main',
+            }}
+          >
+            {outstanding > 0 ? `${formatCurrency(outstanding)} due` : 'Paid in full'}
+          </MUITypography>
         </Box>
       );
     },

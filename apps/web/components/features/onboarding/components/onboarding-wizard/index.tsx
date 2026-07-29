@@ -154,7 +154,11 @@ function buildDefaults(
     customer: undefined,
     propertyName: '',
     propertyType: PropertyType.RESIDENTIAL,
-    isPrimary: false,
+    // A customer's first site is their primary one. Defaulting it off filed a
+    // brand-new customer's only site as "an additional site", which is both
+    // wrong and something nobody thinks to correct. Adding a second site to an
+    // existing customer keeps the old default.
+    isPrimary: !customer,
     address: customer?.address ?? '',
     city: customer?.city ?? '',
     state: customer?.state ?? '',

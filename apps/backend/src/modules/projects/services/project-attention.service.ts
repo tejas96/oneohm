@@ -3,16 +3,23 @@ import {
   type AttentionItem,
   type AttentionSeverity,
   MaterialStatus,
-  PaymentTransactionStatus,
   TaskStatus,
 } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
-import { PaymentEntity } from '../../payments/entities';
 import type { AttentionResponseDto } from '../dto/attention-response.dto';
 import { MaterialRepository } from '../repositories/material.repository';
 import { ProjectTaskRepository } from '../repositories/project-task.repository';
 import { ProjectRepository } from '../repositories/project.repository';
+
+/** A row of `v_milestone_balance`, narrowed to what the alert needs. */
+interface OutstandingMilestone {
+  milestoneId: string;
+  name: string;
+  balancePaise: number;
+  daysOverdue: number;
+  derivedStatus: string;
+}
 
 const ATTENTION_SERVICE_CONSTANTS = {
   UPCOMING_DAYS: 7,
@@ -51,10 +58,10 @@ export class ProjectAttentionService {
     // Ownership validation first to guarantee org isolation for all downstream queries.
     await this.projectRepository.findById(projectId, organizationId);
 
-    const [tasks, materials, payments] = await Promise.all([
+    const [tasks, materials, outstanding] = await Promise.all([
       this.projectTaskRepository.findAllForBoard(projectId),
       this.materialRepository.findByProject(projectId),
-      this.findPendingPayments(projectId, organizationId),
+      this.findOutstandingMilestones(projectId, organizationId),
     ]);
 
     const now = new Date();
@@ -189,19 +196,22 @@ export class ProjectAttentionService {
       });
     }
 
-    // ── Payment due alerts ────────────────────────────────────────────────
-    for (const payment of payments.slice(0, ATTENTION_SERVICE_CONSTANTS.PAYMENT_SAMPLE_SIZE)) {
-      const pendingAmount = Math.max(
-        0,
-        Number(payment.expectedAmount) - Number(payment.paidAmount),
-      );
-      if (pendingAmount <= 0) continue;
+    // ── Outstanding milestone alerts ──────────────────────────────────────
+    // Previously this scanned `payments` for `expected_amount > paid_amount`.
+    // That compared a receipt against a plan figure duplicated onto every
+    // receipt of a milestone, so two ₹25k receipts against one ₹50k milestone
+    // each looked ₹25k short. Outstanding is a property of the MILESTONE, and
+    // `v_milestone_balance` is the single place it is defined.
+    for (const milestone of outstanding.slice(0, ATTENTION_SERVICE_CONSTANTS.PAYMENT_SAMPLE_SIZE)) {
       items.push({
-        id: `payment:${payment.id}:due`,
+        id: `milestone:${milestone.milestoneId}:due`,
         kind: 'payment_due',
-        severity: 'warning',
-        title: `Payment ${payment.paymentNumber} is pending`,
-        subtitle: `${this.formatInr(pendingAmount)} due`,
+        severity: milestone.daysOverdue > 0 ? 'critical' : 'warning',
+        title: `${milestone.name} is ${milestone.derivedStatus}`,
+        subtitle:
+          milestone.daysOverdue > 0
+            ? `${this.formatInr(milestone.balancePaise / 100)} short · ${milestone.daysOverdue} days overdue`
+            : `${this.formatInr(milestone.balancePaise / 100)} short`,
         href: `/projects/${projectId}?tab=payments`,
       });
     }
@@ -217,22 +227,32 @@ export class ProjectAttentionService {
       .slice(0, ATTENTION_SERVICE_CONSTANTS.MAX_ITEMS);
   }
 
-  private async findPendingPayments(
+  /**
+   * Milestones with money still owed, worst first.
+   *
+   * Waived milestones are excluded by the view's `status` filter, so a waived
+   * residual no longer nags forever — the contradiction where the finance
+   * dashboard dropped a waived amount while the project card kept reporting it.
+   */
+  private async findOutstandingMilestones(
     projectId: string,
     organizationId: string,
-  ): Promise<PaymentEntity[]> {
-    return this.dataSource
-      .getRepository(PaymentEntity)
-      .createQueryBuilder('payment')
-      .where('payment.projectId = :projectId', { projectId })
-      .andWhere('payment.organizationId = :organizationId', { organizationId })
-      .andWhere('payment.deletedAt IS NULL')
-      .andWhere('payment.status IN (:...statuses)', {
-        statuses: [PaymentTransactionStatus.PENDING, PaymentTransactionStatus.RECEIVED],
-      })
-      .andWhere('payment.expectedAmount > payment.paidAmount')
-      .orderBy('payment.createdAt', 'ASC')
-      .getMany();
+  ): Promise<OutstandingMilestone[]> {
+    return this.dataSource.query(
+      `SELECT
+         milestone_id   AS "milestoneId",
+         name,
+         balance_paise  AS "balancePaise",
+         days_overdue   AS "daysOverdue",
+         derived_status AS "derivedStatus"
+       FROM v_milestone_balance
+       WHERE project_id = $1
+         AND organization_id = $2
+         AND status = 'active'
+         AND balance_paise > 0
+       ORDER BY days_overdue DESC, display_order ASC`,
+      [projectId, organizationId],
+    );
   }
 
   private buildTaskHref(projectId: string, taskCode: string): string {

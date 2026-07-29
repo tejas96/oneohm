@@ -45,6 +45,8 @@ export enum DocumentEntityType {
   QUOTE = 'quote',
   PAYMENT = 'payment',
   PROJECT_EXPENSE = 'project_expense',
+  /** Proof attached to a ledger entry — a cheque image, UPI screenshot, vendor bill. */
+  LEDGER_ENTRY = 'ledger_entry',
 }
 
 /**

@@ -21,8 +21,8 @@ import { PROJECT_DETAIL_TABS, type ProjectDetailTab } from '../../constants';
 import { useProject, useProjectTeam } from '../../hooks/use-project-detail';
 import { useProjectReports } from '../../hooks/use-project-reports';
 
-import { ProjectFinanceTab } from '@/components/features/finance';
 import { ProjectAllocationsTab } from '@/components/features/inventory';
+import { ProjectMoneyTab } from '@/components/features/ledger/project-money-tab';
 import { Alert } from '@/components/shared/alerts/alert';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -202,7 +202,13 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
         </Box>
 
         <Box sx={{ display: activeTab === 'finance' ? 'block' : 'none' }}>
-          <ProjectFinanceTab projectId={projectId} isActive={activeTab === 'finance'} />
+          {/* `project` supplies the receipt's customer, site and project header
+              with no extra request — the Money tab has no such data of its own. */}
+          <ProjectMoneyTab
+            projectId={projectId}
+            project={project}
+            isActive={activeTab === 'finance'}
+          />
         </Box>
 
         <Box sx={{ display: activeTab === 'bom' ? 'block' : 'none' }}>

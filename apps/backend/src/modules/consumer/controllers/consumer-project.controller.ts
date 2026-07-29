@@ -6,7 +6,7 @@ import { OrganizationContext } from '../../../common/decorators';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { JwtAuthGuard } from '../../auth/guards';
 import { DocumentService } from '../../documents/services/document.service';
-import { ReceiptService } from '../../payments/services/receipt.service';
+import { ProjectLedgerService } from '../../ledger/services/project-ledger.service';
 import { ProjectResponseDto } from '../../projects/dto';
 import { ProjectSummaryResponseDto } from '../../projects/dto/analytics';
 import { ProjectRepository } from '../../projects/repositories/project.repository';
@@ -35,7 +35,7 @@ export class ConsumerProjectController {
     private readonly projectService: ProjectService,
     private readonly projectAnalyticsService: ProjectAnalyticsService,
     private readonly projectRepository: ProjectRepository,
-    private readonly receiptService: ReceiptService,
+    private readonly projectLedgerService: ProjectLedgerService,
     private readonly documentService: DocumentService,
   ) {}
 
@@ -106,7 +106,7 @@ export class ConsumerProjectController {
     @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ConsumerProjectPaymentsResponseDto> {
-    const summary = await this.receiptService.getProjectSummary(projectId, organizationId);
+    const summary = await this.projectLedgerService.getProjectSummary(projectId, organizationId);
     const project = await this.projectService.findById(projectId, organizationId);
     const { contractValue } = resolveQuoteFinancialFields(project);
 
@@ -136,7 +136,7 @@ export class ConsumerProjectController {
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ConsumerFinancialSummaryResponseDto> {
     const [summary, project] = await Promise.all([
-      this.receiptService.getProjectSummary(projectId, organizationId),
+      this.projectLedgerService.getProjectSummary(projectId, organizationId),
       this.projectService.findById(projectId, organizationId),
     ]);
     const { contractValue, subsidyAmount, netCost } = resolveQuoteFinancialFields(project);

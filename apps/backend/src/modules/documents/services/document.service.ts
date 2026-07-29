@@ -192,6 +192,16 @@ export class DocumentService {
                ORDER BY is_primary DESC, created_at ASC
                LIMIT 1`;
         break;
+      case DocumentEntityType.LEDGER_ENTRY: {
+        // Ledger entries know their project; the property comes through it.
+        const ledgerRows = await this.dataSource.query(
+          `SELECT p.property_id FROM ledger_entries le
+             JOIN projects p ON p.id = le.project_id
+            WHERE le.id = $1`,
+          [entityId],
+        );
+        return (ledgerRows[0]?.property_id as string | undefined) ?? null;
+      }
       case DocumentEntityType.PROJECT_EXPENSE:
         sql = `SELECT p.property_id AS pid FROM project_expenses pe
                JOIN projects p ON pe.project_id = p.id

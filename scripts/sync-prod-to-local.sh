@@ -8,14 +8,20 @@ PROD_USER="oneohm"
 PROD_PASSWORD='OneOhm@Secure2025!'
 PROXY_PORT=15432
 
-# ─── Local (Docker Compose) ───
-LOCAL_HOST="localhost"
-LOCAL_PORT=5436
+# ─── Local (oneohm-postgres container — matches apps/backend/.env) ───
+LOCAL_CONTAINER="oneohm-postgres"
 LOCAL_DB="oneohm_epc"
-LOCAL_USER="oneohm"
-LOCAL_PASSWORD="postgres"
+LOCAL_USER="root"
+LOCAL_PASSWORD="root"
 
-DUMP_FILE="/tmp/oneohm_epc_prod_dump.sql"
+# pg_dump/psql/pg_isready are NOT required on the host — they run inside
+# $LOCAL_CONTAINER via `docker exec`, since that's where they already exist
+# (postgres:15-alpine image). The container reaches the fly proxy on the host
+# via host.docker.internal.
+DUMP_FILE="${TMPDIR:-/tmp}/oneohm_epc_prod_dump.sql"
+
+dexec() { docker exec "$LOCAL_CONTAINER" "$@"; }
+dexec_i() { docker exec -i "$LOCAL_CONTAINER" "$@"; }
 
 cleanup() {
   if [[ -n "${PROXY_PID:-}" ]] && kill -0 "$PROXY_PID" 2>/dev/null; then
@@ -29,17 +35,20 @@ cleanup() {
 trap cleanup EXIT
 
 # ─── Preflight checks ───
-for cmd in flyctl pg_dump psql pg_isready; do
+for cmd in flyctl docker; do
   if ! command -v "$cmd" &>/dev/null; then
     echo "ERROR: '$cmd' is required but not found in PATH." >&2
     exit 1
   fi
 done
 
-echo "Checking local database is reachable on $LOCAL_HOST:$LOCAL_PORT..."
-if ! PGPASSWORD="$LOCAL_PASSWORD" pg_isready -h "$LOCAL_HOST" -p "$LOCAL_PORT" -U "$LOCAL_USER" &>/dev/null; then
-  echo "ERROR: Local PostgreSQL is not reachable at $LOCAL_HOST:$LOCAL_PORT."
-  echo "       Start it with:  docker compose up postgres -d"
+echo "Checking local container '$LOCAL_CONTAINER' is running..."
+if ! docker inspect -f '{{.State.Running}}' "$LOCAL_CONTAINER" 2>/dev/null | grep -q true; then
+  echo "ERROR: Container '$LOCAL_CONTAINER' is not running."
+  exit 1
+fi
+if ! dexec env PGPASSWORD="$LOCAL_PASSWORD" pg_isready -U "$LOCAL_USER" &>/dev/null; then
+  echo "ERROR: Local PostgreSQL inside '$LOCAL_CONTAINER' is not ready."
   exit 1
 fi
 echo "  Local database is up."
@@ -58,7 +67,7 @@ PROXY_PID=$!
 echo "  Waiting for proxy to be ready..."
 READY=false
 for _ in $(seq 1 30); do
-  if pg_isready -h localhost -p "$PROXY_PORT" -U "$PROD_USER" &>/dev/null; then
+  if dexec env PGPASSWORD="$PROD_PASSWORD" pg_isready -h host.docker.internal -p "$PROXY_PORT" -U "$PROD_USER" &>/dev/null; then
     READY=true
     break
   fi
@@ -75,11 +84,11 @@ if [[ "$READY" != "true" ]]; then
 fi
 echo "  Proxy is ready."
 
-# ─── 2. Dump production database ───
+# ─── 2. Dump production database (pg_dump runs inside the container, over host.docker.internal) ───
 echo ""
 echo "Dumping production database '$PROD_DB'..."
-PGPASSWORD="$PROD_PASSWORD" pg_dump \
-  -h localhost \
+dexec env PGPASSWORD="$PROD_PASSWORD" pg_dump \
+  -h host.docker.internal \
   -p "$PROXY_PORT" \
   -U "$PROD_USER" \
   -d "$PROD_DB" \
@@ -108,33 +117,31 @@ echo "  Proxy stopped."
 echo ""
 echo "Dropping and recreating local database '$LOCAL_DB'..."
 
-PGPASSWORD="$LOCAL_PASSWORD" psql \
-  -h "$LOCAL_HOST" -p "$LOCAL_PORT" -U "$LOCAL_USER" -d postgres \
+dexec env PGPASSWORD="$LOCAL_PASSWORD" psql \
+  -U "$LOCAL_USER" -d postgres \
   -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$LOCAL_DB' AND pid <> pg_backend_pid();" \
   >/dev/null 2>&1 || true
 
-PGPASSWORD="$LOCAL_PASSWORD" psql \
-  -h "$LOCAL_HOST" -p "$LOCAL_PORT" -U "$LOCAL_USER" -d postgres \
+dexec env PGPASSWORD="$LOCAL_PASSWORD" psql \
+  -U "$LOCAL_USER" -d postgres \
   -c "DROP DATABASE IF EXISTS \"$LOCAL_DB\";"
 
-PGPASSWORD="$LOCAL_PASSWORD" psql \
-  -h "$LOCAL_HOST" -p "$LOCAL_PORT" -U "$LOCAL_USER" -d postgres \
+dexec env PGPASSWORD="$LOCAL_PASSWORD" psql \
+  -U "$LOCAL_USER" -d postgres \
   -c "CREATE DATABASE \"$LOCAL_DB\" OWNER \"$LOCAL_USER\";"
 
 echo "  Database recreated."
 
-# ─── 5. Restore dump into local database ───
+# ─── 5. Restore dump into local database (dump piped in over docker exec stdin) ───
 echo ""
 echo "Restoring dump into local database..."
 set +e
-PGPASSWORD="$LOCAL_PASSWORD" psql \
-  -h "$LOCAL_HOST" \
-  -p "$LOCAL_PORT" \
+dexec_i env PGPASSWORD="$LOCAL_PASSWORD" psql \
   -U "$LOCAL_USER" \
   -d "$LOCAL_DB" \
-  -f "$DUMP_FILE" \
   --quiet \
   -v ON_ERROR_STOP=0 \
+  < "$DUMP_FILE" \
   2>&1 | grep -i 'error' || true
 RESTORE_EXIT=${PIPESTATUS[0]}
 set -e
@@ -150,8 +157,8 @@ fi
 # Copy records so that migration:run knows which migrations are already applied.
 echo ""
 echo "Syncing migration tracking tables..."
-PGPASSWORD="$LOCAL_PASSWORD" psql \
-  -h "$LOCAL_HOST" -p "$LOCAL_PORT" -U "$LOCAL_USER" -d "$LOCAL_DB" \
+dexec env PGPASSWORD="$LOCAL_PASSWORD" psql \
+  -U "$LOCAL_USER" -d "$LOCAL_DB" \
   --quiet -c "
     CREATE TABLE IF NOT EXISTS migrations (
       id SERIAL PRIMARY KEY,
@@ -166,15 +173,15 @@ echo "  Migration records synced."
 
 # ─── 7. Verify ───
 echo ""
-TABLE_COUNT=$(PGPASSWORD="$LOCAL_PASSWORD" psql \
-  -h "$LOCAL_HOST" -p "$LOCAL_PORT" -U "$LOCAL_USER" -d "$LOCAL_DB" \
+TABLE_COUNT=$(dexec env PGPASSWORD="$LOCAL_PASSWORD" psql \
+  -U "$LOCAL_USER" -d "$LOCAL_DB" \
   -t -A -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';")
 
-MIGRATION_COUNT=$(PGPASSWORD="$LOCAL_PASSWORD" psql \
-  -h "$LOCAL_HOST" -p "$LOCAL_PORT" -U "$LOCAL_USER" -d "$LOCAL_DB" \
+MIGRATION_COUNT=$(dexec env PGPASSWORD="$LOCAL_PASSWORD" psql \
+  -U "$LOCAL_USER" -d "$LOCAL_DB" \
   -t -A -c "SELECT count(*) FROM migrations;" 2>/dev/null || echo "0")
 
 echo "Done! Local database '$LOCAL_DB' now mirrors production."
 echo "  Tables restored: $TABLE_COUNT"
 echo "  Migrations tracked: $MIGRATION_COUNT"
-echo "  Connection: postgresql://$LOCAL_USER:$LOCAL_PASSWORD@$LOCAL_HOST:$LOCAL_PORT/$LOCAL_DB"
+echo "  Connection: postgresql://$LOCAL_USER:$LOCAL_PASSWORD@localhost:5432/$LOCAL_DB"

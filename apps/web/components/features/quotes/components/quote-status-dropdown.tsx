@@ -127,6 +127,30 @@ export const QuoteStatusDropdown = React.memo(
       });
     };
 
+    /**
+     * Move Draft → Sent without messaging anyone.
+     *
+     * The only route to Sent used to be the WhatsApp share, so a quote handed
+     * over by email, print or in person could not be marked sent at all — and
+     * nobody could walk the accept → project flow without transmitting a real
+     * message to a real customer. The backend has always allowed the plain
+     * transition; only the UI insisted on the side effect.
+     */
+    const handleMarkAsSent = (): void => {
+      sendMutation.mutate(quoteId, {
+        onSuccess: () => {
+          showToast.success('Quote marked as sent');
+          setSendModalOpen(false);
+        },
+        onError: (err) => {
+          showToast.error(
+            (err.response?.data as { message?: string } | undefined)?.message ??
+              'Failed to update quote status',
+          );
+        },
+      });
+    };
+
     const handleAccept = (): void => {
       if (!customerSignature.trim()) {
         showToast.error('Please enter customer name as signature');
@@ -254,6 +278,12 @@ export const QuoteStatusDropdown = React.memo(
                 ? 'This will generate the quote PDF, upload it, and send it via WhatsApp. Draft quotes will move to Sent.'
                 : 'This will change the quote status from Draft to Sent.'}
             </p>
+            {onShareWhatsapp && canShareWhatsapp && (
+              <p className="mt-2 text-sm text-foreground-tertiary">
+                Already shared it by email, print or in person? Mark it as sent without messaging
+                the customer.
+              </p>
+            )}
           </MUIDialogBody>
           <MUIDialogFooter>
             <Button
@@ -263,6 +293,17 @@ export const QuoteStatusDropdown = React.memo(
             >
               Cancel
             </Button>
+            {/* Only offered alongside the WhatsApp path. Where WhatsApp is
+                unavailable the single button below already does exactly this. */}
+            {onShareWhatsapp && canShareWhatsapp && (
+              <Button
+                variant="outline"
+                onClick={handleMarkAsSent}
+                disabled={sendMutation.isPending || isSharingWhatsapp}
+              >
+                Mark as sent
+              </Button>
+            )}
             <Button onClick={handleSend} disabled={sendMutation.isPending || isSharingWhatsapp}>
               {sendMutation.isPending || isSharingWhatsapp
                 ? 'Sending...'

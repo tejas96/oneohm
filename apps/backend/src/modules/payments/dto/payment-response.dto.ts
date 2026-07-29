@@ -57,6 +57,21 @@ export class PaymentResponseDto {
   @Transform(({ value }) => toNum(value))
   paidAmount!: number;
 
+  @ApiProperty({
+    description: 'Date the money actually moved (IST business date), not the data-entry date',
+    example: '2026-07-15',
+  })
+  @Expose()
+  paidAt!: string;
+
+  @ApiProperty({
+    description:
+      'True only for historical rows backfilled from created_at, whose true value date is unrecoverable',
+    example: false,
+  })
+  @Expose()
+  paidAtIsInferred!: boolean;
+
   // ============================================
   // PAYMENT METHOD
   // ============================================

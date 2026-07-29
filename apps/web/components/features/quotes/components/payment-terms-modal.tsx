@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrencyDecimal } from '@/lib/utils/format';
 
 const PERCENTAGE_STEPS = Array.from({ length: 20 }, (_, i) => (i + 1) * 5);
 
@@ -241,9 +241,15 @@ export function PaymentTermsModal({
                 )}
               </span>
             </div>
+            {/* Paise, not whole rupees, on both the total and the lines below.
+                Rounding each figure independently made the milestones appear to
+                sum ₹1 short of the gross — the stored paise are exact, but a
+                finance operator checking the arithmetic on screen saw it fail. */}
             <div className="flex items-center justify-between text-xs">
               <span className="text-foreground-secondary">Gross Total</span>
-              <span className="font-semibold text-foreground">{formatCurrency(grossTotal)}</span>
+              <span className="font-semibold text-foreground">
+                {formatCurrencyDecimal(grossTotal)}
+              </span>
             </div>
 
             {/* Per-milestone preview */}
@@ -259,7 +265,9 @@ export function PaymentTermsModal({
                       {r.name} ({r.percentage}%)
                     </span>
                     <span className="font-medium text-foreground">
-                      {formatCurrency(Math.round(grossTotal * (r.percentage / 100) * 100) / 100)}
+                      {formatCurrencyDecimal(
+                        Math.round(grossTotal * (r.percentage / 100) * 100) / 100,
+                      )}
                     </span>
                   </div>
                 ))}
