@@ -93,6 +93,20 @@ export const ALLOCATE_WATERFALL = `
 `;
 
 /**
+ * `trg_ledger_allocations_not_over_allocated` (see 01-create-core.sql.ts) is
+ * DEFERRABLE INITIALLY DEFERRED, so the waterfall INSERT above leaves one
+ * queued trigger event per row. M7 (EnableLedgerAppendOnly) then needs to
+ * ALTER TABLE ledger_allocations in the same transaction, and Postgres refuses
+ * ALTER TABLE while a table has unfired deferred trigger events. Firing them
+ * here — inside M5, where the rows were written — clears the queue before M7
+ * ever runs, without weakening the trigger's deferred semantics for runtime
+ * writes.
+ */
+export const FIRE_DEFERRED_ALLOCATION_TRIGGERS = `
+  SET CONSTRAINTS trg_ledger_allocations_not_over_allocated IMMEDIATE
+`;
+
+/**
  * Gate R7 — the assertion this whole migration exists to satisfy.
  * Must hold immediately after the waterfall runs.
  */
@@ -127,6 +141,7 @@ export const ASSERT_NO_OVER_ALLOCATED_ENTRIES = `
 
 export const ALLOCATE_LEDGER: string[] = [
   ALLOCATE_WATERFALL,
+  FIRE_DEFERRED_ALLOCATION_TRIGGERS,
   ASSERT_NO_OVER_ALLOCATED_MILESTONES,
   ASSERT_NO_OVER_ALLOCATED_ENTRIES,
 ];
