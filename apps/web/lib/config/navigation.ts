@@ -1,10 +1,7 @@
 import {
-  AlertCircle,
   BadgePercent,
-  Banknote,
   Box,
   Calendar,
-  CalendarClock,
   CheckCircle,
   CheckSquare,
   Edit,
@@ -19,13 +16,11 @@ import {
   List,
   Package,
   Plus,
-  Receipt,
   Send,
   Settings,
   Shield,
   Tag,
   TrendingUp,
-  Truck,
   Users,
   Wallet,
   Wrench,
@@ -406,76 +401,25 @@ export const navigationConfig: NavigationConfig = {
 
     finance: {
       title: 'Finance',
-      // Sections per finance_module_v1 plan: OVERVIEW / LEDGERS / INSIGHTS.
-      // Calendar item is labelled "Dues Calendar" to disambiguate from the
-      // dashboard panel's existing /dashboard/calendar item.
+      // Two items, down from nine. Receipts, expenses, calendar, reports,
+      // vendors, profitability and customers-AR were separate screens over the
+      // same data; the ledger view replaces all of them with one filterable
+      // table, and receivables replaces outstanding + customers-AR.
       sections: [
         {
-          title: 'OVERVIEW',
+          title: 'MONEY',
           items: [
             {
-              id: 'finance-dashboard',
+              id: 'finance-cash',
               icon: LayoutGrid,
-              label: 'Dashboard',
+              label: 'Cash',
               href: ROUTES.FINANCE.HOME,
             },
-          ],
-        },
-        {
-          title: 'LEDGERS',
-          items: [
             {
-              id: 'finance-receipts',
-              icon: Receipt,
-              label: 'Receipts',
-              href: ROUTES.FINANCE.RECEIPTS,
-            },
-            {
-              id: 'finance-expenses',
-              icon: Banknote,
-              label: 'Expenses',
-              href: ROUTES.FINANCE.EXPENSES,
-            },
-            {
-              id: 'finance-outstanding',
-              icon: AlertCircle,
-              label: 'Outstanding',
-              href: ROUTES.FINANCE.OUTSTANDING,
-            },
-            {
-              id: 'finance-calendar',
-              icon: CalendarClock,
-              label: 'Dues Calendar',
-              href: ROUTES.FINANCE.CALENDAR,
-            },
-          ],
-        },
-        {
-          title: 'INSIGHTS',
-          items: [
-            {
-              id: 'finance-customers',
-              icon: Users,
-              label: 'Customers AR',
-              href: ROUTES.FINANCE.CUSTOMERS,
-            },
-            {
-              id: 'finance-vendors',
-              icon: Truck,
-              label: 'Vendors & Spend',
-              href: ROUTES.FINANCE.VENDORS,
-            },
-            {
-              id: 'finance-profitability',
-              icon: TrendingUp,
-              label: 'Profitability',
-              href: ROUTES.FINANCE.PROFITABILITY,
-            },
-            {
-              id: 'finance-reports',
+              id: 'finance-receivables',
               icon: FileBarChart,
-              label: 'Reports',
-              href: ROUTES.FINANCE.REPORTS,
+              label: 'Receivables',
+              href: ROUTES.FINANCE.RECEIVABLES,
             },
           ],
         },

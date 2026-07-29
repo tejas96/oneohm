@@ -110,6 +110,9 @@ export const DOCUMENT_ENTITY_TYPE_LABELS: Record<DocumentEntityType, string> = {
   [DocumentEntityType.PROJECT]: 'Project Documents',
   [DocumentEntityType.PAYMENT]: 'Payment Documents',
   [DocumentEntityType.PROJECT_EXPENSE]: 'Expense Documents',
+  // Holds both the customer's own proof of payment and the receipt the system
+  // generates, so "Payment Proof" no longer covers it.
+  [DocumentEntityType.LEDGER_ENTRY]: 'Payment Documents',
 };
 
 /** Ordered options for entity type selectors — used by upload dialogs and filters */
@@ -124,9 +127,18 @@ export const DOCUMENT_ENTITY_TYPE_OPTIONS: ReadonlyArray<{
   { value: DocumentEntityType.PROJECT, label: 'Project' },
   { value: DocumentEntityType.PAYMENT, label: 'Payment' },
   { value: DocumentEntityType.PROJECT_EXPENSE, label: 'Project Expense' },
+  { value: DocumentEntityType.LEDGER_ENTRY, label: 'Payment' },
 ];
 
-/** Fixed display ordering for grouping documents by entity type */
+/**
+ * Fixed display ordering for grouping documents by entity type.
+ *
+ * The document hub filters its groups through this array, so an entity type
+ * missing here is written correctly and rendered NOWHERE. `LEDGER_ENTRY` was
+ * absent: every payment proof uploaded against a project was invisible, and the
+ * Documents tab of a property holding nothing else rendered blank — no rows, no
+ * empty state, because the group was dropped before the empty check.
+ */
 export const DOCUMENT_ENTITY_TYPE_ORDER: readonly DocumentEntityType[] = [
   DocumentEntityType.CUSTOMER,
   DocumentEntityType.PROPERTY,
@@ -134,6 +146,7 @@ export const DOCUMENT_ENTITY_TYPE_ORDER: readonly DocumentEntityType[] = [
   DocumentEntityType.QUOTE,
   DocumentEntityType.PROJECT,
   DocumentEntityType.PAYMENT,
+  DocumentEntityType.LEDGER_ENTRY,
   DocumentEntityType.PROJECT_EXPENSE,
 ];
 

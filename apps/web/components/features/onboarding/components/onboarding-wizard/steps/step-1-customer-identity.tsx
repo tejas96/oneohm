@@ -128,7 +128,6 @@ export function Step1CustomerIdentity({
         />
         <MUIInput
           fieldLabel="Middle Name"
-          required
           disabled={isLocked}
           placeholder="Kumar"
           size="small"

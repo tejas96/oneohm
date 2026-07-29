@@ -125,14 +125,7 @@ export const ROUTES = {
   // and is unaffected by these org-level routes.
   FINANCE: {
     HOME: '/finance',
-    RECEIPTS: '/finance/receipts',
-    EXPENSES: '/finance/expenses',
-    OUTSTANDING: '/finance/outstanding',
-    CALENDAR: '/finance/calendar',
-    CUSTOMERS: '/finance/customers',
-    VENDORS: '/finance/vendors',
-    PROFITABILITY: '/finance/profitability',
-    REPORTS: '/finance/reports',
+    RECEIVABLES: '/finance/receivables',
   },
 
   // Service
@@ -440,14 +433,7 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
 
   // Finance routes (org-wide module)
   [ROUTES.FINANCE.HOME]: 'finance',
-  [ROUTES.FINANCE.RECEIPTS]: 'finance',
-  [ROUTES.FINANCE.EXPENSES]: 'finance',
-  [ROUTES.FINANCE.OUTSTANDING]: 'finance',
-  [ROUTES.FINANCE.CALENDAR]: 'finance',
-  [ROUTES.FINANCE.CUSTOMERS]: 'finance',
-  [ROUTES.FINANCE.VENDORS]: 'finance',
-  [ROUTES.FINANCE.PROFITABILITY]: 'finance',
-  [ROUTES.FINANCE.REPORTS]: 'finance',
+  [ROUTES.FINANCE.RECEIVABLES]: 'finance',
 
   // Service routes
   [ROUTES.SERVICE.HOME]: 'service',

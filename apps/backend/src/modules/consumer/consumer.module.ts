@@ -7,7 +7,7 @@ import { CustomerOwnershipGuard } from './guards';
 import { AuthModule } from '../auth/auth.module';
 import { CustomersModule } from '../customers/customers.module';
 import { DocumentsModule } from '../documents/documents.module';
-import { PaymentsModule } from '../payments/payments.module';
+import { LedgerModule } from '../ledger/ledger.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { QuotesModule } from '../quotes/quotes.module';
 
@@ -21,7 +21,7 @@ import { QuotesModule } from '../quotes/quotes.module';
     AuthModule,
     QuotesModule,
     ProjectsModule,
-    PaymentsModule,
+    LedgerModule,
     DocumentsModule,
   ],
   controllers: [ConsumerPropertyController, ConsumerQuotationController, ConsumerProjectController],

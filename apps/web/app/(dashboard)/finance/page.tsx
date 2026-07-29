@@ -1,6 +1,7 @@
-import { FinanceDashboard } from '@/components/features/finance';
+import { type JSX } from 'react';
 
-// eslint-disable-next-line import/no-default-export -- Next.js requires default export for pages
-export default function FinanceDashboardPage(): React.JSX.Element {
-  return <FinanceDashboard />;
+import { FinanceCashPage } from '@/components/features/ledger/finance-cash-page';
+
+export default function FinancePage(): JSX.Element {
+  return <FinanceCashPage />;
 }

@@ -147,6 +147,16 @@ const MUIInputInner = (
   const disabled = props.disabled ?? false;
   const { fieldLabel, required: labelRequired, tooltip } = props;
 
+  // Associate the label with its control even when the caller supplies no id.
+  //
+  // MUIFieldLabel renders a real <label>, but `htmlFor` was only ever set from a
+  // caller-provided `id` — and most callers pass none. Those fields reached the
+  // accessibility tree with NO accessible name at all: a screen reader announced
+  // "edit text", and the visible label beside it was just decoration. Verified on
+  // the Record payment dialog, where Reference and Notes both surfaced unnamed.
+  const generatedId = React.useId();
+  const resolvedId = props.id ?? `mui-input-${generatedId}`;
+
   const hasError = Boolean(error);
   const errorMsg = typeof error === 'string' ? error : undefined;
   const successMsg = typeof success === 'string' ? success : undefined;
@@ -421,10 +431,11 @@ const MUIInputInner = (
         fieldLabel={fieldLabel}
         required={labelRequired}
         tooltip={tooltip}
-        htmlFor={textFieldProps.id}
+        htmlFor={resolvedId}
       />
       <TextField
         {...textFieldProps}
+        id={resolvedId}
         inputRef={mergedRef}
         select={mode === 'select'}
         color={resolvedColor}

@@ -14,8 +14,9 @@ import {
   PaymentTermStatus,
   PaymentTransactionStatus,
 } from '@tejas96/shared/types';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, EntityManager, IsNull } from 'typeorm';
 
+import { assertMoneyWritesAllowed } from '../../../common/utils';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { PaymentTermEntity } from '../../payment-terms/entities/payment-term.entity';
@@ -101,6 +102,7 @@ export class ReceiptService {
     dto: CreateReceiptDto,
     createdBy: string,
   ): Promise<PaymentEntity> {
+    assertMoneyWritesAllowed();
     this.assertPaidAt(dto.paidAt);
 
     const project = await this.loadProjectInOrg(dto.projectId, organizationId);
@@ -150,6 +152,10 @@ export class ReceiptService {
         paymentNumber,
         expectedAmount,
         paidAmount: dto.paidAmount,
+        // Value date: what the operator recorded, else today (IST). Previously
+        // dto.paidAt was validated and then silently discarded.
+        paidAt: dto.paidAt ? dto.paidAt.slice(0, 10) : this.todayIso(),
+        paidAtIsInferred: false,
         paymentMethod: dto.paymentMethod,
         paymentReference: dto.paymentReference,
         bankName: dto.bankName,
@@ -283,6 +289,23 @@ export class ReceiptService {
    * Aggregations are independent queries — never derived from a
    * paginated list (per backend rules).
    */
+
+  /**
+   * Flat receipt list for a project, newest first.
+   *
+   * Exists so the web app can stop calling `GET /payments/project/:id`
+   * (PaymentController), which is unscoped by organization and part of the
+   * legacy surface slated for removal. Returns the same PaymentEntity shape,
+   * so the response DTO is unchanged for callers.
+   */
+  async listByProject(projectId: string, organizationId: string): Promise<PaymentEntity[]> {
+    return this.dataSource.getRepository(PaymentEntity).find({
+      where: { projectId, organizationId, deletedAt: IsNull() },
+      order: { paidAt: 'DESC', createdAt: 'DESC' },
+      relations: ['customer', 'reconciledByUser'],
+    });
+  }
+
   async getProjectSummary(
     projectId: string,
     organizationId: string,
@@ -505,11 +528,20 @@ export class ReceiptService {
     await repo.save(doc);
   }
 
+  /**
+   * Today's date as an IST business date (YYYY-MM-DD).
+   *
+   * Previously computed in UTC, which put the first 5h30m of every IST day on
+   * the previous date — so an evening receipt was booked a day early, and the
+   * not-in-the-future guard rejected legitimate same-day entries.
+   */
   private todayIso(): string {
-    const d = new Date();
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(d.getUTCDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    // en-CA formats as YYYY-MM-DD.
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
   }
 }

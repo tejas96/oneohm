@@ -14,7 +14,6 @@ import { DiscomRowActionsMenu } from './discom-row-actions-menu';
 import { type DiscomAdmin, useDiscomMutations, useDiscomsAdmin } from '../hooks/use-discoms-admin';
 import { buildDiscomPathLabel, buildSubOfficerLabel } from '../utils/discom-display.util';
 
-import { buildCsv, downloadCsv, type CsvColumn } from '@/components/features/finance/shared/csv';
 import {
   CrmStatusPill,
   CrmTable,
@@ -26,6 +25,7 @@ import { PermissionGuard } from '@/components/shared/guards';
 import { useTableUrlState } from '@/lib/hooks';
 import { color, crm } from '@/lib/theme/tokens';
 import { formatDate, getErrorMessage } from '@/lib/utils';
+import { buildCsv, downloadCsv, type CsvColumn } from '@/lib/utils/csv';
 
 type DiscomRow = DiscomAdmin & Record<string, unknown>;
 const EMPTY_ROWS: DiscomRow[] = [];

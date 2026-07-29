@@ -126,6 +126,17 @@ export function QuotePricingCard({
               : 'N/A (Commercial)'}
           </span>
         </div>
+        {/* The subsidy sits directly above an amount payable it does not reduce,
+            separated by the same divider used elsewhere to introduce a running
+            total — so it reads as an arithmetic error. It is not: the government
+            pays the customer, so the customer owes the gross. Say so, and change
+            no number. */}
+        {breakdown?.subsidyAmount != null && breakdown.subsidyAmount > 0 && (
+          <p className="text-[10px] text-foreground-tertiary leading-relaxed -mt-1">
+            Paid to you directly by the government after commissioning — it is not deducted from
+            this quote, so the amount payable below is the full contract value.
+          </p>
+        )}
         {finalPrice != null && (
           <>
             <div className="h-px bg-border my-2" />

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { FinanceController } from './controllers/finance.controller';
 import { FinanceAggregationService } from './services/finance-aggregation.service';
+import { FinanceReportingService } from './services/finance-reporting.service';
 
 /**
  * FinanceModule
@@ -16,7 +17,7 @@ import { FinanceAggregationService } from './services/finance-aggregation.servic
  */
 @Module({
   controllers: [FinanceController],
-  providers: [FinanceAggregationService],
-  exports: [FinanceAggregationService],
+  providers: [FinanceAggregationService, FinanceReportingService],
+  exports: [FinanceAggregationService, FinanceReportingService],
 })
 export class FinanceModule {}

@@ -96,6 +96,29 @@ export class QuoteConfiguration extends BaseEntity {
   })
   paymentMilestones!: PaymentMilestoneConfig[];
 
+  /**
+   * Payment milestones for loan-financed sites (JSONB).
+   *
+   * When the property has `wants_loan`, the customer funds a smaller advance and
+   * the lender releases the bulk on installation — 10/70/20 rather than the
+   * self-financed 10/85/5. Nothing branched on the loan flag before this: the
+   * onboarding wizard promised "only 10% advance (vs 30% without)" while every
+   * quote, financed or not, got the single org template.
+   *
+   * Configurable rather than a constant because lenders change their release
+   * schedules, and because every other number on this table (gst_config,
+   * payment_milestones, profit_margin_tiers) is org-editable from the same
+   * admin screen. An empty array means "no loan-specific template" and falls
+   * back to {@link paymentMilestones}.
+   */
+  @Column({
+    type: 'jsonb',
+    name: 'payment_milestones_loan',
+    default:
+      '[{"stage":"advance","name":"Advance","percentage":10,"order":1},{"stage":"installation_complete","name":"Installation Complete","percentage":70,"order":2},{"stage":"commissioning","name":"Commissioning","percentage":20,"order":3}]',
+  })
+  paymentMilestonesLoan!: PaymentMilestoneConfig[];
+
   @Column({
     type: 'jsonb',
     name: 'profit_margin_tiers',

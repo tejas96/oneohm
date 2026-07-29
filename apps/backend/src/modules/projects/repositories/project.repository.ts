@@ -7,6 +7,21 @@ import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { ProjectEntity } from '../entities/project.entity';
 
 /**
+ * A project's money position, in rupees, read from `v_project_balance`.
+ *
+ * Every figure here comes from the ledger — the same view the project's Money
+ * tab reads — so a list row and the project it links to can no longer disagree.
+ */
+export interface ProjectPaymentSummary {
+  /** Active milestones only; waived amounts excluded. */
+  totalExpected: number;
+  totalPaid: number;
+  /** Quote plus every agreed change order. This is "what the project is worth". */
+  contractValue: number;
+  outstanding: number;
+}
+
+/**
  * Project Repository
  * Handles database operations for projects
  *
@@ -349,31 +364,53 @@ export class ProjectRepository {
   }
 
   /**
-   * Get payment summary (totalExpected, totalPaid) for a list of project IDs.
-   * Only aggregates non-deleted payments with valid statuses (received, verified, cleared).
+   * Contract and received totals (in rupees) for a list of projects.
+   *
+   * Reads `v_project_balance` rather than aggregating `payments` directly.
+   * The previous implementation summed `payments.expected_amount`, which was a
+   * plan figure DUPLICATED onto every receipt of a milestone — so two ₹25,000
+   * receipts against one ₹50,000 milestone reported ₹100,000 expected and
+   * ₹50,000 still pending on a fully-paid milestone.
+   *
+   * `expected_paise` also correctly excludes waived milestones, which the old
+   * query had no concept of.
    */
-  async getPaymentSummaries(
-    projectIds: string[],
-  ): Promise<Map<string, { totalExpected: number; totalPaid: number }>> {
+  async getPaymentSummaries(projectIds: string[]): Promise<Map<string, ProjectPaymentSummary>> {
     if (projectIds.length === 0) return new Map();
 
-    const results = await this.repository.manager
-      .createQueryBuilder()
-      .select('payment.project_id', 'projectId')
-      .addSelect('COALESCE(SUM(payment.expected_amount), 0)', 'totalExpected')
-      .addSelect('COALESCE(SUM(payment.paid_amount), 0)', 'totalPaid')
-      .from('payments', 'payment')
-      .where('payment.project_id IN (:...projectIds)', { projectIds })
-      .andWhere('payment.deleted_at IS NULL')
-      .andWhere("payment.status IN ('received', 'verified', 'cleared')")
-      .groupBy('payment.project_id')
-      .getRawMany<{ projectId: string; totalExpected: string; totalPaid: string }>();
+    const results = await this.repository.manager.query<
+      Array<{
+        projectId: string;
+        contractPaise: string;
+        expectedPaise: string;
+        receivedPaise: string;
+        outstandingPaise: string;
+      }>
+    >(
+      `SELECT project_id        AS "projectId",
+              contract_paise    AS "contractPaise",
+              expected_paise    AS "expectedPaise",
+              received_paise    AS "receivedPaise",
+              outstanding_paise AS "outstandingPaise"
+         FROM v_project_balance
+        WHERE project_id = ANY($1::uuid[])`,
+      [projectIds],
+    );
 
-    const map = new Map<string, { totalExpected: number; totalPaid: number }>();
+    const map = new Map<string, ProjectPaymentSummary>();
     for (const row of results) {
       map.set(row.projectId, {
-        totalExpected: parseFloat(row.totalExpected) || 0,
-        totalPaid: parseFloat(row.totalPaid) || 0,
+        // callers expect rupees; paise is the authoritative unit in the ledger
+        totalExpected: Number(row.expectedPaise) / 100,
+        totalPaid: Number(row.receivedPaise) / 100,
+        // The contract as it stands — quote plus every agreed change order.
+        // The list used to show `cv.finalPrice` here, which is the ORIGINAL
+        // quote, so a project with change orders reported one value in the list
+        // and a different one on its own Money tab with nothing explaining the
+        // gap. Both were right; they answered different questions under nearly
+        // the same label.
+        contractValue: Number(row.contractPaise) / 100,
+        outstanding: Number(row.outstandingPaise) / 100,
       });
     }
     return map;

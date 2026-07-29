@@ -1,0 +1,193 @@
+import { Injectable } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+
+import {
+  CASH_FLOW_SQL,
+  KPIS_SQL,
+  LEDGER_COUNT_SQL,
+  LEDGER_PAGE_SQL,
+  RECEIVABLES_COUNT_SQL,
+  RECEIVABLES_SQL,
+  SPEND_BY_CATEGORY_SQL,
+  TOP_CUSTOMERS_OUTSTANDING_SQL,
+} from './finance-ledger-queries.sql';
+
+const rs = (paise: unknown): number => Number(paise ?? 0) / 100;
+
+/** Widened to include 'year' — the client's date selector offers a yearly view. */
+export type CashFlowGrain = 'day' | 'week' | 'month' | 'year';
+
+export interface FinanceKpis {
+  revenueInRange: number;
+  spendInRange: number;
+  netCashflowInRange: number;
+  outstandingNow: number;
+  overdueCountNow: number;
+  receiptCountInRange: number;
+  expenseCountInRange: number;
+  unallocatedCredit: number;
+  /** Meter installations completed in the period — dated by task completion. */
+  meterInstallations: number;
+}
+
+/**
+ * Org-wide finance reporting, read from the ledger views.
+ *
+ * Runs alongside `FinanceAggregationService`, which still serves the three
+ * endpoints slated for removal (`customers/ar`, `vendors/spend`,
+ * `projects/profitability`). Those keep reading the old tables until their
+ * frontend pages are deleted — removing a backend route before its consumer is
+ * gone just breaks the app mid-flight.
+ *
+ * Response shapes are unchanged on purpose. The values are now correct; the
+ * contract is not being reshaped at the same time. Reshaping happens with the
+ * frontend rewrite, not during a data migration.
+ */
+@Injectable()
+export class FinanceReportingService {
+  constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+  ) {}
+
+  /**
+   * Headline numbers for the selected period.
+   *
+   * Note the deliberate asymmetry: revenue and spend are FLOWS bounded by
+   * `value_date`, while outstanding is a SNAPSHOT as of today. Money owed does
+   * not belong to a month, and conflating the two is how a dashboard ends up
+   * claiming a customer "owes ₹X in March".
+   */
+  async getKpis(organizationId: string, from: string, to: string): Promise<FinanceKpis> {
+    const [row] = await this.dataSource.query(KPIS_SQL, [organizationId, from, to]);
+    return {
+      revenueInRange: rs(row?.revenuePaise),
+      spendInRange: rs(row?.spendPaise),
+      netCashflowInRange: rs(row?.netPaise),
+      outstandingNow: rs(row?.outstandingPaise),
+      overdueCountNow: Number(row?.overdueCount ?? 0),
+      receiptCountInRange: Number(row?.receiptCount ?? 0),
+      expenseCountInRange: Number(row?.expenseCount ?? 0),
+      unallocatedCredit: rs(row?.unallocatedPaise),
+      meterInstallations: Number(row?.meterInstallations ?? 0),
+    };
+  }
+
+  /**
+   * Cash in/out over time. Empty periods come back as zeros rather than being
+   * absent — a chart with gaps reads as missing data rather than as no activity.
+   */
+  async getCashFlow(
+    organizationId: string,
+    from: string,
+    to: string,
+    grain: CashFlowGrain = 'month',
+  ): Promise<Array<{ month: string; cashIn: number; cashOut: number; net: number }>> {
+    const rows = await this.dataSource.query(CASH_FLOW_SQL, [organizationId, from, to, grain]);
+    return rows.map((r: Record<string, unknown>) => ({
+      month: String(r.bucket),
+      cashIn: rs(r.cashInPaise),
+      cashOut: rs(r.cashOutPaise),
+      net: rs(r.netPaise),
+    }));
+  }
+
+  async getSpendByCategory(
+    organizationId: string,
+    from: string,
+    to: string,
+  ): Promise<Array<{ category: string; total: number }>> {
+    const rows = await this.dataSource.query(SPEND_BY_CATEGORY_SQL, [organizationId, from, to]);
+    return rows.map((r: Record<string, unknown>) => ({
+      category: String(r.category),
+      total: rs(r.totalPaise),
+    }));
+  }
+
+  async getTopCustomersOutstanding(
+    organizationId: string,
+    limit = 5,
+  ): Promise<Array<{ customerId: string; customerName: string; outstanding: number }>> {
+    const rows = await this.dataSource.query(TOP_CUSTOMERS_OUTSTANDING_SQL, [
+      organizationId,
+      limit,
+    ]);
+    return rows.map((r: Record<string, unknown>) => ({
+      customerId: String(r.customerId),
+      customerName: (r.customerName as string) ?? 'Unknown',
+      outstanding: rs(r.outstandingPaise),
+    }));
+  }
+
+  /**
+   * One paginated ledger for both directions.
+   *
+   * Replaces the separate receipts and expenses queries, which duplicated their
+   * filtering, sorting and pagination logic and had already drifted apart.
+   */
+  async getEntries(
+    organizationId: string,
+    opts: {
+      direction?: 'in' | 'out' | null;
+      from?: string | null;
+      to?: string | null;
+      page?: number;
+      limit?: number;
+    },
+  ): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
+    const page = Math.max(1, opts.page ?? 1);
+    const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
+    const params = [organizationId, opts.direction ?? null, opts.from ?? null, opts.to ?? null];
+
+    const [rows, [countRow]] = await Promise.all([
+      this.dataSource.query(LEDGER_PAGE_SQL, [...params, limit, (page - 1) * limit]),
+      this.dataSource.query(LEDGER_COUNT_SQL, params),
+    ]);
+
+    return {
+      data: rows.map((r: Record<string, unknown>) => ({
+        ...r,
+        amountPaise: Number(r.amountPaise),
+        // rupee value for display; never sum these client-side
+        amount: rs(r.amountPaise),
+      })),
+      total: Number(countRow?.count ?? 0),
+      page,
+      limit,
+    };
+  }
+
+  /**
+   * Open milestones across the org — the receivables screen.
+   *
+   * This is the client's requirement expressed directly: for every customer and
+   * milestone, expected / received / short by. Waived milestones are excluded by
+   * the view, so a written-off residual stops being chased.
+   */
+  async getReceivables(
+    organizationId: string,
+    opts: { page?: number; limit?: number } = {},
+  ): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
+    const page = Math.max(1, opts.page ?? 1);
+    const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
+
+    const [rows, [countRow]] = await Promise.all([
+      this.dataSource.query(RECEIVABLES_SQL, [organizationId, limit, (page - 1) * limit]),
+      this.dataSource.query(RECEIVABLES_COUNT_SQL, [organizationId]),
+    ]);
+
+    return {
+      data: rows.map((r: Record<string, unknown>) => ({
+        ...r,
+        expectedAmount: rs(r.expectedPaise),
+        paidAmount: rs(r.allocatedPaise),
+        outstandingAmount: rs(r.balancePaise),
+        daysOverdue: Number(r.daysOverdue ?? 0),
+      })),
+      total: Number(countRow?.count ?? 0),
+      page,
+      limit,
+    };
+  }
+}

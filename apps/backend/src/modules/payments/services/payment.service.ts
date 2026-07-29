@@ -10,9 +10,8 @@ import {
 } from '@nestjs/common';
 import { PaymentTransactionStatus } from '@tejas96/shared/types';
 
-// Third-party imports
-
 // Local imports
+import { assertMoneyWritesAllowed } from '../../../common/utils';
 import { CreatePaymentDto, UpdatePaymentDto, ReconcilePaymentDto } from '../dto';
 import { PaymentEntity } from '../entities/payment.entity';
 import { PaymentRepository } from '../repositories/payment.repository';
@@ -28,6 +27,7 @@ export class PaymentService {
   // CREATE
   // ============================================
   async create(dto: CreatePaymentDto, createdBy: string): Promise<PaymentEntity> {
+    assertMoneyWritesAllowed();
     // Generate payment number if not provided
     const paymentNumber = await this.paymentRepository.getNextPaymentNumber(dto.organizationId);
 

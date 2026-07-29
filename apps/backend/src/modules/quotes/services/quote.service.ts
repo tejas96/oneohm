@@ -139,7 +139,10 @@ export class QuoteService {
 
     const paymentMilestones =
       createDto.paymentMilestones ||
-      this.generatePaymentMilestones(pricingBreakdown.totalPrice, quoteConfig.paymentMilestones);
+      this.generatePaymentMilestones(
+        pricingBreakdown.totalPrice,
+        await this.resolveMilestoneTemplate(organizationId, createDto.propertyId, quoteConfig),
+      );
 
     const result = await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
@@ -196,9 +199,13 @@ export class QuoteService {
   async getPaymentMilestones(
     organizationId: string,
     grossTotal: number,
+    propertyId?: string,
   ): Promise<PaymentMilestone[]> {
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
-    return this.generatePaymentMilestones(grossTotal, quoteConfig.paymentMilestones);
+    return this.generatePaymentMilestones(
+      grossTotal,
+      await this.resolveMilestoneTemplate(organizationId, propertyId, quoteConfig),
+    );
   }
 
   /**
@@ -686,6 +693,43 @@ export class QuoteService {
    * Generate payment milestones from org-level config.
    * @param grossTotal - Total price before discount and subsidy
    */
+  /**
+   * Which payment-terms template applies to this site.
+   *
+   * A loan-financed customer funds a smaller advance and the lender releases the
+   * bulk on installation — 10/70/20 against the self-financed 10/85/5. This is
+   * resolved at QUOTE time, not at project conversion, for two reasons: the
+   * quote PDF is the document the customer signs, so branching later would have
+   * the signed page say 10/85/5 while the project invoices 10/70/20; and the
+   * milestone snapshot copies explicit rupee amounts rather than percentages, so
+   * a later branch would produce rows whose percentage and amount disagree.
+   *
+   * A default, never an enforcement: sales can still negotiate any schedule in
+   * the payment-terms dialog, and an explicit `createDto.paymentMilestones`
+   * wins over this entirely.
+   */
+  private async resolveMilestoneTemplate(
+    organizationId: string,
+    propertyId: string | undefined,
+    quoteConfig: {
+      paymentMilestones: PaymentMilestoneConfig[];
+      paymentMilestonesLoan?: PaymentMilestoneConfig[];
+    },
+  ): Promise<PaymentMilestoneConfig[]> {
+    if (!propertyId) return quoteConfig.paymentMilestones;
+
+    const rows: Array<{ wants_loan: boolean }> = await this.dataSource.query(
+      `SELECT wants_loan FROM customer_properties
+        WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL`,
+      [propertyId, organizationId],
+    );
+
+    const wantsLoan = rows[0]?.wants_loan === true;
+    return wantsLoan && quoteConfig.paymentMilestonesLoan?.length
+      ? quoteConfig.paymentMilestonesLoan
+      : quoteConfig.paymentMilestones;
+  }
+
   private generatePaymentMilestones(
     grossTotal: number,
     milestoneConfigs: PaymentMilestoneConfig[],

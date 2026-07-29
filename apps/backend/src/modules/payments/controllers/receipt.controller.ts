@@ -32,6 +32,7 @@ import { ReceiptService } from '../services/receipt.service';
  *   POST   /receipts                                   create
  *   PATCH  /receipts/:id/status                        FSM transition
  *   DELETE /receipts/:id                               soft delete + re-aggregate
+ *   GET    /receipts/project/:projectId                flat list, newest first
  *   GET    /receipts/project/:projectId/summary        per-term breakdown + totals
  */
 @Controller('receipts')
@@ -78,6 +79,22 @@ export class ReceiptController {
     @OrganizationContext() organizationId: string,
   ): Promise<void> {
     await this.receiptService.delete(id, organizationId);
+  }
+
+  @Get('project/:projectId')
+  @ApiOperation({
+    summary: 'Flat receipt list for a project, newest first',
+    description:
+      'Organization-scoped replacement for the legacy GET /payments/project/:projectId. ' +
+      'Same PaymentResponseDto shape, so callers need no changes beyond the path.',
+  })
+  @ApiParam({ name: 'projectId', type: String })
+  async listByProject(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @OrganizationContext() organizationId: string,
+  ): Promise<PaymentResponseDto[]> {
+    const receipts = await this.receiptService.listByProject(projectId, organizationId);
+    return receipts.map((r) => toDto(PaymentResponseDto, r));
   }
 
   @Get('project/:projectId/summary')

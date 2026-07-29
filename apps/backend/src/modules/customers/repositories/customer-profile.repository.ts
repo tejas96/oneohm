@@ -979,11 +979,13 @@ export class CustomerProfileRepository {
         'hasQuotes',
       )
       .addSelect(
+        // Ledger entries are append-only, so there is no deleted_at to filter;
+        // a reversed receipt still counts as "this customer has paid us before".
         `EXISTS(
-          SELECT 1 FROM payments p
-          WHERE p.customer_id = customer.id
-            AND p.organization_id = :organizationId
-            AND p.deleted_at IS NULL
+          SELECT 1 FROM ledger_entries le
+          WHERE le.customer_id = customer.id
+            AND le.organization_id = :organizationId
+            AND le.direction = 'in'
         )`,
         'hasPayments',
       )

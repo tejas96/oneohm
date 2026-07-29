@@ -17,7 +17,8 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { type JSX, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { type JSX, useMemo } from 'react';
 
 import {
   useCustomerLoans,
@@ -27,7 +28,6 @@ import {
 } from '../../hooks';
 import { TabSkeleton } from '../tab-skeleton';
 
-import { ProjectFinanceDrawer } from '@/components/features/finance/drawers/project-finance-drawer';
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { useOrgOutstanding, useOrgReceipts } from '@/lib/hooks/resources';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
@@ -46,7 +46,7 @@ interface ProjectGroup {
   termCount: number;
 }
 
-export function FinanceTab({ customerId, customerName, enabled }: FinanceTabProps): JSX.Element {
+export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Element {
   const outstandingQ = useOrgOutstanding(
     { customerId, sort: 'daysOverdue', sortOrder: 'DESC', page: 1, limit: 100 },
     { enabled },
@@ -56,11 +56,7 @@ export function FinanceTab({ customerId, customerName, enabled }: FinanceTabProp
   const subsidiesQ = useCustomerSubsidies(customerId, { enabled });
   const projectsQ = useCustomerProjects(customerId, { enabled });
 
-  const [projectDrawer, setProjectDrawer] = useState<{
-    projectId: string;
-    projectNumber?: string;
-    projectName?: string;
-  } | null>(null);
+  const router = useRouter();
 
   const openTerms = outstandingQ.data?.data ?? [];
   const recentReceipts = receiptsQ.data?.data ?? [];
@@ -159,13 +155,10 @@ export function FinanceTab({ customerId, customerName, enabled }: FinanceTabProp
               <Card
                 key={group.projectId}
                 variant="outlined"
-                onClick={() =>
-                  setProjectDrawer({
-                    projectId: group.projectId,
-                    projectNumber: group.projectNumber,
-                    projectName: group.projectName,
-                  })
-                }
+                // Navigate straight to the project's Money tab. The previous
+                // read-only drawer was an interstitial in front of this link
+                // that re-summed money over a capped query.
+                onClick={() => router.push(`/projects/${group.projectId}?tab=finance`)}
                 sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
               >
                 <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
@@ -305,16 +298,6 @@ export function FinanceTab({ customerId, customerName, enabled }: FinanceTabProp
           </>
         )}
       </Box>
-
-      <ProjectFinanceDrawer
-        open={projectDrawer !== null}
-        onClose={() => setProjectDrawer(null)}
-        projectId={projectDrawer?.projectId ?? null}
-        projectNumber={projectDrawer?.projectNumber}
-        projectName={projectDrawer?.projectName}
-        customerName={customerName}
-        stacked
-      />
     </>
   );
 }

@@ -26,15 +26,13 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { FinanceCommonModule } from './modules/finance-common/finance-common.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { LedgerModule } from './modules/ledger/ledger.module';
 import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import { MasterDataModule } from './modules/master-data/master-data.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
-import { PaymentTermsModule } from './modules/payment-terms/payment-terms.module';
-import { PaymentsModule } from './modules/payments/payments.module';
 import { PlatformModule } from './modules/platform/platform.module';
-import { ProjectExpensesModule } from './modules/project-expenses/project-expenses.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { ReportsModule } from './modules/reports/reports.module';
@@ -78,10 +76,18 @@ import { UsersModule } from './modules/users/users.module';
     NotificationsModule,
     ApprovalModule,
     FinanceCommonModule,
+    // The ledger is now the only mounted money module. PaymentsModule,
+    // PaymentTermsModule and ProjectExpensesModule are unmounted: nothing
+    // imports their services any more, and leaving them mounted kept the
+    // legacy PATCH/DELETE /payments endpoints live — the unscoped, non-
+    // transactional writes that silently desynced project_payment_terms.paid_amount
+    // in the first place.
+    //
+    // The module CODE and the underlying tables are deliberately retained: the
+    // `payments` rows are the reconciliation source and the rollback artefact
+    // until cutover has been green for a full cycle.
+    LedgerModule,
     FinanceModule,
-    PaymentTermsModule,
-    ProjectExpensesModule,
-    PaymentsModule,
     CommentsModule,
     DocumentsModule,
     IntegrationsModule,
