@@ -62,7 +62,12 @@ export class QuoteResponseDto {
   @ApiPropertyOptional({ example: 'Rajesh Sharma' })
   @Expose()
   @Transform(({ obj }) =>
-    obj.customer ? `${obj.customer.firstName} ${obj.customer.lastName || ''}`.trim() : undefined,
+    obj.customer
+      ? [obj.customer.firstName, obj.customer.middleName, obj.customer.lastName]
+          .filter(Boolean)
+          .join(' ')
+          .trim()
+      : undefined,
   )
   customerName?: string;
 

@@ -377,7 +377,11 @@ export class QuoteService {
     const validUntil = quote.validUntil
       ? new Date(quote.validUntil).toLocaleDateString('en-IN')
       : 'N/A';
-    const customerName = [quote.customer?.firstName, quote.customer?.lastName]
+    const customerName = [
+      quote.customer?.firstName,
+      quote.customer?.middleName,
+      quote.customer?.lastName,
+    ]
       .filter(Boolean)
       .join(' ')
       .trim();
