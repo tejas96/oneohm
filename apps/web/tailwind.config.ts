@@ -491,6 +491,10 @@ const config: Config = {
           '0%': { transform: 'translateX(40px)' },
           '100%': { transform: 'translateX(-40px)' },
         },
+        'attention-ripple': {
+          '0%': { transform: 'scale(1)', opacity: '0.55' },
+          '100%': { transform: 'scale(2.1)', opacity: '0' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.4s ease forwards',
@@ -501,6 +505,7 @@ const config: Config = {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'wave-drift': 'wave-drift 12s linear infinite',
         'wave-drift-reverse': 'wave-drift-reverse 16s linear infinite',
+        'attention-ripple': 'attention-ripple 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
     },
   },

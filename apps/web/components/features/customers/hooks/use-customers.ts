@@ -63,6 +63,7 @@ export interface CustomerFilters {
   propertySystemSizeMax?: number;
   propertyCity?: string;
   propertyState?: string;
+  propertyConsumerNumber?: string;
   // Sorting
   sortBy?: CustomerSortField;
   sortOrder?: SortOrder;
@@ -235,6 +236,8 @@ export function useCustomers(
       }
       if (queryFilters.propertyCity) params.append('propertyCity', queryFilters.propertyCity);
       if (queryFilters.propertyState) params.append('propertyState', queryFilters.propertyState);
+      if (queryFilters.propertyConsumerNumber)
+        params.append('propertyConsumerNumber', queryFilters.propertyConsumerNumber);
 
       // Sorting
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);

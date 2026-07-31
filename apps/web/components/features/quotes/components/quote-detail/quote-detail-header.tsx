@@ -43,6 +43,7 @@ interface QuoteDetailHeaderProps {
   pdfLoading: boolean;
   handleDownloadPdf: () => void;
   canSendWhatsapp?: boolean;
+  showWhatsappButton?: boolean;
   whatsappLoading?: boolean;
   whatsappBlockedReason?: string;
   whatsappLabel?: string;
@@ -58,6 +59,7 @@ export const QuoteDetailHeader = React.memo(
     pdfLoading,
     handleDownloadPdf,
     canSendWhatsapp = false,
+    showWhatsappButton = false,
     whatsappLoading = false,
     whatsappBlockedReason,
     whatsappLabel = 'Send via WhatsApp',
@@ -177,6 +179,7 @@ export const QuoteDetailHeader = React.memo(
                 disabledReason={lockReason}
                 onShareWhatsapp={onShareWhatsapp}
                 canShareWhatsapp={canSendWhatsapp}
+                highlight={!isPropertyLocked && quote.status === QuoteStatus.DRAFT}
               />
               <span
                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold ${
@@ -257,7 +260,7 @@ export const QuoteDetailHeader = React.memo(
               <Download className="h-3.5 w-3.5" /> {pdfLoading ? 'Downloading...' : 'Download PDF'}
             </button>
 
-            {handleSendWhatsapp && (
+            {handleSendWhatsapp && showWhatsappButton && (
               <button
                 disabled={!canSendWhatsapp || whatsappLoading}
                 onClick={handleSendWhatsapp}

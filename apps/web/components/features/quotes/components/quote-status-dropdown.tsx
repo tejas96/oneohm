@@ -38,6 +38,8 @@ interface QuoteStatusDropdownProps {
   disabledReason?: string;
   onShareWhatsapp?: () => Promise<void>;
   canShareWhatsapp?: boolean;
+  /** Draws a pulsing ripple around the trigger to point users at where to act (e.g. Draft quotes with no other indicator of where to send). */
+  highlight?: boolean;
 }
 
 export const QuoteStatusDropdown = React.memo(
@@ -49,6 +51,7 @@ export const QuoteStatusDropdown = React.memo(
     disabledReason,
     onShareWhatsapp,
     canShareWhatsapp = false,
+    highlight = false,
   }: QuoteStatusDropdownProps): React.JSX.Element => {
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [acceptModalOpen, setAcceptModalOpen] = useState(false);
@@ -222,10 +225,27 @@ export const QuoteStatusDropdown = React.memo(
       <>
         <button
           type="button"
-          className="group cursor-pointer focus:outline-none"
+          className="group relative cursor-pointer focus:outline-none"
           onClick={handleOpen}
         >
-          <Badge variant={variant} shape="pill" size={size} className="gap-1 pr-1.5">
+          {highlight && (
+            <>
+              <span
+                className="pointer-events-none absolute inset-0 rounded-full bg-primary animate-attention-ripple"
+                aria-hidden="true"
+              />
+              <span
+                className="pointer-events-none absolute inset-0 rounded-full bg-primary animate-attention-ripple [animation-delay:0.6s]"
+                aria-hidden="true"
+              />
+            </>
+          )}
+          <Badge
+            variant={variant}
+            shape="pill"
+            size={size}
+            className={`gap-1 pr-1.5 relative ${highlight ? 'ring-2 ring-primary/40 ring-offset-2 ring-offset-white' : ''}`}
+          >
             {label}
             <ChevronDown className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
           </Badge>
@@ -263,7 +283,11 @@ export const QuoteStatusDropdown = React.memo(
         </Menu>
 
         {/* Send Modal */}
-        <MUIDialog open={sendModalOpen} onOpenChange={setSendModalOpen} size="sm">
+        {/* size="default" (not "sm") — this footer can carry three buttons
+            (Cancel / Mark as sent / Send via WhatsApp) and "sm"'s 400px was
+            too narrow, wrapping "Send via WhatsApp" and "Mark as sent" onto
+            two lines. */}
+        <MUIDialog open={sendModalOpen} onOpenChange={setSendModalOpen} size="default">
           <MUIDialogHeader>
             <MUIDialogTitle>Send Quote</MUIDialogTitle>
             <MUIDialogDescription>
