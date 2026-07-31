@@ -182,6 +182,10 @@ function applyMatchingPropertyFilter(
     conditions.push('LOWER(prop.state) LIKE LOWER(:propertyState)');
     params.propertyState = `%${query.propertyState}%`;
   }
+  if (query.propertyConsumerNumber) {
+    conditions.push('LOWER(prop.consumer_number) LIKE LOWER(:propertyConsumerNumber)');
+    params.propertyConsumerNumber = `%${query.propertyConsumerNumber}%`;
+  }
   if (query.quoteStatus !== undefined) {
     conditions.push('latest_quote.status = :quoteStatus');
     params.quoteStatus = query.quoteStatus;

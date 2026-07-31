@@ -386,6 +386,14 @@ export class QuoteService {
       .join(' ')
       .trim();
 
+    const sanitizedCustomerName = customerName
+      .replace(/[^a-zA-Z0-9 ]/g, '')
+      .trim()
+      .replace(/\s+/g, '_');
+    const filename = sanitizedCustomerName
+      ? `${sanitizedCustomerName}-Quote.pdf`
+      : document.fileName;
+
     return {
       to: recipient,
       type: MessageType.TEMPLATE,
@@ -395,7 +403,7 @@ export class QuoteService {
         header: {
           type: 'document',
           link: document.fileUrl,
-          filename: document.fileName,
+          filename,
         },
         body: {
           customer_name: customerName || 'Customer',

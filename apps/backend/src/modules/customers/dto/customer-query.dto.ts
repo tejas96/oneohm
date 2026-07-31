@@ -253,6 +253,16 @@ export class CustomerQueryDto {
   @Transform(({ value }: { value: string }) => value?.trim())
   propertyState?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'Filter customers who have at least one property with this electricity consumer number (partial match, case-insensitive)',
+    example: '123456789012',
+  })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }: { value: string }) => value?.trim())
+  propertyConsumerNumber?: string;
+
   // ==================== Sorting ====================
 
   @ApiPropertyOptional({

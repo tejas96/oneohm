@@ -594,11 +594,16 @@ export function QuoteBuilder(): JSX.Element {
     const prop = propertiesRaw?.find((p: CustomerPropertyResponse) => p.id === propertyId);
     const discount = discountAmount;
 
+    if (!cust) {
+      showToast.error('Select a customer before downloading the quote PDF');
+      return;
+    }
+
     try {
       await generatePdf({
         calculation,
         customer: {
-          name: cust ? `${cust.firstName} ${cust.lastName}`.trim() : 'Customer',
+          name: `${cust.firstName} ${cust.lastName}`.trim(),
           phone: cust?.phone,
           email: cust?.email,
         },

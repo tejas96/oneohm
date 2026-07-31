@@ -1,7 +1,7 @@
 'use client';
 
 import { QuoteStatus } from '@tejas96/shared/types';
-import { FileText } from 'lucide-react';
+import { FileText, Info } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -272,6 +272,11 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
     const pdfData = buildQuotePdfData();
     if (!pdfData) return;
 
+    if (!pdfData.customer.name.trim()) {
+      showToast.error('Customer name is missing on this quote; cannot generate PDF');
+      return;
+    }
+
     setPdfLoading(true);
     try {
       await generateAndDownloadPdf(pdfData);
@@ -286,6 +291,11 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
   const handleSendWhatsapp = useCallback(async () => {
     const pdfData = buildQuotePdfData();
     if (!pdfData || !quote) return;
+
+    if (!pdfData.customer.name.trim()) {
+      showToast.error('Customer name is missing on this quote; cannot send PDF');
+      return;
+    }
 
     if (!quote.customerPhone) {
       showToast.error('Customer phone number is required to send via WhatsApp');
@@ -390,11 +400,10 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
           void handleDownloadPdf();
         }}
         canSendWhatsapp={canSendWhatsapp}
+        showWhatsappButton={quote.status === QuoteStatus.SENT}
         whatsappLoading={whatsappLoading}
         whatsappBlockedReason={whatsappBlockedReason}
-        whatsappLabel={
-          quote.status === QuoteStatus.DRAFT ? 'Send via WhatsApp' : 'Resend via WhatsApp'
-        }
+        whatsappLabel="Resend via WhatsApp"
         handleSendWhatsapp={() => {
           void handleSendWhatsapp();
         }}
@@ -402,6 +411,18 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
       />
 
       <main className="max-w-7xl mx-auto px-4 lg:px-6 space-y-6 pb-12">
+        {quote.status === QuoteStatus.DRAFT && (
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3 shadow-sm">
+            <Info className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-xs text-foreground-secondary">
+              <span className="font-semibold text-foreground">This quote is still a Draft</span> —
+              it hasn&apos;t been sent to the customer yet. Use the{' '}
+              <span className="font-semibold text-primary-dark">Draft</span> status dropdown next to
+              the quote number above to send it via WhatsApp or mark it sent.
+            </p>
+          </div>
+        )}
+
         {quote.propertyId && orderedPropertyQuotes.length > 0 && (
           <div className="bg-white border border-border rounded-xl p-4.5 flex items-center gap-3 flex-wrap shadow-sm">
             <span className="text-xs font-bold text-foreground">Property Quotes:</span>

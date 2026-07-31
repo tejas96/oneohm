@@ -260,13 +260,14 @@ function SiteRow({
               fontFamily: 'var(--font-mono)',
               fontSize: 12,
               fontWeight: 500,
-              color: color['text-primary'],
+              color: property.consumerNumber ? color['text-primary'] : color['text-tertiary'],
+              fontStyle: property.consumerNumber ? 'normal' : 'italic',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
             }}
           >
-            {property.propertyCode ?? property.propertyName ?? 'Unnamed site'}
+            {property.consumerNumber || 'Consumer no. not available'}
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
             {property.isPrimary ? (

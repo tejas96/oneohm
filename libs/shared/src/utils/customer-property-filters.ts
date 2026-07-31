@@ -14,6 +14,7 @@ export interface CustomerPropertyFilterQuery {
   propertySystemSizeMax?: unknown;
   propertyCity?: string;
   propertyState?: string;
+  propertyConsumerNumber?: string;
 }
 
 export function hasAnyCustomerPropertyFilter(query: CustomerPropertyFilterQuery): boolean {
@@ -26,7 +27,8 @@ export function hasAnyCustomerPropertyFilter(query: CustomerPropertyFilterQuery)
     query.propertySystemSizeMin !== undefined ||
     query.propertySystemSizeMax !== undefined ||
     (query.propertyCity !== undefined && query.propertyCity.length > 0) ||
-    (query.propertyState !== undefined && query.propertyState.length > 0)
+    (query.propertyState !== undefined && query.propertyState.length > 0) ||
+    (query.propertyConsumerNumber !== undefined && query.propertyConsumerNumber.length > 0)
   );
 }
 

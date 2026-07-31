@@ -235,6 +235,10 @@ function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilte
       typeof raw.propertyCity === 'string' && raw.propertyCity ? raw.propertyCity : undefined,
     propertyState:
       typeof raw.propertyState === 'string' && raw.propertyState ? raw.propertyState : undefined,
+    propertyConsumerNumber:
+      typeof raw.propertyConsumerNumber === 'string' && raw.propertyConsumerNumber
+        ? raw.propertyConsumerNumber
+        : undefined,
   };
 }
 
@@ -247,6 +251,7 @@ const PROPERTY_LEVEL_FILTER_FIELDS = [
   'latestQuoteSystemSizeKw',
   'propertyCity',
   'propertyState',
+  'propertyConsumerNumber',
 ] as const;
 
 function hasActivePropertyLevelFilter(filters: TableUrlFilterRecord): boolean {
@@ -843,6 +848,13 @@ const FILTER_COLUMNS: ColumnConfig<Customer>[] = [
   {
     field: 'propertyState',
     headerName: 'Property State',
+    filterable: true,
+    filterType: 'text',
+    filterDebounceMs: 400,
+  },
+  {
+    field: 'propertyConsumerNumber',
+    headerName: 'Consumer Number',
     filterable: true,
     filterType: 'text',
     filterDebounceMs: 400,
