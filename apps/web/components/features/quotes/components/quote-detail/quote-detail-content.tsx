@@ -272,6 +272,11 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
     const pdfData = buildQuotePdfData();
     if (!pdfData) return;
 
+    if (!pdfData.customer.name.trim()) {
+      showToast.error('Customer name is missing on this quote; cannot generate PDF');
+      return;
+    }
+
     setPdfLoading(true);
     try {
       await generateAndDownloadPdf(pdfData);
@@ -286,6 +291,11 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
   const handleSendWhatsapp = useCallback(async () => {
     const pdfData = buildQuotePdfData();
     if (!pdfData || !quote) return;
+
+    if (!pdfData.customer.name.trim()) {
+      showToast.error('Customer name is missing on this quote; cannot send PDF');
+      return;
+    }
 
     if (!quote.customerPhone) {
       showToast.error('Customer phone number is required to send via WhatsApp');
