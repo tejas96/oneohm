@@ -31,7 +31,7 @@
 
       /* header-table styles: report-print-base.css */
 
-      table {
+      table.main-table {
         font-size: 8.5pt;
       }
 
@@ -41,8 +41,13 @@
        * elements, especially combined with border-collapse. Cell-level
        * background is rendered correctly by both the browser preview and
        * html2canvas.
+       *
+       * NOTE: all rules below are scoped to `table.main-table` (rather than
+       * bare `thead`/`tbody`) so they cannot leak onto other tables in this
+       * document (`.header-table`, `.sig-table`) via the browser's implicit
+       * <tbody> insertion.
        */
-      thead th {
+      table.main-table thead th {
         padding: 5px 7px;
         font-weight: 600;
         font-size: 8.5pt;
@@ -52,26 +57,26 @@
         color: #ffffff;
       }
 
-      thead th:first-child {
+      table.main-table thead th:first-child {
         width: 8%;
         text-align: center;
       }
 
-      thead th:nth-child(2) {
+      table.main-table thead th:nth-child(2) {
         width: 36%;
       }
 
-      thead th:nth-child(3) {
+      table.main-table thead th:nth-child(3) {
         width: 56%;
       }
 
-      tbody tr {
+      table.main-table tbody tr {
         /* prevent any single row from splitting across pages */
         page-break-inside: avoid;
         break-inside: avoid;
       }
 
-      tbody td {
+      table.main-table tbody td {
         padding: 4px 7px;
         border: 1px solid #cccccc;
         vertical-align: top;
@@ -79,28 +84,28 @@
         background: #ffffff;
       }
 
-      tbody tr:nth-child(even) td {
+      table.main-table tbody tr:nth-child(even) td {
         background: #f5f5f5;
       }
 
-      tbody td:first-child {
+      table.main-table tbody td:first-child {
         text-align: center;
         font-weight: 600;
         color: #1a1a1a;
       }
 
-      tbody td.label {
+      table.main-table tbody td.label {
         font-weight: 600;
         color: #1a1a1a;
       }
 
-      tbody td.label-sub {
+      table.main-table tbody td.label-sub {
         font-weight: 400;
         color: #444444;
         padding-left: 18px;
       }
 
-      tbody td.no {
+      table.main-table tbody td.no {
         color: #888;
       }
 
@@ -148,11 +153,12 @@
         color: #1a1a1a;
       }
 
-      /* ── GUARANTEE PAGE ── */
+      /* ── GUARANTEE SECTION ── */
       .guarantee-heading {
         font-size: 10.5pt;
         font-weight: 700;
         color: #1a1a1a;
+        margin-top: 20px;
         margin-bottom: 12px;
         page-break-inside: avoid;
         break-inside: avoid;
@@ -200,7 +206,7 @@
           </tr>
         </table>
 
-        <table>
+        <table class="main-table">
           <colgroup>
             <col style="width: 8%" />
             <col style="width: 36%" />
@@ -338,7 +344,7 @@
 
       <div class="pdf-page-break"></div>
 
-      <!-- ═══════════════════════════ PAGE 2 — CERTIFICATIONS ═══════════════════════════ -->
+      <!-- ═══════════════════════════ PAGE 2 — CERTIFICATIONS + GUARANTEE ═══════════════════════════ -->
       <div class="pdf-page">
 
         <table class="header-table">
@@ -387,20 +393,7 @@
           </tr>
         </table>
 
-      </div><!-- end page 2 -->
-
-      <div class="pdf-page-break"></div>
-
-      <!-- ═══════════════════════════ PAGE 3 — GUARANTEE ═══════════════════════════ -->
-      <div class="pdf-page">
-
-        <table class="header-table">
-          <tr>
-            <td>{{vendor_name}}</td>
-            <td class="doc-title">Work Completion Report for Solar Power Plant</td>
-          </tr>
-        </table>
-
+        <!-- ═══════ GUARANTEE — same page, no longer a separate page 3 ═══════ -->
         <p class="guarantee-heading">Guarantee Certificate Undertaking to be submitted by VENDOR</p>
 
         <p class="guarantee-text">
@@ -426,7 +419,7 @@
           <div>Aadhar Number: &nbsp;<strong>{{consumer_aadhaar_number}}</strong></div>
         </div>
 
-      </div><!-- end page 3 -->
+      </div><!-- end page 2 -->
 
     </div><!-- end pdf-wrapper -->
   </body>
