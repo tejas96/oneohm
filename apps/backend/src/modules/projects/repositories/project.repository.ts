@@ -146,6 +146,7 @@ export class ProjectRepository {
       currentUserId?: string;
       pendingWorkflowStepId?: string;
       healthStatus?: string;
+      createdBy?: string;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },
@@ -156,6 +157,7 @@ export class ProjectRepository {
       .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
+      .leftJoinAndSelect('project.creator', 'creator')
       .leftJoinAndSelect('project.teamMembers', 'teamMember')
       .leftJoinAndSelect('teamMember.user', 'teamUser')
       .where('property.organizationId = :organizationId', { organizationId })
@@ -229,6 +231,10 @@ export class ProjectRepository {
           .getQuery()}`,
         { memberId: filters.memberId },
       );
+    }
+
+    if (filters?.createdBy) {
+      query.andWhere('project.createdBy = :createdBy', { createdBy: filters.createdBy });
     }
 
     const isSmartSort = filters?.sortBy === 'smartSort';

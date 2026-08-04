@@ -163,6 +163,12 @@ export class ProjectController {
     description: 'Filter by computed health status (overdue or at-risk projects)',
   })
   @ApiQuery({
+    name: 'createdBy',
+    required: false,
+    type: String,
+    description: 'Filter by creator - use "me" for current user or provide userId',
+  })
+  @ApiQuery({
     name: 'sortBy',
     required: false,
     type: String,
@@ -206,6 +212,7 @@ export class ProjectController {
     @Query('pendingWorkflowStepId', new ParseUUIDPipe({ optional: true }))
     pendingWorkflowStepId?: string,
     @Query('healthStatus') healthStatusRaw?: string,
+    @Query('createdBy') createdBy?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ): Promise<PaginatedResponse<ProjectListItemDto>> {
@@ -215,6 +222,12 @@ export class ProjectController {
     // Validate healthStatus to only accept known values
     const healthStatus =
       healthStatusRaw === 'delayed' || healthStatusRaw === 'at_risk' ? healthStatusRaw : undefined;
+
+    // Substitute 'me' with actual user ID for createdBy filter
+    let effectiveCreatedBy = createdBy;
+    if (effectiveCreatedBy === 'me') {
+      effectiveCreatedBy = currentUser.id;
+    }
 
     const isAdmin = hasAdminBypassRole(currentUser.roles || []);
     const effectiveMemberId = isAdmin ? memberId : currentUser.id;
@@ -236,6 +249,7 @@ export class ProjectController {
       currentUserId: currentUser.id,
       pendingWorkflowStepId,
       healthStatus,
+      createdBy: effectiveCreatedBy,
       sortBy,
       sortOrder,
     });

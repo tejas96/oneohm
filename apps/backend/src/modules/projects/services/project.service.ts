@@ -110,6 +110,7 @@ export class ProjectService {
       currentUserId?: string;
       pendingWorkflowStepId?: string;
       healthStatus?: string;
+      createdBy?: string;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },

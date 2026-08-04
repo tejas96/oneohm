@@ -227,4 +227,18 @@ export class ProjectListItemDto {
   @ApiProperty({ example: '2025-02-15T14:20:00Z' })
   @Expose()
   updatedAt!: Date;
+
+  @ApiPropertyOptional()
+  @Expose()
+  createdBy?: string;
+
+  @ApiPropertyOptional({ description: 'Name of the user who created this project' })
+  @Expose()
+  @Transform(({ obj }) => {
+    if (!obj.creator) return undefined;
+    const firstName = obj.creator.firstName || '';
+    const lastName = obj.creator.lastName || '';
+    return `${firstName} ${lastName}`.trim() || undefined;
+  })
+  creatorName?: string;
 }

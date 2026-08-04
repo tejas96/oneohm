@@ -170,6 +170,11 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
     result.address = address;
   }
 
+  const createdBy = raw.createdBy;
+  if (createdBy && typeof createdBy === 'string' && createdBy !== 'all') {
+    result.createdBy = createdBy;
+  }
+
   return result;
 }
 
@@ -541,6 +546,17 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     ),
   },
   {
+    field: 'createdBy',
+    headerName: 'Created By',
+    filterable: true,
+    defaultHidden: true,
+    width: 140,
+    renderCell: ({ row }): JSX.Element => {
+      const name = (row as ProjectListItem).creatorName;
+      return <MUITypography variant="body">{name || '-'}</MUITypography>;
+    },
+  },
+  {
     field: 'pendingWorkflowStepId',
     headerName: 'Pending Task',
     filterable: true,
@@ -675,6 +691,11 @@ export function ProjectListPage(): JSX.Element {
     );
   }, [employeesData?.items]);
 
+  const creatorOptions = useMemo(
+    () => [{ label: 'Current User (Me)', value: 'me' }, ...employeeOptions],
+    [employeeOptions],
+  );
+
   // Fetch active workflow steps for the task filter
   const { items: workflowSteps } = useAllActiveWorkflowSteps();
   const workflowStepOptions = useMemo(() => {
@@ -767,6 +788,48 @@ export function ProjectListPage(): JSX.Element {
           },
         };
       }
+      if (col.field === 'createdBy') {
+        return {
+          ...col,
+          filterType: 'select' as const,
+          filterOptions: creatorOptions,
+          renderFilter: ({
+            value,
+            onChange,
+          }: {
+            value: unknown;
+            onChange: (v: unknown) => void;
+          }) => {
+            const selectedOption =
+              creatorOptions.find((o) => String(o.value) === String(value)) || null;
+            return (
+              <Autocomplete
+                size="small"
+                fullWidth
+                options={creatorOptions}
+                value={selectedOption}
+                disablePortal
+                getOptionLabel={(option) =>
+                  typeof option === 'string' ? option : option.label || ''
+                }
+                isOptionEqualToValue={(option, val) => option.value === val?.value}
+                onChange={(_, val) => {
+                  onChange(val?.value ?? '');
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Search creator..."
+                    sx={{
+                      '& .MuiOutlinedInput-root': {},
+                    }}
+                  />
+                )}
+              />
+            );
+          },
+        };
+      }
       if (col.field === 'pendingWorkflowStepId') {
         return {
           ...col,
@@ -809,7 +872,7 @@ export function ProjectListPage(): JSX.Element {
       }
       return col;
     });
-  }, [employeeOptions, workflowStepOptions]);
+  }, [creatorOptions, employeeOptions, workflowStepOptions]);
 
   const renderEmptyState = useCallback(
     (hasFilters: boolean): JSX.Element => (

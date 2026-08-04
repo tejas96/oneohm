@@ -34,6 +34,7 @@ export interface ProjectFilters {
   memberId?: string;
   pendingWorkflowStepId?: string;
   healthStatus?: string;
+  createdBy?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
   // Query control
@@ -96,6 +97,8 @@ export interface ProjectListItem {
   paymentSummary: PaymentSummary;
   currentPhase: string | null;
   healthStatus: 'on_track' | 'at_risk' | 'delayed' | null;
+  createdBy?: string;
+  creatorName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -157,6 +160,7 @@ export function useProjects(
       if (queryFilters.pendingWorkflowStepId)
         params.append('pendingWorkflowStepId', queryFilters.pendingWorkflowStepId);
       if (queryFilters.healthStatus) params.append('healthStatus', queryFilters.healthStatus);
+      if (queryFilters.createdBy) params.append('createdBy', queryFilters.createdBy);
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
       if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 
