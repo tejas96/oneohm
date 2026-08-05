@@ -68,6 +68,12 @@ defineResource<Vendor>(
     update: 'inventory:write',
     delete: 'inventory:write',
   },
+  {
+    view: 'inventory.stock.view',
+    create: 'inventory.stock.manage',
+    update: 'inventory.stock.manage',
+    delete: 'inventory.stock.manage',
+  },
 );
 
 // ============================================================================

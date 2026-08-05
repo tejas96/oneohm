@@ -26,6 +26,10 @@ defineResource<Bom>(
   {
     view: 'quotes:read',
   },
+  {
+    view: 'projects.bom.view',
+    update: 'projects.bom.manage',
+  },
 );
 
 export const bomResourceKeys = createResourceKeys('bom');

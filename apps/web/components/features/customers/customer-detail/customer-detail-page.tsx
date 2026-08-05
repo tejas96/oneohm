@@ -46,7 +46,7 @@ import { PropertySelectModal } from '../components/property-select-modal';
 import {
   formatDeleteBlockTooltip,
   getCustomerDeleteBlockReasons,
-  ORG_ADMIN_ROLES,
+  shouldShowCustomerDelete,
 } from '@/components/features/properties/utils/delete-eligibility';
 import { EmptyState } from '@/components/shared';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
@@ -109,8 +109,8 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, hasAnyRole } = useAuth();
-  const isOrgAdmin = hasAnyRole([...ORG_ADMIN_ROLES]);
+  const { user } = useAuth();
+  const showCustomerDelete = shouldShowCustomerDelete();
   const deleteCustomerMutation = useDeleteCustomer();
   const deleteConfirmation = useDeleteConfirmation({
     mutation: deleteCustomerMutation,
@@ -380,7 +380,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         onAddProperty={handleAddProperty}
         onCreateQuote={handleCreateQuote}
         onLogFollowup={() => setFollowupDrawerOpen(true)}
-        showDelete={isOrgAdmin}
+        showDelete={showCustomerDelete}
         deleteDisabled={customerDeleteDisabled}
         deleteTooltip={customerDeleteTooltip}
         onDelete={() => deleteConfirmation.requestDelete(customer)}

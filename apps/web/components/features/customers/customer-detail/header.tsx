@@ -32,6 +32,7 @@ import { getCustomerDisplayName } from './utils';
 import type { Customer } from '../hooks';
 
 import { WhatsAppIcon } from '@/components/ui';
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import { formatDate, formatPhoneForWhatsApp, getInitials, toTitleLabel } from '@/lib/utils';
 
 interface CustomerDetailHeaderProps {
@@ -189,24 +190,26 @@ export function CustomerDetailHeader({
 
       {showDelete ? (
         <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
-          <Tooltip title={deleteTooltip ?? ''}>
-            <span>
-              <MenuItem
-                disabled={deleteDisabled}
-                onClick={() => {
-                  if (deleteDisabled) return;
-                  setMoreAnchor(null);
-                  onDelete?.();
-                }}
-                sx={{ color: 'error.main' }}
-              >
-                <ListItemIcon>
-                  <DeleteOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />
-                </ListItemIcon>
-                Delete Customer
-              </MenuItem>
-            </span>
-          </Tooltip>
+          <GuardedFeatureAction feature="customers.delete" label="Delete customer">
+            <Tooltip title={deleteTooltip ?? ''}>
+              <span>
+                <MenuItem
+                  disabled={deleteDisabled}
+                  onClick={() => {
+                    if (deleteDisabled) return;
+                    setMoreAnchor(null);
+                    onDelete?.();
+                  }}
+                  sx={{ color: 'error.main' }}
+                >
+                  <ListItemIcon>
+                    <DeleteOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />
+                  </ListItemIcon>
+                  Delete Customer
+                </MenuItem>
+              </span>
+            </Tooltip>
+          </GuardedFeatureAction>
         </Menu>
       ) : null}
 

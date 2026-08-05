@@ -18,6 +18,7 @@ import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/fee
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES } from '@/lib/config/routes';
+import { useRegisteredResourceAccess } from '@/lib/hooks/core';
 import { useInventoryExport } from '@/lib/hooks/resources/inventory-export';
 import {
   type InventoryStock,
@@ -25,7 +26,7 @@ import {
   useInventoryStockList,
 } from '@/lib/hooks/resources/inventory-stock';
 import { useWarehouses } from '@/lib/hooks/resources/warehouses';
-import { useAuth } from '@/providers/auth-provider';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 
 type StockRow = InventoryStock & Record<string, unknown>;
 const EMPTY_ROWS: StockRow[] = [];
@@ -45,9 +46,7 @@ const EMPTY_ROWS: StockRow[] = [];
  * Cross-page concerns wired here:
  *   - URL state sync via useResourceList(syncToUrl: true) so deep links
  *     and back/forward work as users tweak filters.
- *   - Permission gating: adjust + transfer actions check inventory:write
- *     via useAuth.hasPermission. Admins (platform_admin/super_admin/admin)
- *     bypass via the auth-store fix.
+ *   - Permission gating: adjust + transfer via inventory-stock resource access.
  *   - Saved views: parent owns URL writes for ?view= per the SavedViewsBar
  *     contract; on chip select we call setFilters({...}) inside the same
  *     transition that updates the URL.
@@ -58,10 +57,10 @@ export function InventoryStockPage(): React.JSX.Element {
   const isLowStockUrlFilter = searchParams.get('filter') === 'low-stock';
   const activeViewId = searchParams.get('view');
 
-  const { hasPermission } = useAuth();
-  const canAdjust = hasPermission('stock:adjust') || hasPermission('inventory:write');
-  const canTransfer = hasPermission('stock:transfer') || hasPermission('inventory:write');
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const stockAccess = useRegisteredResourceAccess('inventory-stock');
+  const canExport = useFeatureAccess('inventory.export');
+  const canAdjust = stockAccess.canUpdate;
+  const canTransfer = stockAccess.canUpdate;
 
   const defaultFilters = useMemo<Partial<InventoryStockFilters>>(
     () => (isLowStockUrlFilter ? { lowStock: true } : {}),

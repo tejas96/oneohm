@@ -2,7 +2,7 @@
 
 import { ProjectType } from '@tejas96/shared/types';
 
-import { useResourceMutations, useResourceSubList } from '../core';
+import { defineResource, useResourceMutations, useResourceSubList } from '../core';
 
 export interface ProductPrice {
   id: string;
@@ -19,6 +19,26 @@ export interface ProductPrice {
   createdAt: string;
   updatedAt: string;
 }
+
+defineResource<ProductPrice>(
+  'product-prices',
+  {
+    endpoint: '/products/{parentId}/prices',
+    syncToUrl: false,
+  },
+  {
+    view: 'products:read',
+    create: 'products:create',
+    update: 'products:update',
+    delete: 'products:delete',
+  },
+  {
+    view: 'admin.catalog.manage',
+    create: 'admin.catalog.manage',
+    update: 'admin.catalog.manage',
+    delete: 'admin.catalog.manage',
+  },
+);
 
 export function useProductPrices(productId: string) {
   return useResourceSubList<ProductPrice>(

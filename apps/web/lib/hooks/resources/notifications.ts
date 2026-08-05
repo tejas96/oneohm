@@ -13,6 +13,7 @@ import {
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 import { getErrorMessage } from '@/lib/utils/error';
 
 // ============================================================================
@@ -54,6 +55,9 @@ defineResource<Notification>(
   {
     view: 'notifications:read',
   },
+  {
+    view: 'notifications.view',
+  },
 );
 
 // ============================================================================
@@ -78,8 +82,10 @@ export function useNotifications(
   });
 }
 
-export function useNotificationUnreadCount() {
+export function useNotificationUnreadCount(options?: { enabled?: boolean }) {
   const { organizationId, orgHeaders } = useOrgContext();
+  const canViewNotifications = useFeatureAccess('notifications.view');
+
   return useQuery<{ count: number }>({
     queryKey: ['notifications', 'unread-count', organizationId],
     queryFn: async () => {
@@ -88,6 +94,7 @@ export function useNotificationUnreadCount() {
       });
       return data;
     },
+    enabled: canViewNotifications && (options?.enabled ?? true),
     placeholderData: keepPreviousData,
     refetchInterval: 30_000,
     staleTime: 15_000,

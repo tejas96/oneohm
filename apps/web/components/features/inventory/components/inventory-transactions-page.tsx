@@ -17,6 +17,7 @@ import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES } from '@/lib/config/routes';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 import { useInventoryExport } from '@/lib/hooks/resources/inventory-export';
 import {
   useInventoryTransactions,
@@ -25,7 +26,6 @@ import {
 } from '@/lib/hooks/resources/inventory-transactions';
 import { useWarehouses } from '@/lib/hooks/resources/warehouses';
 import { formatDate } from '@/lib/utils';
-import { useAuth } from '@/providers/auth-provider';
 
 type TxRow = InventoryTransaction & Record<string, unknown>;
 
@@ -191,8 +191,7 @@ export function InventoryTransactionsPage(): React.JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeViewId = searchParams.get('view');
-  const { hasPermission } = useAuth();
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const canExport = useFeatureAccess('inventory.export');
 
   const list = useInventoryTransactions();
   const {

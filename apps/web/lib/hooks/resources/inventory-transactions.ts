@@ -61,6 +61,9 @@ defineResource<InventoryTransaction>(
   {
     view: 'inventory:read',
   },
+  {
+    view: 'inventory.transactions.view',
+  },
 );
 
 // ============================================================================

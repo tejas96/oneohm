@@ -6,6 +6,7 @@ import {
   type BaseFilters,
   defineResource,
   getResourceConfig,
+  getResourceAccess,
   getResourcePermissions,
   STALE_TIMES,
   useResourceList,
@@ -54,6 +55,12 @@ defineResource<SubsidyConfigItem>(
     update: 'subsidy-config:update',
     delete: 'subsidy-config:delete',
   },
+  {
+    view: 'admin.settings.manage',
+    create: 'admin.settings.manage',
+    update: 'admin.settings.manage',
+    delete: 'admin.settings.manage',
+  },
 );
 
 export function useSubsidyConfigList() {
@@ -77,5 +84,5 @@ export function useSubsidyConfigMutations() {
 }
 
 export function useSubsidyConfigPermissions() {
-  return useResourcePermissions(getResourcePermissions('subsidy-config'));
+  return useResourcePermissions(getResourcePermissions('subsidy-config'), getResourceAccess('subsidy-config'));
 }

@@ -14,13 +14,13 @@ import {
   type InventorySearchHit,
   type InventorySearchType,
 } from '@/lib/hooks/resources';
-import { useAuth } from '@/providers/auth-provider';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 
 /**
  * Adapter on top of `useInventorySearch` (Part 12) that shapes the
  * federated results for the command palette: stable per-type group
  * order, an MUI icon per type, a precomputed href, and a single
- * `enabled` switch driven by the user's `inventory:search` permission
+ * `enabled` switch driven by `inventory.search` feature access
  * + the palette's open state.
  *
  * Why this lives next to the palette and not inside the FDAL: the
@@ -138,8 +138,7 @@ export interface UseInventoryPaletteSearchOptions {
 export function useInventoryPaletteSearch(
   opts: UseInventoryPaletteSearchOptions,
 ): UseInventoryPaletteSearchResult {
-  const { hasPermission } = useAuth();
-  const canSearch = hasPermission('inventory:search');
+  const canSearch = useFeatureAccess('inventory.search');
 
   const { query, effectiveQuery, isBelowMinLength } = useInventorySearch({
     query: opts.query,

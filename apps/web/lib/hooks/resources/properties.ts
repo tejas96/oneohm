@@ -72,13 +72,28 @@ export interface PropertyListFilters extends BaseFilters {
 
 // ── Resource Registration (kept for usePropertyMutations) ────────
 
-defineResource<PropertyItem>('properties', {
-  endpoint: '/customer-properties',
-  defaultPageSize: 10,
-  searchDebounceMs: 550,
-  minSearchLength: 2,
-  syncToUrl: true,
-});
+defineResource<PropertyItem>(
+  'properties',
+  {
+    endpoint: '/customer-properties',
+    defaultPageSize: 10,
+    searchDebounceMs: 550,
+    minSearchLength: 2,
+    syncToUrl: true,
+  },
+  {
+    view: 'properties:read',
+    create: 'properties:create',
+    update: 'properties:update',
+    delete: 'properties:delete',
+  },
+  {
+    view: 'properties.view',
+    create: 'properties.manage',
+    update: 'properties.manage',
+    delete: 'properties.delete',
+  },
+);
 
 // ── Hooks ──────────────────────────────────────────────────────
 

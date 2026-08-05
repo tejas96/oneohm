@@ -91,6 +91,12 @@ defineResource<PurchaseOrder>(
     update: 'purchase-order:write',
     delete: 'purchase-order:write',
   },
+  {
+    view: 'inventory.procurement.view',
+    create: 'inventory.procurement.manage',
+    update: 'inventory.procurement.manage',
+    delete: 'inventory.procurement.manage',
+  },
 );
 
 // ============================================================================

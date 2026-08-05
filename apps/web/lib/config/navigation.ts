@@ -10,7 +10,6 @@ import {
   Folder,
   HelpCircle,
   Home,
-  Key,
   LayoutGrid,
   Layers,
   List,
@@ -18,7 +17,6 @@ import {
   Plus,
   Send,
   Settings,
-  Shield,
   Tag,
   TrendingUp,
   Users,
@@ -79,16 +77,6 @@ export const navigationConfig: NavigationConfig = {
       label: 'Inventory',
       href: ROUTES.INVENTORY.STOCK,
       panelKey: 'inventory',
-      roles: [
-        'admin',
-        'super_admin',
-        'platform_admin',
-        'inventory_manager',
-        'store',
-        'project_manager',
-        'accounts_manager',
-      ],
-      permissions: ['inventory:read'],
     },
     {
       id: 'finance',
@@ -123,7 +111,6 @@ export const navigationConfig: NavigationConfig = {
       label: 'Admin',
       href: ROUTES.ADMIN.HOME,
       panelKey: 'admin',
-      roles: ['admin', 'super_admin', 'platform_admin'],
     },
   ],
 
@@ -471,7 +458,6 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Identity & Access',
-          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {
               id: 'admin-users',
@@ -479,23 +465,10 @@ export const navigationConfig: NavigationConfig = {
               label: 'Users',
               href: ROUTES.ADMIN.USERS,
             },
-            {
-              id: 'admin-roles',
-              icon: Shield,
-              label: 'Roles',
-              href: ROUTES.ADMIN.ROLES,
-            },
-            {
-              id: 'admin-permissions',
-              icon: Key,
-              label: 'Permissions',
-              href: ROUTES.ADMIN.PERMISSIONS,
-            },
           ],
         },
         {
           title: 'Utility network',
-          roles: ['super_admin'],
           items: [
             {
               id: 'admin-discom',
@@ -507,7 +480,6 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Catalog & Products',
-          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {
               id: 'admin-product-types',
@@ -531,7 +503,6 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Pricing & Config',
-          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {
               id: 'admin-installation-pricing',
@@ -555,7 +526,6 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Settings',
-          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {
               id: 'general-settings',
@@ -573,7 +543,6 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Project',
-          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {
               id: 'admin-workflow-steps',

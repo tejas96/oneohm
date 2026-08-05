@@ -70,6 +70,12 @@ defineResource<StockAllocation>(
     update: 'allocation:write',
     delete: 'allocation:write',
   },
+  {
+    view: 'inventory.allocations.view',
+    create: 'inventory.allocations.manage',
+    update: 'inventory.allocations.manage',
+    delete: 'inventory.allocations.manage',
+  },
 );
 
 // ============================================================================

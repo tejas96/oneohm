@@ -1,5 +1,6 @@
 'use client';
 
+import { getRolePresentation } from '@tejas96/shared';
 import { ChevronDown, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -22,14 +23,32 @@ import { cn, getInitials } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 /**
- * Get primary role display name
+ * Get primary role display name from canonical or legacy role codes.
  */
 function getRoleDisplay(roles: string[]): string {
-  if (roles.includes('super_admin') || roles.includes('platform_admin')) return 'Super Admin';
-  if (roles.includes('admin')) return 'Admin';
-  if (roles.includes('manager')) return 'Manager';
-  if (roles.includes('sales')) return 'Sales';
-  if (roles.includes('field_worker')) return 'Field Worker';
+  const priority = [
+    'super_admin',
+    'platform_admin',
+    'admin',
+    'hr',
+    'sales',
+    'field_worker',
+    'manager',
+  ];
+
+  for (const code of priority) {
+    if (roles.includes(code)) {
+      return getRolePresentation(code).label;
+    }
+  }
+
+  if (roles.length > 0) {
+    const firstRole = roles[0];
+    if (firstRole) {
+      return getRolePresentation(firstRole).label;
+    }
+  }
+
   return 'User';
 }
 

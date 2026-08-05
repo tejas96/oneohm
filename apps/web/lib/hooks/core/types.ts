@@ -1,6 +1,8 @@
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { PaginationMeta } from '@tejas96/shared/types';
 
+import type { FeatureAccessKey } from '@/lib/access-control/feature-policy';
+
 // ── Filter Types ──────────────────────────────────────────────
 
 export interface BaseFilters {
@@ -48,6 +50,7 @@ export interface ResourceConfig<T = unknown, F extends BaseFilters = BaseFilters
   paramMapping?: Record<string, string>;
   responseAdapter?: (raw: unknown) => ResourceListResponse<T>;
   permissions?: ResourcePermissionConfig;
+  access?: ResourceAccessConfig;
 }
 
 export interface ResourcePermissionConfig {
@@ -57,6 +60,15 @@ export interface ResourcePermissionConfig {
   delete?: string;
   archive?: string;
   bulkDelete?: string;
+}
+
+export interface ResourceAccessConfig {
+  view?: FeatureAccessKey;
+  create?: FeatureAccessKey;
+  update?: FeatureAccessKey;
+  delete?: FeatureAccessKey;
+  archive?: FeatureAccessKey;
+  bulkDelete?: FeatureAccessKey;
 }
 
 // ── Nested/Sub-Resource Configuration ─────────────────────────

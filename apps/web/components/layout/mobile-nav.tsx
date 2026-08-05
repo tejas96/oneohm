@@ -1,9 +1,9 @@
 'use client';
 
 import { Menu } from 'lucide-react';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { GuardedNavLink } from '@/components/layout/guarded-nav-link';
 import { Badge, CountBadge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { isNavItemActive } from '@/lib/config';
@@ -38,12 +38,16 @@ export function MobileNav() {
   const { navigation } = useFilteredNavigation();
   const panelData = getFilteredPanelByPath(navigation, pathname);
 
+  const searchString = searchParams.toString();
+
   // Ensure consistent hydration - only render Sheet after mount
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const closeNav = () => setIsOpen(false);
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname, searchString]);
 
   // Render placeholder button during SSR to avoid hydration mismatch
   if (!mounted) {
@@ -58,7 +62,6 @@ export function MobileNav() {
   }
 
   const panelConfig = panelData?.config;
-  const searchString = searchParams.toString();
   const currentFullUrl = searchString ? `${pathname}?${searchString}` : pathname;
 
   const renderNavItem = (item: NavItem, isSubItem = false) => {
@@ -114,11 +117,13 @@ export function MobileNav() {
     const displayBadge = item.badge;
 
     return (
-      <Link
+      <GuardedNavLink
         key={item.id}
         href={item.href}
+        label={item.label}
+        feature={item.feature}
+        isAllowed={item.isAllowed ?? true}
         prefetch={false}
-        onClick={closeNav}
         className={cn(
           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
           isActive
@@ -139,7 +144,7 @@ export function MobileNav() {
             {displayBadge}
           </Badge>
         )}
-      </Link>
+      </GuardedNavLink>
     );
   };
 
@@ -177,11 +182,13 @@ export function MobileNav() {
               const Icon = item.icon;
 
               return (
-                <Link
+                <GuardedNavLink
                   key={item.id}
                   href={item.href}
+                  label={item.label}
+                  feature={item.feature}
+                  isAllowed={item.isAllowed ?? true}
                   prefetch={false}
-                  onClick={closeNav}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm',
                     'transition-colors',
@@ -195,7 +202,7 @@ export function MobileNav() {
                   {typeof item.badge === 'number' && (
                     <CountBadge count={item.badge} variant="error" />
                   )}
-                </Link>
+                </GuardedNavLink>
               );
             })}
           </div>
@@ -229,11 +236,13 @@ export function MobileNav() {
               const Icon = item.icon;
 
               return (
-                <Link
+                <GuardedNavLink
                   key={item.id}
                   href={item.href}
+                  label={item.label}
+                  feature={item.feature}
+                  isAllowed={item.isAllowed ?? true}
                   prefetch={false}
-                  onClick={closeNav}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm',
                     'transition-colors',
@@ -244,7 +253,7 @@ export function MobileNav() {
                 >
                   {Icon && <Icon className="size-icon-md" strokeWidth={2} />}
                   <span>{item.label}</span>
-                </Link>
+                </GuardedNavLink>
               );
             })}
           </div>

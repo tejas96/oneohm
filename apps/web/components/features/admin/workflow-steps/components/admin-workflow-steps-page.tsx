@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { FIXED_ROLES, isFixedRoleCode } from '@tejas96/shared';
 import type { WorkflowStep } from '@tejas96/shared/types';
 import {
   CheckCircle2,
@@ -15,13 +16,13 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  workflowStepSchema,
+  fixedModeWorkflowStepSchema,
+  type FixedModeWorkflowStepFormValues,
   type ChecklistItem,
-  type WorkflowStepFormValues,
 } from '../schemas/workflow-step.schema';
 import { buildWorkflowStepPayload } from '../utils/workflow-step-payload';
 
@@ -50,10 +51,9 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { useDeleteConfirmation } from '@/lib/hooks/core';
+import { useDeleteConfirmation, useRegisteredResourceAccess } from '@/lib/hooks/core';
 import {
   useAllActiveWorkflowSteps,
-  useRoles,
   useWorkflowStepMutations,
   useWorkflowSteps,
 } from '@/lib/hooks/resources';
@@ -122,16 +122,7 @@ export function AdminWorkflowStepsPage(): React.JSX.Element {
   } = useWorkflowSteps();
 
   const mutations = useWorkflowStepMutations();
-  // TODO: Uncomment when role-permission mappings are configured in the IAM UI
-  // const permissions = useWorkflowStepPermissions();
-  const permissions = {
-    canView: true,
-    canCreate: true,
-    canUpdate: true,
-    canDelete: true,
-    canArchive: true,
-    canBulkDelete: true,
-  };
+  const permissions = useRegisteredResourceAccess('workflow-steps');
 
   const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -483,22 +474,18 @@ interface StepFormSheetProps {
 function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): React.JSX.Element {
   const isEditing = !!step;
 
-  const { items: allRoles, isLoading: isLoadingRoles } = useRoles({
-    syncToUrl: false,
-    defaultPageSize: 100,
-  });
-  const availableRoles = useMemo(() => {
-    const seen = new Set<string>();
-    return allRoles.filter((r) => {
-      if (r.organizationId === null) return false;
-      if (seen.has(r.code)) return false;
-      seen.add(r.code);
-      return true;
-    });
-  }, [allRoles]);
+  const availableRoles = useMemo(
+    () =>
+      FIXED_ROLES.map((role) => ({
+        id: role.code,
+        code: role.code,
+        name: role.label,
+      })),
+    [],
+  );
 
-  const form = useForm<WorkflowStepFormValues>({
-    resolver: zodResolver(workflowStepSchema),
+  const form = useForm<FixedModeWorkflowStepFormValues>({
+    resolver: zodResolver(fixedModeWorkflowStepSchema) as Resolver<FixedModeWorkflowStepFormValues>,
     defaultValues: {
       name: '',
       code: '',
@@ -526,7 +513,10 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         code: step.code,
         description: step.description ?? '',
         type: step.type ?? '',
-        defaultRoleCode: step.defaultRoleCode ?? '',
+        defaultRoleCode:
+          step.defaultRoleCode && isFixedRoleCode(step.defaultRoleCode)
+            ? step.defaultRoleCode
+            : '',
         defaultDepartment: step.defaultDepartment ?? '',
         defaultMilestoneName: step.defaultMilestoneName ?? null,
         defaultMilestoneOrder: step.defaultMilestoneOrder ?? null,
@@ -573,7 +563,7 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
   const isPending = mutations.create.isPending || mutations.update.isPending;
 
   const onSubmit = useCallback(
-    (data: WorkflowStepFormValues): void => {
+    (data: FixedModeWorkflowStepFormValues): void => {
       const payload: Partial<WorkflowStep> = buildWorkflowStepPayload(data);
 
       if (step) {
@@ -660,11 +650,13 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
                   name="defaultRoleCode"
                   control={form.control}
                   render={({ field }): React.JSX.Element => {
+                    const staleRoleCode =
+                      step?.defaultRoleCode &&
+                      !availableRoles.some((role) => role.code === step.defaultRoleCode)
+                        ? step.defaultRoleCode
+                        : null;
                     const selectValue = field.value || NONE_SENTINEL;
-                    const hasStaleValue =
-                      field.value &&
-                      !availableRoles.some((r) => r.code === field.value) &&
-                      !isLoadingRoles;
+                    const hasStaleValue = Boolean(staleRoleCode);
 
                     return (
                       <Select
@@ -672,15 +664,13 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
                         onValueChange={(v) => field.onChange(v === NONE_SENTINEL ? '' : v)}
                       >
                         <SelectTrigger className="h-input-lg text-sm">
-                          <SelectValue
-                            placeholder={isLoadingRoles ? 'Loading...' : 'Select role'}
-                          />
+                          <SelectValue placeholder="Select role" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value={NONE_SENTINEL}>None</SelectItem>
-                          {hasStaleValue && (
-                            <SelectItem value={field.value!} disabled>
-                              {field.value} (deleted)
+                          {hasStaleValue && staleRoleCode && (
+                            <SelectItem value={staleRoleCode} disabled>
+                              {staleRoleCode} (unmapped)
                             </SelectItem>
                           )}
                           {availableRoles.map((role) => (

@@ -60,8 +60,9 @@ import {
 import {
   formatDeleteBlockTooltip,
   getCustomerDeleteBlockReasons,
-  ORG_ADMIN_ROLES,
+  shouldShowCustomerDelete,
 } from '@/components/features/properties/utils/delete-eligibility';
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import type { ColumnConfig } from '@/components/shared/advanced-table';
 import {
   CRM_TONE_FILL,
@@ -79,7 +80,6 @@ import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { color, crm, radius } from '@/lib/theme/tokens';
 import { formatCurrency, getErrorMessage, toTitleLabel } from '@/lib/utils';
-import { useAuth } from '@/providers/auth-provider';
 
 // CrmTable is generic over TRow with no Record constraint, but the filter
 // helpers below index arbitrary fields, so the row type is widened here.
@@ -406,24 +406,26 @@ function RowActionsMenu({
         <Divider />
 
         {showDelete ? (
-          <Tooltip title={deleteTooltip ?? ''}>
-            <span>
-              <MenuItem
-                disabled={deleteDisabled}
-                onClick={() => {
-                  if (deleteDisabled) return;
-                  handleClose();
-                  onRequestDelete?.(customer);
-                }}
-                sx={{ color: 'error.main' }}
-              >
-                <ListItemIcon>
-                  <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
-                </ListItemIcon>
-                Delete Customer
-              </MenuItem>
-            </span>
-          </Tooltip>
+          <GuardedFeatureAction feature="customers.delete" label="Delete customer">
+            <Tooltip title={deleteTooltip ?? ''}>
+              <span>
+                <MenuItem
+                  disabled={deleteDisabled}
+                  onClick={() => {
+                    if (deleteDisabled) return;
+                    handleClose();
+                    onRequestDelete?.(customer);
+                  }}
+                  sx={{ color: 'error.main' }}
+                >
+                  <ListItemIcon>
+                    <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
+                  </ListItemIcon>
+                  Delete Customer
+                </MenuItem>
+              </span>
+            </Tooltip>
+          </GuardedFeatureAction>
         ) : null}
       </Menu>
     </>
@@ -904,8 +906,7 @@ const BULK_ACTIONS: CrmBulkAction<Customer>[] = [
 export function CustomerListPage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { hasAnyRole } = useAuth();
-  const isOrgAdmin = hasAnyRole([...ORG_ADMIN_ROLES]);
+  const showCustomerDelete = shouldShowCustomerDelete();
   const deleteCustomerMutation = useDeleteCustomer();
   const deleteConfirmation = useDeleteConfirmation<Customer>({
     mutation: deleteCustomerMutation,
@@ -1224,13 +1225,13 @@ export function CustomerListPage(): JSX.Element {
         renderCell: (row) => (
           <RowActionsMenu
             customer={row}
-            showDelete={isOrgAdmin}
+            showDelete={showCustomerDelete}
             onRequestDelete={deleteConfirmation.requestDelete}
           />
         ),
       },
     ],
-    [handleAddSite, isOrgAdmin, deleteConfirmation.requestDelete],
+    [handleAddSite, showCustomerDelete, deleteConfirmation.requestDelete],
   );
 
   const renderEmptyState = useCallback(

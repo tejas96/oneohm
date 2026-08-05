@@ -161,7 +161,7 @@ export function buildAllocationColumns(
             onSelect: () => callbacks.onFulfill(row),
             disabled: !canFulfillThis,
             tooltip: !callbacks.canWrite
-              ? 'You need allocation:write to fulfill allocations.'
+              ? 'You need allocation manage access to fulfill allocations.'
               : remaining <= 0
                 ? 'Nothing left to fulfill.'
                 : row.status === 'cancelled'
@@ -175,7 +175,7 @@ export function buildAllocationColumns(
             onSelect: () => callbacks.onCancel(row),
             disabled: !canCancelThis,
             tooltip: !callbacks.canWrite
-              ? 'You need allocation:write to cancel allocations.'
+              ? 'You need allocation manage access to cancel allocations.'
               : row.status === 'cancelled'
                 ? 'Already cancelled.'
                 : row.status === 'dispatched' || row.status === 'completed'

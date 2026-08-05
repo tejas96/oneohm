@@ -6,6 +6,7 @@ import {
   type BaseFilters,
   defineResource,
   getResourceConfig,
+  getResourceAccess,
   getResourcePermissions,
   STALE_TIMES,
   useResourceList,
@@ -50,6 +51,12 @@ defineResource<InstallationPricingItem>(
     update: 'installation-pricing:update',
     delete: 'installation-pricing:delete',
   },
+  {
+    view: 'admin.catalog.manage',
+    create: 'admin.catalog.manage',
+    update: 'admin.catalog.manage',
+    delete: 'admin.catalog.manage',
+  },
 );
 
 export function useInstallationPricing() {
@@ -73,5 +80,5 @@ export function useInstallationPricingMutations() {
 }
 
 export function useInstallationPricingPermissions() {
-  return useResourcePermissions(getResourcePermissions('installation-pricing'));
+  return useResourcePermissions(getResourcePermissions('installation-pricing'), getResourceAccess('installation-pricing'));
 }

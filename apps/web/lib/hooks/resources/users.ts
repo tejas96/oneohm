@@ -1,12 +1,14 @@
 'use client';
 
 import { useQuery, keepPreviousData, type UseQueryResult } from '@tanstack/react-query';
+import type { FixedRoleCode } from '@tejas96/shared';
 import type { AxiosError } from 'axios';
 import { useCallback, useMemo, useState } from 'react';
 
 import {
   defineResource,
   getResourceConfig,
+  getResourceAccess,
   getResourcePermissions,
   useResourceList,
   useResourceDetail,
@@ -42,7 +44,6 @@ export interface AdminUser {
 
 export interface AdminUserFilters extends BaseFilters {
   status?: string;
-  roleId?: string;
   showDeleted?: boolean;
 }
 
@@ -51,7 +52,7 @@ export interface AdminUserListFilters {
   limit?: number;
   search?: string;
   status?: string;
-  roleId?: string;
+  role?: FixedRoleCode;
   showDeleted?: boolean;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
@@ -84,6 +85,12 @@ defineResource<AdminUser>(
     create: 'users:create',
     update: 'users:update',
     delete: 'users:delete',
+  },
+  {
+    view: 'admin.users.view',
+    create: 'admin.users.manage',
+    update: 'admin.users.manage',
+    delete: 'admin.users.delete',
   },
 );
 
@@ -128,7 +135,10 @@ export function useAdminUserMutations(): ReturnType<typeof useResourceMutations<
 }
 
 export function useAdminUserPermissions(): ReturnType<typeof useResourcePermissions> {
-  return useResourcePermissions(getResourcePermissions('users'));
+  return useResourcePermissions(
+    getResourcePermissions('users'),
+    getResourceAccess('users'),
+  );
 }
 
 /**
@@ -154,7 +164,9 @@ export function useAdminUsersList(
         params.append('search', filters.search);
       }
       if (filters.status) params.append('status', filters.status);
-      if (filters.roleId) params.append('roleId', filters.roleId);
+      if (filters.role) {
+        params.append('role', filters.role);
+      }
       if (filters.showDeleted) params.append('showDeleted', 'true');
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);

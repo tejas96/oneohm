@@ -31,6 +31,7 @@ import {
   type BulkAction,
   type ColumnConfig,
 } from '@/components/shared/advanced-table';
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -419,16 +420,18 @@ export function QuoteListPage(): JSX.Element {
           <MUITypography variant="body">
             No quotes yet. Get started by creating your first quote.
           </MUITypography>
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              void router.push(ROUTES.QUOTES.NEW);
-            }}
-          >
-            Create Quote
-          </Button>
+          <GuardedFeatureAction feature="quotes.create" label="Create quote">
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                void router.push(ROUTES.QUOTES.NEW);
+              }}
+            >
+              Create Quote
+            </Button>
+          </GuardedFeatureAction>
         </Box>
       ),
     [router, urlState.resetAll],
@@ -459,16 +462,18 @@ export function QuoteListPage(): JSX.Element {
           <Button variant="outlined" size="small" startIcon={<UploadIcon />} disabled>
             Export
           </Button>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={() => {
-              void router.push(ROUTES.QUOTES.NEW);
-            }}
-          >
-            Create Quote
-          </Button>
+          <GuardedFeatureAction feature="quotes.create" label="Create quote">
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                void router.push(ROUTES.QUOTES.NEW);
+              }}
+            >
+              Create Quote
+            </Button>
+          </GuardedFeatureAction>
         </Stack>
       </Box>
 

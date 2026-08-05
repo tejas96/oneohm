@@ -31,13 +31,15 @@ export interface ThirdPartyConfig {
   stripePublicKey?: string;
 }
 
-/**
- * Complete Web Application Configuration
- */
+export interface FeaturesConfig {
+  // Reserved for future feature flags
+}
+
 export interface WebConfiguration {
   app: AppConfig;
   api: ApiConfig;
   analytics: AnalyticsConfig;
   monitoring: MonitoringConfig;
   thirdParty: ThirdPartyConfig;
+  features: FeaturesConfig;
 }

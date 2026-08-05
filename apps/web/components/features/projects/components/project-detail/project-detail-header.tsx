@@ -9,6 +9,7 @@ import { PROJECT_PRIORITY_LABELS, PROJECT_PRIORITY_BADGE_VARIANT } from '../../c
 import type { ProjectDetail } from '../../hooks/types';
 import { ProjectStatusDropdown } from '../project-status-dropdown';
 
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import { Badge } from '@/components/ui/badge';
 import {
   Breadcrumb,
@@ -56,7 +57,9 @@ export const ProjectDetailHeader = React.memo(
               >
                 {project.name}
               </h1>
-              <ProjectStatusDropdown projectId={project.id} status={project.status} size="sm" />
+              <GuardedFeatureAction feature="projects.update" label="Update project status">
+                <ProjectStatusDropdown projectId={project.id} status={project.status} size="sm" />
+              </GuardedFeatureAction>
               <Badge variant={priorityVariant as 'warning'} shape="pill" size="sm">
                 {priorityLabel}
               </Badge>
@@ -81,14 +84,16 @@ export const ProjectDetailHeader = React.memo(
 
           {onEdit && (
             <div className="flex-shrink-0">
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<EditIcon fontSize="small" />}
-                onClick={onEdit}
-              >
-                Edit Project
-              </Button>
+              <GuardedFeatureAction feature="projects.update" label="Edit project">
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<EditIcon fontSize="small" />}
+                  onClick={onEdit}
+                >
+                  Edit Project
+                </Button>
+              </GuardedFeatureAction>
             </div>
           )}
         </div>

@@ -150,7 +150,7 @@ export function buildDispatchColumns(
             onSelect: () => callbacks.onMarkDispatched(row),
             disabled: !canDispatch,
             tooltip: !callbacks.canWrite
-              ? 'You need dispatch:write to update dispatches.'
+              ? 'You need dispatch manage access to update dispatches.'
               : !canDispatch
                 ? 'Only PREPARED dispatches can be marked dispatched.'
                 : undefined,
@@ -162,7 +162,7 @@ export function buildDispatchColumns(
             onSelect: () => callbacks.onMarkDelivered(row),
             disabled: !canDeliver,
             tooltip: !callbacks.canWrite
-              ? 'You need dispatch:write to update dispatches.'
+              ? 'You need dispatch manage access to update dispatches.'
               : !canDeliver
                 ? 'Only dispatched / in-transit dispatches can be marked delivered.'
                 : undefined,
@@ -174,7 +174,7 @@ export function buildDispatchColumns(
             onSelect: () => callbacks.onCancel(row),
             disabled: !canCancelThis,
             tooltip: !callbacks.canWrite
-              ? 'You need dispatch:write to cancel dispatches.'
+              ? 'You need dispatch manage access to cancel dispatches.'
               : !canCancelThis
                 ? 'Already delivered or cancelled.'
                 : undefined,

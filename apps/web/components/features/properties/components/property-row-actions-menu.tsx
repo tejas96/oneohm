@@ -15,6 +15,7 @@ import {
   getPropertyDeleteBlockReasons,
 } from '../utils/delete-eligibility';
 
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 export interface PropertyRowActionsTarget {
@@ -136,24 +137,26 @@ export function PropertyRowActionsMenu({
 
         {showDelete && <Divider />}
         {showDelete && (
-          <Tooltip title={deleteTooltip ?? ''}>
-            <span>
-              <MenuItem
-                disabled={deleteDisabled}
-                onClick={() => {
-                  if (deleteDisabled) return;
-                  handleClose();
-                  onRequestDelete?.(property);
-                }}
-                sx={{ color: 'error.main' }}
-              >
-                <ListItemIcon>
-                  <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
-                </ListItemIcon>
-                Delete Property
-              </MenuItem>
-            </span>
-          </Tooltip>
+          <GuardedFeatureAction feature="properties.delete" label="Delete property">
+            <Tooltip title={deleteTooltip ?? ''}>
+              <span>
+                <MenuItem
+                  disabled={deleteDisabled}
+                  onClick={() => {
+                    if (deleteDisabled) return;
+                    handleClose();
+                    onRequestDelete?.(property);
+                  }}
+                  sx={{ color: 'error.main' }}
+                >
+                  <ListItemIcon>
+                    <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
+                  </ListItemIcon>
+                  Delete Property
+                </MenuItem>
+              </span>
+            </Tooltip>
+          </GuardedFeatureAction>
         )}
       </Menu>
     </>

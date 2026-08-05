@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return -- user detail from API */
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
 import {
   AlertCircle,
   ArrowLeft,
@@ -12,17 +11,17 @@ import {
   UserCheck,
   UserMinus,
   UserX,
-  X,
   XCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type JSX, useState, useCallback, useMemo } from 'react';
+import { type JSX, useState, useCallback } from 'react';
 
-import { AssignRoleModal } from './assign-role-modal';
+import { FixedRoleAssignmentModal } from './fixed-role-assignment-modal';
+import { FixedRoleBadges } from './fixed-role-badges';
 import { UserStatusBadge } from './user-status-badge';
 
-import { DataTable } from '@/components/shared';
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import {
   Avatar,
   AvatarFallback,
@@ -38,14 +37,7 @@ import {
 } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
-import {
-  useAdminUser,
-  useAdminUserMutations,
-  useUserRoles,
-  useUserRoleMutations,
-  type AdminUser,
-  type UserRoleAssignment,
-} from '@/lib/hooks/resources';
+import { useAdminUser, useAdminUserMutations, type AdminUser } from '@/lib/hooks/resources';
 import { getErrorMessage, formatDate, formatTimeAgo } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -53,20 +45,57 @@ interface AdminUserDetailPageProps {
   userId: string;
 }
 
+interface FixedAssignedRolesSectionProps {
+  userId: string;
+  userName: string;
+  roles: string[];
+}
+
+function FixedAssignedRolesSection({
+  userId,
+  userName,
+  roles,
+}: FixedAssignedRolesSectionProps): JSX.Element {
+  const { refetch } = useAdminUser(userId);
+  const [manageRolesOpen, setManageRolesOpen] = useState(false);
+
+  return (
+    <>
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <Typography variant="h4">Assigned Roles</Typography>
+          <GuardedFeatureAction feature="admin.userRoles.manage" label="Manage roles">
+            <Button size="sm" variant="outline" onClick={() => setManageRolesOpen(true)}>
+              <Shield className="mr-2 size-4" /> Manage Roles
+            </Button>
+          </GuardedFeatureAction>
+        </div>
+        <div className="bg-white rounded-lg shadow-e2 p-6">
+          {roles.length > 0 ? (
+            <FixedRoleBadges roles={roles} />
+          ) : (
+            <p className="text-sm text-foreground-tertiary">No roles assigned</p>
+          )}
+        </div>
+      </div>
+
+      <FixedRoleAssignmentModal
+        open={manageRolesOpen}
+        onOpenChange={setManageRolesOpen}
+        userId={userId}
+        userName={userName}
+        onSaved={() => void refetch()}
+      />
+    </>
+  );
+}
+
 export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.Element {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const { data: user, isLoading, isError, error, refetch } = useAdminUser(userId);
-  const {
-    items: userRoles,
-    isError: isUserRolesError,
-    error: userRolesError,
-  } = useUserRoles(userId);
   const mutations = useAdminUserMutations();
-  const userRoleMutations = useUserRoleMutations();
-  const [assignRoleOpen, setAssignRoleOpen] = useState(false);
   const [statusChangeTarget, setStatusChangeTarget] = useState<string | null>(null);
-  const [removeRoleTarget, setRemoveRoleTarget] = useState<string | null>(null);
 
   const deleteConfirmation = useDeleteConfirmation<AdminUser>({
     mutation: mutations.remove,
@@ -86,67 +115,6 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
       // error toast handled by FDAL mutation config
     }
   }, [mutations.statusChange, userId, statusChangeTarget]);
-
-  const confirmRemoveRole = useCallback(async () => {
-    if (!removeRoleTarget) return;
-    try {
-      await userRoleMutations.remove.mutateAsync(removeRoleTarget);
-      setRemoveRoleTarget(null);
-    } catch {
-      // error toast handled by FDAL mutation config
-    }
-  }, [userRoleMutations.remove, removeRoleTarget]);
-
-  const roleColumns: ColumnDef<UserRoleAssignment>[] = useMemo(
-    () => [
-      {
-        accessorKey: 'roleName',
-        header: 'Role',
-        cell: ({ row }) => (row.original.roleName ?? row.original.roleCode) as string,
-      },
-      {
-        accessorKey: 'roleCode',
-        header: 'Code',
-        cell: ({ row }) => (
-          <Badge variant="outline" size="xs" className="font-mono">
-            {row.original.roleCode}
-          </Badge>
-        ),
-      },
-      {
-        accessorKey: 'createdAt',
-        header: 'Assigned',
-        cell: ({ row }) => (
-          <span className="text-sm text-foreground-secondary">
-            {formatDate(row.original.createdAt)}
-          </span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => {
-          const isAdminRole =
-            row.original.roleCode === 'admin' ||
-            row.original.roleCode === 'platform_admin' ||
-            row.original.roleCode === 'super_admin';
-          const canRemove = !(isSelf && isAdminRole);
-          return (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="size-7 p-0"
-              disabled={!canRemove || userRoleMutations.remove.isPending}
-              onClick={() => setRemoveRoleTarget(row.original.id)}
-            >
-              <X className="size-3.5" />
-            </Button>
-          );
-        },
-      },
-    ],
-    [isSelf, userRoleMutations.remove.isPending],
-  );
 
   if (isLoading) {
     return (
@@ -199,6 +167,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
   }
 
   const initials = `${user.firstName.charAt(0)}${user.lastName?.charAt(0) ?? ''}`.toUpperCase();
+  const userName = `${user.firstName} ${user.lastName ?? ''}`.trim();
 
   return (
     <div className="space-y-5">
@@ -263,79 +232,52 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
         <div className="flex items-center gap-2 mt-4 pt-4">
           {user.status === 'active' ? (
             <>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isSelf}
-                onClick={() => setStatusChangeTarget('inactive')}
-              >
-                <UserX className="mr-2 size-4" />{' '}
-                {isSelf ? 'Cannot deactivate yourself' : 'Deactivate'}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isSelf}
-                onClick={() => setStatusChangeTarget('suspended')}
-              >
-                <UserMinus className="mr-2 size-4" /> Suspend
-              </Button>
+              <GuardedFeatureAction feature="admin.users.manage" label="Deactivate employee">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSelf}
+                  onClick={() => setStatusChangeTarget('inactive')}
+                >
+                  <UserX className="mr-2 size-4" />{' '}
+                  {isSelf ? 'Cannot deactivate yourself' : 'Deactivate'}
+                </Button>
+              </GuardedFeatureAction>
+              <GuardedFeatureAction feature="admin.users.manage" label="Suspend employee">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isSelf}
+                  onClick={() => setStatusChangeTarget('suspended')}
+                >
+                  <UserMinus className="mr-2 size-4" /> Suspend
+                </Button>
+              </GuardedFeatureAction>
             </>
           ) : (
-            <Button size="sm" onClick={() => setStatusChangeTarget('active')}>
-              <UserCheck className="mr-2 size-4" /> Activate
-            </Button>
+            <GuardedFeatureAction feature="admin.users.manage" label="Activate employee">
+              <Button size="sm" onClick={() => setStatusChangeTarget('active')}>
+                <UserCheck className="mr-2 size-4" /> Activate
+              </Button>
+            </GuardedFeatureAction>
           )}
           <div className="flex-1" />
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-error"
-            disabled={isSelf}
-            onClick={() => user && !isSelf && deleteConfirmation.requestDelete(user)}
-          >
-            <Trash2 className="mr-2 size-4" /> {isSelf ? 'Cannot delete yourself' : 'Delete'}
-          </Button>
+          <GuardedFeatureAction feature="admin.users.delete" label="Delete employee">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-error"
+              disabled={isSelf}
+              onClick={() => user && !isSelf && deleteConfirmation.requestDelete(user)}
+            >
+              <Trash2 className="mr-2 size-4" /> {isSelf ? 'Cannot delete yourself' : 'Delete'}
+            </Button>
+          </GuardedFeatureAction>
         </div>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <Typography variant="h4">Assigned Roles</Typography>
-          <Button size="sm" variant="outline" onClick={() => setAssignRoleOpen(true)}>
-            <Shield className="mr-2 size-4" /> Add Role
-          </Button>
-        </div>
-        <div className="bg-white rounded-lg shadow-e2 overflow-hidden">
-          {isUserRolesError ? (
-            <div className="p-6">
-              <div className="flex items-center gap-3 text-foreground-secondary">
-                <AlertCircle className="size-5 shrink-0" />
-                <p className="text-sm">
-                  {userRolesError?.message?.includes('403') ||
-                  userRolesError?.message?.includes('Forbidden')
-                    ? 'You do not have permission to view role assignments.'
-                    : (userRolesError?.message ?? 'Failed to load roles')}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <DataTable
-              columns={roleColumns}
-              data={userRoles as UserRoleAssignment[]}
-              enableSearch={false}
-              enablePagination={false}
-            />
-          )}
-        </div>
-      </div>
+      <FixedAssignedRolesSection userId={userId} userName={userName} roles={user.roles ?? []} />
 
-      <AssignRoleModal
-        open={assignRoleOpen}
-        onOpenChange={setAssignRoleOpen}
-        userId={userId}
-        userName={`${user.firstName} ${user.lastName ?? ''}`.trim()}
-      />
       <Dialog
         open={deleteConfirmation.isOpen}
         onOpenChange={(open) => {
@@ -361,13 +303,15 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => void deleteConfirmation.confirm()}
-              disabled={deleteConfirmation.isPending}
-            >
-              {deleteConfirmation.isPending ? 'Deleting...' : 'Delete User'}
-            </Button>
+            <GuardedFeatureAction feature="admin.users.delete" label="Delete employee">
+              <Button
+                variant="destructive"
+                onClick={() => void deleteConfirmation.confirm()}
+                disabled={deleteConfirmation.isPending}
+              >
+                {deleteConfirmation.isPending ? 'Deleting...' : 'Delete User'}
+              </Button>
+            </GuardedFeatureAction>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -411,55 +355,21 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
             >
               Cancel
             </Button>
-            <Button
-              variant={statusChangeTarget === 'active' ? 'default' : 'destructive'}
-              onClick={() => void confirmStatusChange()}
-              disabled={mutations.statusChange.isPending}
-            >
-              {mutations.statusChange.isPending
-                ? 'Processing...'
-                : statusChangeTarget === 'active'
-                  ? 'Activate'
-                  : statusChangeTarget === 'suspended'
-                    ? 'Suspend'
-                    : 'Deactivate'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={!!removeRoleTarget}
-        onOpenChange={(open) => {
-          if (!open) setRemoveRoleTarget(null);
-        }}
-      >
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>Remove Role</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to remove this role from{' '}
-              <span className="font-medium">
-                {user.firstName} {user.lastName}
-              </span>
-              ? This may affect their access permissions.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRemoveRoleTarget(null)}
-              disabled={userRoleMutations.remove.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => void confirmRemoveRole()}
-              disabled={userRoleMutations.remove.isPending}
-            >
-              {userRoleMutations.remove.isPending ? 'Removing...' : 'Remove Role'}
-            </Button>
+            <GuardedFeatureAction feature="admin.users.manage" label="Change employee status">
+              <Button
+                variant={statusChangeTarget === 'active' ? 'default' : 'destructive'}
+                onClick={() => void confirmStatusChange()}
+                disabled={mutations.statusChange.isPending}
+              >
+                {mutations.statusChange.isPending
+                  ? 'Processing...'
+                  : statusChangeTarget === 'active'
+                    ? 'Activate'
+                    : statusChangeTarget === 'suspended'
+                      ? 'Suspend'
+                      : 'Deactivate'}
+              </Button>
+            </GuardedFeatureAction>
           </DialogFooter>
         </DialogContent>
       </Dialog>

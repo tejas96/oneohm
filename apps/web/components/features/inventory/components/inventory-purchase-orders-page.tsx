@@ -17,6 +17,7 @@ import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/fee
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES } from '@/lib/config/routes';
+import { useRegisteredResourceAccess } from '@/lib/hooks/core';
 import { useInventoryExport } from '@/lib/hooks/resources/inventory-export';
 import {
   usePurchaseOrders,
@@ -25,7 +26,7 @@ import {
 } from '@/lib/hooks/resources/purchase-orders';
 import { useVendors } from '@/lib/hooks/resources/vendors';
 import { useWarehouses } from '@/lib/hooks/resources/warehouses';
-import { useAuth } from '@/providers/auth-provider';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 
 const EMPTY_ROWS: PoColumnRow[] = [];
 
@@ -50,12 +51,11 @@ export function InventoryPurchaseOrdersPage(): React.JSX.Element {
   const searchParams = useSearchParams();
   const activeViewId = searchParams.get('view');
 
-  const { hasPermission } = useAuth();
-  const canCreate = hasPermission('purchase-order:write');
-  const canWrite = canCreate;
-  const canApprove =
-    hasPermission('purchase-order:approve') || hasPermission('purchase-order:write');
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const purchaseOrderAccess = useRegisteredResourceAccess('purchase-orders');
+  const canExport = useFeatureAccess('inventory.export');
+  const canCreate = purchaseOrderAccess.canCreate;
+  const canWrite = purchaseOrderAccess.canUpdate;
+  const canApprove = purchaseOrderAccess.canUpdate;
 
   const list = usePurchaseOrders();
   const {

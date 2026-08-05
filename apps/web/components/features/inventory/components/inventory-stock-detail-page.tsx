@@ -13,9 +13,9 @@ import { ErrorState } from '@/components/shared/feedback';
 import { ProgressBarCell } from '@/components/shared/inventory/progress-bar-cell';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRegisteredResourceAccess } from '@/lib/hooks/core';
 import { useInventoryStockDetail } from '@/lib/hooks/resources/inventory-stock';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/providers/auth-provider';
 
 /**
  * Inventory Stock detail page (Part: rebuild-stock-pages).
@@ -30,8 +30,7 @@ import { useAuth } from '@/providers/auth-provider';
  *      the sticky header can trigger them without prop-drilling).
  *
  * Cross-page concerns:
- *   - Adjust + transfer permissions read from useAuth.hasPermission;
- *     admins bypass via the auth-store fix.
+ *   - Adjust + transfer permissions from inventory-stock resource access.
  *   - All mutations go through the FDAL hooks which already invalidate
  *     `inventory-stock` + `inventory-transactions` caches, so the
  *     transactions card refreshes automatically after an adjust.
@@ -39,11 +38,11 @@ import { useAuth } from '@/providers/auth-provider';
 export function InventoryStockDetailPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>();
   const { data: stock, isLoading, isError } = useInventoryStockDetail(id);
-  const { hasPermission } = useAuth();
+  const stockAccess = useRegisteredResourceAccess('inventory-stock');
 
-  const canAdjust = hasPermission('stock:adjust') || hasPermission('inventory:write');
-  const canTransfer = hasPermission('stock:transfer') || hasPermission('inventory:write');
-  const canEditSettings = hasPermission('inventory:write');
+  const canAdjust = stockAccess.canUpdate;
+  const canTransfer = stockAccess.canUpdate;
+  const canEditSettings = stockAccess.canUpdate;
 
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);

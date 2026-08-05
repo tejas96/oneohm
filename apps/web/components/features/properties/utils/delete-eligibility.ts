@@ -1,6 +1,22 @@
 import { LoanStatus, ChangeRequestStatus } from '@tejas96/shared/types';
 
-export const ORG_ADMIN_ROLES = ['admin', 'super_admin'] as const;
+import { canAccessFeature } from '@/lib/access-control/access';
+
+export function canDeleteCustomer(roles: readonly string[]): boolean {
+  return canAccessFeature(roles, 'customers.delete');
+}
+
+export function canDeleteProperty(roles: readonly string[]): boolean {
+  return canAccessFeature(roles, 'properties.delete');
+}
+
+export function shouldShowCustomerDelete(): boolean {
+  return true;
+}
+
+export function shouldShowPropertyDelete(): boolean {
+  return true;
+}
 
 const ACTIVE_LOAN_STATUSES: LoanStatus[] = [LoanStatus.INITIATED, LoanStatus.APPLIED];
 

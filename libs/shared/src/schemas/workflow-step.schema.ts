@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { isFixedRoleCode, type FixedRoleCode } from '../constants/fixed-roles';
+
 const checklistItemSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -8,6 +10,14 @@ const checklistItemSchema = z.object({
 });
 
 export type ChecklistItem = z.infer<typeof checklistItemSchema>;
+
+export const fixedRoleCodeSchema = z.custom<FixedRoleCode>(
+  (value) => typeof value === 'string' && isFixedRoleCode(value),
+  { message: 'Default role must be a valid fixed role code' },
+);
+
+/** Empty string or a canonical fixed role code. */
+export const workflowStepDefaultRoleCodeSchema = z.union([z.literal(''), fixedRoleCodeSchema]);
 
 export const workflowStepSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name must be at most 255 characters'),

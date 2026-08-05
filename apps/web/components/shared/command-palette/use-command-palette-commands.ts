@@ -4,6 +4,8 @@ import type { LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { ROUTES } from '@/lib/config/routes';
+import { isNavigationHrefExcluded } from '@/lib/config/navigation-features';
+import { getImplementedRoutePaths } from '@/lib/access-control/route-policy';
 import { useFilteredNavigation } from '@/lib/hooks/use-filtered-navigation';
 
 export interface CommandItem {
@@ -15,29 +17,25 @@ export interface CommandItem {
 }
 
 /**
- * Routes that have actual page.tsx files in the app directory.
- * Items referencing routes outside this set are excluded from the palette
- * to avoid surfacing links to unimplemented pages.
+ * Routes with implemented pages. In fixed mode this is derived from route policy.
  */
 const IMPLEMENTED_ROUTES = new Set<string>([
+  ...getImplementedRoutePaths(),
   ROUTES.HOME,
-  ROUTES.DASHBOARD.HOME,
   ROUTES.CUSTOMERS.LIST,
   ROUTES.ONBOARDING.NEW,
-  ROUTES.QUOTES.DASHBOARD,
-  ROUTES.QUOTES.LIST,
-  ROUTES.QUOTES.NEW,
-  ROUTES.PROJECTS.DASHBOARD,
-  ROUTES.PROJECTS.LIST,
-  ROUTES.PROJECTS.NEW,
-  ROUTES.PROJECTS.MY_TASKS,
-  ROUTES.ADMIN.WORKFLOW_STEPS,
   ROUTES.PIPELINE.HOME,
 ]);
 
 function isImplementedRoute(href: string): boolean {
   const basePath = href.split('?')[0]!;
-  return IMPLEMENTED_ROUTES.has(basePath);
+  if (isNavigationHrefExcluded(basePath)) {
+    return false;
+  }
+  return IMPLEMENTED_ROUTES.has(basePath) || [...IMPLEMENTED_ROUTES].some((route) => {
+    const pattern = route.replace(/\[.*?\]/g, '');
+    return basePath.startsWith(pattern) && pattern.length > 1;
+  });
 }
 
 const CONTEXTLESS_LABELS = new Set([

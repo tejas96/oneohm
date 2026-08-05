@@ -5,6 +5,7 @@ export type {
   NormalizedError,
   ResourceConfig,
   ResourcePermissionConfig,
+  ResourceAccessConfig,
   SubResourceConfig,
   MutationConfig,
   OptimisticConfig,
@@ -29,7 +30,12 @@ export { defaultResponseAdapter } from './response-adapter';
 export { normalizeApiError } from './error-adapter';
 
 // Registry
-export { defineResource, getResourceConfig, getResourcePermissions } from './resource-registry';
+export {
+  defineResource,
+  getResourceConfig,
+  getResourcePermissions,
+  getResourceAccess,
+} from './resource-registry';
 
 // Events
 export { resourceEvents } from './resource-events';
@@ -50,6 +56,8 @@ export type { UseResourceStatsReturn } from './use-resource-stats';
 export { useInfiniteResourceList } from './use-infinite-resource-list';
 export { useResourcePermissions } from './use-resource-permissions';
 export type { ResourcePermissions } from './use-resource-permissions';
+export { useResourceAccess } from './use-resource-access';
+export { useRegisteredResourceAccess } from './use-registered-resource-access';
 export { useFieldAvailability } from './use-field-availability';
 
 // Companion hooks

@@ -14,11 +14,9 @@ import { QuoteSustainabilityCard } from './overview/quote-sustainability-card';
 import { QuoteSystemConfigCard } from './overview/quote-system-config-card';
 import type { QuoteDetail } from '../../../hooks/types';
 
-import { Can } from '@/components/shared/guards';
-import { PERMISSIONS } from '@/lib/constants/permissions';
 import { type Bom } from '@/lib/hooks/resources';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 import { formatDate } from '@/lib/utils/format';
-import { useAuth } from '@/providers/auth-provider';
 
 interface QuoteOverviewTabProps {
   quote: QuoteDetail;
@@ -44,10 +42,8 @@ export function QuoteOverviewTab({
   const breakdown = quote.quoteSnapshot?.pricing ?? quote.pricingBreakdown;
   const calcInputs = quote.quoteSnapshot?.inputs ?? quote.calculatorInputs;
 
-  const { hasPermission, hasAnyRole } = useAuth();
-  const canViewEquipmentPricing =
-    hasPermission(PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN) ||
-    hasAnyRole(['admin', 'superadmin', 'super_admin', 'platform_admin']);
+  const canViewPriceBreakdown = useFeatureAccess('quotes.priceBreakdown.view');
+  const canViewEquipmentPricing = canViewPriceBreakdown;
 
   const activeSnapshot = quote.quoteSnapshot;
   const isOldData = useMemo(() => {
@@ -229,23 +225,22 @@ export function QuoteOverviewTab({
         {/* Right Side: Pricing cards and Sidebar Actions */}
         <div className="space-y-6">
           {/* Pricing Details */}
-          <Can permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}>
+          {canViewPriceBreakdown ? (
             <QuotePricingCard
               breakdown={breakdown}
               effectivePrice={quote.effectivePrice}
               profitPercent={profitPercent}
               profitAmount={profitAmount}
             />
-          </Can>
+          ) : null}
 
           {/* Installation Costs */}
           {installationData &&
             ((installationData.totalBeforeTax ?? 0) > 0 ||
-              (installationData.totalWithGst ?? 0) > 0) && (
-              <Can permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}>
-                <QuoteInstallationCard installationData={installationData} />
-              </Can>
-            )}
+              (installationData.totalWithGst ?? 0) > 0) &&
+            canViewPriceBreakdown ? (
+              <QuoteInstallationCard installationData={installationData} />
+            ) : null}
 
           {/* Sidebar Info/Actions */}
           <QuoteSidebar

@@ -11,7 +11,7 @@ import { DashboardOpsSection } from './dashboard/dashboard-ops-section';
 import { TimeWindowPicker } from '@/components/shared/inventory';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { type StatsWindowInput } from '@/lib/hooks/resources/inventory-stats';
-import { useAuth } from '@/providers/auth-provider';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 
 /**
  * Inventory dashboard — orchestrator.
@@ -26,7 +26,7 @@ import { useAuth } from '@/providers/auth-provider';
  * re-renders. Reading once + threading down via a stable object means
  * one render pass when the URL changes.
  *
- * Permission gating: requires `inventory:read`. Users without it see
+ * Permission gating: requires `inventory.stock.view`. Users without it see
  * a friendly permission-denied state rather than a blank page or a
  * crash from the failed FDAL queries (which would 401-toast endlessly).
  *
@@ -49,11 +49,10 @@ import { useAuth } from '@/providers/auth-provider';
  * plan's A1 decision (snapshot table vs derive-from-transactions).
  */
 
-const RESERVED_PERMISSION = 'inventory:read';
+const INVENTORY_VIEW_FEATURE = 'inventory.stock.view' as const;
 
 export function InventoryDashboard(): React.JSX.Element {
-  const { hasPermission } = useAuth();
-  const canRead = hasPermission(RESERVED_PERMISSION);
+  const canRead = useFeatureAccess(INVENTORY_VIEW_FEATURE);
 
   const searchParams = useSearchParams();
   const statsWindow: StatsWindowInput = {
@@ -69,7 +68,7 @@ export function InventoryDashboard(): React.JSX.Element {
         <MUITypography variant="sectionTitle">No access to inventory</MUITypography>
         <MUITypography variant="body" className="max-w-md text-foreground-secondary">
           You don&apos;t have permission to view inventory data. Ask an administrator to grant you
-          the <code>inventory:read</code> permission.
+          inventory access.
         </MUITypography>
       </div>
     );

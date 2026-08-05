@@ -8,6 +8,7 @@ import {
   createResourceKeys,
   defineResource,
   getResourceConfig,
+  getResourceAccess,
   getResourcePermissions,
   STALE_TIMES,
   useOrgContext,
@@ -61,6 +62,12 @@ defineResource<ProductAdminItem>(
     update: 'products:update',
     delete: 'products:delete',
   },
+  {
+    view: 'admin.catalog.manage',
+    create: 'admin.catalog.manage',
+    update: 'admin.catalog.manage',
+    delete: 'admin.catalog.manage',
+  },
 );
 
 export function useProductsAdmin() {
@@ -92,7 +99,7 @@ export function useProductAdminMutations() {
 }
 
 export function useProductAdminPermissions() {
-  return useResourcePermissions(getResourcePermissions('products-admin'));
+  return useResourcePermissions(getResourcePermissions('products-admin'), getResourceAccess('products-admin'));
 }
 
 // ============================================================================

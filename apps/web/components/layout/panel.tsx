@@ -1,8 +1,9 @@
 'use client';
 
 import { ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
 import { useMemo } from 'react';
+
+import { GuardedNavLink } from '@/components/layout/guarded-nav-link';
 
 import { useMyTasksSummary } from '@/components/features/tasks';
 import { Badge } from '@/components/ui/badge';
@@ -158,9 +159,12 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
       : 'secondary';
 
     return (
-      <Link
+      <GuardedNavLink
         key={item.id}
         href={item.href}
+        label={item.label}
+        feature={item.feature}
+        isAllowed={item.isAllowed ?? true}
         prefetch={false}
         className={cn(
           'panel-item',
@@ -168,9 +172,6 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
           item.disabled && 'opacity-50 pointer-events-none',
           isSubItem && 'sub-item',
         )}
-        aria-disabled={item.disabled}
-        target={item.external ? '_blank' : undefined}
-        rel={item.external ? 'noopener noreferrer' : undefined}
       >
         {/* Status dot (for lead temperature) - 8px for better visibility */}
         {item.statusDot && (
@@ -190,7 +191,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
             {displayBadge}
           </Badge>
         )}
-      </Link>
+      </GuardedNavLink>
     );
   };
 

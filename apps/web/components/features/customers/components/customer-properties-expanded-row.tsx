@@ -33,14 +33,13 @@ import {
 import { PROPERTY_TYPE_LABELS } from '@/components/features/properties/constants';
 import { useDeleteProperty } from '@/components/features/properties/hooks/use-properties';
 import { MarkAsLostDialog } from '@/components/features/properties/property-detail/mark-as-lost-dialog';
-import { ORG_ADMIN_ROLES } from '@/components/features/properties/utils/delete-eligibility';
+import { shouldShowPropertyDelete } from '@/components/features/properties/utils/delete-eligibility';
 import { CRM_TONE_FILL, CrmStatusPill, type CrmTone } from '@/components/shared/crm-table';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { color, crm, gradient, radius, shadow } from '@/lib/theme/tokens';
 import { formatCurrency, toTitleLabel } from '@/lib/utils';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Static maps
@@ -179,7 +178,7 @@ function SummaryPill({ value, label }: { value: string; label: string }): JSX.El
 interface SiteRowProps {
   property: CustomerPropertyResponse;
   index: number;
-  isOrgAdmin: boolean;
+  showDelete: boolean;
   onMarkAsLost: (property: PropertyRowActionsTarget) => void;
   onRequestDelete: (property: PropertyRowActionsTarget) => void;
   onOpen: (propertyId: string) => void;
@@ -188,7 +187,7 @@ interface SiteRowProps {
 function SiteRow({
   property,
   index,
-  isOrgAdmin,
+  showDelete,
   onMarkAsLost,
   onRequestDelete,
   onOpen,
@@ -447,7 +446,7 @@ function SiteRow({
           property={property}
           onMarkAsLost={onMarkAsLost}
           onRequestDelete={onRequestDelete}
-          showDelete={isOrgAdmin}
+          showDelete={showDelete}
         />
       </Box>
     </Box>
@@ -481,8 +480,7 @@ export function CustomerPropertiesExpandedRow({
   expectedSiteCount,
 }: CustomerPropertiesExpandedRowProps): JSX.Element {
   const router = useRouter();
-  const { hasAnyRole } = useAuth();
-  const isOrgAdmin = hasAnyRole([...ORG_ADMIN_ROLES]);
+  const showPropertyDelete = shouldShowPropertyDelete();
   const deletePropertyMutation = useDeleteProperty();
   const deleteConfirmation = useDeleteConfirmation<PropertyRowActionsTarget>({
     mutation: deletePropertyMutation,
@@ -708,7 +706,7 @@ export function CustomerPropertiesExpandedRow({
             key={property.id}
             property={property}
             index={index}
-            isOrgAdmin={isOrgAdmin}
+            showDelete={showPropertyDelete}
             onMarkAsLost={handleMarkAsLost}
             onRequestDelete={deleteConfirmation.requestDelete}
             onOpen={handleOpenSite}

@@ -210,7 +210,7 @@ export function buildPoColumns(callbacks: PoRowActionCallbacks): ColumnConfig<Po
             onSelect: () => callbacks.onApprove(row),
             disabled: !canApproveThis,
             tooltip: !callbacks.canApprove
-              ? 'You need purchase-order:approve to approve POs.'
+              ? 'You need procurement manage access to approve POs.'
               : row.status !== 'pending_approval'
                 ? 'Only POs awaiting approval can be approved.'
                 : undefined,
@@ -222,7 +222,7 @@ export function buildPoColumns(callbacks: PoRowActionCallbacks): ColumnConfig<Po
             onSelect: () => callbacks.onSend(row),
             disabled: !canSendThis,
             tooltip: !callbacks.canWrite
-              ? 'You need purchase-order:write to send POs.'
+              ? 'You need procurement manage access to send POs.'
               : row.status !== 'approved' && row.status !== 'confirmed'
                 ? 'Only approved or confirmed POs can be sent.'
                 : undefined,
@@ -234,7 +234,7 @@ export function buildPoColumns(callbacks: PoRowActionCallbacks): ColumnConfig<Po
             onSelect: () => callbacks.onCancel(row),
             disabled: !canCancelThis,
             tooltip: !callbacks.canWrite
-              ? 'You need purchase-order:write to cancel POs.'
+              ? 'You need procurement manage access to cancel POs.'
               : row.status === 'received'
                 ? 'Received POs cannot be cancelled.'
                 : row.status === 'cancelled'

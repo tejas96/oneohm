@@ -10,11 +10,10 @@ import { useMemo, useState } from 'react';
 
 import { EmployeeRow } from './employee-row';
 import { getEmployeeDisplayName } from '../../../utils';
+import { useEmployeeRoleFilterOptions } from '../../../hooks/use-employees';
 
 import { MUIInput, MUISelect, MUITypography } from '@/components/ui';
 import {
-  useRoles,
-  type AdminRole,
   type EmployeeListItem,
   type TeamWorkloadItem,
 } from '@/lib/hooks/resources';
@@ -39,20 +38,7 @@ export function AvailableEmployeesList({
   const [search, setSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
 
-  const { items: roles, isLoading: rolesLoading } = useRoles({
-    syncToUrl: false,
-    defaultPageSize: 100,
-  });
-
-  // Only show roles that at least one employee in the list actually holds
-  const roleOptions = useMemo((): { value: string; label: string }[] => {
-    const codesInUse = new Set(
-      employees.flatMap((e: EmployeeListItem) => (e.roles as string[] | undefined) ?? []),
-    );
-    return (roles as AdminRole[])
-      .filter((r) => codesInUse.has(r.code))
-      .map((r) => ({ value: r.code, label: r.name }));
-  }, [roles, employees]);
+  const { options: roleOptions, isLoading: rolesLoading } = useEmployeeRoleFilterOptions(employees);
 
   const filtered = useMemo((): EmployeeListItem[] => {
     const q = search.toLowerCase().trim();

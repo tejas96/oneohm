@@ -2,7 +2,7 @@
 
 import type { GstConfig, PaymentMilestoneConfig, ProfitMarginTier } from '@tejas96/shared/types';
 
-import { useResourceDetail, useResourceMutations } from '../core';
+import { defineResource, useResourceDetail, useResourceMutations } from '../core';
 
 export interface QuoteConfig {
   id: string;
@@ -19,6 +19,19 @@ export interface QuoteConfig {
   createdAt: string;
   updatedAt: string;
 }
+
+defineResource<QuoteConfig>(
+  'quote-config',
+  {
+    endpoint: '/quote-configurations',
+    syncToUrl: false,
+  },
+  undefined,
+  {
+    view: 'admin.catalog.manage',
+    update: 'admin.catalog.manage',
+  },
+);
 
 export function useQuoteConfig() {
   return useResourceDetail<QuoteConfig>({

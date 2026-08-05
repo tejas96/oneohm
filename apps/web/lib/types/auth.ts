@@ -31,7 +31,6 @@ export interface User {
   fullName: string;
   phone: string;
   roles: string[];
-  permissions: string[];
   profiles: ProfileSummary[];
   emailVerified: boolean;
   phoneVerified: boolean;

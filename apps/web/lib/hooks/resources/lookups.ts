@@ -7,21 +7,17 @@ import { useMemo } from 'react';
 import {
   defineResource,
   getResourceConfig,
-  getResourcePermissions,
   STALE_TIMES,
   useResourceList,
   useResourceDetail,
   useResourceMutations,
-  useResourcePermissions,
+  useRegisteredResourceAccess,
   type BaseFilters,
   type ResourceConfig,
 } from '../core';
 import { useOrgContext } from '../core/use-org-context';
 
 import { apiClient } from '@/lib/api/client';
-import { PERMISSIONS } from '@/lib/constants/permissions';
-
-// ── Types ──────────────────────────────────────────────────────
 
 export interface Lookup {
   id: string;
@@ -83,11 +79,12 @@ defineResource<Lookup>(
     staleTime: STALE_TIMES.slow,
     defaultSort: { field: 'label', order: 'ASC' },
   },
+  undefined,
   {
-    view: PERMISSIONS.LOOKUPS.VIEW,
-    create: PERMISSIONS.LOOKUPS.CREATE,
-    update: PERMISSIONS.LOOKUPS.UPDATE,
-    delete: PERMISSIONS.LOOKUPS.DELETE,
+    view: 'admin.catalog.manage',
+    create: 'admin.catalog.manage',
+    update: 'admin.catalog.manage',
+    delete: 'admin.catalog.manage',
   },
 );
 
@@ -156,8 +153,8 @@ export function useLookupMutations(): ReturnType<typeof useResourceMutations<Loo
 
 // ── Permissions Hook ───────────────────────────────────────────
 
-export function useLookupPermissions(): ReturnType<typeof useResourcePermissions> {
-  return useResourcePermissions(getResourcePermissions('lookups'));
+export function useLookupPermissions() {
+  return useRegisteredResourceAccess('lookups');
 }
 
 // ── By Type Code Hook (dropdown consumer API) ──────────────────

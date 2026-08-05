@@ -147,9 +147,6 @@ export const ROUTES = {
     SETTINGS: '/admin/settings',
     USERS: '/admin/users',
     USER_DETAIL: '/admin/users/[id]',
-    ROLES: '/admin/roles',
-    ROLE_DETAIL: '/admin/roles/[id]',
-    PERMISSIONS: '/admin/permissions',
     PRODUCT_TYPES: '/admin/product-types',
     BRANDS: '/admin/brands',
     PRODUCTS: '/admin/products',
@@ -220,7 +217,6 @@ export interface RouteParamTypes {
   '/vendors/[id]': { id: string };
   '/service/[id]': { id: string };
   '/admin/users/[id]': { id: string };
-  '/admin/roles/[id]': { id: string };
   '/employees/[id]': { id: string };
 
   // Routes with query filters
@@ -281,8 +277,6 @@ export const AUTH_ROUTES = [
 export const ADMIN_ROUTES = [
   ROUTES.ADMIN.HOME,
   ROUTES.ADMIN.USERS,
-  ROUTES.ADMIN.ROLES,
-  ROUTES.ADMIN.PERMISSIONS,
   ROUTES.ADMIN.SETTINGS,
   ROUTES.ADMIN.WORKFLOW_STEPS,
   ROUTES.ADMIN.WORKFLOWS,
@@ -444,8 +438,6 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
 
   // Admin routes
   [ROUTES.ADMIN.USERS]: 'admin',
-  [ROUTES.ADMIN.ROLES]: 'admin',
-  [ROUTES.ADMIN.PERMISSIONS]: 'admin',
   [ROUTES.ADMIN.SETTINGS]: 'admin',
   [ROUTES.ADMIN.WORKFLOW_STEPS]: 'admin',
   [ROUTES.ADMIN.HOME]: 'admin',

@@ -4,6 +4,7 @@ import {
   type BaseFilters,
   defineResource,
   getResourceConfig,
+  getResourceAccess,
   getResourcePermissions,
   STALE_TIMES,
   useResourceList,
@@ -66,6 +67,11 @@ defineResource<ProductType>(
     create: 'product-types:create',
     update: 'product-types:update',
   },
+  {
+    view: 'admin.catalog.manage',
+    create: 'admin.catalog.manage',
+    update: 'admin.catalog.manage',
+  },
 );
 
 export function useProductTypeList(
@@ -105,5 +111,5 @@ export function useProductType(productTypeId: string) {
 }
 
 export function useProductTypePermissions() {
-  return useResourcePermissions(getResourcePermissions('product-types'));
+  return useResourcePermissions(getResourcePermissions('product-types'), getResourceAccess('product-types'));
 }

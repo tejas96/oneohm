@@ -17,8 +17,8 @@ import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
 import { RowActionMenu, type RowAction } from '@/components/shared/inventory/row-action-menu';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES } from '@/lib/config/routes';
+import { useRegisteredResourceAccess } from '@/lib/hooks/core';
 import { useInventoryStockList, type InventoryStock } from '@/lib/hooks/resources/inventory-stock';
-import { useAuth } from '@/providers/auth-provider';
 
 type StockRow = InventoryStock & Record<string, unknown>;
 const EMPTY_ROWS: StockRow[] = [];
@@ -45,14 +45,13 @@ function buildCreatePoHref(row: InventoryStock): string {
  * Adds a KPI summary above the existing low-stock list and a per-row
  * "Create PO" action that deep-links to PO new with the warehouse,
  * product, and suggested quantity prefilled. The PO create page is
- * gated by purchase-order:write (same as PO list / resource registry) so we
- * surface that action only when the user has it (or `inventory:write` as an admin bypass).
+ * gated by purchase-orders resource access.
  */
 export function InventoryAlertsPage(): React.JSX.Element {
   const router = useRouter();
   const fmt = useFmt();
-  const { hasPermission } = useAuth();
-  const canCreatePo = hasPermission('purchase-order:write') || hasPermission('inventory:write');
+  const purchaseOrderAccess = useRegisteredResourceAccess('purchase-orders');
+  const canCreatePo = purchaseOrderAccess.canCreate;
 
   const { items, pagination, search, setSearch, sorting, isLoading, isFetching, isError } =
     useInventoryStockList({

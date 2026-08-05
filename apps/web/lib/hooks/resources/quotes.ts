@@ -54,6 +54,12 @@ defineResource<QuoteListItem>(
     create: 'quotes:create',
     delete: 'quotes:delete',
   },
+  {
+    view: 'quotes.view',
+    create: 'quotes.create',
+    update: 'quotes.manage',
+    delete: 'quotes.delete',
+  },
 );
 
 // ============================================================================

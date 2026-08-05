@@ -8,6 +8,8 @@ import { MobileNav } from './mobile-nav';
 import { UserMenu } from './user-menu';
 
 import { SearchTrigger } from '@/components/shared/search';
+import { showFeatureAccessDenied } from '@/lib/access-control/access-feedback';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 import { useNotificationUnreadCount } from '@/lib/hooks/resources/notifications';
 import { cn } from '@/lib/utils';
 
@@ -22,8 +24,19 @@ interface GlobalHeaderProps {
  */
 export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
   const router = useRouter();
-  const { data: unreadData } = useNotificationUnreadCount();
+  const canViewNotifications = useFeatureAccess('notifications.view');
+  const { data: unreadData } = useNotificationUnreadCount({
+    enabled: canViewNotifications,
+  });
   const unreadCount = unreadData?.count ?? 0;
+
+  const handleNotificationsClick = () => {
+    if (!canViewNotifications) {
+      showFeatureAccessDenied({ feature: 'notifications.view', label: 'Notifications' });
+      return;
+    }
+    router.push('/notifications');
+  };
 
   return (
     <header
@@ -62,7 +75,7 @@ export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
           <IconButton
             size="small"
             aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
-            onClick={() => router.push('/notifications')}
+            onClick={handleNotificationsClick}
             sx={{ borderRadius: '8px' }}
           >
             <Badge

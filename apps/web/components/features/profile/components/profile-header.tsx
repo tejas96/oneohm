@@ -6,11 +6,10 @@ import { useRef, type JSX } from 'react';
 
 import { PROFILE_COMPLETION_FIELDS } from '../constants';
 
+import { FixedRoleBadges } from '@/components/features/admin/users/components/fixed-role-badges';
 import { MUIAvatar, MUIStatusChip, MUITypography } from '@/components/ui';
 import type { EmployeeProfile } from '@/lib/hooks/resources';
 import { useAuth } from '@/providers/auth-provider';
-
-// ── Types ──────────────────────────────────────────────────────
 
 interface ProfileHeaderProps {
   profile: EmployeeProfile;
@@ -20,19 +19,11 @@ interface ProfileHeaderProps {
   onAvatarUpload: (file: File) => Promise<void>;
 }
 
-// ── Helpers ────────────────────────────────────────────────────
-
 function getMissingProfileFields(profile: EmployeeProfile): string[] {
   return PROFILE_COMPLETION_FIELDS.filter(({ key }) => !profile[key as keyof EmployeeProfile]).map(
     ({ label }) => label,
   );
 }
-
-function toReadableRole(role: string): string {
-  return role.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-// ── Component ──────────────────────────────────────────────────
 
 export function ProfileHeader({
   profile,
@@ -61,7 +52,6 @@ export function ProfileHeader({
 
   return (
     <div className="flex flex-col items-center gap-4 text-center">
-      {/* Avatar with camera overlay */}
       <div className="relative">
         <MUIAvatar
           name={fullName}
@@ -90,7 +80,6 @@ export function ProfileHeader({
         />
       </div>
 
-      {/* Name */}
       <div className="flex flex-col items-center gap-1">
         <MUITypography variant="drawerTitle">{fullName}</MUITypography>
 
@@ -109,23 +98,13 @@ export function ProfileHeader({
           </div>
         )}
 
-        {/* Role chips */}
         {user?.roles && user.roles.length > 0 && (
           <div className="mt-2 flex flex-wrap justify-center gap-2">
-            {user.roles.map((role) => (
-              <MUIStatusChip
-                key={role}
-                label={toReadableRole(role)}
-                colorSeed={role}
-                size="small"
-                variant="outlined"
-              />
-            ))}
+            <FixedRoleBadges roles={user.roles} className="justify-center" />
           </div>
         )}
       </div>
 
-      {/* Avatar upload error */}
       {avatarUploadError ? (
         <div className="w-full max-w-md">
           <Alert severity="error" variant="outlined">
@@ -135,7 +114,6 @@ export function ProfileHeader({
         </div>
       ) : null}
 
-      {/* Profile completion banner */}
       {showCompletionBanner && (
         <div className="w-full max-w-md">
           <Alert severity="warning" variant="outlined">

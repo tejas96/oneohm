@@ -18,6 +18,7 @@ import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/fee
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES } from '@/lib/config/routes';
+import { useRegisteredResourceAccess } from '@/lib/hooks/core';
 import { useInventoryExport } from '@/lib/hooks/resources/inventory-export';
 import { useStockSummaryByWarehouse } from '@/lib/hooks/resources/inventory-stock';
 import {
@@ -25,7 +26,7 @@ import {
   type Warehouse,
   type WarehouseFilters,
 } from '@/lib/hooks/resources/warehouses';
-import { useAuth } from '@/providers/auth-provider';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 
 const EMPTY_ROWS: WarehouseColumnRow[] = [];
 
@@ -54,10 +55,10 @@ export function InventoryWarehousesPage(): React.JSX.Element {
   const searchParams = useSearchParams();
   const activeViewId = searchParams.get('view');
 
-  const { hasPermission } = useAuth();
-  const canCreate = hasPermission('inventory:write');
-  const canEdit = canCreate;
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const warehouseAccess = useRegisteredResourceAccess('warehouses');
+  const canCreate = warehouseAccess.canCreate;
+  const canEdit = warehouseAccess.canUpdate;
+  const canExport = useFeatureAccess('inventory.export');
 
   const list = useWarehouses();
   const {

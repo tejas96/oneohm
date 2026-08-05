@@ -16,6 +16,7 @@ import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/fee
 import { SavedViewsBar } from '@/components/shared/inventory/saved-views-bar';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES } from '@/lib/config/routes';
+import { useRegisteredResourceAccess } from '@/lib/hooks/core';
 import { useInventoryExport } from '@/lib/hooks/resources/inventory-export';
 import {
   useStockAllocationMutations,
@@ -23,7 +24,7 @@ import {
   type StockAllocationFilters,
 } from '@/lib/hooks/resources/stock-allocations';
 import { useWarehouses } from '@/lib/hooks/resources/warehouses';
-import { useAuth } from '@/providers/auth-provider';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 
 const EMPTY_ROWS: AllocationColumnRow[] = [];
 
@@ -46,9 +47,9 @@ export function InventoryAllocationsPage(): React.JSX.Element {
   const searchParams = useSearchParams();
   const activeViewId = searchParams.get('view');
 
-  const { hasPermission } = useAuth();
-  const canWrite = hasPermission('allocation:write') || hasPermission('inventory:write');
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const allocationAccess = useRegisteredResourceAccess('stock-allocations');
+  const canWrite = allocationAccess.canCreate || allocationAccess.canUpdate;
+  const canExport = useFeatureAccess('inventory.export');
 
   const list = useStockAllocations();
   const {

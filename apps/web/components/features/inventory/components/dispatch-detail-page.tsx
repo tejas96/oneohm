@@ -13,12 +13,12 @@ import { DispatchDetailHeader } from './dispatches/dispatch-detail-header';
 import { DispatchDetailKpi } from './dispatches/dispatch-detail-kpi';
 
 import { MUITypography } from '@/components/ui/mui-typography';
+import { useRegisteredResourceAccess } from '@/lib/hooks/core';
 import {
   useMaterialDispatch,
   useMaterialDispatchMutations,
   type MaterialDispatchItem,
 } from '@/lib/hooks/resources/material-dispatches';
-import { useAuth } from '@/providers/auth-provider';
 
 function shortId(id: string | undefined): string {
   if (!id) return '—';
@@ -42,8 +42,8 @@ export function DispatchDetailPage(): React.JSX.Element {
   const id = typeof params.id === 'string' ? params.id : '';
   const { data, isLoading, isError, refetch } = useMaterialDispatch(id);
   const { action } = useMaterialDispatchMutations();
-  const { hasPermission } = useAuth();
-  const canWrite = hasPermission('dispatch:write') || hasPermission('inventory:write');
+  const dispatchAccess = useRegisteredResourceAccess('material-dispatches');
+  const canWrite = dispatchAccess.canCreate || dispatchAccess.canUpdate;
   const [busy, setBusy] = useState(false);
 
   const items = useMemo(() => data?.items ?? [], [data?.items]);

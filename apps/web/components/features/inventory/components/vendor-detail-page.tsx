@@ -26,7 +26,7 @@ import { useOrgContext } from '@/lib/hooks/core';
 import { usePurchaseOrders, type PurchaseOrder } from '@/lib/hooks/resources/purchase-orders';
 import { useVendor } from '@/lib/hooks/resources/vendors';
 import { formatCurrency } from '@/lib/utils';
-import { useAuth } from '@/providers/auth-provider';
+import { useRegisteredResourceAccess } from '@/lib/hooks/core';
 
 interface ProjectVendorAssignment {
   id: string;
@@ -151,8 +151,8 @@ export function VendorDetailPage(): React.JSX.Element {
   const params = useParams();
   const router = useRouter();
   const { orgHeaders, isReady } = useOrgContext();
-  const { hasPermission } = useAuth();
-  const canEdit = hasPermission('inventory:write');
+  const vendorAccess = useRegisteredResourceAccess('vendors');
+  const canEdit = vendorAccess.canUpdate;
   const [tab, setTab] = useState('pos');
   const [editOpen, setEditOpen] = useState(false);
   const [assignPage, setAssignPage] = useState(1);

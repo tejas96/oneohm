@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 
+import { showFeatureAccessDenied } from '@/lib/access-control/access-feedback';
 import { ROUTES } from '@/lib/config/routes';
 
 /**
@@ -119,6 +120,7 @@ apiClient.interceptors.request.use(
 
 // Response interceptor - handle 401 errors and token refresh
 let isRefreshing = false;
+let accessDeniedHandled = false;
 let failedQueue: Array<{
   resolve: (value?: unknown) => void;
   reject: (reason?: unknown) => void;
@@ -229,6 +231,23 @@ apiClient.interceptors.response.use(
       } finally {
         isRefreshing = false;
       }
+    }
+
+    if (error.response?.status === 403 && typeof window !== 'undefined') {
+      if (!accessDeniedHandled) {
+        accessDeniedHandled = true;
+        const { showFeatureAccessDenied } = await import('@/lib/access-control/access-feedback');
+        showFeatureAccessDenied();
+        window.dispatchEvent(new CustomEvent('oneohm:access-denied'));
+        setTimeout(() => {
+          accessDeniedHandled = false;
+        }, 1500);
+      }
+    }
+
+    if (error.response?.status === 403 && typeof window !== 'undefined') {
+      showFeatureAccessDenied();
+      window.dispatchEvent(new CustomEvent('oneohm:access-denied'));
     }
 
     return Promise.reject(error);

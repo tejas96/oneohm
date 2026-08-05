@@ -1,9 +1,9 @@
 'use client';
 
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { GuardedNavLink } from '@/components/layout/guarded-nav-link';
 import { CountBadge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { isNavItemActive } from '@/lib/config';
@@ -16,15 +16,46 @@ interface RailProps {
   className?: string;
 }
 
-/**
- * Rail - 48px fixed icon navigation strip
- * Features: Icon buttons with tooltips, active state, notification badges
- * Uses filtered navigation based on user permissions and roles
- * Note: Uses usePathname directly to avoid useSearchParams Suspense requirement
- */
 export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
   const pathname = usePathname();
   const { navigation } = useFilteredNavigation();
+
+  const renderRailItem = (item: (typeof navigation.railTop)[number]) => {
+    const isActive = isNavItemActive(pathname, item.href, item.panelKey);
+    const Icon = item.icon;
+
+    return (
+      <Tooltip key={item.id}>
+        <TooltipTrigger asChild>
+          <GuardedNavLink
+            href={item.href}
+            label={item.label}
+            feature={item.feature}
+            isAllowed={item.isAllowed ?? true}
+            prefetch={false}
+            className={cn(
+              'rail-icon',
+              isActive && 'active',
+              item.disabled && 'opacity-50 pointer-events-none',
+            )}
+          >
+            {Icon && <Icon className="size-icon" strokeWidth={2} />}
+            {typeof item.badge === 'number' && (
+              <CountBadge
+                count={item.badge}
+                variant="primary"
+                size="2xs"
+                className="absolute top-0.5 right-0.5"
+              />
+            )}
+          </GuardedNavLink>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={12}>
+          {item.label}
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -34,53 +65,15 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
           'w-rail h-[calc(100vh-var(--header-height))]',
           'bg-white border-r border-border-light',
           'flex flex-col',
-          // Hide on mobile, show on lg and above
           'hidden lg:flex',
           className,
         )}
       >
-        {/* Top Navigation */}
         <nav className="flex-1 flex flex-col pt-1.5">
-          {navigation.railTop.map((item) => {
-            // Pass panelKey for accurate active state (e.g., /properties shows CRM as active)
-            const isActive = isNavItemActive(pathname, item.href, item.panelKey);
-            const Icon = item.icon;
-
-            return (
-              <Tooltip key={item.id}>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={item.href}
-                    prefetch={false}
-                    className={cn(
-                      'rail-icon',
-                      isActive && 'active',
-                      item.disabled && 'opacity-50 pointer-events-none',
-                    )}
-                    aria-disabled={item.disabled}
-                  >
-                    {Icon && <Icon className="size-icon" strokeWidth={2} />}
-                    {typeof item.badge === 'number' && (
-                      <CountBadge
-                        count={item.badge}
-                        variant="primary"
-                        size="2xs"
-                        className="absolute top-0.5 right-0.5"
-                      />
-                    )}
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={12}>
-                  {item.label}
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
+          {navigation.railTop.map(renderRailItem)}
         </nav>
 
-        {/* Bottom Section */}
         <div className="pb-1.5">
-          {/* Panel Toggle */}
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -100,34 +93,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
             </TooltipContent>
           </Tooltip>
 
-          {/* Bottom Nav Items */}
-          {navigation.railBottom.map((item) => {
-            // Pass panelKey for accurate active state
-            const isActive = isNavItemActive(pathname, item.href, item.panelKey);
-            const Icon = item.icon;
-
-            return (
-              <Tooltip key={item.id}>
-                <TooltipTrigger asChild>
-                  <Link
-                    href={item.href}
-                    prefetch={false}
-                    className={cn(
-                      'rail-icon',
-                      isActive && 'active',
-                      item.disabled && 'opacity-50 pointer-events-none',
-                    )}
-                    aria-disabled={item.disabled}
-                  >
-                    {Icon && <Icon className="size-icon" strokeWidth={2} />}
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={12}>
-                  {item.label}
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
+          {navigation.railBottom.map(renderRailItem)}
         </div>
       </aside>
     </TooltipProvider>

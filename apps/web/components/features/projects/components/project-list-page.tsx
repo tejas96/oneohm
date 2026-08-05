@@ -45,6 +45,7 @@ import {
   type BulkAction,
   type ColumnConfig,
 } from '@/components/shared/advanced-table';
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { MUITypography } from '@/components/ui/mui-typography';
@@ -893,16 +894,18 @@ export function ProjectListPage(): JSX.Element {
           </Button>
         )}
         {!hasFilters && (
-          <Button
-            size="small"
-            variant="contained"
-            sx={{ mt: 1 }}
-            onClick={() => {
-              void router.push(ROUTES.PROJECTS.NEW);
-            }}
-          >
-            New Project
-          </Button>
+          <GuardedFeatureAction feature="projects.create" label="New project">
+            <Button
+              size="small"
+              variant="contained"
+              sx={{ mt: 1 }}
+              onClick={() => {
+                void router.push(ROUTES.PROJECTS.NEW);
+              }}
+            >
+              New Project
+            </Button>
+          </GuardedFeatureAction>
         )}
       </Box>
     ),
@@ -936,15 +939,17 @@ export function ProjectListPage(): JSX.Element {
               <GridViewOutlinedIcon fontSize="small" />
             </ToggleButton>
           </ToggleButtonGroup>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            component={NextLink}
-            href={ROUTES.PROJECTS.NEW}
-          >
-            New Project
-          </Button>
+          <GuardedFeatureAction feature="projects.create" label="New project">
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddIcon />}
+              component={NextLink}
+              href={ROUTES.PROJECTS.NEW}
+            >
+              New Project
+            </Button>
+          </GuardedFeatureAction>
         </Stack>
       </Box>
 
@@ -1048,16 +1053,18 @@ export function ProjectListPage(): JSX.Element {
                   Clear Filters
                 </Button>
               ) : (
-                <Button
-                  size="small"
-                  variant="contained"
-                  sx={{ mt: 1 }}
-                  onClick={() => {
-                    void router.push(ROUTES.PROJECTS.NEW);
-                  }}
-                >
-                  New Project
-                </Button>
+                <GuardedFeatureAction feature="projects.create" label="New project">
+                  <Button
+                    size="small"
+                    variant="contained"
+                    sx={{ mt: 1 }}
+                    onClick={() => {
+                      void router.push(ROUTES.PROJECTS.NEW);
+                    }}
+                  >
+                    New Project
+                  </Button>
+                </GuardedFeatureAction>
               )}
             </Box>
           )}

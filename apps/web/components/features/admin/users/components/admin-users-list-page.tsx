@@ -1,5 +1,6 @@
 'use client';
 
+import { FIXED_ROLES } from '@tejas96/shared';
 import {
   AlertCircle,
   Eye,
@@ -8,6 +9,7 @@ import {
   Pencil,
   Plus,
   RotateCcw,
+  Shield,
   Trash2,
   UserCheck,
   UserX,
@@ -16,11 +18,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type JSX, type MouseEvent, useState, useCallback, useMemo } from 'react';
 
+import { FixedRoleAssignmentModal } from './fixed-role-assignment-modal';
+import { FixedRoleBadges } from './fixed-role-badges';
 import { UserFormModal } from './user-form-modal';
 import { UserStatusBadge } from './user-status-badge';
 
 import { EmptyState } from '@/components/shared';
 import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import {
   Avatar,
   AvatarFallback,
@@ -38,22 +43,24 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   Typography,
+  showToast,
 } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import {
   useAdminUsersList,
   useAdminUserMutations,
-  useRoles,
   type AdminUserListFilters,
 } from '@/lib/hooks/resources';
+import { useFixedRolesSupported } from '@/lib/hooks/resources/fixed-user-roles';
 import type { AdminUser } from '@/lib/hooks/resources/users';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 import {
   type TableUrlFilterRecord,
   type TableUrlSortModel,
   useTableUrlState,
 } from '@/lib/hooks/use-table-url-state';
-import { formatDate, formatRoleCode, formatTimeAgo, getInitials } from '@/lib/utils';
+import { formatDate, formatTimeAgo, getInitials } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 // AdvancedTable requires TRow extends Record<string, unknown>
@@ -70,6 +77,11 @@ const STATUS_OPTIONS = [
   { label: 'Suspended', value: 'suspended' },
   { label: 'Archived', value: 'archived' },
 ] as const;
+
+const FIXED_ROLE_FILTER_OPTIONS = FIXED_ROLES.map((role) => ({
+  label: role.label,
+  value: role.code,
+}));
 
 // ============================================================================
 // Sort adapter — maps AdvancedTable sort model to API fields
@@ -116,7 +128,7 @@ function localDateToUtcDayRange(localDate: string): { fromIso: string; toIso: st
 
 function toUserFilters(
   filters: TableUrlFilterRecord,
-): Pick<AdminUserListFilters, 'status' | 'roleId' | 'showDeleted' | 'fromDate' | 'toDate'> {
+): Pick<AdminUserListFilters, 'status' | 'role' | 'showDeleted' | 'fromDate' | 'toDate'> {
   const statusVal =
     typeof filters.status === 'string' && filters.status ? filters.status : undefined;
   const isArchived = statusVal === 'archived';
@@ -128,9 +140,12 @@ function toUserFilters(
   return {
     status: isArchived ? undefined : statusVal,
     showDeleted: isArchived || undefined,
-    roleId: typeof filters.roleId === 'string' && filters.roleId ? filters.roleId : undefined,
     fromDate: createdAtRange?.fromIso,
     toDate: createdAtRange?.toIso,
+    role:
+      typeof filters.role === 'string' && filters.role
+        ? (filters.role as AdminUserListFilters['role'])
+        : undefined,
   };
 }
 
@@ -142,6 +157,7 @@ interface UserRowActionsMenuProps {
   user: AdminUser;
   isSelf: boolean;
   onEdit: (id: string) => void;
+  onManageRoles: (user: AdminUser) => void;
   onStatusChange: (user: AdminUser, newStatus: string) => void;
   onDelete: (user: AdminUser) => void;
   onRestore: (user: AdminUser) => void;
@@ -151,6 +167,7 @@ function UserRowActionsMenu({
   user,
   isSelf,
   onEdit,
+  onManageRoles,
   onStatusChange,
   onDelete,
   onRestore,
@@ -172,9 +189,11 @@ function UserRowActionsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" onClick={(e: MouseEvent) => e.stopPropagation()}>
         {isDeleted ? (
-          <DropdownMenuItem onClick={() => onRestore(user)}>
-            <RotateCcw className="mr-2 size-icon-sm" /> Restore Employee
-          </DropdownMenuItem>
+          <GuardedFeatureAction feature="admin.users.manage" label="Restore employee">
+            <DropdownMenuItem onClick={() => onRestore(user)}>
+              <RotateCcw className="mr-2 size-icon-sm" /> Restore Employee
+            </DropdownMenuItem>
+          </GuardedFeatureAction>
         ) : (
           <>
             <DropdownMenuItem
@@ -182,29 +201,40 @@ function UserRowActionsMenu({
             >
               <Eye className="mr-2 size-icon-sm" /> View Details
             </DropdownMenuItem>
-            <DropdownMenuItem disabled={isSelf} onClick={() => !isSelf && onEdit(user.id)}>
-              <Pencil className="mr-2 size-icon-sm" />
-              {isSelf ? 'Cannot edit yourself' : 'Edit Employee'}
-            </DropdownMenuItem>
+            <GuardedFeatureAction feature="admin.users.manage" label="Edit employee">
+              <DropdownMenuItem disabled={isSelf} onClick={() => !isSelf && onEdit(user.id)}>
+                <Pencil className="mr-2 size-icon-sm" />
+                {isSelf ? 'Cannot edit yourself' : 'Edit Employee'}
+              </DropdownMenuItem>
+            </GuardedFeatureAction>
+            <GuardedFeatureAction feature="admin.userRoles.manage" label="Manage roles">
+              <DropdownMenuItem onClick={() => onManageRoles(user)}>
+                <Shield className="mr-2 size-icon-sm" /> Manage Roles
+              </DropdownMenuItem>
+            </GuardedFeatureAction>
             <DropdownMenuSeparator />
-            {user.status === 'active' ? (
-              <DropdownMenuItem disabled={isSelf} onClick={() => onStatusChange(user, 'inactive')}>
-                <UserX className="mr-2 size-icon-sm" />
-                {isSelf ? 'Cannot deactivate yourself' : 'Deactivate'}
+            <GuardedFeatureAction feature="admin.users.manage" label="Change employee status">
+              {user.status === 'active' ? (
+                <DropdownMenuItem disabled={isSelf} onClick={() => onStatusChange(user, 'inactive')}>
+                  <UserX className="mr-2 size-icon-sm" />
+                  {isSelf ? 'Cannot deactivate yourself' : 'Deactivate'}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => onStatusChange(user, 'active')}>
+                  <UserCheck className="mr-2 size-icon-sm" /> Activate
+                </DropdownMenuItem>
+              )}
+            </GuardedFeatureAction>
+            <GuardedFeatureAction feature="admin.users.delete" label="Delete employee">
+              <DropdownMenuItem
+                disabled={isSelf}
+                className="text-error"
+                onClick={() => !isSelf && onDelete(user)}
+              >
+                <Trash2 className="mr-2 size-icon-sm" />
+                {isSelf ? 'Cannot delete yourself' : 'Delete'}
               </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem onClick={() => onStatusChange(user, 'active')}>
-                <UserCheck className="mr-2 size-icon-sm" /> Activate
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              disabled={isSelf}
-              className="text-error"
-              onClick={() => !isSelf && onDelete(user)}
-            >
-              <Trash2 className="mr-2 size-icon-sm" />
-              {isSelf ? 'Cannot delete yourself' : 'Delete'}
-            </DropdownMenuItem>
+            </GuardedFeatureAction>
           </>
         )}
       </DropdownMenuContent>
@@ -219,16 +249,13 @@ function UserRowActionsMenu({
 export function AdminUsersListPage(): JSX.Element {
   const router = useRouter();
   const { user: currentUser } = useAuth();
+  const canManageRoles = useFeatureAccess('admin.userRoles.manage');
+  const { data: fixedRolesApiSupported } = useFixedRolesSupported();
 
   // URL-synced table state
   const urlState = useTableUrlState({ prefix: 'users', defaultPageSize: 10 });
 
-  // Fetch roles for filter dropdown
-  const { items: allRoles } = useRoles({ syncToUrl: false, defaultPageSize: 100 });
-  const roleFilterOptions = useMemo(
-    () => (allRoles ?? []).map((r) => ({ label: r.name, value: r.id })),
-    [allRoles],
-  );
+  const showRoleFilter = fixedRolesApiSupported === true;
 
   // Build API filters from URL state
   const apiFilters: AdminUserListFilters = useMemo(
@@ -257,6 +284,7 @@ export function AdminUsersListPage(): JSX.Element {
   // Modal state
   const [createOpen, setCreateOpen] = useState(false);
   const [editUserId, setEditUserId] = useState<string | null>(null);
+  const [fixedRoleTarget, setFixedRoleTarget] = useState<AdminUser | null>(null);
   const [statusChangeTarget, setStatusChangeTarget] = useState<{
     user: AdminUser;
     newStatus: string;
@@ -274,6 +302,24 @@ export function AdminUsersListPage(): JSX.Element {
     (u: AdminUser) => deleteConfirmation.requestDelete(u),
     [deleteConfirmation],
   );
+
+  const handleUserCreated = useCallback(
+    (user: AdminUser) => {
+      if (canManageRoles) {
+        setFixedRoleTarget(user);
+      } else {
+        showToast.info('Employee created; an owner must assign access roles.');
+      }
+    },
+    [canManageRoles],
+  );
+
+  const handleFixedRoleModalChange = useCallback((open: boolean) => {
+    if (!open) {
+      setFixedRoleTarget(null);
+      void refetch();
+    }
+  }, [refetch]);
 
   const confirmStatusChange = useCallback(async () => {
     if (!statusChangeTarget) return;
@@ -302,8 +348,8 @@ export function AdminUsersListPage(): JSX.Element {
   }, [mutations, restoreTarget]);
 
   // Column definitions
-  const columns: ColumnConfig<UserRow>[] = useMemo(
-    () => [
+  const columns: ColumnConfig<UserRow>[] = useMemo(() => {
+    const cols: ColumnConfig<UserRow>[] = [
       {
         field: 'name',
         headerName: 'User',
@@ -372,29 +418,10 @@ export function AdminUsersListPage(): JSX.Element {
         flex: 1.5,
         renderCell: ({ row }) => {
           const roles = row.roles as string[] | undefined;
-          return (
-            <div className="flex flex-wrap gap-1">
-              {roles && roles.length > 0 ? (
-                roles.map((role) => {
-                  const isResellerRole = role === 'reseller';
-                  return (
-                    <Badge
-                      key={role}
-                      variant={isResellerRole ? 'outline' : 'secondary'}
-                      size="xs"
-                      className={
-                        isResellerRole ? 'bg-amber-50 text-amber-700 border-amber-200' : ''
-                      }
-                    >
-                      {formatRoleCode(role)}
-                    </Badge>
-                  );
-                })
-              ) : (
-                <span className="text-foreground-tertiary">--</span>
-              )}
-            </div>
-          );
+          if (!roles || roles.length === 0) {
+            return <span className="text-foreground-tertiary">No roles assigned</span>;
+          }
+          return <FixedRoleBadges roles={roles} size="xs" />;
         },
       },
       {
@@ -406,15 +433,21 @@ export function AdminUsersListPage(): JSX.Element {
         flex: 1,
         renderCell: ({ row }) => <UserStatusBadge status={row.status as string} />,
       },
-      {
-        field: 'roleId',
+    ];
+
+    if (showRoleFilter) {
+      cols.push({
+        field: 'role',
         headerName: 'Role',
         filterable: true,
         filterType: 'select',
-        filterOptions: roleFilterOptions,
+        filterOptions: FIXED_ROLE_FILTER_OPTIONS,
         defaultHidden: true,
         hideable: false,
-      },
+      });
+    }
+
+    cols.push(
       {
         field: 'lastLoginAt',
         headerName: 'Last Login',
@@ -449,15 +482,17 @@ export function AdminUsersListPage(): JSX.Element {
             user={row as unknown as AdminUser}
             isSelf={currentUser?.id === row.id}
             onEdit={(id) => setEditUserId(id)}
+            onManageRoles={(u) => setFixedRoleTarget(u)}
             onStatusChange={(u, status) => setStatusChangeTarget({ user: u, newStatus: status })}
             onDelete={(u) => requestDelete(u)}
             onRestore={(u) => setRestoreTarget(u)}
           />
         ),
       },
-    ],
-    [currentUser?.id, requestDelete, roleFilterOptions],
-  );
+    );
+
+    return cols;
+  }, [currentUser?.id, requestDelete, showRoleFilter]);
 
   const renderEmptyState = useCallback(
     (hasActiveFilters: boolean): JSX.Element =>
@@ -471,7 +506,10 @@ export function AdminUsersListPage(): JSX.Element {
         <EmptyState
           title="No users yet"
           description="Get started by adding your first employee"
-          action={{ label: 'Add Employee', onClick: () => setCreateOpen(true) }}
+          action={{
+            label: 'Add Employee',
+            onClick: () => setCreateOpen(true),
+          }}
         />
       ),
     [urlState.resetAll],
@@ -538,16 +576,23 @@ export function AdminUsersListPage(): JSX.Element {
         searchPlaceholder="Search by name, email, phone..."
         itemLabel="users"
         toolbarActions={
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 size-icon-sm" />
-            Add Employee
-          </Button>
+          <GuardedFeatureAction feature="admin.users.manage" label="Add employee">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 size-icon-sm" />
+              Add Employee
+            </Button>
+          </GuardedFeatureAction>
         }
         renderEmptyState={renderEmptyState}
       />
 
       {/* Create Modal */}
-      <UserFormModal mode="create" open={createOpen} onOpenChange={setCreateOpen} />
+      <UserFormModal
+        mode="create"
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={handleUserCreated}
+      />
 
       {/* Edit Modal — conditionally rendered so hooks only mount when needed */}
       {editUserId && (
@@ -560,6 +605,17 @@ export function AdminUsersListPage(): JSX.Element {
           }}
         />
       )}
+
+      {/* Fixed-role assignment modal */}
+      {fixedRoleTarget ? (
+        <FixedRoleAssignmentModal
+          open
+          onOpenChange={handleFixedRoleModalChange}
+          userId={fixedRoleTarget.id}
+          userName={`${fixedRoleTarget.firstName} ${fixedRoleTarget.lastName ?? ''}`.trim()}
+          onSaved={() => void refetch()}
+        />
+      ) : null}
 
       {/* Delete confirmation */}
       <Dialog
@@ -587,20 +643,22 @@ export function AdminUsersListPage(): JSX.Element {
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => void deleteConfirmation.confirm()}
-              disabled={deleteConfirmation.isPending}
-            >
-              {deleteConfirmation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </Button>
+            <GuardedFeatureAction feature="admin.users.delete" label="Delete employee">
+              <Button
+                variant="destructive"
+                onClick={() => void deleteConfirmation.confirm()}
+                disabled={deleteConfirmation.isPending}
+              >
+                {deleteConfirmation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </Button>
+            </GuardedFeatureAction>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -647,24 +705,26 @@ export function AdminUsersListPage(): JSX.Element {
             >
               Cancel
             </Button>
-            <Button
-              variant={statusChangeTarget?.newStatus === 'active' ? 'default' : 'destructive'}
-              onClick={() => void confirmStatusChange()}
-              disabled={mutations.statusChange.isPending}
-            >
-              {mutations.statusChange.isPending ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Processing...
-                </>
-              ) : statusChangeTarget?.newStatus === 'active' ? (
-                'Activate'
-              ) : statusChangeTarget?.newStatus === 'suspended' ? (
-                'Suspend'
-              ) : (
-                'Deactivate'
-              )}
-            </Button>
+            <GuardedFeatureAction feature="admin.users.manage" label="Change employee status">
+              <Button
+                variant={statusChangeTarget?.newStatus === 'active' ? 'default' : 'destructive'}
+                onClick={() => void confirmStatusChange()}
+                disabled={mutations.statusChange.isPending}
+              >
+                {mutations.statusChange.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : statusChangeTarget?.newStatus === 'active' ? (
+                  'Activate'
+                ) : statusChangeTarget?.newStatus === 'suspended' ? (
+                  'Suspend'
+                ) : (
+                  'Deactivate'
+                )}
+              </Button>
+            </GuardedFeatureAction>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -691,19 +751,21 @@ export function AdminUsersListPage(): JSX.Element {
             <Button variant="outline" onClick={() => setRestoreTarget(null)} disabled={isRestoring}>
               Cancel
             </Button>
-            <Button onClick={() => void confirmRestore()} disabled={isRestoring}>
-              {isRestoring ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Restoring...
-                </>
-              ) : (
-                <>
-                  <RotateCcw className="mr-2 size-4" />
-                  Restore Employee
-                </>
-              )}
-            </Button>
+            <GuardedFeatureAction feature="admin.users.manage" label="Restore employee">
+              <Button onClick={() => void confirmRestore()} disabled={isRestoring}>
+                {isRestoring ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Restoring...
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="mr-2 size-4" />
+                    Restore Employee
+                  </>
+                )}
+              </Button>
+            </GuardedFeatureAction>
           </DialogFooter>
         </DialogContent>
       </Dialog>

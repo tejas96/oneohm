@@ -1,3 +1,3 @@
 export { AuthGuard } from './auth-guard';
-export { Can } from './can';
-export { PermissionGuard } from './permission-guard';
+export { GuardedFeatureAction } from './guarded-feature-action';
+export { RoleAccessGuard } from './role-access-guard';

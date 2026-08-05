@@ -21,7 +21,6 @@ import {
   type CrmColumn,
   type CrmQuickFilter,
 } from '@/components/shared/crm-table';
-import { PermissionGuard } from '@/components/shared/guards';
 import { useTableUrlState } from '@/lib/hooks';
 import { color, crm } from '@/lib/theme/tokens';
 import { formatDate, getErrorMessage } from '@/lib/utils';
@@ -555,9 +554,5 @@ function AdminDiscomListPageContent(): JSX.Element {
 }
 
 export function AdminDiscomListPage(): JSX.Element {
-  return (
-    <PermissionGuard role="super_admin">
-      <AdminDiscomListPageContent />
-    </PermissionGuard>
-  );
+  return <AdminDiscomListPageContent />;
 }

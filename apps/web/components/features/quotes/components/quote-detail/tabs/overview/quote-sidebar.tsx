@@ -5,9 +5,8 @@ import { QuoteStatus } from '@tejas96/shared/types';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 
-import { Can } from '@/components/shared/guards';
 import { ROUTES } from '@/lib/config/routes';
-import { PERMISSIONS } from '@/lib/constants/permissions';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 import { formatCurrency } from '@/lib/utils/format';
 
 interface QuoteSidebarProps {
@@ -34,6 +33,7 @@ export function QuoteSidebar({
   internalNotes,
 }: QuoteSidebarProps): React.JSX.Element {
   const router = useRouter();
+  const canViewPriceBreakdown = useFeatureAccess('quotes.priceBreakdown.view');
 
   const handleConvertToProject = () => {
     const params = new URLSearchParams({
@@ -69,8 +69,10 @@ export function QuoteSidebar({
       </Paper>
 
       {/* Profitability */}
-      {profitPercent != null && profitAmount != null && (profitPercent > 0 || profitAmount > 0) && (
-        <Can permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}>
+      {canViewPriceBreakdown &&
+        profitPercent != null &&
+        profitAmount != null &&
+        (profitPercent > 0 || profitAmount > 0) && (
           <Paper
             variant="outlined"
             className="p-5 rounded-xl border border-border bg-white shadow-sm"
@@ -112,8 +114,7 @@ export function QuoteSidebar({
               </div>
             </div>
           </Paper>
-        </Can>
-      )}
+        )}
 
       {/* Rejection Reason */}
       {rejectionReason && (

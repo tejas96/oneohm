@@ -1,9 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
-
-import { PERMISSIONS } from '@/lib/constants/permissions';
-import { useAuth } from '@/providers/auth-provider';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 
 export interface QuotePermissions {
   canView: boolean;
@@ -13,15 +10,10 @@ export interface QuotePermissions {
 }
 
 export function useQuotePermissions(): QuotePermissions {
-  const { hasPermission } = useAuth();
-
-  return useMemo(
-    () => ({
-      canView: hasPermission(PERMISSIONS.QUOTES.VIEW),
-      canCreate: hasPermission(PERMISSIONS.QUOTES.CREATE),
-      canUpdate: hasPermission(PERMISSIONS.QUOTES.UPDATE),
-      canViewPriceBreakdown: hasPermission(PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN),
-    }),
-    [hasPermission],
-  );
+  return {
+    canView: useFeatureAccess('quotes.view'),
+    canCreate: useFeatureAccess('quotes.create'),
+    canUpdate: useFeatureAccess('quotes.manage'),
+    canViewPriceBreakdown: useFeatureAccess('quotes.priceBreakdown.view'),
+  };
 }

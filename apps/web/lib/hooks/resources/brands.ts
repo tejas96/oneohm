@@ -4,6 +4,7 @@ import {
   type BaseFilters,
   defineResource,
   getResourceConfig,
+  getResourceAccess,
   getResourcePermissions,
   STALE_TIMES,
   useResourceList,
@@ -48,6 +49,12 @@ defineResource<Brand>(
     update: 'brands:update',
     delete: 'brands:delete',
   },
+  {
+    view: 'admin.catalog.manage',
+    create: 'admin.catalog.manage',
+    update: 'admin.catalog.manage',
+    delete: 'admin.catalog.manage',
+  },
 );
 
 export function useBrandList(
@@ -77,5 +84,5 @@ export function useBrandMutations() {
 }
 
 export function useBrandPermissions() {
-  return useResourcePermissions(getResourcePermissions('brands'));
+  return useResourcePermissions(getResourcePermissions('brands'), getResourceAccess('brands'));
 }

@@ -88,6 +88,10 @@ defineResource<InventoryStock>(
   {
     view: 'inventory:read',
   },
+  {
+    view: 'inventory.stock.view',
+    update: 'inventory.stock.manage',
+  },
 );
 
 // ============================================================================

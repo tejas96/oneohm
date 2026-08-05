@@ -16,7 +16,7 @@ import { ErrorState } from '@/components/shared/feedback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWarehouse } from '@/lib/hooks/resources';
-import { useAuth } from '@/providers/auth-provider';
+import { useRegisteredResourceAccess } from '@/lib/hooks/core';
 
 /**
  * Warehouse detail page (Part: rebuild-warehouse-pages).
@@ -33,8 +33,8 @@ import { useAuth } from '@/providers/auth-provider';
 export function WarehouseDetailPage(): React.JSX.Element {
   const params = useParams();
   const [editOpen, setEditOpen] = useState(false);
-  const { hasPermission } = useAuth();
-  const canEdit = hasPermission('inventory:write');
+  const warehouseAccess = useRegisteredResourceAccess('warehouses');
+  const canEdit = warehouseAccess.canUpdate;
 
   const id = useMemo(() => {
     const raw = params?.id;

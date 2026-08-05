@@ -82,6 +82,10 @@ defineResource<EmployeeProfile>(
     view: 'employees:read',
     update: 'employees:update',
   },
+  {
+    view: 'profile.view',
+    update: 'profile.manage',
+  },
 );
 
 // ── Hooks ──────────────────────────────────────────────────────

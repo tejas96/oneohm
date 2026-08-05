@@ -79,6 +79,12 @@ defineResource<MaterialDispatch>(
     update: 'dispatch:write',
     delete: 'dispatch:write',
   },
+  {
+    view: 'inventory.dispatch.view',
+    create: 'inventory.dispatch.manage',
+    update: 'inventory.dispatch.manage',
+    delete: 'inventory.dispatch.manage',
+  },
 );
 
 // ============================================================================

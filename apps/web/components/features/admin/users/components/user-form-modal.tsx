@@ -49,6 +49,7 @@ interface UserFormModalProps {
   onOpenChange: (open: boolean) => void;
   mode: 'create' | 'edit';
   userId?: string;
+  onCreated?: (user: AdminUser) => void;
 }
 
 type FormData = Omit<CreateUserFormData, 'password'> & { password?: string };
@@ -58,6 +59,7 @@ export function UserFormModal({
   onOpenChange,
   mode,
   userId,
+  onCreated,
 }: UserFormModalProps): JSX.Element {
   const isEdit = mode === 'edit';
   const { user: currentUser } = useAuth();
@@ -250,7 +252,8 @@ export function UserFormModal({
           }
         }
 
-        await createUser.mutateAsync(payload as Partial<AdminUser>);
+        const createdUser = await createUser.mutateAsync(payload as Partial<AdminUser>);
+        onCreated?.(createdUser);
       }
 
       // Invalidate queries to trigger UI refresh

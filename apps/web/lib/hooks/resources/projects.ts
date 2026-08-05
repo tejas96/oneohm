@@ -118,6 +118,12 @@ defineResource(
     update: 'projects:update',
     delete: 'projects:delete',
   },
+  {
+    view: 'projects.view',
+    create: 'projects.create',
+    update: 'projects.update',
+    delete: 'projects.delete',
+  },
 );
 
 // ── Summary Hook ───────────────────────────────────────────────

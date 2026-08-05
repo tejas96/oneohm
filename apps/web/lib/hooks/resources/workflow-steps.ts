@@ -5,6 +5,7 @@ import type { StatisticsResponse, WorkflowStep } from '@tejas96/shared/types';
 import {
   defineResource,
   getResourceConfig,
+  getResourceAccess,
   getResourcePermissions,
   useResourceDetail,
   useResourceList,
@@ -39,6 +40,12 @@ defineResource<WorkflowStep>(
     create: 'workflow-steps:create',
     update: 'workflow-steps:update',
     delete: 'workflow-steps:delete',
+  },
+  {
+    view: 'admin.settings.manage',
+    create: 'admin.settings.manage',
+    update: 'admin.settings.manage',
+    delete: 'admin.settings.manage',
   },
 );
 
@@ -103,5 +110,5 @@ export function useWorkflowStepStats(): ReturnType<typeof useResourceStats<Stati
 }
 
 export function useWorkflowStepPermissions(): ReturnType<typeof useResourcePermissions> {
-  return useResourcePermissions(getResourcePermissions('workflow-steps'));
+  return useResourcePermissions(getResourcePermissions('workflow-steps'), getResourceAccess('workflow-steps'));
 }

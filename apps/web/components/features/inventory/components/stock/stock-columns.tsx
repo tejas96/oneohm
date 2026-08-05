@@ -31,7 +31,7 @@ export interface StockRowActionCallbacks {
   onTransfer: (row: InventoryStock) => void;
   /**
    * Permission-derived flags. The parent computes these once via
-   * useAuth().hasPermission and forwards them so we don't pay the
+   * registered resource access and forwards them so we don't pay the
    * cost on every row render.
    */
   canAdjust: boolean;
@@ -198,7 +198,7 @@ export function buildStockColumns(
             disabled: !callbacks.canAdjust,
             tooltip: callbacks.canAdjust
               ? undefined
-              : 'You need stock:adjust to change quantities.',
+              : 'You need stock manage access to change quantities.',
           },
           {
             id: 'transfer',
@@ -207,7 +207,7 @@ export function buildStockColumns(
             onSelect: () => callbacks.onTransfer(row),
             disabled: !callbacks.canTransfer || Number(row.availableQuantity ?? 0) <= 0,
             tooltip: !callbacks.canTransfer
-              ? 'You need stock:transfer to move stock between warehouses.'
+              ? 'You need stock manage access to move stock between warehouses.'
               : Number(row.availableQuantity ?? 0) <= 0
                 ? 'Nothing to transfer — available quantity is zero.'
                 : undefined,

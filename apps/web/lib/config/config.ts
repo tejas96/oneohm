@@ -43,6 +43,8 @@ class WebConfigService {
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
         stripePublicKey: process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY,
       },
+
+      features: {},
     };
   }
 
@@ -79,6 +81,13 @@ class WebConfigService {
    */
   get thirdParty() {
     return this.config.thirdParty;
+  }
+
+  /**
+   * Get feature flags
+   */
+  get features() {
+    return this.config.features;
   }
 
   /**

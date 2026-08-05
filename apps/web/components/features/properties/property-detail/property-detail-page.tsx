@@ -53,7 +53,7 @@ import { PageSkeleton, TabSkeleton } from './tab-skeleton';
 import {
   formatDeleteBlockTooltip,
   getPropertyDeleteBlockReasons,
-  ORG_ADMIN_ROLES,
+  shouldShowPropertyDelete,
 } from '../utils/delete-eligibility';
 
 import {
@@ -64,6 +64,7 @@ import { stickyHeaderPaperSx } from '@/components/features/customers/customer-de
 import { useCustomer } from '@/components/features/customers/hooks';
 import { usePropertyLockStatus } from '@/components/features/quotes/hooks/use-quotes';
 import { EmptyState } from '@/components/shared';
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
 import { showToast, WhatsAppIcon } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -134,8 +135,8 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { user, hasAnyRole } = useAuth();
-  const isOrgAdmin = hasAnyRole([...ORG_ADMIN_ROLES]);
+  const { user } = useAuth();
+  const showPropertyDelete = shouldShowPropertyDelete();
   const deletePropertyMutation = useDeleteProperty();
 
   const rawTab = searchParams.get('tab');
@@ -564,27 +565,29 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         >
           Mark as Lost
         </MenuItem>
-        {isOrgAdmin && <Divider />}
-        {isOrgAdmin && (
-          <Tooltip title={propertyDeleteTooltip ?? ''}>
-            <span>
-              <MenuItem
-                disabled={propertyDeleteDisabled}
-                onClick={() => {
-                  if (propertyDeleteDisabled) return;
-                  setMoreAnchor(null);
-                  deleteConfirmation.requestDelete(property);
-                }}
-                sx={{ color: 'error.main' }}
-              >
-                <ListItemIcon>
-                  <DeleteOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />
-                </ListItemIcon>
-                Delete Property
-              </MenuItem>
-            </span>
-          </Tooltip>
-        )}
+        {showPropertyDelete ? <Divider /> : null}
+        {showPropertyDelete ? (
+          <GuardedFeatureAction feature="properties.delete" label="Delete property">
+            <Tooltip title={propertyDeleteTooltip ?? ''}>
+              <span>
+                <MenuItem
+                  disabled={propertyDeleteDisabled}
+                  onClick={() => {
+                    if (propertyDeleteDisabled) return;
+                    setMoreAnchor(null);
+                    deleteConfirmation.requestDelete(property);
+                  }}
+                  sx={{ color: 'error.main' }}
+                >
+                  <ListItemIcon>
+                    <DeleteOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />
+                  </ListItemIcon>
+                  Delete Property
+                </MenuItem>
+              </span>
+            </Tooltip>
+          </GuardedFeatureAction>
+        ) : null}
       </Menu>
 
       <DeleteConfirmationDialog

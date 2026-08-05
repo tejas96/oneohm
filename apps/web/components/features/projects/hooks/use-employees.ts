@@ -1,7 +1,9 @@
 'use client';
 
+import { FIXED_ROLES } from '@tejas96/shared';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
+import { useMemo } from 'react';
 
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
@@ -14,6 +16,9 @@ export interface EmployeeUser {
   email?: string;
 }
 
+/** Canonical fixed-role codes plus visible legacy strings during transition. */
+export type EmployeeAccessRoleCode = string;
+
 export interface EmployeeListItem {
   id: string;
   userId: string;
@@ -23,7 +28,7 @@ export interface EmployeeListItem {
   phone?: string | null;
   department?: string | null;
   designation?: string | null;
-  roles?: string[];
+  roles?: EmployeeAccessRoleCode[];
   status: string;
 }
 
@@ -32,6 +37,11 @@ interface EmployeeListResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+export interface EmployeeRoleFilterOption {
+  value: string;
+  label: string;
 }
 
 export const employeeKeys = {
@@ -67,4 +77,21 @@ export function useEmployees(options?: {
     },
     enabled: !!organizationId,
   });
+}
+
+export function useEmployeeRoleFilterOptions(employees: EmployeeListItem[]): {
+  options: EmployeeRoleFilterOption[];
+  isLoading: boolean;
+} {
+  return useMemo(() => {
+    const codesInUse = new Set(employees.flatMap((employee) => employee.roles ?? []));
+
+    return {
+      isLoading: false,
+      options: FIXED_ROLES.filter((role) => codesInUse.has(role.code)).map((role) => ({
+        value: role.code,
+        label: role.label,
+      })),
+    };
+  }, [employees]);
 }

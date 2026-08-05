@@ -12,7 +12,7 @@ import {
   useLayout,
 } from '@/components/layout';
 import { CommandPalette } from '@/components/shared/command-palette';
-import { AuthGuard } from '@/components/shared/guards';
+import { AuthGuard, RoleAccessGuard } from '@/components/shared/guards';
 
 interface DashboardLayoutContentProps {
   children: ReactNode;
@@ -63,11 +63,13 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.Element {
   return (
     <AuthGuard>
-      <LayoutProvider>
-        <div className="min-h-screen bg-background-secondary">
-          <DashboardLayoutContent>{children}</DashboardLayoutContent>
-        </div>
-      </LayoutProvider>
+      <RoleAccessGuard>
+        <LayoutProvider>
+          <div className="min-h-screen bg-background-secondary">
+            <DashboardLayoutContent>{children}</DashboardLayoutContent>
+          </div>
+        </LayoutProvider>
+      </RoleAccessGuard>
     </AuthGuard>
   );
 }

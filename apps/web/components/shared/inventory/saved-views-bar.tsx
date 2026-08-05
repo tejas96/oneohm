@@ -30,7 +30,8 @@ import {
   type SavedView,
   type SavedViewResource,
 } from '@/lib/hooks/resources';
-import { useAuth } from '@/providers/auth-provider';
+import type { FeatureAccessKey } from '@/lib/access-control/feature-policy';
+import { useFeatureAccess } from '@/lib/hooks/use-feature-access';
 
 /**
  * SavedViewsBar — segmented chips strip for saved filter views.
@@ -47,9 +48,9 @@ import { useAuth } from '@/providers/auth-provider';
  * `activeId` in, `onSelect(id|null)` out.
  *
  * Permission gating:
- *   - no `saved-view:read`  -> renders nothing.
- *   - read only             -> chips visible, save/manage hidden.
- *   - `saved-view:write`    -> full toolbar.
+ *   - no host-module view access -> renders nothing.
+ *   - view only             -> chips visible, save/manage hidden.
+ *   - host-module manage    -> full toolbar.
  *
  * Stale-view safety: if the URL `?view=<id>` references a view that
  * no longer exists (deleted in another tab), `useSavedViewState`
@@ -78,15 +79,49 @@ export interface SavedViewsBarProps {
   onSelect: (id: string | null, filters: Record<string, unknown>) => void;
 }
 
+const SAVED_VIEW_FEATURE_ACCESS: Record<
+  SavedViewResource,
+  { read: FeatureAccessKey; write: FeatureAccessKey }
+> = {
+  'inventory-stock': {
+    read: 'inventory.stock.view',
+    write: 'inventory.stock.manage',
+  },
+  'inventory-transactions': {
+    read: 'inventory.transactions.view',
+    write: 'inventory.transactions.view',
+  },
+  'purchase-orders': {
+    read: 'inventory.procurement.view',
+    write: 'inventory.procurement.manage',
+  },
+  'material-dispatches': {
+    read: 'inventory.dispatch.view',
+    write: 'inventory.dispatch.manage',
+  },
+  'stock-allocations': {
+    read: 'inventory.allocations.view',
+    write: 'inventory.allocations.manage',
+  },
+  vendors: {
+    read: 'inventory.stock.view',
+    write: 'inventory.stock.manage',
+  },
+  warehouses: {
+    read: 'inventory.stock.view',
+    write: 'inventory.stock.manage',
+  },
+};
+
 export function SavedViewsBar({
   resource,
   activeId,
   currentFilters,
   onSelect,
 }: SavedViewsBarProps): React.JSX.Element | null {
-  const { hasPermission } = useAuth();
-  const canRead = hasPermission('saved-view:read');
-  const canWrite = hasPermission('saved-view:write');
+  const featureAccess = SAVED_VIEW_FEATURE_ACCESS[resource];
+  const canRead = useFeatureAccess(featureAccess.read);
+  const canWrite = useFeatureAccess(featureAccess.write);
 
   const viewsQuery = useSavedViews(resource);
   const mutations = useSavedViewMutations();

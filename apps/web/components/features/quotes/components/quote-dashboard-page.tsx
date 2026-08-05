@@ -19,6 +19,7 @@ import {
 } from './dashboard';
 
 import { MUITypography } from '@/components/ui';
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import { ROUTES } from '@/lib/config/routes';
 import { useQuoteListResource, useProjectListResource } from '@/lib/hooks/resources';
 import { useAuth } from '@/providers/auth-provider';
@@ -322,15 +323,17 @@ export function QuoteDashboardPage(): React.JSX.Element {
             <Article className="size-4 mr-2 text-text-secondary" />
             All Quotes
           </Button>
-          <Button
-            variant="contained"
-            size="small"
-            onClick={() => router.push(ROUTES.QUOTES.NEW)}
-            className="rounded-lg shadow-sm hover:shadow bg-primary text-white hover:bg-primary/95 normal-case font-semibold px-4 py-2"
-          >
-            <Add className="size-4 mr-2" />
-            Create Quote
-          </Button>
+          <GuardedFeatureAction feature="quotes.create" label="Create quote">
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => router.push(ROUTES.QUOTES.NEW)}
+              className="rounded-lg shadow-sm hover:shadow bg-primary text-white hover:bg-primary/95 normal-case font-semibold px-4 py-2"
+            >
+              <Add className="size-4 mr-2" />
+              Create Quote
+            </Button>
+          </GuardedFeatureAction>
         </div>
       </div>
 

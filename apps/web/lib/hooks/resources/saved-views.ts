@@ -73,6 +73,11 @@ export interface UpdateSavedViewPayload {
 // ============================================================================
 // Registry — registers permissions so `<Can>` and `useResourcePermissions`
 // can gate UI off the same codes the backend enforces.
+//
+// Fixed-mode access: intentionally omitted. Saved-view actions inherit the
+// feature key of the host inventory module at the call site (e.g.
+// inventory.stock.view on warehouses) rather than a static cross-module grant.
+// See SavedViewsBar for runtime gating.
 // ============================================================================
 
 defineResource<SavedView>(

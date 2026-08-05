@@ -14,7 +14,7 @@ import type { QuoteDetail } from '../../hooks/types';
 import { useDeleteQuote, usePropertyLockStatus } from '../../hooks/use-quotes';
 import { QuoteStatusDropdown } from '../quote-status-dropdown';
 
-import { Can } from '@/components/shared/guards';
+import { GuardedFeatureAction } from '@/components/shared/guards';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -300,7 +300,7 @@ export const QuoteDetailHeader = React.memo(
                 </ListItemIcon>
                 <ListItemText>Create New Quote</ListItemText>
               </MenuItem>
-              <Can permission="quotes:delete">
+              <GuardedFeatureAction feature="quotes.delete" label="Delete quote">
                 {canDelete && (
                   <MenuItem onClick={handleDeleteClick} sx={{ color: 'error.main' }}>
                     <ListItemIcon>
@@ -309,7 +309,7 @@ export const QuoteDetailHeader = React.memo(
                     <ListItemText>Delete Quote</ListItemText>
                   </MenuItem>
                 )}
-              </Can>
+              </GuardedFeatureAction>
             </Menu>
           </div>
         </div>

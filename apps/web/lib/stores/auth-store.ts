@@ -3,77 +3,31 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 import type { User } from '@/lib/types/auth';
 
-// Re-export for backward compatibility
 export type { ProfileSummary, User } from '@/lib/types/auth';
 
-/**
- * Roles that bypass every permission check on the client.
- *
- * Mirrors the backend's `ADMIN_BYPASS_ROLES`
- * (apps/backend/src/modules/iam/constants/admin-roles.ts) so the UI
- * never shows a "missing permission" state to a user the API would
- * have served anyway.
- *
- * Why this matters:
- *   * Without the bypass, an `admin` / `super_admin` / `platform_admin`
- *     who happens NOT to have the granular `inventory:read` permission
- *     code in their JWT would see hidden buttons / blank dashboards /
- *     blocked actions even though every API request they made would
- *     succeed (because the backend bypasses them).
- *   * That mismatch is the worst kind of bug: silent UI lying about
- *     what's possible.
- *
- * Keep this list in sync with `ADMIN_BYPASS_ROLES` server-side. If the
- * backend list changes, this one MUST change too.
- */
-export const ADMIN_BYPASS_ROLES: readonly string[] = ['platform_admin', 'super_admin', 'admin'];
-
-function userHasAdminBypass(roles: readonly string[] | undefined): boolean {
-  if (!roles?.length) return false;
-  for (const role of roles) {
-    if (ADMIN_BYPASS_ROLES.includes(role)) return true;
-  }
-  return false;
-}
-
-/**
- * Auth state interface
- */
 interface AuthState {
-  // State
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   _hasHydrated: boolean;
 
-  // Actions
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
   setHasHydrated: (state: boolean) => void;
 
-  // Permission helpers
-  hasPermission: (permission: string) => boolean;
-  hasAnyPermission: (permissions: string[]) => boolean;
-  hasAllPermissions: (permissions: string[]) => boolean;
   hasRole: (role: string) => boolean;
   hasAnyRole: (roles: string[]) => boolean;
 }
 
-/**
- * Auth Store
- * Manages authentication state with persistence
- */
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      // Initial state
       user: null,
       isAuthenticated: false,
       isLoading: true,
       _hasHydrated: false,
 
-      // Set user and update authenticated state
       setUser: (user) =>
         set({
           user,
@@ -81,13 +35,10 @@ export const useAuthStore = create<AuthState>()(
           isLoading: false,
         }),
 
-      // Set loading state
       setLoading: (loading) => set({ isLoading: loading }),
 
-      // Set hydration state
       setHasHydrated: (state) => set({ _hasHydrated: state }),
 
-      // Logout - clear user state
       logout: () =>
         set({
           user: null,
@@ -95,44 +46,11 @@ export const useAuthStore = create<AuthState>()(
           isLoading: false,
         }),
 
-      // Check if user has specific permission.
-      //
-      // Admin bypass: users carrying any role in ADMIN_BYPASS_ROLES
-      // (platform_admin / super_admin / admin) are treated as having
-      // every permission, mirroring the backend PermissionGuard. This
-      // keeps client UI honest with what the API actually allows.
-      hasPermission: (permission) => {
-        const { user } = get();
-        if (!user) return false;
-        if (userHasAdminBypass(user.roles)) return true;
-        return user.permissions?.includes(permission) ?? false;
-      },
-
-      // Check if user has any of the specified permissions
-      hasAnyPermission: (permissions) => {
-        const { user } = get();
-        if (!user) return false;
-        if (userHasAdminBypass(user.roles)) return true;
-        if (!user.permissions) return false;
-        return permissions.some((p) => user.permissions.includes(p));
-      },
-
-      // Check if user has all of the specified permissions
-      hasAllPermissions: (permissions) => {
-        const { user } = get();
-        if (!user) return false;
-        if (userHasAdminBypass(user.roles)) return true;
-        if (!user.permissions) return false;
-        return permissions.every((p) => user.permissions.includes(p));
-      },
-
-      // Check if user has specific role
       hasRole: (role) => {
         const { user } = get();
         return user?.roles?.includes(role) ?? false;
       },
 
-      // Check if user has any of the specified roles
       hasAnyRole: (roles) => {
         const { user } = get();
         if (!user?.roles) return false;
@@ -153,34 +71,18 @@ export const useAuthStore = create<AuthState>()(
   ),
 );
 
-/**
- * Hook to check if user is admin.
- *
- * Uses the same `ADMIN_BYPASS_ROLES` set that `hasPermission`/
- * `hasAnyPermission`/`hasAllPermissions` consult internally so the
- * "is admin" UI cue stays in sync with the actual permission bypass.
- */
 export function useIsAdmin(): boolean {
-  return useAuthStore((state) => state.hasAnyRole([...ADMIN_BYPASS_ROLES]));
+  return useAuthStore((state) => state.hasAnyRole(['admin', 'super_admin']));
 }
 
-/**
- * Hook to get current user
- */
 export function useCurrentUser(): User | null {
   return useAuthStore((state) => state.user);
 }
 
-/**
- * Hook to check authentication status
- */
 export function useIsAuthenticated(): boolean {
   return useAuthStore((state) => state.isAuthenticated);
 }
 
-/**
- * Hook to check if auth store has hydrated from localStorage
- */
 export function useHasHydrated(): boolean {
   return useAuthStore((state) => state._hasHydrated);
 }

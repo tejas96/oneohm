@@ -37,6 +37,9 @@ defineResource<EmployeeListItem>(
     update: 'employees:update',
     delete: 'employees:delete',
   },
+  {
+    view: 'projects.team.manage',
+  },
 );
 
 // ── Hooks ──────────────────────────────────────────────────────

@@ -1,10 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
-
-import type { ResourcePermissionConfig } from './types';
-
-import { useAuth } from '@/providers/auth-provider';
+import { getResourceAccess } from './resource-registry';
+import { useResourceAccess } from './use-resource-access';
 
 export interface ResourcePermissions {
   canView: boolean;
@@ -15,27 +12,15 @@ export interface ResourcePermissions {
   canBulkDelete: boolean;
 }
 
-export function useResourcePermissions(config?: ResourcePermissionConfig): ResourcePermissions {
-  const { hasPermission } = useAuth();
+/** @deprecated Use `useRegisteredResourceAccess(resource)` instead. */
+export function useResourcePermissions(
+  _permissions?: unknown,
+  access?: Parameters<typeof useResourceAccess>[0],
+): ResourcePermissions {
+  return useResourceAccess(access);
+}
 
-  return useMemo(() => {
-    if (!config) {
-      return {
-        canView: true,
-        canCreate: true,
-        canUpdate: true,
-        canDelete: true,
-        canArchive: true,
-        canBulkDelete: true,
-      };
-    }
-    return {
-      canView: config.view ? hasPermission(config.view) : true,
-      canCreate: config.create ? hasPermission(config.create) : true,
-      canUpdate: config.update ? hasPermission(config.update) : true,
-      canDelete: config.delete ? hasPermission(config.delete) : true,
-      canArchive: config.archive ? hasPermission(config.archive) : true,
-      canBulkDelete: config.bulkDelete ? hasPermission(config.bulkDelete) : true,
-    };
-  }, [config, hasPermission]);
+/** @deprecated Use `useRegisteredResourceAccess(resource)` instead. */
+export function useRegisteredResourcePermissions(resource: string): ResourcePermissions {
+  return useResourceAccess(getResourceAccess(resource));
 }

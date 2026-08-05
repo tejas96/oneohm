@@ -8,7 +8,7 @@ export type { StatsCardProps } from '../ui';
 export { CommandPalette } from './command-palette';
 
 // Guards
-export { AuthGuard, PermissionGuard } from './guards';
+export { AuthGuard } from './guards';
 
 // Alerts
 export { Alert, alertVariants } from './alerts';

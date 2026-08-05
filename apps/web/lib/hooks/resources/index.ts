@@ -12,8 +12,18 @@ export {
   type AdminUserListResponse,
 } from './users';
 
-// User Roles
-export { useUserRoles, useUserRoleMutations, type UserRoleAssignment } from './user-roles';
+// Fixed User Roles (atomic replacement API)
+export {
+  fixedUserRolesAdapter,
+  fixedUserRolesKeys,
+  FixedRolesAdapterError,
+  useFixedUserRoles,
+  useFixedRolesSupported,
+  useReplaceFixedUserRoles,
+  getFixedRolesErrorMessage,
+  type FixedUserRolesAdapter,
+  type FixedRolesAdapterErrorKind,
+} from './fixed-user-roles';
 
 // Invitations
 export {
@@ -22,27 +32,6 @@ export {
   type Invitation,
   type InvitationFilters,
 } from './invitations';
-
-// Roles
-export {
-  useRoles,
-  useRole,
-  useRoleMutations,
-  useRolePermissions,
-  type AdminRole,
-  type RoleWithPermissions,
-  type RoleFilters,
-} from './roles';
-
-// Permissions
-export {
-  usePermissions,
-  useAllPermissions,
-  usePermissionPermissions,
-  type AdminPermission,
-  type Permission,
-  type PermissionFilters,
-} from './permissions';
 
 // Workflow Steps
 export {

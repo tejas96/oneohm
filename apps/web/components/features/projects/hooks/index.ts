@@ -7,8 +7,12 @@ export type {
   TeamMemberSummary,
 } from './use-projects';
 
-export { employeeKeys, useEmployees } from './use-employees';
-export type { EmployeeListItem } from './use-employees';
+export { employeeKeys, useEmployees, useEmployeeRoleFilterOptions } from './use-employees';
+export type {
+  EmployeeAccessRoleCode,
+  EmployeeListItem,
+  EmployeeRoleFilterOption,
+} from './use-employees';
 
 export { workloadKeys, useTeamWorkload } from './use-team-workload';
 export type { TeamWorkloadItem } from './use-team-workload';
