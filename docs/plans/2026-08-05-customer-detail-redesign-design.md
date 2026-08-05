@@ -1,69 +1,65 @@
-# Design Document: Customer Details Screen Redesign
+# Design Document: Customer Details Screen Redesign (V2 OneOhm Alignment)
 
 **Date:** 2026-08-05  
-**Topic:** Customer Details Screen UI/UX Redesign  
-**Design System:** OneOhm Design System (HelioGrid DS)  
-**Target Route:** `/customers/[id]` (`http://localhost:3001/customers/75879e33-c8b8-4d60-b5a8-50fe8a303bb4`)
+**Topic:** Customer Details Screen UI/UX Complete Redesign  
+**Design System:** OneOhm Design System (HelioGrid DS - Matched to Customer List Page)  
+**Target Route:** `/customers/[id]` (`http://localhost:3001/customers/75879e33-c8b8-4d60-b5a8-50fe8a303bb4`)  
+**Stitch Screen ID:** `projects/9532433856706886612/screens/813b62a0253e464f98e8455dbdfb6d0b`
 
 ---
 
-## 1. Goal & Vision
-Redesign the Customer Details screen (`CustomerDetailPage`, `CustomerDetailHeader`, `CustomerDetailKpiStrip`, `CustomerAttentionPanel`, and tab wrappers) to strictly align with the **OneOhm Design System**. The new UX provides a premium, calm, SaaS precision-instrument feel, removing legacy 1px structural borders, adopting soft floating elevation shadows (`e1`–`e3`), fully pill buttons (`999px`), Geist typography, overline uppercase micro-labels, circular icon containers with 6% color tint, and WCAG AA accessibility compliance.
+## 1. Executive Summary & Design System Standards
+
+This design document outlines the complete UI/UX overhaul of the Customer Details page (`CustomerDetailPage`, `CustomerDetailHeader`, `CustomerDetailKpiStrip`, `CustomerAttentionPanel`, and **all 9 sub-tabs**).
+
+The redesign strictly matches the OneOhm Design System tokens (`@/lib/theme/tokens.ts`) and component patterns established in the Customer List page (`customer-list-page.tsx`, `customer-kpi-cards.tsx`).
+
+### Core OneOhm Rules Applied:
+1. **Zero 1px Structural Borders:** Surfaces separate through background contrast (warm stone canvas `#FAFAF9` vs pure white `#FFFFFF` cards) and low-opacity elevation shadows (`shadow.e1` to `shadow.e3`).
+2. **Text Overflow & Flex-Shrink Safety:** Avatars (`MUIAvatar`), status chips (`CrmStatusPill` / `MUIStatusChip`), and action icons carry `flexShrink: 0`, `minWidth: 0`, and `noWrap` so text **never breaks or crushes icons** even with long names or high ₹ amounts.
+3. **Geist & Mono Typography:**
+   - Overline micro-labels: `11px`, `fontWeight: 700`, `letterSpacing: '0.12em'`, uppercase (`var(--text-overline-track)`).
+   - Figures & Codes: Geist Mono with `tabular-nums` for currency (`₹4,52,471`), system sizes (`kWp`), dates, and codes.
+4. **Signature Circular Icon Containers:** Action & category icons sit inside perfect `36px` / `40px` circles with a 6% tint background wash (`#0D74B8` blue, `#76C044` green, `#EAB308` amber).
+5. **Fully Pill Action Buttons & Chips:** All buttons, status indicators, and tab triggers use `borderRadius: 999px`.
 
 ---
 
-## 2. Design System Alignment & Specifications
+## 2. Component Architecture & Fixes
 
-### 2.1 Color & Surface Hierarchy
-- **Canvas & Page Background:** Warm stone canvas (`--canvas: #FAFAF9` / `--bg-page`).
-- **Surface Elevation:** Pure white floating cards (`--surface: #FFFFFF`) with soft wide shadows (`shadow.e1` to `shadow.e3`). Zero 1px grey structural borders (`border: none`).
-- **Brand Colors:**
-  - **Brand Primary Green (`#76C044`):** Interactive accents, primary action buttons, active tab indicators.
-  - **Brand Secondary Blue (`#0D74B8`):** Sub-accents, links, secondary action wash.
-  - **Dark Stone Text (`#1C1917`):** High contrast heading text.
-  - **Warm Muted Text (`#57534E`):** Body copy and secondary details.
+### 2.1 Header Hero Card (`CustomerDetailHeader`)
+- **Card Surface:** Floating `shadow.e2` borderless card (`radius.card-expressive` / `24px`) with an ambient radial brand glow wash (`glow-brand`).
+- **Flex Layout Fix:** 48px `MUIAvatar` (`flexShrink: 0`), customer name (`minWidth: 0`, Geist Bold), customer code pill badge (`Geist Mono`), and `MUIStatusChip`. Icons and text **never overlap or break**.
+- **Contact Action Badges:** 36px circular icon button shortcuts for Call (`tel:`), WhatsApp (`WhatsAppIcon`), and Email with 6% brand blue background wash.
+- **Action Buttons:** Fully pill (`999px`) buttons (Brand Green primary `+ Follow-up`, white `shadow.e1` secondary `Edit`, `Property`, `Quote`).
 
-### 2.2 Typography & Micro-Labels
-- **Font Family:** Geist Sans (`var(--font-geist-sans)`), Geist Mono for codes/quantities (`customerCode`, monetary values, counts).
-- **Overline Micro-Labels:** `11px`, `fontWeight: 700`, `letterSpacing: '0.12em'`, uppercase (e.g. `CUSTOMER PROFILE`, `METRIC OVERVIEW`, `ATTENTION REQUIRED`).
-- **Tabular Numerals:** All financial figures (₹ formatting like `₹4,52,471`) and counts use `tabular-nums`.
+### 2.2 Key Metric KPI Cards (`CustomerDetailKpiStrip`)
+- **Grid Layout:** 6 responsive floating cards (`shadow.e2`, 12px radius, zero border) matching `CustomerKpiCards`.
+- **Stat Typography:** Overline uppercase heading (`0.12em` tracking), 20px bold Geist value with `tabular-nums`, and delta direction indicators.
 
-### 2.3 Spacing, Radii & Buttons
-- **Card Radius:** Functional cards use `12px` (`radius['rf-lg']` / `12px`).
-- **Pill Geometry:** All buttons, status chips, and tab triggers use fully pill (`999px`) geometry.
-- **Circular Icon Badges:** Action and status icons sit in 36px–40px perfect circle containers with a 6% tint of semantic/brand color.
+### 2.3 Attention Banner (`CustomerAttentionPanel`)
+- Soft rounded warning card (`radius.card-functional`) with 36px amber circular icon badge and "View All" green accent pill button.
+
+### 2.4 Tab Navigation Shell (`CustomerDetailPage`)
+- Segmented container for tabs with pill triggers, Brand Green active indicator, and smooth transition easings.
 
 ---
 
-## 3. Detailed Component Architecture
+## 3. Comprehensive Sub-Tabs Redesign
 
-### Component 1: `CustomerDetailHeader`
-- Replaces 1px border paper with floating `e2` card surface featuring an ambient brand radial wash (`glow-brand`).
-- 48px `MUIAvatar` with initials, customer title in Geist Bold, customer code chip in Geist Mono.
-- Contact quick-actions (Phone, WhatsApp, Email) styled with circular icon containers (`36px`, 6% brand blue tint `#0D74B8`).
-- Fully pill action buttons (`Edit`, `+ Property`, `+ Quote`, `Log Follow-up`).
-- Inactive alert banner styled as soft amber card with subtle warning tint.
-
-### Component 2: `CustomerDetailKpiStrip`
-- 6 floating metric cards (`shadow.e1`, 12px radius, no structural borders).
-- Micro overline headings (`0.12em` tracking).
-- Values in Geist tabular nums with semantic tone washes (e.g. outstanding AR in `#FEF7E6` background wash).
-
-### Component 3: `CustomerAttentionPanel`
-- Soft rounded warning card (`radius.lg`) with amber circular icon badge.
-- List of overdue follow-ups / outstanding balance with one-click pill button navigation.
-
-### Component 4: Section Navigation (`Tabs`)
-- Segmented pill container for tabs (`Overview`, `Properties`, `Quotes`, `Projects`, `Documents`, `Followups`, `Finance`, `Service`, `Activity`).
-- Active pill tab in Brand Green (`#76C044` / `accent-subtle`), smooth transition easings.
-
-### Component 5: Tab Wrapper & Skeleton Loaders
-- Borderless card panel enclosing active sub-tab view.
-- Premium shimmer wave skeleton (`TabSkeleton`, `PageSkeleton`) and empty state illustrations.
+1. **Overview Tab (`OverviewTab`)**: Contact Card, Financial Snapshot, Property Pipeline Strip, Upcoming Follow-ups, and Open Service Tickets — all converted to borderless `shadow.e1` cards, overline `0.12em` labels, circular icon badges, and full text overflow safety.
+2. **Properties Tab (`PropertiesTab`)**: Header with count pill badge & "Add Property" pill button. Table updated to OneOhm `CrmTable` styling: zebra striping (`#FFFFFF` / `#FAF9F7`), zero 1px cell borders, `tabular-nums`, primary property badge, and `OpenInNew` pill action buttons. Empty state equipped with rounded icon container & green pill button.
+3. **Quotes Tab (`QuotesTab`)**: Borderless table/cards with quote status pills (`APPROVED`, `SENT`, `DRAFT`), system capacity (`kWp` in Geist Mono), formatted ₹ amounts, valid-until dates, and PDF view action pills.
+4. **Projects Tab (`ProjectsTab`)**: Project progress cards featuring progress bars, stage status pills, kWp capacity badges, DISCOM utility details, and milestone timelines with circular stage nodes.
+5. **Documents Tab (`DocumentsTab`)**: Property filter bar styled to match `CrmTable` inputs. Document grid with circular file-type icon badges (PDF, Image, CAD), file sizes, upload timestamps, and preview/download action pills.
+6. **Followups Tab (`FollowupsTab`)**: Timeline view with category circular badges (Call, Meeting, Site Visit, Email), scheduled date/time badges, status pills (`PENDING`, `COMPLETED`), and "Schedule Follow-up" primary green pill button.
+7. **Finance Tab (`FinanceTab`)**: KPI summary cards for Total Outstanding, 30/60/90+ Aging Buckets, Last Receipt Date, and Payment History table formatted with `tabular-nums` and status pills.
+8. **Service Tab (`ServiceTab`)**: Service ticket cards with priority badges (`HIGH`, `MEDIUM`, `LOW`), issue status chips, assignee avatars (`MUIAvatar`), and issue description wrappers with text truncation safety.
+9. **Activity Tab (`ActivityTab`)**: Vertical audit stream with icon nodes, user avatars (`MUIAvatar`), formatted timestamps, and clear change logs.
 
 ---
 
-## 5. Verification & Functionality Requirements
+## 4. Verification Requirements
 - **100% Business Logic Preservation:** All hooks (`useCustomer`, `useCustomerProperties`, `useCustomerFollowups`, `useDeleteCustomer`), state handlers, drawers (`CustomerEditDrawer`, `FollowupDrawer`, `PropertyDetailDrawer`), and modals (`PropertySelectModal`, `DeleteConfirmationDialog`) remain unchanged.
 - **Route Navigation:** URL search parameters (`?tab=...`, `?docProperty=...`) and route pushes (`/customers`, `/onboarding/new`) are fully preserved.
-- **Accessibility:** Tested for WCAG AA contrast ratios, focus rings (`2px #76C044`), aria-labels, and keyboard tab navigation.
+- **Build & Lint Verification:** `npm run typecheck` and zero runtime console errors.
