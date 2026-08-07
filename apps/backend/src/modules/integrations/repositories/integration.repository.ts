@@ -34,9 +34,8 @@ export class IntegrationRepository {
   /**
    * Find all integrations for an organization
    */
-  async findByOrganization(organizationId: string): Promise<IntegrationEntity[]> {
+  async findByOrganization(): Promise<IntegrationEntity[]> {
     return this.repository.find({
-      where: { organizationId },
       order: { createdAt: 'DESC' },
     });
   }
@@ -44,9 +43,9 @@ export class IntegrationRepository {
   /**
    * Find active integrations for an organization
    */
-  async findActiveByOrganization(organizationId: string): Promise<IntegrationEntity[]> {
+  async findActiveByOrganization(): Promise<IntegrationEntity[]> {
     return this.repository.find({
-      where: { organizationId, isActive: true },
+      where: { isActive: true },
       order: { createdAt: 'DESC' },
     });
   }
@@ -55,13 +54,11 @@ export class IntegrationRepository {
    * Find integration by organization, provider, and category
    */
   async findByOrgProviderCategory(
-    organizationId: string,
     provider: IntegrationProvider,
     category: IntegrationCategory,
   ): Promise<IntegrationEntity | null> {
     return this.repository.findOne({
       where: {
-        organizationId,
         provider,
         category,
         isActive: true,
@@ -74,11 +71,9 @@ export class IntegrationRepository {
    */
   async findByCategoryAndOrg(
     category: IntegrationCategory,
-    organizationId: string,
   ): Promise<IntegrationEntity[]> {
     return this.repository.find({
       where: {
-        organizationId,
         category,
         isActive: true,
       },
@@ -157,12 +152,11 @@ export class IntegrationRepository {
    * Check if integration exists for org + provider + category
    */
   async exists(
-    organizationId: string,
     provider: IntegrationProvider,
     category: IntegrationCategory,
   ): Promise<boolean> {
     const count = await this.repository.count({
-      where: { organizationId, provider, category },
+      where: { provider, category },
     });
     return count > 0;
   }

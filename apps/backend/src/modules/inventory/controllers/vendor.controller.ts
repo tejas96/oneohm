@@ -20,8 +20,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
+  ApiUpdate
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -49,10 +48,9 @@ export class VendorController {
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get vendor statistics' })
   async getStatistics(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<ExtendedStatisticsResponse<VendorStatus, VendorType>> {
-    return this.vendorService.getStatistics(organizationId);
+    return this.vendorService.getStatistics();
   }
 
   /**
@@ -66,11 +64,10 @@ export class VendorController {
     responseType: VendorResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateVendorDto,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorService.create(organizationId, createDto, currentUser.id);
+    const vendor = await this.vendorService.create(createDto, currentUser.id);
 
     return plainToInstance(VendorResponseDto, vendor, {
       excludeExtraneousValues: true,
@@ -120,7 +117,6 @@ export class VendorController {
     description: 'Search by name, code, or contact person',
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query() query: Record<string, string>,
     @Query('status') status?: VendorStatus,
@@ -131,7 +127,7 @@ export class VendorController {
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
-    const { vendors, total } = await this.vendorService.findAll(organizationId, pageNum, limitNum, {
+    const { vendors, total } = await this.vendorService.findAll(pageNum, limitNum, {
       status,
       vendorType,
       search,
@@ -161,11 +157,10 @@ export class VendorController {
     responseType: VendorResponseDto,
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorService.findById(id, organizationId);
+    const vendor = await this.vendorService.findById(id);
 
     return plainToInstance(VendorResponseDto, vendor, {
       excludeExtraneousValues: true,
@@ -183,12 +178,11 @@ export class VendorController {
     responseType: VendorResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateVendorDto,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorService.update(id, organizationId, updateDto, currentUser.id);
+    const vendor = await this.vendorService.update(id, updateDto, currentUser.id);
 
     return plainToInstance(VendorResponseDto, vendor, {
       excludeExtraneousValues: true,
@@ -205,11 +199,10 @@ export class VendorController {
     description: 'Soft delete a vendor',
   })
   async delete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.vendorService.delete(id, organizationId, currentUser.id);
+    await this.vendorService.delete(id, currentUser.id);
 
     return { message: 'Vendor deleted successfully' };
   }
@@ -224,14 +217,12 @@ export class VendorController {
     description: 'Update the status of a vendor',
   })
   async changeStatus(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: VendorStatus,
   ): Promise<VendorResponseDto> {
     const vendor = await this.vendorService.changeStatus(
       id,
-      organizationId,
       status,
       currentUser.id,
     );
@@ -251,12 +242,11 @@ export class VendorController {
     description: 'Update the rating of a vendor (0-5)',
   })
   async updateRating(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('rating') rating: number,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorService.updateRating(id, organizationId, rating);
+    const vendor = await this.vendorService.updateRating(id, rating);
 
     return plainToInstance(VendorResponseDto, vendor, {
       excludeExtraneousValues: true,

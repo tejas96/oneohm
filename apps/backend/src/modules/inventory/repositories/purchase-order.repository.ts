@@ -27,9 +27,9 @@ export class PurchaseOrderRepository {
   /**
    * Find purchase order by ID with relations
    */
-  async findById(id: string, organizationId: string): Promise<PurchaseOrderEntity> {
+  async findById(id: string): Promise<PurchaseOrderEntity> {
     const po = await this.repository.findOne({
-      where: { id, organizationId, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull() },
       relations: ['vendor', 'warehouse', 'project', 'items', 'items.product', 'creator', 'updater'],
     });
 
@@ -45,10 +45,9 @@ export class PurchaseOrderRepository {
    */
   async findByPoNumber(
     poNumber: string,
-    organizationId: string,
   ): Promise<PurchaseOrderEntity | null> {
     return this.repository.findOne({
-      where: { poNumber, organizationId, deletedAt: IsNull() },
+      where: { poNumber, deletedAt: IsNull() },
       relations: ['vendor', 'items'],
     });
   }
@@ -57,7 +56,6 @@ export class PurchaseOrderRepository {
    * Find all purchase orders with filters and pagination
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -77,7 +75,6 @@ export class PurchaseOrderRepository {
       .leftJoinAndSelect('po.vendor', 'vendor')
       .leftJoinAndSelect('po.warehouse', 'warehouse')
       .leftJoinAndSelect('po.project', 'project')
-      .where('po.organizationId = :organizationId', { organizationId })
       .andWhere('po.deletedAt IS NULL');
 
     // Apply filters
@@ -136,10 +133,9 @@ export class PurchaseOrderRepository {
    */
   async update(
     id: string,
-    organizationId: string,
     updateData: Record<string, unknown>,
   ): Promise<PurchaseOrderEntity> {
-    const po = await this.findById(id, organizationId);
+    const po = await this.findById(id);
 
     Object.assign(po, updateData);
 
@@ -149,8 +145,8 @@ export class PurchaseOrderRepository {
   /**
    * Soft delete purchase order
    */
-  async softDelete(id: string, organizationId: string, deletedBy: string): Promise<void> {
-    const po = await this.findById(id, organizationId);
+  async softDelete(id: string, deletedBy: string): Promise<void> {
+    const po = await this.findById(id);
 
     po.deletedAt = new Date();
     po.updatedBy = deletedBy;
@@ -161,12 +157,11 @@ export class PurchaseOrderRepository {
   /**
    * Count purchase orders by status
    */
-  async countByStatus(organizationId: string): Promise<Record<PurchaseOrderStatus, number>> {
+  async countByStatus(): Promise<Record<PurchaseOrderStatus, number>> {
     const result = await this.repository
       .createQueryBuilder('po')
       .select('po.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('po.organizationId = :organizationId', { organizationId })
       .andWhere('po.deletedAt IS NULL')
       .groupBy('po.status')
       .getRawMany<{ status: PurchaseOrderStatus; count: string }>();
@@ -193,13 +188,11 @@ export class PurchaseOrderRepository {
    * Get total purchase order value by status
    */
   async getTotalValueByStatus(
-    organizationId: string,
     status: PurchaseOrderStatus,
   ): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('po')
       .select('SUM(po.totalAmount)', 'totalValue')
-      .where('po.organizationId = :organizationId', { organizationId })
       .andWhere('po.status = :status', { status })
       .andWhere('po.deletedAt IS NULL')
       .getRawOne<{ totalValue: string }>();
@@ -210,10 +203,9 @@ export class PurchaseOrderRepository {
   /**
    * Get pending approvals count
    */
-  async getPendingApprovalsCount(organizationId: string): Promise<number> {
+  async getPendingApprovalsCount(): Promise<number> {
     return this.repository.count({
       where: {
-        organizationId,
         status: PurchaseOrderStatus.PENDING_APPROVAL,
         deletedAt: IsNull(),
       },
@@ -223,7 +215,7 @@ export class PurchaseOrderRepository {
   /**
    * Get overdue purchase orders
    */
-  async getOverduePurchaseOrders(organizationId: string): Promise<PurchaseOrderEntity[]> {
+  async getOverduePurchaseOrders(): Promise<PurchaseOrderEntity[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -231,7 +223,6 @@ export class PurchaseOrderRepository {
       .createQueryBuilder('po')
       .leftJoinAndSelect('po.vendor', 'vendor')
       .leftJoinAndSelect('po.warehouse', 'warehouse')
-      .where('po.organizationId = :organizationId', { organizationId })
       .andWhere('po.expectedDeliveryDate < :today', { today })
       .andWhere('po.status IN (:...statuses)', {
         statuses: [
@@ -248,11 +239,10 @@ export class PurchaseOrderRepository {
   /**
    * True if the vendor has any non-deleted PO in this org that is not cancelled or fully received.
    */
-  async hasActivePOs(vendorId: string, organizationId: string): Promise<boolean> {
+  async hasActivePOs(vendorId: string): Promise<boolean> {
     const po = await this.repository.findOne({
       where: {
         vendorId,
-        organizationId,
         deletedAt: IsNull(),
         status: Not(In([PurchaseOrderStatus.CANCELLED, PurchaseOrderStatus.RECEIVED])),
       },

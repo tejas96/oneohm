@@ -51,7 +51,6 @@ export class UserRoleResponseDto {
     example: '00000000-0000-0000-0000-000000000001',
     description: 'Organization ID',
   })
-  organizationId?: string;
 
   @ApiProperty({
     example: '2024-01-15T10:30:00Z',

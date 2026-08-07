@@ -22,22 +22,19 @@ export class DocumentRepository {
     return this.repository.save(entities);
   }
 
-  async findById(id: string, organizationId?: string): Promise<DocumentEntity | null> {
+  async findById(id: string): Promise<DocumentEntity | null> {
     const where: Record<string, unknown> = { id, deletedAt: IsNull() };
-    if (organizationId) where.organizationId = organizationId;
     return this.repository.findOne({ where, relations: ['uploadedByUser'] });
   }
 
   async findByEntity(
     entityType: DocumentEntityType,
     entityId: string,
-    organizationId: string,
     filters?: { tag?: string; tags?: string[]; category?: string },
   ): Promise<DocumentEntity[]> {
     const where: Record<string, unknown> = {
       entityType,
       entityId,
-      organizationId,
       deletedAt: IsNull(),
     };
     if (filters?.tags?.length) {
@@ -56,11 +53,10 @@ export class DocumentRepository {
   async findByEntityBatch(
     entityType: DocumentEntityType,
     entityIds: string[],
-    organizationId: string,
   ): Promise<DocumentEntity[]> {
     if (entityIds.length === 0) return [];
     return this.repository.find({
-      where: { entityType, entityId: In(entityIds), organizationId, deletedAt: IsNull() },
+      where: { entityType, entityId: In(entityIds), deletedAt: IsNull() },
       relations: ['uploadedByUser'],
       order: { createdAt: 'DESC' },
     });
@@ -68,12 +64,10 @@ export class DocumentRepository {
 
   async findByProperty(
     propertyId: string,
-    organizationId: string,
     filters?: { entityType?: DocumentEntityType; category?: string; tag?: string; tags?: string[] },
   ): Promise<DocumentEntity[]> {
     const where: Record<string, unknown> = {
       propertyId,
-      organizationId,
       deletedAt: IsNull(),
     };
     if (filters?.entityType) where.entityType = filters.entityType;
@@ -92,7 +86,6 @@ export class DocumentRepository {
   }
 
   async findByOrganization(
-    organizationId: string,
     filters?: {
       entityType?: DocumentEntityType;
       category?: string;
@@ -105,7 +98,6 @@ export class DocumentRepository {
     const qb = this.repository
       .createQueryBuilder('doc')
       .leftJoinAndSelect('doc.uploadedByUser', 'uploader')
-      .where('doc.organizationId = :organizationId', { organizationId })
       .andWhere('doc.deletedAt IS NULL');
 
     if (filters?.entityType)

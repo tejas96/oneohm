@@ -12,6 +12,13 @@ describe('COMPANY', () => {
     expect(COMPANY.pincode).toBe('416416');
   });
 
+  it('pins the code embedded in every generated entity code', () => {
+    // TSK-ONEOHM_EPC-…, CUST-ONEOHM_EPC-…, PROP-…, PRJ-… all contain this, and
+    // the generators scan for it to find the next number. Changing it restarts
+    // every sequence from 1.
+    expect(COMPANY.code).toBe('ONEOHM_EPC');
+  });
+
   it('carries the tax identifiers for reference', () => {
     expect(COMPANY.gstin).toBe('27AABCU9603R1ZM');
     expect(COMPANY.pan).toBe('AABCU9603R');

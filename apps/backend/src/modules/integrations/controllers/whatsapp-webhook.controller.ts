@@ -28,7 +28,6 @@ export class WhatsappWebhookController {
   @ApiOperation({ summary: 'Verify WhatsApp webhook callback URL' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Webhook challenge accepted' })
   async verifyWebhook(
-    @Param('organizationId') _organizationId: string,
     @Query('hub.mode') mode: string,
     @Query('hub.verify_token') verifyToken: string,
     @Query('hub.challenge') challenge: string,
@@ -51,10 +50,9 @@ export class WhatsappWebhookController {
   @ApiOperation({ summary: 'Receive WhatsApp webhook events' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Webhook event accepted' })
   async receiveWebhook(
-    @Param('organizationId') organizationId: string,
     @Body() payload: Record<string, unknown>,
   ): Promise<{ received: true }> {
-    this.processWebhookEvents(payload, organizationId);
+    this.processWebhookEvents(payload);
     return { received: true };
   }
 
@@ -62,7 +60,7 @@ export class WhatsappWebhookController {
    * Process webhook payloads. Delivery status and inbound messages are logged here;
    * extend this handler when adding chatbot or notification side-effects.
    */
-  private processWebhookEvents(payload: Record<string, unknown>, organizationId: string): void {
+  private processWebhookEvents(payload: Record<string, unknown>): void {
     const entries = Array.isArray(payload.entry) ? payload.entry : [];
 
     for (const entry of entries) {
@@ -87,11 +85,11 @@ export class WhatsappWebhookController {
 
           if (messageStatus === 'failed') {
             this.logger.error(
-              `WhatsApp delivery failed for org ${organizationId}, recipient ${String(recipient)}, message ${messageId}: ${JSON.stringify(errors)}`,
+              `WhatsApp delivery failed, recipient ${String(recipient)}, message ${messageId}: ${JSON.stringify(errors)}`,
             );
           } else {
             this.logger.log(
-              `WhatsApp ${messageStatus} for org ${organizationId}, recipient ${String(recipient)}, message ${messageId}`,
+              `WhatsApp ${messageStatus}, recipient ${String(recipient)}, message ${messageId}`,
             );
           }
         }
@@ -100,7 +98,7 @@ export class WhatsappWebhookController {
         for (const message of messages) {
           if (!this.isRecord(message)) continue;
           this.logger.log(
-            `WhatsApp inbound message for org ${organizationId}: ${JSON.stringify(message)}`,
+            `WhatsApp inbound message: ${JSON.stringify(message)}`,
           );
         }
       }

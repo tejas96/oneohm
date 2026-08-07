@@ -21,10 +21,9 @@ export class EmployeeProfileRepository {
 
   async findByUserAndOrganization(
     userId: string,
-    organizationId: string,
   ): Promise<EmployeeProfileEntity | null> {
     return this.repository.findOne({
-      where: { userId, organizationId, deletedAt: IsNull() },
+      where: { userId, deletedAt: IsNull() },
       relations: ['user', 'organization'],
     });
   }
@@ -37,14 +36,12 @@ export class EmployeeProfileRepository {
   }
 
   async findByOrganization(
-    organizationId: string,
     page = 1,
     limit = 20,
     status?: UserStatus,
     profileKind?: EmployeeProfileKind,
   ): Promise<{ items: EmployeeProfileEntity[]; total: number; page: number; limit: number }> {
     const whereCondition: Record<string, unknown> = {
-      organizationId,
       deletedAt: IsNull(),
     };
 
@@ -68,11 +65,10 @@ export class EmployeeProfileRepository {
   }
 
   async findByDepartment(
-    organizationId: string,
     department: string,
   ): Promise<EmployeeProfileEntity[]> {
     return this.repository.find({
-      where: { organizationId, department, deletedAt: IsNull() },
+      where: { department, deletedAt: IsNull() },
       relations: ['user'],
       order: { createdAt: 'DESC' },
     });
@@ -112,11 +108,10 @@ export class EmployeeProfileRepository {
    * Ported from ResellerProfileRepository.findByCompanyCode
    */
   async findByCompanyCode(
-    organizationId: string,
     companyCode: string,
   ): Promise<EmployeeProfileEntity | null> {
     return this.repository.findOne({
-      where: { organizationId, companyCode, deletedAt: IsNull() },
+      where: { companyCode, deletedAt: IsNull() },
     });
   }
 
@@ -124,9 +119,9 @@ export class EmployeeProfileRepository {
    * Find by email within an organization (used for reseller-kind uniqueness checks)
    * Ported from ResellerProfileRepository.findByEmail
    */
-  async findByEmail(organizationId: string, email: string): Promise<EmployeeProfileEntity | null> {
+  async findByEmail(email: string): Promise<EmployeeProfileEntity | null> {
     return this.repository.findOne({
-      where: { organizationId, email, deletedAt: IsNull() },
+      where: { email, deletedAt: IsNull() },
     });
   }
 

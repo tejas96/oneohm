@@ -2,7 +2,6 @@ import { Controller, Get, HttpStatus, Param, ParseUUIDPipe, UseGuards } from '@n
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { JwtAuthGuard } from '../../auth/guards';
 import { DocumentService } from '../../documents/services/document.service';
@@ -52,16 +51,15 @@ export class ConsumerProjectController {
   })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not authorized' })
   async findProjectByProperty(
-    @OrganizationContext() organizationId: string,
     @Param('propertyId', ParseUUIDPipe) propertyId: string,
   ): Promise<{ project: ProjectResponseDto | null }> {
-    const existing = await this.projectRepository.findOneByPropertyId(propertyId, organizationId);
+    const existing = await this.projectRepository.findOneByPropertyId(propertyId);
 
     if (!existing) {
       return { project: null };
     }
 
-    const project = await this.projectService.findById(existing.id, organizationId);
+    const project = await this.projectService.findById(existing.id);
 
     return {
       project: plainToInstance(ProjectResponseDto, project, {
@@ -84,10 +82,9 @@ export class ConsumerProjectController {
   })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not authorized' })
   async getProjectDashboard(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ProjectSummaryResponseDto> {
-    return this.projectAnalyticsService.getProjectSummary(projectId, organizationId);
+    return this.projectAnalyticsService.getProjectSummary(projectId);
   }
 
   @Get('projects/:projectId/payments')
@@ -103,11 +100,10 @@ export class ConsumerProjectController {
   })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not authorized' })
   async getProjectPayments(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ConsumerProjectPaymentsResponseDto> {
-    const summary = await this.projectLedgerService.getProjectSummary(projectId, organizationId);
-    const project = await this.projectService.findById(projectId, organizationId);
+    const summary = await this.projectLedgerService.getProjectSummary(projectId);
+    const project = await this.projectService.findById(projectId);
     const { contractValue } = resolveQuoteFinancialFields(project);
 
     const terms = summary.terms.map((term) => ({
@@ -132,12 +128,11 @@ export class ConsumerProjectController {
   })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not authorized' })
   async getProjectFinancialSummary(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ConsumerFinancialSummaryResponseDto> {
     const [summary, project] = await Promise.all([
-      this.projectLedgerService.getProjectSummary(projectId, organizationId),
-      this.projectService.findById(projectId, organizationId),
+      this.projectLedgerService.getProjectSummary(projectId),
+      this.projectService.findById(projectId),
     ]);
     const { contractValue, subsidyAmount, netCost } = resolveQuoteFinancialFields(project);
 
@@ -167,12 +162,10 @@ export class ConsumerProjectController {
   })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not authorized' })
   async getProjectTimeline(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ConsumerProjectTimelineResponseDto> {
     const milestones = await this.projectAnalyticsService.getMilestoneAggregates(
       projectId,
-      organizationId,
     );
     return toDto(ConsumerProjectTimelineResponseDto, { milestones });
   }
@@ -189,11 +182,10 @@ export class ConsumerProjectController {
   })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not authorized' })
   async getProjectDocuments(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ConsumerProjectDocumentsResponseDto> {
-    const project = await this.projectService.findById(projectId, organizationId);
-    const docs = await this.documentService.findByProperty(project.propertyId, organizationId);
+    const project = await this.projectService.findById(projectId);
+    const docs = await this.documentService.findByProperty(project.propertyId);
 
     const documents = toDtoArray(ConsumerDocumentDto, docs);
     return toDto(ConsumerProjectDocumentsResponseDto, { documents });

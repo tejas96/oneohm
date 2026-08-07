@@ -19,18 +19,6 @@ export class ProfileSummaryDto {
   profileId!: string;
 
   @ApiProperty({
-    description: 'Organization ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  organizationId!: string;
-
-  @ApiProperty({
-    description: 'Organization name',
-    example: 'OneOhm Delhi',
-  })
-  organizationName!: string;
-
-  @ApiProperty({
     description: 'Whether this is the primary/default profile',
     example: true,
   })
@@ -77,12 +65,6 @@ export class LoginUserDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
-
-  @ApiPropertyOptional({
-    description: 'Active/Primary Organization ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
-  })
-  organizationId?: string;
 
   @ApiProperty({
     description: 'Email address',

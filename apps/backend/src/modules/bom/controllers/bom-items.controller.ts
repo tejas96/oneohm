@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -37,13 +36,12 @@ export class BomItemsController {
   @Patch(':id/serial')
   @ApiOperation({ summary: 'Update serial number for a BOM unit item' })
   async updateSerial(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateBomItemSerialDto,
   ) {
     this.assertSerialEditRole(currentUser);
-    const item = await this.bomService.updateItemSerial(organizationId, id, dto.serialNumber);
+    const item = await this.bomService.updateItemSerial(id, dto.serialNumber);
     return { data: item };
   }
 
@@ -51,12 +49,11 @@ export class BomItemsController {
   @Patch('bulk-serials')
   @ApiOperation({ summary: 'Bulk update serial numbers for BOM unit items' })
   async bulkUpdateSerials(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: BulkUpdateBomItemSerialsDto,
   ) {
     this.assertSerialEditRole(currentUser);
-    const items = await this.bomService.bulkUpdateItemSerials(organizationId, dto.items);
+    const items = await this.bomService.bulkUpdateItemSerials(dto.items);
     return { data: items };
   }
 
@@ -64,14 +61,13 @@ export class BomItemsController {
   @Get('check-serial')
   @ApiOperation({ summary: 'Find serial conflicts in current organization BOMs' })
   async checkSerial(
-    @OrganizationContext() organizationId: string,
     @Query('serialNumber') serialNumber: string,
   ) {
     const normalized = serialNumber?.trim();
     if (!normalized) {
       throw new BadRequestException('serialNumber is required');
     }
-    const conflicts = await this.bomService.findSerialConflicts(organizationId, normalized);
+    const conflicts = await this.bomService.findSerialConflicts(normalized);
     return { data: conflicts };
   }
 

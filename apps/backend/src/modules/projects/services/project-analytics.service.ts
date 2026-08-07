@@ -29,10 +29,9 @@ export class ProjectAnalyticsService {
 
   async getProjectSummary(
     projectId: string,
-    organizationId: string,
   ): Promise<ProjectSummaryResponseDto> {
     const [project, allTasks] = await Promise.all([
-      this.projectRepository.findById(projectId, organizationId),
+      this.projectRepository.findById(projectId),
       this.taskRepository.findAllForBoard(projectId),
     ]);
 
@@ -265,8 +264,8 @@ export class ProjectAnalyticsService {
    * Returns one row per distinct milestone_name, derived live from project_tasks.
    * Cancelled tasks are excluded from all counts.
    */
-  async ensureProjectAccess(projectId: string, organizationId: string): Promise<void> {
-    const project = await this.projectRepository.findById(projectId, organizationId);
+  async ensureProjectAccess(projectId: string): Promise<void> {
+    const project = await this.projectRepository.findById(projectId);
     if (!project) {
       throw new NotFoundException(`Project ${projectId} not found`);
     }
@@ -274,7 +273,6 @@ export class ProjectAnalyticsService {
 
   async getMilestoneAggregates(
     projectId: string,
-    organizationId: string,
   ): Promise<
     {
       name: string;
@@ -288,7 +286,7 @@ export class ProjectAnalyticsService {
     }[]
   > {
     // Validates ownership
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     const allTasks = await this.taskRepository.findAllForBoard(projectId);
 

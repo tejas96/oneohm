@@ -62,7 +62,6 @@ export class RoleController {
   ): Promise<RoleResponseDto> {
     const exists = await this.roleRepository.existsByCodeAndOrganization(
       createRoleDto.code,
-      createRoleDto.organizationId,
     );
     if (exists) {
       throw new ConflictException('A role with this code already exists in this organization');
@@ -87,7 +86,6 @@ export class RoleController {
     description: 'Get paginated list of roles for the organization',
   })
   async findAll(
-    @Query('organizationId') organizationId?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
     @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize: number = 10,
     @Query('search') search?: string,
@@ -95,7 +93,6 @@ export class RoleController {
   ): Promise<PaginatedRolesDto> {
     const skip = (page - 1) * pageSize;
     const [roles, total] = await this.roleRepository.findAllPaginated(skip, pageSize, {
-      organizationId,
       search,
       isSystemRole: isSystemRole !== undefined ? isSystemRole === 'true' : undefined,
     });

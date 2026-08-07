@@ -21,7 +21,6 @@ export class InventoryStockStatsRepository {
   ) {}
 
   async topLowStock(
-    organizationId: string,
     limit: number,
   ): Promise<
     Array<{
@@ -45,7 +44,6 @@ export class InventoryStockStatsRepository {
       .addSelect('stock.availableQuantity', 'availableQuantity')
       .addSelect('stock.minimumStockLevel', 'minimumStockLevel')
       .addSelect('(stock.minimumStockLevel - stock.availableQuantity)', 'deficit')
-      .where('warehouse.organizationId = :organizationId', { organizationId })
       .andWhere('product.deletedAt IS NULL')
       .andWhere('warehouse.deletedAt IS NULL')
       .andWhere('stock.minimumStockLevel IS NOT NULL')

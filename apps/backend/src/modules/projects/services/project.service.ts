@@ -1,3 +1,4 @@
+import { COMPANY } from '@tejas96/shared/constants';
 import {
   BadRequestException,
   ConflictException,
@@ -31,7 +32,6 @@ import {
   ProjectCompletedEvent,
   ProjectOnboardedEvent,
 } from '../../notifications/events/consumer-notification.events';
-import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteVersionEntity } from '../../quotes/entities/quote-version.entity';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
 import { QuoteService } from '../../quotes/services/quote.service';
@@ -71,7 +71,6 @@ export class ProjectService {
 
   constructor(
     private readonly projectRepository: ProjectRepository,
-    private readonly organizationRepository: OrganizationRepository,
     private readonly quoteService: QuoteService,
     private readonly customerPropertyRepository: CustomerPropertyRepository,
     private readonly workflowStepRepository: WorkflowStepRepository,
@@ -90,7 +89,6 @@ export class ProjectService {
    * Find all projects with filters, computed fields, and payment summaries
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -129,7 +127,6 @@ export class ProjectService {
     limit: number;
   }> {
     const { projects, total } = await this.projectRepository.findAll(
-      organizationId,
       page,
       limit,
       filters,
@@ -226,8 +223,8 @@ export class ProjectService {
   /**
    * Find project by ID
    */
-  async findById(id: string, organizationId: string): Promise<ProjectEntity> {
-    return this.projectRepository.findById(id, organizationId);
+  async findById(id: string): Promise<ProjectEntity> {
+    return this.projectRepository.findById(id);
   }
 
   /**
@@ -237,11 +234,10 @@ export class ProjectService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateProjectDto,
     updatedBy: string,
   ): Promise<ProjectEntity> {
-    const project = await this.projectRepository.findById(id, organizationId);
+    const project = await this.projectRepository.findById(id);
 
     // Warehouse-lock guard: once any active (non-cancelled) stock allocation exists for
     // this project, the defaultWarehouseId cannot be changed. Changing it mid-allocation
@@ -303,14 +299,14 @@ export class ProjectService {
       };
     }
 
-    return this.projectRepository.update(id, organizationId, updateData);
+    return this.projectRepository.update(id, updateData);
   }
 
   /**
    * Delete a project
    */
-  async delete(id: string, organizationId: string): Promise<void> {
-    const project = await this.projectRepository.findById(id, organizationId);
+  async delete(id: string): Promise<void> {
+    const project = await this.projectRepository.findById(id);
 
     if (project.status !== ProjectStatus.PLANNING && project.status !== ProjectStatus.CANCELLED) {
       throw new BadRequestException(
@@ -333,10 +329,9 @@ export class ProjectService {
    */
   async updateStatus(
     id: string,
-    organizationId: string,
     newStatus: ProjectStatus,
   ): Promise<ProjectEntity> {
-    const project = await this.projectRepository.findById(id, organizationId);
+    const project = await this.projectRepository.findById(id);
 
     // Validate status transition
     this.validateStatusTransition(project.status, newStatus);
@@ -364,18 +359,17 @@ export class ProjectService {
       updateData.progressPercentage = 100;
     }
 
-    await this.projectRepository.update(id, organizationId, updateData);
-    const updatedProject = await this.projectRepository.findById(id, organizationId);
+    await this.projectRepository.update(id, updateData);
+    const updatedProject = await this.projectRepository.findById(id);
 
     // Notify consumer when project is completed (manual status change)
     if (newStatus === ProjectStatus.COMPLETED) {
       this.logger.debug(
-        `Project status changed to COMPLETED. Emitting CONSUMER_EVENTS.PROJECT_COMPLETED event. orgId=${organizationId}, projectId=${id}, propertyId=${updatedProject.propertyId}, projectName=${updatedProject.name}`,
+        `Project status changed to COMPLETED. Emitting CONSUMER_EVENTS.PROJECT_COMPLETED event. orgId=, projectId=${id}, propertyId=${updatedProject.propertyId}, projectName=${updatedProject.name}`,
       );
       this.eventEmitter.emit(
         CONSUMER_EVENTS.PROJECT_COMPLETED,
         new ProjectCompletedEvent(
-          organizationId,
           id,
           updatedProject.propertyId,
           updatedProject.name,
@@ -390,22 +384,22 @@ export class ProjectService {
    * Calculate and update project progress based on task completion ratio.
    * Cancelled tasks are excluded from both numerator and denominator.
    */
-  async calculateProgress(id: string, organizationId: string): Promise<ProjectEntity> {
+  async calculateProgress(id: string): Promise<ProjectEntity> {
     const { done, total } = await this.taskRepository.computeProgress(id);
     const progress = total > 0 ? Math.round((100 * done) / total) : 0;
 
-    await this.projectRepository.update(id, organizationId, {
+    await this.projectRepository.update(id, {
       progressPercentage: progress,
     });
 
-    return this.projectRepository.findById(id, organizationId);
+    return this.projectRepository.findById(id);
   }
 
   /**
    * Find projects by customer
    */
-  async findByCustomer(customerId: string, organizationId: string): Promise<ProjectEntity[]> {
-    return this.projectRepository.findByCustomer(customerId, organizationId);
+  async findByCustomer(customerId: string): Promise<ProjectEntity[]> {
+    return this.projectRepository.findByCustomer(customerId);
   }
 
   /**
@@ -424,11 +418,10 @@ export class ProjectService {
    */
   async convertFromQuote(
     quoteId: string,
-    organizationId: string,
     createdBy: string,
     convertDto?: ConvertFromQuoteDto,
   ): Promise<ProjectEntity> {
-    const quote = await this.quoteService.findById(quoteId, organizationId);
+    const quote = await this.quoteService.findById(quoteId);
 
     if (quote.status !== QuoteStatus.ACCEPTED) {
       throw new BadRequestException('Only accepted quotes can be converted to projects');
@@ -442,7 +435,6 @@ export class ProjectService {
 
     const property = await this.customerPropertyRepository.findByIdAndOrganization(
       quote.propertyId,
-      organizationId,
     );
     if (!property) {
       throw new NotFoundException(
@@ -457,7 +449,6 @@ export class ProjectService {
 
     const existingProject = await this.projectRepository.findOneByPropertyId(
       quote.propertyId,
-      organizationId,
     );
     if (existingProject) {
       throw new BadRequestException(
@@ -465,10 +456,6 @@ export class ProjectService {
       );
     }
 
-    const org = await this.organizationRepository.findOneById(organizationId);
-    if (!org) {
-      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
-    }
 
     const contractVersion = this.pickContractQuoteVersion(quote);
     if (!contractVersion) {
@@ -521,8 +508,7 @@ export class ProjectService {
         taskStatuses: taskStatuses?.length ? taskStatuses : undefined,
       },
       propertyId: quote.propertyId,
-      organizationId,
-      orgCode: org.code,
+      orgCode: COMPANY.code,
       createdBy,
       milestones,
       teamConfig: convertDto
@@ -541,13 +527,12 @@ export class ProjectService {
     });
 
     // Copy BOM from quote version to project
-    await this.copyQuoteBomToProject(organizationId, contractVersion.id, project.id, createdBy);
+    await this.copyQuoteBomToProject(contractVersion.id, project.id, createdBy);
 
     // Notify consumer about project onboarding (fire-and-forget)
     this.eventEmitter.emit(
       CONSUMER_EVENTS.PROJECT_ONBOARDED,
       new ProjectOnboardedEvent(
-        organizationId,
         project.id,
         project.propertyId,
         project.name,
@@ -564,7 +549,6 @@ export class ProjectService {
    */
   async getProjectTimeline(
     projectId: string,
-    organizationId: string,
   ): Promise<{
     project: { id: string; name: string; startDate?: Date; endDate?: Date };
     tasks: Array<{
@@ -580,7 +564,7 @@ export class ProjectService {
     }>;
     milestones: Array<Record<string, never>>;
   }> {
-    const project = await this.findById(projectId, organizationId);
+    const project = await this.findById(projectId);
 
     // Get all tasks for timeline (get all tasks without pagination)
     const { data: tasks } = await this.taskRepository.findAll(
@@ -617,7 +601,6 @@ export class ProjectService {
    */
   async getProjectProgress(
     projectId: string,
-    organizationId: string,
   ): Promise<{
     totalTasks: number;
     statusCounts: Record<TaskStatus, number>;
@@ -626,7 +609,7 @@ export class ProjectService {
     blockedTasksCount: number;
     upcomingDeadlines: Array<{ id: string; name: string; endDate: Date }>;
   }> {
-    const project = await this.findById(projectId, organizationId);
+    const project = await this.findById(projectId);
 
     // Get task statistics - returns Record<TaskStatus, number>
     const statusCounts = await this.taskRepository.countByStatus(projectId);
@@ -838,7 +821,6 @@ export class ProjectService {
   private async orchestrateProjectCreation(params: {
     projectData: Partial<ProjectEntity>;
     propertyId: string;
-    organizationId: string;
     orgCode: string;
     createdBy: string;
     milestones: Array<{ name: string; order: number }>;
@@ -862,7 +844,6 @@ export class ProjectService {
     const {
       projectData,
       propertyId,
-      organizationId,
       orgCode,
       createdBy,
       milestones,
@@ -902,7 +883,6 @@ export class ProjectService {
       // 5. Apply workflow steps — milestone fields are set directly on each task
       await this.applyWorkflowStepsWithMilestones(
         project.id,
-        organizationId,
         createdBy,
         milestoneNameToOrder,
         taskMilestoneOverrides ?? [],
@@ -914,7 +894,6 @@ export class ProjectService {
       await this.changeRequestTaskService.applyChangeRequestTasks({
         projectId: project.id,
         propertyId,
-        organizationId,
         createdBy,
         orgCode,
         manager,
@@ -941,7 +920,6 @@ export class ProjectService {
       if (paymentTermSnapshot) {
         await this.milestoneService.snapshotFromQuoteVersion({
           projectId: project.id,
-          organizationId,
           sourceVersionId: paymentTermSnapshot.sourceVersionId,
           milestones: paymentTermSnapshot.milestones,
           // Lets the snapshot derive amounts from percentages when a milestone
@@ -953,7 +931,7 @@ export class ProjectService {
         });
       }
 
-      return this.projectRepository.findById(project.id, organizationId, manager);
+      return this.projectRepository.findById(project.id, manager);
     });
   }
 
@@ -963,7 +941,6 @@ export class ProjectService {
    */
   private async applyWorkflowStepsWithMilestones(
     projectId: string,
-    organizationId: string,
     createdBy: string,
     milestoneNameToOrder: Map<string, number>,
     taskMilestoneOverrides: Array<{
@@ -975,7 +952,7 @@ export class ProjectService {
     projectStartDate?: Date,
     manager?: EntityManager,
   ): Promise<void> {
-    let steps = await this.workflowStepRepository.findAllActive(organizationId, manager);
+    let steps = await this.workflowStepRepository.findAllActive(manager);
 
     if (steps.length === 0) return;
 
@@ -991,8 +968,7 @@ export class ProjectService {
 
     this.detectDependencyCycles(steps);
 
-    const org = await this.organizationRepository.findOneById(organizationId);
-    const orgCode = org?.code || 'UNKNOWN';
+    const orgCode = COMPANY.code;
 
     // Build override lookup keyed by workflowStepId
     const overrideMap = new Map(taskMilestoneOverrides.map((o) => [o.workflowStepId, o]));
@@ -1170,13 +1146,12 @@ export class ProjectService {
    * Idempotent: deletes any existing project BOM before recreating.
    */
   async syncBomFromSnapshot(
-    organizationId: string,
     projectId: string,
     userId: string,
   ): Promise<void> {
-    const project = await this.projectRepository.findById(projectId, organizationId);
+    const project = await this.projectRepository.findById(projectId);
 
-    const quote = await this.quoteService.findById(project.quoteId, organizationId);
+    const quote = await this.quoteService.findById(project.quoteId);
 
     const latestVersion =
       [...(quote.versions ?? [])].sort((a, b) => {
@@ -1197,7 +1172,6 @@ export class ProjectService {
     // Non-destructive reconcile: diffs existing BOM rather than delete+create.
     // If no project BOM exists yet, this creates it from the calculation.
     const reconcileResult = await this.bomService.reconcileFromCalculation(
-      organizationId,
       projectId,
       calculation,
       userId,
@@ -1216,7 +1190,6 @@ export class ProjectService {
    * If quote version has no BOM or copying fails, log warning but don't block project creation.
    */
   private async copyQuoteBomToProject(
-    organizationId: string,
     quoteVersionId: string | undefined,
     projectId: string,
     createdBy: string,
@@ -1229,7 +1202,6 @@ export class ProjectService {
     try {
       // Check if project already has a BOM (idempotency)
       const existingProjectBom = await this.bomService.findByEntity(
-        organizationId,
         'project',
         projectId,
       );
@@ -1240,7 +1212,6 @@ export class ProjectService {
 
       // Find quote version BOM
       const quoteBom = await this.bomService.findByEntity(
-        organizationId,
         'quote_version',
         quoteVersionId,
       );
@@ -1272,7 +1243,6 @@ export class ProjectService {
       }));
 
       await this.bomService.createFromItems(
-        organizationId,
         'project',
         projectId,
         clonedItems,

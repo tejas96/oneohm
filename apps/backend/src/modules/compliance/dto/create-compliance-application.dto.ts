@@ -14,9 +14,6 @@ import {
  * DTO for creating a compliance application
  */
 export class CreateComplianceApplicationDto {
-  @IsUUID()
-  @IsNotEmpty()
-  organizationId: string;
 
   @IsUUID()
   @IsNotEmpty()

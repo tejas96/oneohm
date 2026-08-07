@@ -26,16 +26,15 @@ export class ChangeRequestTaskService {
   async applyChangeRequestTasks(params: {
     projectId: string;
     propertyId: string;
-    organizationId: string;
     createdBy: string;
     orgCode: string;
     manager: EntityManager;
   }): Promise<void> {
-    const { projectId, propertyId, organizationId, createdBy, orgCode, manager } = params;
+    const { projectId, propertyId, createdBy, orgCode, manager } = params;
 
     const propertyRepo = manager.getRepository(CustomerPropertyEntity);
     const property = await propertyRepo.findOne({
-      where: { id: propertyId, organizationId },
+      where: { id: propertyId },
       lock: { mode: 'pessimistic_write' },
     });
 
@@ -50,7 +49,6 @@ export class ChangeRequestTaskService {
 
       const step = await manager.getRepository(WorkflowStepEntity).findOne({
         where: {
-          organizationId,
           changeRequestType: request.type,
           isActive: true,
           isSpecial: true,
@@ -60,7 +58,7 @@ export class ChangeRequestTaskService {
 
       if (!step) {
         this.logger.warn(
-          `No workflow step template found for change request type "${request.type}" in org ${organizationId}`,
+          `No workflow step template found for change request type "${request.type}"`,
         );
         continue;
       }

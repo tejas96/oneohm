@@ -13,12 +13,10 @@ export class InstallationPricingRepository {
   ) {}
 
   async create(
-    organizationId: string,
     data: Partial<InstallationPricing>,
   ): Promise<InstallationPricing> {
     const pricing = this.repository.create({
       ...data,
-      organizationId,
     });
     return this.repository.save(pricing);
   }
@@ -28,7 +26,6 @@ export class InstallationPricingRepository {
    * System size is rounded UP to the nearest integer to match pricing tiers.
    */
   async findBySystemSize(
-    organizationId: string,
     systemSizeKw: number,
     _projectType?: string,
     asOfDate?: Date,
@@ -39,7 +36,6 @@ export class InstallationPricingRepository {
 
     const qb = this.repository
       .createQueryBuilder('pricing')
-      .where('pricing.organization_id = :organizationId', { organizationId })
       .andWhere('pricing.is_active = true')
       .andWhere('pricing.min_system_size_kw <= :size', { size: roundedSizeKw })
       .andWhere('(pricing.max_system_size_kw IS NULL OR pricing.max_system_size_kw >= :size)', {
@@ -57,7 +53,6 @@ export class InstallationPricingRepository {
   }
 
   async findAll(
-    organizationId: string,
     filters?: {
       isActive?: boolean;
       search?: string;
@@ -66,8 +61,7 @@ export class InstallationPricingRepository {
     },
   ): Promise<{ data: InstallationPricing[]; total: number }> {
     const query = this.repository
-      .createQueryBuilder('pricing')
-      .where('pricing.organization_id = :organizationId', { organizationId });
+      .createQueryBuilder('pricing');
 
     if (filters?.isActive !== undefined) {
       query.andWhere('pricing.is_active = :isActive', { isActive: filters.isActive });
@@ -99,40 +93,37 @@ export class InstallationPricingRepository {
     return { data, total };
   }
 
-  async findById(id: string, organizationId: string): Promise<InstallationPricing | null> {
+  async findById(id: string): Promise<InstallationPricing | null> {
     return this.repository.findOne({
-      where: { id, organizationId },
+      where: { id },
     });
   }
 
   async update(
     id: string,
-    organizationId: string,
     data: Partial<InstallationPricing>,
   ): Promise<InstallationPricing> {
-    await this.repository.update({ id, organizationId }, {
+    await this.repository.update({ id }, {
       ...data,
       updatedAt: new Date(),
     } as QueryDeepPartialEntity<InstallationPricing>);
-    const updated = await this.findById(id, organizationId);
+    const updated = await this.findById(id);
     if (!updated) {
       throw new NotFoundException('Installation pricing not found after update');
     }
     return updated;
   }
 
-  async delete(id: string, organizationId: string): Promise<void> {
-    await this.repository.delete({ id, organizationId });
+  async delete(id: string): Promise<void> {
+    await this.repository.delete({ id });
   }
 
   async bulkCreate(
-    organizationId: string,
     pricingList: Partial<InstallationPricing>[],
   ): Promise<InstallationPricing[]> {
     const entities = pricingList.map((data) =>
       this.repository.create({
         ...data,
-        organizationId,
       }),
     );
     return this.repository.save(entities);

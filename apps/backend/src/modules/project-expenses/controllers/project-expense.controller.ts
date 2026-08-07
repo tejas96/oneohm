@@ -14,7 +14,6 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { toDto } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -68,12 +67,10 @@ export class ProjectExpenseController {
   @ApiParam({ name: 'projectId', type: String })
   async create(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: CreateExpenseDto,
   ): Promise<ExpenseResponseDto> {
     const expense = await this.expenseService.create(
-      organizationId,
       projectId,
       dto,
       currentUser.id,
@@ -92,7 +89,6 @@ export class ProjectExpenseController {
   @ApiParam({ name: 'projectId', type: String })
   async list(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
     @Query() query: ListExpensesQueryDto,
   ): Promise<{
     data: ExpenseResponseDto[];
@@ -102,7 +98,6 @@ export class ProjectExpenseController {
   }> {
     const { data, total, page, limit } = await this.expenseService.list(
       projectId,
-      organizationId,
       query,
     );
     return {
@@ -120,9 +115,8 @@ export class ProjectExpenseController {
   @ApiParam({ name: 'projectId', type: String })
   async getProjectSummary(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<ReturnType<ProjectExpenseService['getProjectSummary']>> {
-    return this.expenseService.getProjectSummary(projectId, organizationId);
+    return this.expenseService.getProjectSummary(projectId);
   }
 
   // ============================================
@@ -134,9 +128,8 @@ export class ProjectExpenseController {
   @ApiParam({ name: 'id', type: String })
   async findById(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<ExpenseResponseDto> {
-    const expense = await this.expenseService.findById(id, organizationId);
+    const expense = await this.expenseService.findById(id);
     return toDto(ExpenseResponseDto, expense);
   }
 
@@ -145,11 +138,10 @@ export class ProjectExpenseController {
   @ApiParam({ name: 'id', type: String })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: UpdateExpenseDto,
   ): Promise<ExpenseResponseDto> {
-    const expense = await this.expenseService.update(id, organizationId, dto, currentUser.id);
+    const expense = await this.expenseService.update(id, dto, currentUser.id);
     return toDto(ExpenseResponseDto, expense);
   }
 
@@ -159,9 +151,8 @@ export class ProjectExpenseController {
   @ApiParam({ name: 'id', type: String })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<void> {
-    await this.expenseService.delete(id, organizationId);
+    await this.expenseService.delete(id);
   }
 
   @Patch('expenses/:id/reimbursement-status')
@@ -169,13 +160,11 @@ export class ProjectExpenseController {
   @ApiParam({ name: 'id', type: String })
   async updateReimbursementStatus(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: UpdateReimbursementStatusDto,
   ): Promise<ExpenseResponseDto> {
     const expense = await this.expenseService.updateReimbursementStatus(
       id,
-      organizationId,
       dto,
       currentUser.id,
     );

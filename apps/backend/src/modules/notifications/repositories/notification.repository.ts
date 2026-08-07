@@ -22,12 +22,11 @@ export class NotificationRepository {
 
   async findByUser(
     userId: string,
-    organizationId: string,
     page = 1,
     limit = 20,
     unreadOnly = false,
   ): Promise<{ notifications: NotificationEntity[]; total: number }> {
-    const where: Record<string, unknown> = { userId, organizationId };
+    const where: Record<string, unknown> = { userId };
     if (unreadOnly) where.readAt = IsNull();
 
     const [notifications, total] = await this.repository.findAndCount({
@@ -39,9 +38,9 @@ export class NotificationRepository {
     return { notifications, total };
   }
 
-  async getUnreadCount(userId: string, organizationId: string): Promise<number> {
+  async getUnreadCount(userId: string): Promise<number> {
     return this.repository.count({
-      where: { userId, organizationId, readAt: IsNull() },
+      where: { userId, readAt: IsNull() },
     });
   }
 
@@ -49,13 +48,12 @@ export class NotificationRepository {
     await this.repository.update({ id, userId }, { readAt: () => 'CURRENT_TIMESTAMP' });
   }
 
-  async markAllRead(userId: string, organizationId: string): Promise<void> {
+  async markAllRead(userId: string): Promise<void> {
     await this.repository
       .createQueryBuilder()
       .update(NotificationEntity)
       .set({ readAt: () => 'CURRENT_TIMESTAMP' })
       .where('user_id = :userId', { userId })
-      .andWhere('organization_id = :organizationId', { organizationId })
       .andWhere('read_at IS NULL')
       .execute();
   }

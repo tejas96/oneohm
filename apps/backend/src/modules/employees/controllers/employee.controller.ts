@@ -21,8 +21,7 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-  ApiAction,
-  OrganizationContext,
+  ApiAction
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -88,7 +87,6 @@ export class EmployeeController {
     description: 'Filter by profile kind (staff or reseller)',
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
     @Query('status') status?: UserStatus,
@@ -101,7 +99,7 @@ export class EmployeeController {
     limit: number;
   }> {
     if (department) {
-      const employees = await this.employeeService.findByDepartment(organizationId, department);
+      const employees = await this.employeeService.findByDepartment(department);
       const paged = employees.slice((page - 1) * limit, page * limit);
       return {
         items: paged,
@@ -112,7 +110,6 @@ export class EmployeeController {
     }
 
     return this.employeeService.findByOrganization(
-      organizationId,
       page,
       limit,
       status,
@@ -129,9 +126,8 @@ export class EmployeeController {
   })
   async findMe(
     @CurrentUser() currentUser: CurrentUserType,
-    @OrganizationContext() organizationId: string,
   ): Promise<EmployeeResponseDto | null> {
-    return this.employeeService.findByUserAndOrganization(currentUser.id, organizationId);
+    return this.employeeService.findByUserAndOrganization(currentUser.id);
   }
 
   @Get('user/:userId')

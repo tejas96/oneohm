@@ -12,7 +12,6 @@ export class IntegrationResponseDto {
     description: 'Organization ID',
     example: 'b1ffcd99-8d1c-5fg9-cc7e-7cc0ce491b22',
   })
-  organizationId!: string;
 
   @ApiProperty({
     description: 'Integration name',

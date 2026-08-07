@@ -55,7 +55,6 @@ export interface RecordReceiptInput {
  */
 type LedgerEntryValues = Pick<
   LedgerEntryEntity,
-  | 'organizationId'
   | 'projectId'
   | 'entryNo'
   | 'entryType'
@@ -130,19 +129,17 @@ export class LedgerWriteService {
    * the last milestone and never silently dropped.
    */
   async recordReceipt(
-    organizationId: string,
     input: RecordReceiptInput,
     createdBy: string,
   ): Promise<LedgerEntryEntity> {
     this.assertWritesAllowed();
     const valueDate = this.resolveValueDate(input.valueDate);
     this.assertAmount(input.amountPaise);
-    await this.assertProjectInOrg(input.projectId, organizationId);
+    await this.assertProjectInOrg(input.projectId);
 
     return this.dataSource.transaction(async (manager) => {
       const balances = await this.ledgerRepository.getMilestoneBalances(
         input.projectId,
-        organizationId,
         manager,
         true, // FOR UPDATE — the actual concurrency mechanism
       );
@@ -173,7 +170,6 @@ export class LedgerWriteService {
       }
 
       const entry = await this.insertEntry(manager, {
-        organizationId,
         projectId: input.projectId,
         customerId: input.customerId ?? null,
         entryNo: await this.sequenceService.getNextNumber(
@@ -210,18 +206,16 @@ export class LedgerWriteService {
    * against a milestone, and they never change what the customer owes.
    */
   async recordExpense(
-    organizationId: string,
     input: RecordExpenseInput,
     createdBy: string,
   ): Promise<LedgerEntryEntity> {
     this.assertWritesAllowed();
     const valueDate = this.resolveValueDate(input.valueDate);
     this.assertAmount(input.amountPaise);
-    await this.assertProjectInOrg(input.projectId, organizationId);
+    await this.assertProjectInOrg(input.projectId);
 
     return this.dataSource.transaction(async (manager) =>
       this.insertEntry(manager, {
-        organizationId,
         projectId: input.projectId,
         customerId: null,
         entryNo: await this.sequenceService.getNextNumber(
@@ -274,7 +268,6 @@ export class LedgerWriteService {
     }
 
     await manager.getRepository(DocumentEntity).insert({
-      organizationId: entry.organizationId,
       propertyId,
       entityType: DocumentEntityType.LEDGER_ENTRY,
       entityId: entry.id,
@@ -303,7 +296,6 @@ export class LedgerWriteService {
    * can be gated with a single decorator, without touching the recording path.
    */
   async reverse(
-    organizationId: string,
     entryId: string,
     reason: string,
     createdBy: string,
@@ -314,7 +306,7 @@ export class LedgerWriteService {
     }
 
     return this.dataSource.transaction(async (manager) => {
-      const original = await this.ledgerRepository.findEntryById(entryId, organizationId, manager);
+      const original = await this.ledgerRepository.findEntryById(entryId, manager);
       if (!original) {
         throw new NotFoundException(`Ledger entry ${entryId} not found`);
       }
@@ -333,7 +325,6 @@ export class LedgerWriteService {
         original.direction === 'in' ? FinanceSequenceScope.RECEIPT : FinanceSequenceScope.EXPENSE;
 
       const reversal = await this.insertEntry(manager, {
-        organizationId,
         projectId: original.projectId,
         customerId: original.customerId ?? null,
         entryNo: await this.sequenceService.getNextNumber(scope, manager),
@@ -423,8 +414,8 @@ export class LedgerWriteService {
    * Ownership check — see `LedgerRepository.projectBelongsToOrg` for why the FK
    * alone is not a guard.
    */
-  private async assertProjectInOrg(projectId: string, organizationId: string): Promise<void> {
-    if (!(await this.ledgerRepository.projectBelongsToOrg(projectId, organizationId))) {
+  private async assertProjectInOrg(projectId: string): Promise<void> {
+    if (!(await this.ledgerRepository.projectBelongsToOrg(projectId))) {
       throw new NotFoundException(`Project ${projectId} not found`);
     }
   }

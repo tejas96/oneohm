@@ -24,7 +24,6 @@ export class InventoryTransactionStatsRepository {
    * entry per bucket with `series: { type: count }`).
    */
   async byTypeTrend(
-    organizationId: string,
     fromDate: string,
     toDate: string,
     bucket: StatsBucket,
@@ -35,7 +34,6 @@ export class InventoryTransactionStatsRepository {
       .select(dateExpr, 'date')
       .addSelect('txn.transactionType', 'transactionType')
       .addSelect('COUNT(*)', 'count')
-      .where('txn.organizationId = :organizationId', { organizationId })
       .andWhere('txn.transaction_date >= :fromDate', { fromDate })
       .andWhere("txn.transaction_date < (CAST(:toDate AS date) + INTERVAL '1 day')", { toDate })
       .groupBy(dateExpr)

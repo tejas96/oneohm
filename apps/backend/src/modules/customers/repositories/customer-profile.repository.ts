@@ -144,7 +144,6 @@ function needsQuoteJoinForPropertyFilter(query: CustomerQueryDto): boolean {
 
 function applyMatchingPropertyFilter(
   qb: SelectQueryBuilder<CustomerProfileEntity>,
-  organizationId: string,
   query: CustomerQueryDto,
 ): void {
   if (!hasAnyCustomerPropertyFilter(query)) {
@@ -156,7 +155,7 @@ function applyMatchingPropertyFilter(
     'prop.deleted_at IS NULL',
     'prop.organization_id = :propFilterOrgId',
   ];
-  const params: Record<string, unknown> = { propFilterOrgId: organizationId };
+    const params: Record<string, unknown> = {};
 
   if (query.propertyType) {
     conditions.push('prop.property_type = :propertyType');
@@ -257,10 +256,9 @@ export class CustomerProfileRepository {
 
   async findByUserAndOrganization(
     userId: string,
-    organizationId: string,
   ): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
-      where: { userId, organizationId, deletedAt: IsNull() },
+      where: { userId, deletedAt: IsNull() },
       relations: ['user', 'organization'],
     });
   }
@@ -273,12 +271,11 @@ export class CustomerProfileRepository {
   }
 
   async findByOrganization(
-    organizationId: string,
     page = 1,
     limit = 20,
   ): Promise<[CustomerProfileEntity[], number]> {
     return this.repository.findAndCount({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       relations: ['user', 'properties'],
       skip: (page - 1) * limit,
       take: limit,
@@ -311,9 +308,9 @@ export class CustomerProfileRepository {
     return (result.affected ?? 0) > 0;
   }
 
-  async hardDelete(id: string, organizationId: string, manager?: EntityManager): Promise<boolean> {
+  async hardDelete(id: string, manager?: EntityManager): Promise<boolean> {
     const repo = manager ? manager.getRepository(CustomerProfileEntity) : this.repository;
-    const result = await repo.delete({ id, organizationId });
+    const result = await repo.delete({ id });
     return (result.affected ?? 0) > 0;
   }
 
@@ -322,7 +319,6 @@ export class CustomerProfileRepository {
    * Used for field workers to see their own and assigned customers.
    */
   async findByCreatedBy(
-    organizationId: string,
     userId: string,
     page = 1,
     limit = 20,
@@ -333,7 +329,6 @@ export class CustomerProfileRepository {
       .leftJoinAndSelect('customer.organization', 'organization')
       .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
       .leftJoinAndSelect('customer.assignee', 'assignee')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL')
       .andWhere('(customer.createdBy = :userId OR customer.assigneeId = :userId)', { userId })
       .orderBy('customer.createdAt', 'DESC')
@@ -342,25 +337,23 @@ export class CustomerProfileRepository {
       .getManyAndCount();
   }
 
-  async findByPhone(organizationId: string, phone: string): Promise<CustomerProfileEntity[]> {
+  async findByPhone(phone: string): Promise<CustomerProfileEntity[]> {
     return this.repository.find({
-      where: { organizationId, phone, deletedAt: IsNull() },
+      where: { phone, deletedAt: IsNull() },
     });
   }
 
   async findOneByPhone(
-    organizationId: string,
     phone: string,
   ): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
-      where: { organizationId, phone, deletedAt: IsNull() },
+      where: { phone, deletedAt: IsNull() },
     });
   }
 
-  async findByEmail(organizationId: string, email: string): Promise<CustomerProfileEntity | null> {
+  async findByEmail(email: string): Promise<CustomerProfileEntity | null> {
     return this.repository
       .createQueryBuilder('cp')
-      .where('cp.organization_id = :organizationId', { organizationId })
       .andWhere('LOWER(cp.email) = LOWER(:email)', { email })
       .andWhere('cp.deleted_at IS NULL')
       .getOne();
@@ -372,22 +365,20 @@ export class CustomerProfileRepository {
    * Consider using CustomerPropertyRepository.findByConsumerNumber instead
    */
   async findByConsumerNumber(
-    organizationId: string,
     consumerNumber: string,
   ): Promise<CustomerProfileEntity | null> {
     return this.repository
       .createQueryBuilder('customer')
       .innerJoin('customer.properties', 'property')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('property.consumerNumber = :consumerNumber', { consumerNumber })
       .andWhere('customer.deletedAt IS NULL')
       .andWhere('property.deletedAt IS NULL')
       .getOne();
   }
 
-  async countByStatus(organizationId: string, status: CustomerStatus): Promise<number> {
+  async countByStatus(status: CustomerStatus): Promise<number> {
     return this.repository.count({
-      where: { organizationId, status, deletedAt: IsNull() },
+      where: { status, deletedAt: IsNull() },
     });
   }
 
@@ -396,13 +387,11 @@ export class CustomerProfileRepository {
    * Returns count of customers grouped by status
    */
   async getStatusStats(
-    organizationId: string,
   ): Promise<{ status: CustomerStatus; count: number }[]> {
     const result = await this.repository
       .createQueryBuilder('customer')
       .select('customer.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL')
       .groupBy('customer.status')
       .getRawMany<{ status: CustomerStatus; count: string }>();
@@ -437,7 +426,6 @@ export class CustomerProfileRepository {
    */
   async getSitePortfolioSummaries(
     customerIds: string[],
-    organizationId: string,
   ): Promise<Map<string, SitePortfolioSummary>> {
     const summaries = new Map<string, SitePortfolioSummary>();
     if (customerIds.length === 0) {
@@ -473,7 +461,7 @@ export class CustomerProfileRepository {
         AND prop.deleted_at IS NULL
       GROUP BY prop.customer_id, prop.status
       `,
-      [organizationId, customerIds],
+      [customerIds],
     );
 
     for (const row of rows) {
@@ -511,7 +499,7 @@ export class CustomerProfileRepository {
    * is out, unanswered, and the site has not converted. Accepted and converted
    * value belongs to revenue, not pipeline; draft value was never offered.
    */
-  async getOverviewStats(organizationId: string): Promise<CustomerOverviewStats> {
+  async getOverviewStats(): Promise<CustomerOverviewStats> {
     const monthStart = startOfCurrentMonth();
     const ageingCutoff = ageingCutoffDate();
 
@@ -525,7 +513,7 @@ export class CustomerProfileRepository {
       WHERE c.organization_id = $1
         AND c.deleted_at IS NULL
       `,
-      [organizationId, monthStart],
+      [monthStart],
     );
 
     const [siteRow] = await this.repository.manager.query<
@@ -557,7 +545,6 @@ export class CustomerProfileRepository {
         AND prop.deleted_at IS NULL
       `,
       [
-        organizationId,
         monthStart,
         PropertyStatus.CONVERTED,
         [...AWAITING_QUOTE_STATUSES],
@@ -580,7 +567,6 @@ export class CustomerProfileRepository {
    * Search customers by name, phone, or email
    * Searches within the organization context
    *
-   * @param organizationId - Organization to search in
    * @param searchQuery - Search term (searches first name, last name, phone, email, group)
    * @param createdBy - Optional: filter by creator (for field workers)
    * @param page - Page number
@@ -588,7 +574,6 @@ export class CustomerProfileRepository {
    * @returns Matching customers with pagination
    */
   async search(
-    organizationId: string,
     searchQuery: string,
     createdBy?: string,
     page = 1,
@@ -603,7 +588,6 @@ export class CustomerProfileRepository {
       .leftJoinAndSelect('customer.organization', 'organization')
       .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
       .leftJoinAndSelect('customer.assignee', 'assignee')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL')
       .andWhere(
         `(
@@ -643,12 +627,10 @@ export class CustomerProfileRepository {
    * Find customers with comprehensive filtering, sorting, and pagination
    * This is the primary method for the customer list API
    *
-   * @param organizationId - Organization context
    * @param query - Query parameters (filters, sorting, pagination)
    * @returns Tuple of [customers, total count]
    */
   async findWithFilters(
-    organizationId: string,
     query: CustomerQueryDto,
   ): Promise<[CustomerProfileEntity[], number]> {
     const qb = this.repository
@@ -663,7 +645,6 @@ export class CustomerProfileRepository {
       )
       .leftJoinAndSelect('customer.creator', 'creator')
       .leftJoinAndSelect('customer.assignee', 'assignee')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL');
 
     // ===== Search (case-insensitive, multiple fields) =====
@@ -751,7 +732,7 @@ export class CustomerProfileRepository {
         }
       }
 
-      applyMatchingPropertyFilter(qb, organizationId, query);
+      applyMatchingPropertyFilter(qb, query);
     }
 
     if (query.fromDate) {
@@ -790,13 +771,11 @@ export class CustomerProfileRepository {
    * Used to populate the group selector in the customer form.
    */
   async findDistinctGroups(
-    organizationId: string,
   ): Promise<{ groupCode: string; groupName: string }[]> {
     const rows = await this.repository
       .createQueryBuilder('customer')
       .select('customer.groupCode', 'groupCode')
       .addSelect('customer.groupName', 'groupName')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.groupCode IS NOT NULL')
       .andWhere('customer.deletedAt IS NULL')
       .distinctOn(['customer.groupCode'])
@@ -811,14 +790,13 @@ export class CustomerProfileRepository {
    * Format: GRP-XXXX (e.g. GRP-0001, GRP-0042).
    * Uses withDeleted() so codes from soft-deleted records are never reused.
    */
-  async generateGroupCode(organizationId: string): Promise<string> {
+  async generateGroupCode(): Promise<string> {
     const pattern = 'GRP-%';
 
     const result = await this.repository
       .createQueryBuilder('customer')
       .withDeleted()
       .select('customer.groupCode', 'code')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.groupCode LIKE :pattern', { pattern })
       .orderBy('customer.groupCode', 'DESC')
       .limit(1)
@@ -841,9 +819,9 @@ export class CustomerProfileRepository {
    * Checks whether a group code exists for the given organization.
    * Used for validation when a client provides a groupCode explicitly.
    */
-  async groupCodeExists(organizationId: string, groupCode: string): Promise<boolean> {
+  async groupCodeExists(groupCode: string): Promise<boolean> {
     const count = await this.repository.count({
-      where: { organizationId, groupCode, deletedAt: IsNull() },
+      where: { groupCode, deletedAt: IsNull() },
     });
     return count > 0;
   }
@@ -853,18 +831,16 @@ export class CustomerProfileRepository {
    */
   async getCustomerDeleteBlockers(
     customerId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<string[]> {
-    const flags = await this.queryDeleteBlockerFlags([customerId], organizationId, manager);
+    const flags = await this.queryDeleteBlockerFlags([customerId], manager);
     return this.mapDeleteBlockerFlags(flags.get(customerId));
   }
 
   async getCustomerDeleteBlockersBatch(
     customerIds: string[],
-    organizationId: string,
   ): Promise<Map<string, string[]>> {
-    const flags = await this.queryDeleteBlockerFlags(customerIds, organizationId);
+    const flags = await this.queryDeleteBlockerFlags(customerIds);
     const result = new Map<string, string[]>();
     for (const customerId of customerIds) {
       result.set(customerId, this.mapDeleteBlockerFlags(flags.get(customerId)));
@@ -914,7 +890,6 @@ export class CustomerProfileRepository {
 
   private async queryDeleteBlockerFlags(
     customerIds: string[],
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<
     Map<
@@ -1027,8 +1002,6 @@ export class CustomerProfileRepository {
         'hasFeedback',
       )
       .where('customer.id IN (:...customerIds)', { customerIds })
-      .andWhere('customer.organizationId = :organizationId', { organizationId })
-      .setParameters({ organizationId })
       .getRawMany<{
         customerId: string;
         hasProperties: boolean;

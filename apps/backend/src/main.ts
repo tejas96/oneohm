@@ -84,8 +84,6 @@ async function bootstrap(): Promise<void> {
     )
     .addTag('Authentication', 'Login, OTP, token refresh endpoints')
     .addTag('Users', 'User management and profile creation')
-    .addTag('Organizations', 'Organization management endpoints')
-    .addTag('Organization Settings', 'Organization settings management')
     .addTag('Customers', 'Customer profile management')
     .addTag('Customer Properties', 'Customer property/installation site management')
     .addTag('Employees', 'Employee profile management (includes reseller-kind profiles)')

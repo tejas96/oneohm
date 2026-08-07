@@ -82,28 +82,24 @@ export class AuditLogController {
 
   @Get('stats/actions')
   @ApiOperation({ summary: 'Get action statistics' })
-  @ApiQuery({ name: 'organizationId', required: false, type: String })
   @ApiResponse({
     status: 200,
     description: 'Action statistics',
   })
   async getActionStats(
-    @Query('organizationId') organizationId?: string,
   ): Promise<Record<string, number>> {
-    return this.auditLogService.getActionStats(organizationId);
+    return this.auditLogService.getActionStats();
   }
 
   @Get('stats/entities')
   @ApiOperation({ summary: 'Get entity type statistics' })
-  @ApiQuery({ name: 'organizationId', required: false, type: String })
   @ApiResponse({
     status: 200,
     description: 'Entity type statistics',
   })
   async getEntityTypeStats(
-    @Query('organizationId') organizationId?: string,
   ): Promise<Record<string, number>> {
-    return this.auditLogService.getEntityTypeStats(organizationId);
+    return this.auditLogService.getEntityTypeStats();
   }
 
   @Get('count')
@@ -156,7 +152,6 @@ export class AuditLogController {
 
   @Get('organization/:organizationId')
   @ApiOperation({ summary: 'Get audit logs for an organization' })
-  @ApiParam({ name: 'organizationId', description: 'Organization UUID' })
   @ApiQuery({
     name: 'limit',
     required: false,
@@ -169,10 +164,9 @@ export class AuditLogController {
     type: [AuditLogResponseDto],
   })
   async findByOrganization(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
     @Query('limit', new DefaultValuePipe(100), ParseIntPipe) limit: number,
   ): Promise<AuditLogResponseDto[]> {
-    return this.auditLogService.findByOrganization(organizationId, limit);
+    return this.auditLogService.findByOrganization(limit);
   }
 
   @Get(':id')

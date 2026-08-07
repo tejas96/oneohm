@@ -68,7 +68,6 @@ export class SalesPipelineService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   async getDashboard(
-    organizationId: string,
     fromDate?: string,
     toDate?: string,
     salesPersonId?: string,
@@ -76,15 +75,13 @@ export class SalesPipelineService {
   ): Promise<SalesPipelineDashboardResponseDto> {
     const window = resolveStatsWindow(fromDate, toDate);
     const filters = this.buildFilters(
-      organizationId,
       window.fromDate,
       window.toDate,
       salesPersonId,
     );
-    const leaderboardFilters = this.buildFilters(organizationId, window.fromDate, window.toDate);
+    const leaderboardFilters = this.buildFilters(window.fromDate, window.toDate);
     const prevWindow = computePreviousWindow(window.fromDate, window.toDate);
     const prevFilters = this.buildFilters(
-      organizationId,
       prevWindow.fromDate,
       prevWindow.toDate,
       salesPersonId,
@@ -126,14 +123,12 @@ export class SalesPipelineService {
   }
 
   async getFunnel(
-    organizationId: string,
     fromDate?: string,
     toDate?: string,
     salesPersonId?: string,
   ): Promise<SalesPipelineFunnelResponseDto> {
     const window = resolveStatsWindow(fromDate, toDate);
     const filters = this.buildFilters(
-      organizationId,
       window.fromDate,
       window.toDate,
       salesPersonId,
@@ -143,21 +138,18 @@ export class SalesPipelineService {
   }
 
   async getStats(
-    organizationId: string,
     fromDate?: string,
     toDate?: string,
     salesPersonId?: string,
   ): Promise<SalesPipelineStatsResponseDto> {
     const window = resolveStatsWindow(fromDate, toDate);
     const filters = this.buildFilters(
-      organizationId,
       window.fromDate,
       window.toDate,
       salesPersonId,
     );
     const prevWindow = computePreviousWindow(window.fromDate, window.toDate);
     const prevFilters = this.buildFilters(
-      organizationId,
       prevWindow.fromDate,
       prevWindow.toDate,
       salesPersonId,
@@ -188,18 +180,16 @@ export class SalesPipelineService {
   }
 
   async getLeaderboard(
-    organizationId: string,
     fromDate?: string,
     toDate?: string,
   ): Promise<SalesPipelineLeaderboardResponseDto> {
     const window = resolveStatsWindow(fromDate, toDate);
-    const filters = this.buildFilters(organizationId, window.fromDate, window.toDate);
+    const filters = this.buildFilters(window.fromDate, window.toDate);
     const leaderboard = await this.queryLeaderboard(filters);
     return { fromDate: window.fromDate, toDate: window.toDate, entries: leaderboard.entries };
   }
 
   async getTrend(
-    organizationId: string,
     fromDate?: string,
     toDate?: string,
     granularity: 'week' | 'month' = 'week',
@@ -207,7 +197,6 @@ export class SalesPipelineService {
   ): Promise<SalesPipelineTrendResponseDto> {
     const window = resolveStatsWindow(fromDate, toDate);
     const filters = this.buildFilters(
-      organizationId,
       window.fromDate,
       window.toDate,
       salesPersonId,
@@ -222,12 +211,11 @@ export class SalesPipelineService {
   }
 
   private buildFilters(
-    organizationId: string,
     fromDate: string,
     toDate: string,
     salesPersonId?: string,
   ): SalesPipelineFilterParams {
-    return { organizationId, fromDate, toDate, salesPersonId };
+    return { fromDate, toDate, salesPersonId };
   }
 
   private async queryFunnelAndStats(filters: SalesPipelineFilterParams): Promise<{
@@ -350,7 +338,7 @@ export class SalesPipelineService {
       buildLeaderboardSql(parts),
       parts.params,
     );
-    const userNames = await this.fetchOrgUserNames(filters.organizationId);
+    const userNames = await this.fetchOrgUserNames();
 
     const entries: SalesPipelineLeaderboardEntryDto[] = rows.map((row) => {
       const isUnassigned = row.sales_person_id === null;
@@ -391,7 +379,7 @@ export class SalesPipelineService {
     };
   }
 
-  private async fetchOrgUserNames(organizationId: string): Promise<Map<string, string>> {
+  private async fetchOrgUserNames(): Promise<Map<string, string>> {
     const rows = await this.dataSource.query<
       Array<{ user_id: string; first_name: string; last_name: string | null }>
     >(
@@ -401,7 +389,7 @@ export class SalesPipelineService {
       INNER JOIN user_roles ur ON ur.user_id = u.id
       WHERE ur.organization_id = $1
       `,
-      [organizationId],
+      [],
     );
     const map = new Map<string, string>();
     for (const row of rows) {

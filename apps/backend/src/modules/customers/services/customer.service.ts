@@ -1,3 +1,4 @@
+import { COMPANY } from '@tejas96/shared/constants';
 import {
   BadRequestException,
   ConflictException,
@@ -14,7 +15,6 @@ import { DataSource, In, IsNull } from 'typeorm';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
-import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
 import { StorageService } from '../../storage/services/storage.service';
 import { UserRepository } from '../../users/repositories/user.repository';
@@ -67,7 +67,6 @@ export class CustomerService {
 
   constructor(
     private readonly customerRepository: CustomerProfileRepository,
-    private readonly organizationRepository: OrganizationRepository,
     @Inject(forwardRef(() => ProfileService))
     private readonly profileService: ProfileService,
     @Inject(forwardRef(() => UserRepository))
@@ -82,7 +81,6 @@ export class CustomerService {
    * Normalizes phone/email, finds-or-creates a users row, then creates the customer_profile.
    */
   async create(
-    organizationId: string,
     createDto: CreateCustomerDto,
     createdBy?: string,
   ): Promise<CustomerProfileEntity> {
@@ -92,7 +90,7 @@ export class CustomerService {
     this.logger.log(`Creating customer profile: phone=${phone}, email=${email ?? 'N/A'}`);
 
     // Step 1: Check for duplicates within this organization
-    await this.guardOrgDuplicates(organizationId, phone, email);
+    await this.guardOrgDuplicates(phone, email);
 
     // Step 2: Find or create user by phone (for login capability)
     const user = await this.findOrCreateUser(phone, email, createDto);
@@ -100,7 +98,6 @@ export class CustomerService {
     // Step 3: Guard against duplicate profile for same user+org
     const existingProfile = await this.customerRepository.findByUserAndOrganization(
       user.id,
-      organizationId,
     );
     if (existingProfile) {
       throw new ConflictException('Customer profile already exists for this user in organization');
@@ -109,7 +106,6 @@ export class CustomerService {
     // Step 4: Create customer profile using ProfileService (handles role assignment)
     const customer = (await this.profileService.createProfile({
       userId: user.id,
-      organizationId,
       profileType: UserProfileType.CUSTOMER,
       profileData: {
         ...createDto,
@@ -123,13 +119,12 @@ export class CustomerService {
     })) as CustomerProfileEntity;
 
     // Step 5: Generate human-readable code
-    await this.assignCustomerCode(customer, organizationId);
+    await this.assignCustomerCode(customer);
 
     // Step 6: Resolve group assignment (best-effort — does not roll back the customer on error)
     try {
       await this.resolveGroupAssignment(
         customer,
-        organizationId,
         createDto.groupCode,
         createDto.groupName,
       );
@@ -146,16 +141,14 @@ export class CustomerService {
   /**
    * Find customer by ID
    */
-  async findById(id: string, organizationId: string): Promise<CustomerWithDeleteInfo> {
+  async findById(id: string): Promise<CustomerWithDeleteInfo> {
     const customer = await this.customerRepository.findById(id);
-
-    if (customer?.organizationId !== organizationId) {
-      throw new NotFoundException(`Customer with ID '${id}' not found`);
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${id} not found`);
     }
 
     const deleteBlockReasons = await this.customerRepository.getCustomerDeleteBlockers(
       id,
-      organizationId,
     );
 
     return { ...customer, deleteBlockReasons };
@@ -169,26 +162,22 @@ export class CustomerService {
    * @overload New signature with CustomerQueryDto for full filtering
    */
   async findAll(
-    organizationId: string,
     query: CustomerQueryDto,
   ): Promise<{ data: CustomerProfileEntity[]; total: number }>;
   async findAll(
-    organizationId: string,
     page: number,
     limit: number,
   ): Promise<{ data: CustomerProfileEntity[]; total: number }>;
   async findAll(
-    organizationId: string,
     pageOrQuery: number | CustomerQueryDto = 1,
     limit = 20,
   ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
     // New query-based approach
     if (typeof pageOrQuery === 'object') {
       const [data, total] = await this.customerRepository.findWithFilters(
-        organizationId,
         pageOrQuery,
       );
-      return this.enrichListPage(data, total, organizationId);
+      return this.enrichListPage(data, total);
     }
 
     // Legacy approach - convert to query DTO
@@ -196,17 +185,16 @@ export class CustomerService {
     legacyQuery.page = pageOrQuery;
     legacyQuery.limit = limit;
     const [data, total] = await this.customerRepository.findWithFilters(
-      organizationId,
       legacyQuery,
     );
-    return this.enrichListPage(data, total, organizationId);
+    return this.enrichListPage(data, total);
   }
 
   /**
    * Organisation-wide CRM roll-up behind the customer list's KPI cards.
    */
-  async getOverviewStats(organizationId: string): Promise<CustomerOverviewStats> {
-    return this.customerRepository.getOverviewStats(organizationId);
+  async getOverviewStats(): Promise<CustomerOverviewStats> {
+    return this.customerRepository.getOverviewStats();
   }
 
   /**
@@ -220,13 +208,12 @@ export class CustomerService {
   private async enrichListPage(
     data: CustomerProfileEntity[],
     total: number,
-    organizationId: string,
   ): Promise<{ data: CustomerWithDeleteInfo[]; total: number }> {
     const customerIds = data.map((customer) => customer.id);
 
     const [blockerMap, portfolioMap] = await Promise.all([
-      this.customerRepository.getCustomerDeleteBlockersBatch(customerIds, organizationId),
-      this.customerRepository.getSitePortfolioSummaries(customerIds, organizationId),
+      this.customerRepository.getCustomerDeleteBlockersBatch(customerIds),
+      this.customerRepository.getSitePortfolioSummaries(customerIds),
     ]);
 
     return {
@@ -244,13 +231,11 @@ export class CustomerService {
    * Returns data in FindAllResponse format for consistency
    */
   async findByCreator(
-    organizationId: string,
     createdBy: string,
     page = 1,
     limit = 20,
   ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
     const [data, total] = await this.customerRepository.findByCreatedBy(
-      organizationId,
       createdBy,
       page,
       limit,
@@ -264,13 +249,12 @@ export class CustomerService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateCustomerDto,
     updatedBy?: string,
   ): Promise<CustomerProfileEntity> {
     this.logger.log(`Updating customer: ${id}`);
 
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     // Normalize email: null = explicit clear (→ null in DB), string = normalize, undefined = skip
     if (updateDto.email === null) {
@@ -298,7 +282,6 @@ export class CustomerService {
     // Check for email conflicts within this org (exclude self)
     if (updateDto.email) {
       const existingByEmail = await this.customerRepository.findByEmail(
-        organizationId,
         updateDto.email,
       );
       if (existingByEmail && existingByEmail.id !== id) {
@@ -311,7 +294,6 @@ export class CustomerService {
     // Check for phone conflicts within this org (exclude self)
     if (updateDto.phone) {
       const existingByPhone = await this.customerRepository.findOneByPhone(
-        organizationId,
         updateDto.phone,
       );
       if (existingByPhone && existingByPhone.id !== id) {
@@ -389,7 +371,7 @@ export class CustomerService {
       // Treat empty strings the same as null for group clearing
       const resolvedCode = updateDto.groupCode === '' ? null : updateDto.groupCode;
       const resolvedName = updateDto.groupName === '' ? null : updateDto.groupName;
-      await this.resolveGroupAssignment(updated, organizationId, resolvedCode, resolvedName);
+      await this.resolveGroupAssignment(updated, resolvedCode, resolvedName);
       // Re-fetch after group update to return accurate state
       const refreshed = await this.customerRepository.findById(id);
       if (refreshed) return refreshed;
@@ -404,13 +386,12 @@ export class CustomerService {
    */
   async updateStatus(
     id: string,
-    organizationId: string,
     newStatus: CustomerStatus,
     updatedBy?: string,
   ): Promise<CustomerProfileEntity> {
     this.logger.log(`Updating customer ${id} status to: ${newStatus}`);
 
-    const customer = await this.findById(id, organizationId);
+    const customer = await this.findById(id);
 
     if (customer.status === newStatus) {
       throw new BadRequestException(`Customer is already in '${newStatus}' status`);
@@ -432,16 +413,16 @@ export class CustomerService {
   /**
    * Permanently delete customer when it has no properties, quotes, or financial records.
    */
-  async delete(id: string, organizationId: string, _deletedBy?: string): Promise<void> {
+  async delete(id: string, _deletedBy?: string): Promise<void> {
     this.logger.log(`Permanently deleting customer: ${id}`);
 
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     let fileUrls: string[] = [];
 
     await this.dataSource.transaction(async (manager) => {
       const locked = await manager.findOne(CustomerProfileEntity, {
-        where: { id, organizationId, deletedAt: IsNull() },
+        where: { id, deletedAt: IsNull() },
         lock: { mode: 'pessimistic_write' },
       });
       if (!locked) {
@@ -450,7 +431,6 @@ export class CustomerService {
 
       const blockers = await this.customerRepository.getCustomerDeleteBlockers(
         id,
-        organizationId,
         manager,
       );
       if (blockers.length > 0) {
@@ -461,16 +441,14 @@ export class CustomerService {
         .getRepository(CustomerPropertyEntity)
         .createQueryBuilder('property')
         .where('property.customerId = :customerId', { customerId: id })
-        .andWhere('property.organizationId = :organizationId', { organizationId })
         .withDeleted()
         .getMany();
 
-      fileUrls = await this.collectCustomerPropertyFileUrls(properties, organizationId);
+      fileUrls = await this.collectCustomerPropertyFileUrls(properties);
 
       const propertyIds = properties.map((property) => property.id);
       if (propertyIds.length > 0) {
         await manager.delete(DocumentEntity, {
-          organizationId,
           propertyId: In(propertyIds),
         });
       }
@@ -480,11 +458,10 @@ export class CustomerService {
         .delete()
         .from(QuoteEntity)
         .where('customer_id = :customerId', { customerId: id })
-        .andWhere('organization_id = :organizationId', { organizationId })
         .andWhere('deleted_at IS NOT NULL')
         .execute();
 
-      const deleted = await this.customerRepository.hardDelete(id, organizationId, manager);
+      const deleted = await this.customerRepository.hardDelete(id, manager);
       if (!deleted) {
         throw new NotFoundException(`Customer with ID '${id}' not found`);
       }
@@ -497,7 +474,6 @@ export class CustomerService {
 
   private async collectCustomerPropertyFileUrls(
     properties: CustomerPropertyEntity[],
-    organizationId: string,
   ): Promise<string[]> {
     const urls = new Set<string>();
 
@@ -513,7 +489,7 @@ export class CustomerService {
     }
 
     const documents = await this.dataSource.getRepository(DocumentEntity).find({
-      where: { propertyId: In(propertyIds), organizationId },
+      where: { propertyId: In(propertyIds) },
       select: ['fileUrl'],
     });
     for (const doc of documents) {
@@ -540,8 +516,8 @@ export class CustomerService {
   /**
    * Get customer statistics by status (optimized single query)
    */
-  async getStatusStatistics(organizationId: string): Promise<Record<string, number>> {
-    const stats = await this.customerRepository.getStatusStats(organizationId);
+  async getStatusStatistics(): Promise<Record<string, number>> {
+    const stats = await this.customerRepository.getStatusStats();
 
     // Initialize all statuses with 0
     const result: Record<string, number> = {
@@ -563,20 +539,18 @@ export class CustomerService {
    * Search customers by query string
    * Searches across name, phone, email, and city
    *
-   * @param organizationId - Organization to search in
    * @param query - Search query string
    * @param createdBy - Optional: filter by creator ID (for field workers)
    * @param page - Page number
    * @param limit - Items per page
    */
   async search(
-    organizationId: string,
     query: string,
     createdBy?: string,
     page = 1,
     limit = 20,
   ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
-    this.logger.log(`Searching customers: query="${query}", org=${organizationId}`);
+    this.logger.log(`Searching customers: query="${query}", org=`);
 
     // Return empty results for empty or very short queries
     if (!query || query.trim().length < 2) {
@@ -584,7 +558,6 @@ export class CustomerService {
     }
 
     const [data, total] = await this.customerRepository.search(
-      organizationId,
       query.trim(),
       createdBy,
       page,
@@ -600,7 +573,6 @@ export class CustomerService {
    * Queries customer_profiles (org-scoped). Normalizes phone (E.164) and email (lowercase).
    */
   async checkAvailability(
-    organizationId: string,
     phone?: string,
     email?: string,
     excludeCustomerId?: string,
@@ -613,7 +585,7 @@ export class CustomerService {
     const normalizedEmail = email ? normalizeEmail(email) : undefined;
 
     this.logger.log(
-      `Checking availability: phone=${normalizedPhone ?? 'N/A'}, email=${normalizedEmail ?? 'N/A'}, org=${organizationId}`,
+      `Checking availability: phone=${normalizedPhone ?? 'N/A'}, email=${normalizedEmail ?? 'N/A'}, org=`,
     );
 
     const result: AvailabilityResponseDto = {
@@ -623,7 +595,6 @@ export class CustomerService {
 
     if (normalizedPhone) {
       const existingByPhone = await this.customerRepository.findOneByPhone(
-        organizationId,
         normalizedPhone,
       );
       if (existingByPhone && existingByPhone.id !== excludeCustomerId) {
@@ -634,7 +605,6 @@ export class CustomerService {
 
     if (normalizedEmail) {
       const existingByEmail = await this.customerRepository.findByEmail(
-        organizationId,
         normalizedEmail,
       );
       if (existingByEmail && existingByEmail.id !== excludeCustomerId) {
@@ -656,13 +626,12 @@ export class CustomerService {
    */
   async assignCustomer(
     id: string,
-    organizationId: string,
     assigneeId: string | null,
     updatedBy?: string,
   ): Promise<CustomerProfileEntity> {
     this.logger.log(`Assigning customer ${id} to user ${assigneeId ?? 'null (unassign)'}`);
 
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     if (assigneeId !== null) {
       // Validate assignee user exists
@@ -674,7 +643,6 @@ export class CustomerService {
       // Validate assignee has an employee profile in the same organization (cross-org guard)
       const employeeProfile = await this.employeeProfileRepository.findByUserAndOrganization(
         assigneeId,
-        organizationId,
       );
       if (!employeeProfile) {
         throw new BadRequestException(`User '${assigneeId}' does not belong to this organization`);
@@ -704,11 +672,10 @@ export class CustomerService {
 
   /** Guard against duplicate phone/email within an org's customer_profiles */
   private async guardOrgDuplicates(
-    organizationId: string,
     phone: string,
     email?: string,
   ): Promise<void> {
-    const existingByPhone = await this.customerRepository.findOneByPhone(organizationId, phone);
+    const existingByPhone = await this.customerRepository.findOneByPhone(phone);
     if (existingByPhone) {
       throw new ConflictException(
         `A customer with phone '${phone}' already exists in this organization`,
@@ -716,7 +683,7 @@ export class CustomerService {
     }
 
     if (email) {
-      const existingByEmail = await this.customerRepository.findByEmail(organizationId, email);
+      const existingByEmail = await this.customerRepository.findByEmail(email);
       if (existingByEmail) {
         throw new ConflictException(
           `A customer with email '${email}' already exists in this organization`,
@@ -768,25 +735,20 @@ export class CustomerService {
    * Used by the GET /customers/groups endpoint.
    */
   async getDistinctGroups(
-    organizationId: string,
   ): Promise<{ groupCode: string; groupName: string }[]> {
-    return this.customerRepository.findDistinctGroups(organizationId);
+    return this.customerRepository.findDistinctGroups();
   }
 
   /** Generate and assign a human-readable customer code (non-fatal on failure) */
   private async assignCustomerCode(
     customer: CustomerProfileEntity,
-    organizationId: string,
   ): Promise<void> {
     try {
-      const org = await this.organizationRepository.findOneById(organizationId);
-      if (!org) return;
-
       const customerCode = await generateEntityCode(
         this.customerRepository.repository,
         'customerCode',
         'CUST',
-        org.code,
+        COMPANY.code,
         'customer_code',
       );
       await this.customerRepository.update(customer.id, { customerCode });
@@ -805,7 +767,6 @@ export class CustomerService {
    */
   private async resolveGroupAssignment(
     customer: CustomerProfileEntity,
-    organizationId: string,
     groupCode?: string | null,
     groupName?: string | null,
   ): Promise<void> {
@@ -825,7 +786,7 @@ export class CustomerService {
 
     if (groupCode) {
       // Joining an existing group: validate it exists
-      const exists = await this.customerRepository.groupCodeExists(organizationId, groupCode);
+      const exists = await this.customerRepository.groupCodeExists(groupCode);
       if (!exists) {
         throw new BadRequestException(
           `Group code '${groupCode}' does not exist in this organization`,
@@ -839,7 +800,7 @@ export class CustomerService {
       customer.groupName = groupName ?? undefined;
     } else if (groupName) {
       // Creating a new group: generate a code
-      const newGroupCode = await this.customerRepository.generateGroupCode(organizationId);
+      const newGroupCode = await this.customerRepository.generateGroupCode();
       await this.customerRepository.update(customer.id, {
         groupCode: newGroupCode,
         groupName,

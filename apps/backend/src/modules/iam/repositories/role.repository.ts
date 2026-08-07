@@ -5,7 +5,6 @@ import { IsNull, Repository, SelectQueryBuilder } from 'typeorm';
 import { RoleEntity } from '../entities/role.entity';
 
 export interface RoleListFilters {
-  organizationId?: string;
   search?: string;
   isSystemRole?: boolean;
 }
@@ -23,18 +22,11 @@ export class RoleRepository {
    */
   async findByCodeAndOrganization(
     code: string,
-    organizationId: string | null,
   ): Promise<RoleEntity | null> {
     // For platform roles, organization_id IS NULL
-    if (organizationId === null || organizationId === '') {
-      return this.repository.findOne({
-        where: { code, organizationId: IsNull(), deletedAt: IsNull() },
-        relations: ['rolePermissions', 'rolePermissions.permission'],
-      });
-    }
 
     return this.repository.findOne({
-      where: { code, organizationId, deletedAt: IsNull() },
+      where: { code, deletedAt: IsNull() },
       relations: ['rolePermissions', 'rolePermissions.permission'],
     });
   }
@@ -44,7 +36,7 @@ export class RoleRepository {
    */
   async findPlatformRoleByCode(code: string): Promise<RoleEntity | null> {
     return this.repository.findOne({
-      where: { code, organizationId: IsNull(), deletedAt: IsNull() },
+      where: { code, deletedAt: IsNull() },
       relations: ['rolePermissions', 'rolePermissions.permission'],
     });
   }
@@ -53,12 +45,11 @@ export class RoleRepository {
    * Find all roles for an organization
    */
   async findByOrganization(
-    organizationId: string,
     skip?: number,
     take?: number,
   ): Promise<[RoleEntity[], number]> {
     return this.repository.findAndCount({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       order: { level: 'ASC', name: 'ASC' },
       skip,
       take,
@@ -68,9 +59,9 @@ export class RoleRepository {
   /**
    * Find system roles for an organization
    */
-  async findSystemRoles(organizationId: string): Promise<RoleEntity[]> {
+  async findSystemRoles(): Promise<RoleEntity[]> {
     return this.repository.find({
-      where: { organizationId, isSystemRole: true, deletedAt: IsNull() },
+      where: { isSystemRole: true, deletedAt: IsNull() },
       order: { name: 'ASC' },
     });
   }
@@ -90,13 +81,11 @@ export class RoleRepository {
    */
   async existsByCodeAndOrganization(
     code: string,
-    organizationId: string,
     excludeId?: string,
   ): Promise<boolean> {
     const query = this.repository
       .createQueryBuilder('role')
       .where('role.code = :code', { code })
-      .andWhere('role.organization_id = :organizationId', { organizationId })
       .andWhere('role.deleted_at IS NULL');
 
     if (excludeId) {
@@ -120,9 +109,6 @@ export class RoleRepository {
       .createQueryBuilder('role')
       .where('role.deleted_at IS NULL');
 
-    if (filters?.organizationId) {
-      qb.andWhere('role.organization_id = :orgId', { orgId: filters.organizationId });
-    }
 
     if (filters?.search) {
       qb.andWhere('(role.name ILIKE :search OR role.code ILIKE :search)', {

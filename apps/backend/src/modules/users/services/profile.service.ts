@@ -17,7 +17,6 @@ import { UserRepository } from '../repositories/user.repository';
 
 interface CreateProfileDto {
   userId: string;
-  organizationId: string;
   profileType: UserProfileType;
 
   profileData: Record<string, unknown>;
@@ -34,8 +33,6 @@ interface UserProfileSummary {
   profileCompleted: boolean;
   profiles: {
     type: UserProfileType;
-    organizationId: string;
-    organizationName?: string;
     profileId: string;
   }[];
 }
@@ -83,20 +80,14 @@ export class ProfileService {
     const profiles: UserProfileSummary['profiles'] = [
       ...customerProfiles.map((p) => ({
         type: UserProfileType.CUSTOMER,
-        organizationId: p.organizationId,
-        organizationName: p.organization?.name,
         profileId: p.id,
       })),
       ...resellerProfiles.map((p) => ({
         type: UserProfileType.RESELLER,
-        organizationId: p.organizationId,
-        organizationName: p.organization?.name,
         profileId: p.id,
       })),
       ...employeeProfiles.map((p) => ({
         type: UserProfileType.EMPLOYEE,
-        organizationId: p.organizationId,
-        organizationName: p.organization?.name,
         profileId: p.id,
       })),
     ];
@@ -119,7 +110,7 @@ export class ProfileService {
   async createProfile(
     dto: CreateProfileDto,
   ): Promise<CustomerProfileEntity | EmployeeProfileEntity> {
-    const { userId, organizationId, profileType, profileData, createdBy, roleCode } = dto;
+    const { userId, profileType, profileData, createdBy, roleCode } = dto;
 
     // Verify user exists
     const user = await this.userRepository.findById(userId);
@@ -128,7 +119,7 @@ export class ProfileService {
     }
 
     // Check if profile already exists
-    const existingProfile = await this.getProfile(userId, organizationId, profileType);
+    const existingProfile = await this.getProfile(userId, profileType);
     if (existingProfile) {
       throw new BadRequestException(
         `User already has a ${profileType} profile in this organization`,
@@ -143,36 +134,33 @@ export class ProfileService {
         case UserProfileType.CUSTOMER:
           profile = await this.customerProfileRepository.create({
             userId,
-            organizationId,
             ...profileData,
             createdBy,
           });
           defaultRoleCode = 'customer';
-          this.logger.log(`Created customer profile for user ${userId} in org ${organizationId}`);
+          this.logger.log(`Created customer profile for user ${userId}`);
           break;
 
         case UserProfileType.RESELLER:
           profile = await this.employeeProfileRepository.create({
             userId,
-            organizationId,
             ...profileData,
             profileKind: EmployeeProfileKind.RESELLER,
             createdBy,
           });
           defaultRoleCode = 'reseller';
-          this.logger.log(`Created reseller profile for user ${userId} in org ${organizationId}`);
+          this.logger.log(`Created reseller profile for user ${userId}`);
           break;
 
         case UserProfileType.EMPLOYEE:
           profile = await this.employeeProfileRepository.create({
             userId,
-            organizationId,
             ...profileData,
             profileKind: EmployeeProfileKind.STAFF,
             createdBy,
           });
           defaultRoleCode = 'employee_basic';
-          this.logger.log(`Created employee profile for user ${userId} in org ${organizationId}`);
+          this.logger.log(`Created employee profile for user ${userId}`);
           break;
 
         default:
@@ -203,7 +191,7 @@ export class ProfileService {
 
     // ✅ AUTO-ASSIGN ROLE (use custom roleCode if provided, otherwise use default)
     const finalRoleCode = roleCode || defaultRoleCode;
-    await this.assignDefaultRole(userId, organizationId, finalRoleCode, createdBy);
+    await this.assignDefaultRole(userId, finalRoleCode, createdBy);
 
     // ✅ UPDATE USER: Mark profile as completed
     await this.userRepository.markProfileCompleted(userId);
@@ -217,20 +205,18 @@ export class ProfileService {
    */
   async getProfile(
     userId: string,
-    organizationId: string,
     profileType: UserProfileType,
   ): Promise<CustomerProfileEntity | EmployeeProfileEntity | null> {
     switch (profileType) {
       case UserProfileType.CUSTOMER:
-        return this.customerProfileRepository.findByUserAndOrganization(userId, organizationId);
+        return this.customerProfileRepository.findByUserAndOrganization(userId);
 
       case UserProfileType.RESELLER: {
         // employee_profiles now holds both staff and reseller-kind rows; a
-        // user can only have one row per (userId, organizationId), so filter
+        // user can only have one row per (userId), so filter
         // by profileKind to avoid returning a staff row as a "reseller" profile.
         const profile = await this.employeeProfileRepository.findByUserAndOrganization(
           userId,
-          organizationId,
         );
         return profile?.profileKind === EmployeeProfileKind.RESELLER ? profile : null;
       }
@@ -238,7 +224,6 @@ export class ProfileService {
       case UserProfileType.EMPLOYEE: {
         const profile = await this.employeeProfileRepository.findByUserAndOrganization(
           userId,
-          organizationId,
         );
         return profile?.profileKind === EmployeeProfileKind.STAFF ? profile : null;
       }
@@ -302,10 +287,9 @@ export class ProfileService {
    */
   async hasProfile(
     userId: string,
-    organizationId: string,
     profileType: UserProfileType,
   ): Promise<boolean> {
-    const profile = await this.getProfile(userId, organizationId, profileType);
+    const profile = await this.getProfile(userId, profileType);
     return !!profile;
   }
 
@@ -339,62 +323,48 @@ export class ProfileService {
    * Verify user has access to an organization
    * Throws ForbiddenException if user doesn't have any profile in the organization
    * @param userId - User ID
-   * @param organizationId - Organization ID to check access
    * @param requiredProfileType - Optional: require specific profile type
    */
   async verifyUserHasAccessToOrg(
     userId: string,
-    organizationId: string,
     requiredProfileType?: UserProfileType,
   ): Promise<void> {
     const profileSummary = await this.getUserProfileSummary(userId);
 
     const hasAccess = profileSummary.profiles.some(
       (p) =>
-        p.organizationId === organizationId &&
         (requiredProfileType ? p.type === requiredProfileType : true),
     );
 
     if (!hasAccess) {
       const profileTypeMsg = requiredProfileType ? ` with ${requiredProfileType} profile` : '';
       throw new NotFoundException(
-        `User does not have access to organization ${organizationId}${profileTypeMsg}`,
+        `User does not have access to organization ${profileTypeMsg}`,
       );
     }
 
-    this.logger.debug(`Access verified: User ${userId} has access to org ${organizationId}`);
+    this.logger.debug(`Access verified: User ${userId} has access to org `);
   }
 
-  /**
-   * Get all organizations a user has access to
-   * Returns unique organization IDs across all profile types
-   */
-  async getUserOrganizations(userId: string): Promise<string[]> {
-    const profileSummary = await this.getUserProfileSummary(userId);
-    const uniqueOrgIds = [...new Set(profileSummary.profiles.map((p) => p.organizationId))];
-    return uniqueOrgIds;
-  }
 
   /**
    * Assign default role to user based on profile type
    * Called automatically after profile creation
    * @param userId - User ID
-   * @param organizationId - Organization ID
    * @param roleCode - Role code to assign (e.g., 'customer', 'reseller', 'employee_basic')
    * @param createdBy - User ID of creator (for audit)
    */
   async assignDefaultRole(
     userId: string,
-    organizationId: string,
     roleCode: string,
     createdBy?: string,
   ): Promise<void> {
     try {
-      const role = await this.roleRepository.findByCodeAndOrganization(roleCode, organizationId);
+      const role = await this.roleRepository.findByCodeAndOrganization(roleCode);
 
       if (!role) {
         this.logger.error(
-          `Default role '${roleCode}' not found for org ${organizationId}. ` +
+          `Default role '${roleCode}' not found. ` +
             `Ensure the SeedIAMCoreData migration has run. ` +
             `User ${userId} will have no role until assigned manually.`,
         );
@@ -413,12 +383,11 @@ export class ProfileService {
         userId,
         roleId: role.id,
         role: roleCode,
-        organizationId,
         createdBy: createdBy || userId,
       });
 
       this.logger.log(
-        `Assigned default role '${roleCode}' (${role.id}) to user ${userId} in org ${organizationId}`,
+        `Assigned default role '${roleCode}' (${role.id}) to user ${userId}`,
       );
     } catch (error) {
       this.logger.error(`Failed to assign default role '${roleCode}' to user ${userId}:`, error);

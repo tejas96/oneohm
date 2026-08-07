@@ -33,9 +33,6 @@ export class CustomerPropertyResponseDto {
   @Expose()
   customerId!: string;
 
-  @ApiProperty()
-  @Expose()
-  organizationId!: string;
 
   @ApiPropertyOptional()
   @Expose()

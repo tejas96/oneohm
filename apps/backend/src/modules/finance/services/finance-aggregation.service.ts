@@ -47,7 +47,6 @@ export class FinanceAggregationService {
   // 1. DASHBOARD — single fat endpoint
   // ============================================
   async getDashboard(
-    organizationId: string,
     fromInput?: string,
     toInput?: string,
   ): Promise<DashboardDto> {
@@ -61,12 +60,12 @@ export class FinanceAggregationService {
       topVendorsRows,
       activityRows,
     ] = await Promise.all([
-      this.queryDashboardKpis(organizationId, from, to),
-      this.queryCashFlowMonthly(organizationId),
-      this.querySpendByCategory(organizationId, from, to),
-      this.queryTopCustomersOutstanding(organizationId, 5),
-      this.queryTopVendorsSpend(organizationId, from, to, 5),
-      this.queryRecentActivity(organizationId, 10),
+      this.queryDashboardKpis(from, to),
+      this.queryCashFlowMonthly(),
+      this.querySpendByCategory(from, to),
+      this.queryTopCustomersOutstanding(5),
+      this.queryTopVendorsSpend(from, to, 5),
+      this.queryRecentActivity(10),
     ]);
 
     const revenueInRange = Number(kpisRow.revenueInRange ?? 0);
@@ -119,14 +118,13 @@ export class FinanceAggregationService {
   // 2. RECEIPTS LEDGER (org-wide, paginated)
   // ============================================
   async getReceipts(
-    organizationId: string,
     query: ReceiptsQueryDto,
   ): Promise<PaginatedResponse<ReceiptListItemDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
     const offset = (page - 1) * limit;
 
-    const params: unknown[] = [organizationId];
+    const params: unknown[] = [];
     let where = ` p.organization_id = $1 AND p.deleted_at IS NULL `;
 
     if (query.status) {
@@ -226,14 +224,13 @@ export class FinanceAggregationService {
   // 3. EXPENSES LEDGER (org-wide, paginated)
   // ============================================
   async getExpenses(
-    organizationId: string,
     query: ExpensesQueryDto,
   ): Promise<PaginatedResponse<ExpenseListItemDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
     const offset = (page - 1) * limit;
 
-    const params: unknown[] = [organizationId];
+    const params: unknown[] = [];
     let where = ` e.organization_id = $1 AND e.deleted_at IS NULL `;
 
     if (query.category) {
@@ -315,14 +312,13 @@ export class FinanceAggregationService {
   // 4. OUTSTANDING — org-wide unpaid payment terms
   // ============================================
   async getOutstanding(
-    organizationId: string,
     query: OutstandingQueryDto,
   ): Promise<PaginatedResponse<OutstandingTermDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
     const offset = (page - 1) * limit;
 
-    const params: unknown[] = [organizationId];
+    const params: unknown[] = [];
     let where = `
       t.organization_id = $1
       AND t.deleted_at IS NULL
@@ -445,7 +441,6 @@ export class FinanceAggregationService {
   // 5. CUSTOMERS AR — per-customer aging buckets
   // ============================================
   async getCustomersAr(
-    organizationId: string,
     query: CustomersArQueryDto,
   ): Promise<CustomerAgingDto[]> {
     const asOf = query.asOfDate ?? this.todayLocal();
@@ -500,7 +495,7 @@ export class FinanceAggregationService {
       GROUP BY c.id, c.first_name, c.last_name, c.phone, c.email, lr.last_at
       ORDER BY "totalOutstanding" DESC
     `;
-    const rows = await this.dataSource.query<RawCustomerAgingRow[]>(sql, [organizationId, asOf]);
+    const rows = await this.dataSource.query<RawCustomerAgingRow[]>(sql, [asOf]);
 
     return rows.map((r) => ({
       customerId: r.customerId,
@@ -522,11 +517,10 @@ export class FinanceAggregationService {
   // 6. VENDORS SPEND — per-vendor analytics
   // ============================================
   async getVendorsSpend(
-    organizationId: string,
     query: VendorsSpendQueryDto,
   ): Promise<VendorSpendDto[]> {
     const { from, to } = this.resolveDateRange(query.from, query.to);
-    const params: unknown[] = [organizationId, from, to];
+    const params: unknown[] = [from, to];
     let categoryFilter = '';
     if (query.category) {
       params.push(query.category);
@@ -614,7 +608,6 @@ export class FinanceAggregationService {
   // 7. PROJECT PROFITABILITY
   // ============================================
   async getProfitability(
-    organizationId: string,
     query: ProfitabilityQueryDto,
   ): Promise<PaginatedResponse<ProjectProfitabilityDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
@@ -624,7 +617,7 @@ export class FinanceAggregationService {
     // Profitability = lifetime metric. Quoted revenue is always the latest
     // quote, and received/spend are all-time totals so the comparison is
     // apples-to-apples. (See ProfitabilityQueryDto comment.)
-    const params: unknown[] = [organizationId];
+    const params: unknown[] = [];
 
     const countSql = `
       SELECT COUNT(*)::int AS total
@@ -635,7 +628,7 @@ export class FinanceAggregationService {
           WHERE cp.id = p.property_id AND cp.organization_id = $1
         )
     `;
-    const countRows = await this.dataSource.query<{ total: number }[]>(countSql, [organizationId]);
+    const countRows = await this.dataSource.query<{ total: number }[]>(countSql, []);
     const total = Number(countRows[0]?.total ?? 0);
 
     const dataParams = [...params, limit, offset];
@@ -727,7 +720,6 @@ export class FinanceAggregationService {
    *  - avgDaysToCollect : avg(first_receipt.created_at - term.due_date) trailing 90d
    */
   private async queryDashboardKpis(
-    organizationId: string,
     from: string,
     to: string,
   ): Promise<RawKpiRow> {
@@ -792,7 +784,7 @@ export class FinanceAggregationService {
         COALESCE(collection.avg_days, 0) AS "avgDaysToCollect"
       FROM revenue, spend, outstanding, collection
     `;
-    const rows = await this.dataSource.query<RawKpiRow[]>(sql, [organizationId, from, to]);
+    const rows = await this.dataSource.query<RawKpiRow[]>(sql, [from, to]);
     return (
       rows[0] ?? {
         revenueInRange: 0,
@@ -805,7 +797,7 @@ export class FinanceAggregationService {
   }
 
   /** Last 12 calendar months including current. */
-  private async queryCashFlowMonthly(organizationId: string): Promise<RawCashFlowRow[]> {
+  private async queryCashFlowMonthly(): Promise<RawCashFlowRow[]> {
     const sql = `
       WITH months AS (
         SELECT TO_CHAR(d, 'YYYY-MM') AS month, d::date AS first_day
@@ -843,11 +835,10 @@ export class FinanceAggregationService {
       LEFT JOIN cash_out ON cash_out.month = m.month
       ORDER BY m.month ASC
     `;
-    return this.dataSource.query<RawCashFlowRow[]>(sql, [organizationId]);
+    return this.dataSource.query<RawCashFlowRow[]>(sql, []);
   }
 
   private async querySpendByCategory(
-    organizationId: string,
     from: string,
     to: string,
   ): Promise<RawSpendByCategoryRow[]> {
@@ -860,11 +851,10 @@ export class FinanceAggregationService {
       GROUP BY e.category
       ORDER BY total DESC
     `;
-    return this.dataSource.query<RawSpendByCategoryRow[]>(sql, [organizationId, from, to]);
+    return this.dataSource.query<RawSpendByCategoryRow[]>(sql, [from, to]);
   }
 
   private async queryTopCustomersOutstanding(
-    organizationId: string,
     limit: number,
   ): Promise<RawTopCustomerRow[]> {
     const sql = `
@@ -884,11 +874,10 @@ export class FinanceAggregationService {
       ORDER BY outstanding DESC
       LIMIT $2
     `;
-    return this.dataSource.query<RawTopCustomerRow[]>(sql, [organizationId, limit]);
+    return this.dataSource.query<RawTopCustomerRow[]>(sql, [limit]);
   }
 
   private async queryTopVendorsSpend(
-    organizationId: string,
     from: string,
     to: string,
     limit: number,
@@ -908,11 +897,10 @@ export class FinanceAggregationService {
       ORDER BY "totalSpend" DESC
       LIMIT $4
     `;
-    return this.dataSource.query<RawTopVendorRow[]>(sql, [organizationId, from, to, limit]);
+    return this.dataSource.query<RawTopVendorRow[]>(sql, [from, to, limit]);
   }
 
   private async queryRecentActivity(
-    organizationId: string,
     limit: number,
   ): Promise<RawActivityRow[]> {
     const sql = `
@@ -950,7 +938,7 @@ export class FinanceAggregationService {
       ORDER BY at DESC
       LIMIT $2
     `;
-    return this.dataSource.query<RawActivityRow[]>(sql, [organizationId, limit]);
+    return this.dataSource.query<RawActivityRow[]>(sql, [limit]);
   }
 
   // ============================================

@@ -108,13 +108,12 @@ export class ProjectMaintenanceConfigService {
    * Find configs by organization
    */
   async findByOrganization(
-    organizationId: string,
     includeRelations: boolean = false,
   ): Promise<MaintenanceConfigResponseDto[]> {
     const relations = includeRelations
       ? ['organization', 'project', 'createdByUser', 'updatedByUser']
       : [];
-    const configs = await this.maintenanceConfigRepository.findByOrganization(organizationId, {
+    const configs = await this.maintenanceConfigRepository.findByOrganization({
       relations,
     });
 

@@ -36,11 +36,10 @@ export class ProjectExpenseRepository {
 
   async findById(
     id: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<ProjectExpenseEntity | null> {
     return this.repo(manager).findOne({
-      where: { id, organizationId, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull() },
       relations: ['productLinks'],
     });
   }
@@ -53,14 +52,12 @@ export class ProjectExpenseRepository {
   async findByIdForUpdate(
     manager: EntityManager,
     id: string,
-    organizationId: string,
   ): Promise<ProjectExpenseEntity | null> {
     const expense = await manager
       .getRepository(ProjectExpenseEntity)
       .createQueryBuilder('e')
       .setLock('pessimistic_write')
       .where('e.id = :id', { id })
-      .andWhere('e.organization_id = :organizationId', { organizationId })
       .andWhere('e.deleted_at IS NULL')
       .getOne();
     if (!expense) return null;
@@ -75,7 +72,6 @@ export class ProjectExpenseRepository {
 
   async list(
     projectId: string,
-    organizationId: string,
     filters: ListExpensesFilters,
   ): Promise<{ data: ProjectExpenseEntity[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, filters.page ?? 1);
@@ -85,7 +81,6 @@ export class ProjectExpenseRepository {
       .createQueryBuilder('e')
       .leftJoinAndSelect('e.productLinks', 'links')
       .where('e.project_id = :projectId', { projectId })
-      .andWhere('e.organization_id = :organizationId', { organizationId })
       .andWhere('e.deleted_at IS NULL');
 
     if (filters.category) qb.andWhere('e.category = :category', { category: filters.category });
@@ -119,7 +114,6 @@ export class ProjectExpenseRepository {
    */
   async aggregateForProject(
     projectId: string,
-    organizationId: string,
   ): Promise<{
     total: number;
     byCategory: Array<{ category: ExpenseCategory; amount: number; count: number }>;
@@ -131,7 +125,7 @@ export class ProjectExpenseRepository {
         WHERE project_id = $1
           AND organization_id = $2
           AND deleted_at IS NULL`,
-      [projectId, organizationId],
+      [projectId],
     );
 
     const byCatRows = await this.dataSource.query(
@@ -144,7 +138,7 @@ export class ProjectExpenseRepository {
           AND deleted_at IS NULL
         GROUP BY category
         ORDER BY amount DESC`,
-      [projectId, organizationId],
+      [projectId],
     );
 
     const pendingRows = await this.dataSource.query(
@@ -155,7 +149,7 @@ export class ProjectExpenseRepository {
           AND deleted_at IS NULL
           AND paid_by = 'employee'
           AND reimbursement_status = 'pending'`,
-      [projectId, organizationId],
+      [projectId],
     );
 
     return {
@@ -176,7 +170,6 @@ export class ProjectExpenseRepository {
    */
   async sumSpentQuantitiesByProduct(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<Map<string, number>> {
     const rows = await (manager ?? this.dataSource).query(
@@ -189,7 +182,7 @@ export class ProjectExpenseRepository {
           AND pe.deleted_at IS NULL
           AND epl.product_id IS NOT NULL
         GROUP BY epl.product_id`,
-      [projectId, organizationId],
+      [projectId],
     );
     const out = new Map<string, number>();
     for (const r of rows) out.set(r.product_id, Number(r.spent));

@@ -8,9 +8,6 @@ export class ReturnRequestResponseDto {
   @ApiProperty()
   id!: string;
 
-  @Expose()
-  @ApiProperty()
-  organizationId!: string;
 
   @Expose()
   @ApiProperty()

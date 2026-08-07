@@ -21,7 +21,6 @@ export class InvitationRepository {
   async create(data: {
     email: string;
     token: string;
-    organizationId: string;
     roleId: string;
     expiresAt: Date;
     invitedBy?: string;
@@ -49,9 +48,6 @@ export class InvitationRepository {
     filters?: { organizationId?: string; status?: InvitationStatus },
   ): Promise<[InvitationEntity[], number]> {
     const where: Record<string, unknown> = {};
-    if (filters?.organizationId) {
-      where.organizationId = filters.organizationId;
-    }
     if (filters?.status) {
       where.status = filters.status;
     }
@@ -80,12 +76,10 @@ export class InvitationRepository {
    */
   async findByEmailAndOrganization(
     email: string,
-    organizationId: string,
   ): Promise<InvitationEntity | null> {
     return this.repository.findOne({
       where: {
         email,
-        organizationId,
         status: InvitationStatus.PENDING,
       },
       relations: ['organization', 'role'],
@@ -96,10 +90,9 @@ export class InvitationRepository {
    * Find all invitations for an organization
    */
   async findByOrganization(
-    organizationId: string,
     status?: InvitationStatus,
   ): Promise<InvitationEntity[]> {
-    const where: Record<string, unknown> = { organizationId };
+    const where: Record<string, unknown> = {};
     if (status) {
       where.status = status;
     }
@@ -165,11 +158,10 @@ export class InvitationRepository {
   /**
    * Cancel pending invitations for email and org (before creating new one)
    */
-  async cancelPendingInvitations(email: string, organizationId: string): Promise<void> {
+  async cancelPendingInvitations(email: string): Promise<void> {
     await this.repository.update(
       {
         email,
-        organizationId,
         status: InvitationStatus.PENDING,
       },
       {

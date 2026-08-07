@@ -17,22 +17,20 @@ export class SavedViewRepository {
    * most-recently-updated first so the bar reflects recent activity.
    */
   async findForUser(
-    organizationId: string,
     userId: string,
     resource: SavedViewResource,
   ): Promise<SavedViewEntity[]> {
     return this.repository.find({
-      where: { organizationId, userId, resource },
+      where: { userId, resource },
       order: { updatedAt: 'DESC' },
     });
   }
 
   async countForUser(
-    organizationId: string,
     userId: string,
     resource: SavedViewResource,
   ): Promise<number> {
-    return this.repository.count({ where: { organizationId, userId, resource } });
+    return this.repository.count({ where: { userId, resource } });
   }
 
   /**
@@ -42,20 +40,18 @@ export class SavedViewRepository {
    */
   async findOneScoped(
     id: string,
-    organizationId: string,
     userId: string,
   ): Promise<SavedViewEntity | null> {
-    return this.repository.findOne({ where: { id, organizationId, userId } });
+    return this.repository.findOne({ where: { id, userId } });
   }
 
   async findByName(
-    organizationId: string,
     userId: string,
     resource: SavedViewResource,
     name: string,
   ): Promise<SavedViewEntity | null> {
     return this.repository.findOne({
-      where: { organizationId, userId, resource, name },
+      where: { userId, resource, name },
     });
   }
 
@@ -68,8 +64,8 @@ export class SavedViewRepository {
     return this.repository.save(entity);
   }
 
-  async deleteScoped(id: string, organizationId: string, userId: string): Promise<boolean> {
-    const result = await this.repository.delete({ id, organizationId, userId });
+  async deleteScoped(id: string, userId: string): Promise<boolean> {
+    const result = await this.repository.delete({ id, userId });
     return (result.affected ?? 0) > 0;
   }
 }

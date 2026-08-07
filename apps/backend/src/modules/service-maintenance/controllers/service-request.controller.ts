@@ -144,9 +144,8 @@ export class ServiceRequestController {
     description: 'Statistics retrieved successfully',
   })
   async getStatistics(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
   ): Promise<Record<string, unknown>> {
-    return this.serviceRequestService.getStatistics(organizationId);
+    return this.serviceRequestService.getStatistics();
   }
 
   @Get('average-rating')

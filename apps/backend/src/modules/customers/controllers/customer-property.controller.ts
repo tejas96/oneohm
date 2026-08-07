@@ -24,7 +24,6 @@ import {
 } from '@nestjs/swagger';
 import { LeadTemperature, type PaginatedResponse } from '@tejas96/shared/types';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { toDto, toDtoArray, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -75,10 +74,9 @@ export class CustomerPropertyController {
   @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Consumer number already exists' })
   async create(
     @Body() createDto: CreateCustomerPropertyDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
-    const property = await this.propertyService.create(organizationId, createDto, currentUser.id);
+    const property = await this.propertyService.create(createDto, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
 
@@ -101,7 +99,6 @@ export class CustomerPropertyController {
     type: [CustomerPropertyResponseDto],
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query() query: PropertyQueryDto,
   ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
@@ -110,7 +107,7 @@ export class CustomerPropertyController {
       query.createdBy = currentUser.id;
     }
 
-    const result = await this.propertyService.findAll(organizationId, query);
+    const result = await this.propertyService.findAll(query);
     return toPaginatedResponse(
       CustomerPropertyResponseDto,
       result.data,
@@ -135,10 +132,9 @@ export class CustomerPropertyController {
     type: [CustomerPropertyResponseDto],
   })
   async findMyProperties(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto[]> {
-    const properties = await this.propertyService.findMyProperties(currentUser.id, organizationId);
+    const properties = await this.propertyService.findMyProperties(currentUser.id);
     return toDtoArray(CustomerPropertyResponseDto, properties);
   }
 
@@ -159,9 +155,8 @@ export class CustomerPropertyController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Customer not found' })
   async findByCustomer(
     @Param('customerId', ParseUUIDPipe) customerId: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<CustomerPropertyResponseDto[]> {
-    const properties = await this.propertyService.findByCustomer(customerId, organizationId);
+    const properties = await this.propertyService.findByCustomer(customerId);
     return toDtoArray(CustomerPropertyResponseDto, properties);
   }
 
@@ -199,12 +194,10 @@ export class CustomerPropertyController {
   })
   async findByTemperature(
     @Param('temperature') temperature: LeadTemperature,
-    @OrganizationContext() organizationId: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
     const result = await this.propertyService.findByTemperature(
-      organizationId,
       temperature,
       page,
       limit,
@@ -235,9 +228,8 @@ export class CustomerPropertyController {
     },
   })
   async getTemperatureStatistics(
-    @OrganizationContext() organizationId: string,
   ): Promise<Record<string, number>> {
-    return this.propertyService.getTemperatureStatistics(organizationId);
+    return this.propertyService.getTemperatureStatistics();
   }
 
   /**
@@ -257,9 +249,8 @@ export class CustomerPropertyController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<CustomerPropertyResponseDto> {
-    const property = await this.propertyService.findById(id, organizationId);
+    const property = await this.propertyService.findById(id);
     return toDto(CustomerPropertyResponseDto, property);
   }
 
@@ -282,12 +273,10 @@ export class CustomerPropertyController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateCustomerPropertyDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
     const property = await this.propertyService.update(
       id,
-      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -326,12 +315,10 @@ export class CustomerPropertyController {
   async updateTemperature(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('temperature') temperature: LeadTemperature,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
     const property = await this.propertyService.updateTemperature(
       id,
-      organizationId,
       temperature,
       currentUser.id,
     );
@@ -357,10 +344,9 @@ export class CustomerPropertyController {
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Property is already primary' })
   async setPrimary(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
-    const property = await this.propertyService.setPrimary(id, organizationId, currentUser.id);
+    const property = await this.propertyService.setPrimary(id, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
 
@@ -383,10 +369,9 @@ export class CustomerPropertyController {
   @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Property cannot be deleted' })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.propertyService.delete(id, organizationId, currentUser.id);
+    await this.propertyService.delete(id, currentUser.id);
   }
 
   // ==================== DOCUMENT NESTED ROUTES ====================
@@ -410,12 +395,10 @@ export class CustomerPropertyController {
   async addDocument(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() document: PropertyDocumentDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
     const property = await this.propertyService.addDocument(
       id,
-      organizationId,
       document,
       currentUser.id,
     );
@@ -448,13 +431,11 @@ export class CustomerPropertyController {
   async removeDocument(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('encodedUrl') encodedUrl: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
     const url = Buffer.from(encodedUrl, 'base64').toString('utf-8');
     const property = await this.propertyService.removeDocument(
       id,
-      organizationId,
       url,
       currentUser.id,
     );
@@ -470,12 +451,10 @@ export class CustomerPropertyController {
   @ApiResponse({ status: HttpStatus.OK, type: CustomerPropertyResponseDto })
   async completeVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
     const updated = await this.propertyService.completeVisit(
       propertyId,
-      organizationId,
       currentUser.id,
     );
     return toDto(CustomerPropertyResponseDto, updated);
@@ -488,12 +467,10 @@ export class CustomerPropertyController {
   @ApiResponse({ status: HttpStatus.OK, type: CustomerPropertyResponseDto })
   async completeSurvey(
     @Param('id', ParseUUIDPipe) propertyId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
     const updated = await this.propertyService.completeSurvey(
       propertyId,
-      organizationId,
       currentUser.id,
     );
     return toDto(CustomerPropertyResponseDto, updated);
@@ -506,12 +483,10 @@ export class CustomerPropertyController {
   @ApiResponse({ status: HttpStatus.OK, type: CustomerPropertyResponseDto })
   async cancelSiteActivity(
     @Param('id', ParseUUIDPipe) propertyId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
     const updated = await this.propertyService.cancelSiteActivity(
       propertyId,
-      organizationId,
       currentUser.id,
     );
     return toDto(CustomerPropertyResponseDto, updated);

@@ -86,13 +86,12 @@ export class ApprovalHistoryRepository {
   /**
    * Get recent actions
    */
-  async getRecentActions(organizationId: string, limit = 10): Promise<ApprovalHistoryEntity[]> {
+  async getRecentActions(limit = 10): Promise<ApprovalHistoryEntity[]> {
     return this.repository
       .createQueryBuilder('history')
       .leftJoinAndSelect('history.approvalRequest', 'request')
       .leftJoinAndSelect('history.actedByUser', 'user')
       .leftJoinAndSelect('history.stage', 'stage')
-      .where('request.organization_id = :organizationId', { organizationId })
       .orderBy('history.acted_at', 'DESC')
       .limit(limit)
       .getMany();

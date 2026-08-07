@@ -4,7 +4,6 @@ import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../common/utils';
 import { CustomerResponseDto } from '../../customers/dto/customer-response.dto';
-import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 
 /**
@@ -36,9 +35,6 @@ export class ServiceRequestResponseDto {
   @Expose()
   id: string;
 
-  @ApiProperty({ description: 'Organization ID', example: '123e4567-e89b-12d3-a456-426614174001' })
-  @Expose()
-  organizationId: string;
 
   @ApiProperty({ description: 'Project ID', example: '123e4567-e89b-12d3-a456-426614174002' })
   @Expose()
@@ -171,10 +167,7 @@ export class ServiceRequestResponseDto {
   updatedBy?: string;
 
   // Relations
-  @ApiPropertyOptional({ description: 'Organization details', type: OrganizationResponseDto })
   @Expose()
-  @Type(() => OrganizationResponseDto)
-  organization?: OrganizationResponseDto;
 
   @ApiPropertyOptional({ description: 'Customer details', type: CustomerResponseDto })
   @Expose()

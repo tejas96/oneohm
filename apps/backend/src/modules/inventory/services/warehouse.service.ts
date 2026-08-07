@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { WarehouseStatus, WarehouseType } from '@tejas96/shared/types';
 
-import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateWarehouseDto, UpdateWarehouseDto } from '../dto';
 import { WarehouseEntity } from '../entities/warehouse.entity';
 import { InventoryStockRepository, WarehouseRepository } from '../repositories';
@@ -14,7 +13,6 @@ import { InventoryStockRepository, WarehouseRepository } from '../repositories';
 export class WarehouseService {
   constructor(
     private readonly warehouseRepository: WarehouseRepository,
-    private readonly organizationRepository: OrganizationRepository,
     private readonly inventoryStockRepository: InventoryStockRepository,
   ) {}
 
@@ -22,20 +20,14 @@ export class WarehouseService {
    * Create a new warehouse
    */
   async create(
-    organizationId: string,
     createDto: CreateWarehouseDto,
     createdBy: string,
   ): Promise<WarehouseEntity> {
     // Verify organization exists
-    const org = await this.organizationRepository.findOneById(organizationId);
-    if (!org) {
-      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
-    }
 
     // Check if code already exists
     const existingWarehouse = await this.warehouseRepository.findByCode(
       createDto.code,
-      organizationId,
     );
 
     if (existingWarehouse) {
@@ -44,7 +36,6 @@ export class WarehouseService {
 
     // Create warehouse
     const warehouse = await this.warehouseRepository.create({
-      organizationId,
       name: createDto.name,
       code: createDto.code,
       address: createDto.address,
@@ -62,14 +53,13 @@ export class WarehouseService {
       createdBy,
     });
 
-    return this.warehouseRepository.findById(warehouse.id, organizationId);
+    return this.warehouseRepository.findById(warehouse.id);
   }
 
   /**
    * Find all warehouses with filters
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -79,14 +69,14 @@ export class WarehouseService {
       search?: string;
     },
   ) {
-    return this.warehouseRepository.findAll(organizationId, page, limit, filters);
+    return this.warehouseRepository.findAll(page, limit, filters);
   }
 
   /**
    * Find warehouse by ID
    */
-  async findById(id: string, organizationId: string): Promise<WarehouseEntity> {
-    return this.warehouseRepository.findById(id, organizationId);
+  async findById(id: string): Promise<WarehouseEntity> {
+    return this.warehouseRepository.findById(id);
   }
 
   /**
@@ -94,7 +84,6 @@ export class WarehouseService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateWarehouseDto,
     updatedBy: string,
   ): Promise<WarehouseEntity> {
@@ -102,7 +91,6 @@ export class WarehouseService {
     if (updateDto.code) {
       const existingWarehouse = await this.warehouseRepository.findByCode(
         updateDto.code,
-        organizationId,
       );
 
       if (existingWarehouse && existingWarehouse.id !== id) {
@@ -111,7 +99,7 @@ export class WarehouseService {
     }
 
     // Update warehouse
-    return this.warehouseRepository.update(id, organizationId, {
+    return this.warehouseRepository.update(id, {
       ...updateDto,
       updatedBy,
     });
@@ -120,19 +108,19 @@ export class WarehouseService {
   /**
    * Delete warehouse (soft delete)
    */
-  async delete(id: string, organizationId: string, deletedBy: string): Promise<void> {
+  async delete(id: string, deletedBy: string): Promise<void> {
     const hasActive = await this.inventoryStockRepository.hasActiveStock(id);
     if (hasActive) {
       throw new BadRequestException('Cannot delete warehouse with active stock');
     }
-    await this.warehouseRepository.softDelete(id, organizationId, deletedBy);
+    await this.warehouseRepository.softDelete(id, deletedBy);
   }
 
   /**
    * Get warehouse statistics
    */
-  async getStatistics(organizationId: string) {
-    const countByStatus = await this.warehouseRepository.countByStatus(organizationId);
+  async getStatistics() {
+    const countByStatus = await this.warehouseRepository.countByStatus();
 
     return {
       total: Object.values(countByStatus).reduce((sum, count) => sum + count, 0),
@@ -143,8 +131,8 @@ export class WarehouseService {
   /**
    * Get active warehouses
    */
-  async getActiveWarehouses(organizationId: string): Promise<WarehouseEntity[]> {
-    return this.warehouseRepository.findByType(organizationId, WarehouseType.OWN);
+  async getActiveWarehouses(): Promise<WarehouseEntity[]> {
+    return this.warehouseRepository.findByType(WarehouseType.OWN);
   }
 
   /**
@@ -152,11 +140,10 @@ export class WarehouseService {
    */
   async changeStatus(
     id: string,
-    organizationId: string,
     status: WarehouseStatus,
     updatedBy: string,
   ): Promise<WarehouseEntity> {
-    return this.warehouseRepository.update(id, organizationId, {
+    return this.warehouseRepository.update(id, {
       status,
       updatedBy,
     });

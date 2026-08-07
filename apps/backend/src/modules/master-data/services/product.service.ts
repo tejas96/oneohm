@@ -25,19 +25,18 @@ export class ProductService {
   ) {}
 
   async create(
-    organizationId: string,
     createDto: CreateProductDto,
     createdBy?: string,
   ): Promise<ProductEntity> {
-    const existing = await this.productRepository.findByCode(createDto.code, organizationId);
+    const existing = await this.productRepository.findByCode(createDto.code);
     if (existing) {
       throw new ConflictException(`Product with code '${createDto.code}' already exists`);
     }
 
-    const preparedDto = await this.prepareMountingStructureDto(organizationId, createDto);
+    const preparedDto = await this.prepareMountingStructureDto(createDto);
 
     try {
-      return await this.productRepository.create(organizationId, {
+      return await this.productRepository.create({
         ...preparedDto,
         status: preparedDto.status ?? ProductStatus.ACTIVE,
         createdBy,
@@ -49,7 +48,6 @@ export class ProductService {
   }
 
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -67,13 +65,12 @@ export class ProductService {
     const resolvedFilters = { ...filters };
 
     if (resolvedFilters.type && !resolvedFilters.productTypeId) {
-      const pt = await this.productTypeRepository.findByCode(resolvedFilters.type, organizationId);
+      const pt = await this.productTypeRepository.findByCode(resolvedFilters.type);
       if (pt) resolvedFilters.productTypeId = pt.id;
       delete resolvedFilters.type;
     }
 
     const result = await this.productRepository.findAll(
-      organizationId,
       page,
       limit,
       resolvedFilters,
@@ -86,8 +83,8 @@ export class ProductService {
     };
   }
 
-  async findById(id: string, organizationId: string): Promise<ProductEntity> {
-    const product = await this.productRepository.findById(id, organizationId);
+  async findById(id: string): Promise<ProductEntity> {
+    const product = await this.productRepository.findById(id);
     if (!product) {
       throw new NotFoundException('Product not found');
     }
@@ -96,28 +93,26 @@ export class ProductService {
 
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateProductDto,
     updatedBy?: string,
   ): Promise<ProductEntity> {
-    const existing = await this.findById(id, organizationId);
+    const existing = await this.findById(id);
 
     if (updateDto.code) {
-      const codeConflict = await this.productRepository.findByCode(updateDto.code, organizationId);
+      const codeConflict = await this.productRepository.findByCode(updateDto.code);
       if (codeConflict && codeConflict.id !== id) {
         throw new ConflictException(`Product with code '${updateDto.code}' already exists`);
       }
     }
 
     const preparedDto = await this.prepareMountingStructureDto(
-      organizationId,
       updateDto,
       existing,
       id,
     );
 
     try {
-      return await this.productRepository.update(id, organizationId, {
+      return await this.productRepository.update(id, {
         ...preparedDto,
         updatedBy,
       });
@@ -129,32 +124,30 @@ export class ProductService {
 
   async updateStatus(
     id: string,
-    organizationId: string,
     status: ProductStatus,
     updatedBy?: string,
   ): Promise<ProductEntity> {
     if (status === ProductStatus.ACTIVE) {
-      const existing = await this.findById(id, organizationId);
-      await this.ensureMountingStructureReadyForActivation(organizationId, existing, id, updatedBy);
+      const existing = await this.findById(id);
+      await this.ensureMountingStructureReadyForActivation(existing, id, updatedBy);
     } else {
-      await this.findById(id, organizationId);
+      await this.findById(id);
     }
 
     try {
-      return await this.productRepository.updateStatus(id, organizationId, status, updatedBy);
+      return await this.productRepository.updateStatus(id, status, updatedBy);
     } catch (error) {
       this.rethrowKnownErrors(error);
       throw error;
     }
   }
 
-  async delete(id: string, organizationId: string): Promise<void> {
-    await this.findById(id, organizationId);
-    await this.productRepository.softDelete(id, organizationId);
+  async delete(id: string): Promise<void> {
+    await this.findById(id);
+    await this.productRepository.softDelete(id);
   }
 
   private async prepareMountingStructureDto(
-    organizationId: string,
     dto: CreateProductDto | UpdateProductDto,
     existing?: ProductEntity,
     excludeProductId?: string,
@@ -162,7 +155,7 @@ export class ProductService {
     const productTypeId = dto.productTypeId ?? existing?.productTypeId;
     if (!productTypeId) return dto;
 
-    const productType = await this.productTypeRepository.findById(productTypeId, organizationId);
+    const productType = await this.productTypeRepository.findById(productTypeId);
     if (productType?.code !== MOUNTING_STRUCTURE_CODE) {
       return dto;
     }
@@ -181,7 +174,6 @@ export class ProductService {
     const nextStatus = dto.status ?? existing?.status ?? ProductStatus.ACTIVE;
     if (nextStatus === ProductStatus.ACTIVE) {
       await this.assertUniqueActiveStructureType(
-        organizationId,
         productTypeId,
         { ...existing, specifications: specs, status: nextStatus } as ProductEntity,
         excludeProductId,
@@ -195,14 +187,12 @@ export class ProductService {
   }
 
   private async ensureMountingStructureReadyForActivation(
-    organizationId: string,
     existing: ProductEntity,
     excludeProductId: string,
     updatedBy?: string,
   ): Promise<ProductEntity> {
     const productType = await this.productTypeRepository.findById(
       existing.productTypeId,
-      organizationId,
     );
     if (productType?.code !== MOUNTING_STRUCTURE_CODE) {
       return existing;
@@ -220,14 +210,13 @@ export class ProductService {
     let nextExisting = existing;
     if (normalized !== rawStructureType) {
       specs[STRUCTURE_TYPE_KEY] = normalized;
-      nextExisting = await this.productRepository.update(excludeProductId, organizationId, {
+      nextExisting = await this.productRepository.update(excludeProductId, {
         specifications: specs,
         updatedBy,
       });
     }
 
     await this.assertUniqueActiveStructureType(
-      organizationId,
       nextExisting.productTypeId,
       { ...nextExisting, status: ProductStatus.ACTIVE },
       excludeProductId,
@@ -237,7 +226,6 @@ export class ProductService {
   }
 
   private async assertUniqueActiveStructureType(
-    organizationId: string,
     productTypeId: string,
     product: Pick<ProductEntity, 'specifications' | 'status'>,
     excludeProductId?: string,
@@ -249,7 +237,6 @@ export class ProductService {
     if (!structureType) return;
 
     const conflict = await this.productRepository.findActiveByStructureType(
-      organizationId,
       productTypeId,
       structureType,
       excludeProductId,

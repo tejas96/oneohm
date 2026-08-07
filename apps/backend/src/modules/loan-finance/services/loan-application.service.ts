@@ -23,13 +23,11 @@ export class LoanApplicationService {
   // ============================================
 
   async create(
-    organizationId: string,
     createDto: CreateLoanApplicationDto,
   ): Promise<LoanApplicationResponseDto> {
     if (createDto.propertyId) {
       const existing = await this.loanApplicationRepository.findByProperty(
         createDto.propertyId,
-        organizationId,
       );
       if (existing) {
         throw new BadRequestException(
@@ -49,12 +47,10 @@ export class LoanApplicationService {
   }
 
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
   ): Promise<{ data: LoanApplicationResponseDto[]; total: number }> {
     const [applications, total] = await this.loanApplicationRepository.findAll(
-      organizationId,
       page,
       limit,
     );
@@ -64,8 +60,8 @@ export class LoanApplicationService {
     return { data, total };
   }
 
-  async findById(organizationId: string, id: string): Promise<LoanApplicationResponseDto> {
-    const application = await this.loanApplicationRepository.findById(id, organizationId);
+  async findById(id: string): Promise<LoanApplicationResponseDto> {
+    const application = await this.loanApplicationRepository.findById(id);
 
     if (!application) {
       throw new NotFoundException(`Loan application with ID ${id} not found`);
@@ -77,11 +73,10 @@ export class LoanApplicationService {
   }
 
   async update(
-    organizationId: string,
     id: string,
     updateDto: UpdateLoanApplicationDto,
   ): Promise<LoanApplicationResponseDto> {
-    const existingApplication = await this.loanApplicationRepository.findById(id, organizationId);
+    const existingApplication = await this.loanApplicationRepository.findById(id);
 
     if (!existingApplication) {
       throw new NotFoundException(`Loan application with ID ${id} not found`);
@@ -99,12 +94,11 @@ export class LoanApplicationService {
   }
 
   async updateStatus(
-    organizationId: string,
     id: string,
     newStatus: LoanStatus,
     updatedBy: string,
   ): Promise<LoanApplicationResponseDto> {
-    const existingApplication = await this.loanApplicationRepository.findById(id, organizationId);
+    const existingApplication = await this.loanApplicationRepository.findById(id);
 
     if (!existingApplication) {
       throw new NotFoundException(`Loan application with ID ${id} not found`);
@@ -126,8 +120,8 @@ export class LoanApplicationService {
     });
   }
 
-  async delete(organizationId: string, id: string): Promise<void> {
-    const application = await this.loanApplicationRepository.findById(id, organizationId);
+  async delete(id: string): Promise<void> {
+    const application = await this.loanApplicationRepository.findById(id);
 
     if (!application) {
       throw new NotFoundException(`Loan application with ID ${id} not found`);
@@ -145,12 +139,10 @@ export class LoanApplicationService {
   // ============================================
 
   async findByProperty(
-    organizationId: string,
     propertyId: string,
   ): Promise<LoanApplicationResponseDto | null> {
     const application = await this.loanApplicationRepository.findByProperty(
       propertyId,
-      organizationId,
     );
     if (!application) {
       return null;
@@ -162,12 +154,10 @@ export class LoanApplicationService {
   }
 
   async findByCustomer(
-    organizationId: string,
     customerId: string,
   ): Promise<LoanApplicationResponseDto[]> {
     const applications = await this.loanApplicationRepository.findByCustomer(
       customerId,
-      organizationId,
     );
     return plainToInstance(LoanApplicationResponseDto, applications, {
       excludeExtraneousValues: true,

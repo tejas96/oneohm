@@ -15,9 +15,9 @@ export class FollowupRepository {
   /**
    * Find followup by ID within organization
    */
-  async findById(id: string, organizationId: string): Promise<FollowupEntity | null> {
+  async findById(id: string): Promise<FollowupEntity | null> {
     return this.repository.findOne({
-      where: { id, organizationId, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull() },
       relations: ['customer', 'property', 'assignedToUser'],
     });
   }
@@ -26,12 +26,11 @@ export class FollowupRepository {
    * Find all followups for an organization with pagination
    */
   async findByOrganization(
-    organizationId: string,
     page = 1,
     limit = 20,
   ): Promise<[FollowupEntity[], number]> {
     return this.repository.findAndCount({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       relations: ['customer', 'property', 'assignedToUser'],
       skip: (page - 1) * limit,
       take: limit,
@@ -43,7 +42,6 @@ export class FollowupRepository {
    * Find followups with filters
    */
   async findWithFilters(
-    organizationId: string,
     filters: {
       status?: FollowupStatus;
       assignedToUserId?: string;
@@ -57,7 +55,6 @@ export class FollowupRepository {
     limit = 20,
   ): Promise<[FollowupEntity[], number]> {
     const where: Record<string, unknown> = {
-      organizationId,
       deletedAt: IsNull(),
     };
 
@@ -97,14 +94,12 @@ export class FollowupRepository {
    * Find followups assigned to a specific user
    */
   async findByAssignedUser(
-    organizationId: string,
     assignedToUserId: string,
     status?: FollowupStatus,
     page = 1,
     limit = 20,
   ): Promise<[FollowupEntity[], number]> {
     const where: Record<string, unknown> = {
-      organizationId,
       assignedToUserId,
       deletedAt: IsNull(),
     };
@@ -126,7 +121,6 @@ export class FollowupRepository {
    * Find today's followups for an organization or user
    */
   async findTodayFollowups(
-    organizationId: string,
     assignedToUserId?: string,
     page = 1,
     limit = 20,
@@ -136,7 +130,6 @@ export class FollowupRepository {
     const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
     const where: Record<string, unknown> = {
-      organizationId,
       scheduledAt: Between(startOfDay, endOfDay),
       status: FollowupStatus.PENDING,
       deletedAt: IsNull(),
@@ -159,7 +152,6 @@ export class FollowupRepository {
    * Find overdue followups (pending and scheduledAt < now)
    */
   async findOverdueFollowups(
-    organizationId: string,
     assignedToUserId?: string,
     page = 1,
     limit = 20,
@@ -167,7 +159,6 @@ export class FollowupRepository {
     const now = new Date();
 
     const where: Record<string, unknown> = {
-      organizationId,
       scheduledAt: LessThan(now),
       status: FollowupStatus.PENDING,
       deletedAt: IsNull(),
@@ -190,13 +181,12 @@ export class FollowupRepository {
    * Find followups by customer
    */
   async findByCustomer(
-    organizationId: string,
     customerId: string,
     page = 1,
     limit = 20,
   ): Promise<[FollowupEntity[], number]> {
     return this.repository.findAndCount({
-      where: { organizationId, customerId, deletedAt: IsNull() },
+      where: { customerId, deletedAt: IsNull() },
       relations: ['property', 'assignedToUser'],
       skip: (page - 1) * limit,
       take: limit,
@@ -208,13 +198,12 @@ export class FollowupRepository {
    * Find followups by property
    */
   async findByProperty(
-    organizationId: string,
     propertyId: string,
     page = 1,
     limit = 20,
   ): Promise<[FollowupEntity[], number]> {
     return this.repository.findAndCount({
-      where: { organizationId, propertyId, deletedAt: IsNull() },
+      where: { propertyId, deletedAt: IsNull() },
       relations: ['customer', 'assignedToUser'],
       skip: (page - 1) * limit,
       take: limit,
@@ -236,12 +225,11 @@ export class FollowupRepository {
    */
   async update(
     id: string,
-    organizationId: string,
     updates: Partial<FollowupEntity>,
   ): Promise<FollowupEntity | null> {
-    await this.repository.update({ id, organizationId }, updates as Record<string, unknown>);
+    await this.repository.update({ id }, updates as Record<string, unknown>);
     return this.repository.findOne({
-      where: { id, organizationId, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull() },
       relations: ['customer', 'property', 'assignedToUser'],
     });
   }

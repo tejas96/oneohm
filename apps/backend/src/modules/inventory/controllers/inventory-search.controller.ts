@@ -1,7 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
 import { PermissionGuard } from '../../iam/guards/permission.guard';
@@ -31,9 +30,8 @@ export class InventorySearchController {
       'Searches products, vendors, warehouses, purchase orders, and material dispatches in parallel. Per-bucket limit 8, per-bucket timeout 2s. Failed/timed-out buckets appear in `degraded` and return empty hits.',
   })
   async search(
-    @OrganizationContext() organizationId: string,
     @Query() query: InventorySearchQueryDto,
   ): Promise<InventorySearchResponse> {
-    return this.inventorySearchService.search(organizationId, query.q, query.types ?? []);
+    return this.inventorySearchService.search(query.q, query.types ?? []);
   }
 }

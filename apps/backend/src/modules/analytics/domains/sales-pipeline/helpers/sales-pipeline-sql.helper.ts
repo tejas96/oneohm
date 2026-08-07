@@ -3,7 +3,6 @@ import { QuoteStatus } from '@tejas96/shared/types';
 import { NEGOTIATION_THRESHOLD_DAYS } from '../constants/sales-pipeline-stages';
 
 export interface SalesPipelineFilterParams {
-  organizationId: string;
   fromDate: string;
   toDate: string;
   salesPersonId?: string;
@@ -35,7 +34,7 @@ export function buildCohortCte(filters: SalesPipelineFilterParams): CohortQueryP
     : '';
   const statusParamIndex = hasSalesPerson ? 5 : 4;
 
-  const params: unknown[] = [filters.organizationId, filters.fromDate, filters.toDate];
+  const params: unknown[] = [filters.fromDate, filters.toDate];
   if (hasSalesPerson) {
     params.push(filters.salesPersonId);
   }

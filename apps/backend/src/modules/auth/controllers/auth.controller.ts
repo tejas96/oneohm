@@ -138,7 +138,6 @@ export class AuthController {
     });
 
     if (primaryProfile) {
-      userDto.organizationId = primaryProfile.organizationId;
     }
 
     return userDto;

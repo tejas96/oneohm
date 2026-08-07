@@ -70,14 +70,13 @@ export class ProjectLedgerService {
 
   async getProjectSummary(
     projectId: string,
-    organizationId: string,
   ): Promise<ProjectLedgerSummary> {
-    const balance = await this.ledgerRepository.getProjectBalance(projectId, organizationId);
+    const balance = await this.ledgerRepository.getProjectBalance(projectId);
     if (!balance) {
       throw new NotFoundException(`Project ${projectId} not found`);
     }
 
-    const milestones = await this.ledgerRepository.getMilestoneBalances(projectId, organizationId);
+    const milestones = await this.ledgerRepository.getMilestoneBalances(projectId);
 
     // Allocations joined to their entries, so each milestone lists the receipts
     // that actually paid it — and how much of each landed here.
@@ -113,7 +112,7 @@ export class ProjectLedgerService {
          AND e.reverses_id IS NULL
          AND a.amount_paise > 0
        ORDER BY e.value_date, e.created_at`,
-      [projectId, organizationId],
+      [projectId],
     );
 
     const byMilestone = new Map<string, ProjectLedgerSummary['terms'][number]['payments']>();

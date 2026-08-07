@@ -13,20 +13,18 @@ export class SubsidyConfigurationService {
   constructor(private readonly subsidyConfigurationRepository: SubsidyConfigurationRepository) {}
 
   async findAll(
-    organizationId: string,
     filters?: { projectType?: ProjectType; isActive?: boolean; search?: string },
   ): Promise<SubsidyConfiguration[]> {
-    return this.subsidyConfigurationRepository.findAll(organizationId, filters);
+    return this.subsidyConfigurationRepository.findAll(filters);
   }
 
-  async findById(id: string, organizationId: string): Promise<SubsidyConfiguration> {
-    const config = await this.subsidyConfigurationRepository.findById(id, organizationId);
+  async findById(id: string): Promise<SubsidyConfiguration> {
+    const config = await this.subsidyConfigurationRepository.findById(id);
     if (!config) throw new NotFoundException('Subsidy configuration not found');
     return config;
   }
 
   async create(
-    organizationId: string,
     dto: CreateSubsidyConfigurationDto,
     createdBy?: string,
   ): Promise<SubsidyConfiguration> {
@@ -37,7 +35,7 @@ export class SubsidyConfigurationService {
     this.validateDateRange(effectiveFrom, effectiveTo);
 
     const tiers = this.normalizeTiers(dto.tiers);
-    return this.subsidyConfigurationRepository.create(organizationId, {
+    return this.subsidyConfigurationRepository.create({
       ...dto,
       tiers,
       effectiveFrom: effectiveFrom ?? undefined,
@@ -48,11 +46,10 @@ export class SubsidyConfigurationService {
 
   async update(
     id: string,
-    organizationId: string,
     dto: UpdateSubsidyConfigurationDto,
     updatedBy?: string,
   ): Promise<SubsidyConfiguration> {
-    const existing = await this.findById(id, organizationId);
+    const existing = await this.findById(id);
 
     const effectiveFrom = dto.effectiveFrom
       ? this.toDate(dto.effectiveFrom, 'effectiveFrom')
@@ -63,7 +60,7 @@ export class SubsidyConfigurationService {
     this.validateDateRange(effectiveFrom, effectiveTo);
 
     const tiers = this.normalizeTiers(dto.tiers);
-    return this.subsidyConfigurationRepository.update(id, organizationId, {
+    return this.subsidyConfigurationRepository.update(id, {
       ...dto,
       tiers,
       effectiveFrom: effectiveFrom ?? undefined,
@@ -72,9 +69,9 @@ export class SubsidyConfigurationService {
     });
   }
 
-  async delete(id: string, organizationId: string): Promise<void> {
-    await this.findById(id, organizationId);
-    await this.subsidyConfigurationRepository.delete(id, organizationId);
+  async delete(id: string): Promise<void> {
+    await this.findById(id);
+    await this.subsidyConfigurationRepository.delete(id);
   }
 
   private validateDateRange(effectiveFrom: Date | null, effectiveTo: Date | null): void {

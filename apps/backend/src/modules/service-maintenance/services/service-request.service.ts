@@ -23,7 +23,6 @@ export class ServiceRequestService {
   async create(createDto: CreateServiceRequestDto): Promise<ServiceRequestResponseDto> {
     // Generate request number
     const requestNumber = await this.serviceRequestRepository.generateRequestNumber(
-      createDto.organizationId,
     );
 
     const request = await this.serviceRequestRepository.create({
@@ -321,9 +320,9 @@ export class ServiceRequestService {
   /**
    * Get statistics for organization
    */
-  async getStatistics(organizationId: string): Promise<Record<string, unknown>> {
+  async getStatistics(): Promise<Record<string, unknown>> {
     const [stats, avgRating, openCount] = await Promise.all([
-      this.serviceRequestRepository.getStatsByOrganization(organizationId),
+      this.serviceRequestRepository.getStatsByOrganization(),
       this.serviceRequestRepository.getAverageRating(),
       this.serviceRequestRepository.countOpen(),
     ]);

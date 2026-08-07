@@ -20,8 +20,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
+  ApiUpdate
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -70,13 +69,11 @@ export class PurchaseOrderController {
       'Returns { succeeded: string[], failed: { id, reason }[] } at HTTP 200. Failures on one id do not roll back the rest.',
   })
   async bulkApprove(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: BulkIdsDto,
   ): Promise<BulkOperationResultDto> {
     return this.inventoryBulkService.approvePurchaseOrders(
       body.ids,
-      organizationId,
       currentUser.id,
     );
   }
@@ -92,13 +89,11 @@ export class PurchaseOrderController {
       'Returns { succeeded: string[], failed: { id, reason }[] } at HTTP 200. Each id is cancelled independently.',
   })
   async bulkCancel(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: BulkCancelDto,
   ): Promise<BulkOperationResultDto> {
     return this.inventoryBulkService.cancelPurchaseOrders(
       body.ids,
-      organizationId,
       body.reason,
       currentUser.id,
     );
@@ -114,7 +109,6 @@ export class PurchaseOrderController {
     description: 'Get PO count by status and pending approvals',
   })
   async getStatistics(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<{
     total: number;
@@ -122,7 +116,7 @@ export class PurchaseOrderController {
     pendingApprovals: number;
     overdueCount: number;
   }> {
-    return this.purchaseOrderService.getStatistics(organizationId);
+    return this.purchaseOrderService.getStatistics();
   }
 
   @RequirePermission('inventory:read')
@@ -132,13 +126,12 @@ export class PurchaseOrderController {
   @ApiQuery({ name: 'toDate', required: false, type: String })
   @ApiQuery({ name: 'bucket', required: false, enum: ['day', 'week'] })
   async statsSpendTrend(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('bucket') bucket?: string,
   ): Promise<TrendResponse> {
-    return this.purchaseOrderStatsService.spendTrend(organizationId, fromDate, toDate, bucket);
+    return this.purchaseOrderStatsService.spendTrend(fromDate, toDate, bucket);
   }
 
   @RequirePermission('inventory:read')
@@ -148,13 +141,12 @@ export class PurchaseOrderController {
   @ApiQuery({ name: 'toDate', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async statsTopVendors(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('limit') limit?: string,
   ): Promise<TopItemsResponse> {
-    return this.purchaseOrderStatsService.topVendors(organizationId, fromDate, toDate, limit);
+    return this.purchaseOrderStatsService.topVendors(fromDate, toDate, limit);
   }
 
   @RequirePermission('inventory:read')
@@ -164,13 +156,12 @@ export class PurchaseOrderController {
   @ApiQuery({ name: 'toDate', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async statsSpendByWarehouse(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('limit') limit?: string,
   ): Promise<TopItemsResponse> {
-    return this.purchaseOrderStatsService.spendByWarehouse(organizationId, fromDate, toDate, limit);
+    return this.purchaseOrderStatsService.spendByWarehouse(fromDate, toDate, limit);
   }
 
   @RequirePermission('inventory:read')
@@ -178,11 +169,10 @@ export class PurchaseOrderController {
   @ApiOperation({ summary: 'Outstanding balance per vendor (now-snapshot)' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async statsOutstandingByVendor(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('limit') limit?: string,
   ): Promise<TopItemsResponse> {
-    return this.purchaseOrderStatsService.outstandingByVendor(organizationId, limit);
+    return this.purchaseOrderStatsService.outstandingByVendor(limit);
   }
 
   /**
@@ -195,10 +185,9 @@ export class PurchaseOrderController {
     description: 'Get list of purchase orders past expected delivery date',
   })
   async getOverdue(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<PurchaseOrderResponseDto[]> {
-    const pos = await this.purchaseOrderService.getOverduePurchaseOrders(organizationId);
+    const pos = await this.purchaseOrderService.getOverduePurchaseOrders();
 
     return plainToInstance(PurchaseOrderResponseDto, pos, {
       excludeExtraneousValues: true,
@@ -218,11 +207,10 @@ export class PurchaseOrderController {
     responseType: PurchaseOrderResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreatePurchaseOrderDto,
   ): Promise<PurchaseOrderResponseDto> {
-    const po = await this.purchaseOrderService.create(organizationId, createDto, currentUser.id);
+    const po = await this.purchaseOrderService.create(createDto, currentUser.id);
 
     return plainToInstance(PurchaseOrderResponseDto, po, {
       excludeExtraneousValues: true,
@@ -250,7 +238,6 @@ export class PurchaseOrderController {
   @ApiQuery({ name: 'toDate', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query() query: Record<string, string>,
     @Query('status') status?: PurchaseOrderStatus,
@@ -267,7 +254,6 @@ export class PurchaseOrderController {
   }> {
     const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
     const { purchaseOrders, total } = await this.purchaseOrderService.findAll(
-      organizationId,
       pageNum,
       limitNum,
       { status, paymentStatus, vendorId, warehouseId, projectId, fromDate, toDate, search },
@@ -299,11 +285,10 @@ export class PurchaseOrderController {
     responseType: PurchaseOrderResponseDto,
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<PurchaseOrderResponseDto> {
-    const po = await this.purchaseOrderService.findById(id, organizationId);
+    const po = await this.purchaseOrderService.findById(id);
 
     return plainToInstance(PurchaseOrderResponseDto, po, {
       excludeExtraneousValues: true,
@@ -321,14 +306,12 @@ export class PurchaseOrderController {
     responseType: PurchaseOrderResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdatePurchaseOrderDto,
   ): Promise<PurchaseOrderResponseDto> {
     const po = await this.purchaseOrderService.update(
       id,
-      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -348,11 +331,10 @@ export class PurchaseOrderController {
     description: 'Soft delete a purchase order (draft only)',
   })
   async delete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.purchaseOrderService.delete(id, organizationId, currentUser.id);
+    await this.purchaseOrderService.delete(id, currentUser.id);
 
     return { message: 'Purchase order deleted successfully' };
   }
@@ -364,13 +346,11 @@ export class PurchaseOrderController {
   @Post(':id/submit')
   @ApiOperation({ summary: 'Submit purchase order for approval' })
   async submitForApproval(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<PurchaseOrderResponseDto> {
     const po = await this.purchaseOrderService.submitForApproval(
       id,
-      organizationId,
       currentUser.id,
     );
 
@@ -386,11 +366,10 @@ export class PurchaseOrderController {
   @Post(':id/approve')
   @ApiOperation({ summary: 'Approve purchase order' })
   async approve(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<PurchaseOrderResponseDto> {
-    const po = await this.purchaseOrderService.approve(id, organizationId, currentUser.id);
+    const po = await this.purchaseOrderService.approve(id, currentUser.id);
 
     return plainToInstance(PurchaseOrderResponseDto, po, {
       excludeExtraneousValues: true,
@@ -404,11 +383,10 @@ export class PurchaseOrderController {
   @Post(':id/send')
   @ApiOperation({ summary: 'Send purchase order to vendor' })
   async send(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<PurchaseOrderResponseDto> {
-    const po = await this.purchaseOrderService.send(id, organizationId, currentUser.id);
+    const po = await this.purchaseOrderService.send(id, currentUser.id);
 
     return plainToInstance(PurchaseOrderResponseDto, po, {
       excludeExtraneousValues: true,
@@ -422,14 +400,12 @@ export class PurchaseOrderController {
   @Post(':id/receive')
   @ApiOperation({ summary: 'Receive purchase order (full or partial)' })
   async receive(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() receiveDto: ReceivePurchaseOrderDto,
   ): Promise<PurchaseOrderResponseDto> {
     const po = await this.purchaseOrderService.receive(
       id,
-      organizationId,
       receiveDto,
       currentUser.id,
     );
@@ -448,14 +424,12 @@ export class PurchaseOrderController {
   @Post(':id/record-payment')
   @ApiOperation({ summary: 'Record a payment against a purchase order' })
   async recordPayment(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: RecordPaymentDto,
   ): Promise<PurchaseOrderResponseDto> {
     const po = await this.purchaseOrderService.recordPayment(
       id,
-      organizationId,
       body.amount,
       currentUser.id,
       body.notes,
@@ -472,12 +446,11 @@ export class PurchaseOrderController {
   @Post(':id/cancel')
   @ApiOperation({ summary: 'Cancel purchase order' })
   async cancel(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('reason') reason: string,
   ): Promise<PurchaseOrderResponseDto> {
-    const po = await this.purchaseOrderService.cancel(id, organizationId, reason, currentUser.id);
+    const po = await this.purchaseOrderService.cancel(id, reason, currentUser.id);
 
     return plainToInstance(PurchaseOrderResponseDto, po, {
       excludeExtraneousValues: true,

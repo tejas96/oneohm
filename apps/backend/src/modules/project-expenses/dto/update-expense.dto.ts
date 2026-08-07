@@ -19,7 +19,7 @@ import { ExpenseProductLinkDto } from './expense-product-link.dto';
 
 /**
  * Edit fields on a project expense. Excludes:
- *   - expenseNumber, organizationId, projectId, createdBy
+ *   - expenseNumber, projectId, createdBy
  *   - override_used / override_reason  (immutable post-create)
  *   - reimbursement_status              (use /:id/reimbursement-status)
  *

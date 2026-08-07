@@ -60,9 +60,9 @@ export class SubsidyApplicationRepository {
   // QUERY METHODS
   // ============================================
 
-  async findByOrganization(organizationId: string): Promise<SubsidyApplicationEntity[]> {
+  async findByOrganization(): Promise<SubsidyApplicationEntity[]> {
     return this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       relations: ['project', 'customer'],
       order: { createdAt: 'DESC' },
     });
@@ -143,9 +143,9 @@ export class SubsidyApplicationRepository {
   // STATISTICS
   // ============================================
 
-  async getStatsByOrganization(organizationId: string): Promise<Record<string, unknown>> {
+  async getStatsByOrganization(): Promise<Record<string, unknown>> {
     const applications = await this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
     });
 
     const totalApplied = applications.reduce((sum, app) => sum + Number(app.appliedAmount), 0);
@@ -174,9 +174,9 @@ export class SubsidyApplicationRepository {
     };
   }
 
-  async countByOrganization(organizationId: string): Promise<number> {
+  async countByOrganization(): Promise<number> {
     return this.repository.count({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
     });
   }
 
@@ -186,11 +186,8 @@ export class SubsidyApplicationRepository {
     });
   }
 
-  async countByStatus(status: SubsidyStatus, organizationId?: string): Promise<number> {
+  async countByStatus(status: SubsidyStatus): Promise<number> {
     const where: Record<string, unknown> = { status, deletedAt: IsNull() };
-    if (organizationId) {
-      where.organizationId = organizationId;
-    }
     return this.repository.count({ where });
   }
 }

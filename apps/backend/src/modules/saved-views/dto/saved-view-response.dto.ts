@@ -8,9 +8,6 @@ export class SavedViewResponseDto {
   @Expose()
   id!: string;
 
-  @ApiProperty()
-  @Expose()
-  organizationId!: string;
 
   @ApiProperty()
   @Expose()

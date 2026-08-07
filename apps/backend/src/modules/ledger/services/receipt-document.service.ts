@@ -56,7 +56,6 @@ export class ReceiptDocumentService {
    * regenerable from data at any time.
    */
   async storeGeneratedReceipt(
-    organizationId: string,
     entryId: string,
     file: { buffer: Buffer; originalname?: string; mimetype?: string },
     createdBy: string,
@@ -68,7 +67,7 @@ export class ReceiptDocumentService {
       throw new BadRequestException('The receipt file is empty');
     }
 
-    const entry = await this.ledgerRepository.findEntryById(entryId, organizationId);
+    const entry = await this.ledgerRepository.findEntryById(entryId);
     if (!entry) {
       throw new NotFoundException(`Ledger entry ${entryId} not found`);
     }
@@ -101,7 +100,6 @@ export class ReceiptDocumentService {
 
     return this.documentService.create(
       {
-        organizationId,
         propertyId,
         entityType: DocumentEntityType.LEDGER_ENTRY,
         entityId: entry.id,

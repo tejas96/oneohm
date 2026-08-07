@@ -14,7 +14,6 @@ export class PurchaseOrderStatsService {
   constructor(private readonly repo: PurchaseOrderStatsRepository) {}
 
   async spendTrend(
-    organizationId: string,
     fromDate: string | undefined,
     toDate: string | undefined,
     bucket: string | undefined,
@@ -22,7 +21,6 @@ export class PurchaseOrderStatsService {
     const window = resolveStatsWindow(fromDate, toDate);
     const resolvedBucket = resolveStatsBucket(bucket);
     const points = await this.repo.spendTrend(
-      organizationId,
       window.fromDate,
       window.toDate,
       resolvedBucket,
@@ -36,7 +34,6 @@ export class PurchaseOrderStatsService {
   }
 
   async topVendors(
-    organizationId: string,
     fromDate: string | undefined,
     toDate: string | undefined,
     limit: string | undefined,
@@ -44,7 +41,6 @@ export class PurchaseOrderStatsService {
     const window = resolveStatsWindow(fromDate, toDate);
     const resolvedLimit = resolveStatsLimit(limit);
     const rows = await this.repo.topVendors(
-      organizationId,
       window.fromDate,
       window.toDate,
       resolvedLimit,
@@ -63,7 +59,6 @@ export class PurchaseOrderStatsService {
   }
 
   async spendByWarehouse(
-    organizationId: string,
     fromDate: string | undefined,
     toDate: string | undefined,
     limit: string | undefined,
@@ -71,7 +66,6 @@ export class PurchaseOrderStatsService {
     const window = resolveStatsWindow(fromDate, toDate);
     const resolvedLimit = resolveStatsLimit(limit);
     const rows = await this.repo.spendByWarehouse(
-      organizationId,
       window.fromDate,
       window.toDate,
       resolvedLimit,
@@ -90,11 +84,10 @@ export class PurchaseOrderStatsService {
   }
 
   async outstandingByVendor(
-    organizationId: string,
     limit: string | undefined,
   ): Promise<TopItemsResponse> {
     const resolvedLimit = resolveStatsLimit(limit);
-    const rows = await this.repo.outstandingByVendor(organizationId, resolvedLimit);
+    const rows = await this.repo.outstandingByVendor(resolvedLimit);
     return {
       limit: resolvedLimit,
       items: rows.map<TopItem>((r) => ({

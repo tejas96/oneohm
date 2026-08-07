@@ -57,21 +57,12 @@ export class UserService {
    * }, 'admin-user-uuid');
    */
   async create(createDto: CreateUserDto, createdBy?: string): Promise<UserEntity> {
-    // Validate: If profileType provided, organizationId is required
-    if (createDto.profileType && !createDto.organizationId) {
-      throw new BadRequestException('organizationId is required when profileType is provided');
-    }
 
     // Check phone first -- phone is the identity key used for smart linking
     const existingPhone = await this.userRepository.findByPhoneIncludingDeleted(createDto.phone);
 
-    // Smart link: phone exists + profileType + organizationId + not soft-deleted -> link to existing user
-    if (
-      existingPhone &&
-      !existingPhone.deletedAt &&
-      createDto.profileType &&
-      createDto.organizationId
-    ) {
+    // Smart link: phone exists + profileType + not soft-deleted -> link to existing user
+    if (existingPhone && !existingPhone.deletedAt && createDto.profileType) {
       return this.linkExistingUserToProfile(existingPhone, createDto, createdBy);
     }
 
@@ -101,7 +92,7 @@ export class UserService {
     }
 
     // Extract profile and role fields from user data
-    const { roles, password, organizationId, profileType, profileData, ...userData } = createDto;
+    const { roles, password, profileType, profileData, ...userData } = createDto;
 
     // Create user
     let user: UserEntity;
@@ -126,14 +117,13 @@ export class UserService {
     this.logger.log(`User created: ${user.phone} (${user.email || 'no email'})`);
 
     // Create profile if profileType is provided (org onboarding flow)
-    if (profileType && organizationId) {
+    if (profileType) {
       try {
         // Use first role from roles array if provided, otherwise use default for profileType
         const customRoleCode = roles && roles.length > 0 ? roles[0] : undefined;
 
         await this.profileService.createProfile({
           userId: user.id,
-          organizationId,
           profileType,
           profileData: (profileData || {}) as Record<string, unknown>,
           createdBy: createdBy || user.id,
@@ -141,7 +131,7 @@ export class UserService {
         });
 
         this.logger.log(
-          `Profile created: ${profileType} for user ${user.id} in org ${organizationId}${
+          `Profile created: ${profileType} for user ${user.id}${
             customRoleCode ? ` with role ${customRoleCode}` : ''
           }`,
         );
@@ -169,7 +159,6 @@ export class UserService {
         user.id,
         roles,
         createdBy || user.id,
-        organizationId,
       );
       this.logger.warn(
         `Direct role assignment used for user ${user.id}. Consider using profileType instead.`,
@@ -243,14 +232,12 @@ export class UserService {
 
   async employeeProfileExists(
     phone: string,
-    organizationId: string,
     excludeId?: string,
   ): Promise<boolean> {
     const user = await this.userRepository.findByPhoneIncludingDeleted(phone, excludeId);
     if (!user || user.deletedAt) return false;
     const profile = await this.employeeProfileRepository.findByUserAndOrganization(
       user.id,
-      organizationId,
     );
     return !!profile;
   }
@@ -260,7 +247,7 @@ export class UserService {
     dto: CreateUserDto,
     createdBy?: string,
   ): Promise<UserEntity> {
-    const { profileType, organizationId, profileData, roles, password, ...userData } = dto;
+    const { profileType, profileData, roles, password, ...userData } = dto;
 
     // Email conflict check: if a different email is provided, verify it is not taken by another user
     if (dto.email && dto.email !== existingUser.email) {
@@ -291,7 +278,6 @@ export class UserService {
     const customRoleCode = roles && roles.length > 0 ? roles[0] : undefined;
     await this.profileService.createProfile({
       userId: existingUser.id,
-      organizationId: organizationId!,
       profileType: profileType!,
       profileData: (profileData || {}) as Record<string, unknown>,
       createdBy: createdBy || existingUser.id,
@@ -299,7 +285,7 @@ export class UserService {
     });
 
     this.logger.log(
-      `Linked existing user ${existingUser.id} with ${String(profileType)} profile in org ${organizationId}`,
+      `Linked existing user ${existingUser.id} with ${String(profileType)} profile`,
     );
 
     return this.findById(existingUser.id);
@@ -346,10 +332,9 @@ export class UserService {
       profileType?: unknown;
       organizationId?: unknown;
     };
-    const { profileData, profileType, organizationId, ...userData } = rest;
+    const { profileData, profileType, ...userData } = rest;
     void profileData;
     void profileType;
-    void organizationId;
 
     // Update user
     const updatedUser = await this.userRepository.update(id, userData);

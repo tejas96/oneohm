@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { ApiCreate, ApiUpdate, OrganizationContext } from '../../../common/decorators';
+import { ApiCreate, ApiUpdate } from '../../../common/decorators';
 import { toDto } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -32,9 +32,8 @@ export class QuoteConfigurationController {
   @Get('active')
   @ApiResponse({ status: 200, type: QuoteConfigurationResponseDto })
   async getActive(
-    @OrganizationContext() organizationId: string,
   ): Promise<QuoteConfigurationResponseDto> {
-    const config = await this.quoteConfigurationService.getActive(organizationId);
+    const config = await this.quoteConfigurationService.getActive();
     return toDto(QuoteConfigurationResponseDto, config);
   }
 
@@ -45,12 +44,10 @@ export class QuoteConfigurationController {
     responseType: QuoteConfigurationResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: CreateQuoteConfigurationDto,
   ): Promise<QuoteConfigurationResponseDto> {
     const config = await this.quoteConfigurationService.create(
-      organizationId,
       body,
       currentUser.id,
     );
@@ -64,14 +61,12 @@ export class QuoteConfigurationController {
     responseType: QuoteConfigurationResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateQuoteConfigurationDto,
   ): Promise<QuoteConfigurationResponseDto> {
     const config = await this.quoteConfigurationService.update(
       id,
-      organizationId,
       body,
       currentUser.id,
     );

@@ -273,9 +273,9 @@ export class MaintenanceTaskService {
   /**
    * Get statistics for organization
    */
-  async getStatistics(organizationId: string): Promise<Record<string, unknown>> {
+  async getStatistics(): Promise<Record<string, unknown>> {
     const [stats, overdueCount] = await Promise.all([
-      this.maintenanceTaskRepository.getStatsByOrganization(organizationId),
+      this.maintenanceTaskRepository.getStatsByOrganization(),
       this.maintenanceTaskRepository.countOverdue(),
     ]);
 

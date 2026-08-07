@@ -93,7 +93,6 @@ export class UserController {
   async checkAvailability(
     @Query('email') email?: string,
     @Query('phone') phone?: string,
-    @Query('organizationId') organizationId?: string,
     @Query('excludeId', new ParseUUIDPipe({ optional: true })) excludeId?: string,
   ): Promise<{
     emailExists: boolean;
@@ -104,8 +103,8 @@ export class UserController {
     const emailExists = email ? await this.userService.emailExists(email, excludeId) : false;
     const phoneExists = phone ? await this.userService.phoneExists(phone, excludeId) : false;
     const employeeExists =
-      phone && organizationId
-        ? await this.userService.employeeProfileExists(phone, organizationId, excludeId)
+      phone
+        ? await this.userService.employeeProfileExists(phone, excludeId)
         : false;
 
     let emailBelongsToPhoneUser = false;
@@ -193,7 +192,6 @@ export class UserController {
       status,
       search,
       roleId,
-      organizationId,
       showDeleted: showDeleted === 'true',
       sortBy: validatedSortBy,
       sortOrder: validatedSortOrder,
@@ -308,7 +306,6 @@ export class UserController {
 
     const profile = await this.profileService.createProfile({
       userId,
-      organizationId: createProfileDto.organizationId,
       profileType: createProfileDto.profileType,
       profileData: createProfileDto.profileData,
       createdBy,

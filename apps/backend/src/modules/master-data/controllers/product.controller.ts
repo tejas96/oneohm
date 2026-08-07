@@ -21,8 +21,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
+  ApiUpdate
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -49,11 +48,10 @@ export class ProductController {
     responseType: ProductResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateProductDto,
   ): Promise<ProductResponseDto> {
-    const product = await this.productService.create(organizationId, createDto, currentUser.id);
+    const product = await this.productService.create(createDto, currentUser.id);
 
     return plainToInstance(ProductResponseDto, product, {
       excludeExtraneousValues: true,
@@ -103,7 +101,6 @@ export class ProductController {
     ],
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
@@ -117,7 +114,7 @@ export class ProductController {
     @Query('sortOrder') sortOrder?: string,
     @Query('hasActivePrice') hasActivePrice?: string,
   ): Promise<PaginatedResponse<ProductResponseDto>> {
-    const result = await this.productService.findAll(organizationId, page, limit, {
+    const result = await this.productService.findAll(page, limit, {
       status,
       productTypeId,
       type,
@@ -149,11 +146,10 @@ export class ProductController {
     responseType: ProductResponseDto,
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProductResponseDto> {
-    const product = await this.productService.findById(id, organizationId);
+    const product = await this.productService.findById(id);
 
     return plainToInstance(ProductResponseDto, product, {
       excludeExtraneousValues: true,
@@ -167,12 +163,11 @@ export class ProductController {
     responseType: ProductResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateProductDto,
   ): Promise<ProductResponseDto> {
-    const product = await this.productService.update(id, organizationId, updateDto, currentUser.id);
+    const product = await this.productService.update(id, updateDto, currentUser.id);
 
     return plainToInstance(ProductResponseDto, product, {
       excludeExtraneousValues: true,
@@ -187,14 +182,12 @@ export class ProductController {
     responseType: ProductResponseDto,
   })
   async updateStatus(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateProductStatusDto,
   ): Promise<ProductResponseDto> {
     const product = await this.productService.updateStatus(
       id,
-      organizationId,
       statusDto.status,
       currentUser.id,
     );
@@ -210,10 +203,9 @@ export class ProductController {
     description: 'Soft delete a product',
   })
   async delete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    await this.productService.delete(id, organizationId);
+    await this.productService.delete(id);
   }
 }

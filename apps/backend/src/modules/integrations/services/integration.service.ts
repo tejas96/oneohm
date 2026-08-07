@@ -43,7 +43,6 @@ export class IntegrationService {
   ) {}
 
   async createIntegration(
-    organizationId: string,
     dto: CreateIntegrationDto,
     userId: string,
   ): Promise<IntegrationEntity> {
@@ -59,7 +58,6 @@ export class IntegrationService {
     const encryptedCredentials = this.credentialService.encrypt(dto.credentials);
 
     const integration = await this.repository.create({
-      organizationId,
       name: dto.name,
       provider: dto.provider,
       category: dto.category,
@@ -82,15 +80,14 @@ export class IntegrationService {
 
   async updateIntegration(
     id: string,
-    organizationId: string,
     dto: UpdateIntegrationDto,
     userId: string,
   ): Promise<IntegrationEntity> {
     const integration = await this.repository.findById(id);
-
-    if (integration?.organizationId !== organizationId) {
-      throw new NotFoundException(`Integration with ID ${id} not found`);
+    if (!integration) {
+      throw new NotFoundException('Integration not found');
     }
+
 
     const updateData: Partial<IntegrationEntity> = {
       updatedBy: userId,
@@ -137,34 +134,33 @@ export class IntegrationService {
     return updated;
   }
 
-  async deleteIntegration(id: string, organizationId: string): Promise<void> {
+  async deleteIntegration(id: string): Promise<void> {
     const integration = await this.repository.findById(id);
-
-    if (integration?.organizationId !== organizationId) {
-      throw new NotFoundException(`Integration with ID ${id} not found`);
+    if (!integration) {
+      throw new NotFoundException('Integration not found');
     }
+
 
     await this.repository.softDelete(id);
     this.logger.log(`Deleted integration: ${integration.name} (${id})`);
   }
 
-  async getIntegrationById(id: string, organizationId: string): Promise<IntegrationEntity> {
+  async getIntegrationById(id: string): Promise<IntegrationEntity> {
     const integration = await this.repository.findById(id);
-
-    if (integration?.organizationId !== organizationId) {
-      throw new NotFoundException(`Integration with ID ${id} not found`);
+    if (!integration) {
+      throw new NotFoundException('Integration not found');
     }
+
 
     return integration;
   }
 
-  async getIntegrations(organizationId: string): Promise<IntegrationEntity[]> {
-    return this.repository.findByOrganization(organizationId);
+  async getIntegrations(): Promise<IntegrationEntity[]> {
+    return this.repository.findByOrganization();
   }
 
   async getIntegrationsByCategory(
     category: IntegrationCategory,
-    _organizationId?: string,
   ): Promise<IntegrationEntity[]> {
     return this.repository.findAllActiveByCategory(category);
   }
@@ -196,7 +192,6 @@ export class IntegrationService {
   }
 
   async sendTextMessage(
-    _organizationId: string,
     message: ITextMessage,
     provider?: IntegrationProvider,
   ): Promise<IMessageResponse> {
@@ -206,7 +201,6 @@ export class IntegrationService {
   }
 
   async sendTemplateMessage(
-    _organizationId: string,
     message: ITemplateMessage,
     provider?: IntegrationProvider,
   ): Promise<IMessageResponse> {
@@ -216,7 +210,6 @@ export class IntegrationService {
   }
 
   async sendMediaMessage(
-    _organizationId: string,
     message: IMediaMessage,
     provider?: IntegrationProvider,
   ): Promise<IMessageResponse> {
@@ -226,7 +219,6 @@ export class IntegrationService {
   }
 
   async sendOtpMessage(
-    _organizationId: string,
     message: IOtpMessage,
     provider?: IntegrationProvider,
   ): Promise<IMessageResponse> {
@@ -236,7 +228,6 @@ export class IntegrationService {
   }
 
   async sendAlertMessage(
-    _organizationId: string,
     message: IAlertMessage,
     provider?: IntegrationProvider,
   ): Promise<IMessageResponse> {

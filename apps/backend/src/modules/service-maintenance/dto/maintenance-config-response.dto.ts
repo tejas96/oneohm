@@ -2,7 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MaintenanceConfigStatus } from '@tejas96/shared/types';
 import { Expose, Type } from 'class-transformer';
 
-import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 
 /**
@@ -34,9 +33,6 @@ export class MaintenanceConfigResponseDto {
   @Expose()
   id: string;
 
-  @ApiProperty({ description: 'Organization ID', example: '123e4567-e89b-12d3-a456-426614174001' })
-  @Expose()
-  organizationId: string;
 
   @ApiProperty({ description: 'Project ID', example: '123e4567-e89b-12d3-a456-426614174002' })
   @Expose()
@@ -95,10 +91,7 @@ export class MaintenanceConfigResponseDto {
   updatedBy?: string;
 
   // Relations
-  @ApiPropertyOptional({ description: 'Organization details', type: OrganizationResponseDto })
   @Expose()
-  @Type(() => OrganizationResponseDto)
-  organization?: OrganizationResponseDto;
 
   @ApiPropertyOptional({ description: 'Created by user details', type: UserResponseDto })
   @Expose()

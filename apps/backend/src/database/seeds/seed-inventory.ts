@@ -1,3 +1,4 @@
+import { COMPANY } from '@tejas96/shared/constants';
 import dataSource from '../ormconfig';
 
 /**
@@ -41,7 +42,7 @@ async function seedInventory(): Promise<void> {
         'active',
         u.id
       FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
       ON CONFLICT (organization_id, code) DO NOTHING;
 
       -- Secondary Warehouse (Mumbai)
@@ -66,7 +67,7 @@ async function seedInventory(): Promise<void> {
         'active',
         u.id
       FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
       ON CONFLICT (organization_id, code) DO NOTHING;
 
       -- Third-Party Warehouse (Delhi)
@@ -88,7 +89,7 @@ async function seedInventory(): Promise<void> {
         'active',
         u.id
       FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
       ON CONFLICT (organization_id, code) DO NOTHING;
     `);
 
@@ -135,7 +136,7 @@ async function seedInventory(): Promise<void> {
         'Premium solar panel supplier with quick delivery',
         u.id
       FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
       ON CONFLICT (organization_id, code) DO NOTHING;
 
       -- Inverter Supplier
@@ -171,7 +172,7 @@ async function seedInventory(): Promise<void> {
         'active',
         u.id
       FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
       ON CONFLICT (organization_id, code) DO NOTHING;
 
       -- Installation Contractor
@@ -203,7 +204,7 @@ async function seedInventory(): Promise<void> {
         'Experienced installation team with good track record',
         u.id
       FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
       ON CONFLICT (organization_id, code) DO NOTHING;
 
       -- Mounting Structure Supplier
@@ -234,7 +235,7 @@ async function seedInventory(): Promise<void> {
         'active',
         u.id
       FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
       ON CONFLICT (organization_id, code) DO NOTHING;
     `);
 
@@ -275,7 +276,7 @@ async function seedInventory(): Promise<void> {
         'Standard payment and delivery terms apply',
         u.id
       FROM organizations org, vendors v, warehouses w, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND v.code = 'VEN-001'
         AND w.code = 'WH-BLR-001'
         AND u.email = 'admin@oneohm.com'
@@ -310,7 +311,7 @@ async function seedInventory(): Promise<void> {
         'Inverter stock for upcoming projects',
         u.id
       FROM organizations org, vendors v, warehouses w, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND v.code = 'VEN-002'
         AND w.code = 'WH-BLR-001'
         AND u.email = 'admin@oneohm.com'
@@ -344,7 +345,7 @@ async function seedInventory(): Promise<void> {
         'Aluminum mounting structures',
         u.id
       FROM organizations org, vendors v, warehouses w, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND v.code = 'VEN-004'
         AND w.code = 'WH-MUM-001'
         AND u.email = 'admin@oneohm.com'
@@ -451,7 +452,7 @@ async function seedInventory(): Promise<void> {
         '2024-02-10'::date,
         '2024-02-15'::date
       FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-BLR-001'
         AND p.code = 'JINKO-550W'
         AND org.id = w.organization_id
@@ -473,7 +474,7 @@ async function seedInventory(): Promise<void> {
         5.000,
         30.000
       FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-MUM-001'
         AND p.code = 'TRINA-535W'
         AND org.id = w.organization_id
@@ -497,7 +498,7 @@ async function seedInventory(): Promise<void> {
         15.000,
         '2024-02-12'::date
       FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-BLR-001'
         AND p.code = 'GROWATT-5KW'
         AND org.id = w.organization_id
@@ -518,7 +519,7 @@ async function seedInventory(): Promise<void> {
         2.000,
         10.000
       FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-MUM-001'
         AND p.code = 'DEYE-8KW-HYB'
         AND org.id = w.organization_id
@@ -540,7 +541,7 @@ async function seedInventory(): Promise<void> {
         10.000,
         20.000
       FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-BLR-001'
         AND p.code = 'PYLON-3.5KWH'
         AND org.id = w.organization_id
@@ -563,7 +564,7 @@ async function seedInventory(): Promise<void> {
         20.000,
         '2024-01-25'::date
       FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-MUM-001'
         AND p.code = 'MNT-ROOF-AL'
         AND org.id = w.organization_id
@@ -597,7 +598,7 @@ async function seedInventory(): Promise<void> {
         'Received from PO-202401-0001',
         u.id
       FROM organizations org, warehouses w, products p, purchase_orders po, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-BLR-001'
         AND p.code = 'JINKO-550W'
         AND po.po_number = 'PO-202401-0001'
@@ -624,7 +625,7 @@ async function seedInventory(): Promise<void> {
         'Allocated for upcoming project',
         u.id
       FROM organizations org, warehouses w, products p, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-BLR-001'
         AND p.code = 'JINKO-550W'
         AND u.email = 'admin@oneohm.com'
@@ -651,7 +652,7 @@ async function seedInventory(): Promise<void> {
         'Transfer to Mumbai warehouse',
         u.id
       FROM organizations org, warehouses w_from, warehouses w_to, products p, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w_from.code = 'WH-BLR-001'
         AND w_to.code = 'WH-MUM-001'
         AND p.code = 'GROWATT-5KW'

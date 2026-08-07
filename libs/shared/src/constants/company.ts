@@ -8,6 +8,15 @@
  */
 export const COMPANY = {
   name: 'OneOhm',
+
+  /**
+   * Embedded in every generated human-readable code — `TSK-ONEOHM_EPC-2026-6435`,
+   * `CUST-ONEOHM_EPC-2026-0234`, `PROP-…`, `PRJ-…`. The generators find the next
+   * number by scanning for this exact prefix, so changing it does not merely
+   * restyle new codes: it restarts every sequence from 1 and orphans thousands
+   * of existing rows. It is not cosmetic.
+   */
+  code: 'ONEOHM_EPC',
   email: 'sanjay@oneohm.com',
   phone: '+919850808484',
   address: 'Plot No.93, Vasantdada Industrial Estate, Sangli',

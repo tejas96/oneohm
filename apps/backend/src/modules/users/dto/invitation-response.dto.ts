@@ -15,13 +15,8 @@ export class InvitationResponseDto {
   @ApiProperty()
   status!: string;
 
-  @Expose()
-  @ApiProperty()
-  organizationId!: string;
 
   @Expose()
-  @ApiPropertyOptional()
-  organizationName?: string;
 
   @Expose()
   @ApiProperty()

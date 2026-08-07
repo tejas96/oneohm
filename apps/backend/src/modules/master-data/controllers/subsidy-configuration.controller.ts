@@ -18,8 +18,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
+  ApiUpdate
 } from '../../../common/decorators';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -46,12 +45,10 @@ export class SubsidyConfigurationController {
     responseType: SubsidyConfigurationResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: CreateSubsidyConfigurationDto,
   ): Promise<SubsidyConfigurationResponseDto> {
     const config = await this.subsidyConfigurationService.create(
-      organizationId,
       body,
       currentUser.id,
     );
@@ -86,7 +83,6 @@ export class SubsidyConfigurationController {
     includePagination: false,
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('projectType') projectType?: ProjectType,
     @Query('isActive') isActive?: string,
@@ -96,7 +92,7 @@ export class SubsidyConfigurationController {
       isActive !== undefined
         ? { projectType, isActive: isActive === 'true', search }
         : { projectType, search };
-    const configs = await this.subsidyConfigurationService.findAll(organizationId, filter);
+    const configs = await this.subsidyConfigurationService.findAll(filter);
     return toDtoArray(SubsidyConfigurationResponseDto, configs);
   }
 
@@ -107,11 +103,10 @@ export class SubsidyConfigurationController {
     responseType: SubsidyConfigurationResponseDto,
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<SubsidyConfigurationResponseDto> {
-    const config = await this.subsidyConfigurationService.findById(id, organizationId);
+    const config = await this.subsidyConfigurationService.findById(id);
     return toDto(SubsidyConfigurationResponseDto, config);
   }
 
@@ -122,14 +117,12 @@ export class SubsidyConfigurationController {
     responseType: SubsidyConfigurationResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateSubsidyConfigurationDto,
   ): Promise<SubsidyConfigurationResponseDto> {
     const config = await this.subsidyConfigurationService.update(
       id,
-      organizationId,
       body,
       currentUser.id,
     );
@@ -142,10 +135,9 @@ export class SubsidyConfigurationController {
     description: 'Delete a subsidy configuration',
   })
   async delete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    await this.subsidyConfigurationService.delete(id, organizationId);
+    await this.subsidyConfigurationService.delete(id);
   }
 }

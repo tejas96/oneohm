@@ -15,15 +15,11 @@ export class DocumentService {
   ) {}
 
   async create(dto: CreateDocumentDto, userId: string): Promise<DocumentEntity> {
-    if (!dto.organizationId) {
-      throw new BadRequestException('organizationId is required');
-    }
 
     const propertyId =
       dto.propertyId ?? (await this.resolvePropertyId(dto.entityType, dto.entityId));
 
     const created = await this.documentRepository.create({
-      organizationId: dto.organizationId,
       propertyId,
       entityType: dto.entityType,
       entityId: dto.entityId,
@@ -49,7 +45,6 @@ export class DocumentService {
         dto.propertyId ?? (await this.resolvePropertyId(dto.entityType, dto.entityId));
 
       items.push({
-        organizationId: dto.organizationId,
         propertyId,
         entityType: dto.entityType,
         entityId: dto.entityId,
@@ -72,22 +67,20 @@ export class DocumentService {
   async findByEntity(
     entityType: DocumentEntityType,
     entityId: string,
-    organizationId: string,
     filters?: { tag?: string; tags?: string[]; category?: string },
   ): Promise<DocumentEntity[]> {
-    return this.documentRepository.findByEntity(entityType, entityId, organizationId, filters);
+    return this.documentRepository.findByEntity(entityType, entityId, filters);
   }
 
   async findByEntityBatch(
     entityType: DocumentEntityType,
     entityIds: string[],
-    organizationId: string,
   ): Promise<DocumentEntity[]> {
-    return this.documentRepository.findByEntityBatch(entityType, entityIds, organizationId);
+    return this.documentRepository.findByEntityBatch(entityType, entityIds);
   }
 
-  async findById(id: string, organizationId: string): Promise<DocumentEntity> {
-    const doc = await this.documentRepository.findById(id, organizationId);
+  async findById(id: string): Promise<DocumentEntity> {
+    const doc = await this.documentRepository.findById(id);
     if (!doc) {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
@@ -96,19 +89,17 @@ export class DocumentService {
 
   findByProperty(
     propertyId: string,
-    organizationId: string,
     filters?: { entityType?: DocumentEntityType; category?: string; tag?: string; tags?: string[] },
   ): Promise<DocumentEntity[]> {
-    return this.documentRepository.findByProperty(propertyId, organizationId, filters);
+    return this.documentRepository.findByProperty(propertyId, filters);
   }
 
   async update(
     id: string,
     dto: UpdateDocumentDto,
     userId: string,
-    organizationId: string,
   ): Promise<DocumentEntity> {
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     const updateData: Record<string, unknown> = { updatedBy: userId };
     if (dto.propertyId !== undefined) updateData.propertyId = dto.propertyId;
@@ -126,21 +117,20 @@ export class DocumentService {
   }
 
   async findByOrganization(
-    organizationId: string,
     filters?: { entityType?: DocumentEntityType; category?: string; tag?: string; tags?: string[] },
     page = 1,
     limit = 20,
   ): Promise<[DocumentEntity[], number]> {
-    return this.documentRepository.findByOrganization(organizationId, filters, page, limit);
+    return this.documentRepository.findByOrganization(filters, page, limit);
   }
 
-  async delete(id: string, organizationId: string): Promise<void> {
-    await this.findById(id, organizationId);
+  async delete(id: string): Promise<void> {
+    await this.findById(id);
     await this.documentRepository.softDelete(id);
   }
 
-  async hardDelete(id: string, organizationId: string): Promise<void> {
-    await this.findById(id, organizationId);
+  async hardDelete(id: string): Promise<void> {
+    await this.findById(id);
     await this.documentRepository.hardDelete(id);
   }
 

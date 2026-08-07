@@ -53,15 +53,14 @@ export class ProjectAttentionService {
 
   async getProjectAttention(
     projectId: string,
-    organizationId: string,
   ): Promise<AttentionResponseDto[]> {
     // Ownership validation first to guarantee org isolation for all downstream queries.
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     const [tasks, materials, outstanding] = await Promise.all([
       this.projectTaskRepository.findAllForBoard(projectId),
       this.materialRepository.findByProject(projectId),
-      this.findOutstandingMilestones(projectId, organizationId),
+      this.findOutstandingMilestones(projectId),
     ]);
 
     const now = new Date();
@@ -236,7 +235,6 @@ export class ProjectAttentionService {
    */
   private async findOutstandingMilestones(
     projectId: string,
-    organizationId: string,
   ): Promise<OutstandingMilestone[]> {
     return this.dataSource.query(
       `SELECT
@@ -251,7 +249,7 @@ export class ProjectAttentionService {
          AND status = 'active'
          AND balance_paise > 0
        ORDER BY days_overdue DESC, display_order ASC`,
-      [projectId, organizationId],
+      [projectId],
     );
   }
 

@@ -15,18 +15,17 @@ const PG_FK_VIOLATION_CODE = '23503';
 export class QuoteConfigurationService {
   constructor(private readonly quoteConfigurationRepository: QuoteConfigurationRepository) {}
 
-  async getActive(organizationId: string): Promise<QuoteConfiguration> {
-    return this.quoteConfigurationRepository.getOrCreateDefault(organizationId);
+  async getActive(): Promise<QuoteConfiguration> {
+    return this.quoteConfigurationRepository.getOrCreateDefault();
   }
 
-  async findById(id: string, organizationId: string): Promise<QuoteConfiguration> {
-    const config = await this.quoteConfigurationRepository.findById(id, organizationId);
+  async findById(id: string): Promise<QuoteConfiguration> {
+    const config = await this.quoteConfigurationRepository.findById(id);
     if (!config) throw new NotFoundException('Quote configuration not found');
     return config;
   }
 
   async create(
-    organizationId: string,
     dto: CreateQuoteConfigurationDto,
     createdBy?: string,
   ): Promise<QuoteConfiguration> {
@@ -44,7 +43,7 @@ export class QuoteConfigurationService {
       this.validateProfitMarginTiers(this.normalizeProfitMarginTiers(profitMarginTiersDto));
     }
     try {
-      return await this.quoteConfigurationRepository.create(organizationId, {
+      return await this.quoteConfigurationRepository.create({
         ...createRest,
         ...(profitMarginTiersDto !== undefined && {
           profitMarginTiers: this.normalizeProfitMarginTiers(profitMarginTiersDto),
@@ -54,7 +53,7 @@ export class QuoteConfigurationService {
     } catch (error: unknown) {
       const err = error as { code?: string };
       if (err?.code === PG_FK_VIOLATION_CODE) {
-        throw new BadRequestException(`Invalid organization ID: ${organizationId}`);
+        throw new BadRequestException(`Invalid organization ID: `);
       }
       throw error;
     }
@@ -62,7 +61,6 @@ export class QuoteConfigurationService {
 
   async update(
     id: string,
-    organizationId: string,
     dto: UpdateQuoteConfigurationDto,
     updatedBy?: string,
   ): Promise<QuoteConfiguration> {
@@ -79,8 +77,8 @@ export class QuoteConfigurationService {
     if (profitMarginTiersDto !== undefined) {
       this.validateProfitMarginTiers(this.normalizeProfitMarginTiers(profitMarginTiersDto));
     }
-    await this.findById(id, organizationId);
-    const updated = await this.quoteConfigurationRepository.update(id, organizationId, {
+    await this.findById(id);
+    const updated = await this.quoteConfigurationRepository.update(id, {
       ...updateRest,
       ...(profitMarginTiersDto !== undefined && {
         profitMarginTiers: this.normalizeProfitMarginTiers(profitMarginTiersDto),
@@ -89,7 +87,7 @@ export class QuoteConfigurationService {
     });
 
     if (updateRest.isActive === true) {
-      return this.quoteConfigurationRepository.setActive(id, organizationId);
+      return this.quoteConfigurationRepository.setActive(id);
     }
 
     return updated;

@@ -17,7 +17,6 @@ import { ProjectRepository } from '../repositories/project.repository';
  */
 interface AddTeamMemberInput extends AddTeamMemberDto {
   projectId: string;
-  organizationId: string;
 }
 
 /**
@@ -149,7 +148,7 @@ export class ProjectTeamService {
    * Get workload summary for users across projects within an organization.
    * Returns per-user: activeProjectCount, totalTaskCount, inProgressTaskCount, notCompletedTaskCount.
    */
-  async getUserWorkloads(organizationId: string): Promise<
+  async getUserWorkloads(): Promise<
     Array<{
       userId: string;
       firstName: string;
@@ -185,7 +184,6 @@ export class ProjectTeamService {
         'customer_properties',
         'cp',
         'cp.id = p.property_id AND cp.organization_id = :orgId',
-        { orgId: organizationId },
       )
       .leftJoin(
         'project_tasks',

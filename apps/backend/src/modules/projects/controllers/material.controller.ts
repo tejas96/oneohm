@@ -18,8 +18,7 @@ import {
   ApiCreate,
   ApiDelete,
   ApiReadAll,
-  ApiUpdate,
-  OrganizationContext,
+  ApiUpdate
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -49,7 +48,6 @@ export class MaterialController {
     responseType: MaterialResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Body() createDto: CreateMaterialDto,
@@ -57,7 +55,7 @@ export class MaterialController {
     // Ensure projectId in path matches DTO
     createDto.projectId = projectId;
 
-    const material = await this.materialService.create(organizationId, createDto);
+    const material = await this.materialService.create(createDto);
 
     return plainToInstance(MaterialResponseDto, material, {
       excludeExtraneousValues: true,
@@ -92,14 +90,13 @@ export class MaterialController {
     description: 'Filter by product ID',
   })
   async findByProject(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Query('status') status?: MaterialStatus,
     @Query('category') category?: string,
     @Query('productId') productId?: string,
   ): Promise<MaterialResponseDto[]> {
-    const materials = await this.materialService.findByProject(projectId, organizationId, {
+    const materials = await this.materialService.findByProject(projectId, {
       status,
       category,
       productId,
@@ -120,7 +117,6 @@ export class MaterialController {
     description: 'Get comprehensive material statistics for the project',
   })
   async getStatistics(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<{
@@ -131,7 +127,7 @@ export class MaterialController {
     usedCount: number;
     totalCost: number;
   }> {
-    return this.materialService.getStatistics(projectId, organizationId);
+    return this.materialService.getStatistics(projectId);
   }
 
   /**
@@ -143,12 +139,11 @@ export class MaterialController {
     description: 'Retrieve a single material with details',
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MaterialResponseDto> {
-    const material = await this.materialService.findById(id, projectId, organizationId);
+    const material = await this.materialService.findById(id, projectId);
 
     return plainToInstance(MaterialResponseDto, material, {
       excludeExtraneousValues: true,
@@ -165,13 +160,12 @@ export class MaterialController {
     responseType: MaterialResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateMaterialDto,
   ): Promise<MaterialResponseDto> {
-    const material = await this.materialService.update(id, projectId, organizationId, updateDto);
+    const material = await this.materialService.update(id, projectId, updateDto);
 
     return plainToInstance(MaterialResponseDto, material, {
       excludeExtraneousValues: true,
@@ -187,12 +181,11 @@ export class MaterialController {
     description: 'Delete a material (only required/ordered)',
   })
   async delete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.materialService.delete(id, projectId, organizationId);
+    await this.materialService.delete(id, projectId);
     return { message: 'Material deleted successfully' };
   }
 
@@ -205,13 +198,12 @@ export class MaterialController {
     description: 'Change material status with auto-date updates',
   })
   async updateStatus(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: MaterialStatus,
   ): Promise<MaterialResponseDto> {
-    const material = await this.materialService.updateStatus(id, projectId, organizationId, status);
+    const material = await this.materialService.updateStatus(id, projectId, status);
 
     return plainToInstance(MaterialResponseDto, material, {
       excludeExtraneousValues: true,
@@ -239,14 +231,13 @@ export class MaterialController {
     description: 'Used quantity',
   })
   async updateQuantities(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Query('quantityAllocated') quantityAllocated?: string,
     @Query('quantityUsed') quantityUsed?: string,
   ): Promise<MaterialResponseDto> {
-    const material = await this.materialService.updateQuantities(id, projectId, organizationId, {
+    const material = await this.materialService.updateQuantities(id, projectId, {
       quantityAllocated: quantityAllocated ? parseFloat(quantityAllocated) : undefined,
       quantityUsed: quantityUsed ? parseFloat(quantityUsed) : undefined,
     });

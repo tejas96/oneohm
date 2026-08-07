@@ -27,9 +27,9 @@ export class VendorRepository {
   /**
    * Find vendor by ID with relations
    */
-  async findById(id: string, organizationId: string): Promise<VendorEntity> {
+  async findById(id: string): Promise<VendorEntity> {
     const vendor = await this.repository.findOne({
-      where: { id, organizationId, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull() },
       relations: ['organization'],
     });
 
@@ -43,9 +43,9 @@ export class VendorRepository {
   /**
    * Find vendor by code
    */
-  async findByCode(code: string, organizationId: string): Promise<VendorEntity | null> {
+  async findByCode(code: string): Promise<VendorEntity | null> {
     return this.repository.findOne({
-      where: { code, organizationId, deletedAt: IsNull() },
+      where: { code, deletedAt: IsNull() },
     });
   }
 
@@ -53,7 +53,6 @@ export class VendorRepository {
    * Find all vendors with filters and pagination
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -64,7 +63,6 @@ export class VendorRepository {
   ): Promise<{ vendors: VendorEntity[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('vendor')
-      .where('vendor.organizationId = :organizationId', { organizationId })
       .andWhere('vendor.deletedAt IS NULL');
 
     // Apply filters
@@ -100,10 +98,9 @@ export class VendorRepository {
    */
   async update(
     id: string,
-    organizationId: string,
     updateData: Record<string, unknown>,
   ): Promise<VendorEntity> {
-    const vendor = await this.findById(id, organizationId);
+    const vendor = await this.findById(id);
 
     Object.assign(vendor, updateData);
 
@@ -113,8 +110,8 @@ export class VendorRepository {
   /**
    * Soft delete vendor
    */
-  async softDelete(id: string, organizationId: string, deletedBy: string): Promise<void> {
-    const vendor = await this.findById(id, organizationId);
+  async softDelete(id: string, deletedBy: string): Promise<void> {
+    const vendor = await this.findById(id);
 
     vendor.deletedAt = new Date();
     vendor.updatedBy = deletedBy;
@@ -125,12 +122,11 @@ export class VendorRepository {
   /**
    * Count vendors by status
    */
-  async countByStatus(organizationId: string): Promise<Record<VendorStatus, number>> {
+  async countByStatus(): Promise<Record<VendorStatus, number>> {
     const result = await this.repository
       .createQueryBuilder('vendor')
       .select('vendor.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('vendor.organizationId = :organizationId', { organizationId })
       .andWhere('vendor.deletedAt IS NULL')
       .groupBy('vendor.status')
       .getRawMany<{ status: VendorStatus; count: string }>();
@@ -151,12 +147,11 @@ export class VendorRepository {
   /**
    * Count vendors by type
    */
-  async countByType(organizationId: string): Promise<Record<VendorType, number>> {
+  async countByType(): Promise<Record<VendorType, number>> {
     const result = await this.repository
       .createQueryBuilder('vendor')
       .select('vendor.vendorType', 'vendorType')
       .addSelect('COUNT(*)', 'count')
-      .where('vendor.organizationId = :organizationId', { organizationId })
       .andWhere('vendor.deletedAt IS NULL')
       .groupBy('vendor.vendorType')
       .getRawMany<{ vendorType: VendorType; count: string }>();
@@ -178,13 +173,11 @@ export class VendorRepository {
    * Find vendors by type and status
    */
   async findByTypeAndStatus(
-    organizationId: string,
     vendorType: VendorType,
     status: VendorStatus = VendorStatus.ACTIVE,
   ): Promise<VendorEntity[]> {
     return this.repository.find({
       where: {
-        organizationId,
         vendorType,
         status,
         deletedAt: IsNull(),
@@ -196,8 +189,8 @@ export class VendorRepository {
   /**
    * Update vendor rating
    */
-  async updateRating(id: string, organizationId: string, rating: number): Promise<VendorEntity> {
-    const vendor = await this.findById(id, organizationId);
+  async updateRating(id: string, rating: number): Promise<VendorEntity> {
+    const vendor = await this.findById(id);
 
     vendor.rating = rating;
 

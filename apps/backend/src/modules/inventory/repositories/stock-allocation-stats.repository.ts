@@ -25,7 +25,6 @@ export class StockAllocationStatsRepository {
    * separately via cancelledCount.
    */
   async funnel(
-    organizationId: string,
     fromDate: string,
     toDate: string,
   ): Promise<{ stages: Array<{ status: string; count: number }>; cancelledCount: number }> {
@@ -33,7 +32,6 @@ export class StockAllocationStatsRepository {
       .createQueryBuilder('alloc')
       .select('alloc.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('alloc.organizationId = :organizationId', { organizationId })
       .andWhere('alloc.allocated_at >= :fromDate', { fromDate })
       .andWhere("alloc.allocated_at < (CAST(:toDate AS date) + INTERVAL '1 day')", { toDate })
       .groupBy('alloc.status')

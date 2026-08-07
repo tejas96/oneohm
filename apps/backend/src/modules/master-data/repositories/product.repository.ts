@@ -14,18 +14,15 @@ export class ProductRepository {
   ) {}
 
   async create(
-    organizationId: string,
     productData: Partial<ProductEntity>,
   ): Promise<ProductEntity> {
     const product = this.repository.create({
       ...productData,
-      organizationId,
     });
     return this.repository.save(product);
   }
 
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -43,7 +40,6 @@ export class ProductRepository {
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.productType', 'productType')
       .leftJoinAndSelect('product.brand', 'brand')
-      .where('product.organization_id = :organizationId', { organizationId })
       .andWhere('product.deleted_at IS NULL')
       .andWhere('(brand.id IS NULL OR brand.is_active = true)');
 
@@ -118,12 +114,10 @@ export class ProductRepository {
 
   async findById(
     id: string,
-    organizationId: string,
     options?: { requireActive?: boolean },
   ): Promise<ProductEntity | null> {
     const where: FindOptionsWhere<ProductEntity> = {
       id,
-      organizationId,
       deletedAt: IsNull(),
     };
     if (options?.requireActive === true) {
@@ -135,11 +129,10 @@ export class ProductRepository {
     });
   }
 
-  async findAnyById(id: string, organizationId: string): Promise<ProductEntity | null> {
+  async findAnyById(id: string): Promise<ProductEntity | null> {
     return this.repository.findOne({
       where: {
         id,
-        organizationId,
       },
       relations: ['productType', 'brand'],
     });
@@ -151,22 +144,21 @@ export class ProductRepository {
    * able to look up products that may have been deactivated). Returns a Map
    * keyed by productId for O(1) lookup; missing ids are absent from the map.
    */
-  async findManyByIds(ids: string[], organizationId: string): Promise<Map<string, ProductEntity>> {
+  async findManyByIds(ids: string[]): Promise<Map<string, ProductEntity>> {
     const map = new Map<string, ProductEntity>();
     if (ids.length === 0) return map;
     const rows = await this.repository.find({
-      where: { id: In(ids), organizationId },
+      where: { id: In(ids) },
       relations: ['productType', 'brand'],
     });
     for (const row of rows) map.set(row.id, row);
     return map;
   }
 
-  async findByCode(code: string, organizationId: string): Promise<ProductEntity | null> {
+  async findByCode(code: string): Promise<ProductEntity | null> {
     return this.repository.findOne({
       where: {
         code,
-        organizationId,
         deletedAt: IsNull(),
       },
     });
@@ -174,15 +166,14 @@ export class ProductRepository {
 
   async update(
     id: string,
-    organizationId: string,
     productData: Partial<ProductEntity>,
   ): Promise<ProductEntity> {
-    await this.repository.update({ id, organizationId }, {
+    await this.repository.update({ id }, {
       ...productData,
       updatedAt: new Date(),
     } as QueryDeepPartialEntity<ProductEntity>);
 
-    const updated = await this.findById(id, organizationId);
+    const updated = await this.findById(id);
     if (!updated) {
       throw new NotFoundException('Product not found after update');
     }
@@ -191,12 +182,11 @@ export class ProductRepository {
 
   async updateStatus(
     id: string,
-    organizationId: string,
     status: ProductStatus,
     updatedBy?: string,
   ): Promise<ProductEntity> {
     await this.repository.update(
-      { id, organizationId },
+      { id },
       {
         status,
         updatedBy,
@@ -204,16 +194,16 @@ export class ProductRepository {
       },
     );
 
-    const updated = await this.findById(id, organizationId);
+    const updated = await this.findById(id);
     if (!updated) {
       throw new NotFoundException('Product not found after status update');
     }
     return updated;
   }
 
-  async softDelete(id: string, organizationId: string): Promise<void> {
+  async softDelete(id: string): Promise<void> {
     await this.repository.update(
-      { id, organizationId },
+      { id },
       {
         deletedAt: new Date(),
       },
@@ -223,7 +213,6 @@ export class ProductRepository {
   // ==================== Quote Calculator Methods ====================
 
   async findSolarPanel(
-    organizationId: string,
     isDcr: boolean,
     productTypeId: string,
     preferredBrand?: string,
@@ -234,7 +223,6 @@ export class ProductRepository {
       this.repository
         .createQueryBuilder('product')
         .leftJoinAndSelect('product.brand', 'brand')
-        .where('product.organization_id = :organizationId', { organizationId })
         .andWhere('product.product_type_id = :productTypeId', { productTypeId })
         .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
         .andWhere('product.deleted_at IS NULL')
@@ -268,7 +256,6 @@ export class ProductRepository {
   }
 
   async findAllSolarPanels(
-    organizationId: string,
     isDcr: boolean,
     productTypeId: string,
     preferredBrand?: string,
@@ -279,7 +266,6 @@ export class ProductRepository {
       this.repository
         .createQueryBuilder('product')
         .leftJoinAndSelect('product.brand', 'brand')
-        .where('product.organization_id = :organizationId', { organizationId })
         .andWhere('product.product_type_id = :productTypeId', { productTypeId })
         .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
         .andWhere('product.deleted_at IS NULL')
@@ -313,7 +299,6 @@ export class ProductRepository {
   }
 
   async findInvertersByPhase(
-    organizationId: string,
     phaseType: string,
     productTypeId: string,
     preferredBrand?: string,
@@ -322,7 +307,6 @@ export class ProductRepository {
     const query = this.repository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.brand', 'brand')
-      .where('product.organization_id = :organizationId', { organizationId })
       .andWhere('product.product_type_id = :productTypeId', { productTypeId })
       .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
       .andWhere('product.deleted_at IS NULL')
@@ -345,14 +329,12 @@ export class ProductRepository {
   }
 
   async findMountingStructure(
-    organizationId: string,
     productTypeId: string,
     structureType?: string,
   ): Promise<ProductEntity | null> {
     const query = this.repository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.brand', 'brand')
-      .where('product.organization_id = :organizationId', { organizationId })
       .andWhere('product.product_type_id = :productTypeId', { productTypeId })
       .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
       .andWhere('product.deleted_at IS NULL')
@@ -370,14 +352,12 @@ export class ProductRepository {
   }
 
   async findActiveByStructureType(
-    organizationId: string,
     productTypeId: string,
     structureType: string,
     excludeProductId?: string,
   ): Promise<ProductEntity | null> {
     const query = this.repository
       .createQueryBuilder('product')
-      .where('product.organization_id = :organizationId', { organizationId })
       .andWhere('product.product_type_id = :productTypeId', { productTypeId })
       .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
       .andWhere('product.deleted_at IS NULL')
@@ -393,12 +373,10 @@ export class ProductRepository {
   }
 
   async findByType(
-    organizationId: string,
     productTypeId: string,
     activeOnly = true,
   ): Promise<ProductEntity[]> {
     const where: FindOptionsWhere<ProductEntity> = {
-      organizationId,
       productTypeId,
       deletedAt: IsNull(),
     };

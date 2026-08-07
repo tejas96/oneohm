@@ -61,7 +61,6 @@ export class OtpService {
    * Generate and store OTP
    * @param phone - Phone number (E.164 format: +919876543210)
    * @param userId - Optional user ID (if user exists)
-   * @param organizationId - Optional organization ID
    * @param ipAddress - Request IP address
    * @param userAgent - Request user agent
    *
@@ -70,11 +69,10 @@ export class OtpService {
   async generateAndStoreOtp(data: {
     phone: string;
     userId?: string;
-    organizationId?: string;
     ipAddress?: string;
     userAgent?: string;
   }): Promise<{ otp: string; expiresAt: Date }> {
-    const { phone, userId, organizationId, ipAddress, userAgent } = data;
+    const { phone, userId, ipAddress, userAgent } = data;
 
     // 1. Check if user/IP is blocked
     const isBlocked = await this.securityEventService.isBlocked(userId, ipAddress);
@@ -101,7 +99,6 @@ export class OtpService {
       eventCategory: SecurityEventCategory.AUTHENTICATION,
       status: SecurityEventStatus.PENDING,
       userId,
-      organizationId,
       ipAddress,
       userAgent,
       metadata: {

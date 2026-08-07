@@ -19,8 +19,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
+  ApiUpdate
 } from '../../../common/decorators';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -43,11 +42,10 @@ export class BrandController {
     responseType: BrandResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: CreateBrandDto,
   ): Promise<BrandResponseDto> {
-    const brand = await this.brandService.create(organizationId, body, currentUser.id);
+    const brand = await this.brandService.create(body, currentUser.id);
     return toDto(BrandResponseDto, brand);
   }
 
@@ -87,7 +85,6 @@ export class BrandController {
     ],
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('productTypeId') productTypeId?: string,
     @Query('isActive') isActive?: string,
@@ -109,7 +106,7 @@ export class BrandController {
       sortBy,
       sortOrder: sortOrder === 'DESC' ? ('DESC' as const) : ('ASC' as const),
     };
-    const result = await this.brandService.findAll(organizationId, filter);
+    const result = await this.brandService.findAll(filter);
     return {
       data: toDtoArray(BrandResponseDto, result.data),
       meta: result.meta,
@@ -123,11 +120,10 @@ export class BrandController {
     responseType: BrandResponseDto,
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<BrandResponseDto> {
-    const brand = await this.brandService.findById(id, organizationId);
+    const brand = await this.brandService.findById(id);
     return toDto(BrandResponseDto, brand);
   }
 
@@ -138,12 +134,11 @@ export class BrandController {
     responseType: BrandResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateBrandDto,
   ): Promise<BrandResponseDto> {
-    const brand = await this.brandService.update(id, organizationId, body, currentUser.id);
+    const brand = await this.brandService.update(id, body, currentUser.id);
     return toDto(BrandResponseDto, brand);
   }
 
@@ -153,10 +148,9 @@ export class BrandController {
     description: 'Soft delete a brand',
   })
   async delete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    await this.brandService.delete(id, organizationId);
+    await this.brandService.delete(id);
   }
 }

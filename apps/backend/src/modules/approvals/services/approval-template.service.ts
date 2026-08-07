@@ -17,12 +17,11 @@ export class ApprovalTemplateService {
    * Create a new approval template
    */
   async create(
-    organizationId: string,
     createDto: CreateApprovalTemplateDto,
     createdBy: string,
   ): Promise<ApprovalTemplateEntity> {
     // Check if code already exists
-    const existing = await this.templateRepository.findByCode(createDto.code, organizationId);
+    const existing = await this.templateRepository.findByCode(createDto.code);
 
     if (existing) {
       throw new BadRequestException(`Template with code "${createDto.code}" already exists`);
@@ -40,7 +39,6 @@ export class ApprovalTemplateService {
 
     return this.templateRepository.create({
       ...templateData,
-      organizationId,
       createdBy,
       updatedBy: createdBy,
       stages: stages as ApprovalStageEntity[], // TypeORM cascade creation - DTO shape differs from entity
@@ -51,7 +49,6 @@ export class ApprovalTemplateService {
    * Find all templates
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -60,14 +57,14 @@ export class ApprovalTemplateService {
       search?: string;
     },
   ): Promise<{ templates: ApprovalTemplateEntity[]; total: number }> {
-    return this.templateRepository.findAll(organizationId, page, limit, filters);
+    return this.templateRepository.findAll(page, limit, filters);
   }
 
   /**
    * Find template by ID
    */
-  async findById(id: string, organizationId: string): Promise<ApprovalTemplateEntity> {
-    const template = await this.templateRepository.findById(id, organizationId);
+  async findById(id: string): Promise<ApprovalTemplateEntity> {
+    const template = await this.templateRepository.findById(id);
 
     if (!template) {
       throw new NotFoundException('Template not found');
@@ -81,9 +78,8 @@ export class ApprovalTemplateService {
    */
   async findByWorkflowType(
     workflowType: ApprovalWorkflowType,
-    organizationId: string,
   ): Promise<ApprovalTemplateEntity[]> {
-    return this.templateRepository.findByWorkflowType(workflowType, organizationId);
+    return this.templateRepository.findByWorkflowType(workflowType);
   }
 
   /**
@@ -91,15 +87,14 @@ export class ApprovalTemplateService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateApprovalTemplateDto,
     updatedBy: string,
   ): Promise<ApprovalTemplateEntity> {
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     // Check code uniqueness if code is being updated
     if (updateDto.code) {
-      const existing = await this.templateRepository.findByCode(updateDto.code, organizationId);
+      const existing = await this.templateRepository.findByCode(updateDto.code);
 
       if (existing && existing.id !== id) {
         throw new BadRequestException(`Template with code "${updateDto.code}" already exists`);
@@ -115,7 +110,7 @@ export class ApprovalTemplateService {
       }
     }
 
-    return this.templateRepository.update(id, organizationId, {
+    return this.templateRepository.update(id, {
       ...updateDto,
       updatedBy,
     });
@@ -124,19 +119,18 @@ export class ApprovalTemplateService {
   /**
    * Delete template
    */
-  async delete(id: string, organizationId: string, deletedBy: string): Promise<void> {
-    await this.findById(id, organizationId);
-    await this.templateRepository.softDelete(id, organizationId, deletedBy);
+  async delete(id: string, deletedBy: string): Promise<void> {
+    await this.findById(id);
+    await this.templateRepository.softDelete(id, deletedBy);
   }
 
   /**
    * Get statistics
    */
   async getStatistics(
-    organizationId: string,
   ): Promise<ExtendedStatisticsResponse<string, ApprovalWorkflowType>> {
-    const byType = await this.templateRepository.countByWorkflowType(organizationId);
-    const activeCount = await this.templateRepository.countActive(organizationId);
+    const byType = await this.templateRepository.countByWorkflowType();
+    const activeCount = await this.templateRepository.countActive();
 
     return {
       total: Object.values(byType).reduce((sum, count) => sum + count, 0),
@@ -153,12 +147,11 @@ export class ApprovalTemplateService {
    */
   async toggleStatus(
     id: string,
-    organizationId: string,
     updatedBy: string,
   ): Promise<ApprovalTemplateEntity> {
-    const template = await this.findById(id, organizationId);
+    const template = await this.findById(id);
 
-    return this.templateRepository.update(id, organizationId, {
+    return this.templateRepository.update(id, {
       isActive: !template.isActive,
       updatedBy,
     });

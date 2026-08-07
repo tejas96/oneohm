@@ -39,11 +39,9 @@ export class CustomerOwnershipGuard implements CanActivate {
     }
 
     const organizationId = this.resolveOrganizationId(request);
-    request.organizationId = organizationId;
 
     const customerProfile = await this.customerProfileRepository.findByUserAndOrganization(
       request.user.id,
-      organizationId,
     );
 
     if (!customerProfile) {
@@ -54,17 +52,17 @@ export class CustomerOwnershipGuard implements CanActivate {
 
     const propertyId = request.params?.propertyId as string | undefined;
     if (propertyId) {
-      await this.assertPropertyOwnership(propertyId, organizationId, customerProfile.id);
+      await this.assertPropertyOwnership(propertyId, customerProfile.id);
     }
 
     const quotationId = request.params?.quotationId as string | undefined;
     if (quotationId) {
-      await this.assertQuoteOwnership(quotationId, organizationId, customerProfile.id);
+      await this.assertQuoteOwnership(quotationId, customerProfile.id);
     }
 
     const projectId = request.params?.projectId as string | undefined;
     if (projectId) {
-      await this.assertProjectOwnership(projectId, organizationId, customerProfile.id);
+      await this.assertProjectOwnership(projectId, customerProfile.id);
     }
 
     return true;
@@ -85,21 +83,16 @@ export class CustomerOwnershipGuard implements CanActivate {
       );
     }
 
-    if (!UUID_REGEX.test(organizationId)) {
-      throw new BadRequestException('organizationId must be a valid UUID');
-    }
-
+    
     return organizationId;
   }
 
   private async assertPropertyOwnership(
     propertyId: string,
-    organizationId: string,
     customerProfileId: string,
   ): Promise<void> {
     const property = await this.customerPropertyRepository.findByIdAndOrganization(
       propertyId,
-      organizationId,
     );
 
     if (property?.customerId !== customerProfileId) {
@@ -109,10 +102,9 @@ export class CustomerOwnershipGuard implements CanActivate {
 
   private async assertQuoteOwnership(
     quotationId: string,
-    organizationId: string,
     customerProfileId: string,
   ): Promise<void> {
-    const quote = await this.quoteRepository.findById(quotationId, organizationId);
+    const quote = await this.quoteRepository.findById(quotationId);
 
     if (quote.customerId !== customerProfileId) {
       throw new ForbiddenException('Access denied: You do not own this quotation');
@@ -121,10 +113,9 @@ export class CustomerOwnershipGuard implements CanActivate {
 
   private async assertProjectOwnership(
     projectId: string,
-    organizationId: string,
     customerProfileId: string,
   ): Promise<void> {
-    const project = await this.projectRepository.findById(projectId, organizationId);
+    const project = await this.projectRepository.findById(projectId);
 
     if (!project) {
       throw new ForbiddenException('Access denied: You do not own this project');
@@ -132,7 +123,6 @@ export class CustomerOwnershipGuard implements CanActivate {
 
     const property = await this.customerPropertyRepository.findByIdAndOrganization(
       project.propertyId,
-      organizationId,
     );
 
     if (property?.customerId !== customerProfileId) {

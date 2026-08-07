@@ -117,11 +117,9 @@ export class ProjectMaintenanceConfigController {
     type: [MaintenanceConfigResponseDto],
   })
   async findByOrganization(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
     @Query('includeRelations') includeRelations?: string,
   ): Promise<MaintenanceConfigResponseDto[]> {
     return this.maintenanceConfigService.findByOrganization(
-      organizationId,
       includeRelations === 'true',
     );
   }

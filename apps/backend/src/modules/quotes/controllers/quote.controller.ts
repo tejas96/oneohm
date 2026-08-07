@@ -22,8 +22,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
+  ApiUpdate
 } from '../../../common/decorators';
 import { toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -66,11 +65,10 @@ export class QuoteController {
     responseType: QuoteResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateQuoteDto,
   ): Promise<QuoteResponseDto> {
-    const quote = await this.quoteService.create(organizationId, createDto, currentUser.id);
+    const quote = await this.quoteService.create(createDto, currentUser.id);
 
     return plainToInstance(QuoteResponseDto, quote, {
       excludeExtraneousValues: true,
@@ -91,11 +89,10 @@ export class QuoteController {
     responseType: QuoteResponseDto,
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query() query: QuoteQueryDto,
   ): Promise<PaginatedResponse<QuoteResponseDto>> {
-    const result = await this.quoteService.findAll(organizationId, query);
+    const result = await this.quoteService.findAll(query);
     return toPaginatedResponse(
       QuoteResponseDto,
       result.data,
@@ -116,10 +113,9 @@ export class QuoteController {
   })
   @ApiResponse({ status: HttpStatus.OK })
   async getPropertyLockStatus(
-    @OrganizationContext() organizationId: string,
     @Query('propertyId', ParseUUIDPipe) propertyId: string,
   ): Promise<{ locked: boolean; acceptedQuoteNumber?: string }> {
-    return this.quoteService.getPropertyLockStatus(propertyId, organizationId);
+    return this.quoteService.getPropertyLockStatus(propertyId);
   }
 
   /**
@@ -133,10 +129,9 @@ export class QuoteController {
   })
   @ApiResponse({ status: HttpStatus.OK, type: [QuoteResponseDto] })
   async findByProperty(
-    @OrganizationContext() organizationId: string,
     @Param('propertyId', ParseUUIDPipe) propertyId: string,
   ): Promise<QuoteResponseDto[]> {
-    const quotes = await this.quoteService.findAllByPropertyId(propertyId, organizationId);
+    const quotes = await this.quoteService.findAllByPropertyId(propertyId);
     return plainToInstance(QuoteResponseDto, quotes, { excludeExtraneousValues: true });
   }
 
@@ -166,11 +161,10 @@ export class QuoteController {
     responseType: QuoteResponseDto,
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<QuoteResponseDto> {
-    const quote = await this.quoteService.findById(id, organizationId);
+    const quote = await this.quoteService.findById(id);
 
     return plainToInstance(QuoteResponseDto, quote, {
       excludeExtraneousValues: true,
@@ -188,12 +182,11 @@ export class QuoteController {
     responseType: QuoteResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateQuoteDto,
   ): Promise<QuoteResponseDto> {
-    const quote = await this.quoteService.update(id, organizationId, updateDto, currentUser.id);
+    const quote = await this.quoteService.update(id, updateDto, currentUser.id);
 
     return plainToInstance(QuoteResponseDto, quote, {
       excludeExtraneousValues: true,
@@ -223,14 +216,12 @@ export class QuoteController {
     type: QuoteResponseDto,
   })
   async updateStatus(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateQuoteStatusDto,
   ): Promise<QuoteResponseDto> {
     const quote = await this.quoteService.updateStatus(
       id,
-      organizationId,
       statusDto,
       currentUser.id,
     );
@@ -259,13 +250,12 @@ export class QuoteController {
     type: ShareQuoteWhatsappResponseDto,
   })
   async shareOnWhatsapp(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ShareQuoteWhatsappDto,
     @UploadedFile() file?: UploadedPdfFile,
   ): Promise<ShareQuoteWhatsappResponseDto> {
-    return this.quoteService.shareOnWhatsapp(id, organizationId, dto, currentUser.id, file);
+    return this.quoteService.shareOnWhatsapp(id, dto, currentUser.id, file);
   }
 
   /**
@@ -276,10 +266,9 @@ export class QuoteController {
     description: 'Soft delete a quote. Cannot delete accepted quotes.',
   })
   async delete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    await this.quoteService.delete(id, organizationId);
+    await this.quoteService.delete(id);
   }
 }

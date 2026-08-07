@@ -54,14 +54,8 @@ export class AuditLogRepository {
   ): Promise<AuditLogEntity[]> {
     const query = this.repository
       .createQueryBuilder('audit')
-      .leftJoinAndSelect('audit.organization', 'organization')
       .leftJoinAndSelect('audit.user', 'user');
 
-    if (filters.organizationId) {
-      query.andWhere('audit.organization_id = :organizationId', {
-        organizationId: filters.organizationId,
-      });
-    }
 
     if (filters.entityType) {
       query.andWhere('audit.entity_type = :entityType', { entityType: filters.entityType });
@@ -125,9 +119,8 @@ export class AuditLogRepository {
   /**
    * Find audit logs by organization
    */
-  async findByOrganization(organizationId: string, limit: number = 100): Promise<AuditLogEntity[]> {
+  async findByOrganization(limit: number = 100): Promise<AuditLogEntity[]> {
     return this.repository.find({
-      where: { organizationId },
       relations: ['user'],
       order: { createdAt: 'DESC' },
       take: limit,
@@ -185,11 +178,6 @@ export class AuditLogRepository {
   async countWithFilters(filters: QueryAuditLogsDto): Promise<number> {
     const query = this.repository.createQueryBuilder('audit');
 
-    if (filters.organizationId) {
-      query.andWhere('audit.organization_id = :organizationId', {
-        organizationId: filters.organizationId,
-      });
-    }
 
     if (filters.entityType) {
       query.andWhere('audit.entity_type = :entityType', { entityType: filters.entityType });
@@ -220,16 +208,13 @@ export class AuditLogRepository {
   /**
    * Get action statistics
    */
-  async getActionStats(organizationId?: string): Promise<Record<string, number>> {
+  async getActionStats(): Promise<Record<string, number>> {
     const query = this.repository
       .createQueryBuilder('audit')
       .select('audit.action', 'action')
       .addSelect('COUNT(*)', 'count')
       .groupBy('audit.action');
 
-    if (organizationId) {
-      query.where('audit.organization_id = :organizationId', { organizationId });
-    }
 
     const results = await query.getRawMany<{ action: string; count: string }>();
 
@@ -242,16 +227,13 @@ export class AuditLogRepository {
   /**
    * Get entity type statistics
    */
-  async getEntityTypeStats(organizationId?: string): Promise<Record<string, number>> {
+  async getEntityTypeStats(): Promise<Record<string, number>> {
     const query = this.repository
       .createQueryBuilder('audit')
       .select('audit.entity_type', 'entityType')
       .addSelect('COUNT(*)', 'count')
       .groupBy('audit.entity_type');
 
-    if (organizationId) {
-      query.where('audit.organization_id = :organizationId', { organizationId });
-    }
 
     const results = await query.getRawMany<{ entityType: string; count: string }>();
 

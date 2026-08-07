@@ -28,7 +28,6 @@ export class FollowupService {
    * Create a new followup
    */
   async create(
-    organizationId: string,
     createDto: CreateFollowupDto,
     createdBy: string,
   ): Promise<FollowupEntity> {
@@ -36,14 +35,14 @@ export class FollowupService {
 
     // Validate customer exists in this org
     const customer = await this.customerRepository.findById(createDto.customerId);
-    if (customer?.organizationId !== organizationId) {
+    if (!customer) {
       throw new NotFoundException('Customer not found');
     }
 
     // Validate property if provided
     if (createDto.propertyId) {
       const property = await this.propertyRepository.findById(createDto.propertyId);
-      if (property?.organizationId !== organizationId) {
+      if (!property) {
         throw new NotFoundException('Property not found');
       }
       // Ensure property belongs to the customer
@@ -55,7 +54,6 @@ export class FollowupService {
     // Validate assigned user has a role in this organization
     const userRoles = await this.userRoleRepository.findByUserAndOrganization(
       createDto.assignedToUserId,
-      organizationId,
     );
     if (userRoles.length === 0) {
       throw new BadRequestException('Assigned user not found in this organization');
@@ -63,7 +61,6 @@ export class FollowupService {
 
     const followup = await this.followupRepository.create({
       ...createDto,
-      organizationId,
       scheduledAt: new Date(createDto.scheduledAt),
       createdBy,
     });
@@ -76,12 +73,10 @@ export class FollowupService {
    * Find all followups for an organization
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
     const [data, total] = await this.followupRepository.findByOrganization(
-      organizationId,
       page,
       limit,
     );
@@ -92,7 +87,6 @@ export class FollowupService {
    * Find followups with filters
    */
   async findWithFilters(
-    organizationId: string,
     filters: {
       status?: FollowupStatus;
       assignedToUserId?: string;
@@ -112,7 +106,6 @@ export class FollowupService {
     };
 
     const [data, total] = await this.followupRepository.findWithFilters(
-      organizationId,
       parsedFilters,
       page,
       limit,
@@ -124,14 +117,12 @@ export class FollowupService {
    * Find followups assigned to current user
    */
   async findMyFollowups(
-    organizationId: string,
     userId: string,
     status?: FollowupStatus,
     page = 1,
     limit = 20,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
     const [data, total] = await this.followupRepository.findByAssignedUser(
-      organizationId,
       userId,
       status,
       page,
@@ -144,13 +135,11 @@ export class FollowupService {
    * Find today's followups
    */
   async findTodayFollowups(
-    organizationId: string,
     userId?: string,
     page = 1,
     limit = 20,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
     const [data, total] = await this.followupRepository.findTodayFollowups(
-      organizationId,
       userId,
       page,
       limit,
@@ -162,13 +151,11 @@ export class FollowupService {
    * Find overdue followups
    */
   async findOverdueFollowups(
-    organizationId: string,
     userId?: string,
     page = 1,
     limit = 20,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
     const [data, total] = await this.followupRepository.findOverdueFollowups(
-      organizationId,
       userId,
       page,
       limit,
@@ -179,8 +166,8 @@ export class FollowupService {
   /**
    * Find followup by ID
    */
-  async findById(id: string, organizationId: string): Promise<FollowupEntity> {
-    const followup = await this.followupRepository.findById(id, organizationId);
+  async findById(id: string): Promise<FollowupEntity> {
+    const followup = await this.followupRepository.findById(id);
     if (!followup) {
       throw new NotFoundException('Followup not found');
     }
@@ -192,19 +179,18 @@ export class FollowupService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateFollowupDto,
     updatedBy: string,
   ): Promise<FollowupEntity> {
     this.logger.log(`Updating followup: ${id}`);
 
     // Verify followup exists and belongs to org
-    const existingFollowup = await this.findById(id, organizationId);
+    const existingFollowup = await this.findById(id);
 
     // If propertyId is being updated, validate it
     if (updateDto.propertyId && updateDto.propertyId !== existingFollowup.propertyId) {
       const property = await this.propertyRepository.findById(updateDto.propertyId);
-      if (property?.organizationId !== organizationId) {
+      if (!property) {
         throw new NotFoundException('Property not found');
       }
       // Ensure property belongs to the customer
@@ -224,7 +210,7 @@ export class FollowupService {
       updates.scheduledAt = new Date(scheduledAt);
     }
 
-    const updatedFollowup = await this.followupRepository.update(id, organizationId, updates);
+    const updatedFollowup = await this.followupRepository.update(id, updates);
     if (!updatedFollowup) {
       throw new NotFoundException('Followup not found');
     }
@@ -238,12 +224,11 @@ export class FollowupService {
    */
   async markAsCompleted(
     id: string,
-    organizationId: string,
     updatedBy: string,
   ): Promise<FollowupEntity> {
     this.logger.log(`Marking followup as completed: ${id}`);
 
-    const existingFollowup = await this.findById(id, organizationId);
+    const existingFollowup = await this.findById(id);
 
     // Check if already in a final state
     if (existingFollowup.status === FollowupStatus.COMPLETED) {
@@ -253,7 +238,7 @@ export class FollowupService {
       throw new BadRequestException('Cannot complete a cancelled followup');
     }
 
-    const updatedFollowup = await this.followupRepository.update(id, organizationId, {
+    const updatedFollowup = await this.followupRepository.update(id, {
       status: FollowupStatus.COMPLETED,
       updatedBy,
     });
@@ -271,12 +256,11 @@ export class FollowupService {
    */
   async markAsCancelled(
     id: string,
-    organizationId: string,
     updatedBy: string,
   ): Promise<FollowupEntity> {
     this.logger.log(`Marking followup as cancelled: ${id}`);
 
-    const existingFollowup = await this.findById(id, organizationId);
+    const existingFollowup = await this.findById(id);
 
     // Check if already in a final state
     if (existingFollowup.status === FollowupStatus.CANCELLED) {
@@ -286,7 +270,7 @@ export class FollowupService {
       throw new BadRequestException('Cannot cancel a completed followup');
     }
 
-    const updatedFollowup = await this.followupRepository.update(id, organizationId, {
+    const updatedFollowup = await this.followupRepository.update(id, {
       status: FollowupStatus.CANCELLED,
       updatedBy,
     });
@@ -302,10 +286,10 @@ export class FollowupService {
   /**
    * Soft delete a followup
    */
-  async delete(id: string, organizationId: string, deletedBy: string): Promise<void> {
+  async delete(id: string, deletedBy: string): Promise<void> {
     this.logger.log(`Deleting followup: ${id}`);
 
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     const deleted = await this.followupRepository.softDelete(id, deletedBy);
     if (!deleted) {

@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { VendorStatus, VendorType } from '@tejas96/shared/types';
 
-import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateVendorDto, UpdateVendorDto } from '../dto';
 import { VendorEntity } from '../entities/vendor.entity';
 import { PurchaseOrderRepository, VendorRepository } from '../repositories';
@@ -14,7 +13,6 @@ import { PurchaseOrderRepository, VendorRepository } from '../repositories';
 export class VendorService {
   constructor(
     private readonly vendorRepository: VendorRepository,
-    private readonly organizationRepository: OrganizationRepository,
     private readonly purchaseOrderRepository: PurchaseOrderRepository,
   ) {}
 
@@ -22,18 +20,13 @@ export class VendorService {
    * Create a new vendor
    */
   async create(
-    organizationId: string,
     createDto: CreateVendorDto,
     createdBy: string,
   ): Promise<VendorEntity> {
     // Verify organization exists
-    const org = await this.organizationRepository.findOneById(organizationId);
-    if (!org) {
-      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
-    }
 
     // Check if code already exists
-    const existingVendor = await this.vendorRepository.findByCode(createDto.code, organizationId);
+    const existingVendor = await this.vendorRepository.findByCode(createDto.code);
 
     if (existingVendor) {
       throw new BadRequestException(`Vendor with code ${createDto.code} already exists`);
@@ -41,7 +34,6 @@ export class VendorService {
 
     // Create vendor
     const vendor = await this.vendorRepository.create({
-      organizationId,
       name: createDto.name,
       code: createDto.code,
       vendorType: createDto.vendorType,
@@ -66,14 +58,13 @@ export class VendorService {
       createdBy,
     });
 
-    return this.vendorRepository.findById(vendor.id, organizationId);
+    return this.vendorRepository.findById(vendor.id);
   }
 
   /**
    * Find all vendors with filters
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -82,14 +73,14 @@ export class VendorService {
       search?: string;
     },
   ): Promise<{ vendors: VendorEntity[]; total: number }> {
-    return this.vendorRepository.findAll(organizationId, page, limit, filters);
+    return this.vendorRepository.findAll(page, limit, filters);
   }
 
   /**
    * Find vendor by ID
    */
-  async findById(id: string, organizationId: string): Promise<VendorEntity> {
-    return this.vendorRepository.findById(id, organizationId);
+  async findById(id: string): Promise<VendorEntity> {
+    return this.vendorRepository.findById(id);
   }
 
   /**
@@ -97,13 +88,12 @@ export class VendorService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateVendorDto,
     updatedBy: string,
   ): Promise<VendorEntity> {
     // Check if code is being changed and already exists
     if (updateDto.code) {
-      const existingVendor = await this.vendorRepository.findByCode(updateDto.code, organizationId);
+      const existingVendor = await this.vendorRepository.findByCode(updateDto.code);
 
       if (existingVendor && existingVendor.id !== id) {
         throw new BadRequestException(`Vendor with code ${updateDto.code} already exists`);
@@ -111,7 +101,7 @@ export class VendorService {
     }
 
     // Update vendor
-    return this.vendorRepository.update(id, organizationId, {
+    return this.vendorRepository.update(id, {
       ...updateDto,
       updatedBy,
     });
@@ -120,21 +110,21 @@ export class VendorService {
   /**
    * Delete vendor (soft delete)
    */
-  async delete(id: string, organizationId: string, deletedBy: string): Promise<void> {
-    const hasActive = await this.purchaseOrderRepository.hasActivePOs(id, organizationId);
+  async delete(id: string, deletedBy: string): Promise<void> {
+    const hasActive = await this.purchaseOrderRepository.hasActivePOs(id);
     if (hasActive) {
       throw new BadRequestException('Cannot delete vendor with active purchase orders');
     }
-    await this.vendorRepository.softDelete(id, organizationId, deletedBy);
+    await this.vendorRepository.softDelete(id, deletedBy);
   }
 
   /**
    * Get vendor statistics
    */
-  async getStatistics(organizationId: string) {
+  async getStatistics() {
     const [countByStatus, countByType] = await Promise.all([
-      this.vendorRepository.countByStatus(organizationId),
-      this.vendorRepository.countByType(organizationId),
+      this.vendorRepository.countByStatus(),
+      this.vendorRepository.countByType(),
     ]);
 
     return {
@@ -148,11 +138,9 @@ export class VendorService {
    * Get active vendors by type
    */
   async getActiveVendorsByType(
-    organizationId: string,
     vendorType: VendorType,
   ): Promise<VendorEntity[]> {
     return this.vendorRepository.findByTypeAndStatus(
-      organizationId,
       vendorType,
       VendorStatus.ACTIVE,
     );
@@ -163,11 +151,10 @@ export class VendorService {
    */
   async changeStatus(
     id: string,
-    organizationId: string,
     status: VendorStatus,
     updatedBy: string,
   ): Promise<VendorEntity> {
-    return this.vendorRepository.update(id, organizationId, {
+    return this.vendorRepository.update(id, {
       status,
       updatedBy,
     });
@@ -176,11 +163,11 @@ export class VendorService {
   /**
    * Update vendor rating
    */
-  async updateRating(id: string, organizationId: string, rating: number): Promise<VendorEntity> {
+  async updateRating(id: string, rating: number): Promise<VendorEntity> {
     if (rating < 0 || rating > 5) {
       throw new BadRequestException('Rating must be between 0 and 5');
     }
 
-    return this.vendorRepository.updateRating(id, organizationId, rating);
+    return this.vendorRepository.updateRating(id, rating);
   }
 }

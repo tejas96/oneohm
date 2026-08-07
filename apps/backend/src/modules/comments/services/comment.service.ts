@@ -87,8 +87,8 @@ export class CommentService {
   /**
    * Find comments by organization
    */
-  async findByOrganization(organizationId: string): Promise<CommentEntity[]> {
-    return this.commentRepository.findByOrganization(organizationId);
+  async findByOrganization(): Promise<CommentEntity[]> {
+    return this.commentRepository.findByOrganization();
   }
 
   /**

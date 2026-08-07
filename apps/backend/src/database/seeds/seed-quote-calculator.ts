@@ -17,7 +17,6 @@ import { DataSource } from 'typeorm';
  */
 export async function seedQuoteCalculatorData(
   dataSource: DataSource,
-  organizationId: string,
 ): Promise<void> {
   console.log('🌱 Seeding Quote Calculator data...');
 
@@ -71,7 +70,6 @@ export async function seedQuoteCalculatorData(
           description = EXCLUDED.description
         RETURNING id`,
         [
-          organizationId,
           pt.name,
           pt.code,
           pt.description,
@@ -107,7 +105,7 @@ export async function seedQuoteCalculatorData(
         ON CONFLICT (organization_id, name) DO UPDATE SET
           manufacturer_name = EXCLUDED.manufacturer_name
         RETURNING id`,
-        [organizationId, brand.name, brand.manufacturer],
+        [brand.name, brand.manufacturer],
       );
       brandIds[brand.name] = result[0].id;
     }
@@ -211,7 +209,6 @@ export async function seedQuoteCalculatorData(
           specifications = EXCLUDED.specifications
         RETURNING id`,
         [
-          organizationId,
           productTypeIds['solar_panel'],
           brandIds[panel.brand],
           panel.name,
@@ -237,7 +234,6 @@ export async function seedQuoteCalculatorData(
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         ON CONFLICT DO NOTHING`,
         [
-          organizationId,
           result[0].id,
           panel.isDcr ? 'residential' : 'commercial',
           panel.pricePerWatt,
@@ -386,7 +382,6 @@ export async function seedQuoteCalculatorData(
           specifications = EXCLUDED.specifications
         RETURNING id`,
         [
-          organizationId,
           productTypeIds['inverter'],
           brandIds[inverter.brand],
           inverter.name,
@@ -410,7 +405,6 @@ export async function seedQuoteCalculatorData(
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         ON CONFLICT DO NOTHING`,
         [
-          organizationId,
           result[0].id,
           null,
           inverter.price,
@@ -436,7 +430,6 @@ export async function seedQuoteCalculatorData(
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT DO NOTHING`,
       [
-        organizationId,
         'PM Surya Ghar - Residential',
         SubsidySchemeType.PM_SURYA_GHAR,
         ProjectType.RESIDENTIAL,
@@ -459,7 +452,6 @@ export async function seedQuoteCalculatorData(
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT DO NOTHING`,
       [
-        organizationId,
         'PM Surya Ghar - Commercial',
         SubsidySchemeType.PM_SURYA_GHAR,
         ProjectType.COMMERCIAL,
@@ -577,7 +569,6 @@ export async function seedQuoteCalculatorData(
           is_active = EXCLUDED.is_active,
           updated_at = NOW()`,
         [
-          organizationId,
           pricing.min,
           pricing.max,
           pricing.transport,
@@ -603,7 +594,6 @@ export async function seedQuoteCalculatorData(
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       ON CONFLICT DO NOTHING`,
       [
-        organizationId,
         30,
         3,
         4,
@@ -666,9 +656,9 @@ async function main() {
 
     const orgId = result[0].id;
     console.log(`Using organization ID: ${orgId}`);
-    await seedQuoteCalculatorData(dataSource, orgId);
+    await seedQuoteCalculatorData(dataSource);
   } else {
-    await seedQuoteCalculatorData(dataSource, organizationId);
+    await seedQuoteCalculatorData(dataSource);
   }
 
   await dataSource.destroy();

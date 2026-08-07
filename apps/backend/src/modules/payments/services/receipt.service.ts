@@ -98,14 +98,13 @@ export class ReceiptService {
    * Failure of any step rolls back the entire flow.
    */
   async create(
-    organizationId: string,
     dto: CreateReceiptDto,
     createdBy: string,
   ): Promise<PaymentEntity> {
     assertMoneyWritesAllowed();
     this.assertPaidAt(dto.paidAt);
 
-    const project = await this.loadProjectInOrg(dto.projectId, organizationId);
+    const project = await this.loadProjectInOrg(dto.projectId);
     const customerId = await this.resolveCustomerId(project, dto.customerId);
     const propertyId = project.property?.id ?? project.propertyId;
     const initialStatus = dto.status ?? PaymentTransactionStatus.RECEIVED;
@@ -117,7 +116,6 @@ export class ReceiptService {
         lockedTerm = await this.termRepository.findByIdForUpdate(
           manager,
           dto.paymentTermId,
-          organizationId,
         );
         if (!lockedTerm) {
           throw new NotFoundException(`Payment term ${dto.paymentTermId} not found`);
@@ -144,7 +142,6 @@ export class ReceiptService {
       const expectedAmount = lockedTerm ? Number(lockedTerm.expectedAmount) : dto.paidAmount;
 
       const receipt = receiptRepo.create({
-        organizationId,
         projectId: project.id,
         customerId,
         paymentTermId: dto.paymentTermId ?? null,
@@ -171,7 +168,6 @@ export class ReceiptService {
         await this.attachProofDocument({
           manager,
           receiptId: saved.id,
-          organizationId,
           propertyId,
           createdBy,
           proof: dto.proofDocument,
@@ -196,7 +192,6 @@ export class ReceiptService {
    */
   async updateStatus(
     id: string,
-    organizationId: string,
     dto: UpdateReceiptStatusDto,
     updatedBy: string,
   ): Promise<PaymentEntity> {
@@ -206,7 +201,6 @@ export class ReceiptService {
         .createQueryBuilder('p')
         .setLock('pessimistic_write')
         .where('p.id = :id', { id })
-        .andWhere('p.organization_id = :organizationId', { organizationId })
         .andWhere('p.deleted_at IS NULL')
         .getOne();
 
@@ -227,7 +221,7 @@ export class ReceiptService {
       // Lock the linked term (if any) before mutating the receipt so
       // re-aggregation sees a consistent snapshot.
       if (receipt.paymentTermId) {
-        await this.termRepository.findByIdForUpdate(manager, receipt.paymentTermId, organizationId);
+        await this.termRepository.findByIdForUpdate(manager, receipt.paymentTermId);
       }
 
       receipt.status = dto.status;
@@ -251,14 +245,13 @@ export class ReceiptService {
   // SOFT DELETE — re-aggregates parent term in same tx
   // ============================================
 
-  async delete(id: string, organizationId: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PaymentEntity);
       const receipt = await repo
         .createQueryBuilder('p')
         .setLock('pessimistic_write')
         .where('p.id = :id', { id })
-        .andWhere('p.organization_id = :organizationId', { organizationId })
         .andWhere('p.deleted_at IS NULL')
         .getOne();
 
@@ -267,7 +260,7 @@ export class ReceiptService {
       }
 
       if (receipt.paymentTermId) {
-        await this.termRepository.findByIdForUpdate(manager, receipt.paymentTermId, organizationId);
+        await this.termRepository.findByIdForUpdate(manager, receipt.paymentTermId);
       }
 
       await repo.softDelete(id);
@@ -297,9 +290,9 @@ export class ReceiptService {
    * legacy surface slated for removal. Returns the same PaymentEntity shape,
    * so the response DTO is unchanged for callers.
    */
-  async listByProject(projectId: string, organizationId: string): Promise<PaymentEntity[]> {
+  async listByProject(projectId: string): Promise<PaymentEntity[]> {
     return this.dataSource.getRepository(PaymentEntity).find({
-      where: { projectId, organizationId, deletedAt: IsNull() },
+      where: { projectId, deletedAt: IsNull() },
       order: { paidAt: 'DESC', createdAt: 'DESC' },
       relations: ['customer', 'reconciledByUser'],
     });
@@ -307,7 +300,6 @@ export class ReceiptService {
 
   async getProjectSummary(
     projectId: string,
-    organizationId: string,
   ): Promise<{
     totals: {
       totalExpected: number;
@@ -335,9 +327,9 @@ export class ReceiptService {
     nextDueTermId: string | null;
     overdueCount: number;
   }> {
-    const project = await this.loadProjectInOrg(projectId, organizationId);
+    const project = await this.loadProjectInOrg(projectId);
 
-    const terms = await this.termRepository.findByProject(project.id, organizationId);
+    const terms = await this.termRepository.findByProject(project.id);
 
     const counted = COUNTED_STATUSES.map((s) => `'${s}'`).join(',');
     const totalsRows = await this.dataSource.query(
@@ -349,7 +341,7 @@ export class ReceiptService {
          AND organization_id = $2
          AND deleted_at IS NULL
          AND status IN (${counted})`,
-      [project.id, organizationId],
+      [project.id],
     );
 
     const totalReceived = Number(totalsRows[0]?.total_received ?? 0);
@@ -383,7 +375,7 @@ export class ReceiptService {
          AND deleted_at IS NULL
          AND status IN (${counted})
        ORDER BY created_at DESC`,
-      [project.id, organizationId],
+      [project.id],
     );
 
     return {
@@ -448,7 +440,6 @@ export class ReceiptService {
 
   private async loadProjectInOrg(
     projectId: string,
-    organizationId: string,
   ): Promise<{
     id: string;
     propertyId: string;
@@ -456,13 +447,13 @@ export class ReceiptService {
     quote?: { customerId: string; organizationId?: string };
   }> {
     try {
-      const p = await this.projectRepository.findById(projectId, organizationId);
+      const p = await this.projectRepository.findById(projectId);
       return {
         id: p.id,
         propertyId: p.propertyId,
         property: p.property ? { id: p.property.id } : undefined,
         quote: p.quote
-          ? { customerId: p.quote.customerId, organizationId: p.quote.organizationId }
+          ? { customerId: p.quote.customerId }
           : undefined,
       };
     } catch {
@@ -498,12 +489,11 @@ export class ReceiptService {
   private async attachProofDocument(params: {
     manager: EntityManager;
     receiptId: string;
-    organizationId: string;
     propertyId: string;
     createdBy: string;
     proof: NonNullable<CreateReceiptDto['proofDocument']>;
   }): Promise<void> {
-    const { manager, receiptId, organizationId, propertyId, createdBy, proof } = params;
+    const { manager, receiptId, propertyId, createdBy, proof } = params;
 
     const category =
       proof.category ??
@@ -511,7 +501,6 @@ export class ReceiptService {
 
     const repo = manager.getRepository(DocumentEntity);
     const doc = repo.create({
-      organizationId,
       propertyId,
       entityType: DocumentEntityType.PAYMENT,
       entityId: receiptId,

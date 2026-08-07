@@ -28,7 +28,6 @@ export class ApprovalRequestRepository {
    * Find all requests for an organization
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -47,7 +46,6 @@ export class ApprovalRequestRepository {
       .leftJoinAndSelect('request.template', 'template')
       .leftJoinAndSelect('request.currentStage', 'currentStage')
       .leftJoinAndSelect('request.requestedByUser', 'requestedByUser')
-      .where('request.organization_id = :organizationId', { organizationId })
       .orderBy('request.submitted_at', 'DESC');
 
     // Apply filters
@@ -108,11 +106,10 @@ export class ApprovalRequestRepository {
   /**
    * Find request by ID
    */
-  async findById(id: string, organizationId: string): Promise<ApprovalRequestEntity | null> {
+  async findById(id: string): Promise<ApprovalRequestEntity | null> {
     return this.repository.findOne({
       where: {
         id,
-        organizationId,
       },
       relations: [
         'template',
@@ -171,13 +168,11 @@ export class ApprovalRequestRepository {
    */
   async findPendingForUser(
     userId: string,
-    organizationId: string,
   ): Promise<ApprovalRequestEntity[]> {
     return this.repository
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.template', 'template')
       .leftJoinAndSelect('request.currentStage', 'currentStage')
-      .where('request.organization_id = :organizationId', { organizationId })
       .andWhere('request.status = :status', { status: ApprovalRequestStatus.IN_PROGRESS })
       .andWhere('(:userId = ANY(currentStage.approver_user_ids))', { userId })
       .orderBy('request.priority', 'DESC')
@@ -190,18 +185,16 @@ export class ApprovalRequestRepository {
    */
   async update(
     id: string,
-    organizationId: string,
     updateData: Record<string, unknown>,
   ): Promise<ApprovalRequestEntity> {
     await this.repository.update(
       {
         id,
-        organizationId,
       },
       updateData,
     );
 
-    const updated = await this.findById(id, organizationId);
+    const updated = await this.findById(id);
     if (!updated) {
       throw new Error('Request not found after update');
     }
@@ -211,12 +204,11 @@ export class ApprovalRequestRepository {
   /**
    * Get statistics by status
    */
-  async countByStatus(organizationId: string): Promise<Record<ApprovalRequestStatus, number>> {
+  async countByStatus(): Promise<Record<ApprovalRequestStatus, number>> {
     const result = await this.repository
       .createQueryBuilder('request')
       .select('request.status', 'status')
       .addSelect('COUNT(request.id)', 'count')
-      .where('request.organization_id = :organizationId', { organizationId })
       .groupBy('request.status')
       .getRawMany<{ status: ApprovalRequestStatus; count: string }>();
 
@@ -235,10 +227,9 @@ export class ApprovalRequestRepository {
   /**
    * Count pending requests
    */
-  async countPending(organizationId: string): Promise<number> {
+  async countPending(): Promise<number> {
     return this.repository.count({
       where: {
-        organizationId,
         status: ApprovalRequestStatus.IN_PROGRESS,
       },
     });

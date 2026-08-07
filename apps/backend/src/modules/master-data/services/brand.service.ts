@@ -19,7 +19,6 @@ export class BrandService {
   ) {}
 
   async findAll(
-    organizationId: string,
     filters?: {
       productTypeId?: string;
       isActive?: boolean;
@@ -32,7 +31,7 @@ export class BrandService {
   ): Promise<PaginatedBrands> {
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
-    const { data, total } = await this.brandRepository.findAll(organizationId, filters);
+    const { data, total } = await this.brandRepository.findAll(filters);
     const withTypes = await this.attachProductTypes(data);
     return {
       data: withTypes,
@@ -40,8 +39,8 @@ export class BrandService {
     };
   }
 
-  async findById(id: string, organizationId: string): Promise<BrandWithProductTypes> {
-    const brand = await this.brandRepository.findById(id, organizationId);
+  async findById(id: string): Promise<BrandWithProductTypes> {
+    const brand = await this.brandRepository.findById(id);
     if (!brand) throw new NotFoundException('Brand not found');
     const [withTypes] = await this.attachProductTypes([brand]);
     if (!withTypes) {
@@ -51,14 +50,13 @@ export class BrandService {
   }
 
   async create(
-    organizationId: string,
     data: CreateBrandDto,
     createdBy?: string,
   ): Promise<BrandWithProductTypes> {
-    const existing = await this.brandRepository.findByName(data.name, organizationId);
+    const existing = await this.brandRepository.findByName(data.name);
     if (existing) throw new ConflictException(`Brand '${data.name}' already exists`);
     const { productTypeIds, ...brandData } = data;
-    const brand = await this.brandRepository.create(organizationId, { ...brandData, createdBy });
+    const brand = await this.brandRepository.create({ ...brandData, createdBy });
     if (productTypeIds !== undefined) {
       await this.brandProductTypeRepository.replaceBrandProductTypes(brand.id, productTypeIds);
     }
@@ -71,13 +69,12 @@ export class BrandService {
 
   async update(
     id: string,
-    organizationId: string,
     data: UpdateBrandDto,
     updatedBy?: string,
   ): Promise<BrandWithProductTypes> {
-    await this.findById(id, organizationId);
+    await this.findById(id);
     const { productTypeIds, ...brandData } = data;
-    const brand = await this.brandRepository.update(id, organizationId, {
+    const brand = await this.brandRepository.update(id, {
       ...brandData,
       updatedBy,
     });
@@ -91,9 +88,9 @@ export class BrandService {
     return withTypes;
   }
 
-  async delete(id: string, organizationId: string): Promise<void> {
-    await this.findById(id, organizationId);
-    await this.brandRepository.softDelete(id, organizationId);
+  async delete(id: string): Promise<void> {
+    await this.findById(id);
+    await this.brandRepository.softDelete(id);
   }
 
   private async attachProductTypes(brands: BrandEntity[]): Promise<BrandWithProductTypes[]> {

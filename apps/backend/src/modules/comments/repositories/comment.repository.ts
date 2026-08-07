@@ -99,9 +99,9 @@ export class CommentRepository {
   /**
    * Find comments by organization
    */
-  async findByOrganization(organizationId: string): Promise<CommentEntity[]> {
+  async findByOrganization(): Promise<CommentEntity[]> {
     return this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       relations: ['createdByUser'],
       order: { createdAt: 'DESC' },
     });

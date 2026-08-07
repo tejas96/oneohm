@@ -13,7 +13,6 @@ export class ProductTypeRepository {
   ) {}
 
   async findAll(
-    organizationId: string,
     filters?: {
       isActive?: boolean;
       search?: string;
@@ -26,7 +25,6 @@ export class ProductTypeRepository {
     const query = this.repository
       .createQueryBuilder('productType')
       .leftJoinAndSelect('productType.attributes', 'attributes')
-      .where('productType.organization_id = :organizationId', { organizationId })
       .andWhere('productType.deleted_at IS NULL');
 
     if (filters?.isActive !== undefined) {
@@ -67,38 +65,36 @@ export class ProductTypeRepository {
     return { data, total };
   }
 
-  async findById(id: string, organizationId: string): Promise<ProductTypeEntity | null> {
+  async findById(id: string): Promise<ProductTypeEntity | null> {
     return this.repository.findOne({
-      where: { id, organizationId, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull() },
       relations: ['attributes'],
     });
   }
 
-  async findByCode(code: string, organizationId: string): Promise<ProductTypeEntity | null> {
+  async findByCode(code: string): Promise<ProductTypeEntity | null> {
     return this.repository.findOne({
-      where: { code, organizationId, deletedAt: IsNull(), isActive: true },
+      where: { code, deletedAt: IsNull(), isActive: true },
       relations: ['attributes'],
     });
   }
 
   async create(
-    organizationId: string,
     data: Partial<ProductTypeEntity>,
   ): Promise<ProductTypeEntity> {
-    const entity = this.repository.create({ ...data, organizationId });
+    const entity = this.repository.create({ ...data });
     return this.repository.save(entity);
   }
 
   async update(
     id: string,
-    organizationId: string,
     data: Partial<ProductTypeEntity>,
   ): Promise<ProductTypeEntity> {
     return this.repository.manager.transaction(async (manager) => {
       const repo = manager.getRepository(ProductTypeEntity);
       const attrRepo = manager.getRepository(ProductTypeAttributeEntity);
       const existing = await repo.findOne({
-        where: { id, organizationId, deletedAt: IsNull() },
+        where: { id, deletedAt: IsNull() },
         relations: ['attributes'],
       });
       if (!existing) {

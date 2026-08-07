@@ -22,7 +22,6 @@ export class StockTransferService {
   ) {}
 
   async transferStock(
-    organizationId: string,
     fromWarehouseId: string,
     toWarehouseId: string,
     productId: string,
@@ -35,9 +34,9 @@ export class StockTransferService {
     }
 
     await Promise.all([
-      this.warehouseRepository.findById(fromWarehouseId, organizationId),
-      this.warehouseRepository.findById(toWarehouseId, organizationId),
-      this.productRepository.findById(productId, organizationId),
+      this.warehouseRepository.findById(fromWarehouseId),
+      this.warehouseRepository.findById(toWarehouseId),
+      this.productRepository.findById(productId),
     ]);
 
     let sourceForAlert: InventoryStockEntity | null = null;
@@ -48,7 +47,6 @@ export class StockTransferService {
       const stockRepo = manager.getRepository(InventoryStockEntity);
       const sourceStock = await stockRepo
         .createQueryBuilder('stock')
-        .where('stock.organizationId = :organizationId', { organizationId })
         .andWhere('stock.warehouseId = :warehouseId', { warehouseId: fromWarehouseId })
         .andWhere('stock.productId = :productId', { productId })
         .setLock('pessimistic_write')
@@ -70,7 +68,6 @@ export class StockTransferService {
 
       let destinationStock = await stockRepo
         .createQueryBuilder('stock')
-        .where('stock.organizationId = :organizationId', { organizationId })
         .andWhere('stock.warehouseId = :warehouseId', { warehouseId: toWarehouseId })
         .andWhere('stock.productId = :productId', { productId })
         .setLock('pessimistic_write')
@@ -78,7 +75,6 @@ export class StockTransferService {
 
       if (!destinationStock) {
         destinationStock = stockRepo.create({
-          organizationId,
           warehouseId: toWarehouseId,
           productId,
           availableQuantity: 0,
@@ -99,7 +95,6 @@ export class StockTransferService {
       const txnRepo = manager.getRepository(InventoryTransactionEntity);
       await txnRepo.save(
         txnRepo.create({
-          organizationId,
           warehouseId: fromWarehouseId,
           productId,
           transactionType: InventoryTransactionType.TRANSFER_OUT,
@@ -113,7 +108,6 @@ export class StockTransferService {
       );
       await txnRepo.save(
         txnRepo.create({
-          organizationId,
           warehouseId: toWarehouseId,
           productId,
           transactionType: InventoryTransactionType.TRANSFER_IN,
@@ -131,7 +125,6 @@ export class StockTransferService {
 
     if (sourceForAlert) {
       this.lowStockAlertService.checkAndFire(
-        organizationId,
         sourceForAlert,
         prevSourceAvailable,
         nextSourceAvailable,

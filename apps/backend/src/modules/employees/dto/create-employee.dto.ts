@@ -38,7 +38,6 @@ export class CreateEmployeeDto {
   @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, {
     message: 'organizationId must be a valid UUID',
   })
-  organizationId!: string;
 
   // ==================== Employment Info ====================
   @ApiPropertyOptional({

@@ -3,7 +3,6 @@ import { MaintenanceTaskStatus } from '@tejas96/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 import { MaintenanceConfigResponseDto } from './maintenance-config-response.dto';
-import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 
 /**
@@ -56,9 +55,6 @@ export class MaintenanceTaskResponseDto {
   @Expose()
   id: string;
 
-  @ApiProperty({ description: 'Organization ID', example: '123e4567-e89b-12d3-a456-426614174001' })
-  @Expose()
-  organizationId: string;
 
   @ApiProperty({ description: 'Project ID', example: '123e4567-e89b-12d3-a456-426614174002' })
   @Expose()
@@ -169,10 +165,7 @@ export class MaintenanceTaskResponseDto {
   updatedBy?: string;
 
   // Relations
-  @ApiPropertyOptional({ description: 'Organization details', type: OrganizationResponseDto })
   @Expose()
-  @Type(() => OrganizationResponseDto)
-  organization?: OrganizationResponseDto;
 
   @ApiPropertyOptional({
     description: 'Maintenance config details',

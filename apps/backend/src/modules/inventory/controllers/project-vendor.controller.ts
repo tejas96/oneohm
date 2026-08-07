@@ -20,8 +20,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
+  ApiUpdate
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -52,10 +51,9 @@ export class ProjectVendorController {
   @Get('project/:projectId')
   @ApiOperation({ summary: 'Get vendors by project' })
   async findByProject(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ProjectVendorResponseDto[]> {
-    const projectVendors = await this.projectVendorService.findByProject(projectId, organizationId);
+    const projectVendors = await this.projectVendorService.findByProject(projectId);
     return plainToInstance(ProjectVendorResponseDto, projectVendors, {
       excludeExtraneousValues: true,
     });
@@ -68,12 +66,10 @@ export class ProjectVendorController {
   @Get('project/:projectId/contract-value')
   @ApiOperation({ summary: 'Get total contract value for a project' })
   async getTotalContractValue(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<{ totalValue: number }> {
     const totalValue = await this.projectVendorService.getTotalContractValueByProject(
       projectId,
-      organizationId,
     );
     return { totalValue };
   }
@@ -85,12 +81,10 @@ export class ProjectVendorController {
   @Get('project/:projectId/active')
   @ApiOperation({ summary: 'Get active vendors for a project' })
   async getActiveVendors(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ProjectVendorResponseDto[]> {
     const projectVendors = await this.projectVendorService.getActiveVendorsByProject(
       projectId,
-      organizationId,
     );
     return plainToInstance(ProjectVendorResponseDto, projectVendors, {
       excludeExtraneousValues: true,
@@ -107,7 +101,6 @@ export class ProjectVendorController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, enum: Object.values(ProjectVendorStatus) })
   async findByVendor(
-    @OrganizationContext() organizationId: string,
     @Param('vendorId', ParseUUIDPipe) vendorId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -118,7 +111,6 @@ export class ProjectVendorController {
   }> {
     const { projectVendors, total } = await this.projectVendorService.findByVendor(
       vendorId,
-      organizationId,
       page,
       limit,
       { status },
@@ -146,12 +138,10 @@ export class ProjectVendorController {
     responseType: ProjectVendorResponseDto,
   })
   async assignVendor(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateProjectVendorDto,
   ): Promise<ProjectVendorResponseDto> {
     const projectVendor = await this.projectVendorService.assignVendorToProject(
-      organizationId,
       createDto,
       currentUser.id,
     );
@@ -169,10 +159,9 @@ export class ProjectVendorController {
   @Get(':id')
   @ApiReadOne({ summary: 'Get project-vendor by ID', responseType: ProjectVendorResponseDto })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProjectVendorResponseDto> {
-    const projectVendor = await this.projectVendorService.findById(id, organizationId);
+    const projectVendor = await this.projectVendorService.findById(id);
     return plainToInstance(ProjectVendorResponseDto, projectVendor, {
       excludeExtraneousValues: true,
     });
@@ -188,11 +177,10 @@ export class ProjectVendorController {
     responseType: ProjectVendorResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateProjectVendorDto,
   ): Promise<ProjectVendorResponseDto> {
-    const projectVendor = await this.projectVendorService.update(id, organizationId, updateDto);
+    const projectVendor = await this.projectVendorService.update(id, updateDto);
     return plainToInstance(ProjectVendorResponseDto, projectVendor, {
       excludeExtraneousValues: true,
     });
@@ -205,10 +193,9 @@ export class ProjectVendorController {
   @Delete(':id')
   @ApiDelete({ summary: 'Remove vendor from project' })
   async remove(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.projectVendorService.removeVendorFromProject(id, organizationId);
+    await this.projectVendorService.removeVendorFromProject(id);
     return { message: 'Vendor removed from project successfully' };
   }
 
@@ -219,11 +206,10 @@ export class ProjectVendorController {
   @Patch(':id/status')
   @ApiOperation({ summary: 'Change vendor status in project' })
   async changeStatus(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status', new ParseEnumPipe(ProjectVendorStatus)) status: ProjectVendorStatus,
   ): Promise<ProjectVendorResponseDto> {
-    const projectVendor = await this.projectVendorService.changeStatus(id, organizationId, status);
+    const projectVendor = await this.projectVendorService.changeStatus(id, status);
     return plainToInstance(ProjectVendorResponseDto, projectVendor, {
       excludeExtraneousValues: true,
     });

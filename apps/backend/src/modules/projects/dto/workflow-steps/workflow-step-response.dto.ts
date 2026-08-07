@@ -7,9 +7,6 @@ export class WorkflowStepResponseDto {
   @Expose()
   id!: string;
 
-  @ApiProperty()
-  @Expose()
-  organizationId!: string;
 
   @ApiProperty()
   @Expose()

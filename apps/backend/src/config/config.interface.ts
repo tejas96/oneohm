@@ -138,7 +138,6 @@ export interface SeedConfig {
   platformAdminEmail: string;
   platformAdminPhone: string;
   platformAdminPassword: string;
-  organizationId: string;
 }
 
 /**

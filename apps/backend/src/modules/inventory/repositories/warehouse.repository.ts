@@ -27,9 +27,9 @@ export class WarehouseRepository {
   /**
    * Find warehouse by ID with relations
    */
-  async findById(id: string, organizationId: string): Promise<WarehouseEntity> {
+  async findById(id: string): Promise<WarehouseEntity> {
     const warehouse = await this.repository.findOne({
-      where: { id, organizationId, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull() },
       relations: ['organization', 'warehouseManager'],
     });
 
@@ -43,9 +43,9 @@ export class WarehouseRepository {
   /**
    * Find warehouse by code
    */
-  async findByCode(code: string, organizationId: string): Promise<WarehouseEntity | null> {
+  async findByCode(code: string): Promise<WarehouseEntity | null> {
     return this.repository.findOne({
-      where: { code, organizationId, deletedAt: IsNull() },
+      where: { code, deletedAt: IsNull() },
     });
   }
 
@@ -53,7 +53,6 @@ export class WarehouseRepository {
    * Find all warehouses with filters and pagination
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -66,7 +65,6 @@ export class WarehouseRepository {
     const query = this.repository
       .createQueryBuilder('warehouse')
       .leftJoinAndSelect('warehouse.warehouseManager', 'manager')
-      .where('warehouse.organizationId = :organizationId', { organizationId })
       .andWhere('warehouse.deletedAt IS NULL');
 
     // Apply filters
@@ -110,10 +108,9 @@ export class WarehouseRepository {
    */
   async update(
     id: string,
-    organizationId: string,
     updateData: Record<string, unknown>,
   ): Promise<WarehouseEntity> {
-    const warehouse = await this.findById(id, organizationId);
+    const warehouse = await this.findById(id);
 
     Object.assign(warehouse, updateData);
 
@@ -123,8 +120,8 @@ export class WarehouseRepository {
   /**
    * Soft delete warehouse
    */
-  async softDelete(id: string, organizationId: string, deletedBy: string): Promise<void> {
-    const warehouse = await this.findById(id, organizationId);
+  async softDelete(id: string, deletedBy: string): Promise<void> {
+    const warehouse = await this.findById(id);
 
     warehouse.deletedAt = new Date();
     warehouse.updatedBy = deletedBy;
@@ -135,12 +132,11 @@ export class WarehouseRepository {
   /**
    * Count warehouses by status
    */
-  async countByStatus(organizationId: string): Promise<Record<WarehouseStatus, number>> {
+  async countByStatus(): Promise<Record<WarehouseStatus, number>> {
     const result = await this.repository
       .createQueryBuilder('warehouse')
       .select('warehouse.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('warehouse.organizationId = :organizationId', { organizationId })
       .andWhere('warehouse.deletedAt IS NULL')
       .groupBy('warehouse.status')
       .getRawMany<{ status: WarehouseStatus; count: string }>();
@@ -161,12 +157,10 @@ export class WarehouseRepository {
    * Find warehouses by type
    */
   async findByType(
-    organizationId: string,
     warehouseType: WarehouseType,
   ): Promise<WarehouseEntity[]> {
     return this.repository.find({
       where: {
-        organizationId,
         warehouseType,
         status: WarehouseStatus.ACTIVE,
         deletedAt: IsNull(),

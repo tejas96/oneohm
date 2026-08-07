@@ -49,7 +49,6 @@ export class ConsumerNotificationListener {
       const propertyLabel = event.propertyName || 'your property';
 
       await this.notificationService.create({
-        organizationId: event.organizationId,
         userId,
         type: NotificationType.PROPERTY_CREATED,
         title: 'Property Registered ✅',
@@ -81,7 +80,6 @@ export class ConsumerNotificationListener {
       }
 
       await this.notificationService.create({
-        organizationId: event.organizationId,
         userId,
         type: NotificationType.QUOTATION_CREATED,
         title: 'New Quotation Ready 📋',
@@ -114,7 +112,6 @@ export class ConsumerNotificationListener {
       }
 
       await this.notificationService.create({
-        organizationId: event.organizationId,
         userId,
         type: NotificationType.PROJECT_ONBOARDED,
         title: 'Project Started! 🎉',
@@ -152,7 +149,6 @@ export class ConsumerNotificationListener {
       }
 
       const notificationResult = await this.notificationService.create({
-        organizationId: event.organizationId,
         userId,
         type: NotificationType.PROJECT_COMPLETED,
         title: 'Project Completed! ✅',
@@ -188,7 +184,6 @@ export class ConsumerNotificationListener {
       const senderName = await this.resolveSenderName(event.senderUserId);
 
       await this.notificationService.create({
-        organizationId: event.organizationId,
         userId,
         type: NotificationType.CHAT_MESSAGE,
         title: `New Message from ${senderName}`,

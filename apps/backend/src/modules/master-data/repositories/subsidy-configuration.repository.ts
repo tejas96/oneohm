@@ -20,12 +20,10 @@ export class SubsidyConfigurationRepository {
    * Create a new subsidy configuration
    */
   async create(
-    organizationId: string,
     data: Partial<SubsidyConfiguration>,
   ): Promise<SubsidyConfiguration> {
     const config = this.repository.create({
       ...data,
-      organizationId,
     });
     return this.repository.save(config);
   }
@@ -35,7 +33,6 @@ export class SubsidyConfigurationRepository {
    * This is the main method used by the quote calculator
    */
   async findActiveByProjectType(
-    organizationId: string,
     projectType: ProjectType,
     asOfDate?: Date,
   ): Promise<SubsidyConfiguration | null> {
@@ -44,7 +41,6 @@ export class SubsidyConfigurationRepository {
 
     return this.repository
       .createQueryBuilder('config')
-      .where('config.organization_id = :organizationId', { organizationId })
       .andWhere('config.project_type = :projectType', { projectType })
       .andWhere('config.is_active = true')
       .andWhere('(config.effective_from IS NULL OR config.effective_from <= :date)', {
@@ -59,7 +55,6 @@ export class SubsidyConfigurationRepository {
    * Find ALL active subsidy configurations for a project type (supports multi-subsidy).
    */
   async findAllActiveByProjectType(
-    organizationId: string,
     projectType: ProjectType,
     asOfDate?: Date,
   ): Promise<SubsidyConfiguration[]> {
@@ -68,7 +63,6 @@ export class SubsidyConfigurationRepository {
 
     return this.repository
       .createQueryBuilder('config')
-      .where('config.organization_id = :organizationId', { organizationId })
       .andWhere('config.project_type = :projectType', { projectType })
       .andWhere('config.is_active = true')
       .andWhere('(config.effective_from IS NULL OR config.effective_from <= :date)', {
@@ -84,7 +78,6 @@ export class SubsidyConfigurationRepository {
    * Only returns active, non-expired configurations.
    */
   async findByIds(
-    organizationId: string,
     ids: string[],
     asOfDate?: Date,
   ): Promise<SubsidyConfiguration[]> {
@@ -94,7 +87,6 @@ export class SubsidyConfigurationRepository {
 
     return this.repository
       .createQueryBuilder('config')
-      .where('config.organization_id = :organizationId', { organizationId })
       .andWhere('config.id IN (:...ids)', { ids })
       .andWhere('config.is_active = true')
       .andWhere('(config.effective_from IS NULL OR config.effective_from <= :date)', {
@@ -110,7 +102,6 @@ export class SubsidyConfigurationRepository {
    * Find all subsidy configurations for an organization
    */
   async findAll(
-    organizationId: string,
     filters?: {
       projectType?: ProjectType;
       isActive?: boolean;
@@ -118,8 +109,7 @@ export class SubsidyConfigurationRepository {
     },
   ): Promise<SubsidyConfiguration[]> {
     const query = this.repository
-      .createQueryBuilder('config')
-      .where('config.organization_id = :organizationId', { organizationId });
+      .createQueryBuilder('config');
 
     if (filters?.projectType) {
       query.andWhere('config.project_type = :projectType', {
@@ -143,9 +133,9 @@ export class SubsidyConfigurationRepository {
   /**
    * Find by ID
    */
-  async findById(id: string, organizationId: string): Promise<SubsidyConfiguration | null> {
+  async findById(id: string): Promise<SubsidyConfiguration | null> {
     return this.repository.findOne({
-      where: { id, organizationId },
+      where: { id },
     });
   }
 
@@ -154,11 +144,10 @@ export class SubsidyConfigurationRepository {
    */
   async update(
     id: string,
-    organizationId: string,
     data: Partial<SubsidyConfiguration>,
   ): Promise<SubsidyConfiguration> {
-    await this.repository.update({ id, organizationId }, data);
-    const updated = await this.findById(id, organizationId);
+    await this.repository.update({ id }, data);
+    const updated = await this.findById(id);
     if (!updated) {
       throw new NotFoundException('Subsidy configuration not found after update');
     }
@@ -170,7 +159,6 @@ export class SubsidyConfigurationRepository {
    * Ensures only one active config per org + project type
    */
   async deactivateOthers(
-    organizationId: string,
     projectType: ProjectType,
     exceptId?: string,
   ): Promise<void> {
@@ -178,7 +166,6 @@ export class SubsidyConfigurationRepository {
       .createQueryBuilder()
       .update(SubsidyConfiguration)
       .set({ isActive: false })
-      .where('organization_id = :organizationId', { organizationId })
       .andWhere('project_type = :projectType', { projectType });
 
     if (exceptId) {
@@ -191,7 +178,7 @@ export class SubsidyConfigurationRepository {
   /**
    * Soft-delete subsidy configuration (preserves audit trail for quote recalculation).
    */
-  async delete(id: string, organizationId: string): Promise<void> {
-    await this.repository.softDelete({ id, organizationId });
+  async delete(id: string): Promise<void> {
+    await this.repository.softDelete({ id });
   }
 }

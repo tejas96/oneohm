@@ -21,16 +21,16 @@ export class PaymentTermRepository {
   /**
    * List terms for a project, ordered by display_order.
    */
-  async findByProject(projectId: string, organizationId: string): Promise<PaymentTermEntity[]> {
+  async findByProject(projectId: string): Promise<PaymentTermEntity[]> {
     return this.repository.find({
-      where: { projectId, organizationId, deletedAt: IsNull() },
+      where: { projectId, deletedAt: IsNull() },
       order: { displayOrder: 'ASC', createdAt: 'ASC' },
     });
   }
 
-  async findById(id: string, organizationId: string): Promise<PaymentTermEntity | null> {
+  async findById(id: string): Promise<PaymentTermEntity | null> {
     return this.repository.findOne({
-      where: { id, organizationId, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull() },
     });
   }
 
@@ -43,14 +43,12 @@ export class PaymentTermRepository {
   async findByIdForUpdate(
     manager: EntityManager,
     id: string,
-    organizationId: string,
   ): Promise<PaymentTermEntity | null> {
     return manager
       .getRepository(PaymentTermEntity)
       .createQueryBuilder('term')
       .setLock('pessimistic_write')
       .where('term.id = :id', { id })
-      .andWhere('term.organization_id = :organizationId', { organizationId })
       .andWhere('term.deleted_at IS NULL')
       .getOne();
   }
@@ -58,12 +56,11 @@ export class PaymentTermRepository {
   /**
    * Highest existing display_order for a project (used to append new terms).
    */
-  async getMaxDisplayOrder(projectId: string, organizationId: string): Promise<number> {
+  async getMaxDisplayOrder(projectId: string): Promise<number> {
     const row = await this.repository
       .createQueryBuilder('term')
       .select('COALESCE(MAX(term.display_order), 0)', 'maxOrder')
       .where('term.project_id = :projectId', { projectId })
-      .andWhere('term.organization_id = :organizationId', { organizationId })
       .andWhere('term.deleted_at IS NULL')
       .getRawOne<{ maxOrder: string | number | null }>();
 
@@ -76,9 +73,9 @@ export class PaymentTermRepository {
    * (any status, including soft-deleted is excluded — only live rows count
    * for snapshot idempotency, per plan §11).
    */
-  async projectHasAnyTerm(projectId: string, organizationId: string): Promise<boolean> {
+  async projectHasAnyTerm(projectId: string): Promise<boolean> {
     const count = await this.repository.count({
-      where: { projectId, organizationId, deletedAt: IsNull() },
+      where: { projectId, deletedAt: IsNull() },
     });
     return count > 0;
   }
@@ -87,12 +84,11 @@ export class PaymentTermRepository {
    * Returns true if the project has any term that has received any payment.
    * Used as a preflight check on resnapshot (plan §11).
    */
-  async projectHasReceivedPayments(projectId: string, organizationId: string): Promise<boolean> {
+  async projectHasReceivedPayments(projectId: string): Promise<boolean> {
     const row = await this.repository
       .createQueryBuilder('term')
       .select('1')
       .where('term.project_id = :projectId', { projectId })
-      .andWhere('term.organization_id = :organizationId', { organizationId })
       .andWhere('term.deleted_at IS NULL')
       .andWhere('term.paid_amount > 0')
       .limit(1)

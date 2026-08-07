@@ -14,9 +14,6 @@ export class CommissionResponseDto {
   @Expose()
   id!: string;
 
-  @ApiProperty()
-  @Expose()
-  organizationId!: string;
 
   @ApiProperty()
   @Expose()

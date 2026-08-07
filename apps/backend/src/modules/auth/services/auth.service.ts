@@ -127,7 +127,6 @@ export class AuthService {
       emailVerified: !!user.emailVerifiedAt,
       phoneVerified: !!user.phoneVerifiedAt,
       fullName: `${user.firstName} ${user.lastName || ''}`.trim(),
-      organizationId: primaryProfile?.organizationId,
     };
 
     return {
@@ -253,7 +252,6 @@ export class AuthService {
       emailVerified: !!user.emailVerifiedAt,
       phoneVerified: !!user.phoneVerifiedAt,
       fullName: `${user.firstName} ${user.lastName || ''}`.trim(),
-      organizationId: primaryProfile?.organizationId,
     };
 
     return {
@@ -398,7 +396,6 @@ export class AuthService {
       emailVerified: !!user.emailVerifiedAt,
       phoneVerified: !!user.phoneVerifiedAt,
       fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-      organizationId: primaryProfile?.organizationId,
     };
 
     return {
@@ -689,8 +686,6 @@ export class AuthService {
         profiles.push({
           type: 'customer',
           profileId: profile.id,
-          organizationId: profile.organizationId,
-          organizationName: profile.organization?.name || 'Unknown Organization',
           isPrimary: false, // TODO: Add isPrimary logic if needed
           status: profile.status,
         });
@@ -701,8 +696,6 @@ export class AuthService {
         profiles.push({
           type: 'reseller',
           profileId: profile.id,
-          organizationId: profile.organizationId,
-          organizationName: profile.organization?.name || 'Unknown Organization',
           isPrimary: false, // TODO: Add isPrimary logic if needed
           status: profile.status,
           businessName: profile.companyName,
@@ -714,8 +707,6 @@ export class AuthService {
         profiles.push({
           type: 'employee',
           profileId: profile.id,
-          organizationId: profile.organizationId,
-          organizationName: profile.organization?.name || 'Unknown Organization',
           isPrimary: false, // TODO: Add isPrimary logic if needed
           status: profile.status,
           avatarUrl: profile.avatarUrl,

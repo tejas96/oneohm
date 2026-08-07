@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -44,10 +43,9 @@ export class ReportsController {
   @ApiOperation({ summary: 'Get completeness summary for all reports of a project' })
   @ApiResponse({ status: HttpStatus.OK, type: ReportsPendingSummaryDto })
   async getCompleteness(
-    @OrganizationContext() organizationId: string,
     @Query('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ReportsPendingSummaryDto> {
-    return this.reportEngine.getCompleteness(projectId, organizationId);
+    return this.reportEngine.getCompleteness(projectId);
   }
 
   @Post('initialize')
@@ -55,13 +53,12 @@ export class ReportsController {
   @ApiOperation({ summary: 'Initialize report — fetch project data and merge saved fields' })
   @ApiResponse({ status: HttpStatus.OK, type: ReportInitializeResponseDto })
   async initialize(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: CurrentUserType,
     @Body() dto: ReportInitializeDto,
   ): Promise<ReportInitializeResponseDto> {
     return this.reportEngine.initialize(
       dto.reportId,
-      this.buildContext(dto, organizationId, user),
+      this.buildContext(dto, user),
       { ignoreSavedDraft: dto.ignoreSavedDraft },
     );
   }
@@ -70,13 +67,12 @@ export class ReportsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Render preview HTML from field snapshot' })
   async preview(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: CurrentUserType,
     @Body() dto: ReportRenderDto,
   ): Promise<ReportPreviewResponseDto> {
     return this.reportEngine.preview(
       dto.reportId,
-      this.buildContext(dto, organizationId, user),
+      this.buildContext(dto, user),
       dto.fields,
     );
   }
@@ -86,13 +82,12 @@ export class ReportsController {
   @ApiOperation({ summary: 'Save client-generated PDF and field snapshot to project documents' })
   @ApiResponse({ status: HttpStatus.OK, type: ReportSaveResponseDto })
   async save(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: CurrentUserType,
     @Body() dto: ReportSaveDto,
   ): Promise<ReportSaveResponseDto> {
     return this.reportEngine.save(
       dto.reportId,
-      this.buildContext(dto, organizationId, user),
+      this.buildContext(dto, user),
       dto.fields,
       dto.file,
     );
@@ -100,11 +95,9 @@ export class ReportsController {
 
   private buildContext(
     dto: ReportInitializeDto | ReportRenderDto,
-    organizationId: string,
     user: CurrentUserType,
   ): ReportEngineContext {
     return {
-      organizationId,
       userId: user.id,
       entityType: dto.context.entityType,
       entityId: dto.context.entityId,

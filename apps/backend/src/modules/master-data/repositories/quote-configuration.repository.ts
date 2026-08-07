@@ -21,15 +21,13 @@ export class QuoteConfigurationRepository {
    * Will deactivate any existing active config for the org
    */
   async create(
-    organizationId: string,
     data: Partial<QuoteConfiguration>,
   ): Promise<QuoteConfiguration> {
     // Deactivate existing active configs
-    await this.deactivateAll(organizationId);
+    await this.deactivateAll();
 
     const config = this.repository.create({
       ...data,
-      organizationId,
       isActive: true,
     });
     return this.repository.save(config);
@@ -39,10 +37,9 @@ export class QuoteConfigurationRepository {
    * Get the active configuration for an organization
    * This is the main method used by the quote calculator
    */
-  async getActiveConfig(organizationId: string): Promise<QuoteConfiguration | null> {
+  async getActiveConfig(): Promise<QuoteConfiguration | null> {
     return this.repository.findOne({
       where: {
-        organizationId,
         isActive: true,
       },
     });
@@ -52,12 +49,12 @@ export class QuoteConfigurationRepository {
    * Get or create default configuration
    * Creates a default config if none exists
    */
-  async getOrCreateDefault(organizationId: string): Promise<QuoteConfiguration> {
-    let config = await this.getActiveConfig(organizationId);
+  async getOrCreateDefault(): Promise<QuoteConfiguration> {
+    let config = await this.getActiveConfig();
 
     if (!config) {
       try {
-        config = await this.create(organizationId, {
+        config = await this.create({
           defaultValidityDays: 30,
           maxVersions: 3,
           defaultCompletionWeeks: 4,
@@ -84,7 +81,7 @@ export class QuoteConfigurationRepository {
         const err = error as { code?: string };
         if (err?.code === '23503') {
           throw new BadRequestException(
-            `Invalid organization ID: ${organizationId}. Organization does not exist.`,
+            `Invalid organization ID: . Organization does not exist.`,
           );
         }
         throw error;
@@ -97,9 +94,8 @@ export class QuoteConfigurationRepository {
   /**
    * Find all configurations for an organization (including inactive)
    */
-  async findAll(organizationId: string): Promise<QuoteConfiguration[]> {
+  async findAll(): Promise<QuoteConfiguration[]> {
     return this.repository.find({
-      where: { organizationId },
       order: { createdAt: 'DESC' },
     });
   }
@@ -107,9 +103,9 @@ export class QuoteConfigurationRepository {
   /**
    * Find by ID
    */
-  async findById(id: string, organizationId: string): Promise<QuoteConfiguration | null> {
+  async findById(id: string): Promise<QuoteConfiguration | null> {
     return this.repository.findOne({
-      where: { id, organizationId },
+      where: { id },
     });
   }
 
@@ -118,11 +114,10 @@ export class QuoteConfigurationRepository {
    */
   async update(
     id: string,
-    organizationId: string,
     data: Partial<QuoteConfiguration>,
   ): Promise<QuoteConfiguration> {
-    await this.repository.update({ id, organizationId }, data);
-    const updated = await this.findById(id, organizationId);
+    await this.repository.update({ id }, data);
+    const updated = await this.findById(id);
     if (!updated) {
       throw new Error('Quote configuration not found after update');
     }
@@ -132,27 +127,26 @@ export class QuoteConfigurationRepository {
   /**
    * Set a configuration as active (deactivates others)
    */
-  async setActive(id: string, organizationId: string): Promise<QuoteConfiguration> {
-    await this.deactivateAll(organizationId);
-    return this.update(id, organizationId, { isActive: true });
+  async setActive(id: string): Promise<QuoteConfiguration> {
+    await this.deactivateAll();
+    return this.update(id, { isActive: true });
   }
 
   /**
    * Deactivate all configurations for an organization
    */
-  async deactivateAll(organizationId: string): Promise<void> {
+  async deactivateAll(): Promise<void> {
     await this.repository
       .createQueryBuilder()
       .update(QuoteConfiguration)
       .set({ isActive: false })
-      .where('organization_id = :organizationId', { organizationId })
       .execute();
   }
 
   /**
    * Delete quote configuration
    */
-  async delete(id: string, organizationId: string): Promise<void> {
-    await this.repository.delete({ id, organizationId });
+  async delete(id: string): Promise<void> {
+    await this.repository.delete({ id });
   }
 }

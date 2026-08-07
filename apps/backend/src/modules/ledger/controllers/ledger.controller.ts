@@ -18,7 +18,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -75,11 +74,10 @@ export class LedgerController {
   @ApiParam({ name: 'projectId', type: String })
   async getSummary(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<ProjectLedgerSummaryDto> {
     const [balance, milestones] = await Promise.all([
-      this.ledgerRepository.getProjectBalance(projectId, organizationId),
-      this.ledgerRepository.getMilestoneBalancesWithAllocations(projectId, organizationId),
+      this.ledgerRepository.getProjectBalance(projectId),
+      this.ledgerRepository.getMilestoneBalancesWithAllocations(projectId),
     ]);
 
     // Without this, an unknown / soft-deleted / cross-org project returned 200
@@ -100,9 +98,8 @@ export class LedgerController {
   @ApiParam({ name: 'projectId', type: String })
   async listEntries(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<LedgerEntryResponseDto[]> {
-    const entries = await this.ledgerRepository.listEntriesByProject(projectId, organizationId);
+    const entries = await this.ledgerRepository.listEntriesByProject(projectId);
     return toDtoArray(LedgerEntryResponseDto, entries);
   }
 
@@ -118,11 +115,9 @@ export class LedgerController {
   @ApiParam({ name: 'projectId', type: String })
   async listMilestones(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<MilestoneBalanceResponseDto[]> {
     const rows = await this.ledgerRepository.getMilestoneBalancesWithAllocations(
       projectId,
-      organizationId,
     );
     return toDtoArray(MilestoneBalanceResponseDto, rows);
   }
@@ -141,12 +136,10 @@ export class LedgerController {
   @ApiParam({ name: 'projectId', type: String })
   async recordReceipt(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: RecordReceiptDto,
   ): Promise<LedgerEntryResponseDto> {
     const entry = await this.writeService.recordReceipt(
-      organizationId,
       { projectId, ...dto },
       currentUser.id,
     );
@@ -163,12 +156,10 @@ export class LedgerController {
   @ApiParam({ name: 'projectId', type: String })
   async recordExpense(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: RecordExpenseDto,
   ): Promise<LedgerEntryResponseDto> {
     const entry = await this.writeService.recordExpense(
-      organizationId,
       { projectId, ...dto },
       currentUser.id,
     );
@@ -190,7 +181,6 @@ export class LedgerController {
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
   async storeReceiptDocument(
     @Param('entryId', ParseUUIDPipe) entryId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @UploadedFile() file: { buffer: Buffer; originalname?: string; mimetype?: string } | undefined,
   ): Promise<{ documentId: string; fileUrl: string }> {
@@ -198,7 +188,6 @@ export class LedgerController {
       throw new BadRequestException('No receipt file was uploaded');
     }
     const document = await this.receiptDocumentService.storeGeneratedReceipt(
-      organizationId,
       entryId,
       file,
       currentUser.id,
@@ -216,12 +205,10 @@ export class LedgerController {
   @ApiParam({ name: 'entryId', type: String })
   async reverse(
     @Param('entryId', ParseUUIDPipe) entryId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: ReverseEntryDto,
   ): Promise<LedgerEntryResponseDto> {
     const entry = await this.writeService.reverse(
-      organizationId,
       entryId,
       dto.reason,
       currentUser.id,
@@ -243,17 +230,15 @@ export class LedgerController {
   @ApiParam({ name: 'projectId', type: String })
   async addChangeOrder(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: ChangeOrderDto,
   ): Promise<MilestoneBalanceResponseDto> {
     const milestone = await this.milestoneService.addChangeOrder(
-      organizationId,
       projectId,
       dto,
       currentUser.id,
     );
-    const rows = await this.ledgerRepository.getMilestoneBalances(projectId, organizationId);
+    const rows = await this.ledgerRepository.getMilestoneBalances(projectId);
     const created = rows.find((r) => r.milestoneId === milestone.id);
     return toDto(MilestoneBalanceResponseDto, created ?? {});
   }
@@ -268,12 +253,10 @@ export class LedgerController {
   @ApiParam({ name: 'milestoneId', type: String })
   async waive(
     @Param('milestoneId', ParseUUIDPipe) milestoneId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: WaiveMilestoneDto,
   ): Promise<{ id: string; status: string }> {
     const milestone = await this.milestoneService.waive(
-      organizationId,
       milestoneId,
       dto.reason,
       currentUser.id,
@@ -292,9 +275,8 @@ export class LedgerController {
   @ApiParam({ name: 'milestoneId', type: String })
   async remove(
     @Param('milestoneId', ParseUUIDPipe) milestoneId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.milestoneService.remove(organizationId, milestoneId, currentUser.id);
+    await this.milestoneService.remove(milestoneId, currentUser.id);
   }
 }

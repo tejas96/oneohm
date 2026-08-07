@@ -69,16 +69,14 @@ export class PricingService {
    */
   async getEffectiveUnitPrice(
     productId: string,
-    organizationId: string,
     opts: EffectiveUnitPriceOptions = {},
   ): Promise<EffectiveUnitPrice> {
-    const product = await this.productRepo.findAnyById(productId, organizationId);
+    const product = await this.productRepo.findAnyById(productId);
     if (!product) {
       throw new NotFoundException(`Product ${productId} not found`);
     }
 
     const price = await this.productPriceRepo.findActiveForProduct(
-      organizationId,
       productId,
       opts.projectType,
       opts.asOf,
@@ -96,7 +94,6 @@ export class PricingService {
    */
   async getEffectiveUnitPrices(
     productIds: string[],
-    organizationId: string,
     opts: EffectiveUnitPriceOptions = {},
     productsById?: Map<string, ProductEntity>,
   ): Promise<Map<string, EffectiveUnitPrice>> {
@@ -104,14 +101,13 @@ export class PricingService {
     if (productIds.length === 0) return result;
 
     const priceMap = await this.productPriceRepo.findActiveForProducts(
-      organizationId,
       productIds,
       opts.projectType,
       opts.asOf,
     );
 
     const resolvedProducts =
-      productsById ?? (await this.loadProductsById(productIds, organizationId));
+      productsById ?? (await this.loadProductsById(productIds));
 
     for (const productId of productIds) {
       const product = resolvedProducts.get(productId);
@@ -128,12 +124,11 @@ export class PricingService {
 
   private async loadProductsById(
     productIds: string[],
-    organizationId: string,
   ): Promise<Map<string, ProductEntity>> {
     // Single SELECT … WHERE id IN (…) plus its productType/brand joins.
     // Prevents the N+1 we'd get from per-id findAnyById calls in the
     // quote calculator's batch validation paths.
-    return this.productRepo.findManyByIds(productIds, organizationId);
+    return this.productRepo.findManyByIds(productIds);
   }
 
   private resolveOne(

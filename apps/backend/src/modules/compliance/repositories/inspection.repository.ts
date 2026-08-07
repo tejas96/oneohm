@@ -56,9 +56,8 @@ export class InspectionRepository {
   // QUERY METHODS
   // ============================================
 
-  async findByOrganization(organizationId: string): Promise<InspectionEntity[]> {
+  async findByOrganization(): Promise<InspectionEntity[]> {
     return this.repository.find({
-      where: { organizationId },
       relations: ['project'],
       order: { scheduledDate: 'DESC' },
     });
@@ -157,19 +156,16 @@ export class InspectionRepository {
   // STATISTICS
   // ============================================
 
-  async countByOrganization(organizationId: string): Promise<number> {
-    return this.repository.count({ where: { organizationId } });
+  async countByOrganization(): Promise<number> {
+    return this.repository.count();
   }
 
   async countByProject(projectId: string): Promise<number> {
     return this.repository.count({ where: { projectId } });
   }
 
-  async countByStatus(status: InspectionStatus, organizationId?: string): Promise<number> {
+  async countByStatus(status: InspectionStatus): Promise<number> {
     const where: Record<string, unknown> = { status };
-    if (organizationId) {
-      where.organizationId = organizationId;
-    }
     return this.repository.count({ where });
   }
 }

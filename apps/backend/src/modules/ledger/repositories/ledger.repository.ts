@@ -60,7 +60,6 @@ export interface MilestoneAllocationRow {
 /** A row of `v_project_balance`. */
 export interface ProjectBalanceRow {
   projectId: string;
-  organizationId: string;
   customerId: string | null;
   contractPaise: number;
   /** The part of the contract that came from the signed quote. */
@@ -157,7 +156,6 @@ export class LedgerRepository {
    */
   async getMilestoneBalances(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
     forUpdate = false,
   ): Promise<MilestoneBalanceRow[]> {
@@ -169,7 +167,7 @@ export class LedgerRepository {
           WHERE project_id = $1 AND organization_id = $2
           ORDER BY display_order, id
           FOR UPDATE`,
-        [projectId, organizationId],
+        [projectId],
       );
     }
 
@@ -191,7 +189,7 @@ export class LedgerRepository {
        FROM v_milestone_balance
        WHERE project_id = $1 AND organization_id = $2
        ORDER BY display_order`,
-      [projectId, organizationId],
+      [projectId],
     );
 
     return rows.map((r) => LedgerRepository.num(r, LedgerRepository.MILESTONE_NUMERIC));
@@ -210,7 +208,6 @@ export class LedgerRepository {
    */
   async getMilestoneAllocations(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<MilestoneAllocationRow[]> {
     const rows: MilestoneAllocationRow[] = await this.exec(manager).query(
@@ -236,7 +233,7 @@ export class LedgerRepository {
          LEFT JOIN ledger_entries rev  ON rev.reverses_id = e.id
         WHERE a.project_id = $1 AND e.organization_id = $2
         ORDER BY e.value_date, e.created_at, a.created_at`,
-      [projectId, organizationId],
+      [projectId],
     );
     return rows.map((r) => LedgerRepository.num(r, LedgerRepository.ALLOCATION_NUMERIC));
   }
@@ -250,12 +247,11 @@ export class LedgerRepository {
    */
   async getMilestoneBalancesWithAllocations(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<Array<MilestoneBalanceRow & { allocations: MilestoneAllocationRow[] }>> {
     const [balances, allocations] = await Promise.all([
-      this.getMilestoneBalances(projectId, organizationId, manager),
-      this.getMilestoneAllocations(projectId, organizationId, manager),
+      this.getMilestoneBalances(projectId, manager),
+      this.getMilestoneAllocations(projectId, manager),
     ]);
 
     const byMilestone = new Map<string, MilestoneAllocationRow[]>();
@@ -273,7 +269,6 @@ export class LedgerRepository {
 
   async getProjectBalance(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<ProjectBalanceRow | null> {
     const rows: ProjectBalanceRow[] = await this.exec(manager).query(
@@ -295,7 +290,7 @@ export class LedgerRepository {
          milestone_count   AS "milestoneCount"
        FROM v_project_balance
        WHERE project_id = $1 AND organization_id = $2`,
-      [projectId, organizationId],
+      [projectId],
     );
     const row = rows[0];
     return row ? LedgerRepository.num(row, LedgerRepository.PROJECT_NUMERIC) : null;
@@ -316,7 +311,6 @@ export class LedgerRepository {
    */
   async projectBelongsToOrg(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<boolean> {
     const rows = await this.exec(manager).query(
@@ -325,19 +319,18 @@ export class LedgerRepository {
          JOIN customer_properties cp ON cp.id = p.property_id
         WHERE p.id = $1 AND cp.organization_id = $2 AND p.deleted_at IS NULL
         LIMIT 1`,
-      [projectId, organizationId],
+      [projectId],
     );
     return rows.length > 0;
   }
 
   async findEntryById(
     id: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<LedgerEntryEntity | null> {
     return this.exec(manager)
       .getRepository(LedgerEntryEntity)
-      .findOne({ where: { id, organizationId } });
+      .findOne({ where: { id } });
   }
 
   /** The allocations of an entry — needed to build its reversal mirror. */
@@ -360,13 +353,12 @@ export class LedgerRepository {
 
   async listEntriesByProject(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<LedgerEntryEntity[]> {
     return this.exec(manager)
       .getRepository(LedgerEntryEntity)
       .find({
-        where: { projectId, organizationId },
+        where: { projectId },
         order: { valueDate: 'DESC', createdAt: 'DESC' },
       });
   }

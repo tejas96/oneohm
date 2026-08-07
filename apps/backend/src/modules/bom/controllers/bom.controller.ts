@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -31,7 +30,6 @@ export class BomController {
   @RequirePermission('bom:read')
   @Get()
   async findByEntity(
-    @OrganizationContext() organizationId: string,
     @Query('entityType') entityType: string,
     @Query('entityId', ParseUUIDPipe) entityId: string,
   ): Promise<BomResponseDto | null> {
@@ -44,7 +42,7 @@ export class BomController {
       );
     }
 
-    const bom = await this.bomService.findByEntity(organizationId, entityType, entityId);
+    const bom = await this.bomService.findByEntity(entityType, entityId);
     return bom;
   }
 
@@ -59,10 +57,9 @@ export class BomController {
     summary: 'Per-product procurement status for a project (BOM target vs spent qty)',
   })
   async getProcurementStatus(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ReturnType<BomService['getProcurementStatus']>> {
-    return this.bomService.getProcurementStatus(projectId, organizationId);
+    return this.bomService.getProcurementStatus(projectId);
   }
 
   /**
@@ -80,10 +77,9 @@ export class BomController {
       'Partially or fully reserves stock from the project default warehouse. Idempotent.',
   })
   async allocatePending(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.bomService.allocatePending(organizationId, id, currentUser.id);
+    return this.bomService.allocatePending(id, currentUser.id);
   }
 }

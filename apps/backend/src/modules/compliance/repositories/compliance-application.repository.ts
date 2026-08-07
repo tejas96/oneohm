@@ -62,9 +62,9 @@ export class ComplianceApplicationRepository {
   // QUERY METHODS
   // ============================================
 
-  async findByOrganization(organizationId: string): Promise<ComplianceApplicationEntity[]> {
+  async findByOrganization(): Promise<ComplianceApplicationEntity[]> {
     return this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       relations: ['project'],
       order: { createdAt: 'DESC' },
     });
@@ -137,9 +137,9 @@ export class ComplianceApplicationRepository {
   // STATISTICS
   // ============================================
 
-  async countByOrganization(organizationId: string): Promise<number> {
+  async countByOrganization(): Promise<number> {
     return this.repository.count({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
     });
   }
 
@@ -149,11 +149,8 @@ export class ComplianceApplicationRepository {
     });
   }
 
-  async countByStatus(status: ComplianceStatus, organizationId?: string): Promise<number> {
+  async countByStatus(status: ComplianceStatus): Promise<number> {
     const where: Record<string, unknown> = { status, deletedAt: IsNull() };
-    if (organizationId) {
-      where.organizationId = organizationId;
-    }
     return this.repository.count({ where });
   }
 }

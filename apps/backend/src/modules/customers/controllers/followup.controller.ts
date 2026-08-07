@@ -17,8 +17,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
+  ApiUpdate
 } from '../../../common/decorators';
 import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -50,10 +49,9 @@ export class FollowupController {
   })
   async create(
     @Body() createDto: CreateFollowupDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<FollowupResponseDto> {
-    const followup = await this.followupService.create(organizationId, createDto, currentUser.id);
+    const followup = await this.followupService.create(createDto, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
 
@@ -76,7 +74,6 @@ export class FollowupController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @Query('status') status?: FollowupStatus,
     @Query('assignedToUserId') assignedToUserId?: string,
     @Query('customerId', new ParseUUIDPipe({ optional: true })) customerId?: string,
@@ -92,7 +89,6 @@ export class FollowupController {
 
     if (hasFilters) {
       const result = await this.followupService.findWithFilters(
-        organizationId,
         { status, assignedToUserId, customerId, propertyId, priority, from, to },
         page,
         limit,
@@ -100,7 +96,7 @@ export class FollowupController {
       return toPaginatedResponse(FollowupResponseDto, result.data, result.total, page, limit);
     }
 
-    const result = await this.followupService.findAll(organizationId, page, limit);
+    const result = await this.followupService.findAll(page, limit);
     return toPaginatedResponse(FollowupResponseDto, result.data, result.total, page, limit);
   }
 
@@ -117,14 +113,12 @@ export class FollowupController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async findMyFollowups(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('status') status?: FollowupStatus,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
     const result = await this.followupService.findMyFollowups(
-      organizationId,
       currentUser.id,
       status,
       page,
@@ -151,13 +145,11 @@ export class FollowupController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async findTodayFollowups(
-    @OrganizationContext() organizationId: string,
     @Query('assignedToUserId') assignedToUserId?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
     const result = await this.followupService.findTodayFollowups(
-      organizationId,
       assignedToUserId,
       page,
       limit,
@@ -183,13 +175,11 @@ export class FollowupController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async findOverdueFollowups(
-    @OrganizationContext() organizationId: string,
     @Query('assignedToUserId') assignedToUserId?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
     const result = await this.followupService.findOverdueFollowups(
-      organizationId,
       assignedToUserId,
       page,
       limit,
@@ -207,9 +197,8 @@ export class FollowupController {
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<FollowupResponseDto> {
-    const followup = await this.followupService.findById(id, organizationId);
+    const followup = await this.followupService.findById(id);
     return toDto(FollowupResponseDto, followup);
   }
 
@@ -225,12 +214,10 @@ export class FollowupController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateFollowupDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<FollowupResponseDto> {
     const followup = await this.followupService.update(
       id,
-      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -248,10 +235,9 @@ export class FollowupController {
   })
   async markAsCompleted(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<FollowupResponseDto> {
-    const followup = await this.followupService.markAsCompleted(id, organizationId, currentUser.id);
+    const followup = await this.followupService.markAsCompleted(id, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
 
@@ -266,10 +252,9 @@ export class FollowupController {
   })
   async markAsCancelled(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<FollowupResponseDto> {
-    const followup = await this.followupService.markAsCancelled(id, organizationId, currentUser.id);
+    const followup = await this.followupService.markAsCancelled(id, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
 
@@ -282,9 +267,8 @@ export class FollowupController {
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.followupService.delete(id, organizationId, currentUser.id);
+    await this.followupService.delete(id, currentUser.id);
   }
 }

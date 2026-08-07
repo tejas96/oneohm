@@ -15,10 +15,6 @@ import {
 } from 'class-validator';
 
 export class CreateDocumentDto {
-  @ApiPropertyOptional({ description: 'Organization ID (set by server from auth context)' })
-  @IsOptional()
-  @IsUUID()
-  organizationId?: string;
 
   @ApiPropertyOptional({ description: 'Property ID (auto-resolved from entity if not provided)' })
   @IsOptional()

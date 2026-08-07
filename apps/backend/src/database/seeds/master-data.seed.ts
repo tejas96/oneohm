@@ -21,7 +21,6 @@ import loadConfig from '../../config/configuration';
  * 7. Quote Configuration (1)
  */
 
-const ORG_ID = loadConfig().seed.organizationId;
 
 // =====================================================
 // Product Type IDs (Pre-generated)

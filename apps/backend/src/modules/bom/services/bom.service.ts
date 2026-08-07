@@ -53,7 +53,6 @@ export class BomService {
   ) {}
 
   async createFromCalculation(
-    organizationId: string,
     entityType: string,
     entityId: string,
     calculation: CalculateQuoteResponseDto,
@@ -145,7 +144,6 @@ export class BomService {
     const totalCost = items.reduce((sum, i) => sum + (i.totalPrice ?? 0), 0);
 
     return this.bomRepository.create({
-      organizationId,
       // bomNumber is generated inside BomRepository.create() within a transaction
       entityType,
       entityId,
@@ -158,7 +156,6 @@ export class BomService {
   }
 
   async createFromItems(
-    organizationId: string,
     entityType: string,
     entityId: string,
     sourceItems: Array<Partial<BomItemEntity>>,
@@ -174,7 +171,6 @@ export class BomService {
     const totalCost = items.reduce((sum, item) => sum + Number(item.totalPrice ?? 0), 0);
 
     return this.bomRepository.create({
-      organizationId,
       entityType,
       entityId,
       status: 'finalized',
@@ -186,14 +182,13 @@ export class BomService {
   }
 
   async findByEntity(
-    organizationId: string,
     entityType: string,
     entityId: string,
   ): Promise<
     | (BomEntity & { productAllocationStatus: Record<string, 'allocated' | 'partial' | 'pending'> })
     | null
   > {
-    const bom = await this.bomRepository.findByEntity(organizationId, entityType, entityId);
+    const bom = await this.bomRepository.findByEntity(entityType, entityId);
     if (!bom) return null;
 
     // Build per-product allocation status from live BOM-linked allocations
@@ -251,7 +246,6 @@ export class BomService {
   }
 
   async deleteByEntity(
-    organizationId: string,
     entityType: string,
     entityId: string,
   ): Promise<void> {
@@ -260,7 +254,7 @@ export class BomService {
     // them first would orphan reserved inventory. Quote-version BOMs never have
     // allocations so this check is a safe no-op for them.
     if (entityType === 'project') {
-      const bom = await this.bomRepository.findByEntity(organizationId, entityType, entityId);
+      const bom = await this.bomRepository.findByEntity(entityType, entityId);
       if (bom) {
         const { StockAllocationEntity } = await import(
           '../../inventory/entities/stock-allocation.entity'
@@ -280,7 +274,7 @@ export class BomService {
         }
       }
     }
-    return this.bomRepository.deleteByEntity(organizationId, entityType, entityId);
+    return this.bomRepository.deleteByEntity(entityType, entityId);
   }
 
   // ============================================================
@@ -306,7 +300,6 @@ export class BomService {
    * diff needs to be applied.
    */
   async reconcileFromCalculation(
-    organizationId: string,
     projectId: string,
     calculation: CalculateQuoteResponseDto,
     userId: string,
@@ -334,14 +327,12 @@ export class BomService {
         .createQueryBuilder('bom')
         .where('bom.entityType = :et', { et: 'project' })
         .andWhere('bom.entityId = :eid', { eid: projectId })
-        .andWhere('bom.organizationId = :orgId', { orgId: organizationId })
         .setLock('pessimistic_write')
         .getOne();
 
       // No BOM yet → create from calculation (no diff needed)
       if (!existingBom) {
         await this.bomRepository.create({
-          organizationId,
           entityType: 'project',
           entityId: projectId,
           status: 'finalized',
@@ -353,7 +344,7 @@ export class BomService {
         });
         // Reload and build items via standard path
         const freshBom = await bomRepo.findOne({
-          where: { entityType: 'project', entityId: projectId, organizationId },
+          where: { entityType: 'project', entityId: projectId },
           relations: ['items'],
         });
         if (freshBom) {
@@ -363,7 +354,6 @@ export class BomService {
             incomingMap,
             warehouseId,
             userId,
-            organizationId,
           );
           await this.recomputeBomTotals(manager, freshBom);
         }
@@ -429,7 +419,6 @@ export class BomService {
           if (alloc) {
             await this.stockAllocationService.cancel(
               alloc.id,
-              organizationId,
               'BOM line removed (reconcile)',
               userId,
             );
@@ -463,7 +452,6 @@ export class BomService {
               warehouseId,
               totalQty,
               userId,
-              organizationId,
             );
             if (result.shortfall > 0) pendingStock.push(incoming.name);
           } else {
@@ -508,7 +496,6 @@ export class BomService {
               warehouseId,
               newRequired,
               userId,
-              organizationId,
             );
             if (result.shortfall > 0) pendingStock.push(incoming.name);
           } else {
@@ -527,7 +514,7 @@ export class BomService {
               // Release undispatched portion from reservation
               const releaseQty = allocated - newRequired;
               if (releaseQty > 0) {
-                await this.releaseReservation(manager, alloc, releaseQty, organizationId, userId);
+                await this.releaseReservation(manager, alloc, releaseQty, userId);
               }
             } else {
               // OVER-DISPATCH: required drops below what's already physically sent
@@ -537,7 +524,6 @@ export class BomService {
                   manager,
                   alloc,
                   undispatchedToRelease,
-                  organizationId,
                   userId,
                 );
               }
@@ -546,7 +532,6 @@ export class BomService {
               const returnRequestRepo = manager.getRepository(ReturnRequestEntity);
               await returnRequestRepo.save(
                 returnRequestRepo.create({
-                  organizationId,
                   allocationId: alloc.id,
                   bomId: existingBom.id,
                   quantity: returnQty,
@@ -589,7 +574,6 @@ export class BomService {
    * Lock order: BOM row → inventory_stock row (via allocateForProduct).
    */
   async allocatePending(
-    organizationId: string,
     bomId: string,
     userId: string,
   ): Promise<{
@@ -597,7 +581,7 @@ export class BomService {
     pendingStock: Array<{ productId: string; name: string; shortfall: number }>;
     alreadySatisfied: Array<{ productId: string; name: string }>;
   }> {
-    const bom = await this.bomRepository.findByEntityId(bomId, organizationId);
+    const bom = await this.bomRepository.findByEntityId(bomId);
     if (!bom) throw new NotFoundException(`BOM ${bomId} not found`);
 
     if (bom.entityType !== 'project') {
@@ -626,7 +610,6 @@ export class BomService {
       const lockedBom = await bomRepo
         .createQueryBuilder('bom')
         .where('bom.id = :id', { id: bomId })
-        .andWhere('bom.organizationId = :orgId', { orgId: organizationId })
         .setLock('pessimistic_write')
         .getOne();
       if (!lockedBom) throw new NotFoundException(`BOM ${bomId} not found`);
@@ -665,7 +648,6 @@ export class BomService {
           warehouseId,
           totalQty,
           userId,
-          organizationId,
         );
         if (alloc.status === 'satisfied') {
           alreadySatisfied.push({ productId, name });
@@ -701,7 +683,6 @@ export class BomService {
     warehouseId: string,
     requiredQty: number,
     userId: string,
-    organizationId: string,
   ): Promise<{ reserved: number; shortfall: number; status: 'satisfied' | 'partial' | 'new' }> {
     const allocRepo = manager.getRepository(StockAllocationEntity);
 
@@ -758,7 +739,6 @@ export class BomService {
       .createQueryBuilder('stock')
       .where('stock.warehouseId = :wid', { wid: warehouseId })
       .andWhere('stock.productId = :pid', { pid: productId })
-      .andWhere('stock.organizationId = :orgId', { orgId: organizationId })
       .setLock('pessimistic_write')
       .getOne();
 
@@ -792,7 +772,6 @@ export class BomService {
 
       await txnRepo.save(
         txnRepo.create({
-          organizationId,
           warehouseId,
           productId,
           transactionType: InventoryTransactionType.ALLOCATION,
@@ -807,7 +786,6 @@ export class BomService {
     } else {
       // Create new allocation
       const newAlloc = allocRepo.create({
-        organizationId,
         projectId: bom.entityId,
         warehouseId,
         productId,
@@ -824,7 +802,6 @@ export class BomService {
 
       await txnRepo.save(
         txnRepo.create({
-          organizationId,
           warehouseId,
           productId,
           transactionType: InventoryTransactionType.ALLOCATION,
@@ -849,7 +826,6 @@ export class BomService {
     manager: EntityManager,
     allocation: StockAllocationEntity,
     releaseQty: number,
-    organizationId: string,
     userId: string,
   ): Promise<void> {
     const stockRepo = manager.getRepository(InventoryStockEntity);
@@ -857,7 +833,6 @@ export class BomService {
       .createQueryBuilder('stock')
       .where('stock.warehouseId = :wid', { wid: allocation.warehouseId })
       .andWhere('stock.productId = :pid', { pid: allocation.productId })
-      .andWhere('stock.organizationId = :orgId', { orgId: organizationId })
       .setLock('pessimistic_write')
       .getOne();
 
@@ -880,7 +855,6 @@ export class BomService {
     const txnRepo = manager.getRepository(InventoryTransactionEntity);
     await txnRepo.save(
       txnRepo.create({
-        organizationId,
         warehouseId: allocation.warehouseId,
         productId: allocation.productId,
         transactionType: InventoryTransactionType.ALLOCATION,
@@ -1163,7 +1137,6 @@ export class BomService {
     incomingMap: ReturnType<BomService['buildIncomingProductMap']>,
     warehouseId: string | null,
     userId: string,
-    organizationId: string,
   ): Promise<void> {
     const itemRepo = manager.getRepository(BomItemEntity);
     let sortOrder = 0;
@@ -1181,19 +1154,17 @@ export class BomService {
           warehouseId,
           incoming.quantity,
           userId,
-          organizationId,
         );
       }
     }
   }
 
   async updateItemSerial(
-    organizationId: string,
     itemId: string,
     serialNumber: string | null,
   ): Promise<BomItemEntity> {
     const updatedId = await this.dataSource.transaction(async (manager) => {
-      const item = await this.findBomItemForOrg(manager, organizationId, itemId);
+      const item = await this.findBomItemForOrg(manager, itemId);
       const normalizedSerial = this.normalizeSerialNumber(serialNumber);
 
       this.ensureSerializableItemType(item.itemType);
@@ -1211,13 +1182,12 @@ export class BomService {
   }
 
   async bulkUpdateItemSerials(
-    organizationId: string,
     updates: Array<{ id: string; serialNumber: string | null }>,
   ): Promise<BomItemEntity[]> {
     const updatedItemIds = await this.dataSource.transaction(async (manager) => {
       const ids: string[] = [];
       for (const update of updates) {
-        const item = await this.findBomItemForOrg(manager, organizationId, update.id);
+        const item = await this.findBomItemForOrg(manager, update.id);
         this.ensureSerializableItemType(item.itemType);
         item.serialNumber = this.normalizeSerialNumber(update.serialNumber) ?? undefined;
         await this.saveItemWithUniqueGuard(manager, item);
@@ -1231,7 +1201,6 @@ export class BomService {
   }
 
   async findSerialConflicts(
-    organizationId: string,
     serialNumber: string,
   ): Promise<
     Array<{
@@ -1260,7 +1229,6 @@ export class BomService {
         'bom.entityType AS entity_type',
         'bom.entityId AS entity_id',
       ])
-      .where('bom.organizationId = :organizationId', { organizationId })
       .andWhere('item.serialNumber = :serialNumber', { serialNumber: normalizedSerial })
       .orderBy('bom.createdAt', 'DESC')
       .getRawMany<{
@@ -1392,7 +1360,6 @@ export class BomService {
 
   private async findBomItemForOrg(
     manager: EntityManager,
-    organizationId: string,
     itemId: string,
   ): Promise<BomItemEntity> {
     const item = await manager
@@ -1400,7 +1367,6 @@ export class BomService {
       .createQueryBuilder('item')
       .innerJoinAndSelect('item.bom', 'bom')
       .where('item.id = :itemId', { itemId })
-      .andWhere('bom.organizationId = :organizationId', { organizationId })
       .getOne();
 
     if (!item) {
@@ -1460,10 +1426,9 @@ export class BomService {
    */
   async getBomTargetsForProject(
     projectId: string,
-    organizationId: string,
     productIdsFilter?: string[],
   ): Promise<Map<string, number>> {
-    const params: unknown[] = [projectId, organizationId];
+    const params: unknown[] = [projectId];
     let filterSql = '';
     if (productIdsFilter && productIdsFilter.length > 0) {
       params.push(productIdsFilter);
@@ -1501,7 +1466,6 @@ export class BomService {
    */
   async getProcurementStatus(
     projectId: string,
-    organizationId: string,
   ): Promise<{
     items: Array<{
       productId: string;
@@ -1563,7 +1527,7 @@ export class BomService {
          FROM bom_targets t
          LEFT JOIN spent s ON s.product_id = t.product_id
         ORDER BY t.name`,
-      [projectId, organizationId],
+      [projectId],
     );
 
     interface ProcurementItem {

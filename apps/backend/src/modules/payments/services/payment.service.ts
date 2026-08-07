@@ -29,7 +29,7 @@ export class PaymentService {
   async create(dto: CreatePaymentDto, createdBy: string): Promise<PaymentEntity> {
     assertMoneyWritesAllowed();
     // Generate payment number if not provided
-    const paymentNumber = await this.paymentRepository.getNextPaymentNumber(dto.organizationId);
+    const paymentNumber = await this.paymentRepository.getNextPaymentNumber();
 
     // Validate amounts
     if (dto.paidAmount > dto.expectedAmount) {
@@ -63,12 +63,12 @@ export class PaymentService {
     return this.paymentRepository.findAll();
   }
 
-  async findByOrganization(organizationId: string): Promise<PaymentEntity[]> {
-    return this.paymentRepository.findByOrganization(organizationId);
+  async findByOrganization(): Promise<PaymentEntity[]> {
+    return this.paymentRepository.findByOrganization();
   }
 
-  async findByProject(projectId: string, organizationId: string): Promise<PaymentEntity[]> {
-    return this.paymentRepository.findByProject(projectId, organizationId);
+  async findByProject(projectId: string): Promise<PaymentEntity[]> {
+    return this.paymentRepository.findByProject(projectId);
   }
 
   async findByCustomer(customerId: string): Promise<PaymentEntity[]> {
@@ -177,7 +177,6 @@ export class PaymentService {
   // ============================================
   async getProjectPaymentSummary(
     projectId: string,
-    organizationId: string,
   ): Promise<{
     totalExpected: number;
     totalPaid: number;
@@ -185,8 +184,8 @@ export class PaymentService {
     paymentCount: number;
   }> {
     const [totals, payments] = await Promise.all([
-      this.paymentRepository.getTotalAmountByProject(projectId, organizationId),
-      this.paymentRepository.findByProject(projectId, organizationId),
+      this.paymentRepository.getTotalAmountByProject(projectId),
+      this.paymentRepository.findByProject(projectId),
     ]);
 
     return {
@@ -195,20 +194,20 @@ export class PaymentService {
     };
   }
 
-  async getOrganizationPaymentStats(organizationId: string): Promise<
+  async getOrganizationPaymentStats(): Promise<
     Array<{
       status: PaymentTransactionStatus;
       count: number;
       totalAmount: number;
     }>
   > {
-    return this.paymentRepository.getPaymentStatsByStatus(organizationId);
+    return this.paymentRepository.getPaymentStatsByStatus();
   }
 
   // ============================================
   // UTILITIES
   // ============================================
-  async generatePaymentNumber(organizationId: string): Promise<string> {
-    return this.paymentRepository.getNextPaymentNumber(organizationId);
+  async generatePaymentNumber(): Promise<string> {
+    return this.paymentRepository.getNextPaymentNumber();
   }
 }

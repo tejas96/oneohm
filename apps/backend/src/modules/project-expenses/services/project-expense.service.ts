@@ -78,7 +78,6 @@ export class ProjectExpenseService {
   // ============================================
 
   async create(
-    organizationId: string,
     projectId: string,
     dto: CreateExpenseDto,
     createdBy: string,
@@ -95,7 +94,7 @@ export class ProjectExpenseService {
     }
     if (dto.productLinks) this.assertNoDuplicateProductLinks(dto.productLinks);
 
-    await this.assertProjectInOrg(projectId, organizationId);
+    await this.assertProjectInOrg(projectId);
 
     return this.dataSource.transaction(async (manager) => {
       // Procurement guard runs inside the tx so concurrent inserts serialize.
@@ -103,7 +102,6 @@ export class ProjectExpenseService {
         await this.assertProcurementGuard({
           manager,
           projectId,
-          organizationId,
           newLinks: dto.productLinks,
           excludeExpenseId: null,
         });
@@ -121,7 +119,6 @@ export class ProjectExpenseService {
           : ReimbursementStatus.NOT_APPLICABLE;
 
       const expense = expenseRepo.create({
-        organizationId,
         projectId,
         expenseNumber,
         category: dto.category,
@@ -145,7 +142,7 @@ export class ProjectExpenseService {
         await this.replaceProductLinks(manager, saved.id, dto.productLinks);
       }
 
-      return (await this.expenseRepository.findById(saved.id, organizationId, manager))!;
+      return (await this.expenseRepository.findById(saved.id, manager))!;
     });
   }
 
@@ -153,20 +150,20 @@ export class ProjectExpenseService {
   // READ
   // ============================================
 
-  async findById(id: string, organizationId: string): Promise<ProjectExpenseEntity> {
-    const expense = await this.expenseRepository.findById(id, organizationId);
+  async findById(id: string): Promise<ProjectExpenseEntity> {
+    const expense = await this.expenseRepository.findById(id);
     if (!expense) throw new NotFoundException(`Expense ${id} not found`);
     return expense;
   }
 
-  async list(projectId: string, organizationId: string, query: ListExpensesQueryDto) {
-    await this.assertProjectInOrg(projectId, organizationId);
-    return this.expenseRepository.list(projectId, organizationId, query);
+  async list(projectId: string, query: ListExpensesQueryDto) {
+    await this.assertProjectInOrg(projectId);
+    return this.expenseRepository.list(projectId, query);
   }
 
-  async getProjectSummary(projectId: string, organizationId: string) {
-    await this.assertProjectInOrg(projectId, organizationId);
-    return this.expenseRepository.aggregateForProject(projectId, organizationId);
+  async getProjectSummary(projectId: string) {
+    await this.assertProjectInOrg(projectId);
+    return this.expenseRepository.aggregateForProject(projectId);
   }
 
   // ============================================
@@ -175,14 +172,13 @@ export class ProjectExpenseService {
 
   async update(
     id: string,
-    organizationId: string,
     dto: UpdateExpenseDto,
     updatedBy: string,
   ): Promise<ProjectExpenseEntity> {
     if (dto.expenseDate) this.assertExpenseDate(dto.expenseDate);
 
     return this.dataSource.transaction(async (manager) => {
-      const existing = await this.expenseRepository.findByIdForUpdate(manager, id, organizationId);
+      const existing = await this.expenseRepository.findByIdForUpdate(manager, id);
       if (!existing) throw new NotFoundException(`Expense ${id} not found`);
 
       // Reimbursement state-change is its own endpoint; reject indirect changes here.
@@ -215,7 +211,6 @@ export class ProjectExpenseService {
         await this.assertProcurementGuard({
           manager,
           projectId: existing.projectId,
-          organizationId,
           newLinks: dto.productLinks,
           excludeExpenseId: id,
         });
@@ -248,7 +243,7 @@ export class ProjectExpenseService {
         await this.replaceProductLinks(manager, id, dto.productLinks);
       }
 
-      return (await this.expenseRepository.findById(id, organizationId, manager))!;
+      return (await this.expenseRepository.findById(id, manager))!;
     });
   }
 
@@ -256,9 +251,9 @@ export class ProjectExpenseService {
   // DELETE (soft) — releases procurement-spent quota in next request
   // ============================================
 
-  async delete(id: string, organizationId: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
-      const existing = await this.expenseRepository.findByIdForUpdate(manager, id, organizationId);
+      const existing = await this.expenseRepository.findByIdForUpdate(manager, id);
       if (!existing) throw new NotFoundException(`Expense ${id} not found`);
 
       if (existing.reimbursementStatus === ReimbursementStatus.REIMBURSED) {
@@ -281,12 +276,11 @@ export class ProjectExpenseService {
    */
   async updateReimbursementStatus(
     id: string,
-    organizationId: string,
     dto: UpdateReimbursementStatusDto,
     updatedBy: string,
   ): Promise<ProjectExpenseEntity> {
     return this.dataSource.transaction(async (manager) => {
-      const existing = await this.expenseRepository.findByIdForUpdate(manager, id, organizationId);
+      const existing = await this.expenseRepository.findByIdForUpdate(manager, id);
       if (!existing) throw new NotFoundException(`Expense ${id} not found`);
 
       if (existing.paidBy !== ExpensePaidByType.EMPLOYEE) {
@@ -374,11 +368,10 @@ export class ProjectExpenseService {
   private async assertProcurementGuard(params: {
     manager: EntityManager;
     projectId: string;
-    organizationId: string;
     newLinks: ExpenseProductLinkDto[];
     excludeExpenseId: string | null;
   }): Promise<void> {
-    const { manager, projectId, organizationId, newLinks, excludeExpenseId } = params;
+    const { manager, projectId, newLinks, excludeExpenseId } = params;
 
     const productIds = newLinks.map((l) => l.productId).filter((id): id is string => !!id);
     if (productIds.length === 0) return;
@@ -395,7 +388,7 @@ export class ProjectExpenseService {
           AND epl.product_id = ANY($3::uuid[])
           AND ($4::uuid IS NULL OR pe.id <> $4::uuid)
         GROUP BY epl.product_id`,
-      [projectId, organizationId, productIds, excludeExpenseId],
+      [projectId, productIds, excludeExpenseId],
     );
 
     const spentMap = new Map<string, number>(
@@ -404,7 +397,6 @@ export class ProjectExpenseService {
 
     const bomTargets = await this.bomService.getBomTargetsForProject(
       projectId,
-      organizationId,
       productIds,
     );
 
@@ -453,9 +445,9 @@ export class ProjectExpenseService {
     await linkRepo.save(rows);
   }
 
-  private async assertProjectInOrg(projectId: string, organizationId: string): Promise<void> {
+  private async assertProjectInOrg(projectId: string): Promise<void> {
     try {
-      await this.projectRepository.findById(projectId, organizationId);
+      await this.projectRepository.findById(projectId);
     } catch {
       throw new NotFoundException(`Project ${projectId} not found in this organization`);
     }

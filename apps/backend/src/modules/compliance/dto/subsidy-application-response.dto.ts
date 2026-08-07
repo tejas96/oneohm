@@ -3,7 +3,6 @@ import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum, toNumNullable } from '../../../common/utils';
 import { CustomerResponseDto } from '../../customers/dto/customer-response.dto';
-import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { ProjectResponseDto } from '../../projects/dto/projects/project-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 
@@ -14,12 +13,8 @@ export class SubsidyApplicationResponseDto {
   @Expose()
   id: string;
 
-  @Expose()
-  organizationId: string;
 
   @Expose()
-  @Type(() => OrganizationResponseDto)
-  organization?: OrganizationResponseDto;
 
   @Expose()
   projectId: string;

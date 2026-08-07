@@ -41,7 +41,7 @@ export class ReportEngineService {
     return this.registry.list();
   }
 
-  async getCompleteness(projectId: string, organizationId: string): Promise<any> {
+  async getCompleteness(projectId: string): Promise<any> {
     const catalog = this.registry.list();
     if (catalog.length === 0) {
       return {
@@ -58,7 +58,6 @@ export class ReportEngineService {
     const plugins = catalog.map((entry) => this.registry.get(entry.id));
 
     const ctx: ReportEngineContext = {
-      organizationId,
       userId: '',
       entityType: DocumentEntityType.PROJECT,
       entityId: projectId,
@@ -74,7 +73,6 @@ export class ReportEngineService {
     const docs = await this.documentService.findByEntity(
       DocumentEntityType.PROJECT,
       projectId,
-      organizationId,
       { tags: reportTags },
     );
 
@@ -176,7 +174,6 @@ export class ReportEngineService {
 
     const document = await this.documentService.create(
       {
-        organizationId: ctx.organizationId,
         entityType: ctx.entityType,
         entityId: ctx.entityId,
         category: DocumentCategory.REPORT,
@@ -243,7 +240,6 @@ export class ReportEngineService {
     const docs = await this.documentService.findByEntity(
       ctx.entityType,
       ctx.entityId,
-      ctx.organizationId,
       { tag },
     );
 
@@ -264,7 +260,6 @@ export class ReportEngineService {
     const docs = await this.documentService.findByEntity(
       ctx.entityType,
       ctx.entityId,
-      ctx.organizationId,
       { tag },
     );
 
@@ -280,7 +275,7 @@ export class ReportEngineService {
             /* file may already be gone */
           }
         }
-        await this.documentService.hardDelete(doc.id, ctx.organizationId);
+        await this.documentService.hardDelete(doc.id);
       }),
     );
   }

@@ -78,7 +78,6 @@ export class InventorySearchService {
   ) {}
 
   async search(
-    organizationId: string,
     q: string,
     types: InventorySearchType[],
   ): Promise<InventorySearchResponse> {
@@ -94,11 +93,11 @@ export class InventorySearchService {
     const degraded: InventorySearchType[] = [];
 
     const runners: Record<InventorySearchType, () => Promise<InventorySearchHit[]>> = {
-      product: () => this.searchProducts(organizationId, q),
-      vendor: () => this.searchVendors(organizationId, q),
-      warehouse: () => this.searchWarehouses(organizationId, q),
-      'purchase-order': () => this.searchPurchaseOrders(organizationId, q),
-      dispatch: () => this.searchDispatches(organizationId, q),
+      product: () => this.searchProducts(q),
+      vendor: () => this.searchVendors(q),
+      warehouse: () => this.searchWarehouses(q),
+      'purchase-order': () => this.searchPurchaseOrders(q),
+      dispatch: () => this.searchDispatches(q),
     };
 
     await Promise.all(
@@ -133,10 +132,9 @@ export class InventorySearchService {
     ]);
   }
 
-  private async searchProducts(orgId: string, q: string): Promise<InventorySearchHit[]> {
+  private async searchProducts(q: string): Promise<InventorySearchHit[]> {
     const rows = await this.products
       .createQueryBuilder('p')
-      .where('p.organizationId = :orgId', { orgId })
       .andWhere('p.deletedAt IS NULL')
       .andWhere('lower(p.name) LIKE lower(:q)', { q: `%${q}%` })
       .orderBy('p.name', 'ASC')
@@ -152,10 +150,9 @@ export class InventorySearchService {
     }));
   }
 
-  private async searchVendors(orgId: string, q: string): Promise<InventorySearchHit[]> {
+  private async searchVendors(q: string): Promise<InventorySearchHit[]> {
     const rows = await this.vendors
       .createQueryBuilder('v')
-      .where('v.organizationId = :orgId', { orgId })
       .andWhere('v.deletedAt IS NULL')
       .andWhere('lower(v.name) LIKE lower(:q)', { q: `%${q}%` })
       .orderBy('v.name', 'ASC')
@@ -170,10 +167,9 @@ export class InventorySearchService {
     }));
   }
 
-  private async searchWarehouses(orgId: string, q: string): Promise<InventorySearchHit[]> {
+  private async searchWarehouses(q: string): Promise<InventorySearchHit[]> {
     const rows = await this.warehouses
       .createQueryBuilder('w')
-      .where('w.organizationId = :orgId', { orgId })
       .andWhere('w.deletedAt IS NULL')
       .andWhere('lower(w.name) LIKE lower(:q)', { q: `%${q}%` })
       .orderBy('w.name', 'ASC')
@@ -188,10 +184,9 @@ export class InventorySearchService {
     }));
   }
 
-  private async searchPurchaseOrders(orgId: string, q: string): Promise<InventorySearchHit[]> {
+  private async searchPurchaseOrders(q: string): Promise<InventorySearchHit[]> {
     const rows = await this.purchaseOrders
       .createQueryBuilder('po')
-      .where('po.organizationId = :orgId', { orgId })
       .andWhere('po.deletedAt IS NULL')
       .andWhere('lower(po.poNumber) LIKE lower(:q)', { q: `%${q}%` })
       .orderBy('po.poDate', 'DESC')
@@ -206,10 +201,9 @@ export class InventorySearchService {
     }));
   }
 
-  private async searchDispatches(orgId: string, q: string): Promise<InventorySearchHit[]> {
+  private async searchDispatches(q: string): Promise<InventorySearchHit[]> {
     const rows = await this.dispatches
       .createQueryBuilder('d')
-      .where('d.organizationId = :orgId', { orgId })
       .andWhere('lower(d.dispatchNumber) LIKE lower(:q)', { q: `%${q}%` })
       .orderBy('d.dispatchDate', 'DESC')
       .limit(PER_BUCKET_LIMIT)

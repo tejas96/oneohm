@@ -78,11 +78,9 @@ export class MaintenanceTaskRepository {
    * Find tasks by organization
    */
   async findByOrganization(
-    organizationId: string,
     options?: { relations?: string[] },
   ): Promise<MaintenanceTaskEntity[]> {
     return this.repository.find({
-      where: { organizationId },
       relations: options?.relations || [],
       order: { scheduledDate: 'DESC' },
     });
@@ -253,9 +251,8 @@ export class MaintenanceTaskRepository {
   /**
    * Get task statistics for organization
    */
-  async getStatsByOrganization(organizationId: string): Promise<Record<string, number>> {
+  async getStatsByOrganization(): Promise<Record<string, number>> {
     const tasks = await this.repository.find({
-      where: { organizationId },
       select: ['status'],
     });
 

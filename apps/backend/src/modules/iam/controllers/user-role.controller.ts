@@ -71,12 +71,9 @@ export class UserRoleController {
     }
 
     // Resolve role
-    const role = await this.resolveRole(dto.roleId, dto.roleCode, dto.organizationId);
+    const role = await this.resolveRole(dto.roleId, dto.roleCode);
 
-    // Validate user exists and has profile in organization (skip for platform-level roles)
-    if (dto.organizationId) {
-      await this.validateUserInOrganization(dto.userId, dto.organizationId);
-    }
+    await this.validateUserHasProfile(dto.userId);
 
     // Check if user already has this role
     const existing = await this.userRoleRepository.findByUserAndRole(dto.userId, role.id);
@@ -90,7 +87,6 @@ export class UserRoleController {
       userId: dto.userId,
       roleId: role.id,
       role: role.code,
-      organizationId: dto.organizationId,
       createdBy: currentUser.id,
     });
 
@@ -128,7 +124,7 @@ export class UserRoleController {
     }
 
     // Resolve role
-    const role = await this.resolveRole(dto.roleId, dto.roleCode, dto.organizationId);
+    const role = await this.resolveRole(dto.roleId, dto.roleCode);
 
     let assigned = 0;
     let skipped = 0;
@@ -137,7 +133,7 @@ export class UserRoleController {
     for (const userId of dto.userIds) {
       try {
         // Validate user exists and has profile in organization
-        await this.validateUserInOrganization(userId, dto.organizationId);
+        await this.validateUserHasProfile(userId);
 
         // Check if user already has this role
         const existing = await this.userRoleRepository.findByUserAndRole(userId, role.id);
@@ -151,7 +147,6 @@ export class UserRoleController {
           userId,
           roleId: role.id,
           role: role.code,
-          organizationId: dto.organizationId,
           createdBy: currentUser.id,
         });
         assigned++;
@@ -239,7 +234,6 @@ export class UserRoleController {
   private async resolveRole(
     roleId?: string,
     roleCode?: string,
-    organizationId?: string,
   ): Promise<{ id: string; code: string; name: string }> {
     let role;
 
@@ -248,8 +242,8 @@ export class UserRoleController {
       if (!role) {
         throw new NotFoundException(`Role with ID '${roleId}' not found`);
       }
-    } else if (roleCode && organizationId) {
-      role = await this.roleRepository.findByCodeAndOrganization(roleCode, organizationId);
+    } else if (roleCode) {
+      role = await this.roleRepository.findByCodeAndOrganization(roleCode);
       if (!role) {
         throw new NotFoundException(`Role with code '${roleCode}' not found in organization`);
       }
@@ -267,12 +261,12 @@ export class UserRoleController {
   /**
    * Validate user exists and has profile in organization
    */
-  private async validateUserInOrganization(userId: string, organizationId: string): Promise<void> {
+  private async validateUserHasProfile(userId: string): Promise<void> {
     try {
-      await this.profileService.verifyUserHasAccessToOrg(userId, organizationId);
+      await this.profileService.verifyUserHasAccessToOrg(userId);
     } catch {
       throw new BadRequestException(
-        `User '${userId}' does not have a profile in organization '${organizationId}'`,
+        `User '${userId}' does not have a profile in organization ''`,
       );
     }
   }
@@ -294,7 +288,6 @@ export class UserRoleController {
       roleId: entity.roleId ?? '',
       roleCode: iamRole?.code ?? entity.role ?? '',
       roleName: iamRole?.name,
-      organizationId: entity.organizationId ?? undefined,
       createdAt: entity.createdAt,
     };
   }

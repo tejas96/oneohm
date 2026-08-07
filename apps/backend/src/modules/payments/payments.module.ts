@@ -9,7 +9,6 @@ import { PaymentService } from './services/payment.service';
 import { ReceiptService } from './services/receipt.service';
 import { CustomersModule } from '../customers/customers.module';
 import { FinanceCommonModule } from '../finance-common/finance-common.module';
-import { OrganizationsModule } from '../organizations/organizations.module';
 import { PaymentTermsModule } from '../payment-terms/payment-terms.module';
 import { ProjectsModule } from '../projects/projects.module';
 
@@ -27,7 +26,6 @@ import { ProjectsModule } from '../projects/projects.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([PaymentEntity]),
-    OrganizationsModule,
     ProjectsModule,
     CustomersModule,
     PaymentTermsModule,

@@ -27,9 +27,9 @@ export class InventoryTransactionRepository {
   /**
    * Find transaction by ID
    */
-  async findById(id: string, organizationId?: string): Promise<InventoryTransactionEntity> {
+  async findById(id: string): Promise<InventoryTransactionEntity> {
     const txn = await this.repository.findOne({
-      where: organizationId ? { id, organizationId } : { id },
+      where: { id },
       relations: ['warehouse', 'product', 'fromWarehouse', 'toWarehouse', 'creator'],
     });
 
@@ -44,7 +44,6 @@ export class InventoryTransactionRepository {
    * Find all transactions with filters and pagination
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 50,
     filters?: {
@@ -62,8 +61,7 @@ export class InventoryTransactionRepository {
       .leftJoinAndSelect('txn.warehouse', 'warehouse')
       .leftJoinAndSelect('txn.product', 'product')
       .leftJoinAndSelect('txn.fromWarehouse', 'fromWarehouse')
-      .leftJoinAndSelect('txn.toWarehouse', 'toWarehouse')
-      .where('txn.organizationId = :organizationId', { organizationId });
+      .leftJoinAndSelect('txn.toWarehouse', 'toWarehouse');
 
     // Apply filters
     if (filters?.transactionType) {
@@ -115,7 +113,6 @@ export class InventoryTransactionRepository {
    */
   async findByWarehouse(
     warehouseId: string,
-    organizationId: string,
     page = 1,
     limit = 50,
   ): Promise<{ transactions: InventoryTransactionEntity[]; total: number }> {
@@ -123,7 +120,6 @@ export class InventoryTransactionRepository {
       .createQueryBuilder('txn')
       .leftJoinAndSelect('txn.product', 'product')
       .where('txn.warehouseId = :warehouseId', { warehouseId })
-      .andWhere('txn.organizationId = :organizationId', { organizationId })
       .skip((page - 1) * limit)
       .take(limit)
       .orderBy('txn.transactionDate', 'DESC');
@@ -138,7 +134,6 @@ export class InventoryTransactionRepository {
    */
   async findByProduct(
     productId: string,
-    organizationId: string,
     page = 1,
     limit = 50,
   ): Promise<{ transactions: InventoryTransactionEntity[]; total: number }> {
@@ -146,7 +141,6 @@ export class InventoryTransactionRepository {
       .createQueryBuilder('txn')
       .leftJoinAndSelect('txn.warehouse', 'warehouse')
       .where('txn.productId = :productId', { productId })
-      .andWhere('txn.organizationId = :organizationId', { organizationId })
       .skip((page - 1) * limit)
       .take(limit)
       .orderBy('txn.transactionDate', 'DESC');
@@ -162,10 +156,9 @@ export class InventoryTransactionRepository {
   async findByReference(
     referenceType: string,
     referenceId: string,
-    organizationId: string,
   ): Promise<InventoryTransactionEntity[]> {
     return this.repository.find({
-      where: { referenceType, referenceId, organizationId },
+      where: { referenceType, referenceId },
       relations: ['warehouse', 'product'],
       order: { transactionDate: 'DESC', createdAt: 'DESC' },
     });
@@ -175,7 +168,6 @@ export class InventoryTransactionRepository {
    * Get transaction summary by type
    */
   async getTransactionSummaryByType(
-    organizationId: string,
     fromDate?: string,
     toDate?: string,
   ): Promise<
@@ -185,8 +177,7 @@ export class InventoryTransactionRepository {
       .createQueryBuilder('txn')
       .select('txn.transactionType', 'transactionType')
       .addSelect('COUNT(*)', 'count')
-      .addSelect('SUM(txn.quantity)', 'totalQuantity')
-      .where('txn.organizationId = :organizationId', { organizationId });
+      .addSelect('SUM(txn.quantity)', 'totalQuantity');
 
     if (fromDate) {
       query.andWhere('txn.transactionDate >= :fromDate', { fromDate });
@@ -205,11 +196,9 @@ export class InventoryTransactionRepository {
    * Get recent transactions
    */
   async getRecentTransactions(
-    organizationId: string,
     limit = 10,
   ): Promise<InventoryTransactionEntity[]> {
     return this.repository.find({
-      where: { organizationId },
       relations: ['warehouse', 'product', 'creator'],
       order: { createdAt: 'DESC' },
       take: limit,
@@ -222,11 +211,10 @@ export class InventoryTransactionRepository {
   async getStockMovementHistory(
     productId: string,
     warehouseId: string,
-    organizationId: string,
     limit = 20,
   ): Promise<InventoryTransactionEntity[]> {
     return this.repository.find({
-      where: { productId, warehouseId, organizationId },
+      where: { productId, warehouseId },
       relations: ['creator'],
       order: { transactionDate: 'DESC', createdAt: 'DESC' },
       take: limit,

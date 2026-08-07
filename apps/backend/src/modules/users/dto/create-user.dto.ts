@@ -42,7 +42,7 @@ export type ProfileDataType =
  *
  * Use cases:
  * 1. Create user only (no profile): Provide basic fields only
- * 2. Onboard employee/reseller: Provide organizationId + profileType + profileData
+ * 2. Onboard employee/reseller: Provide profileType + profileData
  * 3. Register customer: Can be done via self-registration flow
  */
 @ApiExtraModels(PartialEmployeeProfileDto, PartialCustomerProfileDto, PartialResellerProfileDto)
@@ -111,16 +111,13 @@ export class CreateUserDto {
     example: '00000000-0000-0000-0000-000000000001',
     description: 'Organization ID for profile creation. Required if profileType is provided.',
   })
-  @ValidateIf((o) => o.profileType !== undefined)
-  @IsUUID()
-  organizationId?: string;
 
   @ApiPropertyOptional({
     enum: UserProfileType,
     enumName: 'UserProfileType',
     example: UserProfileType.EMPLOYEE,
     description:
-      'Type of profile to create. When provided, also requires organizationId.\n' +
+      'Type of profile to create.\n' +
       '- employee: Creates employee profile + assigns employee_basic role\n' +
       '- reseller: Creates reseller profile + assigns reseller role\n' +
       '- customer: Creates customer profile + assigns customer role',
@@ -135,7 +132,7 @@ export class CreateUserDto {
       '- employee: { designation, department, joiningDate, ... }\n' +
       '- customer: { leadSource, propertyType, address, ... }\n' +
       '- reseller: { companyName, companyCode, gstin, ... }\n' +
-      'Note: userId and organizationId are auto-filled from user creation.',
+      'Note: userId is auto-filled from user creation.',
     oneOf: [
       { $ref: getSchemaPath(PartialEmployeeProfileDto) },
       { $ref: getSchemaPath(PartialCustomerProfileDto) },

@@ -59,15 +59,13 @@ export class SubsidyApplicationController {
 
   @Get('statistics/:organizationId')
   @ApiOperation({ summary: 'Get subsidy statistics by organization' })
-  @ApiParam({ name: 'organizationId', description: 'Organization UUID' })
   @ApiResponse({
     status: 200,
     description: 'Subsidy application statistics',
   })
   async getStatistics(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
   ): Promise<Record<string, unknown>> {
-    return this.subsidyService.getStatsByOrganization(organizationId);
+    return this.subsidyService.getStatsByOrganization();
   }
 
   @Get('project/:projectId')

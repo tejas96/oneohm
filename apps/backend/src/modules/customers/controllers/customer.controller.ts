@@ -18,8 +18,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
+  ApiUpdate
 } from '../../../common/decorators';
 import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -77,10 +76,9 @@ export class CustomerController {
   })
   async create(
     @Body() createDto: CreateCustomerDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    const customer = await this.customerService.create(organizationId, createDto, currentUser.id);
+    const customer = await this.customerService.create(createDto, currentUser.id);
     return toDto(CustomerResponseDto, customer);
   }
 
@@ -99,7 +97,6 @@ export class CustomerController {
     responseType: CustomerResponseDto,
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query() query: CustomerQueryDto,
   ): Promise<PaginatedResponse<CustomerResponseDto>> {
@@ -114,7 +111,7 @@ export class CustomerController {
     }
 
     // Use unified findAll with query DTO
-    const result = await this.customerService.findAll(organizationId, query);
+    const result = await this.customerService.findAll(query);
     return toPaginatedResponse(
       CustomerResponseDto,
       result.data,
@@ -151,9 +148,8 @@ export class CustomerController {
     },
   })
   async getGroups(
-    @OrganizationContext() organizationId: string,
   ): Promise<{ groupCode: string; groupName: string }[]> {
-    return this.customerService.getDistinctGroups(organizationId);
+    return this.customerService.getDistinctGroups();
   }
 
   /**
@@ -192,12 +188,10 @@ export class CustomerController {
     type: AvailabilityResponseDto,
   })
   async checkAvailability(
-    @OrganizationContext() organizationId: string,
     @Query() queryDto: CheckAvailabilityQueryDto,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<AvailabilityResponseDto> {
     return this.customerService.checkAvailability(
-      organizationId,
       queryDto.phone,
       queryDto.email,
       queryDto.excludeCustomerId,
@@ -229,10 +223,9 @@ export class CustomerController {
     },
   })
   async getStatusStatistics(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<Record<string, number>> {
-    return this.customerService.getStatusStatistics(organizationId);
+    return this.customerService.getStatusStatistics();
   }
 
   /**
@@ -255,10 +248,9 @@ export class CustomerController {
     type: CustomerOverviewStatsDto,
   })
   async getOverviewStatistics(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerOverviewStatsDto> {
-    return this.customerService.getOverviewStats(organizationId);
+    return this.customerService.getOverviewStats();
   }
 
   /**
@@ -273,10 +265,9 @@ export class CustomerController {
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    const customer = await this.customerService.findById(id, organizationId);
+    const customer = await this.customerService.findById(id);
     return toDto(CustomerResponseDto, customer);
   }
 
@@ -300,12 +291,10 @@ export class CustomerController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateCustomerDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.update(
       id,
-      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -325,12 +314,10 @@ export class CustomerController {
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateCustomerStatusDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.updateStatus(
       id,
-      organizationId,
       statusDto.status,
       currentUser.id,
     );
@@ -363,12 +350,10 @@ export class CustomerController {
   async assignCustomer(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() assigneeDto: UpdateAssigneeDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.assignCustomer(
       id,
-      organizationId,
       assigneeDto.assigneeId,
       currentUser.id,
     );
@@ -388,9 +373,8 @@ export class CustomerController {
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.customerService.delete(id, organizationId, currentUser.id);
+    await this.customerService.delete(id, currentUser.id);
   }
 }

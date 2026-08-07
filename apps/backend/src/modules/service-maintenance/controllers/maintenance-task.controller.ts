@@ -133,9 +133,8 @@ export class MaintenanceTaskController {
     description: 'Statistics retrieved successfully',
   })
   async getStatistics(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
   ): Promise<Record<string, unknown>> {
-    return this.maintenanceTaskService.getStatistics(organizationId);
+    return this.maintenanceTaskService.getStatistics();
   }
 
   @Get(':id')

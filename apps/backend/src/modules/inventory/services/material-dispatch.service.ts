@@ -4,7 +4,6 @@ import { MaterialDispatchStatus, StockAllocationStatus } from '@tejas96/shared/t
 import { DataSource } from 'typeorm';
 
 import { ProductRepository } from '../../master-data/repositories/product.repository';
-import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { ProjectRepository } from '../../projects/repositories/project.repository';
 import {
   CreateMaterialDispatchDto,
@@ -34,7 +33,6 @@ export class MaterialDispatchService {
     private readonly projectRepository: ProjectRepository,
     private readonly warehouseRepository: WarehouseRepository,
     private readonly productRepository: ProductRepository,
-    private readonly organizationRepository: OrganizationRepository,
     private readonly inventoryStockService: InventoryStockService,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
@@ -43,21 +41,19 @@ export class MaterialDispatchService {
    * Create a new material dispatch
    */
   async create(
-    organizationId: string,
     createDto: CreateMaterialDispatchDto,
     createdBy: string,
   ): Promise<MaterialDispatchEntity> {
     // Verify dependencies
     await Promise.all([
-      this.organizationRepository.findOneById(organizationId),
-      this.projectRepository.findById(createDto.projectId, organizationId),
-      this.warehouseRepository.findById(createDto.warehouseId, organizationId),
+      this.projectRepository.findById(createDto.projectId),
+      this.warehouseRepository.findById(createDto.warehouseId),
     ]);
 
     const uniqueProductIds = [...new Set(createDto.items.map((item) => item.productId))];
     const productLookups = await Promise.all(
       uniqueProductIds.map((productId) =>
-        this.productRepository.findById(productId, organizationId, { requireActive: true }),
+        this.productRepository.findById(productId, { requireActive: true }),
       ),
     );
     const invalidProductIds = uniqueProductIds.filter((_, index) => !productLookups[index]);
@@ -86,7 +82,7 @@ export class MaterialDispatchService {
 
     const linkedAllocations = await Promise.all(
       uniqueAllocationIds.map((allocationId) =>
-        this.stockAllocationRepository.findById(allocationId, organizationId),
+        this.stockAllocationRepository.findById(allocationId),
       ),
     );
     const allocationById = new Map(
@@ -138,7 +134,6 @@ export class MaterialDispatchService {
     }
     for (const [productId, requiredReserved] of reservedNeededByProduct) {
       const stock = await this.inventoryStockService.getStock(
-        organizationId,
         createDto.warehouseId,
         productId,
       );
@@ -156,7 +151,6 @@ export class MaterialDispatchService {
 
     // Create dispatch
     const dispatch = await this.materialDispatchRepository.create({
-      organizationId,
       projectId: createDto.projectId,
       warehouseId: createDto.warehouseId,
       dispatchNumber,
@@ -188,14 +182,13 @@ export class MaterialDispatchService {
       await this.materialDispatchItemRepository.createMany(items);
     }
 
-    return this.materialDispatchRepository.findById(dispatch.id, organizationId);
+    return this.materialDispatchRepository.findById(dispatch.id);
   }
 
   /**
    * Find all dispatches with filters
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -207,14 +200,14 @@ export class MaterialDispatchService {
       search?: string;
     },
   ) {
-    return this.materialDispatchRepository.findAll(organizationId, page, limit, filters);
+    return this.materialDispatchRepository.findAll(page, limit, filters);
   }
 
   /**
    * Find dispatch by ID
    */
-  async findById(id: string, organizationId: string): Promise<MaterialDispatchEntity> {
-    return this.materialDispatchRepository.findById(id, organizationId);
+  async findById(id: string): Promise<MaterialDispatchEntity> {
+    return this.materialDispatchRepository.findById(id);
   }
 
   /**
@@ -222,9 +215,8 @@ export class MaterialDispatchService {
    */
   async findByProject(
     projectId: string,
-    organizationId: string,
   ): Promise<MaterialDispatchEntity[]> {
-    return this.materialDispatchRepository.findByProject(projectId, organizationId);
+    return this.materialDispatchRepository.findByProject(projectId);
   }
 
   /**
@@ -232,18 +224,17 @@ export class MaterialDispatchService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateMaterialDispatchDto,
     updatedBy: string,
   ): Promise<MaterialDispatchEntity> {
-    const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
+    const dispatch = await this.materialDispatchRepository.findById(id);
 
     // Only allow updates if dispatch is in prepared status
     if (dispatch.status !== MaterialDispatchStatus.PREPARED) {
       throw new BadRequestException(`Cannot update dispatch with status ${dispatch.status}`);
     }
 
-    return this.materialDispatchRepository.update(id, organizationId, {
+    return this.materialDispatchRepository.update(id, {
       ...updateDto,
       updatedBy,
     });
@@ -254,11 +245,10 @@ export class MaterialDispatchService {
    */
   async updateStatus(
     id: string,
-    organizationId: string,
     statusDto: UpdateMaterialDispatchStatusDto,
     updatedBy: string,
   ): Promise<MaterialDispatchEntity> {
-    const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
+    const dispatch = await this.materialDispatchRepository.findById(id);
 
     validateDispatchStatusTransition(dispatch.status, statusDto.status);
 
@@ -285,7 +275,7 @@ export class MaterialDispatchService {
       updateData.notes = `${dispatch.notes || ''}\n${statusDto.notes}`;
     }
 
-    return this.materialDispatchRepository.update(id, organizationId, updateData);
+    return this.materialDispatchRepository.update(id, updateData);
   }
 
   /**
@@ -294,10 +284,9 @@ export class MaterialDispatchService {
    */
   async markDispatched(
     id: string,
-    organizationId: string,
     performedBy: string,
   ): Promise<MaterialDispatchEntity> {
-    const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
+    const dispatch = await this.materialDispatchRepository.findById(id);
 
     if (dispatch.status !== MaterialDispatchStatus.PREPARED) {
       throw new BadRequestException(
@@ -309,7 +298,6 @@ export class MaterialDispatchService {
     await this.dataSource.transaction(async (manager) => {
       for (const item of dispatch.items ?? []) {
         await this.inventoryStockService.deductReservedStock(
-          organizationId,
           dispatch.warehouseId,
           item.productId,
           Number(item.quantity),
@@ -346,7 +334,7 @@ export class MaterialDispatchService {
       }
     });
 
-    return this.materialDispatchRepository.update(id, organizationId, {
+    return this.materialDispatchRepository.update(id, {
       status: MaterialDispatchStatus.IN_TRANSIT,
       updatedBy: performedBy,
     });
@@ -359,12 +347,11 @@ export class MaterialDispatchService {
    */
   async markDelivered(
     id: string,
-    organizationId: string,
     performedBy: string,
     actualDeliveryDate?: Date,
     receivedById?: string,
   ): Promise<MaterialDispatchEntity> {
-    const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
+    const dispatch = await this.materialDispatchRepository.findById(id);
 
     const allowed =
       dispatch.status === MaterialDispatchStatus.IN_TRANSIT ||
@@ -397,7 +384,7 @@ export class MaterialDispatchService {
       }
     });
 
-    return this.materialDispatchRepository.update(id, organizationId, {
+    return this.materialDispatchRepository.update(id, {
       status: MaterialDispatchStatus.DELIVERED,
       actualDeliveryDate: actualDeliveryDate ?? new Date(),
       receivedBy: receivedById,
@@ -410,11 +397,10 @@ export class MaterialDispatchService {
    */
   async cancel(
     id: string,
-    organizationId: string,
     reason: string,
     updatedBy: string,
   ): Promise<MaterialDispatchEntity> {
-    const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
+    const dispatch = await this.materialDispatchRepository.findById(id);
 
     if (dispatch.status === MaterialDispatchStatus.DELIVERED) {
       throw new BadRequestException('Cannot cancel a delivered dispatch');
@@ -432,7 +418,6 @@ export class MaterialDispatchService {
           if (itemQuantity <= 0) continue;
 
           await this.inventoryStockService.restoreReservedStock(
-            organizationId,
             dispatch.warehouseId,
             item.productId,
             itemQuantity,
@@ -447,7 +432,7 @@ export class MaterialDispatchService {
             const { StockAllocationEntity } = await import('../entities/stock-allocation.entity');
             const allocationRepo = manager.getRepository(StockAllocationEntity);
             const allocation = await allocationRepo.findOne({
-              where: { id: item.stockAllocationId, organizationId },
+              where: { id: item.stockAllocationId },
             });
 
             if (allocation && allocation.status !== StockAllocationStatus.CANCELLED) {
@@ -473,7 +458,7 @@ export class MaterialDispatchService {
       });
     }
 
-    return this.materialDispatchRepository.update(id, organizationId, {
+    return this.materialDispatchRepository.update(id, {
       status: MaterialDispatchStatus.CANCELLED,
       notes: `${dispatch.notes || ''}\nCancelled: ${reason}`,
       updatedBy,
@@ -483,22 +468,22 @@ export class MaterialDispatchService {
   /**
    * Delete dispatch
    */
-  async delete(id: string, organizationId: string): Promise<void> {
-    const dispatch = await this.materialDispatchRepository.findById(id, organizationId);
+  async delete(id: string): Promise<void> {
+    const dispatch = await this.materialDispatchRepository.findById(id);
 
     // Only allow deletion if dispatch is in draft status
     if (dispatch.status !== MaterialDispatchStatus.PREPARED) {
       throw new BadRequestException('Only draft dispatches can be deleted');
     }
 
-    await this.materialDispatchRepository.delete(id, organizationId);
+    await this.materialDispatchRepository.delete(id);
   }
 
   /**
    * Get dispatch statistics
    */
-  async getStatistics(organizationId: string) {
-    const countByStatus = await this.materialDispatchRepository.countByStatus(organizationId);
+  async getStatistics() {
+    const countByStatus = await this.materialDispatchRepository.countByStatus();
 
     return {
       total: Object.values(countByStatus).reduce((sum, count) => sum + count, 0),
@@ -509,14 +494,14 @@ export class MaterialDispatchService {
   /**
    * Get in-transit dispatches
    */
-  async getInTransitDispatches(organizationId: string): Promise<MaterialDispatchEntity[]> {
-    return this.materialDispatchRepository.getInTransitDispatches(organizationId);
+  async getInTransitDispatches(): Promise<MaterialDispatchEntity[]> {
+    return this.materialDispatchRepository.getInTransitDispatches();
   }
 
   /**
    * Get pending dispatches
    */
-  async getPendingDispatches(organizationId: string): Promise<MaterialDispatchEntity[]> {
-    return this.materialDispatchRepository.getPendingDispatches(organizationId);
+  async getPendingDispatches(): Promise<MaterialDispatchEntity[]> {
+    return this.materialDispatchRepository.getPendingDispatches();
   }
 }

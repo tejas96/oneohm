@@ -14,7 +14,7 @@ import { type PaginatedResponse } from '@tejas96/shared/types';
 import { parsePaginationParams } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
-import { ApiReadAll, OrganizationContext } from '../../../common/decorators';
+import { ApiReadAll } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -63,7 +63,6 @@ export class InventoryStockController {
   @ApiQuery({ name: 'sortBy', required: false, type: String })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @Query() query: Record<string, string>,
     @Query('warehouseId') warehouseId?: string,
     @Query('productId') productId?: string,
@@ -77,7 +76,6 @@ export class InventoryStockController {
     const normalizedOrder: 'ASC' | 'DESC' | undefined =
       sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : undefined;
     const { stocks, total } = await this.inventoryStockService.getAllStock(
-      organizationId,
       pageNum,
       limitNum,
       {
@@ -113,11 +111,10 @@ export class InventoryStockController {
     description: 'Retrieve stock level for a specific product in a specific warehouse',
   })
   async getStock(
-    @OrganizationContext() organizationId: string,
     @Param('warehouseId', ParseUUIDPipe) warehouseId: string,
     @Param('productId', ParseUUIDPipe) productId: string,
   ): Promise<InventoryStockResponseDto | null> {
-    const stock = await this.inventoryStockService.getStock(organizationId, warehouseId, productId);
+    const stock = await this.inventoryStockService.getStock(warehouseId, productId);
 
     return stock
       ? plainToInstance(InventoryStockResponseDto, stock, {
@@ -163,7 +160,6 @@ export class InventoryStockController {
     description: 'Search by product name or code',
   })
   async getStockByWarehouse(
-    @OrganizationContext() organizationId: string,
     @Param('warehouseId', ParseUUIDPipe) warehouseId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -171,7 +167,6 @@ export class InventoryStockController {
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<InventoryStockResponseDto>> {
     const { stocks, total } = await this.inventoryStockService.getStockByWarehouse(
-      organizationId,
       warehouseId,
       page,
       limit,
@@ -204,11 +199,10 @@ export class InventoryStockController {
     description: 'Retrieve stock levels for a product across all warehouses',
   })
   async getStockByProduct(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('productId', ParseUUIDPipe) productId: string,
   ): Promise<InventoryStockResponseDto[]> {
-    const stocks = await this.inventoryStockService.getStockByProduct(productId, organizationId);
+    const stocks = await this.inventoryStockService.getStockByProduct(productId);
 
     return plainToInstance(InventoryStockResponseDto, stocks, {
       excludeExtraneousValues: true,
@@ -225,10 +219,9 @@ export class InventoryStockController {
     description: 'Retrieve all products with stock below minimum level',
   })
   async getLowStockAlerts(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<InventoryStockResponseDto[]> {
-    const stocks = await this.inventoryStockService.getLowStockAlerts(organizationId);
+    const stocks = await this.inventoryStockService.getLowStockAlerts();
 
     return plainToInstance(InventoryStockResponseDto, stocks, {
       excludeExtraneousValues: true,
@@ -245,14 +238,12 @@ export class InventoryStockController {
     description: 'Add or remove stock (creates transaction record)',
   })
   async updateStock(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() updateDto: UpdateStockDto,
   ): Promise<InventoryStockResponseDto> {
     const stock = await this.inventoryStockService.updateStock(
       {
         ...updateDto,
-        organizationId: organizationId,
       },
       currentUser.id,
     );
@@ -272,12 +263,10 @@ export class InventoryStockController {
     description: 'Move stock from one warehouse to another',
   })
   async transferStock(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() transferDto: StockTransferDto,
   ): Promise<{ message: string }> {
     await this.inventoryStockService.transferStock(
-      organizationId,
       transferDto.fromWarehouseId,
       transferDto.toWarehouseId,
       transferDto.productId,
@@ -299,12 +288,10 @@ export class InventoryStockController {
     description: 'Manually adjust stock quantity (for corrections)',
   })
   async adjustStock(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() adjustmentDto: StockAdjustmentDto,
   ): Promise<InventoryStockResponseDto> {
     const stock = await this.inventoryStockService.adjustStock(
-      organizationId,
       adjustmentDto.warehouseId,
       adjustmentDto.productId,
       adjustmentDto.newQuantity,
@@ -327,10 +314,9 @@ export class InventoryStockController {
     description: 'Calculate total value of all stock in organization',
   })
   async getTotalStockValue(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<{ totalValue: number }> {
-    const totalValue = await this.inventoryStockService.getTotalStockValue(organizationId);
+    const totalValue = await this.inventoryStockService.getTotalStockValue();
 
     return { totalValue };
   }
@@ -345,7 +331,6 @@ export class InventoryStockController {
     description: 'Get stock statistics grouped by warehouse',
   })
   async getStockSummary(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<
     Array<{
@@ -355,7 +340,7 @@ export class InventoryStockController {
       totalValue: number;
     }>
   > {
-    return this.inventoryStockService.getStockSummaryByWarehouse(organizationId);
+    return this.inventoryStockService.getStockSummaryByWarehouse();
   }
 
   @RequirePermission('inventory:read')
@@ -363,11 +348,10 @@ export class InventoryStockController {
   @ApiOperation({ summary: 'Top items that have crossed their minimum stock level (deficit DESC)' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async statsTopLowStock(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('limit') limit?: string,
   ): Promise<TopItemsResponse> {
-    return this.inventoryStatsService.topLowStock(organizationId, limit);
+    return this.inventoryStatsService.topLowStock(limit);
   }
 
   /**
@@ -380,10 +364,9 @@ export class InventoryStockController {
     description: 'Retrieve a stock record by id',
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<InventoryStockResponseDto> {
-    const stock = await this.inventoryStockService.getStockById(id, organizationId);
+    const stock = await this.inventoryStockService.getStockById(id);
     return plainToInstance(InventoryStockResponseDto, stock, {
       excludeExtraneousValues: true,
     });
@@ -399,11 +382,10 @@ export class InventoryStockController {
     description: 'Update stock thresholds (minimum, maximum, reorder levels)',
   })
   async updateStockSettings(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateInventoryStockDto,
   ): Promise<InventoryStockResponseDto> {
-    const stock = await this.inventoryStockService.getStockById(id, organizationId);
+    const stock = await this.inventoryStockService.getStockById(id);
 
     const updatedStock = await this.inventoryStockService.updateStockSettings(stock.id, updateDto);
 

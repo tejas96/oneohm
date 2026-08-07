@@ -27,9 +27,9 @@ export class MaterialDispatchRepository {
   /**
    * Find dispatch by ID with relations
    */
-  async findById(id: string, organizationId: string): Promise<MaterialDispatchEntity> {
+  async findById(id: string): Promise<MaterialDispatchEntity> {
     const dispatch = await this.repository.findOne({
-      where: { id, organizationId },
+      where: { id },
       relations: ['project', 'warehouse', 'items', 'items.product', 'creator', 'updater'],
     });
 
@@ -45,10 +45,9 @@ export class MaterialDispatchRepository {
    */
   async findByDispatchNumber(
     dispatchNumber: string,
-    organizationId: string,
   ): Promise<MaterialDispatchEntity | null> {
     return this.repository.findOne({
-      where: { dispatchNumber, organizationId },
+      where: { dispatchNumber },
       relations: ['project', 'warehouse', 'items'],
     });
   }
@@ -57,7 +56,6 @@ export class MaterialDispatchRepository {
    * Find all dispatches with filters and pagination
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -72,8 +70,7 @@ export class MaterialDispatchRepository {
     const query = this.repository
       .createQueryBuilder('dispatch')
       .leftJoinAndSelect('dispatch.project', 'project')
-      .leftJoinAndSelect('dispatch.warehouse', 'warehouse')
-      .where('dispatch.organizationId = :organizationId', { organizationId });
+      .leftJoinAndSelect('dispatch.warehouse', 'warehouse');
 
     // Apply filters
     if (filters?.status) {
@@ -120,10 +117,9 @@ export class MaterialDispatchRepository {
    */
   async findByProject(
     projectId: string,
-    organizationId: string,
   ): Promise<MaterialDispatchEntity[]> {
     return this.repository.find({
-      where: { projectId, organizationId },
+      where: { projectId },
       relations: ['warehouse', 'items', 'items.product'],
       order: { dispatchDate: 'DESC' },
     });
@@ -155,10 +151,9 @@ export class MaterialDispatchRepository {
    */
   async update(
     id: string,
-    organizationId: string,
     updateData: Record<string, unknown>,
   ): Promise<MaterialDispatchEntity> {
-    const dispatch = await this.findById(id, organizationId);
+    const dispatch = await this.findById(id);
 
     Object.assign(dispatch, updateData);
 
@@ -168,20 +163,19 @@ export class MaterialDispatchRepository {
   /**
    * Delete dispatch
    */
-  async delete(id: string, organizationId: string): Promise<void> {
-    const dispatch = await this.findById(id, organizationId);
+  async delete(id: string): Promise<void> {
+    const dispatch = await this.findById(id);
     await this.repository.remove(dispatch);
   }
 
   /**
    * Count dispatches by status
    */
-  async countByStatus(organizationId: string): Promise<Record<MaterialDispatchStatus, number>> {
+  async countByStatus(): Promise<Record<MaterialDispatchStatus, number>> {
     const result = await this.repository
       .createQueryBuilder('dispatch')
       .select('dispatch.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('dispatch.organizationId = :organizationId', { organizationId })
       .groupBy('dispatch.status')
       .getRawMany<{ status: MaterialDispatchStatus; count: string }>();
 
@@ -204,10 +198,9 @@ export class MaterialDispatchRepository {
   /**
    * Get in-transit dispatches
    */
-  async getInTransitDispatches(organizationId: string): Promise<MaterialDispatchEntity[]> {
+  async getInTransitDispatches(): Promise<MaterialDispatchEntity[]> {
     return this.repository.find({
       where: {
-        organizationId,
         status: MaterialDispatchStatus.IN_TRANSIT,
       },
       relations: ['project', 'warehouse'],
@@ -218,12 +211,11 @@ export class MaterialDispatchRepository {
   /**
    * Get pending dispatches (draft or prepared)
    */
-  async getPendingDispatches(organizationId: string): Promise<MaterialDispatchEntity[]> {
+  async getPendingDispatches(): Promise<MaterialDispatchEntity[]> {
     return this.repository
       .createQueryBuilder('dispatch')
       .leftJoinAndSelect('dispatch.project', 'project')
       .leftJoinAndSelect('dispatch.warehouse', 'warehouse')
-      .where('dispatch.organizationId = :organizationId', { organizationId })
       .andWhere('dispatch.status IN (:...statuses)', {
         statuses: [MaterialDispatchStatus.PREPARED],
       })
