@@ -1256,32 +1256,50 @@ git commit -m "refactor(backend): drop organization from database seeds"
 - Consumes: the org-free API from Task 10
 - Produces: a web app that never reads, sends, or caches an organization id
 
+> **Scope correction, found during execution.** Most of the web's org plumbing funnels through one hook, `apps/web/lib/hooks/core/use-org-context.ts` — 21 lines returning `{ organizationId, orgHeaders, isReady }`, consumed by **48 files across 139 references**. Delete the hook first and the consumers follow; do not hand-edit headers file-by-file.
+>
+> Separately: `useOrgReceipts`, `useOrgOutstanding`, `useOrgProfitability`, `OrgReceiptListItem`, `OrgExpenseListItem`, `lib/hooks/resources/finance-org.ts` and similar `Org`-prefixed names mean **company-wide** (all receipts across the business, versus per-project). They are not tenancy and are **deliberately left untouched** — decided 2026-08-07. Do not rename them.
+
 - [ ] **Step 1: Get the worklist**
 
 ```bash
-grep -rln "organizationId\|X-Organization-Id" apps/web/app apps/web/components apps/web/lib apps/web/providers apps/web/types | sort
+grep -rln "organizationId\|X-Organization-Id\|useOrgContext\|orgHeaders" apps/web/app apps/web/components apps/web/lib apps/web/providers apps/web/types | sort
 ```
 
-- [ ] **Step 2: Delete the headers**
+- [ ] **Step 2: Delete the central hook and its consumers**
+
+```bash
+rm apps/web/lib/hooks/core/use-org-context.ts
+```
+
+Remove its re-export from `apps/web/lib/hooks/core/index.ts:38`. Then, in each of the 48 consumers:
+
+- Delete the `useOrgContext()` call and its destructuring.
+- Delete `...orgHeaders` spreads from request header objects. Where that leaves `headers: {}`, delete the `headers` key; where it leaves an empty options object as the last argument, delete the argument.
+- Delete `isReady` from `enabled:` expressions, keeping any other conditions. Where `isReady` was the only condition, delete the `enabled` key.
+
+`use-resource-list.ts` and `use-infinite-resource-list.ts` are the two core hooks that consume it — do those first, since many features inherit their behaviour.
+
+- [ ] **Step 3: Delete the remaining direct headers**
 
 Remove every `'X-Organization-Id': organizationId` entry. Where that leaves an empty `headers: {}`, delete the `headers` key; where it leaves an empty options object as the last argument, delete the argument.
 
-- [ ] **Step 3: Narrow the query keys**
+- [ ] **Step 4: Narrow the query keys**
 
 `customerKeys.list(organizationId, filters)` becomes `customerKeys.list(filters)`. Update each key factory's signature and every call site together, so the key arity stays consistent — a factory updated without its callers produces silently colliding cache keys rather than a type error when the parameter is `unknown`.
 
-- [ ] **Step 4: Delete the gates**
+- [ ] **Step 5: Delete the gates**
 
 Remove `!!organizationId` from every `enabled:` expression. Where it was the only condition, delete the `enabled` key entirely. Where it was combined, keep the rest: `enabled: !!customerId && !!organizationId && options?.enabled !== false` becomes `enabled: !!customerId && options?.enabled !== false`.
 
 Then delete the now-unused `const organizationId = user?.organizationId;` lines.
 
-- [ ] **Step 5: Clean the provider and routes**
+- [ ] **Step 6: Clean the provider and routes**
 
 - `providers/auth-provider.tsx` — drop `organizationId` from the user type and anywhere it is read.
 - `lib/config/routes.ts:172` — delete the unused `ORGANIZATIONS: '/organizations',` entry.
 
-- [ ] **Step 6: Verify**
+- [ ] **Step 7: Verify**
 
 ```bash
 npm run typecheck:web
@@ -1290,7 +1308,7 @@ grep -rniE "organi[sz]ation" apps/web/app apps/web/components apps/web/lib apps/
 
 Expected: typecheck clean; grep returns nothing.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add apps/web
@@ -1314,12 +1332,25 @@ Expected: all clean. Any failure is a defect in tasks 1–12, not something to w
 - [ ] **Step 2: Prove no org reference survives**
 
 ```bash
-grep -rniE "organi[sz]ation" apps libs --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.next --exclude-dir=migrations
+grep -rniE "organi[sz]ation|useOrgContext|orgHeaders|X-Organization-Id" apps libs \
+  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.next --exclude-dir=migrations
 ```
 
-Expected: no output. Historical migrations are excluded by design; the new migration under `sql/org-cleanup/` is reviewed by eye instead — it legitimately names the tables it drops.
+Expected: no output.
 
-- [ ] **Step 3: Migrate the working database**
+The second half of that pattern matters: `useOrgContext` and `orgHeaders` are the web's actual tenancy plumbing and **do not contain the string "organization"**, so a bare `organi[sz]ation` grep reports success while 139 references survive. That is the whole reason this gate is spelled out.
+
+Historical migrations are excluded by design. The new migration under `sql/org-cleanup/` is reviewed by eye instead — it legitimately names the tables it drops.
+
+- [ ] **Step 3: Confirm the deliberate survivors are still intact**
+
+```bash
+grep -rl "useOrgReceipts\|useOrgOutstanding\|useOrgProfitability" apps/web/lib apps/web/components | wc -l
+```
+
+Expected: a non-zero count. These company-wide finance hooks were deliberately kept (decision of 2026-08-07). A zero here means someone over-applied the cleanup and deleted working report code.
+
+- [ ] **Step 4: Migrate the working database**
 
 ```bash
 cd apps/backend && npx ts-node -r tsconfig-paths/register src/scripts/org-cleanup-baseline.ts
@@ -1329,7 +1360,7 @@ cd apps/backend && npx ts-node -r tsconfig-paths/register src/scripts/org-cleanu
 
 Expected: baseline written, migration succeeds, comparison reports `Money unchanged across N projects.` and exits 0.
 
-- [ ] **Step 4: Smoke the app end to end**
+- [ ] **Step 5: Smoke the app end to end**
 
 Start both apps, then walk this path in the browser and confirm each screen **renders** the expected data — a correct database row that nothing displays is a failed check:
 
@@ -1342,14 +1373,14 @@ Start both apps, then walk this path in the browser and confirm each screen **re
 7. Create a purchase order — confirm the PO number increments (this exercises the rewritten `ON CONFLICT` target).
 8. Reload the project's Money tab and confirm the balance moved by the payment amount.
 
-- [ ] **Step 5: Drop the scratch databases**
+- [ ] **Step 6: Drop the scratch databases**
 
 ```bash
 docker exec oneohm-postgres psql -U root -d postgres -c "DROP DATABASE IF EXISTS oneohm_orgtest;"
 docker exec oneohm-postgres psql -U root -d postgres -c "DROP DATABASE IF EXISTS oneohm_seedtest;"
 ```
 
-- [ ] **Step 6: Record what breaks and commit**
+- [ ] **Step 7: Record what breaks and commit**
 
 Append to the design doc's §12 the confirmed list of mobile call sites that will fail, so the follow-up repos have a checklist:
 
