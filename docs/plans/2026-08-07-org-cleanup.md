@@ -48,55 +48,15 @@
 
 **Files:**
 - Create: `libs/shared/src/constants/company.ts`
-- Create: `libs/shared/src/constants/company.spec.ts`
 - Modify: `libs/shared/src/constants/index.ts`
 
 **Interfaces:**
 - Consumes: nothing
-- Produces: `COMPANY` — a `const` object with keys `name, email, phone, address, city, state, country, pincode, gstin, pan, timezone, currency, dateFormat, defaultProjectTimelineWeeks, defaultQuoteValidityDays, maxQuoteVersions`. Tasks 2 and 11 import it as `import { COMPANY } from '@tejas96/shared'`.
+- Produces: `COMPANY` — a `const` object with keys `name, email, phone, address, city, state, country, pincode, gstin, pan, timezone, currency, dateFormat, defaultProjectTimelineWeeks, defaultQuoteValidityDays, maxQuoteVersions`. Tasks 2 and 11 import it as `import { COMPANY } from '@tejas96/shared/constants'` — the subpath, which is what `apps/web/jest.config.ts` maps.
 
-- [ ] **Step 1: Write the failing test**
+> **Plan deviation, recorded during execution.** `libs/shared` has no jest config and no `test` target, so the originally-planned `company.spec.ts` could not run there. Adding a jest project to a library that has never had one is scope creep in a deletion PR. The value assertions moved into Task 2's web spec instead, where these values actually reach customers; the protection against a transcription typo is unchanged. Task 1's gate is therefore `typecheck`, not a test.
 
-Create `libs/shared/src/constants/company.spec.ts`:
-
-```ts
-import { describe, it, expect } from '@jest/globals';
-
-import { COMPANY } from './company';
-
-describe('COMPANY', () => {
-  it('carries the registered company identity', () => {
-    expect(COMPANY.name).toBe('OneOhm');
-    expect(COMPANY.email).toBe('sanjay@oneohm.com');
-    expect(COMPANY.phone).toBe('+919850808484');
-    expect(COMPANY.address).toBe('Plot No.93, Vasantdada Industrial Estate, Sangli');
-    expect(COMPANY.pincode).toBe('416416');
-  });
-
-  it('carries the tax identifiers for reference', () => {
-    expect(COMPANY.gstin).toBe('27AABCU9603R1ZM');
-    expect(COMPANY.pan).toBe('AABCU9603R');
-  });
-
-  it('carries the business defaults that used to live on the organizations row', () => {
-    expect(COMPANY.currency).toBe('INR');
-    expect(COMPANY.timezone).toBe('Asia/Kolkata');
-    expect(COMPANY.defaultQuoteValidityDays).toBe(30);
-    expect(COMPANY.maxQuoteVersions).toBe(3);
-    expect(COMPANY.defaultProjectTimelineWeeks).toBe(4);
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-```bash
-npx nx test shared --testPathPatterns=company
-```
-
-Expected: FAIL — `Cannot find module './company'`.
-
-- [ ] **Step 3: Write the constant**
+- [ ] **Step 1: Write the constant**
 
 Create `libs/shared/src/constants/company.ts`:
 
@@ -136,7 +96,7 @@ export const COMPANY = {
 } as const;
 ```
 
-- [ ] **Step 4: Export it**
+- [ ] **Step 2: Export it**
 
 Add to `libs/shared/src/constants/index.ts`, keeping alphabetical order with the existing exports:
 
@@ -144,18 +104,19 @@ Add to `libs/shared/src/constants/index.ts`, keeping alphabetical order with the
 export * from './company';
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [ ] **Step 3: Verify it compiles and is reachable**
 
 ```bash
-npx nx test shared --testPathPatterns=company
+npm run typecheck:libs
+grep -n "company" libs/shared/src/constants/index.ts
 ```
 
-Expected: PASS, 3 tests.
+Expected: typecheck clean, and the export present.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add libs/shared/src/constants/company.ts libs/shared/src/constants/company.spec.ts libs/shared/src/constants/index.ts
+git add libs/shared/src/constants/company.ts libs/shared/src/constants/index.ts
 git commit -m "feat(shared): add COMPANY constant to replace the organizations row"
 ```
 
@@ -187,9 +148,32 @@ Create `apps/web/components/features/ledger/services/receipt-pdf.template.spec.t
 
 ```ts
 import { describe, it, expect } from '@jest/globals';
-import { COMPANY } from '@tejas96/shared';
+import { COMPANY } from '@tejas96/shared/constants';
 
 import { RECEIPT_COMPANY } from './receipt-pdf.template';
+
+describe('COMPANY', () => {
+  it('carries the registered company identity', () => {
+    expect(COMPANY.name).toBe('OneOhm');
+    expect(COMPANY.email).toBe('sanjay@oneohm.com');
+    expect(COMPANY.phone).toBe('+919850808484');
+    expect(COMPANY.address).toBe('Plot No.93, Vasantdada Industrial Estate, Sangli');
+    expect(COMPANY.pincode).toBe('416416');
+  });
+
+  it('carries the tax identifiers for reference', () => {
+    expect(COMPANY.gstin).toBe('27AABCU9603R1ZM');
+    expect(COMPANY.pan).toBe('AABCU9603R');
+  });
+
+  it('carries the business defaults that used to live on the organizations row', () => {
+    expect(COMPANY.currency).toBe('INR');
+    expect(COMPANY.timezone).toBe('Asia/Kolkata');
+    expect(COMPANY.defaultQuoteValidityDays).toBe(30);
+    expect(COMPANY.maxQuoteVersions).toBe(3);
+    expect(COMPANY.defaultProjectTimelineWeeks).toBe(4);
+  });
+});
 
 describe('RECEIPT_COMPANY', () => {
   it('is derived from the shared COMPANY constant, not hardcoded', () => {
@@ -217,16 +201,14 @@ describe('RECEIPT_COMPANY', () => {
 npx nx test web --testPathPatterns=receipt-pdf.template
 ```
 
-Expected: FAIL — `RECEIPT_COMPANY` is not exported.
-
-If it instead fails with `Cannot find module '@tejas96/shared'`, the web Jest config lacks the path mapping. Check how other web tests import shared code and follow that; do not work around it by duplicating the constant.
+Expected: FAIL — `RECEIPT_COMPANY` is not exported. The `COMPANY` describe block should already pass, since Task 1 created the constant.
 
 - [ ] **Step 4: Replace the hardcoded block**
 
 In `receipt-pdf.template.ts`, delete the `RECEIPT_DEFAULT_COMPANY` block (and its comment about following the quote PDF's precedent) and replace with:
 
 ```ts
-import { COMPANY } from '@tejas96/shared';
+import { COMPANY } from '@tejas96/shared/constants';
 
 /**
  * The company block printed on receipts. Assembled from the shared COMPANY
@@ -249,7 +231,7 @@ Update every caller found in Step 1 to use `RECEIPT_COMPANY`.
 npx nx test web --testPathPatterns=receipt-pdf.template
 ```
 
-Expected: PASS, 3 tests.
+Expected: PASS, 6 tests.
 
 - [ ] **Step 6: Do the same for the quote PDF**
 
@@ -293,7 +275,8 @@ Create `apps/backend/src/scripts/org-cleanup-baseline.ts`:
  */
 import { writeFileSync, readFileSync, existsSync } from 'node:fs';
 
-import { AppDataSource } from '../database/ormconfig';
+// ormconfig exports the DataSource as a default (required by the TypeORM CLI).
+import AppDataSource from '../database/ormconfig';
 
 const BASELINE_PATH = 'tmp/org-cleanup-baseline.json';
 
@@ -381,13 +364,13 @@ async function main(): Promise<void> {
 void main();
 ```
 
-- [ ] **Step 2: Verify the import path for the data source**
+- [ ] **Step 2: Confirm the data source export shape**
 
 ```bash
-ls apps/backend/src/database/ormconfig.ts && grep -n "export" apps/backend/src/database/ormconfig.ts | head -5
+grep -n "export" apps/backend/src/database/ormconfig.ts
 ```
 
-If the exported name is not `AppDataSource`, fix the import in the script to match. Do not guess.
+Expected: a single `export default new DataSource(...)` — already reflected in the import above. Verified during execution on 2026-08-07; re-check only if this fails.
 
 - [ ] **Step 3: Run it against the local database**
 
