@@ -63,9 +63,9 @@ export async function seedQuoteCalculatorData(
     const productTypeIds: Record<string, string> = {};
     for (const pt of productTypeRows) {
       const result = await queryRunner.query(
-        `INSERT INTO product_types (organization_id, name, code, description, default_pricing_basis, default_gst_rate, unit_of_measure, is_active, sort_order, created_at, updated_at)
+        `INSERT INTO product_types (name, code, description, default_pricing_basis, default_gst_rate, unit_of_measure, is_active, sort_order, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, $8, NOW(), NOW())
-        ON CONFLICT (organization_id, code) DO UPDATE SET
+        ON CONFLICT (code) DO UPDATE SET
           name = EXCLUDED.name,
           description = EXCLUDED.description
         RETURNING id`,
@@ -100,9 +100,9 @@ export async function seedQuoteCalculatorData(
     const brandIds: Record<string, string> = {};
     for (const brand of brandRows) {
       const result = await queryRunner.query(
-        `INSERT INTO brands (organization_id, name, manufacturer_name, is_active, created_at, updated_at)
+        `INSERT INTO brands (name, manufacturer_name, is_active, created_at, updated_at)
         VALUES ($1, $2, $3, TRUE, NOW(), NOW())
-        ON CONFLICT (organization_id, name) DO UPDATE SET
+        ON CONFLICT (name) DO UPDATE SET
           manufacturer_name = EXCLUDED.manufacturer_name
         RETURNING id`,
         [brand.name, brand.manufacturer],
@@ -201,10 +201,10 @@ export async function seedQuoteCalculatorData(
     for (const panel of panelData) {
       const result = await queryRunner.query(
         `INSERT INTO products (
-          organization_id, product_type_id, brand_id, name, code, status,
+          product_type_id, brand_id, name, code, status,
           specifications
         ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (organization_id, code) DO UPDATE SET
+        ON CONFLICT (code) DO UPDATE SET
           name = EXCLUDED.name,
           specifications = EXCLUDED.specifications
         RETURNING id`,
@@ -229,7 +229,7 @@ export async function seedQuoteCalculatorData(
       // Create product price for panel
       await queryRunner.query(
         `INSERT INTO product_prices (
-          organization_id, product_id, project_type, unit_price, cost_multiplier,
+          product_id, project_type, unit_price, cost_multiplier,
           gst_rate, currency, effective_from, is_active, created_at, updated_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         ON CONFLICT DO NOTHING`,
@@ -374,10 +374,10 @@ export async function seedQuoteCalculatorData(
     for (const inverter of inverterData) {
       const result = await queryRunner.query(
         `INSERT INTO products (
-          organization_id, product_type_id, brand_id, name, code, status,
+          product_type_id, brand_id, name, code, status,
           specifications
         ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (organization_id, code) DO UPDATE SET
+        ON CONFLICT (code) DO UPDATE SET
           name = EXCLUDED.name,
           specifications = EXCLUDED.specifications
         RETURNING id`,
@@ -400,7 +400,7 @@ export async function seedQuoteCalculatorData(
       // Create product price for inverter
       await queryRunner.query(
         `INSERT INTO product_prices (
-          organization_id, product_id, project_type, unit_price, cost_multiplier,
+          product_id, project_type, unit_price, cost_multiplier,
           gst_rate, currency, effective_from, is_active, created_at, updated_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         ON CONFLICT DO NOTHING`,
@@ -424,7 +424,7 @@ export async function seedQuoteCalculatorData(
     console.log('💰 Creating subsidy configurations...');
     await queryRunner.query(
       `INSERT INTO subsidy_configurations (
-        organization_id, scheme_name, scheme_type, project_type,
+        scheme_name, scheme_type, project_type,
         max_subsidy_kw, requires_dcr, is_active,
         tiers, description
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -446,7 +446,7 @@ export async function seedQuoteCalculatorData(
 
     await queryRunner.query(
       `INSERT INTO subsidy_configurations (
-        organization_id, scheme_name, scheme_type, project_type,
+        scheme_name, scheme_type, project_type,
         max_subsidy_kw, requires_dcr, is_active,
         tiers, description
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -556,11 +556,11 @@ export async function seedQuoteCalculatorData(
 
       await queryRunner.query(
         `INSERT INTO installation_pricing (
-          organization_id, min_system_size_kw, max_system_size_kw,
+          min_system_size_kw, max_system_size_kw,
           transport_rate_per_km, floor_increment_percent, gst_rate,
           cost_components, effective_from, is_active, created_at, updated_at
         ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, NOW(), NOW())
-        ON CONFLICT (organization_id, min_system_size_kw, max_system_size_kw) DO UPDATE SET
+        ON CONFLICT (min_system_size_kw, max_system_size_kw) DO UPDATE SET
           transport_rate_per_km = EXCLUDED.transport_rate_per_km,
           floor_increment_percent = EXCLUDED.floor_increment_percent,
           gst_rate = EXCLUDED.gst_rate,
@@ -588,7 +588,7 @@ export async function seedQuoteCalculatorData(
     console.log('⚙️ Creating quote configuration...');
     await queryRunner.query(
       `INSERT INTO quote_configurations (
-        organization_id, default_validity_days, max_versions,
+        default_validity_days, max_versions,
         default_completion_weeks, gst_config,
         payment_milestones, show_inventory_stock, is_active
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -641,25 +641,7 @@ async function main() {
     await dataSource.initialize();
   }
 
-  const organizationId = process.argv[2] || 'YOUR_ORGANIZATION_ID';
-
-  if (organizationId === 'YOUR_ORGANIZATION_ID') {
-    console.log('Usage: npx ts-node src/database/seeds/seed-quote-calculator.ts <organization_id>');
-    console.log('');
-    console.log('Getting first organization from database...');
-
-    const result = await dataSource.query('SELECT id FROM organizations LIMIT 1');
-    if (result.length === 0) {
-      console.error('No organizations found. Please create an organization first.');
-      process.exit(1);
-    }
-
-    const orgId = result[0].id;
-    console.log(`Using organization ID: ${orgId}`);
-    await seedQuoteCalculatorData(dataSource);
-  } else {
-    await seedQuoteCalculatorData(dataSource);
-  }
+  await seedQuoteCalculatorData(dataSource);
 
   await dataSource.destroy();
 }
