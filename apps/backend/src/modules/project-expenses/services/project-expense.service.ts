@@ -110,7 +110,6 @@ export class ProjectExpenseService {
       }
 
       const expenseNumber = await this.sequenceService.getNextNumber(
-        organizationId,
         FinanceSequenceScope.EXPENSE,
         manager,
       );

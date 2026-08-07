@@ -177,7 +177,6 @@ export class LedgerWriteService {
         projectId: input.projectId,
         customerId: input.customerId ?? null,
         entryNo: await this.sequenceService.getNextNumber(
-          organizationId,
           FinanceSequenceScope.RECEIPT,
           manager,
         ),
@@ -226,7 +225,6 @@ export class LedgerWriteService {
         projectId: input.projectId,
         customerId: null,
         entryNo: await this.sequenceService.getNextNumber(
-          organizationId,
           FinanceSequenceScope.EXPENSE,
           manager,
         ),
@@ -338,7 +336,7 @@ export class LedgerWriteService {
         organizationId,
         projectId: original.projectId,
         customerId: original.customerId ?? null,
-        entryNo: await this.sequenceService.getNextNumber(organizationId, scope, manager),
+        entryNo: await this.sequenceService.getNextNumber(scope, manager),
         entryType: original.entryType,
         direction: original.direction,
         amountPaise: -original.amountPaise,

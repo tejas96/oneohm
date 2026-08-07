@@ -94,10 +94,7 @@ export class PurchaseOrderService {
 
     const po = await this.runOrTranslateNumericError(() =>
       this.dataSource.transaction(async (manager) => {
-        const poNumberTx = await this.purchaseOrderRepository.generatePoNumber(
-          organizationId,
-          manager,
-        );
+        const poNumberTx = await this.purchaseOrderRepository.generatePoNumber(manager);
         const poRepo = manager.getRepository(PurchaseOrderEntity);
         const saved = await poRepo.save(
           poRepo.create({

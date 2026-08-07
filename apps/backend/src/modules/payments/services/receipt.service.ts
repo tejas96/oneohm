@@ -136,7 +136,6 @@ export class ReceiptService {
       }
 
       const paymentNumber = await this.sequenceService.getNextNumber(
-        organizationId,
         FinanceSequenceScope.RECEIPT,
         manager,
       );

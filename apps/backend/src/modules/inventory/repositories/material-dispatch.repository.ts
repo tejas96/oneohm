@@ -234,7 +234,7 @@ export class MaterialDispatchRepository {
   /**
    * Generate next dispatch number (concurrency-safe via numbering_sequences)
    */
-  async generateDispatchNumber(organizationId: string, manager?: EntityManager): Promise<string> {
+  async generateDispatchNumber(manager?: EntityManager): Promise<string> {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -243,12 +243,12 @@ export class MaterialDispatchRepository {
 
     const exec = manager ?? this.repository.manager;
     const result = await exec.query(
-      `INSERT INTO numbering_sequences (organization_id, sequence_key, last_value)
-       VALUES ($1, $2, 1)
-       ON CONFLICT (organization_id, sequence_key)
+      `INSERT INTO numbering_sequences (sequence_key, last_value)
+       VALUES ($1, 1)
+       ON CONFLICT (sequence_key)
        DO UPDATE SET last_value = numbering_sequences.last_value + 1
        RETURNING last_value`,
-      [organizationId, sequenceKey],
+      [sequenceKey],
     );
 
     const raw = result[0]?.last_value;

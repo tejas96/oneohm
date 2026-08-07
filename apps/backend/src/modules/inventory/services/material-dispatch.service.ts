@@ -152,7 +152,7 @@ export class MaterialDispatchService {
 
     // Generate dispatch number
     const dispatchNumber =
-      await this.materialDispatchRepository.generateDispatchNumber(organizationId);
+      await this.materialDispatchRepository.generateDispatchNumber();
 
     // Create dispatch
     const dispatch = await this.materialDispatchRepository.create({
