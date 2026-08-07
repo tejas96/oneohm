@@ -10,7 +10,6 @@ import {
   getResourceConfig,
   getResourcePermissions,
   STALE_TIMES,
-  useOrgContext,
   useResourceList,
   useResourceMutations,
   useResourcePermissions,
@@ -127,18 +126,17 @@ export function useProductPrices(
   isLoading: boolean;
   isError: boolean;
 } {
-  const { orgHeaders, organizationId, isReady } = useOrgContext();
 
   const query = useQuery<ProductPrice[]>({
-    queryKey: productPriceKeys.list(organizationId, { productId, isActive: true }),
+    queryKey: productPriceKeys.list({ productId, isActive: true }),
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<ProductPrice[]>(
         `/products/${productId}/prices?isActive=true`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data;
     },
-    enabled: Boolean(productId) && isReady && (options?.enabled ?? true),
+    enabled: Boolean(productId) && (options?.enabled ?? true),
     staleTime: STALE_TIMES.standard,
   });
 
@@ -228,13 +226,11 @@ export function useEffectiveProductPrice(
   isLoading: boolean;
   isError: boolean;
 } {
-  const { orgHeaders, organizationId, isReady } = useOrgContext();
   const { projectType, asOf, systemSizeKw, enabled } = options;
 
   const query = useQuery<EffectiveProductPrice>({
     queryKey: [
       'product-prices',
-      organizationId,
       'effective-price',
       productId,
       { projectType: projectType ?? null, asOf: asOf ?? null, systemSizeKw: systemSizeKw ?? null },
@@ -247,11 +243,11 @@ export function useEffectiveProductPrice(
       const qs = params.toString();
       const { data } = await apiClient.get<EffectiveProductPrice>(
         `/products/${productId}/effective-price${qs ? `?${qs}` : ''}`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data;
     },
-    enabled: Boolean(productId) && isReady && (enabled ?? true),
+    enabled: Boolean(productId) && (enabled ?? true),
     staleTime: STALE_TIMES.standard,
   });
 

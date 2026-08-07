@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { createResourceKeys, useOrgContext, useResourceDetail } from '../core';
+import { createResourceKeys, useResourceDetail } from '../core';
 
 import { customerKeys } from '@/components/features/customers/hooks/use-create-customer';
 import { Customer } from '@/components/features/customers/hooks/use-customers';
@@ -33,16 +33,14 @@ export function useCustomerSearch(search: string): {
   isFetching: boolean;
   isError: boolean;
 } {
-  const { orgHeaders, organizationId, isReady } = useOrgContext();
-  const enabled = isReady && search.length >= 2;
+  const enabled = search.length >= 2;
 
   const query = useQuery<CustomerListResponse>({
-    queryKey: customerResourceKeys.list(organizationId, { search, limit: 20 }),
+    queryKey: customerResourceKeys.list({ search, limit: 20 }),
     queryFn: async (): Promise<CustomerListResponse> => {
       const params = new URLSearchParams({ search, limit: '20', page: '1' });
       const { data } = await apiClient.get<CustomerListResponse>(
         `/customers?${params.toString()}`,
-        { headers: orgHeaders },
       );
       return data as CustomerListResponse;
     },

@@ -9,7 +9,6 @@ import type {
 import type { AxiosError } from 'axios';
 
 import { paymentTermKeys } from './payment-terms';
-import { useOrgContext } from '../core';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
@@ -111,11 +110,11 @@ export interface ReceiptProjectSummary {
 // ============================================================================
 
 export const receiptKeys = {
-  all: (orgId?: string) => ['receipts', orgId] as const,
-  byProject: (orgId: string | undefined, projectId: string) =>
-    [...receiptKeys.all(orgId), 'project', projectId] as const,
-  summary: (orgId: string | undefined, projectId: string) =>
-    [...receiptKeys.all(orgId), 'summary', projectId] as const,
+  all: () => ['receipts'] as const,
+  byProject: (projectId: string) =>
+    [...receiptKeys.all(), 'project', projectId] as const,
+  summary: (projectId: string) =>
+    [...receiptKeys.all(), 'summary', projectId] as const,
 };
 
 // ============================================================================
@@ -134,17 +133,15 @@ export function useProjectReceipts(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<Receipt[], AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   return useQuery({
-    queryKey: receiptKeys.byProject(organizationId, projectId),
+    queryKey: receiptKeys.byProject(projectId),
     queryFn: async ({ signal }): Promise<Receipt[]> => {
       const { data } = await apiClient.get<Receipt[]>(`/receipts/project/${projectId}`, {
-        headers: orgHeaders,
         signal,
       });
       return data;
     },
-    enabled: isReady && !!projectId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -159,17 +156,16 @@ export function useProjectReceiptSummary(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<ReceiptProjectSummary, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   return useQuery({
-    queryKey: receiptKeys.summary(organizationId, projectId),
+    queryKey: receiptKeys.summary(projectId),
     queryFn: async ({ signal }): Promise<ReceiptProjectSummary> => {
       const { data } = await apiClient.get<ReceiptProjectSummary>(
         `/receipts/project/${projectId}/summary`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data;
     },
-    enabled: isReady && !!projectId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -186,25 +182,22 @@ export function useProjectReceiptSummary(
  */
 export function useReceiptMutations(projectId: string) {
   const queryClient = useQueryClient();
-  const { organizationId, orgHeaders } = useOrgContext();
 
   const invalidate = (): void => {
     void queryClient.invalidateQueries({
-      queryKey: receiptKeys.byProject(organizationId, projectId),
+      queryKey: receiptKeys.byProject(projectId),
     });
     void queryClient.invalidateQueries({
-      queryKey: receiptKeys.summary(organizationId, projectId),
+      queryKey: receiptKeys.summary(projectId),
     });
     void queryClient.invalidateQueries({
-      queryKey: paymentTermKeys.byProject(organizationId, projectId),
+      queryKey: paymentTermKeys.byProject(projectId),
     });
   };
 
   const create = useMutation<Receipt, AxiosError, CreateReceiptPayload>({
     mutationFn: async (payload) => {
-      const { data } = await apiClient.post<Receipt>('/receipts', payload, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.post<Receipt>('/receipts', payload);
       return data;
     },
     onSuccess: () => {
@@ -220,9 +213,7 @@ export function useReceiptMutations(projectId: string) {
     { id: string; payload: UpdateReceiptStatusPayload }
   >({
     mutationFn: async ({ id, payload }) => {
-      const { data } = await apiClient.patch<Receipt>(`/receipts/${id}/status`, payload, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.patch<Receipt>(`/receipts/${id}/status`, payload);
       return data;
     },
     onSuccess: (_data, variables) => {
@@ -234,7 +225,7 @@ export function useReceiptMutations(projectId: string) {
 
   const remove = useMutation<void, AxiosError, string>({
     mutationFn: async (id) => {
-      await apiClient.delete(`/receipts/${id}`, { headers: orgHeaders });
+      await apiClient.delete(`/receipts/${id}`);
     },
     onSuccess: () => {
       showToast.success('Receipt deleted');

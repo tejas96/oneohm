@@ -8,7 +8,6 @@ import type { MilestoneAggregateItem, MilestoneWithPayment } from './types';
 import { PROJECT_MILESTONE_AGG_QUERY_KEY } from '../constants';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Query Keys
@@ -16,18 +15,18 @@ import { useAuth } from '@/providers/auth-provider';
 
 /**
  * Cache key namespace for the legacy `/payments` route. Retained because
- * `useReceiptMutations` invalidates `['payments', orgId]` to keep older
+ * `useReceiptMutations` invalidates `['payments']` to keep older
  * consumers (and any out-of-tree integrations) refreshed in lockstep
  * with the receipts ledger. The list/summary fetchers themselves were
  * removed when the Finance subsystem shipped; consumers should use
  * `useProjectReceiptSummary` / `useProjectReceipts` from FDAL instead.
  */
 export const paymentKeys = {
-  all: (orgId?: string) => ['payments', orgId] as const,
-  byProject: (orgId: string | undefined, projectId: string) =>
-    [...paymentKeys.all(orgId), 'project', projectId] as const,
-  summary: (orgId: string | undefined, projectId: string) =>
-    [...paymentKeys.all(orgId), 'summary', projectId] as const,
+  all: () => ['payments'] as const,
+  byProject: (projectId: string) =>
+    [...paymentKeys.all(), 'project', projectId] as const,
+  summary: (projectId: string) =>
+    [...paymentKeys.all(), 'summary', projectId] as const,
 };
 
 // ============================================================================
@@ -42,19 +41,16 @@ export function useProjectMilestones(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<MilestoneAggregateItem[], AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
     queryKey: PROJECT_MILESTONE_AGG_QUERY_KEY(projectId),
     queryFn: async (): Promise<MilestoneAggregateItem[]> => {
       const { data } = await apiClient.get<MilestoneAggregateItem[]>(
         `/projects/${projectId}/milestones`,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
-    enabled: !!projectId && !!organizationId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }

@@ -90,7 +90,7 @@ export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps): JSX.E
                 {role.isSystemRole ? 'System' : 'Custom'}
               </Badge>
               <span>
-                {role.organizationId ? `Org: ${role.organizationId.slice(0, 8)}...` : 'Platform'}
+                {'Platform'}
               </span>
             </div>
             {role.description && (

@@ -7,7 +7,6 @@ import type { QuoteDetail } from './types';
 import { quoteKeys } from './use-quotes';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Query Keys
@@ -15,8 +14,8 @@ import { useAuth } from '@/providers/auth-provider';
 
 export const quoteDetailKeys = {
   ...quoteKeys,
-  versions: (orgId: string | undefined, id: string) =>
-    [...quoteKeys.detail(orgId, id), 'versions'] as const,
+  versions: (id: string) =>
+    [...quoteKeys.detail(id), 'versions'] as const,
 };
 
 // ============================================================================
@@ -32,18 +31,15 @@ export function useQuoteDetail(
   quoteId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<QuoteDetail, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: quoteDetailKeys.detail(organizationId, quoteId),
+    queryKey: quoteDetailKeys.detail(quoteId),
     queryFn: async (): Promise<QuoteDetail> => {
       const { data } = await apiClient.get<QuoteDetail>(`/quotes/${quoteId}`, {
-        headers: { 'X-Organization-Id': organizationId },
       });
       return data;
     },
-    enabled: !!quoteId && !!organizationId && options?.enabled !== false,
+    enabled: !!quoteId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }

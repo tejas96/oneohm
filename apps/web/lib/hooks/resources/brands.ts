@@ -14,7 +14,6 @@ import {
 
 export interface Brand {
   id: string;
-  organizationId: string;
   name: string;
   manufacturerName?: string;
   logoUrl?: string;

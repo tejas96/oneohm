@@ -8,7 +8,6 @@ import { RESOURCE_MUTATION_DEFAULTS } from './query-defaults';
 import { createResourceKeys } from './query-keys';
 import { resourceEvents } from './resource-events';
 import type { MutationConfig, ResourceListResponse, NormalizedError } from './types';
-import { useOrgContext } from './use-org-context';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
@@ -28,11 +27,10 @@ export function useResourceMutations<T extends { id: string }>(
   config: MutationConfig<T>,
 ): UseResourceMutationsReturn<T> {
   const queryClient = useQueryClient();
-  const { organizationId, orgHeaders } = useOrgContext();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
   const headers = useMemo(
-    () => (config.requiresOrg !== false ? orgHeaders : {}),
-    [config.requiresOrg, orgHeaders],
+    () => ({}),
+    [],
   );
 
   const configRef = useRef(config);
@@ -41,12 +39,12 @@ export function useResourceMutations<T extends { id: string }>(
   const invalidateResource = useCallback(() => {
     // Invalidate every query bucket under this resource key (list/detail/by-parent/infinite/stats).
     // This keeps sub-resource lists (e.g. product prices by productId) in sync after mutations.
-    void queryClient.invalidateQueries({ queryKey: keys.all(organizationId) });
+    void queryClient.invalidateQueries({ queryKey: keys.all() });
     configRef.current.invalidateRelated?.forEach((related) => {
       const relatedKeys = createResourceKeys(related);
-      void queryClient.invalidateQueries({ queryKey: relatedKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: relatedKeys.all() });
     });
-  }, [queryClient, keys, organizationId]);
+  }, [queryClient, keys]);
 
   // ── CREATE ────────────────────────────────────────────────
   const create = useMutation({
@@ -58,9 +56,9 @@ export function useResourceMutations<T extends { id: string }>(
     },
     onMutate: async (payload) => {
       if (!config.optimistic?.create) return {};
-      await queryClient.cancelQueries({ queryKey: keys.lists(organizationId) });
+      await queryClient.cancelQueries({ queryKey: keys.lists() });
       const listQueries = queryClient.getQueriesData<ResourceListResponse<T>>({
-        queryKey: keys.lists(organizationId),
+        queryKey: keys.lists(),
       });
       const snapshots = listQueries.map(([key, data]) => ({ key, data }));
       for (const [key, data] of listQueries) {
@@ -100,17 +98,17 @@ export function useResourceMutations<T extends { id: string }>(
     },
     onMutate: async ({ id, data: payload }) => {
       if (!config.optimistic?.update) return {};
-      await queryClient.cancelQueries({ queryKey: keys.lists(organizationId) });
-      await queryClient.cancelQueries({ queryKey: keys.detail(organizationId, id) });
+      await queryClient.cancelQueries({ queryKey: keys.lists() });
+      await queryClient.cancelQueries({ queryKey: keys.detail(id) });
 
-      const previousDetail = queryClient.getQueryData<T>(keys.detail(organizationId, id));
+      const previousDetail = queryClient.getQueryData<T>(keys.detail(id));
       const listQueries = queryClient.getQueriesData<ResourceListResponse<T>>({
-        queryKey: keys.lists(organizationId),
+        queryKey: keys.lists(),
       });
       const snapshots = listQueries.map(([key, data]) => ({ key, data }));
 
       if (previousDetail) {
-        queryClient.setQueryData(keys.detail(organizationId, id), {
+        queryClient.setQueryData(keys.detail(id), {
           ...previousDetail,
           ...payload,
         });
@@ -133,7 +131,7 @@ export function useResourceMutations<T extends { id: string }>(
         snapshots?: Array<{ key: unknown; data: unknown }>;
       };
       if (ctx.previousDetail !== undefined) {
-        queryClient.setQueryData(keys.detail(organizationId, id), ctx.previousDetail);
+        queryClient.setQueryData(keys.detail(id), ctx.previousDetail);
       }
       ctx.snapshots?.forEach(({ key, data }) => {
         queryClient.setQueryData(key as readonly unknown[], data);
@@ -143,10 +141,10 @@ export function useResourceMutations<T extends { id: string }>(
       }
     },
     onSuccess: (updated, { id }) => {
-      queryClient.setQueryData<T>(keys.detail(organizationId, id), (prev) =>
+      queryClient.setQueryData<T>(keys.detail(id), (prev) =>
         prev ? { ...prev, ...updated } : updated,
       );
-      void queryClient.invalidateQueries({ queryKey: keys.detail(organizationId, id) });
+      void queryClient.invalidateQueries({ queryKey: keys.detail(id) });
       invalidateResource();
       resourceEvents.emit(config.resource, 'updated', { data: updated, id });
       if (config.toast?.update?.success) showToast.success(config.toast.update.success);
@@ -162,10 +160,10 @@ export function useResourceMutations<T extends { id: string }>(
     },
     onMutate: async (id) => {
       if (!config.optimistic?.delete) return {};
-      await queryClient.cancelQueries({ queryKey: keys.lists(organizationId) });
+      await queryClient.cancelQueries({ queryKey: keys.lists() });
 
       const listQueries = queryClient.getQueriesData<ResourceListResponse<T>>({
-        queryKey: keys.lists(organizationId),
+        queryKey: keys.lists(),
       });
       const snapshots = listQueries.map(([key, data]) => ({ key, data }));
 
@@ -191,7 +189,7 @@ export function useResourceMutations<T extends { id: string }>(
       }
     },
     onSuccess: (_, id) => {
-      void queryClient.cancelQueries({ queryKey: keys.detail(organizationId, id) });
+      void queryClient.cancelQueries({ queryKey: keys.detail(id) });
       invalidateResource();
       resourceEvents.emit(config.resource, 'deleted', { id });
       if (config.toast?.delete?.success) showToast.success(config.toast.delete.success);
@@ -227,7 +225,7 @@ export function useResourceMutations<T extends { id: string }>(
     },
     onSuccess: (_, ids) => {
       ids.forEach((id) => {
-        void queryClient.cancelQueries({ queryKey: keys.detail(organizationId, id) });
+        void queryClient.cancelQueries({ queryKey: keys.detail(id) });
       });
       invalidateResource();
       resourceEvents.emit(config.resource, 'bulkDeleted', { ids });
@@ -248,10 +246,10 @@ export function useResourceMutations<T extends { id: string }>(
       }
     },
     onSuccess: (updated, { id }) => {
-      queryClient.setQueryData<T>(keys.detail(organizationId, id), (prev) =>
+      queryClient.setQueryData<T>(keys.detail(id), (prev) =>
         prev ? { ...prev, ...updated } : updated,
       );
-      void queryClient.invalidateQueries({ queryKey: keys.detail(organizationId, id) });
+      void queryClient.invalidateQueries({ queryKey: keys.detail(id) });
       invalidateResource();
       resourceEvents.emit(config.resource, 'updated', { data: updated, id });
       if (config.toast?.statusChange?.success) {
@@ -279,7 +277,7 @@ export function useResourceMutations<T extends { id: string }>(
         .then((res) => {
           const data = res.data as T;
           invalidateResource();
-          void queryClient.invalidateQueries({ queryKey: keys.detail(organizationId, id) });
+          void queryClient.invalidateQueries({ queryKey: keys.detail(id) });
           resourceEvents.emit(cfg.resource, 'updated', { data, id });
           const toastMsg = cfg.toast?.[actionName]?.success;
           if (toastMsg) showToast.success(toastMsg);
@@ -292,7 +290,7 @@ export function useResourceMutations<T extends { id: string }>(
           throw error as Error;
         });
     },
-    [headers, invalidateResource, queryClient, keys, organizationId],
+    [headers, invalidateResource, queryClient, keys],
   );
 
   return {

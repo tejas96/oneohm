@@ -16,7 +16,6 @@ import {
 
 export interface InstallationPricingItem {
   id: string;
-  organizationId: string;
   minSystemSizeKw: number;
   maxSystemSizeKw: number | null;
   transportRatePerKm: number;

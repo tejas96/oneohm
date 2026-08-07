@@ -22,7 +22,6 @@ import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiClient } from '@/lib/api/client';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { useOrgContext } from '@/lib/hooks/core';
 import { usePurchaseOrders, type PurchaseOrder } from '@/lib/hooks/resources/purchase-orders';
 import { useVendor } from '@/lib/hooks/resources/vendors';
 import { formatCurrency } from '@/lib/utils';
@@ -150,7 +149,6 @@ const ASSIGN_COLUMNS: ColumnConfig<AssignRow>[] = [
 export function VendorDetailPage(): React.JSX.Element {
   const params = useParams();
   const router = useRouter();
-  const { orgHeaders, isReady } = useOrgContext();
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('inventory:write');
   const [tab, setTab] = useState('pos');
@@ -190,11 +188,11 @@ export function VendorDetailPage(): React.JSX.Element {
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<ProjectVendorListResponse>(
         `/project-vendors/vendor/${id}`,
-        { params: { page: assignPage, limit: assignPageSize }, headers: orgHeaders, signal },
+        { params: { page: assignPage, limit: assignPageSize }, signal },
       );
       return data;
     },
-    enabled: !!id && isReady && tab === 'projects',
+    enabled: !!id && tab === 'projects',
   });
 
   const poRows: PORow[] = (poItems ?? EMPTY_PO) as PORow[];

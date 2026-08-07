@@ -73,13 +73,13 @@ describe('ProductRepository', () => {
     it('returns correct shape', async () => {
       qb['getCount'].mockResolvedValue(2);
       qb['getMany'].mockResolvedValue([{ id: 'p-1' }, { id: 'p-2' }]);
-      const result = await repo.findAll('org-1', 1, 10);
+      const result = await repo.findAll(1, 10);
       expect(result.total).toBe(2);
       expect(result.data).toHaveLength(2);
     });
 
     it('applies pagination skip/take correctly', async () => {
-      await repo.findAll('org-1', 2, 15);
+      await repo.findAll(2, 15);
       expect(qb['skip']).toHaveBeenCalledWith(15); // (2-1)*15
       expect(qb['take']).toHaveBeenCalledWith(15);
     });

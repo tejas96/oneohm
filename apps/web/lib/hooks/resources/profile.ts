@@ -7,7 +7,6 @@ import {
   defineResource,
   useResourceDetail,
   useResourceMutations,
-  useOrgContext,
   createResourceKeys,
 } from '../core';
 
@@ -76,7 +75,6 @@ defineResource<EmployeeProfile>(
   {
     endpoint: '/employees',
     syncToUrl: false,
-    requiresOrg: true,
   },
   {
     view: 'employees:read',
@@ -96,7 +94,6 @@ export function useEmployeeProfile(
     resource: 'employee-profile',
     endpoint: '/employees',
     id: employeeId,
-    requiresOrg: true,
     enabled: !!employeeId,
   });
 }
@@ -113,18 +110,15 @@ export function useCurrentUserEmployeeProfile(): {
   refetch: () => void;
 } {
   const { user } = useAuth();
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const keys = useMemo(() => createResourceKeys('employee-profile'), []);
 
   const query = useQuery({
-    queryKey: keys.detail(organizationId, `me-${user?.id ?? ''}`),
+    queryKey: keys.detail(`me-${user?.id ?? ''}`),
     queryFn: async (): Promise<EmployeeProfile | null> => {
-      const { data } = await apiClient.get<EmployeeProfile | null>('/employees/me', {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.get<EmployeeProfile | null>('/employees/me');
       return data ?? null;
     },
-    enabled: !!user?.id && isReady,
+    enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -149,7 +143,6 @@ export function useEmployeeProfileMutations(): ReturnType<
   return useResourceMutations<EmployeeProfile>({
     resource: 'employee-profile',
     endpoint: '/employees',
-    requiresOrg: true,
     toast: {
       update: { success: 'Profile updated successfully', error: 'Failed to update profile' },
     },
@@ -167,18 +160,15 @@ export function useUserEmployeeProfile(userId: string): {
   error: unknown;
   refetch: () => void;
 } {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const keys = useMemo(() => createResourceKeys('employee-profile'), []);
 
   const query = useQuery({
-    queryKey: keys.detail(organizationId, `user-${userId}`),
+    queryKey: keys.detail(`user-${userId}`),
     queryFn: async (): Promise<EmployeeProfile | null> => {
-      const { data } = await apiClient.get<EmployeeProfile[]>(`/employees/user/${userId}`, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.get<EmployeeProfile[]>(`/employees/user/${userId}`);
       return data && data.length > 0 ? (data[0] ?? null) : null;
     },
-    enabled: !!userId && isReady,
+    enabled: !!userId,
   });
 
   return {

@@ -15,7 +15,6 @@ import type { QuoteSnapshot } from '../types/calculator.types';
 
 export interface QuoteDetail {
   id: string;
-  organizationId: string;
   customerId: string;
   customerName?: string;
   customerPhone?: string;

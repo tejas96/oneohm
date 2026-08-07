@@ -19,7 +19,6 @@ import {
 import { createResourceKeys } from '../core/query-keys';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -140,12 +139,10 @@ export function useAdminUserPermissions(): ReturnType<typeof useResourcePermissi
 export function useAdminUsersList(
   filters: AdminUserListFilters,
 ): UseQueryResult<AdminUserListResponse, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
   const keys = useMemo(() => createResourceKeys('users'), []);
 
   return useQuery({
-    queryKey: keys.list(organizationId, filters as unknown as Record<string, unknown>),
+    queryKey: keys.list(filters as unknown as Record<string, unknown>),
     queryFn: async (): Promise<AdminUserListResponse> => {
       const params = new URLSearchParams();
       if (filters.page != null) params.append('page', String(filters.page));
@@ -161,18 +158,15 @@ export function useAdminUsersList(
       if (filters.fromDate) params.append('fromDate', filters.fromDate);
       if (filters.toDate) params.append('toDate', filters.toDate);
       const { data } = await apiClient.get(`/users?${params.toString()}`, {
-        headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
       });
       return data as AdminUserListResponse;
     },
-    enabled: !!organizationId,
     placeholderData: keepPreviousData,
   });
 }
 
 export function useCheckUserAvailability(
   excludeId?: string,
-  organizationId?: string,
 ): ReturnType<typeof useFieldAvailability> & {
   checkPhone: (phone: string) => void;
   checkEmail: (email: string) => void;
@@ -185,10 +179,9 @@ export function useCheckUserAvailability(
 
   const extraParams = useMemo(() => {
     const params: Record<string, string> = {};
-    if (organizationId) params.organizationId = organizationId;
     if (contextPhone) params.phone = contextPhone;
     return Object.keys(params).length > 0 ? params : undefined;
-  }, [organizationId, contextPhone]);
+  }, [contextPhone]);
 
   const fieldConfig = useMemo(
     () => ({

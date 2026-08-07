@@ -16,7 +16,6 @@ import {
 
 export interface InventoryTransaction {
   id: string;
-  organizationId: string;
   transactionType: string;
   quantity: number;
   warehouseId: string;

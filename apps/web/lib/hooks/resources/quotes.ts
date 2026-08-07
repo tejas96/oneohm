@@ -9,7 +9,6 @@ import {
   createResourceKeys,
   defineResource,
   RESOURCE_QUERY_DEFAULTS,
-  useOrgContext,
 } from '../core';
 
 import type {
@@ -58,7 +57,7 @@ defineResource<QuoteListItem>(
 
 // ============================================================================
 // Query keys — follows FDAL createResourceKeys convention so that mutations
-// which invalidate ['quotes', orgId] will also bust these list cache entries.
+// which invalidate ['quotes'] will also bust these list cache entries.
 // ============================================================================
 
 export const quoteResourceKeys = createResourceKeys('quotes');
@@ -76,22 +75,19 @@ export const quoteResourceKeys = createResourceKeys('quotes');
  * replacing the hand-rolled URLSearchParams construction in the legacy useQuotes hook.
  */
 export function useQuoteListResource(filters: QuoteListFilters = {}) {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
 
   return useQuery({
-    queryKey: quoteResourceKeys.list(organizationId, filters as Record<string, unknown>),
+    queryKey: quoteResourceKeys.list(filters as Record<string, unknown>),
     queryFn: async ({ signal }): Promise<QuoteListResponse> => {
       const params = buildQueryParams(filters, {
         minSearchLength: 2,
         skipValues: ['all'],
       });
       const { data } = await apiClient.get<QuoteListResponse>(`/quotes?${params.toString()}`, {
-        headers: orgHeaders,
         signal,
       });
       return data;
     },
-    enabled: isReady,
     placeholderData: keepPreviousData,
     staleTime: RESOURCE_QUERY_DEFAULTS.staleTime,
   });

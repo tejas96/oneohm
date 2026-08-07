@@ -411,11 +411,11 @@ export class LedgerWriteService {
    * pass. Reads stay available throughout, so the app still renders.
    */
   /**
-   * Ownership check — see `LedgerRepository.projectBelongsToOrg` for why the FK
+   * Ownership check — see `LedgerRepository.projectExists` for why the FK
    * alone is not a guard.
    */
   private async assertProjectInOrg(projectId: string): Promise<void> {
-    if (!(await this.ledgerRepository.projectBelongsToOrg(projectId))) {
+    if (!(await this.ledgerRepository.projectExists(projectId))) {
       throw new NotFoundException(`Project ${projectId} not found`);
     }
   }

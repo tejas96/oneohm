@@ -27,7 +27,6 @@ import {
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import { createResourceKeys } from '@/lib/hooks/core';
-import { useOrgContext } from '@/lib/hooks/core/use-org-context';
 import { type Vendor, useVendorMutations } from '@/lib/hooks/resources/vendors';
 import { getErrorMessage } from '@/lib/utils';
 
@@ -245,7 +244,6 @@ export function VendorFormDialog({
 }: VendorFormDialogProps): React.JSX.Element {
   const { create, update } = useVendorMutations();
   const queryClient = useQueryClient();
-  const { organizationId, orgHeaders } = useOrgContext();
   const vendorKeys = useMemo(() => createResourceKeys('vendors'), []);
 
   // Custom mutation for status change with proper cache invalidation
@@ -254,16 +252,15 @@ export function VendorFormDialog({
       const { data } = await apiClient.patch<Vendor>(
         `/vendors/${id}/status`,
         { status },
-        { headers: orgHeaders },
       );
       return data;
     },
     onSuccess: (data, variables) => {
       // Invalidate all vendor queries to refresh lists and details
-      void queryClient.invalidateQueries({ queryKey: vendorKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: vendorKeys.all() });
 
       // Optimistically update the detail cache
-      queryClient.setQueryData<Vendor>(vendorKeys.detail(organizationId, variables.id), (prev) =>
+      queryClient.setQueryData<Vendor>(vendorKeys.detail(variables.id), (prev) =>
         prev ? { ...prev, status: variables.status } : data,
       );
 

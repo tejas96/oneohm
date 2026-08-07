@@ -8,7 +8,6 @@ import { quoteKeys } from './use-quotes';
 
 import { projectKeys } from '@/components/features/projects/hooks';
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // Re-export everything from use-quotes
 export * from './use-quotes';
@@ -57,21 +56,17 @@ interface ConvertToProjectPayload {
 async function updateQuoteStatus(
   quoteId: string,
   payload: UpdateQuoteStatusPayload,
-  organizationId?: string,
 ) {
   const { data } = await apiClient.patch(`/quotes/${quoteId}/status`, payload, {
-    headers: { 'X-Organization-Id': organizationId },
   });
   return data;
 }
 
 async function convertQuoteToProject(
   quoteId: string,
-  organizationId?: string,
   payload?: ConvertToProjectPayload,
 ) {
   const { data } = await apiClient.post(`/projects/convert-from-quote/${quoteId}`, payload ?? {}, {
-    headers: { 'X-Organization-Id': organizationId },
   });
   return data;
 }
@@ -82,46 +77,39 @@ async function convertQuoteToProject(
 
 export function useAcceptQuote() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation<unknown, AxiosError, { quoteId: string; customerSignature: string }>({
     mutationFn: ({ quoteId, customerSignature }) =>
       updateQuoteStatus(
         quoteId,
         { status: QuoteStatus.ACCEPTED, customerSignature },
-        organizationId,
       ),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
     },
   });
 }
 
 export function useRejectQuote() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation<unknown, AxiosError, { quoteId: string; rejectionReason: string }>({
     mutationFn: ({ quoteId, rejectionReason }) =>
-      updateQuoteStatus(quoteId, { status: QuoteStatus.REJECTED, rejectionReason }, organizationId),
+      updateQuoteStatus(quoteId, { status: QuoteStatus.REJECTED, rejectionReason }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
     },
   });
 }
 
 export function useConvertToProject() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation<unknown, AxiosError, { quoteId: string; payload?: ConvertToProjectPayload }>({
-    mutationFn: ({ quoteId, payload }) => convertQuoteToProject(quoteId, organizationId, payload),
+    mutationFn: ({ quoteId, payload }) => convertQuoteToProject(quoteId, payload),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: projectKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: projectKeys.all() });
     },
   });
 }

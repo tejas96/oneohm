@@ -50,37 +50,36 @@ describe('createResourceKeys', () => {
   const keys = createResourceKeys('customers');
 
   it('creates correct all key', () => {
-    expect(keys.all('org-1')).toEqual(['customers', 'org-1']);
+    expect(keys.all()).toEqual(['customers']);
   });
 
   it('creates correct lists key', () => {
-    expect(keys.lists('org-1')).toEqual(['customers', 'org-1', 'list']);
+    expect(keys.lists()).toEqual(['customers', 'list']);
   });
 
   it('creates correct list key with stable filter hash', () => {
-    const key1 = keys.list('org-1', { page: 1, status: 'active' });
-    const key2 = keys.list('org-1', { status: 'active', page: 1 });
+    const key1 = keys.list({ page: 1, status: 'active' });
+    const key2 = keys.list({ status: 'active', page: 1 });
     expect(key1).toEqual(key2);
   });
 
   it('creates correct detail key', () => {
-    expect(keys.detail('org-1', 'user-123')).toEqual(['customers', 'org-1', 'detail', 'user-123']);
+    expect(keys.detail('user-123')).toEqual(['customers', 'detail', 'user-123']);
   });
 
   it('creates correct stats key', () => {
-    expect(keys.stats('org-1')).toEqual(['customers', 'org-1', 'stats']);
+    expect(keys.stats()).toEqual(['customers', 'stats']);
   });
 
   it('creates correct infinite key', () => {
-    const key = keys.infinite('org-1', { page: 1 });
+    const key = keys.infinite({ page: 1 });
     expect(key[0]).toBe('customers');
-    expect(key[1]).toBe('org-1');
-    expect(key[2]).toBe('infinite');
-    expect(typeof key[3]).toBe('string');
+    expect(key[1]).toBe('infinite');
+    expect(typeof key[2]).toBe('string');
   });
 
-  it('handles undefined orgId', () => {
-    expect(keys.all(undefined)).toEqual(['customers', undefined]);
-    expect(keys.lists(undefined)).toEqual(['customers', undefined, 'list']);
+  it('keys carry no tenant segment', () => {
+    expect(keys.all()).toEqual(['customers']);
+    expect(keys.lists()).toEqual(['customers', 'list']);
   });
 });

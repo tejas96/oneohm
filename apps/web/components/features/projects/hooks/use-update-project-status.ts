@@ -8,23 +8,21 @@ import { projectKeys } from './use-projects';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
-import { useOrgContext } from '@/lib/hooks/core';
 import { getErrorMessage } from '@/lib/utils/error';
 
 export function useUpdateProjectStatus(projectId: string) {
-  const { orgHeaders, organizationId } = useOrgContext();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (status: ProjectStatus) => {
-      await apiClient.patch(`/projects/${projectId}/status`, { status }, { headers: orgHeaders });
+      await apiClient.patch(`/projects/${projectId}/status`, { status });
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: projectDetailKeys.detail(organizationId, projectId),
+        queryKey: projectDetailKeys.detail(projectId),
       });
       void queryClient.invalidateQueries({
-        queryKey: projectKeys.lists(organizationId),
+        queryKey: projectKeys.lists(),
       });
       showToast.success('Project status updated successfully');
     },

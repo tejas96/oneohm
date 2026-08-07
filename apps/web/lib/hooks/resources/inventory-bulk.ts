@@ -8,7 +8,6 @@ import {
   createResourceKeys,
   normalizeApiError,
   resourceEvents,
-  useOrgContext,
 } from '../core';
 
 import { showToast } from '@/components/ui/sonner';
@@ -58,30 +57,27 @@ function useBulkMutation<TPayload extends { ids: string[] }>(
   opts: UseBulkMutationOptions,
 ): UseMutationResult<BulkResult, unknown, TPayload> {
   const queryClient = useQueryClient();
-  const { organizationId, orgHeaders } = useOrgContext();
   const keys = useMemo(() => createResourceKeys(opts.resource), [opts.resource]);
 
   const invalidate = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: keys.all(organizationId) });
+    void queryClient.invalidateQueries({ queryKey: keys.all() });
     opts.invalidateRelated?.forEach((related) => {
       const relatedKeys = createResourceKeys(related);
-      void queryClient.invalidateQueries({ queryKey: relatedKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: relatedKeys.all() });
     });
-  }, [queryClient, keys, organizationId, opts.invalidateRelated]);
+  }, [queryClient, keys, opts.invalidateRelated]);
 
   return useMutation<BulkResult, unknown, TPayload>({
     retry: RESOURCE_MUTATION_DEFAULTS.retry,
     mutationFn: async (payload) => {
-      const { data } = await apiClient.post<BulkResult>(opts.endpoint, payload, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.post<BulkResult>(opts.endpoint, payload);
       return data;
     },
     onSuccess: (result) => {
       invalidate();
       // Best-effort detail-cache eviction for the items we know mutated.
       result.succeeded.forEach((id) => {
-        void queryClient.invalidateQueries({ queryKey: keys.detail(organizationId, id) });
+        void queryClient.invalidateQueries({ queryKey: keys.detail(id) });
       });
       resourceEvents.emit(opts.resource, opts.eventType ?? 'updated', {
         ids: result.succeeded,

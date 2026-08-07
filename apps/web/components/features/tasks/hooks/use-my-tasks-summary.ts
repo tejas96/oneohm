@@ -13,7 +13,7 @@ interface MyTasksSummaryResponse {
 }
 
 export const myTasksSummaryKeys = {
-  all: (orgId?: string) => ['my-tasks-summary', orgId] as const,
+  all: () => ['my-tasks-summary'] as const,
 };
 
 /**
@@ -22,17 +22,15 @@ export const myTasksSummaryKeys = {
  */
 export function useMyTasksSummary(): UseQueryResult<MyTasksSummaryResponse> {
   const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: myTasksSummaryKeys.all(organizationId),
+    queryKey: myTasksSummaryKeys.all(),
     queryFn: async () => {
       const { data } = await apiClient.get<MyTasksSummaryResponse>('/tasks/my/summary', {
-        headers: { 'X-Organization-Id': organizationId },
       });
       return data;
     },
-    enabled: !!user && !!organizationId,
+    enabled: !!user,
     staleTime: 60_000,
     refetchInterval: 120_000,
     refetchOnWindowFocus: true,

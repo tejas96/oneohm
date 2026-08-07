@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-query';
 import type { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 
-import { createResourceKeys, useOrgContext } from '../core';
+import { createResourceKeys } from '../core';
 
 import {
   getDocuments,
@@ -35,26 +35,24 @@ export function useDocumentsByEntity(
   entityType: DocumentEntityType,
   entityId: string | undefined,
 ): UseQueryResult<DocumentRecord[]> {
-  const { organizationId, isReady } = useOrgContext();
 
   return useQuery({
-    queryKey: [...documentKeys.all(organizationId), entityType, entityId ?? ''],
+    queryKey: [...documentKeys.all(), entityType, entityId ?? ''],
     queryFn: (): Promise<DocumentRecord[]> =>
-      getDocuments({ entityType, entityId: entityId!, organizationId }),
-    enabled: !!entityId && isReady,
+      getDocuments({ entityType, entityId: entityId! }),
+    enabled: !!entityId,
   });
 }
 
 export function useDocumentsByProperty(
   propertyId: string | undefined,
 ): UseQueryResult<DocumentRecord[]> {
-  const { organizationId, isReady } = useOrgContext();
 
   return useQuery({
-    queryKey: [...documentKeys.all(organizationId), 'property', propertyId ?? ''],
+    queryKey: [...documentKeys.all(), 'property', propertyId ?? ''],
     queryFn: (): Promise<DocumentRecord[]> =>
-      getDocuments({ propertyId: propertyId!, organizationId }),
-    enabled: !!propertyId && isReady,
+      getDocuments({ propertyId: propertyId! }),
+    enabled: !!propertyId,
     staleTime: 0,
     refetchOnMount: 'always',
   });
@@ -64,13 +62,12 @@ export function useDocumentsByEntityBatch(
   entityType: DocumentEntityType,
   entityIds: string[],
 ): UseQueryResult<DocumentRecord[]> {
-  const { organizationId, isReady } = useOrgContext();
 
   return useQuery({
-    queryKey: [...documentKeys.all(organizationId), entityType, 'batch', ...entityIds],
+    queryKey: [...documentKeys.all(), entityType, 'batch', ...entityIds],
     queryFn: (): Promise<DocumentRecord[]> =>
-      getDocuments({ entityType, entityIds: entityIds.join(','), organizationId }),
-    enabled: entityIds.length > 0 && isReady,
+      getDocuments({ entityType, entityIds: entityIds.join(',') }),
+    enabled: entityIds.length > 0,
   });
 }
 
@@ -82,13 +79,12 @@ export function useUploadDocument(): UseMutationResult<
   CreateDocumentPayload
 > {
   const queryClient = useQueryClient();
-  const { organizationId } = useOrgContext();
 
   return useMutation({
     mutationFn: (payload: CreateDocumentPayload): Promise<DocumentRecord> =>
-      createDocument(payload, organizationId),
+      createDocument(payload),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: documentKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: documentKeys.all() });
     },
   });
 }
@@ -99,13 +95,12 @@ export function useUploadDocumentsBulk(): UseMutationResult<
   CreateDocumentPayload[]
 > {
   const queryClient = useQueryClient();
-  const { organizationId } = useOrgContext();
 
   return useMutation({
     mutationFn: (documents: CreateDocumentPayload[]): Promise<DocumentRecord[]> =>
-      createDocumentsBulk(documents, organizationId),
+      createDocumentsBulk(documents),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: documentKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: documentKeys.all() });
     },
   });
 }
@@ -125,13 +120,12 @@ export function useUpdateDocument(): UseMutationResult<
   UpdateDocumentPayload
 > {
   const queryClient = useQueryClient();
-  const { organizationId } = useOrgContext();
 
   return useMutation({
     mutationFn: ({ id, ...payload }: UpdateDocumentPayload): Promise<DocumentRecord> =>
-      updateDocument(id, payload, organizationId),
+      updateDocument(id, payload),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: documentKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: documentKeys.all() });
     },
   });
 }
@@ -143,7 +137,6 @@ export interface DeleteDocumentInput {
 
 export function useDeleteDocument(): UseMutationResult<void, unknown, DeleteDocumentInput> {
   const queryClient = useQueryClient();
-  const { organizationId } = useOrgContext();
 
   return useMutation({
     mutationFn: async ({ id, fileUrl }: DeleteDocumentInput): Promise<void> => {
@@ -155,10 +148,10 @@ export function useDeleteDocument(): UseMutationResult<void, unknown, DeleteDocu
           // Storage delete is non-blocking — file may already be gone or key invalid
         }
       }
-      await deleteDocument(id, organizationId);
+      await deleteDocument(id);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: documentKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: documentKeys.all() });
     },
   });
 }

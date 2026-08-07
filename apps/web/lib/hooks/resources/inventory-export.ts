@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
-import { useOrgContext } from '../core';
 
 import { showToast } from '@/components/ui/sonner';
 import { PayloadTooLargeError, downloadFromUrl } from '@/lib/utils/download';
@@ -78,24 +77,16 @@ export interface UseInventoryExportReturn {
  * flag true until all of them resolve.
  */
 export function useInventoryExport(): UseInventoryExportReturn {
-  const { organizationId } = useOrgContext();
   const [pending, setPending] = useState(0);
   const [error, setError] = useState<Error | null>(null);
 
   const exportCsv = useCallback(
     async (opts: ExportInventoryOptions) => {
-      if (!organizationId) {
-        const err = new Error('Cannot export without an active organization');
-        setError(err);
-        showToast.error(err.message);
-        throw err;
-      }
 
       setPending((n) => n + 1);
       try {
         await downloadFromUrl({
           path: RESOURCE_PATHS[opts.resource],
-          organizationId,
           params: opts.filters,
           filename: opts.filename,
         });
@@ -119,7 +110,7 @@ export function useInventoryExport(): UseInventoryExportReturn {
         setPending((n) => Math.max(0, n - 1));
       }
     },
-    [organizationId],
+    [],
   );
 
   return useMemo(

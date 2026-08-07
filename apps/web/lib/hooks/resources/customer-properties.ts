@@ -2,7 +2,7 @@
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
-import { createResourceKeys, useOrgContext } from '../core';
+import { createResourceKeys } from '../core';
 
 import type { CustomerPropertyResponse } from '@/components/features/customers/hooks/use-customer-properties';
 import { apiClient } from '@/lib/api/client';
@@ -25,17 +25,15 @@ const cpKeys = createResourceKeys('customer-properties');
 export function useCustomerPropertiesByCustomer(
   customerId: string,
 ): UseQueryResult<CustomerPropertyResponse[]> {
-  const { orgHeaders, organizationId, isReady } = useOrgContext();
 
   return useQuery<CustomerPropertyResponse[]>({
-    queryKey: cpKeys.list(organizationId, { customerId }),
+    queryKey: cpKeys.list({ customerId }),
     queryFn: async (): Promise<CustomerPropertyResponse[]> => {
       const { data } = await apiClient.get<CustomerPropertyResponse[]>(
         `/customer-properties/customer/${customerId}`,
-        { headers: orgHeaders },
       );
       return data as CustomerPropertyResponse[];
     },
-    enabled: !!customerId && isReady,
+    enabled: !!customerId,
   });
 }

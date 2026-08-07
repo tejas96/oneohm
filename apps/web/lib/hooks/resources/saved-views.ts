@@ -15,7 +15,6 @@ import {
   createResourceKeys,
   defineResource,
   normalizeApiError,
-  useOrgContext,
 } from '../core';
 
 import { showToast } from '@/components/ui/sonner';
@@ -32,7 +31,7 @@ import { apiClient } from '@/lib/api/client';
  * `apiClient` directly, and we want the resource type list to stay
  * tightly typed via the `SavedViewResource` enum the backend defined.
  *
- * Cache layout: `['saved-views', orgId, 'list', resource]` — one entry
+ * Cache layout: `['saved-views', 'list', resource]` — one entry
  * per (org, resource) pair. After any mutation we invalidate the
  * matching list key so the SavedViewsBar reflects the change without a
  * page reload.
@@ -102,15 +101,12 @@ export const savedViewKeys = createResourceKeys('saved-views');
  * can render `views.length === 0` without an extra null guard.
  */
 export function useSavedViews(resource: SavedViewResource): UseQueryResult<SavedView[], unknown> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
 
   return useQuery<SavedView[]>({
-    queryKey: ['saved-views', organizationId, 'list', resource] as const,
-    enabled: isReady,
+    queryKey: ['saved-views', 'list', resource] as const,
     staleTime: STALE_TIMES.standard,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<SavedView[]>('/saved-views', {
-        headers: orgHeaders,
         params: { resource },
         signal,
       });
@@ -121,15 +117,13 @@ export function useSavedViews(resource: SavedViewResource): UseQueryResult<Saved
 
 /** Fetch a single saved view by id. Cross-user/cross-org returns 404. */
 export function useSavedView(id: string | undefined): UseQueryResult<SavedView, unknown> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
 
   return useQuery<SavedView>({
-    queryKey: ['saved-views', organizationId, 'detail', id ?? ''] as const,
-    enabled: isReady && Boolean(id),
+    queryKey: ['saved-views', 'detail', id ?? ''] as const,
+    enabled: Boolean(id),
     staleTime: STALE_TIMES.standard,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<SavedView>(`/saved-views/${id ?? ''}`, {
-        headers: orgHeaders,
         signal,
       });
       return data;
@@ -149,24 +143,21 @@ export interface SavedViewMutations {
 
 export function useSavedViewMutations(): SavedViewMutations {
   const queryClient = useQueryClient();
-  const { organizationId, orgHeaders } = useOrgContext();
 
   const invalidate = (resource?: SavedViewResource): void => {
     if (resource) {
       void queryClient.invalidateQueries({
-        queryKey: ['saved-views', organizationId, 'list', resource],
+        queryKey: ['saved-views', 'list', resource],
       });
     } else {
-      void queryClient.invalidateQueries({ queryKey: ['saved-views', organizationId] });
+      void queryClient.invalidateQueries({ queryKey: ['saved-views'] });
     }
   };
 
   const create = useMutation<SavedView, unknown, CreateSavedViewPayload>({
     retry: RESOURCE_MUTATION_DEFAULTS.retry,
     mutationFn: async (payload) => {
-      const { data } = await apiClient.post<SavedView>('/saved-views', payload, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.post<SavedView>('/saved-views', payload);
       return data;
     },
     onSuccess: (saved) => {
@@ -181,14 +172,12 @@ export function useSavedViewMutations(): SavedViewMutations {
   const update = useMutation<SavedView, unknown, { id: string; data: UpdateSavedViewPayload }>({
     retry: RESOURCE_MUTATION_DEFAULTS.retry,
     mutationFn: async ({ id, data: payload }) => {
-      const { data } = await apiClient.patch<SavedView>(`/saved-views/${id}`, payload, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.patch<SavedView>(`/saved-views/${id}`, payload);
       return data;
     },
     onSuccess: (saved) => {
       queryClient.setQueryData<SavedView>(
-        ['saved-views', organizationId, 'detail', saved.id],
+        ['saved-views', 'detail', saved.id],
         saved,
       );
       invalidate(saved.resource);
@@ -202,7 +191,7 @@ export function useSavedViewMutations(): SavedViewMutations {
   const remove = useMutation<void, unknown, string>({
     retry: RESOURCE_MUTATION_DEFAULTS.retry,
     mutationFn: async (id) => {
-      await apiClient.delete(`/saved-views/${id}`, { headers: orgHeaders });
+      await apiClient.delete(`/saved-views/${id}`);
     },
     onSuccess: (_void, id) => {
       // We don't know the resource bucket the deleted view belonged to,
@@ -211,13 +200,12 @@ export function useSavedViewMutations(): SavedViewMutations {
       // when the user opens the matching SavedViewsBar.
       const cached = queryClient.getQueryData<SavedView>([
         'saved-views',
-        organizationId,
         'detail',
         id,
       ]);
       invalidate(cached?.resource);
       queryClient.removeQueries({
-        queryKey: ['saved-views', organizationId, 'detail', id],
+        queryKey: ['saved-views', 'detail', id],
       });
       showToast.success('Saved view deleted');
     },

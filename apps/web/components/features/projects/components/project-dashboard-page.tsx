@@ -21,7 +21,6 @@ import {
 import { MUITypography } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
 import { ROUTES } from '@/lib/config/routes';
-import { useOrgContext } from '@/lib/hooks/core';
 import {
   bomResourceKeys,
   useProjectListResource,
@@ -51,8 +50,8 @@ function getPercentageString(value: number): string {
 // ============================================================================
 
 export function ProjectDashboardPage(): React.JSX.Element {
-  const router = useRouter();
   const { user } = useAuth();
+  const router = useRouter();
   const isAdmin = useIsAdmin();
   const firstName = user?.firstName || 'User';
 
@@ -85,7 +84,6 @@ export function ProjectDashboardPage(): React.JSX.Element {
   const { data: teamWorkloadData, isLoading: teamWorkloadLoading } = useTeamWorkload();
 
   // Organization context and dynamic parallel BOM queries for active installations
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
 
   const activeProjectsSample = React.useMemo((): ProjectListItem[] => {
     const rawList = activeListResponse?.data || [];
@@ -96,15 +94,15 @@ export function ProjectDashboardPage(): React.JSX.Element {
     queries: activeProjectsSample.map((p) => {
       const projectId = p.id;
       return {
-        queryKey: [...bomResourceKeys.all(organizationId), 'project', projectId] as const,
+        queryKey: [...bomResourceKeys.all(), 'project', projectId] as const,
         queryFn: async ({ signal }): Promise<Record<string, unknown> | null> => {
           const { data } = await apiClient.get<Record<string, unknown> | null>(
             `/bom?entityType=project&entityId=${projectId}`,
-            { headers: orgHeaders, signal },
+            { signal },
           );
           return data;
         },
-        enabled: isReady && !!projectId,
+        enabled: !!projectId,
         staleTime: 60_000,
       };
     }),

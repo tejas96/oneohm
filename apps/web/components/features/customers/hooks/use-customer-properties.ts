@@ -19,7 +19,6 @@ import type { AxiosError } from 'axios';
 import { propertyKeys } from '@/components/features/properties/hooks/property-keys';
 import type { DiscomResponse } from '@/components/features/properties/hooks/use-discoms';
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Types
@@ -129,19 +128,16 @@ export function useCustomerProperties(
   customerId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerPropertyResponse[], AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: propertyKeys.byCustomer(organizationId, customerId),
+    queryKey: propertyKeys.byCustomer(customerId),
     queryFn: async (): Promise<CustomerPropertyResponse[]> => {
       const { data } = await apiClient.get<CustomerPropertyResponse[]>(
         `/customer-properties/customer/${customerId}`,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
-    enabled: !!customerId && !!organizationId && options?.enabled !== false,
+    enabled: !!customerId && options?.enabled !== false,
   });
 }
 
@@ -154,18 +150,15 @@ export function useCustomerProperties(
 export function useProperty(
   propertyId: string,
 ): UseQueryResult<CustomerPropertyResponse, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: propertyKeys.detail(organizationId, propertyId),
+    queryKey: propertyKeys.detail(propertyId),
     queryFn: async (): Promise<CustomerPropertyResponse> => {
       const { data } = await apiClient.get<CustomerPropertyResponse>(
         `/customer-properties/${propertyId}`,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
-    enabled: !!propertyId && !!organizationId,
+    enabled: !!propertyId,
   });
 }

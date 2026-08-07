@@ -41,7 +41,7 @@ lib/hooks/core/                        ← FDAL engine (never edit for new resou
   query-defaults.ts                      RESOURCE_QUERY_DEFAULTS, RESOURCE_MUTATION_DEFAULTS, STALE_TIMES
   response-adapter.ts                    defaultResponseAdapter (normalizes 3 API formats)
   error-adapter.ts                       normalizeApiError (Axios → NormalizedError)
-  use-org-context.ts                     useOrgContext (organizationId, orgHeaders, isReady)
+  use-org-context.ts                     useOrgContext ()
   use-query-state.ts                     useQueryState (search, filters, pagination, sorting, URL sync)
   use-resource-list.ts                   useResourceList (paginated list hook)
   use-resource-detail.ts                 useResourceDetail, prefetchResourceDetail
@@ -329,7 +329,6 @@ const handleHover = (id: string) => {
     resource: 'projects',
     endpoint: '/projects',
     id,
-    organizationId,
   });
 };
 ```
@@ -618,7 +617,7 @@ const { handleSubmit, handleClose, isSubmitting } = useModalForm({
   mutation: mutations.create,
   successMessage: 'Created successfully',
   onOpenChange: setOpen,
-  transformPayload: (data) => ({ ...data, organizationId }),
+  transformPayload: (data) => ({ ...data, }),
 });
 
 <form onSubmit={handleSubmit}>
@@ -709,15 +708,13 @@ Events are emitted automatically by `useResourceMutations` after successful muta
 `useOrgContext()` provides the authenticated user's organization info. All core hooks use it internally.
 
 ```typescript
-import { useOrgContext } from '@/lib/hooks/core';
 
-const { organizationId, orgHeaders, isReady } = useOrgContext();
-// organizationId: string | undefined
-// orgHeaders: { 'X-Organization-Id': string } | {}
-// isReady: boolean (true when org is available)
+// : string | undefined
+// : { 'X-Organization-Id': string } | {}
+// : boolean (true when org is available)
 ```
 
-Queries with `requiresOrg: true` (default) are disabled until `isReady` is `true`.
+Queries with `requiresOrg: true` (default) are disabled until `` is `true`.
 
 ---
 
@@ -783,13 +780,13 @@ Generates a namespaced query key factory:
 
 ```typescript
 const keys = createResourceKeys('projects');
-keys.all(orgId); // ['projects', orgId]
-keys.lists(orgId); // ['projects', orgId, 'list']
-keys.list(orgId, filters); // ['projects', orgId, 'list', stableHash(filters)]
-keys.details(orgId); // ['projects', orgId, 'detail']
-keys.detail(orgId, id); // ['projects', orgId, 'detail', id]
-keys.stats(orgId); // ['projects', orgId, 'stats']
-keys.infinite(orgId, filters); // ['projects', orgId, 'infinite', stableHash(filters)]
+keys.all(); // ['projects']
+keys.lists(); // ['projects', 'list']
+keys.list(filters); // ['projects', 'list', stableHash(filters)]
+keys.details(); // ['projects', 'detail']
+keys.detail(id); // ['projects', 'detail', id]
+keys.stats(); // ['projects', 'stats']
+keys.infinite(filters); // ['projects', 'infinite', stableHash(filters)]
 ```
 
 ---

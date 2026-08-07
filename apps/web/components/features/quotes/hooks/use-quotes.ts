@@ -23,7 +23,6 @@ import type { QuotePdfData } from '../types';
 
 import { apiClient } from '@/lib/api/client';
 import { getDocuments } from '@/lib/api/documents';
-import { useAuth } from '@/providers/auth-provider';
 
 const WHATSAPP_SHARE_TIMEOUT_MS = 120_000;
 
@@ -135,19 +134,19 @@ export interface QuoteStatusCounts {
 // ============================================================================
 
 export const quoteKeys = {
-  all: (orgId?: string) => ['quotes', orgId] as const,
-  lists: (orgId?: string) => [...quoteKeys.all(orgId), 'list'] as const,
-  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
-    [...quoteKeys.lists(orgId), filters] as const,
-  details: (orgId?: string) => [...quoteKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) => [...quoteKeys.details(orgId), id] as const,
-  byCustomer: (orgId: string | undefined, customerId: string) =>
-    [...quoteKeys.all(orgId), 'customer', customerId] as const,
-  byProperty: (orgId: string | undefined, propertyId: string) =>
-    [...quoteKeys.all(orgId), 'property', propertyId] as const,
-  propertyVersions: (orgId: string | undefined, propertyId: string) =>
-    [...quoteKeys.all(orgId), 'property-versions', propertyId] as const,
-  statusCounts: (orgId?: string) => [...quoteKeys.all(orgId), 'statusCounts'] as const,
+  all: () => ['quotes'] as const,
+  lists: () => [...quoteKeys.all(), 'list'] as const,
+  list: (filters: Record<string, unknown>) =>
+    [...quoteKeys.lists(), filters] as const,
+  details: () => [...quoteKeys.all(), 'detail'] as const,
+  detail: (id: string) => [...quoteKeys.details(), id] as const,
+  byCustomer: (customerId: string) =>
+    [...quoteKeys.all(), 'customer', customerId] as const,
+  byProperty: (propertyId: string) =>
+    [...quoteKeys.all(), 'property', propertyId] as const,
+  propertyVersions: (propertyId: string) =>
+    [...quoteKeys.all(), 'property-versions', propertyId] as const,
+  statusCounts: () => [...quoteKeys.all(), 'statusCounts'] as const,
 };
 
 // ============================================================================
@@ -161,12 +160,10 @@ export const quoteKeys = {
 export function useQuotes(
   filters: QuoteFilters = {},
 ): UseQueryResult<QuoteListResponse, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
   const { enabled: callerEnabled, ...queryFilters } = filters;
 
   return useQuery({
-    queryKey: quoteKeys.list(organizationId, queryFilters as Record<string, unknown>),
+    queryKey: quoteKeys.list(queryFilters as Record<string, unknown>),
     queryFn: async (): Promise<QuoteListResponse> => {
       const params = new URLSearchParams();
 
@@ -186,11 +183,10 @@ export function useQuotes(
       if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 
       const { data } = await apiClient.get<QuoteListResponse>(`/quotes?${params.toString()}`, {
-        headers: { 'X-Organization-Id': organizationId },
       });
       return data;
     },
-    enabled: !!organizationId && callerEnabled !== false,
+    enabled: callerEnabled !== false,
     placeholderData: keepPreviousData,
   });
 }
@@ -199,18 +195,15 @@ export function useQuotes(
  * Fetch a single quote by ID with all versions.
  */
 export function useQuote(id: string): UseQueryResult<QuoteListItem, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: quoteKeys.detail(organizationId, id),
+    queryKey: quoteKeys.detail(id),
     queryFn: async (): Promise<QuoteListItem> => {
       const { data } = await apiClient.get<QuoteListItem>(`/quotes/${id}`, {
-        headers: { 'X-Organization-Id': organizationId },
       });
       return data;
     },
-    enabled: !!id && !!organizationId,
+    enabled: !!id,
   });
 }
 
@@ -219,13 +212,10 @@ export function useQuote(id: string): UseQueryResult<QuoteListItem, AxiosError> 
  * Fires one call per status with limit=1 to get meta.total without loading data.
  */
 export function useQuoteStatusCounts(): UseQueryResult<QuoteStatusCounts, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: quoteKeys.statusCounts(organizationId),
+    queryKey: quoteKeys.statusCounts(),
     queryFn: async (): Promise<QuoteStatusCounts> => {
-      const headers = { 'X-Organization-Id': organizationId };
 
       const statuses = [
         QuoteStatus.DRAFT,
@@ -237,9 +227,9 @@ export function useQuoteStatusCounts(): UseQueryResult<QuoteStatusCounts, AxiosE
       ] as const;
 
       const [totalRes, ...statusResults] = await Promise.all([
-        apiClient.get<QuoteListResponse>('/quotes?limit=1', { headers }),
+        apiClient.get<QuoteListResponse>('/quotes?limit=1'),
         ...statuses.map((s) =>
-          apiClient.get<QuoteListResponse>(`/quotes?limit=1&status=${s}`, { headers }),
+          apiClient.get<QuoteListResponse>(`/quotes?limit=1&status=${s}`),
         ),
       ]);
 
@@ -253,7 +243,6 @@ export function useQuoteStatusCounts(): UseQueryResult<QuoteStatusCounts, AxiosE
         expired: statusResults[5]?.data.meta.total ?? 0,
       };
     },
-    enabled: !!organizationId,
     staleTime: 30_000,
   });
 }
@@ -267,20 +256,17 @@ export function useQuoteStatusCounts(): UseQueryResult<QuoteStatusCounts, AxiosE
  */
 export function useSendQuote(): UseMutationResult<unknown, AxiosError, string> {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (quoteId: string) => {
       const { data } = await apiClient.patch(
         `/quotes/${quoteId}/status`,
         { status: QuoteStatus.SENT },
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
     },
   });
 }
@@ -294,17 +280,14 @@ interface ShareQuoteWhatsappInput {
 
 async function shareQuoteOnWhatsapp(
   input: ShareQuoteWhatsappInput,
-  organizationId?: string,
 ): Promise<ShareQuoteWhatsappResult> {
-  const headers = organizationId ? { 'X-Organization-Id': organizationId } : {};
-  const requestConfig = { headers, timeout: WHATSAPP_SHARE_TIMEOUT_MS };
+  const requestConfig = { timeout: WHATSAPP_SHARE_TIMEOUT_MS };
 
   if (input.quoteStatus !== QuoteStatus.DRAFT) {
     const documents = await getDocuments({
       entityType: DocumentEntityType.QUOTE,
       entityId: input.quoteId,
       tag: 'quote_pdf',
-      organizationId,
     });
     const latestPdf = documents
       .filter((doc) => doc.mimeType === 'application/pdf')
@@ -344,16 +327,14 @@ export function useShareQuoteWhatsapp(): UseMutationResult<
   ShareQuoteWhatsappInput
 > {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async ({ quoteId, pdfData, quoteStatus, to }: ShareQuoteWhatsappInput) => {
-      return shareQuoteOnWhatsapp({ quoteId, pdfData, quoteStatus, to }, organizationId);
+      return shareQuoteOnWhatsapp({ quoteId, pdfData, quoteStatus, to });
     },
     onSuccess: (_, { quoteId }) => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.detail(organizationId, quoteId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.detail(quoteId) });
     },
   });
 }
@@ -362,22 +343,17 @@ export function useWhatsappMessagingHealth(): UseQueryResult<
   WhatsappMessagingHealth | null,
   AxiosError
 > {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: ['whatsapp-messaging-health', organizationId],
+    queryKey: ['whatsapp-messaging-health'],
     queryFn: async (): Promise<WhatsappMessagingHealth | null> => {
       try {
-        const { data } = await apiClient.get<WhatsappMessagingHealth>('/quotes/whatsapp/health', {
-          headers: organizationId ? { 'X-Organization-Id': organizationId } : undefined,
-        });
+        const { data } = await apiClient.get<WhatsappMessagingHealth>('/quotes/whatsapp/health');
         return data;
       } catch {
         return null;
       }
     },
-    enabled: !!organizationId,
     staleTime: 60_000,
   });
 }
@@ -387,18 +363,15 @@ export function useWhatsappMessagingHealth(): UseQueryResult<
  */
 export function useDeleteQuote(): UseMutationResult<void, AxiosError, string> {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (quoteId: string): Promise<void> => {
       await apiClient.delete(`/quotes/${quoteId}`, {
-        headers: { 'X-Organization-Id': organizationId },
       });
     },
     onSuccess: (_, quoteId) => {
-      queryClient.removeQueries({ queryKey: quoteKeys.detail(organizationId, quoteId) });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
+      queryClient.removeQueries({ queryKey: quoteKeys.detail(quoteId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
     },
   });
 }
@@ -409,20 +382,17 @@ export function useDeleteQuote(): UseMutationResult<void, AxiosError, string> {
 export function usePropertyQuoteVersions(
   propertyId: string | undefined,
 ): UseQueryResult<PropertyQuoteVersionItem[], AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: quoteKeys.propertyVersions(organizationId, propertyId ?? ''),
+    queryKey: quoteKeys.propertyVersions(propertyId ?? ''),
     queryFn: async (): Promise<PropertyQuoteVersionItem[]> => {
       if (!propertyId) return [];
       const { data } = await apiClient.get<PropertyQuoteVersionItem[]>(
         `/quotes/property/${propertyId}/versions`,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
-    enabled: !!propertyId && !!organizationId,
+    enabled: !!propertyId,
     staleTime: 30_000,
   });
 }
@@ -433,21 +403,18 @@ export function usePropertyQuoteVersions(
 export function usePropertyLockStatus(
   propertyId: string | undefined,
 ): UseQueryResult<{ locked: boolean; acceptedQuoteNumber?: string }, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: [...quoteKeys.all(organizationId), 'property-lock', propertyId],
+    queryKey: [...quoteKeys.all(), 'property-lock', propertyId],
     queryFn: async () => {
       const { data } = await apiClient.get<{ locked: boolean; acceptedQuoteNumber?: string }>(
         '/quotes/property-lock-status',
         {
           params: { propertyId },
-          headers: { 'X-Organization-Id': organizationId },
         },
       );
       return data;
     },
-    enabled: !!propertyId && !!organizationId,
+    enabled: !!propertyId,
   });
 }

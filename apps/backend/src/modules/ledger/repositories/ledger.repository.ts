@@ -297,27 +297,19 @@ export class LedgerRepository {
   }
 
   /**
-   * Does this project belong to the caller's organization?
+   * Does this project exist and is it live?
    *
-   * `projects` has no `organization_id` of its own, so ownership is a two-hop
-   * through `customer_properties`. Without this check the only guard on a ledger
-   * write is the FK to `projects(id)` — which ANY real project satisfies. A
-   * receipt posted to another org's project would insert cleanly, allocate
-   * nothing, become phantom credit, and count toward the caller's totals. And
-   * because the ledger is append-only, the bad row could only ever be reversed,
-   * never removed.
-   *
-   * This is tenancy, not the out-of-scope RBAC work.
+   * Was an org-ownership check before the app went single-tenant. The tenancy
+   * half is gone, but the check is not redundant: it still rejects a write to a
+   * soft-deleted project, which the FK to `projects(id)` happily accepts. The
+   * ledger is append-only, so a bad row could only ever be reversed, never
+   * removed — the guard stays.
    */
-  async projectBelongsToOrg(
-    projectId: string,
-    manager?: EntityManager,
-  ): Promise<boolean> {
+  async projectExists(projectId: string, manager?: EntityManager): Promise<boolean> {
     const rows = await this.exec(manager).query(
       `SELECT 1
          FROM projects p
-         JOIN customer_properties cp ON cp.id = p.property_id
-        WHERE p.id = $1 AND cp.organization_id = $2 AND p.deleted_at IS NULL
+        WHERE p.id = $1 AND p.deleted_at IS NULL
         LIMIT 1`,
       [projectId],
     );

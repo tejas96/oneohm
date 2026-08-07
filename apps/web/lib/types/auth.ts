@@ -10,7 +10,6 @@
 export interface ProfileSummary {
   type: 'customer' | 'reseller' | 'employee';
   profileId: string;
-  organizationId: string;
   organizationName: string;
   isPrimary: boolean;
   status: string;
@@ -36,7 +35,6 @@ export interface User {
   emailVerified: boolean;
   phoneVerified: boolean;
   profileCompleted: boolean;
-  organizationId?: string;
 }
 
 // ============================================

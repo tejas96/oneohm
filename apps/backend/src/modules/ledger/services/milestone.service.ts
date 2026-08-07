@@ -226,7 +226,7 @@ export class MilestoneService {
       throw new BadRequestException('Change order amount must be a positive integer paise value');
     }
 
-    if (!(await this.ledgerRepository.projectBelongsToOrg(projectId))) {
+    if (!(await this.ledgerRepository.projectExists(projectId))) {
       throw new NotFoundException(`Project ${projectId} not found`);
     }
 

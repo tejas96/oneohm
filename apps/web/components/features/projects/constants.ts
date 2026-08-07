@@ -353,8 +353,8 @@ export const KANBAN_BOARD_LIMIT = 500;
  * Base query key for the project task list (FDAL resource).
  * Must stay in sync with the key used in lib/hooks/resources/projects.ts.
  */
-export const PROJECT_TASKS_QUERY_KEY = (organizationId: string | undefined) =>
-  ['project-tasks', organizationId] as const;
+export const PROJECT_TASKS_QUERY_KEY = () =>
+  ['project-tasks'] as const;
 
 /**
  * Query key for the milestone aggregation endpoint.

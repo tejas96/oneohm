@@ -15,7 +15,6 @@ import {
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
-import { useOrgContext } from '../core';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
@@ -128,13 +127,13 @@ export interface ExpenseProjectSummary {
 // ============================================================================
 
 export const projectExpenseKeys = {
-  all: (orgId?: string) => ['project-expenses', orgId] as const,
-  byProject: (orgId: string | undefined, projectId: string) =>
-    [...projectExpenseKeys.all(orgId), 'project', projectId] as const,
-  list: (orgId: string | undefined, projectId: string, filters: ExpenseListFilters) =>
-    [...projectExpenseKeys.byProject(orgId, projectId), 'list', filters] as const,
-  summary: (orgId: string | undefined, projectId: string) =>
-    [...projectExpenseKeys.byProject(orgId, projectId), 'summary'] as const,
+  all: () => ['project-expenses'] as const,
+  byProject: (projectId: string) =>
+    [...projectExpenseKeys.all(), 'project', projectId] as const,
+  list: (projectId: string, filters: ExpenseListFilters) =>
+    [...projectExpenseKeys.byProject(projectId), 'list', filters] as const,
+  summary: (projectId: string) =>
+    [...projectExpenseKeys.byProject(projectId), 'summary'] as const,
 };
 
 // ============================================================================
@@ -146,10 +145,9 @@ export function useProjectExpenses(
   filters: ExpenseListFilters = {},
   options?: { enabled?: boolean },
 ): UseQueryResult<ExpenseListResponse, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
 
   return useQuery({
-    queryKey: projectExpenseKeys.list(organizationId, projectId, filters),
+    queryKey: projectExpenseKeys.list(projectId, filters),
     queryFn: async ({ signal }): Promise<ExpenseListResponse> => {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([k, v]) => {
@@ -158,11 +156,11 @@ export function useProjectExpenses(
       const qs = params.toString();
       const { data } = await apiClient.get<ExpenseListResponse>(
         `/projects/${projectId}/expenses${qs ? `?${qs}` : ''}`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data;
     },
-    enabled: isReady && !!projectId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
     placeholderData: keepPreviousData,
   });
@@ -172,18 +170,17 @@ export function useProjectExpenseSummary(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<ExpenseProjectSummary, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
 
   return useQuery({
-    queryKey: projectExpenseKeys.summary(organizationId, projectId),
+    queryKey: projectExpenseKeys.summary(projectId),
     queryFn: async ({ signal }): Promise<ExpenseProjectSummary> => {
       const { data } = await apiClient.get<ExpenseProjectSummary>(
         `/projects/${projectId}/expenses/summary`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data;
     },
-    enabled: isReady && !!projectId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -201,17 +198,16 @@ export function useProjectExpenseSummary(
  */
 export function useProjectExpenseMutations(projectId: string) {
   const queryClient = useQueryClient();
-  const { organizationId, orgHeaders } = useOrgContext();
 
   const invalidate = (): void => {
     void queryClient.invalidateQueries({
-      queryKey: projectExpenseKeys.byProject(organizationId, projectId),
+      queryKey: projectExpenseKeys.byProject(projectId),
     });
     // BOM procurement-status keys live under the bom resource; invalidate
     // the whole bom space for this org rather than mirror its key shape.
-    void queryClient.invalidateQueries({ queryKey: ['bom', organizationId] });
+    void queryClient.invalidateQueries({ queryKey: ['bom'] });
     void queryClient.invalidateQueries({
-      queryKey: ['bom-procurement-status', organizationId, projectId],
+      queryKey: ['bom-procurement-status', projectId],
     });
   };
 
@@ -220,7 +216,6 @@ export function useProjectExpenseMutations(projectId: string) {
       const { data } = await apiClient.post<ProjectExpense>(
         `/projects/${projectId}/expenses`,
         payload,
-        { headers: orgHeaders },
       );
       return data;
     },
@@ -237,9 +232,7 @@ export function useProjectExpenseMutations(projectId: string) {
     { id: string; payload: UpdateExpensePayload }
   >({
     mutationFn: async ({ id, payload }) => {
-      const { data } = await apiClient.patch<ProjectExpense>(`/expenses/${id}`, payload, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.patch<ProjectExpense>(`/expenses/${id}`, payload);
       return data;
     },
     onSuccess: () => {
@@ -251,7 +244,7 @@ export function useProjectExpenseMutations(projectId: string) {
 
   const remove = useMutation<void, AxiosError, string>({
     mutationFn: async (id) => {
-      await apiClient.delete(`/expenses/${id}`, { headers: orgHeaders });
+      await apiClient.delete(`/expenses/${id}`);
     },
     onSuccess: () => {
       showToast.success('Expense deleted');
@@ -269,7 +262,6 @@ export function useProjectExpenseMutations(projectId: string) {
       const { data } = await apiClient.patch<ProjectExpense>(
         `/expenses/${id}/reimbursement-status`,
         { status: ReimbursementStatus.REIMBURSED },
-        { headers: orgHeaders },
       );
       return data;
     },

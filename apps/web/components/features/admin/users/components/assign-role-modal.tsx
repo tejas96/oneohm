@@ -23,7 +23,6 @@ import {
 } from '@/components/ui';
 import { showToast } from '@/components/ui/sonner';
 import { useUserRoles, useUserRoleMutations, useRoles } from '@/lib/hooks/resources';
-import { useAuth } from '@/providers/auth-provider';
 
 interface AssignRoleModalProps {
   open: boolean;
@@ -38,14 +37,13 @@ export function AssignRoleModal({
   userId,
   userName,
 }: AssignRoleModalProps): JSX.Element {
-  const { user: currentUser } = useAuth();
   const { items: userRoles, isLoading } = useUserRoles(userId);
   const userRoleMutations = useUserRoleMutations();
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(['']);
   const [isAssigning, setIsAssigning] = useState(false);
 
   const { items: allRoles } = useRoles({ syncToUrl: false, defaultPageSize: 100 });
-  const availableRoles = allRoles.filter((r) => r.organizationId !== null);
+  const availableRoles = allRoles.filter(() => true);
 
   const assignedRoleIds = new Set(userRoles.map((ur) => ur.roleId));
 
@@ -90,7 +88,6 @@ export function AssignRoleModal({
         await userRoleMutations.create.mutateAsync({
           userId,
           roleId,
-          organizationId: currentUser?.organizationId || undefined,
         } as unknown as Record<string, unknown> & { id: string });
         successCount++;
       } catch {
@@ -107,7 +104,7 @@ export function AssignRoleModal({
     if (failCount > 0 && successCount === 0) {
       showToast.error('Failed to assign roles');
     }
-  }, [rolesToAssign, userRoleMutations, userId, currentUser?.organizationId, onOpenChange]);
+  }, [rolesToAssign, userRoleMutations, userId, onOpenChange]);
 
   const handleClose = (isOpen: boolean): void => {
     if (!isOpen) {
@@ -140,7 +137,7 @@ export function AssignRoleModal({
                   <Badge key={ur.id} variant="secondary" size="sm">
                     {ur.roleName ?? ur.roleCode}
                     <span className="ml-1 text-[10px] opacity-60">
-                      {ur.organizationId ? 'Org' : 'Platform'}
+                      {'Platform'}
                     </span>
                   </Badge>
                 ))}

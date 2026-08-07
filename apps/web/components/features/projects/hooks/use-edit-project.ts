@@ -8,7 +8,6 @@ import { projectKeys } from './use-projects';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
-import { useOrgContext } from '@/lib/hooks/core';
 import type { ProjectTaskItem } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils/error';
 
@@ -60,18 +59,16 @@ export function useProjectMemberTasks(
   isLoading: boolean;
   isError: boolean;
 } {
-  const { orgHeaders, organizationId } = useOrgContext();
 
   const query = useQuery<ProjectTaskItem[]>({
-    queryKey: [...projectDetailKeys.tasks(organizationId, projectId), 'byAssignee', userId],
+    queryKey: [...projectDetailKeys.tasks(projectId), 'byAssignee', userId],
     queryFn: async () => {
       const { data } = await apiClient.get<{ data: ProjectTaskItem[] }>(
         `/projects/${projectId}/tasks?assignedToUserId=${encodeURIComponent(userId)}&limit=200`,
-        { headers: orgHeaders },
       );
       return data.data ?? [];
     },
-    enabled: !!projectId && !!userId && !!organizationId && options?.enabled !== false,
+    enabled: !!projectId && !!userId && options?.enabled !== false,
     staleTime: 0,
   });
 
@@ -93,20 +90,19 @@ export interface UseEditProjectReturn {
 }
 
 export function useEditProject(projectId: string): UseEditProjectReturn {
-  const { orgHeaders, organizationId } = useOrgContext();
   const queryClient = useQueryClient();
 
   // ── Update project details ───────────────────────────────────
 
   const updateProjectMutation = useMutation({
     mutationFn: async (payload: UpdateProjectPayload) => {
-      await apiClient.patch(`/projects/${projectId}`, payload, { headers: orgHeaders });
+      await apiClient.patch(`/projects/${projectId}`, payload);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: projectDetailKeys.detail(organizationId, projectId),
+        queryKey: projectDetailKeys.detail(projectId),
       });
-      void queryClient.invalidateQueries({ queryKey: projectKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     },
     onError: (error) => {
       showToast.error(getErrorMessage(error));
@@ -117,11 +113,11 @@ export function useEditProject(projectId: string): UseEditProjectReturn {
 
   const addTeamMemberMutation = useMutation({
     mutationFn: async (payload: AddTeamMemberPayload) => {
-      await apiClient.post(`/projects/${projectId}/team`, payload, { headers: orgHeaders });
+      await apiClient.post(`/projects/${projectId}/team`, payload);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: projectDetailKeys.team(organizationId, projectId),
+        queryKey: projectDetailKeys.team(projectId),
       });
     },
     onError: (error) => {
@@ -133,13 +129,11 @@ export function useEditProject(projectId: string): UseEditProjectReturn {
 
   const updateTeamMemberMutation = useMutation({
     mutationFn: async ({ memberId, ...rest }: UpdateTeamMemberPayload) => {
-      await apiClient.patch(`/projects/${projectId}/team/${memberId}`, rest, {
-        headers: orgHeaders,
-      });
+      await apiClient.patch(`/projects/${projectId}/team/${memberId}`, rest);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: projectDetailKeys.team(organizationId, projectId),
+        queryKey: projectDetailKeys.team(projectId),
       });
     },
     onError: (error) => {
@@ -151,11 +145,11 @@ export function useEditProject(projectId: string): UseEditProjectReturn {
 
   const removeTeamMemberMutation = useMutation({
     mutationFn: async ({ memberId }: RemoveTeamMemberPayload) => {
-      await apiClient.delete(`/projects/${projectId}/team/${memberId}`, { headers: orgHeaders });
+      await apiClient.delete(`/projects/${projectId}/team/${memberId}`);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: projectDetailKeys.team(organizationId, projectId),
+        queryKey: projectDetailKeys.team(projectId),
       });
     },
     onError: (error) => {
@@ -170,12 +164,11 @@ export function useEditProject(projectId: string): UseEditProjectReturn {
       await apiClient.patch(
         `/projects/${projectId}/tasks/${taskId}`,
         { assignedToUserId },
-        { headers: orgHeaders },
       );
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: projectDetailKeys.tasks(organizationId, projectId),
+        queryKey: projectDetailKeys.tasks(projectId),
       });
     },
     onError: (error) => {

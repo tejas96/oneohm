@@ -89,7 +89,6 @@ export function useDocumentUpload(): UseDocumentUploadReturn {
           : DocumentCategory.DOCUMENT;
 
         await uploadMutation.mutateAsync({
-          organizationId: '', // Will be set by the API client interceptor
           entityType: DocumentEntityType.PROPERTY,
           entityId: propertyId,
           category,

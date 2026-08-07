@@ -12,7 +12,6 @@ import type {
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
-import { useOrgContext } from '../core';
 
 import { apiClient } from '@/lib/api/client';
 
@@ -250,21 +249,21 @@ export interface ProfitabilityFilters {
 // ============================================================================
 
 export const orgFinanceKeys = {
-  root: (orgId: string | undefined) => ['finance-org', orgId] as const,
-  dashboard: (orgId: string | undefined, range: DateRangeFilter) =>
-    [...orgFinanceKeys.root(orgId), 'dashboard', range] as const,
-  receipts: (orgId: string | undefined, filters: OrgReceiptsFilters) =>
-    [...orgFinanceKeys.root(orgId), 'receipts', filters] as const,
-  expenses: (orgId: string | undefined, filters: OrgExpensesFilters) =>
-    [...orgFinanceKeys.root(orgId), 'expenses', filters] as const,
-  outstanding: (orgId: string | undefined, filters: OutstandingFilters) =>
-    [...orgFinanceKeys.root(orgId), 'outstanding', filters] as const,
-  customersAr: (orgId: string | undefined, asOfDate?: string) =>
-    [...orgFinanceKeys.root(orgId), 'customers-ar', asOfDate ?? null] as const,
-  vendorsSpend: (orgId: string | undefined, filters: VendorsSpendFilters) =>
-    [...orgFinanceKeys.root(orgId), 'vendors-spend', filters] as const,
-  profitability: (orgId: string | undefined, filters: ProfitabilityFilters) =>
-    [...orgFinanceKeys.root(orgId), 'profitability', filters] as const,
+  root: () => ['finance-org'] as const,
+  dashboard: (range: DateRangeFilter) =>
+    [...orgFinanceKeys.root(), 'dashboard', range] as const,
+  receipts: (filters: OrgReceiptsFilters) =>
+    [...orgFinanceKeys.root(), 'receipts', filters] as const,
+  expenses: (filters: OrgExpensesFilters) =>
+    [...orgFinanceKeys.root(), 'expenses', filters] as const,
+  outstanding: (filters: OutstandingFilters) =>
+    [...orgFinanceKeys.root(), 'outstanding', filters] as const,
+  customersAr: (asOfDate?: string) =>
+    [...orgFinanceKeys.root(), 'customers-ar', asOfDate ?? null] as const,
+  vendorsSpend: (filters: VendorsSpendFilters) =>
+    [...orgFinanceKeys.root(), 'vendors-spend', filters] as const,
+  profitability: (filters: ProfitabilityFilters) =>
+    [...orgFinanceKeys.root(), 'profitability', filters] as const,
 };
 
 // ============================================================================
@@ -291,19 +290,17 @@ export function useOrgFinanceDashboard(
   range: DateRangeFilter = {},
   options?: { enabled?: boolean },
 ): UseQueryResult<DashboardData, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const params = compact(range);
   return useQuery({
-    queryKey: orgFinanceKeys.dashboard(organizationId, params),
+    queryKey: orgFinanceKeys.dashboard(params),
     queryFn: async ({ signal }): Promise<DashboardData> => {
       const { data } = await apiClient.get<DashboardData>('/finance/dashboard', {
-        headers: orgHeaders,
         params,
         signal,
       });
       return data;
     },
-    enabled: isReady && options?.enabled !== false,
+    enabled: options?.enabled !== false,
     staleTime: STALE_MS,
     placeholderData: keepPreviousData,
   });
@@ -313,18 +310,17 @@ export function useOrgReceipts(
   filters: OrgReceiptsFilters = {},
   options?: { enabled?: boolean },
 ): UseQueryResult<PaginatedResponse<OrgReceiptListItem>, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const params = compact(filters);
   return useQuery({
-    queryKey: orgFinanceKeys.receipts(organizationId, params),
+    queryKey: orgFinanceKeys.receipts(params),
     queryFn: async ({ signal }): Promise<PaginatedResponse<OrgReceiptListItem>> => {
       const { data } = await apiClient.get<PaginatedResponse<OrgReceiptListItem>>(
         '/finance/receipts',
-        { headers: orgHeaders, params, signal },
+        { params, signal },
       );
       return data;
     },
-    enabled: isReady && options?.enabled !== false,
+    enabled: options?.enabled !== false,
     staleTime: STALE_MS,
     placeholderData: keepPreviousData,
   });
@@ -334,18 +330,17 @@ export function useOrgExpenses(
   filters: OrgExpensesFilters = {},
   options?: { enabled?: boolean },
 ): UseQueryResult<PaginatedResponse<OrgExpenseListItem>, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const params = compact(filters);
   return useQuery({
-    queryKey: orgFinanceKeys.expenses(organizationId, params),
+    queryKey: orgFinanceKeys.expenses(params),
     queryFn: async ({ signal }): Promise<PaginatedResponse<OrgExpenseListItem>> => {
       const { data } = await apiClient.get<PaginatedResponse<OrgExpenseListItem>>(
         '/finance/expenses',
-        { headers: orgHeaders, params, signal },
+        { params, signal },
       );
       return data;
     },
-    enabled: isReady && options?.enabled !== false,
+    enabled: options?.enabled !== false,
     staleTime: STALE_MS,
     placeholderData: keepPreviousData,
   });
@@ -355,18 +350,17 @@ export function useOrgOutstanding(
   filters: OutstandingFilters = {},
   options?: { enabled?: boolean },
 ): UseQueryResult<PaginatedResponse<OutstandingTerm>, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const params = compact(filters);
   return useQuery({
-    queryKey: orgFinanceKeys.outstanding(organizationId, params),
+    queryKey: orgFinanceKeys.outstanding(params),
     queryFn: async ({ signal }): Promise<PaginatedResponse<OutstandingTerm>> => {
       const { data } = await apiClient.get<PaginatedResponse<OutstandingTerm>>(
         '/finance/outstanding',
-        { headers: orgHeaders, params, signal },
+        { params, signal },
       );
       return data;
     },
-    enabled: isReady && options?.enabled !== false,
+    enabled: options?.enabled !== false,
     staleTime: STALE_MS,
     placeholderData: keepPreviousData,
   });
@@ -376,19 +370,17 @@ export function useOrgCustomersAr(
   asOfDate?: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerAging[], AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const params = asOfDate ? { asOfDate } : undefined;
   return useQuery({
-    queryKey: orgFinanceKeys.customersAr(organizationId, asOfDate),
+    queryKey: orgFinanceKeys.customersAr(asOfDate),
     queryFn: async ({ signal }): Promise<CustomerAging[]> => {
       const { data } = await apiClient.get<CustomerAging[]>('/finance/customers/ar', {
-        headers: orgHeaders,
         params,
         signal,
       });
       return data;
     },
-    enabled: isReady && options?.enabled !== false,
+    enabled: options?.enabled !== false,
     staleTime: STALE_MS,
     placeholderData: keepPreviousData,
   });
@@ -398,19 +390,17 @@ export function useOrgVendorsSpend(
   filters: VendorsSpendFilters = {},
   options?: { enabled?: boolean },
 ): UseQueryResult<VendorSpend[], AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const params = compact(filters);
   return useQuery({
-    queryKey: orgFinanceKeys.vendorsSpend(organizationId, params),
+    queryKey: orgFinanceKeys.vendorsSpend(params),
     queryFn: async ({ signal }): Promise<VendorSpend[]> => {
       const { data } = await apiClient.get<VendorSpend[]>('/finance/vendors/spend', {
-        headers: orgHeaders,
         params,
         signal,
       });
       return data;
     },
-    enabled: isReady && options?.enabled !== false,
+    enabled: options?.enabled !== false,
     staleTime: STALE_MS,
     placeholderData: keepPreviousData,
   });
@@ -420,18 +410,17 @@ export function useOrgProfitability(
   filters: ProfitabilityFilters = {},
   options?: { enabled?: boolean },
 ): UseQueryResult<PaginatedResponse<ProjectProfitability>, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const params = compact(filters);
   return useQuery({
-    queryKey: orgFinanceKeys.profitability(organizationId, params),
+    queryKey: orgFinanceKeys.profitability(params),
     queryFn: async ({ signal }): Promise<PaginatedResponse<ProjectProfitability>> => {
       const { data } = await apiClient.get<PaginatedResponse<ProjectProfitability>>(
         '/finance/projects/profitability',
-        { headers: orgHeaders, params, signal },
+        { params, signal },
       );
       return data;
     },
-    enabled: isReady && options?.enabled !== false,
+    enabled: options?.enabled !== false,
     staleTime: STALE_MS,
     placeholderData: keepPreviousData,
   });

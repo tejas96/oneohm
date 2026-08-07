@@ -24,10 +24,6 @@ export const lookupSchema = z
     icon: z.string().max(100).optional(),
     isActive: z.boolean().default(true),
     metadata: z.record(z.unknown()).optional(),
-  })
-  .refine((data) => data.scopeType !== LookupScopeType.ORGANIZATION || !!data.scopeId, {
-    message: 'Scope ID is required when scope type is Organization',
-    path: ['scopeId'],
   });
 
 export type LookupFormValues = z.output<typeof lookupSchema>;

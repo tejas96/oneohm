@@ -9,7 +9,6 @@ import { RESOURCE_QUERY_DEFAULTS, RESOURCE_QUERY_RETRY } from './query-defaults'
 import { createResourceKeys } from './query-keys';
 import { defaultResponseAdapter } from './response-adapter';
 import type { BaseFilters, ResourceConfig, ResourceListResponse } from './types';
-import { useOrgContext } from './use-org-context';
 
 interface UseInfiniteResourceListReturn<T> {
   items: T[];
@@ -31,7 +30,6 @@ export function useInfiniteResourceList<T, F extends BaseFilters = BaseFilters>(
   config: ResourceConfig<T, F>,
   filters?: Partial<F>,
 ): UseInfiniteResourceListReturn<T> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
   const baseFilters = { ...config.defaultFilters, ...filters } as F;
 
@@ -39,7 +37,7 @@ export function useInfiniteResourceList<T, F extends BaseFilters = BaseFilters>(
 
   const query = useInfiniteQuery({
     queryKey: [
-      ...keys.infinite(organizationId, baseFilters as Record<string, unknown>),
+      ...keys.infinite(baseFilters as Record<string, unknown>),
       ...(endpointKey ? [endpointKey] : []),
     ],
     queryFn: async ({ pageParam, signal }) => {
@@ -47,7 +45,6 @@ export function useInfiniteResourceList<T, F extends BaseFilters = BaseFilters>(
         minSearchLength: config.minSearchLength,
       });
       const { data } = await apiClient.get(`${config.endpoint}?${params.toString()}`, {
-        headers: config.requiresOrg !== false ? orgHeaders : {},
         signal,
       });
       return (config.responseAdapter ?? defaultResponseAdapter<T>)(data);
@@ -57,7 +54,7 @@ export function useInfiniteResourceList<T, F extends BaseFilters = BaseFilters>(
       const { page, totalPages } = lastPage.meta;
       return page < totalPages ? page + 1 : undefined;
     },
-    enabled: config.requiresOrg !== false ? isReady : true,
+    enabled: true,
     retry: RESOURCE_QUERY_RETRY,
     staleTime: config.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
   });

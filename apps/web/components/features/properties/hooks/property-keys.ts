@@ -2,12 +2,12 @@
  * React Query keys for property resources — single source of truth.
  */
 export const propertyKeys = {
-  all: (orgId?: string) => ['properties', orgId] as const,
-  lists: (orgId?: string) => [...propertyKeys.all(orgId), 'list'] as const,
-  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
-    [...propertyKeys.lists(orgId), filters] as const,
-  byCustomer: (orgId: string | undefined, customerId: string) =>
-    [...propertyKeys.all(orgId), 'customer', customerId] as const,
-  details: (orgId?: string) => [...propertyKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) => [...propertyKeys.details(orgId), id] as const,
+  all: () => ['properties'] as const,
+  lists: () => [...propertyKeys.all(), 'list'] as const,
+  list: (filters: Record<string, unknown>) =>
+    [...propertyKeys.lists(), filters] as const,
+  byCustomer: (customerId: string) =>
+    [...propertyKeys.all(), 'customer', customerId] as const,
+  details: () => [...propertyKeys.all(), 'detail'] as const,
+  detail: (id: string) => [...propertyKeys.details(), id] as const,
 };

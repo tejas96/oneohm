@@ -15,7 +15,6 @@ import {
   MUISelect,
   MUITypography,
 } from '@/components/ui';
-import { useOrgContext } from '@/lib/hooks/core';
 import {
   uploadProofFile,
   useLedgerMutations,
@@ -99,7 +98,6 @@ export function RecordMoneyDialog({
   const [proof, setProof] = useState<ProofDocumentInput | null>(null);
   const [proofName, setProofName] = useState('');
   const [uploading, setUploading] = useState(false);
-  const { orgHeaders } = useOrgContext();
 
   const isReceipt = mode === 'receipt';
   const pending = recordReceipt.isPending || recordExpense.isPending;
@@ -233,7 +231,7 @@ export function RecordMoneyDialog({
                 if (!file) return;
                 setProofName(file.name);
                 setUploading(true);
-                void uploadProofFile(file, orgHeaders)
+                void uploadProofFile(file)
                   .then(setProof)
                   .catch(() => setProofName('Upload failed — try again'))
                   .finally(() => setUploading(false));

@@ -8,7 +8,6 @@ import {
   useResourceDetail,
   useResourceMutations,
   useResourcePermissions,
-  useOrgContext,
   type ResourceConfig,
   type BaseFilters,
 } from '../core';
@@ -72,7 +71,6 @@ defineResource<AdminRole>(
 export function useRoles(
   overrides?: Partial<ResourceConfig<AdminRole, RoleFilters>>,
 ): ReturnType<typeof useResourceList<AdminRole, RoleFilters>> {
-  const { organizationId } = useOrgContext();
   const config = getResourceConfig('roles') as ResourceConfig<AdminRole, RoleFilters>;
   return useResourceList<AdminRole, RoleFilters>({
     ...config,
@@ -80,7 +78,6 @@ export function useRoles(
     defaultFilters: {
       ...config.defaultFilters,
       ...overrides?.defaultFilters,
-      organizationId,
     } as Partial<RoleFilters>,
   });
 }

@@ -35,7 +35,6 @@ export { defineResource, getResourceConfig, getResourcePermissions } from './res
 export { resourceEvents } from './resource-events';
 
 // Hooks
-export { useOrgContext } from './use-org-context';
 export { useQueryState } from './use-query-state';
 export type { UseQueryStateReturn } from './use-query-state';
 export { useResourceList } from './use-resource-list';

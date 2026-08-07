@@ -17,7 +17,6 @@ import {
 
 export interface StockAllocation {
   id: string;
-  organizationId: string;
   projectId: string;
   warehouseId: string;
   productId: string;

@@ -6,7 +6,6 @@ import type { AxiosError } from 'axios';
 
 import { quoteKeys, type QuoteListItem } from '@/components/features/quotes';
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Types (re-export for backward compatibility)
@@ -46,14 +45,12 @@ export function useCustomerQuotes(
     enabled?: boolean;
   },
 ): UseQueryResult<CustomerQuotesResponse, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
   const page = options?.page ?? 1;
   const limit = options?.limit ?? 50;
 
   return useQuery({
     queryKey: [
-      ...quoteKeys.byCustomer(organizationId, customerId),
+      ...quoteKeys.byCustomer(customerId),
       { page, limit, status: options?.status },
     ],
     queryFn: async (): Promise<CustomerQuotesResponse> => {
@@ -66,10 +63,9 @@ export function useCustomerQuotes(
       }
 
       const { data } = await apiClient.get<CustomerQuotesResponse>(`/quotes?${params.toString()}`, {
-        headers: { 'X-Organization-Id': organizationId },
       });
       return data;
     },
-    enabled: !!customerId && !!organizationId && options?.enabled !== false,
+    enabled: !!customerId && options?.enabled !== false,
   });
 }

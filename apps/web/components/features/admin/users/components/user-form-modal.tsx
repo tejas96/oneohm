@@ -65,7 +65,6 @@ export function UserFormModal({
   const { update: updateEmployeeProfile } = useEmployeeProfileMutations();
   const availability = useCheckUserAvailability(
     isEdit ? userId : undefined,
-    isEdit ? undefined : currentUser?.organizationId,
   );
 
   const schema = isEdit ? editUserSchema : createUserSchema;
@@ -242,12 +241,9 @@ export function UserFormModal({
         if (createData.lastName) payload.lastName = createData.lastName;
         if (createData.email) payload.email = createData.email;
 
-        if (currentUser?.organizationId) {
-          payload.organizationId = currentUser.organizationId;
-          payload.profileType = data.profileKind === 'reseller' ? 'reseller' : 'employee';
-          if (Object.keys(profileData).length > 0) {
-            payload.profileData = profileData;
-          }
+        payload.profileType = data.profileKind === 'reseller' ? 'reseller' : 'employee';
+        if (Object.keys(profileData).length > 0) {
+          payload.profileData = profileData;
         }
 
         await createUser.mutateAsync(payload as Partial<AdminUser>);

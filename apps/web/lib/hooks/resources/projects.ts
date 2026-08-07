@@ -7,7 +7,6 @@ import {
   createResourceKeys,
   defineResource,
   STALE_TIMES,
-  useOrgContext,
   useMutationWithToast,
 } from '../core';
 
@@ -137,18 +136,17 @@ export function useProjectSummary(
   error: unknown;
   refetch: () => void;
 } {
-  const { orgHeaders, isReady } = useOrgContext();
 
   const query = useQuery<ProjectSummary>({
-    queryKey: summaryKeys.detail(undefined, projectId),
+    queryKey: summaryKeys.detail(projectId),
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<ProjectSummary>(
         `/projects/${projectId}/analytics/summary`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data;
     },
-    enabled: !!projectId && isReady && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: STALE_TIMES.fast,
   });
 
@@ -182,10 +180,9 @@ export function useProjectTaskList(
   error: unknown;
   refetch: () => void;
 } {
-  const { orgHeaders, organizationId, isReady } = useOrgContext();
 
   const query = useQuery<PaginatedResponse<ProjectTaskItem>>({
-    queryKey: taskListKeys.list(organizationId, { projectId, ...params }),
+    queryKey: taskListKeys.list({ projectId, ...params }),
     queryFn: async ({ signal }) => {
       const qs = new URLSearchParams();
       qs.set('page', String(params.page));
@@ -198,11 +195,11 @@ export function useProjectTaskList(
 
       const { data } = await apiClient.get<PaginatedResponse<ProjectTaskItem>>(
         `/projects/${projectId}/tasks?${qs.toString()}`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data;
     },
-    enabled: !!projectId && isReady && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: STALE_TIMES.fast,
     placeholderData: keepPreviousData,
   });
@@ -255,20 +252,18 @@ export interface UseConvertFromQuoteReturn {
  */
 export function useUpdateProjectWarehouse() {
   const queryClient = useQueryClient();
-  const { orgHeaders, organizationId } = useOrgContext();
 
   const mutation = useMutation<void, unknown, { projectId: string; warehouseId: string | null }>({
     mutationFn: async ({ projectId, warehouseId }) => {
       await apiClient.patch(
         `/projects/${projectId}`,
         { defaultWarehouseId: warehouseId },
-        { headers: orgHeaders },
       );
     },
     onSuccess: (_data, { projectId }) => {
-      void queryClient.invalidateQueries({ queryKey: projectResourceKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: projectResourceKeys.lists() });
       void queryClient.invalidateQueries({
-        queryKey: [...projectResourceKeys.all(organizationId), projectId],
+        queryKey: [...projectResourceKeys.all(), projectId],
       });
     },
   });
@@ -281,7 +276,6 @@ export function useUpdateProjectWarehouse() {
 }
 
 export function useConvertFromQuote(): UseConvertFromQuoteReturn {
-  const { orgHeaders, organizationId } = useOrgContext();
   const queryClient = useQueryClient();
 
   const mutation = useMutation<
@@ -296,17 +290,16 @@ export function useConvertFromQuote(): UseConvertFromQuoteReturn {
       const { data } = await apiClient.post<ProjectResponse>(
         `/projects/convert-from-quote/${quoteId}`,
         payload,
-        { headers: orgHeaders },
       );
       return data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: projectResourceKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: projectResourceKeys.lists() });
       void queryClient.invalidateQueries({
-        queryKey: quoteResourceKeysForConvert.lists(organizationId),
+        queryKey: quoteResourceKeysForConvert.lists(),
       });
       void queryClient.invalidateQueries({
-        queryKey: propertyResourceKeysForConvert.lists(organizationId),
+        queryKey: propertyResourceKeysForConvert.lists(),
       });
     },
   });
@@ -336,10 +329,9 @@ export interface ProjectListFilters {
 }
 
 export function useProjectListResource(filters: ProjectListFilters = {}) {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
 
   return useQuery({
-    queryKey: projectResourceKeys.list(organizationId, filters),
+    queryKey: projectResourceKeys.list(filters),
     queryFn: async ({ signal }): Promise<PaginatedResponse<ProjectListItem>> => {
       const params = new URLSearchParams();
       params.set('page', String(filters.page || 1));
@@ -349,13 +341,11 @@ export function useProjectListResource(filters: ProjectListFilters = {}) {
       const { data } = await apiClient.get<PaginatedResponse<ProjectListItem>>(
         `/projects?${params.toString()}`,
         {
-          headers: orgHeaders,
           signal,
         },
       );
       return data;
     },
-    enabled: isReady,
     placeholderData: keepPreviousData,
     staleTime: STALE_TIMES.fast,
   });

@@ -5,7 +5,6 @@ import { UserStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Types
@@ -48,9 +47,9 @@ export interface UseEmployeesOptions {
 // ============================================================================
 
 export const employeeKeys = {
-  all: (orgId?: string) => ['employees', orgId] as const,
-  list: (orgId?: string, filters?: Record<string, unknown>) =>
-    [...employeeKeys.all(orgId), 'list', filters] as const,
+  all: () => ['employees'] as const,
+  list: (filters?: Record<string, unknown>) =>
+    [...employeeKeys.all(), 'list', filters] as const,
 };
 
 // ============================================================================
@@ -64,12 +63,10 @@ export const employeeKeys = {
 export function useEmployees(
   options: UseEmployeesOptions = {},
 ): UseQueryResult<Employee[], AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
   const { status = UserStatus.ACTIVE, limit = 200, enabled = true } = options;
 
   return useQuery({
-    queryKey: employeeKeys.list(organizationId, { status, limit }),
+    queryKey: employeeKeys.list({ status, limit }),
     queryFn: async (): Promise<Employee[]> => {
       const params = new URLSearchParams();
       params.append('status', status);
@@ -77,11 +74,10 @@ export function useEmployees(
 
       const { data } = await apiClient.get<EmployeeListResponse>(
         `/employees?${params.toString()}`,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data.items;
     },
-    enabled: !!organizationId && enabled,
+    enabled: enabled,
     // Employees don't change often — cache for 5 minutes
     staleTime: 5 * 60 * 1000,
   });
