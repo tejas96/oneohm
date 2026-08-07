@@ -5,7 +5,7 @@ import { useCallback, useState } from 'react';
 
 import { generateReceiptPdfBlob, downloadReceiptPdf } from '../services/receipt-pdf.service';
 import {
-  RECEIPT_DEFAULT_COMPANY,
+  RECEIPT_COMPANY,
   type ReceiptAllocationLine,
   type ReceiptPdfData,
 } from '../services/receipt-pdf.template';
@@ -71,7 +71,7 @@ export function buildReceiptData(
       receivedPaise: summary.receivedPaise,
       outstandingPaise: summary.outstandingPaise,
     },
-    company: RECEIPT_DEFAULT_COMPANY,
+    company: RECEIPT_COMPANY,
   };
 }
 
