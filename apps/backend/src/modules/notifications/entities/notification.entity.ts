@@ -7,7 +7,6 @@ import { Column, CreateDateColumn, Entity, Index } from 'typeorm';
  * type and severity stored as VARCHAR + CHECK — no Postgres ENUM.
  */
 @Entity('notifications')
-@Index(['organizationId'])
 @Index(['userId', 'readAt'])
 @Index(['userId', 'createdAt'])
 @Index('uq_notifications_user_dedupe', ['userId', 'dedupeKey'], {
@@ -18,8 +17,6 @@ export class NotificationEntity {
   @Column({ type: 'uuid', primary: true, default: () => 'gen_random_uuid()' })
   id!: string;
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;

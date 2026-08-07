@@ -16,7 +16,6 @@ export * from './integration-provider.enum';
 export * from './inventory.enum';
 export * from './invitation.enum';
 export * from './loan.enum';
-export * from './organization.enum';
 export * from './payment.enum';
 export * from './product.enum';
 export * from './project.enum';

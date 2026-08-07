@@ -4,7 +4,6 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { WarehouseEntity } from './warehouse.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { ProductEntity } from '../../master-data/entities/product.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 
 /**
@@ -19,9 +18,6 @@ import { ProjectEntity } from '../../projects/entities/project.entity';
 export class StockAllocationEntity extends BaseEntity {
   // ==================== Relations ====================
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   @ManyToOne(() => ProjectEntity)
   @JoinColumn({ name: 'project_id' })
@@ -37,8 +33,6 @@ export class StockAllocationEntity extends BaseEntity {
 
   // ==================== Foreign Keys ====================
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;

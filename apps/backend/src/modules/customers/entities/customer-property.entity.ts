@@ -25,7 +25,6 @@ import { CustomerProfileEntity } from './customer-profile.entity';
 import type { FollowupEntity } from './followup.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { DiscomEntity } from '../../discoms/entities/discom.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import type { ProjectEntity } from '../../projects/entities/project.entity';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
 import { UserEntity } from '../../users/entities/user.entity';
@@ -36,9 +35,9 @@ import { UserEntity } from '../../users/entities/user.entity';
  * One customer can have multiple properties (one-to-many relationship)
  */
 @Entity('customer_properties')
-@Index(['customerId', 'organizationId'])
-@Index(['organizationId', 'status', 'deletedAt'])
-@Index(['organizationId', 'leadTemperature', 'deletedAt'])
+@Index(['customerId'])
+@Index(['status', 'deletedAt'])
+@Index(['leadTemperature', 'deletedAt'])
 @Index(['consumerNumber'], { where: 'deleted_at IS NULL' })
 @Index(['pincode'])
 export class CustomerPropertyEntity extends BaseEntity {
@@ -52,12 +51,7 @@ export class CustomerPropertyEntity extends BaseEntity {
   @JoinColumn({ name: 'customer_id' })
   customer?: CustomerProfileEntity;
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   // ==================== QUOTES (One-to-Many) ====================
   @OneToMany(() => QuoteEntity, (quote) => quote.property)

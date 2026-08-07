@@ -3,7 +3,6 @@ import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne } from '
 
 import { WarehouseEntity } from './warehouse.entity';
 import { ProductEntity } from '../../master-data/entities/product.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -24,9 +23,6 @@ export class InventoryTransactionEntity {
 
   // ==================== Relations ====================
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   @ManyToOne(() => WarehouseEntity, (warehouse) => warehouse.transactions)
   @JoinColumn({ name: 'warehouse_id' })
@@ -50,8 +46,6 @@ export class InventoryTransactionEntity {
 
   // ==================== Foreign Keys ====================
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'warehouse_id', type: 'uuid' })
   warehouseId!: string;

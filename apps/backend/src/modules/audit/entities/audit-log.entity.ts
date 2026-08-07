@@ -8,7 +8,6 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -24,17 +23,11 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index('idx_audit_logs_user', ['userId'])
 @Index('idx_audit_logs_created', ['createdAt'])
 @Index('idx_audit_logs_action', ['action'])
-@Index('idx_audit_logs_organization', ['organizationId'])
 export class AuditLogEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'organization_id', type: 'uuid', nullable: true })
-  organizationId: string | null;
 
-  @ManyToOne(() => OrganizationEntity, { nullable: true })
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   // ============================================
   // ENTITY INFO

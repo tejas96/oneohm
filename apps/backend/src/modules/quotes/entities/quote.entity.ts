@@ -6,7 +6,6 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
 import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -16,12 +15,7 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Entity('quotes')
 export class QuoteEntity extends BaseEntity {
   // ==================== Relations ====================
-  @Column({ type: 'uuid', name: 'organization_id' })
-  organizationId!: string;
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   @Column({ type: 'uuid', name: 'customer_id' })
   customerId!: string;

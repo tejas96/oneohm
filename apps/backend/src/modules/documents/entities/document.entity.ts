@@ -3,21 +3,15 @@ import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from '
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 @Entity('documents')
-@Index(['organizationId', 'deletedAt'])
+@Index(['deletedAt'])
 @Index(['entityType', 'entityId', 'deletedAt'])
 @Index(['tag', 'deletedAt'])
-@Index(['propertyId', 'organizationId', 'deletedAt'])
+@Index(['propertyId', 'deletedAt'])
 export class DocumentEntity extends BaseEntity {
-  @ManyToOne(() => OrganizationEntity, { nullable: false })
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @ManyToOne(() => CustomerPropertyEntity, { createForeignKeyConstraints: false })
   @JoinColumn({ name: 'property_id' })

@@ -11,7 +11,6 @@ import {
 } from 'typeorm';
 
 import { RoleEntity } from '../../iam/entities/role.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 export { InvitationStatus };
 
@@ -23,7 +22,6 @@ export { InvitationStatus };
 @Entity('invitations')
 @Index(['email'])
 @Index(['token'], { unique: true })
-@Index(['organizationId'])
 @Index(['status'])
 @Index(['expiresAt'])
 export class InvitationEntity {
@@ -57,12 +55,7 @@ export class InvitationEntity {
 
   // ==================== Relations ====================
 
-  @ManyToOne(() => OrganizationEntity, { nullable: false })
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @ManyToOne(() => RoleEntity, { nullable: false })
   @JoinColumn({ name: 'role_id' })

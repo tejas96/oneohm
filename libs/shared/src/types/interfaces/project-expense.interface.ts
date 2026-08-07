@@ -38,7 +38,6 @@ export interface ExpenseProductLink {
  */
 export interface ProjectExpense {
   id: string;
-  organizationId: string;
   projectId: string;
 
   /** Sequential, FY-scoped (e.g. 'EXP-2026-27-000123'). */

@@ -2,7 +2,6 @@ import { SubsidySchemeType, ProjectType, type SubsidyTier } from '@tejas96/share
 import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 /**
  * Subsidy Configuration Entity
@@ -29,8 +28,8 @@ import { OrganizationEntity } from '../../organizations/entities/organization.en
  * }
  */
 @Entity('subsidy_configurations')
-@Index(['organizationId', 'projectType', 'isActive'])
-// Note: Unique index on (organization_id, scheme_code) is created via migration
+@Index(['projectType', 'isActive'])
+// Note: Unique index on (scheme_code) is created via migration
 // as a partial index (WHERE scheme_code IS NOT NULL) since scheme_code is nullable
 @Index(['schemeType', 'isActive'])
 export class SubsidyConfiguration extends BaseEntity {
@@ -39,8 +38,6 @@ export class SubsidyConfiguration extends BaseEntity {
   /**
    * Organization this configuration belongs to
    */
-  @Column({ type: 'uuid', name: 'organization_id' })
-  organizationId!: string;
 
   // ==================== Identity ====================
 
@@ -191,7 +188,4 @@ export class SubsidyConfiguration extends BaseEntity {
 
   // ==================== Relationships ====================
 
-  @ManyToOne(() => OrganizationEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 }

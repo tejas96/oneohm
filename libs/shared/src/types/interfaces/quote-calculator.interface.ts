@@ -181,7 +181,7 @@ export interface ProfitMarginTier {
 }
 
 /**
- * Quote Configuration - Per Organization
+ * Quote Configuration
  * Stored as JSON with one active config per org
  */
 export interface QuoteConfiguration {

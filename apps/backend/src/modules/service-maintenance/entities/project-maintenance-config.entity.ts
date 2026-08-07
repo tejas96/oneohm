@@ -3,7 +3,6 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { MaintenanceTaskEntity } from './maintenance-task.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
@@ -17,12 +16,7 @@ export class ProjectMaintenanceConfigEntity extends BaseEntity {
   // RELATIONS
   // ============================================
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization: OrganizationEntity;
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId: string;
 
   @ManyToOne(() => ProjectEntity)
   @JoinColumn({ name: 'project_id' })

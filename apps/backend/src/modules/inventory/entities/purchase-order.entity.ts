@@ -5,7 +5,6 @@ import { PurchaseOrderItemEntity } from './purchase-order-item.entity';
 import { VendorEntity } from './vendor.entity';
 import { WarehouseEntity } from './warehouse.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
@@ -14,7 +13,7 @@ import { UserEntity } from '../../users/entities/user.entity';
  * Represents procurement orders from vendors
  */
 @Entity('purchase_orders')
-@Index(['organizationId', 'deletedAt'])
+@Index(['deletedAt'])
 @Index(['vendorId'])
 @Index(['warehouseId'])
 @Index(['projectId'])
@@ -22,9 +21,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 export class PurchaseOrderEntity extends BaseEntity {
   // ==================== Relations ====================
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   @ManyToOne(() => VendorEntity, (vendor) => vendor.purchaseOrders)
   @JoinColumn({ name: 'vendor_id' })
@@ -51,8 +47,6 @@ export class PurchaseOrderEntity extends BaseEntity {
 
   // ==================== Foreign Keys ====================
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'vendor_id', type: 'uuid' })
   vendorId!: string;

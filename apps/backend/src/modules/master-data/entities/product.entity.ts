@@ -4,17 +4,14 @@ import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from '
 import { BrandEntity } from './brand.entity';
 import { ProductTypeEntity } from './product-type.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 @Entity('products')
-@Index(['organizationId', 'code'], { unique: true })
-@Index(['organizationId', 'status', 'deletedAt'])
+@Index(['code'], { unique: true })
+@Index(['status', 'deletedAt'])
 @Index(['productTypeId', 'status'])
 @Index(['brandId'])
 export class ProductEntity extends BaseEntity {
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'product_type_id', type: 'uuid' })
   productTypeId!: string;
@@ -67,9 +64,6 @@ export class ProductEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   @ManyToOne(() => ProductTypeEntity)
   @JoinColumn({ name: 'product_type_id' })

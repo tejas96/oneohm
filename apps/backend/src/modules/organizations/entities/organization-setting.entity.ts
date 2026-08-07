@@ -1,7 +1,6 @@
 import { SettingDataType } from '@tejas96/shared/types';
 import { Column, Entity, Index, JoinColumn, ManyToOne, Unique } from 'typeorm';
 
-import { OrganizationEntity } from './organization.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
 /**
@@ -9,12 +8,9 @@ import { BaseEntity } from '../../../common/entities/base.entity';
  * Key-value configuration storage for organization-specific settings
  */
 @Entity('organization_settings')
-@Index(['organizationId'])
 @Index(['category'])
-@Unique(['organizationId', 'key'])
+@Unique(['key'])
 export class OrganizationSettingEntity extends BaseEntity {
-  @Column({ type: 'uuid', name: 'organization_id', nullable: false })
-  organizationId: string;
 
   // Setting Details
   @Column({ type: 'varchar', length: 100, nullable: false })

@@ -4,7 +4,6 @@ import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from '
 import { CustomerProfileEntity } from './customer-profile.entity';
 import { CustomerPropertyEntity } from './customer-property.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -15,19 +14,14 @@ import { UserEntity } from '../../users/entities/user.entity';
  * - Customer + Property (property-level followup)
  */
 @Entity('followups')
-@Index(['organizationId', 'status', 'deletedAt'])
+@Index(['status', 'deletedAt'])
 @Index(['assignedToUserId', 'scheduledAt'], { where: 'deleted_at IS NULL' })
 @Index(['customerId'], { where: 'deleted_at IS NULL' })
 @Index(['propertyId'], { where: 'deleted_at IS NULL' })
 @Index(['scheduledAt', 'status'], { where: 'deleted_at IS NULL' })
 export class FollowupEntity extends BaseEntity {
   // ==================== ORGANIZATION ====================
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   // ==================== CUSTOMER (Required) ====================
   @Column({ name: 'customer_id', type: 'uuid' })

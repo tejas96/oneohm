@@ -2,13 +2,10 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { ProductEntity } from './product.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 @Entity('product_prices')
 @Index(['productId', 'isActive', 'effectiveFrom', 'effectiveTo'])
 export class ProductPriceEntity extends BaseEntity {
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'product_id', type: 'uuid' })
   productId!: string;
@@ -43,9 +40,6 @@ export class ProductPriceEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'product_id' })

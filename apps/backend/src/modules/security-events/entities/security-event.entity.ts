@@ -7,7 +7,6 @@ import {
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -23,7 +22,7 @@ import { UserEntity } from '../../users/entities/user.entity';
  * - Suspicious activity detection
  */
 @Entity('security_events')
-@Index(['organizationId', 'eventType', 'createdAt'])
+@Index(['eventType', 'createdAt'])
 @Index(['userId', 'eventType', 'createdAt'])
 @Index(['eventType', 'status', 'createdAt'])
 @Index(['eventCategory', 'severity', 'createdAt'])
@@ -35,12 +34,7 @@ export class SecurityEventEntity extends BaseEntity {
   /**
    * Organization (nullable for system-level events)
    */
-  @ManyToOne(() => OrganizationEntity, { nullable: true })
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
-  @Column({ name: 'organization_id', type: 'uuid', nullable: true })
-  organizationId?: string;
 
   /**
    * User (nullable if event occurs before user creation)

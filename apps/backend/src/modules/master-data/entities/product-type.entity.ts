@@ -2,13 +2,10 @@ import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMa
 
 import { ProductTypeAttributeEntity } from './product-type-attribute.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 @Entity('product_types')
-@Index(['organizationId', 'code'], { unique: true })
+@Index(['code'], { unique: true })
 export class ProductTypeEntity extends BaseEntity {
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ type: 'varchar', length: 100 })
   name!: string;
@@ -54,9 +51,6 @@ export class ProductTypeEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   @OneToMany(() => ProductTypeAttributeEntity, (attr) => attr.productType, { cascade: true })
   attributes?: ProductTypeAttributeEntity[];

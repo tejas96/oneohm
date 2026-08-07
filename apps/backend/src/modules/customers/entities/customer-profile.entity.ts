@@ -4,7 +4,6 @@ import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMa
 import { CustomerPropertyEntity } from './customer-property.entity';
 import { FollowupEntity } from './followup.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -13,13 +12,13 @@ import { UserEntity } from '../../users/entities/user.entity';
  * A user can have one customer profile per organization
  */
 @Entity('customer_profiles')
-@Index(['userId', 'organizationId'], { unique: true })
-@Index(['organizationId', 'status', 'deletedAt'])
+@Index(['userId'], { unique: true })
+@Index(['status', 'deletedAt'])
 @Index(['phone'], { where: 'deleted_at IS NULL' })
 @Index(['email'], { where: 'deleted_at IS NULL' })
 // Composite unique constraints managed by migration 1788000000000:
-//   uq_customer_profiles_org_phone  — UNIQUE (organization_id, phone)       WHERE deleted_at IS NULL
-//   uq_customer_profiles_org_email  — UNIQUE (organization_id, LOWER(email)) WHERE deleted_at IS NULL
+//   uq_customer_profiles_phone      — UNIQUE (phone)       WHERE deleted_at IS NULL
+//   uq_customer_profiles_email      — UNIQUE (LOWER(email)) WHERE deleted_at IS NULL
 export class CustomerProfileEntity extends BaseEntity {
   // ==================== RELATIONSHIPS ====================
   @Column({ name: 'user_id', type: 'uuid' })
@@ -29,12 +28,7 @@ export class CustomerProfileEntity extends BaseEntity {
   @JoinColumn({ name: 'user_id' })
   user?: UserEntity;
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   // ==================== PROPERTIES (One-to-Many) ====================
   @OneToMany(() => CustomerPropertyEntity, (property) => property.customer)

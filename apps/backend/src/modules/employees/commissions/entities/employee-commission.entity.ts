@@ -2,7 +2,6 @@ import { CommissionStatus } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../../organizations/entities/organization.entity';
 import { UserEntity } from '../../../users/entities/user.entity';
 import { EmployeeProfileEntity } from '../../entities/employee-profile.entity';
 
@@ -13,11 +12,9 @@ import { EmployeeProfileEntity } from '../../entities/employee-profile.entity';
  * reseller_commissions as part of the reseller module merge into employees.
  */
 @Entity('employee_commissions')
-@Index(['organizationId', 'employeeId', 'status'])
+@Index(['employeeId', 'status'])
 @Index(['status'])
 export class EmployeeCommissionEntity extends BaseEntity {
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'employee_id', type: 'uuid' })
   employeeId!: string;
@@ -88,9 +85,6 @@ export class EmployeeCommissionEntity extends BaseEntity {
   updatedBy?: string;
 
   // ==================== Relationships ====================
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   @ManyToOne(() => EmployeeProfileEntity)
   @JoinColumn({ name: 'employee_id' })

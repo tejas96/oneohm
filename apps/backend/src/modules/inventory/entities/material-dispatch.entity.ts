@@ -4,7 +4,6 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm
 import { MaterialDispatchItemEntity } from './material-dispatch-item.entity';
 import { WarehouseEntity } from './warehouse.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
@@ -20,9 +19,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 export class MaterialDispatchEntity extends BaseEntity {
   // ==================== Relations ====================
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   @ManyToOne(() => ProjectEntity)
   @JoinColumn({ name: 'project_id' })
@@ -45,8 +41,6 @@ export class MaterialDispatchEntity extends BaseEntity {
 
   // ==================== Foreign Keys ====================
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;

@@ -13,23 +13,19 @@ import {
 import { ProjectVendorEntity } from './project-vendor.entity';
 import { PurchaseOrderEntity } from './purchase-order.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 /**
  * Vendor Entity
  * Represents suppliers, contractors, and service providers
  */
 @Entity('vendors')
-@Unique(['organizationId', 'code'])
-@Index(['organizationId', 'deletedAt'])
+@Unique(['code'])
+@Index(['deletedAt'])
 @Index(['vendorType', 'deletedAt'])
 @Index(['status', 'deletedAt'])
 export class VendorEntity extends BaseEntity {
   // ==================== Relations ====================
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   @OneToMany(() => PurchaseOrderEntity, (po) => po.vendor)
   purchaseOrders!: PurchaseOrderEntity[];
@@ -39,8 +35,6 @@ export class VendorEntity extends BaseEntity {
 
   // ==================== Foreign Keys ====================
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   // ==================== Main Fields ====================
 

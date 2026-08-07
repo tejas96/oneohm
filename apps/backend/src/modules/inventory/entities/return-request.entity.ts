@@ -3,7 +3,6 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { StockAllocationEntity } from './stock-allocation.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { BomEntity } from '../../bom/entities/bom.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 export type ReturnRequestStatus = 'pending' | 'completed' | 'cancelled';
@@ -26,9 +25,6 @@ export type ReturnRequestStatus = 'pending' | 'completed' | 'cancelled';
 export class ReturnRequestEntity extends BaseEntity {
   // ==================== Relations ====================
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   @ManyToOne(() => StockAllocationEntity)
   @JoinColumn({ name: 'allocation_id' })
@@ -40,8 +36,6 @@ export class ReturnRequestEntity extends BaseEntity {
 
   // ==================== Foreign Keys ====================
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'allocation_id', type: 'uuid' })
   allocationId!: string;

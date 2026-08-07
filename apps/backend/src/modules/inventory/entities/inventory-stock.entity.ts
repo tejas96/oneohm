@@ -2,7 +2,6 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, Unique, UpdateDateColumn 
 
 import { WarehouseEntity } from './warehouse.entity';
 import { ProductEntity } from '../../master-data/entities/product.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 /**
  * Inventory Stock Entity
@@ -22,12 +21,7 @@ export class InventoryStockEntity {
 
   // ==================== Relations ====================
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   @Column({ name: 'warehouse_id', type: 'uuid' })
   warehouseId!: string;
