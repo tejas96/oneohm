@@ -3,9 +3,15 @@
  *
  * Of the 90 indexes that mentioned the column: 30 unique and 60 non-unique.
  * 29 uniques are rebuilt (the 30th belonged to organization_settings, which is
- * dropped), along with 29 non-uniques. The remaining 31 non-uniques are
- * deliberately NOT rebuilt — 24 indexed nothing but the org column itself, and
- * 7 became prefixes of a unique index rebuilt here.
+ * dropped), along with 19 non-uniques. The other 41 non-uniques are deliberately
+ * NOT rebuilt:
+ *   24  indexed nothing but the org column itself
+ *    7  became prefixes of a unique index rebuilt here
+ *   10  turned out to duplicate an index that already existed on the same table
+ *       under the same name without the org column — e.g. inventory_stock had
+ *       both (organization_id, product_id) and (product_id). Recreating those
+ *       fails with "relation already exists"; the org-prefixed composites were
+ *       redundant all along, so dropping them is a small win, not a loss.
  */
 export const ORG_CLEANUP_INDEXES: string[] = [
   // ---- unique ----
@@ -45,7 +51,6 @@ export const ORG_CLEANUP_INDEXES: string[] = [
 
   // ---- non-unique ----
   `CREATE INDEX idx_customer_profiles_status ON customer_profiles (status, deleted_at)`,
-  `CREATE INDEX idx_customer_profiles_assignee ON customer_profiles (assignee_id) WHERE deleted_at IS NULL`,
   `CREATE INDEX idx_customer_profiles_group ON customer_profiles (group_code) WHERE deleted_at IS NULL`,
   `CREATE INDEX idx_customer_properties_temperature ON customer_properties (lead_temperature, deleted_at)`,
   `CREATE INDEX idx_customer_properties_site_status ON customer_properties (site_status) WHERE deleted_at IS NULL`,
@@ -53,7 +58,6 @@ export const ORG_CLEANUP_INDEXES: string[] = [
   `CREATE INDEX idx_customer_properties_filter_lookup ON customer_properties (customer_id, property_type, connection_type, status, lead_temperature) WHERE deleted_at IS NULL`,
   `CREATE INDEX idx_customer_properties_status ON customer_properties (status, deleted_at)`,
   `CREATE INDEX idx_documents_property ON documents (property_id, deleted_at)`,
-  `CREATE INDEX idx_documents_entity ON documents (entity_type, deleted_at)`,
   `CREATE INDEX idx_commissions_employee ON employee_commissions (employee_id, status)`,
   `CREATE INDEX idx_employee_profiles_kind_status ON employee_profiles (profile_kind, status, deleted_at)`,
   `CREATE INDEX idx_employee_profiles_status ON employee_profiles (status, deleted_at)`,
@@ -61,16 +65,8 @@ export const ORG_CLEANUP_INDEXES: string[] = [
   `CREATE INDEX idx_installation_pricing_active ON installation_pricing (is_active)`,
   `CREATE INDEX idx_ip_active_size ON installation_pricing (is_active, min_system_size_kw DESC)`,
   `CREATE INDEX idx_integrations_active ON integrations (is_active)`,
-  `CREATE INDEX idx_inventory_stock_warehouse ON inventory_stock (warehouse_id)`,
-  `CREATE INDEX idx_inventory_stock_product ON inventory_stock (product_id)`,
-  `CREATE INDEX idx_inventory_transactions_date ON inventory_transactions (transaction_date DESC)`,
   `CREATE INDEX idx_ledger_entries_direction_value_date ON ledger_entries (direction, value_date)`,
-  `CREATE INDEX idx_material_dispatches_status ON material_dispatches (status)`,
   `CREATE INDEX idx_products_status ON products (status, deleted_at)`,
-  `CREATE INDEX idx_purchase_orders_status ON purchase_orders (status)`,
-  `CREATE INDEX idx_purchase_orders_vendor ON purchase_orders (vendor_id)`,
   `CREATE INDEX idx_security_events_type_created ON security_events (event_type, created_at)`,
-  `CREATE INDEX idx_stock_allocations_status ON stock_allocations (status)`,
   `CREATE INDEX idx_subsidy_config_project_active ON subsidy_configurations (project_type, is_active)`,
-  `CREATE INDEX idx_user_roles_role ON user_roles (role_id) WHERE role_id IS NOT NULL`,
 ];
