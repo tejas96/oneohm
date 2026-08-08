@@ -1,9 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FollowupStatus } from '@tejas96/shared/types';
-import { Between, IsNull, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  Between,
+  type EntityManager,
+  IsNull,
+  LessThan,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 
 import { FollowupEntity } from '../entities/followup.entity';
+
+/** One open lead unit that nobody currently owes an action. */
+export interface FollowupGapRow {
+  kind: 'customer' | 'property';
+  customerId: string;
+  propertyId: string | null;
+  name: string;
+  leadTemperature: string | null;
+  attributedUserId: string | null;
+}
 
 @Injectable()
 export class FollowupRepository {
@@ -13,7 +31,7 @@ export class FollowupRepository {
   ) {}
 
   /**
-   * Find followup by ID within organization
+   * Find followup by ID
    */
   async findById(id: string): Promise<FollowupEntity | null> {
     return this.repository.findOne({
@@ -23,9 +41,9 @@ export class FollowupRepository {
   }
 
   /**
-   * Find all followups for an organization with pagination
+   * Find all followups with pagination
    */
-  async findByOrganization(page = 1, limit = 20): Promise<[FollowupEntity[], number]> {
+  async findAll(page = 1, limit = 20): Promise<[FollowupEntity[], number]> {
     return this.repository.findAndCount({
       where: { deletedAt: IsNull() },
       relations: ['customer', 'property', 'assignedToUser'],
@@ -115,7 +133,7 @@ export class FollowupRepository {
   }
 
   /**
-   * Find today's followups for an organization or user
+   * Find today's followups, optionally scoped to one user
    */
   async findTodayFollowups(
     assignedToUserId?: string,
@@ -211,18 +229,27 @@ export class FollowupRepository {
   /**
    * Create a new followup
    */
-  async create(data: Partial<FollowupEntity>): Promise<FollowupEntity> {
-    const followup = this.repository.create(data);
-    return this.repository.save(followup);
+  async create(data: Partial<FollowupEntity>, manager?: EntityManager): Promise<FollowupEntity> {
+    const repo = manager ? manager.getRepository(FollowupEntity) : this.repository;
+    const followup = repo.create(data);
+    return repo.save(followup);
   }
 
   /**
    * Update a followup
-   * Note: Caller must validate organizationId before calling
+   *
+   * Accepts an EntityManager so completing a followup and creating its
+   * successor happen in one transaction — a crash between the two would
+   * otherwise leave a lead with nobody owing it an action.
    */
-  async update(id: string, updates: Partial<FollowupEntity>): Promise<FollowupEntity | null> {
-    await this.repository.update({ id }, updates as Record<string, unknown>);
-    return this.repository.findOne({
+  async update(
+    id: string,
+    updates: Partial<FollowupEntity>,
+    manager?: EntityManager,
+  ): Promise<FollowupEntity | null> {
+    const repo = manager ? manager.getRepository(FollowupEntity) : this.repository;
+    await repo.update({ id }, updates as Record<string, unknown>);
+    return repo.findOne({
       where: { id, deletedAt: IsNull() },
       relations: ['customer', 'property', 'assignedToUser'],
     });
@@ -240,5 +267,161 @@ export class FollowupRepository {
       },
     );
     return (result.affected ?? 0) > 0;
+  }
+
+  /**
+   * How many pending followups a lead unit still has.
+   *
+   * `excludeId` lets a followup that is mid-completion avoid counting itself,
+   * which is how the service decides whether a next followup is mandatory.
+   */
+  async countPendingForUnit(
+    customerId: string,
+    propertyId: string | null,
+    excludeId?: string,
+  ): Promise<number> {
+    return this.repository.count({
+      where: {
+        customerId,
+        // A customer-level chain must not match property rows, and vice versa.
+        propertyId: propertyId === null ? IsNull() : propertyId,
+        status: FollowupStatus.PENDING,
+        deletedAt: IsNull(),
+        ...(excludeId ? { id: Not(excludeId) } : {}),
+      },
+    });
+  }
+
+  /**
+   * Open lead units with zero pending followups — the safety net.
+   *
+   * Two branches unioned: properties that are still open, and customers who
+   * have no property at all. Records arrive by import and direct API call and
+   * never pass the UI gates, so rather than pretend enforcement is airtight,
+   * whatever slipped surfaces here with a name against it.
+   *
+   * Attribution falls back from the most recently completed followup's assignee
+   * to whoever created the record, so no gap is ownerless.
+   */
+  async findGaps(): Promise<FollowupGapRow[]> {
+    return this.repository.manager.query(`
+      SELECT 'property' AS kind,
+             p.customer_id AS "customerId",
+             p.id          AS "propertyId",
+             COALESCE(NULLIF(p.property_name, ''), p.city, 'Unnamed property') AS name,
+             p.lead_temperature AS "leadTemperature",
+             COALESCE(
+               (SELECT f.assigned_to_user_id
+                  FROM followups f
+                 WHERE f.property_id = p.id
+                   AND f.deleted_at IS NULL
+                   AND f.status = 'completed'
+                 ORDER BY f.completed_at DESC NULLS LAST
+                 LIMIT 1),
+               p.created_by
+             ) AS "attributedUserId"
+        FROM customer_properties p
+       WHERE p.deleted_at IS NULL
+         AND p.status NOT IN ('converted', 'lost')
+         AND NOT EXISTS (
+               SELECT 1 FROM followups f
+                WHERE f.property_id = p.id
+                  AND f.deleted_at IS NULL
+                  AND f.status = 'pending')
+         AND NOT EXISTS (
+               SELECT 1 FROM quotes q
+                WHERE q.property_id = p.id
+                  AND q.deleted_at IS NULL
+                  AND q.status = 'accepted')
+
+      UNION ALL
+
+      SELECT 'customer' AS kind,
+             c.id  AS "customerId",
+             NULL  AS "propertyId",
+             TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')) AS name,
+             NULL  AS "leadTemperature",
+             COALESCE(
+               (SELECT f.assigned_to_user_id
+                  FROM followups f
+                 WHERE f.customer_id = c.id
+                   AND f.deleted_at IS NULL
+                   AND f.status = 'completed'
+                 ORDER BY f.completed_at DESC NULLS LAST
+                 LIMIT 1),
+               c.created_by
+             ) AS "attributedUserId"
+        FROM customer_profiles c
+       WHERE c.deleted_at IS NULL
+         AND c.status IN ('lead', 'prospect')
+         AND NOT EXISTS (
+               SELECT 1 FROM customer_properties p
+                WHERE p.customer_id = c.id
+                  AND p.deleted_at IS NULL)
+         AND NOT EXISTS (
+               SELECT 1 FROM followups f
+                WHERE f.customer_id = c.id
+                  AND f.deleted_at IS NULL
+                  AND f.status = 'pending')
+    `);
+  }
+
+  /**
+   * Counts for the nav badge. `userId` null means everyone's followups.
+   */
+  async summaryCounts(userId: string | null): Promise<{
+    overdue: number;
+    today: number;
+    upcoming: number;
+  }> {
+    const rows: Array<{ overdue: string; today: string; upcoming: string }> =
+      await this.repository.manager.query(
+        `
+      SELECT
+        COUNT(*) FILTER (WHERE f.scheduled_at < date_trunc('day', now())) AS overdue,
+        COUNT(*) FILTER (WHERE f.scheduled_at >= date_trunc('day', now())
+                           AND f.scheduled_at <  date_trunc('day', now()) + interval '1 day') AS today,
+        COUNT(*) FILTER (WHERE f.scheduled_at >= date_trunc('day', now()) + interval '1 day') AS upcoming
+      FROM followups f
+      WHERE f.deleted_at IS NULL
+        AND f.status = 'pending'
+        AND ($1::uuid IS NULL OR f.assigned_to_user_id = $1::uuid)
+    `,
+        [userId],
+      );
+
+    // Postgres COUNT comes back as a string.
+    const row = rows[0];
+    return {
+      overdue: Number(row?.overdue ?? 0),
+      today: Number(row?.today ?? 0),
+      upcoming: Number(row?.upcoming ?? 0),
+    };
+  }
+
+  /**
+   * Cancels every pending followup on a lead unit. Called when the unit reaches
+   * a terminal state, so a won or dead deal stops nagging without a second click.
+   */
+  async cancelPendingFor(
+    customerId: string,
+    propertyId: string | null,
+    updatedBy: string,
+    manager?: EntityManager,
+  ): Promise<number> {
+    const repo = manager ? manager.getRepository(FollowupEntity) : this.repository;
+    const result = await repo
+      .createQueryBuilder()
+      .update(FollowupEntity)
+      .set({ status: FollowupStatus.CANCELLED, updatedBy })
+      .where('customer_id = :customerId', { customerId })
+      .andWhere(propertyId === null ? 'property_id IS NULL' : 'property_id = :propertyId', {
+        propertyId,
+      })
+      .andWhere('status = :pending', { pending: FollowupStatus.PENDING })
+      .andWhere('deleted_at IS NULL')
+      .execute();
+
+    return result.affected ?? 0;
   }
 }

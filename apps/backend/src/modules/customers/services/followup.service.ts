@@ -67,10 +67,10 @@ export class FollowupService {
   }
 
   /**
-   * Find all followups for an organization
+   * Find all followups
    */
   async findAll(page = 1, limit = 20): Promise<{ data: FollowupEntity[]; total: number }> {
-    const [data, total] = await this.followupRepository.findByOrganization(page, limit);
+    const [data, total] = await this.followupRepository.findAll(page, limit);
     return { data, total };
   }
 
