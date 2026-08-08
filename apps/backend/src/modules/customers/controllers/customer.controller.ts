@@ -202,7 +202,7 @@ export class CustomerController {
   @Get('statistics/status')
   @ApiOperation({
     summary: 'Get customer status statistics',
-    description: 'Returns count of customers grouped by status for the specified organization.',
+    description: 'Returns count of customers grouped by status.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -319,7 +319,7 @@ export class CustomerController {
     summary: 'Assign or unassign a customer',
     description:
       'Assign a customer to a user (field worker). Send assigneeId as a UUID to assign, or null to unassign. ' +
-      'Assignee must be an active employee in the same organization. ' +
+      'Assignee must be an active employee. ' +
       '',
   })
   @ApiResponse({

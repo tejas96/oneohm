@@ -146,7 +146,7 @@ export class CustomerService {
   }
 
   /**
-   * Find all customers for an organization with filters, sorting, and pagination
+   * Find all customers with filters, sorting, and pagination
    * Supports both legacy signature (page, limit) and new query DTO
    *
    * @overload Legacy signature for backward compatibility
@@ -610,7 +610,7 @@ export class CustomerService {
    *
    * Validations when assigning:
    * - Assignee user must exist
-   * - Assignee must have an active employee profile in the same organization
+   * - Assignee must have an active employee profile
    */
   async assignCustomer(
     id: string,
@@ -628,7 +628,7 @@ export class CustomerService {
         throw new NotFoundException(`User with ID '${assigneeId}' not found`);
       }
 
-      // Validate assignee has an employee profile in the same organization (cross-org guard)
+      // Validate the assignee has an employee profile
       const employeeProfile =
         await this.employeeProfileRepository.findByUserAndOrganization(assigneeId);
       if (!employeeProfile) {
@@ -711,7 +711,7 @@ export class CustomerService {
   }
 
   /**
-   * Returns distinct customer groups for an organization.
+   * Returns distinct customer groups.
    * Used by the GET /customers/groups endpoint.
    */
   async getDistinctGroups(): Promise<{ groupCode: string; groupName: string }[]> {

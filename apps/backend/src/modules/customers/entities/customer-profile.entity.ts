@@ -9,7 +9,7 @@ import { UserEntity } from '../../users/entities/user.entity';
 /**
  * Customer Profile Entity
  * Stores customer-specific profile data
- * A user can have one customer profile per organization
+ * A user has at most one customer profile
  */
 @Entity('customer_profiles')
 @Index(['userId'], { unique: true })

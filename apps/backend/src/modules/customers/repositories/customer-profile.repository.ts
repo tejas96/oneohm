@@ -555,7 +555,7 @@ export class CustomerProfileRepository {
 
   /**
    * Search customers by name, phone, or email
-   * Searches within the organization context
+   * Full-text-ish search across customer fields
    *
    * @param searchQuery - Search term (searches first name, last name, phone, email, group)
    * @param createdBy - Optional: filter by creator (for field workers)
@@ -753,7 +753,7 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * Returns all distinct (group_code, group_name) pairs for an organization.
+   * Returns all distinct (group_code, group_name) pairs.
    * Used to populate the group selector in the customer form.
    */
   async findDistinctGroups(): Promise<{ groupCode: string; groupName: string }[]> {
@@ -771,7 +771,7 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * Generates the next available group code for an organization.
+   * Generates the next available group code.
    * Format: GRP-XXXX (e.g. GRP-0001, GRP-0042).
    * Uses withDeleted() so codes from soft-deleted records are never reused.
    */
@@ -801,7 +801,7 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * Checks whether a group code exists for the given organization.
+   * Checks whether a group code already exists.
    * Used for validation when a client provides a groupCode explicitly.
    */
   async groupCodeExists(groupCode: string): Promise<boolean> {

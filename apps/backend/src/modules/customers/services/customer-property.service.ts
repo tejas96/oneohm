@@ -120,7 +120,7 @@ export class CustomerPropertyService {
   ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Creating property for customer: ${createDto.customerId}`);
 
-    // Verify customer exists and belongs to organization
+    // Verify customer exists
     const customer = await this.customerRepository.findById(createDto.customerId);
     if (!customer) {
       throw new NotFoundException('Customer not found');
@@ -214,7 +214,7 @@ export class CustomerPropertyService {
   }
 
   /**
-   * Find all properties for an organization with filters, sorting, and pagination
+   * Find all properties with filters, sorting, and pagination
    * Enriches results with latest quote info per property
    *
    * @param query - Query parameters (filters, sorting, pagination)
@@ -268,7 +268,7 @@ export class CustomerPropertyService {
    * This avoids N+1 queries and is performant for customers with many properties.
    */
   async findByCustomer(customerId: string): Promise<PropertyWithQuoteInfo[]> {
-    // Verify customer belongs to organization
+    // Verify customer exists
     const customer = await this.customerRepository.findById(customerId);
     if (!customer) {
       throw new NotFoundException('Customer not found');
@@ -351,7 +351,7 @@ export class CustomerPropertyService {
   ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Updating property: ${id}`);
 
-    // Verify property exists and belongs to organization
+    // Verify property exists
     const property = await this.findById(id);
 
     // Validate loan status if trying to disable loan

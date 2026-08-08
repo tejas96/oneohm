@@ -228,8 +228,9 @@ async function runGates(ds: DataSource): Promise<void> {
       (SELECT COUNT(*)::int FROM ledger_entries WHERE amount_paise = 0) AS zero_amount,
       (SELECT COUNT(*)::int FROM ledger_entries WHERE value_date > CURRENT_DATE) AS future_dated,
       (SELECT COUNT(*)::int FROM (
-         SELECT organization_id, entry_no FROM ledger_entries
-          GROUP BY organization_id, entry_no HAVING COUNT(*) > 1) d) AS dup_entry_no
+         -- entry_no is globally unique now that organization_id is gone.
+         SELECT entry_no FROM ledger_entries
+          GROUP BY entry_no HAVING COUNT(*) > 1) d) AS dup_entry_no
   `);
   const r10ok =
     r10.null_created_by === 0 &&
