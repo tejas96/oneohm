@@ -17,10 +17,7 @@ export class ReturnRequestService {
   /**
    * Create a return request manually or via BOM reconcile (over-dispatch path).
    */
-  async create(
-    dto: CreateReturnRequestDto,
-    createdBy: string,
-  ): Promise<ReturnRequestEntity> {
+  async create(dto: CreateReturnRequestDto, createdBy: string): Promise<ReturnRequestEntity> {
     const repo = this.dataSource.getRepository(ReturnRequestEntity);
 
     // Validate the allocation belongs to this org
@@ -46,17 +43,13 @@ export class ReturnRequestService {
   /**
    * List return requests with optional filters.
    */
-  async list(
-    filters?: {
-      status?: ReturnRequestStatus;
-      bomId?: string;
-      allocationId?: string;
-    },
-  ): Promise<ReturnRequestEntity[]> {
+  async list(filters?: {
+    status?: ReturnRequestStatus;
+    bomId?: string;
+    allocationId?: string;
+  }): Promise<ReturnRequestEntity[]> {
     const repo = this.dataSource.getRepository(ReturnRequestEntity);
-    const query = repo
-      .createQueryBuilder('rr')
-      .orderBy('rr.createdAt', 'DESC');
+    const query = repo.createQueryBuilder('rr').orderBy('rr.createdAt', 'DESC');
 
     if (filters?.status) {
       query.andWhere('rr.status = :status', { status: filters.status });
@@ -82,10 +75,7 @@ export class ReturnRequestService {
    * Complete a return request — PM has physically received the units.
    * Calls StockAllocationService.returnToStock to move qty back to available.
    */
-  async complete(
-    id: string,
-    completedBy: string,
-  ): Promise<ReturnRequestEntity> {
+  async complete(id: string, completedBy: string): Promise<ReturnRequestEntity> {
     const request = await this.findById(id);
 
     if (request.status === 'completed') {
@@ -117,10 +107,7 @@ export class ReturnRequestService {
    * Cancel a return request — PM accepts the over-dispatch (scope creep / write-off).
    * No inventory change; the dispatched excess is simply accepted.
    */
-  async cancel(
-    id: string,
-    cancelledBy: string,
-  ): Promise<ReturnRequestEntity> {
+  async cancel(id: string, cancelledBy: string): Promise<ReturnRequestEntity> {
     const request = await this.findById(id);
 
     if (request.status === 'completed') {

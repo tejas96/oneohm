@@ -16,20 +16,14 @@ export class SavedViewRepository {
    * List saved views for one (org, user, resource) triplet, ordered by
    * most-recently-updated first so the bar reflects recent activity.
    */
-  async findForUser(
-    userId: string,
-    resource: SavedViewResource,
-  ): Promise<SavedViewEntity[]> {
+  async findForUser(userId: string, resource: SavedViewResource): Promise<SavedViewEntity[]> {
     return this.repository.find({
       where: { userId, resource },
       order: { updatedAt: 'DESC' },
     });
   }
 
-  async countForUser(
-    userId: string,
-    resource: SavedViewResource,
-  ): Promise<number> {
+  async countForUser(userId: string, resource: SavedViewResource): Promise<number> {
     return this.repository.count({ where: { userId, resource } });
   }
 
@@ -38,10 +32,7 @@ export class SavedViewRepository {
    * into a single saved view. Returning null lets the service decide
    * whether to throw 404; callers must never bypass these scopes.
    */
-  async findOneScoped(
-    id: string,
-    userId: string,
-  ): Promise<SavedViewEntity | null> {
+  async findOneScoped(id: string, userId: string): Promise<SavedViewEntity | null> {
     return this.repository.findOne({ where: { id, userId } });
   }
 

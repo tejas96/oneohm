@@ -27,15 +27,13 @@ export interface CustomerProjectItem {
 
 export const customerProjectKeys = {
   all: () => ['customer-projects'] as const,
-  byCustomer: (customerId: string) =>
-    [...customerProjectKeys.all(), customerId] as const,
+  byCustomer: (customerId: string) => [...customerProjectKeys.all(), customerId] as const,
 };
 
 export function useCustomerProjects(
   customerId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerProjectItem[], AxiosError> {
-
   return useQuery({
     queryKey: customerProjectKeys.byCustomer(customerId),
     queryFn: async (): Promise<CustomerProjectItem[]> => {

@@ -72,9 +72,7 @@ export class DocumentController {
   @Get()
   @ApiOperation({ summary: 'List documents by entity with filters' })
   @ApiResponse({ status: HttpStatus.OK, type: [DocumentResponseDto] })
-  async findAll(
-    @Query() queryDto: QueryDocumentsDto,
-  ): Promise<DocumentResponseDto[]> {
+  async findAll(@Query() queryDto: QueryDocumentsDto): Promise<DocumentResponseDto[]> {
     const page = queryDto.page ?? 1;
     const limit = queryDto.limit ?? 50;
     const tags = this.parseCsv(queryDto.tags);
@@ -93,20 +91,17 @@ export class DocumentController {
     // Batch query by entityIds
     if (queryDto.entityType && queryDto.entityIds) {
       const ids = queryDto.entityIds.split(',').map((id) => id.trim());
-      const docs = await this.documentService.findByEntityBatch(
-        queryDto.entityType,
-        ids,
-      );
+      const docs = await this.documentService.findByEntityBatch(queryDto.entityType, ids);
       return toDtoArray(DocumentResponseDto, docs);
     }
 
     // Single entity query
     if (queryDto.entityType && queryDto.entityId) {
-      const docs = await this.documentService.findByEntity(
-        queryDto.entityType,
-        queryDto.entityId,
-        { tag: queryDto.tag, tags, category: queryDto.category },
-      );
+      const docs = await this.documentService.findByEntity(queryDto.entityType, queryDto.entityId, {
+        tag: queryDto.tag,
+        tags,
+        category: queryDto.category,
+      });
       return toDtoArray(DocumentResponseDto, docs);
     }
 
@@ -126,9 +121,7 @@ export class DocumentController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a single document' })
   @ApiResponse({ status: HttpStatus.OK, type: DocumentResponseDto })
-  async findById(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<DocumentResponseDto> {
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<DocumentResponseDto> {
     const document = await this.documentService.findById(id);
     return toDto(DocumentResponseDto, document);
   }
@@ -163,9 +156,7 @@ export class DocumentController {
   @Get(':id/download')
   @ApiOperation({ summary: 'Get presigned download URL (placeholder)' })
   @ApiResponse({ status: HttpStatus.OK })
-  async download(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ url: string }> {
+  async download(@Param('id', ParseUUIDPipe) id: string): Promise<{ url: string }> {
     const document = await this.documentService.findById(id);
     return { url: document.fileUrl };
   }

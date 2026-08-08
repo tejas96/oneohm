@@ -194,11 +194,7 @@ export class CustomerPropertyController {
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
-    const result = await this.propertyService.findByTemperature(
-      temperature,
-      page,
-      limit,
-    );
+    const result = await this.propertyService.findByTemperature(temperature, page, limit);
     return toPaginatedResponse(CustomerPropertyResponseDto, result.data, result.total, page, limit);
   }
 
@@ -224,8 +220,7 @@ export class CustomerPropertyController {
       },
     },
   })
-  async getTemperatureStatistics(
-  ): Promise<Record<string, number>> {
+  async getTemperatureStatistics(): Promise<Record<string, number>> {
     return this.propertyService.getTemperatureStatistics();
   }
 
@@ -244,9 +239,7 @@ export class CustomerPropertyController {
     type: CustomerPropertyResponseDto,
   })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<CustomerPropertyResponseDto> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<CustomerPropertyResponseDto> {
     const property = await this.propertyService.findById(id);
     return toDto(CustomerPropertyResponseDto, property);
   }
@@ -272,11 +265,7 @@ export class CustomerPropertyController {
     @Body() updateDto: UpdateCustomerPropertyDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
-    const property = await this.propertyService.update(
-      id,
-      updateDto,
-      currentUser.id,
-    );
+    const property = await this.propertyService.update(id, updateDto, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
 
@@ -314,11 +303,7 @@ export class CustomerPropertyController {
     @Body('temperature') temperature: LeadTemperature,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
-    const property = await this.propertyService.updateTemperature(
-      id,
-      temperature,
-      currentUser.id,
-    );
+    const property = await this.propertyService.updateTemperature(id, temperature, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
 
@@ -394,11 +379,7 @@ export class CustomerPropertyController {
     @Body() document: PropertyDocumentDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
-    const property = await this.propertyService.addDocument(
-      id,
-      document,
-      currentUser.id,
-    );
+    const property = await this.propertyService.addDocument(id, document, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
 
@@ -431,11 +412,7 @@ export class CustomerPropertyController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
     const url = Buffer.from(encodedUrl, 'base64').toString('utf-8');
-    const property = await this.propertyService.removeDocument(
-      id,
-      url,
-      currentUser.id,
-    );
+    const property = await this.propertyService.removeDocument(id, url, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
 
@@ -450,10 +427,7 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) propertyId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
-    const updated = await this.propertyService.completeVisit(
-      propertyId,
-      currentUser.id,
-    );
+    const updated = await this.propertyService.completeVisit(propertyId, currentUser.id);
     return toDto(CustomerPropertyResponseDto, updated);
   }
 
@@ -466,10 +440,7 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) propertyId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
-    const updated = await this.propertyService.completeSurvey(
-      propertyId,
-      currentUser.id,
-    );
+    const updated = await this.propertyService.completeSurvey(propertyId, currentUser.id);
     return toDto(CustomerPropertyResponseDto, updated);
   }
 
@@ -482,10 +453,7 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) propertyId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
-    const updated = await this.propertyService.cancelSiteActivity(
-      propertyId,
-      currentUser.id,
-    );
+    const updated = await this.propertyService.cancelSiteActivity(propertyId, currentUser.id);
     return toDto(CustomerPropertyResponseDto, updated);
   }
 }

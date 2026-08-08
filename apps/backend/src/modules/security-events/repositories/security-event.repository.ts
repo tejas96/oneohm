@@ -94,7 +94,6 @@ export class SecurityEventRepository {
       query.andWhere('event.eventType = :eventType', { eventType: filter.eventType });
     }
 
-
     return query.getCount();
   }
 
@@ -188,9 +187,7 @@ export class SecurityEventRepository {
   /**
    * Get suspicious activities
    */
-  async getSuspiciousActivities(
-    limit = 50,
-  ): Promise<SecurityEventEntity[]> {
+  async getSuspiciousActivities(limit = 50): Promise<SecurityEventEntity[]> {
     return this.repository.find({
       where: {
         eventCategory: SecurityEventCategory.SUSPICIOUS_ACTIVITY,

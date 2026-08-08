@@ -21,8 +21,6 @@ export class InventoryStockEntity {
 
   // ==================== Relations ====================
 
-
-
   @Column({ name: 'warehouse_id', type: 'uuid' })
   warehouseId!: string;
 

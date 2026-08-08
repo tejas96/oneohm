@@ -7,8 +7,6 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 @Index(['isActive'])
 @Index(['minSystemSizeKw', 'maxSystemSizeKw'])
 export class InstallationPricing extends BaseEntity {
-
-
   @Column({
     type: 'decimal',
     precision: 10,

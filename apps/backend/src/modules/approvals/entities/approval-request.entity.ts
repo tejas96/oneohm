@@ -61,7 +61,6 @@ export class ApprovalRequestEntity {
 
   // ==================== Foreign Keys ====================
 
-
   @Column({ name: 'template_id', type: 'uuid' })
   templateId!: string;
 

@@ -12,9 +12,11 @@ import { SubsidyConfigurationRepository } from '../repositories/subsidy-configur
 export class SubsidyConfigurationService {
   constructor(private readonly subsidyConfigurationRepository: SubsidyConfigurationRepository) {}
 
-  async findAll(
-    filters?: { projectType?: ProjectType; isActive?: boolean; search?: string },
-  ): Promise<SubsidyConfiguration[]> {
+  async findAll(filters?: {
+    projectType?: ProjectType;
+    isActive?: boolean;
+    search?: string;
+  }): Promise<SubsidyConfiguration[]> {
     return this.subsidyConfigurationRepository.findAll(filters);
   }
 

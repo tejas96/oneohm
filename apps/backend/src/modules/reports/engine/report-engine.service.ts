@@ -70,11 +70,9 @@ export class ReportEngineService {
     const raw = await firstPlugin.provider.fetch(ctx);
 
     const reportTags = plugins.map((p) => p.schema.documentTag);
-    const docs = await this.documentService.findByEntity(
-      DocumentEntityType.PROJECT,
-      projectId,
-      { tags: reportTags },
-    );
+    const docs = await this.documentService.findByEntity(DocumentEntityType.PROJECT, projectId, {
+      tags: reportTags,
+    });
 
     const docsMap = new Map<string, any>();
     for (const doc of docs) {
@@ -237,11 +235,7 @@ export class ReportEngineService {
       return {};
     }
 
-    const docs = await this.documentService.findByEntity(
-      ctx.entityType,
-      ctx.entityId,
-      { tag },
-    );
+    const docs = await this.documentService.findByEntity(ctx.entityType, ctx.entityId, { tag });
 
     const latest = docs[0];
     if (!latest?.metadata?.reportFields) {
@@ -257,11 +251,7 @@ export class ReportEngineService {
     tag: string,
     excludeDocumentId?: string,
   ): Promise<void> {
-    const docs = await this.documentService.findByEntity(
-      ctx.entityType,
-      ctx.entityId,
-      { tag },
-    );
+    const docs = await this.documentService.findByEntity(ctx.entityType, ctx.entityId, { tag });
 
     const toPurge = excludeDocumentId ? docs.filter((doc) => doc.id !== excludeDocumentId) : docs;
 

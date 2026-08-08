@@ -106,9 +106,7 @@ export class FinanceReportingService {
   async getTopCustomersOutstanding(
     limit = 5,
   ): Promise<Array<{ customerId: string; customerName: string; outstanding: number }>> {
-    const rows = await this.dataSource.query(TOP_CUSTOMERS_OUTSTANDING_SQL, [
-      limit,
-    ]);
+    const rows = await this.dataSource.query(TOP_CUSTOMERS_OUTSTANDING_SQL, [limit]);
     return rows.map((r: Record<string, unknown>) => ({
       customerId: String(r.customerId),
       customerName: (r.customerName as string) ?? 'Unknown',
@@ -122,15 +120,13 @@ export class FinanceReportingService {
    * Replaces the separate receipts and expenses queries, which duplicated their
    * filtering, sorting and pagination logic and had already drifted apart.
    */
-  async getEntries(
-    opts: {
-      direction?: 'in' | 'out' | null;
-      from?: string | null;
-      to?: string | null;
-      page?: number;
-      limit?: number;
-    },
-  ): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
+  async getEntries(opts: {
+    direction?: 'in' | 'out' | null;
+    from?: string | null;
+    to?: string | null;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
     const params = [opts.direction ?? null, opts.from ?? null, opts.to ?? null];

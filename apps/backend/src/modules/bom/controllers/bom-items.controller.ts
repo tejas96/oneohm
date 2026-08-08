@@ -60,9 +60,7 @@ export class BomItemsController {
   @RequirePermission('bom:read')
   @Get('check-serial')
   @ApiOperation({ summary: 'Find serial conflicts in current organization BOMs' })
-  async checkSerial(
-    @Query('serialNumber') serialNumber: string,
-  ) {
+  async checkSerial(@Query('serialNumber') serialNumber: string) {
     const normalized = serialNumber?.trim();
     if (!normalized) {
       throw new BadRequestException('serialNumber is required');

@@ -143,8 +143,7 @@ export class ServiceRequestController {
     status: 200,
     description: 'Statistics retrieved successfully',
   })
-  async getStatistics(
-  ): Promise<Record<string, unknown>> {
+  async getStatistics(): Promise<Record<string, unknown>> {
     return this.serviceRequestService.getStatistics();
   }
 

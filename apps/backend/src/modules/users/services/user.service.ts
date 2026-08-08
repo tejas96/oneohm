@@ -57,7 +57,6 @@ export class UserService {
    * }, 'admin-user-uuid');
    */
   async create(createDto: CreateUserDto, createdBy?: string): Promise<UserEntity> {
-
     // Check phone first -- phone is the identity key used for smart linking
     const existingPhone = await this.userRepository.findByPhoneIncludingDeleted(createDto.phone);
 
@@ -155,11 +154,7 @@ export class UserService {
       }
     } else if (roles && roles.length > 0) {
       // Legacy: Direct role assignment (deprecated, use profileType instead)
-      await this.userRoleRepository.createUserRoles(
-        user.id,
-        roles,
-        createdBy || user.id,
-      );
+      await this.userRoleRepository.createUserRoles(user.id, roles, createdBy || user.id);
       this.logger.warn(
         `Direct role assignment used for user ${user.id}. Consider using profileType instead.`,
       );
@@ -230,15 +225,10 @@ export class UserService {
     return emailUser.phone === phone;
   }
 
-  async employeeProfileExists(
-    phone: string,
-    excludeId?: string,
-  ): Promise<boolean> {
+  async employeeProfileExists(phone: string, excludeId?: string): Promise<boolean> {
     const user = await this.userRepository.findByPhoneIncludingDeleted(phone, excludeId);
     if (!user || user.deletedAt) return false;
-    const profile = await this.employeeProfileRepository.findByUserAndOrganization(
-      user.id,
-    );
+    const profile = await this.employeeProfileRepository.findByUserAndOrganization(user.id);
     return !!profile;
   }
 
@@ -284,9 +274,7 @@ export class UserService {
       roleCode: customRoleCode,
     });
 
-    this.logger.log(
-      `Linked existing user ${existingUser.id} with ${String(profileType)} profile`,
-    );
+    this.logger.log(`Linked existing user ${existingUser.id} with ${String(profileType)} profile`);
 
     return this.findById(existingUser.id);
   }

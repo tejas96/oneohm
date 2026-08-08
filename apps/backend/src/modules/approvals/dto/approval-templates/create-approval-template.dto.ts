@@ -30,7 +30,6 @@ export class CreateApprovalTemplateDto {
   })
 
   // ==================== Template Info ====================
-
   @ApiProperty({
     description: 'Template name',
     example: 'PO Approval - Under 100K',

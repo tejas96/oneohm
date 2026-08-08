@@ -47,8 +47,7 @@ export interface UseEmployeesOptions {
 
 export const employeeKeys = {
   all: () => ['employees'] as const,
-  list: (filters?: Record<string, unknown>) =>
-    [...employeeKeys.all(), 'list', filters] as const,
+  list: (filters?: Record<string, unknown>) => [...employeeKeys.all(), 'list', filters] as const,
 };
 
 // ============================================================================
@@ -71,9 +70,7 @@ export function useEmployees(
       params.append('status', status);
       params.append('limit', String(limit));
 
-      const { data } = await apiClient.get<EmployeeListResponse>(
-        `/employees?${params.toString()}`,
-      );
+      const { data } = await apiClient.get<EmployeeListResponse>(`/employees?${params.toString()}`);
       return data.items;
     },
     enabled: enabled,

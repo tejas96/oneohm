@@ -207,7 +207,6 @@ async function seed(): Promise<void> {
     // ============================================
     console.error('\n🔐 Seeding Roles...');
 
-
     for (const role of ORG_ROLES) {
       const existing = await queryRunner.query(
         `SELECT id FROM roles WHERE code = $1 AND deleted_at IS NULL LIMIT 1`,
@@ -372,9 +371,7 @@ async function seed(): Promise<void> {
     // ============================================
     console.error('\n⚙️  Seeding Quote Configuration...');
 
-    const existingConfig = await queryRunner.query(
-      `SELECT id FROM quote_configurations LIMIT 1`,
-    );
+    const existingConfig = await queryRunner.query(`SELECT id FROM quote_configurations LIMIT 1`);
 
     if (existingConfig.length === 0) {
       await queryRunner.query(

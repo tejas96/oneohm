@@ -155,8 +155,7 @@ export class CustomerPropertyService {
     this.logger.log(`✅ Property created: ${property.id}`);
 
     const createdProperty =
-      (await this.propertyRepository.findByIdAndOrganization(property.id)) ??
-      property;
+      (await this.propertyRepository.findByIdAndOrganization(property.id)) ?? property;
 
     // Notify consumer about new property (fire-and-forget)
     this.eventEmitter.emit(
@@ -194,9 +193,7 @@ export class CustomerPropertyService {
   async findAll(
     query: PropertyQueryDto,
   ): Promise<{ data: PropertyWithQuoteInfo[]; total: number }> {
-    const [properties, total] = await this.propertyRepository.findWithFilters(
-      query,
-    );
+    const [properties, total] = await this.propertyRepository.findWithFilters(query);
 
     // Early return if no properties (skip quote lookup)
     if (properties.length === 0) {
@@ -205,14 +202,10 @@ export class CustomerPropertyService {
 
     // Batch-load latest quote per property (single query, avoids N+1)
     const propertyIds = properties.map((p) => p.id);
-    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(
-      propertyIds,
-    );
+    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
     const projectIdMap = await this.propertyRepository.findProjectIdsByPropertyIds(propertyIds);
     const activeLoanPropertyIds =
-      await this.loanApplicationRepository.findPropertyIdsWithActiveLoans(
-        propertyIds,
-      );
+      await this.loanApplicationRepository.findPropertyIdsWithActiveLoans(propertyIds);
 
     const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
@@ -244,9 +237,7 @@ export class CustomerPropertyService {
    *
    * This avoids N+1 queries and is performant for customers with many properties.
    */
-  async findByCustomer(
-    customerId: string,
-  ): Promise<PropertyWithQuoteInfo[]> {
+  async findByCustomer(customerId: string): Promise<PropertyWithQuoteInfo[]> {
     // Verify customer belongs to organization
     const customer = await this.customerRepository.findById(customerId);
     if (!customer) {
@@ -263,9 +254,7 @@ export class CustomerPropertyService {
 
     // Query 2: Get latest quotes for all properties (single batch query)
     const propertyIds = properties.map((p) => p.id);
-    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(
-      propertyIds,
-    );
+    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
 
     // Enrich properties with quote data
     return properties.map((property) => {
@@ -290,12 +279,8 @@ export class CustomerPropertyService {
    * Eagerly loads project, quotes, and versions in a single query.
    * Enforces status != 'inactive' and deletedAt IS NULL.
    */
-  async findMyProperties(
-    userId: string,
-  ): Promise<CustomerPropertyEntity[]> {
-    const customerProfile = await this.customerRepository.findByUserAndOrganization(
-      userId,
-    );
+  async findMyProperties(userId: string): Promise<CustomerPropertyEntity[]> {
+    const customerProfile = await this.customerRepository.findByUserAndOrganization(userId);
     if (!customerProfile) {
       return [];
     }
@@ -322,11 +307,7 @@ export class CustomerPropertyService {
     page = 1,
     limit = 20,
   ): Promise<{ data: CustomerPropertyEntity[]; total: number }> {
-    const [data, total] = await this.propertyRepository.findByTemperature(
-      temperature,
-      page,
-      limit,
-    );
+    const [data, total] = await this.propertyRepository.findByTemperature(temperature, page, limit);
     return { data, total };
   }
 
@@ -438,10 +419,7 @@ export class CustomerPropertyService {
   /**
    * Set property as primary
    */
-  async setPrimary(
-    id: string,
-    updatedBy?: string,
-  ): Promise<CustomerPropertyEntity> {
+  async setPrimary(id: string, updatedBy?: string): Promise<CustomerPropertyEntity> {
     this.logger.log(`Setting property ${id} as primary`);
 
     const property = await this.findById(id);
@@ -492,10 +470,7 @@ export class CustomerPropertyService {
     this.logger.log(`Property permanently deleted: ${id}`);
   }
 
-  private async assertDeletable(
-    propertyId: string,
-    manager: EntityManager,
-  ): Promise<void> {
+  private async assertDeletable(propertyId: string, manager: EntityManager): Promise<void> {
     const projectMap = await this.propertyRepository.findProjectIdsByPropertyIds(
       [propertyId],
       manager,
@@ -504,18 +479,12 @@ export class CustomerPropertyService {
       throw new ConflictException('Cannot delete: property has been converted to a project');
     }
 
-    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(
-      [propertyId],
-      manager,
-    );
+    const quoteMap = await this.quoteRepository.findLatestByPropertyIds([propertyId], manager);
     if (quoteMap.has(propertyId)) {
       throw new ConflictException('Cannot delete: property has quotations');
     }
 
-    const loan = await this.loanApplicationRepository.findByProperty(
-      propertyId,
-      manager,
-    );
+    const loan = await this.loanApplicationRepository.findByProperty(propertyId, manager);
     if (loan && !TERMINAL_LOAN_STATUSES.includes(loan.status)) {
       throw new ConflictException(
         'Cannot delete: property has an active loan application in progress',
@@ -531,9 +500,7 @@ export class CustomerPropertyService {
     }
   }
 
-  private async collectPropertyFileUrls(
-    property: CustomerPropertyEntity,
-  ): Promise<string[]> {
+  private async collectPropertyFileUrls(property: CustomerPropertyEntity): Promise<string[]> {
     const urls = new Set<string>();
 
     for (const doc of property.documents ?? []) {
@@ -655,13 +622,8 @@ export class CustomerPropertyService {
    * Complete a site visit for a property.
    * Validates that the property is in a valid state before marking visit as done.
    */
-  async completeVisit(
-    propertyId: string,
-    userId: string,
-  ): Promise<CustomerPropertyEntity> {
-    const property = await this.propertyRepository.findByIdAndOrganization(
-      propertyId,
-    );
+  async completeVisit(propertyId: string, userId: string): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findByIdAndOrganization(propertyId);
     if (!property) {
       throw new NotFoundException(`Property ${propertyId} not found`);
     }
@@ -694,13 +656,8 @@ export class CustomerPropertyService {
    * Complete a site survey for a property.
    * Requires that the site visit has already been completed.
    */
-  async completeSurvey(
-    propertyId: string,
-    userId: string,
-  ): Promise<CustomerPropertyEntity> {
-    const property = await this.propertyRepository.findByIdAndOrganization(
-      propertyId,
-    );
+  async completeSurvey(propertyId: string, userId: string): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findByIdAndOrganization(propertyId);
     if (!property) {
       throw new NotFoundException(`Property ${propertyId} not found`);
     }
@@ -743,13 +700,8 @@ export class CustomerPropertyService {
   /**
    * Cancel the site activity for a property.
    */
-  async cancelSiteActivity(
-    propertyId: string,
-    userId: string,
-  ): Promise<CustomerPropertyEntity> {
-    const property = await this.propertyRepository.findByIdAndOrganization(
-      propertyId,
-    );
+  async cancelSiteActivity(propertyId: string, userId: string): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findByIdAndOrganization(propertyId);
     if (!property) {
       throw new NotFoundException(`Property ${propertyId} not found`);
     }

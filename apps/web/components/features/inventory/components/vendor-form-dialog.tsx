@@ -249,10 +249,7 @@ export function VendorFormDialog({
   // Custom mutation for status change with proper cache invalidation
   const changeStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: VendorStatus }) => {
-      const { data } = await apiClient.patch<Vendor>(
-        `/vendors/${id}/status`,
-        { status },
-      );
+      const { data } = await apiClient.patch<Vendor>(`/vendors/${id}/status`, { status });
       return data;
     },
     onSuccess: (data, variables) => {

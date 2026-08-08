@@ -13,9 +13,7 @@ export class SubsidyApplicationResponseDto {
   @Expose()
   id: string;
 
-
   @Expose()
-
   @Expose()
   projectId: string;
 

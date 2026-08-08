@@ -28,22 +28,11 @@ export class InventoryBulkService {
     private readonly materialDispatchService: MaterialDispatchService,
   ) {}
 
-  approvePurchaseOrders(
-    ids: string[],
-    userId: string,
-  ): Promise<BulkResult> {
-    return runBulk(
-      ids,
-      (id) => this.purchaseOrderService.approve(id, userId),
-      'PO.bulkApprove',
-    );
+  approvePurchaseOrders(ids: string[], userId: string): Promise<BulkResult> {
+    return runBulk(ids, (id) => this.purchaseOrderService.approve(id, userId), 'PO.bulkApprove');
   }
 
-  cancelPurchaseOrders(
-    ids: string[],
-    reason: string,
-    userId: string,
-  ): Promise<BulkResult> {
+  cancelPurchaseOrders(ids: string[], reason: string, userId: string): Promise<BulkResult> {
     return runBulk(
       ids,
       (id) => this.purchaseOrderService.cancel(id, reason, userId),
@@ -51,11 +40,7 @@ export class InventoryBulkService {
     );
   }
 
-  cancelAllocations(
-    ids: string[],
-    reason: string,
-    userId: string,
-  ): Promise<BulkResult> {
+  cancelAllocations(ids: string[], reason: string, userId: string): Promise<BulkResult> {
     return runBulk(
       ids,
       (id) => this.stockAllocationService.cancel(id, reason, userId),
@@ -63,11 +48,7 @@ export class InventoryBulkService {
     );
   }
 
-  cancelDispatches(
-    ids: string[],
-    reason: string,
-    userId: string,
-  ): Promise<BulkResult> {
+  cancelDispatches(ids: string[], reason: string, userId: string): Promise<BulkResult> {
     return runBulk(
       ids,
       (id) => this.materialDispatchService.cancel(id, reason, userId),

@@ -15,9 +15,7 @@ export class InvitationResponseDto {
   @ApiProperty()
   status!: string;
 
-
   @Expose()
-
   @Expose()
   @ApiProperty()
   roleId!: string;

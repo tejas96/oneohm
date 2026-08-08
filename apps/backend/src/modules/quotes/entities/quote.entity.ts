@@ -16,7 +16,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 export class QuoteEntity extends BaseEntity {
   // ==================== Relations ====================
 
-
   @Column({ type: 'uuid', name: 'customer_id' })
   customerId!: string;
 

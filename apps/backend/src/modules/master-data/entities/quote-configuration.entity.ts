@@ -170,5 +170,4 @@ export class QuoteConfiguration extends BaseEntity {
   updatedBy?: string;
 
   // ==================== Relationships ====================
-
 }

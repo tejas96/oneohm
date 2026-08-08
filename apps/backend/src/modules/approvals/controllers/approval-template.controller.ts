@@ -23,7 +23,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -103,15 +103,11 @@ export class ApprovalTemplateController {
     @Query('isActive') isActive?: boolean,
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<ApprovalTemplateResponseDto>> {
-    const { templates, total } = await this.templateService.findAll(
-      page ?? 1,
-      limit ?? 20,
-      {
-        workflowType,
-        isActive,
-        search,
-      },
-    );
+    const { templates, total } = await this.templateService.findAll(page ?? 1, limit ?? 20, {
+      workflowType,
+      isActive,
+      search,
+    });
 
     return {
       data: plainToInstance(ApprovalTemplateResponseDto, templates, {
@@ -179,11 +175,7 @@ export class ApprovalTemplateController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateApprovalTemplateDto,
   ): Promise<ApprovalTemplateResponseDto> {
-    const template = await this.templateService.update(
-      id,
-      updateDto,
-      currentUser.id,
-    );
+    const template = await this.templateService.update(id, updateDto, currentUser.id);
 
     return plainToInstance(ApprovalTemplateResponseDto, template, {
       excludeExtraneousValues: true,

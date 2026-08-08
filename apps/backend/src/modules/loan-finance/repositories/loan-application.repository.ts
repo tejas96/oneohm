@@ -26,10 +26,7 @@ export class LoanApplicationRepository {
     return this.repository.save(entity);
   }
 
-  async findAll(
-    page = 1,
-    limit = 20,
-  ): Promise<[LoanApplicationEntity[], number]> {
+  async findAll(page = 1, limit = 20): Promise<[LoanApplicationEntity[], number]> {
     return this.repository.findAndCount({
       where: {
         deletedAt: IsNull(),
@@ -46,7 +43,6 @@ export class LoanApplicationRepository {
       where: {
         id,
         deletedAt: IsNull(),
-        
       },
       relations: ['property', 'customer', 'createdByUser', 'updatedByUser'],
     });
@@ -78,7 +74,6 @@ export class LoanApplicationRepository {
       where: {
         propertyId,
         deletedAt: IsNull(),
-        
       },
       relations: ['property', 'customer'],
     });
@@ -107,14 +102,11 @@ export class LoanApplicationRepository {
     return new Set(rows.map((row) => row.propertyId));
   }
 
-  async findByCustomer(
-    customerId: string,
-  ): Promise<LoanApplicationEntity[]> {
+  async findByCustomer(customerId: string): Promise<LoanApplicationEntity[]> {
     return this.repository.find({
       where: {
         customerId,
         deletedAt: IsNull(),
-        
       },
       relations: ['property'],
       order: { createdAt: 'DESC' },

@@ -14,12 +14,7 @@ import { StockAllocationStatus } from '@tejas96/shared/types';
 import { parsePaginationParams } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  ApiCreate,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate
-} from '../../../common/decorators';
+import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -69,11 +64,7 @@ export class StockAllocationController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: BulkCancelDto,
   ): Promise<BulkOperationResultDto> {
-    return this.inventoryBulkService.cancelAllocations(
-      body.ids,
-      body.reason,
-      currentUser.id,
-    );
+    return this.inventoryBulkService.cancelAllocations(body.ids, body.reason, currentUser.id);
   }
 
   /**
@@ -82,9 +73,7 @@ export class StockAllocationController {
   @RequirePermission('inventory:read')
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get stock allocation statistics' })
-  async getStatistics(
-    @CurrentUser() _currentUser: CurrentUserType,
-  ) {
+  async getStatistics(@CurrentUser() _currentUser: CurrentUserType) {
     return this.stockAllocationService.getStatistics();
   }
 
@@ -149,10 +138,7 @@ export class StockAllocationController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateStockAllocationDto,
   ): Promise<StockAllocationResponseDto> {
-    const allocation = await this.stockAllocationService.create(
-      createDto,
-      currentUser.id,
-    );
+    const allocation = await this.stockAllocationService.create(createDto, currentUser.id);
     return plainToInstance(StockAllocationResponseDto, allocation, {
       excludeExtraneousValues: true,
     });
@@ -194,17 +180,13 @@ export class StockAllocationController {
   }> {
     const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
     const activeOnly = activeOnlyRaw === 'true' || activeOnlyRaw === '1';
-    const { allocations, total } = await this.stockAllocationService.findAll(
-      pageNum,
-      limitNum,
-      {
-        status,
-        activeOnly: status ? undefined : activeOnly,
-        projectId,
-        warehouseId,
-        productId,
-      },
-    );
+    const { allocations, total } = await this.stockAllocationService.findAll(pageNum, limitNum, {
+      status,
+      activeOnly: status ? undefined : activeOnly,
+      projectId,
+      warehouseId,
+      productId,
+    });
 
     return {
       data: plainToInstance(StockAllocationResponseDto, allocations, {
@@ -250,11 +232,7 @@ export class StockAllocationController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() editDto: EditAllocationDetailsDto,
   ): Promise<StockAllocationResponseDto> {
-    const allocation = await this.stockAllocationService.update(
-      id,
-      editDto,
-      currentUser.id,
-    );
+    const allocation = await this.stockAllocationService.update(id, editDto, currentUser.id);
     return plainToInstance(StockAllocationResponseDto, allocation, {
       excludeExtraneousValues: true,
     });
@@ -271,11 +249,7 @@ export class StockAllocationController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() fulfillDto: FulfillStockAllocationDto,
   ): Promise<StockAllocationResponseDto> {
-    const allocation = await this.stockAllocationService.fulfill(
-      id,
-      fulfillDto,
-      currentUser.id,
-    );
+    const allocation = await this.stockAllocationService.fulfill(id, fulfillDto, currentUser.id);
     return plainToInstance(StockAllocationResponseDto, allocation, {
       excludeExtraneousValues: true,
     });
@@ -292,11 +266,7 @@ export class StockAllocationController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('reason') reason: string,
   ): Promise<StockAllocationResponseDto> {
-    const allocation = await this.stockAllocationService.cancel(
-      id,
-      reason,
-      currentUser.id,
-    );
+    const allocation = await this.stockAllocationService.cancel(id, reason, currentUser.id);
     return plainToInstance(StockAllocationResponseDto, allocation, {
       excludeExtraneousValues: true,
     });

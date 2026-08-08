@@ -20,7 +20,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -68,9 +68,7 @@ export class ProjectVendorController {
   async getTotalContractValue(
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<{ totalValue: number }> {
-    const totalValue = await this.projectVendorService.getTotalContractValueByProject(
-      projectId,
-    );
+    const totalValue = await this.projectVendorService.getTotalContractValueByProject(projectId);
     return { totalValue };
   }
 
@@ -83,9 +81,7 @@ export class ProjectVendorController {
   async getActiveVendors(
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ProjectVendorResponseDto[]> {
-    const projectVendors = await this.projectVendorService.getActiveVendorsByProject(
-      projectId,
-    );
+    const projectVendors = await this.projectVendorService.getActiveVendorsByProject(projectId);
     return plainToInstance(ProjectVendorResponseDto, projectVendors, {
       excludeExtraneousValues: true,
     });
@@ -158,9 +154,7 @@ export class ProjectVendorController {
   @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({ summary: 'Get project-vendor by ID', responseType: ProjectVendorResponseDto })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<ProjectVendorResponseDto> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<ProjectVendorResponseDto> {
     const projectVendor = await this.projectVendorService.findById(id);
     return plainToInstance(ProjectVendorResponseDto, projectVendor, {
       excludeExtraneousValues: true,
@@ -192,9 +186,7 @@ export class ProjectVendorController {
   @RequirePermission('inventory:write')
   @Delete(':id')
   @ApiDelete({ summary: 'Remove vendor from project' })
-  async remove(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ message: string }> {
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
     await this.projectVendorService.removeVendorFromProject(id);
     return { message: 'Vendor removed from project successfully' };
   }

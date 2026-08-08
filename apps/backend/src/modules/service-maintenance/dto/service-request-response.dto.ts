@@ -35,7 +35,6 @@ export class ServiceRequestResponseDto {
   @Expose()
   id: string;
 
-
   @ApiProperty({ description: 'Project ID', example: '123e4567-e89b-12d3-a456-426614174002' })
   @Expose()
   projectId: string;
@@ -168,7 +167,6 @@ export class ServiceRequestResponseDto {
 
   // Relations
   @Expose()
-
   @ApiPropertyOptional({ description: 'Customer details', type: CustomerResponseDto })
   @Expose()
   @Type(() => CustomerResponseDto)

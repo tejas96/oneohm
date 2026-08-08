@@ -166,9 +166,7 @@ export class ApprovalRequestRepository {
   /**
    * Find pending requests for a user (where user is an approver)
    */
-  async findPendingForUser(
-    userId: string,
-  ): Promise<ApprovalRequestEntity[]> {
+  async findPendingForUser(userId: string): Promise<ApprovalRequestEntity[]> {
     return this.repository
       .createQueryBuilder('request')
       .leftJoinAndSelect('request.template', 'template')
@@ -183,10 +181,7 @@ export class ApprovalRequestRepository {
   /**
    * Update request
    */
-  async update(
-    id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<ApprovalRequestEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<ApprovalRequestEntity> {
     await this.repository.update(
       {
         id,

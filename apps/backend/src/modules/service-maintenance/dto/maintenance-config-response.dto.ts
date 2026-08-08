@@ -33,7 +33,6 @@ export class MaintenanceConfigResponseDto {
   @Expose()
   id: string;
 
-
   @ApiProperty({ description: 'Project ID', example: '123e4567-e89b-12d3-a456-426614174002' })
   @Expose()
   projectId: string;
@@ -92,7 +91,6 @@ export class MaintenanceConfigResponseDto {
 
   // Relations
   @Expose()
-
   @ApiPropertyOptional({ description: 'Created by user details', type: UserResponseDto })
   @Expose()
   @Type(() => UserResponseDto)

@@ -56,11 +56,9 @@ export class ReportsController {
     @CurrentUser() user: CurrentUserType,
     @Body() dto: ReportInitializeDto,
   ): Promise<ReportInitializeResponseDto> {
-    return this.reportEngine.initialize(
-      dto.reportId,
-      this.buildContext(dto, user),
-      { ignoreSavedDraft: dto.ignoreSavedDraft },
-    );
+    return this.reportEngine.initialize(dto.reportId, this.buildContext(dto, user), {
+      ignoreSavedDraft: dto.ignoreSavedDraft,
+    });
   }
 
   @Post('preview')
@@ -70,11 +68,7 @@ export class ReportsController {
     @CurrentUser() user: CurrentUserType,
     @Body() dto: ReportRenderDto,
   ): Promise<ReportPreviewResponseDto> {
-    return this.reportEngine.preview(
-      dto.reportId,
-      this.buildContext(dto, user),
-      dto.fields,
-    );
+    return this.reportEngine.preview(dto.reportId, this.buildContext(dto, user), dto.fields);
   }
 
   @Post('save')
@@ -85,12 +79,7 @@ export class ReportsController {
     @CurrentUser() user: CurrentUserType,
     @Body() dto: ReportSaveDto,
   ): Promise<ReportSaveResponseDto> {
-    return this.reportEngine.save(
-      dto.reportId,
-      this.buildContext(dto, user),
-      dto.fields,
-      dto.file,
-    );
+    return this.reportEngine.save(dto.reportId, this.buildContext(dto, user), dto.fields, dto.file);
   }
 
   private buildContext(

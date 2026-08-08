@@ -15,7 +15,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 export class IntegrationEntity extends BaseEntity {
   // ===== RELATIONSHIPS =====
 
-
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'created_by' })
   creator?: UserEntity;

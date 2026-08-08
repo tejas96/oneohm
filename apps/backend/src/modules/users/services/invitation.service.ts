@@ -113,9 +113,7 @@ export class InvitationService {
       throw new NotFoundException('Invitation not found after accepting');
     }
 
-    this.logger.log(
-      `Invitation accepted for ${updatedInvitation.email}`,
-    );
+    this.logger.log(`Invitation accepted for ${updatedInvitation.email}`);
 
     return updatedInvitation;
   }
@@ -157,9 +155,7 @@ export class InvitationService {
   /**
    * Get invitations by organization
    */
-  async getInvitationsByOrganization(
-    status?: InvitationStatus,
-  ): Promise<InvitationEntity[]> {
+  async getInvitationsByOrganization(status?: InvitationStatus): Promise<InvitationEntity[]> {
     return this.invitationRepository.findByOrganization(status);
   }
 

@@ -10,7 +10,6 @@ export class QuoteConfigurationResponseDto {
   @Expose()
   id!: string;
 
-
   @ApiProperty({ example: 30 })
   @Expose()
   defaultValidityDays!: number;

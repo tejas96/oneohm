@@ -28,8 +28,6 @@ export class CustomerProfileEntity extends BaseEntity {
   @JoinColumn({ name: 'user_id' })
   user?: UserEntity;
 
-
-
   // ==================== PROPERTIES (One-to-Many) ====================
   @OneToMany(() => CustomerPropertyEntity, (property) => property.customer)
   properties?: CustomerPropertyEntity[];

@@ -20,9 +20,7 @@ export class WorkflowStepService {
     createDto: Partial<WorkflowStepEntity> & { code: string },
     currentUserId: string,
   ): Promise<WorkflowStepEntity> {
-    const codeExists = await this.stepRepository.existsByCode(
-      createDto.code,
-    );
+    const codeExists = await this.stepRepository.existsByCode(createDto.code);
     if (codeExists) {
       throw new BadRequestException(`Workflow step with code ${createDto.code} already exists`);
     }
@@ -94,10 +92,7 @@ export class WorkflowStepService {
     return updated;
   }
 
-  async toggleStatus(
-    id: string,
-    currentUserId: string,
-  ): Promise<WorkflowStepEntity> {
+  async toggleStatus(id: string, currentUserId: string): Promise<WorkflowStepEntity> {
     const step = await this.findById(id);
 
     const updated = await this.stepRepository.update(id, {

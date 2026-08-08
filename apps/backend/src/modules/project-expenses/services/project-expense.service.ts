@@ -394,10 +394,7 @@ export class ProjectExpenseService {
       spentRows.map((r: { product_id: string; spent: string }) => [r.product_id, Number(r.spent)]),
     );
 
-    const bomTargets = await this.bomService.getBomTargetsForProject(
-      projectId,
-      productIds,
-    );
+    const bomTargets = await this.bomService.getBomTargetsForProject(projectId, productIds);
 
     for (const link of newLinks) {
       if (!link.productId) continue;

@@ -17,7 +17,6 @@ export class NotificationEntity {
   @Column({ type: 'uuid', primary: true, default: () => 'gen_random_uuid()' })
   id!: string;
 
-
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 

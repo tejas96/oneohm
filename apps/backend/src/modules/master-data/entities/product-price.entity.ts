@@ -6,7 +6,6 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 @Entity('product_prices')
 @Index(['productId', 'isActive', 'effectiveFrom', 'effectiveTo'])
 export class ProductPriceEntity extends BaseEntity {
-
   @Column({ name: 'product_id', type: 'uuid' })
   productId!: string;
 
@@ -39,7 +38,6 @@ export class ProductPriceEntity extends BaseEntity {
 
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
-
 
   @ManyToOne(() => ProductEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'product_id' })

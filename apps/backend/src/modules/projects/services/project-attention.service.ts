@@ -51,9 +51,7 @@ export class ProjectAttentionService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getProjectAttention(
-    projectId: string,
-  ): Promise<AttentionResponseDto[]> {
+  async getProjectAttention(projectId: string): Promise<AttentionResponseDto[]> {
     // Ownership validation first to guarantee org isolation for all downstream queries.
     await this.projectRepository.findById(projectId);
 
@@ -233,9 +231,7 @@ export class ProjectAttentionService {
    * residual no longer nags forever — the contradiction where the finance
    * dashboard dropped a waived amount while the project card kept reporting it.
    */
-  private async findOutstandingMilestones(
-    projectId: string,
-  ): Promise<OutstandingMilestone[]> {
+  private async findOutstandingMilestones(projectId: string): Promise<OutstandingMilestone[]> {
     return this.dataSource.query(
       `SELECT
          milestone_id   AS "milestoneId",

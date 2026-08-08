@@ -74,9 +74,7 @@ export class InvitationRepository {
   /**
    * Find invitation by email and organization
    */
-  async findByEmailAndOrganization(
-    email: string,
-  ): Promise<InvitationEntity | null> {
+  async findByEmailAndOrganization(email: string): Promise<InvitationEntity | null> {
     return this.repository.findOne({
       where: {
         email,
@@ -89,9 +87,7 @@ export class InvitationRepository {
   /**
    * Find all invitations for an organization
    */
-  async findByOrganization(
-    status?: InvitationStatus,
-  ): Promise<InvitationEntity[]> {
+  async findByOrganization(status?: InvitationStatus): Promise<InvitationEntity[]> {
     const where: Record<string, unknown> = {};
     if (status) {
       where.status = status;

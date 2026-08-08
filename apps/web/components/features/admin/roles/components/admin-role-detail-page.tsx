@@ -89,9 +89,7 @@ export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps): JSX.E
               <Badge variant={role.isSystemRole ? 'info' : 'secondary'} size="xs">
                 {role.isSystemRole ? 'System' : 'Custom'}
               </Badge>
-              <span>
-                {'Platform'}
-              </span>
+              <span>{'Platform'}</span>
             </div>
             {role.description && (
               <p className="text-sm text-foreground-tertiary mt-2">{role.description}</p>

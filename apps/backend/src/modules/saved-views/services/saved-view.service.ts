@@ -32,10 +32,7 @@ export class SavedViewService {
 
   constructor(private readonly repository: SavedViewRepository) {}
 
-  async list(
-    userId: string,
-    resource: SavedViewResource,
-  ): Promise<SavedViewEntity[]> {
+  async list(userId: string, resource: SavedViewResource): Promise<SavedViewEntity[]> {
     return this.repository.findForUser(userId, resource);
   }
 
@@ -47,21 +44,14 @@ export class SavedViewService {
     return view;
   }
 
-  async create(
-    dto: CreateSavedViewDto,
-    userId: string,
-  ): Promise<SavedViewEntity> {
+  async create(dto: CreateSavedViewDto, userId: string): Promise<SavedViewEntity> {
     const cleanedFilters = validateSavedViewFilters(dto.resource, dto.filters);
     const trimmedName = dto.name.trim();
     if (trimmedName.length === 0) {
       throw new ConflictException('Saved view name cannot be empty');
     }
 
-    const existingByName = await this.repository.findByName(
-      userId,
-      dto.resource,
-      trimmedName,
-    );
+    const existingByName = await this.repository.findByName(userId, dto.resource, trimmedName);
     if (existingByName) {
       throw new ConflictException(
         `A saved view named "${trimmedName}" already exists for this list`,
@@ -83,11 +73,7 @@ export class SavedViewService {
     });
   }
 
-  async update(
-    id: string,
-    dto: UpdateSavedViewDto,
-    userId: string,
-  ): Promise<SavedViewEntity> {
+  async update(id: string, dto: UpdateSavedViewDto, userId: string): Promise<SavedViewEntity> {
     const view = await this.findOne(id, userId);
 
     if (dto.name !== undefined) {
@@ -96,11 +82,7 @@ export class SavedViewService {
         throw new ConflictException('Saved view name cannot be empty');
       }
       if (trimmed !== view.name) {
-        const existing = await this.repository.findByName(
-          userId,
-          view.resource,
-          trimmed,
-        );
+        const existing = await this.repository.findByName(userId, view.resource, trimmed);
         if (existing && existing.id !== id) {
           throw new ConflictException(
             `A saved view named "${trimmed}" already exists for this list`,

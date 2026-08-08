@@ -1,7 +1,6 @@
 import { DataSource, type QueryRunner } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
-
 /**
  * Master Data Seed for Organization: OneOhm EPC
  *
@@ -19,7 +18,6 @@ import { v4 as uuidv4 } from 'uuid';
  * 6. Subsidy Configurations (3 - residential, apartment, commercial/industrial)
  * 7. Quote Configuration (1)
  */
-
 
 // =====================================================
 // Product Type IDs (Pre-generated)
@@ -146,9 +144,13 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
     await queryRunner.query(`DELETE FROM installation_pricing`);
     await queryRunner.query(`DELETE FROM product_prices`);
     await queryRunner.query(`DELETE FROM products`);
-    await queryRunner.query(`DELETE FROM brand_product_types WHERE brand_id IN (SELECT id FROM brands)`);
+    await queryRunner.query(
+      `DELETE FROM brand_product_types WHERE brand_id IN (SELECT id FROM brands)`,
+    );
     await queryRunner.query(`DELETE FROM brands`);
-    await queryRunner.query(`DELETE FROM product_type_attributes WHERE product_type_id IN (SELECT id FROM product_types) AND is_system IS NOT TRUE`);
+    await queryRunner.query(
+      `DELETE FROM product_type_attributes WHERE product_type_id IN (SELECT id FROM product_types) AND is_system IS NOT TRUE`,
+    );
     await queryRunner.query(`DELETE FROM product_types WHERE is_system IS NOT TRUE`);
 
     console.log('✅ Cleanup completed');
@@ -262,9 +264,15 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
   }
 
   // Re-read the actual IDs from DB (ON CONFLICT DO NOTHING may have kept existing rows with different IDs)
-  const [ptSolar] = await queryRunner.query(`SELECT id FROM product_types WHERE code = 'solar_panel' LIMIT 1`);
-  const [ptInverter] = await queryRunner.query(`SELECT id FROM product_types WHERE code = 'inverter' LIMIT 1`);
-  const [ptStructure] = await queryRunner.query(`SELECT id FROM product_types WHERE code = 'mounting_structure' LIMIT 1`);
+  const [ptSolar] = await queryRunner.query(
+    `SELECT id FROM product_types WHERE code = 'solar_panel' LIMIT 1`,
+  );
+  const [ptInverter] = await queryRunner.query(
+    `SELECT id FROM product_types WHERE code = 'inverter' LIMIT 1`,
+  );
+  const [ptStructure] = await queryRunner.query(
+    `SELECT id FROM product_types WHERE code = 'mounting_structure' LIMIT 1`,
+  );
 
   // Update in-memory IDs to match what's actually in the DB
   PRODUCT_TYPE_IDS.SOLAR_PANEL = ptSolar.id as string;

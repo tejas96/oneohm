@@ -21,7 +21,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -98,8 +98,7 @@ export class PaymentController {
 
   @Get('organization')
   @ApiOperation({ summary: 'Get payments by organization' })
-  async findByOrganization(
-  ): Promise<PaymentResponseDto[]> {
+  async findByOrganization(): Promise<PaymentResponseDto[]> {
     const payments = await this.paymentService.findByOrganization();
     return plainToInstance(PaymentResponseDto, payments, {
       excludeExtraneousValues: true,
@@ -220,9 +219,7 @@ export class PaymentController {
   @Get('project/:projectId/summary')
   @ApiOperation({ summary: 'Get payment summary for project' })
   @ApiParam({ name: 'projectId', type: String })
-  async getProjectPaymentSummary(
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-  ): Promise<{
+  async getProjectPaymentSummary(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<{
     totalExpected: number;
     totalPaid: number;
     pendingAmount: number;
@@ -233,8 +230,7 @@ export class PaymentController {
 
   @Get('organization/stats')
   @ApiOperation({ summary: 'Get payment statistics by organization' })
-  async getOrganizationPaymentStats(
-  ): Promise<
+  async getOrganizationPaymentStats(): Promise<
     Array<{
       status: PaymentTransactionStatus;
       count: number;
@@ -249,8 +245,7 @@ export class PaymentController {
   // ============================================
   @Get('organization/next-number')
   @ApiOperation({ summary: 'Generate next payment number' })
-  async generatePaymentNumber(
-  ): Promise<{ paymentNumber: string }> {
+  async generatePaymentNumber(): Promise<{ paymentNumber: string }> {
     const paymentNumber = await this.paymentService.generatePaymentNumber();
     return { paymentNumber };
   }

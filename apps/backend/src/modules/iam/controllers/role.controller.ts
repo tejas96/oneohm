@@ -60,9 +60,7 @@ export class RoleController {
     @Body() createRoleDto: CreateRoleDto,
     @CurrentUser() user: CurrentUserType,
   ): Promise<RoleResponseDto> {
-    const exists = await this.roleRepository.existsByCodeAndOrganization(
-      createRoleDto.code,
-    );
+    const exists = await this.roleRepository.existsByCodeAndOrganization(createRoleDto.code);
     if (exists) {
       throw new ConflictException('A role with this code already exists');
     }

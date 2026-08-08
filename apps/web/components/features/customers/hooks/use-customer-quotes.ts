@@ -49,10 +49,7 @@ export function useCustomerQuotes(
   const limit = options?.limit ?? 50;
 
   return useQuery({
-    queryKey: [
-      ...quoteKeys.byCustomer(customerId),
-      { page, limit, status: options?.status },
-    ],
+    queryKey: [...quoteKeys.byCustomer(customerId), { page, limit, status: options?.status }],
     queryFn: async (): Promise<CustomerQuotesResponse> => {
       const params = new URLSearchParams();
       params.append('customerId', customerId);
@@ -62,8 +59,10 @@ export function useCustomerQuotes(
         params.append('status', options.status);
       }
 
-      const { data } = await apiClient.get<CustomerQuotesResponse>(`/quotes?${params.toString()}`, {
-      });
+      const { data } = await apiClient.get<CustomerQuotesResponse>(
+        `/quotes?${params.toString()}`,
+        {},
+      );
       return data;
     },
     enabled: !!customerId && options?.enabled !== false,

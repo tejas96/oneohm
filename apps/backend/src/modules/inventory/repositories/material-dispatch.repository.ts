@@ -43,9 +43,7 @@ export class MaterialDispatchRepository {
   /**
    * Find dispatch by dispatch number
    */
-  async findByDispatchNumber(
-    dispatchNumber: string,
-  ): Promise<MaterialDispatchEntity | null> {
+  async findByDispatchNumber(dispatchNumber: string): Promise<MaterialDispatchEntity | null> {
     return this.repository.findOne({
       where: { dispatchNumber },
       relations: ['project', 'warehouse', 'items'],
@@ -115,9 +113,7 @@ export class MaterialDispatchRepository {
   /**
    * Find dispatches by project
    */
-  async findByProject(
-    projectId: string,
-  ): Promise<MaterialDispatchEntity[]> {
+  async findByProject(projectId: string): Promise<MaterialDispatchEntity[]> {
     return this.repository.find({
       where: { projectId },
       relations: ['warehouse', 'items', 'items.product'],
@@ -149,10 +145,7 @@ export class MaterialDispatchRepository {
   /**
    * Update dispatch
    */
-  async update(
-    id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<MaterialDispatchEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<MaterialDispatchEntity> {
     const dispatch = await this.findById(id);
 
     Object.assign(dispatch, updateData);

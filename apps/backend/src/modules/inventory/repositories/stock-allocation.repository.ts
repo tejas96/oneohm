@@ -140,10 +140,7 @@ export class StockAllocationRepository {
   /**
    * Update allocation
    */
-  async update(
-    id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<StockAllocationEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<StockAllocationEntity> {
     const allocation = await this.findById(id);
 
     Object.assign(allocation, updateData);

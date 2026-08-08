@@ -106,8 +106,7 @@ export class PricingService {
       opts.asOf,
     );
 
-    const resolvedProducts =
-      productsById ?? (await this.loadProductsById(productIds));
+    const resolvedProducts = productsById ?? (await this.loadProductsById(productIds));
 
     for (const productId of productIds) {
       const product = resolvedProducts.get(productId);
@@ -122,9 +121,7 @@ export class PricingService {
     return result;
   }
 
-  private async loadProductsById(
-    productIds: string[],
-  ): Promise<Map<string, ProductEntity>> {
+  private async loadProductsById(productIds: string[]): Promise<Map<string, ProductEntity>> {
     // Single SELECT … WHERE id IN (…) plus its productType/brand joins.
     // Prevents the N+1 we'd get from per-id findAnyById calls in the
     // quote calculator's batch validation paths.

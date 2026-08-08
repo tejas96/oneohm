@@ -79,12 +79,7 @@ export class ProductPriceService {
       Object.prototype.hasOwnProperty.call(dto, 'isActive');
 
     if (nextIsActive && (projectTypeChanged || touchesScheduleOrActive)) {
-      await this.deactivateExistingPrices(
-        productId,
-        nextProjectType,
-        effectiveFrom,
-        id,
-      );
+      await this.deactivateExistingPrices(productId, nextProjectType, effectiveFrom, id);
     }
 
     const updateData: Partial<ProductPriceEntity> = {
@@ -102,11 +97,7 @@ export class ProductPriceService {
     });
   }
 
-  async deactivate(
-    id: string,
-    productId: string,
-    updatedBy?: string,
-  ): Promise<ProductPriceEntity> {
+  async deactivate(id: string, productId: string, updatedBy?: string): Promise<ProductPriceEntity> {
     await this.assertProductExists(productId, { allowDeleted: true });
     const existing = await this.findById(id, productId);
     const effectiveTo = existing.effectiveTo ?? this.today();
@@ -118,10 +109,7 @@ export class ProductPriceService {
     });
   }
 
-  private async findById(
-    id: string,
-    productId: string,
-  ): Promise<ProductPriceEntity> {
+  private async findById(id: string, productId: string): Promise<ProductPriceEntity> {
     const price = await this.productPriceRepository.findById(id, productId);
     if (!price) {
       throw new NotFoundException('Product price not found');

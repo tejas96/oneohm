@@ -18,7 +18,6 @@ import { ProjectEntity } from '../../projects/entities/project.entity';
 export class StockAllocationEntity extends BaseEntity {
   // ==================== Relations ====================
 
-
   @ManyToOne(() => ProjectEntity)
   @JoinColumn({ name: 'project_id' })
   project!: ProjectEntity;
@@ -32,7 +31,6 @@ export class StockAllocationEntity extends BaseEntity {
   product!: ProductEntity;
 
   // ==================== Foreign Keys ====================
-
 
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;

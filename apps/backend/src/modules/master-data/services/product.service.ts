@@ -24,10 +24,7 @@ export class ProductService {
     private readonly productTypeRepository: ProductTypeRepository,
   ) {}
 
-  async create(
-    createDto: CreateProductDto,
-    createdBy?: string,
-  ): Promise<ProductEntity> {
+  async create(createDto: CreateProductDto, createdBy?: string): Promise<ProductEntity> {
     const existing = await this.productRepository.findByCode(createDto.code);
     if (existing) {
       throw new ConflictException(`Product with code '${createDto.code}' already exists`);
@@ -70,11 +67,7 @@ export class ProductService {
       delete resolvedFilters.type;
     }
 
-    const result = await this.productRepository.findAll(
-      page,
-      limit,
-      resolvedFilters,
-    );
+    const result = await this.productRepository.findAll(page, limit, resolvedFilters);
 
     return {
       ...result,
@@ -105,11 +98,7 @@ export class ProductService {
       }
     }
 
-    const preparedDto = await this.prepareMountingStructureDto(
-      updateDto,
-      existing,
-      id,
-    );
+    const preparedDto = await this.prepareMountingStructureDto(updateDto, existing, id);
 
     try {
       return await this.productRepository.update(id, {
@@ -191,9 +180,7 @@ export class ProductService {
     excludeProductId: string,
     updatedBy?: string,
   ): Promise<ProductEntity> {
-    const productType = await this.productTypeRepository.findById(
-      existing.productTypeId,
-    );
+    const productType = await this.productTypeRepository.findById(existing.productTypeId);
     if (productType?.code !== MOUNTING_STRUCTURE_CODE) {
       return existing;
     }

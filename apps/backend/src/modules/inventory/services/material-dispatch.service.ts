@@ -133,10 +133,7 @@ export class MaterialDispatchService {
       );
     }
     for (const [productId, requiredReserved] of reservedNeededByProduct) {
-      const stock = await this.inventoryStockService.getStock(
-        createDto.warehouseId,
-        productId,
-      );
+      const stock = await this.inventoryStockService.getStock(createDto.warehouseId, productId);
       const reserved = stock ? Number(stock.reservedQuantity) : 0;
       if (reserved < requiredReserved) {
         throw new BadRequestException(
@@ -146,8 +143,7 @@ export class MaterialDispatchService {
     }
 
     // Generate dispatch number
-    const dispatchNumber =
-      await this.materialDispatchRepository.generateDispatchNumber();
+    const dispatchNumber = await this.materialDispatchRepository.generateDispatchNumber();
 
     // Create dispatch
     const dispatch = await this.materialDispatchRepository.create({
@@ -213,9 +209,7 @@ export class MaterialDispatchService {
   /**
    * Find dispatches by project
    */
-  async findByProject(
-    projectId: string,
-  ): Promise<MaterialDispatchEntity[]> {
+  async findByProject(projectId: string): Promise<MaterialDispatchEntity[]> {
     return this.materialDispatchRepository.findByProject(projectId);
   }
 
@@ -282,10 +276,7 @@ export class MaterialDispatchService {
    * Mark dispatch as IN_TRANSIT — deducts reserved stock atomically.
    * Transitions PREPARED → IN_TRANSIT.
    */
-  async markDispatched(
-    id: string,
-    performedBy: string,
-  ): Promise<MaterialDispatchEntity> {
+  async markDispatched(id: string, performedBy: string): Promise<MaterialDispatchEntity> {
     const dispatch = await this.materialDispatchRepository.findById(id);
 
     if (dispatch.status !== MaterialDispatchStatus.PREPARED) {
@@ -395,11 +386,7 @@ export class MaterialDispatchService {
   /**
    * Cancel dispatch
    */
-  async cancel(
-    id: string,
-    reason: string,
-    updatedBy: string,
-  ): Promise<MaterialDispatchEntity> {
+  async cancel(id: string, reason: string, updatedBy: string): Promise<MaterialDispatchEntity> {
     const dispatch = await this.materialDispatchRepository.findById(id);
 
     if (dispatch.status === MaterialDispatchStatus.DELIVERED) {

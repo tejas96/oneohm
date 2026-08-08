@@ -16,7 +16,6 @@ export class ApprovalTemplateResponseDto {
 
   // ==================== Organization ====================
 
-
   // ==================== Template Info ====================
 
   @ApiProperty({ example: 'PO Approval - Under 100K' })

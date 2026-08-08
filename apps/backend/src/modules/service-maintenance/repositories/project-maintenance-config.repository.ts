@@ -64,9 +64,9 @@ export class ProjectMaintenanceConfigRepository {
   /**
    * Find configs by organization
    */
-  async findByOrganization(
-    options?: { relations?: string[] },
-  ): Promise<ProjectMaintenanceConfigEntity[]> {
+  async findByOrganization(options?: {
+    relations?: string[];
+  }): Promise<ProjectMaintenanceConfigEntity[]> {
     return this.repository.find({
       relations: options?.relations || [],
     });
@@ -152,8 +152,7 @@ export class ProjectMaintenanceConfigRepository {
    * Count configs by organization
    */
   async countByOrganization(): Promise<number> {
-    return this.repository.count({
-    });
+    return this.repository.count({});
   }
 
   /**

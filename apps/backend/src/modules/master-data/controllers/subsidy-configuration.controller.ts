@@ -18,7 +18,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -48,10 +48,7 @@ export class SubsidyConfigurationController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: CreateSubsidyConfigurationDto,
   ): Promise<SubsidyConfigurationResponseDto> {
-    const config = await this.subsidyConfigurationService.create(
-      body,
-      currentUser.id,
-    );
+    const config = await this.subsidyConfigurationService.create(body, currentUser.id);
     return toDto(SubsidyConfigurationResponseDto, config);
   }
 
@@ -121,11 +118,7 @@ export class SubsidyConfigurationController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateSubsidyConfigurationDto,
   ): Promise<SubsidyConfigurationResponseDto> {
-    const config = await this.subsidyConfigurationService.update(
-      id,
-      body,
-      currentUser.id,
-    );
+    const config = await this.subsidyConfigurationService.update(id, body, currentUser.id);
     return toDto(SubsidyConfigurationResponseDto, config);
   }
 

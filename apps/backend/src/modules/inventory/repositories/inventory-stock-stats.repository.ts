@@ -20,9 +20,7 @@ export class InventoryStockStatsRepository {
     private readonly repository: Repository<InventoryStockEntity>,
   ) {}
 
-  async topLowStock(
-    limit: number,
-  ): Promise<
+  async topLowStock(limit: number): Promise<
     Array<{
       id: string;
       productName: string;

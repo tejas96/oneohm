@@ -239,9 +239,7 @@ export function useCustomers(
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
       if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 
-      const { data } = await apiClient.get<CustomerListResponse>(
-        `/customers?${params.toString()}`,
-      );
+      const { data } = await apiClient.get<CustomerListResponse>(`/customers?${params.toString()}`);
       return data;
     },
     enabled: callerEnabled !== false,
@@ -257,12 +255,10 @@ export function useCustomer(
   id: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<Customer, AxiosError> {
-
   return useQuery({
     queryKey: customerKeys.detail(id),
     queryFn: async (): Promise<Customer> => {
-      const { data } = await apiClient.get<Customer>(`/customers/${id}`, {
-      });
+      const { data } = await apiClient.get<Customer>(`/customers/${id}`, {});
       return data;
     },
     enabled: !!id && options?.enabled !== false,
@@ -273,12 +269,13 @@ export function useCustomer(
  * Hook to fetch customer status statistics
  */
 export function useCustomerStats(): UseQueryResult<CustomerStatsResponse, AxiosError> {
-
   return useQuery({
     queryKey: [...customerKeys.all(), 'stats'] as const,
     queryFn: async (): Promise<CustomerStatsResponse> => {
-      const { data } = await apiClient.get<CustomerStatsResponse>('/customers/statistics/status', {
-      });
+      const { data } = await apiClient.get<CustomerStatsResponse>(
+        '/customers/statistics/status',
+        {},
+      );
       return data;
     },
   });
@@ -293,13 +290,10 @@ export function useCustomerStats(): UseQueryResult<CustomerStatsResponse, AxiosE
  * every keystroke of the search box.
  */
 export function useCustomerOverviewStats(): UseQueryResult<CustomerOverviewStats, AxiosError> {
-
   return useQuery({
     queryKey: [...customerKeys.all(), 'overview'] as const,
     queryFn: async (): Promise<CustomerOverviewStats> => {
-      const { data } = await apiClient.get<CustomerOverviewStats>(
-        '/customers/statistics/overview',
-      );
+      const { data } = await apiClient.get<CustomerOverviewStats>('/customers/statistics/overview');
       return data;
     },
   });
@@ -317,15 +311,11 @@ export function useUpdateCustomer(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ id, data }): Promise<Customer> => {
-      const { data: response } = await apiClient.patch<Customer>(`/customers/${id}`, data, {
-      });
+      const { data: response } = await apiClient.patch<Customer>(`/customers/${id}`, data, {});
       return response;
     },
     onSuccess: (updatedCustomer) => {
-      queryClient.setQueryData(
-        customerKeys.detail(updatedCustomer.id),
-        updatedCustomer,
-      );
+      queryClient.setQueryData(customerKeys.detail(updatedCustomer.id), updatedCustomer);
       void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
       void queryClient.invalidateQueries({
         queryKey: [...customerKeys.all(), 'stats'],
@@ -346,17 +336,13 @@ export function useUpdateCustomerStatus(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ id, status }): Promise<Customer> => {
-      const { data: response } = await apiClient.post<Customer>(
-        `/customers/${id}/status`,
-        { status },
-      );
+      const { data: response } = await apiClient.post<Customer>(`/customers/${id}/status`, {
+        status,
+      });
       return response;
     },
     onSuccess: (updatedCustomer) => {
-      queryClient.setQueryData(
-        customerKeys.detail(updatedCustomer.id),
-        updatedCustomer,
-      );
+      queryClient.setQueryData(customerKeys.detail(updatedCustomer.id), updatedCustomer);
       void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
       void queryClient.invalidateQueries({
         queryKey: [...customerKeys.all(), 'stats'],
@@ -378,18 +364,14 @@ export function useAssignCustomer(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ id, assigneeId }): Promise<Customer> => {
-      const { data: response } = await apiClient.patch<Customer>(
-        `/customers/${id}/assignee`,
-        { assigneeId },
-      );
+      const { data: response } = await apiClient.patch<Customer>(`/customers/${id}/assignee`, {
+        assigneeId,
+      });
       return response;
     },
     onSuccess: (updatedCustomer) => {
       // Update the detail cache immediately so the UI reflects the new assignee without a refetch
-      queryClient.setQueryData(
-        customerKeys.detail(updatedCustomer.id),
-        updatedCustomer,
-      );
+      queryClient.setQueryData(customerKeys.detail(updatedCustomer.id), updatedCustomer);
       // Do NOT invalidate the list queries here — assigning an employee to a customer
       // does not change what appears in the customer list, and triggering a full list
       // refetch would cause a spurious /customers pagination request every time.
@@ -405,8 +387,7 @@ export function useDeleteCustomer(): UseMutationResult<void, AxiosError, string>
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await apiClient.delete(`/customers/${id}`, {
-      });
+      await apiClient.delete(`/customers/${id}`, {});
     },
     onSuccess: (_, id) => {
       showToast.success('Customer permanently deleted');
@@ -434,12 +415,10 @@ export interface CustomerGroup {
  * Used to populate the group selector on the customer form.
  */
 export function useCustomerGroups(): UseQueryResult<CustomerGroup[], AxiosError> {
-
   return useQuery({
     queryKey: [...customerKeys.all(), 'groups'] as const,
     queryFn: async (): Promise<CustomerGroup[]> => {
-      const { data } = await apiClient.get<CustomerGroup[]>('/customers/groups', {
-      });
+      const { data } = await apiClient.get<CustomerGroup[]>('/customers/groups', {});
       return data;
     },
   });

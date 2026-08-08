@@ -258,11 +258,7 @@ export class StockAllocationService {
   /**
    * Cancel allocation — releases reserved stock back to available.
    */
-  async cancel(
-    id: string,
-    reason: string,
-    updatedBy: string,
-  ): Promise<StockAllocationEntity> {
+  async cancel(id: string, reason: string, updatedBy: string): Promise<StockAllocationEntity> {
     const updatedAllocationId = await this.dataSource.transaction(async (manager) => {
       // Pessimistic-lock the allocation row first so concurrent cancels serialize
       // and the second one observes status=CANCELLED instead of racing to a

@@ -27,13 +27,10 @@ export class FollowupService {
   /**
    * Create a new followup
    */
-  async create(
-    createDto: CreateFollowupDto,
-    createdBy: string,
-  ): Promise<FollowupEntity> {
+  async create(createDto: CreateFollowupDto, createdBy: string): Promise<FollowupEntity> {
     this.logger.log(`Creating followup for customer: ${createDto.customerId}`);
 
-    // Validate customer exists 
+    // Validate customer exists
     const customer = await this.customerRepository.findById(createDto.customerId);
     if (!customer) {
       throw new NotFoundException('Customer not found');
@@ -72,14 +69,8 @@ export class FollowupService {
   /**
    * Find all followups for an organization
    */
-  async findAll(
-    page = 1,
-    limit = 20,
-  ): Promise<{ data: FollowupEntity[]; total: number }> {
-    const [data, total] = await this.followupRepository.findByOrganization(
-      page,
-      limit,
-    );
+  async findAll(page = 1, limit = 20): Promise<{ data: FollowupEntity[]; total: number }> {
+    const [data, total] = await this.followupRepository.findByOrganization(page, limit);
     return { data, total };
   }
 
@@ -105,11 +96,7 @@ export class FollowupService {
       to: filters.to ? new Date(filters.to) : undefined,
     };
 
-    const [data, total] = await this.followupRepository.findWithFilters(
-      parsedFilters,
-      page,
-      limit,
-    );
+    const [data, total] = await this.followupRepository.findWithFilters(parsedFilters, page, limit);
     return { data, total };
   }
 
@@ -139,11 +126,7 @@ export class FollowupService {
     page = 1,
     limit = 20,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
-    const [data, total] = await this.followupRepository.findTodayFollowups(
-      userId,
-      page,
-      limit,
-    );
+    const [data, total] = await this.followupRepository.findTodayFollowups(userId, page, limit);
     return { data, total };
   }
 
@@ -155,11 +138,7 @@ export class FollowupService {
     page = 1,
     limit = 20,
   ): Promise<{ data: FollowupEntity[]; total: number }> {
-    const [data, total] = await this.followupRepository.findOverdueFollowups(
-      userId,
-      page,
-      limit,
-    );
+    const [data, total] = await this.followupRepository.findOverdueFollowups(userId, page, limit);
     return { data, total };
   }
 
@@ -222,10 +201,7 @@ export class FollowupService {
   /**
    * Mark followup as completed
    */
-  async markAsCompleted(
-    id: string,
-    updatedBy: string,
-  ): Promise<FollowupEntity> {
+  async markAsCompleted(id: string, updatedBy: string): Promise<FollowupEntity> {
     this.logger.log(`Marking followup as completed: ${id}`);
 
     const existingFollowup = await this.findById(id);
@@ -254,10 +230,7 @@ export class FollowupService {
   /**
    * Mark followup as cancelled
    */
-  async markAsCancelled(
-    id: string,
-    updatedBy: string,
-  ): Promise<FollowupEntity> {
+  async markAsCancelled(id: string, updatedBy: string): Promise<FollowupEntity> {
     this.logger.log(`Marking followup as cancelled: ${id}`);
 
     const existingFollowup = await this.findById(id);

@@ -77,9 +77,7 @@ export class MaintenanceTaskRepository {
   /**
    * Find tasks by organization
    */
-  async findByOrganization(
-    options?: { relations?: string[] },
-  ): Promise<MaintenanceTaskEntity[]> {
+  async findByOrganization(options?: { relations?: string[] }): Promise<MaintenanceTaskEntity[]> {
     return this.repository.find({
       relations: options?.relations || [],
       order: { scheduledDate: 'DESC' },

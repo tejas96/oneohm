@@ -69,9 +69,7 @@ export class IntegrationRepository {
   /**
    * Find all active integrations by category for an organization
    */
-  async findByCategoryAndOrg(
-    category: IntegrationCategory,
-  ): Promise<IntegrationEntity[]> {
+  async findByCategoryAndOrg(category: IntegrationCategory): Promise<IntegrationEntity[]> {
     return this.repository.find({
       where: {
         category,
@@ -151,10 +149,7 @@ export class IntegrationRepository {
   /**
    * Check if integration exists for org + provider + category
    */
-  async exists(
-    provider: IntegrationProvider,
-    category: IntegrationCategory,
-  ): Promise<boolean> {
+  async exists(provider: IntegrationProvider, category: IntegrationCategory): Promise<boolean> {
     const count = await this.repository.count({
       where: { provider, category },
     });

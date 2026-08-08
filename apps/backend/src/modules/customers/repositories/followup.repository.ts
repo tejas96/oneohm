@@ -25,10 +25,7 @@ export class FollowupRepository {
   /**
    * Find all followups for an organization with pagination
    */
-  async findByOrganization(
-    page = 1,
-    limit = 20,
-  ): Promise<[FollowupEntity[], number]> {
+  async findByOrganization(page = 1, limit = 20): Promise<[FollowupEntity[], number]> {
     return this.repository.findAndCount({
       where: { deletedAt: IsNull() },
       relations: ['customer', 'property', 'assignedToUser'],
@@ -223,10 +220,7 @@ export class FollowupRepository {
    * Update a followup
    * Note: Caller must validate organizationId before calling
    */
-  async update(
-    id: string,
-    updates: Partial<FollowupEntity>,
-  ): Promise<FollowupEntity | null> {
+  async update(id: string, updates: Partial<FollowupEntity>): Promise<FollowupEntity | null> {
     await this.repository.update({ id }, updates as Record<string, unknown>);
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },

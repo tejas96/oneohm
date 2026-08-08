@@ -12,20 +12,16 @@ export class BrandRepository {
     private readonly repository: Repository<BrandEntity>,
   ) {}
 
-  async findAll(
-    filters?: {
-      productTypeId?: string;
-      isActive?: boolean;
-      search?: string;
-      page?: number;
-      limit?: number;
-      sortBy?: string;
-      sortOrder?: 'ASC' | 'DESC';
-    },
-  ): Promise<{ data: BrandEntity[]; total: number }> {
-    const query = this.repository
-      .createQueryBuilder('brand')
-      .andWhere('brand.deleted_at IS NULL');
+  async findAll(filters?: {
+    productTypeId?: string;
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<{ data: BrandEntity[]; total: number }> {
+    const query = this.repository.createQueryBuilder('brand').andWhere('brand.deleted_at IS NULL');
 
     if (filters?.isActive !== undefined) {
       query.andWhere('brand.is_active = :isActive', { isActive: filters.isActive });
@@ -86,10 +82,7 @@ export class BrandRepository {
     return this.repository.save(entity);
   }
 
-  async update(
-    id: string,
-    data: Partial<BrandEntity>,
-  ): Promise<BrandEntity> {
+  async update(id: string, data: Partial<BrandEntity>): Promise<BrandEntity> {
     await this.repository.update({ id }, {
       ...data,
       updatedAt: new Date(),

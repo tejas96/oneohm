@@ -145,9 +145,7 @@ export class FinanceController {
       'top 5 vendors by spend (in range), and last 10 activity items. ' +
       'Defaults range to the current calendar month if from/to omitted.',
   })
-  async getDashboard(
-    @Query() query: DashboardQueryDto,
-  ): Promise<DashboardDto> {
+  async getDashboard(@Query() query: DashboardQueryDto): Promise<DashboardDto> {
     return this.aggregationService.getDashboard(query.from, query.to);
   }
 
@@ -208,9 +206,7 @@ export class FinanceController {
       'Returns one row per customer with totalOutstanding broken into 5 aging ' +
       'buckets (current, 0-30, 31-60, 61-90, 90+). Optional asOfDate (default today).',
   })
-  async getCustomersAr(
-    @Query() query: CustomersArQueryDto,
-  ): Promise<CustomerAgingDto[]> {
+  async getCustomersAr(@Query() query: CustomersArQueryDto): Promise<CustomerAgingDto[]> {
     return this.aggregationService.getCustomersAr(query);
   }
 
@@ -225,9 +221,7 @@ export class FinanceController {
       'last expense, top category, reimbursed %, and per-category breakdown. ' +
       'Vendor matching is case-insensitive on TRIM(vendor_name).',
   })
-  async getVendorsSpend(
-    @Query() query: VendorsSpendQueryDto,
-  ): Promise<VendorSpendDto[]> {
+  async getVendorsSpend(@Query() query: VendorsSpendQueryDto): Promise<VendorSpendDto[]> {
     return this.aggregationService.getVendorsSpend(query);
   }
 

@@ -48,9 +48,7 @@ export class WhatsappWebhookController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Receive WhatsApp webhook events' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Webhook event accepted' })
-  async receiveWebhook(
-    @Body() payload: Record<string, unknown>,
-  ): Promise<{ received: true }> {
+  async receiveWebhook(@Body() payload: Record<string, unknown>): Promise<{ received: true }> {
     this.processWebhookEvents(payload);
     return { received: true };
   }
@@ -96,9 +94,7 @@ export class WhatsappWebhookController {
         const messages = Array.isArray(value.messages) ? value.messages : [];
         for (const message of messages) {
           if (!this.isRecord(message)) continue;
-          this.logger.log(
-            `WhatsApp inbound message: ${JSON.stringify(message)}`,
-          );
+          this.logger.log(`WhatsApp inbound message: ${JSON.stringify(message)}`);
         }
       }
     }

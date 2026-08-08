@@ -127,7 +127,6 @@ export function useCustomerProperties(
   customerId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerPropertyResponse[], AxiosError> {
-
   return useQuery({
     queryKey: propertyKeys.byCustomer(customerId),
     queryFn: async (): Promise<CustomerPropertyResponse[]> => {
@@ -149,7 +148,6 @@ export function useCustomerProperties(
 export function useProperty(
   propertyId: string,
 ): UseQueryResult<CustomerPropertyResponse, AxiosError> {
-
   return useQuery({
     queryKey: propertyKeys.detail(propertyId),
     queryFn: async (): Promise<CustomerPropertyResponse> => {

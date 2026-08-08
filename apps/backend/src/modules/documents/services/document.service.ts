@@ -15,7 +15,6 @@ export class DocumentService {
   ) {}
 
   async create(dto: CreateDocumentDto, userId: string): Promise<DocumentEntity> {
-
     const propertyId =
       dto.propertyId ?? (await this.resolvePropertyId(dto.entityType, dto.entityId));
 
@@ -94,11 +93,7 @@ export class DocumentService {
     return this.documentRepository.findByProperty(propertyId, filters);
   }
 
-  async update(
-    id: string,
-    dto: UpdateDocumentDto,
-    userId: string,
-  ): Promise<DocumentEntity> {
+  async update(id: string, dto: UpdateDocumentDto, userId: string): Promise<DocumentEntity> {
     await this.findById(id);
 
     const updateData: Record<string, unknown> = { updatedBy: userId };

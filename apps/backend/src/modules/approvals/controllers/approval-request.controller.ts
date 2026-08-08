@@ -17,12 +17,7 @@ import {
 } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  ApiCreate,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate
-} from '../../../common/decorators';
+import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -109,16 +104,12 @@ export class ApprovalRequestController {
     @Query('templateId') templateId?: string,
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<ApprovalRequestResponseDto>> {
-    const { requests, total } = await this.requestService.findAll(
-      page ?? 1,
-      limit ?? 20,
-      {
-        status,
-        referenceType,
-        templateId,
-        search,
-      },
-    );
+    const { requests, total } = await this.requestService.findAll(page ?? 1, limit ?? 20, {
+      status,
+      referenceType,
+      templateId,
+      search,
+    });
 
     return {
       data: plainToInstance(ApprovalRequestResponseDto, requests, {
@@ -259,9 +250,7 @@ export class ApprovalRequestController {
     summary: 'Get pending count',
     description: 'Get count of pending approval requests',
   })
-  async getPendingCount(
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<{ count: number }> {
+  async getPendingCount(@CurrentUser() _currentUser: CurrentUserType): Promise<{ count: number }> {
     const count = await this.requestService.getPendingCount();
     return { count };
   }

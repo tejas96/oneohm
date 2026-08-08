@@ -112,8 +112,7 @@ export class CustomerFeedbackController {
     description: 'List of feedback',
     type: [CustomerFeedbackResponseDto],
   })
-  async findByOrganization(
-  ): Promise<CustomerFeedbackResponseDto[]> {
+  async findByOrganization(): Promise<CustomerFeedbackResponseDto[]> {
     return this.feedbackService.findByOrganization();
   }
 
@@ -124,8 +123,7 @@ export class CustomerFeedbackController {
     description: 'List of published feedback',
     type: [CustomerFeedbackResponseDto],
   })
-  async findPublishedByOrganization(
-  ): Promise<CustomerFeedbackResponseDto[]> {
+  async findPublishedByOrganization(): Promise<CustomerFeedbackResponseDto[]> {
     return this.feedbackService.findPublishedByOrganization();
   }
 
@@ -211,8 +209,7 @@ export class CustomerFeedbackController {
     status: HttpStatus.OK,
     description: 'Average rating',
   })
-  async getAverageRating(
-  ): Promise<{ averageRating: number }> {
+  async getAverageRating(): Promise<{ averageRating: number }> {
     const rating = await this.feedbackService.getAverageRating();
     return { averageRating: rating };
   }
@@ -223,8 +220,7 @@ export class CustomerFeedbackController {
     status: HttpStatus.OK,
     description: 'Department averages',
   })
-  async getDepartmentAverages(
-  ): Promise<Record<string, number>> {
+  async getDepartmentAverages(): Promise<Record<string, number>> {
     return this.feedbackService.getDepartmentAverages();
   }
 
@@ -234,8 +230,7 @@ export class CustomerFeedbackController {
     status: HttpStatus.OK,
     description: 'Comprehensive feedback statistics',
   })
-  async getStatistics(
-  ): Promise<Record<string, unknown>> {
+  async getStatistics(): Promise<Record<string, unknown>> {
     return this.feedbackService.getStatistics();
   }
 

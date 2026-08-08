@@ -55,13 +55,7 @@ export interface RecordReceiptInput {
  */
 type LedgerEntryValues = Pick<
   LedgerEntryEntity,
-  | 'projectId'
-  | 'entryNo'
-  | 'entryType'
-  | 'direction'
-  | 'amountPaise'
-  | 'valueDate'
-  | 'createdBy'
+  'projectId' | 'entryNo' | 'entryType' | 'direction' | 'amountPaise' | 'valueDate' | 'createdBy'
 > &
   Partial<
     Pick<
@@ -128,10 +122,7 @@ export class LedgerWriteService {
    * and surfaces as customer credit on `v_project_balance` — never forced onto
    * the last milestone and never silently dropped.
    */
-  async recordReceipt(
-    input: RecordReceiptInput,
-    createdBy: string,
-  ): Promise<LedgerEntryEntity> {
+  async recordReceipt(input: RecordReceiptInput, createdBy: string): Promise<LedgerEntryEntity> {
     this.assertWritesAllowed();
     const valueDate = this.resolveValueDate(input.valueDate);
     this.assertAmount(input.amountPaise);
@@ -172,10 +163,7 @@ export class LedgerWriteService {
       const entry = await this.insertEntry(manager, {
         projectId: input.projectId,
         customerId: input.customerId ?? null,
-        entryNo: await this.sequenceService.getNextNumber(
-          FinanceSequenceScope.RECEIPT,
-          manager,
-        ),
+        entryNo: await this.sequenceService.getNextNumber(FinanceSequenceScope.RECEIPT, manager),
         entryType: 'receipt',
         direction: 'in',
         amountPaise: input.amountPaise,
@@ -205,10 +193,7 @@ export class LedgerWriteService {
    * Record money out. Expenses carry no allocations — they are not receivable
    * against a milestone, and they never change what the customer owes.
    */
-  async recordExpense(
-    input: RecordExpenseInput,
-    createdBy: string,
-  ): Promise<LedgerEntryEntity> {
+  async recordExpense(input: RecordExpenseInput, createdBy: string): Promise<LedgerEntryEntity> {
     this.assertWritesAllowed();
     const valueDate = this.resolveValueDate(input.valueDate);
     this.assertAmount(input.amountPaise);
@@ -218,10 +203,7 @@ export class LedgerWriteService {
       this.insertEntry(manager, {
         projectId: input.projectId,
         customerId: null,
-        entryNo: await this.sequenceService.getNextNumber(
-          FinanceSequenceScope.EXPENSE,
-          manager,
-        ),
+        entryNo: await this.sequenceService.getNextNumber(FinanceSequenceScope.EXPENSE, manager),
         entryType: 'expense',
         direction: 'out',
         // money out is stored negative so SUM over the ledger is the cash position
@@ -295,11 +277,7 @@ export class LedgerWriteService {
    * Kept as its own operation (and its own endpoint) so that when RBAC lands it
    * can be gated with a single decorator, without touching the recording path.
    */
-  async reverse(
-    entryId: string,
-    reason: string,
-    createdBy: string,
-  ): Promise<LedgerEntryEntity> {
+  async reverse(entryId: string, reason: string, createdBy: string): Promise<LedgerEntryEntity> {
     this.assertWritesAllowed();
     if (!reason?.trim()) {
       throw new BadRequestException('A reversal reason is required');

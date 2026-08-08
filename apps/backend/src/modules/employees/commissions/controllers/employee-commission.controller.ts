@@ -17,7 +17,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../../common/decorators';
 import { CurrentUser } from '../../../auth/decorators';
 import { JwtAuthGuard } from '../../../auth/guards';
@@ -62,10 +62,7 @@ export class EmployeeCommissionController {
     @Body() createDto: CreateCommissionDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
-    const commission = await this.commissionService.create(
-      createDto,
-      currentUser.id,
-    );
+    const commission = await this.commissionService.create(createDto, currentUser.id);
     return commission as CommissionResponseDto;
   }
 
@@ -145,11 +142,7 @@ export class EmployeeCommissionController {
     @Body() updateDto: UpdateCommissionDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
-    const commission = await this.commissionService.update(
-      id,
-      updateDto,
-      currentUser.id,
-    );
+    const commission = await this.commissionService.update(id, updateDto, currentUser.id);
     return commission as CommissionResponseDto;
   }
 

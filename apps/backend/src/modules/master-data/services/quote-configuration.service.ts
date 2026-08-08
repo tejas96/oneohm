@@ -25,10 +25,7 @@ export class QuoteConfigurationService {
     return config;
   }
 
-  async create(
-    dto: CreateQuoteConfigurationDto,
-    createdBy?: string,
-  ): Promise<QuoteConfiguration> {
+  async create(dto: CreateQuoteConfigurationDto, createdBy?: string): Promise<QuoteConfiguration> {
     if (dto.gstConfig) {
       const { rate1Percentage, rate2Percentage } = dto.gstConfig;
       if (rate1Percentage !== undefined && rate2Percentage !== undefined) {

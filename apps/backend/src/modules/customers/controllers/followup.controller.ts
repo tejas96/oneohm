@@ -17,7 +17,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -118,12 +118,7 @@ export class FollowupController {
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
-    const result = await this.followupService.findMyFollowups(
-      currentUser.id,
-      status,
-      page,
-      limit,
-    );
+    const result = await this.followupService.findMyFollowups(currentUser.id, status, page, limit);
     return toPaginatedResponse(FollowupResponseDto, result.data, result.total, page, limit);
   }
 
@@ -149,11 +144,7 @@ export class FollowupController {
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
-    const result = await this.followupService.findTodayFollowups(
-      assignedToUserId,
-      page,
-      limit,
-    );
+    const result = await this.followupService.findTodayFollowups(assignedToUserId, page, limit);
     return toPaginatedResponse(FollowupResponseDto, result.data, result.total, page, limit);
   }
 
@@ -179,11 +170,7 @@ export class FollowupController {
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
-    const result = await this.followupService.findOverdueFollowups(
-      assignedToUserId,
-      page,
-      limit,
-    );
+    const result = await this.followupService.findOverdueFollowups(assignedToUserId, page, limit);
     return toPaginatedResponse(FollowupResponseDto, result.data, result.total, page, limit);
   }
 
@@ -195,9 +182,7 @@ export class FollowupController {
     description: 'Get a specific followup by its ID',
     responseType: FollowupResponseDto,
   })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<FollowupResponseDto> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<FollowupResponseDto> {
     const followup = await this.followupService.findById(id);
     return toDto(FollowupResponseDto, followup);
   }
@@ -216,11 +201,7 @@ export class FollowupController {
     @Body() updateDto: UpdateFollowupDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<FollowupResponseDto> {
-    const followup = await this.followupService.update(
-      id,
-      updateDto,
-      currentUser.id,
-    );
+    const followup = await this.followupService.update(id, updateDto, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
 

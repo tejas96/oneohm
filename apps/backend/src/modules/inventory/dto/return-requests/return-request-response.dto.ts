@@ -8,7 +8,6 @@ export class ReturnRequestResponseDto {
   @ApiProperty()
   id!: string;
 
-
   @Expose()
   @ApiProperty()
   allocationId!: string;

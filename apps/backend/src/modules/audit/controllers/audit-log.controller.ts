@@ -86,8 +86,7 @@ export class AuditLogController {
     status: 200,
     description: 'Action statistics',
   })
-  async getActionStats(
-  ): Promise<Record<string, number>> {
+  async getActionStats(): Promise<Record<string, number>> {
     return this.auditLogService.getActionStats();
   }
 
@@ -97,8 +96,7 @@ export class AuditLogController {
     status: 200,
     description: 'Entity type statistics',
   })
-  async getEntityTypeStats(
-  ): Promise<Record<string, number>> {
+  async getEntityTypeStats(): Promise<Record<string, number>> {
     return this.auditLogService.getEntityTypeStats();
   }
 

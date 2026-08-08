@@ -58,11 +58,7 @@ export class InventoryTransactionController {
     @Query('toDate') toDate?: string,
     @Query('bucket') bucket?: string,
   ): Promise<TrendResponse> {
-    return this.inventoryStatsService.transactionsByTypeTrend(
-      fromDate,
-      toDate,
-      bucket,
-    );
+    return this.inventoryStatsService.transactionsByTypeTrend(fromDate, toDate, bucket);
   }
 
   /**
@@ -102,11 +98,7 @@ export class InventoryTransactionController {
       total,
       page: p,
       limit: l,
-    } = await this.inventoryTransactionService.findByProduct(
-      productId,
-      page,
-      limit,
-    );
+    } = await this.inventoryTransactionService.findByProduct(productId, page, limit);
 
     return {
       data: plainToInstance(InventoryTransactionResponseDto, transactions, {

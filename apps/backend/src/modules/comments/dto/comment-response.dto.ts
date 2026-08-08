@@ -59,7 +59,6 @@ export class CommentResponseDto {
   @Expose()
   id!: string;
 
-
   @ApiProperty({ enum: CommentEntityType })
   @Expose()
   entityType!: CommentEntityType;

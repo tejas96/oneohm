@@ -94,19 +94,14 @@ export class ProductPriceRepository {
     return resultMap;
   }
 
-  async findAllByProductId(
-    productId: string,
-  ): Promise<ProductPriceEntity[]> {
+  async findAllByProductId(productId: string): Promise<ProductPriceEntity[]> {
     return this.repository.find({
       where: { productId },
       order: { effectiveFrom: 'DESC' },
     });
   }
 
-  async findById(
-    id: string,
-    productId?: string,
-  ): Promise<ProductPriceEntity | null> {
+  async findById(id: string, productId?: string): Promise<ProductPriceEntity | null> {
     return this.repository.findOne({
       where: {
         id,
@@ -115,17 +110,12 @@ export class ProductPriceRepository {
     });
   }
 
-  async create(
-    data: Partial<ProductPriceEntity>,
-  ): Promise<ProductPriceEntity> {
+  async create(data: Partial<ProductPriceEntity>): Promise<ProductPriceEntity> {
     const entity = this.repository.create({ ...data });
     return this.repository.save(entity);
   }
 
-  async update(
-    id: string,
-    data: Partial<ProductPriceEntity>,
-  ): Promise<ProductPriceEntity> {
+  async update(id: string, data: Partial<ProductPriceEntity>): Promise<ProductPriceEntity> {
     await this.repository.update({ id }, {
       ...data,
       updatedAt: new Date(),

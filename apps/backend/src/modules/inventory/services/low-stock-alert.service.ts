@@ -73,9 +73,7 @@ export class LowStockAlertService {
     );
   }
 
-  private async getRecipientUserIds(
-    fallbackUserId: string,
-  ): Promise<string[]> {
+  private async getRecipientUserIds(fallbackUserId: string): Promise<string[]> {
     const rows = await this.dataSource.query(
       `SELECT DISTINCT ur.user_id AS "userId"
        FROM user_roles ur

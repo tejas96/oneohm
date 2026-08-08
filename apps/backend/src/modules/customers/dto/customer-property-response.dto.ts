@@ -33,7 +33,6 @@ export class CustomerPropertyResponseDto {
   @Expose()
   customerId!: string;
 
-
   @ApiPropertyOptional()
   @Expose()
   propertyCode?: string;

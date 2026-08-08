@@ -88,7 +88,9 @@ async function main(): Promise<void> {
     }
   }
   if (before.projectBalances.length !== current.projectBalances.length) {
-    diffs.push(`project count: ${before.projectBalances.length} -> ${current.projectBalances.length}`);
+    diffs.push(
+      `project count: ${before.projectBalances.length} -> ${current.projectBalances.length}`,
+    );
   }
 
   if (diffs.length > 0) {

@@ -20,9 +20,7 @@ export class QuoteConfigurationRepository {
    * Create a new quote configuration
    * Will deactivate any existing active config for the org
    */
-  async create(
-    data: Partial<QuoteConfiguration>,
-  ): Promise<QuoteConfiguration> {
+  async create(data: Partial<QuoteConfiguration>): Promise<QuoteConfiguration> {
     // Deactivate existing active configs
     await this.deactivateAll();
 
@@ -80,9 +78,7 @@ export class QuoteConfigurationRepository {
       } catch (error: unknown) {
         const err = error as { code?: string };
         if (err?.code === '23503') {
-          throw new BadRequestException(
-            `Invalid quote configuration`,
-          );
+          throw new BadRequestException(`Invalid quote configuration`);
         }
         throw error;
       }
@@ -112,10 +108,7 @@ export class QuoteConfigurationRepository {
   /**
    * Update quote configuration
    */
-  async update(
-    id: string,
-    data: Partial<QuoteConfiguration>,
-  ): Promise<QuoteConfiguration> {
+  async update(id: string, data: Partial<QuoteConfiguration>): Promise<QuoteConfiguration> {
     await this.repository.update({ id }, data);
     const updated = await this.findById(id);
     if (!updated) {

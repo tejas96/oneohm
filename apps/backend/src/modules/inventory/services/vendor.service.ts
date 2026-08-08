@@ -19,10 +19,7 @@ export class VendorService {
   /**
    * Create a new vendor
    */
-  async create(
-    createDto: CreateVendorDto,
-    createdBy: string,
-  ): Promise<VendorEntity> {
+  async create(createDto: CreateVendorDto, createdBy: string): Promise<VendorEntity> {
     // Verify organization exists
 
     // Check if code already exists
@@ -86,11 +83,7 @@ export class VendorService {
   /**
    * Update vendor
    */
-  async update(
-    id: string,
-    updateDto: UpdateVendorDto,
-    updatedBy: string,
-  ): Promise<VendorEntity> {
+  async update(id: string, updateDto: UpdateVendorDto, updatedBy: string): Promise<VendorEntity> {
     // Check if code is being changed and already exists
     if (updateDto.code) {
       const existingVendor = await this.vendorRepository.findByCode(updateDto.code);
@@ -137,23 +130,14 @@ export class VendorService {
   /**
    * Get active vendors by type
    */
-  async getActiveVendorsByType(
-    vendorType: VendorType,
-  ): Promise<VendorEntity[]> {
-    return this.vendorRepository.findByTypeAndStatus(
-      vendorType,
-      VendorStatus.ACTIVE,
-    );
+  async getActiveVendorsByType(vendorType: VendorType): Promise<VendorEntity[]> {
+    return this.vendorRepository.findByTypeAndStatus(vendorType, VendorStatus.ACTIVE);
   }
 
   /**
    * Change vendor status
    */
-  async changeStatus(
-    id: string,
-    status: VendorStatus,
-    updatedBy: string,
-  ): Promise<VendorEntity> {
+  async changeStatus(id: string, status: VendorStatus, updatedBy: string): Promise<VendorEntity> {
     return this.vendorRepository.update(id, {
       status,
       updatedBy,

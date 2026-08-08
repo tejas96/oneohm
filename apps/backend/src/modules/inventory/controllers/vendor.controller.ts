@@ -20,7 +20,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -221,11 +221,7 @@ export class VendorController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: VendorStatus,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorService.changeStatus(
-      id,
-      status,
-      currentUser.id,
-    );
+    const vendor = await this.vendorService.changeStatus(id, status, currentUser.id);
 
     return plainToInstance(VendorResponseDto, vendor, {
       excludeExtraneousValues: true,

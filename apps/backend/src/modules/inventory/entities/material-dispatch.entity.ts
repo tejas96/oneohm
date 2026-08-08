@@ -19,7 +19,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 export class MaterialDispatchEntity extends BaseEntity {
   // ==================== Relations ====================
 
-
   @ManyToOne(() => ProjectEntity)
   @JoinColumn({ name: 'project_id' })
   project!: ProjectEntity;
@@ -40,7 +39,6 @@ export class MaterialDispatchEntity extends BaseEntity {
   items!: MaterialDispatchItemEntity[];
 
   // ==================== Foreign Keys ====================
-
 
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;

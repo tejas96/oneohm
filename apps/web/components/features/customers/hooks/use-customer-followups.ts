@@ -85,8 +85,7 @@ export function useCustomerFollowups(
 
       const { data } = await apiClient.get<
         FollowupsListResponse | { data: FollowupResponse[]; meta?: PaginationMeta }
-      >(`/followups?${params.toString()}`, {
-      });
+      >(`/followups?${params.toString()}`, {});
       if (Array.isArray(data)) {
         return { data };
       }
@@ -109,8 +108,7 @@ export function useCreateFollowup(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (input): Promise<FollowupResponse> => {
-      const { data } = await apiClient.post<FollowupResponse>('/followups', input, {
-      });
+      const { data } = await apiClient.post<FollowupResponse>('/followups', input, {});
       return data;
     },
     onSuccess: (_, variables) => {
@@ -126,10 +124,7 @@ export function useCompleteFollowup(): UseMutationResult<FollowupResponse, Axios
 
   return useMutation({
     mutationFn: async (id): Promise<FollowupResponse> => {
-      const { data } = await apiClient.post<FollowupResponse>(
-        `/followups/${id}/complete`,
-        {},
-      );
+      const { data } = await apiClient.post<FollowupResponse>(`/followups/${id}/complete`, {});
       return data;
     },
     onSuccess: (data) => {

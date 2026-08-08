@@ -71,9 +71,7 @@ export class CustomerPropertyRepository {
     });
   }
 
-  async findByIdAndOrganization(
-    id: string,
-  ): Promise<CustomerPropertyEntity | null> {
+  async findByIdAndOrganization(id: string): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
       relations: [
@@ -95,10 +93,7 @@ export class CustomerPropertyRepository {
     });
   }
 
-  async findByOrganization(
-    page = 1,
-    limit = 20,
-  ): Promise<[CustomerPropertyEntity[], number]> {
+  async findByOrganization(page = 1, limit = 20): Promise<[CustomerPropertyEntity[], number]> {
     return this.repository.findAndCount({
       where: { deletedAt: IsNull() },
       relations: ['customer'],
@@ -108,9 +103,7 @@ export class CustomerPropertyRepository {
     });
   }
 
-  async findByConsumerNumber(
-    consumerNumber: string,
-  ): Promise<CustomerPropertyEntity | null> {
+  async findByConsumerNumber(consumerNumber: string): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
       where: { consumerNumber, deletedAt: IsNull() },
       relations: ['customer'],
@@ -216,9 +209,7 @@ export class CustomerPropertyRepository {
    * @param query - Query parameters (filters, sorting, pagination)
    * @returns Tuple of [properties, total count]
    */
-  async findWithFilters(
-    query: PropertyQueryDto,
-  ): Promise<[CustomerPropertyEntity[], number]> {
+  async findWithFilters(query: PropertyQueryDto): Promise<[CustomerPropertyEntity[], number]> {
     const needsQuoteJoin =
       QUOTE_SORT_FIELDS.has(query.sortBy) ||
       query.quoteStatus !== undefined ||
@@ -254,9 +245,7 @@ export class CustomerPropertyRepository {
       qb.addSelect(['cv.systemSizeKw', 'cv.finalPrice']);
     }
 
-    qb.where(
-      'property.deletedAt IS NULL',
-    );
+    qb.where('property.deletedAt IS NULL');
 
     // ===== Search (case-insensitive, multiple fields including customer name) =====
     if (query.search && query.search.length >= 2) {
@@ -368,8 +357,7 @@ export class CustomerPropertyRepository {
    * Get temperature statistics in a single query
    * Returns count of properties grouped by lead_temperature
    */
-  async getTemperatureStats(
-  ): Promise<{ temperature: LeadTemperature; count: number }[]> {
+  async getTemperatureStats(): Promise<{ temperature: LeadTemperature; count: number }[]> {
     const result = await this.repository
       .createQueryBuilder('property')
       .select('property.lead_temperature', 'temperature')

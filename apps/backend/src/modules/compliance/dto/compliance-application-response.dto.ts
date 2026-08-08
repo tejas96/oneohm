@@ -11,9 +11,7 @@ export class ComplianceApplicationResponseDto {
   @Expose()
   id: string;
 
-
   @Expose()
-
   @Expose()
   projectId: string;
 

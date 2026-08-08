@@ -91,7 +91,6 @@ export class CustomerResponseDto {
   @Expose()
   id!: string;
 
-
   @ApiPropertyOptional()
   @Expose()
   userId?: string;

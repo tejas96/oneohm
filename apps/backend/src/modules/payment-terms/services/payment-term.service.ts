@@ -76,8 +76,7 @@ export class PaymentTermService {
     createdBy: string,
   ): Promise<PaymentTermEntity> {
     const displayOrder =
-      dto.displayOrder ??
-      (await this.termRepository.getMaxDisplayOrder(projectId)) + 1;
+      dto.displayOrder ?? (await this.termRepository.getMaxDisplayOrder(projectId)) + 1;
 
     const repo = this.dataSource.getRepository(PaymentTermEntity);
     const entity = repo.create({
@@ -154,11 +153,7 @@ export class PaymentTermService {
   // STATUS ACTIONS — waive / cancel
   // ============================================
 
-  async waive(
-    id: string,
-    dto: WaivePaymentTermDto,
-    updatedBy: string,
-  ): Promise<PaymentTermEntity> {
+  async waive(id: string, dto: WaivePaymentTermDto, updatedBy: string): Promise<PaymentTermEntity> {
     const term = await this.findById(id);
 
     if (term.status === PaymentTermStatus.WAIVED) {
@@ -278,9 +273,7 @@ export class PaymentTermService {
   }): Promise<PaymentTermEntity[]> {
     const { projectId, sourceVersionId, milestones, updatedBy } = params;
 
-    const hasPayments = await this.termRepository.projectHasReceivedPayments(
-      projectId,
-    );
+    const hasPayments = await this.termRepository.projectHasReceivedPayments(projectId);
     if (hasPayments) {
       throw new ConflictException(
         'Cannot re-snapshot: at least one term already has received payments. Reconcile manually.',

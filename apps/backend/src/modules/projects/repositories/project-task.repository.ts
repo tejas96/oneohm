@@ -665,7 +665,6 @@ export class ProjectTaskRepository {
     teamProjectIds: string[] = [],
     isAdmin = false,
   ): Promise<ProjectTaskEntity | null> {
-
     let whereConditions: Record<string, unknown>[];
 
     if (isAdmin) {
@@ -676,9 +675,7 @@ export class ProjectTaskRepository {
         { id: taskId, projectId: In(teamProjectIds), deletedAt: IsNull() },
       ];
     } else {
-      whereConditions = [
-        { id: taskId, assignedToUserId: userId, deletedAt: IsNull() },
-      ];
+      whereConditions = [{ id: taskId, assignedToUserId: userId, deletedAt: IsNull() }];
     }
 
     const task = await this.repository.findOne({
@@ -723,10 +720,7 @@ export class ProjectTaskRepository {
     return task ? this.resolveTaskFields(task) : null;
   }
 
-  async countCompletedThisWeek(
-    userId: string,
-    projectId?: string,
-  ): Promise<number> {
+  async countCompletedThisWeek(userId: string, projectId?: string): Promise<number> {
     const startOfWeek = new Date();
     const day = startOfWeek.getDay();
     const diff = day === 0 ? 6 : day - 1;

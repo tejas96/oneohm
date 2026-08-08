@@ -63,9 +63,7 @@ export function UserFormModal({
   const { user: currentUser } = useAuth();
   const { create: createUser, update: updateUser } = useAdminUserMutations();
   const { update: updateEmployeeProfile } = useEmployeeProfileMutations();
-  const availability = useCheckUserAvailability(
-    isEdit ? userId : undefined,
-  );
+  const availability = useCheckUserAvailability(isEdit ? userId : undefined);
 
   const schema = isEdit ? editUserSchema : createUserSchema;
 

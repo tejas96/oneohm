@@ -12,7 +12,6 @@ export class RoleResponseDto {
     nullable: true,
     description: 'Organization ID. NULL for platform-level roles (e.g., platform_admin)',
   })
-
   @ApiProperty({ example: 'Sales Manager' })
   name: string;
 

@@ -22,7 +22,6 @@ import { type SavedViewResource } from '../types/saved-view-resource';
 @Index(['userId', 'resource'])
 @Unique(['userId', 'resource', 'name'])
 export class SavedViewEntity extends BaseEntity {
-
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 

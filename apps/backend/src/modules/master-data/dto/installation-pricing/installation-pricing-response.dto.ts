@@ -9,7 +9,6 @@ export class InstallationPricingResponseDto {
   @Expose()
   id!: string;
 
-
   @ApiProperty({ example: 3 })
   @Expose()
   @Transform(({ value }) => toNum(value))

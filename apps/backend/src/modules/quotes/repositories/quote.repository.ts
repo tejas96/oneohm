@@ -70,9 +70,7 @@ export class QuoteRepository {
    * @param query - Query parameters (filters, sorting, pagination)
    * @returns Tuple of [quotes, total count]
    */
-  async findWithFilters(
-    query: QuoteQueryDto,
-  ): Promise<[QuoteEntity[], number]> {
+  async findWithFilters(query: QuoteQueryDto): Promise<[QuoteEntity[], number]> {
     const qb = this.repository
       .createQueryBuilder('quote')
       .leftJoinAndSelect('quote.versions', 'cv', latestVersionJoinCondition('quote'))
@@ -221,10 +219,7 @@ export class QuoteRepository {
   /**
    * Update quote
    */
-  async update(
-    id: string,
-    quoteData: Partial<QuoteEntity>,
-  ): Promise<QuoteEntity> {
+  async update(id: string, quoteData: Partial<QuoteEntity>): Promise<QuoteEntity> {
     await this.repository.update(
       { id },
       {

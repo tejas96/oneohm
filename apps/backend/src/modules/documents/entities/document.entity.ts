@@ -11,8 +11,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['tag', 'deletedAt'])
 @Index(['propertyId', 'deletedAt'])
 export class DocumentEntity extends BaseEntity {
-
-
   @ManyToOne(() => CustomerPropertyEntity, { createForeignKeyConstraints: false })
   @JoinColumn({ name: 'property_id' })
   property?: CustomerPropertyEntity;

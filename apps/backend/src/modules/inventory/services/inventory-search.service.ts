@@ -77,10 +77,7 @@ export class InventorySearchService {
     private readonly dispatches: Repository<MaterialDispatchEntity>,
   ) {}
 
-  async search(
-    q: string,
-    types: InventorySearchType[],
-  ): Promise<InventorySearchResponse> {
+  async search(q: string, types: InventorySearchType[]): Promise<InventorySearchResponse> {
     const start = Date.now();
     const requested = types.length > 0 ? types : [...INVENTORY_SEARCH_TYPES];
     const results: Record<InventorySearchType, InventorySearchHit[]> = {

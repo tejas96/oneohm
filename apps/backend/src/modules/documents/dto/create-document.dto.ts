@@ -15,7 +15,6 @@ import {
 } from 'class-validator';
 
 export class CreateDocumentDto {
-
   @ApiPropertyOptional({ description: 'Property ID (auto-resolved from entity if not provided)' })
   @IsOptional()
   @IsUUID()

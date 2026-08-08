@@ -195,9 +195,7 @@ export class ApprovalRequestService {
 
       // TODO: Send rejection notifications
 
-      return this.requestRepository.findById(
-        requestId,
-      ) as Promise<ApprovalRequestEntity>;
+      return this.requestRepository.findById(requestId) as Promise<ApprovalRequestEntity>;
     }
 
     // Handle approval - check if stage requirements are met
@@ -205,9 +203,7 @@ export class ApprovalRequestService {
 
     if (!stageFulfilled) {
       // More approvals needed for this stage
-      return this.requestRepository.findById(
-        requestId,
-      ) as Promise<ApprovalRequestEntity>;
+      return this.requestRepository.findById(requestId) as Promise<ApprovalRequestEntity>;
     }
 
     // Stage is fulfilled, move to next stage or complete
@@ -227,9 +223,7 @@ export class ApprovalRequestService {
 
       // TODO: Send approval completion notifications
 
-      return this.requestRepository.findById(
-        requestId,
-      ) as Promise<ApprovalRequestEntity>;
+      return this.requestRepository.findById(requestId) as Promise<ApprovalRequestEntity>;
     }
 
     // Move to next stage
@@ -241,9 +235,7 @@ export class ApprovalRequestService {
 
     // TODO: Send notifications to next stage approvers
 
-    return this.requestRepository.findById(
-      requestId,
-    ) as Promise<ApprovalRequestEntity>;
+    return this.requestRepository.findById(requestId) as Promise<ApprovalRequestEntity>;
   }
 
   /**
@@ -291,9 +283,7 @@ export class ApprovalRequestService {
   /**
    * Find pending requests for a user
    */
-  async findPendingForUser(
-    userId: string,
-  ): Promise<ApprovalRequestEntity[]> {
+  async findPendingForUser(userId: string): Promise<ApprovalRequestEntity[]> {
     return this.requestRepository.findPendingForUser(userId);
   }
 
@@ -316,11 +306,7 @@ export class ApprovalRequestService {
   /**
    * Cancel request
    */
-  async cancel(
-    id: string,
-    cancelledBy: string,
-    reason?: string,
-  ): Promise<ApprovalRequestEntity> {
+  async cancel(id: string, cancelledBy: string, reason?: string): Promise<ApprovalRequestEntity> {
     const request = await this.findById(id);
 
     if (

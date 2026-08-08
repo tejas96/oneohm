@@ -22,8 +22,7 @@ export class ServiceRequestService {
    */
   async create(createDto: CreateServiceRequestDto): Promise<ServiceRequestResponseDto> {
     // Generate request number
-    const requestNumber = await this.serviceRequestRepository.generateRequestNumber(
-    );
+    const requestNumber = await this.serviceRequestRepository.generateRequestNumber();
 
     const request = await this.serviceRequestRepository.create({
       ...createDto,

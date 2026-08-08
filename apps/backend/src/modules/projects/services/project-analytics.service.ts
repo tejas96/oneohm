@@ -27,9 +27,7 @@ export class ProjectAnalyticsService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async getProjectSummary(
-    projectId: string,
-  ): Promise<ProjectSummaryResponseDto> {
+  async getProjectSummary(projectId: string): Promise<ProjectSummaryResponseDto> {
     const [project, allTasks] = await Promise.all([
       this.projectRepository.findById(projectId),
       this.taskRepository.findAllForBoard(projectId),
@@ -271,9 +269,7 @@ export class ProjectAnalyticsService {
     }
   }
 
-  async getMilestoneAggregates(
-    projectId: string,
-  ): Promise<
+  async getMilestoneAggregates(projectId: string): Promise<
     {
       name: string;
       order: number;

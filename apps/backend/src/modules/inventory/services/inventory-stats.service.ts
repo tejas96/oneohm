@@ -37,11 +37,7 @@ export class InventoryStatsService {
   ): Promise<TrendResponse> {
     const window = resolveStatsWindow(fromDate, toDate);
     const resolvedBucket = resolveStatsBucket(bucket);
-    const rows = await this.txnStats.byTypeTrend(
-      window.fromDate,
-      window.toDate,
-      resolvedBucket,
-    );
+    const rows = await this.txnStats.byTypeTrend(window.fromDate, window.toDate, resolvedBucket);
     return {
       fromDate: window.fromDate,
       toDate: window.toDate,

@@ -21,7 +21,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -186,11 +186,7 @@ export class ProductController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateProductStatusDto,
   ): Promise<ProductResponseDto> {
-    const product = await this.productService.updateStatus(
-      id,
-      statusDto.status,
-      currentUser.id,
-    );
+    const product = await this.productService.updateStatus(id, statusDto.status, currentUser.id);
 
     return plainToInstance(ProductResponseDto, product, {
       excludeExtraneousValues: true,

@@ -22,7 +22,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 export class FollowupEntity extends BaseEntity {
   // ==================== ORGANIZATION ====================
 
-
   // ==================== CUSTOMER (Required) ====================
   @Column({ name: 'customer_id', type: 'uuid' })
   customerId!: string;

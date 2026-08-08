@@ -134,7 +134,6 @@ export class UserRepository {
       );
     }
 
-
     if (filters?.roleId) {
       qb.andWhere(
         'EXISTS (SELECT 1 FROM user_roles ur_filter WHERE ur_filter.user_id = user.id AND ur_filter.role_id = :roleId)',

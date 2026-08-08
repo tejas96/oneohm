@@ -58,7 +58,6 @@ export class PaginationQueryBase {
   @Min(1)
   @Max(5000)
   limit?: number;
-
 }
 
 export class ReceiptsQueryDto extends PaginationQueryBase {
@@ -135,7 +134,6 @@ export class OutstandingQueryDto extends PaginationQueryBase {
 }
 
 export class CustomersArQueryDto {
-
   @ApiPropertyOptional({ description: 'As-of date for aging calc (YYYY-MM-DD); defaults to today' })
   @IsOptional()
   @IsDateString()
@@ -143,7 +141,6 @@ export class CustomersArQueryDto {
 }
 
 export class VendorsSpendQueryDto extends DateRangeQueryDto {
-
   @ApiPropertyOptional({ enum: ExpenseCategory })
   @IsOptional()
   @IsEnum(ExpenseCategory)

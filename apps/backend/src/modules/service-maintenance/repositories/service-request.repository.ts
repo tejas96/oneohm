@@ -92,9 +92,7 @@ export class ServiceRequestRepository {
   /**
    * Find requests by organization
    */
-  async findByOrganization(
-    options?: { relations?: string[] },
-  ): Promise<ServiceRequestEntity[]> {
+  async findByOrganization(options?: { relations?: string[] }): Promise<ServiceRequestEntity[]> {
     return this.repository.find({
       where: { deletedAt: IsNull() },
       relations: options?.relations || [],
@@ -278,9 +276,7 @@ export class ServiceRequestRepository {
   /**
    * Generate next request number
    */
-  async generateRequestNumber(
-    year: number = new Date().getFullYear(),
-  ): Promise<string> {
+  async generateRequestNumber(year: number = new Date().getFullYear()): Promise<string> {
     const prefix = `SR-${year}`;
     const lastRequest = await this.repository.findOne({
       where: {

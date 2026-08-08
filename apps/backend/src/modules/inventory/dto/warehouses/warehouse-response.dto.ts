@@ -13,7 +13,6 @@ export class WarehouseResponseDto {
   @Expose()
   id!: string;
 
-
   // ==================== Basic Info ====================
 
   @ApiProperty({ example: 'Main Warehouse Mumbai' })

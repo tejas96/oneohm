@@ -12,7 +12,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['productTypeId', 'status'])
 @Index(['brandId'])
 export class ProductEntity extends BaseEntity {
-
   @Column({ name: 'product_type_id', type: 'uuid' })
   productTypeId!: string;
 
@@ -63,7 +62,6 @@ export class ProductEntity extends BaseEntity {
 
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
-
 
   @ManyToOne(() => ProductTypeEntity)
   @JoinColumn({ name: 'product_type_id' })

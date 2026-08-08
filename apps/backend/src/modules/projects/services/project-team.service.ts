@@ -180,11 +180,7 @@ export class ProjectTeamService {
         'p',
         "p.id = tm.projectId AND p.deleted_at IS NULL AND p.status NOT IN ('completed', 'cancelled')",
       )
-      .innerJoin(
-        'customer_properties',
-        'cp',
-        'cp.id = p.property_id',
-      )
+      .innerJoin('customer_properties', 'cp', 'cp.id = p.property_id')
       .leftJoin(
         'project_tasks',
         't',

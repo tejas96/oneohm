@@ -27,15 +27,13 @@ export interface CustomerSubsidyApplication {
 
 export const customerSubsidyKeys = {
   all: () => ['customer-subsidies'] as const,
-  byCustomer: (customerId: string) =>
-    [...customerSubsidyKeys.all(), customerId] as const,
+  byCustomer: (customerId: string) => [...customerSubsidyKeys.all(), customerId] as const,
 };
 
 export function useCustomerSubsidies(
   customerId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerSubsidyApplication[], AxiosError> {
-
   return useQuery({
     queryKey: customerSubsidyKeys.byCustomer(customerId),
     queryFn: async (): Promise<CustomerSubsidyApplication[]> => {

@@ -187,7 +187,8 @@ describe('LedgerWriteService', () => {
 
     it('rejects a future value date', async () => {
       await expect(
-        service.recordReceipt({ projectId: PROJECT, amountPaise: 1000, valueDate: '2099-01-01' },
+        service.recordReceipt(
+          { projectId: PROJECT, amountPaise: 1000, valueDate: '2099-01-01' },
           USER,
         ),
       ).rejects.toThrow(/in the future/);
@@ -195,7 +196,8 @@ describe('LedgerWriteService', () => {
 
     it('accepts a back-dated value date — money often arrives before it is keyed in', async () => {
       repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 100_000)]);
-      await service.recordReceipt({ projectId: PROJECT, amountPaise: 1000, valueDate: '2026-01-15' },
+      await service.recordReceipt(
+        { projectId: PROJECT, amountPaise: 1000, valueDate: '2026-01-15' },
         USER,
       );
       expect(captured.entries[0].valueDate).toBe('2026-01-15');
@@ -209,7 +211,8 @@ describe('LedgerWriteService', () => {
           milestone('m2', 100_000),
         ]);
 
-        await service.recordReceipt({
+        await service.recordReceipt(
+          {
             projectId: PROJECT,
             amountPaise: 10_000,
             allocations: [
@@ -227,7 +230,8 @@ describe('LedgerWriteService', () => {
       it('rejects an allocation exceeding a single milestone capacity', async () => {
         repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 5_000)]);
         await expect(
-          service.recordReceipt({
+          service.recordReceipt(
+            {
               projectId: PROJECT,
               amountPaise: 9000,
               allocations: [{ milestoneId: 'm1', amountPaise: 9000 }],
@@ -240,7 +244,8 @@ describe('LedgerWriteService', () => {
       it('rejects allocations exceeding the entry — that would create money', async () => {
         repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 100_000)]);
         await expect(
-          service.recordReceipt({
+          service.recordReceipt(
+            {
               projectId: PROJECT,
               amountPaise: 5000,
               allocations: [{ milestoneId: 'm1', amountPaise: 9000 }],
@@ -253,7 +258,8 @@ describe('LedgerWriteService', () => {
       it("rejects a milestone that isn't on this project", async () => {
         repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 100_000)]);
         await expect(
-          service.recordReceipt({
+          service.recordReceipt(
+            {
               projectId: PROJECT,
               amountPaise: 5000,
               allocations: [{ milestoneId: 'somewhere-else', amountPaise: 5000 }],
@@ -266,7 +272,8 @@ describe('LedgerWriteService', () => {
       it('rejects allocating to a waived milestone', async () => {
         repo.getMilestoneBalances.mockResolvedValue([milestone('w', 100_000, 'waived')]);
         await expect(
-          service.recordReceipt({
+          service.recordReceipt(
+            {
               projectId: PROJECT,
               amountPaise: 5000,
               allocations: [{ milestoneId: 'w', amountPaise: 5000 }],
@@ -280,7 +287,8 @@ describe('LedgerWriteService', () => {
 
   describe('recordExpense', () => {
     it('stores money out as a NEGATIVE amount so SUM over the ledger is the cash position', async () => {
-      await service.recordExpense({ projectId: PROJECT, amountPaise: 8_000_000, category: 'materials', payee: 'Acme' },
+      await service.recordExpense(
+        { projectId: PROJECT, amountPaise: 8_000_000, category: 'materials', payee: 'Acme' },
         USER,
       );
 
@@ -294,7 +302,8 @@ describe('LedgerWriteService', () => {
     });
 
     it('creates no allocations — an expense is not receivable against a milestone', async () => {
-      await service.recordExpense({ projectId: PROJECT, amountPaise: 1000, category: 'travel' },
+      await service.recordExpense(
+        { projectId: PROJECT, amountPaise: 1000, category: 'travel' },
         USER,
       );
       expect(captured.allocations).toHaveLength(0);
@@ -316,7 +325,8 @@ describe('LedgerWriteService', () => {
         const call =
           method === 'recordReceipt'
             ? service.recordReceipt({ projectId: 'someone-elses', amountPaise: 1000 }, USER)
-            : service.recordExpense({ projectId: 'someone-elses', amountPaise: 1000, category: 'x' },
+            : service.recordExpense(
+                { projectId: 'someone-elses', amountPaise: 1000, category: 'x' },
                 USER,
               );
         await expect(call).rejects.toBeInstanceOf(NotFoundException);
@@ -349,7 +359,8 @@ describe('LedgerWriteService', () => {
           method === 'recordReceipt'
             ? service.recordReceipt({ projectId: PROJECT, amountPaise: 1000 }, USER)
             : method === 'recordExpense'
-              ? service.recordExpense({ projectId: PROJECT, amountPaise: 1000, category: 'x' },
+              ? service.recordExpense(
+                  { projectId: PROJECT, amountPaise: 1000, category: 'x' },
                   USER,
                 )
               : service.reverse('entry-1', 'reason', USER);
@@ -450,9 +461,7 @@ describe('LedgerWriteService', () => {
 
     it('404s on an unknown entry', async () => {
       repo.findEntryById.mockResolvedValue(null);
-      await expect(service.reverse('missing', 'x', USER)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(service.reverse('missing', 'x', USER)).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 });

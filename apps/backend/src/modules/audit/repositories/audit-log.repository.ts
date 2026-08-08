@@ -56,7 +56,6 @@ export class AuditLogRepository {
       .createQueryBuilder('audit')
       .leftJoinAndSelect('audit.user', 'user');
 
-
     if (filters.entityType) {
       query.andWhere('audit.entity_type = :entityType', { entityType: filters.entityType });
     }
@@ -178,7 +177,6 @@ export class AuditLogRepository {
   async countWithFilters(filters: QueryAuditLogsDto): Promise<number> {
     const query = this.repository.createQueryBuilder('audit');
 
-
     if (filters.entityType) {
       query.andWhere('audit.entity_type = :entityType', { entityType: filters.entityType });
     }
@@ -215,7 +213,6 @@ export class AuditLogRepository {
       .addSelect('COUNT(*)', 'count')
       .groupBy('audit.action');
 
-
     const results = await query.getRawMany<{ action: string; count: string }>();
 
     return results.reduce<Record<string, number>>((acc, row) => {
@@ -233,7 +230,6 @@ export class AuditLogRepository {
       .select('audit.entity_type', 'entityType')
       .addSelect('COUNT(*)', 'count')
       .groupBy('audit.entity_type');
-
 
     const results = await query.getRawMany<{ entityType: string; count: string }>();
 

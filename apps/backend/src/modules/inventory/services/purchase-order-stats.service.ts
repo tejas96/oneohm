@@ -20,11 +20,7 @@ export class PurchaseOrderStatsService {
   ): Promise<TrendResponse> {
     const window = resolveStatsWindow(fromDate, toDate);
     const resolvedBucket = resolveStatsBucket(bucket);
-    const points = await this.repo.spendTrend(
-      window.fromDate,
-      window.toDate,
-      resolvedBucket,
-    );
+    const points = await this.repo.spendTrend(window.fromDate, window.toDate, resolvedBucket);
     return {
       fromDate: window.fromDate,
       toDate: window.toDate,
@@ -40,11 +36,7 @@ export class PurchaseOrderStatsService {
   ): Promise<TopItemsResponse> {
     const window = resolveStatsWindow(fromDate, toDate);
     const resolvedLimit = resolveStatsLimit(limit);
-    const rows = await this.repo.topVendors(
-      window.fromDate,
-      window.toDate,
-      resolvedLimit,
-    );
+    const rows = await this.repo.topVendors(window.fromDate, window.toDate, resolvedLimit);
     return {
       fromDate: window.fromDate,
       toDate: window.toDate,
@@ -65,11 +57,7 @@ export class PurchaseOrderStatsService {
   ): Promise<TopItemsResponse> {
     const window = resolveStatsWindow(fromDate, toDate);
     const resolvedLimit = resolveStatsLimit(limit);
-    const rows = await this.repo.spendByWarehouse(
-      window.fromDate,
-      window.toDate,
-      resolvedLimit,
-    );
+    const rows = await this.repo.spendByWarehouse(window.fromDate, window.toDate, resolvedLimit);
     return {
       fromDate: window.fromDate,
       toDate: window.toDate,
@@ -83,9 +71,7 @@ export class PurchaseOrderStatsService {
     };
   }
 
-  async outstandingByVendor(
-    limit: string | undefined,
-  ): Promise<TopItemsResponse> {
+  async outstandingByVendor(limit: string | undefined): Promise<TopItemsResponse> {
     const resolvedLimit = resolveStatsLimit(limit);
     const rows = await this.repo.outstandingByVendor(resolvedLimit);
     return {

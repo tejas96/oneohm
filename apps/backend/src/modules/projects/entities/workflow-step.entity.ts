@@ -11,7 +11,6 @@ export class WorkflowStepEntity extends BaseEntity {
   @OneToMany(() => ProjectTaskEntity, (task) => task.workflowStep)
   tasks!: ProjectTaskEntity[];
 
-
   @Column({ type: 'varchar', length: 255 })
   name!: string;
 

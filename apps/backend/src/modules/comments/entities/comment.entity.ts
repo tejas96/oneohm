@@ -37,7 +37,6 @@ export class CommentEntity {
   // RELATIONS
   // ============================================
 
-
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'created_by' })
   createdByUser?: UserEntity;

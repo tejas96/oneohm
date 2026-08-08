@@ -26,9 +26,12 @@ export interface PaginatedInstallationPricing {
 export class InstallationPricingService {
   constructor(private readonly installationPricingRepository: InstallationPricingRepository) {}
 
-  async findAll(
-    filters?: { isActive?: boolean; search?: string; page?: number; limit?: number },
-  ): Promise<PaginatedInstallationPricing> {
+  async findAll(filters?: {
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedInstallationPricing> {
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
     const { data, total } = await this.installationPricingRepository.findAll({
@@ -59,9 +62,7 @@ export class InstallationPricingService {
     return pricing;
   }
 
-  async create(
-    dto: CreateInstallationPricingDto,
-  ): Promise<InstallationPricing> {
+  async create(dto: CreateInstallationPricingDto): Promise<InstallationPricing> {
     this.validateRange(dto.minSystemSizeKw, dto.maxSystemSizeKw ?? null);
 
     // Check for duplicate tier (same min/max in same org)
@@ -86,10 +87,7 @@ export class InstallationPricingService {
     });
   }
 
-  async update(
-    id: string,
-    dto: UpdateInstallationPricingDto,
-  ): Promise<InstallationPricing> {
+  async update(id: string, dto: UpdateInstallationPricingDto): Promise<InstallationPricing> {
     const current = await this.findById(id);
 
     const mergedMin = dto.minSystemSizeKw ?? Number(current.minSystemSizeKw);

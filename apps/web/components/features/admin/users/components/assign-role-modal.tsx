@@ -136,9 +136,7 @@ export function AssignRoleModal({
                 {userRoles.map((ur) => (
                   <Badge key={ur.id} variant="secondary" size="sm">
                     {ur.roleName ?? ur.roleCode}
-                    <span className="ml-1 text-[10px] opacity-60">
-                      {'Platform'}
-                    </span>
+                    <span className="ml-1 text-[10px] opacity-60">{'Platform'}</span>
                   </Badge>
                 ))}
               </div>

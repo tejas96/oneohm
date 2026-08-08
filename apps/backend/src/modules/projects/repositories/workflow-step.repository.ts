@@ -60,9 +60,7 @@ export class WorkflowStepRepository {
     return { data, total };
   }
 
-  async findAllActive(
-    manager?: EntityManager,
-  ): Promise<WorkflowStepEntity[]> {
+  async findAllActive(manager?: EntityManager): Promise<WorkflowStepEntity[]> {
     const repo = this.getRepo(manager);
     return repo.find({
       where: {
@@ -75,10 +73,7 @@ export class WorkflowStepRepository {
     });
   }
 
-  async update(
-    id: string,
-    data: Record<string, unknown>,
-  ): Promise<WorkflowStepEntity | null> {
+  async update(id: string, data: Record<string, unknown>): Promise<WorkflowStepEntity | null> {
     await this.repository.update(
       {
         id,

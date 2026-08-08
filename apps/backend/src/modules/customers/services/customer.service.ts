@@ -80,10 +80,7 @@ export class CustomerService {
    * Create a new customer profile
    * Normalizes phone/email, finds-or-creates a users row, then creates the customer_profile.
    */
-  async create(
-    createDto: CreateCustomerDto,
-    createdBy?: string,
-  ): Promise<CustomerProfileEntity> {
+  async create(createDto: CreateCustomerDto, createdBy?: string): Promise<CustomerProfileEntity> {
     const phone = normalizePhoneToE164(createDto.phone);
     const email = createDto.email ? normalizeEmail(createDto.email) : undefined;
 
@@ -96,9 +93,7 @@ export class CustomerService {
     const user = await this.findOrCreateUser(phone, email, createDto);
 
     // Step 3: Guard against duplicate profile for same user+org
-    const existingProfile = await this.customerRepository.findByUserAndOrganization(
-      user.id,
-    );
+    const existingProfile = await this.customerRepository.findByUserAndOrganization(user.id);
     if (existingProfile) {
       throw new ConflictException('Customer profile already exists for this user');
     }
@@ -123,11 +118,7 @@ export class CustomerService {
 
     // Step 6: Resolve group assignment (best-effort — does not roll back the customer on error)
     try {
-      await this.resolveGroupAssignment(
-        customer,
-        createDto.groupCode,
-        createDto.groupName,
-      );
+      await this.resolveGroupAssignment(customer, createDto.groupCode, createDto.groupName);
     } catch (err: unknown) {
       this.logger.warn(`Group assignment failed for customer ${customer.id}: ${String(err)}`);
       // Customer is already persisted; surface the error so the caller can retry assignment
@@ -147,9 +138,7 @@ export class CustomerService {
       throw new NotFoundException(`Customer with ID ${id} not found`);
     }
 
-    const deleteBlockReasons = await this.customerRepository.getCustomerDeleteBlockers(
-      id,
-    );
+    const deleteBlockReasons = await this.customerRepository.getCustomerDeleteBlockers(id);
 
     return { ...customer, deleteBlockReasons };
   }
@@ -161,9 +150,7 @@ export class CustomerService {
    * @overload Legacy signature for backward compatibility
    * @overload New signature with CustomerQueryDto for full filtering
    */
-  async findAll(
-    query: CustomerQueryDto,
-  ): Promise<{ data: CustomerProfileEntity[]; total: number }>;
+  async findAll(query: CustomerQueryDto): Promise<{ data: CustomerProfileEntity[]; total: number }>;
   async findAll(
     page: number,
     limit: number,
@@ -174,9 +161,7 @@ export class CustomerService {
   ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
     // New query-based approach
     if (typeof pageOrQuery === 'object') {
-      const [data, total] = await this.customerRepository.findWithFilters(
-        pageOrQuery,
-      );
+      const [data, total] = await this.customerRepository.findWithFilters(pageOrQuery);
       return this.enrichListPage(data, total);
     }
 
@@ -184,9 +169,7 @@ export class CustomerService {
     const legacyQuery = new CustomerQueryDto();
     legacyQuery.page = pageOrQuery;
     legacyQuery.limit = limit;
-    const [data, total] = await this.customerRepository.findWithFilters(
-      legacyQuery,
-    );
+    const [data, total] = await this.customerRepository.findWithFilters(legacyQuery);
     return this.enrichListPage(data, total);
   }
 
@@ -235,11 +218,7 @@ export class CustomerService {
     page = 1,
     limit = 20,
   ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
-    const [data, total] = await this.customerRepository.findByCreatedBy(
-      createdBy,
-      page,
-      limit,
-    );
+    const [data, total] = await this.customerRepository.findByCreatedBy(createdBy, page, limit);
     return { data, total };
   }
 
@@ -281,25 +260,17 @@ export class CustomerService {
 
     // Check for email conflicts within this org (exclude self)
     if (updateDto.email) {
-      const existingByEmail = await this.customerRepository.findByEmail(
-        updateDto.email,
-      );
+      const existingByEmail = await this.customerRepository.findByEmail(updateDto.email);
       if (existingByEmail && existingByEmail.id !== id) {
-        throw new ConflictException(
-          `Customer with email '${updateDto.email}' already exists`,
-        );
+        throw new ConflictException(`Customer with email '${updateDto.email}' already exists`);
       }
     }
 
     // Check for phone conflicts within this org (exclude self)
     if (updateDto.phone) {
-      const existingByPhone = await this.customerRepository.findOneByPhone(
-        updateDto.phone,
-      );
+      const existingByPhone = await this.customerRepository.findOneByPhone(updateDto.phone);
       if (existingByPhone && existingByPhone.id !== id) {
-        throw new ConflictException(
-          `Customer with phone '${updateDto.phone}' already exists`,
-        );
+        throw new ConflictException(`Customer with phone '${updateDto.phone}' already exists`);
       }
     }
 
@@ -429,10 +400,7 @@ export class CustomerService {
         throw new NotFoundException(`Customer with ID '${id}' not found`);
       }
 
-      const blockers = await this.customerRepository.getCustomerDeleteBlockers(
-        id,
-        manager,
-      );
+      const blockers = await this.customerRepository.getCustomerDeleteBlockers(id, manager);
       if (blockers.length > 0) {
         throw new ConflictException(blockers[0]);
       }
@@ -594,9 +562,7 @@ export class CustomerService {
     };
 
     if (normalizedPhone) {
-      const existingByPhone = await this.customerRepository.findOneByPhone(
-        normalizedPhone,
-      );
+      const existingByPhone = await this.customerRepository.findOneByPhone(normalizedPhone);
       if (existingByPhone && existingByPhone.id !== excludeCustomerId) {
         result.phoneExists = true;
         result.phoneError = 'This phone number is already registered';
@@ -604,9 +570,7 @@ export class CustomerService {
     }
 
     if (normalizedEmail) {
-      const existingByEmail = await this.customerRepository.findByEmail(
-        normalizedEmail,
-      );
+      const existingByEmail = await this.customerRepository.findByEmail(normalizedEmail);
       if (existingByEmail && existingByEmail.id !== excludeCustomerId) {
         result.emailExists = true;
         result.emailError = 'This email is already registered';
@@ -641,9 +605,8 @@ export class CustomerService {
       }
 
       // Validate assignee has an employee profile in the same organization (cross-org guard)
-      const employeeProfile = await this.employeeProfileRepository.findByUserAndOrganization(
-        assigneeId,
-      );
+      const employeeProfile =
+        await this.employeeProfileRepository.findByUserAndOrganization(assigneeId);
       if (!employeeProfile) {
         throw new BadRequestException(`User '${assigneeId}' was not found`);
       }
@@ -671,23 +634,16 @@ export class CustomerService {
   // ==================== PRIVATE HELPERS ====================
 
   /** Guard against duplicate phone/email within an org's customer_profiles */
-  private async guardOrgDuplicates(
-    phone: string,
-    email?: string,
-  ): Promise<void> {
+  private async guardOrgDuplicates(phone: string, email?: string): Promise<void> {
     const existingByPhone = await this.customerRepository.findOneByPhone(phone);
     if (existingByPhone) {
-      throw new ConflictException(
-        `A customer with phone '${phone}' already exists`,
-      );
+      throw new ConflictException(`A customer with phone '${phone}' already exists`);
     }
 
     if (email) {
       const existingByEmail = await this.customerRepository.findByEmail(email);
       if (existingByEmail) {
-        throw new ConflictException(
-          `A customer with email '${email}' already exists`,
-        );
+        throw new ConflictException(`A customer with email '${email}' already exists`);
       }
     }
   }
@@ -734,15 +690,12 @@ export class CustomerService {
    * Returns distinct customer groups for an organization.
    * Used by the GET /customers/groups endpoint.
    */
-  async getDistinctGroups(
-  ): Promise<{ groupCode: string; groupName: string }[]> {
+  async getDistinctGroups(): Promise<{ groupCode: string; groupName: string }[]> {
     return this.customerRepository.findDistinctGroups();
   }
 
   /** Generate and assign a human-readable customer code (non-fatal on failure) */
-  private async assignCustomerCode(
-    customer: CustomerProfileEntity,
-  ): Promise<void> {
+  private async assignCustomerCode(customer: CustomerProfileEntity): Promise<void> {
     try {
       const customerCode = await generateEntityCode(
         this.customerRepository.repository,
@@ -788,9 +741,7 @@ export class CustomerService {
       // Joining an existing group: validate it exists
       const exists = await this.customerRepository.groupCodeExists(groupCode);
       if (!exists) {
-        throw new BadRequestException(
-          `Group code '${groupCode}' does not exist`,
-        );
+        throw new BadRequestException(`Group code '${groupCode}' does not exist`);
       }
       await this.customerRepository.update(customer.id, {
         groupCode,

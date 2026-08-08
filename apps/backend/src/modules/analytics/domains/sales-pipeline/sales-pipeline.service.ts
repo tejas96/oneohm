@@ -74,18 +74,10 @@ export class SalesPipelineService {
     granularity: 'week' | 'month' = 'week',
   ): Promise<SalesPipelineDashboardResponseDto> {
     const window = resolveStatsWindow(fromDate, toDate);
-    const filters = this.buildFilters(
-      window.fromDate,
-      window.toDate,
-      salesPersonId,
-    );
+    const filters = this.buildFilters(window.fromDate, window.toDate, salesPersonId);
     const leaderboardFilters = this.buildFilters(window.fromDate, window.toDate);
     const prevWindow = computePreviousWindow(window.fromDate, window.toDate);
-    const prevFilters = this.buildFilters(
-      prevWindow.fromDate,
-      prevWindow.toDate,
-      salesPersonId,
-    );
+    const prevFilters = this.buildFilters(prevWindow.fromDate, prevWindow.toDate, salesPersonId);
 
     const [funnelAndStats, leaderboard, trend, prevStats] = await Promise.all([
       this.queryFunnelAndStats(filters),
@@ -128,11 +120,7 @@ export class SalesPipelineService {
     salesPersonId?: string,
   ): Promise<SalesPipelineFunnelResponseDto> {
     const window = resolveStatsWindow(fromDate, toDate);
-    const filters = this.buildFilters(
-      window.fromDate,
-      window.toDate,
-      salesPersonId,
-    );
+    const filters = this.buildFilters(window.fromDate, window.toDate, salesPersonId);
     const { funnel } = await this.queryFunnelAndStats(filters);
     return { fromDate: window.fromDate, toDate: window.toDate, ...funnel };
   }
@@ -143,17 +131,9 @@ export class SalesPipelineService {
     salesPersonId?: string,
   ): Promise<SalesPipelineStatsResponseDto> {
     const window = resolveStatsWindow(fromDate, toDate);
-    const filters = this.buildFilters(
-      window.fromDate,
-      window.toDate,
-      salesPersonId,
-    );
+    const filters = this.buildFilters(window.fromDate, window.toDate, salesPersonId);
     const prevWindow = computePreviousWindow(window.fromDate, window.toDate);
-    const prevFilters = this.buildFilters(
-      prevWindow.fromDate,
-      prevWindow.toDate,
-      salesPersonId,
-    );
+    const prevFilters = this.buildFilters(prevWindow.fromDate, prevWindow.toDate, salesPersonId);
 
     const [current, previous] = await Promise.all([
       this.queryStatsFromFilters(filters),
@@ -196,11 +176,7 @@ export class SalesPipelineService {
     salesPersonId?: string,
   ): Promise<SalesPipelineTrendResponseDto> {
     const window = resolveStatsWindow(fromDate, toDate);
-    const filters = this.buildFilters(
-      window.fromDate,
-      window.toDate,
-      salesPersonId,
-    );
+    const filters = this.buildFilters(window.fromDate, window.toDate, salesPersonId);
     const trend = await this.queryTrend(filters, granularity);
     return {
       fromDate: window.fromDate,

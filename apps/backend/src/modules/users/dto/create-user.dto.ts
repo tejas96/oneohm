@@ -109,7 +109,6 @@ export class CreateUserDto {
     example: '00000000-0000-0000-0000-000000000001',
     description: 'Organization ID for profile creation. Required if profileType is provided.',
   })
-
   @ApiPropertyOptional({
     enum: UserProfileType,
     enumName: 'UserProfileType',

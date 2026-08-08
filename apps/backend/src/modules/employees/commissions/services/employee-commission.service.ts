@@ -62,7 +62,6 @@ export class EmployeeCommissionService {
       throw new NotFoundException('Commission not found');
     }
 
-
     return commission;
   }
 
@@ -76,9 +75,7 @@ export class EmployeeCommissionService {
   /**
    * Find commissions by employee ID
    */
-  async findByEmployeeId(
-    employeeId: string,
-  ): Promise<EmployeeCommissionEntity[]> {
+  async findByEmployeeId(employeeId: string): Promise<EmployeeCommissionEntity[]> {
     // Verify employee exists and belongs to organization
     await this.employeeService.findByIdInOrganization(employeeId);
 
@@ -88,9 +85,7 @@ export class EmployeeCommissionService {
   /**
    * Find commissions by status
    */
-  async findByStatus(
-    status: CommissionStatus,
-  ): Promise<EmployeeCommissionEntity[]> {
+  async findByStatus(status: CommissionStatus): Promise<EmployeeCommissionEntity[]> {
     return this.commissionRepository.findByStatus(status);
   }
 

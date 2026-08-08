@@ -22,7 +22,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -220,11 +220,7 @@ export class QuoteController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateQuoteStatusDto,
   ): Promise<QuoteResponseDto> {
-    const quote = await this.quoteService.updateStatus(
-      id,
-      statusDto,
-      currentUser.id,
-    );
+    const quote = await this.quoteService.updateStatus(id, statusDto, currentUser.id);
 
     return plainToInstance(QuoteResponseDto, quote, {
       excludeExtraneousValues: true,

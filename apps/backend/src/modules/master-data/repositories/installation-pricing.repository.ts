@@ -12,9 +12,7 @@ export class InstallationPricingRepository {
     private readonly repository: Repository<InstallationPricing>,
   ) {}
 
-  async create(
-    data: Partial<InstallationPricing>,
-  ): Promise<InstallationPricing> {
+  async create(data: Partial<InstallationPricing>): Promise<InstallationPricing> {
     const pricing = this.repository.create({
       ...data,
     });
@@ -52,16 +50,13 @@ export class InstallationPricingRepository {
     return qb.getOne();
   }
 
-  async findAll(
-    filters?: {
-      isActive?: boolean;
-      search?: string;
-      page?: number;
-      limit?: number;
-    },
-  ): Promise<{ data: InstallationPricing[]; total: number }> {
-    const query = this.repository
-      .createQueryBuilder('pricing');
+  async findAll(filters?: {
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: InstallationPricing[]; total: number }> {
+    const query = this.repository.createQueryBuilder('pricing');
 
     if (filters?.isActive !== undefined) {
       query.andWhere('pricing.is_active = :isActive', { isActive: filters.isActive });
@@ -99,10 +94,7 @@ export class InstallationPricingRepository {
     });
   }
 
-  async update(
-    id: string,
-    data: Partial<InstallationPricing>,
-  ): Promise<InstallationPricing> {
+  async update(id: string, data: Partial<InstallationPricing>): Promise<InstallationPricing> {
     await this.repository.update({ id }, {
       ...data,
       updatedAt: new Date(),
@@ -118,9 +110,7 @@ export class InstallationPricingRepository {
     await this.repository.delete({ id });
   }
 
-  async bulkCreate(
-    pricingList: Partial<InstallationPricing>[],
-  ): Promise<InstallationPricing[]> {
+  async bulkCreate(pricingList: Partial<InstallationPricing>[]): Promise<InstallationPricing[]> {
     const entities = pricingList.map((data) =>
       this.repository.create({
         ...data,

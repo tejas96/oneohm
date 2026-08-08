@@ -138,9 +138,7 @@ export class LoanApplicationController {
     type: LoanApplicationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Loan application not found' })
-  async findById(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<LoanApplicationResponseDto> {
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<LoanApplicationResponseDto> {
     return this.loanApplicationService.findById(id);
   }
 
@@ -196,9 +194,7 @@ export class LoanApplicationController {
   @ApiParam({ name: 'id', description: 'Loan Application UUID' })
   @ApiResponse({ status: 200, description: 'Loan application deleted successfully' })
   @ApiResponse({ status: 404, description: 'Loan application not found' })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ message: string }> {
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
     await this.loanApplicationService.delete(id);
     return { message: 'Loan application deleted successfully' };
   }

@@ -16,8 +16,7 @@ import { apiClient } from '@/lib/api/client';
 export const customerKeys = {
   all: () => ['customers'] as const,
   lists: () => [...customerKeys.all(), 'list'] as const,
-  list: (filters: Record<string, unknown>) =>
-    [...customerKeys.lists(), filters] as const,
+  list: (filters: Record<string, unknown>) => [...customerKeys.lists(), filters] as const,
   details: () => [...customerKeys.all(), 'detail'] as const,
   detail: (id: string) => [...customerKeys.details(), id] as const,
 };
@@ -99,8 +98,7 @@ export function useCreateCustomer(): UseMutationResult<
         groupName: data.groupName || undefined,
       };
 
-      const { data: response } = await apiClient.post<CustomerResponse>('/customers', payload, {
-      });
+      const { data: response } = await apiClient.post<CustomerResponse>('/customers', payload, {});
       return response;
     },
     onSuccess: () => {
@@ -135,7 +133,6 @@ export function useCheckAvailability(): {
   clearErrors: () => void;
   hasErrors: boolean;
 } {
-
   const [state, setState] = useState<AvailabilityState>({
     phoneError: null,
     emailError: null,
@@ -163,8 +160,7 @@ export function useCheckAvailability(): {
 
       const url = `/customers/check-availability?${queryParams.toString()}`;
 
-      const { data } = await apiClient.get<AvailabilityResponse>(url, {
-      });
+      const { data } = await apiClient.get<AvailabilityResponse>(url, {});
       return data;
     },
     [],

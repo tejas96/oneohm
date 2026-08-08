@@ -111,9 +111,7 @@ export class ApprovalTemplateRepository {
   /**
    * Find templates by workflow type
    */
-  async findByWorkflowType(
-    workflowType: ApprovalWorkflowType,
-  ): Promise<ApprovalTemplateEntity[]> {
+  async findByWorkflowType(workflowType: ApprovalWorkflowType): Promise<ApprovalTemplateEntity[]> {
     return this.repository.find({
       where: {
         workflowType,
@@ -132,10 +130,7 @@ export class ApprovalTemplateRepository {
   /**
    * Update template
    */
-  async update(
-    id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<ApprovalTemplateEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<ApprovalTemplateEntity> {
     await this.repository.update(
       {
         id,

@@ -12,12 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import {
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiUpdate
-} from '../../../common/decorators';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate } from '../../../common/decorators';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -47,11 +42,7 @@ export class ProductPriceController {
     @Param('productId', ParseUUIDPipe) productId: string,
     @Body() body: CreateProductPriceDto,
   ): Promise<ProductPriceResponseDto> {
-    const price = await this.productPriceService.create(
-      productId,
-      body,
-      currentUser.id,
-    );
+    const price = await this.productPriceService.create(productId, body, currentUser.id);
     return toDto(ProductPriceResponseDto, price);
   }
 
@@ -92,12 +83,7 @@ export class ProductPriceController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateProductPriceDto,
   ): Promise<ProductPriceResponseDto> {
-    const price = await this.productPriceService.update(
-      id,
-      productId,
-      body,
-      currentUser.id,
-    );
+    const price = await this.productPriceService.update(id, productId, body, currentUser.id);
     return toDto(ProductPriceResponseDto, price);
   }
 
@@ -114,11 +100,7 @@ export class ProductPriceController {
     @Param('productId', ParseUUIDPipe) productId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProductPriceResponseDto> {
-    const price = await this.productPriceService.deactivate(
-      id,
-      productId,
-      currentUser.id,
-    );
+    const price = await this.productPriceService.deactivate(id, productId, currentUser.id);
     return toDto(ProductPriceResponseDto, price);
   }
 

@@ -48,7 +48,6 @@ export class PaymentMilestoneEntity {
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
 
-
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;
 

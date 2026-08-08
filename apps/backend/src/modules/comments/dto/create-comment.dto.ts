@@ -49,7 +49,6 @@ export class CommentAttachmentDto {
  * Create Comment DTO
  */
 export class CreateCommentDto {
-
   @ApiProperty({
     description: 'Entity type',
     enum: CommentEntityType,

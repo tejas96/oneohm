@@ -85,24 +85,16 @@ export class UserRoleRepository {
    * Also includes platform-level roles (organization_id IS NULL) since
    * those apply globally across all organizations.
    */
-  async findByUserAndOrganization(
-    userId: string,
-  ): Promise<UserRoleEntity[]> {
+  async findByUserAndOrganization(userId: string): Promise<UserRoleEntity[]> {
     return this.repository.find({
-      where: [
-        { userId },
-        { userId },
-      ],
+      where: [{ userId }, { userId }],
     });
   }
 
   /**
    * Check if user has a specific role in an organization
    */
-  async hasRoleInOrganization(
-    userId: string,
-    role: string,
-  ): Promise<boolean> {
+  async hasRoleInOrganization(userId: string, role: string): Promise<boolean> {
     const count = await this.repository.count({
       where: { userId, role },
     });

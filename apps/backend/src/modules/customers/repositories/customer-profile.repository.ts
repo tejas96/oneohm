@@ -147,11 +147,8 @@ function applyMatchingPropertyFilter(
     return;
   }
 
-  const conditions: string[] = [
-    'prop.customer_id = customer.id',
-    'prop.deleted_at IS NULL',
-  ];
-    const params: Record<string, unknown> = {};
+  const conditions: string[] = ['prop.customer_id = customer.id', 'prop.deleted_at IS NULL'];
+  const params: Record<string, unknown> = {};
 
   if (query.propertyType) {
     conditions.push('prop.property_type = :propertyType');
@@ -249,9 +246,7 @@ export class CustomerProfileRepository {
     });
   }
 
-  async findByUserAndOrganization(
-    userId: string,
-  ): Promise<CustomerProfileEntity | null> {
+  async findByUserAndOrganization(userId: string): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
       where: { userId, deletedAt: IsNull() },
       relations: ['user'],
@@ -265,10 +260,7 @@ export class CustomerProfileRepository {
     });
   }
 
-  async findByOrganization(
-    page = 1,
-    limit = 20,
-  ): Promise<[CustomerProfileEntity[], number]> {
+  async findByOrganization(page = 1, limit = 20): Promise<[CustomerProfileEntity[], number]> {
     return this.repository.findAndCount({
       where: { deletedAt: IsNull() },
       relations: ['user', 'properties'],
@@ -337,9 +329,7 @@ export class CustomerProfileRepository {
     });
   }
 
-  async findOneByPhone(
-    phone: string,
-  ): Promise<CustomerProfileEntity | null> {
+  async findOneByPhone(phone: string): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
       where: { phone, deletedAt: IsNull() },
     });
@@ -358,9 +348,7 @@ export class CustomerProfileRepository {
    * @deprecated Consumer number is now on CustomerPropertyEntity
    * Consider using CustomerPropertyRepository.findByConsumerNumber instead
    */
-  async findByConsumerNumber(
-    consumerNumber: string,
-  ): Promise<CustomerProfileEntity | null> {
+  async findByConsumerNumber(consumerNumber: string): Promise<CustomerProfileEntity | null> {
     return this.repository
       .createQueryBuilder('customer')
       .innerJoin('customer.properties', 'property')
@@ -380,8 +368,7 @@ export class CustomerProfileRepository {
    * Get status statistics in a single query
    * Returns count of customers grouped by status
    */
-  async getStatusStats(
-  ): Promise<{ status: CustomerStatus; count: number }[]> {
+  async getStatusStats(): Promise<{ status: CustomerStatus; count: number }[]> {
     const result = await this.repository
       .createQueryBuilder('customer')
       .select('customer.status', 'status')
@@ -532,12 +519,7 @@ export class CustomerProfileRepository {
       FROM customer_properties prop
       ${latestQuoteJoins()} WHERE prop.deleted_at IS NULL
       `,
-      [
-        monthStart,
-        PropertyStatus.CONVERTED,
-        [...AWAITING_QUOTE_STATUSES],
-        ageingCutoff,
-      ],
+      [monthStart, PropertyStatus.CONVERTED, [...AWAITING_QUOTE_STATUSES], ageingCutoff],
     );
 
     return {
@@ -617,9 +599,7 @@ export class CustomerProfileRepository {
    * @param query - Query parameters (filters, sorting, pagination)
    * @returns Tuple of [customers, total count]
    */
-  async findWithFilters(
-    query: CustomerQueryDto,
-  ): Promise<[CustomerProfileEntity[], number]> {
+  async findWithFilters(query: CustomerQueryDto): Promise<[CustomerProfileEntity[], number]> {
     const qb = this.repository
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.user', 'user')
@@ -756,8 +736,7 @@ export class CustomerProfileRepository {
    * Returns all distinct (group_code, group_name) pairs for an organization.
    * Used to populate the group selector in the customer form.
    */
-  async findDistinctGroups(
-  ): Promise<{ groupCode: string; groupName: string }[]> {
+  async findDistinctGroups(): Promise<{ groupCode: string; groupName: string }[]> {
     const rows = await this.repository
       .createQueryBuilder('customer')
       .select('customer.groupCode', 'groupCode')
@@ -815,17 +794,12 @@ export class CustomerProfileRepository {
   /**
    * Returns human-readable reasons why a customer cannot be permanently deleted.
    */
-  async getCustomerDeleteBlockers(
-    customerId: string,
-    manager?: EntityManager,
-  ): Promise<string[]> {
+  async getCustomerDeleteBlockers(customerId: string, manager?: EntityManager): Promise<string[]> {
     const flags = await this.queryDeleteBlockerFlags([customerId], manager);
     return this.mapDeleteBlockerFlags(flags.get(customerId));
   }
 
-  async getCustomerDeleteBlockersBatch(
-    customerIds: string[],
-  ): Promise<Map<string, string[]>> {
+  async getCustomerDeleteBlockersBatch(customerIds: string[]): Promise<Map<string, string[]>> {
     const flags = await this.queryDeleteBlockerFlags(customerIds);
     const result = new Map<string, string[]>();
     for (const customerId of customerIds) {

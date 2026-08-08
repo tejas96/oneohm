@@ -19,16 +19,11 @@ export class WarehouseService {
   /**
    * Create a new warehouse
    */
-  async create(
-    createDto: CreateWarehouseDto,
-    createdBy: string,
-  ): Promise<WarehouseEntity> {
+  async create(createDto: CreateWarehouseDto, createdBy: string): Promise<WarehouseEntity> {
     // Verify organization exists
 
     // Check if code already exists
-    const existingWarehouse = await this.warehouseRepository.findByCode(
-      createDto.code,
-    );
+    const existingWarehouse = await this.warehouseRepository.findByCode(createDto.code);
 
     if (existingWarehouse) {
       throw new BadRequestException(`Warehouse with code ${createDto.code} already exists`);
@@ -89,9 +84,7 @@ export class WarehouseService {
   ): Promise<WarehouseEntity> {
     // Check if code is being changed and already exists
     if (updateDto.code) {
-      const existingWarehouse = await this.warehouseRepository.findByCode(
-        updateDto.code,
-      );
+      const existingWarehouse = await this.warehouseRepository.findByCode(updateDto.code);
 
       if (existingWarehouse && existingWarehouse.id !== id) {
         throw new BadRequestException(`Warehouse with code ${updateDto.code} already exists`);

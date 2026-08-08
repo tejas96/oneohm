@@ -63,9 +63,7 @@ export class InventoryTransactionService {
     return { transactions, total, page, limit };
   }
 
-  async getRecentTransactions(
-    limitCount = 10,
-  ): Promise<InventoryTransactionEntity[]> {
+  async getRecentTransactions(limitCount = 10): Promise<InventoryTransactionEntity[]> {
     return this.inventoryTransactionRepository.getRecentTransactions(limitCount);
   }
 
@@ -75,9 +73,6 @@ export class InventoryTransactionService {
   ): Promise<
     Array<{ transactionType: InventoryTransactionType; count: number; totalQuantity: number }>
   > {
-    return this.inventoryTransactionRepository.getTransactionSummaryByType(
-      fromDate,
-      toDate,
-    );
+    return this.inventoryTransactionRepository.getTransactionSummaryByType(fromDate, toDate);
   }
 }

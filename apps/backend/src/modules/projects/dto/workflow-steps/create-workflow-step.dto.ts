@@ -14,7 +14,6 @@ import {
 } from 'class-validator';
 
 export class CreateWorkflowStepDto {
-
   @ApiProperty({ description: 'Step name', maxLength: 255 })
   @IsString()
   @IsNotEmpty()

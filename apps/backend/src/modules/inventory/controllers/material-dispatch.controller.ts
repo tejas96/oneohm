@@ -20,7 +20,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -69,11 +69,7 @@ export class MaterialDispatchController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: BulkCancelDto,
   ): Promise<BulkOperationResultDto> {
-    return this.inventoryBulkService.cancelDispatches(
-      body.ids,
-      body.reason,
-      currentUser.id,
-    );
+    return this.inventoryBulkService.cancelDispatches(body.ids, body.reason, currentUser.id);
   }
 
   /**
@@ -82,9 +78,7 @@ export class MaterialDispatchController {
   @RequirePermission('inventory:read')
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get dispatch statistics' })
-  async getStatistics(
-    @CurrentUser() _currentUser: CurrentUserType,
-  ) {
+  async getStatistics(@CurrentUser() _currentUser: CurrentUserType) {
     return this.materialDispatchService.getStatistics();
   }
 
@@ -161,10 +155,7 @@ export class MaterialDispatchController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateMaterialDispatchDto,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.create(
-      createDto,
-      currentUser.id,
-    );
+    const dispatch = await this.materialDispatchService.create(createDto, currentUser.id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });
@@ -201,11 +192,14 @@ export class MaterialDispatchController {
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
-    const { dispatches, total } = await this.materialDispatchService.findAll(
-      pageNum,
-      limitNum,
-      { status, projectId, warehouseId, fromDate, toDate, search },
-    );
+    const { dispatches, total } = await this.materialDispatchService.findAll(pageNum, limitNum, {
+      status,
+      projectId,
+      warehouseId,
+      fromDate,
+      toDate,
+      search,
+    });
 
     return {
       data: plainToInstance(MaterialDispatchResponseDto, dispatches, {
@@ -247,11 +241,7 @@ export class MaterialDispatchController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateMaterialDispatchDto,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.update(
-      id,
-      updateDto,
-      currentUser.id,
-    );
+    const dispatch = await this.materialDispatchService.update(id, updateDto, currentUser.id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });
@@ -268,11 +258,7 @@ export class MaterialDispatchController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateMaterialDispatchStatusDto,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.updateStatus(
-      id,
-      statusDto,
-      currentUser.id,
-    );
+    const dispatch = await this.materialDispatchService.updateStatus(id, statusDto, currentUser.id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });
@@ -288,10 +274,7 @@ export class MaterialDispatchController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.markDispatched(
-      id,
-      currentUser.id,
-    );
+    const dispatch = await this.materialDispatchService.markDispatched(id, currentUser.id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });
@@ -330,11 +313,7 @@ export class MaterialDispatchController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('reason') reason: string,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.cancel(
-      id,
-      reason,
-      currentUser.id,
-    );
+    const dispatch = await this.materialDispatchService.cancel(id, reason, currentUser.id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });

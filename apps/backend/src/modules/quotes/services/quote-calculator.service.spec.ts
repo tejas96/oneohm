@@ -30,7 +30,6 @@ describe('QuoteCalculatorService', () => {
   let installationPricingRepo: InstallationPricingRepository;
   let quoteConfigRepo: QuoteConfigurationRepository;
 
-
   // Mock data
   const mockProductType = { id: 'pt-solar-panel', code: 'solar_panel', name: 'Solar Panel' };
   const mockInverterType = { id: 'pt-inverter', code: 'inverter', name: 'Inverter' };
@@ -230,10 +229,7 @@ describe('QuoteCalculatorService', () => {
               productId: string,
               opts: { projectType?: string } = {},
             ) => {
-              const price: any = await priceRepo.findActiveForProduct(
-                productId,
-                opts.projectType,
-              );
+              const price: any = await priceRepo.findActiveForProduct(productId, opts.projectType);
               if (!price) {
                 return {
                   productId,
@@ -576,10 +572,7 @@ describe('QuoteCalculatorService', () => {
         { id: 'inv-10', specifications: { capacity_kw: 10 } },
       ] as ProductEntity[];
 
-      const result = (service as any).findOptimalInverterCombination(
-        mockInverters,
-        60,
-      );
+      const result = (service as any).findOptimalInverterCombination(mockInverters, 60);
 
       expect(result.length).toBe(2);
       const totalCapacity = result.reduce(
@@ -596,10 +589,7 @@ describe('QuoteCalculatorService', () => {
         { id: 'inv-5', specifications: { capacity_kw: 5 } },
       ] as ProductEntity[];
 
-      const result = (service as any).findOptimalInverterCombination(
-        mockInverters,
-        10,
-      );
+      const result = (service as any).findOptimalInverterCombination(mockInverters, 10);
 
       expect(result.length).toBe(1);
       expect(result[0].inverter.id).toBe('inv-10');
@@ -612,10 +602,7 @@ describe('QuoteCalculatorService', () => {
       ] as ProductEntity[];
 
       // 30KW system: should use 3x 10KW
-      const result = (service as any).findOptimalInverterCombination(
-        mockInverters,
-        30,
-      );
+      const result = (service as any).findOptimalInverterCombination(mockInverters, 30);
 
       expect(result.length).toBe(1);
       expect(result[0].inverter.id).toBe('inv-10');

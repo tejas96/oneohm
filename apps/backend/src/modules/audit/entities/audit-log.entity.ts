@@ -27,8 +27,6 @@ export class AuditLogEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-
-
   // ============================================
   // ENTITY INFO
   // ============================================

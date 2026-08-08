@@ -18,17 +18,15 @@ export class BrandService {
     private readonly brandProductTypeRepository: BrandProductTypeRepository,
   ) {}
 
-  async findAll(
-    filters?: {
-      productTypeId?: string;
-      isActive?: boolean;
-      search?: string;
-      page?: number;
-      limit?: number;
-      sortBy?: string;
-      sortOrder?: 'ASC' | 'DESC';
-    },
-  ): Promise<PaginatedBrands> {
+  async findAll(filters?: {
+    productTypeId?: string;
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<PaginatedBrands> {
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
     const { data, total } = await this.brandRepository.findAll(filters);
@@ -49,10 +47,7 @@ export class BrandService {
     return withTypes;
   }
 
-  async create(
-    data: CreateBrandDto,
-    createdBy?: string,
-  ): Promise<BrandWithProductTypes> {
+  async create(data: CreateBrandDto, createdBy?: string): Promise<BrandWithProductTypes> {
     const existing = await this.brandRepository.findByName(data.name);
     if (existing) throw new ConflictException(`Brand '${data.name}' already exists`);
     const { productTypeIds, ...brandData } = data;

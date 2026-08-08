@@ -164,9 +164,7 @@ export class ConsumerProjectController {
   async getProjectTimeline(
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ConsumerProjectTimelineResponseDto> {
-    const milestones = await this.projectAnalyticsService.getMilestoneAggregates(
-      projectId,
-    );
+    const milestones = await this.projectAnalyticsService.getMilestoneAggregates(projectId);
     return toDto(ConsumerProjectTimelineResponseDto, { milestones });
   }
 

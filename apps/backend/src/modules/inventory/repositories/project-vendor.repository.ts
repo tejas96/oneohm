@@ -93,10 +93,7 @@ export class ProjectVendorRepository {
   /**
    * Update project-vendor
    */
-  async update(
-    id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<ProjectVendorEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<ProjectVendorEntity> {
     const projectVendor = await this.findById(id);
 
     Object.assign(projectVendor, updateData);

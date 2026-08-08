@@ -62,9 +62,7 @@ export class ReturnRequestController {
   @RequirePermission('inventory:read')
   @Get(':id')
   @ApiOperation({ summary: 'Get a single return request' })
-  async findById(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<ReturnRequestResponseDto> {
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<ReturnRequestResponseDto> {
     const result = await this.returnRequestService.findById(id);
     return plainToInstance(ReturnRequestResponseDto, result, { excludeExtraneousValues: true });
   }

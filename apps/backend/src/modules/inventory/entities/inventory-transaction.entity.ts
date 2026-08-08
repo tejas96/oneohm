@@ -23,7 +23,6 @@ export class InventoryTransactionEntity {
 
   // ==================== Relations ====================
 
-
   @ManyToOne(() => WarehouseEntity, (warehouse) => warehouse.transactions)
   @JoinColumn({ name: 'warehouse_id' })
   warehouse!: WarehouseEntity;
@@ -45,7 +44,6 @@ export class InventoryTransactionEntity {
   creator?: UserEntity;
 
   // ==================== Foreign Keys ====================
-
 
   @Column({ name: 'warehouse_id', type: 'uuid' })
   warehouseId!: string;

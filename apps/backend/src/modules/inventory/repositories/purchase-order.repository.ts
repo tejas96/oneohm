@@ -43,9 +43,7 @@ export class PurchaseOrderRepository {
   /**
    * Find purchase order by PO number
    */
-  async findByPoNumber(
-    poNumber: string,
-  ): Promise<PurchaseOrderEntity | null> {
+  async findByPoNumber(poNumber: string): Promise<PurchaseOrderEntity | null> {
     return this.repository.findOne({
       where: { poNumber, deletedAt: IsNull() },
       relations: ['vendor', 'items'],
@@ -131,10 +129,7 @@ export class PurchaseOrderRepository {
   /**
    * Update purchase order
    */
-  async update(
-    id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<PurchaseOrderEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<PurchaseOrderEntity> {
     const po = await this.findById(id);
 
     Object.assign(po, updateData);
@@ -187,9 +182,7 @@ export class PurchaseOrderRepository {
   /**
    * Get total purchase order value by status
    */
-  async getTotalValueByStatus(
-    status: PurchaseOrderStatus,
-  ): Promise<number> {
+  async getTotalValueByStatus(status: PurchaseOrderStatus): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('po')
       .select('SUM(po.totalAmount)', 'totalValue')

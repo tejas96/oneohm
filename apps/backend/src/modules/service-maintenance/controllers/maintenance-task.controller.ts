@@ -132,8 +132,7 @@ export class MaintenanceTaskController {
     status: 200,
     description: 'Statistics retrieved successfully',
   })
-  async getStatistics(
-  ): Promise<Record<string, unknown>> {
+  async getStatistics(): Promise<Record<string, unknown>> {
     return this.maintenanceTaskService.getStatistics();
   }
 

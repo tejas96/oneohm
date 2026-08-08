@@ -46,10 +46,7 @@ export class FinanceAggregationService {
   // ============================================
   // 1. DASHBOARD — single fat endpoint
   // ============================================
-  async getDashboard(
-    fromInput?: string,
-    toInput?: string,
-  ): Promise<DashboardDto> {
+  async getDashboard(fromInput?: string, toInput?: string): Promise<DashboardDto> {
     const { from, to } = this.resolveDateRange(fromInput, toInput);
 
     const [
@@ -117,9 +114,7 @@ export class FinanceAggregationService {
   // ============================================
   // 2. RECEIPTS LEDGER (org-wide, paginated)
   // ============================================
-  async getReceipts(
-    query: ReceiptsQueryDto,
-  ): Promise<PaginatedResponse<ReceiptListItemDto>> {
+  async getReceipts(query: ReceiptsQueryDto): Promise<PaginatedResponse<ReceiptListItemDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
     const offset = (page - 1) * limit;
@@ -223,9 +218,7 @@ export class FinanceAggregationService {
   // ============================================
   // 3. EXPENSES LEDGER (org-wide, paginated)
   // ============================================
-  async getExpenses(
-    query: ExpensesQueryDto,
-  ): Promise<PaginatedResponse<ExpenseListItemDto>> {
+  async getExpenses(query: ExpensesQueryDto): Promise<PaginatedResponse<ExpenseListItemDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
     const offset = (page - 1) * limit;
@@ -311,9 +304,7 @@ export class FinanceAggregationService {
   // ============================================
   // 4. OUTSTANDING — org-wide unpaid payment terms
   // ============================================
-  async getOutstanding(
-    query: OutstandingQueryDto,
-  ): Promise<PaginatedResponse<OutstandingTermDto>> {
+  async getOutstanding(query: OutstandingQueryDto): Promise<PaginatedResponse<OutstandingTermDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
     const offset = (page - 1) * limit;
@@ -440,9 +431,7 @@ export class FinanceAggregationService {
   // ============================================
   // 5. CUSTOMERS AR — per-customer aging buckets
   // ============================================
-  async getCustomersAr(
-    query: CustomersArQueryDto,
-  ): Promise<CustomerAgingDto[]> {
+  async getCustomersAr(query: CustomersArQueryDto): Promise<CustomerAgingDto[]> {
     const asOf = query.asOfDate ?? this.todayLocal();
 
     // The aging bucket expression here uses ($2::date) instead of CURRENT_DATE
@@ -512,9 +501,7 @@ export class FinanceAggregationService {
   // ============================================
   // 6. VENDORS SPEND — per-vendor analytics
   // ============================================
-  async getVendorsSpend(
-    query: VendorsSpendQueryDto,
-  ): Promise<VendorSpendDto[]> {
+  async getVendorsSpend(query: VendorsSpendQueryDto): Promise<VendorSpendDto[]> {
     const { from, to } = this.resolveDateRange(query.from, query.to);
     const params: unknown[] = [from, to];
     let categoryFilter = '';
@@ -712,10 +699,7 @@ export class FinanceAggregationService {
    *  - overdueCountNow  : count of open terms with due_date < today
    *  - avgDaysToCollect : avg(first_receipt.created_at - term.due_date) trailing 90d
    */
-  private async queryDashboardKpis(
-    from: string,
-    to: string,
-  ): Promise<RawKpiRow> {
+  private async queryDashboardKpis(from: string, to: string): Promise<RawKpiRow> {
     const sql = `
       WITH params AS (
         SELECT
@@ -822,10 +806,7 @@ export class FinanceAggregationService {
     return this.dataSource.query<RawCashFlowRow[]>(sql, []);
   }
 
-  private async querySpendByCategory(
-    from: string,
-    to: string,
-  ): Promise<RawSpendByCategoryRow[]> {
+  private async querySpendByCategory(from: string, to: string): Promise<RawSpendByCategoryRow[]> {
     const sql = `
       SELECT e.category, COALESCE(SUM(e.amount), 0)::numeric AS total
       FROM project_expenses e WHERE e.deleted_at IS NULL
@@ -836,9 +817,7 @@ export class FinanceAggregationService {
     return this.dataSource.query<RawSpendByCategoryRow[]>(sql, [from, to]);
   }
 
-  private async queryTopCustomersOutstanding(
-    limit: number,
-  ): Promise<RawTopCustomerRow[]> {
+  private async queryTopCustomersOutstanding(limit: number): Promise<RawTopCustomerRow[]> {
     const sql = `
       SELECT
         c.id                                                              AS "customerId",
@@ -878,9 +857,7 @@ export class FinanceAggregationService {
     return this.dataSource.query<RawTopVendorRow[]>(sql, [from, to, limit]);
   }
 
-  private async queryRecentActivity(
-    limit: number,
-  ): Promise<RawActivityRow[]> {
+  private async queryRecentActivity(limit: number): Promise<RawActivityRow[]> {
     const sql = `
       (
         SELECT

@@ -37,10 +37,7 @@ export class PurchaseOrderService {
   /**
    * Create a new purchase order
    */
-  async create(
-    createDto: CreatePurchaseOrderDto,
-    createdBy: string,
-  ): Promise<PurchaseOrderEntity> {
+  async create(createDto: CreatePurchaseOrderDto, createdBy: string): Promise<PurchaseOrderEntity> {
     // Verify organization exists
 
     // Verify vendor exists
@@ -226,10 +223,7 @@ export class PurchaseOrderService {
   /**
    * Submit purchase order for approval
    */
-  async submitForApproval(
-    id: string,
-    updatedBy: string,
-  ): Promise<PurchaseOrderEntity> {
+  async submitForApproval(id: string, updatedBy: string): Promise<PurchaseOrderEntity> {
     const po = await this.purchaseOrderRepository.findById(id);
 
     if (po.status !== PurchaseOrderStatus.DRAFT) {
@@ -245,10 +239,7 @@ export class PurchaseOrderService {
   /**
    * Approve purchase order
    */
-  async approve(
-    id: string,
-    updatedBy: string,
-  ): Promise<PurchaseOrderEntity> {
+  async approve(id: string, updatedBy: string): Promise<PurchaseOrderEntity> {
     const po = await this.purchaseOrderRepository.findById(id);
 
     if (po.status !== PurchaseOrderStatus.PENDING_APPROVAL) {
@@ -402,11 +393,7 @@ export class PurchaseOrderService {
   /**
    * Cancel purchase order
    */
-  async cancel(
-    id: string,
-    reason: string,
-    updatedBy: string,
-  ): Promise<PurchaseOrderEntity> {
+  async cancel(id: string, reason: string, updatedBy: string): Promise<PurchaseOrderEntity> {
     const po = await this.purchaseOrderRepository.findById(id);
 
     if (

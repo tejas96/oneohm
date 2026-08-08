@@ -19,9 +19,7 @@ export class MaterialService {
   /**
    * Create a new material entry
    */
-  async create(
-    createDto: CreateMaterialDto,
-  ): Promise<ProjectMaterialEntity> {
+  async create(createDto: CreateMaterialDto): Promise<ProjectMaterialEntity> {
     // Verify project exists and belongs to organization
     await this.projectRepository.findById(createDto.projectId);
 
@@ -71,10 +69,7 @@ export class MaterialService {
   /**
    * Find material by ID
    */
-  async findById(
-    id: string,
-    projectId: string,
-  ): Promise<ProjectMaterialEntity> {
+  async findById(id: string, projectId: string): Promise<ProjectMaterialEntity> {
     // Verify project exists
     await this.projectRepository.findById(projectId);
 
@@ -258,9 +253,7 @@ export class MaterialService {
   /**
    * Get material statistics for a project
    */
-  async getStatistics(
-    projectId: string,
-  ): Promise<{
+  async getStatistics(projectId: string): Promise<{
     totalMaterials: number;
     requiredCount: number;
     orderedCount: number;

@@ -75,18 +75,14 @@ export class InventoryStockController {
       query.lowStock === 'true' ? true : query.lowStock === 'false' ? false : undefined;
     const normalizedOrder: 'ASC' | 'DESC' | undefined =
       sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : undefined;
-    const { stocks, total } = await this.inventoryStockService.getAllStock(
-      pageNum,
-      limitNum,
-      {
-        warehouseId,
-        productId,
-        lowStock,
-        search,
-        sortBy,
-        sortOrder: normalizedOrder,
-      },
-    );
+    const { stocks, total } = await this.inventoryStockService.getAllStock(pageNum, limitNum, {
+      warehouseId,
+      productId,
+      lowStock,
+      search,
+      sortBy,
+      sortOrder: normalizedOrder,
+    });
 
     return {
       data: plainToInstance(InventoryStockResponseDto, stocks, {
@@ -330,9 +326,7 @@ export class InventoryStockController {
     summary: 'Get stock summary by warehouse',
     description: 'Get stock statistics grouped by warehouse',
   })
-  async getStockSummary(
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<
+  async getStockSummary(@CurrentUser() _currentUser: CurrentUserType): Promise<
     Array<{
       warehouseId: string;
       warehouseName: string;
@@ -363,9 +357,7 @@ export class InventoryStockController {
     summary: 'Get stock by ID',
     description: 'Retrieve a stock record by id',
   })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<InventoryStockResponseDto> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<InventoryStockResponseDto> {
     const stock = await this.inventoryStockService.getStockById(id);
     return plainToInstance(InventoryStockResponseDto, stock, {
       excludeExtraneousValues: true,

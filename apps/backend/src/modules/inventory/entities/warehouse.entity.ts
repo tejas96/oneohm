@@ -30,7 +30,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 export class WarehouseEntity extends BaseEntity {
   // ==================== Relations ====================
 
-
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'warehouse_manager_id' })
   warehouseManager?: UserEntity;
@@ -57,7 +56,6 @@ export class WarehouseEntity extends BaseEntity {
   incomingTransfers!: InventoryTransactionEntity[];
 
   // ==================== Foreign Keys ====================
-
 
   @Column({ name: 'warehouse_manager_id', type: 'uuid', nullable: true })
   warehouseManagerId?: string;

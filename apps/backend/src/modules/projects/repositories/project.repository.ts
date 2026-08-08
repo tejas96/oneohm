@@ -93,10 +93,7 @@ export class ProjectRepository {
    * Find project by ID with relations
    * Filters by organization via property.organizationId
    */
-  async findById(
-    id: string,
-    manager?: EntityManager,
-  ): Promise<ProjectEntity> {
+  async findById(id: string, manager?: EntityManager): Promise<ProjectEntity> {
     const repo = this.getRepo(manager);
     const project = await repo
       .createQueryBuilder('project')
@@ -451,10 +448,7 @@ export class ProjectRepository {
    * Update a project
    * Validates ownership via findById before updating
    */
-  async update(
-    id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<ProjectEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<ProjectEntity> {
     // First validate the project belongs to org via property
     await this.findById(id);
 
@@ -481,10 +475,7 @@ export class ProjectRepository {
    * Update project status
    * Validates ownership via findById before updating
    */
-  async updateStatus(
-    id: string,
-    status: ProjectStatus,
-  ): Promise<ProjectEntity> {
+  async updateStatus(id: string, status: ProjectStatus): Promise<ProjectEntity> {
     // Validate ownership first
     await this.findById(id);
 
@@ -496,10 +487,7 @@ export class ProjectRepository {
    * Update project progress
    * Validates ownership via findById before updating
    */
-  async updateProgress(
-    id: string,
-    progressPercentage: number,
-  ): Promise<ProjectEntity> {
+  async updateProgress(id: string, progressPercentage: number): Promise<ProjectEntity> {
     // Validate ownership first
     const project = await this.findById(id);
 
@@ -569,9 +557,7 @@ export class ProjectRepository {
    * Find single project by property ID (for OneToOne check)
    * Returns null if no project exists for the property
    */
-  async findOneByPropertyId(
-    propertyId: string,
-  ): Promise<ProjectEntity | null> {
+  async findOneByPropertyId(propertyId: string): Promise<ProjectEntity | null> {
     return this.repository
       .createQueryBuilder('project')
       .innerJoin('project.property', 'property')

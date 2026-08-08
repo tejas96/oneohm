@@ -69,9 +69,7 @@ export class CustomerOwnershipGuard implements CanActivate {
     propertyId: string,
     customerProfileId: string,
   ): Promise<void> {
-    const property = await this.customerPropertyRepository.findByIdAndOrganization(
-      propertyId,
-    );
+    const property = await this.customerPropertyRepository.findByIdAndOrganization(propertyId);
 
     if (property?.customerId !== customerProfileId) {
       throw new ForbiddenException('Access denied: You do not own this property');

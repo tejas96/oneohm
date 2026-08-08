@@ -5,7 +5,6 @@ import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID } from 'clas
  * DTO for creating an audit log entry
  */
 export class CreateAuditLogDto {
-
   @IsEnum(AuditEntityType)
   @IsNotEmpty()
   entityType: AuditEntityType;

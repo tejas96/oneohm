@@ -20,9 +20,7 @@ export class RoleRepository {
    * Find role by code and organization
    * Pass null for organizationId to find platform-level roles
    */
-  async findByCodeAndOrganization(
-    code: string,
-  ): Promise<RoleEntity | null> {
+  async findByCodeAndOrganization(code: string): Promise<RoleEntity | null> {
     // For platform roles, organization_id IS NULL
 
     return this.repository.findOne({
@@ -44,10 +42,7 @@ export class RoleRepository {
   /**
    * Find all roles for an organization
    */
-  async findByOrganization(
-    skip?: number,
-    take?: number,
-  ): Promise<[RoleEntity[], number]> {
+  async findByOrganization(skip?: number, take?: number): Promise<[RoleEntity[], number]> {
     return this.repository.findAndCount({
       where: { deletedAt: IsNull() },
       order: { level: 'ASC', name: 'ASC' },
@@ -79,10 +74,7 @@ export class RoleRepository {
   /**
    * Check if role code exists in organization
    */
-  async existsByCodeAndOrganization(
-    code: string,
-    excludeId?: string,
-  ): Promise<boolean> {
+  async existsByCodeAndOrganization(code: string, excludeId?: string): Promise<boolean> {
     const query = this.repository
       .createQueryBuilder('role')
       .where('role.code = :code', { code })
@@ -108,7 +100,6 @@ export class RoleRepository {
     const qb: SelectQueryBuilder<RoleEntity> = this.repository
       .createQueryBuilder('role')
       .where('role.deleted_at IS NULL');
-
 
     if (filters?.search) {
       qb.andWhere('(role.name ILIKE :search OR role.code ILIKE :search)', {

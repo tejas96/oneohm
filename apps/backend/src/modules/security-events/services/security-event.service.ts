@@ -215,9 +215,7 @@ export class SecurityEventService {
   /**
    * Get suspicious activities for an organization
    */
-  async getSuspiciousActivities(
-    limit = 50,
-  ): Promise<SecurityEventEntity[]> {
+  async getSuspiciousActivities(limit = 50): Promise<SecurityEventEntity[]> {
     return this.repository.getSuspiciousActivities(limit);
   }
 

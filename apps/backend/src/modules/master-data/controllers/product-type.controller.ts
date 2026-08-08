@@ -13,12 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import {
-  ApiCreate,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate
-} from '../../../common/decorators';
+import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';

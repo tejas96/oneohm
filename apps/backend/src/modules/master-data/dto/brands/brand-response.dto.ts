@@ -6,7 +6,6 @@ export class BrandResponseDto {
   @Expose()
   id!: string;
 
-
   @ApiProperty()
   @Expose()
   name!: string;

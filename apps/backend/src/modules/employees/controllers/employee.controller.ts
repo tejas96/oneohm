@@ -21,7 +21,7 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-  ApiAction
+  ApiAction,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -109,12 +109,7 @@ export class EmployeeController {
       };
     }
 
-    return this.employeeService.findByOrganization(
-      page,
-      limit,
-      status,
-      profileKind,
-    );
+    return this.employeeService.findByOrganization(page, limit, status, profileKind);
   }
 
   @Get('me')
@@ -124,9 +119,7 @@ export class EmployeeController {
       'Returns the employee profile for the currently authenticated user in their organization',
     responseType: EmployeeResponseDto,
   })
-  async findMe(
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<EmployeeResponseDto | null> {
+  async findMe(@CurrentUser() currentUser: CurrentUserType): Promise<EmployeeResponseDto | null> {
     return this.employeeService.findByUserAndOrganization(currentUser.id);
   }
 

@@ -81,12 +81,8 @@ export class QuoteService {
       throw new BadRequestException('Property ID is required to create a quote');
     }
 
-
-
     if (createDto.propertyId) {
-      const accepted = await this.quoteRepository.findAcceptedByPropertyId(
-        createDto.propertyId,
-      );
+      const accepted = await this.quoteRepository.findAcceptedByPropertyId(createDto.propertyId);
       if (accepted) {
         throw new BadRequestException(
           `Property already has an accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
@@ -187,10 +183,7 @@ export class QuoteService {
    * Get payment milestones for a given org (fetches config from DB).
    * @param grossTotal - Total price before discount and subsidy
    */
-  async getPaymentMilestones(
-    grossTotal: number,
-    propertyId?: string,
-  ): Promise<PaymentMilestone[]> {
+  async getPaymentMilestones(grossTotal: number, propertyId?: string): Promise<PaymentMilestone[]> {
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
     return this.generatePaymentMilestones(
       grossTotal,
@@ -201,9 +194,7 @@ export class QuoteService {
   /**
    * Find all quotes with filters, sorting, and pagination
    */
-  async findAll(
-    query: QuoteQueryDto,
-  ): Promise<{ data: QuoteEntity[]; total: number }> {
+  async findAll(query: QuoteQueryDto): Promise<{ data: QuoteEntity[]; total: number }> {
     const [data, total] = await this.quoteRepository.findWithFilters(query);
     return { data, total };
   }
@@ -239,12 +230,7 @@ export class QuoteService {
       throw new BadRequestException('Recipient phone number is invalid');
     }
 
-    const document = await this.resolveQuotePdfDocument(
-      quote,
-      updatedBy,
-      dto.documentId,
-      file,
-    );
+    const document = await this.resolveQuotePdfDocument(quote, updatedBy, dto.documentId, file);
 
     const message = this.buildQuoteShareMessage(quote, document, recipient);
     const result = await this.integrationService.sendTemplateMessage(
@@ -264,12 +250,7 @@ export class QuoteService {
       if (quote.propertyId && quote.customerId) {
         this.eventEmitter.emit(
           CONSUMER_EVENTS.QUOTATION_CREATED,
-          new QuotationCreatedEvent(
-            id,
-            quote.propertyId,
-            quote.customerId,
-            quote.quoteNumber,
-          ),
+          new QuotationCreatedEvent(id, quote.propertyId, quote.customerId, quote.quoteNumber),
         );
       }
     }
@@ -600,12 +581,7 @@ export class QuoteService {
       if (quote.propertyId && quote.customerId) {
         this.eventEmitter.emit(
           CONSUMER_EVENTS.QUOTATION_CREATED,
-          new QuotationCreatedEvent(
-            id,
-            quote.propertyId,
-            quote.customerId,
-            quote.quoteNumber,
-          ),
+          new QuotationCreatedEvent(id, quote.propertyId, quote.customerId, quote.quoteNumber),
         );
       }
     }
@@ -632,9 +608,7 @@ export class QuoteService {
   async getPropertyLockStatus(
     propertyId: string,
   ): Promise<{ locked: boolean; acceptedQuoteNumber?: string }> {
-    const accepted = await this.quoteRepository.findAcceptedByPropertyId(
-      propertyId,
-    );
+    const accepted = await this.quoteRepository.findAcceptedByPropertyId(propertyId);
     return {
       locked: !!accepted,
       acceptedQuoteNumber: accepted?.quoteNumber,
@@ -763,13 +737,8 @@ export class QuoteService {
    * Calculate subsidy using tiered rates from DB.
    * Uses dcrSizeKw (for DCR-requiring subsidies) instead of total systemSizeKw.
    */
-  private async calculateSubsidy(
-    systemSizeKw: number,
-    projectType: ProjectType,
-  ): Promise<number> {
-    const configs = await this.subsidyConfigRepo.findAllActiveByProjectType(
-      projectType,
-    );
+  private async calculateSubsidy(systemSizeKw: number, projectType: ProjectType): Promise<number> {
+    const configs = await this.subsidyConfigRepo.findAllActiveByProjectType(projectType);
 
     if (configs.length === 0) return 0;
 

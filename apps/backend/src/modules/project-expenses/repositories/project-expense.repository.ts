@@ -34,10 +34,7 @@ export class ProjectExpenseRepository {
       : this.dataSource.getRepository(ProjectExpenseEntity);
   }
 
-  async findById(
-    id: string,
-    manager?: EntityManager,
-  ): Promise<ProjectExpenseEntity | null> {
+  async findById(id: string, manager?: EntityManager): Promise<ProjectExpenseEntity | null> {
     return this.repo(manager).findOne({
       where: { id, deletedAt: IsNull() },
       relations: ['productLinks'],
@@ -112,9 +109,7 @@ export class ProjectExpenseRepository {
    * Aggregated totals (independent query — never derived from a paged
    * list, per backend rules).
    */
-  async aggregateForProject(
-    projectId: string,
-  ): Promise<{
+  async aggregateForProject(projectId: string): Promise<{
     total: number;
     byCategory: Array<{ category: ExpenseCategory; amount: number; count: number }>;
     pendingReimbursementAmount: number;

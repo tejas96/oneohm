@@ -90,21 +90,13 @@ export class ProjectVendorService {
     },
   ): Promise<{ projectVendors: ProjectVendorEntity[]; total: number }> {
     await this.vendorRepository.findById(vendorId);
-    return this.projectVendorRepository.findByVendor(
-      vendorId,
-      page,
-      limit,
-      filters,
-    );
+    return this.projectVendorRepository.findByVendor(vendorId, page, limit, filters);
   }
 
   /**
    * Update project-vendor relationship
    */
-  async update(
-    id: string,
-    updateDto: UpdateProjectVendorDto,
-  ): Promise<ProjectVendorEntity> {
+  async update(id: string, updateDto: UpdateProjectVendorDto): Promise<ProjectVendorEntity> {
     return this.projectVendorRepository.update(id, { ...updateDto });
   }
 
@@ -125,10 +117,7 @@ export class ProjectVendorService {
   /**
    * Change vendor status
    */
-  async changeStatus(
-    id: string,
-    status: ProjectVendorStatus,
-  ): Promise<ProjectVendorEntity> {
+  async changeStatus(id: string, status: ProjectVendorStatus): Promise<ProjectVendorEntity> {
     return this.projectVendorRepository.update(id, { status });
   }
 
@@ -143,9 +132,7 @@ export class ProjectVendorService {
   /**
    * Get active vendors for a project
    */
-  async getActiveVendorsByProject(
-    projectId: string,
-  ): Promise<ProjectVendorEntity[]> {
+  async getActiveVendorsByProject(projectId: string): Promise<ProjectVendorEntity[]> {
     await this.projectRepository.findById(projectId);
     return this.projectVendorRepository.getActiveVendorsByProject(projectId);
   }

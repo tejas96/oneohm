@@ -55,8 +55,6 @@ export class InvitationEntity {
 
   // ==================== Relations ====================
 
-
-
   @ManyToOne(() => RoleEntity, { nullable: false })
   @JoinColumn({ name: 'role_id' })
   role!: RoleEntity;

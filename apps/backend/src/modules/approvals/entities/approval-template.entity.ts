@@ -24,9 +24,7 @@ export class ApprovalTemplateEntity extends BaseEntity {
   @OneToMany(() => ApprovalRequestEntity, (request) => request.template)
   requests!: ApprovalRequestEntity[];
 
-
   // ==================== Foreign Keys ====================
-
 
   // ==================== Template Info ====================
 

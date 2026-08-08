@@ -14,7 +14,6 @@ import {
  * DTO for creating an inspection
  */
 export class CreateInspectionDto {
-
   @IsUUID()
   @IsNotEmpty()
   projectId: string;

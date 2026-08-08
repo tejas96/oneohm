@@ -18,7 +18,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -61,8 +61,7 @@ export class CustomerController {
   // @RequirePermission('customers:create') // TODO: Re-enable
   @ApiCreate({
     summary: 'Create a new customer',
-    description:
-      'Creates a new customer/lead in the system.',
+    description: 'Creates a new customer/lead in the system.',
     responseType: CustomerResponseDto,
     additionalErrors: [
       {
@@ -119,7 +118,7 @@ export class CustomerController {
   }
 
   /**
-   * Get distinct customer groups 
+   * Get distinct customer groups
    * Returns all (groupCode, groupName) pairs used to populate the group selector.
    * NOTE: Must be defined BEFORE :id routes to avoid route conflicts.
    */
@@ -144,8 +143,7 @@ export class CustomerController {
       },
     },
   })
-  async getGroups(
-  ): Promise<{ groupCode: string; groupName: string }[]> {
+  async getGroups(): Promise<{ groupCode: string; groupName: string }[]> {
     return this.customerService.getDistinctGroups();
   }
 
@@ -203,8 +201,7 @@ export class CustomerController {
   @Get('statistics/status')
   @ApiOperation({
     summary: 'Get customer status statistics',
-    description:
-      'Returns count of customers grouped by status for the specified organization.',
+    description: 'Returns count of customers grouped by status for the specified organization.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -256,8 +253,7 @@ export class CustomerController {
   // @RequirePermission('customers:read') // TODO: Re-enable
   @ApiReadOne({
     summary: 'Get customer by ID',
-    description:
-      'Retrieve a specific customer by their ID.',
+    description: 'Retrieve a specific customer by their ID.',
     responseType: CustomerResponseDto,
   })
   async findOne(
@@ -274,8 +270,7 @@ export class CustomerController {
   // @RequirePermission('customers:update') // TODO: Re-enable
   @ApiUpdate({
     summary: 'Update customer',
-    description:
-      'Update customer information.',
+    description: 'Update customer information.',
     responseType: CustomerResponseDto,
     method: 'PATCH', // Use PATCH for partial updates
     additionalErrors: [
@@ -290,11 +285,7 @@ export class CustomerController {
     @Body() updateDto: UpdateCustomerDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    const customer = await this.customerService.update(
-      id,
-      updateDto,
-      currentUser.id,
-    );
+    const customer = await this.customerService.update(id, updateDto, currentUser.id);
     return toDto(CustomerResponseDto, customer);
   }
 
@@ -313,11 +304,7 @@ export class CustomerController {
     @Body() statusDto: UpdateCustomerStatusDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    const customer = await this.customerService.updateStatus(
-      id,
-      statusDto.status,
-      currentUser.id,
-    );
+    const customer = await this.customerService.updateStatus(id, statusDto.status, currentUser.id);
     return toDto(CustomerResponseDto, customer);
   }
 

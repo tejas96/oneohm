@@ -40,10 +40,7 @@ export class PaymentTermRepository {
    * paid_amount and status, so concurrent receipts on the same term
    * cannot produce inconsistent state (plan §2.2 concurrency safety).
    */
-  async findByIdForUpdate(
-    manager: EntityManager,
-    id: string,
-  ): Promise<PaymentTermEntity | null> {
+  async findByIdForUpdate(manager: EntityManager, id: string): Promise<PaymentTermEntity | null> {
     return manager
       .getRepository(PaymentTermEntity)
       .createQueryBuilder('term')

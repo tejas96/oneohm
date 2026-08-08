@@ -11,7 +11,6 @@ export class CheckAvailabilityQueryDto {
   @ApiPropertyOptional({
     example: '7e5ce9c8-9c17-4a86-8fcd-da9ce182467b',
   })
-
   @ApiPropertyOptional({
     description: 'Phone number to check (10 digits or with country code)',
     example: '+919876543210',

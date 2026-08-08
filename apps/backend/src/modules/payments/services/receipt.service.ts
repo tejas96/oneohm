@@ -97,10 +97,7 @@ export class ReceiptService {
    *   6. Re-aggregate term paid_amount/status (skipped if no term).
    * Failure of any step rolls back the entire flow.
    */
-  async create(
-    dto: CreateReceiptDto,
-    createdBy: string,
-  ): Promise<PaymentEntity> {
+  async create(dto: CreateReceiptDto, createdBy: string): Promise<PaymentEntity> {
     assertMoneyWritesAllowed();
     this.assertPaidAt(dto.paidAt);
 
@@ -113,10 +110,7 @@ export class ReceiptService {
       let lockedTerm: PaymentTermEntity | null = null;
 
       if (dto.paymentTermId) {
-        lockedTerm = await this.termRepository.findByIdForUpdate(
-          manager,
-          dto.paymentTermId,
-        );
+        lockedTerm = await this.termRepository.findByIdForUpdate(manager, dto.paymentTermId);
         if (!lockedTerm) {
           throw new NotFoundException(`Payment term ${dto.paymentTermId} not found`);
         }
@@ -298,9 +292,7 @@ export class ReceiptService {
     });
   }
 
-  async getProjectSummary(
-    projectId: string,
-  ): Promise<{
+  async getProjectSummary(projectId: string): Promise<{
     totals: {
       totalExpected: number;
       totalReceived: number;
@@ -436,9 +428,7 @@ export class ReceiptService {
     }
   }
 
-  private async loadProjectInOrg(
-    projectId: string,
-  ): Promise<{
+  private async loadProjectInOrg(projectId: string): Promise<{
     id: string;
     propertyId: string;
     property?: { id: string };
@@ -450,9 +440,7 @@ export class ReceiptService {
         id: p.id,
         propertyId: p.propertyId,
         property: p.property ? { id: p.property.id } : undefined,
-        quote: p.quote
-          ? { customerId: p.quote.customerId }
-          : undefined,
+        quote: p.quote ? { customerId: p.quote.customerId } : undefined,
       };
     } catch {
       throw new NotFoundException(`Project ${projectId} not found`);

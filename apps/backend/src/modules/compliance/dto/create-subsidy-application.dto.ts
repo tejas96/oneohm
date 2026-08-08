@@ -16,7 +16,6 @@ import {
  * DTO for creating a subsidy application
  */
 export class CreateSubsidyApplicationDto {
-
   @IsUUID()
   @IsNotEmpty()
   projectId: string;

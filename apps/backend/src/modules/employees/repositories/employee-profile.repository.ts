@@ -19,9 +19,7 @@ export class EmployeeProfileRepository {
     });
   }
 
-  async findByUserAndOrganization(
-    userId: string,
-  ): Promise<EmployeeProfileEntity | null> {
+  async findByUserAndOrganization(userId: string): Promise<EmployeeProfileEntity | null> {
     return this.repository.findOne({
       where: { userId, deletedAt: IsNull() },
       relations: ['user'],
@@ -64,9 +62,7 @@ export class EmployeeProfileRepository {
     return { items, total, page, limit };
   }
 
-  async findByDepartment(
-    department: string,
-  ): Promise<EmployeeProfileEntity[]> {
+  async findByDepartment(department: string): Promise<EmployeeProfileEntity[]> {
     return this.repository.find({
       where: { department, deletedAt: IsNull() },
       relations: ['user'],
@@ -107,9 +103,7 @@ export class EmployeeProfileRepository {
    * Find by company code (reseller-kind profiles)
    * Ported from ResellerProfileRepository.findByCompanyCode
    */
-  async findByCompanyCode(
-    companyCode: string,
-  ): Promise<EmployeeProfileEntity | null> {
+  async findByCompanyCode(companyCode: string): Promise<EmployeeProfileEntity | null> {
     return this.repository.findOne({
       where: { companyCode, deletedAt: IsNull() },
     });

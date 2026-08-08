@@ -6,7 +6,6 @@ import { IsDate, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
  * DTO for querying audit logs with filters
  */
 export class QueryAuditLogsDto {
-
   @IsEnum(AuditEntityType)
   @IsOptional()
   entityType?: AuditEntityType;

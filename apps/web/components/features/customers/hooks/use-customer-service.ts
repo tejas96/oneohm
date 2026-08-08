@@ -49,7 +49,6 @@ export function useCustomerServiceRequests(
   customerId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerServiceRequest[], AxiosError> {
-
   return useQuery({
     queryKey: customerServiceKeys.requests(customerId),
     queryFn: async (): Promise<CustomerServiceRequest[]> => {
@@ -67,7 +66,6 @@ export function useCustomerFeedback(
   customerId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerFeedbackItem[], AxiosError> {
-
   return useQuery({
     queryKey: customerServiceKeys.feedback(customerId),
     queryFn: async (): Promise<CustomerFeedbackItem[]> => {

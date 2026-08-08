@@ -1,12 +1,5 @@
 import { VendorStatus, VendorType } from '@tejas96/shared/types';
-import {
-  Column,
-  DeleteDateColumn,
-  Entity,
-  Index,
-  OneToMany,
-  Unique,
-} from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, OneToMany, Unique } from 'typeorm';
 
 import { ProjectVendorEntity } from './project-vendor.entity';
 import { PurchaseOrderEntity } from './purchase-order.entity';
@@ -24,7 +17,6 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 export class VendorEntity extends BaseEntity {
   // ==================== Relations ====================
 
-
   @OneToMany(() => PurchaseOrderEntity, (po) => po.vendor)
   purchaseOrders!: PurchaseOrderEntity[];
 
@@ -32,7 +24,6 @@ export class VendorEntity extends BaseEntity {
   projectVendors!: ProjectVendorEntity[];
 
   // ==================== Foreign Keys ====================
-
 
   // ==================== Main Fields ====================
 

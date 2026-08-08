@@ -11,9 +11,7 @@ export class InspectionResponseDto {
   @Expose()
   id: string;
 
-
   @Expose()
-
   @Expose()
   projectId: string;
 

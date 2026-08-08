@@ -126,11 +126,7 @@ export class ProjectService {
     page: number;
     limit: number;
   }> {
-    const { projects, total } = await this.projectRepository.findAll(
-      page,
-      limit,
-      filters,
-    );
+    const { projects, total } = await this.projectRepository.findAll(page, limit, filters);
 
     const projectIds = projects.map((p) => p.id);
     const paymentMap = await this.projectRepository.getPaymentSummaries(projectIds);
@@ -232,11 +228,7 @@ export class ProjectService {
    * Note: propertyId and quoteId cannot be changed after creation.
    * actualCost is routed to metadata.actualCost.
    */
-  async update(
-    id: string,
-    updateDto: UpdateProjectDto,
-    updatedBy: string,
-  ): Promise<ProjectEntity> {
+  async update(id: string, updateDto: UpdateProjectDto, updatedBy: string): Promise<ProjectEntity> {
     const project = await this.projectRepository.findById(id);
 
     // Warehouse-lock guard: once any active (non-cancelled) stock allocation exists for
@@ -327,10 +319,7 @@ export class ProjectService {
   /**
    * Update project status with validation
    */
-  async updateStatus(
-    id: string,
-    newStatus: ProjectStatus,
-  ): Promise<ProjectEntity> {
+  async updateStatus(id: string, newStatus: ProjectStatus): Promise<ProjectEntity> {
     const project = await this.projectRepository.findById(id);
 
     // Validate status transition
@@ -369,11 +358,7 @@ export class ProjectService {
       );
       this.eventEmitter.emit(
         CONSUMER_EVENTS.PROJECT_COMPLETED,
-        new ProjectCompletedEvent(
-          id,
-          updatedProject.propertyId,
-          updatedProject.name,
-        ),
+        new ProjectCompletedEvent(id, updatedProject.propertyId, updatedProject.name),
       );
     }
 
@@ -437,9 +422,7 @@ export class ProjectService {
       quote.propertyId,
     );
     if (!property) {
-      throw new NotFoundException(
-        `Property with ID ${quote.propertyId} not found`,
-      );
+      throw new NotFoundException(`Property with ID ${quote.propertyId} not found`);
     }
     if (property.status === PropertyStatus.CONVERTED) {
       throw new BadRequestException(
@@ -447,15 +430,12 @@ export class ProjectService {
       );
     }
 
-    const existingProject = await this.projectRepository.findOneByPropertyId(
-      quote.propertyId,
-    );
+    const existingProject = await this.projectRepository.findOneByPropertyId(quote.propertyId);
     if (existingProject) {
       throw new BadRequestException(
         `Property already has a project (${existingProject.projectNumber}). One property can only have one project.`,
       );
     }
-
 
     const contractVersion = this.pickContractQuoteVersion(quote);
     if (!contractVersion) {
@@ -547,9 +527,7 @@ export class ProjectService {
    * Get project timeline data for Gantt visualization
    * Returns tasks with their dates, dependencies, and status
    */
-  async getProjectTimeline(
-    projectId: string,
-  ): Promise<{
+  async getProjectTimeline(projectId: string): Promise<{
     project: { id: string; name: string; startDate?: Date; endDate?: Date };
     tasks: Array<{
       id: string;
@@ -599,9 +577,7 @@ export class ProjectService {
   /**
    * Get project progress statistics
    */
-  async getProjectProgress(
-    projectId: string,
-  ): Promise<{
+  async getProjectProgress(projectId: string): Promise<{
     totalTasks: number;
     statusCounts: Record<TaskStatus, number>;
     completionPercentage: number;
@@ -1145,10 +1121,7 @@ export class ProjectService {
    * the project BOM via BomService.createFromCalculation.
    * Idempotent: deletes any existing project BOM before recreating.
    */
-  async syncBomFromSnapshot(
-    projectId: string,
-    userId: string,
-  ): Promise<void> {
+  async syncBomFromSnapshot(projectId: string, userId: string): Promise<void> {
     const project = await this.projectRepository.findById(projectId);
 
     const quote = await this.quoteService.findById(project.quoteId);
@@ -1201,20 +1174,14 @@ export class ProjectService {
 
     try {
       // Check if project already has a BOM (idempotency)
-      const existingProjectBom = await this.bomService.findByEntity(
-        'project',
-        projectId,
-      );
+      const existingProjectBom = await this.bomService.findByEntity('project', projectId);
       if (existingProjectBom) {
         this.logger.debug(`Project ${projectId} already has BOM ${existingProjectBom.bomNumber}`);
         return;
       }
 
       // Find quote version BOM
-      const quoteBom = await this.bomService.findByEntity(
-        'quote_version',
-        quoteVersionId,
-      );
+      const quoteBom = await this.bomService.findByEntity('quote_version', quoteVersionId);
 
       if (!quoteBom) {
         this.logger.warn(
@@ -1242,12 +1209,7 @@ export class ProjectService {
         sortOrder: item.sortOrder,
       }));
 
-      await this.bomService.createFromItems(
-        'project',
-        projectId,
-        clonedItems,
-        createdBy,
-      );
+      await this.bomService.createFromItems('project', projectId, clonedItems, createdBy);
 
       this.logger.log(
         `Successfully copied BOM from quote version ${quoteVersionId} to project ${projectId}`,

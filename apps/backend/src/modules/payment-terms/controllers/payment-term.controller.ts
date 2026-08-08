@@ -146,9 +146,7 @@ export class PaymentTermController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft-delete a term (only if no linked receipts)' })
   @ApiParam({ name: 'id', type: String })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<void> {
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.termService.delete(id);
   }
 
@@ -160,9 +158,7 @@ export class PaymentTermController {
    * Verify the project exists in the caller's organization (cross-tenant
    * safety). Returns the loaded project for downstream use.
    */
-  private async assertProjectInOrg(
-    projectId: string,
-  ): Promise<{ id: string; quoteId: string }> {
+  private async assertProjectInOrg(projectId: string): Promise<{ id: string; quoteId: string }> {
     try {
       const project = await this.projectRepository.findById(projectId);
       return { id: project.id, quoteId: project.quoteId };

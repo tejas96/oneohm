@@ -71,17 +71,13 @@ export class TasksController {
     @Query('dueDateFilter') dueDateFilter?: DueDateFilter,
   ): Promise<GroupedMyTasksResponseDto | PaginatedResponse<ProjectTaskResponseDto>> {
     if (groupBy) {
-      const result = await this.taskService.getMyTasksGrouped(
-        currentUser.id,
-        groupBy,
-        {
-          status,
-          priority,
-          projectId,
-          search,
-          dueDateFilter,
-        },
-      );
+      const result = await this.taskService.getMyTasksGrouped(currentUser.id, groupBy, {
+        status,
+        priority,
+        projectId,
+        search,
+        dueDateFilter,
+      });
 
       return plainToInstance(GroupedMyTasksResponseDto, result, {
         excludeExtraneousValues: true,
@@ -90,15 +86,10 @@ export class TasksController {
 
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
 
-    const result = await this.taskService.getMyTasks(
-      currentUser.id,
-      pageNum,
-      limitNum,
-      {
-        status,
-        priority,
-      },
-    );
+    const result = await this.taskService.getMyTasks(currentUser.id, pageNum, limitNum, {
+      status,
+      priority,
+    });
 
     return {
       data: plainToInstance(MyTaskResponseDto, result.data, {
@@ -181,12 +172,7 @@ export class TasksController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddCommentDto,
   ): Promise<{ success: boolean }> {
-    await this.taskService.addComment(
-      id,
-      dto.comment,
-      currentUser.id,
-      currentUser.roles,
-    );
+    await this.taskService.addComment(id, dto.comment, currentUser.id, currentUser.roles);
     return { success: true };
   }
 }

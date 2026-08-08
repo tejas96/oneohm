@@ -68,9 +68,7 @@ export class ProjectLedgerService {
     private readonly ledgerRepository: LedgerRepository,
   ) {}
 
-  async getProjectSummary(
-    projectId: string,
-  ): Promise<ProjectLedgerSummary> {
+  async getProjectSummary(projectId: string): Promise<ProjectLedgerSummary> {
     const balance = await this.ledgerRepository.getProjectBalance(projectId);
     if (!balance) {
       throw new NotFoundException(`Project ${projectId} not found`);

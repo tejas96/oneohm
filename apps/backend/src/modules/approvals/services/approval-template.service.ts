@@ -76,9 +76,7 @@ export class ApprovalTemplateService {
   /**
    * Find templates by workflow type
    */
-  async findByWorkflowType(
-    workflowType: ApprovalWorkflowType,
-  ): Promise<ApprovalTemplateEntity[]> {
+  async findByWorkflowType(workflowType: ApprovalWorkflowType): Promise<ApprovalTemplateEntity[]> {
     return this.templateRepository.findByWorkflowType(workflowType);
   }
 
@@ -127,8 +125,7 @@ export class ApprovalTemplateService {
   /**
    * Get statistics
    */
-  async getStatistics(
-  ): Promise<ExtendedStatisticsResponse<string, ApprovalWorkflowType>> {
+  async getStatistics(): Promise<ExtendedStatisticsResponse<string, ApprovalWorkflowType>> {
     const byType = await this.templateRepository.countByWorkflowType();
     const activeCount = await this.templateRepository.countActive();
 
@@ -145,10 +142,7 @@ export class ApprovalTemplateService {
   /**
    * Toggle template status
    */
-  async toggleStatus(
-    id: string,
-    updatedBy: string,
-  ): Promise<ApprovalTemplateEntity> {
+  async toggleStatus(id: string, updatedBy: string): Promise<ApprovalTemplateEntity> {
     const template = await this.findById(id);
 
     return this.templateRepository.update(id, {

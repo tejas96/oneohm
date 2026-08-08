@@ -15,12 +15,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { type PaginatedResponse, ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  ApiDelete,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate
-} from '../../../common/decorators';
+import { ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -325,11 +320,7 @@ export class ProjectController {
     @Param('quoteId', ParseUUIDPipe) quoteId: string,
     @Body() convertDto?: ConvertFromQuoteDto,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.convertFromQuote(
-      quoteId,
-      currentUser.id,
-      convertDto,
-    );
+    const project = await this.projectService.convertFromQuote(quoteId, currentUser.id, convertDto);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,

@@ -116,9 +116,7 @@ export class LedgerController {
   async listMilestones(
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<MilestoneBalanceResponseDto[]> {
-    const rows = await this.ledgerRepository.getMilestoneBalancesWithAllocations(
-      projectId,
-    );
+    const rows = await this.ledgerRepository.getMilestoneBalancesWithAllocations(projectId);
     return toDtoArray(MilestoneBalanceResponseDto, rows);
   }
 
@@ -139,10 +137,7 @@ export class LedgerController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: RecordReceiptDto,
   ): Promise<LedgerEntryResponseDto> {
-    const entry = await this.writeService.recordReceipt(
-      { projectId, ...dto },
-      currentUser.id,
-    );
+    const entry = await this.writeService.recordReceipt({ projectId, ...dto }, currentUser.id);
     return toDto(LedgerEntryResponseDto, entry);
   }
 
@@ -159,10 +154,7 @@ export class LedgerController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: RecordExpenseDto,
   ): Promise<LedgerEntryResponseDto> {
-    const entry = await this.writeService.recordExpense(
-      { projectId, ...dto },
-      currentUser.id,
-    );
+    const entry = await this.writeService.recordExpense({ projectId, ...dto }, currentUser.id);
     return toDto(LedgerEntryResponseDto, entry);
   }
 
@@ -208,11 +200,7 @@ export class LedgerController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: ReverseEntryDto,
   ): Promise<LedgerEntryResponseDto> {
-    const entry = await this.writeService.reverse(
-      entryId,
-      dto.reason,
-      currentUser.id,
-    );
+    const entry = await this.writeService.reverse(entryId, dto.reason, currentUser.id);
     return toDto(LedgerEntryResponseDto, entry);
   }
 
@@ -233,11 +221,7 @@ export class LedgerController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: ChangeOrderDto,
   ): Promise<MilestoneBalanceResponseDto> {
-    const milestone = await this.milestoneService.addChangeOrder(
-      projectId,
-      dto,
-      currentUser.id,
-    );
+    const milestone = await this.milestoneService.addChangeOrder(projectId, dto, currentUser.id);
     const rows = await this.ledgerRepository.getMilestoneBalances(projectId);
     const created = rows.find((r) => r.milestoneId === milestone.id);
     return toDto(MilestoneBalanceResponseDto, created ?? {});
@@ -256,11 +240,7 @@ export class LedgerController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: WaiveMilestoneDto,
   ): Promise<{ id: string; status: string }> {
-    const milestone = await this.milestoneService.waive(
-      milestoneId,
-      dto.reason,
-      currentUser.id,
-    );
+    const milestone = await this.milestoneService.waive(milestoneId, dto.reason, currentUser.id);
     return { id: milestone.id, status: milestone.status };
   }
 

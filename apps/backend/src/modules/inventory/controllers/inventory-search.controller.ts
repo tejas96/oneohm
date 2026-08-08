@@ -29,9 +29,7 @@ export class InventorySearchController {
     description:
       'Searches products, vendors, warehouses, purchase orders, and material dispatches in parallel. Per-bucket limit 8, per-bucket timeout 2s. Failed/timed-out buckets appear in `degraded` and return empty hits.',
   })
-  async search(
-    @Query() query: InventorySearchQueryDto,
-  ): Promise<InventorySearchResponse> {
+  async search(@Query() query: InventorySearchQueryDto): Promise<InventorySearchResponse> {
     return this.inventorySearchService.search(query.q, query.types ?? []);
   }
 }

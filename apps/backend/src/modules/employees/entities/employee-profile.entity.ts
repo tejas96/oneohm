@@ -30,8 +30,6 @@ export class EmployeeProfileEntity extends BaseEntity {
   @JoinColumn({ name: 'user_id' })
   user?: UserEntity;
 
-
-
   // ==================== Profile Kind ====================
   @Column({
     name: 'profile_kind',

@@ -121,9 +121,7 @@ export class ProfileService {
     // Check if profile already exists
     const existingProfile = await this.getProfile(userId, profileType);
     if (existingProfile) {
-      throw new BadRequestException(
-        `User already has a ${profileType} profile`,
-      );
+      throw new BadRequestException(`User already has a ${profileType} profile`);
     }
 
     let profile: CustomerProfileEntity | EmployeeProfileEntity;
@@ -172,19 +170,13 @@ export class ProfileService {
         const constraint = dbError.constraint ?? '';
         if (constraint.includes('emp_id') || constraint.includes('employee_id')) {
           const pd = profileData as Record<string, string | undefined>;
-          throw new ConflictException(
-            `Employee ID "${pd.employeeId ?? ''}" already exists`,
-          );
+          throw new ConflictException(`Employee ID "${pd.employeeId ?? ''}" already exists`);
         }
         if (constraint.includes('company_code')) {
           const pd = profileData as Record<string, string | undefined>;
-          throw new ConflictException(
-            `Company code "${pd.companyCode ?? ''}" already exists`,
-          );
+          throw new ConflictException(`Company code "${pd.companyCode ?? ''}" already exists`);
         }
-        throw new ConflictException(
-          `A ${profileType} profile with this data already exists`,
-        );
+        throw new ConflictException(`A ${profileType} profile with this data already exists`);
       }
       throw error;
     }
@@ -215,16 +207,12 @@ export class ProfileService {
         // employee_profiles now holds both staff and reseller-kind rows; a
         // user can only have one row per (userId), so filter
         // by profileKind to avoid returning a staff row as a "reseller" profile.
-        const profile = await this.employeeProfileRepository.findByUserAndOrganization(
-          userId,
-        );
+        const profile = await this.employeeProfileRepository.findByUserAndOrganization(userId);
         return profile?.profileKind === EmployeeProfileKind.RESELLER ? profile : null;
       }
 
       case UserProfileType.EMPLOYEE: {
-        const profile = await this.employeeProfileRepository.findByUserAndOrganization(
-          userId,
-        );
+        const profile = await this.employeeProfileRepository.findByUserAndOrganization(userId);
         return profile?.profileKind === EmployeeProfileKind.STAFF ? profile : null;
       }
 
@@ -285,10 +273,7 @@ export class ProfileService {
   /**
    * Check if user has a specific profile type in an organization
    */
-  async hasProfile(
-    userId: string,
-    profileType: UserProfileType,
-  ): Promise<boolean> {
+  async hasProfile(userId: string, profileType: UserProfileType): Promise<boolean> {
     const profile = await this.getProfile(userId, profileType);
     return !!profile;
   }
@@ -331,21 +316,17 @@ export class ProfileService {
   ): Promise<void> {
     const profileSummary = await this.getUserProfileSummary(userId);
 
-    const hasAccess = profileSummary.profiles.some(
-      (p) =>
-        (requiredProfileType ? p.type === requiredProfileType : true),
+    const hasAccess = profileSummary.profiles.some((p) =>
+      requiredProfileType ? p.type === requiredProfileType : true,
     );
 
     if (!hasAccess) {
       const profileTypeMsg = requiredProfileType ? ` with ${requiredProfileType} profile` : '';
-      throw new NotFoundException(
-        `User does not have access to organization ${profileTypeMsg}`,
-      );
+      throw new NotFoundException(`User does not have access to organization ${profileTypeMsg}`);
     }
 
     this.logger.debug(`Access verified: User ${userId} has access to org `);
   }
-
 
   /**
    * Assign default role to user based on profile type
@@ -354,11 +335,7 @@ export class ProfileService {
    * @param roleCode - Role code to assign (e.g., 'customer', 'reseller', 'employee_basic')
    * @param createdBy - User ID of creator (for audit)
    */
-  async assignDefaultRole(
-    userId: string,
-    roleCode: string,
-    createdBy?: string,
-  ): Promise<void> {
+  async assignDefaultRole(userId: string, roleCode: string, createdBy?: string): Promise<void> {
     try {
       const role = await this.roleRepository.findByCodeAndOrganization(roleCode);
 
@@ -386,9 +363,7 @@ export class ProfileService {
         createdBy: createdBy || userId,
       });
 
-      this.logger.log(
-        `Assigned default role '${roleCode}' (${role.id}) to user ${userId}`,
-      );
+      this.logger.log(`Assigned default role '${roleCode}' (${role.id}) to user ${userId}`);
     } catch (error) {
       this.logger.error(`Failed to assign default role '${roleCode}' to user ${userId}:`, error);
     }

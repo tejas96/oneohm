@@ -31,7 +31,6 @@ export class RoleEntity {
 
   // ==================== Relations ====================
 
-
   @OneToMany(() => RolePermissionEntity, (rolePermission) => rolePermission.role)
   rolePermissions!: RolePermissionEntity[];
 
@@ -44,7 +43,6 @@ export class RoleEntity {
   updater?: UserEntity;
 
   // ==================== Foreign Keys ====================
-
 
   // ==================== Role Info ====================
 

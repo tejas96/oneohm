@@ -27,7 +27,6 @@ export class ProjectExpenseEntity extends BaseEntity {
   @JoinColumn({ name: 'project_id' })
   project?: ProjectEntity;
 
-
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;
 

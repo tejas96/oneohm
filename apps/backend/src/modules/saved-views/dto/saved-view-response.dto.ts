@@ -8,7 +8,6 @@ export class SavedViewResponseDto {
   @Expose()
   id!: string;
 
-
   @ApiProperty()
   @Expose()
   userId!: string;

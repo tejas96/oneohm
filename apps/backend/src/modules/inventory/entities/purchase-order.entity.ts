@@ -21,7 +21,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 export class PurchaseOrderEntity extends BaseEntity {
   // ==================== Relations ====================
 
-
   @ManyToOne(() => VendorEntity, (vendor) => vendor.purchaseOrders)
   @JoinColumn({ name: 'vendor_id' })
   vendor!: VendorEntity;
@@ -46,7 +45,6 @@ export class PurchaseOrderEntity extends BaseEntity {
   items!: PurchaseOrderItemEntity[];
 
   // ==================== Foreign Keys ====================
-
 
   @Column({ name: 'vendor_id', type: 'uuid' })
   vendorId!: string;

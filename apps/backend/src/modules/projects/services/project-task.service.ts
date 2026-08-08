@@ -81,10 +81,7 @@ export class ProjectTaskService {
     private readonly changeRequestTaskService: ChangeRequestTaskService,
   ) {}
 
-  async create(
-    createDto: CreateProjectTaskDto,
-    currentUserId: string,
-  ): Promise<ProjectTaskEntity> {
+  async create(createDto: CreateProjectTaskDto, currentUserId: string): Promise<ProjectTaskEntity> {
     if (!createDto.projectId) {
       throw new BadRequestException('Project ID is required');
     }
@@ -835,12 +832,7 @@ export class ProjectTaskService {
       priority?: string;
     } = {},
   ): Promise<PaginatedResponse<Record<string, unknown>>> {
-    const { data, total } = await this.taskRepository.findByUserId(
-      userId,
-      page,
-      limit,
-      filters,
-    );
+    const { data, total } = await this.taskRepository.findByUserId(userId, page, limit, filters);
 
     const flatData = data.map((task) => ({
       ...task,

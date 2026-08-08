@@ -5,7 +5,6 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 @Entity('brands')
 @Index(['name'], { unique: true })
 export class BrandEntity extends BaseEntity {
-
   @Column({ type: 'varchar', length: 100 })
   name!: string;
 
@@ -35,5 +34,4 @@ export class BrandEntity extends BaseEntity {
 
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
-
 }

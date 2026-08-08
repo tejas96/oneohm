@@ -8,11 +8,7 @@ import { customerDisplayName, formatPropertyAddress, str } from '../../utils/rep
 
 @Injectable()
 export class DcrMapper implements ReportMapper<ProjectReportRawData, DcrViewModel> {
-  toViewModel({
-    companyName,
-    project,
-    panelSerialNumbers,
-  }: ProjectReportRawData): DcrViewModel {
+  toViewModel({ companyName, project, panelSerialNumbers }: ProjectReportRawData): DcrViewModel {
     const fields = { ...DCR_DEFAULT_FIELDS };
     const property = project.property;
     const snapshot = getQuoteSnapshot(project);

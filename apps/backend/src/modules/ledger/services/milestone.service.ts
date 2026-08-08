@@ -86,21 +86,9 @@ export class MilestoneService {
         source: milestone.source,
       };
       if (action === 'create') {
-        await this.auditLog.logCreate(
-          'payment_milestone',
-          milestone.id,
-          values,
-          userId,
-          metadata,
-        );
+        await this.auditLog.logCreate('payment_milestone', milestone.id, values, userId, metadata);
       } else if (action === 'delete') {
-        await this.auditLog.logDelete(
-          'payment_milestone',
-          milestone.id,
-          values,
-          userId,
-          metadata,
-        );
+        await this.auditLog.logDelete('payment_milestone', milestone.id, values, userId, metadata);
       } else {
         await this.auditLog.logUpdate(
           'payment_milestone',
@@ -136,14 +124,7 @@ export class MilestoneService {
    *    contract — no perpetual "₹0.01 pending".
    */
   async snapshotFromQuoteVersion(params: SnapshotParams): Promise<PaymentMilestoneEntity[]> {
-    const {
-      projectId,
-      sourceVersionId,
-      milestones,
-      contractPaise,
-      createdBy,
-      manager,
-    } = params;
+    const { projectId, sourceVersionId, milestones, contractPaise, createdBy, manager } = params;
 
     const repo = manager.getRepository(PaymentMilestoneEntity);
 

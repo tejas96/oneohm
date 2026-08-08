@@ -21,7 +21,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -135,16 +135,12 @@ export class WarehouseController {
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
-    const { warehouses, total } = await this.warehouseService.findAll(
-      pageNum,
-      limitNum,
-      {
-        status,
-        warehouseType,
-        warehouseManagerId,
-        search,
-      },
-    );
+    const { warehouses, total } = await this.warehouseService.findAll(pageNum, limitNum, {
+      status,
+      warehouseType,
+      warehouseManagerId,
+      search,
+    });
 
     return {
       data: plainToInstance(WarehouseResponseDto, warehouses, {
@@ -195,11 +191,7 @@ export class WarehouseController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateWarehouseDto,
   ): Promise<WarehouseResponseDto> {
-    const warehouse = await this.warehouseService.update(
-      id,
-      updateDto,
-      currentUser.id,
-    );
+    const warehouse = await this.warehouseService.update(id, updateDto, currentUser.id);
 
     return plainToInstance(WarehouseResponseDto, warehouse, {
       excludeExtraneousValues: true,
@@ -238,11 +230,7 @@ export class WarehouseController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status', new ParseEnumPipe(WarehouseStatus)) status: WarehouseStatus,
   ): Promise<WarehouseResponseDto> {
-    const warehouse = await this.warehouseService.changeStatus(
-      id,
-      status,
-      currentUser.id,
-    );
+    const warehouse = await this.warehouseService.changeStatus(id, status, currentUser.id);
 
     return plainToInstance(WarehouseResponseDto, warehouse, {
       excludeExtraneousValues: true,

@@ -86,9 +86,7 @@ export class QuoteCalculatorService {
    * Main quote calculation method
    * Takes input from sales person and returns complete calculated quote
    */
-  async calculateQuote(
-    input: CalculateQuoteDto,
-  ): Promise<CalculateQuoteResponseDto> {
+  async calculateQuote(input: CalculateQuoteDto): Promise<CalculateQuoteResponseDto> {
     const warnings: ValidationWarning[] = [];
 
     // 0. Validate input for conflicting override types
@@ -289,10 +287,7 @@ export class QuoteCalculatorService {
 
       inventoryStatus = await Promise.all(
         allProductIds.map(async (productId) => {
-          const stock = await this.inventoryStockService!.getStock(
-            warehouseId,
-            productId,
-          );
+          const stock = await this.inventoryStockService!.getStock(warehouseId, productId);
           return {
             productId,
             warehouseId,
@@ -438,11 +433,7 @@ export class QuoteCalculatorService {
           `No DCR panel found${preferredBrand ? ` for brand ${preferredBrand}` : ''}${preferredTechnology ? ` with ${preferredTechnology} technology` : ''}. Please try different options or contact administrator.`,
         );
       }
-      const dcrConfig = await this.calculatePanelQuantity(
-        dcrPanel,
-        dcrSizeKw,
-        projectType,
-      );
+      const dcrConfig = await this.calculatePanelQuantity(dcrPanel, dcrSizeKw, projectType);
       panels.push(dcrConfig);
     }
 
@@ -483,10 +474,7 @@ export class QuoteCalculatorService {
 
     // Batch query for all product prices to avoid N+1 queries
     const productIds = overrides.map((o) => o.productId);
-    const productPricesMap = await this.getProductPricesBatch(
-      productIds,
-      projectType,
-    );
+    const productPricesMap = await this.getProductPricesBatch(productIds, projectType);
 
     for (const override of overrides) {
       const panel = await this.productRepo.findById(override.productId, {
@@ -611,21 +599,13 @@ export class QuoteCalculatorService {
       actualDcrSizeKw = dcrResult.actualSizeKw;
     } else if (originalDcrSizeKw > 0) {
       // No manual count specified, use auto-calculation
-      const dcrPanel = await this.findPanel(
-        true,
-        preferredBrand,
-        preferredTechnology,
-      );
+      const dcrPanel = await this.findPanel(true, preferredBrand, preferredTechnology);
       if (!dcrPanel) {
         throw new BadRequestException(
           `No DCR panel found${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please try different options.`,
         );
       }
-      const dcrConfig = await this.calculatePanelQuantity(
-        dcrPanel,
-        originalDcrSizeKw,
-        projectType,
-      );
+      const dcrConfig = await this.calculatePanelQuantity(dcrPanel, originalDcrSizeKw, projectType);
       panels.push(dcrConfig);
       actualDcrSizeKw = dcrConfig.totalWattage / WATTS_PER_KW;
     }
@@ -655,11 +635,7 @@ export class QuoteCalculatorService {
       actualNonDcrSizeKw = nonDcrResult.actualSizeKw;
     } else if (originalNonDcrSizeKw > 0) {
       // No manual count specified, use auto-calculation
-      const nonDcrPanel = await this.findPanel(
-        false,
-        preferredBrand,
-        preferredTechnology,
-      );
+      const nonDcrPanel = await this.findPanel(false, preferredBrand, preferredTechnology);
       if (!nonDcrPanel) {
         throw new BadRequestException(
           `No Non-DCR panel found${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please try different options.`,
@@ -939,12 +915,7 @@ export class QuoteCalculatorService {
   ): Promise<CalculatedInverterConfig> {
     // If overrides provided, validate and use them (capacity filter is NOT applied -- overrides specify exact products)
     if (overrides && overrides.length > 0) {
-      return this.calculateInvertersWithOverrides(
-        systemSizeKw,
-        projectType,
-        overrides,
-        warnings,
-      );
+      return this.calculateInvertersWithOverrides(systemSizeKw, projectType, overrides, warnings);
     }
 
     // Auto-calculate inverters
@@ -1040,10 +1011,7 @@ export class QuoteCalculatorService {
 
     // Batch query for all product prices to avoid N+1 queries
     const productIds = overrides.map((o) => o.productId);
-    const productPricesMap = await this.getProductPricesBatch(
-      productIds,
-      projectType,
-    );
+    const productPricesMap = await this.getProductPricesBatch(productIds, projectType);
 
     for (const override of overrides) {
       const inverter = await this.productRepo.findById(override.productId, {
@@ -1143,10 +1111,7 @@ export class QuoteCalculatorService {
 
     // Pre-fetch pricing for all available inverters in a single batch query (N+1 optimization)
     const productIds = availableInverters.map((inv) => inv.id);
-    const productPricesMap = await this.getProductPricesBatch(
-      productIds,
-      projectType,
-    );
+    const productPricesMap = await this.getProductPricesBatch(productIds, projectType);
 
     const inverterPricing = new Map<string, { basePrice: number; gstRate: number }>();
     const pricedInverters: ProductEntity[] = [];
@@ -1848,10 +1813,7 @@ export class QuoteCalculatorService {
     }
 
     // 2. Get pricing rule and validate
-    const productPrice = await this.getProductPrice(
-      structureProduct.id,
-      projectType,
-    );
+    const productPrice = await this.getProductPrice(structureProduct.id, projectType);
     const { basePrice, gstRate, multiplier } = this.validateStructurePricing(
       productPrice,
       structureProduct.name,

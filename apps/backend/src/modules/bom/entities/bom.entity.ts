@@ -16,7 +16,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 export class BomEntity extends BaseEntity {
   // ==================== Organization ====================
 
-
   // ==================== Identity ====================
   @Column({ name: 'bom_number', type: 'varchar', length: 50, unique: true })
   bomNumber!: string;

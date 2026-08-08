@@ -106,10 +106,7 @@ export class WarehouseRepository {
   /**
    * Update warehouse
    */
-  async update(
-    id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<WarehouseEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<WarehouseEntity> {
     const warehouse = await this.findById(id);
 
     Object.assign(warehouse, updateData);
@@ -156,9 +153,7 @@ export class WarehouseRepository {
   /**
    * Find warehouses by type
    */
-  async findByType(
-    warehouseType: WarehouseType,
-  ): Promise<WarehouseEntity[]> {
+  async findByType(warehouseType: WarehouseType): Promise<WarehouseEntity[]> {
     return this.repository.find({
       where: {
         warehouseType,

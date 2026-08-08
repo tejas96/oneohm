@@ -39,10 +39,7 @@ export class AdminIntegrationController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: CreateIntegrationDto,
   ): Promise<IntegrationResponseDto> {
-    const integration = await this.integrationService.createIntegration(
-      dto,
-      currentUser.id,
-    );
+    const integration = await this.integrationService.createIntegration(dto, currentUser.id);
     return this.toResponseDto(integration);
   }
 
@@ -84,11 +81,7 @@ export class AdminIntegrationController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: UpdateIntegrationDto,
   ): Promise<IntegrationResponseDto> {
-    const integration = await this.integrationService.updateIntegration(
-      id,
-      dto,
-      currentUser.id,
-    );
+    const integration = await this.integrationService.updateIntegration(id, dto, currentUser.id);
     return this.toResponseDto(integration);
   }
 

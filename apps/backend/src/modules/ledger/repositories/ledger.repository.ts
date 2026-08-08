@@ -315,13 +315,8 @@ export class LedgerRepository {
     return rows.length > 0;
   }
 
-  async findEntryById(
-    id: string,
-    manager?: EntityManager,
-  ): Promise<LedgerEntryEntity | null> {
-    return this.exec(manager)
-      .getRepository(LedgerEntryEntity)
-      .findOne({ where: { id } });
+  async findEntryById(id: string, manager?: EntityManager): Promise<LedgerEntryEntity | null> {
+    return this.exec(manager).getRepository(LedgerEntryEntity).findOne({ where: { id } });
   }
 
   /** The allocations of an entry — needed to build its reversal mirror. */

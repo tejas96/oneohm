@@ -31,8 +31,7 @@ export class QuoteConfigurationController {
 
   @Get('active')
   @ApiResponse({ status: 200, type: QuoteConfigurationResponseDto })
-  async getActive(
-  ): Promise<QuoteConfigurationResponseDto> {
+  async getActive(): Promise<QuoteConfigurationResponseDto> {
     const config = await this.quoteConfigurationService.getActive();
     return toDto(QuoteConfigurationResponseDto, config);
   }
@@ -47,10 +46,7 @@ export class QuoteConfigurationController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: CreateQuoteConfigurationDto,
   ): Promise<QuoteConfigurationResponseDto> {
-    const config = await this.quoteConfigurationService.create(
-      body,
-      currentUser.id,
-    );
+    const config = await this.quoteConfigurationService.create(body, currentUser.id);
     return toDto(QuoteConfigurationResponseDto, config);
   }
 
@@ -65,11 +61,7 @@ export class QuoteConfigurationController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateQuoteConfigurationDto,
   ): Promise<QuoteConfigurationResponseDto> {
-    const config = await this.quoteConfigurationService.update(
-      id,
-      body,
-      currentUser.id,
-    );
+    const config = await this.quoteConfigurationService.update(id, body, currentUser.id);
     return toDto(QuoteConfigurationResponseDto, config);
   }
 }

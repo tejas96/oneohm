@@ -59,20 +59,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('purchase-orders.csv')
   @ApiOperation({ summary: 'Stream CSV export of purchase orders (max 50k rows)' })
-  async exportPurchaseOrders(
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportPurchaseOrders(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.poFilters(query);
     const { total } = await this.purchaseOrderRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.purchaseOrderRepository.findAll(
-            page,
-            limit,
-            filters,
-          );
+          const r = await this.purchaseOrderRepository.findAll(page, limit, filters);
           return r.purchaseOrders;
         },
       },
@@ -84,20 +78,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('material-dispatches.csv')
   @ApiOperation({ summary: 'Stream CSV export of material dispatches (max 50k rows)' })
-  async exportDispatches(
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportDispatches(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.dispatchFilters(query);
     const { total } = await this.materialDispatchRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.materialDispatchRepository.findAll(
-            page,
-            limit,
-            filters,
-          );
+          const r = await this.materialDispatchRepository.findAll(page, limit, filters);
           return r.dispatches;
         },
       },
@@ -109,20 +97,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('stock-allocations.csv')
   @ApiOperation({ summary: 'Stream CSV export of stock allocations (max 50k rows)' })
-  async exportAllocations(
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportAllocations(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.allocationFilters(query);
     const { total } = await this.stockAllocationRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.stockAllocationRepository.findAll(
-            page,
-            limit,
-            filters,
-          );
+          const r = await this.stockAllocationRepository.findAll(page, limit, filters);
           return r.allocations;
         },
       },
@@ -134,20 +116,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('inventory-stock.csv')
   @ApiOperation({ summary: 'Stream CSV export of stock levels (max 50k rows)' })
-  async exportStock(
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportStock(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.stockFilters(query);
     const { total } = await this.inventoryStockRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.inventoryStockRepository.findAll(
-            page,
-            limit,
-            filters,
-          );
+          const r = await this.inventoryStockRepository.findAll(page, limit, filters);
           return r.stocks;
         },
       },
@@ -159,24 +135,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('inventory-transactions.csv')
   @ApiOperation({ summary: 'Stream CSV export of inventory transactions (max 50k rows)' })
-  async exportTransactions(
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportTransactions(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.txnFilters(query);
-    const { total } = await this.inventoryTransactionRepository.findAll(
-      1,
-      1,
-      filters,
-    );
+    const { total } = await this.inventoryTransactionRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.inventoryTransactionRepository.findAll(
-            page,
-            limit,
-            filters,
-          );
+          const r = await this.inventoryTransactionRepository.findAll(page, limit, filters);
           return r.transactions;
         },
       },
@@ -188,9 +154,7 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('vendors.csv')
   @ApiOperation({ summary: 'Stream CSV export of vendors (max 50k rows)' })
-  async exportVendors(
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportVendors(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.vendorFilters(query);
     const { total } = await this.vendorRepository.findAll(1, 1, filters);
     return buildCsvStream(
@@ -209,9 +173,7 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('warehouses.csv')
   @ApiOperation({ summary: 'Stream CSV export of warehouses (max 50k rows)' })
-  async exportWarehouses(
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportWarehouses(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.warehouseFilters(query);
     const { total } = await this.warehouseRepository.findAll(1, 1, filters);
     return buildCsvStream(

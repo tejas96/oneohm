@@ -245,10 +245,7 @@ export class BomService {
     return Object.assign(bom, { productAllocationStatus });
   }
 
-  async deleteByEntity(
-    entityType: string,
-    entityId: string,
-  ): Promise<void> {
+  async deleteByEntity(entityType: string, entityId: string): Promise<void> {
     // Belt-and-suspenders guard on top of the FK ON DELETE RESTRICT constraint.
     // Project BOMs may have linked stock_allocations; deleting without cancelling
     // them first would orphan reserved inventory. Quote-version BOMs never have
@@ -348,13 +345,7 @@ export class BomService {
           relations: ['items'],
         });
         if (freshBom) {
-          await this.applyAddedProducts(
-            manager,
-            freshBom,
-            incomingMap,
-            warehouseId,
-            userId,
-          );
+          await this.applyAddedProducts(manager, freshBom, incomingMap, warehouseId, userId);
           await this.recomputeBomTotals(manager, freshBom);
         }
         return {
@@ -520,12 +511,7 @@ export class BomService {
               // OVER-DISPATCH: required drops below what's already physically sent
               const undispatchedToRelease = allocated - dispatched;
               if (undispatchedToRelease > 0) {
-                await this.releaseReservation(
-                  manager,
-                  alloc,
-                  undispatchedToRelease,
-                  userId,
-                );
+                await this.releaseReservation(manager, alloc, undispatchedToRelease, userId);
               }
               // Create return request for the surplus that was dispatched
               const returnQty = dispatched - newRequired;
@@ -1159,10 +1145,7 @@ export class BomService {
     }
   }
 
-  async updateItemSerial(
-    itemId: string,
-    serialNumber: string | null,
-  ): Promise<BomItemEntity> {
+  async updateItemSerial(itemId: string, serialNumber: string | null): Promise<BomItemEntity> {
     const updatedId = await this.dataSource.transaction(async (manager) => {
       const item = await this.findBomItemForOrg(manager, itemId);
       const normalizedSerial = this.normalizeSerialNumber(serialNumber);
@@ -1200,9 +1183,7 @@ export class BomService {
     return this.dataSource.getRepository(BomItemEntity).findBy({ id: In(updatedItemIds) });
   }
 
-  async findSerialConflicts(
-    serialNumber: string,
-  ): Promise<
+  async findSerialConflicts(serialNumber: string): Promise<
     Array<{
       bomId: string;
       bomNumber: string;
@@ -1358,10 +1339,7 @@ export class BomService {
       : undefined;
   }
 
-  private async findBomItemForOrg(
-    manager: EntityManager,
-    itemId: string,
-  ): Promise<BomItemEntity> {
+  private async findBomItemForOrg(manager: EntityManager, itemId: string): Promise<BomItemEntity> {
     const item = await manager
       .getRepository(BomItemEntity)
       .createQueryBuilder('item')
@@ -1463,9 +1441,7 @@ export class BomService {
    *   pending   : spent == 0
    * Rows where spent > target are flagged via the `over` boolean.
    */
-  async getProcurementStatus(
-    projectId: string,
-  ): Promise<{
+  async getProcurementStatus(projectId: string): Promise<{
     items: Array<{
       productId: string;
       name: string;

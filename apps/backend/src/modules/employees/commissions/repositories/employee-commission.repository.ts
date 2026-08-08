@@ -58,9 +58,7 @@ export class EmployeeCommissionRepository {
   /**
    * Find commissions by status
    */
-  async findByStatus(
-    status: CommissionStatus,
-  ): Promise<EmployeeCommissionEntity[]> {
+  async findByStatus(status: CommissionStatus): Promise<EmployeeCommissionEntity[]> {
     return this.repository.find({
       where: { status },
       relations: ['employee'],

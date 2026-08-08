@@ -15,7 +15,6 @@ export class VendorResponseDto {
   @Expose()
   id!: string;
 
-
   // ==================== Basic Info ====================
 
   @ApiProperty({ example: 'Tata Power Solar' })

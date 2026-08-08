@@ -63,8 +63,7 @@ export class SubsidyApplicationController {
     status: 200,
     description: 'Subsidy application statistics',
   })
-  async getStatistics(
-  ): Promise<Record<string, unknown>> {
+  async getStatistics(): Promise<Record<string, unknown>> {
     return this.subsidyService.getStatsByOrganization();
   }
 

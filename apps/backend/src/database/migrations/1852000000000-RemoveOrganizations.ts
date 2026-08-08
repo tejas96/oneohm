@@ -3,10 +3,7 @@ import { type MigrationInterface, type QueryRunner } from 'typeorm';
 import { ORG_CLEANUP_ASSERTIONS } from './sql/org-cleanup/01-assertions.sql';
 import { ORG_CLEANUP_DROP_COLUMNS } from './sql/org-cleanup/02-drop-columns.sql';
 import { ORG_CLEANUP_INDEXES } from './sql/org-cleanup/03-indexes.sql';
-import {
-  ORG_CLEANUP_CREATE_VIEWS,
-  ORG_CLEANUP_DROP_VIEWS,
-} from './sql/org-cleanup/04-views.sql';
+import { ORG_CLEANUP_CREATE_VIEWS, ORG_CLEANUP_DROP_VIEWS } from './sql/org-cleanup/04-views.sql';
 
 /**
  * RemoveOrganizations — the app is single-tenant.
@@ -47,8 +44,6 @@ export class RemoveOrganizations1852000000000 implements MigrationInterface {
   }
 
   public async down(): Promise<void> {
-    throw new Error(
-      'RemoveOrganizations is irreversible. Restore from the pre-deploy snapshot.',
-    );
+    throw new Error('RemoveOrganizations is irreversible. Restore from the pre-deploy snapshot.');
   }
 }

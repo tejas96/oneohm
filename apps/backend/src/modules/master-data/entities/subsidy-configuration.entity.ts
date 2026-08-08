@@ -187,5 +187,4 @@ export class SubsidyConfiguration extends BaseEntity {
   updatedBy?: string;
 
   // ==================== Relationships ====================
-
 }

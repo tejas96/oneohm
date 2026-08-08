@@ -29,10 +29,7 @@ export class BomRepository {
     });
   }
 
-  async findByEntity(
-    entityType: string,
-    entityId: string,
-  ): Promise<BomEntity | null> {
+  async findByEntity(entityType: string, entityId: string): Promise<BomEntity | null> {
     return this.repository.findOne({
       where: { entityType, entityId },
       relations: ['items'],
@@ -52,10 +49,7 @@ export class BomRepository {
    * Delete the BOM for a given entity, scoped to the organization.
    * organizationId prevents cross-tenant deletion.
    */
-  async deleteByEntity(
-    entityType: string,
-    entityId: string,
-  ): Promise<void> {
+  async deleteByEntity(entityType: string, entityId: string): Promise<void> {
     const bom = await this.repository.findOne({
       where: { entityType, entityId },
     });

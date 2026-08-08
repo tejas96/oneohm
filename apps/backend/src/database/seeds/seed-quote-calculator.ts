@@ -15,9 +15,7 @@ import { DataSource } from 'typeorm';
  * 8. Installation pricing tiers
  * 9. Quote configuration
  */
-export async function seedQuoteCalculatorData(
-  dataSource: DataSource,
-): Promise<void> {
+export async function seedQuoteCalculatorData(dataSource: DataSource): Promise<void> {
   console.log('🌱 Seeding Quote Calculator data...');
 
   const queryRunner = dataSource.createQueryRunner();
@@ -69,15 +67,7 @@ export async function seedQuoteCalculatorData(
           name = EXCLUDED.name,
           description = EXCLUDED.description
         RETURNING id`,
-        [
-          pt.name,
-          pt.code,
-          pt.description,
-          pt.pricingBasis,
-          pt.gstRate,
-          pt.uom,
-          pt.sort,
-        ],
+        [pt.name, pt.code, pt.description, pt.pricingBasis, pt.gstRate, pt.uom, pt.sort],
       );
       productTypeIds[pt.code] = result[0].id;
     }

@@ -27,15 +27,13 @@ export interface CustomerLoanApplication {
 
 export const customerLoanKeys = {
   all: () => ['customer-loans'] as const,
-  byCustomer: (customerId: string) =>
-    [...customerLoanKeys.all(), customerId] as const,
+  byCustomer: (customerId: string) => [...customerLoanKeys.all(), customerId] as const,
 };
 
 export function useCustomerLoans(
   customerId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerLoanApplication[], AxiosError> {
-
   return useQuery({
     queryKey: customerLoanKeys.byCustomer(customerId),
     queryFn: async (): Promise<CustomerLoanApplication[]> => {

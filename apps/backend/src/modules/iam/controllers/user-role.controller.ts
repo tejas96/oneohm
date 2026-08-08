@@ -265,9 +265,7 @@ export class UserRoleController {
     try {
       await this.profileService.verifyUserHasAccessToOrg(userId);
     } catch {
-      throw new BadRequestException(
-        `User '${userId}' does not have a profile in organization ''`,
-      );
+      throw new BadRequestException(`User '${userId}' does not have a profile in organization ''`);
     }
   }
 

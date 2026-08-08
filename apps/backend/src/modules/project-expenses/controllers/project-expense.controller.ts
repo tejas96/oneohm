@@ -70,17 +70,12 @@ export class ProjectExpenseController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: CreateExpenseDto,
   ): Promise<ExpenseResponseDto> {
-    const expense = await this.expenseService.create(
-      projectId,
-      dto,
-      currentUser.id,
-      {
-        canOverrideProcurementGuard: this.userHasPermission(
-          currentUser,
-          'expenses:override-procurement-guard',
-        ),
-      },
-    );
+    const expense = await this.expenseService.create(projectId, dto, currentUser.id, {
+      canOverrideProcurementGuard: this.userHasPermission(
+        currentUser,
+        'expenses:override-procurement-guard',
+      ),
+    });
     return toDto(ExpenseResponseDto, expense);
   }
 
@@ -96,10 +91,7 @@ export class ProjectExpenseController {
     page: number;
     limit: number;
   }> {
-    const { data, total, page, limit } = await this.expenseService.list(
-      projectId,
-      query,
-    );
+    const { data, total, page, limit } = await this.expenseService.list(projectId, query);
     return {
       data: data.map((e) => toDto(ExpenseResponseDto, e)),
       total,
@@ -126,9 +118,7 @@ export class ProjectExpenseController {
   @Get('expenses/:id')
   @ApiOperation({ summary: 'Get one expense by id' })
   @ApiParam({ name: 'id', type: String })
-  async findById(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<ExpenseResponseDto> {
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<ExpenseResponseDto> {
     const expense = await this.expenseService.findById(id);
     return toDto(ExpenseResponseDto, expense);
   }
@@ -149,9 +139,7 @@ export class ProjectExpenseController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft-delete an expense' })
   @ApiParam({ name: 'id', type: String })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<void> {
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.expenseService.delete(id);
   }
 
@@ -163,11 +151,7 @@ export class ProjectExpenseController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: UpdateReimbursementStatusDto,
   ): Promise<ExpenseResponseDto> {
-    const expense = await this.expenseService.updateReimbursementStatus(
-      id,
-      dto,
-      currentUser.id,
-    );
+    const expense = await this.expenseService.updateReimbursementStatus(id, dto, currentUser.id);
     return toDto(ExpenseResponseDto, expense);
   }
 

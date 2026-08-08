@@ -38,15 +38,9 @@ export class InventoryStockService {
   /**
    * Get stock by warehouse and product — validates warehouse belongs to org.
    */
-  async getStock(
-    warehouseId: string,
-    productId: string,
-  ): Promise<InventoryStockEntity | null> {
+  async getStock(warehouseId: string, productId: string): Promise<InventoryStockEntity | null> {
     await this.warehouseRepository.findById(warehouseId);
-    return this.inventoryStockRepository.findByWarehouseAndProduct(
-      warehouseId,
-      productId,
-    );
+    return this.inventoryStockRepository.findByWarehouseAndProduct(warehouseId, productId);
   }
 
   /**
@@ -90,9 +84,7 @@ export class InventoryStockService {
   /**
    * Get all stock for a product across warehouses.
    */
-  async getStockByProduct(
-    productId: string,
-  ): Promise<InventoryStockEntity[]> {
+  async getStockByProduct(productId: string): Promise<InventoryStockEntity[]> {
     return this.inventoryStockRepository.findByProduct(productId);
   }
 
@@ -113,8 +105,7 @@ export class InventoryStockService {
   /**
    * Get stock summary by warehouse.
    */
-  async getStockSummaryByWarehouse(
-  ): Promise<
+  async getStockSummaryByWarehouse(): Promise<
     Array<{ warehouseId: string; warehouseName: string; totalItems: number; totalValue: number }>
   > {
     return this.inventoryStockRepository.getStockSummaryByWarehouse();
@@ -127,7 +118,6 @@ export class InventoryStockService {
    * All convenience methods delegate here.
    */
   async updateStock(updateDto: UpdateStockDto, performedBy: string): Promise<InventoryStockEntity> {
-
     const [warehouse, product] = await Promise.all([
       this.warehouseRepository.findById(updateDto.warehouseId),
       this.productRepository.findById(updateDto.productId),
@@ -178,7 +168,8 @@ export class InventoryStockService {
     });
 
     if (updateDto.quantity < 0) {
-      this.lowStockAlertService.checkAndFire(stock,
+      this.lowStockAlertService.checkAndFire(
+        stock,
         prevAvailable,
         newAvailableQuantity,
         performedBy,

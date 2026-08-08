@@ -35,7 +35,6 @@ export class SecurityEventEntity extends BaseEntity {
    * Organization (nullable for system-level events)
    */
 
-
   /**
    * User (nullable if event occurs before user creation)
    */

@@ -148,9 +148,7 @@ export class AuditLogService {
   /**
    * Get all audit logs for an organization
    */
-  async findByOrganization(
-    limit: number = 100,
-  ): Promise<AuditLogResponseDto[]> {
+  async findByOrganization(limit: number = 100): Promise<AuditLogResponseDto[]> {
     const auditLogs = await this.repository.findByOrganization(limit);
 
     return plainToInstance(AuditLogResponseDto, auditLogs, {

@@ -117,9 +117,7 @@ export function AvailableEmployeesList({
         {filtered.length === 0 ? (
           <div className="p-4 text-center">
             <MUITypography variant="body" className="text-foreground-secondary">
-              {employees.length === 0
-                ? 'No employees found.'
-                : 'No matches for current filters.'}
+              {employees.length === 0 ? 'No employees found.' : 'No matches for current filters.'}
             </MUITypography>
           </div>
         ) : (

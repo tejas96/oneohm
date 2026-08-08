@@ -15,7 +15,6 @@ import { EmployeeProfileEntity } from '../../entities/employee-profile.entity';
 @Index(['employeeId', 'status'])
 @Index(['status'])
 export class EmployeeCommissionEntity extends BaseEntity {
-
   @Column({ name: 'employee_id', type: 'uuid' })
   employeeId!: string;
 

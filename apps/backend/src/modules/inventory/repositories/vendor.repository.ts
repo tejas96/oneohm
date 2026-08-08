@@ -61,9 +61,7 @@ export class VendorRepository {
       search?: string;
     },
   ): Promise<{ vendors: VendorEntity[]; total: number }> {
-    const query = this.repository
-      .createQueryBuilder('vendor')
-      .andWhere('vendor.deletedAt IS NULL');
+    const query = this.repository.createQueryBuilder('vendor').andWhere('vendor.deletedAt IS NULL');
 
     // Apply filters
     if (filters?.status) {
@@ -96,10 +94,7 @@ export class VendorRepository {
   /**
    * Update vendor
    */
-  async update(
-    id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<VendorEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<VendorEntity> {
     const vendor = await this.findById(id);
 
     Object.assign(vendor, updateData);

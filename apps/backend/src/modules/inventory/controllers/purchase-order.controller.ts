@@ -20,7 +20,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -72,10 +72,7 @@ export class PurchaseOrderController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: BulkIdsDto,
   ): Promise<BulkOperationResultDto> {
-    return this.inventoryBulkService.approvePurchaseOrders(
-      body.ids,
-      currentUser.id,
-    );
+    return this.inventoryBulkService.approvePurchaseOrders(body.ids, currentUser.id);
   }
 
   /**
@@ -92,11 +89,7 @@ export class PurchaseOrderController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: BulkCancelDto,
   ): Promise<BulkOperationResultDto> {
-    return this.inventoryBulkService.cancelPurchaseOrders(
-      body.ids,
-      body.reason,
-      currentUser.id,
-    );
+    return this.inventoryBulkService.cancelPurchaseOrders(body.ids, body.reason, currentUser.id);
   }
 
   /**
@@ -108,9 +101,7 @@ export class PurchaseOrderController {
     summary: 'Get purchase order statistics',
     description: 'Get PO count by status and pending approvals',
   })
-  async getStatistics(
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<{
+  async getStatistics(@CurrentUser() _currentUser: CurrentUserType): Promise<{
     total: number;
     byStatus: Record<PurchaseOrderStatus, number>;
     pendingApprovals: number;
@@ -253,11 +244,16 @@ export class PurchaseOrderController {
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
-    const { purchaseOrders, total } = await this.purchaseOrderService.findAll(
-      pageNum,
-      limitNum,
-      { status, paymentStatus, vendorId, warehouseId, projectId, fromDate, toDate, search },
-    );
+    const { purchaseOrders, total } = await this.purchaseOrderService.findAll(pageNum, limitNum, {
+      status,
+      paymentStatus,
+      vendorId,
+      warehouseId,
+      projectId,
+      fromDate,
+      toDate,
+      search,
+    });
 
     return {
       data: plainToInstance(PurchaseOrderResponseDto, purchaseOrders, {
@@ -310,11 +306,7 @@ export class PurchaseOrderController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdatePurchaseOrderDto,
   ): Promise<PurchaseOrderResponseDto> {
-    const po = await this.purchaseOrderService.update(
-      id,
-      updateDto,
-      currentUser.id,
-    );
+    const po = await this.purchaseOrderService.update(id, updateDto, currentUser.id);
 
     return plainToInstance(PurchaseOrderResponseDto, po, {
       excludeExtraneousValues: true,
@@ -349,10 +341,7 @@ export class PurchaseOrderController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<PurchaseOrderResponseDto> {
-    const po = await this.purchaseOrderService.submitForApproval(
-      id,
-      currentUser.id,
-    );
+    const po = await this.purchaseOrderService.submitForApproval(id, currentUser.id);
 
     return plainToInstance(PurchaseOrderResponseDto, po, {
       excludeExtraneousValues: true,
@@ -404,11 +393,7 @@ export class PurchaseOrderController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() receiveDto: ReceivePurchaseOrderDto,
   ): Promise<PurchaseOrderResponseDto> {
-    const po = await this.purchaseOrderService.receive(
-      id,
-      receiveDto,
-      currentUser.id,
-    );
+    const po = await this.purchaseOrderService.receive(id, receiveDto, currentUser.id);
 
     return plainToInstance(PurchaseOrderResponseDto, po, {
       excludeExtraneousValues: true,

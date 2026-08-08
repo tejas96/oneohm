@@ -25,7 +25,6 @@ export type ReturnRequestStatus = 'pending' | 'completed' | 'cancelled';
 export class ReturnRequestEntity extends BaseEntity {
   // ==================== Relations ====================
 
-
   @ManyToOne(() => StockAllocationEntity)
   @JoinColumn({ name: 'allocation_id' })
   allocation!: StockAllocationEntity;
@@ -35,7 +34,6 @@ export class ReturnRequestEntity extends BaseEntity {
   bom!: BomEntity;
 
   // ==================== Foreign Keys ====================
-
 
   @Column({ name: 'allocation_id', type: 'uuid' })
   allocationId!: string;

@@ -195,9 +195,7 @@ export class InventoryTransactionRepository {
   /**
    * Get recent transactions
    */
-  async getRecentTransactions(
-    limit = 10,
-  ): Promise<InventoryTransactionEntity[]> {
+  async getRecentTransactions(limit = 10): Promise<InventoryTransactionEntity[]> {
     return this.repository.find({
       relations: ['warehouse', 'product', 'creator'],
       order: { createdAt: 'DESC' },

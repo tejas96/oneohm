@@ -96,10 +96,9 @@ export class UserController {
   }> {
     const emailExists = email ? await this.userService.emailExists(email, excludeId) : false;
     const phoneExists = phone ? await this.userService.phoneExists(phone, excludeId) : false;
-    const employeeExists =
-      phone
-        ? await this.userService.employeeProfileExists(phone, excludeId)
-        : false;
+    const employeeExists = phone
+      ? await this.userService.employeeProfileExists(phone, excludeId)
+      : false;
 
     let emailBelongsToPhoneUser = false;
     if (emailExists && phone) {

@@ -19,9 +19,7 @@ export class SubsidyConfigurationRepository {
   /**
    * Create a new subsidy configuration
    */
-  async create(
-    data: Partial<SubsidyConfiguration>,
-  ): Promise<SubsidyConfiguration> {
+  async create(data: Partial<SubsidyConfiguration>): Promise<SubsidyConfiguration> {
     const config = this.repository.create({
       ...data,
     });
@@ -77,10 +75,7 @@ export class SubsidyConfigurationRepository {
    * Find specific subsidy configurations by their IDs (used when user selects specific subsidies).
    * Only returns active, non-expired configurations.
    */
-  async findByIds(
-    ids: string[],
-    asOfDate?: Date,
-  ): Promise<SubsidyConfiguration[]> {
+  async findByIds(ids: string[], asOfDate?: Date): Promise<SubsidyConfiguration[]> {
     if (ids.length === 0) return [];
     const date = asOfDate || new Date();
     const dateStr = date.toISOString().split('T')[0];
@@ -101,15 +96,12 @@ export class SubsidyConfigurationRepository {
   /**
    * Find all subsidy configurations for an organization
    */
-  async findAll(
-    filters?: {
-      projectType?: ProjectType;
-      isActive?: boolean;
-      search?: string;
-    },
-  ): Promise<SubsidyConfiguration[]> {
-    const query = this.repository
-      .createQueryBuilder('config');
+  async findAll(filters?: {
+    projectType?: ProjectType;
+    isActive?: boolean;
+    search?: string;
+  }): Promise<SubsidyConfiguration[]> {
+    const query = this.repository.createQueryBuilder('config');
 
     if (filters?.projectType) {
       query.andWhere('config.project_type = :projectType', {
@@ -142,10 +134,7 @@ export class SubsidyConfigurationRepository {
   /**
    * Update subsidy configuration
    */
-  async update(
-    id: string,
-    data: Partial<SubsidyConfiguration>,
-  ): Promise<SubsidyConfiguration> {
+  async update(id: string, data: Partial<SubsidyConfiguration>): Promise<SubsidyConfiguration> {
     await this.repository.update({ id }, data);
     const updated = await this.findById(id);
     if (!updated) {
@@ -158,10 +147,7 @@ export class SubsidyConfigurationRepository {
    * Deactivate other configs when setting one as active
    * Ensures only one active config per org + project type
    */
-  async deactivateOthers(
-    projectType: ProjectType,
-    exceptId?: string,
-  ): Promise<void> {
+  async deactivateOthers(projectType: ProjectType, exceptId?: string): Promise<void> {
     const query = this.repository
       .createQueryBuilder()
       .update(SubsidyConfiguration)

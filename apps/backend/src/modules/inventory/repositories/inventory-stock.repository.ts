@@ -326,8 +326,7 @@ export class InventoryStockRepository {
    * Get stock summary by warehouse
    * Uses weighted average unit price from received PO items (per warehouse + product).
    */
-  async getStockSummaryByWarehouse(
-  ): Promise<
+  async getStockSummaryByWarehouse(): Promise<
     Array<{ warehouseId: string; warehouseName: string; totalItems: number; totalValue: number }>
   > {
     const rows = await this.repository

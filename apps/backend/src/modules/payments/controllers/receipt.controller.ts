@@ -71,9 +71,7 @@ export class ReceiptController {
     summary: 'Soft-delete a receipt (re-aggregates the parent term in same transaction)',
   })
   @ApiParam({ name: 'id', type: String })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<void> {
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.receiptService.delete(id);
   }
 

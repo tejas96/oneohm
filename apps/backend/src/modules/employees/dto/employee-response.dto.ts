@@ -57,7 +57,6 @@ export class EmployeeResponseDto {
   @ApiProperty({ description: 'User ID' })
   userId!: string;
 
-
   // ==================== Employment ====================
   @Expose()
   @ApiPropertyOptional({ description: 'Employee ID' })

@@ -32,9 +32,7 @@ export class NotificationController {
   @RequirePermission('notifications:read')
   @Get('unread-count')
   @ApiOperation({ summary: 'Get unread notification count for current user' })
-  async getUnreadCount(
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<{ count: number }> {
+  async getUnreadCount(@CurrentUser() currentUser: CurrentUserType): Promise<{ count: number }> {
     const count = await this.notificationService.getUnreadCount(currentUser.id);
     return { count };
   }
@@ -45,9 +43,7 @@ export class NotificationController {
   @RequirePermission('notifications:read')
   @Post('mark-all-read')
   @ApiOperation({ summary: 'Mark all notifications as read for current user' })
-  async markAllRead(
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<{ message: string }> {
+  async markAllRead(@CurrentUser() currentUser: CurrentUserType): Promise<{ message: string }> {
     await this.notificationService.markAllRead(currentUser.id);
     return { message: 'All notifications marked as read' };
   }

@@ -51,8 +51,6 @@ export class CustomerPropertyEntity extends BaseEntity {
   @JoinColumn({ name: 'customer_id' })
   customer?: CustomerProfileEntity;
 
-
-
   // ==================== QUOTES (One-to-Many) ====================
   @OneToMany(() => QuoteEntity, (quote) => quote.property)
   quotes?: QuoteEntity[];

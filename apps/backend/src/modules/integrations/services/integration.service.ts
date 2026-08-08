@@ -42,10 +42,7 @@ export class IntegrationService {
     private readonly providerResolver: ProviderResolver,
   ) {}
 
-  async createIntegration(
-    dto: CreateIntegrationDto,
-    userId: string,
-  ): Promise<IntegrationEntity> {
+  async createIntegration(dto: CreateIntegrationDto, userId: string): Promise<IntegrationEntity> {
     const exists = await this.repository.existsByProviderAndCategory(dto.provider, dto.category);
     if (exists) {
       throw new ConflictException(
@@ -87,7 +84,6 @@ export class IntegrationService {
     if (!integration) {
       throw new NotFoundException('Integration not found');
     }
-
 
     const updateData: Partial<IntegrationEntity> = {
       updatedBy: userId,
@@ -140,7 +136,6 @@ export class IntegrationService {
       throw new NotFoundException('Integration not found');
     }
 
-
     await this.repository.softDelete(id);
     this.logger.log(`Deleted integration: ${integration.name} (${id})`);
   }
@@ -151,7 +146,6 @@ export class IntegrationService {
       throw new NotFoundException('Integration not found');
     }
 
-
     return integration;
   }
 
@@ -159,9 +153,7 @@ export class IntegrationService {
     return this.repository.findByOrganization();
   }
 
-  async getIntegrationsByCategory(
-    category: IntegrationCategory,
-  ): Promise<IntegrationEntity[]> {
+  async getIntegrationsByCategory(category: IntegrationCategory): Promise<IntegrationEntity[]> {
     return this.repository.findAllActiveByCategory(category);
   }
 

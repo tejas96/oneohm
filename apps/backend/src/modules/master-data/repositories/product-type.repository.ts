@@ -12,16 +12,14 @@ export class ProductTypeRepository {
     private readonly repository: Repository<ProductTypeEntity>,
   ) {}
 
-  async findAll(
-    filters?: {
-      isActive?: boolean;
-      search?: string;
-      page?: number;
-      limit?: number;
-      sortBy?: string;
-      sortOrder?: 'ASC' | 'DESC';
-    },
-  ): Promise<{ data: ProductTypeEntity[]; total: number }> {
+  async findAll(filters?: {
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<{ data: ProductTypeEntity[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('productType')
       .leftJoinAndSelect('productType.attributes', 'attributes')
@@ -79,17 +77,12 @@ export class ProductTypeRepository {
     });
   }
 
-  async create(
-    data: Partial<ProductTypeEntity>,
-  ): Promise<ProductTypeEntity> {
+  async create(data: Partial<ProductTypeEntity>): Promise<ProductTypeEntity> {
     const entity = this.repository.create({ ...data });
     return this.repository.save(entity);
   }
 
-  async update(
-    id: string,
-    data: Partial<ProductTypeEntity>,
-  ): Promise<ProductTypeEntity> {
+  async update(id: string, data: Partial<ProductTypeEntity>): Promise<ProductTypeEntity> {
     return this.repository.manager.transaction(async (manager) => {
       const repo = manager.getRepository(ProductTypeEntity);
       const attrRepo = manager.getRepository(ProductTypeAttributeEntity);

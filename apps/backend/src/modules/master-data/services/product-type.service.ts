@@ -13,16 +13,14 @@ export interface PaginatedProductTypes {
 export class ProductTypeService {
   constructor(private readonly productTypeRepository: ProductTypeRepository) {}
 
-  async findAll(
-    filters?: {
-      isActive?: boolean;
-      search?: string;
-      page?: number;
-      limit?: number;
-      sortBy?: string;
-      sortOrder?: 'ASC' | 'DESC';
-    },
-  ): Promise<PaginatedProductTypes> {
+  async findAll(filters?: {
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<PaginatedProductTypes> {
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
     const { data, total } = await this.productTypeRepository.findAll(filters);
@@ -44,10 +42,7 @@ export class ProductTypeService {
     return pt;
   }
 
-  async create(
-    data: Partial<ProductTypeEntity>,
-    createdBy?: string,
-  ): Promise<ProductTypeEntity> {
+  async create(data: Partial<ProductTypeEntity>, createdBy?: string): Promise<ProductTypeEntity> {
     if (!data.name?.trim()) {
       throw new BadRequestException('Product type name is required');
     }

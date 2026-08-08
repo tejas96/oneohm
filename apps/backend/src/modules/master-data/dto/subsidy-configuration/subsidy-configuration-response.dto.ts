@@ -32,7 +32,6 @@ export class SubsidyConfigurationResponseDto {
   @Expose()
   id!: string;
 
-
   @ApiProperty({ example: 'PM Surya Ghar - Residential' })
   @Expose()
   schemeName!: string;

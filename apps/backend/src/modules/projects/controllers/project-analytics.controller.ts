@@ -35,9 +35,7 @@ export class ProjectAnalyticsController {
     description:
       'Returns one row per distinct milestone group, computed live from project_tasks. Cancelled tasks excluded from all counts.',
   })
-  async getMilestones(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<MilestoneAggregateDto[]> {
+  async getMilestones(@Param('id', ParseUUIDPipe) id: string): Promise<MilestoneAggregateDto[]> {
     return this.analyticsService.getMilestoneAggregates(id);
   }
 

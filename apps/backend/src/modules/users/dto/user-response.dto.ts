@@ -13,7 +13,6 @@ export class UserResponseDto {
   @ApiProperty()
   id!: string;
 
-
   @Expose()
   @ApiProperty()
   firstName!: string;

@@ -6,7 +6,6 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 @Entity('product_types')
 @Index(['code'], { unique: true })
 export class ProductTypeEntity extends BaseEntity {
-
   @Column({ type: 'varchar', length: 100 })
   name!: string;
 
@@ -50,7 +49,6 @@ export class ProductTypeEntity extends BaseEntity {
 
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
-
 
   @OneToMany(() => ProductTypeAttributeEntity, (attr) => attr.productType, { cascade: true })
   attributes?: ProductTypeAttributeEntity[];

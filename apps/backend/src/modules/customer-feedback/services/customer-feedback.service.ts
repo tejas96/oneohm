@@ -129,8 +129,7 @@ export class CustomerFeedbackService {
     });
   }
 
-  async findPublishedByOrganization(
-  ): Promise<CustomerFeedbackResponseDto[]> {
+  async findPublishedByOrganization(): Promise<CustomerFeedbackResponseDto[]> {
     const feedbacks = await this.feedbackRepository.findPublishedByOrganization();
     return plainToInstance(CustomerFeedbackResponseDto, feedbacks, {
       excludeExtraneousValues: true,

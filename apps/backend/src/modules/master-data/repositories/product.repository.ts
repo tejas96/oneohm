@@ -13,9 +13,7 @@ export class ProductRepository {
     private readonly repository: Repository<ProductEntity>,
   ) {}
 
-  async create(
-    productData: Partial<ProductEntity>,
-  ): Promise<ProductEntity> {
+  async create(productData: Partial<ProductEntity>): Promise<ProductEntity> {
     const product = this.repository.create({
       ...productData,
     });
@@ -111,10 +109,7 @@ export class ProductRepository {
     return { data, total };
   }
 
-  async findById(
-    id: string,
-    options?: { requireActive?: boolean },
-  ): Promise<ProductEntity | null> {
+  async findById(id: string, options?: { requireActive?: boolean }): Promise<ProductEntity | null> {
     const where: FindOptionsWhere<ProductEntity> = {
       id,
       deletedAt: IsNull(),
@@ -163,10 +158,7 @@ export class ProductRepository {
     });
   }
 
-  async update(
-    id: string,
-    productData: Partial<ProductEntity>,
-  ): Promise<ProductEntity> {
+  async update(id: string, productData: Partial<ProductEntity>): Promise<ProductEntity> {
     await this.repository.update({ id }, {
       ...productData,
       updatedAt: new Date(),
@@ -371,10 +363,7 @@ export class ProductRepository {
     return query.getOne();
   }
 
-  async findByType(
-    productTypeId: string,
-    activeOnly = true,
-  ): Promise<ProductEntity[]> {
+  async findByType(productTypeId: string, activeOnly = true): Promise<ProductEntity[]> {
     const where: FindOptionsWhere<ProductEntity> = {
       productTypeId,
       deletedAt: IsNull(),

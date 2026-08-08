@@ -105,9 +105,7 @@ export class QuoteCalculatorController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid input or missing products/pricing',
   })
-  async calculate(
-    @Body() input: CalculateQuoteDto,
-  ): Promise<CalculateQuoteResponseDto> {
+  async calculate(@Body() input: CalculateQuoteDto): Promise<CalculateQuoteResponseDto> {
     const result = await this.calculatorService.calculateQuote(input);
     return result;
   }
@@ -241,9 +239,7 @@ export class QuoteCalculatorController {
     // Property-level versioning model:
     // every save creates a brand-new quote record for the property.
     if (input.propertyId) {
-      const accepted = await this.quoteRepository.findAcceptedByPropertyId(
-        input.propertyId,
-      );
+      const accepted = await this.quoteRepository.findAcceptedByPropertyId(input.propertyId);
       if (accepted) {
         throw new BadRequestException(
           `Property already has an accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
@@ -305,8 +301,7 @@ export class QuoteCalculatorController {
     status: HttpStatus.OK,
     description: 'Quote configuration',
   })
-  async getConfig(
-  ): Promise<QuoteConfigurationResponseDto> {
+  async getConfig(): Promise<QuoteConfigurationResponseDto> {
     const config = await this.quoteConfigRepo.getOrCreateDefault();
     return plainToInstance(QuoteConfigurationResponseDto, config, {
       excludeExtraneousValues: true,
@@ -341,9 +336,7 @@ export class QuoteCalculatorController {
   async getSubsidyRules(
     @Query('projectType') projectType: ProjectType,
   ): Promise<SubsidyConfigurationResponseDto | null> {
-    const config = await this.subsidyConfigRepo.findActiveByProjectType(
-      projectType,
-    );
+    const config = await this.subsidyConfigRepo.findActiveByProjectType(projectType);
     if (!config) return null;
     return plainToInstance(SubsidyConfigurationResponseDto, config, {
       excludeExtraneousValues: true,
@@ -362,8 +355,7 @@ export class QuoteCalculatorController {
     status: HttpStatus.OK,
     description: 'List of subsidy configurations',
   })
-  async getAllSubsidyRules(
-  ): Promise<SubsidyConfigurationResponseDto[]> {
+  async getAllSubsidyRules(): Promise<SubsidyConfigurationResponseDto[]> {
     const configs = await this.subsidyConfigRepo.findAll({ isActive: true });
     return plainToInstance(SubsidyConfigurationResponseDto, configs, {
       excludeExtraneousValues: true,
@@ -388,9 +380,7 @@ export class QuoteCalculatorController {
   async getInstallationPricing(
     @Query() query: InstallationPricingQueryDto,
   ): Promise<InstallationPricingResponseDto | null> {
-    const pricing = await this.installationPricingRepo.findBySystemSize(
-      query.systemSizeKw,
-    );
+    const pricing = await this.installationPricingRepo.findBySystemSize(query.systemSizeKw);
     if (!pricing) return null;
     return plainToInstance(InstallationPricingResponseDto, pricing, {
       excludeExtraneousValues: true,
@@ -409,8 +399,7 @@ export class QuoteCalculatorController {
     status: HttpStatus.OK,
     description: 'List of installation pricing tiers',
   })
-  async getAllInstallationPricing(
-  ): Promise<InstallationPricingResponseDto[]> {
+  async getAllInstallationPricing(): Promise<InstallationPricingResponseDto[]> {
     const result = await this.installationPricingRepo.findAll({
       isActive: true,
     });
@@ -430,12 +419,7 @@ export class QuoteCalculatorController {
   ): Promise<void> {
     try {
       await this.bomService.deleteByEntity('quote_version', versionId);
-      await this.bomService.createFromCalculation(
-        'quote_version',
-        versionId,
-        calculation,
-        userId,
-      );
+      await this.bomService.createFromCalculation('quote_version', versionId, calculation, userId);
     } catch (error) {
       this.logger.warn(`BOM creation failed for version ${versionId}: ${(error as Error).message}`);
     }

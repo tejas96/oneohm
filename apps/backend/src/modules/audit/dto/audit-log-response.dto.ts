@@ -9,9 +9,7 @@ export class AuditLogResponseDto {
   @Expose()
   id: string;
 
-
   @Expose()
-
   @Expose()
   entityType: string;
 

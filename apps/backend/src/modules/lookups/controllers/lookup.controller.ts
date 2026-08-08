@@ -20,7 +20,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -129,9 +129,7 @@ export class LookupController {
     description: 'Retrieve a specific lookup entry by its UUID',
     responseType: LookupResponseDto,
   })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<LookupResponseDto> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<LookupResponseDto> {
     return this.lookupService.findById(id);
   }
 

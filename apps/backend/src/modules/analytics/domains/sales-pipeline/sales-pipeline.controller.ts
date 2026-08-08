@@ -37,26 +37,14 @@ export class SalesPipelineController {
 
   @Get('funnel')
   @ApiOperation({ summary: 'Sales funnel stage counts and values' })
-  async getFunnel(
-    @Query() query: SalesPipelineQueryDto,
-  ): Promise<SalesPipelineFunnelResponseDto> {
-    return this.salesPipelineService.getFunnel(
-      query.fromDate,
-      query.toDate,
-      query.salesPersonId,
-    );
+  async getFunnel(@Query() query: SalesPipelineQueryDto): Promise<SalesPipelineFunnelResponseDto> {
+    return this.salesPipelineService.getFunnel(query.fromDate, query.toDate, query.salesPersonId);
   }
 
   @Get('stats')
   @ApiOperation({ summary: 'Sales pipeline KPI statistics' })
-  async getStats(
-    @Query() query: SalesPipelineQueryDto,
-  ): Promise<SalesPipelineStatsResponseDto> {
-    return this.salesPipelineService.getStats(
-      query.fromDate,
-      query.toDate,
-      query.salesPersonId,
-    );
+  async getStats(@Query() query: SalesPipelineQueryDto): Promise<SalesPipelineStatsResponseDto> {
+    return this.salesPipelineService.getStats(query.fromDate, query.toDate, query.salesPersonId);
   }
 
   @Get('by-salesperson')

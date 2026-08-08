@@ -14,12 +14,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { MaterialStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiUpdate
-} from '../../../common/decorators';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';

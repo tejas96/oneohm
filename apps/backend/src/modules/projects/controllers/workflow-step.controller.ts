@@ -20,7 +20,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -41,10 +41,7 @@ export class WorkflowStepController {
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateWorkflowStepDto,
   ): Promise<WorkflowStepResponseDto> {
-    const step = await this.stepService.create(
-      createDto,
-      currentUser.id,
-    );
+    const step = await this.stepService.create(createDto, currentUser.id);
     return plainToInstance(WorkflowStepResponseDto, step, {
       excludeExtraneousValues: true,
     });
@@ -83,9 +80,7 @@ export class WorkflowStepController {
 
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get workflow step statistics' })
-  async getStatistics(
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<StatisticsResponse> {
+  async getStatistics(@CurrentUser() _currentUser: CurrentUserType): Promise<StatisticsResponse> {
     return this.stepService.getStatistics();
   }
 

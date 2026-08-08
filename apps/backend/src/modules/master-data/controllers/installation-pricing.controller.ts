@@ -22,7 +22,7 @@ import {
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
-  ApiUpdate
+  ApiUpdate,
 } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import {
@@ -113,9 +113,7 @@ export class InstallationPricingController {
     description: 'Retrieve a specific installation pricing tier.',
     responseType: InstallationPricingResponseDto,
   })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<InstallationPricingResponseDto> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<InstallationPricingResponseDto> {
     const tier = await this.installationPricingService.findById(id);
     return plainToInstance(InstallationPricingResponseDto, tier, {
       excludeExtraneousValues: true,
@@ -146,9 +144,7 @@ export class InstallationPricingController {
     summary: 'Delete installation pricing tier',
     description: 'Permanently remove an installation pricing tier.',
   })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<void> {
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.installationPricingService.delete(id);
   }
 }

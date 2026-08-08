@@ -47,7 +47,6 @@ export class LookupService {
   async create(dto: CreateLookupDto, createdBy?: string): Promise<LookupResponseDto> {
     const scopeType = dto.scopeType ?? LookupScopeType.GLOBAL;
 
-
     const isDuplicate = await this.lookupRepository.checkDuplicate(
       dto.typeCode,
       dto.code,

@@ -19,8 +19,6 @@ export class SubsidyApplicationEntity extends BaseEntity {
   // RELATIONS
   // ============================================
 
-
-
   @ManyToOne(() => ProjectEntity)
   @JoinColumn({ name: 'project_id' })
   project: ProjectEntity;
