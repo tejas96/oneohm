@@ -17,7 +17,6 @@ import {
 
 export interface Vendor {
   id: string;
-  organizationId: string;
   name: string;
   code: string;
   vendorType: string;

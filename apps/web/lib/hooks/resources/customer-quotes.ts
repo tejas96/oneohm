@@ -3,7 +3,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { QuoteStatus } from '@tejas96/shared/types';
 
-import { createResourceKeys, useOrgContext } from '../core';
+import { createResourceKeys } from '../core';
 
 import {
   quoteKeys as featureQuoteKeys,
@@ -31,12 +31,11 @@ export function useCustomerQuotes(
   customerId: string,
   opts?: { status?: QuoteStatus; page?: number; limit?: number },
 ): UseQueryResult<CustomerQuotesResponse> {
-  const { orgHeaders, organizationId, isReady } = useOrgContext();
   const page = opts?.page ?? 1;
   const limit = opts?.limit ?? 50;
 
   return useQuery<CustomerQuotesResponse>({
-    queryKey: cqKeys.list(organizationId, {
+    queryKey: cqKeys.list({
       customerId,
       page,
       limit,
@@ -49,11 +48,9 @@ export function useCustomerQuotes(
       params.append('limit', String(limit));
       if (opts?.status) params.append('status', opts.status);
 
-      const { data } = await apiClient.get<CustomerQuotesResponse>(`/quotes?${params.toString()}`, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.get<CustomerQuotesResponse>(`/quotes?${params.toString()}`);
       return data as CustomerQuotesResponse;
     },
-    enabled: !!customerId && isReady,
+    enabled: !!customerId,
   });
 }

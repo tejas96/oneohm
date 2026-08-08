@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { ProjectSummaryResponseDto } from '../dto/analytics';
 import { MilestoneAggregateDto, RenameMilestoneDto } from '../dto/projects/milestone-aggregate.dto';
@@ -25,10 +24,9 @@ export class ProjectAnalyticsController {
       'Returns aggregated analytics for a project: task metrics, status/priority breakdowns, recent activity, team workload, and milestone progress.',
   })
   async getProjectSummary(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProjectSummaryResponseDto> {
-    return this.analyticsService.getProjectSummary(id, organizationId);
+    return this.analyticsService.getProjectSummary(id);
   }
 
   @Get(':id/milestones')
@@ -37,11 +35,8 @@ export class ProjectAnalyticsController {
     description:
       'Returns one row per distinct milestone group, computed live from project_tasks. Cancelled tasks excluded from all counts.',
   })
-  async getMilestones(
-    @OrganizationContext() organizationId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<MilestoneAggregateDto[]> {
-    return this.analyticsService.getMilestoneAggregates(id, organizationId);
+  async getMilestones(@Param('id', ParseUUIDPipe) id: string): Promise<MilestoneAggregateDto[]> {
+    return this.analyticsService.getMilestoneAggregates(id);
   }
 
   @Patch(':id/milestones/rename')
@@ -51,11 +46,10 @@ export class ProjectAnalyticsController {
       'Atomically updates milestone_name (and optionally milestone_order) for all tasks in the group. Covers wizard "rename" and post-creation rename.',
   })
   async renameMilestone(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: RenameMilestoneDto,
   ): Promise<{ affected: number }> {
-    await this.analyticsService.ensureProjectAccess(id, organizationId);
+    await this.analyticsService.ensureProjectAccess(id);
     return this.taskService.renameMilestone(id, body.from, body.to, body.order);
   }
 }

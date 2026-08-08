@@ -22,7 +22,6 @@ import type { DiscomResponse } from './use-discoms';
 
 import { showToast } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Types (kept for backward compatibility with detail/form pages)
@@ -52,7 +51,6 @@ export interface PropertyFilters {
 export interface Property {
   id: string;
   customerId: string;
-  organizationId: string;
   propertyCode?: string;
   propertyName?: string;
   propertyType: PropertyType;
@@ -147,8 +145,6 @@ export function useUpdateProperty(): UseMutationResult<
   { id: string; data: UpdatePropertyData }
 > {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async ({
@@ -161,14 +157,13 @@ export function useUpdateProperty(): UseMutationResult<
       const { data: response } = await apiClient.patch<Property>(
         `/customer-properties/${id}`,
         data,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return response;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
       void queryClient.invalidateQueries({
-        queryKey: customerKeys.lists(organizationId),
+        queryKey: customerKeys.lists(),
       });
     },
   });
@@ -179,20 +174,16 @@ export function useUpdateProperty(): UseMutationResult<
  */
 export function useDeleteProperty(): UseMutationResult<void, AxiosError, string> {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await apiClient.delete(`/customer-properties/${id}`, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      await apiClient.delete(`/customer-properties/${id}`, {});
     },
     onSuccess: () => {
       showToast.success('Property permanently deleted');
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
       void queryClient.invalidateQueries({
-        queryKey: customerKeys.lists(organizationId),
+        queryKey: customerKeys.lists(),
       });
     },
     onError: (error: AxiosError<{ message?: string | string[] }>) => {
@@ -208,24 +199,21 @@ export function useDeleteProperty(): UseMutationResult<void, AxiosError, string>
  */
 export function useCompletePropertyVisit(): UseMutationResult<Property, AxiosError, string> {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (propertyId: string): Promise<Property> => {
       const { data } = await apiClient.post<Property>(
         `/customer-properties/${propertyId}/complete-visit`,
         {},
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
     onSuccess: (_, propertyId) => {
       showToast.success('Site visit marked as completed');
       void queryClient.invalidateQueries({
-        queryKey: propertyKeys.detail(organizationId, propertyId),
+        queryKey: propertyKeys.detail(propertyId),
       });
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
     },
     onError: (error: AxiosError<{ message?: string | string[] }>) => {
       const message = error.response?.data?.message;
@@ -240,24 +228,21 @@ export function useCompletePropertyVisit(): UseMutationResult<Property, AxiosErr
  */
 export function useCompletePropertySurvey(): UseMutationResult<Property, AxiosError, string> {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (propertyId: string): Promise<Property> => {
       const { data } = await apiClient.post<Property>(
         `/customer-properties/${propertyId}/complete-survey`,
         {},
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
     onSuccess: (_, propertyId) => {
       showToast.success('Site survey marked as completed');
       void queryClient.invalidateQueries({
-        queryKey: propertyKeys.detail(organizationId, propertyId),
+        queryKey: propertyKeys.detail(propertyId),
       });
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
     },
     onError: (error: AxiosError<{ message?: string | string[] }>) => {
       const message = error.response?.data?.message;
@@ -272,24 +257,21 @@ export function useCompletePropertySurvey(): UseMutationResult<Property, AxiosEr
  */
 export function useCancelPropertySiteActivity(): UseMutationResult<Property, AxiosError, string> {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (propertyId: string): Promise<Property> => {
       const { data } = await apiClient.post<Property>(
         `/customer-properties/${propertyId}/cancel-site-activity`,
         {},
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
     onSuccess: (_, propertyId) => {
       showToast.success('Site activity cancelled');
       void queryClient.invalidateQueries({
-        queryKey: propertyKeys.detail(organizationId, propertyId),
+        queryKey: propertyKeys.detail(propertyId),
       });
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
     },
     onError: (error: AxiosError<{ message?: string | string[] }>) => {
       const message = error.response?.data?.message;

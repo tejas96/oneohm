@@ -66,7 +66,6 @@ import { PermissionGuard } from '../iam/guards/permission.guard';
 import { ProductEntity } from '../master-data/entities/product.entity';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { NotificationsModule } from '../notifications/notifications.module';
-import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectEntity } from '../projects/entities/project.entity';
 import { ProjectRepository } from '../projects/repositories/project.repository';
 
@@ -96,7 +95,6 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
       ProjectEntity,
       ProductEntity,
     ]),
-    OrganizationsModule,
     MasterDataModule,
     NotificationsModule,
   ],

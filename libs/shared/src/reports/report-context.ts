@@ -6,6 +6,5 @@ export interface ReportContextDto {
 }
 
 export interface ReportEngineContext extends ReportContextDto {
-  organizationId: string;
   userId: string;
 }

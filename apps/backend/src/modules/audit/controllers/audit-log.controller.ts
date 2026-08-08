@@ -82,28 +82,22 @@ export class AuditLogController {
 
   @Get('stats/actions')
   @ApiOperation({ summary: 'Get action statistics' })
-  @ApiQuery({ name: 'organizationId', required: false, type: String })
   @ApiResponse({
     status: 200,
     description: 'Action statistics',
   })
-  async getActionStats(
-    @Query('organizationId') organizationId?: string,
-  ): Promise<Record<string, number>> {
-    return this.auditLogService.getActionStats(organizationId);
+  async getActionStats(): Promise<Record<string, number>> {
+    return this.auditLogService.getActionStats();
   }
 
   @Get('stats/entities')
   @ApiOperation({ summary: 'Get entity type statistics' })
-  @ApiQuery({ name: 'organizationId', required: false, type: String })
   @ApiResponse({
     status: 200,
     description: 'Entity type statistics',
   })
-  async getEntityTypeStats(
-    @Query('organizationId') organizationId?: string,
-  ): Promise<Record<string, number>> {
-    return this.auditLogService.getEntityTypeStats(organizationId);
+  async getEntityTypeStats(): Promise<Record<string, number>> {
+    return this.auditLogService.getEntityTypeStats();
   }
 
   @Get('count')
@@ -154,9 +148,8 @@ export class AuditLogController {
     return this.auditLogService.findByUser(userId, limit);
   }
 
-  @Get('organization/:organizationId')
-  @ApiOperation({ summary: 'Get audit logs for an organization' })
-  @ApiParam({ name: 'organizationId', description: 'Organization UUID' })
+  @Get('organization')
+  @ApiOperation({ summary: 'Get audit logs' })
   @ApiQuery({
     name: 'limit',
     required: false,
@@ -165,14 +158,13 @@ export class AuditLogController {
   })
   @ApiResponse({
     status: 200,
-    description: 'List of audit logs for organization',
+    description: 'List of audit logs',
     type: [AuditLogResponseDto],
   })
   async findByOrganization(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
     @Query('limit', new DefaultValuePipe(100), ParseIntPipe) limit: number,
   ): Promise<AuditLogResponseDto[]> {
-    return this.auditLogService.findByOrganization(organizationId, limit);
+    return this.auditLogService.findByOrganization(limit);
   }
 
   @Get(':id')

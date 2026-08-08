@@ -10,10 +10,6 @@ export class SavedViewResponseDto {
 
   @ApiProperty()
   @Expose()
-  organizationId!: string;
-
-  @ApiProperty()
-  @Expose()
   userId!: string;
 
   @ApiProperty({ enum: SAVED_VIEW_RESOURCES })

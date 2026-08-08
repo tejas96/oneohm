@@ -18,7 +18,6 @@ import {
 } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
@@ -71,7 +70,6 @@ export class PricingController {
   @ApiResponse({ status: HttpStatus.OK, type: EffectiveUnitPriceResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
   async getEffectivePrice(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('productId', ParseUUIDPipe) productId: string,
     @Query('projectType') projectType?: string,
@@ -81,7 +79,7 @@ export class PricingController {
     const asOfDate = parseAsOf(asOf);
     const systemSize = systemSizeKw != null ? Number(systemSizeKw) : undefined;
 
-    const resolved = await this.pricingService.getEffectiveUnitPrice(productId, organizationId, {
+    const resolved = await this.pricingService.getEffectiveUnitPrice(productId, {
       projectType,
       asOf: asOfDate,
       systemSizeKw: systemSize != null && Number.isFinite(systemSize) ? systemSize : undefined,

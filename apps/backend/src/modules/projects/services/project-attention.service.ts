@@ -51,17 +51,14 @@ export class ProjectAttentionService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async getProjectAttention(
-    projectId: string,
-    organizationId: string,
-  ): Promise<AttentionResponseDto[]> {
+  async getProjectAttention(projectId: string): Promise<AttentionResponseDto[]> {
     // Ownership validation first to guarantee org isolation for all downstream queries.
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     const [tasks, materials, outstanding] = await Promise.all([
       this.projectTaskRepository.findAllForBoard(projectId),
       this.materialRepository.findByProject(projectId),
-      this.findOutstandingMilestones(projectId, organizationId),
+      this.findOutstandingMilestones(projectId),
     ]);
 
     const now = new Date();
@@ -234,10 +231,7 @@ export class ProjectAttentionService {
    * residual no longer nags forever — the contradiction where the finance
    * dashboard dropped a waived amount while the project card kept reporting it.
    */
-  private async findOutstandingMilestones(
-    projectId: string,
-    organizationId: string,
-  ): Promise<OutstandingMilestone[]> {
+  private async findOutstandingMilestones(projectId: string): Promise<OutstandingMilestone[]> {
     return this.dataSource.query(
       `SELECT
          milestone_id   AS "milestoneId",
@@ -247,11 +241,10 @@ export class ProjectAttentionService {
          derived_status AS "derivedStatus"
        FROM v_milestone_balance
        WHERE project_id = $1
-         AND organization_id = $2
          AND status = 'active'
          AND balance_paise > 0
        ORDER BY days_overdue DESC, display_order ASC`,
-      [projectId, organizationId],
+      [projectId],
     );
   }
 

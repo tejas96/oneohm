@@ -23,12 +23,8 @@ export class CreateApprovalRequestDto {
     description: 'Organization ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
-  @IsNotEmpty()
-  organizationId!: string;
 
   // ==================== Template ====================
-
   @ApiProperty({
     description: 'Approval template ID',
     example: '123e4567-e89b-12d3-a456-426614174000',

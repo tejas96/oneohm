@@ -38,31 +38,22 @@ export class InventoryStockService {
   /**
    * Get stock by warehouse and product — validates warehouse belongs to org.
    */
-  async getStock(
-    organizationId: string,
-    warehouseId: string,
-    productId: string,
-  ): Promise<InventoryStockEntity | null> {
-    await this.warehouseRepository.findById(warehouseId, organizationId);
-    return this.inventoryStockRepository.findByWarehouseAndProduct(
-      warehouseId,
-      productId,
-      organizationId,
-    );
+  async getStock(warehouseId: string, productId: string): Promise<InventoryStockEntity | null> {
+    await this.warehouseRepository.findById(warehouseId);
+    return this.inventoryStockRepository.findByWarehouseAndProduct(warehouseId, productId);
   }
 
   /**
    * Get stock by stock row id.
    */
-  async getStockById(id: string, organizationId: string): Promise<InventoryStockEntity> {
-    return this.inventoryStockRepository.findById(id, organizationId);
+  async getStockById(id: string): Promise<InventoryStockEntity> {
+    return this.inventoryStockRepository.findById(id);
   }
 
   /**
    * Get stock across organization with optional filters.
    */
   async getAllStock(
-    organizationId: string,
     page = 1,
     limit = 50,
     filters?: {
@@ -74,56 +65,50 @@ export class InventoryStockService {
       sortOrder?: 'ASC' | 'DESC';
     },
   ): Promise<{ stocks: InventoryStockEntity[]; total: number }> {
-    return this.inventoryStockRepository.findAll(organizationId, page, limit, filters);
+    return this.inventoryStockRepository.findAll(page, limit, filters);
   }
 
   /**
    * Get all stock for a warehouse — validates warehouse belongs to org.
    */
   async getStockByWarehouse(
-    organizationId: string,
     warehouseId: string,
     page = 1,
     limit = 50,
     filters?: { lowStock?: boolean; search?: string },
   ): Promise<{ stocks: InventoryStockEntity[]; total: number }> {
-    await this.warehouseRepository.findById(warehouseId, organizationId);
+    await this.warehouseRepository.findById(warehouseId);
     return this.inventoryStockRepository.findByWarehouse(warehouseId, page, limit, filters);
   }
 
   /**
    * Get all stock for a product across warehouses.
    */
-  async getStockByProduct(
-    productId: string,
-    organizationId: string,
-  ): Promise<InventoryStockEntity[]> {
-    return this.inventoryStockRepository.findByProduct(productId, organizationId);
+  async getStockByProduct(productId: string): Promise<InventoryStockEntity[]> {
+    return this.inventoryStockRepository.findByProduct(productId);
   }
 
   /**
    * Get low stock alerts.
    */
-  async getLowStockAlerts(organizationId: string): Promise<InventoryStockEntity[]> {
-    return this.inventoryStockRepository.findLowStock(organizationId);
+  async getLowStockAlerts(): Promise<InventoryStockEntity[]> {
+    return this.inventoryStockRepository.findLowStock();
   }
 
   /**
    * Get total stock value.
    */
-  async getTotalStockValue(organizationId: string): Promise<number> {
-    return this.inventoryStockRepository.getTotalStockValue(organizationId);
+  async getTotalStockValue(): Promise<number> {
+    return this.inventoryStockRepository.getTotalStockValue();
   }
 
   /**
    * Get stock summary by warehouse.
    */
-  async getStockSummaryByWarehouse(
-    organizationId: string,
-  ): Promise<
+  async getStockSummaryByWarehouse(): Promise<
     Array<{ warehouseId: string; warehouseName: string; totalItems: number; totalValue: number }>
   > {
-    return this.inventoryStockRepository.getStockSummaryByWarehouse(organizationId);
+    return this.inventoryStockRepository.getStockSummaryByWarehouse();
   }
 
   // ==================== Mutation Methods ====================
@@ -133,13 +118,9 @@ export class InventoryStockService {
    * All convenience methods delegate here.
    */
   async updateStock(updateDto: UpdateStockDto, performedBy: string): Promise<InventoryStockEntity> {
-    if (!updateDto.organizationId) {
-      throw new BadRequestException('Organization ID is required');
-    }
-
     const [warehouse, product] = await Promise.all([
-      this.warehouseRepository.findById(updateDto.warehouseId, updateDto.organizationId),
-      this.productRepository.findById(updateDto.productId, updateDto.organizationId),
+      this.warehouseRepository.findById(updateDto.warehouseId),
+      this.productRepository.findById(updateDto.productId),
     ]);
 
     if (!warehouse) throw new NotFoundException('Warehouse not found');
@@ -148,12 +129,10 @@ export class InventoryStockService {
     let stock = await this.inventoryStockRepository.findByWarehouseAndProduct(
       updateDto.warehouseId,
       updateDto.productId,
-      updateDto.organizationId,
     );
 
     if (!stock) {
       stock = await this.inventoryStockRepository.upsert({
-        organizationId: updateDto.organizationId,
         warehouseId: updateDto.warehouseId,
         productId: updateDto.productId,
         availableQuantity: 0,
@@ -177,7 +156,6 @@ export class InventoryStockService {
     });
 
     await this.inventoryTransactionRepository.create({
-      organizationId: updateDto.organizationId,
       warehouseId: updateDto.warehouseId,
       productId: updateDto.productId,
       transactionType: updateDto.transactionType,
@@ -191,7 +169,6 @@ export class InventoryStockService {
 
     if (updateDto.quantity < 0) {
       this.lowStockAlertService.checkAndFire(
-        updateDto.organizationId,
         stock,
         prevAvailable,
         newAvailableQuantity,
@@ -206,7 +183,6 @@ export class InventoryStockService {
    * Add stock (e.g. on PO receive). Optionally accepts an EntityManager for transactional use.
    */
   async addStock(
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -219,7 +195,6 @@ export class InventoryStockService {
     if (manager) {
       return this.reservedStockService.addStockWithManager(
         manager,
-        organizationId,
         warehouseId,
         productId,
         quantity,
@@ -231,7 +206,6 @@ export class InventoryStockService {
     }
     return this.updateStock(
       {
-        organizationId,
         warehouseId,
         productId,
         quantity,
@@ -248,7 +222,6 @@ export class InventoryStockService {
    * Remove stock (convenience). Deducts from available.
    */
   async removeStock(
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -259,7 +232,6 @@ export class InventoryStockService {
   ): Promise<InventoryStockEntity> {
     return this.updateStock(
       {
-        organizationId,
         warehouseId,
         productId,
         quantity: -quantity,
@@ -273,7 +245,6 @@ export class InventoryStockService {
   }
 
   async transferStock(
-    organizationId: string,
     fromWarehouseId: string,
     toWarehouseId: string,
     productId: string,
@@ -282,7 +253,6 @@ export class InventoryStockService {
     notes?: string,
   ): Promise<void> {
     return this.stockTransferService.transferStock(
-      organizationId,
       fromWarehouseId,
       toWarehouseId,
       productId,
@@ -296,7 +266,6 @@ export class InventoryStockService {
    * Adjust stock to a new absolute quantity.
    */
   async adjustStock(
-    organizationId: string,
     warehouseId: string,
     productId: string,
     newQuantity: number,
@@ -306,14 +275,12 @@ export class InventoryStockService {
     const stock = await this.inventoryStockRepository.findByWarehouseAndProduct(
       warehouseId,
       productId,
-      organizationId,
     );
     if (!stock) throw new BadRequestException('Stock record not found');
 
     const adjustment = newQuantity - Number(stock.availableQuantity);
     return this.updateStock(
       {
-        organizationId,
         warehouseId,
         productId,
         quantity: adjustment,
@@ -331,7 +298,6 @@ export class InventoryStockService {
    * Writes an ALLOCATION transaction.
    */
   async reserveStock(
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -348,7 +314,6 @@ export class InventoryStockService {
         .createQueryBuilder('stock')
         .where('stock.warehouseId = :warehouseId', { warehouseId })
         .andWhere('stock.productId = :productId', { productId })
-        .andWhere('stock.organizationId = :organizationId', { organizationId })
         .setLock('pessimistic_write')
         .getOne();
 
@@ -370,7 +335,6 @@ export class InventoryStockService {
       const txnRepo = manager.getRepository(TxnEntity);
       await txnRepo.save(
         txnRepo.create({
-          organizationId,
           warehouseId,
           productId,
           transactionType: InventoryTransactionType.ALLOCATION,
@@ -388,7 +352,6 @@ export class InventoryStockService {
 
     if (stockForAlert) {
       this.lowStockAlertService.checkAndFire(
-        organizationId,
         stockForAlert,
         prevAvailable,
         newAvailable,
@@ -402,7 +365,6 @@ export class InventoryStockService {
    * Writes a reverse ALLOCATION transaction.
    */
   async releaseStock(
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -415,7 +377,6 @@ export class InventoryStockService {
         .createQueryBuilder('stock')
         .where('stock.warehouseId = :warehouseId', { warehouseId })
         .andWhere('stock.productId = :productId', { productId })
-        .andWhere('stock.organizationId = :organizationId', { organizationId })
         .setLock('pessimistic_write')
         .getOne();
 
@@ -434,7 +395,6 @@ export class InventoryStockService {
       const txnRepo = manager.getRepository(TxnEntity);
       await txnRepo.save(
         txnRepo.create({
-          organizationId,
           warehouseId,
           productId,
           transactionType: InventoryTransactionType.ALLOCATION,
@@ -450,7 +410,6 @@ export class InventoryStockService {
   }
 
   async restoreReservedStock(
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -461,7 +420,6 @@ export class InventoryStockService {
     manager?: EntityManager,
   ): Promise<void> {
     return this.reservedStockService.restoreReservedStock(
-      organizationId,
       warehouseId,
       productId,
       quantity,
@@ -474,7 +432,6 @@ export class InventoryStockService {
   }
 
   async deductReservedStock(
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -485,7 +442,6 @@ export class InventoryStockService {
     manager?: EntityManager,
   ): Promise<void> {
     return this.reservedStockService.deductReservedStock(
-      organizationId,
       warehouseId,
       productId,
       quantity,

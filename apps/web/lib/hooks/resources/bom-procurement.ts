@@ -3,8 +3,6 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-import { useOrgContext } from '../core';
-
 import { apiClient } from '@/lib/api/client';
 
 // ============================================================================
@@ -49,8 +47,7 @@ export interface BomProcurementStatus {
 // ============================================================================
 
 export const bomProcurementKeys = {
-  byProject: (orgId: string | undefined, projectId: string) =>
-    ['bom-procurement-status', orgId, projectId] as const,
+  byProject: (projectId: string) => ['bom-procurement-status', projectId] as const,
 };
 
 // ============================================================================
@@ -66,18 +63,16 @@ export function useBomProcurementStatus(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<BomProcurementStatus, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
-
   return useQuery({
-    queryKey: bomProcurementKeys.byProject(organizationId, projectId),
+    queryKey: bomProcurementKeys.byProject(projectId),
     queryFn: async ({ signal }): Promise<BomProcurementStatus> => {
       const { data } = await apiClient.get<BomProcurementStatus>(
         `/bom/project/${projectId}/procurement-status`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data;
     },
-    enabled: isReady && !!projectId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }

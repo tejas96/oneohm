@@ -12,13 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import {
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiUpdate,
-  OrganizationContext,
-} from '../../../common/decorators';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate } from '../../../common/decorators';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -44,17 +38,11 @@ export class ProductPriceController {
     responseType: ProductPriceResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('productId', ParseUUIDPipe) productId: string,
     @Body() body: CreateProductPriceDto,
   ): Promise<ProductPriceResponseDto> {
-    const price = await this.productPriceService.create(
-      organizationId,
-      productId,
-      body,
-      currentUser.id,
-    );
+    const price = await this.productPriceService.create(productId, body, currentUser.id);
     return toDto(ProductPriceResponseDto, price);
   }
 
@@ -74,13 +62,12 @@ export class ProductPriceController {
     includePagination: false,
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('productId', ParseUUIDPipe) productId: string,
     @Query('isActive') isActive?: string,
   ): Promise<ProductPriceResponseDto[]> {
     const filter = isActive !== undefined ? { isActive: isActive === 'true' } : undefined;
-    const prices = await this.productPriceService.findAll(organizationId, productId, filter);
+    const prices = await this.productPriceService.findAll(productId, filter);
     return toDtoArray(ProductPriceResponseDto, prices);
   }
 
@@ -91,19 +78,12 @@ export class ProductPriceController {
     responseType: ProductPriceResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('productId', ParseUUIDPipe) productId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateProductPriceDto,
   ): Promise<ProductPriceResponseDto> {
-    const price = await this.productPriceService.update(
-      id,
-      organizationId,
-      productId,
-      body,
-      currentUser.id,
-    );
+    const price = await this.productPriceService.update(id, productId, body, currentUser.id);
     return toDto(ProductPriceResponseDto, price);
   }
 
@@ -116,17 +96,11 @@ export class ProductPriceController {
     path: ':id/deactivate',
   })
   async deactivate(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('productId', ParseUUIDPipe) productId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProductPriceResponseDto> {
-    const price = await this.productPriceService.deactivate(
-      id,
-      organizationId,
-      productId,
-      currentUser.id,
-    );
+    const price = await this.productPriceService.deactivate(id, productId, currentUser.id);
     return toDto(ProductPriceResponseDto, price);
   }
 
@@ -136,11 +110,10 @@ export class ProductPriceController {
     description: 'Deactivate a product price entry',
   })
   async delete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('productId', ParseUUIDPipe) productId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    await this.productPriceService.deactivate(id, organizationId, productId, currentUser.id);
+    await this.productPriceService.deactivate(id, productId, currentUser.id);
   }
 }

@@ -3,7 +3,7 @@
 import { useQuery, keepPreviousData, type UseQueryResult } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { STALE_TIMES, stableHash, useOrgContext } from '../core';
+import { STALE_TIMES, stableHash } from '../core';
 import {
   resolveStatsWindow,
   type ResolvedStatsWindow,
@@ -135,16 +135,14 @@ function usePipelineQuery<TParams extends Record<string, unknown>, TResponse>(
   params: TParams,
   enabled: boolean,
 ): UseQueryResult<TResponse, unknown> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
-
   const queryKey = useMemo(
-    () => ['sales-pipeline', organizationId, key, stableHash(params)] as const,
-    [organizationId, key, params],
+    () => ['sales-pipeline', key, stableHash(params)] as const,
+    [key, params],
   );
 
   return useQuery<TResponse>({
     queryKey,
-    enabled: isReady && enabled,
+    enabled: enabled,
     staleTime: STALE_TIMES.standard,
     placeholderData: keepPreviousData,
     queryFn: async ({ signal }) => {
@@ -155,7 +153,7 @@ function usePipelineQuery<TParams extends Record<string, unknown>, TResponse>(
       }
       const qs = search.toString();
       const url = qs ? `${endpoint}?${qs}` : endpoint;
-      const { data } = await apiClient.get<TResponse>(url, { headers: orgHeaders, signal });
+      const { data } = await apiClient.get<TResponse>(url, { signal });
       return data;
     },
   });

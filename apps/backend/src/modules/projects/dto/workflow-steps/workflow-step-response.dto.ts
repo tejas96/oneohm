@@ -9,10 +9,6 @@ export class WorkflowStepResponseDto {
 
   @ApiProperty()
   @Expose()
-  organizationId!: string;
-
-  @ApiProperty()
-  @Expose()
   name!: string;
 
   @ApiProperty()

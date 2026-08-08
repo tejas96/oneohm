@@ -27,7 +27,6 @@ export interface SnapshotableMilestone {
 
 export interface SnapshotParams {
   projectId: string;
-  organizationId: string;
   sourceVersionId: string | null;
   milestones: SnapshotableMilestone[] | null | undefined;
   /** Contract total in paise. Used to derive amounts when only percentages exist. */
@@ -87,23 +86,9 @@ export class MilestoneService {
         source: milestone.source,
       };
       if (action === 'create') {
-        await this.auditLog.logCreate(
-          'payment_milestone',
-          milestone.id,
-          values,
-          userId,
-          milestone.organizationId,
-          metadata,
-        );
+        await this.auditLog.logCreate('payment_milestone', milestone.id, values, userId, metadata);
       } else if (action === 'delete') {
-        await this.auditLog.logDelete(
-          'payment_milestone',
-          milestone.id,
-          values,
-          userId,
-          milestone.organizationId,
-          metadata,
-        );
+        await this.auditLog.logDelete('payment_milestone', milestone.id, values, userId, metadata);
       } else {
         await this.auditLog.logUpdate(
           'payment_milestone',
@@ -111,7 +96,6 @@ export class MilestoneService {
           (metadata.before as Record<string, unknown>) ?? {},
           values,
           userId,
-          milestone.organizationId,
           metadata,
         );
       }
@@ -140,20 +124,12 @@ export class MilestoneService {
    *    contract — no perpetual "₹0.01 pending".
    */
   async snapshotFromQuoteVersion(params: SnapshotParams): Promise<PaymentMilestoneEntity[]> {
-    const {
-      projectId,
-      organizationId,
-      sourceVersionId,
-      milestones,
-      contractPaise,
-      createdBy,
-      manager,
-    } = params;
+    const { projectId, sourceVersionId, milestones, contractPaise, createdBy, manager } = params;
 
     const repo = manager.getRepository(PaymentMilestoneEntity);
 
     const existing = await repo.find({
-      where: { projectId, organizationId },
+      where: { projectId },
       order: { displayOrder: 'ASC' },
     });
     if (existing.length > 0) {
@@ -175,7 +151,6 @@ export class MilestoneService {
 
     const rows = milestones.map((m, idx) =>
       repo.create({
-        organizationId,
         projectId,
         source: 'quote_snapshot' as const,
         sourceQuoteVersionId: sourceVersionId,
@@ -221,7 +196,6 @@ export class MilestoneService {
    * `SUM(payment_milestones.amount_paise)` rather than a stored column.
    */
   async addChangeOrder(
-    organizationId: string,
     projectId: string,
     input: { name: string; description?: string; amountPaise: number; dueDate?: string },
     createdBy: string,
@@ -233,7 +207,7 @@ export class MilestoneService {
       throw new BadRequestException('Change order amount must be a positive integer paise value');
     }
 
-    if (!(await this.ledgerRepository.projectBelongsToOrg(projectId, organizationId))) {
+    if (!(await this.ledgerRepository.projectExists(projectId))) {
       throw new NotFoundException(`Project ${projectId} not found`);
     }
 
@@ -246,7 +220,6 @@ export class MilestoneService {
 
       const created = await repo.save(
         repo.create({
-          organizationId,
           projectId,
           source: 'change_order' as const,
           stage: 'change_order',
@@ -295,7 +268,6 @@ export class MilestoneService {
    * allocation waterfall.
    */
   async waive(
-    organizationId: string,
     milestoneId: string,
     reason: string,
     waivedBy: string,
@@ -306,7 +278,7 @@ export class MilestoneService {
 
     return this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PaymentMilestoneEntity);
-      const milestone = await repo.findOne({ where: { id: milestoneId, organizationId } });
+      const milestone = await repo.findOne({ where: { id: milestoneId } });
       if (!milestone) {
         throw new NotFoundException(`Milestone ${milestoneId} not found`);
       }
@@ -341,7 +313,6 @@ export class MilestoneService {
    * and nothing recomputed. Correct the allocation, or issue a change order.
    */
   async updateAmount(
-    organizationId: string,
     milestoneId: string,
     amountPaise: number,
     updatedBy: string,
@@ -352,7 +323,7 @@ export class MilestoneService {
 
     return this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PaymentMilestoneEntity);
-      const milestone = await repo.findOne({ where: { id: milestoneId, organizationId } });
+      const milestone = await repo.findOne({ where: { id: milestoneId } });
       if (!milestone) {
         throw new NotFoundException(`Milestone ${milestoneId} not found`);
       }
@@ -384,10 +355,10 @@ export class MilestoneService {
    * `ledger_allocations`, so one with money against it cannot be removed —
    * the database refuses rather than orphaning the allocation.
    */
-  async remove(organizationId: string, milestoneId: string, deletedBy: string): Promise<void> {
+  async remove(milestoneId: string, deletedBy: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PaymentMilestoneEntity);
-      const milestone = await repo.findOne({ where: { id: milestoneId, organizationId } });
+      const milestone = await repo.findOne({ where: { id: milestoneId } });
       if (!milestone) {
         throw new NotFoundException(`Milestone ${milestoneId} not found`);
       }
@@ -404,9 +375,8 @@ export class MilestoneService {
 
   async listByProject(
     projectId: string,
-    organizationId: string,
   ): Promise<ReturnType<LedgerRepository['getMilestoneBalances']>> {
-    return this.ledgerRepository.getMilestoneBalances(projectId, organizationId);
+    return this.ledgerRepository.getMilestoneBalances(projectId);
   }
 
   // ============================================

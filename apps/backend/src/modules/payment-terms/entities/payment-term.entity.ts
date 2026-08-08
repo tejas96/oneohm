@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 
 /**
@@ -25,18 +24,10 @@ import { ProjectEntity } from '../../projects/entities/project.entity';
 @Entity('project_payment_terms')
 @Index(['projectId', 'displayOrder'])
 @Index(['projectId', 'status'])
-@Index(['organizationId'])
 export class PaymentTermEntity extends BaseEntity {
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
-
   @ManyToOne(() => ProjectEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'project_id' })
   project?: ProjectEntity;
-
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;

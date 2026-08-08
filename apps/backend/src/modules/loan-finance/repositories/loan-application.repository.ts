@@ -26,15 +26,10 @@ export class LoanApplicationRepository {
     return this.repository.save(entity);
   }
 
-  async findAll(
-    organizationId: string,
-    page = 1,
-    limit = 20,
-  ): Promise<[LoanApplicationEntity[], number]> {
+  async findAll(page = 1, limit = 20): Promise<[LoanApplicationEntity[], number]> {
     return this.repository.findAndCount({
       where: {
         deletedAt: IsNull(),
-        property: { organizationId },
       },
       relations: ['property', 'customer', 'createdByUser', 'updatedByUser'],
       skip: (page - 1) * limit,
@@ -43,12 +38,11 @@ export class LoanApplicationRepository {
     });
   }
 
-  async findById(id: string, organizationId?: string): Promise<LoanApplicationEntity | null> {
+  async findById(id: string): Promise<LoanApplicationEntity | null> {
     return this.repository.findOne({
       where: {
         id,
         deletedAt: IsNull(),
-        ...(organizationId ? { property: { organizationId } } : {}),
       },
       relations: ['property', 'customer', 'createdByUser', 'updatedByUser'],
     });
@@ -73,7 +67,6 @@ export class LoanApplicationRepository {
 
   async findByProperty(
     propertyId: string,
-    organizationId?: string,
     manager?: EntityManager,
   ): Promise<LoanApplicationEntity | null> {
     const repo = manager ? manager.getRepository(LoanApplicationEntity) : this.repository;
@@ -81,7 +74,6 @@ export class LoanApplicationRepository {
       where: {
         propertyId,
         deletedAt: IsNull(),
-        ...(organizationId ? { property: { organizationId } } : {}),
       },
       relations: ['property', 'customer'],
     });
@@ -89,7 +81,6 @@ export class LoanApplicationRepository {
 
   async findPropertyIdsWithActiveLoans(
     propertyIds: string[],
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<Set<string>> {
     if (propertyIds.length === 0) {
@@ -103,7 +94,6 @@ export class LoanApplicationRepository {
       .innerJoin('loan.property', 'property')
       .where('loan.propertyId IN (:...propertyIds)', { propertyIds })
       .andWhere('loan.deletedAt IS NULL')
-      .andWhere('property.organizationId = :organizationId', { organizationId })
       .andWhere('loan.status IN (:...statuses)', {
         statuses: [LoanStatus.INITIATED, LoanStatus.APPLIED],
       })
@@ -112,15 +102,11 @@ export class LoanApplicationRepository {
     return new Set(rows.map((row) => row.propertyId));
   }
 
-  async findByCustomer(
-    customerId: string,
-    organizationId?: string,
-  ): Promise<LoanApplicationEntity[]> {
+  async findByCustomer(customerId: string): Promise<LoanApplicationEntity[]> {
     return this.repository.find({
       where: {
         customerId,
         deletedAt: IsNull(),
-        ...(organizationId ? { property: { organizationId } } : {}),
       },
       relations: ['property'],
       order: { createdAt: 'DESC' },

@@ -39,23 +39,18 @@ export class EmployeeService {
    * Create a new employee profile
    */
   async create(dto: CreateEmployeeDto, createdBy?: string): Promise<EmployeeResponseDto> {
-    // Check if employee profile already exists for this user in this org
-    const existing = await this.employeeRepository.findByUserAndOrganization(
-      dto.userId,
-      dto.organizationId,
-    );
+    // Check if employee profile already exists for this user
+    const existing = await this.employeeRepository.findByUserAndOrganization(dto.userId);
 
     if (existing) {
-      throw new BadRequestException(
-        'Employee profile already exists for this user in this organization',
-      );
+      throw new BadRequestException('Employee profile already exists for this user');
     }
 
     const profileKind = dto.profileKind ?? EmployeeProfileKind.STAFF;
     let commissionDefaults: Partial<CreateEmployeeDto> = {};
 
     if (profileKind === EmployeeProfileKind.RESELLER) {
-      commissionDefaults = await this.validateResellerFields(dto.organizationId, dto);
+      commissionDefaults = await this.validateResellerFields(dto);
     }
 
     // Create profile
@@ -69,18 +64,11 @@ export class EmployeeService {
       createdBy,
     });
 
-    this.logger.log(
-      `Created employee profile ${profile.id} for user ${dto.userId} in org ${dto.organizationId}`,
-    );
+    this.logger.log(`Created employee profile ${profile.id} for user ${dto.userId}`);
 
     // Auto-assign default role
     const roleCode = profileKind === EmployeeProfileKind.RESELLER ? 'reseller' : 'employee_basic';
-    await this.profileService.assignDefaultRole(
-      dto.userId,
-      dto.organizationId,
-      roleCode,
-      createdBy,
-    );
+    await this.profileService.assignDefaultRole(dto.userId, roleCode, createdBy);
 
     return this.toResponseDto(profile);
   }
@@ -90,14 +78,10 @@ export class EmployeeService {
    * and return the default commission percentage. Ported from ResellerService.create.
    */
   private async validateResellerFields(
-    organizationId: string,
     dto: Pick<CreateEmployeeDto, 'companyCode' | 'email' | 'commissionPercentage'>,
   ): Promise<Partial<CreateEmployeeDto>> {
     if (dto.companyCode) {
-      const existingByCode = await this.employeeRepository.findByCompanyCode(
-        organizationId,
-        dto.companyCode,
-      );
+      const existingByCode = await this.employeeRepository.findByCompanyCode(dto.companyCode);
       if (existingByCode) {
         throw new ConflictException(
           `Reseller with company code '${dto.companyCode}' already exists`,
@@ -106,7 +90,7 @@ export class EmployeeService {
     }
 
     if (dto.email) {
-      const existingByEmail = await this.employeeRepository.findByEmail(organizationId, dto.email);
+      const existingByEmail = await this.employeeRepository.findByEmail(dto.email);
       if (existingByEmail) {
         throw new ConflictException(`Reseller with email '${dto.email}' already exists`);
       }
@@ -122,26 +106,19 @@ export class EmployeeService {
    */
   async createFromProfileData(
     userId: string,
-    organizationId: string,
     profileData: Record<string, unknown>,
     createdBy?: string,
   ): Promise<EmployeeProfileEntity> {
     // Check if employee profile already exists
-    const existing = await this.employeeRepository.findByUserAndOrganization(
-      userId,
-      organizationId,
-    );
+    const existing = await this.employeeRepository.findByUserAndOrganization(userId);
 
     if (existing) {
-      throw new BadRequestException(
-        'Employee profile already exists for this user in this organization',
-      );
+      throw new BadRequestException('Employee profile already exists for this user');
     }
 
     // Create profile
     const profile = await this.employeeRepository.create({
       userId,
-      organizationId,
       ...profileData,
       joiningDate: profileData.joiningDate
         ? new Date(profileData.joiningDate as string)
@@ -153,9 +130,7 @@ export class EmployeeService {
       createdBy,
     });
 
-    this.logger.log(
-      `Created employee profile ${profile.id} for user ${userId} in org ${organizationId}`,
-    );
+    this.logger.log(`Created employee profile ${profile.id} for user ${userId}`);
 
     return profile;
   }
@@ -165,6 +140,9 @@ export class EmployeeService {
    */
   async findById(id: string): Promise<EmployeeResponseDto> {
     const employee = await this.employeeRepository.findById(id);
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
 
     if (!employee) {
       throw new NotFoundException('Employee not found');
@@ -176,14 +154,8 @@ export class EmployeeService {
   /**
    * Find employee by user and organization
    */
-  async findByUserAndOrganization(
-    userId: string,
-    organizationId: string,
-  ): Promise<EmployeeResponseDto | null> {
-    const employee = await this.employeeRepository.findByUserAndOrganization(
-      userId,
-      organizationId,
-    );
+  async findByUserAndOrganization(userId: string): Promise<EmployeeResponseDto | null> {
+    const employee = await this.employeeRepository.findByUserAndOrganization(userId);
 
     return employee ? this.toResponseDto(employee) : null;
   }
@@ -200,7 +172,6 @@ export class EmployeeService {
    * Find all employees in an organization (paginated)
    */
   async findByOrganization(
-    organizationId: string,
     page = 1,
     limit = 20,
     status?: UserStatus,
@@ -212,7 +183,6 @@ export class EmployeeService {
     limit: number;
   }> {
     const result = await this.employeeRepository.findByOrganization(
-      organizationId,
       page,
       limit,
       status,
@@ -245,11 +215,8 @@ export class EmployeeService {
   /**
    * Find employees by department
    */
-  async findByDepartment(
-    organizationId: string,
-    department: string,
-  ): Promise<EmployeeResponseDto[]> {
-    const employees = await this.employeeRepository.findByDepartment(organizationId, department);
+  async findByDepartment(department: string): Promise<EmployeeResponseDto[]> {
+    const employees = await this.employeeRepository.findByDepartment(department);
     return employees.map((e) => this.toResponseDto(e));
   }
 
@@ -271,10 +238,7 @@ export class EmployeeService {
     if (existing.profileKind === EmployeeProfileKind.RESELLER) {
       // Check for email conflicts (if email is being updated)
       if (dto.email) {
-        const existingByEmail = await this.employeeRepository.findByEmail(
-          existing.organizationId,
-          dto.email,
-        );
+        const existingByEmail = await this.employeeRepository.findByEmail(dto.email);
         if (existingByEmail && existingByEmail.id !== id) {
           throw new ConflictException(`Reseller with email '${dto.email}' already exists`);
         }
@@ -348,30 +312,26 @@ export class EmployeeService {
   /**
    * Check if employee profile exists
    */
-  async exists(userId: string, organizationId: string): Promise<boolean> {
-    const employee = await this.employeeRepository.findByUserAndOrganization(
-      userId,
-      organizationId,
-    );
+  async exists(userId: string): Promise<boolean> {
+    const employee = await this.employeeRepository.findByUserAndOrganization(userId);
     return !!employee;
   }
 
   /**
    * Get raw entity (for internal use)
    */
-  async getEntity(userId: string, organizationId: string): Promise<EmployeeProfileEntity | null> {
-    return this.employeeRepository.findByUserAndOrganization(userId, organizationId);
+  async getEntity(userId: string): Promise<EmployeeProfileEntity | null> {
+    return this.employeeRepository.findByUserAndOrganization(userId);
   }
 
   /**
    * Find employee by ID, verifying it belongs to the given organization.
    * Used by the commissions submodule (ported from ResellerService.findById).
    */
-  async findByIdInOrganization(id: string, organizationId: string): Promise<EmployeeProfileEntity> {
+  async findByIdInOrganization(id: string): Promise<EmployeeProfileEntity> {
     const employee = await this.employeeRepository.findById(id);
-
-    if (employee?.organizationId !== organizationId) {
-      throw new NotFoundException(`Employee with ID '${id}' not found`);
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
     }
 
     return employee;
@@ -384,7 +344,6 @@ export class EmployeeService {
    */
   async updatePerformanceMetrics(
     id: string,
-    organizationId: string,
     metrics: {
       totalLeadsGenerated?: number;
       totalProjectsConverted?: number;
@@ -395,7 +354,7 @@ export class EmployeeService {
     this.logger.log(`Updating performance metrics for employee: ${id}`);
 
     // Verify employee exists and belongs to organization
-    await this.findByIdInOrganization(id, organizationId);
+    await this.findByIdInOrganization(id);
 
     await this.employeeRepository.updatePerformanceMetrics(id, metrics);
 

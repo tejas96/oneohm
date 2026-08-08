@@ -6,7 +6,6 @@ import { useMemo } from 'react';
 import { STALE_TIMES } from './query-defaults';
 import { createResourceKeys } from './query-keys';
 import type { StatsConfig } from './types';
-import { useOrgContext } from './use-org-context';
 
 import { apiClient } from '@/lib/api/client';
 
@@ -20,19 +19,17 @@ export interface UseResourceStatsReturn<TStats> {
 export function useResourceStats<TStats = Record<string, number>>(
   config: StatsConfig<TStats>,
 ): UseResourceStatsReturn<TStats> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
 
   const query = useQuery({
-    queryKey: keys.stats(organizationId),
+    queryKey: keys.stats(),
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get(config.endpoint, {
-        headers: config.requiresOrg !== false ? orgHeaders : {},
         signal,
       });
       return config.transform ? config.transform(data) : (data as TStats);
     },
-    enabled: config.requiresOrg !== false ? isReady : true,
+    enabled: true,
     staleTime: config.staleTime ?? STALE_TIMES.standard,
   });
 

@@ -1,6 +1,5 @@
 import { Expose, Type } from 'class-transformer';
 
-import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 
 /**
@@ -11,12 +10,6 @@ export class AuditLogResponseDto {
   id: string;
 
   @Expose()
-  organizationId: string | null;
-
-  @Expose()
-  @Type(() => OrganizationResponseDto)
-  organization?: OrganizationResponseDto;
-
   @Expose()
   entityType: string;
 

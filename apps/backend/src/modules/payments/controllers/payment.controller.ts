@@ -22,7 +22,6 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-  OrganizationContext,
 } from '../../../common/decorators';
 import { toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -97,13 +96,10 @@ export class PaymentController {
     });
   }
 
-  @Get('organization/:organizationId')
+  @Get('organization')
   @ApiOperation({ summary: 'Get payments by organization' })
-  @ApiParam({ name: 'organizationId', type: String })
-  async findByOrganization(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
-  ): Promise<PaymentResponseDto[]> {
-    const payments = await this.paymentService.findByOrganization(organizationId);
+  async findByOrganization(): Promise<PaymentResponseDto[]> {
+    const payments = await this.paymentService.findByOrganization();
     return plainToInstance(PaymentResponseDto, payments, {
       excludeExtraneousValues: true,
     });
@@ -114,9 +110,8 @@ export class PaymentController {
   @ApiParam({ name: 'projectId', type: String })
   async findByProject(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<PaymentResponseDto[]> {
-    const payments = await this.paymentService.findByProject(projectId, organizationId);
+    const payments = await this.paymentService.findByProject(projectId);
     return toDtoArray(PaymentResponseDto, payments);
   }
 
@@ -224,43 +219,34 @@ export class PaymentController {
   @Get('project/:projectId/summary')
   @ApiOperation({ summary: 'Get payment summary for project' })
   @ApiParam({ name: 'projectId', type: String })
-  async getProjectPaymentSummary(
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
-  ): Promise<{
+  async getProjectPaymentSummary(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<{
     totalExpected: number;
     totalPaid: number;
     pendingAmount: number;
     paymentCount: number;
   }> {
-    return this.paymentService.getProjectPaymentSummary(projectId, organizationId);
+    return this.paymentService.getProjectPaymentSummary(projectId);
   }
 
-  @Get('organization/:organizationId/stats')
+  @Get('organization/stats')
   @ApiOperation({ summary: 'Get payment statistics by organization' })
-  @ApiParam({ name: 'organizationId', type: String })
-  async getOrganizationPaymentStats(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
-  ): Promise<
+  async getOrganizationPaymentStats(): Promise<
     Array<{
       status: PaymentTransactionStatus;
       count: number;
       totalAmount: number;
     }>
   > {
-    return this.paymentService.getOrganizationPaymentStats(organizationId);
+    return this.paymentService.getOrganizationPaymentStats();
   }
 
   // ============================================
   // UTILITIES
   // ============================================
-  @Get('organization/:organizationId/next-number')
+  @Get('organization/next-number')
   @ApiOperation({ summary: 'Generate next payment number' })
-  @ApiParam({ name: 'organizationId', type: String })
-  async generatePaymentNumber(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
-  ): Promise<{ paymentNumber: string }> {
-    const paymentNumber = await this.paymentService.generatePaymentNumber(organizationId);
+  async generatePaymentNumber(): Promise<{ paymentNumber: string }> {
+    const paymentNumber = await this.paymentService.generatePaymentNumber();
     return { paymentNumber };
   }
 }

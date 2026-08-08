@@ -63,10 +63,7 @@ export function UserFormModal({
   const { user: currentUser } = useAuth();
   const { create: createUser, update: updateUser } = useAdminUserMutations();
   const { update: updateEmployeeProfile } = useEmployeeProfileMutations();
-  const availability = useCheckUserAvailability(
-    isEdit ? userId : undefined,
-    isEdit ? undefined : currentUser?.organizationId,
-  );
+  const availability = useCheckUserAvailability(isEdit ? userId : undefined);
 
   const schema = isEdit ? editUserSchema : createUserSchema;
 
@@ -242,12 +239,9 @@ export function UserFormModal({
         if (createData.lastName) payload.lastName = createData.lastName;
         if (createData.email) payload.email = createData.email;
 
-        if (currentUser?.organizationId) {
-          payload.organizationId = currentUser.organizationId;
-          payload.profileType = data.profileKind === 'reseller' ? 'reseller' : 'employee';
-          if (Object.keys(profileData).length > 0) {
-            payload.profileData = profileData;
-          }
+        payload.profileType = data.profileKind === 'reseller' ? 'reseller' : 'employee';
+        if (Object.keys(profileData).length > 0) {
+          payload.profileData = profileData;
         }
 
         await createUser.mutateAsync(payload as Partial<AdminUser>);
@@ -267,11 +261,11 @@ export function UserFormModal({
         form.setError('phone', { message: 'This phone number is already registered' });
       } else if (lowerMsg.includes('employee id') && lowerMsg.includes('already')) {
         form.setError('employeeId', {
-          message: 'This Employee ID already exists in your organization',
+          message: 'This Employee ID already exists',
         });
       } else if (lowerMsg.includes('company code') && lowerMsg.includes('already')) {
         form.setError('companyCode', {
-          message: 'This Company Code already exists in your organization',
+          message: 'This Company Code already exists',
         });
       }
     }

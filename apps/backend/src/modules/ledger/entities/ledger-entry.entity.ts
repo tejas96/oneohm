@@ -38,7 +38,7 @@ export type LedgerEntryType = 'receipt' | 'expense' | 'refund' | 'write_off';
  */
 @Entity('ledger_entries')
 @Index(['projectId', 'valueDate'])
-@Index(['organizationId', 'direction', 'valueDate'])
+@Index(['direction', 'valueDate'])
 export class LedgerEntryEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -49,8 +49,6 @@ export class LedgerEntryEntity {
   // ============================================
   // SCOPE
   // ============================================
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;

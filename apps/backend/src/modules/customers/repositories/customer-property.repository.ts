@@ -71,12 +71,9 @@ export class CustomerPropertyRepository {
     });
   }
 
-  async findByIdAndOrganization(
-    id: string,
-    organizationId: string,
-  ): Promise<CustomerPropertyEntity | null> {
+  async findByIdAndOrganization(id: string): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
-      where: { id, organizationId, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull() },
       relations: [
         'customer',
         'creator',
@@ -96,13 +93,9 @@ export class CustomerPropertyRepository {
     });
   }
 
-  async findByOrganization(
-    organizationId: string,
-    page = 1,
-    limit = 20,
-  ): Promise<[CustomerPropertyEntity[], number]> {
+  async findByOrganization(page = 1, limit = 20): Promise<[CustomerPropertyEntity[], number]> {
     return this.repository.findAndCount({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       relations: ['customer'],
       skip: (page - 1) * limit,
       take: limit,
@@ -110,24 +103,20 @@ export class CustomerPropertyRepository {
     });
   }
 
-  async findByConsumerNumber(
-    organizationId: string,
-    consumerNumber: string,
-  ): Promise<CustomerPropertyEntity | null> {
+  async findByConsumerNumber(consumerNumber: string): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
-      where: { organizationId, consumerNumber, deletedAt: IsNull() },
+      where: { consumerNumber, deletedAt: IsNull() },
       relations: ['customer'],
     });
   }
 
   async findByTemperature(
-    organizationId: string,
     temperature: LeadTemperature,
     page = 1,
     limit = 20,
   ): Promise<[CustomerPropertyEntity[], number]> {
     return this.repository.findAndCount({
-      where: { organizationId, leadTemperature: temperature, deletedAt: IsNull() },
+      where: { leadTemperature: temperature, deletedAt: IsNull() },
       relations: ['customer'],
       skip: (page - 1) * limit,
       take: limit,
@@ -160,9 +149,9 @@ export class CustomerPropertyRepository {
     return (result.affected ?? 0) > 0;
   }
 
-  async hardDelete(id: string, organizationId: string, manager?: EntityManager): Promise<boolean> {
+  async hardDelete(id: string, manager?: EntityManager): Promise<boolean> {
     const repo = manager ? manager.getRepository(CustomerPropertyEntity) : this.repository;
-    const result = await repo.delete({ id, organizationId });
+    const result = await repo.delete({ id });
     return (result.affected ?? 0) > 0;
   }
 
@@ -207,9 +196,9 @@ export class CustomerPropertyRepository {
     return new Map(rows.map((row) => [row.propertyId, row.projectId]));
   }
 
-  async countByTemperature(organizationId: string, temperature: LeadTemperature): Promise<number> {
+  async countByTemperature(temperature: LeadTemperature): Promise<number> {
     return this.repository.count({
-      where: { organizationId, leadTemperature: temperature, deletedAt: IsNull() },
+      where: { leadTemperature: temperature, deletedAt: IsNull() },
     });
   }
 
@@ -217,14 +206,10 @@ export class CustomerPropertyRepository {
    * Find properties with comprehensive filtering, sorting, and pagination
    * This is the primary method for the property list API
    *
-   * @param organizationId - Organization context
    * @param query - Query parameters (filters, sorting, pagination)
    * @returns Tuple of [properties, total count]
    */
-  async findWithFilters(
-    organizationId: string,
-    query: PropertyQueryDto,
-  ): Promise<[CustomerPropertyEntity[], number]> {
+  async findWithFilters(query: PropertyQueryDto): Promise<[CustomerPropertyEntity[], number]> {
     const needsQuoteJoin =
       QUOTE_SORT_FIELDS.has(query.sortBy) ||
       query.quoteStatus !== undefined ||
@@ -243,9 +228,8 @@ export class CustomerPropertyRepository {
         'latestQuote',
         'latestQuote.id = ' +
           '(SELECT q2.id FROM quotes q2 WHERE q2.property_id = property.id ' +
-          'AND q2.organization_id = :sortOrgId AND q2.deleted_at IS NULL ' +
+          'AND q2.deleted_at IS NULL ' +
           'ORDER BY q2.created_at DESC, q2.id DESC LIMIT 1)',
-        { sortOrgId: organizationId },
       );
       qb.leftJoin(
         'latestQuote.versions',
@@ -261,9 +245,7 @@ export class CustomerPropertyRepository {
       qb.addSelect(['cv.systemSizeKw', 'cv.finalPrice']);
     }
 
-    qb.where('property.organizationId = :organizationId', { organizationId }).andWhere(
-      'property.deletedAt IS NULL',
-    );
+    qb.where('property.deletedAt IS NULL');
 
     // ===== Search (case-insensitive, multiple fields including customer name) =====
     if (query.search && query.search.length >= 2) {
@@ -375,14 +357,11 @@ export class CustomerPropertyRepository {
    * Get temperature statistics in a single query
    * Returns count of properties grouped by lead_temperature
    */
-  async getTemperatureStats(
-    organizationId: string,
-  ): Promise<{ temperature: LeadTemperature; count: number }[]> {
+  async getTemperatureStats(): Promise<{ temperature: LeadTemperature; count: number }[]> {
     const result = await this.repository
       .createQueryBuilder('property')
       .select('property.lead_temperature', 'temperature')
       .addSelect('COUNT(*)', 'count')
-      .where('property.organization_id = :organizationId', { organizationId })
       .andWhere('property.deleted_at IS NULL')
       .groupBy('property.lead_temperature')
       .getRawMany<{ temperature: LeadTemperature; count: string }>();

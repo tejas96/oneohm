@@ -25,7 +25,6 @@ export class LowStockAlertService {
   ) {}
 
   checkAndFire(
-    organizationId: string,
     stock: InventoryStockEntity,
     prevAvailable: number,
     newAvailable: number,
@@ -34,14 +33,13 @@ export class LowStockAlertService {
     const minLevel = Number(stock.minimumStockLevel ?? 0);
     if (prevAvailable > minLevel && newAvailable <= minLevel) {
       const updatedStock = { ...stock, availableQuantity: newAvailable } as InventoryStockEntity;
-      void this.fireNotification(organizationId, updatedStock, performedBy).catch((err) =>
+      void this.fireNotification(updatedStock, performedBy).catch((err) =>
         this.logger.error('Low-stock notification failed', err),
       );
     }
   }
 
   private async fireNotification(
-    organizationId: string,
     stock: InventoryStockEntity,
     triggeredByUserId: string,
   ): Promise<void> {
@@ -51,12 +49,11 @@ export class LowStockAlertService {
     const productName = stock.product?.name ?? stock.productId;
     const warehouseName = stock.warehouse?.name ?? stock.warehouseId;
 
-    const recipientUserIds = await this.getRecipientUserIds(organizationId, triggeredByUserId);
+    const recipientUserIds = await this.getRecipientUserIds(triggeredByUserId);
 
     await Promise.all(
       recipientUserIds.map((userId) =>
         this.notificationService.create({
-          organizationId,
           userId,
           type: NotificationType.LOW_STOCK,
           title: `Low Stock Alert: ${productName}`,
@@ -76,18 +73,14 @@ export class LowStockAlertService {
     );
   }
 
-  private async getRecipientUserIds(
-    organizationId: string,
-    fallbackUserId: string,
-  ): Promise<string[]> {
+  private async getRecipientUserIds(fallbackUserId: string): Promise<string[]> {
     const rows = await this.dataSource.query(
       `SELECT DISTINCT ur.user_id AS "userId"
        FROM user_roles ur
        INNER JOIN users u ON u.id = ur.user_id AND u.deleted_at IS NULL
        LEFT JOIN roles r ON r.id = ur.role_id AND r.deleted_at IS NULL
-       WHERE (ur.organization_id = $1 OR ur.organization_id IS NULL)
-         AND COALESCE(r.code, ur.role) = ANY($2::text[])`,
-      [organizationId, LowStockAlertService.RECIPIENT_ROLE_CODES],
+       WHERE COALESCE(r.code, ur.role) = ANY($1::text[])`,
+      [LowStockAlertService.RECIPIENT_ROLE_CODES],
     );
 
     const recipients = rows

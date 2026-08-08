@@ -28,7 +28,7 @@ export class CustomerFeedbackRepository {
   async findAll(): Promise<CustomerFeedbackEntity[]> {
     return this.repository.find({
       where: { deletedAt: IsNull() },
-      relations: ['organization', 'customer', 'respondedByUser', 'createdByUser', 'updatedByUser'],
+      relations: ['customer', 'respondedByUser', 'createdByUser', 'updatedByUser'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -36,7 +36,7 @@ export class CustomerFeedbackRepository {
   async findById(id: string): Promise<CustomerFeedbackEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization', 'customer', 'respondedByUser', 'createdByUser', 'updatedByUser'],
+      relations: ['customer', 'respondedByUser', 'createdByUser', 'updatedByUser'],
     });
   }
 
@@ -57,9 +57,9 @@ export class CustomerFeedbackRepository {
   // QUERY METHODS
   // ============================================
 
-  async findByOrganization(organizationId: string): Promise<CustomerFeedbackEntity[]> {
+  async findByOrganization(): Promise<CustomerFeedbackEntity[]> {
     return this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       relations: ['customer', 'respondedByUser'],
       order: { createdAt: 'DESC' },
     });
@@ -84,14 +84,14 @@ export class CustomerFeedbackRepository {
   async findPublished(): Promise<CustomerFeedbackEntity[]> {
     return this.repository.find({
       where: { isPublished: true, deletedAt: IsNull() },
-      relations: ['customer', 'organization'],
+      relations: ['customer'],
       order: { createdAt: 'DESC' },
     });
   }
 
-  async findPublishedByOrganization(organizationId: string): Promise<CustomerFeedbackEntity[]> {
+  async findPublishedByOrganization(): Promise<CustomerFeedbackEntity[]> {
     return this.repository.find({
-      where: { organizationId, isPublished: true, deletedAt: IsNull() },
+      where: { isPublished: true, deletedAt: IsNull() },
       relations: ['customer'],
       order: { createdAt: 'DESC' },
     });
@@ -100,7 +100,7 @@ export class CustomerFeedbackRepository {
   async findByNPSCategory(npsCategory: NPSCategory): Promise<CustomerFeedbackEntity[]> {
     return this.repository.find({
       where: { npsCategory, deletedAt: IsNull() },
-      relations: ['customer', 'organization'],
+      relations: ['customer'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -112,7 +112,7 @@ export class CustomerFeedbackRepository {
       .andWhere('feedback.deleted_at IS NULL')
       .leftJoinAndSelect('feedback.customer', 'customer')
       .leftJoinAndSelect('feedback.respondedByUser', 'respondedByUser')
-      .orderBy('feedback.responded_at', 'DESC')
+      .orderBy('feedback.respondedAt', 'DESC')
       .getMany();
   }
 
@@ -122,7 +122,7 @@ export class CustomerFeedbackRepository {
       .where('feedback.company_response IS NULL')
       .andWhere('feedback.deleted_at IS NULL')
       .leftJoinAndSelect('feedback.customer', 'customer')
-      .orderBy('feedback.created_at', 'ASC')
+      .orderBy('feedback.createdAt', 'ASC')
       .getMany();
   }
 
@@ -132,7 +132,7 @@ export class CustomerFeedbackRepository {
         createdAt: Between(startDate, endDate),
         deletedAt: IsNull(),
       },
-      relations: ['customer', 'organization'],
+      relations: ['customer'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -148,7 +148,7 @@ export class CustomerFeedbackRepository {
    * Passives: 7-8
    * Promoters: 9-10
    */
-  async calculateNPSScore(organizationId: string): Promise<{
+  async calculateNPSScore(): Promise<{
     npsScore: number;
     totalResponses: number;
     promoters: number;
@@ -160,7 +160,6 @@ export class CustomerFeedbackRepository {
   }> {
     const feedbacks = await this.repository.find({
       where: {
-        organizationId,
         deletedAt: IsNull(),
       },
       select: ['npsScore'],
@@ -208,11 +207,10 @@ export class CustomerFeedbackRepository {
   /**
    * Get average rating for an organization
    */
-  async getAverageRating(organizationId: string): Promise<number> {
+  async getAverageRating(): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('feedback')
       .select('AVG(feedback.overall_rating)', 'avgRating')
-      .where('feedback.organization_id = :organizationId', { organizationId })
       .andWhere('feedback.overall_rating IS NOT NULL')
       .andWhere('feedback.deleted_at IS NULL')
       .getRawOne<{ avgRating: string | null }>();
@@ -223,9 +221,9 @@ export class CustomerFeedbackRepository {
   /**
    * Get department-wise average ratings
    */
-  async getDepartmentAverages(organizationId: string): Promise<Record<string, number>> {
+  async getDepartmentAverages(): Promise<Record<string, number>> {
     const feedbacks = await this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       select: ['departmentRatings'],
     });
 
@@ -255,14 +253,14 @@ export class CustomerFeedbackRepository {
   // STATISTICS
   // ============================================
 
-  async getStatsByOrganization(organizationId: string): Promise<Record<string, unknown>> {
+  async getStatsByOrganization(): Promise<Record<string, unknown>> {
     const feedbacks = await this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
     });
 
-    const npsData = await this.calculateNPSScore(organizationId);
-    const avgRating = await this.getAverageRating(organizationId);
-    const deptAverages = await this.getDepartmentAverages(organizationId);
+    const npsData = await this.calculateNPSScore();
+    const avgRating = await this.getAverageRating();
+    const deptAverages = await this.getDepartmentAverages();
 
     return {
       total: feedbacks.length,
@@ -277,9 +275,9 @@ export class CustomerFeedbackRepository {
     };
   }
 
-  async countByOrganization(organizationId: string): Promise<number> {
+  async countByOrganization(): Promise<number> {
     return this.repository.count({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
     });
   }
 
@@ -295,9 +293,9 @@ export class CustomerFeedbackRepository {
     });
   }
 
-  async countPublished(organizationId: string): Promise<number> {
+  async countPublished(): Promise<number> {
     return this.repository.count({
-      where: { organizationId, isPublished: true, deletedAt: IsNull() },
+      where: { isPublished: true, deletedAt: IsNull() },
     });
   }
 }

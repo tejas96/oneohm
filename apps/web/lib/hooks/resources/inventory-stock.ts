@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createResourceKeys,
   defineResource,
-  useOrgContext,
   useResourceDetail,
   useResourceList,
   type BaseFilters,
@@ -22,7 +21,6 @@ import { getErrorMessage } from '@/lib/utils/error';
 
 export interface InventoryStock {
   id: string;
-  organizationId: string;
   warehouseId: string;
   productId: string;
   availableQuantity: number;
@@ -126,12 +124,9 @@ export function useInventoryStockDetail(id: string) {
 
 export function useAdjustInventoryStock() {
   const queryClient = useQueryClient();
-  const { orgHeaders } = useOrgContext();
   const mutation = useMutation<InventoryStock, unknown, AdjustStockPayload>({
     mutationFn: async (payload) => {
-      const { data } = await apiClient.post<InventoryStock>('/inventory-stock/adjust', payload, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.post<InventoryStock>('/inventory-stock/adjust', payload);
       return data;
     },
     onSuccess: () => {
@@ -162,10 +157,9 @@ export interface StockSummaryByWarehouseRow {
 
 export function useTransferInventoryStock() {
   const queryClient = useQueryClient();
-  const { orgHeaders } = useOrgContext();
   const mutation = useMutation<void, unknown, TransferStockPayload>({
     mutationFn: async (payload) => {
-      await apiClient.post('/inventory-stock/transfer', payload, { headers: orgHeaders });
+      await apiClient.post('/inventory-stock/transfer', payload);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['inventory-stock'] });
@@ -184,16 +178,13 @@ export function useTransferInventoryStock() {
 
 export function useUpdateStockSettings() {
   const queryClient = useQueryClient();
-  const { orgHeaders } = useOrgContext();
   const mutation = useMutation<
     InventoryStock,
     unknown,
     { id: string; payload: UpdateStockSettingsPayload }
   >({
     mutationFn: async ({ id, payload }) => {
-      const { data } = await apiClient.patch<InventoryStock>(`/inventory-stock/${id}`, payload, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.patch<InventoryStock>(`/inventory-stock/${id}`, payload);
       return data;
     },
     onSuccess: () => {
@@ -219,17 +210,15 @@ export function useUpdateStockSettings() {
  * page to render utilization bars and by detail to show value.
  */
 export function useStockSummaryByWarehouse() {
-  const { organizationId, orgHeaders } = useOrgContext();
   return useQuery<StockSummaryByWarehouseRow[]>({
-    queryKey: ['inventory-stock', 'stats', 'by-warehouse', organizationId],
+    queryKey: ['inventory-stock', 'stats', 'by-warehouse'],
     queryFn: async () => {
       const res = await apiClient.get<StockSummaryByWarehouseRow[]>(
         '/inventory-stock/stats/by-warehouse',
-        { headers: orgHeaders },
       );
       return res.data;
     },
-    enabled: Boolean(organizationId),
+    enabled: Boolean(),
     staleTime: 60_000,
   });
 }

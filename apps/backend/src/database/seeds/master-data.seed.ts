@@ -1,8 +1,6 @@
 import { DataSource, type QueryRunner } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
-import loadConfig from '../../config/configuration';
-
 /**
  * Master Data Seed for Organization: OneOhm EPC
  *
@@ -20,8 +18,6 @@ import loadConfig from '../../config/configuration';
  * 6. Subsidy Configurations (3 - residential, apartment, commercial/industrial)
  * 7. Quote Configuration (1)
  */
-
-const ORG_ID = loadConfig().seed.organizationId;
 
 // =====================================================
 // Product Type IDs (Pre-generated)
@@ -117,49 +113,45 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
   await queryRunner.startTransaction();
 
   try {
-    console.log('🌱 Seeding master data for organization:', ORG_ID);
+    console.log('🌱 Seeding master data');
 
     // =====================================================
     // 0. CLEANUP EXISTING DATA (in correct order for FK constraints)
     // =====================================================
     console.log('🧹 Cleaning up existing master data...');
 
+    // This seeder owns MASTER data — product types, brands, products, prices and
+    // the pricing/subsidy/quote configuration rows. It used to begin by deleting
+    // quote_versions, projects and quotes as well. That is removed, for three
+    // independent reasons:
+    //
+    //   1. It cannot work. The ledger rebuild made `ledger_entries` and
+    //      `ledger_allocations` append-only via ALWAYS-enabled triggers
+    //      (trg_ledger_entries_append_only), and both reference `projects` under
+    //      RESTRICT. Projects with any ledger history are undeletable by design.
+    //   2. It is unnecessary. No blocking foreign key runs from quotes, projects
+    //      or the ledger to products/brands/product_types — only the inventory
+    //      tables reference products. Wiping transactional data was never a
+    //      prerequisite for reseeding master data.
+    //   3. It is destructive. Run against a database with real data it would
+    //      delete every quote and every project — on a production clone that is
+    //      221 projects and ~₹1.84 crore of ledger history.
+    //
+    // If you genuinely need a clean transactional slate, recreate the database;
+    // do not teach this seeder to delete money records.
+    await queryRunner.query(`DELETE FROM quote_configurations`);
+    await queryRunner.query(`DELETE FROM subsidy_configurations`);
+    await queryRunner.query(`DELETE FROM installation_pricing`);
+    await queryRunner.query(`DELETE FROM product_prices`);
+    await queryRunner.query(`DELETE FROM products`);
     await queryRunner.query(
-      `DELETE FROM quote_versions 
-      WHERE quote_id IN (SELECT id FROM quotes WHERE organization_id = $1)`,
-      [ORG_ID],
+      `DELETE FROM brand_product_types WHERE brand_id IN (SELECT id FROM brands)`,
     );
-    // Delete projects that reference quotes for this org (quote_id is NOT NULL in projects)
+    await queryRunner.query(`DELETE FROM brands`);
     await queryRunner.query(
-      `DELETE FROM projects WHERE quote_id IN (SELECT id FROM quotes WHERE organization_id = $1)`,
-      [ORG_ID],
+      `DELETE FROM product_type_attributes WHERE product_type_id IN (SELECT id FROM product_types) AND is_system IS NOT TRUE`,
     );
-    await queryRunner.query(`DELETE FROM quotes WHERE organization_id = $1`, [ORG_ID]);
-
-    await queryRunner.query(`DELETE FROM quote_configurations WHERE organization_id = $1`, [
-      ORG_ID,
-    ]);
-    await queryRunner.query(`DELETE FROM subsidy_configurations WHERE organization_id = $1`, [
-      ORG_ID,
-    ]);
-    await queryRunner.query(`DELETE FROM installation_pricing WHERE organization_id = $1`, [
-      ORG_ID,
-    ]);
-    await queryRunner.query(`DELETE FROM product_prices WHERE organization_id = $1`, [ORG_ID]);
-    await queryRunner.query(`DELETE FROM products WHERE organization_id = $1`, [ORG_ID]);
-    await queryRunner.query(
-      `DELETE FROM brand_product_types WHERE brand_id IN (SELECT id FROM brands WHERE organization_id = $1)`,
-      [ORG_ID],
-    );
-    await queryRunner.query(`DELETE FROM brands WHERE organization_id = $1`, [ORG_ID]);
-    await queryRunner.query(
-      `DELETE FROM product_type_attributes WHERE product_type_id IN (SELECT id FROM product_types WHERE organization_id = $1) AND is_system IS NOT TRUE`,
-      [ORG_ID],
-    );
-    await queryRunner.query(
-      `DELETE FROM product_types WHERE organization_id = $1 AND is_system IS NOT TRUE`,
-      [ORG_ID],
-    );
+    await queryRunner.query(`DELETE FROM product_types WHERE is_system IS NOT TRUE`);
 
     console.log('✅ Cleanup completed');
 
@@ -255,12 +247,11 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
 
   for (const pt of productTypes) {
     await queryRunner.query(
-      `INSERT INTO product_types (id, organization_id, name, code, description, default_pricing_basis, default_gst_rate, default_unit_of_measure, is_active, sort_order, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, $9, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING`,
+      `INSERT INTO product_types (id, name, code, description, default_pricing_basis, default_gst_rate, default_unit_of_measure, is_active, sort_order, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, $8, NOW(), NOW())
+      ON CONFLICT (code) DO NOTHING`,
       [
         pt.id,
-        ORG_ID,
         pt.name,
         pt.code,
         pt.description,
@@ -274,16 +265,13 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
 
   // Re-read the actual IDs from DB (ON CONFLICT DO NOTHING may have kept existing rows with different IDs)
   const [ptSolar] = await queryRunner.query(
-    `SELECT id FROM product_types WHERE organization_id = $1 AND code = 'solar_panel' LIMIT 1`,
-    [ORG_ID],
+    `SELECT id FROM product_types WHERE code = 'solar_panel' LIMIT 1`,
   );
   const [ptInverter] = await queryRunner.query(
-    `SELECT id FROM product_types WHERE organization_id = $1 AND code = 'inverter' LIMIT 1`,
-    [ORG_ID],
+    `SELECT id FROM product_types WHERE code = 'inverter' LIMIT 1`,
   );
   const [ptStructure] = await queryRunner.query(
-    `SELECT id FROM product_types WHERE organization_id = $1 AND code = 'mounting_structure' LIMIT 1`,
-    [ORG_ID],
+    `SELECT id FROM product_types WHERE code = 'mounting_structure' LIMIT 1`,
   );
 
   // Update in-memory IDs to match what's actually in the DB
@@ -573,17 +561,17 @@ async function insertBrands(queryRunner: QueryRunner): Promise<void> {
 
   for (const brand of brands) {
     await queryRunner.query(
-      `INSERT INTO brands (id, organization_id, name, manufacturer_name, website, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), NOW())
-      ON CONFLICT (organization_id, name) DO NOTHING`,
-      [brand.id, ORG_ID, brand.name, brand.manufacturer, brand.website],
+      `INSERT INTO brands (id, name, manufacturer_name, website, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, TRUE, NOW(), NOW())
+      ON CONFLICT (name) DO NOTHING`,
+      [brand.id, brand.name, brand.manufacturer, brand.website],
     );
   }
 
   // Re-read actual brand IDs from DB (ON CONFLICT DO NOTHING may have kept existing rows)
   const brandRows = await queryRunner.query(
-    `SELECT id, name FROM brands WHERE organization_id = $1 AND name = ANY($2::text[])`,
-    [ORG_ID, Object.keys(BRAND_IDS)],
+    `SELECT id, name FROM brands WHERE name = ANY($1::text[])`,
+    [Object.keys(BRAND_IDS)],
   );
   for (const row of brandRows as Array<{ id: string; name: string }>) {
     BRAND_IDS[row.name] = row.id;
@@ -876,12 +864,11 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       efficiency: panel.eff,
     });
     await queryRunner.query(
-      `INSERT INTO products (id, organization_id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, performance_warranty_years, status, specifications, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING`,
+      `INSERT INTO products (id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, performance_warranty_years, status, specifications, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+      ON CONFLICT (code) DO NOTHING`,
       [
         PRODUCT_IDS[panel.code],
-        ORG_ID,
         PRODUCT_TYPE_IDS.SOLAR_PANEL,
         BRAND_IDS[panel.brand],
         panel.name,
@@ -908,12 +895,11 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       efficiency: panel.eff,
     });
     await queryRunner.query(
-      `INSERT INTO products (id, organization_id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, performance_warranty_years, status, specifications, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING`,
+      `INSERT INTO products (id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, performance_warranty_years, status, specifications, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+      ON CONFLICT (code) DO NOTHING`,
       [
         PRODUCT_IDS[panel.code],
-        ORG_ID,
         PRODUCT_TYPE_IDS.SOLAR_PANEL,
         BRAND_IDS[panel.brand],
         panel.name,
@@ -1277,12 +1263,11 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       voltage: '230V',
     });
     await queryRunner.query(
-      `INSERT INTO products (id, organization_id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING`,
+      `INSERT INTO products (id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+      ON CONFLICT (code) DO NOTHING`,
       [
         PRODUCT_IDS[inv.code],
-        ORG_ID,
         PRODUCT_TYPE_IDS.INVERTER,
         BRAND_IDS[inv.brand],
         inv.name,
@@ -1307,12 +1292,11 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       voltage: '415V',
     });
     await queryRunner.query(
-      `INSERT INTO products (id, organization_id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING`,
+      `INSERT INTO products (id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+      ON CONFLICT (code) DO NOTHING`,
       [
         PRODUCT_IDS[inv.code],
-        ORG_ID,
         PRODUCT_TYPE_IDS.INVERTER,
         BRAND_IDS[inv.brand],
         inv.name,
@@ -1360,12 +1344,11 @@ async function insertProductPrices(queryRunner: QueryRunner): Promise<void> {
 
   for (const price of panelPricing) {
     await queryRunner.query(
-      `INSERT INTO product_prices (id, organization_id, product_id, project_type, unit_price, cost_multiplier, gst_rate, currency, effective_from, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      `INSERT INTO product_prices (id, product_id, project_type, unit_price, cost_multiplier, gst_rate, currency, effective_from, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
       ON CONFLICT DO NOTHING`,
       [
         uuidv4(),
-        ORG_ID,
         PRODUCT_IDS[price.productCode],
         price.projectType,
         price.unitPrice,
@@ -1417,12 +1400,11 @@ async function insertProductPrices(queryRunner: QueryRunner): Promise<void> {
 
   for (const price of inverterPricing) {
     await queryRunner.query(
-      `INSERT INTO product_prices (id, organization_id, product_id, project_type, unit_price, cost_multiplier, gst_rate, currency, effective_from, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      `INSERT INTO product_prices (id, product_id, project_type, unit_price, cost_multiplier, gst_rate, currency, effective_from, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
       ON CONFLICT DO NOTHING`,
       [
         uuidv4(),
-        ORG_ID,
         PRODUCT_IDS[price.productCode],
         null,
         price.unitPrice,
@@ -2357,10 +2339,10 @@ async function insertInstallationPricing(queryRunner: QueryRunner): Promise<void
     });
 
     await queryRunner.query(
-      `INSERT INTO installation_pricing (id, organization_id, min_system_size_kw, max_system_size_kw, transport_rate_per_km, floor_increment_percent, gst_rate, cost_components, effective_from, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, NOW(), NOW())
-      ON CONFLICT (organization_id, min_system_size_kw, max_system_size_kw) DO NOTHING`,
-      [uuidv4(), ORG_ID, data.kw, data.kw, 35, 25, 18, costComponents, '2024-01-01', true],
+      `INSERT INTO installation_pricing (id, min_system_size_kw, max_system_size_kw, transport_rate_per_km, floor_increment_percent, gst_rate, cost_components, effective_from, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, NOW(), NOW())
+      ON CONFLICT (min_system_size_kw, max_system_size_kw) DO NOTHING`,
+      [uuidv4(), data.kw, data.kw, 35, 25, 18, costComponents, '2024-01-01', true],
     );
   }
 
@@ -2378,12 +2360,11 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
   ]);
 
   await queryRunner.query(
-    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, tiers, is_active, description, effective_from, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+    `INSERT INTO subsidy_configurations (id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, tiers, is_active, description, effective_from, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
     ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
-      ORG_ID,
       'PM Surya Ghar - Residential',
       'PM-SURYA-GHAR-RES',
       'pm_surya_ghar',
@@ -2402,12 +2383,11 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
   const apartmentTiers = JSON.stringify([{ fromKw: 0, toKw: 500, ratePerKw: 18000 }]);
 
   await queryRunner.query(
-    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, tiers, is_active, description, effective_from, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+    `INSERT INTO subsidy_configurations (id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, tiers, is_active, description, effective_from, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
     ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
-      ORG_ID,
       'PM Surya Ghar - Apartment Common',
       'PM-SURYA-GHAR-APT',
       'pm_surya_ghar',
@@ -2426,12 +2406,11 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
   const noSubsidyTiers = JSON.stringify([]);
 
   await queryRunner.query(
-    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, tiers, is_active, description, effective_from, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+    `INSERT INTO subsidy_configurations (id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, tiers, is_active, description, effective_from, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
     ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
-      ORG_ID,
       'No Subsidy - Commercial/Industrial',
       'NO-SUBSIDY-COM',
       'none',
@@ -2466,12 +2445,11 @@ async function insertQuoteConfiguration(queryRunner: QueryRunner): Promise<void>
   ]);
 
   await queryRunner.query(
-    `INSERT INTO quote_configurations (id, organization_id, default_validity_days, max_versions, default_completion_weeks, gst_config, payment_milestones, show_inventory_stock, is_active, notes, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+    `INSERT INTO quote_configurations (id, default_validity_days, max_versions, default_completion_weeks, gst_config, payment_milestones, show_inventory_stock, is_active, notes, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
     ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
-      ORG_ID,
       30,
       3,
       4,

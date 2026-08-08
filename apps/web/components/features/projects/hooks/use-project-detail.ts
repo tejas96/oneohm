@@ -8,7 +8,6 @@ import { projectKeys } from './use-projects';
 
 import { apiClient } from '@/lib/api/client';
 import type { ProjectTaskItem } from '@/lib/hooks/resources';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Query Keys
@@ -16,12 +15,9 @@ import { useAuth } from '@/providers/auth-provider';
 
 export const projectDetailKeys = {
   ...projectKeys,
-  team: (orgId: string | undefined, id: string) =>
-    [...projectKeys.detail(orgId, id), 'team'] as const,
-  taskStats: (orgId: string | undefined, id: string) =>
-    [...projectKeys.detail(orgId, id), 'taskStats'] as const,
-  tasks: (orgId: string | undefined, id: string) =>
-    [...projectKeys.detail(orgId, id), 'tasks'] as const,
+  team: (id: string) => [...projectKeys.detail(id), 'team'] as const,
+  taskStats: (id: string) => [...projectKeys.detail(id), 'taskStats'] as const,
+  tasks: (id: string) => [...projectKeys.detail(id), 'tasks'] as const,
 };
 
 // ============================================================================
@@ -32,18 +28,13 @@ export function useProject(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<ProjectDetail, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   return useQuery({
-    queryKey: projectDetailKeys.detail(organizationId, projectId),
+    queryKey: projectDetailKeys.detail(projectId),
     queryFn: async (): Promise<ProjectDetail> => {
-      const { data } = await apiClient.get<ProjectDetail>(`/projects/${projectId}`, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      const { data } = await apiClient.get<ProjectDetail>(`/projects/${projectId}`, {});
       return data;
     },
-    enabled: !!projectId && !!organizationId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -52,18 +43,13 @@ export function useProjectTeam(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<ProjectTeamMember[], AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   return useQuery({
-    queryKey: projectDetailKeys.team(organizationId, projectId),
+    queryKey: projectDetailKeys.team(projectId),
     queryFn: async (): Promise<ProjectTeamMember[]> => {
-      const { data } = await apiClient.get<ProjectTeamMember[]>(`/projects/${projectId}/team`, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      const { data } = await apiClient.get<ProjectTeamMember[]>(`/projects/${projectId}/team`, {});
       return data;
     },
-    enabled: !!projectId && !!organizationId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -72,19 +58,15 @@ export function useProjectTaskStats(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<TaskStatsSummary, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   return useQuery({
-    queryKey: projectDetailKeys.taskStats(organizationId, projectId),
+    queryKey: projectDetailKeys.taskStats(projectId),
     queryFn: async (): Promise<TaskStatsSummary> => {
       const { data } = await apiClient.get<TaskStatsSummary>(
         `/projects/${projectId}/tasks/stats/summary`,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
-    enabled: !!projectId && !!organizationId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -93,19 +75,15 @@ export function useProjectTasks(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<ProjectTaskItem[], AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   return useQuery({
-    queryKey: projectDetailKeys.tasks(organizationId, projectId),
+    queryKey: projectDetailKeys.tasks(projectId),
     queryFn: async (): Promise<ProjectTaskItem[]> => {
       const { data } = await apiClient.get<{ data: ProjectTaskItem[] }>(
         `/projects/${projectId}/tasks?limit=100`,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data.data ?? [];
     },
-    enabled: !!projectId && !!organizationId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }

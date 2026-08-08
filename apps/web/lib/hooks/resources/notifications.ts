@@ -6,7 +6,6 @@ import {
   createResourceKeys,
   defineResource,
   useResourceList,
-  useOrgContext,
   type BaseFilters,
   type ResourceConfig,
 } from '../core';
@@ -21,7 +20,6 @@ import { getErrorMessage } from '@/lib/utils/error';
 
 export interface Notification {
   id: string;
-  organizationId: string;
   userId?: string;
   type: string;
   severity: string;
@@ -79,13 +77,10 @@ export function useNotifications(
 }
 
 export function useNotificationUnreadCount() {
-  const { organizationId, orgHeaders } = useOrgContext();
   return useQuery<{ count: number }>({
-    queryKey: ['notifications', 'unread-count', organizationId],
+    queryKey: ['notifications', 'unread-count'],
     queryFn: async () => {
-      const { data } = await apiClient.get<{ count: number }>('/notifications/unread-count', {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.get<{ count: number }>('/notifications/unread-count');
       return data;
     },
     placeholderData: keepPreviousData,
@@ -96,10 +91,9 @@ export function useNotificationUnreadCount() {
 
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
-  const { orgHeaders } = useOrgContext();
   const mutation = useMutation<void, unknown, string>({
     mutationFn: async (id: string) => {
-      await apiClient.patch(`/notifications/${id}/read`, {}, { headers: orgHeaders });
+      await apiClient.patch(`/notifications/${id}/read`, {});
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -113,10 +107,9 @@ export function useMarkNotificationRead() {
 
 export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
-  const { orgHeaders } = useOrgContext();
   const mutation = useMutation<void, unknown>({
     mutationFn: async () => {
-      await apiClient.post('/notifications/mark-all-read', {}, { headers: orgHeaders });
+      await apiClient.post('/notifications/mark-all-read', {});
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['notifications'] });

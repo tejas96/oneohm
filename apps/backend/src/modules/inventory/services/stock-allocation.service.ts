@@ -3,7 +3,6 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { InventoryTransactionType, StockAllocationStatus } from '@tejas96/shared/types';
 import { DataSource, EntityManager } from 'typeorm';
 
-import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { ProjectRepository } from '../../projects/repositories/project.repository';
 import {
   CreateStockAllocationDto,
@@ -26,7 +25,6 @@ export class StockAllocationService {
     private readonly stockAllocationRepository: StockAllocationRepository,
     private readonly warehouseRepository: WarehouseRepository,
     private readonly projectRepository: ProjectRepository,
-    private readonly organizationRepository: OrganizationRepository,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
@@ -34,14 +32,12 @@ export class StockAllocationService {
    * Create a new stock allocation — reserves stock atomically.
    */
   async create(
-    organizationId: string,
     createDto: CreateStockAllocationDto,
     createdBy: string,
   ): Promise<StockAllocationEntity> {
     await Promise.all([
-      this.organizationRepository.findOneById(organizationId),
-      this.projectRepository.findById(createDto.projectId, organizationId),
-      this.warehouseRepository.findById(createDto.warehouseId, organizationId),
+      this.projectRepository.findById(createDto.projectId),
+      this.warehouseRepository.findById(createDto.warehouseId),
     ]);
 
     const allocationId = await this.dataSource.transaction(async (manager) => {
@@ -75,7 +71,6 @@ export class StockAllocationService {
       // Persist allocation record
       const allocationRepo = manager.getRepository(StockAllocationEntity);
       const allocation = allocationRepo.create({
-        organizationId,
         projectId: createDto.projectId,
         warehouseId: createDto.warehouseId,
         productId: createDto.productId,
@@ -97,7 +92,6 @@ export class StockAllocationService {
       const txnRepo = manager.getRepository(InventoryTransactionEntity);
       await txnRepo.save(
         txnRepo.create({
-          organizationId,
           warehouseId: createDto.warehouseId,
           productId: createDto.productId,
           transactionType: InventoryTransactionType.ALLOCATION,
@@ -113,11 +107,10 @@ export class StockAllocationService {
       return allocation.id;
     });
 
-    return this.stockAllocationRepository.findById(allocationId, organizationId);
+    return this.stockAllocationRepository.findById(allocationId);
   }
 
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -128,15 +121,15 @@ export class StockAllocationService {
       productId?: string;
     },
   ): Promise<{ allocations: StockAllocationEntity[]; total: number }> {
-    return this.stockAllocationRepository.findAll(organizationId, page, limit, filters);
+    return this.stockAllocationRepository.findAll(page, limit, filters);
   }
 
-  async findById(id: string, organizationId: string): Promise<StockAllocationEntity> {
-    return this.stockAllocationRepository.findById(id, organizationId);
+  async findById(id: string): Promise<StockAllocationEntity> {
+    return this.stockAllocationRepository.findById(id);
   }
 
-  async findByProject(projectId: string, organizationId: string): Promise<StockAllocationEntity[]> {
-    return this.stockAllocationRepository.findByProject(projectId, organizationId);
+  async findByProject(projectId: string): Promise<StockAllocationEntity[]> {
+    return this.stockAllocationRepository.findByProject(projectId);
   }
 
   /**
@@ -145,11 +138,10 @@ export class StockAllocationService {
    */
   async update(
     id: string,
-    organizationId: string,
     editDto: EditAllocationDetailsDto,
     updatedBy: string,
   ): Promise<StockAllocationEntity> {
-    const allocation = await this.stockAllocationRepository.findById(id, organizationId);
+    const allocation = await this.stockAllocationRepository.findById(id);
 
     if (allocation.status === StockAllocationStatus.DISPATCHED) {
       throw new BadRequestException('Cannot edit a fully dispatched allocation');
@@ -164,7 +156,7 @@ export class StockAllocationService {
       updateData.expectedDispatchDate = new Date(editDto.expectedDispatchDate);
     }
 
-    return this.stockAllocationRepository.update(id, organizationId, updateData);
+    return this.stockAllocationRepository.update(id, updateData);
   }
 
   /**
@@ -172,7 +164,6 @@ export class StockAllocationService {
    */
   async fulfill(
     id: string,
-    organizationId: string,
     fulfillDto: FulfillStockAllocationDto,
     performedBy: string,
   ): Promise<StockAllocationEntity> {
@@ -181,7 +172,6 @@ export class StockAllocationService {
       const allocationRow = await allocationRepo
         .createQueryBuilder('allocation')
         .where('allocation.id = :id', { id })
-        .andWhere('allocation.organizationId = :organizationId', { organizationId })
         .setLock('pessimistic_write')
         .getOne();
 
@@ -211,7 +201,6 @@ export class StockAllocationService {
 
       const stock = await this.lockInventoryStock(
         manager,
-        organizationId,
         allocationRow.warehouseId,
         allocationRow.productId,
       );
@@ -241,7 +230,6 @@ export class StockAllocationService {
       const txnRepo = manager.getRepository(InventoryTransactionEntity);
       await txnRepo.save(
         txnRepo.create({
-          organizationId,
           warehouseId: allocationRow.warehouseId,
           productId: allocationRow.productId,
           transactionType: InventoryTransactionType.DISPATCH,
@@ -264,18 +252,13 @@ export class StockAllocationService {
       return allocationRow.id;
     });
 
-    return this.stockAllocationRepository.findById(updatedAllocationId, organizationId);
+    return this.stockAllocationRepository.findById(updatedAllocationId);
   }
 
   /**
    * Cancel allocation — releases reserved stock back to available.
    */
-  async cancel(
-    id: string,
-    organizationId: string,
-    reason: string,
-    updatedBy: string,
-  ): Promise<StockAllocationEntity> {
+  async cancel(id: string, reason: string, updatedBy: string): Promise<StockAllocationEntity> {
     const updatedAllocationId = await this.dataSource.transaction(async (manager) => {
       // Pessimistic-lock the allocation row first so concurrent cancels serialize
       // and the second one observes status=CANCELLED instead of racing to a
@@ -284,7 +267,6 @@ export class StockAllocationService {
       const allocation = await allocationRepo
         .createQueryBuilder('alloc')
         .where('alloc.id = :id', { id })
-        .andWhere('alloc.organizationId = :organizationId', { organizationId })
         .setLock('pessimistic_write')
         .getOne();
       if (!allocation) {
@@ -306,7 +288,6 @@ export class StockAllocationService {
       if (undispatchedQuantity > 0) {
         const stock = await this.lockInventoryStock(
           manager,
-          organizationId,
           allocation.warehouseId,
           allocation.productId,
         );
@@ -325,7 +306,6 @@ export class StockAllocationService {
         const txnRepo = manager.getRepository(InventoryTransactionEntity);
         await txnRepo.save(
           txnRepo.create({
-            organizationId,
             warehouseId: allocation.warehouseId,
             productId: allocation.productId,
             transactionType: InventoryTransactionType.ALLOCATION,
@@ -349,7 +329,7 @@ export class StockAllocationService {
       return allocation.id;
     });
 
-    return this.stockAllocationRepository.findById(updatedAllocationId, organizationId);
+    return this.stockAllocationRepository.findById(updatedAllocationId);
   }
 
   /**
@@ -364,7 +344,6 @@ export class StockAllocationService {
    */
   async returnToStock(
     id: string,
-    organizationId: string,
     quantity: number,
     reason: string,
     performedBy: string,
@@ -375,7 +354,6 @@ export class StockAllocationService {
       const allocationRow = await allocationRepo
         .createQueryBuilder('allocation')
         .where('allocation.id = :id', { id })
-        .andWhere('allocation.organizationId = :organizationId', { organizationId })
         .setLock('pessimistic_write')
         .getOne();
 
@@ -413,7 +391,6 @@ export class StockAllocationService {
       const stockRepo = manager.getRepository(InventoryStockEntity);
       const stock = await this.lockInventoryStock(
         manager,
-        organizationId,
         allocationRow.warehouseId,
         allocationRow.productId,
       );
@@ -421,7 +398,6 @@ export class StockAllocationService {
       if (!stock) {
         // Edge case: stock row was deleted after allocation — recreate it.
         const newStock = stockRepo.create({
-          organizationId,
           warehouseId: allocationRow.warehouseId,
           productId: allocationRow.productId,
           availableQuantity: quantity,
@@ -438,7 +414,6 @@ export class StockAllocationService {
       const txnRepo = manager.getRepository(InventoryTransactionEntity);
       await txnRepo.save(
         txnRepo.create({
-          organizationId,
           warehouseId: allocationRow.warehouseId,
           productId: allocationRow.productId,
           transactionType: InventoryTransactionType.RETURN,
@@ -462,24 +437,23 @@ export class StockAllocationService {
       return allocationRow.id;
     });
 
-    return this.stockAllocationRepository.findById(updatedAllocationId, organizationId);
+    return this.stockAllocationRepository.findById(updatedAllocationId);
   }
 
-  async getStatistics(organizationId: string) {
-    const countByStatus = await this.stockAllocationRepository.countByStatus(organizationId);
+  async getStatistics() {
+    const countByStatus = await this.stockAllocationRepository.countByStatus();
     return {
       total: Object.values(countByStatus).reduce((sum: number, count) => sum + count, 0),
       byStatus: countByStatus,
     };
   }
 
-  async getPendingAllocations(organizationId: string): Promise<StockAllocationEntity[]> {
-    return this.stockAllocationRepository.getPendingAllocations(organizationId);
+  async getPendingAllocations(): Promise<StockAllocationEntity[]> {
+    return this.stockAllocationRepository.getPendingAllocations();
   }
 
   private async lockInventoryStock(
     manager: EntityManager,
-    organizationId: string,
     warehouseId: string,
     productId: string,
   ): Promise<InventoryStockEntity | null> {
@@ -488,7 +462,6 @@ export class StockAllocationService {
       .createQueryBuilder('stock')
       .where('stock.warehouseId = :warehouseId', { warehouseId })
       .andWhere('stock.productId = :productId', { productId })
-      .andWhere('stock.organizationId = :organizationId', { organizationId })
       .setLock('pessimistic_write')
       .getOne();
   }

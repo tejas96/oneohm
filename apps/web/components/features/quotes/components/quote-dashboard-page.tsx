@@ -53,8 +53,8 @@ function formatIndianRupees(value: number): string {
 // ============================================================================
 
 export function QuoteDashboardPage(): React.JSX.Element {
-  const router = useRouter();
   const { user } = useAuth();
+  const router = useRouter();
   const firstName = user?.firstName || 'Tejas';
 
   // Greeting based on time-of-day

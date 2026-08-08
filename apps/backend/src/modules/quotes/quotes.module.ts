@@ -10,7 +10,6 @@ import { DocumentsModule } from '../documents/documents.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { MasterDataModule } from '../master-data/master-data.module';
-import { OrganizationsModule } from '../organizations/organizations.module';
 import { StorageModule } from '../storage/storage.module';
 
 /**
@@ -21,7 +20,6 @@ import { StorageModule } from '../storage/storage.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([QuoteEntity, QuoteVersionEntity]),
-    OrganizationsModule,
     MasterDataModule,
     DocumentsModule,
     IntegrationsModule,

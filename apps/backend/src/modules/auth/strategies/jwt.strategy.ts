@@ -41,7 +41,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // organizationId is optional - users can belong to multiple orgs
     return {
       id: payload.sub,
-      organizationId: payload.organizationId, // Optional - may be undefined
       roles: payload.roles || [],
       permissions: payload.permissions || [], // NEW: Permissions from JWT
     };

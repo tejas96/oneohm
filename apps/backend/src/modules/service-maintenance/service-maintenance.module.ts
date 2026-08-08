@@ -22,7 +22,6 @@ import {
   ServiceRequestService,
 } from './services';
 import { CustomersModule } from '../customers/customers.module';
-import { OrganizationsModule } from '../organizations/organizations.module';
 import { ProjectsModule } from '../projects/projects.module';
 import { UsersModule } from '../users/users.module';
 
@@ -37,7 +36,6 @@ import { UsersModule } from '../users/users.module';
       MaintenanceTaskEntity,
       ServiceRequestEntity,
     ]),
-    OrganizationsModule,
     UsersModule,
     ProjectsModule,
     CustomersModule,

@@ -16,7 +16,6 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -38,7 +37,6 @@ export class SavedViewController {
   @ApiOperation({ summary: 'List saved views for the current user on a given resource' })
   @ApiResponse({ status: 200, type: [SavedViewResponseDto] })
   async list(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: CurrentUserType,
     @Query('resource') resource?: string,
   ): Promise<SavedViewResponseDto[]> {
@@ -48,7 +46,7 @@ export class SavedViewController {
     if (!isSavedViewResource(resource)) {
       throw new BadRequestException(`Unknown resource "${resource}"`);
     }
-    const views = await this.service.list(organizationId, user.id, resource);
+    const views = await this.service.list(user.id, resource);
     return plainToInstance(SavedViewResponseDto, views, { excludeExtraneousValues: true });
   }
 
@@ -59,10 +57,9 @@ export class SavedViewController {
   @ApiResponse({ status: 404, description: 'Saved view not found' })
   async findOne(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: CurrentUserType,
   ): Promise<SavedViewResponseDto> {
-    const view = await this.service.findOne(id, organizationId, user.id);
+    const view = await this.service.findOne(id, user.id);
     return plainToInstance(SavedViewResponseDto, view, { excludeExtraneousValues: true });
   }
 
@@ -74,10 +71,9 @@ export class SavedViewController {
   @ApiResponse({ status: 409, description: 'Name already exists or 25-view cap reached' })
   async create(
     @Body() dto: CreateSavedViewDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: CurrentUserType,
   ): Promise<SavedViewResponseDto> {
-    const view = await this.service.create(dto, organizationId, user.id);
+    const view = await this.service.create(dto, user.id);
     return plainToInstance(SavedViewResponseDto, view, { excludeExtraneousValues: true });
   }
 
@@ -90,10 +86,9 @@ export class SavedViewController {
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateSavedViewDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: CurrentUserType,
   ): Promise<SavedViewResponseDto> {
-    const view = await this.service.update(id, dto, organizationId, user.id);
+    const view = await this.service.update(id, dto, user.id);
     return plainToInstance(SavedViewResponseDto, view, { excludeExtraneousValues: true });
   }
 
@@ -105,9 +100,8 @@ export class SavedViewController {
   @ApiResponse({ status: 404, description: 'Saved view not found' })
   async delete(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: CurrentUserType,
   ): Promise<void> {
-    await this.service.delete(id, organizationId, user.id);
+    await this.service.delete(id, user.id);
   }
 }

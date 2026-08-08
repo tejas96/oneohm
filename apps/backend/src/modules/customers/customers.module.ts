@@ -17,7 +17,6 @@ import { DiscomsModule } from '../discoms/discoms.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
 import { LoanFinanceModule } from '../loan-finance/loan-finance.module';
-import { OrganizationsModule } from '../organizations/organizations.module';
 import { QuotesModule } from '../quotes/quotes.module';
 import { StorageModule } from '../storage/storage.module';
 import { UsersModule } from '../users/users.module';
@@ -32,7 +31,6 @@ import { UsersModule } from '../users/users.module';
     TypeOrmModule.forFeature([CustomerProfileEntity, CustomerPropertyEntity, FollowupEntity]),
     forwardRef(() => UsersModule),
     forwardRef(() => EmployeesModule),
-    OrganizationsModule,
     forwardRef(() => QuotesModule),
     LoanFinanceModule,
     StorageModule,

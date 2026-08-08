@@ -78,30 +78,30 @@ describe('ProductTypeRepository', () => {
     it('returns correct shape', async () => {
       qb['getCount'].mockResolvedValue(5);
       qb['getMany'].mockResolvedValue([{ id: 'pt-1' }]);
-      const result = await repo.findAll('org-1', { page: 1, limit: 10 });
+      const result = await repo.findAll({ page: 1, limit: 10 });
       expect(result.total).toBe(5);
       expect(result.data).toHaveLength(1);
     });
 
     it('applies sortBy=sortOrder correctly', async () => {
-      await repo.findAll('org-1', { sortBy: 'sortOrder', sortOrder: 'DESC' });
+      await repo.findAll({ sortBy: 'sortOrder', sortOrder: 'DESC' });
       expect(qb['orderBy']).toHaveBeenCalledWith('productType.sortOrder', 'DESC');
     });
 
     it('applies sortBy=name correctly', async () => {
-      await repo.findAll('org-1', { sortBy: 'name' });
+      await repo.findAll({ sortBy: 'name' });
       expect(qb['orderBy']).toHaveBeenCalledWith('productType.name', 'ASC');
     });
 
     it('applies isActive filter', async () => {
-      await repo.findAll('org-1', { isActive: true });
+      await repo.findAll({ isActive: true });
       expect(qb['andWhere']).toHaveBeenCalledWith('productType.is_active = :isActive', {
         isActive: true,
       });
     });
 
     it('applies search filter', async () => {
-      await repo.findAll('org-1', { search: 'solar' });
+      await repo.findAll({ search: 'solar' });
       expect(qb['andWhere']).toHaveBeenCalledWith(
         '(productType.name ILIKE :search OR productType.code ILIKE :search)',
         { search: '%solar%' },
@@ -109,7 +109,7 @@ describe('ProductTypeRepository', () => {
     });
 
     it('applies pagination correctly', async () => {
-      await repo.findAll('org-1', { page: 3, limit: 5 });
+      await repo.findAll({ page: 3, limit: 5 });
       expect(qb['skip']).toHaveBeenCalledWith(10); // (3-1)*5
       expect(qb['take']).toHaveBeenCalledWith(5);
     });

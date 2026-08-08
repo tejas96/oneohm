@@ -8,18 +8,14 @@ import { customerDisplayName, formatPropertyAddress, str } from '../../utils/rep
 
 @Injectable()
 export class DcrMapper implements ReportMapper<ProjectReportRawData, DcrViewModel> {
-  toViewModel({
-    organizationName,
-    project,
-    panelSerialNumbers,
-  }: ProjectReportRawData): DcrViewModel {
+  toViewModel({ companyName, project, panelSerialNumbers }: ProjectReportRawData): DcrViewModel {
     const fields = { ...DCR_DEFAULT_FIELDS };
     const property = project.property;
     const snapshot = getQuoteSnapshot(project);
     const panel = snapshot?.calculation?.panels?.[0];
     const kw = getSystemSizeKw(project);
 
-    fields.vendor_name = organizationName;
+    fields.vendor_name = companyName;
     fields.capacity_kw = str(kw);
     fields.consumer_name = customerDisplayName(property);
     fields.consumer_address = formatPropertyAddress(property);

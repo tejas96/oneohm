@@ -4,7 +4,6 @@ import { PaymentStatus, PurchaseOrderStatus } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import { ProductRepository } from '../../master-data/repositories';
-import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { ProjectRepository } from '../../projects/repositories';
 import { CreatePurchaseOrderDto, ReceivePurchaseOrderDto, UpdatePurchaseOrderDto } from '../dto';
 import { PurchaseOrderItemEntity } from '../entities/purchase-order-item.entity';
@@ -29,7 +28,6 @@ export class PurchaseOrderService {
     private readonly purchaseOrderItemRepository: PurchaseOrderItemRepository,
     private readonly vendorRepository: VendorRepository,
     private readonly warehouseRepository: WarehouseRepository,
-    private readonly organizationRepository: OrganizationRepository,
     private readonly inventoryStockService: InventoryStockService,
     private readonly projectRepository: ProjectRepository,
     private readonly productRepository: ProductRepository,
@@ -39,31 +37,23 @@ export class PurchaseOrderService {
   /**
    * Create a new purchase order
    */
-  async create(
-    organizationId: string,
-    createDto: CreatePurchaseOrderDto,
-    createdBy: string,
-  ): Promise<PurchaseOrderEntity> {
+  async create(createDto: CreatePurchaseOrderDto, createdBy: string): Promise<PurchaseOrderEntity> {
     // Verify organization exists
-    const org = await this.organizationRepository.findOneById(organizationId);
-    if (!org) {
-      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
-    }
 
     // Verify vendor exists
-    await this.vendorRepository.findById(createDto.vendorId, organizationId);
+    await this.vendorRepository.findById(createDto.vendorId);
 
     // Verify warehouse exists if provided
     if (createDto.warehouseId) {
-      await this.warehouseRepository.findById(createDto.warehouseId, organizationId);
+      await this.warehouseRepository.findById(createDto.warehouseId);
     }
 
     if (createDto.projectId) {
-      await this.projectRepository.findById(createDto.projectId, organizationId);
+      await this.projectRepository.findById(createDto.projectId);
     }
 
     for (const item of createDto.items) {
-      const product = await this.productRepository.findById(item.productId, organizationId);
+      const product = await this.productRepository.findById(item.productId);
       if (!product) {
         throw new NotFoundException(`Product with ID ${item.productId} not found`);
       }
@@ -94,14 +84,10 @@ export class PurchaseOrderService {
 
     const po = await this.runOrTranslateNumericError(() =>
       this.dataSource.transaction(async (manager) => {
-        const poNumberTx = await this.purchaseOrderRepository.generatePoNumber(
-          organizationId,
-          manager,
-        );
+        const poNumberTx = await this.purchaseOrderRepository.generatePoNumber(manager);
         const poRepo = manager.getRepository(PurchaseOrderEntity);
         const saved = await poRepo.save(
           poRepo.create({
-            organizationId,
             vendorId: createDto.vendorId,
             warehouseId: createDto.warehouseId,
             projectId: createDto.projectId,
@@ -142,7 +128,7 @@ export class PurchaseOrderService {
       }),
     );
 
-    return this.purchaseOrderRepository.findById(po.id, organizationId);
+    return this.purchaseOrderRepository.findById(po.id);
   }
 
   /**
@@ -172,7 +158,6 @@ export class PurchaseOrderService {
    * Find all purchase orders with filters
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -186,14 +171,14 @@ export class PurchaseOrderService {
       search?: string;
     },
   ) {
-    return this.purchaseOrderRepository.findAll(organizationId, page, limit, filters);
+    return this.purchaseOrderRepository.findAll(page, limit, filters);
   }
 
   /**
    * Find purchase order by ID
    */
-  async findById(id: string, organizationId: string): Promise<PurchaseOrderEntity> {
-    return this.purchaseOrderRepository.findById(id, organizationId);
+  async findById(id: string): Promise<PurchaseOrderEntity> {
+    return this.purchaseOrderRepository.findById(id);
   }
 
   /**
@@ -201,11 +186,10 @@ export class PurchaseOrderService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdatePurchaseOrderDto,
     updatedBy: string,
   ): Promise<PurchaseOrderEntity> {
-    const po = await this.purchaseOrderRepository.findById(id, organizationId);
+    const po = await this.purchaseOrderRepository.findById(id);
 
     // Only allow updates if PO is in draft or pending approval status
     if (
@@ -215,7 +199,7 @@ export class PurchaseOrderService {
       throw new BadRequestException(`Cannot update purchase order with status ${po.status}`);
     }
 
-    return this.purchaseOrderRepository.update(id, organizationId, {
+    return this.purchaseOrderRepository.update(id, {
       ...updateDto,
       updatedBy,
     });
@@ -224,8 +208,8 @@ export class PurchaseOrderService {
   /**
    * Delete purchase order
    */
-  async delete(id: string, organizationId: string, deletedBy: string): Promise<void> {
-    const po = await this.purchaseOrderRepository.findById(id, organizationId);
+  async delete(id: string, deletedBy: string): Promise<void> {
+    const po = await this.purchaseOrderRepository.findById(id);
 
     // Only allow deletion if PO is in draft status
     if (po.status !== PurchaseOrderStatus.DRAFT) {
@@ -233,24 +217,20 @@ export class PurchaseOrderService {
     }
 
     await this.purchaseOrderItemRepository.deleteByPurchaseOrder(id);
-    await this.purchaseOrderRepository.softDelete(id, organizationId, deletedBy);
+    await this.purchaseOrderRepository.softDelete(id, deletedBy);
   }
 
   /**
    * Submit purchase order for approval
    */
-  async submitForApproval(
-    id: string,
-    organizationId: string,
-    updatedBy: string,
-  ): Promise<PurchaseOrderEntity> {
-    const po = await this.purchaseOrderRepository.findById(id, organizationId);
+  async submitForApproval(id: string, updatedBy: string): Promise<PurchaseOrderEntity> {
+    const po = await this.purchaseOrderRepository.findById(id);
 
     if (po.status !== PurchaseOrderStatus.DRAFT) {
       throw new BadRequestException('Only draft purchase orders can be submitted');
     }
 
-    return this.purchaseOrderRepository.update(id, organizationId, {
+    return this.purchaseOrderRepository.update(id, {
       status: PurchaseOrderStatus.PENDING_APPROVAL,
       updatedBy,
     });
@@ -259,18 +239,14 @@ export class PurchaseOrderService {
   /**
    * Approve purchase order
    */
-  async approve(
-    id: string,
-    organizationId: string,
-    updatedBy: string,
-  ): Promise<PurchaseOrderEntity> {
-    const po = await this.purchaseOrderRepository.findById(id, organizationId);
+  async approve(id: string, updatedBy: string): Promise<PurchaseOrderEntity> {
+    const po = await this.purchaseOrderRepository.findById(id);
 
     if (po.status !== PurchaseOrderStatus.PENDING_APPROVAL) {
       throw new BadRequestException('Only pending purchase orders can be approved');
     }
 
-    return this.purchaseOrderRepository.update(id, organizationId, {
+    return this.purchaseOrderRepository.update(id, {
       status: PurchaseOrderStatus.APPROVED,
       updatedBy,
     });
@@ -279,14 +255,14 @@ export class PurchaseOrderService {
   /**
    * Send purchase order to vendor
    */
-  async send(id: string, organizationId: string, updatedBy: string): Promise<PurchaseOrderEntity> {
-    const po = await this.purchaseOrderRepository.findById(id, organizationId);
+  async send(id: string, updatedBy: string): Promise<PurchaseOrderEntity> {
+    const po = await this.purchaseOrderRepository.findById(id);
 
     if (po.status !== PurchaseOrderStatus.APPROVED) {
       throw new BadRequestException('Only approved purchase orders can be sent');
     }
 
-    return this.purchaseOrderRepository.update(id, organizationId, {
+    return this.purchaseOrderRepository.update(id, {
       status: PurchaseOrderStatus.SENT,
       updatedBy,
     });
@@ -297,7 +273,6 @@ export class PurchaseOrderService {
    */
   async receive(
     id: string,
-    organizationId: string,
     receiveDto: ReceivePurchaseOrderDto,
     performedBy: string,
   ): Promise<PurchaseOrderEntity> {
@@ -308,7 +283,6 @@ export class PurchaseOrderService {
       const orderRow = await poRepo
         .createQueryBuilder('po')
         .where('po.id = :id', { id })
-        .andWhere('po.organizationId = :organizationId', { organizationId })
         .andWhere('po.deletedAt IS NULL')
         .setLock('pessimistic_write')
         .getOne();
@@ -401,7 +375,6 @@ export class PurchaseOrderService {
 
       for (const line of receiveLines) {
         await this.inventoryStockService.addStock(
-          organizationId,
           orderRow.warehouseId,
           line.productId,
           line.quantityReceived,
@@ -414,19 +387,14 @@ export class PurchaseOrderService {
       }
     });
 
-    return this.purchaseOrderRepository.findById(id, organizationId);
+    return this.purchaseOrderRepository.findById(id);
   }
 
   /**
    * Cancel purchase order
    */
-  async cancel(
-    id: string,
-    organizationId: string,
-    reason: string,
-    updatedBy: string,
-  ): Promise<PurchaseOrderEntity> {
-    const po = await this.purchaseOrderRepository.findById(id, organizationId);
+  async cancel(id: string, reason: string, updatedBy: string): Promise<PurchaseOrderEntity> {
+    const po = await this.purchaseOrderRepository.findById(id);
 
     if (
       po.status === PurchaseOrderStatus.RECEIVED ||
@@ -437,7 +405,7 @@ export class PurchaseOrderService {
       );
     }
 
-    return this.purchaseOrderRepository.update(id, organizationId, {
+    return this.purchaseOrderRepository.update(id, {
       status: PurchaseOrderStatus.CANCELLED,
       notes: `${po.notes ?? ''}\nCancelled: ${reason}`,
       updatedBy,
@@ -451,7 +419,6 @@ export class PurchaseOrderService {
    */
   async recordPayment(
     id: string,
-    organizationId: string,
     amount: number,
     performedBy: string,
     notes?: string,
@@ -465,7 +432,6 @@ export class PurchaseOrderService {
       const po = await repo
         .createQueryBuilder('po')
         .where('po.id = :id', { id })
-        .andWhere('po.organizationId = :organizationId', { organizationId })
         .andWhere('po.deletedAt IS NULL')
         .setLock('pessimistic_write')
         .getOne();
@@ -507,11 +473,11 @@ export class PurchaseOrderService {
   /**
    * Get purchase order statistics
    */
-  async getStatistics(organizationId: string) {
+  async getStatistics() {
     const [countByStatus, pendingApprovals, overduePos] = await Promise.all([
-      this.purchaseOrderRepository.countByStatus(organizationId),
-      this.purchaseOrderRepository.getPendingApprovalsCount(organizationId),
-      this.purchaseOrderRepository.getOverduePurchaseOrders(organizationId),
+      this.purchaseOrderRepository.countByStatus(),
+      this.purchaseOrderRepository.getPendingApprovalsCount(),
+      this.purchaseOrderRepository.getOverduePurchaseOrders(),
     ]);
 
     return {
@@ -525,7 +491,7 @@ export class PurchaseOrderService {
   /**
    * Get overdue purchase orders
    */
-  async getOverduePurchaseOrders(organizationId: string): Promise<PurchaseOrderEntity[]> {
-    return this.purchaseOrderRepository.getOverduePurchaseOrders(organizationId);
+  async getOverduePurchaseOrders(): Promise<PurchaseOrderEntity[]> {
+    return this.purchaseOrderRepository.getOverduePurchaseOrders();
   }
 }

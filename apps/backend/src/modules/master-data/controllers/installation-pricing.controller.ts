@@ -23,7 +23,6 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-  OrganizationContext,
 } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import {
@@ -49,10 +48,9 @@ export class InstallationPricingController {
     responseType: InstallationPricingResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @Body() body: CreateInstallationPricingDto,
   ): Promise<InstallationPricingResponseDto> {
-    const tier = await this.installationPricingService.create(organizationId, body);
+    const tier = await this.installationPricingService.create(body);
     return plainToInstance(InstallationPricingResponseDto, tier, {
       excludeExtraneousValues: true,
     });
@@ -61,7 +59,7 @@ export class InstallationPricingController {
   @Get()
   @ApiReadAll({
     summary: 'Get all installation pricing tiers',
-    description: 'Retrieve pricing tiers for the organisation, ordered by min system size.',
+    description: 'Retrieve pricing tiers, ordered by min system size.',
     responseType: InstallationPricingResponseDto,
     additionalQueries: [
       {
@@ -86,7 +84,6 @@ export class InstallationPricingController {
     ],
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @Query('isActive') isActive?: string,
     @Query('search') search?: string,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
@@ -101,7 +98,7 @@ export class InstallationPricingController {
       page,
       limit,
     };
-    const result = await this.installationPricingService.findAll(organizationId, filter);
+    const result = await this.installationPricingService.findAll(filter);
     return {
       data: plainToInstance(InstallationPricingResponseDto, result.data, {
         excludeExtraneousValues: true,
@@ -116,11 +113,8 @@ export class InstallationPricingController {
     description: 'Retrieve a specific installation pricing tier.',
     responseType: InstallationPricingResponseDto,
   })
-  async findOne(
-    @OrganizationContext() organizationId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<InstallationPricingResponseDto> {
-    const tier = await this.installationPricingService.findById(id, organizationId);
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<InstallationPricingResponseDto> {
+    const tier = await this.installationPricingService.findById(id);
     return plainToInstance(InstallationPricingResponseDto, tier, {
       excludeExtraneousValues: true,
     });
@@ -135,11 +129,10 @@ export class InstallationPricingController {
     responseType: InstallationPricingResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateInstallationPricingDto,
   ): Promise<InstallationPricingResponseDto> {
-    const tier = await this.installationPricingService.update(id, organizationId, body);
+    const tier = await this.installationPricingService.update(id, body);
     return plainToInstance(InstallationPricingResponseDto, tier, {
       excludeExtraneousValues: true,
     });
@@ -151,10 +144,7 @@ export class InstallationPricingController {
     summary: 'Delete installation pricing tier',
     description: 'Permanently remove an installation pricing tier.',
   })
-  async delete(
-    @OrganizationContext() organizationId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<void> {
-    await this.installationPricingService.delete(id, organizationId);
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.installationPricingService.delete(id);
   }
 }

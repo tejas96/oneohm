@@ -101,8 +101,8 @@ export class CustomerFeedbackService {
   // QUERY METHODS
   // ============================================
 
-  async findByOrganization(organizationId: string): Promise<CustomerFeedbackResponseDto[]> {
-    const feedbacks = await this.feedbackRepository.findByOrganization(organizationId);
+  async findByOrganization(): Promise<CustomerFeedbackResponseDto[]> {
+    const feedbacks = await this.feedbackRepository.findByOrganization();
     return plainToInstance(CustomerFeedbackResponseDto, feedbacks, {
       excludeExtraneousValues: true,
     });
@@ -129,10 +129,8 @@ export class CustomerFeedbackService {
     });
   }
 
-  async findPublishedByOrganization(
-    organizationId: string,
-  ): Promise<CustomerFeedbackResponseDto[]> {
-    const feedbacks = await this.feedbackRepository.findPublishedByOrganization(organizationId);
+  async findPublishedByOrganization(): Promise<CustomerFeedbackResponseDto[]> {
+    const feedbacks = await this.feedbackRepository.findPublishedByOrganization();
     return plainToInstance(CustomerFeedbackResponseDto, feedbacks, {
       excludeExtraneousValues: true,
     });
@@ -237,7 +235,7 @@ export class CustomerFeedbackService {
   // NPS CALCULATIONS
   // ============================================
 
-  async calculateNPSScore(organizationId: string): Promise<{
+  async calculateNPSScore(): Promise<{
     npsScore: number;
     totalResponses: number;
     promoters: number;
@@ -247,23 +245,23 @@ export class CustomerFeedbackService {
     passivePercentage: number;
     detractorPercentage: number;
   }> {
-    return this.feedbackRepository.calculateNPSScore(organizationId);
+    return this.feedbackRepository.calculateNPSScore();
   }
 
-  async getAverageRating(organizationId: string): Promise<number> {
-    return this.feedbackRepository.getAverageRating(organizationId);
+  async getAverageRating(): Promise<number> {
+    return this.feedbackRepository.getAverageRating();
   }
 
-  async getDepartmentAverages(organizationId: string): Promise<Record<string, number>> {
-    return this.feedbackRepository.getDepartmentAverages(organizationId);
+  async getDepartmentAverages(): Promise<Record<string, number>> {
+    return this.feedbackRepository.getDepartmentAverages();
   }
 
   // ============================================
   // STATISTICS
   // ============================================
 
-  async getStatistics(organizationId: string): Promise<Record<string, unknown>> {
-    return this.feedbackRepository.getStatsByOrganization(organizationId);
+  async getStatistics(): Promise<Record<string, unknown>> {
+    return this.feedbackRepository.getStatsByOrganization();
   }
 
   // ============================================

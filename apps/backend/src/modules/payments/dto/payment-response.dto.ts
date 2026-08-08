@@ -19,10 +19,6 @@ export class PaymentResponseDto {
   @Expose()
   id!: string;
 
-  @ApiProperty({ description: 'Organization ID' })
-  @Expose()
-  organizationId!: string;
-
   @ApiProperty({ description: 'Project ID' })
   @Expose()
   projectId!: string;

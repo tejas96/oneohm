@@ -10,7 +10,6 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { MessageType } from '@tejas96/shared/types';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
@@ -33,14 +32,13 @@ export class MessagingController {
   })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid message data' })
   async sendMessage(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: SendMessageDto,
   ): Promise<MessageResponseDto> {
     const messageType: MessageType = dto.type;
     switch (messageType) {
       case MessageType.TEXT:
-        return this.integrationService.sendTextMessage(organizationId, {
+        return this.integrationService.sendTextMessage({
           to: dto.to,
           type: MessageType.TEXT,
           body: dto.body!,
@@ -48,7 +46,7 @@ export class MessagingController {
         });
 
       case MessageType.TEMPLATE:
-        return this.integrationService.sendTemplateMessage(organizationId, {
+        return this.integrationService.sendTemplateMessage({
           to: dto.to,
           type: MessageType.TEMPLATE,
           templateName: dto.templateName!,
@@ -61,7 +59,7 @@ export class MessagingController {
       case MessageType.DOCUMENT:
       case MessageType.VIDEO:
       case MessageType.AUDIO:
-        return this.integrationService.sendMediaMessage(organizationId, {
+        return this.integrationService.sendMediaMessage({
           to: dto.to,
           type: messageType,
           mediaUrl: dto.mediaUrl,
@@ -72,7 +70,7 @@ export class MessagingController {
         });
 
       case MessageType.OTP:
-        return this.integrationService.sendOtpMessage(organizationId, {
+        return this.integrationService.sendOtpMessage({
           to: dto.to,
           type: MessageType.OTP,
           otp: dto.otp!,
@@ -81,7 +79,7 @@ export class MessagingController {
         });
 
       case MessageType.ALERT:
-        return this.integrationService.sendAlertMessage(organizationId, {
+        return this.integrationService.sendAlertMessage({
           to: dto.to,
           type: MessageType.ALERT,
           body: dto.body!,

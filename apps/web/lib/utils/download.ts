@@ -34,8 +34,6 @@ export class PayloadTooLargeError extends Error {
 interface DownloadFromUrlOptions {
   /** API path relative to the apiClient baseURL, e.g. `inventory/export/purchase-orders.csv` */
   path: string;
-  /** Organization id for the X-Organization-Id header. Pass from useOrgContext(). */
-  organizationId: string;
   /** Optional query params; arrays are repeated, undefined values dropped. */
   params?: Record<string, string | number | boolean | undefined>;
   /**
@@ -110,18 +108,11 @@ export async function downloadFromUrl(options: DownloadFromUrlOptions): Promise<
   if (!isBrowser()) {
     throw new Error('downloadFromUrl can only be called in the browser');
   }
-  if (!options.organizationId) {
-    throw new Error('organizationId is required to download an organization-scoped resource');
-  }
-
   let response;
   try {
     response = await apiClient.get<Blob>(options.path, {
       params: options.params,
-      headers: {
-        'X-Organization-Id': options.organizationId,
-        ...(options.headers ?? {}),
-      },
+      headers: options.headers ?? {},
       responseType: 'blob',
     });
   } catch (err) {

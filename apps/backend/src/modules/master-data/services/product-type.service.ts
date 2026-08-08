@@ -13,43 +13,36 @@ export interface PaginatedProductTypes {
 export class ProductTypeService {
   constructor(private readonly productTypeRepository: ProductTypeRepository) {}
 
-  async findAll(
-    organizationId: string,
-    filters?: {
-      isActive?: boolean;
-      search?: string;
-      page?: number;
-      limit?: number;
-      sortBy?: string;
-      sortOrder?: 'ASC' | 'DESC';
-    },
-  ): Promise<PaginatedProductTypes> {
+  async findAll(filters?: {
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<PaginatedProductTypes> {
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
-    const { data, total } = await this.productTypeRepository.findAll(organizationId, filters);
+    const { data, total } = await this.productTypeRepository.findAll(filters);
     return {
       data,
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
     };
   }
 
-  async findById(id: string, organizationId: string): Promise<ProductTypeEntity> {
-    const pt = await this.productTypeRepository.findById(id, organizationId);
+  async findById(id: string): Promise<ProductTypeEntity> {
+    const pt = await this.productTypeRepository.findById(id);
     if (!pt) throw new NotFoundException('Product type not found');
     return pt;
   }
 
-  async findByCode(code: string, organizationId: string): Promise<ProductTypeEntity> {
-    const pt = await this.productTypeRepository.findByCode(code, organizationId);
+  async findByCode(code: string): Promise<ProductTypeEntity> {
+    const pt = await this.productTypeRepository.findByCode(code);
     if (!pt) throw new NotFoundException(`Product type '${code}' not found`);
     return pt;
   }
 
-  async create(
-    organizationId: string,
-    data: Partial<ProductTypeEntity>,
-    createdBy?: string,
-  ): Promise<ProductTypeEntity> {
+  async create(data: Partial<ProductTypeEntity>, createdBy?: string): Promise<ProductTypeEntity> {
     if (!data.name?.trim()) {
       throw new BadRequestException('Product type name is required');
     }
@@ -62,7 +55,7 @@ export class ProductTypeService {
     delete (sanitized as Record<string, unknown>).deletedAt;
 
     try {
-      return await this.productTypeRepository.create(organizationId, sanitized);
+      return await this.productTypeRepository.create(sanitized);
     } catch (error: unknown) {
       if (!(error instanceof QueryFailedError)) throw error;
 
@@ -76,11 +69,10 @@ export class ProductTypeService {
 
   async update(
     id: string,
-    organizationId: string,
     data: Partial<ProductTypeEntity>,
     updatedBy?: string,
   ): Promise<ProductTypeEntity> {
-    const existing = await this.findById(id, organizationId);
+    const existing = await this.findById(id);
 
     const sanitized = { ...data, updatedBy };
     delete (sanitized as Record<string, unknown>).isSystem;
@@ -97,6 +89,6 @@ export class ProductTypeService {
       }
     }
 
-    return this.productTypeRepository.update(id, organizationId, sanitized);
+    return this.productTypeRepository.update(id, sanitized);
   }
 }

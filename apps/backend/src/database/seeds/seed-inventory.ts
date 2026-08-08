@@ -20,12 +20,11 @@ async function seedInventory(): Promise<void> {
     await dataSource.query(`
       -- Main Warehouse (Bangalore)
       INSERT INTO warehouses (
-        organization_id, name, code, address, city, state, pincode,
+        name, code, address, city, state, pincode,
         coordinates, warehouse_type, warehouse_manager_id,
         contact_person, phone, email, status, created_by
       )
       SELECT
-        org.id,
         'Main Warehouse - Bangalore',
         'WH-BLR-001',
         'Plot 45, Industrial Area, Peenya',
@@ -40,18 +39,17 @@ async function seedInventory(): Promise<void> {
         'warehouse.blr@oneohm.com',
         'active',
         u.id
-      FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
-      ON CONFLICT (organization_id, code) DO NOTHING;
+      FROM users u
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      ON CONFLICT (code) DO NOTHING;
 
       -- Secondary Warehouse (Mumbai)
       INSERT INTO warehouses (
-        organization_id, name, code, address, city, state, pincode,
+        name, code, address, city, state, pincode,
         coordinates, warehouse_type,
         contact_person, phone, email, status, created_by
       )
       SELECT
-        org.id,
         'Regional Warehouse - Mumbai',
         'WH-MUM-001',
         'Godown 23, Andheri Industrial Estate',
@@ -65,17 +63,16 @@ async function seedInventory(): Promise<void> {
         'warehouse.mum@oneohm.com',
         'active',
         u.id
-      FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
-      ON CONFLICT (organization_id, code) DO NOTHING;
+      FROM users u
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      ON CONFLICT (code) DO NOTHING;
 
       -- Third-Party Warehouse (Delhi)
       INSERT INTO warehouses (
-        organization_id, name, code, address, city, state, pincode,
+        name, code, address, city, state, pincode,
         warehouse_type, contact_person, phone, status, created_by
       )
       SELECT
-        org.id,
         'Partner Warehouse - Delhi',
         'WH-DEL-TP1',
         'Sector 18, Okhla Industrial Area',
@@ -87,9 +84,9 @@ async function seedInventory(): Promise<void> {
         '+91-9876543232',
         'active',
         u.id
-      FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
-      ON CONFLICT (organization_id, code) DO NOTHING;
+      FROM users u
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      ON CONFLICT (code) DO NOTHING;
     `);
 
     console.error('✓ Warehouses seeded (3 warehouses)');
@@ -102,7 +99,7 @@ async function seedInventory(): Promise<void> {
     await dataSource.query(`
       -- Solar Panel Supplier
       INSERT INTO vendors (
-        organization_id, name, code, vendor_type,
+        name, code, vendor_type,
         contact_person, email, phone, alternate_phone,
         address, city, state, country, pincode,
         gstin, pan, payment_terms, credit_days,
@@ -110,7 +107,6 @@ async function seedInventory(): Promise<void> {
         rating, status, notes, created_by
       )
       SELECT
-        org.id,
         'Solar Panels India Pvt Ltd',
         'VEN-001',
         'supplier',
@@ -134,13 +130,13 @@ async function seedInventory(): Promise<void> {
         'active',
         'Premium solar panel supplier with quick delivery',
         u.id
-      FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
-      ON CONFLICT (organization_id, code) DO NOTHING;
+      FROM users u
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      ON CONFLICT (code) DO NOTHING;
 
       -- Inverter Supplier
       INSERT INTO vendors (
-        organization_id, name, code, vendor_type,
+        name, code, vendor_type,
         contact_person, email, phone,
         address, city, state, country, pincode,
         gstin, pan, payment_terms, credit_days,
@@ -148,7 +144,6 @@ async function seedInventory(): Promise<void> {
         rating, status, created_by
       )
       SELECT
-        org.id,
         'Inverter Solutions Ltd',
         'VEN-002',
         'supplier',
@@ -170,20 +165,19 @@ async function seedInventory(): Promise<void> {
         4.8,
         'active',
         u.id
-      FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
-      ON CONFLICT (organization_id, code) DO NOTHING;
+      FROM users u
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      ON CONFLICT (code) DO NOTHING;
 
       -- Installation Contractor
       INSERT INTO vendors (
-        organization_id, name, code, vendor_type,
+        name, code, vendor_type,
         contact_person, email, phone,
         address, city, state, country, pincode,
         pan, payment_terms, credit_days,
         rating, status, notes, created_by
       )
       SELECT
-        org.id,
         'Solar Install Experts',
         'VEN-003',
         'contractor',
@@ -202,20 +196,19 @@ async function seedInventory(): Promise<void> {
         'active',
         'Experienced installation team with good track record',
         u.id
-      FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
-      ON CONFLICT (organization_id, code) DO NOTHING;
+      FROM users u
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      ON CONFLICT (code) DO NOTHING;
 
       -- Mounting Structure Supplier
       INSERT INTO vendors (
-        organization_id, name, code, vendor_type,
+        name, code, vendor_type,
         contact_person, email, phone,
         address, city, state, country, pincode,
         gstin, pan, credit_days,
         rating, status, created_by
       )
       SELECT
-        org.id,
         'Aluminum Structures Co',
         'VEN-004',
         'supplier',
@@ -233,9 +226,9 @@ async function seedInventory(): Promise<void> {
         4.0,
         'active',
         u.id
-      FROM organizations org, users u
-      WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
-      ON CONFLICT (organization_id, code) DO NOTHING;
+      FROM users u
+      WHERE COMPANY.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+      ON CONFLICT (code) DO NOTHING;
     `);
 
     console.error('✓ Vendors seeded (4 vendors)');
@@ -248,7 +241,7 @@ async function seedInventory(): Promise<void> {
     await dataSource.query(`
       -- PO 1: Solar Panels (Received)
       INSERT INTO purchase_orders (
-        organization_id, vendor_id, warehouse_id, project_id,
+        vendor_id, warehouse_id, project_id,
         po_number, po_date, po_type,
         expected_delivery_date, actual_delivery_date,
         subtotal, tax_amount, total_amount,
@@ -256,7 +249,6 @@ async function seedInventory(): Promise<void> {
         notes, terms_conditions, created_by
       )
       SELECT
-        org.id,
         v.id,
         w.id,
         NULL,
@@ -274,19 +266,17 @@ async function seedInventory(): Promise<void> {
         'Bulk order for Q1 2024 stock',
         'Standard payment and delivery terms apply',
         u.id
-      FROM organizations org, vendors v, warehouses w, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM vendors v, warehouses w, users u
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND v.code = 'VEN-001'
         AND w.code = 'WH-BLR-001'
         AND u.email = 'admin@oneohm.com'
-        AND org.id = v.organization_id
-        AND org.id = w.organization_id
       LIMIT 1
       ON CONFLICT (po_number) DO NOTHING;
 
       -- PO 2: Inverters (Partially Received)
       INSERT INTO purchase_orders (
-        organization_id, vendor_id, warehouse_id,
+        vendor_id, warehouse_id,
         po_number, po_date, po_type,
         expected_delivery_date,
         subtotal, tax_amount, total_amount,
@@ -294,7 +284,6 @@ async function seedInventory(): Promise<void> {
         notes, created_by
       )
       SELECT
-        org.id,
         v.id,
         w.id,
         'PO-202401-0002',
@@ -309,19 +298,17 @@ async function seedInventory(): Promise<void> {
         'partially_received',
         'Inverter stock for upcoming projects',
         u.id
-      FROM organizations org, vendors v, warehouses w, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM vendors v, warehouses w, users u
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND v.code = 'VEN-002'
         AND w.code = 'WH-BLR-001'
         AND u.email = 'admin@oneohm.com'
-        AND org.id = v.organization_id
-        AND org.id = w.organization_id
       LIMIT 1
       ON CONFLICT (po_number) DO NOTHING;
 
       -- PO 3: Mounting Structures (Confirmed)
       INSERT INTO purchase_orders (
-        organization_id, vendor_id, warehouse_id,
+        vendor_id, warehouse_id,
         po_number, po_date, po_type,
         expected_delivery_date,
         subtotal, tax_amount, total_amount,
@@ -329,7 +316,6 @@ async function seedInventory(): Promise<void> {
         notes, created_by
       )
       SELECT
-        org.id,
         v.id,
         w.id,
         'PO-202402-0001',
@@ -343,13 +329,11 @@ async function seedInventory(): Promise<void> {
         'confirmed',
         'Aluminum mounting structures',
         u.id
-      FROM organizations org, vendors v, warehouses w, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM vendors v, warehouses w, users u
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND v.code = 'VEN-004'
         AND w.code = 'WH-MUM-001'
         AND u.email = 'admin@oneohm.com'
-        AND org.id = v.organization_id
-        AND org.id = w.organization_id
       LIMIT 1
       ON CONFLICT (po_number) DO NOTHING;
     `);
@@ -433,13 +417,12 @@ async function seedInventory(): Promise<void> {
     await dataSource.query(`
       -- Jinko Solar Panels in Bangalore Warehouse
       INSERT INTO inventory_stock (
-        organization_id, warehouse_id, product_id,
+        warehouse_id, product_id,
         available_quantity, reserved_quantity, in_transit_quantity,
         minimum_stock_level, reorder_quantity, maximum_stock_level,
         last_stock_in_date, last_stock_out_date
       )
       SELECT
-        org.id,
         w.id,
         p.id,
         15.000,
@@ -450,21 +433,19 @@ async function seedInventory(): Promise<void> {
         50.000,
         '2024-02-10'::date,
         '2024-02-15'::date
-      FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM warehouses w, products p
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-BLR-001'
         AND p.code = 'JINKO-550W'
-        AND org.id = w.organization_id
       ON CONFLICT (warehouse_id, product_id) DO NOTHING;
 
       -- Trina Solar Panels in Mumbai Warehouse
       INSERT INTO inventory_stock (
-        organization_id, warehouse_id, product_id,
+        warehouse_id, product_id,
         available_quantity, reserved_quantity, in_transit_quantity,
         minimum_stock_level, maximum_stock_level
       )
       SELECT
-        org.id,
         w.id,
         p.id,
         8.000,
@@ -472,22 +453,20 @@ async function seedInventory(): Promise<void> {
         10.000,
         5.000,
         30.000
-      FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM warehouses w, products p
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-MUM-001'
         AND p.code = 'TRINA-535W'
-        AND org.id = w.organization_id
       ON CONFLICT (warehouse_id, product_id) DO NOTHING;
 
       -- Growatt Inverters in Bangalore
       INSERT INTO inventory_stock (
-        organization_id, warehouse_id, product_id,
+        warehouse_id, product_id,
         available_quantity, reserved_quantity,
         minimum_stock_level, reorder_quantity, maximum_stock_level,
         last_stock_in_date
       )
       SELECT
-        org.id,
         w.id,
         p.id,
         4.000,
@@ -496,42 +475,38 @@ async function seedInventory(): Promise<void> {
         5.000,
         15.000,
         '2024-02-12'::date
-      FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM warehouses w, products p
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-BLR-001'
         AND p.code = 'GROWATT-5KW'
-        AND org.id = w.organization_id
       ON CONFLICT (warehouse_id, product_id) DO NOTHING;
 
       -- Deye Hybrid Inverters in Mumbai
       INSERT INTO inventory_stock (
-        organization_id, warehouse_id, product_id,
+        warehouse_id, product_id,
         available_quantity, reserved_quantity,
         minimum_stock_level, maximum_stock_level
       )
       SELECT
-        org.id,
         w.id,
         p.id,
         3.000,
         1.000,
         2.000,
         10.000
-      FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM warehouses w, products p
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-MUM-001'
         AND p.code = 'DEYE-8KW-HYB'
-        AND org.id = w.organization_id
       ON CONFLICT (warehouse_id, product_id) DO NOTHING;
 
       -- Pylontech Batteries (Low Stock Alert)
       INSERT INTO inventory_stock (
-        organization_id, warehouse_id, product_id,
+        warehouse_id, product_id,
         available_quantity, reserved_quantity,
         minimum_stock_level, reorder_quantity, maximum_stock_level
       )
       SELECT
-        org.id,
         w.id,
         p.id,
         2.000,
@@ -539,22 +514,20 @@ async function seedInventory(): Promise<void> {
         5.000,
         10.000,
         20.000
-      FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM warehouses w, products p
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-BLR-001'
         AND p.code = 'PYLON-3.5KWH'
-        AND org.id = w.organization_id
       ON CONFLICT (warehouse_id, product_id) DO NOTHING;
 
       -- Mounting Structures in Mumbai
       INSERT INTO inventory_stock (
-        organization_id, warehouse_id, product_id,
+        warehouse_id, product_id,
         available_quantity, reserved_quantity,
         minimum_stock_level, maximum_stock_level,
         last_stock_in_date
       )
       SELECT
-        org.id,
         w.id,
         p.id,
         6.000,
@@ -562,11 +535,10 @@ async function seedInventory(): Promise<void> {
         3.000,
         20.000,
         '2024-01-25'::date
-      FROM organizations org, warehouses w, products p
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM warehouses w, products p
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-MUM-001'
         AND p.code = 'MNT-ROOF-AL'
-        AND org.id = w.organization_id
       ON CONFLICT (warehouse_id, product_id) DO NOTHING;
     `);
 
@@ -580,13 +552,12 @@ async function seedInventory(): Promise<void> {
     await dataSource.query(`
       -- Purchase transaction for PO-1
       INSERT INTO inventory_transactions (
-        organization_id, warehouse_id, product_id,
+        warehouse_id, product_id,
         transaction_type, quantity,
         reference_type, reference_id,
         transaction_date, notes, created_by
       )
       SELECT
-        org.id,
         w.id,
         p.id,
         'purchase',
@@ -596,25 +567,23 @@ async function seedInventory(): Promise<void> {
         '2024-02-10 10:30:00'::timestamp,
         'Received from PO-202401-0001',
         u.id
-      FROM organizations org, warehouses w, products p, purchase_orders po, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM warehouses w, products p, purchase_orders po, users u
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-BLR-001'
         AND p.code = 'JINKO-550W'
         AND po.po_number = 'PO-202401-0001'
         AND u.email = 'admin@oneohm.com'
-        AND org.id = w.organization_id
       LIMIT 1
       ON CONFLICT DO NOTHING;
 
       -- Allocation transaction
       INSERT INTO inventory_transactions (
-        organization_id, warehouse_id, product_id,
+        warehouse_id, product_id,
         transaction_type, quantity,
         reference_type,
         transaction_date, notes, created_by
       )
       SELECT
-        org.id,
         w.id,
         p.id,
         'allocation',
@@ -623,23 +592,21 @@ async function seedInventory(): Promise<void> {
         '2024-02-15 14:20:00'::timestamp,
         'Allocated for upcoming project',
         u.id
-      FROM organizations org, warehouses w, products p, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM warehouses w, products p, users u
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w.code = 'WH-BLR-001'
         AND p.code = 'JINKO-550W'
         AND u.email = 'admin@oneohm.com'
-        AND org.id = w.organization_id
       ON CONFLICT DO NOTHING;
 
       -- Transfer transaction (out from Bangalore)
       INSERT INTO inventory_transactions (
-        organization_id, warehouse_id, product_id,
+        warehouse_id, product_id,
         transaction_type, quantity,
         reference_type, from_warehouse_id, to_warehouse_id,
         transaction_date, notes, created_by
       )
       SELECT
-        org.id,
         w_from.id,
         p.id,
         'transfer_out',
@@ -650,13 +617,12 @@ async function seedInventory(): Promise<void> {
         '2024-02-12 09:00:00'::timestamp,
         'Transfer to Mumbai warehouse',
         u.id
-      FROM organizations org, warehouses w_from, warehouses w_to, products p, users u
-      WHERE org.code = 'ONEOHM-TEST'
+      FROM warehouses w_from, warehouses w_to, products p, users u
+      WHERE COMPANY.code = 'ONEOHM-TEST'
         AND w_from.code = 'WH-BLR-001'
         AND w_to.code = 'WH-MUM-001'
         AND p.code = 'GROWATT-5KW'
         AND u.email = 'admin@oneohm.com'
-        AND org.id = w_from.organization_id
       LIMIT 1
       ON CONFLICT DO NOTHING;
     `);

@@ -30,7 +30,6 @@ import { useUpdateTask } from '@/components/features/tasks/hooks';
 import { TablePagination } from '@/components/shared/data-table/pagination';
 import { ErrorState } from '@/components/shared/feedback/empty-state';
 import { Button } from '@/components/ui/button';
-import { useOrgContext } from '@/lib/hooks/core';
 import { useLookupOptions } from '@/lib/hooks/resources';
 import { useUrlFilters } from '@/lib/hooks/use-url-filters';
 import { getErrorMessage } from '@/lib/utils';
@@ -50,7 +49,6 @@ interface ProjectTasksTabProps {
 export const ProjectTasksTab = React.memo(
   ({ projectId, project: _project, isActive }: ProjectTasksTabProps): React.JSX.Element => {
     const { user } = useAuth();
-    const { organizationId } = useOrgContext();
     const queryClient = useQueryClient();
 
     const { filters, setFilter, clearFilters } =
@@ -106,9 +104,9 @@ export const ProjectTasksTab = React.memo(
     const { mutate: updateTaskMutate } = useUpdateTask();
 
     const invalidateProjectTasks = useCallback(() => {
-      void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY() });
       void queryClient.invalidateQueries({ queryKey: PROJECT_MILESTONE_AGG_QUERY_KEY(projectId) });
-    }, [queryClient, organizationId, projectId]);
+    }, [queryClient, projectId]);
 
     const avatarMembers: TeamMemberSummary[] = useMemo(() => {
       if (!team) return [];
@@ -150,7 +148,7 @@ export const ProjectTasksTab = React.memo(
         const completionPercentage =
           !FINAL_STATUSES.has(newStatus) && currentCompletionPct === 100 ? 0 : undefined;
 
-        const queryKey = PROJECT_TASKS_QUERY_KEY(organizationId);
+        const queryKey = PROJECT_TASKS_QUERY_KEY();
         type CacheSnapshot = { key: readonly unknown[]; data: unknown };
         const snapshots: CacheSnapshot[] = [];
 
@@ -186,7 +184,7 @@ export const ProjectTasksTab = React.memo(
           },
         );
       },
-      [updateTaskMutate, invalidateProjectTasks, queryClient, organizationId],
+      [updateTaskMutate, invalidateProjectTasks, queryClient],
     );
 
     const handlePriorityChange = useCallback(

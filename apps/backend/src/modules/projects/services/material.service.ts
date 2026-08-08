@@ -19,12 +19,9 @@ export class MaterialService {
   /**
    * Create a new material entry
    */
-  async create(
-    organizationId: string,
-    createDto: CreateMaterialDto,
-  ): Promise<ProjectMaterialEntity> {
+  async create(createDto: CreateMaterialDto): Promise<ProjectMaterialEntity> {
     // Verify project exists and belongs to organization
-    await this.projectRepository.findById(createDto.projectId, organizationId);
+    await this.projectRepository.findById(createDto.projectId);
 
     // Calculate total cost if unit cost provided
     const totalCost =
@@ -57,7 +54,6 @@ export class MaterialService {
    */
   async findByProject(
     projectId: string,
-    organizationId: string,
     filters?: {
       status?: MaterialStatus;
       category?: string;
@@ -65,7 +61,7 @@ export class MaterialService {
     },
   ): Promise<ProjectMaterialEntity[]> {
     // Verify project exists
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     return this.materialRepository.findByProject(projectId, filters);
   }
@@ -73,13 +69,9 @@ export class MaterialService {
   /**
    * Find material by ID
    */
-  async findById(
-    id: string,
-    projectId: string,
-    organizationId: string,
-  ): Promise<ProjectMaterialEntity> {
+  async findById(id: string, projectId: string): Promise<ProjectMaterialEntity> {
     // Verify project exists
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     return this.materialRepository.findById(id, projectId);
   }
@@ -90,11 +82,10 @@ export class MaterialService {
   async update(
     id: string,
     projectId: string,
-    organizationId: string,
     updateDto: UpdateMaterialDto,
   ): Promise<ProjectMaterialEntity> {
     // Verify project exists
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     // Verify material exists
     const material = await this.materialRepository.findById(id, projectId);
@@ -151,9 +142,9 @@ export class MaterialService {
   /**
    * Delete a material
    */
-  async delete(id: string, projectId: string, organizationId: string): Promise<void> {
+  async delete(id: string, projectId: string): Promise<void> {
     // Verify project exists
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     // Verify material exists
     const material = await this.materialRepository.findById(id, projectId);
@@ -174,11 +165,10 @@ export class MaterialService {
   async updateStatus(
     id: string,
     projectId: string,
-    organizationId: string,
     newStatus: MaterialStatus,
   ): Promise<ProjectMaterialEntity> {
     // Verify project exists
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     // Verify material exists
     const material = await this.materialRepository.findById(id, projectId);
@@ -205,14 +195,13 @@ export class MaterialService {
   async updateQuantities(
     id: string,
     projectId: string,
-    organizationId: string,
     quantities: {
       quantityAllocated?: number;
       quantityUsed?: number;
     },
   ): Promise<ProjectMaterialEntity> {
     // Verify project exists
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     // Verify material exists
     const material = await this.materialRepository.findById(id, projectId);
@@ -244,9 +233,9 @@ export class MaterialService {
   /**
    * Calculate total material cost for a project
    */
-  async calculateTotalCost(projectId: string, organizationId: string): Promise<number> {
+  async calculateTotalCost(projectId: string): Promise<number> {
     // Verify project exists
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     return this.materialRepository.calculateTotalCost(projectId);
   }
@@ -254,9 +243,9 @@ export class MaterialService {
   /**
    * Find required materials for a project
    */
-  async findRequired(projectId: string, organizationId: string): Promise<ProjectMaterialEntity[]> {
+  async findRequired(projectId: string): Promise<ProjectMaterialEntity[]> {
     // Verify project exists
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     return this.materialRepository.findRequired(projectId);
   }
@@ -264,10 +253,7 @@ export class MaterialService {
   /**
    * Get material statistics for a project
    */
-  async getStatistics(
-    projectId: string,
-    organizationId: string,
-  ): Promise<{
+  async getStatistics(projectId: string): Promise<{
     totalMaterials: number;
     requiredCount: number;
     orderedCount: number;
@@ -276,7 +262,7 @@ export class MaterialService {
     totalCost: number;
   }> {
     // Verify project exists
-    await this.projectRepository.findById(projectId, organizationId);
+    await this.projectRepository.findById(projectId);
 
     const [requiredCount, orderedCount, allocatedCount, usedCount, totalCost] = await Promise.all([
       this.materialRepository.countByStatus(projectId, MaterialStatus.REQUIRED),

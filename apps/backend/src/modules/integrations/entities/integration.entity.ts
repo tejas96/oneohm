@@ -1,7 +1,6 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -10,17 +9,11 @@ import { UserEntity } from '../../users/entities/user.entity';
  * Supports multi-tenant, multi-provider integrations (messaging, payment, storage, etc.)
  */
 @Entity('integrations')
-@Index(['organizationId', 'isActive'])
-@Index(['organizationId', 'provider', 'category'])
+@Index(['isActive'])
+@Index(['provider', 'category'])
 @Index(['provider', 'isActive'])
 export class IntegrationEntity extends BaseEntity {
   // ===== RELATIONSHIPS =====
-  @ManyToOne(() => OrganizationEntity, { nullable: false })
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
-
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'created_by' })

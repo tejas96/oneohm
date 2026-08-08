@@ -31,19 +31,13 @@ export class InventoryStatsService {
   // ==================== Transactions ====================
 
   async transactionsByTypeTrend(
-    organizationId: string,
     fromDate: string | undefined,
     toDate: string | undefined,
     bucket: string | undefined,
   ): Promise<TrendResponse> {
     const window = resolveStatsWindow(fromDate, toDate);
     const resolvedBucket = resolveStatsBucket(bucket);
-    const rows = await this.txnStats.byTypeTrend(
-      organizationId,
-      window.fromDate,
-      window.toDate,
-      resolvedBucket,
-    );
+    const rows = await this.txnStats.byTypeTrend(window.fromDate, window.toDate, resolvedBucket);
     return {
       fromDate: window.fromDate,
       toDate: window.toDate,
@@ -55,32 +49,30 @@ export class InventoryStatsService {
   // ==================== Allocations ====================
 
   async allocationFunnel(
-    organizationId: string,
     fromDate: string | undefined,
     toDate: string | undefined,
   ): Promise<FunnelResponse> {
     const window = resolveStatsWindow(fromDate, toDate);
-    const result = await this.allocStats.funnel(organizationId, window.fromDate, window.toDate);
+    const result = await this.allocStats.funnel(window.fromDate, window.toDate);
     return { fromDate: window.fromDate, toDate: window.toDate, ...result };
   }
 
   // ==================== Dispatches ====================
 
   async dispatchFunnel(
-    organizationId: string,
     fromDate: string | undefined,
     toDate: string | undefined,
   ): Promise<FunnelResponse> {
     const window = resolveStatsWindow(fromDate, toDate);
-    const result = await this.dispatchStats.funnel(organizationId, window.fromDate, window.toDate);
+    const result = await this.dispatchStats.funnel(window.fromDate, window.toDate);
     return { fromDate: window.fromDate, toDate: window.toDate, ...result };
   }
 
   // ==================== Stock ====================
 
-  async topLowStock(organizationId: string, limit: string | undefined): Promise<TopItemsResponse> {
+  async topLowStock(limit: string | undefined): Promise<TopItemsResponse> {
     const resolvedLimit = resolveStatsLimit(limit);
-    const rows = await this.stockStats.topLowStock(organizationId, resolvedLimit);
+    const rows = await this.stockStats.topLowStock(resolvedLimit);
     return {
       limit: resolvedLimit,
       items: rows.map((r) => ({

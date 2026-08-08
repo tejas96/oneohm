@@ -1,20 +1,12 @@
 import { InstallationCostComponents } from '@tejas96/shared/types';
-import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
+import { Column, Entity, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 @Entity('installation_pricing')
-@Index(['organizationId', 'isActive'])
-@Index(['organizationId', 'minSystemSizeKw', 'maxSystemSizeKw'])
+@Index(['isActive'])
+@Index(['minSystemSizeKw', 'maxSystemSizeKw'])
 export class InstallationPricing extends BaseEntity {
-  @Column({ type: 'uuid', name: 'organization_id' })
-  organizationId: string;
-
-  @ManyToOne(() => OrganizationEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'organization_id' })
-  organization: OrganizationEntity;
-
   @Column({
     type: 'decimal',
     precision: 10,

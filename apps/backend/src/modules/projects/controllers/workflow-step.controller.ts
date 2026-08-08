@@ -21,7 +21,6 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-  OrganizationContext,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -39,15 +38,10 @@ export class WorkflowStepController {
   @Post()
   @ApiCreate({ responseType: WorkflowStepResponseDto, summary: 'Create a new workflow step' })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateWorkflowStepDto,
   ): Promise<WorkflowStepResponseDto> {
-    createDto.organizationId = organizationId;
-    const step = await this.stepService.create(
-      createDto as CreateWorkflowStepDto & { organizationId: string },
-      currentUser.id,
-    );
+    const step = await this.stepService.create(createDto, currentUser.id);
     return plainToInstance(WorkflowStepResponseDto, step, {
       excludeExtraneousValues: true,
     });
@@ -61,7 +55,6 @@ export class WorkflowStepController {
   @ApiQuery({ name: 'type', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -71,7 +64,7 @@ export class WorkflowStepController {
   ): Promise<PaginatedResponse<WorkflowStepResponseDto>> {
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
 
-    const result = await this.stepService.findAll(organizationId, pageNum, limitNum, {
+    const result = await this.stepService.findAll(pageNum, limitNum, {
       isActive: isActive !== undefined ? isActive === 'true' : undefined,
       type,
       search,
@@ -87,21 +80,17 @@ export class WorkflowStepController {
 
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get workflow step statistics' })
-  async getStatistics(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<StatisticsResponse> {
-    return this.stepService.getStatistics(organizationId);
+  async getStatistics(@CurrentUser() _currentUser: CurrentUserType): Promise<StatisticsResponse> {
+    return this.stepService.getStatistics();
   }
 
   @Get(':id')
   @ApiReadOne({ responseType: WorkflowStepResponseDto, summary: 'Get workflow step by ID' })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<WorkflowStepResponseDto> {
-    const step = await this.stepService.findById(id, organizationId);
+    const step = await this.stepService.findById(id);
     return plainToInstance(WorkflowStepResponseDto, step, {
       excludeExtraneousValues: true,
     });
@@ -110,12 +99,11 @@ export class WorkflowStepController {
   @Patch(':id')
   @ApiUpdate({ responseType: WorkflowStepResponseDto, summary: 'Update workflow step' })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateWorkflowStepDto,
   ): Promise<WorkflowStepResponseDto> {
-    const step = await this.stepService.update(id, organizationId, updateDto, currentUser.id);
+    const step = await this.stepService.update(id, updateDto, currentUser.id);
     return plainToInstance(WorkflowStepResponseDto, step, {
       excludeExtraneousValues: true,
     });
@@ -124,11 +112,10 @@ export class WorkflowStepController {
   @Patch(':id/toggle-status')
   @ApiOperation({ summary: 'Toggle step active status' })
   async toggleStatus(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<WorkflowStepResponseDto> {
-    const step = await this.stepService.toggleStatus(id, organizationId, currentUser.id);
+    const step = await this.stepService.toggleStatus(id, currentUser.id);
     return plainToInstance(WorkflowStepResponseDto, step, {
       excludeExtraneousValues: true,
     });
@@ -140,10 +127,9 @@ export class WorkflowStepController {
     description: 'Soft delete a workflow step. Will fail if active tasks reference it.',
   })
   async remove(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    await this.stepService.remove(id, organizationId);
+    await this.stepService.remove(id);
   }
 }

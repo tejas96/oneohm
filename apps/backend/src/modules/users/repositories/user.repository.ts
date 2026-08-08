@@ -19,7 +19,6 @@ export interface UserListFilters {
   status?: UserStatus;
   search?: string;
   roleId?: string;
-  organizationId?: string;
   showDeleted?: boolean;
   sortBy?: UserSortField;
   sortOrder?: SortOrder;
@@ -132,14 +131,6 @@ export class UserRepository {
       qb.andWhere(
         '(user.first_name ILIKE :search OR user.last_name ILIKE :search OR user.email ILIKE :search OR user.phone ILIKE :search)',
         { search: `%${filters.search}%` },
-      );
-    }
-
-    if (filters?.organizationId) {
-      const epDeletedClause = filters.showDeleted ? '' : ' AND ep.deleted_at IS NULL';
-      qb.andWhere(
-        `EXISTS (SELECT 1 FROM employee_profiles ep WHERE ep.user_id = user.id AND ep.organization_id = :orgId${epDeletedClause})`,
-        { orgId: filters.organizationId },
       );
     }
 

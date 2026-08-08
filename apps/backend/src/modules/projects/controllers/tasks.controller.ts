@@ -19,7 +19,6 @@ import {
 import { parsePaginationParams } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -62,7 +61,6 @@ export class TasksController {
   @ApiQuery({ name: 'dueDateFilter', required: false, enum: ['overdue', 'dueToday', 'thisWeek'] })
   async getMyTasks(
     @CurrentUser() currentUser: CurrentUserType,
-    @OrganizationContext() organizationId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: TaskStatus,
@@ -73,18 +71,13 @@ export class TasksController {
     @Query('dueDateFilter') dueDateFilter?: DueDateFilter,
   ): Promise<GroupedMyTasksResponseDto | PaginatedResponse<ProjectTaskResponseDto>> {
     if (groupBy) {
-      const result = await this.taskService.getMyTasksGrouped(
-        currentUser.id,
-        organizationId,
-        groupBy,
-        {
-          status,
-          priority,
-          projectId,
-          search,
-          dueDateFilter,
-        },
-      );
+      const result = await this.taskService.getMyTasksGrouped(currentUser.id, groupBy, {
+        status,
+        priority,
+        projectId,
+        search,
+        dueDateFilter,
+      });
 
       return plainToInstance(GroupedMyTasksResponseDto, result, {
         excludeExtraneousValues: true,
@@ -93,16 +86,10 @@ export class TasksController {
 
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
 
-    const result = await this.taskService.getMyTasks(
-      currentUser.id,
-      organizationId,
-      pageNum,
-      limitNum,
-      {
-        status,
-        priority,
-      },
-    );
+    const result = await this.taskService.getMyTasks(currentUser.id, pageNum, limitNum, {
+      status,
+      priority,
+    });
 
     return {
       data: plainToInstance(MyTaskResponseDto, result.data, {
@@ -118,22 +105,19 @@ export class TasksController {
   })
   async getMyTasksSummary(
     @CurrentUser() currentUser: CurrentUserType,
-    @OrganizationContext() organizationId: string,
   ): Promise<{ total: number; overdue: number; dueToday: number; completedThisWeek: number }> {
-    return this.taskService.getMyTasksSummary(currentUser.id, organizationId);
+    return this.taskService.getMyTasksSummary(currentUser.id);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single task detail from cross-project context' })
   async getTaskDetail(
     @CurrentUser() currentUser: CurrentUserType,
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MyTaskResponseDto> {
     const task = await this.taskService.getTaskDetailCrossProject(
       id,
       currentUser.id,
-      organizationId,
       currentUser.roles,
     );
     return plainToInstance(MyTaskResponseDto, task, { excludeExtraneousValues: true });
@@ -143,7 +127,6 @@ export class TasksController {
   @ApiOperation({ summary: 'Update task status from cross-project context (My Tasks)' })
   async updateMyTaskStatus(
     @CurrentUser() currentUser: CurrentUserType,
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTaskStatusDto,
   ): Promise<MyTaskResponseDto> {
@@ -151,7 +134,6 @@ export class TasksController {
       id,
       dto.status,
       currentUser.id,
-      organizationId,
       currentUser.roles,
     );
 
@@ -171,7 +153,6 @@ export class TasksController {
   @ApiOperation({ summary: 'Update task fields from cross-project context (My Tasks drawer)' })
   async updateTask(
     @CurrentUser() currentUser: CurrentUserType,
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTaskCrossProjectDto,
   ): Promise<MyTaskResponseDto> {
@@ -179,7 +160,6 @@ export class TasksController {
       id,
       dto,
       currentUser.id,
-      organizationId,
       currentUser.roles,
     );
     return plainToInstance(MyTaskResponseDto, task, { excludeExtraneousValues: true });
@@ -189,17 +169,10 @@ export class TasksController {
   @ApiOperation({ summary: 'Add a comment to a task from cross-project context' })
   async addComment(
     @CurrentUser() currentUser: CurrentUserType,
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddCommentDto,
   ): Promise<{ success: boolean }> {
-    await this.taskService.addComment(
-      id,
-      dto.comment,
-      currentUser.id,
-      organizationId,
-      currentUser.roles,
-    );
+    await this.taskService.addComment(id, dto.comment, currentUser.id, currentUser.roles);
     return { success: true };
   }
 }

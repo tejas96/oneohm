@@ -19,7 +19,6 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-  OrganizationContext,
 } from '../../../common/decorators';
 import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
@@ -44,9 +43,6 @@ import { CustomerService } from '../services/customer.service';
  * Customer Controller
  * Handles HTTP requests for customer management
  *
- * Multi-Organization Support:
- * - organizationId is required as query parameter or header (X-Organization-Id)
- * - Automatically verifies user has access to the specified organization
  *
  * TODO: Re-enable permission checks when IAM is fully configured
  * - Currently only JwtAuthGuard is active
@@ -65,8 +61,7 @@ export class CustomerController {
   // @RequirePermission('customers:create') // TODO: Re-enable
   @ApiCreate({
     summary: 'Create a new customer',
-    description:
-      'Creates a new customer/lead in the system. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+    description: 'Creates a new customer/lead in the system.',
     responseType: CustomerResponseDto,
     additionalErrors: [
       {
@@ -77,10 +72,9 @@ export class CustomerController {
   })
   async create(
     @Body() createDto: CreateCustomerDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    const customer = await this.customerService.create(organizationId, createDto, currentUser.id);
+    const customer = await this.customerService.create(createDto, currentUser.id);
     return toDto(CustomerResponseDto, customer);
   }
 
@@ -95,11 +89,10 @@ export class CustomerController {
       'Retrieve customers with comprehensive filtering, sorting, and pagination. ' +
       'Supports search (name, phone, email, city), status filter, location filters (city, state), ' +
       'lead source filter, date range, creator filter (createdBy=me), and sorting. ' +
-      'Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      '',
     responseType: CustomerResponseDto,
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query() query: CustomerQueryDto,
   ): Promise<PaginatedResponse<CustomerResponseDto>> {
@@ -114,7 +107,7 @@ export class CustomerController {
     }
 
     // Use unified findAll with query DTO
-    const result = await this.customerService.findAll(organizationId, query);
+    const result = await this.customerService.findAll(query);
     return toPaginatedResponse(
       CustomerResponseDto,
       result.data,
@@ -125,7 +118,7 @@ export class CustomerController {
   }
 
   /**
-   * Get distinct customer groups for the organization
+   * Get distinct customer groups
    * Returns all (groupCode, groupName) pairs used to populate the group selector.
    * NOTE: Must be defined BEFORE :id routes to avoid route conflicts.
    */
@@ -133,7 +126,7 @@ export class CustomerController {
   @ApiOperation({
     summary: 'Get customer groups',
     description:
-      'Returns all distinct customer groups (code + name pairs) for the organization. ' +
+      'Returns all distinct customer groups (code + name pairs) . ' +
       'Used to populate the group selector when creating or editing a customer.',
   })
   @ApiResponse({
@@ -150,10 +143,8 @@ export class CustomerController {
       },
     },
   })
-  async getGroups(
-    @OrganizationContext() organizationId: string,
-  ): Promise<{ groupCode: string; groupName: string }[]> {
-    return this.customerService.getDistinctGroups(organizationId);
+  async getGroups(): Promise<{ groupCode: string; groupName: string }[]> {
+    return this.customerService.getDistinctGroups();
   }
 
   /**
@@ -166,7 +157,7 @@ export class CustomerController {
   @ApiOperation({
     summary: 'Check phone/email availability',
     description:
-      'Check if a phone number or email is already registered for a customer in this organization. Used to prevent duplicate customer creation. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Check if a phone number or email is already registered for a customer. Used to prevent duplicate customer creation.',
   })
   @ApiQuery({
     name: 'phone',
@@ -192,12 +183,10 @@ export class CustomerController {
     type: AvailabilityResponseDto,
   })
   async checkAvailability(
-    @OrganizationContext() organizationId: string,
     @Query() queryDto: CheckAvailabilityQueryDto,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<AvailabilityResponseDto> {
     return this.customerService.checkAvailability(
-      organizationId,
       queryDto.phone,
       queryDto.email,
       queryDto.excludeCustomerId,
@@ -212,8 +201,7 @@ export class CustomerController {
   @Get('statistics/status')
   @ApiOperation({
     summary: 'Get customer status statistics',
-    description:
-      'Returns count of customers grouped by status for the specified organization. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+    description: 'Returns count of customers grouped by status for the specified organization.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -229,10 +217,9 @@ export class CustomerController {
     },
   })
   async getStatusStatistics(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<Record<string, number>> {
-    return this.customerService.getStatusStatistics(organizationId);
+    return this.customerService.getStatusStatistics();
   }
 
   /**
@@ -244,10 +231,10 @@ export class CustomerController {
   @ApiOperation({
     summary: 'Get CRM overview statistics',
     description:
-      'Returns organisation-wide customer and site counts, open pipeline value and ' +
+      'Returns company-wide customer and site counts, open pipeline value and ' +
       'awaiting-reply counts, with current-month deltas. Backs the four KPI cards on ' +
-      'the customer list. Organization ID must be provided via query parameter ' +
-      '(?organizationId=xxx) or header (X-Organization-Id).',
+      'the customer list.' +
+      '',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -255,10 +242,9 @@ export class CustomerController {
     type: CustomerOverviewStatsDto,
   })
   async getOverviewStatistics(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerOverviewStatsDto> {
-    return this.customerService.getOverviewStats(organizationId);
+    return this.customerService.getOverviewStats();
   }
 
   /**
@@ -267,16 +253,14 @@ export class CustomerController {
   // @RequirePermission('customers:read') // TODO: Re-enable
   @ApiReadOne({
     summary: 'Get customer by ID',
-    description:
-      'Retrieve a specific customer by their ID. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+    description: 'Retrieve a specific customer by their ID.',
     responseType: CustomerResponseDto,
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    const customer = await this.customerService.findById(id, organizationId);
+    const customer = await this.customerService.findById(id);
     return toDto(CustomerResponseDto, customer);
   }
 
@@ -286,8 +270,7 @@ export class CustomerController {
   // @RequirePermission('customers:update') // TODO: Re-enable
   @ApiUpdate({
     summary: 'Update customer',
-    description:
-      'Update customer information. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+    description: 'Update customer information.',
     responseType: CustomerResponseDto,
     method: 'PATCH', // Use PATCH for partial updates
     additionalErrors: [
@@ -300,15 +283,9 @@ export class CustomerController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateCustomerDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    const customer = await this.customerService.update(
-      id,
-      organizationId,
-      updateDto,
-      currentUser.id,
-    );
+    const customer = await this.customerService.update(id, updateDto, currentUser.id);
     return toDto(CustomerResponseDto, customer);
   }
 
@@ -319,21 +296,15 @@ export class CustomerController {
   @ApiAction({
     path: 'status',
     summary: 'Update customer status',
-    description: `Update customer status (${Object.values(CustomerStatus).join(', ')}). Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).`,
+    description: `Update customer status (${Object.values(CustomerStatus).join(', ')}).`,
     responseType: CustomerResponseDto,
   })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateCustomerStatusDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    const customer = await this.customerService.updateStatus(
-      id,
-      organizationId,
-      statusDto.status,
-      currentUser.id,
-    );
+    const customer = await this.customerService.updateStatus(id, statusDto.status, currentUser.id);
     return toDto(CustomerResponseDto, customer);
   }
 
@@ -348,7 +319,7 @@ export class CustomerController {
     description:
       'Assign a customer to a user (field worker). Send assigneeId as a UUID to assign, or null to unassign. ' +
       'Assignee must be an active employee in the same organization. ' +
-      'Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      '',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -358,17 +329,15 @@ export class CustomerController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Customer or assignee user not found' })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Assignee is not in this org or is inactive',
+    description: 'Assignee is not  or is inactive',
   })
   async assignCustomer(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() assigneeDto: UpdateAssigneeDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.assignCustomer(
       id,
-      organizationId,
       assigneeDto.assigneeId,
       currentUser.id,
     );
@@ -383,14 +352,13 @@ export class CustomerController {
   @ApiDelete({
     summary: 'Delete customer',
     description:
-      'Permanently delete a customer when it has no properties, quotations, or financial records. Admin or super admin only. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Permanently delete a customer when it has no properties, quotations, or financial records. Admin or super admin only.',
     additionalErrors: [{ status: HttpStatus.CONFLICT, description: 'Customer cannot be deleted' }],
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.customerService.delete(id, organizationId, currentUser.id);
+    await this.customerService.delete(id, currentUser.id);
   }
 }

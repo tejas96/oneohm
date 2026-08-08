@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { COMPANY } from '@tejas96/shared/constants';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { BomEntity } from '../entities/bom.entity';
 
 @Injectable()
@@ -22,34 +22,24 @@ export class BomRepository {
   async create(data: Partial<BomEntity>): Promise<BomEntity> {
     return this.dataSource.transaction(async (manager) => {
       // Resolve the org code within the transaction context
-      const org = await manager
-        .getRepository(OrganizationEntity)
-        .findOne({ where: { id: data.organizationId } });
-      if (!org) {
-        throw new Error(`Organization ${data.organizationId} not found`);
-      }
 
-      const bomNumber = await this.generateBomNumber(org.code, manager);
+      const bomNumber = await this.generateBomNumber(COMPANY.code, manager);
       const repo = manager.getRepository(BomEntity);
       return repo.save(repo.create({ ...data, bomNumber }));
     });
   }
 
-  async findByEntity(
-    organizationId: string,
-    entityType: string,
-    entityId: string,
-  ): Promise<BomEntity | null> {
+  async findByEntity(entityType: string, entityId: string): Promise<BomEntity | null> {
     return this.repository.findOne({
-      where: { organizationId, entityType, entityId },
+      where: { entityType, entityId },
       relations: ['items'],
       order: { items: { sortOrder: 'ASC' } },
     });
   }
 
-  async findByEntityId(id: string, organizationId: string): Promise<BomEntity | null> {
+  async findByEntityId(id: string): Promise<BomEntity | null> {
     return this.repository.findOne({
-      where: { id, organizationId },
+      where: { id },
       relations: ['items'],
       order: { items: { sortOrder: 'ASC' } },
     });
@@ -59,13 +49,9 @@ export class BomRepository {
    * Delete the BOM for a given entity, scoped to the organization.
    * organizationId prevents cross-tenant deletion.
    */
-  async deleteByEntity(
-    organizationId: string,
-    entityType: string,
-    entityId: string,
-  ): Promise<void> {
+  async deleteByEntity(entityType: string, entityId: string): Promise<void> {
     const bom = await this.repository.findOne({
-      where: { organizationId, entityType, entityId },
+      where: { entityType, entityId },
     });
     if (bom) {
       await this.repository.remove(bom);

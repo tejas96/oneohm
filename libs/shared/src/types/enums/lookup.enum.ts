@@ -1,10 +1,9 @@
 /**
  * Lookup Scope Type Enum
- * Defines whether a lookup entry is global (platform-wide) or scoped to a specific organization
+ * Defines whether a lookup entry is global (platform-wide) or scoped to a specific record
  */
 export enum LookupScopeType {
   GLOBAL = 'global',
-  ORGANIZATION = 'organization',
 }
 
 /**

@@ -12,7 +12,6 @@ import {
 } from 'typeorm';
 
 import { RolePermissionEntity } from './role-permission.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -21,8 +20,8 @@ import { UserEntity } from '../../users/entities/user.entity';
  * Schema: Lines 217-241
  */
 @Entity('roles')
-@Index(['organizationId', 'code'], { unique: true })
-@Index(['organizationId', 'deletedAt'])
+@Index(['code'], { unique: true })
+@Index(['deletedAt'])
 @Index(['code', 'deletedAt'])
 export class RoleEntity {
   // ==================== Primary Key ====================
@@ -31,10 +30,6 @@ export class RoleEntity {
   id!: string;
 
   // ==================== Relations ====================
-
-  @ManyToOne(() => OrganizationEntity, { nullable: true })
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   @OneToMany(() => RolePermissionEntity, (rolePermission) => rolePermission.role)
   rolePermissions!: RolePermissionEntity[];
@@ -48,9 +43,6 @@ export class RoleEntity {
   updater?: UserEntity;
 
   // ==================== Foreign Keys ====================
-
-  @Column({ name: 'organization_id', type: 'uuid', nullable: true })
-  organizationId!: string | null;
 
   // ==================== Role Info ====================
 

@@ -26,7 +26,6 @@ export class MaterialDispatchStatsRepository {
    * CANCELLED is returned separately via cancelledCount.
    */
   async funnel(
-    organizationId: string,
     fromDate: string,
     toDate: string,
   ): Promise<{ stages: Array<{ status: string; count: number }>; cancelledCount: number }> {
@@ -34,7 +33,6 @@ export class MaterialDispatchStatsRepository {
       .createQueryBuilder('dispatch')
       .select('dispatch.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('dispatch.organizationId = :organizationId', { organizationId })
       .andWhere('dispatch.dispatch_date BETWEEN :fromDate AND :toDate', { fromDate, toDate })
       .groupBy('dispatch.status')
       .getRawMany<{ status: MaterialDispatchStatus; count: string }>();

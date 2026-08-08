@@ -12,7 +12,6 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -30,14 +29,12 @@ export class ProjectTeamController {
   @Post()
   @ApiOperation({ summary: 'Add a team member to a project' })
   async addMember(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Body() dto: AddTeamMemberDto,
   ): Promise<TeamMemberResponseDto> {
     const member = await this.teamService.addMember({
       projectId,
-      organizationId,
       userId: dto.userId,
       roleName: dto.roleName,
       isProjectManager: dto.isProjectManager,

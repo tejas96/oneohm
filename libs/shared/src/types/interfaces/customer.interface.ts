@@ -29,7 +29,6 @@ import { QuoteStatus } from '../enums/quote.enum';
  * const property: CustomerProperty = {
  *   id: "uuid-here",
  *   customerId: "customer-uuid",
- *   organizationId: "org-uuid",
  *   propertyName: "Main Residence",
  *   propertyType: PropertyType.RESIDENTIAL,
  *   address: "123 MG Road",
@@ -47,8 +46,6 @@ export interface CustomerProperty {
   id: string;
   /** Customer ID this property belongs to */
   customerId: string;
-  /** Organization ID (multi-tenant) */
-  organizationId: string;
   /** Optional display name for the property */
   propertyName?: string;
   /** Type of property (residential, commercial, etc.) */
@@ -138,7 +135,6 @@ export interface PropertyDocument {
  * @example
  * const followup: Followup = {
  *   id: "uuid-here",
- *   organizationId: "org-uuid",
  *   customerId: "customer-uuid",
  *   propertyId: "property-uuid", // optional
  *   type: FollowupType.VISIT,
@@ -154,8 +150,6 @@ export interface PropertyDocument {
 export interface Followup {
   /** UUID for this followup */
   id: string;
-  /** Organization ID (multi-tenant) */
-  organizationId: string;
   /** Customer ID (always required) */
   customerId: string;
   /** Property ID (optional - null for customer-level followups) */

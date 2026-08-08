@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { COMPANY } from '@tejas96/shared/constants';
 import {
   CustomerStatus,
   type CalculatorInputs,
@@ -35,7 +36,6 @@ import {
   CONSUMER_EVENTS,
   QuotationCreatedEvent,
 } from '../../notifications/events/consumer-notification.events';
-import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { FileCategory } from '../../storage/dto';
 import { StorageService } from '../../storage/services';
 import {
@@ -61,7 +61,6 @@ const CENTS_ROUNDING_FACTOR = 100;
 export class QuoteService {
   constructor(
     private readonly quoteRepository: QuoteRepository,
-    private readonly organizationRepository: OrganizationRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
     private readonly documentService: DocumentService,
@@ -75,7 +74,6 @@ export class QuoteService {
    * Create a new quote with initial version
    */
   async create(
-    organizationId: string,
     createDto: CreateQuoteDto,
     createdBy: string,
   ): Promise<QuoteEntity & { versionId: string }> {
@@ -83,17 +81,8 @@ export class QuoteService {
       throw new BadRequestException('Property ID is required to create a quote');
     }
 
-    const org = await this.organizationRepository.findOneById(organizationId);
-
-    if (!org) {
-      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
-    }
-
     if (createDto.propertyId) {
-      const accepted = await this.quoteRepository.findAcceptedByPropertyId(
-        createDto.propertyId,
-        organizationId,
-      );
+      const accepted = await this.quoteRepository.findAcceptedByPropertyId(createDto.propertyId);
       if (accepted) {
         throw new BadRequestException(
           `Property already has an accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
@@ -106,7 +95,6 @@ export class QuoteService {
       .createQueryBuilder('c')
       .select(['c.id AS id', 'c.status AS status'])
       .where('c.id = :id', { id: createDto.customerId })
-      .andWhere('c.organization_id = :organizationId', { organizationId })
       .andWhere('c.deleted_at IS NULL')
       .getRawOne<{ id: string; status: CustomerStatus }>();
 
@@ -117,7 +105,7 @@ export class QuoteService {
       throw new BadRequestException('Cannot perform this action: customer is inactive');
     }
 
-    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
+    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
 
     if (!createDto.quoteSnapshot?.pricing) {
       throw new BadRequestException('quoteSnapshot with pricing is required');
@@ -132,7 +120,7 @@ export class QuoteService {
     const subsidyAmount =
       pricingBreakdown.subsidyAmount ??
       (isSubsidyApplicable
-        ? await this.calculateSubsidy(organizationId, createDto.systemSizeKw, createDto.projectType)
+        ? await this.calculateSubsidy(createDto.systemSizeKw, createDto.projectType)
         : 0);
 
     const effectivePrice = createDto.effectivePrice ?? Math.max(0, finalPrice - subsidyAmount);
@@ -141,18 +129,17 @@ export class QuoteService {
       createDto.paymentMilestones ||
       this.generatePaymentMilestones(
         pricingBreakdown.totalPrice,
-        await this.resolveMilestoneTemplate(organizationId, createDto.propertyId, quoteConfig),
+        await this.resolveMilestoneTemplate(createDto.propertyId, quoteConfig),
       );
 
     const result = await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
       const versionRepo = manager.getRepository(QuoteVersionEntity);
 
-      const quoteNumber = await this.quoteRepository.generateQuoteNumber(org.code, manager);
+      const quoteNumber = await this.quoteRepository.generateQuoteNumber(COMPANY.code, manager);
 
       const quote = await quoteRepo.save(
         quoteRepo.create({
-          organizationId,
           customerId: createDto.customerId,
           propertyId: createDto.propertyId,
           salesPersonId: createDto.salesPersonId,
@@ -188,7 +175,7 @@ export class QuoteService {
       return { quoteId: quote.id, versionId: savedVersion.id };
     });
 
-    const quote = await this.quoteRepository.findById(result.quoteId, organizationId);
+    const quote = await this.quoteRepository.findById(result.quoteId);
     return Object.assign(quote, { versionId: result.versionId });
   }
 
@@ -196,44 +183,36 @@ export class QuoteService {
    * Get payment milestones for a given org (fetches config from DB).
    * @param grossTotal - Total price before discount and subsidy
    */
-  async getPaymentMilestones(
-    organizationId: string,
-    grossTotal: number,
-    propertyId?: string,
-  ): Promise<PaymentMilestone[]> {
-    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
+  async getPaymentMilestones(grossTotal: number, propertyId?: string): Promise<PaymentMilestone[]> {
+    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
     return this.generatePaymentMilestones(
       grossTotal,
-      await this.resolveMilestoneTemplate(organizationId, propertyId, quoteConfig),
+      await this.resolveMilestoneTemplate(propertyId, quoteConfig),
     );
   }
 
   /**
    * Find all quotes with filters, sorting, and pagination
    */
-  async findAll(
-    organizationId: string,
-    query: QuoteQueryDto,
-  ): Promise<{ data: QuoteEntity[]; total: number }> {
-    const [data, total] = await this.quoteRepository.findWithFilters(organizationId, query);
+  async findAll(query: QuoteQueryDto): Promise<{ data: QuoteEntity[]; total: number }> {
+    const [data, total] = await this.quoteRepository.findWithFilters(query);
     return { data, total };
   }
 
   /**
    * Find quote by ID
    */
-  async findById(id: string, organizationId: string): Promise<QuoteEntity> {
-    return this.quoteRepository.findById(id, organizationId);
+  async findById(id: string): Promise<QuoteEntity> {
+    return this.quoteRepository.findById(id);
   }
 
   async shareOnWhatsapp(
     id: string,
-    organizationId: string,
     dto: ShareQuoteWhatsappDto,
     updatedBy: string,
     file?: UploadedPdfFile,
   ): Promise<ShareQuoteWhatsappResponseDto> {
-    const quote = await this.quoteRepository.findById(id, organizationId);
+    const quote = await this.quoteRepository.findById(id);
 
     if (quote.status === QuoteStatus.ACCEPTED || quote.status === QuoteStatus.REJECTED) {
       throw new BadRequestException(
@@ -251,17 +230,10 @@ export class QuoteService {
       throw new BadRequestException('Recipient phone number is invalid');
     }
 
-    const document = await this.resolveQuotePdfDocument(
-      quote,
-      organizationId,
-      updatedBy,
-      dto.documentId,
-      file,
-    );
+    const document = await this.resolveQuotePdfDocument(quote, updatedBy, dto.documentId, file);
 
     const message = this.buildQuoteShareMessage(quote, document, recipient);
     const result = await this.integrationService.sendTemplateMessage(
-      organizationId,
       message,
       IntegrationProvider.WHATSAPP_BUSINESS,
     );
@@ -269,7 +241,7 @@ export class QuoteService {
     let quoteStatus = quote.status;
 
     if (quote.status === QuoteStatus.DRAFT) {
-      await this.quoteRepository.update(id, organizationId, {
+      await this.quoteRepository.update(id, {
         status: QuoteStatus.SENT,
         updatedBy,
       });
@@ -278,13 +250,7 @@ export class QuoteService {
       if (quote.propertyId && quote.customerId) {
         this.eventEmitter.emit(
           CONSUMER_EVENTS.QUOTATION_CREATED,
-          new QuotationCreatedEvent(
-            organizationId,
-            id,
-            quote.propertyId,
-            quote.customerId,
-            quote.quoteNumber,
-          ),
+          new QuotationCreatedEvent(id, quote.propertyId, quote.customerId, quote.quoteNumber),
         );
       }
     }
@@ -299,7 +265,6 @@ export class QuoteService {
 
   private async resolveQuotePdfDocument(
     quote: QuoteEntity,
-    organizationId: string,
     userId: string,
     documentId: string | undefined,
     file: UploadedPdfFile | undefined,
@@ -332,7 +297,6 @@ export class QuoteService {
 
       return this.documentService.create(
         {
-          organizationId,
           propertyId: quote.propertyId,
           entityType: DocumentEntityType.QUOTE,
           entityId: quoteId,
@@ -353,7 +317,7 @@ export class QuoteService {
     }
 
     if (documentId) {
-      const document = await this.documentService.findById(documentId, organizationId);
+      const document = await this.documentService.findById(documentId);
 
       if (document.entityType !== DocumentEntityType.QUOTE || document.entityId !== quoteId) {
         throw new ForbiddenException('Document does not belong to this quote');
@@ -421,8 +385,8 @@ export class QuoteService {
     };
   }
 
-  async findAllByPropertyId(propertyId: string, organizationId: string): Promise<QuoteEntity[]> {
-    return this.quoteRepository.findAllByPropertyId(propertyId, organizationId);
+  async findAllByPropertyId(propertyId: string): Promise<QuoteEntity[]> {
+    return this.quoteRepository.findAllByPropertyId(propertyId);
   }
 
   /**
@@ -430,17 +394,16 @@ export class QuoteService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateQuoteDto,
     updatedBy: string,
   ): Promise<QuoteEntity & { versionId: string }> {
-    const quote = await this.quoteRepository.findById(id, organizationId);
+    const quote = await this.quoteRepository.findById(id);
 
     if ([QuoteStatus.ACCEPTED, QuoteStatus.REJECTED].includes(quote.status)) {
       throw new BadRequestException('Cannot update accepted or rejected quotes');
     }
 
-    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
+    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
 
     const latestVersionNumber = Math.max(...(quote.versions?.map((v) => v.versionNumber) ?? [0]));
     const newVersionNumber = latestVersionNumber + 1;
@@ -490,7 +453,7 @@ export class QuoteService {
 
     const subsidy = isSubsidyApplicable
       ? (updateDto.quoteSnapshot?.pricing?.subsidyAmount ??
-        (await this.calculateSubsidy(organizationId, systemSizeKw, projectType)))
+        (await this.calculateSubsidy(systemSizeKw, projectType)))
       : 0;
 
     if (!updateDto.quoteSnapshot?.pricing) {
@@ -521,7 +484,7 @@ export class QuoteService {
       const versionRepo = manager.getRepository(QuoteVersionEntity);
 
       await quoteRepo.update(
-        { id, organizationId },
+        { id },
         {
           salesPersonId: updateDto.salesPersonId,
           resellerId: updateDto.resellerId,
@@ -561,7 +524,7 @@ export class QuoteService {
       return savedVersion.id;
     });
 
-    const updated = await this.quoteRepository.findById(id, organizationId);
+    const updated = await this.quoteRepository.findById(id);
     return Object.assign(updated, { versionId });
   }
 
@@ -570,16 +533,14 @@ export class QuoteService {
    */
   async updateStatus(
     id: string,
-    organizationId: string,
     statusDto: UpdateQuoteStatusDto,
     updatedBy: string,
   ): Promise<QuoteEntity> {
-    const quote = await this.quoteRepository.findById(id, organizationId);
+    const quote = await this.quoteRepository.findById(id);
 
     if (quote.propertyId) {
       const accepted = await this.quoteRepository.findAcceptedByPropertyId(
         quote.propertyId,
-        organizationId,
         quote.id,
       );
       if (accepted) {
@@ -613,20 +574,14 @@ export class QuoteService {
       updateData.rejectionReason = statusDto.rejectionReason;
     }
 
-    const result = await this.quoteRepository.update(id, organizationId, updateData);
+    const result = await this.quoteRepository.update(id, updateData);
 
     if (statusDto.status === QuoteStatus.SENT) {
       // Notify consumer that quotation is ready (guard propertyId)
       if (quote.propertyId && quote.customerId) {
         this.eventEmitter.emit(
           CONSUMER_EVENTS.QUOTATION_CREATED,
-          new QuotationCreatedEvent(
-            organizationId,
-            id,
-            quote.propertyId,
-            quote.customerId,
-            quote.quoteNumber,
-          ),
+          new QuotationCreatedEvent(id, quote.propertyId, quote.customerId, quote.quoteNumber),
         );
       }
     }
@@ -637,14 +592,14 @@ export class QuoteService {
   /**
    * Delete quote
    */
-  async delete(id: string, organizationId: string): Promise<void> {
-    const quote = await this.quoteRepository.findById(id, organizationId);
+  async delete(id: string): Promise<void> {
+    const quote = await this.quoteRepository.findById(id);
 
     if (quote.status === QuoteStatus.ACCEPTED) {
       throw new ForbiddenException('Cannot delete accepted quotes');
     }
 
-    return this.quoteRepository.delete(id, organizationId);
+    return this.quoteRepository.delete(id);
   }
 
   /**
@@ -652,12 +607,8 @@ export class QuoteService {
    */
   async getPropertyLockStatus(
     propertyId: string,
-    organizationId: string,
   ): Promise<{ locked: boolean; acceptedQuoteNumber?: string }> {
-    const accepted = await this.quoteRepository.findAcceptedByPropertyId(
-      propertyId,
-      organizationId,
-    );
+    const accepted = await this.quoteRepository.findAcceptedByPropertyId(propertyId);
     return {
       locked: !!accepted,
       acceptedQuoteNumber: accepted?.quoteNumber,
@@ -721,7 +672,6 @@ export class QuoteService {
    * wins over this entirely.
    */
   private async resolveMilestoneTemplate(
-    organizationId: string,
     propertyId: string | undefined,
     quoteConfig: {
       paymentMilestones: PaymentMilestoneConfig[];
@@ -732,8 +682,8 @@ export class QuoteService {
 
     const rows: Array<{ wants_loan: boolean }> = await this.dataSource.query(
       `SELECT wants_loan FROM customer_properties
-        WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL`,
-      [propertyId, organizationId],
+        WHERE id = $1 AND deleted_at IS NULL`,
+      [propertyId],
     );
 
     const wantsLoan = rows[0]?.wants_loan === true;
@@ -787,15 +737,8 @@ export class QuoteService {
    * Calculate subsidy using tiered rates from DB.
    * Uses dcrSizeKw (for DCR-requiring subsidies) instead of total systemSizeKw.
    */
-  private async calculateSubsidy(
-    organizationId: string,
-    systemSizeKw: number,
-    projectType: ProjectType,
-  ): Promise<number> {
-    const configs = await this.subsidyConfigRepo.findAllActiveByProjectType(
-      organizationId,
-      projectType,
-    );
+  private async calculateSubsidy(systemSizeKw: number, projectType: ProjectType): Promise<number> {
+    const configs = await this.subsidyConfigRepo.findAllActiveByProjectType(projectType);
 
     if (configs.length === 0) return 0;
 

@@ -73,7 +73,6 @@ export class SecurityEventRepository {
       userId?: string;
       ipAddress?: string;
       eventType?: SecurityEventType;
-      organizationId?: string;
     },
     timeWindowSeconds: number,
   ): Promise<number> {
@@ -93,12 +92,6 @@ export class SecurityEventRepository {
 
     if (filter.eventType) {
       query.andWhere('event.eventType = :eventType', { eventType: filter.eventType });
-    }
-
-    if (filter.organizationId) {
-      query.andWhere('event.organizationId = :organizationId', {
-        organizationId: filter.organizationId,
-      });
     }
 
     return query.getCount();
@@ -153,7 +146,6 @@ export class SecurityEventRepository {
    * Get security events by category for analytics
    */
   async getEventsByCategory(
-    organizationId: string,
     startDate: Date,
     endDate: Date,
   ): Promise<
@@ -164,7 +156,6 @@ export class SecurityEventRepository {
       .select('event.eventCategory', 'category')
       .addSelect('event.severity', 'severity')
       .addSelect('COUNT(*)', 'count')
-      .where('event.organizationId = :organizationId', { organizationId })
       .andWhere('event.createdAt BETWEEN :startDate AND :endDate', { startDate, endDate })
       .groupBy('event.eventCategory')
       .addGroupBy('event.severity')
@@ -196,13 +187,9 @@ export class SecurityEventRepository {
   /**
    * Get suspicious activities
    */
-  async getSuspiciousActivities(
-    organizationId: string,
-    limit = 50,
-  ): Promise<SecurityEventEntity[]> {
+  async getSuspiciousActivities(limit = 50): Promise<SecurityEventEntity[]> {
     return this.repository.find({
       where: {
-        organizationId,
         eventCategory: SecurityEventCategory.SUSPICIOUS_ACTIVITY,
       },
       order: {

@@ -5,7 +5,7 @@ import { InputAdornment, TextField } from '@mui/material';
 import { LookupDataType, LookupScopeType } from '@tejas96/shared/types';
 import { Loader2 } from 'lucide-react';
 import { type JSX, useEffect, useRef } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { LOOKUP_DATA_TYPE_LABELS, LOOKUP_SCOPE_TYPE_LABELS } from '../constants';
 import {
@@ -46,7 +46,6 @@ const DATA_TYPE_OPTIONS = Object.values(LookupDataType).map((v) => ({
 const SCOPE_TYPE_OPTIONS = Object.values(LookupScopeType).map((v) => ({
   value: v,
   label: LOOKUP_SCOPE_TYPE_LABELS[v],
-  disabled: v === LookupScopeType.ORGANIZATION,
 }));
 
 function buildDefaultValues(lookup: Lookup | null): LookupFormInput {
@@ -108,8 +107,7 @@ export function AdminLookupFormModal({
     void form.trigger();
   }, [lookup, form]);
 
-  const scopeType = useWatch({ control: form.control, name: 'scopeType' });
-  const showScopeId = scopeType === LookupScopeType.ORGANIZATION;
+  const showScopeId = false;
 
   // Run validation when modal opens so isValid is correct from the start
   useEffect(() => {
@@ -123,7 +121,7 @@ export function AdminLookupFormModal({
     value: data.value?.trim() || undefined,
     dataType: data.dataType,
     scopeType: data.scopeType,
-    scopeId: data.scopeType === LookupScopeType.ORGANIZATION ? data.scopeId : undefined,
+    scopeId: undefined,
     parentId: data.parentId || undefined,
     dependsOnId: data.dependsOnId || undefined,
     orderIndex: data.orderIndex ?? 0,
@@ -268,7 +266,7 @@ export function AdminLookupFormModal({
                   id="lookup-scope-type"
                   fieldLabel="Scope Type"
                   required
-                  tooltip="Global entries are available everywhere. Organization entries are scoped to one org."
+                  tooltip="Global entries are available everywhere."
                   options={SCOPE_TYPE_OPTIONS}
                   value={field.value}
                   onChange={field.onChange}
@@ -280,9 +278,9 @@ export function AdminLookupFormModal({
             {showScopeId && (
               <MUIInput
                 id="lookup-scope-id"
-                fieldLabel="Scope ID (Organization UUID)"
+                fieldLabel="Scope ID"
                 required
-                tooltip="UUID of the organization this lookup is scoped to."
+                tooltip="UUID of the record this lookup is scoped to."
                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 error={form.formState.errors.scopeId?.message}
                 {...form.register('scopeId')}

@@ -21,7 +21,6 @@ import { useProjectTaskBoard, useTaskBoardDnd, type KanbanColumnData } from '../
 
 import { useUpdateTask } from '@/components/features/tasks/hooks';
 import { showToast } from '@/components/ui/sonner';
-import { useOrgContext } from '@/lib/hooks/core';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -109,7 +108,6 @@ export function TaskBoardView({
   onOpenTask,
   onOpenCreate,
 }: TaskBoardViewProps): React.JSX.Element {
-  const { organizationId } = useOrgContext();
   const queryClient = useQueryClient();
   const { mutate: updateTask } = useUpdateTask();
 
@@ -139,14 +137,8 @@ export function TaskBoardView({
       if (fromStatus === newStatus) return;
 
       const { completionPercentage } = resolveTaskStatusPayload(newStatus, currentCompletionPct);
-      const snapshots = snapshotProjectTasksCaches(queryClient, organizationId);
-      optimisticallyMoveTaskStatus(
-        queryClient,
-        organizationId,
-        taskId,
-        newStatus,
-        completionPercentage,
-      );
+      const snapshots = snapshotProjectTasksCaches(queryClient);
+      optimisticallyMoveTaskStatus(queryClient, taskId, newStatus, completionPercentage);
 
       const fromLabel =
         columns.find((c) => c.code === fromStatus)?.label ?? fromStatus ?? 'unknown';
@@ -162,7 +154,7 @@ export function TaskBoardView({
         {
           onSuccess: () => {
             void queryClient.invalidateQueries({
-              queryKey: PROJECT_TASKS_QUERY_KEY(organizationId),
+              queryKey: PROJECT_TASKS_QUERY_KEY(),
             });
             announce(`Moved task to ${toLabel}`);
           },
@@ -174,7 +166,7 @@ export function TaskBoardView({
         },
       );
     },
-    [columns, queryClient, organizationId, updateTask, announce],
+    [columns, queryClient, updateTask, announce],
   );
 
   const handleAddTask = useCallback(

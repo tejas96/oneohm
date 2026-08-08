@@ -23,7 +23,6 @@ import {
 import { applyPreGstDiscount, GstSplitPercentagesInvalidError } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -106,11 +105,8 @@ export class QuoteCalculatorController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid input or missing products/pricing',
   })
-  async calculate(
-    @OrganizationContext() organizationId: string,
-    @Body() input: CalculateQuoteDto,
-  ): Promise<CalculateQuoteResponseDto> {
-    const result = await this.calculatorService.calculateQuote(organizationId, input);
+  async calculate(@Body() input: CalculateQuoteDto): Promise<CalculateQuoteResponseDto> {
+    const result = await this.calculatorService.calculateQuote(input);
     return result;
   }
 
@@ -136,7 +132,6 @@ export class QuoteCalculatorController {
     description: 'Invalid input or missing products/pricing',
   })
   async createFromCalculation(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() input: CreateQuoteFromCalculationDto,
   ): Promise<{
@@ -148,9 +143,9 @@ export class QuoteCalculatorController {
     subsidyAmount: number;
     calculation: CalculateQuoteResponseDto;
   }> {
-    const calculation = await this.calculatorService.calculateQuote(organizationId, input);
+    const calculation = await this.calculatorService.calculateQuote(input);
 
-    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
+    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + quoteConfig.defaultValidityDays);
 
@@ -244,10 +239,7 @@ export class QuoteCalculatorController {
     // Property-level versioning model:
     // every save creates a brand-new quote record for the property.
     if (input.propertyId) {
-      const accepted = await this.quoteRepository.findAcceptedByPropertyId(
-        input.propertyId,
-        organizationId,
-      );
+      const accepted = await this.quoteRepository.findAcceptedByPropertyId(input.propertyId);
       if (accepted) {
         throw new BadRequestException(
           `Property already has an accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
@@ -275,9 +267,9 @@ export class QuoteCalculatorController {
       paymentMilestones: input.paymentMilestones,
     };
 
-    const quote = await this.quoteService.create(organizationId, createDto, currentUser.id);
+    const quote = await this.quoteService.create(createDto, currentUser.id);
 
-    await this.persistBom(organizationId, quote.versionId, calculation, currentUser.id);
+    await this.persistBom(quote.versionId, calculation, currentUser.id);
 
     return {
       quoteId: quote.id,
@@ -297,7 +289,7 @@ export class QuoteCalculatorController {
   @ApiOperation({
     summary: 'Get quote configuration',
     description: `
-      Returns the active quote configuration for the organization.
+      Returns the active quote configuration .
       Includes:
       - Default validity days
       - Max versions
@@ -309,10 +301,8 @@ export class QuoteCalculatorController {
     status: HttpStatus.OK,
     description: 'Quote configuration',
   })
-  async getConfig(
-    @OrganizationContext() organizationId: string,
-  ): Promise<QuoteConfigurationResponseDto> {
-    const config = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
+  async getConfig(): Promise<QuoteConfigurationResponseDto> {
+    const config = await this.quoteConfigRepo.getOrCreateDefault();
     return plainToInstance(QuoteConfigurationResponseDto, config, {
       excludeExtraneousValues: true,
     });
@@ -344,13 +334,9 @@ export class QuoteCalculatorController {
     description: 'Subsidy configuration',
   })
   async getSubsidyRules(
-    @OrganizationContext() organizationId: string,
     @Query('projectType') projectType: ProjectType,
   ): Promise<SubsidyConfigurationResponseDto | null> {
-    const config = await this.subsidyConfigRepo.findActiveByProjectType(
-      organizationId,
-      projectType,
-    );
+    const config = await this.subsidyConfigRepo.findActiveByProjectType(projectType);
     if (!config) return null;
     return plainToInstance(SubsidyConfigurationResponseDto, config, {
       excludeExtraneousValues: true,
@@ -363,16 +349,14 @@ export class QuoteCalculatorController {
   @Get('subsidy-rules/all')
   @ApiOperation({
     summary: 'Get all subsidy rules',
-    description: 'Returns all subsidy configurations for the organization',
+    description: 'Returns all subsidy configurations ',
   })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of subsidy configurations',
   })
-  async getAllSubsidyRules(
-    @OrganizationContext() organizationId: string,
-  ): Promise<SubsidyConfigurationResponseDto[]> {
-    const configs = await this.subsidyConfigRepo.findAll(organizationId, { isActive: true });
+  async getAllSubsidyRules(): Promise<SubsidyConfigurationResponseDto[]> {
+    const configs = await this.subsidyConfigRepo.findAll({ isActive: true });
     return plainToInstance(SubsidyConfigurationResponseDto, configs, {
       excludeExtraneousValues: true,
     });
@@ -394,13 +378,9 @@ export class QuoteCalculatorController {
     description: 'Installation pricing',
   })
   async getInstallationPricing(
-    @OrganizationContext() organizationId: string,
     @Query() query: InstallationPricingQueryDto,
   ): Promise<InstallationPricingResponseDto | null> {
-    const pricing = await this.installationPricingRepo.findBySystemSize(
-      organizationId,
-      query.systemSizeKw,
-    );
+    const pricing = await this.installationPricingRepo.findBySystemSize(query.systemSizeKw);
     if (!pricing) return null;
     return plainToInstance(InstallationPricingResponseDto, pricing, {
       excludeExtraneousValues: true,
@@ -413,16 +393,14 @@ export class QuoteCalculatorController {
   @Get('installation-pricing/all')
   @ApiOperation({
     summary: 'Get all installation pricing tiers',
-    description: 'Returns all installation pricing configurations for the organization',
+    description: 'Returns all installation pricing configurations ',
   })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of installation pricing tiers',
   })
-  async getAllInstallationPricing(
-    @OrganizationContext() organizationId: string,
-  ): Promise<InstallationPricingResponseDto[]> {
-    const result = await this.installationPricingRepo.findAll(organizationId, {
+  async getAllInstallationPricing(): Promise<InstallationPricingResponseDto[]> {
+    const result = await this.installationPricingRepo.findAll({
       isActive: true,
     });
     return plainToInstance(InstallationPricingResponseDto, result.data, {
@@ -435,20 +413,13 @@ export class QuoteCalculatorController {
    * Non-fatal: failures are logged but don't block the quote save.
    */
   private async persistBom(
-    organizationId: string,
     versionId: string,
     calculation: CalculateQuoteResponseDto,
     userId: string,
   ): Promise<void> {
     try {
-      await this.bomService.deleteByEntity(organizationId, 'quote_version', versionId);
-      await this.bomService.createFromCalculation(
-        organizationId,
-        'quote_version',
-        versionId,
-        calculation,
-        userId,
-      );
+      await this.bomService.deleteByEntity('quote_version', versionId);
+      await this.bomService.createFromCalculation('quote_version', versionId, calculation, userId);
     } catch (error) {
       this.logger.warn(`BOM creation failed for version ${versionId}: ${(error as Error).message}`);
     }

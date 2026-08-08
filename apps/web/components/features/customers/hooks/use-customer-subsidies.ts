@@ -5,7 +5,6 @@ import { SubsidyStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 export interface CustomerSubsidyApplication {
   id: string;
@@ -27,28 +26,23 @@ export interface CustomerSubsidyApplication {
 }
 
 export const customerSubsidyKeys = {
-  all: (orgId?: string) => ['customer-subsidies', orgId] as const,
-  byCustomer: (orgId: string | undefined, customerId: string) =>
-    [...customerSubsidyKeys.all(orgId), customerId] as const,
+  all: () => ['customer-subsidies'] as const,
+  byCustomer: (customerId: string) => [...customerSubsidyKeys.all(), customerId] as const,
 };
 
 export function useCustomerSubsidies(
   customerId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerSubsidyApplication[], AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   return useQuery({
-    queryKey: customerSubsidyKeys.byCustomer(organizationId, customerId),
+    queryKey: customerSubsidyKeys.byCustomer(customerId),
     queryFn: async (): Promise<CustomerSubsidyApplication[]> => {
       const { data } = await apiClient.get<CustomerSubsidyApplication[]>(
         `/subsidy-applications/customer/${customerId}`,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
-    enabled: !!customerId && !!organizationId && options?.enabled !== false,
+    enabled: !!customerId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }

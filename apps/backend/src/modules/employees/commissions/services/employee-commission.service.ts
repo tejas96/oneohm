@@ -25,14 +25,13 @@ export class EmployeeCommissionService {
    * Create a new commission record
    */
   async create(
-    organizationId: string,
     createDto: CreateCommissionDto,
     createdBy?: string,
   ): Promise<EmployeeCommissionEntity> {
     this.logger.log(`Creating commission for employee: ${createDto.employeeId}`);
 
     // Verify employee exists and belongs to organization
-    await this.employeeService.findByIdInOrganization(createDto.employeeId, organizationId);
+    await this.employeeService.findByIdInOrganization(createDto.employeeId);
 
     // Validate commission calculation
     const calculatedAmount = (createDto.projectValue * createDto.commissionPercentage) / 100;
@@ -46,7 +45,6 @@ export class EmployeeCommissionService {
 
     const commission = await this.commissionRepository.create({
       ...createDto,
-      organizationId,
       createdBy,
       updatedBy: createdBy,
     });
@@ -58,11 +56,10 @@ export class EmployeeCommissionService {
   /**
    * Find commission by ID
    */
-  async findById(id: string, organizationId: string): Promise<EmployeeCommissionEntity> {
+  async findById(id: string): Promise<EmployeeCommissionEntity> {
     const commission = await this.commissionRepository.findById(id);
-
-    if (commission?.organizationId !== organizationId) {
-      throw new NotFoundException(`Commission with ID '${id}' not found`);
+    if (!commission) {
+      throw new NotFoundException('Commission not found');
     }
 
     return commission;
@@ -71,19 +68,16 @@ export class EmployeeCommissionService {
   /**
    * Find all commissions for an organization
    */
-  async findAll(organizationId: string): Promise<EmployeeCommissionEntity[]> {
-    return this.commissionRepository.findAll(organizationId);
+  async findAll(): Promise<EmployeeCommissionEntity[]> {
+    return this.commissionRepository.findAll();
   }
 
   /**
    * Find commissions by employee ID
    */
-  async findByEmployeeId(
-    employeeId: string,
-    organizationId: string,
-  ): Promise<EmployeeCommissionEntity[]> {
+  async findByEmployeeId(employeeId: string): Promise<EmployeeCommissionEntity[]> {
     // Verify employee exists and belongs to organization
-    await this.employeeService.findByIdInOrganization(employeeId, organizationId);
+    await this.employeeService.findByIdInOrganization(employeeId);
 
     return this.commissionRepository.findByEmployeeId(employeeId);
   }
@@ -91,11 +85,8 @@ export class EmployeeCommissionService {
   /**
    * Find commissions by status
    */
-  async findByStatus(
-    organizationId: string,
-    status: CommissionStatus,
-  ): Promise<EmployeeCommissionEntity[]> {
-    return this.commissionRepository.findByStatus(organizationId, status);
+  async findByStatus(status: CommissionStatus): Promise<EmployeeCommissionEntity[]> {
+    return this.commissionRepository.findByStatus(status);
   }
 
   /**
@@ -103,14 +94,13 @@ export class EmployeeCommissionService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateCommissionDto,
     updatedBy?: string,
   ): Promise<EmployeeCommissionEntity> {
     this.logger.log(`Updating commission: ${id}`);
 
     // Verify commission exists and belongs to organization
-    const commission = await this.findById(id, organizationId);
+    const commission = await this.findById(id);
 
     // Validate status transitions
     if (commission.status === CommissionStatus.PAID) {
@@ -154,13 +144,12 @@ export class EmployeeCommissionService {
    */
   async updateStatus(
     id: string,
-    organizationId: string,
     newStatus: CommissionStatus,
     updatedBy?: string,
   ): Promise<EmployeeCommissionEntity> {
     this.logger.log(`Updating commission ${id} status to: ${newStatus}`);
 
-    const commission = await this.findById(id, organizationId);
+    const commission = await this.findById(id);
 
     if (commission.status === newStatus) {
       throw new BadRequestException(`Commission is already in '${newStatus}' status`);
@@ -202,7 +191,7 @@ export class EmployeeCommissionService {
         CommissionStatus.PAID,
       );
 
-      await this.employeeService.updatePerformanceMetrics(commission.employeeId, organizationId, {
+      await this.employeeService.updatePerformanceMetrics(commission.employeeId, {
         totalCommissionEarned: totalEarned + commission.commissionAmount,
       });
     }
@@ -216,11 +205,11 @@ export class EmployeeCommissionService {
   /**
    * Delete commission (soft delete)
    */
-  async delete(id: string, organizationId: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     this.logger.log(`Deleting commission: ${id}`);
 
     // Verify commission exists and belongs to organization
-    const commission = await this.findById(id, organizationId);
+    const commission = await this.findById(id);
 
     // Prevent deletion of paid commissions
     if (commission.status === CommissionStatus.PAID) {
@@ -235,9 +224,9 @@ export class EmployeeCommissionService {
   /**
    * Get total commission earned by an employee (reseller-kind profile)
    */
-  async getTotalCommissionEarned(employeeId: string, organizationId: string): Promise<number> {
+  async getTotalCommissionEarned(employeeId: string): Promise<number> {
     // Verify employee exists and belongs to organization
-    await this.employeeService.findByIdInOrganization(employeeId, organizationId);
+    await this.employeeService.findByIdInOrganization(employeeId);
 
     return this.commissionRepository.getTotalCommissionEarned(employeeId, CommissionStatus.PAID);
   }

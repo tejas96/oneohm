@@ -17,7 +17,6 @@ import {
 
 export interface Warehouse {
   id: string;
-  organizationId: string;
   name: string;
   code: string;
   warehouseType: string;

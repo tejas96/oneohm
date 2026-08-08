@@ -3,8 +3,6 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-import { useOrgContext } from '../core';
-
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/utils/error';
@@ -182,17 +180,14 @@ export interface LedgerFilters {
  * balance derived from the ledger there is exactly one cache to bust.
  */
 export const ledgerKeys = {
-  root: (orgId?: string) => ['ledger', orgId] as const,
-  kpis: (orgId: string | undefined, from?: string, to?: string) =>
-    [...ledgerKeys.root(orgId), 'kpis', from, to] as const,
-  cashFlow: (orgId: string | undefined, from?: string, to?: string, grain?: string) =>
-    [...ledgerKeys.root(orgId), 'cash-flow', from, to, grain] as const,
-  entries: (orgId: string | undefined, f: LedgerFilters) =>
-    [...ledgerKeys.root(orgId), 'entries', f] as const,
-  receivables: (orgId: string | undefined, page: number, limit: number) =>
-    [...ledgerKeys.root(orgId), 'receivables', page, limit] as const,
-  project: (orgId: string | undefined, projectId: string) =>
-    [...ledgerKeys.root(orgId), 'project', projectId] as const,
+  root: () => ['ledger'] as const,
+  kpis: (from?: string, to?: string) => [...ledgerKeys.root(), 'kpis', from, to] as const,
+  cashFlow: (from?: string, to?: string, grain?: string) =>
+    [...ledgerKeys.root(), 'cash-flow', from, to, grain] as const,
+  entries: (f: LedgerFilters) => [...ledgerKeys.root(), 'entries', f] as const,
+  receivables: (page: number, limit: number) =>
+    [...ledgerKeys.root(), 'receivables', page, limit] as const,
+  project: (projectId: string) => [...ledgerKeys.root(), 'project', projectId] as const,
 };
 
 // ============================================================================
@@ -203,18 +198,15 @@ export function useFinanceKpis(
   from?: string,
   to?: string,
 ): UseQueryResult<FinanceKpis, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   return useQuery({
-    queryKey: ledgerKeys.kpis(organizationId, from, to),
+    queryKey: ledgerKeys.kpis(from, to),
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<FinanceKpis>('/finance/kpis', {
         params: { from, to },
-        headers: orgHeaders,
         signal,
       });
       return data;
     },
-    enabled: isReady,
     staleTime: 30_000,
   });
 }
@@ -224,18 +216,15 @@ export function useCashFlow(
   to?: string,
   grain: 'day' | 'week' | 'month' = 'month',
 ): UseQueryResult<CashFlowPoint[], AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   return useQuery({
-    queryKey: ledgerKeys.cashFlow(organizationId, from, to, grain),
+    queryKey: ledgerKeys.cashFlow(from, to, grain),
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<CashFlowPoint[]>('/finance/cash-flow', {
         params: { from, to, grain },
-        headers: orgHeaders,
         signal,
       });
       return data;
     },
-    enabled: isReady,
     staleTime: 60_000,
   });
 }
@@ -243,18 +232,15 @@ export function useCashFlow(
 export function useLedgerEntries(
   filters: LedgerFilters = {},
 ): UseQueryResult<Paginated<LedgerEntry>, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   return useQuery({
-    queryKey: ledgerKeys.entries(organizationId, filters),
+    queryKey: ledgerKeys.entries(filters),
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<Paginated<LedgerEntry>>('/finance/entries', {
         params: filters,
-        headers: orgHeaders,
         signal,
       });
       return data;
     },
-    enabled: isReady,
     staleTime: 30_000,
   });
 }
@@ -263,18 +249,15 @@ export function useReceivables(
   page = 1,
   limit = 25,
 ): UseQueryResult<Paginated<Receivable>, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   return useQuery({
-    queryKey: ledgerKeys.receivables(organizationId, page, limit),
+    queryKey: ledgerKeys.receivables(page, limit),
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<Paginated<Receivable>>('/finance/receivables', {
         params: { page, limit },
-        headers: orgHeaders,
         signal,
       });
       return data;
     },
-    enabled: isReady,
     staleTime: 30_000,
   });
 }
@@ -283,17 +266,16 @@ export function useProjectLedger(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<ProjectLedgerSummary, AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   return useQuery({
-    queryKey: ledgerKeys.project(organizationId, projectId),
+    queryKey: ledgerKeys.project(projectId),
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<ProjectLedgerSummary>(
         `/projects/${projectId}/ledger/summary`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data;
     },
-    enabled: isReady && !!projectId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -302,17 +284,15 @@ export function useProjectEntries(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<LedgerEntry[], AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   return useQuery({
-    queryKey: [...ledgerKeys.project(organizationId, projectId), 'entries'] as const,
+    queryKey: [...ledgerKeys.project(projectId), 'entries'] as const,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<LedgerEntry[]>(`/projects/${projectId}/ledger/entries`, {
-        headers: orgHeaders,
         signal,
       });
       return data;
     },
-    enabled: isReady && !!projectId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -356,10 +336,7 @@ export interface RecordExpenseInput {
  * presigned URL, so the file never passes through the API server. Only the
  * resulting key is sent with the receipt.
  */
-export async function uploadProofFile(
-  file: File,
-  orgHeaders: Record<string, string>,
-): Promise<ProofDocumentInput> {
+export async function uploadProofFile(file: File): Promise<ProofDocumentInput> {
   const { data: presigned } = await apiClient.post<{ uploadUrl: string; fileKey: string }>(
     '/storage/presigned-url',
     {
@@ -368,7 +345,6 @@ export async function uploadProofFile(
       fileSize: file.size,
       category: 'document',
     },
-    { headers: orgHeaders },
   );
 
   await fetch(presigned.uploadUrl, {
@@ -393,11 +369,10 @@ export async function uploadProofFile(
  * read the same derived balances.
  */
 export function useLedgerMutations(projectId: string) {
-  const { organizationId, orgHeaders } = useOrgContext();
   const queryClient = useQueryClient();
 
   const invalidate = (): void => {
-    void queryClient.invalidateQueries({ queryKey: ledgerKeys.root(organizationId) });
+    void queryClient.invalidateQueries({ queryKey: ledgerKeys.root() });
   };
 
   const recordReceipt = useMutation({
@@ -405,7 +380,6 @@ export function useLedgerMutations(projectId: string) {
       const { data } = await apiClient.post<LedgerEntry>(
         `/projects/${projectId}/ledger/receipts`,
         input,
-        { headers: orgHeaders },
       );
       return data;
     },
@@ -421,7 +395,6 @@ export function useLedgerMutations(projectId: string) {
       const { data } = await apiClient.post<LedgerEntry>(
         `/projects/${projectId}/ledger/expenses`,
         input,
-        { headers: orgHeaders },
       );
       return data;
     },
@@ -435,11 +408,9 @@ export function useLedgerMutations(projectId: string) {
   /** Corrections are new rows — the original stays visible forever. */
   const reverseEntry = useMutation({
     mutationFn: async ({ entryId, reason }: { entryId: string; reason: string }) => {
-      const { data } = await apiClient.post<LedgerEntry>(
-        `/ledger/entries/${entryId}/reverse`,
-        { reason },
-        { headers: orgHeaders },
-      );
+      const { data } = await apiClient.post<LedgerEntry>(`/ledger/entries/${entryId}/reverse`, {
+        reason,
+      });
       return data;
     },
     onSuccess: () => {
@@ -459,7 +430,6 @@ export function useLedgerMutations(projectId: string) {
       const { data } = await apiClient.post<MilestoneBalance>(
         `/projects/${projectId}/change-orders`,
         input,
-        { headers: orgHeaders },
       );
       return data;
     },
@@ -475,7 +445,6 @@ export function useLedgerMutations(projectId: string) {
       const { data } = await apiClient.patch<{ id: string; status: string }>(
         `/ledger/milestones/${milestoneId}/waive`,
         { reason },
-        { headers: orgHeaders },
       );
       return data;
     },

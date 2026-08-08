@@ -6,8 +6,7 @@
  * For organization-specific operations, use the profile context or pass organizationId as a parameter.
  */
 export interface CurrentUser {
-  id: string;
-  organizationId?: string; // Optional - users can belong to multiple orgs
+  id: string; // Optional - users can belong to multiple orgs
   roles: string[];
   permissions: string[]; // NEW: User permissions from JWT
 }

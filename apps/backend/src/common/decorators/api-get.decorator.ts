@@ -44,12 +44,12 @@ import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
  * @example
  * // With path parameters
  * @ApiGet({
- *   path: ':organizationId/employees/:departmentId',
+ *   path: ':projectId/employees/:departmentId',
  *   summary: 'Get employees by department',
  *   responseType: EmployeeResponseDto,
  *   responseIsArray: true,
  *   params: [
- *     { name: 'organizationId', description: 'Organization UUID' },
+ *     { name: 'projectId', description: 'Project UUID' },
  *     { name: 'departmentId', description: 'Department UUID' },
  *   ],
  * })
@@ -69,7 +69,7 @@ export function ApiGet<TResponse = Record<string, unknown>>(options: {
   responseIsArray?: boolean;
   /** Success message for Swagger response description */
   successMessage?: string;
-  /** Path parameters (e.g., :id, :organizationId) */
+  /** Path parameters (e.g., :id, :projectId) */
   params?: Array<{
     /** Parameter name (must match the path placeholder) */
     name: string;

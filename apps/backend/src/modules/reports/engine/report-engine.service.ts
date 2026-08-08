@@ -41,7 +41,7 @@ export class ReportEngineService {
     return this.registry.list();
   }
 
-  async getCompleteness(projectId: string, organizationId: string): Promise<any> {
+  async getCompleteness(projectId: string): Promise<any> {
     const catalog = this.registry.list();
     if (catalog.length === 0) {
       return {
@@ -58,7 +58,6 @@ export class ReportEngineService {
     const plugins = catalog.map((entry) => this.registry.get(entry.id));
 
     const ctx: ReportEngineContext = {
-      organizationId,
       userId: '',
       entityType: DocumentEntityType.PROJECT,
       entityId: projectId,
@@ -71,12 +70,9 @@ export class ReportEngineService {
     const raw = await firstPlugin.provider.fetch(ctx);
 
     const reportTags = plugins.map((p) => p.schema.documentTag);
-    const docs = await this.documentService.findByEntity(
-      DocumentEntityType.PROJECT,
-      projectId,
-      organizationId,
-      { tags: reportTags },
-    );
+    const docs = await this.documentService.findByEntity(DocumentEntityType.PROJECT, projectId, {
+      tags: reportTags,
+    });
 
     const docsMap = new Map<string, any>();
     for (const doc of docs) {
@@ -176,7 +172,6 @@ export class ReportEngineService {
 
     const document = await this.documentService.create(
       {
-        organizationId: ctx.organizationId,
         entityType: ctx.entityType,
         entityId: ctx.entityId,
         category: DocumentCategory.REPORT,
@@ -240,12 +235,7 @@ export class ReportEngineService {
       return {};
     }
 
-    const docs = await this.documentService.findByEntity(
-      ctx.entityType,
-      ctx.entityId,
-      ctx.organizationId,
-      { tag },
-    );
+    const docs = await this.documentService.findByEntity(ctx.entityType, ctx.entityId, { tag });
 
     const latest = docs[0];
     if (!latest?.metadata?.reportFields) {
@@ -261,12 +251,7 @@ export class ReportEngineService {
     tag: string,
     excludeDocumentId?: string,
   ): Promise<void> {
-    const docs = await this.documentService.findByEntity(
-      ctx.entityType,
-      ctx.entityId,
-      ctx.organizationId,
-      { tag },
-    );
+    const docs = await this.documentService.findByEntity(ctx.entityType, ctx.entityId, { tag });
 
     const toPurge = excludeDocumentId ? docs.filter((doc) => doc.id !== excludeDocumentId) : docs;
 
@@ -280,7 +265,7 @@ export class ReportEngineService {
             /* file may already be gone */
           }
         }
-        await this.documentService.hardDelete(doc.id, ctx.organizationId);
+        await this.documentService.hardDelete(doc.id);
       }),
     );
   }

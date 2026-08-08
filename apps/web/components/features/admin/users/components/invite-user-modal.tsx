@@ -28,7 +28,6 @@ import {
 } from '@/components/ui';
 import { useModalForm } from '@/lib/hooks/core';
 import { useInvitationMutations, useRoles, type Invitation } from '@/lib/hooks/resources';
-import { useAuth } from '@/providers/auth-provider';
 
 interface InviteUserModalProps {
   open: boolean;
@@ -36,10 +35,9 @@ interface InviteUserModalProps {
 }
 
 export function InviteUserModal({ open, onOpenChange }: InviteUserModalProps): JSX.Element {
-  const { user: currentUser } = useAuth();
   const invitationMutations = useInvitationMutations();
   const { items: allRoles } = useRoles({ syncToUrl: false, defaultPageSize: 100 });
-  const availableRoles = allRoles.filter((r) => r.organizationId !== null);
+  const availableRoles = allRoles.filter(() => true);
 
   const form = useForm<InviteUserFormData>({
     resolver: zodResolver(inviteUserSchema),
@@ -56,7 +54,6 @@ export function InviteUserModal({ open, onOpenChange }: InviteUserModalProps): J
     transformPayload: (data) => ({
       email: data.email,
       roleId: data.roleId,
-      organizationId: currentUser?.organizationId || '',
     }),
   });
 

@@ -6,7 +6,6 @@ import { NotificationEntity } from '../entities/notification.entity';
 import { NotificationRepository } from '../repositories/notification.repository';
 
 export interface CreateNotificationInput {
-  organizationId: string;
   userId: string;
   type: NotificationType | string;
   title: string;
@@ -48,7 +47,6 @@ export class NotificationService {
       let notification: NotificationEntity;
       try {
         notification = await this.notificationRepository.create({
-          organizationId: input.organizationId,
           userId: input.userId,
           type: input.type,
           title: input.title,
@@ -97,23 +95,22 @@ export class NotificationService {
 
   async list(
     userId: string,
-    organizationId: string,
     page = 1,
     limit = 20,
     unreadOnly = false,
   ): Promise<{ notifications: NotificationEntity[]; total: number }> {
-    return this.notificationRepository.findByUser(userId, organizationId, page, limit, unreadOnly);
+    return this.notificationRepository.findByUser(userId, page, limit, unreadOnly);
   }
 
-  async getUnreadCount(userId: string, organizationId: string): Promise<number> {
-    return this.notificationRepository.getUnreadCount(userId, organizationId);
+  async getUnreadCount(userId: string): Promise<number> {
+    return this.notificationRepository.getUnreadCount(userId);
   }
 
   async markRead(id: string, userId: string): Promise<void> {
     return this.notificationRepository.markRead(id, userId);
   }
 
-  async markAllRead(userId: string, organizationId: string): Promise<void> {
-    return this.notificationRepository.markAllRead(userId, organizationId);
+  async markAllRead(userId: string): Promise<void> {
+    return this.notificationRepository.markAllRead(userId);
   }
 }

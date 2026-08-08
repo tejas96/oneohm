@@ -105,30 +105,26 @@ export class CustomerFeedbackController {
     return this.feedbackService.findWithResponse();
   }
 
-  @Get('organization/:organizationId')
+  @Get('organization')
   @ApiOperation({ summary: 'Get feedback by organization' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'List of feedback for organization',
+    description: 'List of feedback',
     type: [CustomerFeedbackResponseDto],
   })
-  async findByOrganization(
-    @Param('organizationId') organizationId: string,
-  ): Promise<CustomerFeedbackResponseDto[]> {
-    return this.feedbackService.findByOrganization(organizationId);
+  async findByOrganization(): Promise<CustomerFeedbackResponseDto[]> {
+    return this.feedbackService.findByOrganization();
   }
 
-  @Get('organization/:organizationId/published')
+  @Get('organization/published')
   @ApiOperation({ summary: 'Get published feedback by organization' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'List of published feedback for organization',
+    description: 'List of published feedback',
     type: [CustomerFeedbackResponseDto],
   })
-  async findPublishedByOrganization(
-    @Param('organizationId') organizationId: string,
-  ): Promise<CustomerFeedbackResponseDto[]> {
-    return this.feedbackService.findPublishedByOrganization(organizationId);
+  async findPublishedByOrganization(): Promise<CustomerFeedbackResponseDto[]> {
+    return this.feedbackService.findPublishedByOrganization();
   }
 
   @Get('project/:projectId')
@@ -188,13 +184,13 @@ export class CustomerFeedbackController {
   // NPS & STATISTICS
   // ============================================
 
-  @Get('organization/:organizationId/nps-score')
-  @ApiOperation({ summary: 'Calculate NPS score for organization' })
+  @Get('organization/nps-score')
+  @ApiOperation({ summary: 'Calculate NPS score' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'NPS score calculation',
   })
-  async calculateNPSScore(@Param('organizationId') organizationId: string): Promise<{
+  async calculateNPSScore(): Promise<{
     npsScore: number;
     totalResponses: number;
     promoters: number;
@@ -204,44 +200,38 @@ export class CustomerFeedbackController {
     passivePercentage: number;
     detractorPercentage: number;
   }> {
-    return this.feedbackService.calculateNPSScore(organizationId);
+    return this.feedbackService.calculateNPSScore();
   }
 
-  @Get('organization/:organizationId/average-rating')
-  @ApiOperation({ summary: 'Get average rating for organization' })
+  @Get('organization/average-rating')
+  @ApiOperation({ summary: 'Get average rating' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Average rating',
   })
-  async getAverageRating(
-    @Param('organizationId') organizationId: string,
-  ): Promise<{ averageRating: number }> {
-    const rating = await this.feedbackService.getAverageRating(organizationId);
+  async getAverageRating(): Promise<{ averageRating: number }> {
+    const rating = await this.feedbackService.getAverageRating();
     return { averageRating: rating };
   }
 
-  @Get('organization/:organizationId/department-averages')
+  @Get('organization/department-averages')
   @ApiOperation({ summary: 'Get department-wise average ratings' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Department averages',
   })
-  async getDepartmentAverages(
-    @Param('organizationId') organizationId: string,
-  ): Promise<Record<string, number>> {
-    return this.feedbackService.getDepartmentAverages(organizationId);
+  async getDepartmentAverages(): Promise<Record<string, number>> {
+    return this.feedbackService.getDepartmentAverages();
   }
 
-  @Get('organization/:organizationId/statistics')
-  @ApiOperation({ summary: 'Get comprehensive statistics for organization' })
+  @Get('organization/statistics')
+  @ApiOperation({ summary: 'Get comprehensive statistics' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Comprehensive feedback statistics',
   })
-  async getStatistics(
-    @Param('organizationId') organizationId: string,
-  ): Promise<Record<string, unknown>> {
-    return this.feedbackService.getStatistics(organizationId);
+  async getStatistics(): Promise<Record<string, unknown>> {
+    return this.feedbackService.getStatistics();
   }
 
   @Get(':id')

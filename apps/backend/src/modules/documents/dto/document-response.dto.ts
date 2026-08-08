@@ -12,7 +12,6 @@ class DocumentUserDto {
 @Exclude()
 export class DocumentResponseDto {
   @ApiProperty() @Expose() id!: string;
-  @ApiProperty() @Expose() organizationId!: string;
   @ApiProperty() @Expose() propertyId!: string;
   @ApiProperty({ enum: DocumentEntityType }) @Expose() entityType!: DocumentEntityType;
   @ApiProperty() @Expose() entityId!: string;

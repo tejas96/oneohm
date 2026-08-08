@@ -36,17 +36,15 @@ export const KPIS_SQL = `
       COUNT(*) FILTER (WHERE direction = 'in'  AND reverses_id IS NULL)::int  AS receipt_count,
       COUNT(*) FILTER (WHERE direction = 'out' AND reverses_id IS NULL)::int  AS expense_count
     FROM ledger_entries
-    WHERE organization_id = $1
-      AND value_date >= $2::date
-      AND value_date <= $3::date
+    WHERE value_date >= $1::date
+      AND value_date <= $2::date
   ),
   snapshot AS (
     SELECT
       COALESCE(SUM(balance_paise), 0)::BIGINT                        AS outstanding_paise,
       COUNT(*) FILTER (WHERE days_overdue > 0)::int                  AS overdue_count
     FROM v_milestone_balance
-    WHERE organization_id = $1
-      AND status = 'active'
+    WHERE status = 'active'
       AND balance_paise > 0
   ),
   -- Client requirement: "number of meter installations done on the selected date".
@@ -61,15 +59,13 @@ export const KPIS_SQL = `
     WHERE t.deleted_at IS NULL
       AND t.status = 'done'
       AND t.completed_at IS NOT NULL
-      AND cpr.organization_id = $1
       AND (t.name ILIKE '%meter%' OR t.code ILIKE '%LIA-011%')
-      AND t.completed_at::date >= $2::date
-      AND t.completed_at::date <= $3::date
+      AND t.completed_at::date >= $1::date
+      AND t.completed_at::date <= $2::date
   ),
   credit AS (
     SELECT COALESCE(SUM(unallocated_paise), 0)::BIGINT AS unallocated_paise
     FROM v_project_balance
-    WHERE organization_id = $1
   )
   SELECT
     flows.revenue_paise        AS "revenuePaise",
@@ -94,9 +90,9 @@ export const KPIS_SQL = `
 export const CASH_FLOW_SQL = `
   WITH buckets AS (
     SELECT generate_series(
-      date_trunc($4, $2::date),
-      date_trunc($4, $3::date),
-      ('1 ' || $4)::interval
+      date_trunc($3, $1::date),
+      date_trunc($3, $2::date),
+      ('1 ' || $3)::interval
     ) AS bucket
   )
   SELECT
@@ -106,8 +102,7 @@ export const CASH_FLOW_SQL = `
     COALESCE(SUM(e.amount_paise), 0)::BIGINT                                  AS "netPaise"
   FROM buckets b
   LEFT JOIN ledger_entries e
-    ON date_trunc($4, e.value_date) = b.bucket
-   AND e.organization_id = $1
+    ON date_trunc($3, e.value_date) = b.bucket
   GROUP BY b.bucket
   ORDER BY b.bucket
 `;
@@ -118,10 +113,9 @@ export const SPEND_BY_CATEGORY_SQL = `
     COALESCE(category, 'misc')            AS "category",
     SUM(-amount_paise)::BIGINT            AS "totalPaise"
   FROM ledger_entries
-  WHERE organization_id = $1
-    AND direction = 'out'
-    AND value_date >= $2::date
-    AND value_date <= $3::date
+  WHERE direction = 'out'
+    AND value_date >= $1::date
+    AND value_date <= $2::date
   GROUP BY COALESCE(category, 'misc')
   ORDER BY "totalPaise" DESC
 `;
@@ -143,12 +137,11 @@ export const TOP_CUSTOMERS_OUTSTANDING_SQL = `
   JOIN projects pr            ON pr.id = v.project_id AND pr.deleted_at IS NULL
   JOIN customer_properties prop ON prop.id = pr.property_id
   JOIN customer_profiles cp   ON cp.id = prop.customer_id
-  WHERE v.organization_id = $1
-    AND v.status = 'active'
+  WHERE v.status = 'active'
     AND v.balance_paise > 0
   GROUP BY cp.id, cp.first_name, cp.last_name
   ORDER BY "outstandingPaise" DESC
-  LIMIT $2
+  LIMIT $1
 `;
 
 /** Paginated ledger, either direction. Newest by value date first. */
@@ -172,21 +165,19 @@ export const LEDGER_PAGE_SQL = `
   JOIN projects pr              ON pr.id = e.project_id
   LEFT JOIN customer_properties prop ON prop.id = pr.property_id
   LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
-  WHERE e.organization_id = $1
-    AND ($2::text IS NULL OR e.direction = $2)
-    AND ($3::date IS NULL OR e.value_date >= $3)
-    AND ($4::date IS NULL OR e.value_date <= $4)
+  WHERE ($1::text IS NULL OR e.direction = $1)
+    AND ($2::date IS NULL OR e.value_date >= $2)
+    AND ($3::date IS NULL OR e.value_date <= $3)
   ORDER BY e.value_date DESC, e.created_at DESC
-  LIMIT $5 OFFSET $6
+  LIMIT $4 OFFSET $5
 `;
 
 export const LEDGER_COUNT_SQL = `
   SELECT COUNT(*)::int AS count
   FROM ledger_entries e
-  WHERE e.organization_id = $1
-    AND ($2::text IS NULL OR e.direction = $2)
-    AND ($3::date IS NULL OR e.value_date >= $3)
-    AND ($4::date IS NULL OR e.value_date <= $4)
+  WHERE ($1::text IS NULL OR e.direction = $1)
+    AND ($2::date IS NULL OR e.value_date >= $2)
+    AND ($3::date IS NULL OR e.value_date <= $3)
 `;
 
 /** Every open milestone across the org — the receivables screen. */
@@ -210,16 +201,15 @@ export const RECEIVABLES_SQL = `
   JOIN projects pr              ON pr.id = v.project_id AND pr.deleted_at IS NULL
   LEFT JOIN customer_properties prop ON prop.id = pr.property_id
   LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
-  WHERE v.organization_id = $1
-    AND v.status = 'active'
+  WHERE v.status = 'active'
     AND v.balance_paise > 0
   ORDER BY v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number
-  LIMIT $2 OFFSET $3
+  LIMIT $1 OFFSET $2
 `;
 
 export const RECEIVABLES_COUNT_SQL = `
   SELECT COUNT(*)::int AS count
   FROM v_milestone_balance v
   JOIN projects pr ON pr.id = v.project_id AND pr.deleted_at IS NULL
-  WHERE v.organization_id = $1 AND v.status = 'active' AND v.balance_paise > 0
+  WHERE v.status = 'active' AND v.balance_paise > 0
 `;

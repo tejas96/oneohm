@@ -14,7 +14,6 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -65,10 +64,9 @@ export class PaymentTermController {
   @ApiParam({ name: 'projectId', type: String })
   async listForProject(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<PaymentTermResponseDto[]> {
-    await this.assertProjectInOrg(projectId, organizationId);
-    const terms = await this.termService.listForProject(projectId, organizationId);
+    await this.assertProjectInOrg(projectId);
+    const terms = await this.termService.listForProject(projectId);
     return toDtoArray(PaymentTermResponseDto, terms);
   }
 
@@ -77,12 +75,11 @@ export class PaymentTermController {
   @ApiParam({ name: 'projectId', type: String })
   async create(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: CreatePaymentTermDto,
   ): Promise<PaymentTermResponseDto> {
-    await this.assertProjectInOrg(projectId, organizationId);
-    const term = await this.termService.create(projectId, organizationId, dto, currentUser.id);
+    await this.assertProjectInOrg(projectId);
+    const term = await this.termService.create(projectId, dto, currentUser.id);
     return toDto(PaymentTermResponseDto, term);
   }
 
@@ -95,12 +92,11 @@ export class PaymentTermController {
   @ApiParam({ name: 'projectId', type: String })
   async resnapshot(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<PaymentTermResponseDto[]> {
-    const project = await this.assertProjectInOrg(projectId, organizationId);
+    const project = await this.assertProjectInOrg(projectId);
 
-    const quote = await this.quoteRepository.findById(project.quoteId, organizationId);
+    const quote = await this.quoteRepository.findById(project.quoteId);
     const latestVersion =
       [...(quote.versions ?? [])].sort((a, b) => {
         const createdDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -110,7 +106,6 @@ export class PaymentTermController {
 
     const terms = await this.termService.resnapshotFromLatestQuote({
       projectId,
-      organizationId,
       sourceVersionId: latestVersion?.id ?? null,
       milestones: latestVersion?.paymentMilestones ?? [],
       updatedBy: currentUser.id,
@@ -127,11 +122,10 @@ export class PaymentTermController {
   @ApiParam({ name: 'id', type: String })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: UpdatePaymentTermDto,
   ): Promise<PaymentTermResponseDto> {
-    const term = await this.termService.update(id, organizationId, dto, currentUser.id);
+    const term = await this.termService.update(id, dto, currentUser.id);
     return toDto(PaymentTermResponseDto, term);
   }
 
@@ -141,11 +135,10 @@ export class PaymentTermController {
   @ApiParam({ name: 'id', type: String })
   async waive(
     @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: WaivePaymentTermDto,
   ): Promise<PaymentTermResponseDto> {
-    const term = await this.termService.waive(id, organizationId, dto, currentUser.id);
+    const term = await this.termService.waive(id, dto, currentUser.id);
     return toDto(PaymentTermResponseDto, term);
   }
 
@@ -153,11 +146,8 @@ export class PaymentTermController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft-delete a term (only if no linked receipts)' })
   @ApiParam({ name: 'id', type: String })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
-  ): Promise<void> {
-    await this.termService.delete(id, organizationId);
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.termService.delete(id);
   }
 
   // --------------------------------------------
@@ -168,15 +158,12 @@ export class PaymentTermController {
    * Verify the project exists in the caller's organization (cross-tenant
    * safety). Returns the loaded project for downstream use.
    */
-  private async assertProjectInOrg(
-    projectId: string,
-    organizationId: string,
-  ): Promise<{ id: string; quoteId: string }> {
+  private async assertProjectInOrg(projectId: string): Promise<{ id: string; quoteId: string }> {
     try {
-      const project = await this.projectRepository.findById(projectId, organizationId);
+      const project = await this.projectRepository.findById(projectId);
       return { id: project.id, quoteId: project.quoteId };
     } catch {
-      throw new NotFoundException(`Project ${projectId} not found in this organization`);
+      throw new NotFoundException(`Project ${projectId} not found`);
     }
   }
 }

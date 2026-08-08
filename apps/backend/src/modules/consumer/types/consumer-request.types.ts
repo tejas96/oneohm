@@ -7,5 +7,4 @@ import type { CustomerProfileEntity } from '../../customers/entities/customer-pr
  */
 export interface ConsumerAuthRequest extends JwtAuthRequest {
   customerProfile: CustomerProfileEntity;
-  organizationId: string;
 }

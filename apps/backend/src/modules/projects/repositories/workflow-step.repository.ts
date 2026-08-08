@@ -16,18 +16,16 @@ export class WorkflowStepRepository {
     return this.repository.save(step);
   }
 
-  async findById(id: string, organizationId: string): Promise<WorkflowStepEntity | null> {
+  async findById(id: string): Promise<WorkflowStepEntity | null> {
     return this.repository.findOne({
       where: {
         id,
-        organizationId,
         deletedAt: IsNull(),
       },
     });
   }
 
   async findAll(
-    organizationId: string,
     page: number,
     limit: number,
     filters: {
@@ -39,7 +37,6 @@ export class WorkflowStepRepository {
     const skip = (page - 1) * limit;
     const queryBuilder = this.repository
       .createQueryBuilder('step')
-      .where('step.organization_id = :organizationId', { organizationId })
       .andWhere('step.deleted_at IS NULL');
 
     if (filters.isActive !== undefined) {
@@ -57,20 +54,16 @@ export class WorkflowStepRepository {
       );
     }
 
-    queryBuilder.orderBy('step.sequence_order', 'ASC').skip(skip).take(limit);
+    queryBuilder.orderBy('step.sequenceOrder', 'ASC').skip(skip).take(limit);
 
     const [data, total] = await queryBuilder.getManyAndCount();
     return { data, total };
   }
 
-  async findAllActive(
-    organizationId: string,
-    manager?: EntityManager,
-  ): Promise<WorkflowStepEntity[]> {
+  async findAllActive(manager?: EntityManager): Promise<WorkflowStepEntity[]> {
     const repo = this.getRepo(manager);
     return repo.find({
       where: {
-        organizationId,
         isActive: true,
         deletedAt: IsNull(),
       },
@@ -80,34 +73,27 @@ export class WorkflowStepRepository {
     });
   }
 
-  async update(
-    id: string,
-    organizationId: string,
-    data: Record<string, unknown>,
-  ): Promise<WorkflowStepEntity | null> {
+  async update(id: string, data: Record<string, unknown>): Promise<WorkflowStepEntity | null> {
     await this.repository.update(
       {
         id,
-        organizationId,
         deletedAt: IsNull(),
       },
       data,
     );
-    return this.findById(id, organizationId);
+    return this.findById(id);
   }
 
-  async softDelete(id: string, organizationId: string): Promise<boolean> {
+  async softDelete(id: string): Promise<boolean> {
     const result = await this.repository.softDelete({
       id,
-      organizationId,
     });
     return (result.affected ?? 0) > 0;
   }
 
-  async existsByCode(code: string, organizationId: string, excludeId?: string): Promise<boolean> {
+  async existsByCode(code: string, excludeId?: string): Promise<boolean> {
     const queryBuilder = this.repository
       .createQueryBuilder('step')
-      .where('step.organization_id = :organizationId', { organizationId })
       .andWhere('step.code = :code', { code })
       .andWhere('step.deleted_at IS NULL');
 

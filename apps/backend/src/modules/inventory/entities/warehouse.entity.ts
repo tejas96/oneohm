@@ -16,7 +16,6 @@ import { MaterialDispatchEntity } from './material-dispatch.entity';
 import { PurchaseOrderEntity } from './purchase-order.entity';
 import { StockAllocationEntity } from './stock-allocation.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -24,16 +23,12 @@ import { UserEntity } from '../../users/entities/user.entity';
  * Represents storage locations for inventory
  */
 @Entity('warehouses')
-@Unique(['organizationId', 'code'])
-@Index(['organizationId', 'deletedAt'])
+@Unique(['code'])
+@Index(['deletedAt'])
 @Index(['warehouseType', 'deletedAt'])
 @Index(['warehouseManagerId'])
 export class WarehouseEntity extends BaseEntity {
   // ==================== Relations ====================
-
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'warehouse_manager_id' })
@@ -61,9 +56,6 @@ export class WarehouseEntity extends BaseEntity {
   incomingTransfers!: InventoryTransactionEntity[];
 
   // ==================== Foreign Keys ====================
-
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'warehouse_manager_id', type: 'uuid', nullable: true })
   warehouseManagerId?: string;

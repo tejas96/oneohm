@@ -80,7 +80,7 @@ export class CreateReceiptDto {
 
   @ApiPropertyOptional({
     description:
-      "Override the auto-filled customer (defaults to the project's quote customer). Must belong to the same organization.",
+      "Override the auto-filled customer (defaults to the project's quote customer). Must be an active employee.",
   })
   @IsUUID()
   @IsOptional()

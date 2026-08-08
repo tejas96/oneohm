@@ -98,7 +98,7 @@ export class LookupRepository {
       query.andWhere('lookup.scope_id = :scopeId', { scopeId });
     }
 
-    query.orderBy('lookup.order_index', 'ASC').addOrderBy('lookup.label', 'ASC');
+    query.orderBy('lookup.orderIndex', 'ASC').addOrderBy('lookup.label', 'ASC');
 
     return query.getMany();
   }

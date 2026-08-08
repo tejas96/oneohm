@@ -17,13 +17,10 @@ export class WorkflowStepService {
   ) {}
 
   async create(
-    createDto: Partial<WorkflowStepEntity> & { code: string; organizationId: string },
+    createDto: Partial<WorkflowStepEntity> & { code: string },
     currentUserId: string,
   ): Promise<WorkflowStepEntity> {
-    const codeExists = await this.stepRepository.existsByCode(
-      createDto.code,
-      createDto.organizationId,
-    );
+    const codeExists = await this.stepRepository.existsByCode(createDto.code);
     if (codeExists) {
       throw new BadRequestException(`Workflow step with code ${createDto.code} already exists`);
     }
@@ -36,7 +33,6 @@ export class WorkflowStepService {
   }
 
   async findAll(
-    organizationId: string,
     page: number,
     limit: number,
     filters: {
@@ -45,7 +41,7 @@ export class WorkflowStepService {
       search?: string;
     } = {},
   ): Promise<PaginatedResponse<WorkflowStepEntity>> {
-    const { data, total } = await this.stepRepository.findAll(organizationId, page, limit, filters);
+    const { data, total } = await this.stepRepository.findAll(page, limit, filters);
 
     return {
       data,
@@ -58,34 +54,33 @@ export class WorkflowStepService {
     };
   }
 
-  async findById(id: string, organizationId: string): Promise<WorkflowStepEntity> {
-    const step = await this.stepRepository.findById(id, organizationId);
+  async findById(id: string): Promise<WorkflowStepEntity> {
+    const step = await this.stepRepository.findById(id);
     if (!step) {
       throw new NotFoundException(`Workflow step with ID ${id} not found`);
     }
     return step;
   }
 
-  async findAllActive(organizationId: string): Promise<WorkflowStepEntity[]> {
-    return this.stepRepository.findAllActive(organizationId);
+  async findAllActive(): Promise<WorkflowStepEntity[]> {
+    return this.stepRepository.findAllActive();
   }
 
   async update(
     id: string,
-    organizationId: string,
     updateDto: Partial<WorkflowStepEntity>,
     currentUserId: string,
   ): Promise<WorkflowStepEntity> {
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     if (updateDto.code) {
-      const codeExists = await this.stepRepository.existsByCode(updateDto.code, organizationId, id);
+      const codeExists = await this.stepRepository.existsByCode(updateDto.code, id);
       if (codeExists) {
         throw new BadRequestException(`Workflow step with code ${updateDto.code} already exists`);
       }
     }
 
-    const updated = await this.stepRepository.update(id, organizationId, {
+    const updated = await this.stepRepository.update(id, {
       ...updateDto,
       updatedBy: currentUserId,
     });
@@ -97,14 +92,10 @@ export class WorkflowStepService {
     return updated;
   }
 
-  async toggleStatus(
-    id: string,
-    organizationId: string,
-    currentUserId: string,
-  ): Promise<WorkflowStepEntity> {
-    const step = await this.findById(id, organizationId);
+  async toggleStatus(id: string, currentUserId: string): Promise<WorkflowStepEntity> {
+    const step = await this.findById(id);
 
-    const updated = await this.stepRepository.update(id, organizationId, {
+    const updated = await this.stepRepository.update(id, {
       isActive: !step.isActive,
       updatedBy: currentUserId,
     });
@@ -116,8 +107,8 @@ export class WorkflowStepService {
     return updated;
   }
 
-  async remove(id: string, organizationId: string): Promise<void> {
-    await this.findById(id, organizationId);
+  async remove(id: string): Promise<void> {
+    await this.findById(id);
 
     const activeTaskCount = await this.taskRepository.countByWorkflowStepId(id);
     if (activeTaskCount > 0) {
@@ -126,18 +117,18 @@ export class WorkflowStepService {
       );
     }
 
-    const deleted = await this.stepRepository.softDelete(id, organizationId);
+    const deleted = await this.stepRepository.softDelete(id);
     if (!deleted) {
       throw new NotFoundException(`Workflow step with ID ${id} not found`);
     }
   }
 
-  async getStatistics(organizationId: string): Promise<StatisticsResponse> {
-    const { total: totalActive } = await this.stepRepository.findAll(organizationId, 1, 1, {
+  async getStatistics(): Promise<StatisticsResponse> {
+    const { total: totalActive } = await this.stepRepository.findAll(1, 1, {
       isActive: true,
     });
 
-    const { total: totalInactive } = await this.stepRepository.findAll(organizationId, 1, 1, {
+    const { total: totalInactive } = await this.stepRepository.findAll(1, 1, {
       isActive: false,
     });
 

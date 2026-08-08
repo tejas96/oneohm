@@ -15,13 +15,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { type PaginatedResponse, ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  ApiDelete,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
-} from '../../../common/decorators';
+import { ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -192,7 +186,6 @@ export class ProjectController {
     description: 'Sort order',
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -232,7 +225,7 @@ export class ProjectController {
     const isAdmin = hasAdminBypassRole(currentUser.roles || []);
     const effectiveMemberId = isAdmin ? memberId : currentUser.id;
 
-    const result = await this.projectService.findAll(organizationId, pageNum, limitNum, {
+    const result = await this.projectService.findAll(pageNum, limitNum, {
       status,
       priority,
       customerId,
@@ -268,7 +261,7 @@ export class ProjectController {
   }
 
   /**
-   * Get team workload across all projects in the organization.
+   * Get team workload across all projects.
    * Returns per-user: active project count, total tasks, in-progress tasks, not-completed tasks.
    * NOTE: Must be defined before :id route.
    */
@@ -278,7 +271,7 @@ export class ProjectController {
     description:
       'Returns per-user workload metrics across all projects for team assignment decisions',
   })
-  async getTeamWorkload(@OrganizationContext() organizationId: string): Promise<
+  async getTeamWorkload(): Promise<
     Array<{
       userId: string;
       firstName: string;
@@ -289,7 +282,7 @@ export class ProjectController {
       notCompletedTaskCount: number;
     }>
   > {
-    return this.teamService.getUserWorkloads(organizationId);
+    return this.teamService.getUserWorkloads();
   }
 
   /**
@@ -302,11 +295,10 @@ export class ProjectController {
     description: 'Retrieve all projects for a specific customer',
   })
   async findByCustomer(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('customerId', ParseUUIDPipe) customerId: string,
   ): Promise<ProjectResponseDto[]> {
-    const projects = await this.projectService.findByCustomer(customerId, organizationId);
+    const projects = await this.projectService.findByCustomer(customerId);
 
     return plainToInstance(ProjectResponseDto, projects, {
       excludeExtraneousValues: true,
@@ -324,17 +316,11 @@ export class ProjectController {
       'Create a new project from an approved/accepted quote. Note: One property can only have one project.',
   })
   async convertFromQuote(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('quoteId', ParseUUIDPipe) quoteId: string,
     @Body() convertDto?: ConvertFromQuoteDto,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.convertFromQuote(
-      quoteId,
-      organizationId,
-      currentUser.id,
-      convertDto,
-    );
+    const project = await this.projectService.convertFromQuote(quoteId, currentUser.id, convertDto);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
@@ -351,11 +337,10 @@ export class ProjectController {
     responseType: ProjectResponseDto,
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.findById(id, organizationId);
+    const project = await this.projectService.findById(id);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
@@ -372,12 +357,11 @@ export class ProjectController {
     responseType: ProjectResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateProjectDto,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.update(id, organizationId, updateDto, currentUser.id);
+    const project = await this.projectService.update(id, updateDto, currentUser.id);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
@@ -393,11 +377,10 @@ export class ProjectController {
     description: 'Soft delete a project (only draft/cancelled)',
   })
   async delete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.projectService.delete(id, organizationId);
+    await this.projectService.delete(id);
     return { message: 'Project deleted successfully' };
   }
 
@@ -410,12 +393,11 @@ export class ProjectController {
     description: 'Change project status with validation',
   })
   async updateStatus(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateProjectStatusDto,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.updateStatus(id, organizationId, statusDto.status);
+    const project = await this.projectService.updateStatus(id, statusDto.status);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
@@ -431,10 +413,9 @@ export class ProjectController {
     description: 'Retrieve timeline data including tasks and milestones for Gantt visualization',
   })
   async getTimeline(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ReturnType<typeof this.projectService.getProjectTimeline>> {
-    return this.projectService.getProjectTimeline(id, organizationId);
+    return this.projectService.getProjectTimeline(id);
   }
 
   /**
@@ -446,10 +427,9 @@ export class ProjectController {
     description: 'Retrieve progress statistics including task counts by status and overdue tasks',
   })
   async getProgress(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ReturnType<typeof this.projectService.getProjectProgress>> {
-    return this.projectService.getProjectProgress(id, organizationId);
+    return this.projectService.getProjectProgress(id);
   }
 
   /**
@@ -463,11 +443,10 @@ export class ProjectController {
       'Rebuilds the project BOM from the linked quote calculation snapshot. Use when BOM is missing or outdated.',
   })
   async syncBom(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.projectService.syncBomFromSnapshot(organizationId, id, currentUser.id);
+    await this.projectService.syncBomFromSnapshot(id, currentUser.id);
     return { message: 'BOM synced successfully' };
   }
 

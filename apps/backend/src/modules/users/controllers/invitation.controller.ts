@@ -42,7 +42,6 @@ export class InvitationController {
   ): Promise<InvitationResponseDto> {
     const invitation = await this.invitationService.createInvitation({
       email: dto.email,
-      organizationId: dto.organizationId,
       roleId: dto.roleId,
       invitedBy: user.id,
     });
@@ -57,17 +56,14 @@ export class InvitationController {
   })
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'pageSize', required: false, example: 10 })
-  @ApiQuery({ name: 'organizationId', required: false })
   @ApiQuery({ name: 'status', required: false, enum: InvitationStatus })
   async findAll(
     @Query('page') page: number = 1,
     @Query('pageSize') pageSize: number = 10,
-    @Query('organizationId') organizationId?: string,
     @Query('status') status?: InvitationStatus,
   ): Promise<{ data: InvitationResponseDto[]; total: number; page: number; pageSize: number }> {
     const skip = (page - 1) * pageSize;
     const [invitations, total] = await this.invitationRepository.findAllPaginated(skip, pageSize, {
-      organizationId,
       status,
     });
 
@@ -108,7 +104,6 @@ export class InvitationController {
     const dto = plainToInstance(InvitationResponseDto, entity, {
       excludeExtraneousValues: true,
     });
-    dto.organizationName = entity.organization?.name;
     dto.roleName = entity.role?.name;
     return dto;
   }

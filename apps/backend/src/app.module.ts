@@ -31,7 +31,6 @@ import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import { MasterDataModule } from './modules/master-data/master-data.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
-import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
@@ -58,7 +57,6 @@ import { UsersModule } from './modules/users/users.module';
     SecurityEventsModule,
     AuthModule,
     UsersModule,
-    OrganizationsModule,
     PlatformModule,
     AppConfigModule,
     // Profile modules

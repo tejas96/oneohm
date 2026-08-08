@@ -22,7 +22,6 @@ import {
   ApiReadOne,
   ApiUpdate,
   ApiAction,
-  OrganizationContext,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -63,8 +62,8 @@ export class EmployeeController {
 
   @Get()
   @ApiReadAll({
-    summary: 'Get all employees in organization',
-    description: 'Returns paginated list of employees. Requires x-organization-id header.',
+    summary: 'Get all employees',
+    description: 'Returns paginated list of employees. ',
     responseType: EmployeeResponseDto,
   })
   @ApiQuery({ name: 'page', required: false, example: 1 })
@@ -88,7 +87,6 @@ export class EmployeeController {
     description: 'Filter by profile kind (staff or reseller)',
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
     @Query('status') status?: UserStatus,
@@ -101,7 +99,7 @@ export class EmployeeController {
     limit: number;
   }> {
     if (department) {
-      const employees = await this.employeeService.findByDepartment(organizationId, department);
+      const employees = await this.employeeService.findByDepartment(department);
       const paged = employees.slice((page - 1) * limit, page * limit);
       return {
         items: paged,
@@ -111,13 +109,7 @@ export class EmployeeController {
       };
     }
 
-    return this.employeeService.findByOrganization(
-      organizationId,
-      page,
-      limit,
-      status,
-      profileKind,
-    );
+    return this.employeeService.findByOrganization(page, limit, status, profileKind);
   }
 
   @Get('me')
@@ -127,17 +119,14 @@ export class EmployeeController {
       'Returns the employee profile for the currently authenticated user in their organization',
     responseType: EmployeeResponseDto,
   })
-  async findMe(
-    @CurrentUser() currentUser: CurrentUserType,
-    @OrganizationContext() organizationId: string,
-  ): Promise<EmployeeResponseDto | null> {
-    return this.employeeService.findByUserAndOrganization(currentUser.id, organizationId);
+  async findMe(@CurrentUser() currentUser: CurrentUserType): Promise<EmployeeResponseDto | null> {
+    return this.employeeService.findByUserAndOrganization(currentUser.id);
   }
 
   @Get('user/:userId')
   @ApiReadAll({
     summary: 'Get all employee profiles for a user',
-    description: 'Returns all employee profiles across all organizations for a user',
+    description: 'Returns all employee profiles for a user',
     responseType: EmployeeResponseDto,
   })
   async findByUser(@Param('userId', ParseUUIDPipe) userId: string): Promise<EmployeeResponseDto[]> {

@@ -21,7 +21,6 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-  OrganizationContext,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -67,16 +66,10 @@ export class MaterialDispatchController {
       'Returns { succeeded: string[], failed: { id, reason }[] } at HTTP 200. Each cancel runs in its own transaction and restores reserved stock if applicable.',
   })
   async bulkCancel(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: BulkCancelDto,
   ): Promise<BulkOperationResultDto> {
-    return this.inventoryBulkService.cancelDispatches(
-      body.ids,
-      organizationId,
-      body.reason,
-      currentUser.id,
-    );
+    return this.inventoryBulkService.cancelDispatches(body.ids, body.reason, currentUser.id);
   }
 
   /**
@@ -85,11 +78,8 @@ export class MaterialDispatchController {
   @RequirePermission('inventory:read')
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get dispatch statistics' })
-  async getStatistics(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ) {
-    return this.materialDispatchService.getStatistics(organizationId);
+  async getStatistics(@CurrentUser() _currentUser: CurrentUserType) {
+    return this.materialDispatchService.getStatistics();
   }
 
   @RequirePermission('inventory:read')
@@ -98,12 +88,11 @@ export class MaterialDispatchController {
   @ApiQuery({ name: 'fromDate', required: false, type: String })
   @ApiQuery({ name: 'toDate', required: false, type: String })
   async statsFunnel(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
   ): Promise<FunnelResponse> {
-    return this.inventoryStatsService.dispatchFunnel(organizationId, fromDate, toDate);
+    return this.inventoryStatsService.dispatchFunnel(fromDate, toDate);
   }
 
   /**
@@ -113,10 +102,9 @@ export class MaterialDispatchController {
   @Get('in-transit/list')
   @ApiOperation({ summary: 'Get in-transit dispatches' })
   async getInTransit(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<MaterialDispatchResponseDto[]> {
-    const dispatches = await this.materialDispatchService.getInTransitDispatches(organizationId);
+    const dispatches = await this.materialDispatchService.getInTransitDispatches();
     return plainToInstance(MaterialDispatchResponseDto, dispatches, {
       excludeExtraneousValues: true,
     });
@@ -129,10 +117,9 @@ export class MaterialDispatchController {
   @Get('pending/list')
   @ApiOperation({ summary: 'Get pending (draft/prepared) dispatches' })
   async getPending(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<MaterialDispatchResponseDto[]> {
-    const dispatches = await this.materialDispatchService.getPendingDispatches(organizationId);
+    const dispatches = await this.materialDispatchService.getPendingDispatches();
     return plainToInstance(MaterialDispatchResponseDto, dispatches, {
       excludeExtraneousValues: true,
     });
@@ -145,10 +132,9 @@ export class MaterialDispatchController {
   @Get('project/:projectId')
   @ApiOperation({ summary: 'Get dispatches for a specific project' })
   async findByProject(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<MaterialDispatchResponseDto[]> {
-    const dispatches = await this.materialDispatchService.findByProject(projectId, organizationId);
+    const dispatches = await this.materialDispatchService.findByProject(projectId);
     return plainToInstance(MaterialDispatchResponseDto, dispatches, {
       excludeExtraneousValues: true,
     });
@@ -166,15 +152,10 @@ export class MaterialDispatchController {
     responseType: MaterialDispatchResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateMaterialDispatchDto,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.create(
-      organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const dispatch = await this.materialDispatchService.create(createDto, currentUser.id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });
@@ -198,7 +179,6 @@ export class MaterialDispatchController {
   @ApiQuery({ name: 'toDate', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query() query: Record<string, string>,
     @Query('status') status?: MaterialDispatchStatus,
@@ -212,12 +192,14 @@ export class MaterialDispatchController {
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const { page: pageNum, limit: limitNum } = parsePaginationParams(query.page, query.limit);
-    const { dispatches, total } = await this.materialDispatchService.findAll(
-      organizationId,
-      pageNum,
-      limitNum,
-      { status, projectId, warehouseId, fromDate, toDate, search },
-    );
+    const { dispatches, total } = await this.materialDispatchService.findAll(pageNum, limitNum, {
+      status,
+      projectId,
+      warehouseId,
+      fromDate,
+      toDate,
+      search,
+    });
 
     return {
       data: plainToInstance(MaterialDispatchResponseDto, dispatches, {
@@ -236,11 +218,10 @@ export class MaterialDispatchController {
   @Get(':id')
   @ApiReadOne({ summary: 'Get material dispatch by ID', responseType: MaterialDispatchResponseDto })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.findById(id, organizationId);
+    const dispatch = await this.materialDispatchService.findById(id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });
@@ -256,17 +237,11 @@ export class MaterialDispatchController {
     responseType: MaterialDispatchResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateMaterialDispatchDto,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.update(
-      id,
-      organizationId,
-      updateDto,
-      currentUser.id,
-    );
+    const dispatch = await this.materialDispatchService.update(id, updateDto, currentUser.id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });
@@ -279,17 +254,11 @@ export class MaterialDispatchController {
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update dispatch status' })
   async updateStatus(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateMaterialDispatchStatusDto,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.updateStatus(
-      id,
-      organizationId,
-      statusDto,
-      currentUser.id,
-    );
+    const dispatch = await this.materialDispatchService.updateStatus(id, statusDto, currentUser.id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });
@@ -302,15 +271,10 @@ export class MaterialDispatchController {
   @Post(':id/mark-dispatched')
   @ApiOperation({ summary: 'Mark dispatch as IN_TRANSIT — deducts reserved stock' })
   async markDispatched(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.markDispatched(
-      id,
-      organizationId,
-      currentUser.id,
-    );
+    const dispatch = await this.materialDispatchService.markDispatched(id, currentUser.id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });
@@ -323,14 +287,12 @@ export class MaterialDispatchController {
   @Post(':id/mark-delivered')
   @ApiOperation({ summary: 'Mark dispatch as DELIVERED' })
   async markDelivered(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: { actualDeliveryDate?: string; receivedById?: string } = {},
   ): Promise<MaterialDispatchResponseDto> {
     const dispatch = await this.materialDispatchService.markDelivered(
       id,
-      organizationId,
       currentUser.id,
       body.actualDeliveryDate ? new Date(body.actualDeliveryDate) : undefined,
       body.receivedById,
@@ -347,17 +309,11 @@ export class MaterialDispatchController {
   @Post(':id/cancel')
   @ApiOperation({ summary: 'Cancel material dispatch' })
   async cancel(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('reason') reason: string,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.cancel(
-      id,
-      organizationId,
-      reason,
-      currentUser.id,
-    );
+    const dispatch = await this.materialDispatchService.cancel(id, reason, currentUser.id);
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
     });
@@ -370,11 +326,10 @@ export class MaterialDispatchController {
   @Delete(':id')
   @ApiDelete({ summary: 'Delete a material dispatch (draft only)' })
   async delete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.materialDispatchService.delete(id, organizationId);
+    await this.materialDispatchService.delete(id);
     return { message: 'Material dispatch deleted successfully' };
   }
 }

@@ -5,14 +5,11 @@ import { ProjectTaskEntity } from './project-task.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
 @Entity('workflow_steps')
-@Index(['organizationId', 'deletedAt'])
+@Index(['deletedAt'])
 @Index(['isActive', 'deletedAt'])
 export class WorkflowStepEntity extends BaseEntity {
   @OneToMany(() => ProjectTaskEntity, (task) => task.workflowStep)
   tasks!: ProjectTaskEntity[];
-
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ type: 'varchar', length: 255 })
   name!: string;

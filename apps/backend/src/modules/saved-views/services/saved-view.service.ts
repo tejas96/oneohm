@@ -32,46 +32,33 @@ export class SavedViewService {
 
   constructor(private readonly repository: SavedViewRepository) {}
 
-  async list(
-    organizationId: string,
-    userId: string,
-    resource: SavedViewResource,
-  ): Promise<SavedViewEntity[]> {
-    return this.repository.findForUser(organizationId, userId, resource);
+  async list(userId: string, resource: SavedViewResource): Promise<SavedViewEntity[]> {
+    return this.repository.findForUser(userId, resource);
   }
 
-  async findOne(id: string, organizationId: string, userId: string): Promise<SavedViewEntity> {
-    const view = await this.repository.findOneScoped(id, organizationId, userId);
+  async findOne(id: string, userId: string): Promise<SavedViewEntity> {
+    const view = await this.repository.findOneScoped(id, userId);
     if (!view) {
       throw new NotFoundException(`Saved view ${id} not found`);
     }
     return view;
   }
 
-  async create(
-    dto: CreateSavedViewDto,
-    organizationId: string,
-    userId: string,
-  ): Promise<SavedViewEntity> {
+  async create(dto: CreateSavedViewDto, userId: string): Promise<SavedViewEntity> {
     const cleanedFilters = validateSavedViewFilters(dto.resource, dto.filters);
     const trimmedName = dto.name.trim();
     if (trimmedName.length === 0) {
       throw new ConflictException('Saved view name cannot be empty');
     }
 
-    const existingByName = await this.repository.findByName(
-      organizationId,
-      userId,
-      dto.resource,
-      trimmedName,
-    );
+    const existingByName = await this.repository.findByName(userId, dto.resource, trimmedName);
     if (existingByName) {
       throw new ConflictException(
         `A saved view named "${trimmedName}" already exists for this list`,
       );
     }
 
-    const count = await this.repository.countForUser(organizationId, userId, dto.resource);
+    const count = await this.repository.countForUser(userId, dto.resource);
     if (count >= SavedViewService.MAX_VIEWS_PER_TRIPLET) {
       throw new ConflictException(
         `Cannot create more than ${SavedViewService.MAX_VIEWS_PER_TRIPLET} saved views per list. Delete an existing view first.`,
@@ -79,7 +66,6 @@ export class SavedViewService {
     }
 
     return this.repository.create({
-      organizationId,
       userId,
       resource: dto.resource,
       name: trimmedName,
@@ -87,13 +73,8 @@ export class SavedViewService {
     });
   }
 
-  async update(
-    id: string,
-    dto: UpdateSavedViewDto,
-    organizationId: string,
-    userId: string,
-  ): Promise<SavedViewEntity> {
-    const view = await this.findOne(id, organizationId, userId);
+  async update(id: string, dto: UpdateSavedViewDto, userId: string): Promise<SavedViewEntity> {
+    const view = await this.findOne(id, userId);
 
     if (dto.name !== undefined) {
       const trimmed = dto.name.trim();
@@ -101,12 +82,7 @@ export class SavedViewService {
         throw new ConflictException('Saved view name cannot be empty');
       }
       if (trimmed !== view.name) {
-        const existing = await this.repository.findByName(
-          organizationId,
-          userId,
-          view.resource,
-          trimmed,
-        );
+        const existing = await this.repository.findByName(userId, view.resource, trimmed);
         if (existing && existing.id !== id) {
           throw new ConflictException(
             `A saved view named "${trimmed}" already exists for this list`,
@@ -123,8 +99,8 @@ export class SavedViewService {
     return this.repository.save(view);
   }
 
-  async delete(id: string, organizationId: string, userId: string): Promise<void> {
-    const deleted = await this.repository.deleteScoped(id, organizationId, userId);
+  async delete(id: string, userId: string): Promise<void> {
+    const deleted = await this.repository.deleteScoped(id, userId);
     if (!deleted) {
       throw new NotFoundException(`Saved view ${id} not found`);
     }

@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { COMPANY } from '@tejas96/shared/constants';
 import {
   ChangeRequestStatus,
   CustomerStatus,
@@ -26,7 +27,6 @@ import {
   CONSUMER_EVENTS,
   PropertyCreatedEvent,
 } from '../../notifications/events/consumer-notification.events';
-import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { StorageService } from '../../storage/services/storage.service';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
@@ -73,7 +73,6 @@ export class CustomerPropertyService {
   constructor(
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly customerRepository: CustomerProfileRepository,
-    private readonly organizationRepository: OrganizationRepository,
     private readonly discomService: DiscomService,
     private readonly quoteRepository: QuoteRepository,
     private readonly loanApplicationRepository: LoanApplicationRepository,
@@ -86,7 +85,6 @@ export class CustomerPropertyService {
    * Create a new customer property
    */
   async create(
-    organizationId: string,
     createDto: CreateCustomerPropertyDto,
     createdBy?: string,
   ): Promise<CustomerPropertyEntity> {
@@ -94,8 +92,8 @@ export class CustomerPropertyService {
 
     // Verify customer exists and belongs to organization
     const customer = await this.customerRepository.findById(createDto.customerId);
-    if (customer?.organizationId !== organizationId) {
-      throw new NotFoundException(`Customer with ID '${createDto.customerId}' not found`);
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
     }
     if (customer.status === CustomerStatus.INACTIVE) {
       throw new BadRequestException('Cannot perform this action: customer is inactive');
@@ -104,7 +102,6 @@ export class CustomerPropertyService {
     // Check for consumer number conflicts (if provided)
     if (createDto.consumerNumber) {
       const existingByConsumerNumber = await this.propertyRepository.findByConsumerNumber(
-        organizationId,
         createDto.consumerNumber,
       );
       if (existingByConsumerNumber) {
@@ -128,7 +125,6 @@ export class CustomerPropertyService {
       ...restCreateDto,
       documents: this.normalizeDocuments(documents),
       changeRequests: normalizeChangeRequestsForStorage(changeRequests, createdBy ?? ''),
-      organizationId,
       isPrimary,
       status: createDto.status || PropertyStatus.ACTIVE,
       createdBy,
@@ -143,18 +139,15 @@ export class CustomerPropertyService {
 
     // Generate human-readable code (e.g. PROP-ONEOHM_EPC-2026-0001)
     try {
-      const org = await this.organizationRepository.findOneById(organizationId);
-      if (org) {
-        const propertyCode = await generateEntityCode(
-          this.propertyRepository.repository,
-          'propertyCode',
-          'PROP',
-          org.code,
-          'property_code',
-        );
-        await this.propertyRepository.repository.update(property.id, { propertyCode });
-        property.propertyCode = propertyCode;
-      }
+      const propertyCode = await generateEntityCode(
+        this.propertyRepository.repository,
+        'propertyCode',
+        'PROP',
+        COMPANY.code,
+        'property_code',
+      );
+      await this.propertyRepository.repository.update(property.id, { propertyCode });
+      property.propertyCode = propertyCode;
     } catch (err) {
       this.logger.warn(`Failed to generate property code for ${property.id}: ${String(err)}`);
     }
@@ -162,14 +155,12 @@ export class CustomerPropertyService {
     this.logger.log(`✅ Property created: ${property.id}`);
 
     const createdProperty =
-      (await this.propertyRepository.findByIdAndOrganization(property.id, organizationId)) ??
-      property;
+      (await this.propertyRepository.findByIdAndOrganization(property.id)) ?? property;
 
     // Notify consumer about new property (fire-and-forget)
     this.eventEmitter.emit(
       CONSUMER_EVENTS.PROPERTY_CREATED,
       new PropertyCreatedEvent(
-        organizationId,
         createdProperty.id,
         createDto.customerId,
         createdProperty.propertyName,
@@ -182,8 +173,8 @@ export class CustomerPropertyService {
   /**
    * Find property by ID
    */
-  async findById(id: string, organizationId: string): Promise<CustomerPropertyEntity> {
-    const property = await this.propertyRepository.findByIdAndOrganization(id, organizationId);
+  async findById(id: string): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findByIdAndOrganization(id);
 
     if (!property) {
       throw new NotFoundException(`Property with ID '${id}' not found`);
@@ -196,18 +187,13 @@ export class CustomerPropertyService {
    * Find all properties for an organization with filters, sorting, and pagination
    * Enriches results with latest quote info per property
    *
-   * @param organizationId - Organization context
    * @param query - Query parameters (filters, sorting, pagination)
    * @returns Properties enriched with quote info and total count
    */
   async findAll(
-    organizationId: string,
     query: PropertyQueryDto,
   ): Promise<{ data: PropertyWithQuoteInfo[]; total: number }> {
-    const [properties, total] = await this.propertyRepository.findWithFilters(
-      organizationId,
-      query,
-    );
+    const [properties, total] = await this.propertyRepository.findWithFilters(query);
 
     // Early return if no properties (skip quote lookup)
     if (properties.length === 0) {
@@ -216,16 +202,10 @@ export class CustomerPropertyService {
 
     // Batch-load latest quote per property (single query, avoids N+1)
     const propertyIds = properties.map((p) => p.id);
-    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(
-      propertyIds,
-      organizationId,
-    );
+    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
     const projectIdMap = await this.propertyRepository.findProjectIdsByPropertyIds(propertyIds);
     const activeLoanPropertyIds =
-      await this.loanApplicationRepository.findPropertyIdsWithActiveLoans(
-        propertyIds,
-        organizationId,
-      );
+      await this.loanApplicationRepository.findPropertyIdsWithActiveLoans(propertyIds);
 
     const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
@@ -257,14 +237,11 @@ export class CustomerPropertyService {
    *
    * This avoids N+1 queries and is performant for customers with many properties.
    */
-  async findByCustomer(
-    customerId: string,
-    organizationId: string,
-  ): Promise<PropertyWithQuoteInfo[]> {
+  async findByCustomer(customerId: string): Promise<PropertyWithQuoteInfo[]> {
     // Verify customer belongs to organization
     const customer = await this.customerRepository.findById(customerId);
-    if (customer?.organizationId !== organizationId) {
-      throw new NotFoundException(`Customer with ID '${customerId}' not found`);
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
     }
 
     // Query 1: Get properties
@@ -277,10 +254,7 @@ export class CustomerPropertyService {
 
     // Query 2: Get latest quotes for all properties (single batch query)
     const propertyIds = properties.map((p) => p.id);
-    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(
-      propertyIds,
-      organizationId,
-    );
+    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
 
     // Enrich properties with quote data
     return properties.map((property) => {
@@ -305,14 +279,8 @@ export class CustomerPropertyService {
    * Eagerly loads project, quotes, and versions in a single query.
    * Enforces status != 'inactive' and deletedAt IS NULL.
    */
-  async findMyProperties(
-    userId: string,
-    organizationId: string,
-  ): Promise<CustomerPropertyEntity[]> {
-    const customerProfile = await this.customerRepository.findByUserAndOrganization(
-      userId,
-      organizationId,
-    );
+  async findMyProperties(userId: string): Promise<CustomerPropertyEntity[]> {
+    const customerProfile = await this.customerRepository.findByUserAndOrganization(userId);
     if (!customerProfile) {
       return [];
     }
@@ -335,17 +303,11 @@ export class CustomerPropertyService {
    * Find properties by lead temperature (with pagination)
    */
   async findByTemperature(
-    organizationId: string,
     temperature: LeadTemperature,
     page = 1,
     limit = 20,
   ): Promise<{ data: CustomerPropertyEntity[]; total: number }> {
-    const [data, total] = await this.propertyRepository.findByTemperature(
-      organizationId,
-      temperature,
-      page,
-      limit,
-    );
+    const [data, total] = await this.propertyRepository.findByTemperature(temperature, page, limit);
     return { data, total };
   }
 
@@ -354,14 +316,13 @@ export class CustomerPropertyService {
    */
   async update(
     id: string,
-    organizationId: string,
     updateDto: UpdateCustomerPropertyDto,
     updatedBy?: string,
   ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Updating property: ${id}`);
 
     // Verify property exists and belongs to organization
-    const property = await this.findById(id, organizationId);
+    const property = await this.findById(id);
 
     // Validate loan status if trying to disable loan
     if (property.wantsLoan === true && updateDto.wantsLoan === false) {
@@ -379,7 +340,6 @@ export class CustomerPropertyService {
     // Check for consumer number conflicts (if being updated)
     if (updateDto.consumerNumber && updateDto.consumerNumber !== property.consumerNumber) {
       const existingByConsumerNumber = await this.propertyRepository.findByConsumerNumber(
-        organizationId,
         updateDto.consumerNumber,
       );
       if (existingByConsumerNumber && existingByConsumerNumber.id !== id) {
@@ -436,13 +396,12 @@ export class CustomerPropertyService {
    */
   async updateTemperature(
     id: string,
-    organizationId: string,
     temperature: LeadTemperature,
     updatedBy?: string,
   ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Updating property ${id} temperature to: ${temperature}`);
 
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     const updated = await this.propertyRepository.update(id, {
       leadTemperature: temperature,
@@ -460,14 +419,10 @@ export class CustomerPropertyService {
   /**
    * Set property as primary
    */
-  async setPrimary(
-    id: string,
-    organizationId: string,
-    updatedBy?: string,
-  ): Promise<CustomerPropertyEntity> {
+  async setPrimary(id: string, updatedBy?: string): Promise<CustomerPropertyEntity> {
     this.logger.log(`Setting property ${id} as primary`);
 
-    const property = await this.findById(id, organizationId);
+    const property = await this.findById(id);
 
     if (property.isPrimary) {
       throw new BadRequestException('Property is already the primary property');
@@ -477,7 +432,7 @@ export class CustomerPropertyService {
     await this.propertyRepository.setPrimary(id, property.customerId, updatedBy);
 
     // Fetch and return the updated property
-    const updated = await this.findById(id, organizationId);
+    const updated = await this.findById(id);
 
     this.logger.log(`Property set as primary: ${id}`);
     return updated;
@@ -486,25 +441,25 @@ export class CustomerPropertyService {
   /**
    * Permanently delete property when it has no quotes, project, or active loan.
    */
-  async delete(id: string, organizationId: string, _deletedBy?: string): Promise<void> {
+  async delete(id: string, _deletedBy?: string): Promise<void> {
     this.logger.log(`Permanently deleting property: ${id}`);
 
-    const property = await this.findById(id, organizationId);
-    const fileUrls = await this.collectPropertyFileUrls(property, organizationId);
+    const property = await this.findById(id);
+    const fileUrls = await this.collectPropertyFileUrls(property);
 
     await this.dataSource.transaction(async (manager) => {
       const locked = await manager.findOne(CustomerPropertyEntity, {
-        where: { id, organizationId, deletedAt: IsNull() },
+        where: { id, deletedAt: IsNull() },
         lock: { mode: 'pessimistic_write' },
       });
       if (!locked) {
         throw new NotFoundException(`Property with ID '${id}' not found`);
       }
 
-      await this.assertDeletable(id, organizationId, manager);
+      await this.assertDeletable(id, manager);
 
-      await manager.delete(DocumentEntity, { propertyId: id, organizationId });
-      const deleted = await this.propertyRepository.hardDelete(id, organizationId, manager);
+      await manager.delete(DocumentEntity, { propertyId: id });
+      const deleted = await this.propertyRepository.hardDelete(id, manager);
       if (!deleted) {
         throw new NotFoundException(`Property with ID '${id}' not found`);
       }
@@ -515,11 +470,7 @@ export class CustomerPropertyService {
     this.logger.log(`Property permanently deleted: ${id}`);
   }
 
-  private async assertDeletable(
-    propertyId: string,
-    organizationId: string,
-    manager: EntityManager,
-  ): Promise<void> {
+  private async assertDeletable(propertyId: string, manager: EntityManager): Promise<void> {
     const projectMap = await this.propertyRepository.findProjectIdsByPropertyIds(
       [propertyId],
       manager,
@@ -528,20 +479,12 @@ export class CustomerPropertyService {
       throw new ConflictException('Cannot delete: property has been converted to a project');
     }
 
-    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(
-      [propertyId],
-      organizationId,
-      manager,
-    );
+    const quoteMap = await this.quoteRepository.findLatestByPropertyIds([propertyId], manager);
     if (quoteMap.has(propertyId)) {
       throw new ConflictException('Cannot delete: property has quotations');
     }
 
-    const loan = await this.loanApplicationRepository.findByProperty(
-      propertyId,
-      organizationId,
-      manager,
-    );
+    const loan = await this.loanApplicationRepository.findByProperty(propertyId, manager);
     if (loan && !TERMINAL_LOAN_STATUSES.includes(loan.status)) {
       throw new ConflictException(
         'Cannot delete: property has an active loan application in progress',
@@ -549,7 +492,7 @@ export class CustomerPropertyService {
     }
 
     const property = await manager.findOne(CustomerPropertyEntity, {
-      where: { id: propertyId, organizationId },
+      where: { id: propertyId },
       select: ['id', 'changeRequests'],
     });
     if (property?.changeRequests?.some((cr) => cr.status === ChangeRequestStatus.PENDING)) {
@@ -557,10 +500,7 @@ export class CustomerPropertyService {
     }
   }
 
-  private async collectPropertyFileUrls(
-    property: CustomerPropertyEntity,
-    organizationId: string,
-  ): Promise<string[]> {
+  private async collectPropertyFileUrls(property: CustomerPropertyEntity): Promise<string[]> {
     const urls = new Set<string>();
 
     for (const doc of property.documents ?? []) {
@@ -568,7 +508,7 @@ export class CustomerPropertyService {
     }
 
     const documents = await this.dataSource.getRepository(DocumentEntity).find({
-      where: { propertyId: property.id, organizationId },
+      where: { propertyId: property.id },
       select: ['fileUrl'],
     });
     for (const doc of documents) {
@@ -595,8 +535,8 @@ export class CustomerPropertyService {
   /**
    * Get temperature statistics (optimized single query)
    */
-  async getTemperatureStatistics(organizationId: string): Promise<Record<string, number>> {
-    const stats = await this.propertyRepository.getTemperatureStats(organizationId);
+  async getTemperatureStatistics(): Promise<Record<string, number>> {
+    const stats = await this.propertyRepository.getTemperatureStats();
 
     // Initialize all temperatures with 0
     const result: Record<string, number> = {
@@ -617,13 +557,12 @@ export class CustomerPropertyService {
    */
   async addDocument(
     propertyId: string,
-    organizationId: string,
     document: PropertyDocumentDto,
     userId: string,
   ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Adding document to property ${propertyId}`);
 
-    const property = await this.findById(propertyId, organizationId);
+    const property = await this.findById(propertyId);
     const documents: PropertyDocument[] = [
       ...(property.documents || []),
       this.normalizeDocument(document),
@@ -646,13 +585,12 @@ export class CustomerPropertyService {
    */
   async removeDocument(
     propertyId: string,
-    organizationId: string,
     documentUrl: string,
     userId: string,
   ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Removing document from property ${propertyId}`);
 
-    const property = await this.findById(propertyId, organizationId);
+    const property = await this.findById(propertyId);
     const documents = (property.documents || []).filter((d) => d.url !== documentUrl);
 
     const updated = await this.propertyRepository.update(propertyId, {
@@ -684,15 +622,8 @@ export class CustomerPropertyService {
    * Complete a site visit for a property.
    * Validates that the property is in a valid state before marking visit as done.
    */
-  async completeVisit(
-    propertyId: string,
-    organizationId: string,
-    userId: string,
-  ): Promise<CustomerPropertyEntity> {
-    const property = await this.propertyRepository.findByIdAndOrganization(
-      propertyId,
-      organizationId,
-    );
+  async completeVisit(propertyId: string, userId: string): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findByIdAndOrganization(propertyId);
     if (!property) {
       throw new NotFoundException(`Property ${propertyId} not found`);
     }
@@ -725,15 +656,8 @@ export class CustomerPropertyService {
    * Complete a site survey for a property.
    * Requires that the site visit has already been completed.
    */
-  async completeSurvey(
-    propertyId: string,
-    organizationId: string,
-    userId: string,
-  ): Promise<CustomerPropertyEntity> {
-    const property = await this.propertyRepository.findByIdAndOrganization(
-      propertyId,
-      organizationId,
-    );
+  async completeSurvey(propertyId: string, userId: string): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findByIdAndOrganization(propertyId);
     if (!property) {
       throw new NotFoundException(`Property ${propertyId} not found`);
     }
@@ -776,15 +700,8 @@ export class CustomerPropertyService {
   /**
    * Cancel the site activity for a property.
    */
-  async cancelSiteActivity(
-    propertyId: string,
-    organizationId: string,
-    userId: string,
-  ): Promise<CustomerPropertyEntity> {
-    const property = await this.propertyRepository.findByIdAndOrganization(
-      propertyId,
-      organizationId,
-    );
+  async cancelSiteActivity(propertyId: string, userId: string): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findByIdAndOrganization(propertyId);
     if (!property) {
       throw new NotFoundException(`Property ${propertyId} not found`);
     }

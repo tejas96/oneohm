@@ -15,7 +15,6 @@ import type {
   ResourceSelector,
   NormalizedError,
 } from './types';
-import { useOrgContext } from './use-org-context';
 import { useQueryState, type UseQueryStateReturn } from './use-query-state';
 
 import { apiClient } from '@/lib/api/client';
@@ -48,7 +47,6 @@ export function useResourceList<
     enabled?: boolean;
   },
 ): UseResourceListReturn<T, F, R> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const queryClient = useQueryClient();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
 
@@ -72,7 +70,7 @@ export function useResourceList<
 
   const query = useQuery({
     queryKey: [
-      ...keys.list(organizationId, queryState.activeFilters as Record<string, unknown>),
+      ...keys.list(queryState.activeFilters as Record<string, unknown>),
       ...(endpointKey ? [endpointKey] : []),
     ],
     queryFn: async ({ signal }) => {
@@ -81,13 +79,12 @@ export function useResourceList<
         paramMapping: config.paramMapping,
       });
       const { data } = await apiClient.get(`${config.endpoint}?${params.toString()}`, {
-        headers: config.requiresOrg !== false ? orgHeaders : {},
         signal,
       });
       const adapter = config.responseAdapter ?? defaultResponseAdapter<T>;
       return adapter(data);
     },
-    enabled: (config.requiresOrg !== false ? isReady : true) && (options?.enabled ?? true),
+    enabled: options?.enabled ?? true,
     retry: RESOURCE_QUERY_RETRY,
     placeholderData: keepPreviousData,
     staleTime: config.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
@@ -118,7 +115,7 @@ export function useResourceList<
       const prefetchEndpointKey = cfg.endpoint !== `/${cfg.resource}` ? cfg.endpoint : undefined;
       void queryClient.prefetchQuery({
         queryKey: [
-          ...keys.list(organizationId, prefetchFilters),
+          ...keys.list(prefetchFilters),
           ...(prefetchEndpointKey ? [prefetchEndpointKey] : []),
         ],
         queryFn: async ({ signal }) => {
@@ -127,7 +124,6 @@ export function useResourceList<
             paramMapping: cfg.paramMapping,
           });
           const { data } = await apiClient.get(`${cfg.endpoint}?${params.toString()}`, {
-            headers: cfg.requiresOrg !== false ? orgHeaders : {},
             signal,
           });
           return (cfg.responseAdapter ?? defaultResponseAdapter<T>)(data);
@@ -135,7 +131,7 @@ export function useResourceList<
         staleTime: cfg.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
       });
     },
-    [organizationId, queryState.activeFilters, orgHeaders, keys, queryClient],
+    [queryState.activeFilters, keys, queryClient],
   );
 
   const fullData = query.data as ResourceListResponse<T> | undefined;

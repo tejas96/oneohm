@@ -70,9 +70,9 @@ export interface PricingBreakdown {
   basePrice: number;
   /** Base price after discount applied (before GST recalculation) */
   discountedBasePrice?: number;
-  /** GST on the equipment-weighted portion of the base at organization-configurable rate */
+  /** GST on the equipment-weighted portion of the base at a configurable rate */
   gst5OnEquipment: number;
-  /** GST on the services-weighted portion of the base at organization-configurable rate */
+  /** GST on the services-weighted portion of the base at a configurable rate */
   gst18OnServices: number;
   totalGst: number;
   totalPrice: number;
@@ -145,7 +145,6 @@ export interface QuoteSnapshot {
  */
 export interface Quote {
   id: string;
-  organizationId: string;
   customerId: string;
   propertyId?: string;
   salesPersonId?: string;

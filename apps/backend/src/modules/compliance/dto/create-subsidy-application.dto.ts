@@ -18,10 +18,6 @@ import {
 export class CreateSubsidyApplicationDto {
   @IsUUID()
   @IsNotEmpty()
-  organizationId: string;
-
-  @IsUUID()
-  @IsNotEmpty()
   projectId: string;
 
   @IsUUID()

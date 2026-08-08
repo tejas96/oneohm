@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 import { UserRoleEntity } from '../entities/user-role.entity';
 
@@ -29,20 +29,17 @@ export class UserRoleRepository {
    * @param userId - User ID
    * @param roles - Array of role codes (e.g., ['customer', 'reseller'])
    * @param createdBy - User who created the assignment
-   * @param organizationId - Organization context for the role assignment
    */
   async createUserRoles(
     userId: string,
     roles: string[],
     createdBy: string,
-    organizationId?: string,
   ): Promise<UserRoleEntity[]> {
     const userRoles = roles.map((role) =>
       this.repository.create({
         userId,
         role,
         createdBy,
-        organizationId: organizationId ?? null,
       }),
     );
 
@@ -58,23 +55,16 @@ export class UserRoleRepository {
    * @param userId - User ID
    * @param roles - Array of role codes
    * @param createdBy - User who updated the assignment
-   * @param organizationId - Organization context for the role assignment
    */
   async updateUserRoles(
     userId: string,
     roles: string[],
     createdBy: string,
-    organizationId?: string,
   ): Promise<UserRoleEntity[]> {
-    // Delete existing roles for this org
-    if (organizationId) {
-      await this.repository.delete({ userId, organizationId });
-    } else {
-      await this.deleteUserRoles(userId);
-    }
+    await this.deleteUserRoles(userId);
 
     // Create new roles
-    return this.createUserRoles(userId, roles, createdBy, organizationId);
+    return this.createUserRoles(userId, roles, createdBy);
   }
 
   async hasRole(userId: string, role: string): Promise<boolean> {
@@ -95,28 +85,18 @@ export class UserRoleRepository {
    * Also includes platform-level roles (organization_id IS NULL) since
    * those apply globally across all organizations.
    */
-  async findByUserAndOrganization(
-    userId: string,
-    organizationId: string,
-  ): Promise<UserRoleEntity[]> {
+  async findByUserAndOrganization(userId: string): Promise<UserRoleEntity[]> {
     return this.repository.find({
-      where: [
-        { userId, organizationId },
-        { userId, organizationId: IsNull() },
-      ],
+      where: [{ userId }, { userId }],
     });
   }
 
   /**
    * Check if user has a specific role in an organization
    */
-  async hasRoleInOrganization(
-    userId: string,
-    role: string,
-    organizationId: string,
-  ): Promise<boolean> {
+  async hasRoleInOrganization(userId: string, role: string): Promise<boolean> {
     const count = await this.repository.count({
-      where: { userId, role, organizationId },
+      where: { userId, role },
     });
     return count > 0;
   }
@@ -124,8 +104,8 @@ export class UserRoleRepository {
   /**
    * Delete roles for user in a specific organization
    */
-  async deleteUserRolesInOrganization(userId: string, organizationId: string): Promise<void> {
-    await this.repository.delete({ userId, organizationId });
+  async deleteUserRolesInOrganization(userId: string): Promise<void> {
+    await this.repository.delete({ userId });
   }
 
   /**
@@ -135,14 +115,12 @@ export class UserRoleRepository {
     userId: string;
     roleId: string;
     role?: string | null;
-    organizationId?: string | null;
     createdBy?: string;
   }): Promise<UserRoleEntity> {
     const userRole = this.repository.create({
       userId: data.userId,
       roleId: data.roleId,
       role: data.role ?? null,
-      organizationId: data.organizationId || null,
       createdBy: data.createdBy,
     });
     return this.repository.save(userRole);
@@ -166,7 +144,6 @@ export class UserRoleRepository {
       .innerJoin('roles', 'role', 'role.id = user_role.role_id')
       .where('user_role.user_id = :userId', { userId })
       .andWhere('role.code = :code', { code: 'platform_admin' })
-      .andWhere('user_role.organization_id IS NULL')
       .getCount();
 
     return count > 0;

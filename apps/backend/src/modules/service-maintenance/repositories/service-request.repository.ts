@@ -92,12 +92,9 @@ export class ServiceRequestRepository {
   /**
    * Find requests by organization
    */
-  async findByOrganization(
-    organizationId: string,
-    options?: { relations?: string[] },
-  ): Promise<ServiceRequestEntity[]> {
+  async findByOrganization(options?: { relations?: string[] }): Promise<ServiceRequestEntity[]> {
     return this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       relations: options?.relations || [],
       order: { requestDate: 'DESC' },
     });
@@ -279,14 +276,10 @@ export class ServiceRequestRepository {
   /**
    * Generate next request number
    */
-  async generateRequestNumber(
-    organizationId: string,
-    year: number = new Date().getFullYear(),
-  ): Promise<string> {
+  async generateRequestNumber(year: number = new Date().getFullYear()): Promise<string> {
     const prefix = `SR-${year}`;
     const lastRequest = await this.repository.findOne({
       where: {
-        organizationId,
         requestNumber: Like(`${prefix}-%`),
       },
       order: { requestNumber: 'DESC' },
@@ -371,9 +364,9 @@ export class ServiceRequestRepository {
   /**
    * Get request statistics for organization
    */
-  async getStatsByOrganization(organizationId: string): Promise<Record<string, unknown>> {
+  async getStatsByOrganization(): Promise<Record<string, unknown>> {
     const requests = await this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       select: ['status', 'priority', 'isChargeable'],
     });
 

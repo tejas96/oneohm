@@ -21,32 +21,22 @@ export function stableHash(obj: unknown): string {
 }
 
 export function createResourceKeys(resource: string): {
-  all: (orgId?: string) => readonly [string, string | undefined];
-  lists: (orgId?: string) => readonly [string, string | undefined, 'list'];
-  list: (
-    orgId: string | undefined,
-    filters: Record<string, unknown>,
-  ) => readonly [string, string | undefined, 'list', string];
-  details: (orgId?: string) => readonly [string, string | undefined, 'detail'];
-  detail: (
-    orgId: string | undefined,
-    id: string,
-  ) => readonly [string, string | undefined, 'detail', string];
-  stats: (orgId?: string) => readonly [string, string | undefined, 'stats'];
-  infinite: (
-    orgId: string | undefined,
-    filters: Record<string, unknown>,
-  ) => readonly [string, string | undefined, 'infinite', string];
+  all: () => readonly [string];
+  lists: () => readonly [string, 'list'];
+  list: (filters: Record<string, unknown>) => readonly [string, 'list', string];
+  details: () => readonly [string, 'detail'];
+  detail: (id: string) => readonly [string, 'detail', string];
+  stats: () => readonly [string, 'stats'];
+  infinite: (filters: Record<string, unknown>) => readonly [string, 'infinite', string];
 } {
   return {
-    all: (orgId?: string) => [resource, orgId] as const,
-    lists: (orgId?: string) => [resource, orgId, 'list'] as const,
-    list: (orgId: string | undefined, filters: Record<string, unknown>) =>
-      [resource, orgId, 'list', stableHash(filters)] as const,
-    details: (orgId?: string) => [resource, orgId, 'detail'] as const,
-    detail: (orgId: string | undefined, id: string) => [resource, orgId, 'detail', id] as const,
-    stats: (orgId?: string) => [resource, orgId, 'stats'] as const,
-    infinite: (orgId: string | undefined, filters: Record<string, unknown>) =>
-      [resource, orgId, 'infinite', stableHash(filters)] as const,
+    all: () => [resource] as const,
+    lists: () => [resource, 'list'] as const,
+    list: (filters: Record<string, unknown>) => [resource, 'list', stableHash(filters)] as const,
+    details: () => [resource, 'detail'] as const,
+    detail: (id: string) => [resource, 'detail', id] as const,
+    stats: () => [resource, 'stats'] as const,
+    infinite: (filters: Record<string, unknown>) =>
+      [resource, 'infinite', stableHash(filters)] as const,
   };
 }

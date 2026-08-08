@@ -36,14 +36,13 @@ export class CreateEmployeeDto {
   @IsString()
   @IsNotEmpty()
   @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, {
-    message: 'organizationId must be a valid UUID',
+    message: 'userId must be a valid UUID',
   })
-  organizationId!: string;
 
   // ==================== Employment Info ====================
   @ApiPropertyOptional({
     example: 'EMP-2024-001',
-    description: 'Unique employee ID within organization',
+    description: 'Unique employee ID',
   })
   @IsString()
   @IsOptional()

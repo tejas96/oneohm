@@ -8,19 +8,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CreateCustomerProfileFormData } from '../schemas/customer.schema';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Query Keys
 // ============================================================================
 
 export const customerKeys = {
-  all: (orgId?: string) => ['customers', orgId] as const,
-  lists: (orgId?: string) => [...customerKeys.all(orgId), 'list'] as const,
-  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
-    [...customerKeys.lists(orgId), filters] as const,
-  details: (orgId?: string) => [...customerKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) => [...customerKeys.details(orgId), id] as const,
+  all: () => ['customers'] as const,
+  lists: () => [...customerKeys.all(), 'list'] as const,
+  list: (filters: Record<string, unknown>) => [...customerKeys.lists(), filters] as const,
+  details: () => [...customerKeys.all(), 'detail'] as const,
+  detail: (id: string) => [...customerKeys.details(), id] as const,
 };
 
 // ============================================================================
@@ -74,8 +72,6 @@ export function useCreateCustomer(): UseMutationResult<
   CreateCustomerProfileFormData
 > {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (data: CreateCustomerProfileFormData): Promise<CustomerResponse> => {
@@ -102,13 +98,11 @@ export function useCreateCustomer(): UseMutationResult<
         groupName: data.groupName || undefined,
       };
 
-      const { data: response } = await apiClient.post<CustomerResponse>('/customers', payload, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      const { data: response } = await apiClient.post<CustomerResponse>('/customers', payload, {});
       return response;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
     },
   });
 }
@@ -139,9 +133,6 @@ export function useCheckAvailability(): {
   clearErrors: () => void;
   hasErrors: boolean;
 } {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   const [state, setState] = useState<AvailabilityState>({
     phoneError: null,
     emailError: null,
@@ -169,12 +160,10 @@ export function useCheckAvailability(): {
 
       const url = `/customers/check-availability?${queryParams.toString()}`;
 
-      const { data } = await apiClient.get<AvailabilityResponse>(url, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      const { data } = await apiClient.get<AvailabilityResponse>(url, {});
       return data;
     },
-    [organizationId],
+    [],
   );
 
   const checkPhone = useCallback(

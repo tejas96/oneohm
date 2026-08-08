@@ -1,14 +1,10 @@
-import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 @Entity('brands')
-@Index(['organizationId', 'name'], { unique: true })
+@Index(['name'], { unique: true })
 export class BrandEntity extends BaseEntity {
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
-
   @Column({ type: 'varchar', length: 100 })
   name!: string;
 
@@ -38,8 +34,4 @@ export class BrandEntity extends BaseEntity {
 
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
-
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 }

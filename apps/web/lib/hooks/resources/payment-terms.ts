@@ -4,8 +4,6 @@ import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tan
 import type { PaymentTermSource, PaymentTermStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
-import { useOrgContext } from '../core';
-
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/utils/error';
@@ -16,7 +14,6 @@ import { getErrorMessage } from '@/lib/utils/error';
 
 export interface PaymentTerm {
   id: string;
-  organizationId: string;
   projectId: string;
   sourceQuoteVersionId?: string | null;
   source: PaymentTermSource;
@@ -72,13 +69,12 @@ export interface WaivePaymentTermPayload {
 }
 
 // ============================================================================
-// Cache keys — keyed on organizationId so cross-org bleed is impossible.
+// Cache keys — keyed on so cross-org bleed is impossible.
 // ============================================================================
 
 export const paymentTermKeys = {
-  all: (orgId?: string) => ['payment-terms', orgId] as const,
-  byProject: (orgId: string | undefined, projectId: string) =>
-    [...paymentTermKeys.all(orgId), 'project', projectId] as const,
+  all: () => ['payment-terms'] as const,
+  byProject: (projectId: string) => [...paymentTermKeys.all(), 'project', projectId] as const,
 };
 
 // ============================================================================
@@ -94,17 +90,15 @@ export function usePaymentTerms(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<PaymentTerm[], AxiosError> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   return useQuery({
-    queryKey: paymentTermKeys.byProject(organizationId, projectId),
+    queryKey: paymentTermKeys.byProject(projectId),
     queryFn: async ({ signal }): Promise<PaymentTerm[]> => {
       const { data } = await apiClient.get<PaymentTerm[]>(`/projects/${projectId}/payment-terms`, {
-        headers: orgHeaders,
         signal,
       });
       return data;
     },
-    enabled: isReady && !!projectId && options?.enabled !== false,
+    enabled: !!projectId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -123,17 +117,16 @@ export function usePaymentTerms(
  */
 export function usePaymentTermMutations(projectId: string) {
   const queryClient = useQueryClient();
-  const { organizationId, orgHeaders } = useOrgContext();
 
   const invalidate = (): void => {
     void queryClient.invalidateQueries({
-      queryKey: paymentTermKeys.byProject(organizationId, projectId),
+      queryKey: paymentTermKeys.byProject(projectId),
     });
     // Receipts side-effects: anything keyed under payments/receipts/summary
     // for this project must refetch because reaggregateTerm runs in the
     // same backend transaction as the term mutation.
-    void queryClient.invalidateQueries({ queryKey: ['payments', organizationId] });
-    void queryClient.invalidateQueries({ queryKey: ['receipts', organizationId] });
+    void queryClient.invalidateQueries({ queryKey: ['payments'] });
+    void queryClient.invalidateQueries({ queryKey: ['receipts'] });
   };
 
   const create = useMutation<PaymentTerm, AxiosError, CreatePaymentTermPayload>({
@@ -141,7 +134,6 @@ export function usePaymentTermMutations(projectId: string) {
       const { data } = await apiClient.post<PaymentTerm>(
         `/projects/${projectId}/payment-terms`,
         payload,
-        { headers: orgHeaders },
       );
       return data;
     },
@@ -158,9 +150,7 @@ export function usePaymentTermMutations(projectId: string) {
     { id: string; payload: UpdatePaymentTermPayload }
   >({
     mutationFn: async ({ id, payload }) => {
-      const { data } = await apiClient.patch<PaymentTerm>(`/payment-terms/${id}`, payload, {
-        headers: orgHeaders,
-      });
+      const { data } = await apiClient.patch<PaymentTerm>(`/payment-terms/${id}`, payload);
       return data;
     },
     onSuccess: () => {
@@ -172,11 +162,7 @@ export function usePaymentTermMutations(projectId: string) {
 
   const waive = useMutation<PaymentTerm, AxiosError, { id: string; reason: string }>({
     mutationFn: async ({ id, reason }) => {
-      const { data } = await apiClient.post<PaymentTerm>(
-        `/payment-terms/${id}/waive`,
-        { reason },
-        { headers: orgHeaders },
-      );
+      const { data } = await apiClient.post<PaymentTerm>(`/payment-terms/${id}/waive`, { reason });
       return data;
     },
     onSuccess: () => {
@@ -188,7 +174,7 @@ export function usePaymentTermMutations(projectId: string) {
 
   const remove = useMutation<void, AxiosError, string>({
     mutationFn: async (id) => {
-      await apiClient.delete(`/payment-terms/${id}`, { headers: orgHeaders });
+      await apiClient.delete(`/payment-terms/${id}`);
     },
     onSuccess: () => {
       showToast.success('Payment term deleted');
@@ -208,7 +194,6 @@ export function usePaymentTermMutations(projectId: string) {
       const { data } = await apiClient.post<PaymentTerm[]>(
         `/projects/${projectId}/payment-terms/resnapshot`,
         {},
-        { headers: orgHeaders },
       );
       return data;
     },

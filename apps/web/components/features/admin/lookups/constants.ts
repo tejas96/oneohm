@@ -4,7 +4,6 @@ import type { FilterTab } from '@/components/shared';
 
 export const LOOKUP_SCOPE_TYPE_LABELS: Record<LookupScopeType, string> = {
   [LookupScopeType.GLOBAL]: 'Global',
-  [LookupScopeType.ORGANIZATION]: 'Organization',
 };
 
 export const LOOKUP_DATA_TYPE_LABELS: Record<LookupDataType, string> = {
@@ -24,5 +23,4 @@ export const LOOKUP_STATUS_TABS: FilterTab<string>[] = [
 export const LOOKUP_SCOPE_TYPE_TABS: FilterTab<string>[] = [
   { id: 'all', label: 'All' },
   { id: LookupScopeType.GLOBAL, label: 'Global' },
-  { id: LookupScopeType.ORGANIZATION, label: 'Organization' },
 ];

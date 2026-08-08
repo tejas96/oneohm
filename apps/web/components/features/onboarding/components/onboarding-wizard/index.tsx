@@ -331,15 +331,7 @@ export function OnboardingWizard({
       setCustomerLocked(true);
       return created.id;
     } catch (error: unknown) {
-      const axiosErr = error as { response?: { data?: { message?: string }; status?: number } };
-      const isOrgIdError =
-        axiosErr.response?.status === 400 &&
-        axiosErr.response.data?.message?.includes('organizationId');
-      showToast.error(
-        isOrgIdError
-          ? 'Your account is not assigned to an organization. Please contact support.'
-          : getErrorMessage(error),
-      );
+      showToast.error(getErrorMessage(error));
       return null;
     } finally {
       setIsSavingCustomer(false);

@@ -14,32 +14,30 @@ export class ProductPriceService {
   ) {}
 
   async findAll(
-    organizationId: string,
     productId: string,
     filters?: { isActive?: boolean },
   ): Promise<ProductPriceEntity[]> {
-    await this.assertProductExists(productId, organizationId);
-    const prices = await this.productPriceRepository.findAllByProductId(organizationId, productId);
+    await this.assertProductExists(productId);
+    const prices = await this.productPriceRepository.findAllByProductId(productId);
     if (filters?.isActive === undefined) return prices;
     return prices.filter((price) => price.isActive === filters.isActive);
   }
 
   async create(
-    organizationId: string,
     productId: string,
     dto: CreateProductPriceDto,
     createdBy?: string,
   ): Promise<ProductPriceEntity> {
-    await this.assertProductExists(productId, organizationId);
+    await this.assertProductExists(productId);
 
     const effectiveFrom = this.toDate(dto.effectiveFrom, 'effectiveFrom');
     const effectiveTo = dto.effectiveTo ? this.toDate(dto.effectiveTo, 'effectiveTo') : undefined;
 
     this.validateDateRange(effectiveFrom, effectiveTo);
 
-    await this.deactivateExistingPrices(organizationId, productId, dto.projectType, effectiveFrom);
+    await this.deactivateExistingPrices(productId, dto.projectType, effectiveFrom);
 
-    return this.productPriceRepository.create(organizationId, {
+    return this.productPriceRepository.create({
       ...dto,
       productId,
       effectiveFrom,
@@ -51,13 +49,12 @@ export class ProductPriceService {
 
   async update(
     id: string,
-    organizationId: string,
     productId: string,
     dto: UpdateProductPriceDto,
     updatedBy?: string,
   ): Promise<ProductPriceEntity> {
-    await this.assertProductExists(productId, organizationId);
-    const existing = await this.findById(id, organizationId, productId);
+    await this.assertProductExists(productId);
+    const existing = await this.findById(id, productId);
     const hasProjectTypeUpdate = Object.prototype.hasOwnProperty.call(dto, 'projectType');
 
     const effectiveFrom = dto.effectiveFrom
@@ -82,13 +79,7 @@ export class ProductPriceService {
       Object.prototype.hasOwnProperty.call(dto, 'isActive');
 
     if (nextIsActive && (projectTypeChanged || touchesScheduleOrActive)) {
-      await this.deactivateExistingPrices(
-        organizationId,
-        productId,
-        nextProjectType,
-        effectiveFrom,
-        id,
-      );
+      await this.deactivateExistingPrices(productId, nextProjectType, effectiveFrom, id);
     }
 
     const updateData: Partial<ProductPriceEntity> = {
@@ -101,34 +92,25 @@ export class ProductPriceService {
       updateData.projectType = nextProjectType ?? null;
     }
 
-    return this.productPriceRepository.update(id, organizationId, {
+    return this.productPriceRepository.update(id, {
       ...updateData,
     });
   }
 
-  async deactivate(
-    id: string,
-    organizationId: string,
-    productId: string,
-    updatedBy?: string,
-  ): Promise<ProductPriceEntity> {
-    await this.assertProductExists(productId, organizationId, { allowDeleted: true });
-    const existing = await this.findById(id, organizationId, productId);
+  async deactivate(id: string, productId: string, updatedBy?: string): Promise<ProductPriceEntity> {
+    await this.assertProductExists(productId, { allowDeleted: true });
+    const existing = await this.findById(id, productId);
     const effectiveTo = existing.effectiveTo ?? this.today();
 
-    return this.productPriceRepository.update(id, organizationId, {
+    return this.productPriceRepository.update(id, {
       isActive: false,
       effectiveTo,
       updatedBy,
     });
   }
 
-  private async findById(
-    id: string,
-    organizationId: string,
-    productId: string,
-  ): Promise<ProductPriceEntity> {
-    const price = await this.productPriceRepository.findById(id, organizationId, productId);
+  private async findById(id: string, productId: string): Promise<ProductPriceEntity> {
+    const price = await this.productPriceRepository.findById(id, productId);
     if (!price) {
       throw new NotFoundException('Product price not found');
     }
@@ -137,25 +119,23 @@ export class ProductPriceService {
 
   private async assertProductExists(
     productId: string,
-    organizationId: string,
     options?: { allowDeleted?: boolean },
   ): Promise<void> {
     const product = options?.allowDeleted
-      ? await this.productRepository.findAnyById(productId, organizationId)
-      : await this.productRepository.findById(productId, organizationId);
+      ? await this.productRepository.findAnyById(productId)
+      : await this.productRepository.findById(productId);
     if (!product) {
       throw new NotFoundException('Product not found');
     }
   }
 
   private async deactivateExistingPrices(
-    organizationId: string,
     productId: string,
     projectType: ProjectType | undefined,
     effectiveFrom: Date,
     exceptId?: string,
   ): Promise<void> {
-    const prices = await this.productPriceRepository.findAllByProductId(organizationId, productId);
+    const prices = await this.productPriceRepository.findAllByProductId(productId);
     const matching = prices.filter(
       (price) =>
         price.isActive &&
@@ -168,7 +148,7 @@ export class ProductPriceService {
     const endDate = this.yesterday(effectiveFrom);
     await Promise.all(
       matching.map((price) =>
-        this.productPriceRepository.update(price.id, organizationId, {
+        this.productPriceRepository.update(price.id, {
           isActive: false,
           effectiveTo: endDate,
         }),
