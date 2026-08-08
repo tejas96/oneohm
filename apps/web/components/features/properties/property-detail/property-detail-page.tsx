@@ -343,6 +343,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
           ? '—'
           : 'None scheduled',
       tone: !nextFollowup && !isLeadClosed ? ('error' as const) : ('default' as const),
+      onClick: !nextFollowup && !isLeadClosed ? () => setFollowupDrawerOpen(true) : undefined,
     },
     {
       label: 'Project',
