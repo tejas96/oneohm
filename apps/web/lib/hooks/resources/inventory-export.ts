@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
-
 import { showToast } from '@/components/ui/sonner';
 import { PayloadTooLargeError, downloadFromUrl } from '@/lib/utils/download';
 
@@ -80,38 +79,34 @@ export function useInventoryExport(): UseInventoryExportReturn {
   const [pending, setPending] = useState(0);
   const [error, setError] = useState<Error | null>(null);
 
-  const exportCsv = useCallback(
-    async (opts: ExportInventoryOptions) => {
-
-      setPending((n) => n + 1);
-      try {
-        await downloadFromUrl({
-          path: RESOURCE_PATHS[opts.resource],
-          params: opts.filters,
-          filename: opts.filename,
-        });
-        setError(null);
-      } catch (err: unknown) {
-        if (err instanceof PayloadTooLargeError) {
-          // 413 — narrow your filters. We toast here rather than
-          // re-throw because the call site is normally an "Export"
-          // button click; surfacing the cap is more useful than a
-          // promise rejection.
-          showToast.error(
-            'Export is too large. Narrow your filters (date range, status, …) and try again.',
-          );
-          return;
-        }
-        const wrapped = err instanceof Error ? err : new Error(String(err));
-        setError(wrapped);
-        showToast.error(wrapped.message);
-        throw wrapped;
-      } finally {
-        setPending((n) => Math.max(0, n - 1));
+  const exportCsv = useCallback(async (opts: ExportInventoryOptions) => {
+    setPending((n) => n + 1);
+    try {
+      await downloadFromUrl({
+        path: RESOURCE_PATHS[opts.resource],
+        params: opts.filters,
+        filename: opts.filename,
+      });
+      setError(null);
+    } catch (err: unknown) {
+      if (err instanceof PayloadTooLargeError) {
+        // 413 — narrow your filters. We toast here rather than
+        // re-throw because the call site is normally an "Export"
+        // button click; surfacing the cap is more useful than a
+        // promise rejection.
+        showToast.error(
+          'Export is too large. Narrow your filters (date range, status, …) and try again.',
+        );
+        return;
       }
-    },
-    [],
-  );
+      const wrapped = err instanceof Error ? err : new Error(String(err));
+      setError(wrapped);
+      showToast.error(wrapped.message);
+      throw wrapped;
+    } finally {
+      setPending((n) => Math.max(0, n - 1));
+    }
+  }, []);
 
   return useMemo(
     () => ({ exportCsv, isDownloading: pending > 0, error }),

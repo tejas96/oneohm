@@ -71,9 +71,7 @@ export function useReportEditor(projectId: string, reportId: string | null, open
       previewHtmlRef.current = '';
 
       try {
-        const result = await initializeReport(
-          { reportId, context, ignoreSavedDraft },
-        );
+        const result = await initializeReport({ reportId, context, ignoreSavedDraft });
         if (gen !== initGenRef.current) return;
 
         setFields(result.fields);
@@ -213,18 +211,16 @@ export function useReportEditor(projectId: string, reportId: string | null, open
       });
 
       try {
-        return await saveReport(
-          {
-            reportId,
-            context,
-            fields,
-            file: {
-              fileKey: upload.fileKey,
-              publicUrl: upload.publicUrl,
-              fileSizeBytes: blob.size,
-            },
+        return await saveReport({
+          reportId,
+          context,
+          fields,
+          file: {
+            fileKey: upload.fileKey,
+            publicUrl: upload.publicUrl,
+            fileSizeBytes: blob.size,
           },
-        );
+        });
       } catch (err) {
         try {
           await deleteFile(upload.fileKey);

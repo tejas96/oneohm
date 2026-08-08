@@ -59,7 +59,6 @@ export function useProjectMemberTasks(
   isLoading: boolean;
   isError: boolean;
 } {
-
   const query = useQuery<ProjectTaskItem[]>({
     queryKey: [...projectDetailKeys.tasks(projectId), 'byAssignee', userId],
     queryFn: async () => {
@@ -161,10 +160,7 @@ export function useEditProject(projectId: string): UseEditProjectReturn {
 
   const reassignTaskMutation = useMutation({
     mutationFn: async ({ taskId, assignedToUserId }: ReassignTaskPayload) => {
-      await apiClient.patch(
-        `/projects/${projectId}/tasks/${taskId}`,
-        { assignedToUserId },
-      );
+      await apiClient.patch(`/projects/${projectId}/tasks/${taskId}`, { assignedToUserId });
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({

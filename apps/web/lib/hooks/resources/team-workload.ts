@@ -23,7 +23,6 @@ const wlKeys = createResourceKeys('team-workload');
  * Endpoint: GET /projects/team/workload
  */
 export function useTeamWorkload(): UseQueryResult<TeamWorkloadItem[]> {
-
   return useQuery<TeamWorkloadItem[]>({
     queryKey: wlKeys.list({}),
     queryFn: async (): Promise<TeamWorkloadItem[]> => {

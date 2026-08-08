@@ -157,17 +157,16 @@ export function useAdminUsersList(
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
       if (filters.fromDate) params.append('fromDate', filters.fromDate);
       if (filters.toDate) params.append('toDate', filters.toDate);
-      const { data } = await apiClient.get(`/users?${params.toString()}`, {
-      });
+      const { data } = await apiClient.get(`/users?${params.toString()}`, {});
       return data as AdminUserListResponse;
     },
     placeholderData: keepPreviousData,
   });
 }
 
-export function useCheckUserAvailability(
-  excludeId?: string,
-): ReturnType<typeof useFieldAvailability> & {
+export function useCheckUserAvailability(excludeId?: string): ReturnType<
+  typeof useFieldAvailability
+> & {
   checkPhone: (phone: string) => void;
   checkEmail: (email: string) => void;
   phoneInfo: string | null;

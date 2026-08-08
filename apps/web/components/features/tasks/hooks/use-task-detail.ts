@@ -8,8 +8,7 @@ import { useAuth } from '@/providers/auth-provider';
 
 export const taskDetailKeys = {
   all: () => ['task-detail'] as const,
-  detail: (taskId: string) =>
-    [...taskDetailKeys.all(), taskId] as const,
+  detail: (taskId: string) => [...taskDetailKeys.all(), taskId] as const,
 };
 
 export function useTaskDetail(taskId: string | null): UseQueryResult<MyTask> {
@@ -18,8 +17,7 @@ export function useTaskDetail(taskId: string | null): UseQueryResult<MyTask> {
   return useQuery({
     queryKey: taskDetailKeys.detail(taskId ?? ''),
     queryFn: async () => {
-      const { data } = await apiClient.get<MyTask>(`/tasks/${taskId}`, {
-      });
+      const { data } = await apiClient.get<MyTask>(`/tasks/${taskId}`, {});
       return data;
     },
     enabled: !!user && !!taskId,

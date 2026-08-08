@@ -28,10 +28,7 @@ export function useResourceMutations<T extends { id: string }>(
 ): UseResourceMutationsReturn<T> {
   const queryClient = useQueryClient();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
-  const headers = useMemo(
-    () => ({}),
-    [],
-  );
+  const headers = useMemo(() => ({}), []);
 
   const configRef = useRef(config);
   configRef.current = config;

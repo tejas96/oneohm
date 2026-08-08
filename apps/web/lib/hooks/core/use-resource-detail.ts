@@ -32,8 +32,7 @@ export function useResourceDetail<T>(config: UseResourceDetailConfig<T>) {
       });
       return data as T;
     },
-    enabled:
-      !!config.id && (true) && (config.enabled ?? true),
+    enabled: !!config.id && true && (config.enabled ?? true),
     retry: RESOURCE_QUERY_RETRY,
     staleTime: config.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
     gcTime: config.gcTime ?? RESOURCE_QUERY_DEFAULTS.gcTime,

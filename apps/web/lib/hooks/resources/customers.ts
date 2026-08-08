@@ -39,9 +39,7 @@ export function useCustomerSearch(search: string): {
     queryKey: customerResourceKeys.list({ search, limit: 20 }),
     queryFn: async (): Promise<CustomerListResponse> => {
       const params = new URLSearchParams({ search, limit: '20', page: '1' });
-      const { data } = await apiClient.get<CustomerListResponse>(
-        `/customers?${params.toString()}`,
-      );
+      const { data } = await apiClient.get<CustomerListResponse>(`/customers?${params.toString()}`);
       return data as CustomerListResponse;
     },
     enabled,

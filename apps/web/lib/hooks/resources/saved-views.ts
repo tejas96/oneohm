@@ -100,7 +100,6 @@ export const savedViewKeys = createResourceKeys('saved-views');
  * can render `views.length === 0` without an extra null guard.
  */
 export function useSavedViews(resource: SavedViewResource): UseQueryResult<SavedView[], unknown> {
-
   return useQuery<SavedView[]>({
     queryKey: ['saved-views', 'list', resource] as const,
     staleTime: STALE_TIMES.standard,
@@ -116,7 +115,6 @@ export function useSavedViews(resource: SavedViewResource): UseQueryResult<Saved
 
 /** Fetch a single saved view by id. Cross-user/cross-org returns 404. */
 export function useSavedView(id: string | undefined): UseQueryResult<SavedView, unknown> {
-
   return useQuery<SavedView>({
     queryKey: ['saved-views', 'detail', id ?? ''] as const,
     enabled: Boolean(id),
@@ -175,10 +173,7 @@ export function useSavedViewMutations(): SavedViewMutations {
       return data;
     },
     onSuccess: (saved) => {
-      queryClient.setQueryData<SavedView>(
-        ['saved-views', 'detail', saved.id],
-        saved,
-      );
+      queryClient.setQueryData<SavedView>(['saved-views', 'detail', saved.id], saved);
       invalidate(saved.resource);
       showToast.success('Saved view updated');
     },
@@ -197,11 +192,7 @@ export function useSavedViewMutations(): SavedViewMutations {
       // so invalidate every saved-views list for the org. Cheap because
       // there's at most one query per resource and they refetch only
       // when the user opens the matching SavedViewsBar.
-      const cached = queryClient.getQueryData<SavedView>([
-        'saved-views',
-        'detail',
-        id,
-      ]);
+      const cached = queryClient.getQueryData<SavedView>(['saved-views', 'detail', id]);
       invalidate(cached?.resource);
       queryClient.removeQueries({
         queryKey: ['saved-views', 'detail', id],

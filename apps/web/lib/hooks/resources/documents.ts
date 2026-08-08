@@ -35,11 +35,9 @@ export function useDocumentsByEntity(
   entityType: DocumentEntityType,
   entityId: string | undefined,
 ): UseQueryResult<DocumentRecord[]> {
-
   return useQuery({
     queryKey: [...documentKeys.all(), entityType, entityId ?? ''],
-    queryFn: (): Promise<DocumentRecord[]> =>
-      getDocuments({ entityType, entityId: entityId! }),
+    queryFn: (): Promise<DocumentRecord[]> => getDocuments({ entityType, entityId: entityId! }),
     enabled: !!entityId,
   });
 }
@@ -47,11 +45,9 @@ export function useDocumentsByEntity(
 export function useDocumentsByProperty(
   propertyId: string | undefined,
 ): UseQueryResult<DocumentRecord[]> {
-
   return useQuery({
     queryKey: [...documentKeys.all(), 'property', propertyId ?? ''],
-    queryFn: (): Promise<DocumentRecord[]> =>
-      getDocuments({ propertyId: propertyId! }),
+    queryFn: (): Promise<DocumentRecord[]> => getDocuments({ propertyId: propertyId! }),
     enabled: !!propertyId,
     staleTime: 0,
     refetchOnMount: 'always',
@@ -62,7 +58,6 @@ export function useDocumentsByEntityBatch(
   entityType: DocumentEntityType,
   entityIds: string[],
 ): UseQueryResult<DocumentRecord[]> {
-
   return useQuery({
     queryKey: [...documentKeys.all(), entityType, 'batch', ...entityIds],
     queryFn: (): Promise<DocumentRecord[]> =>

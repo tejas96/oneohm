@@ -135,7 +135,6 @@ function usePipelineQuery<TParams extends Record<string, unknown>, TResponse>(
   params: TParams,
   enabled: boolean,
 ): UseQueryResult<TResponse, unknown> {
-
   const queryKey = useMemo(
     () => ['sales-pipeline', key, stableHash(params)] as const,
     [key, params],

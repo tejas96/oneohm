@@ -35,8 +35,7 @@ interface EmployeeListResponse {
 export const employeeKeys = {
   all: () => ['employees'] as const,
   lists: () => [...employeeKeys.all(), 'list'] as const,
-  list: (filters: Record<string, unknown>) =>
-    [...employeeKeys.lists(), filters] as const,
+  list: (filters: Record<string, unknown>) => [...employeeKeys.lists(), filters] as const,
 };
 
 export function useEmployees(options?: {
@@ -45,7 +44,6 @@ export function useEmployees(options?: {
   status?: string;
   department?: string;
 }): UseQueryResult<EmployeeListResponse, AxiosError> {
-
   return useQuery({
     queryKey: employeeKeys.list({ ...options }),
     queryFn: async (): Promise<EmployeeListResponse> => {
@@ -55,9 +53,7 @@ export function useEmployees(options?: {
       if (options?.status) params.append('status', options.status);
       if (options?.department) params.append('department', options.department);
 
-      const { data } = await apiClient.get<EmployeeListResponse>(
-        `/employees?${params.toString()}`,
-      );
+      const { data } = await apiClient.get<EmployeeListResponse>(`/employees?${params.toString()}`);
       return data;
     },
   });

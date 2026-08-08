@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tan
 import type { PaymentTermSource, PaymentTermStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
-
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/utils/error';
@@ -75,8 +74,7 @@ export interface WaivePaymentTermPayload {
 
 export const paymentTermKeys = {
   all: () => ['payment-terms'] as const,
-  byProject: (projectId: string) =>
-    [...paymentTermKeys.all(), 'project', projectId] as const,
+  byProject: (projectId: string) => [...paymentTermKeys.all(), 'project', projectId] as const,
 };
 
 // ============================================================================
@@ -164,10 +162,7 @@ export function usePaymentTermMutations(projectId: string) {
 
   const waive = useMutation<PaymentTerm, AxiosError, { id: string; reason: string }>({
     mutationFn: async ({ id, reason }) => {
-      const { data } = await apiClient.post<PaymentTerm>(
-        `/payment-terms/${id}/waive`,
-        { reason },
-      );
+      const { data } = await apiClient.post<PaymentTerm>(`/payment-terms/${id}/waive`, { reason });
       return data;
     },
     onSuccess: () => {

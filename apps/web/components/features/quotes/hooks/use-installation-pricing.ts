@@ -31,7 +31,6 @@ export interface InstallationPricingData {
  * (PostgreSQL/TypeORM behavior), so we coerce to number here.
  */
 export function useInstallationPricing(systemSizeKw: number) {
-
   const [debouncedSize, setDebouncedSize] = useState(systemSizeKw);
 
   useEffect(() => {

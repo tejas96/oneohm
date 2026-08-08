@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/utils/error';
@@ -182,16 +181,13 @@ export interface LedgerFilters {
  */
 export const ledgerKeys = {
   root: () => ['ledger'] as const,
-  kpis: (from?: string, to?: string) =>
-    [...ledgerKeys.root(), 'kpis', from, to] as const,
+  kpis: (from?: string, to?: string) => [...ledgerKeys.root(), 'kpis', from, to] as const,
   cashFlow: (from?: string, to?: string, grain?: string) =>
     [...ledgerKeys.root(), 'cash-flow', from, to, grain] as const,
-  entries: (f: LedgerFilters) =>
-    [...ledgerKeys.root(), 'entries', f] as const,
+  entries: (f: LedgerFilters) => [...ledgerKeys.root(), 'entries', f] as const,
   receivables: (page: number, limit: number) =>
     [...ledgerKeys.root(), 'receivables', page, limit] as const,
-  project: (projectId: string) =>
-    [...ledgerKeys.root(), 'project', projectId] as const,
+  project: (projectId: string) => [...ledgerKeys.root(), 'project', projectId] as const,
 };
 
 // ============================================================================
@@ -412,10 +408,9 @@ export function useLedgerMutations(projectId: string) {
   /** Corrections are new rows — the original stays visible forever. */
   const reverseEntry = useMutation({
     mutationFn: async ({ entryId, reason }: { entryId: string; reason: string }) => {
-      const { data } = await apiClient.post<LedgerEntry>(
-        `/ledger/entries/${entryId}/reverse`,
-        { reason },
-      );
+      const { data } = await apiClient.post<LedgerEntry>(`/ledger/entries/${entryId}/reverse`, {
+        reason,
+      });
       return data;
     },
     onSuccess: () => {

@@ -23,12 +23,10 @@ export function useProjectChatMessages(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<ProjectChatMessage[], AxiosError> {
-
   return useQuery({
     queryKey: ['project', projectId, 'chat'],
     queryFn: async (): Promise<ProjectChatMessage[]> => {
-      const { data } = await apiClient.get<ProjectChatMessage[]>(`/projects/${projectId}/chat`, {
-      });
+      const { data } = await apiClient.get<ProjectChatMessage[]>(`/projects/${projectId}/chat`, {});
       return data;
     },
     enabled: !!projectId && options?.enabled !== false,
@@ -42,10 +40,9 @@ export function useSendProjectChatMessage(projectId: string) {
 
   return useMutation({
     mutationFn: async (messageText: string): Promise<ProjectChatMessage> => {
-      const { data } = await apiClient.post<ProjectChatMessage>(
-        `/projects/${projectId}/chat`,
-        { messageText },
-      );
+      const { data } = await apiClient.post<ProjectChatMessage>(`/projects/${projectId}/chat`, {
+        messageText,
+      });
       return data;
     },
     onSuccess: () => {

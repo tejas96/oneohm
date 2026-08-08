@@ -27,9 +27,7 @@ export function resolveTaskStatusPayload(
 }
 
 /** Snapshot helper — used by the board DnD hook before the optimistic patch. */
-export function snapshotProjectTasksCaches(
-  queryClient: QueryClient,
-): CacheSnapshot[] {
+export function snapshotProjectTasksCaches(queryClient: QueryClient): CacheSnapshot[] {
   const snapshots: CacheSnapshot[] = [];
   queryClient
     .getQueryCache()

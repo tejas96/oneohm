@@ -125,7 +125,6 @@ export function useProductPrices(
   isLoading: boolean;
   isError: boolean;
 } {
-
   const query = useQuery<ProductPrice[]>({
     queryKey: productPriceKeys.list({ productId, isActive: true }),
     queryFn: async ({ signal }) => {

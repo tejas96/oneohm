@@ -16,15 +16,13 @@ export interface ProjectReportsData {
 
 export const projectReportKeys = {
   all: () => ['project-reports'] as const,
-  byProject: (projectId: string) =>
-    [...projectReportKeys.all(), projectId] as const,
+  byProject: (projectId: string) => [...projectReportKeys.all(), projectId] as const,
 };
 
 export function useProjectReports(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<ProjectReportsData, AxiosError> {
-
   return useQuery({
     queryKey: projectReportKeys.byProject(projectId),
     queryFn: async (): Promise<ProjectReportsData> => {

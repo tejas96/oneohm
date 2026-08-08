@@ -116,8 +116,7 @@ export interface ProjectListResponse {
 export const projectKeys = {
   all: () => ['projects'] as const,
   lists: () => [...projectKeys.all(), 'list'] as const,
-  list: (filters: Record<string, unknown>) =>
-    [...projectKeys.lists(), filters] as const,
+  list: (filters: Record<string, unknown>) => [...projectKeys.lists(), filters] as const,
   details: () => [...projectKeys.all(), 'detail'] as const,
   detail: (id: string) => [...projectKeys.details(), id] as const,
 };
@@ -161,8 +160,10 @@ export function useProjects(
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
       if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 
-      const response = await apiClient.get<ProjectListResponse>(`/projects?${params.toString()}`, {
-      });
+      const response = await apiClient.get<ProjectListResponse>(
+        `/projects?${params.toString()}`,
+        {},
+      );
       return response.data as ProjectListResponse;
     },
     enabled: callerEnabled !== false,

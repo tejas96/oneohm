@@ -9,8 +9,7 @@ import { apiClient } from '@/lib/api/client';
 export const leadKeys = {
   all: () => ['leads'] as const,
   lists: () => [...leadKeys.all(), 'list'] as const,
-  list: (filters: LeadFilters) =>
-    [...leadKeys.lists(), filters] as const,
+  list: (filters: LeadFilters) => [...leadKeys.lists(), filters] as const,
   details: () => [...leadKeys.all(), 'detail'] as const,
   detail: (id: string) => [...leadKeys.details(), id] as const,
 };
@@ -58,7 +57,6 @@ export interface PaginatedResponse<T> {
  * Hook to fetch leads with pagination and filters
  */
 export function useLeads(filters: LeadFilters = {}) {
-
   return useQuery({
     queryKey: leadKeys.list(filters),
     queryFn: async (): Promise<PaginatedResponse<Lead>> => {
@@ -74,12 +72,10 @@ export function useLeads(filters: LeadFilters = {}) {
  * Hook to fetch a single lead by ID
  */
 export function useLead(id: string) {
-
   return useQuery({
     queryKey: leadKeys.detail(id),
     queryFn: async (): Promise<Lead> => {
-      const { data } = await apiClient.get(`/customers/${id}`, {
-      });
+      const { data } = await apiClient.get(`/customers/${id}`, {});
       return data;
     },
     enabled: !!id,
@@ -107,13 +103,10 @@ export function useCreateLead() {
 
   return useMutation({
     mutationFn: async (lead: CreateLeadDto): Promise<Lead> => {
-      const { data } = await apiClient.post(
-        '/customers',
-        {
-          ...lead,
-          status: 'lead',
-        },
-      );
+      const { data } = await apiClient.post('/customers', {
+        ...lead,
+        status: 'lead',
+      });
       return data;
     },
     onSuccess: () => {
@@ -137,8 +130,7 @@ export function useUpdateLead() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateLeadDto & { id: string }): Promise<Lead> => {
-      const { data } = await apiClient.patch(`/customers/${id}`, updates, {
-      });
+      const { data } = await apiClient.patch(`/customers/${id}`, updates, {});
       return data;
     },
     onSuccess: (data) => {
@@ -156,8 +148,7 @@ export function useDeleteLead() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await apiClient.delete(`/customers/${id}`, {
-      });
+      await apiClient.delete(`/customers/${id}`, {});
     },
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: leadKeys.detail(id) });

@@ -25,7 +25,6 @@ const cpKeys = createResourceKeys('customer-properties');
 export function useCustomerPropertiesByCustomer(
   customerId: string,
 ): UseQueryResult<CustomerPropertyResponse[]> {
-
   return useQuery<CustomerPropertyResponse[]>({
     queryKey: cpKeys.list({ customerId }),
     queryFn: async (): Promise<CustomerPropertyResponse[]> => {

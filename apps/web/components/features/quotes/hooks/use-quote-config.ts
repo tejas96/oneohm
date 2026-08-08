@@ -54,7 +54,6 @@ export interface PhaseTypeOption {
 }
 
 export function useQuoteConfig() {
-
   const productOptions = useProductOptions();
 
   const { items: productTypes } = useProductTypeList({
@@ -80,8 +79,7 @@ export function useQuoteConfig() {
   const configQuery = useQuery<QuoteConfigResponse>({
     queryKey: quoteConfigKeys.config(),
     queryFn: async (): Promise<QuoteConfigResponse> => {
-      const response = await apiClient.get<QuoteConfigResponse>('/quote-calculator/config', {
-      });
+      const response = await apiClient.get<QuoteConfigResponse>('/quote-calculator/config', {});
       return response.data as QuoteConfigResponse;
     },
     staleTime: FIVE_MINUTES,

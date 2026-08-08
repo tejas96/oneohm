@@ -40,8 +40,7 @@ export type {
 
 export const myTaskKeys = {
   all: () => ['my-tasks'] as const,
-  grouped: (filters: MyTaskFilters) =>
-    [...myTaskKeys.all(), 'grouped', filters] as const,
+  grouped: (filters: MyTaskFilters) => [...myTaskKeys.all(), 'grouped', filters] as const,
 };
 
 // ============================================================================
@@ -63,8 +62,7 @@ export function useMyTasks(filters: MyTaskFilters): UseQueryResult<GroupedMyTask
       if (filters.dueDateFilter) params.set('dueDateFilter', filters.dueDateFilter);
 
       const url = `/tasks/my?${params.toString()}`;
-      const { data } = await apiClient.get<GroupedMyTasksResponse>(url, {
-      });
+      const { data } = await apiClient.get<GroupedMyTasksResponse>(url, {});
       return data;
     },
     enabled: !!user,
@@ -81,11 +79,7 @@ export function useUpdateTaskStatus() {
 
   return useMutation({
     mutationFn: async ({ taskId, status }: { taskId: string; status: TaskStatus }) => {
-      const { data } = await apiClient.patch<MyTask>(
-        `/tasks/${taskId}/status`,
-        { status },
-        {},
-      );
+      const { data } = await apiClient.patch<MyTask>(`/tasks/${taskId}/status`, { status }, {});
       return data;
     },
     onSuccess: (_data, variables) => {

@@ -3,12 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PaginatedResponse, TaskPriority } from '@tejas96/shared/types';
 
-import {
-  createResourceKeys,
-  defineResource,
-  STALE_TIMES,
-  useMutationWithToast,
-} from '../core';
+import { createResourceKeys, defineResource, STALE_TIMES, useMutationWithToast } from '../core';
 
 import { apiClient } from '@/lib/api/client';
 
@@ -136,7 +131,6 @@ export function useProjectSummary(
   error: unknown;
   refetch: () => void;
 } {
-
   const query = useQuery<ProjectSummary>({
     queryKey: summaryKeys.detail(projectId),
     queryFn: async ({ signal }) => {
@@ -179,7 +173,6 @@ export function useProjectTaskList(
   error: unknown;
   refetch: () => void;
 } {
-
   const query = useQuery<PaginatedResponse<ProjectTaskItem>>({
     queryKey: taskListKeys.list({ projectId, ...params }),
     queryFn: async ({ signal }) => {
@@ -254,10 +247,7 @@ export function useUpdateProjectWarehouse() {
 
   const mutation = useMutation<void, unknown, { projectId: string; warehouseId: string | null }>({
     mutationFn: async ({ projectId, warehouseId }) => {
-      await apiClient.patch(
-        `/projects/${projectId}`,
-        { defaultWarehouseId: warehouseId },
-      );
+      await apiClient.patch(`/projects/${projectId}`, { defaultWarehouseId: warehouseId });
     },
     onSuccess: (_data, { projectId }) => {
       void queryClient.invalidateQueries({ queryKey: projectResourceKeys.lists() });
@@ -328,7 +318,6 @@ export interface ProjectListFilters {
 }
 
 export function useProjectListResource(filters: ProjectListFilters = {}) {
-
   return useQuery({
     queryKey: projectResourceKeys.list(filters),
     queryFn: async ({ signal }): Promise<PaginatedResponse<ProjectListItem>> => {

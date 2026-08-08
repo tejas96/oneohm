@@ -39,7 +39,6 @@ export const bomResourceKeys = createResourceKeys('bom');
  * BOMs are immutable snapshots so we use a longer staleTime.
  */
 export function useEntityBom(entityType: string, entityId: string | undefined) {
-
   return useQuery({
     queryKey: [...bomResourceKeys.all(), entityType, entityId] as const,
     queryFn: async ({ signal }): Promise<Bom | null> => {
@@ -141,10 +140,9 @@ export function useUpdateBomItemSerial() {
 
   const mutation = useMutation<BomItem, unknown, UpdateBomItemSerialPayload, BomMutationContext>({
     mutationFn: async ({ itemId, serialNumber }) => {
-      const { data } = await apiClient.patch<{ data: BomItem }>(
-        `/bom-items/${itemId}/serial`,
-        { serialNumber },
-      );
+      const { data } = await apiClient.patch<{ data: BomItem }>(`/bom-items/${itemId}/serial`, {
+        serialNumber,
+      });
       return data.data;
     },
     onMutate: async ({ itemId, serialNumber }) => {
@@ -211,10 +209,9 @@ export function useBulkUpdateBomItemSerials() {
     BomMutationContext
   >({
     mutationFn: async ({ items }) => {
-      const { data } = await apiClient.patch<{ data: BomItem[] }>(
-        '/bom-items/bulk-serials',
-        { items },
-      );
+      const { data } = await apiClient.patch<{ data: BomItem[] }>('/bom-items/bulk-serials', {
+        items,
+      });
       return data.data;
     },
     onMutate: async ({ items }) => {
@@ -303,11 +300,7 @@ export function useBomSerialConflicts(serialNumber: string | undefined) {
   const normalizedSerial = serialNumber?.trim() ?? '';
 
   return useQuery({
-    queryKey: [
-      ...bomResourceKeys.all(),
-      'serial-conflicts',
-      normalizedSerial,
-    ] as const,
+    queryKey: [...bomResourceKeys.all(), 'serial-conflicts', normalizedSerial] as const,
     queryFn: async ({ signal }): Promise<BomSerialConflict[]> => {
       const { data } = await apiClient.get<{ data: BomSerialConflict[] }>(
         `/bom-items/check-serial?serialNumber=${encodeURIComponent(normalizedSerial)}`,

@@ -174,7 +174,6 @@ export function useLookupsByTypeCode(
   isError: boolean;
   error: unknown;
 } {
-
   const buildUrl = (): string => {
     const params = new URLSearchParams();
     if (scopeType) params.set('scopeType', scopeType);

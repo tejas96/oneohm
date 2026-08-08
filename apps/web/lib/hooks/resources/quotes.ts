@@ -75,7 +75,6 @@ export const quoteResourceKeys = createResourceKeys('quotes');
  * replacing the hand-rolled URLSearchParams construction in the legacy useQuotes hook.
  */
 export function useQuoteListResource(filters: QuoteListFilters = {}) {
-
   return useQuery({
     queryKey: quoteResourceKeys.list(filters as Record<string, unknown>),
     queryFn: async ({ signal }): Promise<QuoteListResponse> => {

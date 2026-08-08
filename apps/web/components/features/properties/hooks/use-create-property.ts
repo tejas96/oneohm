@@ -23,8 +23,7 @@ export { propertyKeys } from './property-keys';
 export const customerKeys = {
   all: () => ['customers'] as const,
   lists: () => [...customerKeys.all(), 'list'] as const,
-  list: (filters: Record<string, unknown>) =>
-    [...customerKeys.lists(), filters] as const,
+  list: (filters: Record<string, unknown>) => [...customerKeys.lists(), filters] as const,
   details: () => [...customerKeys.all(), 'detail'] as const,
   detail: (id: string) => [...customerKeys.details(), id] as const,
 };
@@ -117,8 +116,7 @@ export function useCreateProperty(): UseMutationResult<
       const { data: response } = await apiClient.post<PropertyResponse>(
         '/customer-properties',
         data,
-        {
-        },
+        {},
       );
       return response;
     },
@@ -140,7 +138,6 @@ export function useCreateProperty(): UseMutationResult<
  * Hook to fetch customers list for selector dropdown
  */
 export function useCustomersList(enabled = true) {
-
   return useQuery({
     queryKey: customerKeys.lists(),
     queryFn: async (): Promise<PaginatedResponse<CustomerResponse>> => {
@@ -161,12 +158,10 @@ export function useCustomersList(enabled = true) {
  * Hook to fetch a single customer by ID
  */
 export function useCustomerById(customerId: string | undefined) {
-
   return useQuery({
     queryKey: customerKeys.detail(customerId ?? ''),
     queryFn: async (): Promise<CustomerResponse> => {
-      const { data } = await apiClient.get<CustomerResponse>(`/customers/${customerId}`, {
-      });
+      const { data } = await apiClient.get<CustomerResponse>(`/customers/${customerId}`, {});
       return data;
     },
     enabled: !!customerId,

@@ -135,14 +135,11 @@ export interface QuoteStatusCounts {
 export const quoteKeys = {
   all: () => ['quotes'] as const,
   lists: () => [...quoteKeys.all(), 'list'] as const,
-  list: (filters: Record<string, unknown>) =>
-    [...quoteKeys.lists(), filters] as const,
+  list: (filters: Record<string, unknown>) => [...quoteKeys.lists(), filters] as const,
   details: () => [...quoteKeys.all(), 'detail'] as const,
   detail: (id: string) => [...quoteKeys.details(), id] as const,
-  byCustomer: (customerId: string) =>
-    [...quoteKeys.all(), 'customer', customerId] as const,
-  byProperty: (propertyId: string) =>
-    [...quoteKeys.all(), 'property', propertyId] as const,
+  byCustomer: (customerId: string) => [...quoteKeys.all(), 'customer', customerId] as const,
+  byProperty: (propertyId: string) => [...quoteKeys.all(), 'property', propertyId] as const,
   propertyVersions: (propertyId: string) =>
     [...quoteKeys.all(), 'property-versions', propertyId] as const,
   statusCounts: () => [...quoteKeys.all(), 'statusCounts'] as const,
@@ -181,8 +178,7 @@ export function useQuotes(
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
       if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 
-      const { data } = await apiClient.get<QuoteListResponse>(`/quotes?${params.toString()}`, {
-      });
+      const { data } = await apiClient.get<QuoteListResponse>(`/quotes?${params.toString()}`, {});
       return data;
     },
     enabled: callerEnabled !== false,
@@ -194,12 +190,10 @@ export function useQuotes(
  * Fetch a single quote by ID with all versions.
  */
 export function useQuote(id: string): UseQueryResult<QuoteListItem, AxiosError> {
-
   return useQuery({
     queryKey: quoteKeys.detail(id),
     queryFn: async (): Promise<QuoteListItem> => {
-      const { data } = await apiClient.get<QuoteListItem>(`/quotes/${id}`, {
-      });
+      const { data } = await apiClient.get<QuoteListItem>(`/quotes/${id}`, {});
       return data;
     },
     enabled: !!id,
@@ -211,11 +205,9 @@ export function useQuote(id: string): UseQueryResult<QuoteListItem, AxiosError> 
  * Fires one call per status with limit=1 to get meta.total without loading data.
  */
 export function useQuoteStatusCounts(): UseQueryResult<QuoteStatusCounts, AxiosError> {
-
   return useQuery({
     queryKey: quoteKeys.statusCounts(),
     queryFn: async (): Promise<QuoteStatusCounts> => {
-
       const statuses = [
         QuoteStatus.DRAFT,
         QuoteStatus.SENT,
@@ -227,9 +219,7 @@ export function useQuoteStatusCounts(): UseQueryResult<QuoteStatusCounts, AxiosE
 
       const [totalRes, ...statusResults] = await Promise.all([
         apiClient.get<QuoteListResponse>('/quotes?limit=1'),
-        ...statuses.map((s) =>
-          apiClient.get<QuoteListResponse>(`/quotes?limit=1&status=${s}`),
-        ),
+        ...statuses.map((s) => apiClient.get<QuoteListResponse>(`/quotes?limit=1&status=${s}`)),
       ]);
 
       return {
@@ -258,10 +248,9 @@ export function useSendQuote(): UseMutationResult<unknown, AxiosError, string> {
 
   return useMutation({
     mutationFn: async (quoteId: string) => {
-      const { data } = await apiClient.patch(
-        `/quotes/${quoteId}/status`,
-        { status: QuoteStatus.SENT },
-      );
+      const { data } = await apiClient.patch(`/quotes/${quoteId}/status`, {
+        status: QuoteStatus.SENT,
+      });
       return data;
     },
     onSuccess: () => {
@@ -342,7 +331,6 @@ export function useWhatsappMessagingHealth(): UseQueryResult<
   WhatsappMessagingHealth | null,
   AxiosError
 > {
-
   return useQuery({
     queryKey: ['whatsapp-messaging-health'],
     queryFn: async (): Promise<WhatsappMessagingHealth | null> => {
@@ -365,8 +353,7 @@ export function useDeleteQuote(): UseMutationResult<void, AxiosError, string> {
 
   return useMutation({
     mutationFn: async (quoteId: string): Promise<void> => {
-      await apiClient.delete(`/quotes/${quoteId}`, {
-      });
+      await apiClient.delete(`/quotes/${quoteId}`, {});
     },
     onSuccess: (_, quoteId) => {
       queryClient.removeQueries({ queryKey: quoteKeys.detail(quoteId) });
@@ -381,7 +368,6 @@ export function useDeleteQuote(): UseMutationResult<void, AxiosError, string> {
 export function usePropertyQuoteVersions(
   propertyId: string | undefined,
 ): UseQueryResult<PropertyQuoteVersionItem[], AxiosError> {
-
   return useQuery({
     queryKey: quoteKeys.propertyVersions(propertyId ?? ''),
     queryFn: async (): Promise<PropertyQuoteVersionItem[]> => {
@@ -402,7 +388,6 @@ export function usePropertyQuoteVersions(
 export function usePropertyLockStatus(
   propertyId: string | undefined,
 ): UseQueryResult<{ locked: boolean; acceptedQuoteNumber?: string }, AxiosError> {
-
   return useQuery({
     queryKey: [...quoteKeys.all(), 'property-lock', propertyId],
     queryFn: async () => {

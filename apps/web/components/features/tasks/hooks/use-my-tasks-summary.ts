@@ -26,8 +26,7 @@ export function useMyTasksSummary(): UseQueryResult<MyTasksSummaryResponse> {
   return useQuery({
     queryKey: myTasksSummaryKeys.all(),
     queryFn: async () => {
-      const { data } = await apiClient.get<MyTasksSummaryResponse>('/tasks/my/summary', {
-      });
+      const { data } = await apiClient.get<MyTasksSummaryResponse>('/tasks/my/summary', {});
       return data;
     },
     enabled: !!user,

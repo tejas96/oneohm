@@ -23,10 +23,8 @@ import { apiClient } from '@/lib/api/client';
  */
 export const paymentKeys = {
   all: () => ['payments'] as const,
-  byProject: (projectId: string) =>
-    [...paymentKeys.all(), 'project', projectId] as const,
-  summary: (projectId: string) =>
-    [...paymentKeys.all(), 'summary', projectId] as const,
+  byProject: (projectId: string) => [...paymentKeys.all(), 'project', projectId] as const,
+  summary: (projectId: string) => [...paymentKeys.all(), 'summary', projectId] as const,
 };
 
 // ============================================================================
@@ -41,7 +39,6 @@ export function useProjectMilestones(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<MilestoneAggregateItem[], AxiosError> {
-
   return useQuery({
     queryKey: PROJECT_MILESTONE_AGG_QUERY_KEY(projectId),
     queryFn: async (): Promise<MilestoneAggregateItem[]> => {

@@ -8,15 +8,13 @@ import { apiClient } from '@/lib/api/client';
 
 export const propertyLoanKeys = {
   all: () => ['property-loans'] as const,
-  detail: (propertyId: string) =>
-    [...propertyLoanKeys.all(), propertyId] as const,
+  detail: (propertyId: string) => [...propertyLoanKeys.all(), propertyId] as const,
 };
 
 export function usePropertyLoan(
   propertyId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerLoanApplication | null, AxiosError> {
-
   return useQuery({
     queryKey: propertyLoanKeys.detail(propertyId),
     queryFn: async (): Promise<CustomerLoanApplication | null> => {

@@ -15,7 +15,6 @@ import {
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
-
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/utils/error';
@@ -127,12 +126,10 @@ export interface ExpenseProjectSummary {
 
 export const projectExpenseKeys = {
   all: () => ['project-expenses'] as const,
-  byProject: (projectId: string) =>
-    [...projectExpenseKeys.all(), 'project', projectId] as const,
+  byProject: (projectId: string) => [...projectExpenseKeys.all(), 'project', projectId] as const,
   list: (projectId: string, filters: ExpenseListFilters) =>
     [...projectExpenseKeys.byProject(projectId), 'list', filters] as const,
-  summary: (projectId: string) =>
-    [...projectExpenseKeys.byProject(projectId), 'summary'] as const,
+  summary: (projectId: string) => [...projectExpenseKeys.byProject(projectId), 'summary'] as const,
 };
 
 // ============================================================================
@@ -144,7 +141,6 @@ export function useProjectExpenses(
   filters: ExpenseListFilters = {},
   options?: { enabled?: boolean },
 ): UseQueryResult<ExpenseListResponse, AxiosError> {
-
   return useQuery({
     queryKey: projectExpenseKeys.list(projectId, filters),
     queryFn: async ({ signal }): Promise<ExpenseListResponse> => {
@@ -169,7 +165,6 @@ export function useProjectExpenseSummary(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<ExpenseProjectSummary, AxiosError> {
-
   return useQuery({
     queryKey: projectExpenseKeys.summary(projectId),
     queryFn: async ({ signal }): Promise<ExpenseProjectSummary> => {

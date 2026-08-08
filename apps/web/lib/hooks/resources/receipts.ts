@@ -110,10 +110,8 @@ export interface ReceiptProjectSummary {
 
 export const receiptKeys = {
   all: () => ['receipts'] as const,
-  byProject: (projectId: string) =>
-    [...receiptKeys.all(), 'project', projectId] as const,
-  summary: (projectId: string) =>
-    [...receiptKeys.all(), 'summary', projectId] as const,
+  byProject: (projectId: string) => [...receiptKeys.all(), 'project', projectId] as const,
+  summary: (projectId: string) => [...receiptKeys.all(), 'summary', projectId] as const,
 };
 
 // ============================================================================

@@ -138,12 +138,7 @@ export function TaskBoardView({
 
       const { completionPercentage } = resolveTaskStatusPayload(newStatus, currentCompletionPct);
       const snapshots = snapshotProjectTasksCaches(queryClient);
-      optimisticallyMoveTaskStatus(
-        queryClient,
-        taskId,
-        newStatus,
-        completionPercentage,
-      );
+      optimisticallyMoveTaskStatus(queryClient, taskId, newStatus, completionPercentage);
 
       const fromLabel =
         columns.find((c) => c.code === fromStatus)?.label ?? fromStatus ?? 'unknown';

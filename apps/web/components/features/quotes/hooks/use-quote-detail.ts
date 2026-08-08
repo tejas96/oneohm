@@ -14,8 +14,7 @@ import { apiClient } from '@/lib/api/client';
 
 export const quoteDetailKeys = {
   ...quoteKeys,
-  versions: (id: string) =>
-    [...quoteKeys.detail(id), 'versions'] as const,
+  versions: (id: string) => [...quoteKeys.detail(id), 'versions'] as const,
 };
 
 // ============================================================================
@@ -31,12 +30,10 @@ export function useQuoteDetail(
   quoteId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<QuoteDetail, AxiosError> {
-
   return useQuery({
     queryKey: quoteDetailKeys.detail(quoteId),
     queryFn: async (): Promise<QuoteDetail> => {
-      const { data } = await apiClient.get<QuoteDetail>(`/quotes/${quoteId}`, {
-      });
+      const { data } = await apiClient.get<QuoteDetail>(`/quotes/${quoteId}`, {});
       return data;
     },
     enabled: !!quoteId && options?.enabled !== false,

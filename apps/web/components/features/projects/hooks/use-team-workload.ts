@@ -20,12 +20,10 @@ export const workloadKeys = {
 };
 
 export function useTeamWorkload(): UseQueryResult<TeamWorkloadItem[], AxiosError> {
-
   return useQuery({
     queryKey: workloadKeys.all(),
     queryFn: async (): Promise<TeamWorkloadItem[]> => {
-      const { data } = await apiClient.get<TeamWorkloadItem[]>('/projects/team/workload', {
-      });
+      const { data } = await apiClient.get<TeamWorkloadItem[]>('/projects/team/workload', {});
       return data;
     },
   });

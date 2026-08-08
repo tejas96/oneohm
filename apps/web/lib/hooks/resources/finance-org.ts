@@ -12,7 +12,6 @@ import type {
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
-
 import { apiClient } from '@/lib/api/client';
 
 // ============================================================================
@@ -250,8 +249,7 @@ export interface ProfitabilityFilters {
 
 export const orgFinanceKeys = {
   root: () => ['finance-org'] as const,
-  dashboard: (range: DateRangeFilter) =>
-    [...orgFinanceKeys.root(), 'dashboard', range] as const,
+  dashboard: (range: DateRangeFilter) => [...orgFinanceKeys.root(), 'dashboard', range] as const,
   receipts: (filters: OrgReceiptsFilters) =>
     [...orgFinanceKeys.root(), 'receipts', filters] as const,
   expenses: (filters: OrgExpensesFilters) =>

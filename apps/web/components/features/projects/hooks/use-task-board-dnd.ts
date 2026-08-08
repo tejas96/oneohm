@@ -52,8 +52,7 @@ export function useTaskBoardDnd(): UseTaskBoardDndResult {
 
   // We need a stable refId for use inside the monitor callbacks
   // (closures capture the value at registration time, but org can change).
-  useEffect(() => {
-  }, []);
+  useEffect(() => {}, []);
 
   // Register the global monitor once. Columns and cards handle their own
   // draggable/dropTarget registrations locally. The monitor centralises the
@@ -92,7 +91,6 @@ export function useTaskBoardDnd(): UseTaskBoardDndResult {
 
         // No-op if dropped in same column
         if (fromStatus === toStatus) return;
-
 
         // Resolve whether completionPercentage needs reset
         const { completionPercentage } = resolveTaskStatusPayload(toStatus, taskCompletionPct);

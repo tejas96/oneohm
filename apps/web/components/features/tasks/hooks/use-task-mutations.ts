@@ -33,8 +33,7 @@ export function useUpdateTask() {
 
   return useMutation({
     mutationFn: async ({ taskId, silent: _silent, ...payload }: UpdateTaskPayload) => {
-      const { data } = await apiClient.patch<MyTask>(`/tasks/${taskId}`, payload, {
-      });
+      const { data } = await apiClient.patch<MyTask>(`/tasks/${taskId}`, payload, {});
       return data;
     },
     onSuccess: (_data, variables) => {
@@ -73,10 +72,7 @@ export function useAddComment() {
 
   return useMutation({
     mutationFn: async ({ taskId, comment }: { taskId: string; comment: string }) => {
-      await apiClient.post(
-        `/tasks/${taskId}/comments`,
-        { comment },
-      );
+      await apiClient.post(`/tasks/${taskId}/comments`, { comment });
     },
     onSuccess: (_data, variables) => {
       showToast.success('Comment added');

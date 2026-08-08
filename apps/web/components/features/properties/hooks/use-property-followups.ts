@@ -34,7 +34,6 @@ export function usePropertyFollowups(
     limit?: number;
   },
 ): UseQueryResult<FollowupsListResponse, AxiosError> {
-
   const filters = {
     status: options?.status,
     from: options?.from,
@@ -54,8 +53,7 @@ export function usePropertyFollowups(
 
       const { data } = await apiClient.get<FollowupsListResponse>(
         `/followups?${params.toString()}`,
-        {
-        },
+        {},
       );
 
       return data;
@@ -74,8 +72,7 @@ export function useCreatePropertyFollowup(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (input): Promise<FollowupResponse> => {
-      const { data } = await apiClient.post<FollowupResponse>('/followups', input, {
-      });
+      const { data } = await apiClient.post<FollowupResponse>('/followups', input, {});
       return data;
     },
     onSuccess: (data) => {
@@ -100,10 +97,7 @@ export function useCompletePropertyFollowup(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (id): Promise<FollowupResponse> => {
-      const { data } = await apiClient.post<FollowupResponse>(
-        `/followups/${id}/complete`,
-        {},
-      );
+      const { data } = await apiClient.post<FollowupResponse>(`/followups/${id}/complete`, {});
       return data;
     },
     onSuccess: (data) => {

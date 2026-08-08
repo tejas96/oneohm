@@ -53,21 +53,17 @@ interface ConvertToProjectPayload {
 // API Functions
 // ============================================================================
 
-async function updateQuoteStatus(
-  quoteId: string,
-  payload: UpdateQuoteStatusPayload,
-) {
-  const { data } = await apiClient.patch(`/quotes/${quoteId}/status`, payload, {
-  });
+async function updateQuoteStatus(quoteId: string, payload: UpdateQuoteStatusPayload) {
+  const { data } = await apiClient.patch(`/quotes/${quoteId}/status`, payload, {});
   return data;
 }
 
-async function convertQuoteToProject(
-  quoteId: string,
-  payload?: ConvertToProjectPayload,
-) {
-  const { data } = await apiClient.post(`/projects/convert-from-quote/${quoteId}`, payload ?? {}, {
-  });
+async function convertQuoteToProject(quoteId: string, payload?: ConvertToProjectPayload) {
+  const { data } = await apiClient.post(
+    `/projects/convert-from-quote/${quoteId}`,
+    payload ?? {},
+    {},
+  );
   return data;
 }
 
@@ -80,10 +76,7 @@ export function useAcceptQuote() {
 
   return useMutation<unknown, AxiosError, { quoteId: string; customerSignature: string }>({
     mutationFn: ({ quoteId, customerSignature }) =>
-      updateQuoteStatus(
-        quoteId,
-        { status: QuoteStatus.ACCEPTED, customerSignature },
-      ),
+      updateQuoteStatus(quoteId, { status: QuoteStatus.ACCEPTED, customerSignature }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
     },

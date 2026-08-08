@@ -177,8 +177,7 @@ export function useDeleteProperty(): UseMutationResult<void, AxiosError, string>
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await apiClient.delete(`/customer-properties/${id}`, {
-      });
+      await apiClient.delete(`/customer-properties/${id}`, {});
     },
     onSuccess: () => {
       showToast.success('Property permanently deleted');

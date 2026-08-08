@@ -3,7 +3,6 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-
 import { apiClient } from '@/lib/api/client';
 
 // ============================================================================
@@ -48,8 +47,7 @@ export interface BomProcurementStatus {
 // ============================================================================
 
 export const bomProcurementKeys = {
-  byProject: (projectId: string) =>
-    ['bom-procurement-status', projectId] as const,
+  byProject: (projectId: string) => ['bom-procurement-status', projectId] as const,
 };
 
 // ============================================================================
@@ -65,7 +63,6 @@ export function useBomProcurementStatus(
   projectId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<BomProcurementStatus, AxiosError> {
-
   return useQuery({
     queryKey: bomProcurementKeys.byProject(projectId),
     queryFn: async ({ signal }): Promise<BomProcurementStatus> => {

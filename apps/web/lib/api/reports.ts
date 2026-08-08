@@ -41,15 +41,16 @@ export async function listReports(): Promise<ReportCatalogItem[]> {
   return data;
 }
 
-export async function initializeReport(
-  payload: {
-    reportId: string;
-    context: ReportContextPayload;
-    ignoreSavedDraft?: boolean;
-  },
-): Promise<ReportInitializeResponse> {
-  const { data } = await apiClient.post<ReportInitializeResponse>('/reports/initialize', payload, {
-  });
+export async function initializeReport(payload: {
+  reportId: string;
+  context: ReportContextPayload;
+  ignoreSavedDraft?: boolean;
+}): Promise<ReportInitializeResponse> {
+  const { data } = await apiClient.post<ReportInitializeResponse>(
+    '/reports/initialize',
+    payload,
+    {},
+  );
   return data;
 }
 
@@ -67,14 +68,12 @@ export async function previewReport(
   return data;
 }
 
-export async function saveReport(
-  payload: {
-    reportId: string;
-    context: ReportContextPayload;
-    fields: Record<string, string>;
-    file: ReportSaveFilePayload;
-  },
-): Promise<ReportSaveResponse> {
+export async function saveReport(payload: {
+  reportId: string;
+  context: ReportContextPayload;
+  fields: Record<string, string>;
+  file: ReportSaveFilePayload;
+}): Promise<ReportSaveResponse> {
   const { data } = await apiClient.post<ReportSaveResponse>('/reports/save', payload, {
     timeout: 60_000,
   });
@@ -108,9 +107,7 @@ export interface ReportsPendingSummary {
   saved: DocumentRecord[];
 }
 
-export async function getReportCompleteness(
-  projectId: string,
-): Promise<ReportsPendingSummary> {
+export async function getReportCompleteness(projectId: string): Promise<ReportsPendingSummary> {
   const { data } = await apiClient.get<ReportsPendingSummary>('/reports/completeness', {
     params: { projectId },
   });

@@ -708,13 +708,12 @@ Events are emitted automatically by `useResourceMutations` after successful muta
 `useOrgContext()` provides the authenticated user's organization info. All core hooks use it internally.
 
 ```typescript
-
 // : string | undefined
 // : { 'X-Organization-Id': string } | {}
 // : boolean (true when org is available)
 ```
 
-Queries with `requiresOrg: true` (default) are disabled until `` is `true`.
+Queries with `requiresOrg: true` (default) are disabled until ``is`true`.
 
 ---
 

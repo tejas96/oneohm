@@ -31,10 +31,7 @@ export function usePropertyQuotes(
   const limit = options?.limit ?? 50;
 
   return useQuery({
-    queryKey: [
-      ...quoteKeys.byProperty(propertyId),
-      { page, limit, status: options?.status },
-    ],
+    queryKey: [...quoteKeys.byProperty(propertyId), { page, limit, status: options?.status }],
     queryFn: async (): Promise<CustomerQuotesResponse> => {
       const params = new URLSearchParams();
       params.append('propertyId', propertyId);
@@ -44,8 +41,10 @@ export function usePropertyQuotes(
         params.append('status', options.status);
       }
 
-      const { data } = await apiClient.get<CustomerQuotesResponse>(`/quotes?${params.toString()}`, {
-      });
+      const { data } = await apiClient.get<CustomerQuotesResponse>(
+        `/quotes?${params.toString()}`,
+        {},
+      );
       return data;
     },
     enabled: !!propertyId,

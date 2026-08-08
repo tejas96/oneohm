@@ -58,23 +58,15 @@ export async function getDocuments(params: {
   return data;
 }
 
-export async function createDocument(
-  payload: CreateDocumentPayload,
-): Promise<DocumentRecord> {
-  const { data } = await apiClient.post<DocumentRecord>('/documents', payload, {
-  });
+export async function createDocument(payload: CreateDocumentPayload): Promise<DocumentRecord> {
+  const { data } = await apiClient.post<DocumentRecord>('/documents', payload, {});
   return data;
 }
 
 export async function createDocumentsBulk(
   documents: CreateDocumentPayload[],
 ): Promise<DocumentRecord[]> {
-  const { data } = await apiClient.post<DocumentRecord[]>(
-    '/documents/bulk',
-    { documents },
-    {
-    },
-  );
+  const { data } = await apiClient.post<DocumentRecord[]>('/documents/bulk', { documents }, {});
   return data;
 }
 
@@ -88,22 +80,17 @@ export async function updateDocument(
     notes?: string;
   },
 ): Promise<DocumentRecord> {
-  const { data } = await apiClient.patch<DocumentRecord>(`/documents/${id}`, payload, {
-  });
+  const { data } = await apiClient.patch<DocumentRecord>(`/documents/${id}`, payload, {});
   return data;
 }
 
-export async function deleteDocument(
-  id: string,
-  options?: { permanent?: boolean },
-): Promise<void> {
+export async function deleteDocument(id: string, options?: { permanent?: boolean }): Promise<void> {
   await apiClient.delete(`/documents/${id}`, {
     params: options?.permanent ? { permanent: 'true' } : undefined,
   });
 }
 
 export async function getDocumentDownloadUrl(id: string): Promise<string> {
-  const { data } = await apiClient.get<{ url: string }>(`/documents/${id}/download`, {
-  });
+  const { data } = await apiClient.get<{ url: string }>(`/documents/${id}/download`, {});
   return data.url;
 }
