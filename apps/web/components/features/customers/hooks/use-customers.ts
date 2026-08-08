@@ -130,6 +130,7 @@ export interface CustomerStatsResponse {
   prospect: number;
   active: number;
   inactive: number;
+  lost: number;
 }
 
 /**

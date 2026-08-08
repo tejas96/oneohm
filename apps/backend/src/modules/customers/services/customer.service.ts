@@ -487,13 +487,11 @@ export class CustomerService {
   async getStatusStatistics(): Promise<Record<string, number>> {
     const stats = await this.customerRepository.getStatusStats();
 
-    // Initialize all statuses with 0
-    const result: Record<string, number> = {
-      [CustomerStatus.LEAD]: 0,
-      [CustomerStatus.PROSPECT]: 0,
-      [CustomerStatus.ACTIVE]: 0,
-      [CustomerStatus.INACTIVE]: 0,
-    };
+    // Initialize every status with 0. Derived from the enum rather than listed
+    // by hand so a new status cannot silently go missing from the response.
+    const result: Record<string, number> = Object.fromEntries(
+      Object.values(CustomerStatus).map((status) => [status, 0]),
+    );
 
     // Fill in actual counts from the single grouped query
     for (const stat of stats) {
