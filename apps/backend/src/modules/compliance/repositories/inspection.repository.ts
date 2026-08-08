@@ -27,7 +27,7 @@ export class InspectionRepository {
 
   async findAll(): Promise<InspectionEntity[]> {
     return this.repository.find({
-      relations: ['organization', 'project', 'createdByUser', 'updatedByUser'],
+      relations: ['project', 'createdByUser', 'updatedByUser'],
       order: { scheduledDate: 'DESC' },
     });
   }
@@ -35,7 +35,7 @@ export class InspectionRepository {
   async findById(id: string): Promise<InspectionEntity | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['organization', 'project', 'createdByUser', 'updatedByUser'],
+      relations: ['project', 'createdByUser', 'updatedByUser'],
     });
   }
 
@@ -89,7 +89,7 @@ export class InspectionRepository {
   async findByInspectionNumber(inspectionNumber: string): Promise<InspectionEntity | null> {
     return this.repository.findOne({
       where: { inspectionNumber },
-      relations: ['organization', 'project'],
+      relations: ['project'],
     });
   }
 

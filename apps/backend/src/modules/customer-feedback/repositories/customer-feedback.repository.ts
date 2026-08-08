@@ -28,7 +28,7 @@ export class CustomerFeedbackRepository {
   async findAll(): Promise<CustomerFeedbackEntity[]> {
     return this.repository.find({
       where: { deletedAt: IsNull() },
-      relations: ['organization', 'customer', 'respondedByUser', 'createdByUser', 'updatedByUser'],
+      relations: ['customer', 'respondedByUser', 'createdByUser', 'updatedByUser'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -36,7 +36,7 @@ export class CustomerFeedbackRepository {
   async findById(id: string): Promise<CustomerFeedbackEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization', 'customer', 'respondedByUser', 'createdByUser', 'updatedByUser'],
+      relations: ['customer', 'respondedByUser', 'createdByUser', 'updatedByUser'],
     });
   }
 
@@ -84,7 +84,7 @@ export class CustomerFeedbackRepository {
   async findPublished(): Promise<CustomerFeedbackEntity[]> {
     return this.repository.find({
       where: { isPublished: true, deletedAt: IsNull() },
-      relations: ['customer', 'organization'],
+      relations: ['customer'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -100,7 +100,7 @@ export class CustomerFeedbackRepository {
   async findByNPSCategory(npsCategory: NPSCategory): Promise<CustomerFeedbackEntity[]> {
     return this.repository.find({
       where: { npsCategory, deletedAt: IsNull() },
-      relations: ['customer', 'organization'],
+      relations: ['customer'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -132,7 +132,7 @@ export class CustomerFeedbackRepository {
         createdAt: Between(startDate, endDate),
         deletedAt: IsNull(),
       },
-      relations: ['customer', 'organization'],
+      relations: ['customer'],
       order: { createdAt: 'DESC' },
     });
   }

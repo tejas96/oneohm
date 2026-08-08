@@ -30,7 +30,7 @@ export class WarehouseRepository {
   async findById(id: string): Promise<WarehouseEntity> {
     const warehouse = await this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization', 'warehouseManager'],
+      relations: ['warehouseManager'],
     });
 
     if (!warehouse) {

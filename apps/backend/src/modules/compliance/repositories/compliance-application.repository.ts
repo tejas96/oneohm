@@ -30,7 +30,7 @@ export class ComplianceApplicationRepository {
   async findAll(): Promise<ComplianceApplicationEntity[]> {
     return this.repository.find({
       where: { deletedAt: IsNull() },
-      relations: ['organization', 'project', 'submittedByUser', 'createdByUser', 'updatedByUser'],
+      relations: ['project', 'submittedByUser', 'createdByUser', 'updatedByUser'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -38,7 +38,7 @@ export class ComplianceApplicationRepository {
   async findById(id: string): Promise<ComplianceApplicationEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'submittedByUser', 'createdByUser', 'updatedByUser'],
+      relations: ['project', 'submittedByUser', 'createdByUser', 'updatedByUser'],
     });
   }
 
@@ -99,7 +99,7 @@ export class ComplianceApplicationRepository {
   ): Promise<ComplianceApplicationEntity | null> {
     return this.repository.findOne({
       where: { applicationNumber, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'submittedByUser'],
+      relations: ['project', 'submittedByUser'],
     });
   }
 

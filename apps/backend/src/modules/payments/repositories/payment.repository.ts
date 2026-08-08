@@ -36,7 +36,7 @@ export class PaymentRepository {
   async findById(id: string): Promise<PaymentEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'customer', 'reconciledByUser'],
+      relations: ['project', 'customer', 'reconciledByUser'],
     });
   }
 
@@ -44,7 +44,7 @@ export class PaymentRepository {
     return this.repository.find({
       where: { deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
-      relations: ['organization', 'project', 'customer'],
+      relations: ['project', 'customer'],
     });
   }
 
@@ -83,7 +83,7 @@ export class PaymentRepository {
   async findByPaymentNumber(paymentNumber: string): Promise<PaymentEntity | null> {
     return this.repository.findOne({
       where: { paymentNumber, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'customer'],
+      relations: ['project', 'customer'],
     });
   }
 

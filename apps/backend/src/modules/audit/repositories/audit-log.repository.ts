@@ -29,13 +29,13 @@ export class AuditLogRepository {
   async findById(id: string): Promise<AuditLogEntity | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['organization', 'user'],
+      relations: ['user'],
     });
   }
 
   async findAll(limit: number = 100): Promise<AuditLogEntity[]> {
     return this.repository.find({
-      relations: ['organization', 'user'],
+      relations: ['user'],
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -110,7 +110,7 @@ export class AuditLogRepository {
   async findByUser(userId: string, limit: number = 100): Promise<AuditLogEntity[]> {
     return this.repository.find({
       where: { userId },
-      relations: ['organization'],
+      relations: [],
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -133,7 +133,7 @@ export class AuditLogRepository {
   async findByAction(action: string, limit: number = 100): Promise<AuditLogEntity[]> {
     return this.repository.find({
       where: { action },
-      relations: ['user', 'organization'],
+      relations: ['user'],
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -151,7 +151,7 @@ export class AuditLogRepository {
       where: {
         createdAt: Between(startDate, endDate),
       },
-      relations: ['user', 'organization'],
+      relations: ['user'],
       order: { createdAt: 'DESC' },
       take: limit,
     });
@@ -162,7 +162,7 @@ export class AuditLogRepository {
    */
   async findRecent(limit: number = 50): Promise<AuditLogEntity[]> {
     return this.repository.find({
-      relations: ['user', 'organization'],
+      relations: ['user'],
       order: { createdAt: 'DESC' },
       take: limit,
     });

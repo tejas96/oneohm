@@ -727,7 +727,7 @@ export class FinanceAggregationService {
       revenue AS (
         SELECT COALESCE(SUM(p.paid_amount), 0)::numeric AS total
         FROM payments p, params
-          AND p.deleted_at IS NULL
+          WHERE p.deleted_at IS NULL
           AND p.status IN ('received','verified','cleared')
           AND p.created_at >= params.from_d::timestamptz
           AND p.created_at <  (params.to_d::date + INTERVAL '1 day')
@@ -735,7 +735,7 @@ export class FinanceAggregationService {
       spend AS (
         SELECT COALESCE(SUM(e.amount), 0)::numeric AS total
         FROM project_expenses e, params
-          AND e.deleted_at IS NULL
+          WHERE e.deleted_at IS NULL
           AND e.expense_date BETWEEN params.from_d AND params.to_d
       ),
       outstanding AS (
@@ -745,7 +745,7 @@ export class FinanceAggregationService {
             WHERE t.due_date IS NOT NULL AND t.due_date < (SELECT today FROM params)
           )::int AS overdue_count
         FROM project_payment_terms t, params
-          AND t.deleted_at IS NULL
+          WHERE t.deleted_at IS NULL
           AND t.status NOT IN ('waived','cancelled')
           AND t.expected_amount > t.paid_amount
       ),
@@ -760,7 +760,7 @@ export class FinanceAggregationService {
             AND p.status IN ('received','verified','cleared')
         ) fr ON TRUE,
         params
-          AND t.deleted_at IS NULL
+          WHERE t.deleted_at IS NULL
           AND t.due_date IS NOT NULL
           AND fr.first_receipt IS NOT NULL
           AND fr.first_receipt >= (params.today - INTERVAL '90 days')

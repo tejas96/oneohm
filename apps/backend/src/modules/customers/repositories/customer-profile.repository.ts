@@ -245,7 +245,7 @@ export class CustomerProfileRepository {
   async findById(id: string): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['user', 'organization', 'creator', 'assignee'],
+      relations: ['user', 'creator', 'assignee'],
     });
   }
 
@@ -254,14 +254,14 @@ export class CustomerProfileRepository {
   ): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
       where: { userId, deletedAt: IsNull() },
-      relations: ['user', 'organization'],
+      relations: ['user'],
     });
   }
 
   async findByUserId(userId: string): Promise<CustomerProfileEntity[]> {
     return this.repository.find({
       where: { userId, deletedAt: IsNull() },
-      relations: ['organization'],
+      relations: [],
     });
   }
 
@@ -321,7 +321,6 @@ export class CustomerProfileRepository {
     return this.repository
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.user', 'user')
-      .leftJoinAndSelect('customer.organization', 'organization')
       .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
       .leftJoinAndSelect('customer.assignee', 'assignee')
       .andWhere('customer.deletedAt IS NULL')
@@ -450,7 +449,7 @@ export class CustomerProfileRepository {
              ), 0)                                       AS "systemSizeKw",
              COALESCE(SUM(cv.final_price), 0)            AS "quotedAmount"
       FROM customer_properties prop
-      ${latestQuoteJoins()} WHERE prop.customer_id = ANY($2::uuid[])
+      ${latestQuoteJoins()} WHERE prop.customer_id = ANY($1::uuid[])
         AND prop.deleted_at IS NULL
       GROUP BY prop.customer_id, prop.status
       `,
@@ -518,17 +517,17 @@ export class CustomerProfileRepository {
     >(
       `
       SELECT COUNT(*)                                     AS "sites",
-             COUNT(*) FILTER (WHERE prop.created_at >= $2) AS "sitesThisMonth",
+             COUNT(*) FILTER (WHERE prop.created_at >= $1) AS "sitesThisMonth",
              COALESCE(SUM(cv.final_price) FILTER (
-               WHERE prop.status <> $3
-                 AND latest_quote.status = ANY($4::varchar[])
+               WHERE prop.status <> $2
+                 AND latest_quote.status = ANY($3::varchar[])
              ), 0)                                        AS "pipelineValue",
              COUNT(*) FILTER (
-               WHERE latest_quote.status = ANY($4::varchar[])
+               WHERE latest_quote.status = ANY($3::varchar[])
              )                                            AS "awaitingReply",
              COUNT(*) FILTER (
-               WHERE latest_quote.status = ANY($4::varchar[])
-                 AND latest_quote.quote_date < $5::date
+               WHERE latest_quote.status = ANY($3::varchar[])
+                 AND latest_quote.quote_date < $4::date
              )                                            AS "awaitingAgeing"
       FROM customer_properties prop
       ${latestQuoteJoins()} WHERE prop.deleted_at IS NULL
@@ -574,7 +573,6 @@ export class CustomerProfileRepository {
     const qb = this.repository
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.user', 'user')
-      .leftJoinAndSelect('customer.organization', 'organization')
       .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
       .leftJoinAndSelect('customer.assignee', 'assignee')
       .andWhere('customer.deletedAt IS NULL')
@@ -625,7 +623,6 @@ export class CustomerProfileRepository {
     const qb = this.repository
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.user', 'user')
-      .leftJoinAndSelect('customer.organization', 'organization')
       .loadRelationCountAndMap(
         'customer.propertyCount',
         'customer.properties',

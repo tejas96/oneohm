@@ -28,7 +28,7 @@ export class SubsidyApplicationRepository {
   async findAll(): Promise<SubsidyApplicationEntity[]> {
     return this.repository.find({
       where: { deletedAt: IsNull() },
-      relations: ['organization', 'project', 'customer', 'createdByUser', 'updatedByUser'],
+      relations: ['project', 'customer', 'createdByUser', 'updatedByUser'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -36,7 +36,7 @@ export class SubsidyApplicationRepository {
   async findById(id: string): Promise<SubsidyApplicationEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'customer', 'createdByUser', 'updatedByUser'],
+      relations: ['project', 'customer', 'createdByUser', 'updatedByUser'],
     });
   }
 
@@ -97,7 +97,7 @@ export class SubsidyApplicationRepository {
   ): Promise<SubsidyApplicationEntity | null> {
     return this.repository.findOne({
       where: { applicationNumber, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'customer'],
+      relations: ['project', 'customer'],
     });
   }
 

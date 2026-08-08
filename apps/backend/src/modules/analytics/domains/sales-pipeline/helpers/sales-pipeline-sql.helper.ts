@@ -30,7 +30,7 @@ const SENT_QUOTE_STATUSES = [
 export function buildCohortCte(filters: SalesPipelineFilterParams): CohortQueryParts {
   const hasSalesPerson = Boolean(filters.salesPersonId);
   const salesPersonClause = hasSalesPerson
-    ? `AND COALESCE(lq.sales_person_id, co.assignee_id) = $4`
+    ? `AND COALESCE(lq.sales_person_id, co.assignee_id) = $1`
     : '';
   const statusParamIndex = hasSalesPerson ? 5 : 4;
 

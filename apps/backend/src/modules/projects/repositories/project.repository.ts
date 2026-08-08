@@ -104,7 +104,6 @@ export class ProjectRepository {
       .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
-      .leftJoinAndSelect('property.organization', 'organization')
       .leftJoinAndSelect('project.creator', 'creator')
       .leftJoinAndSelect('project.updater', 'updater')
       .leftJoinAndSelect('project.materials', 'materials')

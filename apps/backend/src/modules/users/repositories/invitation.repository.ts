@@ -35,7 +35,7 @@ export class InvitationRepository {
   async findById(id: string): Promise<InvitationEntity | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['organization', 'role'],
+      relations: ['role'],
     });
   }
 
@@ -54,7 +54,7 @@ export class InvitationRepository {
 
     return this.repository.findAndCount({
       where,
-      relations: ['organization', 'role'],
+      relations: ['role'],
       order: { createdAt: 'DESC' },
       skip,
       take,
@@ -67,7 +67,7 @@ export class InvitationRepository {
   async findByToken(token: string): Promise<InvitationEntity | null> {
     return this.repository.findOne({
       where: { token },
-      relations: ['organization', 'role'],
+      relations: ['role'],
     });
   }
 
@@ -82,7 +82,7 @@ export class InvitationRepository {
         email,
         status: InvitationStatus.PENDING,
       },
-      relations: ['organization', 'role'],
+      relations: ['role'],
     });
   }
 
@@ -99,7 +99,7 @@ export class InvitationRepository {
 
     return this.repository.find({
       where,
-      relations: ['organization', 'role'],
+      relations: ['role'],
       order: { createdAt: 'DESC' },
     });
   }

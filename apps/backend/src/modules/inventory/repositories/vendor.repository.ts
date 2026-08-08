@@ -30,7 +30,7 @@ export class VendorRepository {
   async findById(id: string): Promise<VendorEntity> {
     const vendor = await this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization'],
+      relations: [],
     });
 
     if (!vendor) {

@@ -15,7 +15,7 @@ export class EmployeeProfileRepository {
   async findById(id: string): Promise<EmployeeProfileEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['user', 'organization'],
+      relations: ['user'],
     });
   }
 
@@ -24,14 +24,14 @@ export class EmployeeProfileRepository {
   ): Promise<EmployeeProfileEntity | null> {
     return this.repository.findOne({
       where: { userId, deletedAt: IsNull() },
-      relations: ['user', 'organization'],
+      relations: ['user'],
     });
   }
 
   async findByUserId(userId: string): Promise<EmployeeProfileEntity[]> {
     return this.repository.find({
       where: { userId, deletedAt: IsNull() },
-      relations: ['organization'],
+      relations: [],
     });
   }
 
