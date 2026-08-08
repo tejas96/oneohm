@@ -716,11 +716,14 @@ export function CustomerPropertiesExpandedRow({
         ))}
       </Box>
 
-      <MarkAsLostDialog
-        open={!!markLostTarget}
-        onClose={() => setMarkLostTarget(null)}
-        propertyName={markLostTarget?.propertyName ?? markLostTarget?.propertyCode}
-      />
+      {markLostTarget && (
+        <MarkAsLostDialog
+          open
+          onClose={() => setMarkLostTarget(null)}
+          propertyId={markLostTarget.id}
+          propertyName={markLostTarget.propertyName ?? markLostTarget.propertyCode}
+        />
+      )}
 
       <DeleteConfirmationDialog
         open={deleteConfirmation.isOpen}

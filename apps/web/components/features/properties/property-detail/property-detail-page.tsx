@@ -568,6 +568,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
       <MarkAsLostDialog
         open={markLostOpen}
         onClose={() => setMarkLostOpen(false)}
+        propertyId={property.id}
         propertyName={propertyName}
       />
 
