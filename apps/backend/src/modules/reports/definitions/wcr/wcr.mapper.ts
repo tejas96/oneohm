@@ -8,7 +8,7 @@ import { customerDisplayName, formatPropertyAddress, str } from '../../utils/rep
 
 @Injectable()
 export class WcrMapper implements ReportMapper<ProjectReportRawData, WcrViewModel> {
-  toViewModel({ organizationName, project }: ProjectReportRawData): WcrViewModel {
+  toViewModel({ companyName, project }: ProjectReportRawData): WcrViewModel {
     const fields = { ...WCR_DEFAULT_FIELDS };
     const property = project.property;
     const snapshot = getQuoteSnapshot(project);
@@ -16,7 +16,7 @@ export class WcrMapper implements ReportMapper<ProjectReportRawData, WcrViewMode
     const inverter = snapshot?.calculation?.inverters?.inverters?.[0];
     const kw = getSystemSizeKw(project);
 
-    fields.vendor_name = organizationName;
+    fields.vendor_name = companyName;
     fields.consumer_name = customerDisplayName(property);
     fields.consumer_number = str(property.consumerNumber);
     fields.site_address = formatPropertyAddress(property);

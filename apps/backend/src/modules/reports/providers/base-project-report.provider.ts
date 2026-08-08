@@ -8,7 +8,7 @@ import { ProjectService } from '../../projects/services/project.service';
 import type { ReportEngineContext } from '../registry/report-plugin.interface';
 
 export interface ProjectReportRawData {
-  organizationName: string;
+  companyName: string;
   project: ProjectEntity;
   panelSerialNumbers: string[];
 }
@@ -34,7 +34,7 @@ export class BaseProjectReportProvider {
       bom?.items?.map((item) => item.serialNumber).filter((s): s is string => !!s?.trim()) ?? [];
 
     return {
-      organizationName: COMPANY.name,
+      companyName: COMPANY.name,
       project,
       panelSerialNumbers,
     };

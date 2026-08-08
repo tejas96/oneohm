@@ -13,7 +13,7 @@ import { customerDisplayName, formatPropertyAddress, str } from '../../utils/rep
 export class AnnexureProformaAMapper
   implements ReportMapper<ProjectReportRawData, AnnexureProformaAViewModel>
 {
-  toViewModel({ organizationName, project }: ProjectReportRawData): AnnexureProformaAViewModel {
+  toViewModel({ companyName, project }: ProjectReportRawData): AnnexureProformaAViewModel {
     const fields = { ...ANNEXURE_PROFORMA_A_DEFAULT_FIELDS };
     const property = project.property;
     const snapshot = getQuoteSnapshot(project);
@@ -21,7 +21,7 @@ export class AnnexureProformaAMapper
     const inverter = snapshot?.calculation?.inverters?.inverters?.[0];
     const kw = getSystemSizeKw(project);
 
-    fields.vendor_name = organizationName;
+    fields.vendor_name = companyName;
     fields.consumer_name = customerDisplayName(property);
     fields.consumer_number = str(property.consumerNumber);
     fields.mobile_number = str(property.customer?.phone);

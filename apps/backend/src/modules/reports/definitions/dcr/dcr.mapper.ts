@@ -9,7 +9,7 @@ import { customerDisplayName, formatPropertyAddress, str } from '../../utils/rep
 @Injectable()
 export class DcrMapper implements ReportMapper<ProjectReportRawData, DcrViewModel> {
   toViewModel({
-    organizationName,
+    companyName,
     project,
     panelSerialNumbers,
   }: ProjectReportRawData): DcrViewModel {
@@ -19,7 +19,7 @@ export class DcrMapper implements ReportMapper<ProjectReportRawData, DcrViewMode
     const panel = snapshot?.calculation?.panels?.[0];
     const kw = getSystemSizeKw(project);
 
-    fields.vendor_name = organizationName;
+    fields.vendor_name = companyName;
     fields.capacity_kw = str(kw);
     fields.consumer_name = customerDisplayName(property);
     fields.consumer_address = formatPropertyAddress(property);
