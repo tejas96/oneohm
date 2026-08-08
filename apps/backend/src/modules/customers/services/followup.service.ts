@@ -1,7 +1,13 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { FollowupStatus } from '@tejas96/shared/types';
+import {
+  FollowupOutcome,
+  FollowupPriority,
+  FollowupStatus,
+  FollowupType,
+} from '@tejas96/shared/types';
 
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
+import { CompleteFollowupDto } from '../dto/complete-followup.dto';
 import { CreateFollowupDto } from '../dto/create-followup.dto';
 import { UpdateFollowupDto } from '../dto/update-followup.dto';
 import { FollowupEntity } from '../entities/followup.entity';
@@ -196,6 +202,112 @@ export class FollowupService {
 
     this.logger.log(`Followup updated: ${id}`);
     return updatedFollowup;
+  }
+
+  /**
+   * Complete a followup and, unless the lead is closing, open the next one.
+   *
+   * The next followup is mandatory only when this is the LAST pending followup
+   * on the lead unit — that is precisely when completing it would leave the lead
+   * with nobody owing it an action. With siblings still pending the rule is
+   * already satisfied, and demanding another would make parallel chases absurd:
+   * finishing a document chase would insist on a second document chase while the
+   * quote-decision followup sits open.
+   *
+   * The check is made server-side against the database; the client's opinion
+   * about how many siblings exist is never trusted.
+   */
+  async complete(id: string, dto: CompleteFollowupDto, userId: string): Promise<FollowupEntity> {
+    const followup = await this.findById(id);
+
+    if (followup.status !== FollowupStatus.PENDING) {
+      throw new BadRequestException(`Followup is already ${followup.status}`);
+    }
+
+    // Without a catch-all people pick a wrong-but-close outcome to get past the
+    // dialog, which corrupts the data more quietly than an honest "other".
+    // Requiring notes is what keeps that escape hatch honest.
+    if (dto.outcome === FollowupOutcome.OTHER && !dto.notes?.trim()) {
+      throw new BadRequestException('Notes are required when the outcome is "other"');
+    }
+
+    if (dto.terminal === 'lost' && !dto.lostReason?.trim()) {
+      throw new BadRequestException('A reason is required when marking a lead lost');
+    }
+
+    const propertyId = followup.propertyId ?? null;
+
+    if (!dto.terminal && !dto.next) {
+      const siblings = await this.followupRepository.countPendingForUnit(
+        followup.customerId,
+        propertyId,
+        id,
+      );
+      if (siblings === 0) {
+        throw new BadRequestException(
+          'This is the only open follow-up. Schedule the next one, or close the lead as won or lost.',
+        );
+      }
+    }
+
+    return this.followupRepository.repository.manager.transaction(async (manager) => {
+      const completed = await this.followupRepository.update(
+        id,
+        {
+          status: FollowupStatus.COMPLETED,
+          outcome: dto.outcome,
+          completedAt: new Date(),
+          notes: dto.notes?.trim() || followup.notes,
+          updatedBy: userId,
+        },
+        manager,
+      );
+      if (!completed) {
+        throw new NotFoundException('Followup not found');
+      }
+
+      if (dto.terminal) {
+        await this.followupRepository.cancelPendingFor(
+          followup.customerId,
+          propertyId,
+          userId,
+          manager,
+        );
+        if (dto.terminal === 'lost') {
+          if (propertyId) {
+            await this.propertyRepository.markLost(propertyId, dto.lostReason!, userId, manager);
+          } else {
+            await this.customerRepository.markLost(
+              followup.customerId,
+              dto.lostReason!,
+              userId,
+              manager,
+            );
+          }
+        }
+        return completed;
+      }
+
+      if (dto.next) {
+        await this.followupRepository.create(
+          {
+            customerId: followup.customerId,
+            propertyId: propertyId ?? undefined,
+            type: dto.next.type ?? FollowupType.TASK,
+            subject: dto.next.subject.trim(),
+            scheduledAt: new Date(dto.next.scheduledAt),
+            assignedToUserId: dto.next.assignedToUserId,
+            priority: dto.next.priority ?? FollowupPriority.NORMAL,
+            notes: dto.next.notes,
+            status: FollowupStatus.PENDING,
+            createdBy: userId,
+          },
+          manager,
+        );
+      }
+
+      return completed;
+    });
   }
 
   /**

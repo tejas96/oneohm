@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   LeadTemperature,
-  type PropertyStatus,
+  PropertyStatus,
   PropertySortField,
   SortOrder,
 } from '@tejas96/shared/types';
@@ -55,6 +55,26 @@ export class CustomerPropertyRepository {
   ): Promise<void> {
     const repo = this.getRepo(manager);
     await repo.update(propertyId, { status });
+  }
+
+  /**
+   * Close this site as lost, with the reason captured at the moment someone
+   * knows it. Sibling properties and the customer are deliberately untouched —
+   * one dead site does not kill the account.
+   */
+  async markLost(
+    id: string,
+    reason: string,
+    updatedBy: string,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = this.getRepo(manager);
+    await repo.update(id, {
+      status: PropertyStatus.LOST,
+      lostReason: reason,
+      lostAt: new Date(),
+      updatedBy,
+    });
   }
 
   async findById(id: string): Promise<CustomerPropertyEntity | null> {

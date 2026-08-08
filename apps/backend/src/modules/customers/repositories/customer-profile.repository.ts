@@ -284,6 +284,26 @@ export class CustomerProfileRepository {
     return this.findById(id);
   }
 
+  /**
+   * Close an enquiry that never got a property. The property-level equivalent
+   * lives on CustomerPropertyRepository; a customer with sites is never marked
+   * lost this way, because losing one site does not kill the account.
+   */
+  async markLost(
+    id: string,
+    reason: string,
+    updatedBy: string,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager ? manager.getRepository(CustomerProfileEntity) : this.repository;
+    await repo.update({ id }, {
+      status: CustomerStatus.LOST,
+      lostReason: reason,
+      lostAt: new Date(),
+      updatedBy,
+    } as Record<string, unknown>);
+  }
+
   async softDelete(id: string, deletedBy?: string): Promise<boolean> {
     const result = await this.repository.update(
       { id },
