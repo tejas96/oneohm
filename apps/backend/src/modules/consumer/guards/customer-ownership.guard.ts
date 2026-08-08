@@ -11,11 +11,9 @@ import { ProjectRepository } from '../../projects/repositories/project.repositor
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import type { ConsumerAuthRequest } from '../types/consumer-request.types';
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /**
  * CustomerOwnershipGuard
- * Resolves customerProfile from JWT user + organization context.
+ * Resolves the customer profile from the authenticated user.
  * Asserts resource ownership when route params include propertyId or quotationId.
  *
  * Usage (with JwtAuthGuard):

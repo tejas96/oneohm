@@ -112,7 +112,6 @@ export class AuthService {
 
     this.logger.log(`User logged in successfully: ${email}`);
 
-    const primaryProfile = profiles.find((p) => p.isPrimary) || profiles[0];
 
     const loginUser: LoginUserDto = {
       id: user.id,
@@ -237,7 +236,6 @@ export class AuthService {
     const profiles = await this.fetchUserProfiles(user.id);
     const permissions = await this.iamService.getUserPermissions(user.id);
 
-    const primaryProfile = profiles.find((p) => p.isPrimary) || profiles[0];
 
     const loginUser: LoginUserDto = {
       id: user.id,
@@ -381,7 +379,6 @@ export class AuthService {
     // Fetch permissions for all user's roles using IAM service
     const permissions = await this.iamService.getUserPermissions(user.id);
 
-    const primaryProfile = profiles.find((p) => p.isPrimary) || profiles[0];
 
     const loginUser: LoginUserDto = {
       id: user.id,

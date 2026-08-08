@@ -13,7 +13,6 @@ import { LedgerAllocationEntity, LedgerEntryEntity } from '../entities';
 import { LedgerWriteService } from './ledger-write.service';
 import { LedgerRepository } from '../repositories/ledger.repository';
 
-const ORG = 'org-1';
 const PROJECT = 'project-1';
 const USER = 'user-1';
 

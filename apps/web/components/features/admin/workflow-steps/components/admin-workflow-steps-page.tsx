@@ -489,8 +489,10 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
   });
   const availableRoles = useMemo(() => {
     const seen = new Set<string>();
+    // Roles were once split platform-level (null org) vs org-scoped, and this
+    // list excluded the platform ones. Single-tenant has no such split, so every
+    // role is offered; the Set below still de-duplicates by code.
     return allRoles.filter((r) => {
-      if (undefined === null) return false;
       if (seen.has(r.code)) return false;
       seen.add(r.code);
       return true;

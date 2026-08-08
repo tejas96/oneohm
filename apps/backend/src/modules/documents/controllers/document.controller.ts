@@ -63,8 +63,6 @@ export class DocumentController {
     @Body() dto: BulkCreateDocumentDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<DocumentResponseDto[]> {
-    for (const doc of dto.documents) {
-    }
     const documents = await this.documentService.createBulk(dto.documents, currentUser.id);
     return toDtoArray(DocumentResponseDto, documents);
   }
