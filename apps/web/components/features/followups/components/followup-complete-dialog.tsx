@@ -78,9 +78,19 @@ export function FollowupCompleteDialog({
     setNotes('');
     setScheduleNext(true);
     setNextDate(nextFollowupDate(new Date(), temperature));
-    setNextOwner(user?.id ?? null);
     setNextSubject('');
-  }, [open, temperature, user?.id]);
+  }, [open, temperature]);
+
+  /**
+   * Default the next owner to the current user, but only once they are a
+   * selectable option — see the same note in FollowupDrawer. A hidden value
+   * behind an "Assign user" placeholder is worse than an honestly empty field.
+   */
+  useEffect(() => {
+    if (!open || employeesLoading) return;
+    const selectable = employees.some((employee) => employee.userId === user?.id);
+    setNextOwner(selectable ? (user?.id ?? null) : null);
+  }, [open, employees, employeesLoading, user?.id]);
 
   const notesRequired = outcome === FollowupOutcome.OTHER;
   const wantsNext = nextRequired || scheduleNext;

@@ -18,17 +18,18 @@ import {
   Typography,
 } from '@mui/material';
 import { FollowupPriority, FollowupStatus } from '@tejas96/shared/types';
-import type { JSX } from 'react';
+import { useMemo, useState, type JSX } from 'react';
 
-import {
-  useCompleteFollowup,
-  useCustomerFollowups,
-  type CustomerPropertyResponse,
-} from '../../hooks';
+import { useCustomerFollowups, type CustomerPropertyResponse } from '../../hooks';
 import { TabSkeleton } from '../tab-skeleton';
 
+import {
+  FollowupCompleteDialog,
+  OUTCOME_LABELS,
+  type FollowupResponse,
+} from '@/components/features/followups';
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
-import { formatDate, getErrorMessage, toTitleLabel } from '@/lib/utils';
+import { formatDate, toTitleLabel } from '@/lib/utils';
 
 export interface FollowupsTabProps {
   customerId: string;
@@ -45,16 +46,27 @@ function getScopeLabel(
 
 export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabProps): JSX.Element {
   const { data, isLoading } = useCustomerFollowups(customerId, { enabled });
-  const completeMutation = useCompleteFollowup();
   const followups = data?.data ?? [];
 
-  const handleComplete = (id: string): void => {
-    completeMutation.mutate(id, {
-      onError: (error) => {
-        console.error(getErrorMessage(error));
-      },
-    });
-  };
+  const [completing, setCompleting] = useState<FollowupResponse | null>(null);
+
+  /**
+   * Pending followups on the SAME lead unit as the one being completed.
+   *
+   * This list spans the whole customer, so it must be narrowed to the matching
+   * propertyId — counting a sibling property's followups here would wrongly
+   * make the next-followup block optional and let a site go dark.
+   */
+  const pendingSiblings = useMemo(() => {
+    if (!completing) return 0;
+    const unitId = completing.propertyId ?? null;
+    return followups.filter(
+      (f) =>
+        f.status === FollowupStatus.PENDING &&
+        f.id !== completing.id &&
+        (f.propertyId ?? null) === unitId,
+    ).length;
+  }, [followups, completing]);
 
   if (isLoading && followups.length === 0) {
     return <TabSkeleton />;
@@ -101,6 +113,7 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                 <TableCell>Scheduled</TableCell>
                 <TableCell>Priority</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell>Outcome</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -150,14 +163,16 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                           }
                         />
                       </TableCell>
+                      <TableCell>
+                        {followup.outcome ? OUTCOME_LABELS[followup.outcome] : '—'}
+                      </TableCell>
                       <TableCell align="right">
                         <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                           {followup.status === FollowupStatus.PENDING && (
                             <Button
                               size="small"
                               startIcon={<CheckCircleOutlineIcon />}
-                              onClick={() => handleComplete(followup.id)}
-                              disabled={completeMutation.isPending}
+                              onClick={() => setCompleting(followup)}
                             >
                               Complete
                             </Button>
@@ -173,6 +188,13 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
           </Table>
         </TableContainer>
       )}
+
+      <FollowupCompleteDialog
+        open={Boolean(completing)}
+        followup={completing}
+        pendingSiblings={pendingSiblings}
+        onClose={() => setCompleting(null)}
+      />
     </Box>
   );
 }

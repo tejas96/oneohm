@@ -45,7 +45,6 @@ import {
   usePropertyFollowups,
   usePropertyLoan,
 } from '../hooks';
-import { FollowupDrawer } from './followup-drawer';
 import { MarkAsLostDialog } from './mark-as-lost-dialog';
 import { useDeleteProperty } from '../hooks/use-properties';
 import { getPropertyDisplayName } from '../utils';
@@ -62,6 +61,7 @@ import {
 } from '@/components/features/customers/customer-detail';
 import { stickyHeaderPaperSx } from '@/components/features/customers/customer-detail/styles';
 import { useCustomer } from '@/components/features/customers/hooks';
+import { FollowupDrawer } from '@/components/features/followups';
 import { usePropertyLockStatus } from '@/components/features/quotes/hooks/use-quotes';
 import { EmptyState } from '@/components/shared';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
@@ -546,8 +546,9 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
       <FollowupDrawer
         open={followupDrawerOpen}
         onClose={() => setFollowupDrawerOpen(false)}
-        property={property}
         customerId={property.customerId}
+        propertyId={property.id}
+        leadTemperature={property.leadTemperature}
       />
       <MarkAsLostDialog
         open={markLostOpen}

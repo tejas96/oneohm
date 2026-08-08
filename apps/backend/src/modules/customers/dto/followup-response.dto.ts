@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { FollowupPriority, FollowupStatus, FollowupType } from '@tejas96/shared/types';
+import {
+  FollowupOutcome,
+  FollowupPriority,
+  FollowupStatus,
+  FollowupType,
+  LeadTemperature,
+} from '@tejas96/shared/types';
 import { Exclude, Expose, Type } from 'class-transformer';
 
 /**
@@ -40,6 +46,17 @@ class PropertySummaryDto {
   @Expose()
   @ApiPropertyOptional()
   city?: string;
+
+  /**
+   * Drives the next-followup date prefill and the temperature chip.
+   *
+   * Without it the complete dialog cannot tell a COLD site from a HOT one and
+   * silently prefills the customer-lead default, so every prefill on a
+   * property-level followup would be wrong.
+   */
+  @Expose()
+  @ApiPropertyOptional({ enum: LeadTemperature })
+  leadTemperature?: LeadTemperature;
 }
 
 /**
@@ -105,6 +122,21 @@ export class FollowupResponseDto {
   @Expose()
   @ApiPropertyOptional({ description: 'Additional notes' })
   notes?: string;
+
+  /**
+   * What actually happened. Null while pending.
+   *
+   * This DTO is @Exclude()-by-default, so a field without @Expose() is silently
+   * dropped from every response — which is what would leave the Outcome column
+   * permanently showing a dash.
+   */
+  @Expose()
+  @ApiPropertyOptional({ enum: FollowupOutcome, description: 'Outcome recorded at completion' })
+  outcome?: FollowupOutcome;
+
+  @Expose()
+  @ApiPropertyOptional({ description: 'When the followup was completed' })
+  completedAt?: Date;
 
   @Expose()
   @ApiProperty({ description: 'Created timestamp' })

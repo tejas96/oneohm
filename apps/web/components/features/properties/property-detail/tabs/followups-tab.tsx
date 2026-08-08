@@ -17,10 +17,15 @@ import {
   Typography,
 } from '@mui/material';
 import { FollowupPriority, FollowupStatus } from '@tejas96/shared/types';
-import type { JSX } from 'react';
+import { useMemo, useState, type JSX } from 'react';
 
-import { useCompletePropertyFollowup, usePropertyFollowups } from '../../hooks';
+import { usePropertyFollowups } from '../../hooks';
 
+import {
+  FollowupCompleteDialog,
+  OUTCOME_LABELS,
+  type FollowupResponse,
+} from '@/components/features/followups';
 import { formatDate, toTitleLabel } from '@/lib/utils';
 
 interface FollowupsTabProps {
@@ -35,8 +40,18 @@ export function FollowupsTab({
   onLogFollowup,
 }: FollowupsTabProps): JSX.Element {
   const { data, isLoading } = usePropertyFollowups(propertyId, { enabled });
-  const completeMutation = useCompletePropertyFollowup();
   const followups = data?.data ?? [];
+
+  const [completing, setCompleting] = useState<FollowupResponse | null>(null);
+
+  // Pending followups on this lead unit other than the one being completed.
+  // Zero is the only case where scheduling the next one is mandatory.
+  const pendingSiblings = useMemo(
+    () =>
+      followups.filter((f) => f.status === FollowupStatus.PENDING && f.id !== completing?.id)
+        .length,
+    [followups, completing?.id],
+  );
 
   return (
     <Box sx={{ p: 2 }}>
@@ -68,6 +83,7 @@ export function FollowupsTab({
                 <TableCell>Scheduled</TableCell>
                 <TableCell>Priority</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell>Outcome</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -97,13 +113,13 @@ export function FollowupsTab({
                       color={followup.status === FollowupStatus.COMPLETED ? 'success' : 'warning'}
                     />
                   </TableCell>
+                  <TableCell>{followup.outcome ? OUTCOME_LABELS[followup.outcome] : '—'}</TableCell>
                   <TableCell align="right">
                     {followup.status === FollowupStatus.PENDING && (
                       <Button
                         size="small"
                         startIcon={<CheckCircleOutlineIcon />}
-                        onClick={() => completeMutation.mutate(followup.id)}
-                        disabled={completeMutation.isPending}
+                        onClick={() => setCompleting(followup)}
                       >
                         Complete
                       </Button>
@@ -115,6 +131,13 @@ export function FollowupsTab({
           </Table>
         </TableContainer>
       )}
+
+      <FollowupCompleteDialog
+        open={Boolean(completing)}
+        followup={completing}
+        pendingSiblings={pendingSiblings}
+        onClose={() => setCompleting(null)}
+      />
     </Box>
   );
 }

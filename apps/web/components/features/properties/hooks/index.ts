@@ -49,12 +49,7 @@ export type { CustomerQuote, CustomerQuotesResponse } from './use-property-quote
 
 // Property loan and follow-up hooks
 export { usePropertyLoan, propertyLoanKeys } from './use-property-loan';
-export {
-  usePropertyFollowups,
-  useCreatePropertyFollowup,
-  useCompletePropertyFollowup,
-  propertyFollowupKeys,
-} from './use-property-followups';
+export { usePropertyFollowups } from './use-property-followups';
 
 export {
   usePropertyFinanceSnapshot,
