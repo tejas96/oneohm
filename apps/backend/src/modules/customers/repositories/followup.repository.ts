@@ -11,8 +11,8 @@ import {
   Repository,
 } from 'typeorm';
 
-import { FollowupEntity } from '../entities/followup.entity';
 import { CUSTOMER_LEAD_NEEDS_FOLLOWUP, PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
+import { FollowupEntity } from '../entities/followup.entity';
 
 /** One open lead unit that nobody currently owes an action. */
 export interface FollowupGapRow {

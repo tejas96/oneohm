@@ -14,6 +14,7 @@ import {
 } from '@tejas96/shared/utils';
 import { IsNull, Repository, type EntityManager, type SelectQueryBuilder } from 'typeorm';
 
+import { CUSTOMER_NEEDS_FOLLOWUP } from './followup-predicates';
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 
@@ -51,6 +52,8 @@ export interface CustomerOverviewStats {
   awaitingReply: number;
   /** Of those, unanswered for longer than `AWAITING_AGEING_DAYS`. */
   awaitingAgeing: number;
+  /** Customers with at least one open site nobody owes an action. */
+  needsFollowup: number;
 }
 
 /** A quote sitting unanswered longer than this is flagged as ageing. */
@@ -503,11 +506,12 @@ export class CustomerProfileRepository {
     const ageingCutoff = ageingCutoffDate();
 
     const [customerRow] = await this.repository.manager.query<
-      { customers: string; customersThisMonth: string }[]
+      { customers: string; customersThisMonth: string; needsFollowup: string }[]
     >(
       `
-      SELECT COUNT(*)                                                  AS "customers",
-             COUNT(*) FILTER (WHERE c.created_at >= $1)                AS "customersThisMonth"
+      SELECT COUNT(*)                                     AS "customers",
+             COUNT(*) FILTER (WHERE c.created_at >= $1)   AS "customersThisMonth",
+             COUNT(*) FILTER (WHERE ${CUSTOMER_NEEDS_FOLLOWUP('c')}) AS "needsFollowup"
       FROM customer_profiles c WHERE c.deleted_at IS NULL
       `,
       [monthStart],
@@ -545,6 +549,7 @@ export class CustomerProfileRepository {
     return {
       customers: Number(customerRow?.customers ?? 0),
       customersThisMonth: Number(customerRow?.customersThisMonth ?? 0),
+      needsFollowup: Number(customerRow?.needsFollowup ?? 0),
       sites: Number(siteRow?.sites ?? 0),
       sitesThisMonth: Number(siteRow?.sitesThisMonth ?? 0),
       pipelineValue: Number(siteRow?.pipelineValue ?? 0),
@@ -734,6 +739,10 @@ export class CustomerProfileRepository {
       qb.andWhere('customer.createdAt <= :toDate', {
         toDate: normalizedToDate,
       });
+    }
+
+    if (query.needsFollowup) {
+      qb.andWhere(`(${CUSTOMER_NEEDS_FOLLOWUP('customer')})`);
     }
 
     // ===== Sorting (using safe field mapping) =====

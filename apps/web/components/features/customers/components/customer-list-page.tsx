@@ -44,8 +44,9 @@ import {
 import {
   Customer as CustomerBase,
   type CustomerFilters,
-  useCustomers,
   useCustomerGroups,
+  useCustomerOverviewStats,
+  useCustomers,
   useCustomerStats,
   useDeleteCustomer,
 } from '../hooks/use-customers';
@@ -983,6 +984,29 @@ export function CustomerListPage(): JSX.Element {
     ];
   }, [statusStats]);
 
+  // Company-wide roll-up used for the KPI cards below — also rendered on this
+  // page by CustomerKpiCards, so TanStack Query dedupes the request.
+  const { data: overviewStats } = useCustomerOverviewStats();
+
+  /**
+   * A second chip row CrmTable already supports and nothing used until now.
+   * Selecting it turns the main CRM screen into a worklist.
+   */
+  const needsFollowupFilters = useMemo<CrmQuickFilter[]>(
+    () => [
+      {
+        key: 'needs-followup',
+        label: 'Needs follow-up',
+        count: overviewStats?.needsFollowup,
+        tone: 'danger',
+        dot: true,
+      },
+    ],
+    [overviewStats?.needsFollowup],
+  );
+
+  const [needsFollowupActive, setNeedsFollowupActive] = useState(false);
+
   // Memoize sorted base employee options
   const baseEmployeeOptions = useMemo(() => {
     const list = employees.map((emp) => {
@@ -1285,6 +1309,7 @@ export function CustomerListPage(): JSX.Element {
     search: urlState.state.search || undefined,
     sortBy: toApiSortField(urlState.state.sortModel),
     sortOrder: toApiSortOrder(urlState.state.sortModel),
+    needsFollowup: needsFollowupActive || undefined,
     ...toCustomerFilters(urlState.state.filters),
   });
 
@@ -1414,6 +1439,9 @@ export function CustomerListPage(): JSX.Element {
         quickFilters={quickFilters}
         activeQuickFilter={activeStatusFilter}
         onQuickFilterChange={handleQuickFilterChange}
+        secondaryQuickFilters={needsFollowupFilters}
+        activeSecondaryQuickFilter={needsFollowupActive ? 'needs-followup' : ''}
+        onSecondaryQuickFilterChange={(key) => setNeedsFollowupActive(key === 'needs-followup')}
         filterColumns={filterColumns}
         filterModel={urlState.state.filters}
         onFilterChange={handleFilterChange}
