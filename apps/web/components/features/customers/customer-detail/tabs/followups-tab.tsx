@@ -28,6 +28,7 @@ import {
   OUTCOME_LABELS,
   type FollowupResponse,
 } from '@/components/features/followups';
+import { MarkAsLostDialog } from '@/components/features/properties';
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { formatDate, toTitleLabel } from '@/lib/utils';
 
@@ -44,11 +45,22 @@ function getScopeLabel(
   return getPropertyDisplayName(property as CustomerPropertyResponse);
 }
 
+/** The assignee is the lead's owner — there is no separate owner field. */
+function ownerName(followup: FollowupResponse): string {
+  return (
+    [followup.assignedToUser?.firstName, followup.assignedToUser?.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim() || 'Unassigned'
+  );
+}
+
 export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabProps): JSX.Element {
   const { data, isLoading } = useCustomerFollowups(customerId, { enabled });
   const followups = data?.data ?? [];
 
   const [completing, setCompleting] = useState<FollowupResponse | null>(null);
+  const [markingLost, setMarkingLost] = useState<{ id: string; name: string } | null>(null);
 
   /**
    * Pending followups on the SAME lead unit as the one being completed.
@@ -111,6 +123,7 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                 <TableCell>Type</TableCell>
                 <TableCell>Scope</TableCell>
                 <TableCell>Scheduled</TableCell>
+                <TableCell>Owner</TableCell>
                 <TableCell>Priority</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Outcome</TableCell>
@@ -141,6 +154,7 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                       <TableCell>{toTitleLabel(followup.type)}</TableCell>
                       <TableCell>{getScopeLabel(followup.property)}</TableCell>
                       <TableCell>{formatDate(followup.scheduledAt)}</TableCell>
+                      <TableCell>{ownerName(followup)}</TableCell>
                       <TableCell>
                         <Chip
                           label={toTitleLabel(followup.priority)}
@@ -194,7 +208,33 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
         followup={completing}
         pendingSiblings={pendingSiblings}
         onClose={() => setCompleting(null)}
+        /*
+         * Only property-level followups can be marked lost from here — losing a
+         * site is a per-site action. A customer-level lead has no site to lose,
+         * so the path is correctly absent there.
+         */
+        onMarkLost={
+          completing?.propertyId
+            ? () => {
+                const target = {
+                  id: completing.propertyId as string,
+                  name: getScopeLabel(completing.property),
+                };
+                setCompleting(null);
+                setMarkingLost(target);
+              }
+            : undefined
+        }
       />
+
+      {markingLost && (
+        <MarkAsLostDialog
+          open
+          onClose={() => setMarkingLost(null)}
+          propertyId={markingLost.id}
+          propertyName={markingLost.name}
+        />
+      )}
     </Box>
   );
 }

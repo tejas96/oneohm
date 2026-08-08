@@ -196,7 +196,24 @@ export function FollowupDrawer({
         </IconButton>
       </Box>
 
-      <Stack spacing={2.5} sx={{ p: 2.5, overflowY: 'auto' }}>
+      <Stack
+        spacing={2.5}
+        useFlexGap
+        sx={{
+          p: 2.5,
+          overflowY: 'auto',
+          /*
+           * The theme gives labelled FormControls `marginTop: 6` for floating-label
+           * headroom (mui-theme.ts:263). MUI Stack implements `spacing` with
+           * margin-top on children, so that rule silently overrides it — labelled
+           * fields end up 6px apart while everything else gets 20px.
+           *
+           * useFlexGap moves spacing to CSS `gap`, which the rule cannot touch, and
+           * the margin is zeroed here since the gap already provides the headroom.
+           */
+          '& > .MuiFormControl-root:has(> .MuiInputLabel-root)': { mt: 0 },
+        }}
+      >
         {showPicker && (
           <TextField
             select

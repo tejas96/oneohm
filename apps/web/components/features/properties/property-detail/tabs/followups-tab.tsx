@@ -32,12 +32,30 @@ interface FollowupsTabProps {
   propertyId: string;
   enabled: boolean;
   onLogFollowup: () => void;
+  /**
+   * Opens the property's mark-as-lost dialog.
+   *
+   * Without it the complete dialog's "Not interested → Mark lost" path never
+   * renders, because it is gated on this callback being present.
+   */
+  onMarkLost?: () => void;
+}
+
+/** The assignee is the lead's owner — there is no separate owner field. */
+function ownerName(followup: FollowupResponse): string {
+  return (
+    [followup.assignedToUser?.firstName, followup.assignedToUser?.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim() || 'Unassigned'
+  );
 }
 
 export function FollowupsTab({
   propertyId,
   enabled,
   onLogFollowup,
+  onMarkLost,
 }: FollowupsTabProps): JSX.Element {
   const { data, isLoading } = usePropertyFollowups(propertyId, { enabled });
   const followups = data?.data ?? [];
@@ -81,6 +99,7 @@ export function FollowupsTab({
                 <TableCell>Subject</TableCell>
                 <TableCell>Type</TableCell>
                 <TableCell>Scheduled</TableCell>
+                <TableCell>Owner</TableCell>
                 <TableCell>Priority</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Outcome</TableCell>
@@ -93,6 +112,7 @@ export function FollowupsTab({
                   <TableCell>{followup.subject}</TableCell>
                   <TableCell>{toTitleLabel(followup.type)}</TableCell>
                   <TableCell>{formatDate(followup.scheduledAt)}</TableCell>
+                  <TableCell>{ownerName(followup)}</TableCell>
                   <TableCell>
                     <Chip
                       label={toTitleLabel(followup.priority)}
@@ -137,6 +157,14 @@ export function FollowupsTab({
         followup={completing}
         pendingSiblings={pendingSiblings}
         onClose={() => setCompleting(null)}
+        onMarkLost={
+          onMarkLost
+            ? () => {
+                setCompleting(null);
+                onMarkLost();
+              }
+            : undefined
+        }
       />
     </Box>
   );

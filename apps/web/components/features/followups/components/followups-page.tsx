@@ -3,10 +3,6 @@
 import {
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Paper,
   Stack,
   ToggleButton,
@@ -34,7 +30,15 @@ import { FollowupList } from './followup-list';
 
 import { useEmployees } from '@/components/features/employees';
 import { FilterTabs } from '@/components/shared/filters';
-import { showToast } from '@/components/ui';
+import {
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+  showToast,
+} from '@/components/ui';
 import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { MUIUserAssigneeSelector } from '@/components/ui/mui-user-assignee-selector';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -266,17 +270,20 @@ export function FollowupsPage(): JSX.Element {
         onClose={() => setCompleting(null)}
       />
 
-      <Dialog
+      <MUIDialog
         open={Boolean(rescheduling)}
-        onClose={() => setRescheduling(null)}
-        maxWidth="xs"
-        fullWidth
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setRescheduling(null);
+        }}
+        size="sm"
       >
-        <DialogTitle>Reschedule follow-up</DialogTitle>
-        <DialogContent dividers>
-          <Typography variant="body2" color="text.secondary" mb={2}>
+        <MUIDialogHeader>
+          <MUIDialogTitle>Reschedule follow-up</MUIDialogTitle>
+          <MUIDialogDescription>
             Moves the date without completing it — no outcome recorded.
-          </Typography>
+          </MUIDialogDescription>
+        </MUIDialogHeader>
+        <MUIDialogBody>
           <MUIDatePicker
             fieldLabel="New date"
             required
@@ -284,9 +291,11 @@ export function FollowupsPage(): JSX.Element {
             onChange={setRescheduleDate}
             fullWidth
           />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setRescheduling(null)}>Cancel</Button>
+        </MUIDialogBody>
+        <MUIDialogFooter>
+          <Button variant="outlined" onClick={() => setRescheduling(null)}>
+            Cancel
+          </Button>
           <Button
             variant="contained"
             disabled={!rescheduleDate || rescheduleMutation.isPending}
@@ -306,22 +315,25 @@ export function FollowupsPage(): JSX.Element {
           >
             Move
           </Button>
-        </DialogActions>
-      </Dialog>
+        </MUIDialogFooter>
+      </MUIDialog>
 
-      <Dialog
+      <MUIDialog
         open={reassigning.length > 0}
-        onClose={() => setReassigning([])}
-        maxWidth="xs"
-        fullWidth
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setReassigning([]);
+        }}
+        size="sm"
       >
-        <DialogTitle>
-          {`Reassign ${reassigning.length} follow-up${reassigning.length === 1 ? '' : 's'}`}
-        </DialogTitle>
-        <DialogContent dividers>
-          <Typography variant="body2" color="text.secondary" mb={2}>
+        <MUIDialogHeader>
+          <MUIDialogTitle>
+            {`Reassign ${reassigning.length} follow-up${reassigning.length === 1 ? '' : 's'}`}
+          </MUIDialogTitle>
+          <MUIDialogDescription>
             Ownership of a lead is whoever holds its next follow-up, so this moves the lead too.
-          </Typography>
+          </MUIDialogDescription>
+        </MUIDialogHeader>
+        <MUIDialogBody>
           <MUIUserAssigneeSelector
             fieldLabel="New owner"
             required
@@ -330,9 +342,11 @@ export function FollowupsPage(): JSX.Element {
             employees={employees}
             disablePortal
           />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setReassigning([])}>Cancel</Button>
+        </MUIDialogBody>
+        <MUIDialogFooter>
+          <Button variant="outlined" onClick={() => setReassigning([])}>
+            Cancel
+          </Button>
           <Button
             variant="contained"
             disabled={!reassignTo || reassignMutation.isPending}
@@ -352,8 +366,8 @@ export function FollowupsPage(): JSX.Element {
           >
             Reassign
           </Button>
-        </DialogActions>
-      </Dialog>
+        </MUIDialogFooter>
+      </MUIDialog>
 
       {schedulingGap && (
         <FollowupDrawer

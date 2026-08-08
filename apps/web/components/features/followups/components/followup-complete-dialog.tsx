@@ -4,10 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   FormControlLabel,
   MenuItem,
@@ -29,7 +25,15 @@ import { useCompleteFollowup } from '../hooks';
 import { type FollowupResponse } from '../hooks/use-followups';
 
 import { useEmployees } from '@/components/features/employees';
-import { showToast } from '@/components/ui';
+import {
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+  showToast,
+} from '@/components/ui';
 import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { MUIUserAssigneeSelector } from '@/components/ui/mui-user-assignee-selector';
 import { getErrorMessage } from '@/lib/utils';
@@ -137,21 +141,38 @@ export function FollowupCompleteDialog({
   const leadName = followup?.property?.propertyName ?? followup?.property?.city ?? 'Customer lead';
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Complete follow-up</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={2.5}>
-          {followup && (
-            <Box>
-              <Typography variant="subtitle2" fontWeight={600}>
-                {leadName}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {followup.subject}
-              </Typography>
-            </Box>
-          )}
+    <MUIDialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && !completeMutation.isPending) onClose();
+      }}
+      /*
+       * lg, not sm: this footer carries four actions — Cancel plus the three
+       * exits the flow allows. At sm (400px) they wrap and squeeze.
+       */
+      size="lg"
+      disableEscapeKeyDown={completeMutation.isPending}
+    >
+      <MUIDialogHeader hideCloseButton={completeMutation.isPending}>
+        <MUIDialogTitle>Complete follow-up</MUIDialogTitle>
+        <MUIDialogDescription>
+          {followup ? `${leadName} · ${followup.subject}` : 'Record what happened.'}
+        </MUIDialogDescription>
+      </MUIDialogHeader>
 
+      <MUIDialogBody>
+        <Stack
+          spacing={2.5}
+          useFlexGap
+          sx={{
+            /*
+             * See followup-drawer.tsx: the theme's `marginTop: 6` on labelled
+             * FormControls overrides Stack's margin-based spacing, so spacing moves
+             * to CSS `gap` and the margin is zeroed.
+             */
+            '& > .MuiFormControl-root:has(> .MuiInputLabel-root)': { mt: 0 },
+          }}
+        >
           <TextField
             select
             fullWidth
@@ -222,7 +243,11 @@ export function FollowupCompleteDialog({
           )}
 
           {wantsNext && (
-            <Stack spacing={2}>
+            <Stack
+              spacing={2}
+              useFlexGap
+              sx={{ '& > .MuiFormControl-root:has(> .MuiInputLabel-root)': { mt: 0 } }}
+            >
               <MUIDatePicker
                 fieldLabel="Date"
                 required
@@ -251,10 +276,10 @@ export function FollowupCompleteDialog({
             </Stack>
           )}
         </Stack>
-      </DialogContent>
+      </MUIDialogBody>
 
-      <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-        <Button onClick={onClose} disabled={completeMutation.isPending}>
+      <MUIDialogFooter>
+        <Button variant="outlined" onClick={onClose} disabled={completeMutation.isPending}>
           Cancel
         </Button>
         <Box sx={{ flex: 1 }} />
@@ -279,7 +304,7 @@ export function FollowupCompleteDialog({
         >
           {wantsNext ? 'Save & schedule next' : 'Save'}
         </Button>
-      </DialogActions>
-    </Dialog>
+      </MUIDialogFooter>
+    </MUIDialog>
   );
 }

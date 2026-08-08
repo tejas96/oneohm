@@ -1,18 +1,19 @@
 'use client';
 
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  TextField,
-} from '@mui/material';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { Box, Button, TextField, Typography } from '@mui/material';
 import { useEffect, useState, type JSX } from 'react';
 
 import { useMarkPropertyLost } from '@/components/features/followups';
-import { showToast } from '@/components/ui';
+import {
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+  showToast,
+} from '@/components/ui';
 import { getErrorMessage } from '@/lib/utils';
 
 interface MarkAsLostDialogProps {
@@ -26,7 +27,9 @@ interface MarkAsLostDialogProps {
  * Close a site as lost, with the reason captured at the moment someone knows
  * it rather than reconstructed later.
  *
- * The reason is required: "lost" without a why is a row nobody can learn from.
+ * Built on the house MUIDialog kit rather than raw MUI primitives: the theme
+ * zeroes `MuiDialogTitle` padding on purpose so this kit can own the spacing,
+ * so a hand-rolled `<DialogTitle>` renders flush against the dialog edge.
  */
 export function MarkAsLostDialog({
   open,
@@ -55,13 +58,44 @@ export function MarkAsLostDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Mark site as lost</DialogTitle>
-      <DialogContent>
-        <DialogContentText sx={{ mb: 2 }}>
-          Closes <strong>{propertyName || 'this site'}</strong> and cancels its pending follow-ups.
-          Other sites for this customer are unaffected.
-        </DialogContentText>
+    <MUIDialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && !markLost.isPending) onClose();
+      }}
+      size="sm"
+      disableEscapeKeyDown={markLost.isPending}
+    >
+      <MUIDialogHeader hideCloseButton={markLost.isPending}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              bgcolor: 'error.light',
+              flexShrink: 0,
+            }}
+          >
+            <ErrorOutlineIcon sx={{ color: 'error.main', fontSize: 20 }} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <MUIDialogTitle>Mark site as lost</MUIDialogTitle>
+            <MUIDialogDescription>
+              Cancels this site&apos;s pending follow-ups. Other sites for this customer are
+              unaffected.
+            </MUIDialogDescription>
+          </Box>
+        </Box>
+      </MUIDialogHeader>
+
+      <MUIDialogBody>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Closing <strong>{propertyName || 'this site'}</strong>.
+        </Typography>
         <TextField
           fullWidth
           size="small"
@@ -72,9 +106,10 @@ export function MarkAsLostDialog({
           placeholder="e.g. competitor pricing, timeline, budget cut"
           helperText="Recorded against the site, so the loss can be counted later."
         />
-      </DialogContent>
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} disabled={markLost.isPending}>
+      </MUIDialogBody>
+
+      <MUIDialogFooter>
+        <Button variant="outlined" onClick={onClose} disabled={markLost.isPending}>
           Cancel
         </Button>
         <Button
@@ -83,9 +118,9 @@ export function MarkAsLostDialog({
           onClick={handleSubmit}
           disabled={!reason.trim() || markLost.isPending}
         >
-          Mark lost
+          {markLost.isPending ? 'Marking…' : 'Mark lost'}
         </Button>
-      </DialogActions>
-    </Dialog>
+      </MUIDialogFooter>
+    </MUIDialog>
   );
 }

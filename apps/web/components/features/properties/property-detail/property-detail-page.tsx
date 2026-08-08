@@ -553,6 +553,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 propertyId={property.id}
                 enabled={activeTab === 'followups'}
                 onLogFollowup={() => setFollowupDrawerOpen(true)}
+                onMarkLost={() => setMarkLostOpen(true)}
               />
             )}
             {activeTab === 'activity' && (
