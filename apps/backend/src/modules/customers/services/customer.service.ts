@@ -12,6 +12,7 @@ import { CustomerStatus, UserProfileType, UserStatus } from '@tejas96/shared/typ
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource, In, IsNull } from 'typeorm';
 
+import { LeadClosureService } from './lead-closure.service';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
@@ -74,6 +75,7 @@ export class CustomerService {
     private readonly employeeProfileRepository: EmployeeProfileRepository,
     private readonly storageService: StorageService,
     private readonly dataSource: DataSource,
+    private readonly leadClosureService: LeadClosureService,
   ) {}
 
   /**
@@ -479,6 +481,30 @@ export class CustomerService {
         this.logger.warn(`Failed to delete file from storage: ${fileKey}`, error);
       }
     }
+  }
+
+  /**
+   * Close an enquiry that never got a property.
+   *
+   * A customer who already has sites is never marked lost this way — losing a
+   * site is a property-level action.
+   */
+  async markLost(id: string, reason: string, userId: string): Promise<CustomerProfileEntity> {
+    const customer = await this.customerRepository.findById(id);
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+    if (customer.status === CustomerStatus.LOST) {
+      throw new BadRequestException('Customer is already marked lost');
+    }
+
+    await this.leadClosureService.markCustomerLost(id, reason, userId);
+
+    const updated = await this.customerRepository.findById(id);
+    if (!updated) {
+      throw new NotFoundException('Customer not found');
+    }
+    return updated;
   }
 
   /**

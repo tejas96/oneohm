@@ -12,8 +12,8 @@ import { CustomerPropertyRepository } from './repositories/customer-property.rep
 import { FollowupRepository } from './repositories/followup.repository';
 import { CustomerPropertyService } from './services/customer-property.service';
 import { CustomerService } from './services/customer.service';
-import { LeadClosureService } from './services/lead-closure.service';
 import { FollowupService } from './services/followup.service';
+import { LeadClosureService } from './services/lead-closure.service';
 import { DiscomsModule } from '../discoms/discoms.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';

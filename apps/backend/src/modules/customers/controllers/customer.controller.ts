@@ -37,6 +37,7 @@ import {
   UpdateCustomerDto,
   UpdateCustomerStatusDto,
 } from '../dto';
+import { MarkLostDto } from '../dto/mark-lost.dto';
 import { CustomerService } from '../services/customer.service';
 
 /**
@@ -360,5 +361,24 @@ export class CustomerController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     await this.customerService.delete(id, currentUser.id);
+  }
+
+  /**
+   * Mark a property-less enquiry as lost
+   */
+  @ApiAction({
+    path: 'lost',
+    summary: 'Mark a customer lead as lost',
+    description:
+      'For an enquiry that never got a property. Sets status LOST with a reason and cancels the customer-level followups.',
+    responseType: CustomerResponseDto,
+  })
+  async markLost(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: MarkLostDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerResponseDto> {
+    const customer = await this.customerService.markLost(id, dto.reason, currentUser.id);
+    return toDto(CustomerResponseDto, customer);
   }
 }
