@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 
 import { FollowupEntity } from '../entities/followup.entity';
+import { CUSTOMER_LEAD_NEEDS_FOLLOWUP, PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
 
 /** One open lead unit that nobody currently owes an action. */
 export interface FollowupGapRow {
@@ -321,18 +322,7 @@ export class FollowupRepository {
                p.created_by
              ) AS "attributedUserId"
         FROM customer_properties p
-       WHERE p.deleted_at IS NULL
-         AND p.status NOT IN ('converted', 'lost')
-         AND NOT EXISTS (
-               SELECT 1 FROM followups f
-                WHERE f.property_id = p.id
-                  AND f.deleted_at IS NULL
-                  AND f.status = 'pending')
-         AND NOT EXISTS (
-               SELECT 1 FROM quotes q
-                WHERE q.property_id = p.id
-                  AND q.deleted_at IS NULL
-                  AND q.status = 'accepted')
+       WHERE ${PROPERTY_NEEDS_FOLLOWUP('p')}
 
       UNION ALL
 
@@ -352,17 +342,7 @@ export class FollowupRepository {
                c.created_by
              ) AS "attributedUserId"
         FROM customer_profiles c
-       WHERE c.deleted_at IS NULL
-         AND c.status IN ('lead', 'prospect')
-         AND NOT EXISTS (
-               SELECT 1 FROM customer_properties p
-                WHERE p.customer_id = c.id
-                  AND p.deleted_at IS NULL)
-         AND NOT EXISTS (
-               SELECT 1 FROM followups f
-                WHERE f.customer_id = c.id
-                  AND f.deleted_at IS NULL
-                  AND f.status = 'pending')
+       WHERE ${CUSTOMER_LEAD_NEEDS_FOLLOWUP('c')}
     `);
   }
 
