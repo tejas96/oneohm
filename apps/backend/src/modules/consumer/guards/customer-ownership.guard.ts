@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   type CanActivate,
   type ExecutionContext,
   ForbiddenException,

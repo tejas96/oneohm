@@ -67,7 +67,7 @@ export class CommentRepository {
       query.andWhere('comment.parent_comment_id IS NULL');
     }
 
-    query.orderBy('comment.created_at', 'ASC');
+    query.orderBy('comment.createdAt', 'ASC');
 
     return query.getMany();
   }
@@ -92,7 +92,7 @@ export class CommentRepository {
       .leftJoinAndSelect('comment.createdByUser', 'user')
       .where(':userId = ANY(comment.mentioned_user_ids)', { userId })
       .andWhere('comment.deleted_at IS NULL')
-      .orderBy('comment.created_at', 'DESC')
+      .orderBy('comment.createdAt', 'DESC')
       .getMany();
   }
 

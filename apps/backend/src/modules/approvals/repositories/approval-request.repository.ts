@@ -46,7 +46,7 @@ export class ApprovalRequestRepository {
       .leftJoinAndSelect('request.template', 'template')
       .leftJoinAndSelect('request.currentStage', 'currentStage')
       .leftJoinAndSelect('request.requestedByUser', 'requestedByUser')
-      .orderBy('request.submitted_at', 'DESC');
+      .orderBy('request.submittedAt', 'DESC');
 
     // Apply filters
     if (filters?.status) {
@@ -176,7 +176,7 @@ export class ApprovalRequestRepository {
       .andWhere('request.status = :status', { status: ApprovalRequestStatus.IN_PROGRESS })
       .andWhere('(:userId = ANY(currentStage.approver_user_ids))', { userId })
       .orderBy('request.priority', 'DESC')
-      .addOrderBy('request.submitted_at', 'ASC')
+      .addOrderBy('request.submittedAt', 'ASC')
       .getMany();
   }
 
@@ -245,7 +245,7 @@ export class ApprovalRequestRepository {
     const lastRequest = await this.repository
       .createQueryBuilder('request')
       .where('request.request_number LIKE :prefix', { prefix: `${prefix}%` })
-      .orderBy('request.request_number', 'DESC')
+      .orderBy('request.requestNumber', 'DESC')
       .getOne();
 
     if (!lastRequest?.requestNumber) {

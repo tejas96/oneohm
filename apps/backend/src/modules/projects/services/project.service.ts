@@ -1,4 +1,3 @@
-import { COMPANY } from '@tejas96/shared/constants';
 import {
   BadRequestException,
   ConflictException,
@@ -9,6 +8,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { COMPANY } from '@tejas96/shared/constants';
 import {
   type PaymentMilestone,
   LookupTypeCode,

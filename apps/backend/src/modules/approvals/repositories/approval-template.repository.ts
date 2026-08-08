@@ -40,8 +40,8 @@ export class ApprovalTemplateRepository {
       .createQueryBuilder('template')
       .leftJoinAndSelect('template.stages', 'stage')
       .andWhere('template.deleted_at IS NULL')
-      .orderBy('stage.stage_order', 'ASC')
-      .addOrderBy('template.created_at', 'DESC');
+      .orderBy('stage.stageOrder', 'ASC')
+      .addOrderBy('template.createdAt', 'DESC');
 
     // Apply filters
     if (filters?.workflowType) {

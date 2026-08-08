@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Headers,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,

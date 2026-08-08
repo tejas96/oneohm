@@ -88,7 +88,7 @@ export class AuditLogRepository {
       query.andWhere('audit.created_at <= :endDate', { endDate: filters.endDate });
     }
 
-    query.orderBy('audit.created_at', 'DESC').take(limit);
+    query.orderBy('audit.createdAt', 'DESC').take(limit);
 
     return query.getMany();
   }

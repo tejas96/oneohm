@@ -1,4 +1,3 @@
-import { COMPANY } from '@tejas96/shared/constants';
 import {
   BadRequestException,
   ConflictException,
@@ -7,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { COMPANY } from '@tejas96/shared/constants';
 import {
   ChangeRequestStatus,
   CustomerStatus,

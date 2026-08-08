@@ -159,7 +159,7 @@ export class PaymentRepository {
       .createQueryBuilder('payment')
       .withDeleted()
       .andWhere('payment.payment_number LIKE :prefix', { prefix: `${prefix}%` })
-      .orderBy('payment.payment_number', 'DESC')
+      .orderBy('payment.paymentNumber', 'DESC')
       .getOne();
 
     if (!lastPayment) {

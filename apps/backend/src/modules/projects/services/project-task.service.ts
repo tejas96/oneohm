@@ -1,4 +1,3 @@
-import { COMPANY } from '@tejas96/shared/constants';
 import { randomUUID } from 'crypto';
 
 import {
@@ -9,6 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { COMPANY } from '@tejas96/shared/constants';
 import {
   type ChecklistProgress,
   LookupTypeCode,

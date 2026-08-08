@@ -1,7 +1,6 @@
 import { DataSource, type QueryRunner } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
-import loadConfig from '../../config/configuration';
 
 /**
  * Master Data Seed for Organization: OneOhm EPC

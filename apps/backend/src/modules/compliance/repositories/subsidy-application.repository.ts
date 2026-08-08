@@ -125,7 +125,7 @@ export class SubsidyApplicationRepository {
     const lastApplication = await this.repository
       .createQueryBuilder('sub')
       .where('sub.application_number LIKE :prefix', { prefix: `${prefix}%` })
-      .orderBy('sub.application_number', 'DESC')
+      .orderBy('sub.applicationNumber', 'DESC')
       .getOne();
 
     if (!lastApplication) {

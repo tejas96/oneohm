@@ -92,7 +92,7 @@ export class ApprovalHistoryRepository {
       .leftJoinAndSelect('history.approvalRequest', 'request')
       .leftJoinAndSelect('history.actedByUser', 'user')
       .leftJoinAndSelect('history.stage', 'stage')
-      .orderBy('history.acted_at', 'DESC')
+      .orderBy('history.actedAt', 'DESC')
       .limit(limit)
       .getMany();
   }

@@ -74,7 +74,7 @@ export class ProductPriceRepository {
       });
     }
 
-    query.orderBy('price.product_id', 'ASC');
+    query.orderBy('price.productId', 'ASC');
     if (projectType) {
       query.addOrderBy(
         `CASE WHEN price.project_type = :projectType THEN 0 WHEN price.project_type IS NULL THEN 1 ELSE 2 END`,

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { VendorStatus, VendorType } from '@tejas96/shared/types';
 
 import { CreateVendorDto, UpdateVendorDto } from '../dto';

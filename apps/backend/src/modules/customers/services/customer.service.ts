@@ -1,4 +1,3 @@
-import { COMPANY } from '@tejas96/shared/constants';
 import {
   BadRequestException,
   ConflictException,
@@ -8,6 +7,7 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
+import { COMPANY } from '@tejas96/shared/constants';
 import { CustomerStatus, UserProfileType, UserStatus } from '@tejas96/shared/types';
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource, In, IsNull } from 'typeorm';

@@ -119,7 +119,7 @@ export class ComplianceApplicationRepository {
     const lastApplication = await this.repository
       .createQueryBuilder('ca')
       .where('ca.application_number LIKE :prefix', { prefix: `${prefix}%` })
-      .orderBy('ca.application_number', 'DESC')
+      .orderBy('ca.applicationNumber', 'DESC')
       .getOne();
 
     if (!lastApplication) {

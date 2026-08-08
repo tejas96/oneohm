@@ -1,4 +1,3 @@
-import { COMPANY } from '@tejas96/shared/constants';
 import dataSource from '../ormconfig';
 
 /**

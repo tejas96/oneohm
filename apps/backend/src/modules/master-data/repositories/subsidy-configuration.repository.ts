@@ -47,7 +47,7 @@ export class SubsidyConfigurationRepository {
         date: dateStr,
       })
       .andWhere('(config.effective_to IS NULL OR config.effective_to >= :date)', { date: dateStr })
-      .orderBy('config.created_at', 'DESC')
+      .orderBy('config.createdAt', 'DESC')
       .getOne();
   }
 
@@ -69,7 +69,7 @@ export class SubsidyConfigurationRepository {
         date: dateStr,
       })
       .andWhere('(config.effective_to IS NULL OR config.effective_to >= :date)', { date: dateStr })
-      .orderBy('config.created_at', 'DESC')
+      .orderBy('config.createdAt', 'DESC')
       .getMany();
   }
 
@@ -127,7 +127,7 @@ export class SubsidyConfigurationRepository {
       });
     }
 
-    return query.orderBy('config.scheme_name', 'ASC').getMany();
+    return query.orderBy('config.schemeName', 'ASC').getMany();
   }
 
   /**

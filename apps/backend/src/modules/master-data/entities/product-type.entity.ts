@@ -1,4 +1,4 @@
-import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 
 import { ProductTypeAttributeEntity } from './product-type-attribute.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';

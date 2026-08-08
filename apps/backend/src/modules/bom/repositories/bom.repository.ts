@@ -1,6 +1,6 @@
-import { COMPANY } from '@tejas96/shared/constants';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { COMPANY } from '@tejas96/shared/constants';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 
 import { BomEntity } from '../entities/bom.entity';

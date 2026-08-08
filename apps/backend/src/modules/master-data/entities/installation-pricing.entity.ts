@@ -1,5 +1,5 @@
 import { InstallationCostComponents } from '@tejas96/shared/types';
-import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
+import { Column, Entity, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 

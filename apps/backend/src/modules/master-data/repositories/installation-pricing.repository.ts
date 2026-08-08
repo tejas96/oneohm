@@ -47,7 +47,7 @@ export class InstallationPricingRepository {
       .andWhere('(pricing.effective_to IS NULL OR pricing.effective_to >= :date)', {
         date: dateStr,
       })
-      .orderBy('pricing.min_system_size_kw', 'DESC');
+      .orderBy('pricing.minSystemSizeKw', 'DESC');
 
     return qb.getOne();
   }
@@ -83,7 +83,7 @@ export class InstallationPricingRepository {
       }
     }
 
-    query.orderBy('pricing.min_system_size_kw', 'ASC');
+    query.orderBy('pricing.minSystemSizeKw', 'ASC');
 
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;

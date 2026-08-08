@@ -110,7 +110,7 @@ export class InspectionRepository {
         statuses: [InspectionStatus.SCHEDULED, InspectionStatus.IN_PROGRESS],
       })
       .leftJoinAndSelect('inspection.project', 'project')
-      .orderBy('inspection.scheduled_date', 'ASC')
+      .orderBy('inspection.scheduledDate', 'ASC')
       .getMany();
   }
 
@@ -138,7 +138,7 @@ export class InspectionRepository {
     const lastInspection = await this.repository
       .createQueryBuilder('inspection')
       .where('inspection.inspection_number LIKE :prefix', { prefix: `${prefix}%` })
-      .orderBy('inspection.inspection_number', 'DESC')
+      .orderBy('inspection.inspectionNumber', 'DESC')
       .getOne();
 
     if (!lastInspection) {

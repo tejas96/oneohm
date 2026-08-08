@@ -333,7 +333,7 @@ export class ProjectTaskRepository {
         completedStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
       })
       .andWhere('task.end_date < CURRENT_DATE')
-      .orderBy('task.end_date', 'ASC')
+      .orderBy('task.endDate', 'ASC')
       .getMany();
     return this.resolveMany(tasks);
   }
@@ -358,7 +358,7 @@ export class ProjectTaskRepository {
       .createQueryBuilder('task')
       .where('task.project_id = :projectId', { projectId })
       .andWhere('task.code LIKE :pattern', { pattern: 'TASK-%' })
-      .orderBy('task.created_at', 'DESC')
+      .orderBy('task.createdAt', 'DESC')
       .getOne();
 
     if (!lastTask) {
@@ -653,7 +653,7 @@ export class ProjectTaskRepository {
     // Ownership: only tasks assigned to this user
     qb.andWhere('task.assigned_to_user_id = :userId', { userId });
 
-    qb.orderBy('task.end_date', 'ASC', 'NULLS LAST').addOrderBy('task.priority', 'DESC');
+    qb.orderBy('task.endDate', 'ASC', 'NULLS LAST').addOrderBy('task.priority', 'DESC');
 
     const results = await qb.getMany();
     return this.resolveMany(results);
@@ -818,7 +818,7 @@ export class ProjectTaskRepository {
       .andWhere('task.end_date IS NOT NULL')
       .andWhere('task.end_date <= :futureDate', { futureDate })
       .andWhere('task.end_date >= CURRENT_DATE')
-      .orderBy('task.end_date', 'ASC')
+      .orderBy('task.endDate', 'ASC')
       .getMany();
     return this.resolveMany(tasks);
   }

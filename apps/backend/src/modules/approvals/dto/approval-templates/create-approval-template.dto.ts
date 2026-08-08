@@ -10,7 +10,6 @@ import {
   IsObject,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   MaxLength,
   Min,

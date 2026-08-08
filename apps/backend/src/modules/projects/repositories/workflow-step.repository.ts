@@ -54,7 +54,7 @@ export class WorkflowStepRepository {
       );
     }
 
-    queryBuilder.orderBy('step.sequence_order', 'ASC').skip(skip).take(limit);
+    queryBuilder.orderBy('step.sequenceOrder', 'ASC').skip(skip).take(limit);
 
     const [data, total] = await queryBuilder.getManyAndCount();
     return { data, total };

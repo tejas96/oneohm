@@ -249,7 +249,7 @@ export class ProductRepository {
 
     query
       .orderBy("(product.specifications->>'wattage')::int", 'DESC')
-      .addOrderBy('price.unit_price', 'ASC', 'NULLS LAST');
+      .addOrderBy('price.unitPrice', 'ASC', 'NULLS LAST');
 
     return query.getOne();
   }
@@ -292,7 +292,7 @@ export class ProductRepository {
 
     query
       .orderBy("(product.specifications->>'wattage')::int", 'ASC')
-      .addOrderBy('price.unit_price', 'ASC', 'NULLS LAST');
+      .addOrderBy('price.unitPrice', 'ASC', 'NULLS LAST');
 
     return query.getMany();
   }

@@ -112,7 +112,7 @@ export class CustomerFeedbackRepository {
       .andWhere('feedback.deleted_at IS NULL')
       .leftJoinAndSelect('feedback.customer', 'customer')
       .leftJoinAndSelect('feedback.respondedByUser', 'respondedByUser')
-      .orderBy('feedback.responded_at', 'DESC')
+      .orderBy('feedback.respondedAt', 'DESC')
       .getMany();
   }
 
@@ -122,7 +122,7 @@ export class CustomerFeedbackRepository {
       .where('feedback.company_response IS NULL')
       .andWhere('feedback.deleted_at IS NULL')
       .leftJoinAndSelect('feedback.customer', 'customer')
-      .orderBy('feedback.created_at', 'ASC')
+      .orderBy('feedback.createdAt', 'ASC')
       .getMany();
   }
 

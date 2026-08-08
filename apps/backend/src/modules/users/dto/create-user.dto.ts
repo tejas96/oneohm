@@ -12,11 +12,9 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  IsUUID,
   Matches,
   MaxLength,
   MinLength,
-  ValidateIf,
 } from 'class-validator';
 
 import { CreateCustomerDto } from '../../customers/dto/create-customer.dto';
