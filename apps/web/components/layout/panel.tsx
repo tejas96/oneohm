@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
+import { useFollowupSummary } from '@/components/features/followups';
 import { useMyTasksSummary } from '@/components/features/tasks';
 import { Badge } from '@/components/ui/badge';
 import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
@@ -54,6 +55,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
   const { navigation } = useFilteredNavigation();
   const panelData = getFilteredPanelByPath(navigation, pathname);
   const { data: tasksSummary } = useMyTasksSummary();
+  const { data: followupSummary } = useFollowupSummary(true);
 
   const dynamicBadges = useMemo<
     Record<string, { value: number | string; variant?: NavBadgeVariant }>
@@ -65,8 +67,17 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         variant: tasksSummary.overdue > 0 ? 'error' : undefined,
       };
     }
+    // Overdue + due today: the work someone owes right now. Red only when
+    // something is actually late, matching how My Tasks already reads.
+    const followupsDue = (followupSummary?.overdue ?? 0) + (followupSummary?.today ?? 0);
+    if (followupsDue > 0) {
+      badges['followups'] = {
+        value: followupsDue,
+        variant: (followupSummary?.overdue ?? 0) > 0 ? 'error' : undefined,
+      };
+    }
     return badges;
-  }, [tasksSummary]);
+  }, [tasksSummary, followupSummary]);
 
   // Build current full URL for comparison (pathname + search params)
   const searchString = searchParams.toString();
