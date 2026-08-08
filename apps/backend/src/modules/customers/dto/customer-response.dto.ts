@@ -54,7 +54,7 @@ export class SitePortfolioDto {
 }
 
 /**
- * Organisation-wide CRM roll-up for the customer list's KPI cards.
+ * Company-wide CRM roll-up for the customer list's KPI cards.
  */
 export class CustomerOverviewStatsDto {
   @ApiProperty()

@@ -53,7 +53,7 @@ export class QuoteConfigurationService {
     } catch (error: unknown) {
       const err = error as { code?: string };
       if (err?.code === PG_FK_VIOLATION_CODE) {
-        throw new BadRequestException(`Invalid organization ID: `);
+        throw new BadRequestException(`Invalid quote configuration`);
       }
       throw error;
     }

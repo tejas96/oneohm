@@ -109,7 +109,7 @@ export class CustomerFeedbackController {
   @ApiOperation({ summary: 'Get feedback by organization' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'List of feedback for organization',
+    description: 'List of feedback',
     type: [CustomerFeedbackResponseDto],
   })
   async findByOrganization(
@@ -121,7 +121,7 @@ export class CustomerFeedbackController {
   @ApiOperation({ summary: 'Get published feedback by organization' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'List of published feedback for organization',
+    description: 'List of published feedback',
     type: [CustomerFeedbackResponseDto],
   })
   async findPublishedByOrganization(
@@ -187,7 +187,7 @@ export class CustomerFeedbackController {
   // ============================================
 
   @Get('organization/nps-score')
-  @ApiOperation({ summary: 'Calculate NPS score for organization' })
+  @ApiOperation({ summary: 'Calculate NPS score' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'NPS score calculation',
@@ -206,7 +206,7 @@ export class CustomerFeedbackController {
   }
 
   @Get('organization/average-rating')
-  @ApiOperation({ summary: 'Get average rating for organization' })
+  @ApiOperation({ summary: 'Get average rating' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Average rating',
@@ -229,7 +229,7 @@ export class CustomerFeedbackController {
   }
 
   @Get('organization/statistics')
-  @ApiOperation({ summary: 'Get comprehensive statistics for organization' })
+  @ApiOperation({ summary: 'Get comprehensive statistics' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Comprehensive feedback statistics',

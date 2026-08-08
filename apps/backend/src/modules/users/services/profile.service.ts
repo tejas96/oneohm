@@ -122,7 +122,7 @@ export class ProfileService {
     const existingProfile = await this.getProfile(userId, profileType);
     if (existingProfile) {
       throw new BadRequestException(
-        `User already has a ${profileType} profile in this organization`,
+        `User already has a ${profileType} profile`,
       );
     }
 
@@ -173,17 +173,17 @@ export class ProfileService {
         if (constraint.includes('emp_id') || constraint.includes('employee_id')) {
           const pd = profileData as Record<string, string | undefined>;
           throw new ConflictException(
-            `Employee ID "${pd.employeeId ?? ''}" already exists in this organization`,
+            `Employee ID "${pd.employeeId ?? ''}" already exists`,
           );
         }
         if (constraint.includes('company_code')) {
           const pd = profileData as Record<string, string | undefined>;
           throw new ConflictException(
-            `Company code "${pd.companyCode ?? ''}" already exists in this organization`,
+            `Company code "${pd.companyCode ?? ''}" already exists`,
           );
         }
         throw new ConflictException(
-          `A ${profileType} profile with this data already exists in the organization`,
+          `A ${profileType} profile with this data already exists`,
         );
       }
       throw error;
@@ -321,7 +321,7 @@ export class ProfileService {
 
   /**
    * Verify user has access to an organization
-   * Throws ForbiddenException if user doesn't have any profile in the organization
+   * Throws ForbiddenException if user doesn't have any profile
    * @param userId - User ID
    * @param requiredProfileType - Optional: require specific profile type
    */

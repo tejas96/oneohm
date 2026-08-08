@@ -127,7 +127,7 @@ export class MaintenanceTaskController {
   }
 
   @Get('statistics')
-  @ApiOperation({ summary: 'Get task statistics for organization' })
+  @ApiOperation({ summary: 'Get task statistics' })
   @ApiResponse({
     status: 200,
     description: 'Statistics retrieved successfully',

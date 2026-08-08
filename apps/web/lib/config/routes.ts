@@ -36,12 +36,18 @@ export const ROUTES = {
     RESET_PASSWORD: '/reset-password',
   },
 
-  // Dashboard
+  // Dashboard.
+  // `app/(dashboard)/` is a Next.js ROUTE GROUP — the parentheses mean it adds
+  // no URL segment, so its page.tsx serves `/`, not `/dashboard`. These pointed
+  // at `/dashboard*`, which has never existed, so every one of these nav links
+  // rendered the 404 page.
   DASHBOARD: {
-    HOME: '/dashboard',
-    TASKS: '/dashboard/tasks',
-    CALENDAR: '/dashboard/calendar',
-    ACTIVITY: '/dashboard/activity',
+    HOME: '/',
+    TASKS: '/projects/my-tasks',
+    // No page exists for these yet. Left pointing at the real dashboard rather
+    // than at a guaranteed 404; they need their pages built.
+    CALENDAR: '/',
+    ACTIVITY: '/',
   },
 
   // CRM

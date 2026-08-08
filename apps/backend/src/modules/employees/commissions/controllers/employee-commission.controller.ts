@@ -74,7 +74,7 @@ export class EmployeeCommissionController {
    */
   @ApiReadAll({
     summary: 'Get all commissions',
-    description: 'Retrieve all commission records for the current organization.',
+    description: 'Retrieve all commission records.',
     responseType: CommissionResponseDto,
     additionalQueries: [
       {

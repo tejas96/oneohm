@@ -448,7 +448,7 @@ export class ProjectExpenseService {
     try {
       await this.projectRepository.findById(projectId);
     } catch {
-      throw new NotFoundException(`Project ${projectId} not found in this organization`);
+      throw new NotFoundException(`Project ${projectId} not found`);
     }
   }
 }

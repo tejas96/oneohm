@@ -51,7 +51,7 @@ export class InventoryStockController {
   @Get()
   @ApiReadAll({
     summary: 'Get all stock',
-    description: 'Retrieve stock levels across all warehouses in the organization',
+    description: 'Retrieve stock levels across all warehouses',
     responseType: InventoryStockResponseDto,
   })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -311,7 +311,7 @@ export class InventoryStockController {
   @Get('stats/total-value')
   @ApiOperation({
     summary: 'Get total stock value',
-    description: 'Calculate total value of all stock in organization',
+    description: 'Calculate total value of all stock',
   })
   async getTotalStockValue(
     @CurrentUser() _currentUser: CurrentUserType,

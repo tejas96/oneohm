@@ -167,7 +167,7 @@ export class PaymentTermController {
       const project = await this.projectRepository.findById(projectId);
       return { id: project.id, quoteId: project.quoteId };
     } catch {
-      throw new NotFoundException(`Project ${projectId} not found in this organization`);
+      throw new NotFoundException(`Project ${projectId} not found`);
     }
   }
 }

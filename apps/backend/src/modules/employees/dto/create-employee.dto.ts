@@ -42,7 +42,7 @@ export class CreateEmployeeDto {
   // ==================== Employment Info ====================
   @ApiPropertyOptional({
     example: 'EMP-2024-001',
-    description: 'Unique employee ID within organization',
+    description: 'Unique employee ID',
   })
   @IsString()
   @IsOptional()

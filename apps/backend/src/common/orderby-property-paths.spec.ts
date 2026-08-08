@@ -1,24 +1,30 @@
 /**
- * `orderBy()` must be given ENTITY PROPERTY PATHS, never database column names.
+ * `orderBy()` criteria must match how the alias was joined.
  *
  * TypeORM resolves an order-by criteria with
- * `alias.metadata.findColumnWithPropertyPath(propertyPath)`, which looks up the
- * *property* name. Hand it a column name like `request.submitted_at` and the
- * lookup returns `undefined`; TypeORM then reads `.databaseName` off it and the
- * request dies with:
+ * `alias.metadata.findColumnWithPropertyPath(propertyPath)` — but only for
+ * aliases it has entity metadata for. That gives two rules, and using the wrong
+ * one breaks in a different way each time:
  *
- *     TypeError: Cannot read properties of undefined (reading 'databaseName')
+ *   ENTITY-MAPPED alias — `createQueryBuilder('x')`, `leftJoin('x.relation', 'y')`
+ *     -> must use the ENTITY PROPERTY path (`request.submittedAt`).
+ *        A column name makes findColumnWithPropertyPath return undefined, and
+ *        TypeORM reads `.databaseName` off it:
+ *          TypeError: Cannot read properties of undefined (reading 'databaseName')
+ *        Only fires on the DISTINCT-PAGINATION path (skip/take + a row-multiplying
+ *        join), so it can sit latent for months and then break when someone adds
+ *        pagination. This killed /approval-requests, /approval-templates and
+ *        /audit-logs while 28 more sites waited their turn.
  *
- * The trap is that this only fires on the DISTINCT-PAGINATION path — when
- * `skip`/`take` are combined with a join that can multiply rows. Every other
- * query passes the string through as raw SQL and works fine, so a snake_case
- * order-by can sit harmlessly for months and then break the moment someone adds
- * pagination or a join. Three endpoints were already broken this way
- * (`/approval-requests`, `/approval-templates`, `/audit-logs`) while 28 more
- * sites waited their turn.
+ *   RAW-JOIN alias — `leftJoin('(SELECT …)', 'y')` or `leftJoin('table', 'y')`
+ *     -> must use the actual SQL COLUMN name (`price.unit_price`).
+ *        There is no metadata, so TypeORM emits the string verbatim. An unquoted
+ *        camelCase identifier is folded to lowercase by Postgres:
+ *          ERROR: column price.unitprice does not exist
+ *        This one fails loudly and immediately — it broke quote calculation.
  *
- * This guard fails on the pattern rather than on the symptom, so the next one is
- * caught at commit time instead of in production.
+ * This guard checks each order-by against the way its alias was actually
+ * introduced, so it catches both directions instead of enforcing one blindly.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -27,14 +33,22 @@ import { describe, it, expect } from '@jest/globals';
 
 const SRC = join(__dirname, '..');
 
-/** `.orderBy('alias.some_column')` / `.addOrderBy(...)` — dotted, with an underscore. */
-const SNAKE_ORDER_BY = /\.(?:orderBy|addOrderBy)\(\s*'([A-Za-z_][\w]*)\.([a-z][a-z0-9]*_[a-z0-9_]+)'/g;
+/** `createQueryBuilder('x')` and `leftJoin('x.relation', 'y')` — TypeORM knows these. */
+const ENTITY_ALIAS = [
+  /createQueryBuilder\(\s*'(\w+)'/g,
+  /\.(?:left|inner)Join(?:AndSelect)?\(\s*'[A-Za-z_]\w*\.\w+'\s*,\s*'(\w+)'/g,
+];
+/** `leftJoin('(SELECT …)', 'y')` / `leftJoin('table_name', 'y')` — no metadata. */
+const RAW_ALIAS = /\.(?:left|inner)Join\(\s*(?:`[^`]*`|'(?!\w+\.)[\w_]+')\s*,\s*'(\w+)'/gs;
+
+const ORDER_BY = /\.(?:orderBy|addOrderBy)\(\s*'(\w+)\.(\w+)'/g;
+
+const isSnake = (s: string): boolean => s.includes('_');
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
-      // Historical migrations legitimately contain raw SQL column names.
       if (entry === 'migrations' || entry === 'node_modules' || entry === 'dist') continue;
       walk(full, out);
     } else if (entry.endsWith('.ts') && !entry.endsWith('.spec.ts')) {
@@ -44,15 +58,35 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-describe('orderBy uses entity property paths, not column names', () => {
-  it('has no snake_case order-by criteria anywhere in the backend', () => {
+describe('orderBy criteria match how their alias was joined', () => {
+  it('entity aliases use property paths and raw-join aliases use column names', () => {
     const offenders: string[] = [];
 
     for (const file of walk(SRC)) {
       const source = readFileSync(file, 'utf8');
-      for (const match of source.matchAll(SNAKE_ORDER_BY)) {
-        const line = source.slice(0, match.index).split('\n').length;
-        offenders.push(`${file.replace(SRC, 'src')}:${line}  ${match[1]}.${match[2]}`);
+
+      const raw = new Set<string>();
+      for (const m of source.matchAll(RAW_ALIAS)) raw.add(m[1]);
+
+      const entity = new Set<string>();
+      for (const pattern of ENTITY_ALIAS) {
+        for (const m of source.matchAll(pattern)) entity.add(m[1]);
+      }
+
+      for (const m of source.matchAll(ORDER_BY)) {
+        const [, alias, prop] = m;
+        const line = source.slice(0, m.index).split('\n').length;
+        const where = `${file.replace(SRC, 'src')}:${line}`;
+
+        // A raw join wins: the same name can appear in both lists when an alias
+        // is reused, and the raw form is what actually reaches Postgres.
+        if (raw.has(alias)) {
+          if (!isSnake(prop) && prop !== prop.toLowerCase()) {
+            offenders.push(`${where}  ${alias}.${prop} — raw-join alias needs the SQL column name`);
+          }
+        } else if (entity.has(alias) && isSnake(prop)) {
+          offenders.push(`${where}  ${alias}.${prop} — entity alias needs the property path`);
+        }
       }
     }
 

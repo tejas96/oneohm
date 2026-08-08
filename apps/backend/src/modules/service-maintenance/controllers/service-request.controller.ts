@@ -138,7 +138,7 @@ export class ServiceRequestController {
   }
 
   @Get('statistics')
-  @ApiOperation({ summary: 'Get request statistics for organization' })
+  @ApiOperation({ summary: 'Get request statistics' })
   @ApiResponse({
     status: 200,
     description: 'Statistics retrieved successfully',

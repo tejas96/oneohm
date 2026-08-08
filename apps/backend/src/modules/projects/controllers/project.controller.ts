@@ -266,7 +266,7 @@ export class ProjectController {
   }
 
   /**
-   * Get team workload across all projects in the organization.
+   * Get team workload across all projects.
    * Returns per-user: active project count, total tasks, in-progress tasks, not-completed tasks.
    * NOTE: Must be defined before :id route.
    */

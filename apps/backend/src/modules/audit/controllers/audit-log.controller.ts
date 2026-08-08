@@ -151,7 +151,7 @@ export class AuditLogController {
   }
 
   @Get('organization')
-  @ApiOperation({ summary: 'Get audit logs for an organization' })
+  @ApiOperation({ summary: 'Get audit logs' })
   @ApiQuery({
     name: 'limit',
     required: false,
@@ -160,7 +160,7 @@ export class AuditLogController {
   })
   @ApiResponse({
     status: 200,
-    description: 'List of audit logs for organization',
+    description: 'List of audit logs',
     type: [AuditLogResponseDto],
   })
   async findByOrganization(

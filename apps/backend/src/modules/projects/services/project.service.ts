@@ -438,7 +438,7 @@ export class ProjectService {
     );
     if (!property) {
       throw new NotFoundException(
-        `Property with ID ${quote.propertyId} not found in this organization`,
+        `Property with ID ${quote.propertyId} not found`,
       );
     }
     if (property.status === PropertyStatus.CONVERTED) {

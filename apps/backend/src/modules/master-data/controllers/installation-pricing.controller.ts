@@ -59,7 +59,7 @@ export class InstallationPricingController {
   @Get()
   @ApiReadAll({
     summary: 'Get all installation pricing tiers',
-    description: 'Retrieve pricing tiers for the organisation, ordered by min system size.',
+    description: 'Retrieve pricing tiers, ordered by min system size.',
     responseType: InstallationPricingResponseDto,
     additionalQueries: [
       {

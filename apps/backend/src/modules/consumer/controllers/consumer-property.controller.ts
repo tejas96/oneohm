@@ -27,7 +27,7 @@ export class ConsumerPropertyController {
   @ApiOperation({
     summary: 'Get properties for the logged-in customer',
     description:
-      'Returns all active properties for the authenticated customer in the organization context, ' +
+      'Returns all active properties for the authenticated customer context, ' +
       'including quotes (with versions) and project details.',
   })
   @ApiResponse({

@@ -158,7 +158,7 @@ export class FinanceController {
   @ApiOperation({
     summary: 'Org-wide receipts ledger',
     description:
-      'Paginated list of receipts across all projects in the organization. ' +
+      'Paginated list of receipts across all projects. ' +
       'Includes joined project + customer fields so PDF templates work without an extra fetch.',
   })
   async getReceipts(
@@ -173,7 +173,7 @@ export class FinanceController {
   @Get('expenses')
   @ApiOperation({
     summary: 'Org-wide expenses ledger',
-    description: 'Paginated list of project expenses across the organization with project joins.',
+    description: 'Paginated list of project expenses with project joins.',
   })
   async getExpenses(
     @Query() query: ExpensesQueryDto,

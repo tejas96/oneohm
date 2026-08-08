@@ -96,7 +96,7 @@ function StatCard({ label, value, delta, deltaDir, loading }: StatCardProps): JS
  * The four KPI cards above the customer grid: customers, sites, open pipeline
  * and quotes awaiting a reply.
  *
- * Every figure is organisation-wide and independent of the table's filters —
+ * Every figure is company-wide and independent of the table's filters —
  * they answer "how is the pipeline doing", not "what am I looking at". Tying
  * them to the filter model would make the same card show different numbers
  * depending on an unrelated search box.

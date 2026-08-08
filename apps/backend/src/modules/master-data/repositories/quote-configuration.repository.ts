@@ -81,7 +81,7 @@ export class QuoteConfigurationRepository {
         const err = error as { code?: string };
         if (err?.code === '23503') {
           throw new BadRequestException(
-            `Invalid organization ID: . Organization does not exist.`,
+            `Invalid quote configuration`,
           );
         }
         throw error;

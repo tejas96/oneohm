@@ -133,7 +133,7 @@ export interface CustomerStatsResponse {
 }
 
 /**
- * Organisation-wide CRM roll-up backing the four KPI cards on the customer
+ * Company-wide CRM roll-up backing the four KPI cards on the customer
  * list. Mirrors `CustomerOverviewStatsDto`.
  */
 export interface CustomerOverviewStats {
@@ -288,7 +288,7 @@ export function useCustomerStats(): UseQueryResult<CustomerStatsResponse, AxiosE
  * Hook to fetch the CRM overview roll-up for the customer list's KPI cards.
  *
  * Kept separate from `useCustomers` on purpose: these figures are
- * organisation-wide and independent of the table's page, sort and filters, so
+ * company-wide and independent of the table's page, sort and filters, so
  * folding them into the list query would refetch four unchanging numbers on
  * every keystroke of the search box.
  */

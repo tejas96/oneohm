@@ -46,7 +46,7 @@ export class EmployeeService {
 
     if (existing) {
       throw new BadRequestException(
-        'Employee profile already exists for this user in this organization',
+        'Employee profile already exists for this user',
       );
     }
 
@@ -128,7 +128,7 @@ export class EmployeeService {
 
     if (existing) {
       throw new BadRequestException(
-        'Employee profile already exists for this user in this organization',
+        'Employee profile already exists for this user',
       );
     }
 

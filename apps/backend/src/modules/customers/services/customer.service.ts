@@ -89,7 +89,7 @@ export class CustomerService {
 
     this.logger.log(`Creating customer profile: phone=${phone}, email=${email ?? 'N/A'}`);
 
-    // Step 1: Check for duplicates within this organization
+    // Step 1: Check for duplicates
     await this.guardOrgDuplicates(phone, email);
 
     // Step 2: Find or create user by phone (for login capability)
@@ -100,7 +100,7 @@ export class CustomerService {
       user.id,
     );
     if (existingProfile) {
-      throw new ConflictException('Customer profile already exists for this user in organization');
+      throw new ConflictException('Customer profile already exists for this user');
     }
 
     // Step 4: Create customer profile using ProfileService (handles role assignment)
@@ -191,7 +191,7 @@ export class CustomerService {
   }
 
   /**
-   * Organisation-wide CRM roll-up behind the customer list's KPI cards.
+   * Company-wide CRM roll-up behind the customer list's KPI cards.
    */
   async getOverviewStats(): Promise<CustomerOverviewStats> {
     return this.customerRepository.getOverviewStats();
@@ -286,7 +286,7 @@ export class CustomerService {
       );
       if (existingByEmail && existingByEmail.id !== id) {
         throw new ConflictException(
-          `Customer with email '${updateDto.email}' already exists in this organization`,
+          `Customer with email '${updateDto.email}' already exists`,
         );
       }
     }
@@ -298,7 +298,7 @@ export class CustomerService {
       );
       if (existingByPhone && existingByPhone.id !== id) {
         throw new ConflictException(
-          `Customer with phone '${updateDto.phone}' already exists in this organization`,
+          `Customer with phone '${updateDto.phone}' already exists`,
         );
       }
     }
@@ -569,7 +569,7 @@ export class CustomerService {
   }
 
   /**
-   * Check if phone/email is already registered for a customer in this organization.
+   * Check if phone/email is already registered for a customer.
    * Queries customer_profiles (org-scoped). Normalizes phone (E.164) and email (lowercase).
    */
   async checkAvailability(
@@ -645,7 +645,7 @@ export class CustomerService {
         assigneeId,
       );
       if (!employeeProfile) {
-        throw new BadRequestException(`User '${assigneeId}' does not belong to this organization`);
+        throw new BadRequestException(`User '${assigneeId}' was not found`);
       }
 
       // Validate assignee is active
@@ -678,7 +678,7 @@ export class CustomerService {
     const existingByPhone = await this.customerRepository.findOneByPhone(phone);
     if (existingByPhone) {
       throw new ConflictException(
-        `A customer with phone '${phone}' already exists in this organization`,
+        `A customer with phone '${phone}' already exists`,
       );
     }
 
@@ -686,7 +686,7 @@ export class CustomerService {
       const existingByEmail = await this.customerRepository.findByEmail(email);
       if (existingByEmail) {
         throw new ConflictException(
-          `A customer with email '${email}' already exists in this organization`,
+          `A customer with email '${email}' already exists`,
         );
       }
     }
@@ -789,7 +789,7 @@ export class CustomerService {
       const exists = await this.customerRepository.groupCodeExists(groupCode);
       if (!exists) {
         throw new BadRequestException(
-          `Group code '${groupCode}' does not exist in this organization`,
+          `Group code '${groupCode}' does not exist`,
         );
       }
       await this.customerRepository.update(customer.id, {

@@ -455,7 +455,7 @@ export class ReceiptService {
           : undefined,
       };
     } catch {
-      throw new NotFoundException(`Project ${projectId} not found in this organization`);
+      throw new NotFoundException(`Project ${projectId} not found`);
     }
   }
 

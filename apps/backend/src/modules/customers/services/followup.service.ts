@@ -51,12 +51,12 @@ export class FollowupService {
       }
     }
 
-    // Validate assigned user has a role in this organization
+    // Validate assigned user has a role
     const userRoles = await this.userRoleRepository.findByUserAndOrganization(
       createDto.assignedToUserId,
     );
     if (userRoles.length === 0) {
-      throw new BadRequestException('Assigned user not found in this organization');
+      throw new BadRequestException('Assigned user not found');
     }
 
     const followup = await this.followupRepository.create({

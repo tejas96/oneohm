@@ -62,8 +62,8 @@ export class EmployeeController {
 
   @Get()
   @ApiReadAll({
-    summary: 'Get all employees in organization',
-    description: 'Returns paginated list of employees. Requires x-organization-id header.',
+    summary: 'Get all employees',
+    description: 'Returns paginated list of employees. ',
     responseType: EmployeeResponseDto,
   })
   @ApiQuery({ name: 'page', required: false, example: 1 })
@@ -133,7 +133,7 @@ export class EmployeeController {
   @Get('user/:userId')
   @ApiReadAll({
     summary: 'Get all employee profiles for a user',
-    description: 'Returns all employee profiles across all organizations for a user',
+    description: 'Returns all employee profiles for a user',
     responseType: EmployeeResponseDto,
   })
   async findByUser(@Param('userId', ParseUUIDPipe) userId: string): Promise<EmployeeResponseDto[]> {

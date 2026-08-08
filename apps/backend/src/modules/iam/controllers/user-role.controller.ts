@@ -245,7 +245,7 @@ export class UserRoleController {
     } else if (roleCode) {
       role = await this.roleRepository.findByCodeAndOrganization(roleCode);
       if (!role) {
-        throw new NotFoundException(`Role with code '${roleCode}' not found in organization`);
+        throw new NotFoundException(`Role with code '${roleCode}' not found`);
       }
     } else {
       throw new BadRequestException('Either roleId or roleCode is required');

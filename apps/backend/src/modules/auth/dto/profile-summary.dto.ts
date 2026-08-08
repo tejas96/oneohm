@@ -111,7 +111,7 @@ export class LoginUserDto {
   permissions!: string[];
 
   @ApiProperty({
-    description: 'User profiles across organizations',
+    description: 'User profiles',
     type: [ProfileSummaryDto],
     isArray: true,
   })

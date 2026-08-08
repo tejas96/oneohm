@@ -63,7 +63,7 @@ export class LookupController {
   @Post()
   @ApiCreate({
     summary: 'Create a lookup entry',
-    description: 'Creates a new lookup entry. For organization-scoped entries, provide scopeId.',
+    description: 'Creates a new lookup entry. For record-scoped entries, provide scopeId.',
     responseType: LookupResponseDto,
   })
   async create(

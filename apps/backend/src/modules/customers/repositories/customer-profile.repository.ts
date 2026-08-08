@@ -39,7 +39,7 @@ export interface SitePortfolioSummary {
   totalQuotedAmount: number;
 }
 
-/** Organisation-wide CRM roll-up behind the four KPI cards on the list page. */
+/** Company-wide CRM roll-up behind the four KPI cards on the list page. */
 export interface CustomerOverviewStats {
   customers: number;
   customersThisMonth: number;
@@ -481,7 +481,7 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * Organisation-wide CRM roll-up for the customer list's KPI cards.
+   * Company-wide CRM roll-up for the customer list's KPI cards.
    *
    * Two queries rather than one: the customer counts have no property join, and
    * forcing them through the property aggregate would either miss customers

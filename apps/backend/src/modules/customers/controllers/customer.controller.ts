@@ -159,7 +159,7 @@ export class CustomerController {
   @ApiOperation({
     summary: 'Check phone/email availability',
     description:
-      'Check if a phone number or email is already registered for a customer in this organization. Used to prevent duplicate customer creation.',
+      'Check if a phone number or email is already registered for a customer. Used to prevent duplicate customer creation.',
   })
   @ApiQuery({
     name: 'phone',
@@ -234,7 +234,7 @@ export class CustomerController {
   @ApiOperation({
     summary: 'Get CRM overview statistics',
     description:
-      'Returns organisation-wide customer and site counts, open pipeline value and ' +
+      'Returns company-wide customer and site counts, open pipeline value and ' +
       'awaiting-reply counts, with current-month deltas. Backs the four KPI cards on ' +
       'the customer list.' +
       '',

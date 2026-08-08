@@ -54,7 +54,7 @@ export class RoleController {
   @RequirePermission('iam:roles:create')
   @ApiOperation({
     summary: 'Create a new role',
-    description: 'Creates a new role for an organization',
+    description: 'Creates a new role',
   })
   async create(
     @Body() createRoleDto: CreateRoleDto,
@@ -64,7 +64,7 @@ export class RoleController {
       createRoleDto.code,
     );
     if (exists) {
-      throw new ConflictException('A role with this code already exists in this organization');
+      throw new ConflictException('A role with this code already exists');
     }
 
     const role = await this.roleRepository.create({
