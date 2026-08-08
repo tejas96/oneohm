@@ -38,14 +38,12 @@ export class CustomerOwnershipGuard implements CanActivate {
       throw new ForbiddenException('Access denied: User not authenticated');
     }
 
-    const organizationId = this.resolveOrganizationId(request);
-
     const customerProfile = await this.customerProfileRepository.findByUserAndOrganization(
       request.user.id,
     );
 
     if (!customerProfile) {
-      throw new ForbiddenException('Access denied: No customer profile for this organization');
+      throw new ForbiddenException('Access denied: No customer profile');
     }
 
     request.customerProfile = customerProfile;
@@ -66,25 +64,6 @@ export class CustomerOwnershipGuard implements CanActivate {
     }
 
     return true;
-  }
-
-  private resolveOrganizationId(request: ConsumerAuthRequest): string {
-    let organizationId = request.query?.organizationId as string | undefined;
-
-    if (!organizationId) {
-      const headerOrgId =
-        request.headers['x-organization-id'] ?? request.headers['X-Organization-Id'];
-      organizationId = Array.isArray(headerOrgId) ? headerOrgId[0] : headerOrgId;
-    }
-
-    if (!organizationId) {
-      throw new BadRequestException(
-        'organizationId is required. Provide it as query parameter (?organizationId=xxx) or header (X-Organization-Id)',
-      );
-    }
-
-    
-    return organizationId;
   }
 
   private async assertPropertyOwnership(

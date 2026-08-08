@@ -152,7 +152,6 @@ export class UserRoleRepository {
       .innerJoin('roles', 'role', 'role.id = user_role.role_id')
       .where('user_role.user_id = :userId', { userId })
       .andWhere('role.code = :code', { code: 'platform_admin' })
-      .andWhere('user_role.organization_id IS NULL')
       .getCount();
 
     return count > 0;

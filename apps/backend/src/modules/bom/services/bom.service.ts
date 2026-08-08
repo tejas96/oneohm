@@ -1432,7 +1432,7 @@ export class BomService {
     let filterSql = '';
     if (productIdsFilter && productIdsFilter.length > 0) {
       params.push(productIdsFilter);
-      filterSql = `AND bi.product_id = ANY($3::uuid[])`;
+      filterSql = `AND bi.product_id = ANY($2::uuid[])`;
     }
 
     const rows = await this.dataSource.query(
@@ -1442,7 +1442,6 @@ export class BomService {
          JOIN bom_items bi ON bi.bom_id = b.id
         WHERE b.entity_type = 'project'
           AND b.entity_id = $1::uuid
-          AND b.organization_id = $2::uuid
           AND bi.product_id IS NOT NULL
           ${filterSql}
         GROUP BY bi.product_id`,
@@ -1501,7 +1500,6 @@ export class BomService {
            JOIN bom_items bi ON bi.bom_id = b.id
           WHERE b.entity_type = 'project'
             AND b.entity_id = $1::uuid
-            AND b.organization_id = $2::uuid
             AND bi.product_id IS NOT NULL
           GROUP BY bi.product_id
        ),
@@ -1512,7 +1510,6 @@ export class BomService {
            FROM expense_product_links epl
            JOIN project_expenses pe ON pe.id = epl.expense_id
           WHERE pe.project_id = $1::uuid
-            AND pe.organization_id = $2::uuid
             AND pe.deleted_at IS NULL
             AND epl.product_id IS NOT NULL
           GROUP BY epl.product_id

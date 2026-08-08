@@ -9,7 +9,6 @@ import { IsEmail, IsOptional, IsString, IsUUID } from 'class-validator';
 export class CheckAvailabilityQueryDto {
   // but needs to be in DTO to pass validation when sent as query param
   @ApiPropertyOptional({
-    description: 'Organization ID (can also be sent via X-Organization-Id header)',
     example: '7e5ce9c8-9c17-4a86-8fcd-da9ce182467b',
   })
 

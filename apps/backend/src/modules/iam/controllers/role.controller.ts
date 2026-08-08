@@ -83,7 +83,7 @@ export class RoleController {
   @RequirePermission('iam:roles:read')
   @ApiOperation({
     summary: 'List all roles',
-    description: 'Get paginated list of roles for the organization',
+    description: 'Get paginated list of roles ',
   })
   async findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,

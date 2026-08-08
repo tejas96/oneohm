@@ -64,7 +64,7 @@ export async function seedQuoteCalculatorData(
     for (const pt of productTypeRows) {
       const result = await queryRunner.query(
         `INSERT INTO product_types (name, code, description, default_pricing_basis, default_gst_rate, unit_of_measure, is_active, sort_order, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, $8, NOW(), NOW())
+        VALUES ( $1, $2, $3, $4, $5, $6, TRUE, $7, NOW(), NOW())
         ON CONFLICT (code) DO UPDATE SET
           name = EXCLUDED.name,
           description = EXCLUDED.description
@@ -101,7 +101,7 @@ export async function seedQuoteCalculatorData(
     for (const brand of brandRows) {
       const result = await queryRunner.query(
         `INSERT INTO brands (name, manufacturer_name, is_active, created_at, updated_at)
-        VALUES ($1, $2, $3, TRUE, NOW(), NOW())
+        VALUES ( $1, $2, TRUE, NOW(), NOW())
         ON CONFLICT (name) DO UPDATE SET
           manufacturer_name = EXCLUDED.manufacturer_name
         RETURNING id`,
@@ -203,7 +203,7 @@ export async function seedQuoteCalculatorData(
         `INSERT INTO products (
           product_type_id, brand_id, name, code, status,
           specifications
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ) VALUES ( $1, $2, $3, $4, $5, $6)
         ON CONFLICT (code) DO UPDATE SET
           name = EXCLUDED.name,
           specifications = EXCLUDED.specifications
@@ -231,7 +231,7 @@ export async function seedQuoteCalculatorData(
         `INSERT INTO product_prices (
           product_id, project_type, unit_price, cost_multiplier,
           gst_rate, currency, effective_from, is_active, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
         ON CONFLICT DO NOTHING`,
         [
           result[0].id,
@@ -376,7 +376,7 @@ export async function seedQuoteCalculatorData(
         `INSERT INTO products (
           product_type_id, brand_id, name, code, status,
           specifications
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ) VALUES ( $1, $2, $3, $4, $5, $6)
         ON CONFLICT (code) DO UPDATE SET
           name = EXCLUDED.name,
           specifications = EXCLUDED.specifications
@@ -402,7 +402,7 @@ export async function seedQuoteCalculatorData(
         `INSERT INTO product_prices (
           product_id, project_type, unit_price, cost_multiplier,
           gst_rate, currency, effective_from, is_active, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
         ON CONFLICT DO NOTHING`,
         [
           result[0].id,
@@ -427,7 +427,7 @@ export async function seedQuoteCalculatorData(
         scheme_name, scheme_type, project_type,
         max_subsidy_kw, requires_dcr, is_active,
         tiers, description
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8)
       ON CONFLICT DO NOTHING`,
       [
         'PM Surya Ghar - Residential',
@@ -449,7 +449,7 @@ export async function seedQuoteCalculatorData(
         scheme_name, scheme_type, project_type,
         max_subsidy_kw, requires_dcr, is_active,
         tiers, description
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8)
       ON CONFLICT DO NOTHING`,
       [
         'PM Surya Ghar - Commercial',
@@ -559,7 +559,7 @@ export async function seedQuoteCalculatorData(
           min_system_size_kw, max_system_size_kw,
           transport_rate_per_km, floor_increment_percent, gst_rate,
           cost_components, effective_from, is_active, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, NOW(), NOW())
+        ) VALUES ( $1, $2, $3, $4, $5, $6::jsonb, $7, $8, NOW(), NOW())
         ON CONFLICT (min_system_size_kw, max_system_size_kw) DO UPDATE SET
           transport_rate_per_km = EXCLUDED.transport_rate_per_km,
           floor_increment_percent = EXCLUDED.floor_increment_percent,
@@ -591,7 +591,7 @@ export async function seedQuoteCalculatorData(
         default_validity_days, max_versions,
         default_completion_weeks, gst_config,
         payment_milestones, show_inventory_stock, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ) VALUES ( $1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT DO NOTHING`,
       [
         30,

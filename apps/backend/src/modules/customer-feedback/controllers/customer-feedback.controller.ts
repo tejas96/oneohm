@@ -105,7 +105,7 @@ export class CustomerFeedbackController {
     return this.feedbackService.findWithResponse();
   }
 
-  @Get('organization/:organizationId')
+  @Get('organization')
   @ApiOperation({ summary: 'Get feedback by organization' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -117,7 +117,7 @@ export class CustomerFeedbackController {
     return this.feedbackService.findByOrganization();
   }
 
-  @Get('organization/:organizationId/published')
+  @Get('organization/published')
   @ApiOperation({ summary: 'Get published feedback by organization' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -186,7 +186,7 @@ export class CustomerFeedbackController {
   // NPS & STATISTICS
   // ============================================
 
-  @Get('organization/:organizationId/nps-score')
+  @Get('organization/nps-score')
   @ApiOperation({ summary: 'Calculate NPS score for organization' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -205,7 +205,7 @@ export class CustomerFeedbackController {
     return this.feedbackService.calculateNPSScore();
   }
 
-  @Get('organization/:organizationId/average-rating')
+  @Get('organization/average-rating')
   @ApiOperation({ summary: 'Get average rating for organization' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -217,7 +217,7 @@ export class CustomerFeedbackController {
     return { averageRating: rating };
   }
 
-  @Get('organization/:organizationId/department-averages')
+  @Get('organization/department-averages')
   @ApiOperation({ summary: 'Get department-wise average ratings' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -228,7 +228,7 @@ export class CustomerFeedbackController {
     return this.feedbackService.getDepartmentAverages();
   }
 
-  @Get('organization/:organizationId/statistics')
+  @Get('organization/statistics')
   @ApiOperation({ summary: 'Get comprehensive statistics for organization' })
   @ApiResponse({
     status: HttpStatus.OK,

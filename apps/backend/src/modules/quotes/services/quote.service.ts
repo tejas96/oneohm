@@ -708,7 +708,7 @@ export class QuoteService {
 
     const rows: Array<{ wants_loan: boolean }> = await this.dataSource.query(
       `SELECT wants_loan FROM customer_properties
-        WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL`,
+        WHERE id = $1 AND deleted_at IS NULL`,
       [propertyId],
     );
 

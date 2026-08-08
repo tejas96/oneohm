@@ -25,7 +25,6 @@ import { getErrorMessage } from '@/lib/utils/error';
  */
 export interface Receipt {
   id: string;
-  organizationId: string;
   projectId: string;
   customerId: string;
   paymentTermId?: string | null;

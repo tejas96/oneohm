@@ -81,8 +81,7 @@ export class LowStockAlertService {
        FROM user_roles ur
        INNER JOIN users u ON u.id = ur.user_id AND u.deleted_at IS NULL
        LEFT JOIN roles r ON r.id = ur.role_id AND r.deleted_at IS NULL
-       WHERE (ur.organization_id = $1 OR ur.organization_id IS NULL)
-         AND COALESCE(r.code, ur.role) = ANY($2::text[])`,
+       WHERE COALESCE(r.code, ur.role) = ANY($1::text[])`,
       [LowStockAlertService.RECIPIENT_ROLE_CODES],
     );
 

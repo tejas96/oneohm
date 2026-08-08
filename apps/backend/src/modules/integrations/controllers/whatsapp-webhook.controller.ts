@@ -23,7 +23,7 @@ export class WhatsappWebhookController {
 
   constructor(private readonly integrationService: IntegrationService) {}
 
-  @Get('webhook/:organizationId')
+  @Get('webhook')
   @Header('Content-Type', 'text/plain')
   @ApiOperation({ summary: 'Verify WhatsApp webhook callback URL' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Webhook challenge accepted' })
@@ -45,7 +45,7 @@ export class WhatsappWebhookController {
     return challenge;
   }
 
-  @Post('webhook/:organizationId')
+  @Post('webhook')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Receive WhatsApp webhook events' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Webhook event accepted' })

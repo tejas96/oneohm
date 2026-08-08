@@ -21,7 +21,6 @@ export interface EmployeeUser {
 export interface Employee {
   id: string;
   userId: string;
-  organizationId: string;
   employeeId?: string;
   designation?: string;
   department?: string;

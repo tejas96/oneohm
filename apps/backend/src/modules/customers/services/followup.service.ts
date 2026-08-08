@@ -33,7 +33,7 @@ export class FollowupService {
   ): Promise<FollowupEntity> {
     this.logger.log(`Creating followup for customer: ${createDto.customerId}`);
 
-    // Validate customer exists in this org
+    // Validate customer exists 
     const customer = await this.customerRepository.findById(createDto.customerId);
     if (!customer) {
       throw new NotFoundException('Customer not found');

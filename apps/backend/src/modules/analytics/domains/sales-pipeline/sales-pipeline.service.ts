@@ -387,7 +387,6 @@ export class SalesPipelineService {
       SELECT DISTINCT u.id AS user_id, u.first_name, u.last_name
       FROM users u
       INNER JOIN user_roles ur ON ur.user_id = u.id
-      WHERE ur.organization_id = $1
       `,
       [],
     );

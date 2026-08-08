@@ -237,7 +237,7 @@ export class CustomerPropertyRepository {
         'latestQuote',
         'latestQuote.id = ' +
           '(SELECT q2.id FROM quotes q2 WHERE q2.property_id = property.id ' +
-          'AND q2.organization_id = :sortOrgId AND q2.deleted_at IS NULL ' +
+          'AND q2.deleted_at IS NULL ' +
           'ORDER BY q2.created_at DESC, q2.id DESC LIMIT 1)',
       );
       qb.leftJoin(

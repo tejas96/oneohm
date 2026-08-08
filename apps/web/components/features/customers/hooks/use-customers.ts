@@ -89,7 +89,6 @@ export interface SitePortfolio {
 
 export interface Customer {
   id: string;
-  organizationId: string;
   firstName: string;
   middleName?: string;
   lastName?: string;

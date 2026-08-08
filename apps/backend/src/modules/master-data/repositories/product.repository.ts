@@ -75,7 +75,6 @@ export class ProductRepository {
         `EXISTS (
           SELECT 1 FROM product_prices pp
           WHERE pp.product_id = product.id
-            AND pp.organization_id = :organizationId
             AND pp.is_active = true
             AND pp.effective_from <= CURRENT_DATE
             AND (pp.effective_to IS NULL OR pp.effective_to >= CURRENT_DATE)
@@ -398,9 +397,7 @@ export class ProductRepository {
     return qb.leftJoin(
       `(
         SELECT product_id, MIN(unit_price::numeric) AS unit_price
-        FROM product_prices
-        WHERE organization_id = :organizationId
-          AND is_active = true
+        FROM product_prices WHERE is_active = true
           AND effective_from <= CURRENT_DATE
           AND (effective_to IS NULL OR effective_to >= CURRENT_DATE)
         GROUP BY product_id

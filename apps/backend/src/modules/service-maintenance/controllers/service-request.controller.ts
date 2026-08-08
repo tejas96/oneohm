@@ -137,7 +137,7 @@ export class ServiceRequestController {
     return this.serviceRequestService.findByStatus(status, includeRelations === 'true');
   }
 
-  @Get('statistics/:organizationId')
+  @Get('statistics')
   @ApiOperation({ summary: 'Get request statistics for organization' })
   @ApiResponse({
     status: 200,

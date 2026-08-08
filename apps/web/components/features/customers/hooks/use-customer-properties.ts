@@ -33,7 +33,6 @@ export type { PropertyDocument };
 export interface CustomerPropertyResponse {
   id: string;
   customerId: string;
-  organizationId: string;
   propertyCode?: string;
   // Property Details
   propertyName?: string;

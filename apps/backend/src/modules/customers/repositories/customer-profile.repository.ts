@@ -66,15 +66,12 @@ const AWAITING_AGEING_DAYS = 7;
  * (`CustomerPropertyRepository.findWithFilters`) — three places computing
  * "latest" differently is exactly how a KPI drifts from the table beneath it.
  *
- * @param orgParam positional placeholder (e.g. `'$1'`) already bound to the
- *   organisation id by the caller.
  */
-function latestQuoteJoins(orgParam: string): string {
+function latestQuoteJoins(): string {
   return `
     LEFT JOIN quotes latest_quote ON latest_quote.id = (
       SELECT q2.id FROM quotes q2
       WHERE q2.property_id = prop.id
-        AND q2.organization_id = ${orgParam}
         AND q2.deleted_at IS NULL
       ORDER BY q2.created_at DESC, q2.id DESC
       LIMIT 1
@@ -153,7 +150,6 @@ function applyMatchingPropertyFilter(
   const conditions: string[] = [
     'prop.customer_id = customer.id',
     'prop.deleted_at IS NULL',
-    'prop.organization_id = :propFilterOrgId',
   ];
     const params: Record<string, unknown> = {};
 
@@ -214,7 +210,6 @@ function applyMatchingPropertyFilter(
         LEFT JOIN quotes latest_quote ON latest_quote.id = (
           SELECT q2.id FROM quotes q2
           WHERE q2.property_id = prop.id
-            AND q2.organization_id = :propFilterOrgId
             AND q2.deleted_at IS NULL
           ORDER BY q2.created_at DESC, q2.id DESC
           LIMIT 1
@@ -455,9 +450,7 @@ export class CustomerProfileRepository {
              ), 0)                                       AS "systemSizeKw",
              COALESCE(SUM(cv.final_price), 0)            AS "quotedAmount"
       FROM customer_properties prop
-      ${latestQuoteJoins('$1')}
-      WHERE prop.organization_id = $1
-        AND prop.customer_id = ANY($2::uuid[])
+      ${latestQuoteJoins()} WHERE prop.customer_id = ANY($2::uuid[])
         AND prop.deleted_at IS NULL
       GROUP BY prop.customer_id, prop.status
       `,
@@ -508,10 +501,8 @@ export class CustomerProfileRepository {
     >(
       `
       SELECT COUNT(*)                                                  AS "customers",
-             COUNT(*) FILTER (WHERE c.created_at >= $2)                AS "customersThisMonth"
-      FROM customer_profiles c
-      WHERE c.organization_id = $1
-        AND c.deleted_at IS NULL
+             COUNT(*) FILTER (WHERE c.created_at >= $1)                AS "customersThisMonth"
+      FROM customer_profiles c WHERE c.deleted_at IS NULL
       `,
       [monthStart],
     );
@@ -540,9 +531,7 @@ export class CustomerProfileRepository {
                  AND latest_quote.quote_date < $5::date
              )                                            AS "awaitingAgeing"
       FROM customer_properties prop
-      ${latestQuoteJoins('$1')}
-      WHERE prop.organization_id = $1
-        AND prop.deleted_at IS NULL
+      ${latestQuoteJoins()} WHERE prop.deleted_at IS NULL
       `,
       [
         monthStart,
@@ -933,7 +922,6 @@ export class CustomerProfileRepository {
         `EXISTS(
           SELECT 1 FROM customer_properties cp
           WHERE cp.customer_id = customer.id
-            AND cp.organization_id = :organizationId
             AND cp.deleted_at IS NULL
         )`,
         'hasProperties',
@@ -943,7 +931,6 @@ export class CustomerProfileRepository {
           SELECT 1 FROM projects p
           INNER JOIN customer_properties cp ON cp.id = p.property_id
           WHERE cp.customer_id = customer.id
-            AND cp.organization_id = :organizationId
             AND p.deleted_at IS NULL
         )`,
         'hasProjects',
@@ -952,7 +939,6 @@ export class CustomerProfileRepository {
         `EXISTS(
           SELECT 1 FROM quotes q
           WHERE q.customer_id = customer.id
-            AND q.organization_id = :organizationId
             AND q.deleted_at IS NULL
         )`,
         'hasQuotes',
@@ -963,7 +949,6 @@ export class CustomerProfileRepository {
         `EXISTS(
           SELECT 1 FROM ledger_entries le
           WHERE le.customer_id = customer.id
-            AND le.organization_id = :organizationId
             AND le.direction = 'in'
         )`,
         'hasPayments',
@@ -972,7 +957,6 @@ export class CustomerProfileRepository {
         `EXISTS(
           SELECT 1 FROM service_requests sr
           WHERE sr.customer_id = customer.id
-            AND sr.organization_id = :organizationId
             AND sr.deleted_at IS NULL
         )`,
         'hasServiceRequests',

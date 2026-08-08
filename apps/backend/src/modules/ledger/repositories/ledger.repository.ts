@@ -164,7 +164,7 @@ export class LedgerRepository {
     if (forUpdate) {
       await exec.query(
         `SELECT id FROM payment_milestones
-          WHERE project_id = $1 AND organization_id = $2
+          WHERE project_id = $1
           ORDER BY display_order, id
           FOR UPDATE`,
         [projectId],
@@ -187,7 +187,7 @@ export class LedgerRepository {
          days_overdue          AS "daysOverdue",
          entry_count           AS "entryCount"
        FROM v_milestone_balance
-       WHERE project_id = $1 AND organization_id = $2
+       WHERE project_id = $1
        ORDER BY display_order`,
       [projectId],
     );
@@ -231,7 +231,7 @@ export class LedgerRepository {
          JOIN ledger_entries e ON e.id = a.entry_id
          LEFT JOIN ledger_entries orig ON orig.id = e.reverses_id
          LEFT JOIN ledger_entries rev  ON rev.reverses_id = e.id
-        WHERE a.project_id = $1 AND e.organization_id = $2
+        WHERE a.project_id = $1
         ORDER BY e.value_date, e.created_at, a.created_at`,
       [projectId],
     );
@@ -274,7 +274,6 @@ export class LedgerRepository {
     const rows: ProjectBalanceRow[] = await this.exec(manager).query(
       `SELECT
          project_id        AS "projectId",
-         organization_id   AS "organizationId",
          customer_id       AS "customerId",
          contract_paise      AS "contractPaise",
          quoted_paise        AS "quotedPaise",
@@ -289,7 +288,7 @@ export class LedgerRepository {
          receipt_count     AS "receiptCount",
          milestone_count   AS "milestoneCount"
        FROM v_project_balance
-       WHERE project_id = $1 AND organization_id = $2`,
+       WHERE project_id = $1`,
       [projectId],
     );
     const row = rows[0];

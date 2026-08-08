@@ -17,7 +17,7 @@ export class WorkflowStepService {
   ) {}
 
   async create(
-    createDto: Partial<WorkflowStepEntity> & { code: string; organizationId: string },
+    createDto: Partial<WorkflowStepEntity> & { code: string },
     currentUserId: string,
   ): Promise<WorkflowStepEntity> {
     const codeExists = await this.stepRepository.existsByCode(

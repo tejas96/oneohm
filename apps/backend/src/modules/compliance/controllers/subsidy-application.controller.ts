@@ -57,7 +57,7 @@ export class SubsidyApplicationController {
     return this.subsidyService.findAll();
   }
 
-  @Get('statistics/:organizationId')
+  @Get('statistics')
   @ApiOperation({ summary: 'Get subsidy statistics by organization' })
   @ApiResponse({
     status: 200,

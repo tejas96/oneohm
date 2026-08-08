@@ -248,7 +248,7 @@ export class UserRoleController {
         throw new NotFoundException(`Role with code '${roleCode}' not found in organization`);
       }
     } else {
-      throw new BadRequestException('Either roleId or roleCode with organizationId is required');
+      throw new BadRequestException('Either roleId or roleCode is required');
     }
 
     return {

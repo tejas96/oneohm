@@ -51,7 +51,6 @@ export interface PropertyFilters {
 export interface Property {
   id: string;
   customerId: string;
-  organizationId: string;
   propertyCode?: string;
   propertyName?: string;
   propertyType: PropertyType;

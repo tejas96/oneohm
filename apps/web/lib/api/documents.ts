@@ -10,7 +10,6 @@ export interface DocumentUser {
 
 export interface DocumentRecord {
   id: string;
-  organizationId: string;
   propertyId: string;
   entityType: DocumentEntityType;
   entityId: string;
@@ -30,7 +29,6 @@ export interface DocumentRecord {
 }
 
 export interface CreateDocumentPayload {
-  organizationId?: string;
   propertyId?: string;
   entityType: DocumentEntityType;
   entityId: string;
@@ -52,9 +50,8 @@ export async function getDocuments(params: {
   category?: string;
   tag?: string;
   tags?: string;
-  organizationId?: string;
 }): Promise<DocumentRecord[]> {
-  const { organizationId, ...queryParams } = params;
+  const queryParams = params;
   const { data } = await apiClient.get<DocumentRecord[]>('/documents', {
     params: queryParams,
   });

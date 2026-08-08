@@ -43,9 +43,6 @@ import { CustomerService } from '../services/customer.service';
  * Customer Controller
  * Handles HTTP requests for customer management
  *
- * Multi-Organization Support:
- * - organizationId is required as query parameter or header (X-Organization-Id)
- * - Automatically verifies user has access to the specified organization
  *
  * TODO: Re-enable permission checks when IAM is fully configured
  * - Currently only JwtAuthGuard is active
@@ -65,7 +62,7 @@ export class CustomerController {
   @ApiCreate({
     summary: 'Create a new customer',
     description:
-      'Creates a new customer/lead in the system. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Creates a new customer/lead in the system.',
     responseType: CustomerResponseDto,
     additionalErrors: [
       {
@@ -93,7 +90,7 @@ export class CustomerController {
       'Retrieve customers with comprehensive filtering, sorting, and pagination. ' +
       'Supports search (name, phone, email, city), status filter, location filters (city, state), ' +
       'lead source filter, date range, creator filter (createdBy=me), and sorting. ' +
-      'Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      '',
     responseType: CustomerResponseDto,
   })
   async findAll(
@@ -122,7 +119,7 @@ export class CustomerController {
   }
 
   /**
-   * Get distinct customer groups for the organization
+   * Get distinct customer groups 
    * Returns all (groupCode, groupName) pairs used to populate the group selector.
    * NOTE: Must be defined BEFORE :id routes to avoid route conflicts.
    */
@@ -130,7 +127,7 @@ export class CustomerController {
   @ApiOperation({
     summary: 'Get customer groups',
     description:
-      'Returns all distinct customer groups (code + name pairs) for the organization. ' +
+      'Returns all distinct customer groups (code + name pairs) . ' +
       'Used to populate the group selector when creating or editing a customer.',
   })
   @ApiResponse({
@@ -162,7 +159,7 @@ export class CustomerController {
   @ApiOperation({
     summary: 'Check phone/email availability',
     description:
-      'Check if a phone number or email is already registered for a customer in this organization. Used to prevent duplicate customer creation. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Check if a phone number or email is already registered for a customer in this organization. Used to prevent duplicate customer creation.',
   })
   @ApiQuery({
     name: 'phone',
@@ -207,7 +204,7 @@ export class CustomerController {
   @ApiOperation({
     summary: 'Get customer status statistics',
     description:
-      'Returns count of customers grouped by status for the specified organization. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Returns count of customers grouped by status for the specified organization.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -239,8 +236,8 @@ export class CustomerController {
     description:
       'Returns organisation-wide customer and site counts, open pipeline value and ' +
       'awaiting-reply counts, with current-month deltas. Backs the four KPI cards on ' +
-      'the customer list. Organization ID must be provided via query parameter ' +
-      '(?organizationId=xxx) or header (X-Organization-Id).',
+      'the customer list.' +
+      '',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -260,7 +257,7 @@ export class CustomerController {
   @ApiReadOne({
     summary: 'Get customer by ID',
     description:
-      'Retrieve a specific customer by their ID. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Retrieve a specific customer by their ID.',
     responseType: CustomerResponseDto,
   })
   async findOne(
@@ -278,7 +275,7 @@ export class CustomerController {
   @ApiUpdate({
     summary: 'Update customer',
     description:
-      'Update customer information. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Update customer information.',
     responseType: CustomerResponseDto,
     method: 'PATCH', // Use PATCH for partial updates
     additionalErrors: [
@@ -308,7 +305,7 @@ export class CustomerController {
   @ApiAction({
     path: 'status',
     summary: 'Update customer status',
-    description: `Update customer status (${Object.values(CustomerStatus).join(', ')}). Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).`,
+    description: `Update customer status (${Object.values(CustomerStatus).join(', ')}).`,
     responseType: CustomerResponseDto,
   })
   async updateStatus(
@@ -335,7 +332,7 @@ export class CustomerController {
     description:
       'Assign a customer to a user (field worker). Send assigneeId as a UUID to assign, or null to unassign. ' +
       'Assignee must be an active employee in the same organization. ' +
-      'Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      '',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -345,7 +342,7 @@ export class CustomerController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Customer or assignee user not found' })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Assignee is not in this org or is inactive',
+    description: 'Assignee is not  or is inactive',
   })
   async assignCustomer(
     @Param('id', ParseUUIDPipe) id: string,
@@ -368,7 +365,7 @@ export class CustomerController {
   @ApiDelete({
     summary: 'Delete customer',
     description:
-      'Permanently delete a customer when it has no properties, quotations, or financial records. Admin or super admin only. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Permanently delete a customer when it has no properties, quotations, or financial records. Admin or super admin only.',
     additionalErrors: [{ status: HttpStatus.CONFLICT, description: 'Customer cannot be deleted' }],
   })
   async delete(

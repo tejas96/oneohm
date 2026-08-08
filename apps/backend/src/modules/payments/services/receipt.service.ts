@@ -338,7 +338,6 @@ export class ReceiptService {
          COALESCE(SUM(paid_amount), 0)::numeric AS total_received
        FROM payments
        WHERE project_id = $1
-         AND organization_id = $2
          AND deleted_at IS NULL
          AND status IN (${counted})`,
       [project.id],
@@ -371,7 +370,6 @@ export class ReceiptService {
          payment_term_id AS "paymentTermId"
        FROM payments
        WHERE project_id = $1
-         AND organization_id = $2
          AND deleted_at IS NULL
          AND status IN (${counted})
        ORDER BY created_at DESC`,
@@ -444,7 +442,7 @@ export class ReceiptService {
     id: string;
     propertyId: string;
     property?: { id: string };
-    quote?: { customerId: string; organizationId?: string };
+    quote?: { customerId: string };
   }> {
     try {
       const p = await this.projectRepository.findById(projectId);

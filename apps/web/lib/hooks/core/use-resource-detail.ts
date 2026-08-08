@@ -52,8 +52,6 @@ export function prefetchResourceDetail<T>(
     resource: string;
     endpoint: string;
     id: string;
-    organizationId?: string;
-    orgHeaders?: Record<string, string>;
   },
 ): void {
   const keys = createResourceKeys(config.resource);
@@ -61,7 +59,6 @@ export function prefetchResourceDetail<T>(
     queryKey: keys.detail(config.id),
     queryFn: async ({ signal }): Promise<T> => {
       const { data } = await apiClient.get<T>(`${config.endpoint}/${config.id}`, {
-        headers: config.orgHeaders ?? {},
         signal,
       });
       return data as T;

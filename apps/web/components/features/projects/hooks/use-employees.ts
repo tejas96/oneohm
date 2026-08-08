@@ -16,7 +16,6 @@ export interface EmployeeUser {
 export interface EmployeeListItem {
   id: string;
   userId: string;
-  organizationId: string;
   user?: EmployeeUser | null;
   email?: string | null;
   phone?: string | null;

@@ -311,7 +311,6 @@ export class InventoryStockRepository {
           FROM purchase_order_items poi
           INNER JOIN purchase_orders po ON po.id = poi.purchase_order_id
           WHERE poi.product_id = stock.product_id
-            AND po.organization_id = stock.organization_id
             AND po.warehouse_id = stock.warehouse_id
             AND po.deleted_at IS NULL
             AND poi.received_quantity > 0
@@ -344,7 +343,6 @@ export class InventoryStockRepository {
           FROM purchase_order_items poi
           INNER JOIN purchase_orders po ON po.id = poi.purchase_order_id
           WHERE poi.product_id = stock.product_id
-            AND po.organization_id = stock.organization_id
             AND po.warehouse_id = stock.warehouse_id
             AND po.deleted_at IS NULL
             AND poi.received_quantity > 0

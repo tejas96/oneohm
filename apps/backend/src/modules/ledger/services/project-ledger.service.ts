@@ -107,7 +107,6 @@ export class ProjectLedgerService {
        FROM ledger_allocations a
        JOIN ledger_entries e ON e.id = a.entry_id
        WHERE a.project_id = $1
-         AND e.organization_id = $2
          AND e.direction = 'in'
          AND e.reverses_id IS NULL
          AND a.amount_paise > 0

@@ -245,7 +245,6 @@ export class ProjectAttentionService {
          derived_status AS "derivedStatus"
        FROM v_milestone_balance
        WHERE project_id = $1
-         AND organization_id = $2
          AND status = 'active'
          AND balance_paise > 0
        ORDER BY days_overdue DESC, display_order ASC`,

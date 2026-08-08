@@ -36,7 +36,6 @@ export const customerKeys = {
 export interface PropertyResponse {
   id: string;
   customerId: string;
-  organizationId: string;
   propertyName?: string;
   propertyType: string;
   address?: string;

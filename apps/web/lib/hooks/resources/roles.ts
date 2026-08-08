@@ -16,7 +16,6 @@ import {
 
 export interface AdminRole {
   id: string;
-  organizationId: string | null;
   name: string;
   code: string;
   description?: string;
@@ -30,7 +29,6 @@ export interface AdminRole {
 
 export interface RoleWithPermissions {
   id: string;
-  organizationId: string | null;
   name: string;
   code: string;
   description?: string;
@@ -44,7 +42,6 @@ export interface RoleWithPermissions {
 
 export interface RoleFilters extends BaseFilters {
   isSystemRole?: boolean;
-  organizationId?: string;
 }
 
 // ── Resource Registration ──────────────────────────────────────

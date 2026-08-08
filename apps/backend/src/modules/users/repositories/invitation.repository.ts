@@ -45,7 +45,7 @@ export class InvitationRepository {
   async findAllPaginated(
     skip: number,
     take: number,
-    filters?: { organizationId?: string; status?: InvitationStatus },
+    filters?: { status?: InvitationStatus },
   ): Promise<[InvitationEntity[], number]> {
     const where: Record<string, unknown> = {};
     if (filters?.status) {

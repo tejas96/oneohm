@@ -183,7 +183,7 @@ export class ProjectTeamService {
       .innerJoin(
         'customer_properties',
         'cp',
-        'cp.id = p.property_id AND cp.organization_id = :orgId',
+        'cp.id = p.property_id',
       )
       .leftJoin(
         'project_tasks',

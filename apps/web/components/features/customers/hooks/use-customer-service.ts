@@ -8,7 +8,6 @@ import { apiClient } from '@/lib/api/client';
 
 export interface CustomerServiceRequest {
   id: string;
-  organizationId: string;
   projectId: string;
   customerId: string;
   requestNumber: string;

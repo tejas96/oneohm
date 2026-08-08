@@ -20,7 +20,6 @@ import { apiClient } from '@/lib/api/client';
 
 export interface ProductAdminItem {
   id: string;
-  organizationId: string;
   productTypeId: string;
   brandId: string;
   brand?: { id: string; name: string };

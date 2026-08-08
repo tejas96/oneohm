@@ -125,7 +125,7 @@ export class FinanceAggregationService {
     const offset = (page - 1) * limit;
 
     const params: unknown[] = [];
-    let where = ` p.organization_id = $1 AND p.deleted_at IS NULL `;
+    let where = ` p.deleted_at IS NULL `;
 
     if (query.status) {
       params.push(query.status);
@@ -231,7 +231,7 @@ export class FinanceAggregationService {
     const offset = (page - 1) * limit;
 
     const params: unknown[] = [];
-    let where = ` e.organization_id = $1 AND e.deleted_at IS NULL `;
+    let where = ` e.deleted_at IS NULL `;
 
     if (query.category) {
       params.push(query.category);
@@ -320,7 +320,7 @@ export class FinanceAggregationService {
 
     const params: unknown[] = [];
     let where = `
-      t.organization_id = $1
+
       AND t.deleted_at IS NULL
       AND t.status NOT IN ('waived','cancelled')
       AND t.expected_amount > t.paid_amount
@@ -454,25 +454,21 @@ export class FinanceAggregationService {
           cp.customer_id                          AS customer_id,
           (t.expected_amount - t.paid_amount)     AS outstanding,
           CASE
-            WHEN t.due_date IS NULL OR t.due_date >= $2::date THEN 'current'
-            WHEN ($2::date - t.due_date) BETWEEN 1  AND 30 THEN '0-30'
-            WHEN ($2::date - t.due_date) BETWEEN 31 AND 60 THEN '31-60'
-            WHEN ($2::date - t.due_date) BETWEEN 61 AND 90 THEN '61-90'
+            WHEN t.due_date IS NULL OR t.due_date >= $1::date THEN 'current'
+            WHEN ($1::date - t.due_date) BETWEEN 1  AND 30 THEN '0-30'
+            WHEN ($1::date - t.due_date) BETWEEN 31 AND 60 THEN '31-60'
+            WHEN ($1::date - t.due_date) BETWEEN 61 AND 90 THEN '61-90'
             ELSE '90+'
           END AS bucket
         FROM project_payment_terms t
         JOIN projects p             ON p.id = t.project_id
-        JOIN customer_properties cp ON cp.id = p.property_id
-        WHERE t.organization_id = $1
-          AND t.deleted_at IS NULL
+        JOIN customer_properties cp ON cp.id = p.property_id WHERE t.deleted_at IS NULL
           AND t.status NOT IN ('waived','cancelled')
           AND t.expected_amount > t.paid_amount
       ),
       last_receipt AS (
         SELECT pay.customer_id, MAX(pay.created_at) AS last_at
-        FROM payments pay
-        WHERE pay.organization_id = $1
-          AND pay.deleted_at IS NULL
+        FROM payments pay WHERE pay.deleted_at IS NULL
           AND pay.status IN ('received','verified','cleared')
         GROUP BY pay.customer_id
       )
@@ -538,12 +534,10 @@ export class FinanceAggregationService {
           e.created_at               AS created_at,
           e.reimbursement_status     AS reimb,
           e.paid_by                  AS paid_by
-        FROM project_expenses e
-        WHERE e.organization_id = $1
-          AND e.deleted_at IS NULL
+        FROM project_expenses e WHERE e.deleted_at IS NULL
           AND e.vendor_name IS NOT NULL
           AND TRIM(e.vendor_name) <> ''
-          AND e.expense_date BETWEEN $2::date AND $3::date
+          AND e.expense_date BETWEEN $1::date AND $2::date
           ${categoryFilter}
       ),
       per_vendor AS (
@@ -625,7 +619,7 @@ export class FinanceAggregationService {
       WHERE p.deleted_at IS NULL
         AND EXISTS (
           SELECT 1 FROM customer_properties cp
-          WHERE cp.id = p.property_id AND cp.organization_id = $1
+          WHERE cp.id = p.property_id
         )
     `;
     const countRows = await this.dataSource.query<{ total: number }[]>(countSql, []);
@@ -668,7 +662,6 @@ export class FinanceAggregationService {
       ) spd ON TRUE
       LEFT JOIN bom bm ON bm.entity_type = 'project' AND bm.entity_id = p.id
       WHERE p.deleted_at IS NULL
-        AND cp.organization_id = $1
       ORDER BY (COALESCE(qv.final_price, 0) - COALESCE(spd.spend, 0)) DESC, p.created_at DESC
       LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}
     `;
@@ -734,7 +727,6 @@ export class FinanceAggregationService {
       revenue AS (
         SELECT COALESCE(SUM(p.paid_amount), 0)::numeric AS total
         FROM payments p, params
-        WHERE p.organization_id = params.org_id
           AND p.deleted_at IS NULL
           AND p.status IN ('received','verified','cleared')
           AND p.created_at >= params.from_d::timestamptz
@@ -743,7 +735,6 @@ export class FinanceAggregationService {
       spend AS (
         SELECT COALESCE(SUM(e.amount), 0)::numeric AS total
         FROM project_expenses e, params
-        WHERE e.organization_id = params.org_id
           AND e.deleted_at IS NULL
           AND e.expense_date BETWEEN params.from_d AND params.to_d
       ),
@@ -754,7 +745,6 @@ export class FinanceAggregationService {
             WHERE t.due_date IS NOT NULL AND t.due_date < (SELECT today FROM params)
           )::int AS overdue_count
         FROM project_payment_terms t, params
-        WHERE t.organization_id = params.org_id
           AND t.deleted_at IS NULL
           AND t.status NOT IN ('waived','cancelled')
           AND t.expected_amount > t.paid_amount
@@ -770,7 +760,6 @@ export class FinanceAggregationService {
             AND p.status IN ('received','verified','cleared')
         ) fr ON TRUE,
         params
-        WHERE t.organization_id = params.org_id
           AND t.deleted_at IS NULL
           AND t.due_date IS NOT NULL
           AND fr.first_receipt IS NOT NULL
@@ -810,9 +799,7 @@ export class FinanceAggregationService {
       cash_in AS (
         SELECT TO_CHAR(DATE_TRUNC('month', p.created_at), 'YYYY-MM') AS month,
                SUM(p.paid_amount)::numeric AS total
-        FROM payments p
-        WHERE p.organization_id = $1
-          AND p.deleted_at IS NULL
+        FROM payments p WHERE p.deleted_at IS NULL
           AND p.status IN ('received','verified','cleared')
           AND p.created_at >= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months')
         GROUP BY 1
@@ -820,9 +807,7 @@ export class FinanceAggregationService {
       cash_out AS (
         SELECT TO_CHAR(DATE_TRUNC('month', e.expense_date), 'YYYY-MM') AS month,
                SUM(e.amount)::numeric AS total
-        FROM project_expenses e
-        WHERE e.organization_id = $1
-          AND e.deleted_at IS NULL
+        FROM project_expenses e WHERE e.deleted_at IS NULL
           AND e.expense_date >= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months')::date
         GROUP BY 1
       )
@@ -844,10 +829,8 @@ export class FinanceAggregationService {
   ): Promise<RawSpendByCategoryRow[]> {
     const sql = `
       SELECT e.category, COALESCE(SUM(e.amount), 0)::numeric AS total
-      FROM project_expenses e
-      WHERE e.organization_id = $1
-        AND e.deleted_at IS NULL
-        AND e.expense_date BETWEEN $2::date AND $3::date
+      FROM project_expenses e WHERE e.deleted_at IS NULL
+        AND e.expense_date BETWEEN $1::date AND $2::date
       GROUP BY e.category
       ORDER BY total DESC
     `;
@@ -865,14 +848,12 @@ export class FinanceAggregationService {
       FROM project_payment_terms t
       JOIN projects p           ON p.id  = t.project_id
       JOIN customer_properties cp ON cp.id = p.property_id
-      JOIN customer_profiles c  ON c.id  = cp.customer_id
-      WHERE t.organization_id = $1
-        AND t.deleted_at IS NULL
+      JOIN customer_profiles c  ON c.id  = cp.customer_id WHERE t.deleted_at IS NULL
         AND t.status NOT IN ('waived','cancelled')
         AND t.expected_amount > t.paid_amount
       GROUP BY c.id, c.first_name, c.last_name
       ORDER BY outstanding DESC
-      LIMIT $2
+      LIMIT $1
     `;
     return this.dataSource.query<RawTopCustomerRow[]>(sql, [limit]);
   }
@@ -887,15 +868,13 @@ export class FinanceAggregationService {
         LOWER(TRIM(e.vendor_name))                          AS "vendorKey",
         (ARRAY_AGG(e.vendor_name ORDER BY e.created_at))[1] AS "vendorName",
         SUM(e.amount)::numeric                              AS "totalSpend"
-      FROM project_expenses e
-      WHERE e.organization_id = $1
-        AND e.deleted_at IS NULL
+      FROM project_expenses e WHERE e.deleted_at IS NULL
         AND e.vendor_name IS NOT NULL
         AND TRIM(e.vendor_name) <> ''
-        AND e.expense_date BETWEEN $2::date AND $3::date
+        AND e.expense_date BETWEEN $1::date AND $2::date
       GROUP BY LOWER(TRIM(e.vendor_name))
       ORDER BY "totalSpend" DESC
-      LIMIT $4
+      LIMIT $3
     `;
     return this.dataSource.query<RawTopVendorRow[]>(sql, [from, to, limit]);
   }
@@ -913,11 +892,9 @@ export class FinanceAggregationService {
           p.paid_amount::numeric  AS amount,
           p.created_at            AS at
         FROM payments p
-        LEFT JOIN projects proj ON proj.id = p.project_id
-        WHERE p.organization_id = $1
-          AND p.deleted_at IS NULL
+        LEFT JOIN projects proj ON proj.id = p.project_id WHERE p.deleted_at IS NULL
         ORDER BY p.created_at DESC
-        LIMIT $2
+        LIMIT $1
       )
       UNION ALL
       (
@@ -929,14 +906,12 @@ export class FinanceAggregationService {
           e.amount::numeric       AS amount,
           e.created_at            AS at
         FROM project_expenses e
-        LEFT JOIN projects proj ON proj.id = e.project_id
-        WHERE e.organization_id = $1
-          AND e.deleted_at IS NULL
+        LEFT JOIN projects proj ON proj.id = e.project_id WHERE e.deleted_at IS NULL
         ORDER BY e.created_at DESC
-        LIMIT $2
+        LIMIT $1
       )
       ORDER BY at DESC
-      LIMIT $2
+      LIMIT $1
     `;
     return this.dataSource.query<RawActivityRow[]>(sql, [limit]);
   }

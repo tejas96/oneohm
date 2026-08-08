@@ -48,7 +48,6 @@ export type SavedViewResource =
 
 export interface SavedView {
   id: string;
-  organizationId: string;
   userId: string;
   resource: SavedViewResource;
   name: string;

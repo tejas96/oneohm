@@ -70,7 +70,6 @@ export interface QuoteFilters {
 export interface QuoteListItem {
   id: string;
   quoteNumber: string;
-  organizationId: string;
   customerId: string;
   customerName?: string;
   propertyId?: string;

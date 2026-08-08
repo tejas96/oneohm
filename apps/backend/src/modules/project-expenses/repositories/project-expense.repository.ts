@@ -123,7 +123,6 @@ export class ProjectExpenseRepository {
       `SELECT COALESCE(SUM(amount),0)::numeric AS total
          FROM project_expenses
         WHERE project_id = $1
-          AND organization_id = $2
           AND deleted_at IS NULL`,
       [projectId],
     );
@@ -134,7 +133,6 @@ export class ProjectExpenseRepository {
               COUNT(*)::int                    AS count
          FROM project_expenses
         WHERE project_id = $1
-          AND organization_id = $2
           AND deleted_at IS NULL
         GROUP BY category
         ORDER BY amount DESC`,
@@ -145,7 +143,6 @@ export class ProjectExpenseRepository {
       `SELECT COALESCE(SUM(amount),0)::numeric AS pending
          FROM project_expenses
         WHERE project_id = $1
-          AND organization_id = $2
           AND deleted_at IS NULL
           AND paid_by = 'employee'
           AND reimbursement_status = 'pending'`,
@@ -178,7 +175,6 @@ export class ProjectExpenseRepository {
          FROM expense_product_links epl
          JOIN project_expenses pe ON pe.id = epl.expense_id
         WHERE pe.project_id = $1
-          AND pe.organization_id = $2
           AND pe.deleted_at IS NULL
           AND epl.product_id IS NOT NULL
         GROUP BY epl.product_id`,

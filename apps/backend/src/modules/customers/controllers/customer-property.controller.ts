@@ -43,9 +43,6 @@ import { CustomerPropertyService } from '../services/customer-property.service';
  * Customer Property Controller
  * Handles HTTP requests for customer property (installation site) management
  *
- * Multi-Organization Support:
- * - organizationId is required as query parameter or header (X-Organization-Id)
- * - Automatically verifies user has access to the specified organization
  */
 @ApiTags('Customer Properties')
 @ApiBearerAuth()

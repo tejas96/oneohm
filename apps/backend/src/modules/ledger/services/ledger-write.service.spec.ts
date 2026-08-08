@@ -379,7 +379,6 @@ describe('LedgerWriteService', () => {
       id: 'entry-1',
       entryNo: 'RCP-2026-27-000005',
       projectId: PROJECT,
-      organizationId: ORG,
       customerId: 'cust-1',
       direction: 'in' as const,
       entryType: 'receipt' as const,

@@ -39,7 +39,7 @@ export class EmployeeService {
    * Create a new employee profile
    */
   async create(dto: CreateEmployeeDto, createdBy?: string): Promise<EmployeeResponseDto> {
-    // Check if employee profile already exists for this user in this org
+    // Check if employee profile already exists for this user 
     const existing = await this.employeeRepository.findByUserAndOrganization(
       dto.userId,
     );

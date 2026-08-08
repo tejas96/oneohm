@@ -36,7 +36,6 @@ export interface ExpenseProductLink {
 
 export interface ProjectExpense {
   id: string;
-  organizationId: string;
   projectId: string;
   expenseNumber: string;
   category: ExpenseCategory;

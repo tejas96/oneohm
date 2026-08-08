@@ -59,9 +59,8 @@ export function buildCohortCte(filters: SalesPipelineFilterParams): CohortQueryP
         ON c.id = p.customer_id AND c.deleted_at IS NULL
       LEFT JOIN users au ON au.id = c.assignee_id
       WHERE p.deleted_at IS NULL
-        AND p.organization_id = $1
-        AND p.created_at >= $2::date
-        AND p.created_at < ($3::date + INTERVAL '1 day')
+        AND p.created_at >= $1::date
+        AND p.created_at < ($2::date + INTERVAL '1 day')
     ),
     latest_quotes AS (
       SELECT DISTINCT ON (q.property_id)

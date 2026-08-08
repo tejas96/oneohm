@@ -150,7 +150,7 @@ export class AuditLogController {
     return this.auditLogService.findByUser(userId, limit);
   }
 
-  @Get('organization/:organizationId')
+  @Get('organization')
   @ApiOperation({ summary: 'Get audit logs for an organization' })
   @ApiQuery({
     name: 'limit',

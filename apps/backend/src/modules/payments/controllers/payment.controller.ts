@@ -96,7 +96,7 @@ export class PaymentController {
     });
   }
 
-  @Get('organization/:organizationId')
+  @Get('organization')
   @ApiOperation({ summary: 'Get payments by organization' })
   async findByOrganization(
   ): Promise<PaymentResponseDto[]> {
@@ -231,7 +231,7 @@ export class PaymentController {
     return this.paymentService.getProjectPaymentSummary(projectId);
   }
 
-  @Get('organization/:organizationId/stats')
+  @Get('organization/stats')
   @ApiOperation({ summary: 'Get payment statistics by organization' })
   async getOrganizationPaymentStats(
   ): Promise<
@@ -247,7 +247,7 @@ export class PaymentController {
   // ============================================
   // UTILITIES
   // ============================================
-  @Get('organization/:organizationId/next-number')
+  @Get('organization/next-number')
   @ApiOperation({ summary: 'Generate next payment number' })
   async generatePaymentNumber(
   ): Promise<{ paymentNumber: string }> {

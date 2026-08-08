@@ -19,7 +19,6 @@ import { apiClient } from '@/lib/api/client';
 
 export interface FollowupResponse {
   id: string;
-  organizationId: string;
   customerId: string;
   propertyId?: string | null;
   type: FollowupType;

@@ -126,7 +126,7 @@ export class MaintenanceTaskController {
     return this.maintenanceTaskService.findByStatus(status, includeRelations === 'true');
   }
 
-  @Get('statistics/:organizationId')
+  @Get('statistics')
   @ApiOperation({ summary: 'Get task statistics for organization' })
   @ApiResponse({
     status: 200,

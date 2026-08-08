@@ -490,7 +490,7 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
   const availableRoles = useMemo(() => {
     const seen = new Set<string>();
     return allRoles.filter((r) => {
-      if (r.organizationId === null) return false;
+      if (undefined === null) return false;
       if (seen.has(r.code)) return false;
       seen.add(r.code);
       return true;

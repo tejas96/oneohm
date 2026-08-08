@@ -3,7 +3,6 @@ import { Expose } from 'class-transformer';
 
 export class NotificationResponseDto {
   @ApiProperty() @Expose() id!: string;
-  @ApiProperty() @Expose() organizationId!: string;
   @ApiProperty() @Expose() userId!: string;
   @ApiProperty() @Expose() type!: string;
   @ApiProperty() @Expose() title!: string;

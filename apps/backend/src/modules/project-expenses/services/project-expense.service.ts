@@ -383,10 +383,9 @@ export class ProjectExpenseService {
          FROM expense_product_links epl
          JOIN project_expenses pe ON pe.id = epl.expense_id
         WHERE pe.project_id = $1::uuid
-          AND pe.organization_id = $2::uuid
           AND pe.deleted_at IS NULL
-          AND epl.product_id = ANY($3::uuid[])
-          AND ($4::uuid IS NULL OR pe.id <> $4::uuid)
+          AND epl.product_id = ANY($2::uuid[])
+          AND ($3::uuid IS NULL OR pe.id <> $3::uuid)
         GROUP BY epl.product_id`,
       [projectId, productIds, excludeExpenseId],
     );

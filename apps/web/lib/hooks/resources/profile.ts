@@ -31,7 +31,6 @@ export interface EmployeeProfileOrganization {
 export interface EmployeeProfile {
   id: string;
   userId: string;
-  organizationId: string;
   employeeId?: string;
   designation?: string;
   department?: string;

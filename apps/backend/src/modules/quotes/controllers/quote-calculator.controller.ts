@@ -293,7 +293,7 @@ export class QuoteCalculatorController {
   @ApiOperation({
     summary: 'Get quote configuration',
     description: `
-      Returns the active quote configuration for the organization.
+      Returns the active quote configuration .
       Includes:
       - Default validity days
       - Max versions
@@ -356,7 +356,7 @@ export class QuoteCalculatorController {
   @Get('subsidy-rules/all')
   @ApiOperation({
     summary: 'Get all subsidy rules',
-    description: 'Returns all subsidy configurations for the organization',
+    description: 'Returns all subsidy configurations ',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -403,7 +403,7 @@ export class QuoteCalculatorController {
   @Get('installation-pricing/all')
   @ApiOperation({
     summary: 'Get all installation pricing tiers',
-    description: 'Returns all installation pricing configurations for the organization',
+    description: 'Returns all installation pricing configurations ',
   })
   @ApiResponse({
     status: HttpStatus.OK,

@@ -109,7 +109,7 @@ export class ProjectMaintenanceConfigController {
     return this.maintenanceConfigService.findByProjectId(projectId, includeRelations === 'true');
   }
 
-  @Get('organization/:organizationId')
+  @Get('organization')
   @ApiOperation({ summary: 'Get maintenance configs by organization' })
   @ApiResponse({
     status: 200,

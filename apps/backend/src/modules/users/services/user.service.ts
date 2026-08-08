@@ -330,7 +330,6 @@ export class UserService {
     const { roles, ...rest } = updateDto as UpdateUserDto & {
       profileData?: unknown;
       profileType?: unknown;
-      organizationId?: unknown;
     };
     const { profileData, profileType, ...userData } = rest;
     void profileData;
