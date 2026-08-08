@@ -98,6 +98,14 @@ export class CustomerProfileEntity extends BaseEntity {
   })
   status!: CustomerStatus;
 
+  // ==================== LOST TRACKING ====================
+  /** Set together with status = LOST, for an enquiry that never got a property. */
+  @Column({ name: 'lost_reason', type: 'text', nullable: true })
+  lostReason?: string;
+
+  @Column({ name: 'lost_at', type: 'timestamptz', nullable: true })
+  lostAt?: Date;
+
   // ==================== Audit Fields ====================
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt?: Date;
