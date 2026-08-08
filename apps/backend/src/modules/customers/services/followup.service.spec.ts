@@ -12,6 +12,7 @@ import { Test } from '@nestjs/testing';
 import { FollowupOutcome, FollowupStatus } from '@tejas96/shared/types';
 
 import { FollowupService } from './followup.service';
+import { LeadClosureService } from './lead-closure.service';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
@@ -37,6 +38,7 @@ interface Harness {
   followupRepo: any;
   propertyRepo: any;
   customerRepo: any;
+  leadClosure: any;
 }
 
 async function makeService(overrides: { roles?: unknown[] } = {}): Promise<Harness> {
@@ -57,6 +59,13 @@ async function makeService(overrides: { roles?: unknown[] } = {}): Promise<Harne
     findById: anyFn().mockResolvedValue({ id: 'cust-1' }),
     markLost: anyFn().mockResolvedValue(undefined),
   };
+  // Terminal closure is delegated so quote acceptance and the complete dialog
+  // cannot drift apart on what "closing a lead" means.
+  const leadClosure = {
+    closeProperty: anyFn().mockResolvedValue(1),
+    markPropertyLost: anyFn().mockResolvedValue(undefined),
+    markCustomerLost: anyFn().mockResolvedValue(undefined),
+  };
 
   const moduleRef = await Test.createTestingModule({
     providers: [
@@ -64,6 +73,7 @@ async function makeService(overrides: { roles?: unknown[] } = {}): Promise<Harne
       { provide: FollowupRepository, useValue: followupRepo },
       { provide: CustomerProfileRepository, useValue: customerRepo },
       { provide: CustomerPropertyRepository, useValue: propertyRepo },
+      { provide: LeadClosureService, useValue: leadClosure },
       {
         provide: UserRoleRepository,
         useValue: {
@@ -73,7 +83,13 @@ async function makeService(overrides: { roles?: unknown[] } = {}): Promise<Harne
     ],
   }).compile();
 
-  return { service: moduleRef.get(FollowupService), followupRepo, propertyRepo, customerRepo };
+  return {
+    service: moduleRef.get(FollowupService),
+    followupRepo,
+    propertyRepo,
+    customerRepo,
+    leadClosure,
+  };
 }
 
 describe('FollowupService.complete', () => {
@@ -157,7 +173,7 @@ describe('FollowupService.complete', () => {
       'user-1',
     );
 
-    expect(h.followupRepo.cancelPendingFor.mock.calls.length).toBe(1);
+    expect(h.leadClosure.closeProperty.mock.calls.length).toBe(1);
     expect(h.followupRepo.create.mock.calls.length).toBe(0);
   });
 
@@ -182,8 +198,8 @@ describe('FollowupService.complete', () => {
       'user-1',
     );
 
-    expect(h.propertyRepo.markLost.mock.calls.length).toBe(1);
-    expect(h.customerRepo.markLost.mock.calls.length).toBe(0);
+    expect(h.leadClosure.markPropertyLost.mock.calls.length).toBe(1);
+    expect(h.leadClosure.markCustomerLost.mock.calls.length).toBe(0);
   });
 
   it('terminal "lost" on a customer-level followup marks the customer', async () => {
@@ -196,8 +212,8 @@ describe('FollowupService.complete', () => {
       'user-1',
     );
 
-    expect(h.customerRepo.markLost.mock.calls.length).toBe(1);
-    expect(h.propertyRepo.markLost.mock.calls.length).toBe(0);
+    expect(h.leadClosure.markCustomerLost.mock.calls.length).toBe(1);
+    expect(h.leadClosure.markPropertyLost.mock.calls.length).toBe(0);
   });
 
   it('refuses to complete an already-completed followup', async () => {

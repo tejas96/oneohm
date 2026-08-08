@@ -6,6 +6,7 @@ import {
   FollowupType,
 } from '@tejas96/shared/types';
 
+import { LeadClosureService } from './lead-closure.service';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { CompleteFollowupDto } from '../dto/complete-followup.dto';
 import { CreateFollowupDto } from '../dto/create-followup.dto';
@@ -28,6 +29,7 @@ export class FollowupService {
     private readonly customerRepository: CustomerProfileRepository,
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly userRoleRepository: UserRoleRepository,
+    private readonly leadClosureService: LeadClosureService,
   ) {}
 
   /**
@@ -266,24 +268,31 @@ export class FollowupService {
         throw new NotFoundException('Followup not found');
       }
 
+      // Every terminal path goes through LeadClosureService so this and quote
+      // acceptance cannot drift apart on what "closing a lead" means.
       if (dto.terminal) {
-        await this.followupRepository.cancelPendingFor(
-          followup.customerId,
-          propertyId,
-          userId,
-          manager,
-        );
         if (dto.terminal === 'lost') {
           if (propertyId) {
-            await this.propertyRepository.markLost(propertyId, dto.lostReason!, userId, manager);
-          } else {
-            await this.customerRepository.markLost(
+            await this.leadClosureService.markPropertyLost(
+              propertyId,
               followup.customerId,
               dto.lostReason!,
               userId,
-              manager,
+            );
+          } else {
+            await this.leadClosureService.markCustomerLost(
+              followup.customerId,
+              dto.lostReason!,
+              userId,
             );
           }
+        } else {
+          await this.leadClosureService.closeProperty(
+            propertyId!,
+            followup.customerId,
+            userId,
+            manager,
+          );
         }
         return completed;
       }
