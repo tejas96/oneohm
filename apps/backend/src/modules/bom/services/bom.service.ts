@@ -1432,7 +1432,7 @@ export class BomService {
     let filterSql = '';
     if (productIdsFilter && productIdsFilter.length > 0) {
       params.push(productIdsFilter);
-      filterSql = `AND bi.product_id = ANY($1::uuid[])`;
+      filterSql = `AND bi.product_id = ANY($2::uuid[])`;
     }
 
     const rows = await this.dataSource.query(
