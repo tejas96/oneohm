@@ -652,7 +652,8 @@ actually missing — a tile reporting a date has nothing to fix."
 
 **Interfaces:**
 - Consumes: nothing
-- Produces: `CustomerPropertyRepository.findNextFollowupByPropertyIds(ids: string[]): Promise<Map<string, Date>>`, `CustomerPropertyResponseDto.nextFollowupAt?: Date`
+- Consumes: `PROPERTY_NEEDS_FOLLOWUP(alias)` (Task 1)
+- Produces: `CustomerPropertyRepository.findFollowupStateByPropertyIds(ids: string[]): Promise<Map<string, { nextAt: Date | null; needsFollowup: boolean }>>`, `CustomerPropertyResponseDto.nextFollowupAt?: Date`, `CustomerPropertyResponseDto.needsFollowup: boolean`
 
 - [ ] **Step 1: Add the batch lookup**
 
@@ -660,30 +661,48 @@ In `customer-property.repository.ts`, alongside `findProjectIdsByPropertyIds`:
 
 ```typescript
   /**
-   * Earliest pending followup per property.
+   * Next pending followup per property, and whether the site needs one.
    *
-   * Batched like the other enrichments here — a per-row query would be N+1
-   * across a customer's whole portfolio. "Next" stays derived; nothing is
+   * `needsFollowup` is evaluated with the SHARED predicate rather than derived
+   * on the client from a null date. Deriving it would omit the accepted-quote
+   * exclusion, so a site with a won quote that is not yet converted would show
+   * a red dot while being absent from both the chip and the gaps tab — three
+   * such sites exist on current data. The dot must not disagree with the
+   * numbers beside it.
+   *
+   * Batched like the other enrichments here; a per-row query would be N+1
+   * across a customer's whole portfolio. "Next" stays derived — nothing is
    * stored on the property.
    */
-  async findNextFollowupByPropertyIds(propertyIds: string[]): Promise<Map<string, Date>> {
+  async findFollowupStateByPropertyIds(
+    propertyIds: string[],
+  ): Promise<Map<string, { nextAt: Date | null; needsFollowup: boolean }>> {
     if (propertyIds.length === 0) return new Map();
 
-    const rows: Array<{ property_id: string; next_at: Date }> =
+    const rows: Array<{ id: string; next_at: Date | null; needs_followup: boolean }> =
       await this.repository.manager.query(
         `
-      SELECT property_id, MIN(scheduled_at) AS next_at
-        FROM followups
-       WHERE property_id = ANY($1::uuid[])
-         AND deleted_at IS NULL
-         AND status = 'pending'
-       GROUP BY property_id
+      SELECT p.id,
+             (SELECT MIN(f.scheduled_at) FROM followups f
+               WHERE f.property_id = p.id AND f.deleted_at IS NULL AND f.status = 'pending')
+               AS next_at,
+             (${PROPERTY_NEEDS_FOLLOWUP('p')}) AS needs_followup
+        FROM customer_properties p
+       WHERE p.id = ANY($1::uuid[])
       `,
         [propertyIds],
       );
 
-    return new Map(rows.map((row) => [row.property_id, row.next_at]));
+    return new Map(
+      rows.map((row) => [row.id, { nextAt: row.next_at, needsFollowup: row.needs_followup }]),
+    );
   }
+```
+
+Add the import:
+
+```typescript
+import { PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
 ```
 
 - [ ] **Step 2: Enrich the response**
@@ -692,16 +711,19 @@ In `customer-property.service.ts`, both `findAll` and `findByCustomer` batch
 their enrichments the same way. In each, after the existing map lookups:
 
 ```typescript
-    const nextFollowupMap = await this.propertyRepository.findNextFollowupByPropertyIds(propertyIds);
+    const followupStateMap =
+      await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
 ```
 
 and inside the `.map(...)`:
 
 ```typescript
-        nextFollowupAt: nextFollowupMap.get(property.id),
+        nextFollowupAt: followupStateMap.get(property.id)?.nextAt ?? undefined,
+        needsFollowup: followupStateMap.get(property.id)?.needsFollowup ?? false,
 ```
 
-Add `nextFollowupAt?: Date` to the `PropertyWithQuoteInfo` type in that file.
+Add `nextFollowupAt?: Date` and `needsFollowup?: boolean` to the
+`PropertyWithQuoteInfo` type in that file.
 
 - [ ] **Step 3: Expose it on the DTO**
 
@@ -717,6 +739,16 @@ In `customer-property-response.dto.ts`:
   @Expose()
   @ApiPropertyOptional({ description: 'Earliest pending followup for this site' })
   nextFollowupAt?: Date;
+
+  /**
+   * True when this open site has nobody owing it an action.
+   *
+   * Computed server-side with the shared predicate so the dot cannot disagree
+   * with the chip count or the gaps tab.
+   */
+  @Expose()
+  @ApiProperty({ description: 'Open site with no pending followup' })
+  needsFollowup!: boolean;
 ```
 
 - [ ] **Step 4: Verify the field reaches the client**
@@ -732,6 +764,7 @@ In `use-customer-properties.ts`, on `CustomerPropertyResponse`:
 
 ```typescript
   nextFollowupAt?: string | null;
+  needsFollowup?: boolean;
 ```
 
 - [ ] **Step 6: Render the dot**
@@ -742,9 +775,9 @@ prepend the marker. Import `Tooltip` from `@mui/material` and `formatDate` from
 
 ```tsx
 {(() => {
-  const isOpen =
-    property.status !== PropertyStatus.CONVERTED && property.status !== PropertyStatus.LOST;
-  if (!isOpen) return null;
+  // Server-computed: do NOT re-derive from status + nextFollowupAt here, or the
+  // dot drifts from the chip on sites with an accepted-but-unconverted quote.
+  if (!property.needsFollowup && !property.nextFollowupAt) return null;
   return property.nextFollowupAt ? (
     <Tooltip title={`Next follow-up ${formatDate(property.nextFollowupAt)}`}>
       <Box
@@ -771,7 +804,11 @@ so the dot sits before the name without disturbing the grid track.
 
 Open `/customers`, expand a customer with several sites. Confirm a red dot on
 sites with nothing pending and a green one on sites that have a follow-up, with
-the date in the tooltip. Confirm converted or lost sites show no dot at all.
+the date in the tooltip. Confirm converted or lost sites show no dot at all. Then check one of the three
+sites that has an accepted quote but is not yet converted (find one with the SQL
+in Task 6 Step 2): it must show **no red dot**, matching its absence from the
+chip and the gaps tab. A red dot there means the client is re-deriving instead
+of reading `needsFollowup`.
 
 - [ ] **Step 8: Commit**
 
