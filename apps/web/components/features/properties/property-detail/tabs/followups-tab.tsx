@@ -1,6 +1,5 @@
 'use client';
 
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import {
   Box,
@@ -16,17 +15,22 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { FollowupPriority, FollowupStatus } from '@tejas96/shared/types';
+import { FollowupStatus } from '@tejas96/shared/types';
 import { useMemo, useState, type JSX } from 'react';
 
 import { usePropertyFollowups } from '../../hooks';
 
 import {
   FollowupCompleteDialog,
+  FollowupReassignDialog,
+  FollowupRescheduleDialog,
+  FollowupRowActions,
   OUTCOME_LABELS,
+  useCancelFollowup,
   type FollowupResponse,
 } from '@/components/features/followups';
-import { formatDate, toTitleLabel } from '@/lib/utils';
+import { showToast } from '@/components/ui';
+import { formatDate, getErrorMessage, toTitleLabel } from '@/lib/utils';
 
 interface FollowupsTabProps {
   propertyId: string;
@@ -61,6 +65,9 @@ export function FollowupsTab({
   const followups = data?.data ?? [];
 
   const [completing, setCompleting] = useState<FollowupResponse | null>(null);
+  const [rescheduling, setRescheduling] = useState<FollowupResponse | null>(null);
+  const [reassigning, setReassigning] = useState<FollowupResponse[]>([]);
+  const cancelMutation = useCancelFollowup();
 
   // Pending followups on this lead unit other than the one being completed.
   // Zero is the only case where scheduling the next one is mandatory.
@@ -100,7 +107,6 @@ export function FollowupsTab({
                 <TableCell>Type</TableCell>
                 <TableCell>Scheduled</TableCell>
                 <TableCell>Owner</TableCell>
-                <TableCell>Priority</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Outcome</TableCell>
                 <TableCell align="right">Actions</TableCell>
@@ -109,23 +115,20 @@ export function FollowupsTab({
             <TableBody>
               {followups.map((followup) => (
                 <TableRow key={followup.id} hover>
-                  <TableCell>{followup.subject}</TableCell>
+                  <TableCell
+                    title={followup.subject}
+                    sx={{
+                      maxWidth: 280,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {followup.subject}
+                  </TableCell>
                   <TableCell>{toTitleLabel(followup.type)}</TableCell>
                   <TableCell>{formatDate(followup.scheduledAt)}</TableCell>
                   <TableCell>{ownerName(followup)}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={toTitleLabel(followup.priority)}
-                      size="small"
-                      color={
-                        followup.priority === FollowupPriority.HIGH
-                          ? 'warning'
-                          : followup.priority === FollowupPriority.LOW
-                            ? 'default'
-                            : 'info'
-                      }
-                    />
-                  </TableCell>
                   <TableCell>
                     <Chip
                       label={toTitleLabel(followup.status)}
@@ -135,15 +138,19 @@ export function FollowupsTab({
                   </TableCell>
                   <TableCell>{followup.outcome ? OUTCOME_LABELS[followup.outcome] : '—'}</TableCell>
                   <TableCell align="right">
-                    {followup.status === FollowupStatus.PENDING && (
-                      <Button
-                        size="small"
-                        startIcon={<CheckCircleOutlineIcon />}
-                        onClick={() => setCompleting(followup)}
-                      >
-                        Complete
-                      </Button>
-                    )}
+                    <FollowupRowActions
+                      followup={followup}
+                      onComplete={setCompleting}
+                      onReschedule={setRescheduling}
+                      onReassign={(f) => setReassigning([f])}
+                      onCancel={(f) =>
+                        cancelMutation.mutate(f.id, {
+                          onSuccess: () =>
+                            showToast.success('Follow-up cancelled — the lead now needs a new one'),
+                          onError: (error) => showToast.error(getErrorMessage(error)),
+                        })
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -166,6 +173,9 @@ export function FollowupsTab({
             : undefined
         }
       />
+
+      <FollowupRescheduleDialog followup={rescheduling} onClose={() => setRescheduling(null)} />
+      <FollowupReassignDialog followups={reassigning} onClose={() => setReassigning([])} />
     </Box>
   );
 }

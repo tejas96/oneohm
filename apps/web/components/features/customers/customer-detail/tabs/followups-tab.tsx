@@ -1,6 +1,5 @@
 'use client';
 
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import {
   Box,
@@ -17,7 +16,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { FollowupPriority, FollowupStatus } from '@tejas96/shared/types';
+import { FollowupStatus } from '@tejas96/shared/types';
 import { useMemo, useState, type JSX } from 'react';
 
 import { useCustomerFollowups, type CustomerPropertyResponse } from '../../hooks';
@@ -25,12 +24,17 @@ import { TabSkeleton } from '../tab-skeleton';
 
 import {
   FollowupCompleteDialog,
+  FollowupReassignDialog,
+  FollowupRescheduleDialog,
+  FollowupRowActions,
   OUTCOME_LABELS,
+  useCancelFollowup,
   type FollowupResponse,
 } from '@/components/features/followups';
 import { MarkAsLostDialog } from '@/components/features/properties';
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
-import { formatDate, toTitleLabel } from '@/lib/utils';
+import { showToast } from '@/components/ui';
+import { formatDate, getErrorMessage, toTitleLabel } from '@/lib/utils';
 
 export interface FollowupsTabProps {
   customerId: string;
@@ -61,6 +65,9 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
 
   const [completing, setCompleting] = useState<FollowupResponse | null>(null);
   const [markingLost, setMarkingLost] = useState<{ id: string; name: string } | null>(null);
+  const [rescheduling, setRescheduling] = useState<FollowupResponse | null>(null);
+  const [reassigning, setReassigning] = useState<FollowupResponse[]>([]);
+  const cancelMutation = useCancelFollowup();
 
   /**
    * Pending followups on the SAME lead unit as the one being completed.
@@ -124,7 +131,6 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                 <TableCell>Scope</TableCell>
                 <TableCell>Scheduled</TableCell>
                 <TableCell>Owner</TableCell>
-                <TableCell>Priority</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Outcome</TableCell>
                 <TableCell align="right">Actions</TableCell>
@@ -157,19 +163,6 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                       <TableCell>{ownerName(followup)}</TableCell>
                       <TableCell>
                         <Chip
-                          label={toTitleLabel(followup.priority)}
-                          size="small"
-                          color={
-                            followup.priority === FollowupPriority.HIGH
-                              ? 'warning'
-                              : followup.priority === FollowupPriority.LOW
-                                ? 'default'
-                                : 'info'
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
                           label={toTitleLabel(followup.status)}
                           size="small"
                           color={
@@ -181,20 +174,21 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                         {followup.outcome ? OUTCOME_LABELS[followup.outcome] : '—'}
                       </TableCell>
                       <TableCell align="right">
-                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                          {followup.status === FollowupStatus.PENDING && (
-                            <Button
-                              size="small"
-                              startIcon={<CheckCircleOutlineIcon />}
-                              onClick={() => setCompleting(followup)}
-                            >
-                              Complete
-                            </Button>
-                          )}
-                          <Button size="small" onClick={onSchedule}>
-                            Schedule
-                          </Button>
-                        </Stack>
+                        <FollowupRowActions
+                          followup={followup}
+                          onComplete={setCompleting}
+                          onReschedule={setRescheduling}
+                          onReassign={(f) => setReassigning([f])}
+                          onCancel={(f) =>
+                            cancelMutation.mutate(f.id, {
+                              onSuccess: () =>
+                                showToast.success(
+                                  'Follow-up cancelled — the lead now needs a new one',
+                                ),
+                              onError: (error) => showToast.error(getErrorMessage(error)),
+                            })
+                          }
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -235,6 +229,9 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
           propertyName={markingLost.name}
         />
       )}
+
+      <FollowupRescheduleDialog followup={rescheduling} onClose={() => setRescheduling(null)} />
+      <FollowupReassignDialog followups={reassigning} onClose={() => setReassigning([])} />
     </Box>
   );
 }

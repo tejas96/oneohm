@@ -19,28 +19,17 @@ import {
   useFollowupGaps,
   useFollowups,
   useFollowupSummary,
-  useReassignFollowupsBulk,
-  useRescheduleFollowup,
   type FollowupGap,
   type FollowupResponse,
 } from '../hooks';
 import { FollowupCompleteDialog } from './followup-complete-dialog';
 import { FollowupDrawer } from './followup-drawer';
 import { FollowupList } from './followup-list';
+import { FollowupReassignDialog } from './followup-reassign-dialog';
+import { FollowupRescheduleDialog } from './followup-reschedule-dialog';
 
-import { useEmployees } from '@/components/features/employees';
 import { FilterTabs } from '@/components/shared/filters';
-import {
-  MUIDialog,
-  MUIDialogBody,
-  MUIDialogDescription,
-  MUIDialogFooter,
-  MUIDialogHeader,
-  MUIDialogTitle,
-  showToast,
-} from '@/components/ui';
-import { MUIDatePicker } from '@/components/ui/mui-date-picker';
-import { MUIUserAssigneeSelector } from '@/components/ui/mui-user-assignee-selector';
+import { showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -53,7 +42,6 @@ export function FollowupsPage(): JSX.Element {
   const [mine, setMine] = useState(true);
 
   const { data: summary } = useFollowupSummary(mine);
-  const { data: employees = [] } = useEmployees();
 
   const { startOfToday, startOfTomorrow } = useMemo(() => dayBoundaries(), []);
 
@@ -106,13 +94,9 @@ export function FollowupsPage(): JSX.Element {
   // ── Row actions ──────────────────────────────────────────────────────────
   const [completing, setCompleting] = useState<FollowupResponse | null>(null);
   const [rescheduling, setRescheduling] = useState<FollowupResponse | null>(null);
-  const [rescheduleDate, setRescheduleDate] = useState<Date | null>(null);
   const [reassigning, setReassigning] = useState<FollowupResponse[]>([]);
-  const [reassignTo, setReassignTo] = useState<string | null>(null);
   const [schedulingGap, setSchedulingGap] = useState<FollowupGap | null>(null);
 
-  const rescheduleMutation = useRescheduleFollowup();
-  const reassignMutation = useReassignFollowupsBulk();
   const cancelMutation = useCancelFollowup();
 
   /**
@@ -240,14 +224,8 @@ export function FollowupsPage(): JSX.Element {
           loading={isLoading}
           totalRowCount={data?.meta?.total}
           onComplete={setCompleting}
-          onReschedule={(followup) => {
-            setRescheduling(followup);
-            setRescheduleDate(new Date(followup.scheduledAt));
-          }}
-          onReassign={(followups) => {
-            setReassigning(followups);
-            setReassignTo(null);
-          }}
+          onReschedule={setRescheduling}
+          onReassign={setReassigning}
           onCancel={(followup) =>
             cancelMutation.mutate(followup.id, {
               onSuccess: () =>
@@ -270,104 +248,9 @@ export function FollowupsPage(): JSX.Element {
         onClose={() => setCompleting(null)}
       />
 
-      <MUIDialog
-        open={Boolean(rescheduling)}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) setRescheduling(null);
-        }}
-        size="sm"
-      >
-        <MUIDialogHeader>
-          <MUIDialogTitle>Reschedule follow-up</MUIDialogTitle>
-          <MUIDialogDescription>
-            Moves the date without completing it — no outcome recorded.
-          </MUIDialogDescription>
-        </MUIDialogHeader>
-        <MUIDialogBody>
-          <MUIDatePicker
-            fieldLabel="New date"
-            required
-            value={rescheduleDate}
-            onChange={setRescheduleDate}
-            fullWidth
-          />
-        </MUIDialogBody>
-        <MUIDialogFooter>
-          <Button variant="outlined" onClick={() => setRescheduling(null)}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            disabled={!rescheduleDate || rescheduleMutation.isPending}
-            onClick={() => {
-              if (!rescheduling || !rescheduleDate) return;
-              rescheduleMutation.mutate(
-                { id: rescheduling.id, scheduledAt: rescheduleDate.toISOString() },
-                {
-                  onSuccess: () => {
-                    showToast.success('Follow-up moved');
-                    setRescheduling(null);
-                  },
-                  onError: (error) => showToast.error(getErrorMessage(error)),
-                },
-              );
-            }}
-          >
-            Move
-          </Button>
-        </MUIDialogFooter>
-      </MUIDialog>
+      <FollowupRescheduleDialog followup={rescheduling} onClose={() => setRescheduling(null)} />
 
-      <MUIDialog
-        open={reassigning.length > 0}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) setReassigning([]);
-        }}
-        size="sm"
-      >
-        <MUIDialogHeader>
-          <MUIDialogTitle>
-            {`Reassign ${reassigning.length} follow-up${reassigning.length === 1 ? '' : 's'}`}
-          </MUIDialogTitle>
-          <MUIDialogDescription>
-            Ownership of a lead is whoever holds its next follow-up, so this moves the lead too.
-          </MUIDialogDescription>
-        </MUIDialogHeader>
-        <MUIDialogBody>
-          <MUIUserAssigneeSelector
-            fieldLabel="New owner"
-            required
-            value={reassignTo}
-            onChange={setReassignTo}
-            employees={employees}
-            disablePortal
-          />
-        </MUIDialogBody>
-        <MUIDialogFooter>
-          <Button variant="outlined" onClick={() => setReassigning([])}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            disabled={!reassignTo || reassignMutation.isPending}
-            onClick={() => {
-              if (!reassignTo) return;
-              reassignMutation.mutate(
-                { ids: reassigning.map((f) => f.id), assignedToUserId: reassignTo },
-                {
-                  onSuccess: (result) => {
-                    showToast.success(`Moved ${result.updated} follow-up(s)`);
-                    setReassigning([]);
-                  },
-                  onError: (error) => showToast.error(getErrorMessage(error)),
-                },
-              );
-            }}
-          >
-            Reassign
-          </Button>
-        </MUIDialogFooter>
-      </MUIDialog>
+      <FollowupReassignDialog followups={reassigning} onClose={() => setReassigning([])} />
 
       {schedulingGap && (
         <FollowupDrawer

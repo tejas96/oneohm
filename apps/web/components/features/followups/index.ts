@@ -4,3 +4,6 @@ export * from './components/followup-complete-dialog';
 export * from './components/followup-drawer';
 export * from './components/followup-list';
 export * from './components/followups-page';
+export * from './components/followup-reschedule-dialog';
+export * from './components/followup-reassign-dialog';
+export * from './components/followup-row-actions';
