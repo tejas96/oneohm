@@ -43,7 +43,7 @@ export class ServiceRequestService {
    */
   async findAll(includeRelations: boolean = false): Promise<ServiceRequestResponseDto[]> {
     const relations = includeRelations
-      ? ['organization', 'project', 'customer', 'assignedToUser', 'createdByUser', 'updatedByUser']
+      ? ['project', 'customer', 'assignedToUser', 'createdByUser', 'updatedByUser']
       : [];
     const requests = await this.serviceRequestRepository.findAll({ relations });
 
@@ -62,7 +62,7 @@ export class ServiceRequestService {
     includeRelations: boolean = false,
   ): Promise<ServiceRequestResponseDto> {
     const relations = includeRelations
-      ? ['organization', 'project', 'customer', 'assignedToUser', 'createdByUser', 'updatedByUser']
+      ? ['project', 'customer', 'assignedToUser', 'createdByUser', 'updatedByUser']
       : [];
     const request = await this.serviceRequestRepository.findById(id, { relations });
 
@@ -83,7 +83,7 @@ export class ServiceRequestService {
     includeRelations: boolean = false,
   ): Promise<ServiceRequestResponseDto> {
     const relations = includeRelations
-      ? ['organization', 'project', 'customer', 'assignedToUser', 'createdByUser', 'updatedByUser']
+      ? ['project', 'customer', 'assignedToUser', 'createdByUser', 'updatedByUser']
       : [];
     const request = await this.serviceRequestRepository.findByRequestNumber(requestNumber, {
       relations,
@@ -105,7 +105,7 @@ export class ServiceRequestService {
     projectId: string,
     includeRelations: boolean = false,
   ): Promise<ServiceRequestResponseDto[]> {
-    const relations = includeRelations ? ['organization', 'customer', 'assignedToUser'] : [];
+    const relations = includeRelations ? ['customer', 'assignedToUser'] : [];
     const requests = await this.serviceRequestRepository.findByProject(projectId, { relations });
 
     return requests.map((request) =>
@@ -122,7 +122,7 @@ export class ServiceRequestService {
     customerId: string,
     includeRelations: boolean = false,
   ): Promise<ServiceRequestResponseDto[]> {
-    const relations = includeRelations ? ['organization', 'project', 'assignedToUser'] : [];
+    const relations = includeRelations ? ['project', 'assignedToUser'] : [];
     const requests = await this.serviceRequestRepository.findByCustomer(customerId, { relations });
 
     return requests.map((request) =>
@@ -139,7 +139,7 @@ export class ServiceRequestService {
     userId: string,
     includeRelations: boolean = false,
   ): Promise<ServiceRequestResponseDto[]> {
-    const relations = includeRelations ? ['organization', 'project', 'customer'] : [];
+    const relations = includeRelations ? ['project', 'customer'] : [];
     const requests = await this.serviceRequestRepository.findByAssignedUser(userId, { relations });
 
     return requests.map((request) =>
@@ -156,9 +156,7 @@ export class ServiceRequestService {
     status: ServiceRequestStatus,
     includeRelations: boolean = false,
   ): Promise<ServiceRequestResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'customer', 'assignedToUser']
-      : [];
+    const relations = includeRelations ? ['project', 'customer', 'assignedToUser'] : [];
     const requests = await this.serviceRequestRepository.findByStatus(status, { relations });
 
     return requests.map((request) =>
@@ -172,9 +170,7 @@ export class ServiceRequestService {
    * Find open requests
    */
   async findOpen(includeRelations: boolean = false): Promise<ServiceRequestResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'customer', 'assignedToUser']
-      : [];
+    const relations = includeRelations ? ['project', 'customer', 'assignedToUser'] : [];
     const requests = await this.serviceRequestRepository.findOpen({ relations });
 
     return requests.map((request) =>
@@ -188,9 +184,7 @@ export class ServiceRequestService {
    * Find overdue requests
    */
   async findOverdue(includeRelations: boolean = false): Promise<ServiceRequestResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'customer', 'assignedToUser']
-      : [];
+    const relations = includeRelations ? ['project', 'customer', 'assignedToUser'] : [];
     const requests = await this.serviceRequestRepository.findOverdue({ relations });
 
     return requests.map((request) =>

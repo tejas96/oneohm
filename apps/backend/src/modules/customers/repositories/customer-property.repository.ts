@@ -62,7 +62,6 @@ export class CustomerPropertyRepository {
       where: { id, deletedAt: IsNull() },
       relations: [
         'customer',
-        'organization',
         'project',
         'discom',
         'siteVisitAssigneeUser',
