@@ -321,7 +321,7 @@ export class FinanceAggregationService {
     const params: unknown[] = [];
     let where = `
 
-      AND t.deleted_at IS NULL
+      t.deleted_at IS NULL
       AND t.status NOT IN ('waived','cancelled')
       AND t.expected_amount > t.paid_amount
     `;
@@ -719,9 +719,8 @@ export class FinanceAggregationService {
     const sql = `
       WITH params AS (
         SELECT
-          $1::uuid       AS org_id,
-          $2::date       AS from_d,
-          $3::date       AS to_d,
+          $1::date       AS from_d,
+          $2::date       AS to_d,
           CURRENT_DATE   AS today
       ),
       revenue AS (
