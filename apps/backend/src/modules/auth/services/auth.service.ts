@@ -112,7 +112,6 @@ export class AuthService {
 
     this.logger.log(`User logged in successfully: ${email}`);
 
-
     const loginUser: LoginUserDto = {
       id: user.id,
       email: user.email ?? '',
@@ -235,7 +234,6 @@ export class AuthService {
     // Fetch all profiles and permissions
     const profiles = await this.fetchUserProfiles(user.id);
     const permissions = await this.iamService.getUserPermissions(user.id);
-
 
     const loginUser: LoginUserDto = {
       id: user.id,
@@ -378,7 +376,6 @@ export class AuthService {
 
     // Fetch permissions for all user's roles using IAM service
     const permissions = await this.iamService.getUserPermissions(user.id);
-
 
     const loginUser: LoginUserDto = {
       id: user.id,
