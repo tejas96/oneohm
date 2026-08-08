@@ -23,11 +23,6 @@ export interface EmployeeProfileUser {
   email?: string;
 }
 
-export interface EmployeeProfileOrganization {
-  id: string;
-  name: string;
-}
-
 export interface EmployeeProfile {
   id: string;
   userId: string;
@@ -59,7 +54,6 @@ export interface EmployeeProfile {
   ifscCode?: string;
   accountHolderName?: string;
   user?: EmployeeProfileUser;
-  organization?: EmployeeProfileOrganization;
   roles?: string[];
   createdAt: string;
   updatedAt: string;
@@ -149,7 +143,7 @@ export function useEmployeeProfileMutations(): ReturnType<
 }
 
 /**
- * Fetch a user's employee/reseller profile across organizations.
+ * Fetch a user's employee/reseller profile.
  * Returns the first active profile or null.
  */
 export function useUserEmployeeProfile(userId: string): {

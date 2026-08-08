@@ -124,7 +124,7 @@ export const receiptKeys = {
  * List receipts for a project.
  *
  * Uses `/receipts/project/:id`. The legacy `/payments/project/:id` route this
- * previously called is not organization-scoped and belongs to the deprecated
+ * previously called belongs to the deprecated
  * PaymentController surface; the replacement returns the same
  * PaymentResponseDto shape.
  */

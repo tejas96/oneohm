@@ -20,7 +20,7 @@ import { useMemo } from 'react';
  *
  * All formatters are stable across re-renders (created once per locale).
  * Using a hook (not a module-level const) so future i18n switches can
- * thread organization-locale through here without a refactor.
+ * thread a locale through here without a refactor.
  */
 
 export interface DashboardFormatters {

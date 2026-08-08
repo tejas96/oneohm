@@ -50,7 +50,7 @@ export function useTaskBoardDnd(): UseTaskBoardDndResult {
   const [dragState, setDragState] = useState<DragState>(IDLE_DRAG_STATE);
   const [activeDropColumn, setActiveDropColumn] = useState<string | null>(null);
 
-  // We need a stable ref to organizationId for use inside the monitor callbacks
+  // We need a stable refId for use inside the monitor callbacks
   // (closures capture the value at registration time, but org can change).
   useEffect(() => {
   }, []);

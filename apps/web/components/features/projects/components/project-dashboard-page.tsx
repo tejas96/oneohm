@@ -80,10 +80,10 @@ export function ProjectDashboardPage(): React.JSX.Element {
     limit: 5,
   });
 
-  // Query live team workload across all projects in the organization
+  // Query live team workload across all projects
   const { data: teamWorkloadData, isLoading: teamWorkloadLoading } = useTeamWorkload();
 
-  // Organization context and dynamic parallel BOM queries for active installations
+  // Dynamic parallel BOM queries for active installations
 
   const activeProjectsSample = React.useMemo((): ProjectListItem[] => {
     const rawList = activeListResponse?.data || [];

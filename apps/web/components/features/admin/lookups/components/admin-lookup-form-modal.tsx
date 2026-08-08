@@ -266,7 +266,7 @@ export function AdminLookupFormModal({
                   id="lookup-scope-type"
                   fieldLabel="Scope Type"
                   required
-                  tooltip="Global entries are available everywhere. Organization entries are scoped to one org."
+                  tooltip="Global entries are available everywhere."
                   options={SCOPE_TYPE_OPTIONS}
                   value={field.value}
                   onChange={field.onChange}
@@ -278,9 +278,9 @@ export function AdminLookupFormModal({
             {showScopeId && (
               <MUIInput
                 id="lookup-scope-id"
-                fieldLabel="Scope ID (Organization UUID)"
+                fieldLabel="Scope ID"
                 required
-                tooltip="UUID of the organization this lookup is scoped to."
+                tooltip="UUID of the record this lookup is scoped to."
                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 error={form.formState.errors.scopeId?.message}
                 {...form.register('scopeId')}

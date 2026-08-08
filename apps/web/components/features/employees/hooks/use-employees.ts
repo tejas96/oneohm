@@ -56,7 +56,7 @@ export const employeeKeys = {
 // ============================================================================
 
 /**
- * Fetches employees for the current organization.
+ * Fetches employees.
  * Defaults to active employees only. Used by MUIUserAssigneeSelector.
  */
 export function useEmployees(

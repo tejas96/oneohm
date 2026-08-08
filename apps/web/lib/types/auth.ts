@@ -10,7 +10,6 @@
 export interface ProfileSummary {
   type: 'customer' | 'reseller' | 'employee';
   profileId: string;
-  organizationName: string;
   isPrimary: boolean;
   status: string;
   avatarUrl?: string;

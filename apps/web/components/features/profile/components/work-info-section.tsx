@@ -51,7 +51,7 @@ export function WorkInfoSection({ profile }: WorkInfoSectionProps): JSX.Element 
           </div>
 
           <MUITypography variant="finePrint" className="text-foreground-tertiary">
-            These fields are managed by your organization and cannot be changed here.
+            These fields are managed by your administrator and cannot be changed here.
           </MUITypography>
         </div>
       </CardContent>

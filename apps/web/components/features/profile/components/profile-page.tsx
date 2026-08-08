@@ -57,7 +57,7 @@ function NoProfileState({ onRetry }: { onRetry: () => void }): JSX.Element {
       <AccountCircleIcon sx={{ fontSize: 72 }} className="text-foreground-tertiary" />
       <MUITypography variant="sectionTitle">No Employee Profile Found</MUITypography>
       <MUITypography variant="body" className="max-w-md text-foreground-secondary">
-        Your employee profile has not been set up yet. Please contact your organization
+        Your employee profile has not been set up yet. Please contact your administrator
         administrator.
       </MUITypography>
       <Button variant="outline" onClick={onRetry}>

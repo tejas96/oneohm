@@ -204,7 +204,7 @@ export function useCheckUserAvailability(
         if (field === 'phone') {
           if (res.phoneExists && res.employeeExists) {
             setPhoneInfo(null);
-            return 'This employee already exists in your organization';
+            return 'This employee already exists';
           }
           if (res.phoneExists && !res.employeeExists) {
             setPhoneInfo('User found. They will be linked as an employee.');

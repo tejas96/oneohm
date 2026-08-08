@@ -430,7 +430,7 @@ export interface CustomerGroup {
 }
 
 /**
- * Hook to fetch distinct customer groups for the organization.
+ * Hook to fetch distinct customer groups.
  * Used to populate the group selector on the customer form.
  */
 export function useCustomerGroups(): UseQueryResult<CustomerGroup[], AxiosError> {

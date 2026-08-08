@@ -263,11 +263,11 @@ export function UserFormModal({
         form.setError('phone', { message: 'This phone number is already registered' });
       } else if (lowerMsg.includes('employee id') && lowerMsg.includes('already')) {
         form.setError('employeeId', {
-          message: 'This Employee ID already exists in your organization',
+          message: 'This Employee ID already exists',
         });
       } else if (lowerMsg.includes('company code') && lowerMsg.includes('already')) {
         form.setError('companyCode', {
-          message: 'This Company Code already exists in your organization',
+          message: 'This Company Code already exists',
         });
       }
     }

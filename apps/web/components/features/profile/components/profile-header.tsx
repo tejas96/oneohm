@@ -100,14 +100,9 @@ export function ProfileHeader({
           </MUITypography>
         )}
 
-        {profile.organization?.name && (
-          <div className="flex items-center justify-center gap-2">
-            <MUITypography variant="timestamp" className="text-foreground-tertiary">
-              {profile.organization.name}
-            </MUITypography>
-            <MUIStatusChip label={profile.status} colorSeed={profile.status} size="small" />
-          </div>
-        )}
+        <div className="flex items-center justify-center gap-2">
+          <MUIStatusChip label={profile.status} colorSeed={profile.status} size="small" />
+        </div>
 
         {/* Role chips */}
         {user?.roles && user.roles.length > 0 && (

@@ -171,11 +171,10 @@ export const ROUTES = {
     DISCOM: '/admin/discom',
   },
 
-  // Organization
+  // People & documents
   ORG: {
     EMPLOYEES: '/employees',
     EMPLOYEE_DETAIL: '/employees/[id]',
-    ORGANIZATIONS: '/organizations',
     RESELLERS: '/resellers',
     DOCUMENTS: '/documents',
   },
