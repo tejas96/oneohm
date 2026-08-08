@@ -6,6 +6,9 @@ import { Box, Button } from '@mui/material';
 import {
   ConnectionType,
   DocumentEntityType,
+  FollowupType,
+  type LeadTemperature,
+  nextFollowupDate,
   PropertyType,
   type StoredChangeRequest,
 } from '@tejas96/shared/types';
@@ -45,6 +48,7 @@ import {
   type CustomerResponse,
 } from '@/components/features/customers';
 import { useUploadDocumentsBulk } from '@/components/features/documents/hooks';
+import { useCreateFollowup } from '@/components/features/followups';
 import {
   useCreateProperty,
   useUpdateProperty,
@@ -233,6 +237,7 @@ export function OnboardingWizard({
   const updateCustomerMutation = useUpdateCustomer();
   const updateCustomerStatusMutation = useUpdateCustomerStatus();
   const createPropertyMutation = useCreateProperty();
+  const createFollowupMutation = useCreateFollowup();
   const updatePropertyMutation = useUpdateProperty();
   const uploadDocsBulk = useUploadDocumentsBulk();
 
@@ -385,6 +390,8 @@ export function OnboardingWizard({
     'customerCountry',
     'customerLatitude',
     'customerLongitude',
+    'nextFollowupDate',
+    'nextFollowupAssignee',
   ];
 
   const buildPropertyPayload = (): Record<string, unknown> => {
@@ -467,6 +474,27 @@ export function OnboardingWizard({
         }
       }
 
+      // The lead now owes someone an action from the moment it exists.
+      // Best-effort: the site and its documents are already saved, so a failure
+      // here must not read as "nothing was created" — it surfaces in the
+      // Needs follow-up bucket instead.
+      const followupDate = form.getValues('nextFollowupDate');
+      const followupOwner = form.getValues('nextFollowupAssignee');
+      if (resolvedCustomerId && followupDate && followupOwner) {
+        try {
+          await createFollowupMutation.mutateAsync({
+            customerId: resolvedCustomerId,
+            propertyId: created.id,
+            type: FollowupType.TASK,
+            subject: 'First follow-up',
+            scheduledAt: new Date(followupDate).toISOString(),
+            assignedToUserId: followupOwner,
+          });
+        } catch {
+          showToast.warning('Site created — schedule the first follow-up from the site record.');
+        }
+      }
+
       showToast.success(
         usingExistingCustomer ? 'Site created successfully' : 'Customer and site created',
       );
@@ -485,6 +513,20 @@ export function OnboardingWizard({
       : ROUTES.CUSTOMERS.LIST;
 
   const isLastStep = activeStep === visibleSteps.length - 1;
+
+  /**
+   * Prefill the first-followup date from the lead temperature.
+   *
+   * Watched rather than set once, because temperature is chosen on an earlier
+   * step — a user who goes back and switches HOT to COLD should not be left
+   * with the HOT rhythm. Only overwrites while the field is untouched.
+   */
+  const watchedTemperature = form.watch('leadTemperature') as LeadTemperature | undefined;
+  const followupDateTouched = form.formState.dirtyFields.nextFollowupDate;
+  React.useEffect(() => {
+    if (isEditProperty || isEditCustomer || followupDateTouched) return;
+    form.setValue('nextFollowupDate', nextFollowupDate(new Date(), watchedTemperature ?? null));
+  }, [watchedTemperature, followupDateTouched, isEditProperty, isEditCustomer, form]);
 
   const handleBack = (): void => {
     setShowErrors(false);
