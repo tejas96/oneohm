@@ -400,7 +400,16 @@ export class FollowupService {
       this.followupRepository.summaryCounts(userId),
       this.followupRepository.findGaps(),
     ]);
-    return { ...counts, gaps: gapRows.length };
+
+    // Gaps must respect the same scope as the date buckets. Counting all of
+    // them while the list filters to one user leaves the badge and the list
+    // disagreeing, which is exactly the kind of thing that makes people stop
+    // believing the numbers.
+    const gaps = userId
+      ? gapRows.filter((row) => row.attributedUserId === userId).length
+      : gapRows.length;
+
+    return { ...counts, gaps };
   }
 
   /**

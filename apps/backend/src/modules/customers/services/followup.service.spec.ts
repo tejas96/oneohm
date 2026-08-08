@@ -293,15 +293,29 @@ describe('FollowupService.reassign and reschedule', () => {
       upcoming: 12,
     });
     h.followupRepo.findGaps = anyFn().mockResolvedValue([
-      { kind: 'property' },
-      { kind: 'customer' },
+      { kind: 'property', attributedUserId: null },
+      { kind: 'customer', attributedUserId: null },
     ]);
 
-    expect(await h.service.summary('user-1')).toEqual({
+    expect(await h.service.summary(null)).toEqual({
       overdue: 4,
       today: 7,
       upcoming: 12,
       gaps: 2,
     });
+  });
+
+  it('scopes the gap count to the same user as the date buckets', async () => {
+    // A badge counting everyone's gaps while the list shows only mine is how
+    // people learn to distrust the numbers.
+    h.followupRepo.summaryCounts = anyFn().mockResolvedValue({ overdue: 0, today: 0, upcoming: 0 });
+    h.followupRepo.findGaps = anyFn().mockResolvedValue([
+      { kind: 'property', attributedUserId: 'user-1' },
+      { kind: 'property', attributedUserId: 'someone-else' },
+      { kind: 'customer', attributedUserId: null },
+    ]);
+
+    expect((await h.service.summary('user-1')).gaps).toBe(1);
+    expect((await h.service.summary(null)).gaps).toBe(3);
   });
 });
