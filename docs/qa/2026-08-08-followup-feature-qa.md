@@ -353,10 +353,30 @@ Check at **1440px, 1024px, 768px, 375px**:
 
 ---
 
-## 10. Known issues — already found, do not re-report
+## 10. Known issues — ALL FIXED
 
-Confirmed before QA started. Re-test after they are fixed; report only if the
-behaviour differs from what is described.
+All five were fixed after the first QA pass. **Re-test each and confirm the new
+behaviour**; report only if it differs from the "Now" column.
+
+| ID | Was | Now |
+|---|---|---|
+| **K-01** | No Owner column on either Follow-ups tab | Owner column present, showing the assignee |
+| **K-02** | Rows 42px without an action button, 50px with one | Uniformly 50px — every row carries the menu |
+| **K-03** | Tabs offered only Complete | Complete + Reschedule / Reassign / Cancel, same as /followups |
+| **K-04** | Priority column read "Normal" on every row | Removed; Owner uses the width |
+| **K-05** | Long subjects wrapped and grew the row | Truncated with ellipsis, full text in tooltip |
+
+Two further defects were found and fixed in the same pass — **re-test these
+explicitly, neither was in the original plan**:
+
+| ID | Issue | Now |
+|---|---|---|
+| **K-06** | The complete dialog's "Not interested → Mark lost" action was **dead code** — nothing passed `onMarkLost`, so it could never render. The first QA pass recorded C-05 as passing by quoting a different element. | Wired from both tabs. Re-run **C-05** and confirm a **Mark lost** button appears in the dialog footer and opens the real dialog. |
+| **K-07** | Dialog titles had **zero padding** and form fields sat 6px apart instead of 20px, because the app theme's rules collide with raw MUI primitives. | All dialogs use the house MUIDialog kit. Measured: header/footer `16px 24px`, body `24px`, field gaps a uniform 20px. |
+
+### Known issues from the original pass, superseded
+
+The list below is kept for history only — all are fixed above.
 
 | ID | Issue | Severity | Where |
 |---|---|---|---|
