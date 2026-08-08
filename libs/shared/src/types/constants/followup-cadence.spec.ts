@@ -1,7 +1,7 @@
 import { describe, it, expect } from '@jest/globals';
 
-import { LeadTemperature } from '../enums/customer.enum';
 import { nextFollowupDate, LEAD_TEMPERATURE_CADENCE_DAYS } from './followup-cadence';
+import { LeadTemperature } from '../enums/customer.enum';
 
 describe('nextFollowupDate', () => {
   const from = new Date('2026-08-08T10:30:00.000Z');
