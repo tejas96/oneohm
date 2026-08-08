@@ -375,8 +375,15 @@ export class CustomerPropertyResponseDto {
    *
    * Computed server-side with the shared predicate so the dot cannot disagree
    * with the chip count or the gaps tab.
+   *
+   * Optional, not required: only endpoints that enrich via the shared batch
+   * lookup (findAll, findByCustomer, findById) populate this. Endpoints that
+   * return the bare entity (create, update, updateTemperature, markLost,
+   * findMyProperties, findByTemperature) leave it undefined, and this DTO is
+   * @Exclude()-by-default so an absent value is simply dropped rather than
+   * serialized as a lie.
    */
   @Expose()
-  @ApiProperty({ description: 'Open site with no pending followup' })
-  needsFollowup!: boolean;
+  @ApiPropertyOptional({ description: 'Open site with no pending followup' })
+  needsFollowup?: boolean;
 }

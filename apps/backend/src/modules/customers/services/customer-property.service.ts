@@ -204,15 +204,29 @@ export class CustomerPropertyService {
 
   /**
    * Find property by ID
+   *
+   * Enriches with the shared follow-up predicate (via the same batch lookup
+   * `findAll`/`findByCustomer` use, single-element array) so `needsFollowup`
+   * is always present on the single-property response and never silently
+   * dropped by the DTO's @Exclude()-by-default.
    */
-  async findById(id: string): Promise<CustomerPropertyEntity> {
+  async findById(id: string): Promise<PropertyWithQuoteInfo> {
     const property = await this.propertyRepository.findByIdAndOrganization(id);
 
     if (!property) {
       throw new NotFoundException(`Property with ID '${id}' not found`);
     }
 
-    return property;
+    const followupStateMap = await this.propertyRepository.findFollowupStateByPropertyIds([
+      property.id,
+    ]);
+    const followupState = followupStateMap.get(property.id);
+
+    return {
+      ...property,
+      nextFollowupAt: followupState?.nextAt ?? undefined,
+      needsFollowup: followupState?.needsFollowup ?? false,
+    };
   }
 
   /**

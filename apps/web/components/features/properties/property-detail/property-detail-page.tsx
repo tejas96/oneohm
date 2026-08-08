@@ -28,7 +28,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { CustomerStatus, FollowupStatus, PropertyStatus, QuoteStatus } from '@tejas96/shared/types';
+import { CustomerStatus, FollowupStatus } from '@tejas96/shared/types';
 import dynamic from 'next/dynamic';
 import NextLink from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -243,11 +243,6 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   const nextFollowup = [...pendingFollowups].sort(
     (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
   )[0];
-  /** Converted, lost, or already won — nobody owes this site a chase. */
-  const isLeadClosed =
-    property?.status === PropertyStatus.CONVERTED ||
-    property?.status === PropertyStatus.LOST ||
-    property?.latestQuoteStatus === QuoteStatus.ACCEPTED;
   const attentionItems = useMemo(() => {
     const items: { id: string; label: string; tab?: string }[] = [];
     if (overdueFollowups.length > 0) {
@@ -335,15 +330,23 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
        * An open lead with nothing pending is the state this whole feature
        * exists to prevent, so it reads as a problem rather than an empty dash.
        * Converted and lost sites are finished — no chase is owed there.
+       *
+       * Driven by the server-computed `needsFollowup` flag (shared predicate
+       * in followup-predicates.ts) rather than re-deriving "closed" from
+       * status/latestQuoteStatus here — a re-derived condition can drift from
+       * the chip/dot definition (e.g. a re-quote after acceptance), flipping
+       * this tile red and clickable for a site the rest of the feature
+       * already excludes.
        */
       label: 'Next Follow-up',
       value: nextFollowup
         ? formatDate(nextFollowup.scheduledAt)
-        : isLeadClosed
-          ? '—'
-          : 'None scheduled',
-      tone: !nextFollowup && !isLeadClosed ? ('error' as const) : ('default' as const),
-      onClick: !nextFollowup && !isLeadClosed ? () => setFollowupDrawerOpen(true) : undefined,
+        : property.needsFollowup
+          ? 'None scheduled'
+          : '—',
+      tone: !nextFollowup && property.needsFollowup ? ('error' as const) : ('default' as const),
+      onClick:
+        !nextFollowup && property.needsFollowup ? () => setFollowupDrawerOpen(true) : undefined,
     },
     {
       label: 'Project',

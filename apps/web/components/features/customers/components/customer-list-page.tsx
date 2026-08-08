@@ -240,6 +240,8 @@ function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilte
       typeof raw.propertyConsumerNumber === 'string' && raw.propertyConsumerNumber
         ? raw.propertyConsumerNumber
         : undefined,
+    needsFollowup:
+      filters.needsFollowup === 'true' || filters.needsFollowup === true ? true : undefined,
   };
 }
 
@@ -1005,7 +1007,25 @@ export function CustomerListPage(): JSX.Element {
     [overviewStats?.needsFollowup],
   );
 
-  const [needsFollowupActive, setNeedsFollowupActive] = useState(false);
+  /**
+   * `needs-followup` is a shortcut into the same URL filter state as every
+   * other filter on this page — not a parallel piece of React state — so
+   * toggling it inherits the page-0 reset and URL persistence that
+   * `urlState.setFilters` already provides.
+   */
+  const needsFollowupActive =
+    urlState.state.filters.needsFollowup === 'true' ||
+    urlState.state.filters.needsFollowup === true;
+
+  const handleSecondaryQuickFilterChange = useCallback(
+    (key: string) => {
+      const next = { ...filtersRef.current };
+      if (key === 'needs-followup') next.needsFollowup = 'true';
+      else delete next.needsFollowup;
+      urlState.setFilters(reconcileContradictoryCustomerFilters(next, 'needsFollowup'));
+    },
+    [urlState.setFilters],
+  );
 
   // Memoize sorted base employee options
   const baseEmployeeOptions = useMemo(() => {
@@ -1309,7 +1329,6 @@ export function CustomerListPage(): JSX.Element {
     search: urlState.state.search || undefined,
     sortBy: toApiSortField(urlState.state.sortModel),
     sortOrder: toApiSortOrder(urlState.state.sortModel),
-    needsFollowup: needsFollowupActive || undefined,
     ...toCustomerFilters(urlState.state.filters),
   });
 
@@ -1441,7 +1460,7 @@ export function CustomerListPage(): JSX.Element {
         onQuickFilterChange={handleQuickFilterChange}
         secondaryQuickFilters={needsFollowupFilters}
         activeSecondaryQuickFilter={needsFollowupActive ? 'needs-followup' : ''}
-        onSecondaryQuickFilterChange={(key) => setNeedsFollowupActive(key === 'needs-followup')}
+        onSecondaryQuickFilterChange={handleSecondaryQuickFilterChange}
         filterColumns={filterColumns}
         filterModel={urlState.state.filters}
         onFilterChange={handleFilterChange}
