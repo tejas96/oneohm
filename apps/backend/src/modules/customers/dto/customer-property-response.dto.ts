@@ -357,4 +357,26 @@ export class CustomerPropertyResponseDto {
   @Expose()
   @Type(() => QuoteResponseDto)
   quotes?: QuoteResponseDto[];
+
+  // ==================== Follow-up Info (enriched via shared predicate) ====================
+
+  /**
+   * Earliest pending followup, or absent when nothing is scheduled.
+   *
+   * This DTO is @Exclude()-by-default, so a field without @Expose() is silently
+   * dropped from every response.
+   */
+  @Expose()
+  @ApiPropertyOptional({ description: 'Earliest pending followup for this site' })
+  nextFollowupAt?: Date;
+
+  /**
+   * True when this open site has nobody owing it an action.
+   *
+   * Computed server-side with the shared predicate so the dot cannot disagree
+   * with the chip count or the gaps tab.
+   */
+  @Expose()
+  @ApiProperty({ description: 'Open site with no pending followup' })
+  needsFollowup!: boolean;
 }

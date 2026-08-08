@@ -8,6 +8,7 @@ import {
 } from '@tejas96/shared/types';
 import { type EntityManager, IsNull, Repository } from 'typeorm';
 
+import { PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
 import { PropertyQueryDto } from '../dto/property-query.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 
@@ -213,6 +214,44 @@ export class CustomerPropertyRepository {
       .getRawMany<{ propertyId: string; projectId: string }>();
 
     return new Map(rows.map((row) => [row.propertyId, row.projectId]));
+  }
+
+  /**
+   * Next pending followup per property, and whether the site needs one.
+   *
+   * `needsFollowup` is evaluated with the SHARED predicate rather than derived
+   * on the client from a null date. Deriving it would omit the accepted-quote
+   * exclusion, so a site with a won quote that is not yet converted would show
+   * a red dot while being absent from both the chip and the gaps tab — three
+   * such sites exist on current data. The dot must not disagree with the
+   * numbers beside it.
+   *
+   * Batched like the other enrichments here; a per-row query would be N+1
+   * across a customer's whole portfolio. "Next" stays derived — nothing is
+   * stored on the property.
+   */
+  async findFollowupStateByPropertyIds(
+    propertyIds: string[],
+  ): Promise<Map<string, { nextAt: Date | null; needsFollowup: boolean }>> {
+    if (propertyIds.length === 0) return new Map();
+
+    const rows: Array<{ id: string; next_at: Date | null; needs_followup: boolean }> =
+      await this.repository.manager.query(
+        `
+      SELECT p.id,
+             (SELECT MIN(f.scheduled_at) FROM followups f
+               WHERE f.property_id = p.id AND f.deleted_at IS NULL AND f.status = 'pending')
+               AS next_at,
+             (${PROPERTY_NEEDS_FOLLOWUP('p')}) AS needs_followup
+        FROM customer_properties p
+       WHERE p.id = ANY($1::uuid[])
+      `,
+        [propertyIds],
+      );
+
+    return new Map(
+      rows.map((row) => [row.id, { nextAt: row.next_at, needsFollowup: row.needs_followup }]),
+    );
   }
 
   async countByTemperature(temperature: LeadTemperature): Promise<number> {

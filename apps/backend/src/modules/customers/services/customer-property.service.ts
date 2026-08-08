@@ -61,6 +61,8 @@ type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   latestQuoteDate?: Date;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;
+  nextFollowupAt?: Date;
+  needsFollowup?: boolean;
 };
 
 /**
@@ -236,6 +238,8 @@ export class CustomerPropertyService {
     const projectIdMap = await this.propertyRepository.findProjectIdsByPropertyIds(propertyIds);
     const activeLoanPropertyIds =
       await this.loanApplicationRepository.findPropertyIdsWithActiveLoans(propertyIds);
+    const followupStateMap =
+      await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
 
     const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
@@ -252,6 +256,8 @@ export class CustomerPropertyService {
           quoteInfo?.totalWattageWp != null && quoteInfo.totalWattageWp > 0
             ? Number(quoteInfo.totalWattageWp) / 1000
             : quoteInfo?.systemSizeKw,
+        nextFollowupAt: followupStateMap.get(property.id)?.nextAt ?? undefined,
+        needsFollowup: followupStateMap.get(property.id)?.needsFollowup ?? false,
       };
     });
 
@@ -285,6 +291,8 @@ export class CustomerPropertyService {
     // Query 2: Get latest quotes for all properties (single batch query)
     const propertyIds = properties.map((p) => p.id);
     const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
+    const followupStateMap =
+      await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
 
     // Enrich properties with quote data
     return properties.map((property) => {
@@ -300,6 +308,8 @@ export class CustomerPropertyService {
           quoteInfo?.totalWattageWp != null && quoteInfo.totalWattageWp > 0
             ? Number(quoteInfo.totalWattageWp) / 1000
             : quoteInfo?.systemSizeKw,
+        nextFollowupAt: followupStateMap.get(property.id)?.nextAt ?? undefined,
+        needsFollowup: followupStateMap.get(property.id)?.needsFollowup ?? false,
       };
     });
   }
