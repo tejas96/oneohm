@@ -32,7 +32,6 @@ export class AuditLogService {
     entityId: string,
     newValues: Record<string, unknown>,
     userId?: string,
-    organizationId?: string,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
     await this.repository.create({
@@ -41,7 +40,6 @@ export class AuditLogService {
       action: 'create',
       newValues,
       userId: userId || null,
-      organizationId: organizationId || null,
       metadata: metadata || null,
       oldValues: null,
       ipAddress: null,
@@ -58,7 +56,6 @@ export class AuditLogService {
     oldValues: Record<string, unknown>,
     newValues: Record<string, unknown>,
     userId?: string,
-    organizationId?: string,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
     await this.repository.create({
@@ -68,7 +65,6 @@ export class AuditLogService {
       oldValues,
       newValues,
       userId: userId || null,
-      organizationId: organizationId || null,
       metadata: metadata || null,
       ipAddress: null,
       userAgent: null,
@@ -83,7 +79,6 @@ export class AuditLogService {
     entityId: string,
     oldValues: Record<string, unknown>,
     userId?: string,
-    organizationId?: string,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
     await this.repository.create({
@@ -92,7 +87,6 @@ export class AuditLogService {
       action: 'delete',
       oldValues,
       userId: userId || null,
-      organizationId: organizationId || null,
       metadata: metadata || null,
       newValues: null,
       ipAddress: null,
@@ -154,11 +148,8 @@ export class AuditLogService {
   /**
    * Get all audit logs for an organization
    */
-  async findByOrganization(
-    organizationId: string,
-    limit: number = 100,
-  ): Promise<AuditLogResponseDto[]> {
-    const auditLogs = await this.repository.findByOrganization(organizationId, limit);
+  async findByOrganization(limit: number = 100): Promise<AuditLogResponseDto[]> {
+    const auditLogs = await this.repository.findByOrganization(limit);
 
     return plainToInstance(AuditLogResponseDto, auditLogs, {
       excludeExtraneousValues: true,
@@ -179,15 +170,15 @@ export class AuditLogService {
   /**
    * Get action statistics
    */
-  async getActionStats(organizationId?: string): Promise<Record<string, number>> {
-    return this.repository.getActionStats(organizationId);
+  async getActionStats(): Promise<Record<string, number>> {
+    return this.repository.getActionStats();
   }
 
   /**
    * Get entity type statistics
    */
-  async getEntityTypeStats(organizationId?: string): Promise<Record<string, number>> {
-    return this.repository.getEntityTypeStats(organizationId);
+  async getEntityTypeStats(): Promise<Record<string, number>> {
+    return this.repository.getEntityTypeStats();
   }
 
   /**

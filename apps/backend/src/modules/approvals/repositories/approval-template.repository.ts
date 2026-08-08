@@ -28,7 +28,6 @@ export class ApprovalTemplateRepository {
    * Find all templates for an organization
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -40,10 +39,9 @@ export class ApprovalTemplateRepository {
     const query = this.repository
       .createQueryBuilder('template')
       .leftJoinAndSelect('template.stages', 'stage')
-      .where('template.organization_id = :organizationId', { organizationId })
       .andWhere('template.deleted_at IS NULL')
-      .orderBy('stage.stage_order', 'ASC')
-      .addOrderBy('template.created_at', 'DESC');
+      .orderBy('stage.stageOrder', 'ASC')
+      .addOrderBy('template.createdAt', 'DESC');
 
     // Apply filters
     if (filters?.workflowType) {
@@ -77,11 +75,10 @@ export class ApprovalTemplateRepository {
   /**
    * Find template by ID
    */
-  async findById(id: string, organizationId: string): Promise<ApprovalTemplateEntity | null> {
+  async findById(id: string): Promise<ApprovalTemplateEntity | null> {
     return this.repository.findOne({
       where: {
         id,
-        organizationId,
         deletedAt: IsNull(),
       },
       relations: ['stages'],
@@ -96,11 +93,10 @@ export class ApprovalTemplateRepository {
   /**
    * Find template by code
    */
-  async findByCode(code: string, organizationId: string): Promise<ApprovalTemplateEntity | null> {
+  async findByCode(code: string): Promise<ApprovalTemplateEntity | null> {
     return this.repository.findOne({
       where: {
         code,
-        organizationId,
         deletedAt: IsNull(),
       },
       relations: ['stages'],
@@ -115,14 +111,10 @@ export class ApprovalTemplateRepository {
   /**
    * Find templates by workflow type
    */
-  async findByWorkflowType(
-    workflowType: ApprovalWorkflowType,
-    organizationId: string,
-  ): Promise<ApprovalTemplateEntity[]> {
+  async findByWorkflowType(workflowType: ApprovalWorkflowType): Promise<ApprovalTemplateEntity[]> {
     return this.repository.find({
       where: {
         workflowType,
-        organizationId,
         isActive: true,
         deletedAt: IsNull(),
       },
@@ -138,21 +130,16 @@ export class ApprovalTemplateRepository {
   /**
    * Update template
    */
-  async update(
-    id: string,
-    organizationId: string,
-    updateData: Record<string, unknown>,
-  ): Promise<ApprovalTemplateEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<ApprovalTemplateEntity> {
     await this.repository.update(
       {
         id,
-        organizationId,
         deletedAt: IsNull(),
       },
       updateData,
     );
 
-    const updated = await this.findById(id, organizationId);
+    const updated = await this.findById(id);
     if (!updated) {
       throw new Error('Template not found after update');
     }
@@ -162,11 +149,10 @@ export class ApprovalTemplateRepository {
   /**
    * Soft delete template
    */
-  async softDelete(id: string, organizationId: string, deletedBy: string): Promise<void> {
+  async softDelete(id: string, deletedBy: string): Promise<void> {
     await this.repository.update(
       {
         id,
-        organizationId,
         deletedAt: IsNull(),
       },
       {
@@ -179,12 +165,11 @@ export class ApprovalTemplateRepository {
   /**
    * Get statistics by workflow type
    */
-  async countByWorkflowType(organizationId: string): Promise<Record<ApprovalWorkflowType, number>> {
+  async countByWorkflowType(): Promise<Record<ApprovalWorkflowType, number>> {
     const result = await this.repository
       .createQueryBuilder('template')
       .select('template.workflow_type', 'workflowType')
       .addSelect('COUNT(template.id)', 'count')
-      .where('template.organization_id = :organizationId', { organizationId })
       .andWhere('template.deleted_at IS NULL')
       .groupBy('template.workflow_type')
       .getRawMany<{ workflowType: ApprovalWorkflowType; count: string }>();
@@ -204,10 +189,9 @@ export class ApprovalTemplateRepository {
   /**
    * Get active templates count
    */
-  async countActive(organizationId: string): Promise<number> {
+  async countActive(): Promise<number> {
     return this.repository.count({
       where: {
-        organizationId,
         isActive: true,
         deletedAt: IsNull(),
       },

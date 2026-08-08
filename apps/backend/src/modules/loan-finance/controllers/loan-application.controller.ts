@@ -21,7 +21,6 @@ import {
 } from '@nestjs/swagger';
 import type { PaginatedResponse } from '@tejas96/shared/types';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -60,10 +59,9 @@ export class LoanApplicationController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async create(
     @Body() createDto: CreateLoanApplicationDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: { id: string },
   ): Promise<LoanApplicationResponseDto> {
-    return this.loanApplicationService.create(organizationId, {
+    return this.loanApplicationService.create({
       ...createDto,
       createdBy: user.id,
     });
@@ -92,11 +90,10 @@ export class LoanApplicationController {
     description: 'Paginated list of loan applications',
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<LoanApplicationResponseDto>> {
-    const result = await this.loanApplicationService.findAll(organizationId, page, limit);
+    const result = await this.loanApplicationService.findAll(page, limit);
     return toPaginatedResponse(LoanApplicationResponseDto, result.data, result.total, page, limit);
   }
 
@@ -114,9 +111,8 @@ export class LoanApplicationController {
   })
   async findByProperty(
     @Param('propertyId', ParseUUIDPipe) propertyId: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<LoanApplicationResponseDto | null> {
-    return this.loanApplicationService.findByProperty(organizationId, propertyId);
+    return this.loanApplicationService.findByProperty(propertyId);
   }
 
   @Get('customer/:customerId')
@@ -129,9 +125,8 @@ export class LoanApplicationController {
   })
   async findByCustomer(
     @Param('customerId', ParseUUIDPipe) customerId: string,
-    @OrganizationContext() organizationId: string,
   ): Promise<LoanApplicationResponseDto[]> {
-    return this.loanApplicationService.findByCustomer(organizationId, customerId);
+    return this.loanApplicationService.findByCustomer(customerId);
   }
 
   @Get(':id')
@@ -143,11 +138,8 @@ export class LoanApplicationController {
     type: LoanApplicationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Loan application not found' })
-  async findById(
-    @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
-  ): Promise<LoanApplicationResponseDto> {
-    return this.loanApplicationService.findById(organizationId, id);
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<LoanApplicationResponseDto> {
+    return this.loanApplicationService.findById(id);
   }
 
   // ============================================
@@ -167,10 +159,9 @@ export class LoanApplicationController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateLoanApplicationDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: { id: string },
   ): Promise<LoanApplicationResponseDto> {
-    return this.loanApplicationService.update(organizationId, id, {
+    return this.loanApplicationService.update(id, {
       ...updateDto,
       updatedBy: user.id,
     });
@@ -189,10 +180,9 @@ export class LoanApplicationController {
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateLoanStatusDto,
-    @OrganizationContext() organizationId: string,
     @CurrentUser() user: { id: string },
   ): Promise<LoanApplicationResponseDto> {
-    return this.loanApplicationService.updateStatus(organizationId, id, statusDto.status, user.id);
+    return this.loanApplicationService.updateStatus(id, statusDto.status, user.id);
   }
 
   // ============================================
@@ -204,11 +194,8 @@ export class LoanApplicationController {
   @ApiParam({ name: 'id', description: 'Loan Application UUID' })
   @ApiResponse({ status: 200, description: 'Loan application deleted successfully' })
   @ApiResponse({ status: 404, description: 'Loan application not found' })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-    @OrganizationContext() organizationId: string,
-  ): Promise<{ message: string }> {
-    await this.loanApplicationService.delete(organizationId, id);
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
+    await this.loanApplicationService.delete(id);
     return { message: 'Loan application deleted successfully' };
   }
 }

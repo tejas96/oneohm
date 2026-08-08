@@ -73,7 +73,6 @@ export function SelectedTeamList({
                 ({
                   userId: member.userId,
                   id: '',
-                  organizationId: '',
                   status: 'active',
                 } as EmployeeListItem)
               }

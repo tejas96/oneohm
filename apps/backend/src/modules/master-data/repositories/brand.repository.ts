@@ -12,22 +12,16 @@ export class BrandRepository {
     private readonly repository: Repository<BrandEntity>,
   ) {}
 
-  async findAll(
-    organizationId: string,
-    filters?: {
-      productTypeId?: string;
-      isActive?: boolean;
-      search?: string;
-      page?: number;
-      limit?: number;
-      sortBy?: string;
-      sortOrder?: 'ASC' | 'DESC';
-    },
-  ): Promise<{ data: BrandEntity[]; total: number }> {
-    const query = this.repository
-      .createQueryBuilder('brand')
-      .where('brand.organization_id = :organizationId', { organizationId })
-      .andWhere('brand.deleted_at IS NULL');
+  async findAll(filters?: {
+    productTypeId?: string;
+    isActive?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<{ data: BrandEntity[]; total: number }> {
+    const query = this.repository.createQueryBuilder('brand').andWhere('brand.deleted_at IS NULL');
 
     if (filters?.isActive !== undefined) {
       query.andWhere('brand.is_active = :isActive', { isActive: filters.isActive });
@@ -69,42 +63,37 @@ export class BrandRepository {
     return { data, total };
   }
 
-  async findById(id: string, organizationId: string): Promise<BrandEntity | null> {
+  async findById(id: string): Promise<BrandEntity | null> {
     return this.repository.findOne({
-      where: { id, organizationId, deletedAt: IsNull() },
+      where: { id, deletedAt: IsNull() },
     });
   }
 
-  async findByName(name: string, organizationId: string): Promise<BrandEntity | null> {
+  async findByName(name: string): Promise<BrandEntity | null> {
     return this.repository
       .createQueryBuilder('brand')
-      .where('brand.organization_id = :organizationId', { organizationId })
       .andWhere('LOWER(brand.name) = LOWER(:name)', { name })
       .andWhere('brand.deleted_at IS NULL')
       .getOne();
   }
 
-  async create(organizationId: string, data: Partial<BrandEntity>): Promise<BrandEntity> {
-    const entity = this.repository.create({ ...data, organizationId });
+  async create(data: Partial<BrandEntity>): Promise<BrandEntity> {
+    const entity = this.repository.create({ ...data });
     return this.repository.save(entity);
   }
 
-  async update(
-    id: string,
-    organizationId: string,
-    data: Partial<BrandEntity>,
-  ): Promise<BrandEntity> {
-    await this.repository.update({ id, organizationId }, {
+  async update(id: string, data: Partial<BrandEntity>): Promise<BrandEntity> {
+    await this.repository.update({ id }, {
       ...data,
       updatedAt: new Date(),
     } as QueryDeepPartialEntity<BrandEntity>);
-    const updated = await this.findById(id, organizationId);
+    const updated = await this.findById(id);
     if (!updated) throw new Error('Brand not found after update');
     return updated;
   }
 
-  async softDelete(id: string, organizationId: string): Promise<void> {
-    await this.repository.update({ id, organizationId }, {
+  async softDelete(id: string): Promise<void> {
+    await this.repository.update({ id }, {
       deletedAt: new Date(),
     } as QueryDeepPartialEntity<BrandEntity>);
   }

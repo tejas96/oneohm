@@ -13,7 +13,6 @@ import type { DiscomResponse } from './use-discoms';
 import type { CreatePropertyFormData } from '../schemas/property.schema';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Query Keys
@@ -22,12 +21,11 @@ import { useAuth } from '@/providers/auth-provider';
 export { propertyKeys } from './property-keys';
 
 export const customerKeys = {
-  all: (orgId?: string) => ['customers', orgId] as const,
-  lists: (orgId?: string) => [...customerKeys.all(orgId), 'list'] as const,
-  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
-    [...customerKeys.lists(orgId), filters] as const,
-  details: (orgId?: string) => [...customerKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) => [...customerKeys.details(orgId), id] as const,
+  all: () => ['customers'] as const,
+  lists: () => [...customerKeys.all(), 'list'] as const,
+  list: (filters: Record<string, unknown>) => [...customerKeys.lists(), filters] as const,
+  details: () => [...customerKeys.all(), 'detail'] as const,
+  detail: (id: string) => [...customerKeys.details(), id] as const,
 };
 
 // ============================================================================
@@ -37,7 +35,6 @@ export const customerKeys = {
 export interface PropertyResponse {
   id: string;
   customerId: string;
-  organizationId: string;
   propertyName?: string;
   propertyType: string;
   address?: string;
@@ -113,26 +110,22 @@ export function useCreateProperty(): UseMutationResult<
   CreatePropertyWithDocsData
 > {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (data: CreatePropertyWithDocsData): Promise<PropertyResponse> => {
       const { data: response } = await apiClient.post<PropertyResponse>(
         '/customer-properties',
         data,
-        {
-          headers: { 'X-Organization-Id': organizationId },
-        },
+        {},
       );
       return response;
     },
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
       void queryClient.invalidateQueries({
-        queryKey: customerKeys.detail(organizationId, variables.customerId),
+        queryKey: customerKeys.detail(variables.customerId),
       });
-      void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
     },
   });
 }
@@ -145,19 +138,15 @@ export function useCreateProperty(): UseMutationResult<
  * Hook to fetch customers list for selector dropdown
  */
 export function useCustomersList(enabled = true) {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   return useQuery({
-    queryKey: customerKeys.lists(organizationId),
+    queryKey: customerKeys.lists(),
     queryFn: async (): Promise<PaginatedResponse<CustomerResponse>> => {
       const { data } = await apiClient.get<PaginatedResponse<CustomerResponse>>('/customers', {
-        headers: { 'X-Organization-Id': organizationId },
         params: { limit: 100 },
       });
       return data;
     },
-    enabled: !!organizationId && enabled,
+    enabled: enabled,
   });
 }
 
@@ -169,17 +158,12 @@ export function useCustomersList(enabled = true) {
  * Hook to fetch a single customer by ID
  */
 export function useCustomerById(customerId: string | undefined) {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   return useQuery({
-    queryKey: customerKeys.detail(organizationId, customerId ?? ''),
+    queryKey: customerKeys.detail(customerId ?? ''),
     queryFn: async (): Promise<CustomerResponse> => {
-      const { data } = await apiClient.get<CustomerResponse>(`/customers/${customerId}`, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      const { data } = await apiClient.get<CustomerResponse>(`/customers/${customerId}`, {});
       return data;
     },
-    enabled: !!organizationId && !!customerId,
+    enabled: !!customerId,
   });
 }

@@ -32,7 +32,6 @@ export class PurchaseOrderStatsRepository {
    * CANCELLED excluded.
    */
   async spendTrend(
-    organizationId: string,
     fromDate: string,
     toDate: string,
     bucket: StatsBucket,
@@ -42,7 +41,6 @@ export class PurchaseOrderStatsRepository {
       .createQueryBuilder('po')
       .select(dateExpr, 'date')
       .addSelect('SUM(po.total_amount)', 'total')
-      .where('po.organizationId = :organizationId', { organizationId })
       .andWhere('po.deletedAt IS NULL')
       .andWhere('po.po_date BETWEEN :fromDate AND :toDate', { fromDate, toDate })
       .andWhere('po.status != :cancelled', { cancelled: PurchaseOrderStatus.CANCELLED })
@@ -57,7 +55,6 @@ export class PurchaseOrderStatsRepository {
    * Top vendors by spend (sum of PO total_amount, CANCELLED excluded).
    */
   async topVendors(
-    organizationId: string,
     fromDate: string,
     toDate: string,
     limit: number,
@@ -69,7 +66,6 @@ export class PurchaseOrderStatsRepository {
       .addSelect('vendor.name', 'name')
       .addSelect('SUM(po.total_amount)', 'value')
       .addSelect('COUNT(*)', 'orderCount')
-      .where('po.organizationId = :organizationId', { organizationId })
       .andWhere('po.deletedAt IS NULL')
       .andWhere('po.po_date BETWEEN :fromDate AND :toDate', { fromDate, toDate })
       .andWhere('po.status != :cancelled', { cancelled: PurchaseOrderStatus.CANCELLED })
@@ -92,7 +88,6 @@ export class PurchaseOrderStatsRepository {
    * exclude rows with no warehouse so the chart is meaningful).
    */
   async spendByWarehouse(
-    organizationId: string,
     fromDate: string,
     toDate: string,
     limit: number,
@@ -104,7 +99,6 @@ export class PurchaseOrderStatsRepository {
       .addSelect('warehouse.name', 'name')
       .addSelect('SUM(po.total_amount)', 'value')
       .addSelect('COUNT(*)', 'orderCount')
-      .where('po.organizationId = :organizationId', { organizationId })
       .andWhere('po.deletedAt IS NULL')
       .andWhere('po.po_date BETWEEN :fromDate AND :toDate', { fromDate, toDate })
       .andWhere('po.status != :cancelled', { cancelled: PurchaseOrderStatus.CANCELLED })
@@ -128,7 +122,6 @@ export class PurchaseOrderStatsRepository {
    * Vendors with zero outstanding are filtered out.
    */
   async outstandingByVendor(
-    organizationId: string,
     limit: number,
   ): Promise<Array<{ id: string; name: string; value: number; orderCount: number }>> {
     const rows = await this.repository
@@ -138,7 +131,6 @@ export class PurchaseOrderStatsRepository {
       .addSelect('vendor.name', 'name')
       .addSelect('SUM(po.total_amount - po.paid_amount)', 'value')
       .addSelect('COUNT(*)', 'orderCount')
-      .where('po.organizationId = :organizationId', { organizationId })
       .andWhere('po.deletedAt IS NULL')
       .andWhere('po.status != :cancelled', { cancelled: PurchaseOrderStatus.CANCELLED })
       .groupBy('vendor.id')

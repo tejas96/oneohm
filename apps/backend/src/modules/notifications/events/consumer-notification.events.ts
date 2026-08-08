@@ -20,7 +20,6 @@ export const CONSUMER_EVENTS = {
 
 export class PropertyCreatedEvent {
   constructor(
-    public readonly organizationId: string,
     public readonly propertyId: string,
     public readonly customerId: string,
     public readonly propertyName?: string,
@@ -29,7 +28,6 @@ export class PropertyCreatedEvent {
 
 export class QuotationCreatedEvent {
   constructor(
-    public readonly organizationId: string,
     public readonly quoteId: string,
     public readonly propertyId: string,
     public readonly customerId: string,
@@ -39,7 +37,6 @@ export class QuotationCreatedEvent {
 
 export class ProjectOnboardedEvent {
   constructor(
-    public readonly organizationId: string,
     public readonly projectId: string,
     public readonly propertyId: string,
     public readonly projectName: string,
@@ -49,7 +46,6 @@ export class ProjectOnboardedEvent {
 
 export class ProjectCompletedEvent {
   constructor(
-    public readonly organizationId: string,
     public readonly projectId: string,
     public readonly propertyId: string,
     public readonly projectName: string,
@@ -58,7 +54,6 @@ export class ProjectCompletedEvent {
 
 export class ChatMessageEvent {
   constructor(
-    public readonly organizationId: string,
     public readonly projectId: string,
     public readonly propertyId: string,
     public readonly messageId: string,

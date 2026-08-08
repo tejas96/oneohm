@@ -180,9 +180,8 @@ export interface TaskActivityEntry {
  * Project
  * Represents a solar installation project
  *
- * Note: organizationId, customerId, siteAddress, and siteCoordinates are
+ * Note: customerId, siteAddress, and siteCoordinates are
  * derived from the required property relation:
- * - property.organizationId
  * - property.customerId
  * - property.address
  *

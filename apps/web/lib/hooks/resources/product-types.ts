@@ -31,7 +31,6 @@ export interface ProductTypeAttribute {
 
 export interface ProductType {
   id: string;
-  organizationId: string;
   name: string;
   code: string;
   description?: string;

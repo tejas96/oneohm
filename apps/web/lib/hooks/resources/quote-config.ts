@@ -6,7 +6,6 @@ import { useResourceDetail, useResourceMutations } from '../core';
 
 export interface QuoteConfig {
   id: string;
-  organizationId: string;
   defaultValidityDays: number;
   maxVersions: number;
   defaultCompletionWeeks: number;

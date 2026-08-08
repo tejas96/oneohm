@@ -143,7 +143,7 @@ export async function migrateUsersToIAM(dataSource: DataSource): Promise<void> {
           continue;
         }
 
-        // Get IAM role ID for this organization
+        // Get IAM role ID
         const orgRoles = roleMap[orgId];
         if (!orgRoles) {
           console.log(`❌ User ${userRole.user_id}: No IAM roles found for organization ${orgId}`);

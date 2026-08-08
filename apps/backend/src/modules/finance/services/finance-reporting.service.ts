@@ -59,8 +59,8 @@ export class FinanceReportingService {
    * not belong to a month, and conflating the two is how a dashboard ends up
    * claiming a customer "owes ₹X in March".
    */
-  async getKpis(organizationId: string, from: string, to: string): Promise<FinanceKpis> {
-    const [row] = await this.dataSource.query(KPIS_SQL, [organizationId, from, to]);
+  async getKpis(from: string, to: string): Promise<FinanceKpis> {
+    const [row] = await this.dataSource.query(KPIS_SQL, [from, to]);
     return {
       revenueInRange: rs(row?.revenuePaise),
       spendInRange: rs(row?.spendPaise),
@@ -79,12 +79,11 @@ export class FinanceReportingService {
    * absent — a chart with gaps reads as missing data rather than as no activity.
    */
   async getCashFlow(
-    organizationId: string,
     from: string,
     to: string,
     grain: CashFlowGrain = 'month',
   ): Promise<Array<{ month: string; cashIn: number; cashOut: number; net: number }>> {
-    const rows = await this.dataSource.query(CASH_FLOW_SQL, [organizationId, from, to, grain]);
+    const rows = await this.dataSource.query(CASH_FLOW_SQL, [from, to, grain]);
     return rows.map((r: Record<string, unknown>) => ({
       month: String(r.bucket),
       cashIn: rs(r.cashInPaise),
@@ -94,11 +93,10 @@ export class FinanceReportingService {
   }
 
   async getSpendByCategory(
-    organizationId: string,
     from: string,
     to: string,
   ): Promise<Array<{ category: string; total: number }>> {
-    const rows = await this.dataSource.query(SPEND_BY_CATEGORY_SQL, [organizationId, from, to]);
+    const rows = await this.dataSource.query(SPEND_BY_CATEGORY_SQL, [from, to]);
     return rows.map((r: Record<string, unknown>) => ({
       category: String(r.category),
       total: rs(r.totalPaise),
@@ -106,13 +104,9 @@ export class FinanceReportingService {
   }
 
   async getTopCustomersOutstanding(
-    organizationId: string,
     limit = 5,
   ): Promise<Array<{ customerId: string; customerName: string; outstanding: number }>> {
-    const rows = await this.dataSource.query(TOP_CUSTOMERS_OUTSTANDING_SQL, [
-      organizationId,
-      limit,
-    ]);
+    const rows = await this.dataSource.query(TOP_CUSTOMERS_OUTSTANDING_SQL, [limit]);
     return rows.map((r: Record<string, unknown>) => ({
       customerId: String(r.customerId),
       customerName: (r.customerName as string) ?? 'Unknown',
@@ -126,19 +120,16 @@ export class FinanceReportingService {
    * Replaces the separate receipts and expenses queries, which duplicated their
    * filtering, sorting and pagination logic and had already drifted apart.
    */
-  async getEntries(
-    organizationId: string,
-    opts: {
-      direction?: 'in' | 'out' | null;
-      from?: string | null;
-      to?: string | null;
-      page?: number;
-      limit?: number;
-    },
-  ): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
+  async getEntries(opts: {
+    direction?: 'in' | 'out' | null;
+    from?: string | null;
+    to?: string | null;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
-    const params = [organizationId, opts.direction ?? null, opts.from ?? null, opts.to ?? null];
+    const params = [opts.direction ?? null, opts.from ?? null, opts.to ?? null];
 
     const [rows, [countRow]] = await Promise.all([
       this.dataSource.query(LEDGER_PAGE_SQL, [...params, limit, (page - 1) * limit]),
@@ -166,15 +157,14 @@ export class FinanceReportingService {
    * the view, so a written-off residual stops being chased.
    */
   async getReceivables(
-    organizationId: string,
     opts: { page?: number; limit?: number } = {},
   ): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
 
     const [rows, [countRow]] = await Promise.all([
-      this.dataSource.query(RECEIVABLES_SQL, [organizationId, limit, (page - 1) * limit]),
-      this.dataSource.query(RECEIVABLES_COUNT_SQL, [organizationId]),
+      this.dataSource.query(RECEIVABLES_SQL, [limit, (page - 1) * limit]),
+      this.dataSource.query(RECEIVABLES_COUNT_SQL, []),
     ]);
 
     return {

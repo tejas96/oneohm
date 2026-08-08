@@ -2,7 +2,6 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm
 
 import { BomItemEntity } from './bom-item.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -16,12 +15,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['entityType', 'entityId'], { unique: true })
 export class BomEntity extends BaseEntity {
   // ==================== Organization ====================
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
-
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   // ==================== Identity ====================
   @Column({ name: 'bom_number', type: 'varchar', length: 50, unique: true })

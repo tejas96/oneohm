@@ -36,7 +36,7 @@ export class PaymentRepository {
   async findById(id: string): Promise<PaymentEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'customer', 'reconciledByUser'],
+      relations: ['project', 'customer', 'reconciledByUser'],
     });
   }
 
@@ -44,21 +44,21 @@ export class PaymentRepository {
     return this.repository.find({
       where: { deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
-      relations: ['organization', 'project', 'customer'],
+      relations: ['project', 'customer'],
     });
   }
 
-  async findByOrganization(organizationId: string): Promise<PaymentEntity[]> {
+  async findByOrganization(): Promise<PaymentEntity[]> {
     return this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
       relations: ['project', 'customer'],
     });
   }
 
-  async findByProject(projectId: string, organizationId: string): Promise<PaymentEntity[]> {
+  async findByProject(projectId: string): Promise<PaymentEntity[]> {
     return this.repository.find({
-      where: { projectId, organizationId, deletedAt: IsNull() },
+      where: { projectId, deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
       relations: ['customer', 'reconciledByUser'],
     });
@@ -83,7 +83,7 @@ export class PaymentRepository {
   async findByPaymentNumber(paymentNumber: string): Promise<PaymentEntity | null> {
     return this.repository.findOne({
       where: { paymentNumber, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'customer'],
+      relations: ['project', 'customer'],
     });
   }
 
@@ -106,10 +106,7 @@ export class PaymentRepository {
   // ============================================
   // AGGREGATIONS & STATISTICS
   // ============================================
-  async getTotalAmountByProject(
-    projectId: string,
-    organizationId: string,
-  ): Promise<{
+  async getTotalAmountByProject(projectId: string): Promise<{
     totalExpected: number;
     totalPaid: number;
     pendingAmount: number;
@@ -119,7 +116,6 @@ export class PaymentRepository {
       .select('SUM(payment.expected_amount)', 'totalExpected')
       .addSelect('SUM(payment.paid_amount)', 'totalPaid')
       .where('payment.project_id = :projectId', { projectId })
-      .andWhere('payment.organization_id = :organizationId', { organizationId })
       .andWhere('payment.deleted_at IS NULL')
       .getRawOne<{ totalExpected: string | null; totalPaid: string | null }>();
 
@@ -133,7 +129,7 @@ export class PaymentRepository {
     };
   }
 
-  async getPaymentStatsByStatus(organizationId: string): Promise<
+  async getPaymentStatsByStatus(): Promise<
     Array<{
       status: PaymentTransactionStatus;
       count: number;
@@ -145,7 +141,6 @@ export class PaymentRepository {
       .select('payment.status', 'status')
       .addSelect('COUNT(payment.id)', 'count')
       .addSelect('SUM(payment.paid_amount)', 'totalAmount')
-      .where('payment.organization_id = :organizationId', { organizationId })
       .andWhere('payment.deleted_at IS NULL')
       .groupBy('payment.status')
       .getRawMany();
@@ -154,16 +149,15 @@ export class PaymentRepository {
   // ============================================
   // AUTO-NUMBERING
   // ============================================
-  async getNextPaymentNumber(organizationId: string): Promise<string> {
+  async getNextPaymentNumber(): Promise<string> {
     const year = new Date().getFullYear();
     const prefix = `PAY-${year}`;
 
     const lastPayment = await this.repository
       .createQueryBuilder('payment')
       .withDeleted()
-      .where('payment.organization_id = :organizationId', { organizationId })
       .andWhere('payment.payment_number LIKE :prefix', { prefix: `${prefix}%` })
-      .orderBy('payment.payment_number', 'DESC')
+      .orderBy('payment.paymentNumber', 'DESC')
       .getOne();
 
     if (!lastPayment) {

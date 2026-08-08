@@ -8,8 +8,6 @@ export interface Invitation {
   id: string;
   email: string;
   status: string;
-  organizationId: string;
-  organizationName?: string;
   roleId: string;
   roleName?: string;
   expiresAt: string;
@@ -18,7 +16,6 @@ export interface Invitation {
 }
 
 export interface InvitationFilters extends BaseFilters {
-  organizationId?: string;
   status?: string;
 }
 
@@ -32,7 +29,6 @@ export function useInvitations(): ReturnType<
     endpoint: '/invitations',
     defaultPageSize: 10,
     syncToUrl: false,
-    requiresOrg: false,
     paramMapping: { limit: 'pageSize' },
   });
 }
@@ -41,7 +37,6 @@ export function useInvitationMutations(): ReturnType<typeof useResourceMutations
   return useResourceMutations<Invitation>({
     resource: 'invitations',
     endpoint: '/invitations',
-    requiresOrg: false,
     customActions: {
       resend: {
         method: 'POST',

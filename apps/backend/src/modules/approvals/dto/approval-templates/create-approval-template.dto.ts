@@ -10,7 +10,6 @@ import {
   IsObject,
   IsOptional,
   IsString,
-  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -29,12 +28,8 @@ export class CreateApprovalTemplateDto {
     description: 'Organization ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
-  @IsNotEmpty()
-  organizationId!: string;
 
   // ==================== Template Info ====================
-
   @ApiProperty({
     description: 'Template name',
     example: 'PO Approval - Under 100K',

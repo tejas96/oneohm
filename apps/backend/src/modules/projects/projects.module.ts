@@ -45,7 +45,6 @@ import { BomModule } from '../bom/bom.module';
 import { CustomersModule } from '../customers/customers.module';
 import { LedgerModule } from '../ledger/ledger.module';
 import { LookupsModule } from '../lookups/lookups.module';
-import { OrganizationsModule } from '../organizations/organizations.module';
 import { QuotesModule } from '../quotes/quotes.module';
 import { UsersModule } from '../users/users.module';
 
@@ -59,7 +58,6 @@ import { UsersModule } from '../users/users.module';
       ProjectTeamMemberEntity,
       ProjectChatMessageEntity,
     ]),
-    OrganizationsModule,
     QuotesModule,
     CustomersModule,
     UsersModule,

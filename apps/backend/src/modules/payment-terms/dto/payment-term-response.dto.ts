@@ -14,10 +14,6 @@ export class PaymentTermResponseDto {
 
   @ApiProperty()
   @Expose()
-  organizationId!: string;
-
-  @ApiProperty()
-  @Expose()
   projectId!: string;
 
   @ApiPropertyOptional()

@@ -16,7 +16,6 @@ export class ReservedStockService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   async deductReservedStock(
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -29,7 +28,6 @@ export class ReservedStockService {
     if (manager) {
       await this.deductWithManager(
         manager,
-        organizationId,
         warehouseId,
         productId,
         quantity,
@@ -44,7 +42,6 @@ export class ReservedStockService {
     await this.dataSource.transaction(async (txManager) => {
       await this.deductWithManager(
         txManager,
-        organizationId,
         warehouseId,
         productId,
         quantity,
@@ -57,7 +54,6 @@ export class ReservedStockService {
   }
 
   async restoreReservedStock(
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -70,7 +66,6 @@ export class ReservedStockService {
     if (manager) {
       await this.restoreWithManager(
         manager,
-        organizationId,
         warehouseId,
         productId,
         quantity,
@@ -85,7 +80,6 @@ export class ReservedStockService {
     await this.dataSource.transaction(async (txManager) => {
       await this.restoreWithManager(
         txManager,
-        organizationId,
         warehouseId,
         productId,
         quantity,
@@ -99,7 +93,6 @@ export class ReservedStockService {
 
   private async deductWithManager(
     manager: EntityManager,
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -132,7 +125,6 @@ export class ReservedStockService {
     const txnRepo = manager.getRepository(TxnEntity);
     await txnRepo.save(
       txnRepo.create({
-        organizationId,
         warehouseId,
         productId,
         transactionType: InventoryTransactionType.DISPATCH,
@@ -148,7 +140,6 @@ export class ReservedStockService {
 
   private async restoreWithManager(
     manager: EntityManager,
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -180,7 +171,6 @@ export class ReservedStockService {
     const txnRepo = manager.getRepository(TxnEntity);
     await txnRepo.save(
       txnRepo.create({
-        organizationId,
         warehouseId,
         productId,
         transactionType: InventoryTransactionType.ALLOCATION,
@@ -196,7 +186,6 @@ export class ReservedStockService {
 
   async addStockWithManager(
     manager: EntityManager,
-    organizationId: string,
     warehouseId: string,
     productId: string,
     quantity: number,
@@ -216,7 +205,6 @@ export class ReservedStockService {
 
     if (!stock) {
       const newStock = stockRepo.create({
-        organizationId,
         warehouseId,
         productId,
         availableQuantity: quantity,
@@ -236,7 +224,6 @@ export class ReservedStockService {
     const txnRepo = manager.getRepository(TxnEntity);
     await txnRepo.save(
       txnRepo.create({
-        organizationId,
         warehouseId,
         productId,
         transactionType: InventoryTransactionType.PURCHASE,

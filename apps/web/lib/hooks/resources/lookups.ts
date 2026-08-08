@@ -16,7 +16,6 @@ import {
   type BaseFilters,
   type ResourceConfig,
 } from '../core';
-import { useOrgContext } from '../core/use-org-context';
 
 import { apiClient } from '@/lib/api/client';
 import { PERMISSIONS } from '@/lib/constants/permissions';
@@ -175,8 +174,6 @@ export function useLookupsByTypeCode(
   isError: boolean;
   error: unknown;
 } {
-  const { orgHeaders } = useOrgContext();
-
   const buildUrl = (): string => {
     const params = new URLSearchParams();
     if (scopeType) params.set('scopeType', scopeType);
@@ -188,7 +185,7 @@ export function useLookupsByTypeCode(
   const query = useQuery<LookupByTypeCode[]>({
     queryKey: ['lookups', 'by-type', typeCode, scopeType ?? '', scopeId ?? ''],
     queryFn: async ({ signal }) => {
-      const headers = scopeType === LookupScopeType.ORGANIZATION ? orgHeaders : {};
+      const headers = {};
       const { data } = await apiClient.get<LookupByTypeCode[]>(buildUrl(), { headers, signal });
       return data as LookupByTypeCode[];
     },

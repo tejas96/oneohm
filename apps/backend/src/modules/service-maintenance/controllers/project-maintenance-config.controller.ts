@@ -109,7 +109,7 @@ export class ProjectMaintenanceConfigController {
     return this.maintenanceConfigService.findByProjectId(projectId, includeRelations === 'true');
   }
 
-  @Get('organization/:organizationId')
+  @Get('organization')
   @ApiOperation({ summary: 'Get maintenance configs by organization' })
   @ApiResponse({
     status: 200,
@@ -117,13 +117,9 @@ export class ProjectMaintenanceConfigController {
     type: [MaintenanceConfigResponseDto],
   })
   async findByOrganization(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
     @Query('includeRelations') includeRelations?: string,
   ): Promise<MaintenanceConfigResponseDto[]> {
-    return this.maintenanceConfigService.findByOrganization(
-      organizationId,
-      includeRelations === 'true',
-    );
+    return this.maintenanceConfigService.findByOrganization(includeRelations === 'true');
   }
 
   @Get(':id')

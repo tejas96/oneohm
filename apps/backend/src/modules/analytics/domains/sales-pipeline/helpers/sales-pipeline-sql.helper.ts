@@ -3,7 +3,6 @@ import { QuoteStatus } from '@tejas96/shared/types';
 import { NEGOTIATION_THRESHOLD_DAYS } from '../constants/sales-pipeline-stages';
 
 export interface SalesPipelineFilterParams {
-  organizationId: string;
   fromDate: string;
   toDate: string;
   salesPersonId?: string;
@@ -31,11 +30,12 @@ const SENT_QUOTE_STATUSES = [
 export function buildCohortCte(filters: SalesPipelineFilterParams): CohortQueryParts {
   const hasSalesPerson = Boolean(filters.salesPersonId);
   const salesPersonClause = hasSalesPerson
-    ? `AND COALESCE(lq.sales_person_id, co.assignee_id) = $4`
+    ? `AND COALESCE(lq.sales_person_id, co.assignee_id) = $3`
     : '';
-  const statusParamIndex = hasSalesPerson ? 5 : 4;
+  // params are [fromDate, toDate] (+ salesPersonId when filtering), then statuses.
+  const statusParamIndex = hasSalesPerson ? 4 : 3;
 
-  const params: unknown[] = [filters.organizationId, filters.fromDate, filters.toDate];
+  const params: unknown[] = [filters.fromDate, filters.toDate];
   if (hasSalesPerson) {
     params.push(filters.salesPersonId);
   }
@@ -60,9 +60,8 @@ export function buildCohortCte(filters: SalesPipelineFilterParams): CohortQueryP
         ON c.id = p.customer_id AND c.deleted_at IS NULL
       LEFT JOIN users au ON au.id = c.assignee_id
       WHERE p.deleted_at IS NULL
-        AND p.organization_id = $1
-        AND p.created_at >= $2::date
-        AND p.created_at < ($3::date + INTERVAL '1 day')
+        AND p.created_at >= $1::date
+        AND p.created_at < ($2::date + INTERVAL '1 day')
     ),
     latest_quotes AS (
       SELECT DISTINCT ON (q.property_id)

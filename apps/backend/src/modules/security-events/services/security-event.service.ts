@@ -28,7 +28,6 @@ export class SecurityEventService {
     severity?: SecurityEventSeverity;
     status: SecurityEventStatus;
     userId?: string;
-    organizationId?: string;
     ipAddress?: string;
     userAgent?: string;
     metadata?: Record<string, any>;
@@ -63,7 +62,6 @@ export class SecurityEventService {
   async logOtpSent(data: {
     phone: string;
     userId?: string;
-    organizationId?: string;
     ipAddress?: string;
     userAgent?: string;
     expirySeconds: number;
@@ -73,7 +71,6 @@ export class SecurityEventService {
       eventCategory: SecurityEventCategory.AUTHENTICATION,
       status: SecurityEventStatus.SUCCESS,
       userId: data.userId,
-      organizationId: data.organizationId,
       ipAddress: data.ipAddress,
       userAgent: data.userAgent,
       metadata: {
@@ -202,7 +199,6 @@ export class SecurityEventService {
       userId?: string;
       ipAddress?: string;
       eventType?: SecurityEventType;
-      organizationId?: string;
     },
     timeWindowSeconds: number,
   ): Promise<number> {
@@ -219,11 +215,8 @@ export class SecurityEventService {
   /**
    * Get suspicious activities for an organization
    */
-  async getSuspiciousActivities(
-    organizationId: string,
-    limit = 50,
-  ): Promise<SecurityEventEntity[]> {
-    return this.repository.getSuspiciousActivities(organizationId, limit);
+  async getSuspiciousActivities(limit = 50): Promise<SecurityEventEntity[]> {
+    return this.repository.getSuspiciousActivities(limit);
   }
 
   /**

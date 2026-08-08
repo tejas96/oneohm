@@ -1,7 +1,6 @@
 import { InspectionStatus } from '@tejas96/shared/types';
 import { Expose, Type } from 'class-transformer';
 
-import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { ProjectResponseDto } from '../../projects/dto/projects/project-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 
@@ -13,12 +12,6 @@ export class InspectionResponseDto {
   id: string;
 
   @Expose()
-  organizationId: string;
-
-  @Expose()
-  @Type(() => OrganizationResponseDto)
-  organization?: OrganizationResponseDto;
-
   @Expose()
   projectId: string;
 

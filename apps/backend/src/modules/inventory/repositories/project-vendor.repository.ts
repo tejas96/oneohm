@@ -27,14 +27,13 @@ export class ProjectVendorRepository {
   /**
    * Find project-vendor by ID (scoped to organization via project.property.organizationId)
    */
-  async findById(id: string, organizationId: string): Promise<ProjectVendorEntity> {
+  async findById(id: string): Promise<ProjectVendorEntity> {
     const projectVendor = await this.repository
       .createQueryBuilder('projectVendor')
       .innerJoinAndSelect('projectVendor.project', 'project')
       .innerJoin('project.property', 'property')
       .leftJoinAndSelect('projectVendor.vendor', 'vendor')
       .where('projectVendor.id = :id', { id })
-      .andWhere('property.organizationId = :organizationId', { organizationId })
       .andWhere('project.deletedAt IS NULL')
       .getOne();
 
@@ -61,7 +60,6 @@ export class ProjectVendorRepository {
    */
   async findByVendor(
     vendorId: string,
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -73,7 +71,6 @@ export class ProjectVendorRepository {
       .innerJoinAndSelect('projectVendor.project', 'project')
       .innerJoin('project.property', 'property')
       .where('projectVendor.vendorId = :vendorId', { vendorId })
-      .andWhere('property.organizationId = :organizationId', { organizationId })
       .andWhere('project.deletedAt IS NULL');
 
     // Apply filters
@@ -96,12 +93,8 @@ export class ProjectVendorRepository {
   /**
    * Update project-vendor
    */
-  async update(
-    id: string,
-    organizationId: string,
-    updateData: Record<string, unknown>,
-  ): Promise<ProjectVendorEntity> {
-    const projectVendor = await this.findById(id, organizationId);
+  async update(id: string, updateData: Record<string, unknown>): Promise<ProjectVendorEntity> {
+    const projectVendor = await this.findById(id);
 
     Object.assign(projectVendor, updateData);
 
@@ -111,8 +104,8 @@ export class ProjectVendorRepository {
   /**
    * Delete project-vendor relationship
    */
-  async delete(id: string, organizationId: string): Promise<void> {
-    const projectVendor = await this.findById(id, organizationId);
+  async delete(id: string): Promise<void> {
+    const projectVendor = await this.findById(id);
     await this.repository.remove(projectVendor);
   }
 

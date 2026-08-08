@@ -7,7 +7,6 @@ import type { AxiosError } from 'axios';
 import type { CustomerPropertyResponse } from './use-customer-properties';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 export interface CustomerProjectItem {
   id: string;
@@ -27,28 +26,23 @@ export interface CustomerProjectItem {
 }
 
 export const customerProjectKeys = {
-  all: (orgId?: string) => ['customer-projects', orgId] as const,
-  byCustomer: (orgId: string | undefined, customerId: string) =>
-    [...customerProjectKeys.all(orgId), customerId] as const,
+  all: () => ['customer-projects'] as const,
+  byCustomer: (customerId: string) => [...customerProjectKeys.all(), customerId] as const,
 };
 
 export function useCustomerProjects(
   customerId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerProjectItem[], AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   return useQuery({
-    queryKey: customerProjectKeys.byCustomer(organizationId, customerId),
+    queryKey: customerProjectKeys.byCustomer(customerId),
     queryFn: async (): Promise<CustomerProjectItem[]> => {
       const { data } = await apiClient.get<CustomerProjectItem[]>(
         `/projects/customer/${customerId}`,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
-    enabled: !!customerId && !!organizationId && options?.enabled !== false,
+    enabled: !!customerId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }

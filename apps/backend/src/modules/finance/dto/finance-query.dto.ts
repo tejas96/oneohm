@@ -41,10 +41,6 @@ export class DateRangeQueryDto {
 
 export class DashboardQueryDto extends DateRangeQueryDto {
   // organizationId comes from @OrganizationContext()
-  @ApiPropertyOptional({ description: 'Set automatically by OrganizationContext.' })
-  @IsOptional()
-  @IsUUID()
-  organizationId?: string;
 }
 
 export class PaginationQueryBase {
@@ -62,11 +58,6 @@ export class PaginationQueryBase {
   @Min(1)
   @Max(5000)
   limit?: number;
-
-  @ApiPropertyOptional({ description: 'Set automatically by OrganizationContext.' })
-  @IsOptional()
-  @IsUUID()
-  organizationId?: string;
 }
 
 export class ReceiptsQueryDto extends PaginationQueryBase {
@@ -143,11 +134,6 @@ export class OutstandingQueryDto extends PaginationQueryBase {
 }
 
 export class CustomersArQueryDto {
-  @ApiPropertyOptional({ description: 'Set automatically by OrganizationContext.' })
-  @IsOptional()
-  @IsUUID()
-  organizationId?: string;
-
   @ApiPropertyOptional({ description: 'As-of date for aging calc (YYYY-MM-DD); defaults to today' })
   @IsOptional()
   @IsDateString()
@@ -155,11 +141,6 @@ export class CustomersArQueryDto {
 }
 
 export class VendorsSpendQueryDto extends DateRangeQueryDto {
-  @ApiPropertyOptional({ description: 'Set automatically by OrganizationContext.' })
-  @IsOptional()
-  @IsUUID()
-  organizationId?: string;
-
   @ApiPropertyOptional({ enum: ExpenseCategory })
   @IsOptional()
   @IsEnum(ExpenseCategory)

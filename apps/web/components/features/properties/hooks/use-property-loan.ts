@@ -5,28 +5,22 @@ import type { AxiosError } from 'axios';
 
 import type { CustomerLoanApplication } from '@/components/features/customers/hooks';
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 export const propertyLoanKeys = {
-  all: (orgId?: string) => ['property-loans', orgId] as const,
-  detail: (orgId: string | undefined, propertyId: string) =>
-    [...propertyLoanKeys.all(orgId), propertyId] as const,
+  all: () => ['property-loans'] as const,
+  detail: (propertyId: string) => [...propertyLoanKeys.all(), propertyId] as const,
 };
 
 export function usePropertyLoan(
   propertyId: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerLoanApplication | null, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   return useQuery({
-    queryKey: propertyLoanKeys.detail(organizationId, propertyId),
+    queryKey: propertyLoanKeys.detail(propertyId),
     queryFn: async (): Promise<CustomerLoanApplication | null> => {
       try {
         const { data } = await apiClient.get<CustomerLoanApplication | null>(
           `/loan-applications/property/${propertyId}`,
-          { headers: { 'X-Organization-Id': organizationId } },
         );
         return data ?? null;
       } catch (error) {
@@ -37,7 +31,7 @@ export function usePropertyLoan(
         throw error;
       }
     },
-    enabled: !!propertyId && !!organizationId && options?.enabled !== false,
+    enabled: !!propertyId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }

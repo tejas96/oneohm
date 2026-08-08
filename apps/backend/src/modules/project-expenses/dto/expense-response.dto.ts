@@ -48,10 +48,6 @@ export class ExpenseResponseDto {
 
   @ApiProperty()
   @Expose()
-  organizationId!: string;
-
-  @ApiProperty()
-  @Expose()
   projectId!: string;
 
   @ApiProperty()

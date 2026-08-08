@@ -28,53 +28,30 @@ export class InventoryBulkService {
     private readonly materialDispatchService: MaterialDispatchService,
   ) {}
 
-  approvePurchaseOrders(
-    ids: string[],
-    organizationId: string,
-    userId: string,
-  ): Promise<BulkResult> {
-    return runBulk(
-      ids,
-      (id) => this.purchaseOrderService.approve(id, organizationId, userId),
-      'PO.bulkApprove',
-    );
+  approvePurchaseOrders(ids: string[], userId: string): Promise<BulkResult> {
+    return runBulk(ids, (id) => this.purchaseOrderService.approve(id, userId), 'PO.bulkApprove');
   }
 
-  cancelPurchaseOrders(
-    ids: string[],
-    organizationId: string,
-    reason: string,
-    userId: string,
-  ): Promise<BulkResult> {
+  cancelPurchaseOrders(ids: string[], reason: string, userId: string): Promise<BulkResult> {
     return runBulk(
       ids,
-      (id) => this.purchaseOrderService.cancel(id, organizationId, reason, userId),
+      (id) => this.purchaseOrderService.cancel(id, reason, userId),
       'PO.bulkCancel',
     );
   }
 
-  cancelAllocations(
-    ids: string[],
-    organizationId: string,
-    reason: string,
-    userId: string,
-  ): Promise<BulkResult> {
+  cancelAllocations(ids: string[], reason: string, userId: string): Promise<BulkResult> {
     return runBulk(
       ids,
-      (id) => this.stockAllocationService.cancel(id, organizationId, reason, userId),
+      (id) => this.stockAllocationService.cancel(id, reason, userId),
       'Allocation.bulkCancel',
     );
   }
 
-  cancelDispatches(
-    ids: string[],
-    organizationId: string,
-    reason: string,
-    userId: string,
-  ): Promise<BulkResult> {
+  cancelDispatches(ids: string[], reason: string, userId: string): Promise<BulkResult> {
     return runBulk(
       ids,
-      (id) => this.materialDispatchService.cancel(id, organizationId, reason, userId),
+      (id) => this.materialDispatchService.cancel(id, reason, userId),
       'Dispatch.bulkCancel',
     );
   }

@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Headers,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
@@ -59,7 +58,7 @@ export class UserController {
     description:
       'Creates a user with optional profile.\n\n' +
       '**User Only:** Provide basic fields (firstName, phone, email, password)\n\n' +
-      '**With Profile (Org Onboarding):** Also provide organizationId, profileType, profileData.\n' +
+      '**With Profile:** Also provide profileType and profileData.\n' +
       'Profile types: employee, reseller, customer. Role is auto-assigned based on profileType.',
     responseType: UserResponseDto,
   })
@@ -79,21 +78,15 @@ export class UserController {
     description:
       'Returns availability status for email and phone fields. ' +
       'Pass excludeId to ignore a specific user (useful when editing). ' +
-      'Pass organizationId alongside phone to also check if an employee profile exists in that org.',
+      'Checks whether an employee profile already exists for the phone number.',
     responseType: Object,
   })
   @ApiQuery({ name: 'email', required: false })
   @ApiQuery({ name: 'phone', required: false })
   @ApiQuery({ name: 'excludeId', required: false, description: 'User ID to exclude from check' })
-  @ApiQuery({
-    name: 'organizationId',
-    required: false,
-    description: 'Check employee profile existence in this org',
-  })
   async checkAvailability(
     @Query('email') email?: string,
     @Query('phone') phone?: string,
-    @Query('organizationId') organizationId?: string,
     @Query('excludeId', new ParseUUIDPipe({ optional: true })) excludeId?: string,
   ): Promise<{
     emailExists: boolean;
@@ -103,10 +96,9 @@ export class UserController {
   }> {
     const emailExists = email ? await this.userService.emailExists(email, excludeId) : false;
     const phoneExists = phone ? await this.userService.phoneExists(phone, excludeId) : false;
-    const employeeExists =
-      phone && organizationId
-        ? await this.userService.employeeProfileExists(phone, organizationId, excludeId)
-        : false;
+    const employeeExists = phone
+      ? await this.userService.employeeProfileExists(phone, excludeId)
+      : false;
 
     let emailBelongsToPhoneUser = false;
     if (emailExists && phone) {
@@ -133,11 +125,6 @@ export class UserController {
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'roleId', required: false })
   @ApiQuery({
-    name: 'organizationId',
-    required: false,
-    description: 'Filter by organization (employees only)',
-  })
-  @ApiQuery({
     name: 'showDeleted',
     required: false,
     description: 'Show only archived/deleted users',
@@ -160,13 +147,11 @@ export class UserController {
     @Query('status') status?: UserStatus,
     @Query('search') search?: string,
     @Query('roleId') roleId?: string,
-    @Query('organizationId') queryOrgId?: string,
     @Query('showDeleted') showDeleted?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
-    @Headers('x-organization-id') headerOrgId?: string,
   ): Promise<{
     items: UserResponseDto[];
     total: number;
@@ -188,12 +173,10 @@ export class UserController {
     const validatedSortOrder: SortOrder | undefined =
       sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : undefined;
 
-    const organizationId = queryOrgId || headerOrgId;
     const result = await this.userService.findAll(page, limit, {
       status,
       search,
       roleId,
-      organizationId,
       showDeleted: showDeleted === 'true',
       sortBy: validatedSortBy,
       sortOrder: validatedSortOrder,
@@ -308,7 +291,6 @@ export class UserController {
 
     const profile = await this.profileService.createProfile({
       userId,
-      organizationId: createProfileDto.organizationId,
       profileType: createProfileDto.profileType,
       profileData: createProfileDto.profileData,
       createdBy,

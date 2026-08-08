@@ -93,11 +93,7 @@ export class ProjectRepository {
    * Find project by ID with relations
    * Filters by organization via property.organizationId
    */
-  async findById(
-    id: string,
-    organizationId: string,
-    manager?: EntityManager,
-  ): Promise<ProjectEntity> {
+  async findById(id: string, manager?: EntityManager): Promise<ProjectEntity> {
     const repo = this.getRepo(manager);
     const project = await repo
       .createQueryBuilder('project')
@@ -105,12 +101,10 @@ export class ProjectRepository {
       .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
-      .leftJoinAndSelect('property.organization', 'organization')
       .leftJoinAndSelect('project.creator', 'creator')
       .leftJoinAndSelect('project.updater', 'updater')
       .leftJoinAndSelect('project.materials', 'materials')
       .where('project.id = :id', { id })
-      .andWhere('property.organizationId = :organizationId', { organizationId })
       .getOne();
 
     if (!project) {
@@ -126,7 +120,6 @@ export class ProjectRepository {
    * Includes: team members (with user), milestones for current phase
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
@@ -160,7 +153,6 @@ export class ProjectRepository {
       .leftJoinAndSelect('project.creator', 'creator')
       .leftJoinAndSelect('project.teamMembers', 'teamMember')
       .leftJoinAndSelect('teamMember.user', 'teamUser')
-      .where('property.organizationId = :organizationId', { organizationId })
       .andWhere('project.deletedAt IS NULL');
 
     // Apply filters
@@ -456,25 +448,21 @@ export class ProjectRepository {
    * Update a project
    * Validates ownership via findById before updating
    */
-  async update(
-    id: string,
-    organizationId: string,
-    updateData: Record<string, unknown>,
-  ): Promise<ProjectEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<ProjectEntity> {
     // First validate the project belongs to org via property
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     await this.repository.update({ id }, updateData);
-    return this.findById(id, organizationId);
+    return this.findById(id);
   }
 
   /**
    * Soft delete a project
    * Validates ownership via findById before deleting
    */
-  async delete(id: string, organizationId: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     // Validate ownership first via property
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     const result = await this.repository.softDelete({ id });
 
@@ -487,29 +475,21 @@ export class ProjectRepository {
    * Update project status
    * Validates ownership via findById before updating
    */
-  async updateStatus(
-    id: string,
-    organizationId: string,
-    status: ProjectStatus,
-  ): Promise<ProjectEntity> {
+  async updateStatus(id: string, status: ProjectStatus): Promise<ProjectEntity> {
     // Validate ownership first
-    await this.findById(id, organizationId);
+    await this.findById(id);
 
     await this.repository.update({ id }, { status });
-    return this.findById(id, organizationId);
+    return this.findById(id);
   }
 
   /**
    * Update project progress
    * Validates ownership via findById before updating
    */
-  async updateProgress(
-    id: string,
-    organizationId: string,
-    progressPercentage: number,
-  ): Promise<ProjectEntity> {
+  async updateProgress(id: string, progressPercentage: number): Promise<ProjectEntity> {
     // Validate ownership first
-    const project = await this.findById(id, organizationId);
+    const project = await this.findById(id);
 
     const updateData: Record<string, any> = { progressPercentage };
     if (
@@ -524,7 +504,7 @@ export class ProjectRepository {
     }
 
     await this.repository.update({ id }, updateData);
-    return this.findById(id, organizationId);
+    return this.findById(id);
   }
 
   /**
@@ -559,7 +539,7 @@ export class ProjectRepository {
    * Find projects by customer
    * Filters via property.customerId
    */
-  async findByCustomer(customerId: string, organizationId: string): Promise<ProjectEntity[]> {
+  async findByCustomer(customerId: string): Promise<ProjectEntity[]> {
     return this.repository
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
@@ -568,7 +548,6 @@ export class ProjectRepository {
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.materials', 'materials')
       .where('property.customerId = :customerId', { customerId })
-      .andWhere('property.organizationId = :organizationId', { organizationId })
       .andWhere('project.deletedAt IS NULL')
       .orderBy('project.createdAt', 'DESC')
       .getMany();
@@ -578,15 +557,11 @@ export class ProjectRepository {
    * Find single project by property ID (for OneToOne check)
    * Returns null if no project exists for the property
    */
-  async findOneByPropertyId(
-    propertyId: string,
-    organizationId: string,
-  ): Promise<ProjectEntity | null> {
+  async findOneByPropertyId(propertyId: string): Promise<ProjectEntity | null> {
     return this.repository
       .createQueryBuilder('project')
       .innerJoin('project.property', 'property')
       .where('project.propertyId = :propertyId', { propertyId })
-      .andWhere('property.organizationId = :organizationId', { organizationId })
       .andWhere('project.deletedAt IS NULL')
       .getOne();
   }
@@ -595,7 +570,7 @@ export class ProjectRepository {
    * Find all projects by property ID (for backward compatibility)
    * Note: With OneToOne constraint, this should return at most 1 project
    */
-  async findAllByPropertyId(propertyId: string, organizationId: string): Promise<ProjectEntity[]> {
+  async findAllByPropertyId(propertyId: string): Promise<ProjectEntity[]> {
     return this.repository
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
@@ -603,7 +578,6 @@ export class ProjectRepository {
       .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
       .where('project.propertyId = :propertyId', { propertyId })
-      .andWhere('property.organizationId = :organizationId', { organizationId })
       .andWhere('project.deletedAt IS NULL')
       .orderBy('project.createdAt', 'DESC')
       .getMany();
@@ -613,13 +587,12 @@ export class ProjectRepository {
    * Find the last project number for an organization (including soft-deleted)
    * Used for generating unique project numbers
    */
-  async findLastProjectNumber(organizationId: string, prefix: string): Promise<string | null> {
+  async findLastProjectNumber(prefix: string): Promise<string | null> {
     const result = await this.repository
       .createQueryBuilder('project')
       .withDeleted() // Include soft-deleted projects for unique number generation
       .innerJoin('project.property', 'property')
       .select('project.projectNumber', 'projectNumber')
-      .where('property.organizationId = :organizationId', { organizationId })
       .andWhere('project.projectNumber LIKE :prefix', { prefix: `${prefix}%` })
       .orderBy('project.projectNumber', 'DESC')
       .limit(1)

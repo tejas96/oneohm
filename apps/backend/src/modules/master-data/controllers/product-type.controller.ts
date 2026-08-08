@@ -13,13 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import {
-  ApiCreate,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
-} from '../../../common/decorators';
+import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
@@ -40,11 +34,10 @@ export class ProductTypeController {
     responseType: ProductTypeEntity,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: Partial<ProductTypeEntity>,
   ): Promise<ProductTypeEntity> {
-    return this.productTypeService.create(organizationId, body, currentUser.id);
+    return this.productTypeService.create(body, currentUser.id);
   }
 
   @Get()
@@ -72,7 +65,6 @@ export class ProductTypeController {
     ],
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('isActive') isActive?: string,
     @Query('search') search?: string,
@@ -92,7 +84,7 @@ export class ProductTypeController {
       sortBy,
       sortOrder: sortOrder === 'DESC' ? ('DESC' as const) : ('ASC' as const),
     };
-    return this.productTypeService.findAll(organizationId, filters);
+    return this.productTypeService.findAll(filters);
   }
 
   @Get(':id')
@@ -102,11 +94,10 @@ export class ProductTypeController {
     responseType: ProductTypeEntity,
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProductTypeEntity> {
-    return this.productTypeService.findById(id, organizationId);
+    return this.productTypeService.findById(id);
   }
 
   @Patch(':id')
@@ -116,11 +107,10 @@ export class ProductTypeController {
     responseType: ProductTypeEntity,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Partial<ProductTypeEntity>,
   ): Promise<ProductTypeEntity> {
-    return this.productTypeService.update(id, organizationId, body, currentUser.id);
+    return this.productTypeService.update(id, body, currentUser.id);
   }
 }

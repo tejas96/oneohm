@@ -21,7 +21,6 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-  OrganizationContext,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -64,11 +63,10 @@ export class LookupController {
   @Post()
   @ApiCreate({
     summary: 'Create a lookup entry',
-    description: 'Creates a new lookup entry. For organization-scoped entries, provide scopeId.',
+    description: 'Creates a new lookup entry. For record-scoped entries, provide scopeId.',
     responseType: LookupResponseDto,
   })
   async create(
-    @OrganizationContext() _organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() body: CreateLookupDto,
   ): Promise<LookupResponseDto> {
@@ -99,7 +97,6 @@ export class LookupController {
     ],
   })
   async findAll(
-    @OrganizationContext() _organizationId: string,
     @Query('typeCode') typeCode?: string,
     @Query('scopeType') scopeType?: string,
     @Query('scopeId') scopeId?: string,
@@ -132,10 +129,7 @@ export class LookupController {
     description: 'Retrieve a specific lookup entry by its UUID',
     responseType: LookupResponseDto,
   })
-  async findOne(
-    @OrganizationContext() _organizationId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<LookupResponseDto> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<LookupResponseDto> {
     return this.lookupService.findById(id);
   }
 
@@ -146,7 +140,6 @@ export class LookupController {
     method: 'PATCH',
   })
   async update(
-    @OrganizationContext() _organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: UpdateLookupDto,
@@ -161,7 +154,6 @@ export class LookupController {
     responseType: LookupResponseDto,
   })
   async toggleActive(
-    @OrganizationContext() _organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: ToggleActiveLookupDto,
@@ -174,7 +166,6 @@ export class LookupController {
     description: 'Soft delete a lookup entry',
   })
   async delete(
-    @OrganizationContext() _organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {

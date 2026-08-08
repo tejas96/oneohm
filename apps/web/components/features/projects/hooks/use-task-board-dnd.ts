@@ -3,7 +3,7 @@
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { useQueryClient } from '@tanstack/react-query';
 import { TaskStatus } from '@tejas96/shared/types';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   optimisticallyMoveTaskStatus,
@@ -15,7 +15,6 @@ import { PROJECT_TASKS_QUERY_KEY } from '../constants';
 
 import { useUpdateTask } from '@/components/features/tasks/hooks';
 import { showToast } from '@/components/ui/sonner';
-import { useOrgContext } from '@/lib/hooks/core';
 
 export interface DragState {
   isDragging: boolean;
@@ -45,19 +44,15 @@ const IDLE_DRAG_STATE: DragState = {
  * - Suppressing success toast on drop (silent: true pattern handled inline)
  */
 export function useTaskBoardDnd(): UseTaskBoardDndResult {
-  const { organizationId } = useOrgContext();
   const queryClient = useQueryClient();
   const { mutate: updateTask } = useUpdateTask();
 
   const [dragState, setDragState] = useState<DragState>(IDLE_DRAG_STATE);
   const [activeDropColumn, setActiveDropColumn] = useState<string | null>(null);
 
-  // We need a stable ref to organizationId for use inside the monitor callbacks
+  // We need a stable refId for use inside the monitor callbacks
   // (closures capture the value at registration time, but org can change).
-  const orgIdRef = useRef(organizationId);
-  useEffect(() => {
-    orgIdRef.current = organizationId;
-  }, [organizationId]);
+  useEffect(() => {}, []);
 
   // Register the global monitor once. Columns and cards handle their own
   // draggable/dropTarget registrations locally. The monitor centralises the
@@ -97,16 +92,14 @@ export function useTaskBoardDnd(): UseTaskBoardDndResult {
         // No-op if dropped in same column
         if (fromStatus === toStatus) return;
 
-        const orgId = orgIdRef.current;
-
         // Resolve whether completionPercentage needs reset
         const { completionPercentage } = resolveTaskStatusPayload(toStatus, taskCompletionPct);
 
         // 1. Snapshot before touching cache
-        const snapshots = snapshotProjectTasksCaches(queryClient, orgId);
+        const snapshots = snapshotProjectTasksCaches(queryClient);
 
         // 2. Optimistically move the task to the new column (synchronous, same tick)
-        optimisticallyMoveTaskStatus(queryClient, orgId, taskId, toStatus, completionPercentage);
+        optimisticallyMoveTaskStatus(queryClient, taskId, toStatus, completionPercentage);
 
         // 3. Fire PATCH in background (no success toast — optimistic UI is the feedback)
         updateTask(
@@ -120,7 +113,7 @@ export function useTaskBoardDnd(): UseTaskBoardDndResult {
             onSuccess: () => {
               // Soft invalidate to sync any server-derived fields
               void queryClient.invalidateQueries({
-                queryKey: PROJECT_TASKS_QUERY_KEY(orgId),
+                queryKey: PROJECT_TASKS_QUERY_KEY(),
               });
             },
             onError: () => {

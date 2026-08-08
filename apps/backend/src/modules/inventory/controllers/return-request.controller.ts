@@ -12,7 +12,6 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -37,11 +36,10 @@ export class ReturnRequestController {
   @Post()
   @ApiOperation({ summary: 'Create a return request' })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: CreateReturnRequestDto,
   ): Promise<ReturnRequestResponseDto> {
-    const result = await this.returnRequestService.create(organizationId, dto, currentUser.id);
+    const result = await this.returnRequestService.create(dto, currentUser.id);
     return plainToInstance(ReturnRequestResponseDto, result, { excludeExtraneousValues: true });
   }
 
@@ -49,12 +47,11 @@ export class ReturnRequestController {
   @Get()
   @ApiOperation({ summary: 'List return requests with optional filters' })
   async list(
-    @OrganizationContext() organizationId: string,
     @Query('status') status?: ReturnRequestStatus,
     @Query('bomId') bomId?: string,
     @Query('allocationId') allocationId?: string,
   ): Promise<ReturnRequestResponseDto[]> {
-    const results = await this.returnRequestService.list(organizationId, {
+    const results = await this.returnRequestService.list({
       status,
       bomId,
       allocationId,
@@ -65,11 +62,8 @@ export class ReturnRequestController {
   @RequirePermission('inventory:read')
   @Get(':id')
   @ApiOperation({ summary: 'Get a single return request' })
-  async findById(
-    @OrganizationContext() organizationId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<ReturnRequestResponseDto> {
-    const result = await this.returnRequestService.findById(id, organizationId);
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<ReturnRequestResponseDto> {
+    const result = await this.returnRequestService.findById(id);
     return plainToInstance(ReturnRequestResponseDto, result, { excludeExtraneousValues: true });
   }
 
@@ -80,11 +74,10 @@ export class ReturnRequestController {
   @Patch(':id/complete')
   @ApiOperation({ summary: 'Complete a return request (PM confirms physical receipt)' })
   async complete(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ReturnRequestResponseDto> {
-    const result = await this.returnRequestService.complete(id, organizationId, currentUser.id);
+    const result = await this.returnRequestService.complete(id, currentUser.id);
     return plainToInstance(ReturnRequestResponseDto, result, { excludeExtraneousValues: true });
   }
 
@@ -95,11 +88,10 @@ export class ReturnRequestController {
   @Patch(':id/cancel')
   @ApiOperation({ summary: 'Cancel a return request (accept over-dispatch as scope creep)' })
   async cancel(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ReturnRequestResponseDto> {
-    const result = await this.returnRequestService.cancel(id, organizationId, currentUser.id);
+    const result = await this.returnRequestService.cancel(id, currentUser.id);
     return plainToInstance(ReturnRequestResponseDto, result, { excludeExtraneousValues: true });
   }
 }

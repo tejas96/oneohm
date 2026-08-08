@@ -8,10 +8,6 @@ export class BrandResponseDto {
 
   @ApiProperty()
   @Expose()
-  organizationId!: string;
-
-  @ApiProperty()
-  @Expose()
   name!: string;
 
   @ApiProperty({ required: false, nullable: true })

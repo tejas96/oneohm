@@ -16,11 +16,9 @@ import {
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 export interface FollowupResponse {
   id: string;
-  organizationId: string;
   customerId: string;
   propertyId?: string | null;
   type: FollowupType;
@@ -53,9 +51,9 @@ export interface CreateFollowupInput {
 }
 
 export const followupKeys = {
-  all: (orgId?: string) => ['followups', orgId] as const,
-  byCustomer: (orgId: string | undefined, customerId: string, filters?: Record<string, unknown>) =>
-    [...followupKeys.all(orgId), 'customer', customerId, filters ?? {}] as const,
+  all: () => ['followups'] as const,
+  byCustomer: (customerId: string, filters?: Record<string, unknown>) =>
+    [...followupKeys.all(), 'customer', customerId, filters ?? {}] as const,
 };
 
 export function useCustomerFollowups(
@@ -68,8 +66,6 @@ export function useCustomerFollowups(
     limit?: number;
   },
 ): UseQueryResult<FollowupsListResponse, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
   const filters = {
     status: options?.status,
     from: options?.from,
@@ -78,7 +74,7 @@ export function useCustomerFollowups(
   };
 
   return useQuery({
-    queryKey: followupKeys.byCustomer(organizationId, customerId, filters),
+    queryKey: followupKeys.byCustomer(customerId, filters),
     queryFn: async (): Promise<FollowupsListResponse> => {
       const params = new URLSearchParams();
       params.append('customerId', customerId);
@@ -89,9 +85,7 @@ export function useCustomerFollowups(
 
       const { data } = await apiClient.get<
         FollowupsListResponse | { data: FollowupResponse[]; meta?: PaginationMeta }
-      >(`/followups?${params.toString()}`, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      >(`/followups?${params.toString()}`, {});
       if (Array.isArray(data)) {
         return { data };
       }
@@ -100,7 +94,7 @@ export function useCustomerFollowups(
       }
       return { data: [] };
     },
-    enabled: !!customerId && !!organizationId && options?.enabled !== false,
+    enabled: !!customerId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -111,19 +105,15 @@ export function useCreateFollowup(): UseMutationResult<
   CreateFollowupInput
 > {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (input): Promise<FollowupResponse> => {
-      const { data } = await apiClient.post<FollowupResponse>('/followups', input, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      const { data } = await apiClient.post<FollowupResponse>('/followups', input, {});
       return data;
     },
     onSuccess: (_, variables) => {
       void queryClient.invalidateQueries({
-        queryKey: followupKeys.byCustomer(organizationId, variables.customerId),
+        queryKey: followupKeys.byCustomer(variables.customerId),
       });
     },
   });
@@ -131,21 +121,15 @@ export function useCreateFollowup(): UseMutationResult<
 
 export function useCompleteFollowup(): UseMutationResult<FollowupResponse, AxiosError, string> {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (id): Promise<FollowupResponse> => {
-      const { data } = await apiClient.post<FollowupResponse>(
-        `/followups/${id}/complete`,
-        {},
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.post<FollowupResponse>(`/followups/${id}/complete`, {});
       return data;
     },
     onSuccess: (data) => {
       void queryClient.invalidateQueries({
-        queryKey: followupKeys.byCustomer(organizationId, data.customerId),
+        queryKey: followupKeys.byCustomer(data.customerId),
       });
     },
   });

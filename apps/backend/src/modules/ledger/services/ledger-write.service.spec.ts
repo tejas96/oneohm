@@ -13,7 +13,6 @@ import { LedgerAllocationEntity, LedgerEntryEntity } from '../entities';
 import { LedgerWriteService } from './ledger-write.service';
 import { LedgerRepository } from '../repositories/ledger.repository';
 
-const ORG = 'org-1';
 const PROJECT = 'project-1';
 const USER = 'user-1';
 
@@ -80,7 +79,7 @@ describe('LedgerWriteService', () => {
     captured = { entries: [], allocations: [] };
 
     repo = {
-      projectBelongsToOrg: jest.fn(async () => true),
+      projectExists: jest.fn(async () => true),
       getMilestoneBalances: jest.fn(async () => [] as any),
       getProjectBalance: jest.fn(),
       findEntryById: jest.fn(),
@@ -115,7 +114,7 @@ describe('LedgerWriteService', () => {
         milestone('m2', 12_999_978),
       ]);
 
-      await service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: 13_000_000 }, USER);
+      await service.recordReceipt({ projectId: PROJECT, amountPaise: 13_000_000 }, USER);
 
       expect(captured.entries).toHaveLength(1);
       expect(captured.entries[0]).toMatchObject({
@@ -134,11 +133,11 @@ describe('LedgerWriteService', () => {
 
     it('locks the milestone rows before reading capacity', async () => {
       repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 5000)]);
-      await service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: 5000 }, USER);
+      await service.recordReceipt({ projectId: PROJECT, amountPaise: 5000 }, USER);
 
       // 4th arg is forUpdate — without it two concurrent receipts both see the
       // same free capacity and jointly over-allocate a milestone.
-      expect(repo.getMilestoneBalances).toHaveBeenCalledWith(PROJECT, ORG, expect.anything(), true);
+      expect(repo.getMilestoneBalances).toHaveBeenCalledWith(PROJECT, expect.anything(), true);
     });
 
     it('skips waived milestones — they absorb nothing', async () => {
@@ -147,7 +146,7 @@ describe('LedgerWriteService', () => {
         milestone('active', 100_000),
       ]);
 
-      await service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: 50_000 }, USER);
+      await service.recordReceipt({ projectId: PROJECT, amountPaise: 50_000 }, USER);
 
       const allocations = captured.allocations[0];
       expect(allocations).toHaveLength(1);
@@ -157,7 +156,7 @@ describe('LedgerWriteService', () => {
     it('leaves overflow unallocated rather than forcing it onto the last milestone', async () => {
       repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 1000)]);
 
-      await service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: 5000 }, USER);
+      await service.recordReceipt({ projectId: PROJECT, amountPaise: 5000 }, USER);
 
       const allocations = captured.allocations[0];
       expect(allocations.reduce((s: number, a: any) => s + a.amountPaise, 0)).toBe(1000);
@@ -167,7 +166,7 @@ describe('LedgerWriteService', () => {
 
     it('records an entry with no allocations when there are no milestones', async () => {
       repo.getMilestoneBalances.mockResolvedValue([]);
-      await service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: 5000 }, USER);
+      await service.recordReceipt({ projectId: PROJECT, amountPaise: 5000 }, USER);
 
       expect(captured.entries).toHaveLength(1);
       expect(captured.allocations).toHaveLength(0);
@@ -175,20 +174,19 @@ describe('LedgerWriteService', () => {
 
     it.each([0, -100])('rejects a non-positive amount (%i)', async (amount) => {
       await expect(
-        service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: amount }, USER),
+        service.recordReceipt({ projectId: PROJECT, amountPaise: amount }, USER),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('rejects a fractional paise amount', async () => {
       await expect(
-        service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: 100.5 }, USER),
+        service.recordReceipt({ projectId: PROJECT, amountPaise: 100.5 }, USER),
       ).rejects.toThrow(/integer number of paise/);
     });
 
     it('rejects a future value date', async () => {
       await expect(
         service.recordReceipt(
-          ORG,
           { projectId: PROJECT, amountPaise: 1000, valueDate: '2099-01-01' },
           USER,
         ),
@@ -198,7 +196,6 @@ describe('LedgerWriteService', () => {
     it('accepts a back-dated value date — money often arrives before it is keyed in', async () => {
       repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 100_000)]);
       await service.recordReceipt(
-        ORG,
         { projectId: PROJECT, amountPaise: 1000, valueDate: '2026-01-15' },
         USER,
       );
@@ -214,7 +211,6 @@ describe('LedgerWriteService', () => {
         ]);
 
         await service.recordReceipt(
-          ORG,
           {
             projectId: PROJECT,
             amountPaise: 10_000,
@@ -234,7 +230,6 @@ describe('LedgerWriteService', () => {
         repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 5_000)]);
         await expect(
           service.recordReceipt(
-            ORG,
             {
               projectId: PROJECT,
               amountPaise: 9000,
@@ -249,7 +244,6 @@ describe('LedgerWriteService', () => {
         repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 100_000)]);
         await expect(
           service.recordReceipt(
-            ORG,
             {
               projectId: PROJECT,
               amountPaise: 5000,
@@ -264,7 +258,6 @@ describe('LedgerWriteService', () => {
         repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 100_000)]);
         await expect(
           service.recordReceipt(
-            ORG,
             {
               projectId: PROJECT,
               amountPaise: 5000,
@@ -279,7 +272,6 @@ describe('LedgerWriteService', () => {
         repo.getMilestoneBalances.mockResolvedValue([milestone('w', 100_000, 'waived')]);
         await expect(
           service.recordReceipt(
-            ORG,
             {
               projectId: PROJECT,
               amountPaise: 5000,
@@ -295,7 +287,6 @@ describe('LedgerWriteService', () => {
   describe('recordExpense', () => {
     it('stores money out as a NEGATIVE amount so SUM over the ledger is the cash position', async () => {
       await service.recordExpense(
-        ORG,
         { projectId: PROJECT, amountPaise: 8_000_000, category: 'materials', payee: 'Acme' },
         USER,
       );
@@ -311,7 +302,6 @@ describe('LedgerWriteService', () => {
 
     it('creates no allocations — an expense is not receivable against a milestone', async () => {
       await service.recordExpense(
-        ORG,
         { projectId: PROJECT, amountPaise: 1000, category: 'travel' },
         USER,
       );
@@ -328,14 +318,13 @@ describe('LedgerWriteService', () => {
      * can never be removed, only reversed.
      */
     it.each(['recordReceipt', 'recordExpense'] as const)(
-      'refuses %s on a project outside the caller org',
+      'refuses %s on a project that does not exist',
       async (method) => {
-        repo.projectBelongsToOrg.mockResolvedValue(false);
+        repo.projectExists.mockResolvedValue(false);
         const call =
           method === 'recordReceipt'
-            ? service.recordReceipt(ORG, { projectId: 'someone-elses', amountPaise: 1000 }, USER)
+            ? service.recordReceipt({ projectId: 'someone-elses', amountPaise: 1000 }, USER)
             : service.recordExpense(
-                ORG,
                 { projectId: 'someone-elses', amountPaise: 1000, category: 'x' },
                 USER,
               );
@@ -343,10 +332,10 @@ describe('LedgerWriteService', () => {
       },
     );
 
-    it('checks ownership against the caller org, not the project alone', async () => {
+    it('checks the project exists before writing', async () => {
       repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 100_000)]);
-      await service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: 1000 }, USER);
-      expect(repo.projectBelongsToOrg).toHaveBeenCalledWith(PROJECT, ORG);
+      await service.recordReceipt({ projectId: PROJECT, amountPaise: 1000 }, USER);
+      expect(repo.projectExists).toHaveBeenCalledWith(PROJECT);
     });
   });
 
@@ -367,14 +356,13 @@ describe('LedgerWriteService', () => {
         process.env.LEDGER_WRITES_FROZEN = 'true';
         const call =
           method === 'recordReceipt'
-            ? service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: 1000 }, USER)
+            ? service.recordReceipt({ projectId: PROJECT, amountPaise: 1000 }, USER)
             : method === 'recordExpense'
               ? service.recordExpense(
-                  ORG,
                   { projectId: PROJECT, amountPaise: 1000, category: 'x' },
                   USER,
                 )
-              : service.reverse(ORG, 'entry-1', 'reason', USER);
+              : service.reverse('entry-1', 'reason', USER);
 
         await expect(call).rejects.toBeInstanceOf(ServiceUnavailableException);
       },
@@ -383,7 +371,7 @@ describe('LedgerWriteService', () => {
     it('allows writes when the flag is absent', async () => {
       repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 100_000)]);
       await expect(
-        service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: 1000 }, USER),
+        service.recordReceipt({ projectId: PROJECT, amountPaise: 1000 }, USER),
       ).resolves.toBeDefined();
     });
 
@@ -391,7 +379,7 @@ describe('LedgerWriteService', () => {
       process.env.LEDGER_WRITES_FROZEN = 'false';
       repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 100_000)]);
       await expect(
-        service.recordReceipt(ORG, { projectId: PROJECT, amountPaise: 1000 }, USER),
+        service.recordReceipt({ projectId: PROJECT, amountPaise: 1000 }, USER),
       ).resolves.toBeDefined();
     });
   });
@@ -401,7 +389,6 @@ describe('LedgerWriteService', () => {
       id: 'entry-1',
       entryNo: 'RCP-2026-27-000005',
       projectId: PROJECT,
-      organizationId: ORG,
       customerId: 'cust-1',
       direction: 'in' as const,
       entryType: 'receipt' as const,
@@ -414,7 +401,7 @@ describe('LedgerWriteService', () => {
     it('posts a negative mirror entry rather than mutating anything', async () => {
       repo.findEntryById.mockResolvedValue(original);
 
-      await service.reverse(ORG, 'entry-1', 'cheque bounced', USER);
+      await service.reverse('entry-1', 'cheque bounced', USER);
 
       expect(captured.entries).toHaveLength(1);
       expect(captured.entries[0]).toMatchObject({
@@ -432,7 +419,7 @@ describe('LedgerWriteService', () => {
         { milestoneId: 'm2', amountPaise: 11_555_558 },
       ]);
 
-      await service.reverse(ORG, 'entry-1', 'bounced', USER);
+      await service.reverse('entry-1', 'bounced', USER);
 
       const mirror = captured.allocations[0];
       expect(mirror).toHaveLength(2);
@@ -444,7 +431,7 @@ describe('LedgerWriteService', () => {
 
     it('dates the reversal today, not on the original value date', async () => {
       repo.findEntryById.mockResolvedValue(original);
-      await service.reverse(ORG, 'entry-1', 'bounced', USER);
+      await service.reverse('entry-1', 'bounced', USER);
       // a bounce is an event of today; back-dating it would rewrite a closed period
       expect(captured.entries[0].valueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
@@ -453,29 +440,27 @@ describe('LedgerWriteService', () => {
       repo.findEntryById.mockResolvedValue(original);
       repo.findReversalOf.mockResolvedValue({ entryNo: 'RCP-2026-27-000099' });
 
-      await expect(service.reverse(ORG, 'entry-1', 'again', USER)).rejects.toBeInstanceOf(
+      await expect(service.reverse('entry-1', 'again', USER)).rejects.toBeInstanceOf(
         ConflictException,
       );
     });
 
     it('refuses to reverse a reversal', async () => {
       repo.findEntryById.mockResolvedValue({ ...original, reversesId: 'entry-0' });
-      await expect(service.reverse(ORG, 'entry-1', 'nope', USER)).rejects.toThrow(
+      await expect(service.reverse('entry-1', 'nope', USER)).rejects.toThrow(
         /reverse the original entry/,
       );
     });
 
     it('requires a reason — an unexplained reversal is not an audit trail', async () => {
-      await expect(service.reverse(ORG, 'entry-1', '   ', USER)).rejects.toBeInstanceOf(
+      await expect(service.reverse('entry-1', '   ', USER)).rejects.toBeInstanceOf(
         BadRequestException,
       );
     });
 
     it('404s on an unknown entry', async () => {
       repo.findEntryById.mockResolvedValue(null);
-      await expect(service.reverse(ORG, 'missing', 'x', USER)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(service.reverse('missing', 'x', USER)).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 });

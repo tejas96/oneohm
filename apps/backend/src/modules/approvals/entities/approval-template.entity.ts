@@ -10,7 +10,7 @@ import { BaseEntity } from '../../../common/entities/base.entity';
  * Represents reusable approval workflow templates
  */
 @Entity('approval_templates')
-@Index(['organizationId', 'deletedAt'])
+@Index(['deletedAt'])
 @Index(['workflowType', 'deletedAt'])
 @Index(['isActive', 'deletedAt'])
 export class ApprovalTemplateEntity extends BaseEntity {
@@ -24,12 +24,7 @@ export class ApprovalTemplateEntity extends BaseEntity {
   @OneToMany(() => ApprovalRequestEntity, (request) => request.template)
   requests!: ApprovalRequestEntity[];
 
-  // Note: Organization relation is implicit via organizationId
-
   // ==================== Foreign Keys ====================
-
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   // ==================== Template Info ====================
 

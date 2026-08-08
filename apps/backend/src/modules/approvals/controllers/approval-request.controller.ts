@@ -17,13 +17,7 @@ import {
 } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  ApiCreate,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-  OrganizationContext,
-} from '../../../common/decorators';
+import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -56,11 +50,10 @@ export class ApprovalRequestController {
     responseType: ApprovalRequestResponseDto,
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateApprovalRequestDto,
   ): Promise<ApprovalRequestResponseDto> {
-    const request = await this.requestService.create(organizationId, createDto, currentUser.id);
+    const request = await this.requestService.create(createDto, currentUser.id);
 
     return plainToInstance(ApprovalRequestResponseDto, request, {
       excludeExtraneousValues: true,
@@ -103,7 +96,6 @@ export class ApprovalRequestController {
     description: 'Search in request number, title, description',
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -112,17 +104,12 @@ export class ApprovalRequestController {
     @Query('templateId') templateId?: string,
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<ApprovalRequestResponseDto>> {
-    const { requests, total } = await this.requestService.findAll(
-      organizationId,
-      page ?? 1,
-      limit ?? 20,
-      {
-        status,
-        referenceType,
-        templateId,
-        search,
-      },
-    );
+    const { requests, total } = await this.requestService.findAll(page ?? 1, limit ?? 20, {
+      status,
+      referenceType,
+      templateId,
+      search,
+    });
 
     return {
       data: plainToInstance(ApprovalRequestResponseDto, requests, {
@@ -147,11 +134,10 @@ export class ApprovalRequestController {
     responseType: ApprovalRequestResponseDto,
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ApprovalRequestResponseDto> {
-    const request = await this.requestService.findById(id, organizationId);
+    const request = await this.requestService.findById(id);
 
     return plainToInstance(ApprovalRequestResponseDto, request, {
       excludeExtraneousValues: true,
@@ -167,10 +153,9 @@ export class ApprovalRequestController {
     description: 'Get requests pending approval by current user',
   })
   async getMyPendingApprovals(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ApprovalRequestResponseDto[]> {
-    const requests = await this.requestService.findPendingForUser(currentUser.id, organizationId);
+    const requests = await this.requestService.findPendingForUser(currentUser.id);
 
     return plainToInstance(ApprovalRequestResponseDto, requests, {
       excludeExtraneousValues: true,
@@ -186,14 +171,12 @@ export class ApprovalRequestController {
     description: 'Approve or reject an approval request',
   })
   async processAction(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() actionDto: ApprovalActionDto,
   ): Promise<ApprovalRequestResponseDto> {
     const request = await this.requestService.processAction(
       id,
-      organizationId,
       actionDto,
       currentUser.id,
       currentUser.roles[0] ?? '', // Use first role
@@ -214,12 +197,11 @@ export class ApprovalRequestController {
     responseType: ApprovalRequestResponseDto,
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateApprovalRequestDto,
   ): Promise<ApprovalRequestResponseDto> {
-    const request = await this.requestService.update(id, organizationId, updateDto, currentUser.id);
+    const request = await this.requestService.update(id, updateDto, currentUser.id);
 
     return plainToInstance(ApprovalRequestResponseDto, request, {
       excludeExtraneousValues: true,
@@ -235,12 +217,11 @@ export class ApprovalRequestController {
     description: 'Cancel a pending approval request',
   })
   async cancel(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('reason') reason?: string,
   ): Promise<ApprovalRequestResponseDto> {
-    const request = await this.requestService.cancel(id, organizationId, currentUser.id, reason);
+    const request = await this.requestService.cancel(id, currentUser.id, reason);
 
     return plainToInstance(ApprovalRequestResponseDto, request, {
       excludeExtraneousValues: true,
@@ -256,10 +237,9 @@ export class ApprovalRequestController {
     description: 'Get approval request statistics by status',
   })
   async getStatistics(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<StatisticsResponse<ApprovalRequestStatus>> {
-    return this.requestService.getStatistics(organizationId);
+    return this.requestService.getStatistics();
   }
 
   /**
@@ -270,11 +250,8 @@ export class ApprovalRequestController {
     summary: 'Get pending count',
     description: 'Get count of pending approval requests',
   })
-  async getPendingCount(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<{ count: number }> {
-    const count = await this.requestService.getPendingCount(organizationId);
+  async getPendingCount(@CurrentUser() _currentUser: CurrentUserType): Promise<{ count: number }> {
+    const count = await this.requestService.getPendingCount();
     return { count };
   }
 }

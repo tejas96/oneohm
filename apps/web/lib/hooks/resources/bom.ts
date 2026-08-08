@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Bom, BomItem } from '@tejas96/shared/types';
 
-import { createResourceKeys, defineResource, useOrgContext } from '../core';
+import { createResourceKeys, defineResource } from '../core';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
@@ -39,14 +39,12 @@ export const bomResourceKeys = createResourceKeys('bom');
  * BOMs are immutable snapshots so we use a longer staleTime.
  */
 export function useEntityBom(entityType: string, entityId: string | undefined) {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
-
   return useQuery({
-    queryKey: [...bomResourceKeys.all(organizationId), entityType, entityId] as const,
+    queryKey: [...bomResourceKeys.all(), entityType, entityId] as const,
     queryFn: async ({ signal }): Promise<Bom | null> => {
       const { data } = await apiClient.get<Bom | null>(
         `/bom?entityType=${entityType}&entityId=${entityId}`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       if (!data) return null;
 
@@ -62,7 +60,7 @@ export function useEntityBom(entityType: string, entityId: string | undefined) {
         totalLineItems: lineGroups.size,
       };
     },
-    enabled: isReady && !!entityId,
+    enabled: !!entityId,
     staleTime: 60_000,
   });
 }
@@ -80,14 +78,12 @@ export interface AllocateBomPendingResult {
  */
 export function useAllocateBomPending() {
   const queryClient = useQueryClient();
-  const { orgHeaders } = useOrgContext();
 
   const mutation = useMutation<AllocateBomPendingResult, unknown, string>({
     mutationFn: async (bomId: string) => {
       const { data } = await apiClient.post<AllocateBomPendingResult>(
         `/bom/${bomId}/allocate-pending`,
         {},
-        { headers: orgHeaders },
       );
       return data;
     },
@@ -141,19 +137,16 @@ interface BomMutationContext {
 
 export function useUpdateBomItemSerial() {
   const queryClient = useQueryClient();
-  const { orgHeaders, organizationId } = useOrgContext();
 
   const mutation = useMutation<BomItem, unknown, UpdateBomItemSerialPayload, BomMutationContext>({
     mutationFn: async ({ itemId, serialNumber }) => {
-      const { data } = await apiClient.patch<{ data: BomItem }>(
-        `/bom-items/${itemId}/serial`,
-        { serialNumber },
-        { headers: orgHeaders },
-      );
+      const { data } = await apiClient.patch<{ data: BomItem }>(`/bom-items/${itemId}/serial`, {
+        serialNumber,
+      });
       return data.data;
     },
     onMutate: async ({ itemId, serialNumber }) => {
-      const targetKeyPrefix = bomResourceKeys.all(organizationId);
+      const targetKeyPrefix = bomResourceKeys.all();
       await queryClient.cancelQueries({ queryKey: targetKeyPrefix });
 
       const snapshots = queryClient.getQueriesData<Bom | null>({ queryKey: targetKeyPrefix });
@@ -168,7 +161,7 @@ export function useUpdateBomItemSerial() {
       return { snapshots };
     },
     onSuccess: (updatedItem) => {
-      const targetKeyPrefix = bomResourceKeys.all(organizationId);
+      const targetKeyPrefix = bomResourceKeys.all();
       const snapshots = queryClient.getQueriesData<Bom | null>({ queryKey: targetKeyPrefix });
       for (const [queryKey, cachedBom] of snapshots) {
         if (!cachedBom) continue;
@@ -208,7 +201,6 @@ export function useUpdateBomItemSerial() {
 
 export function useBulkUpdateBomItemSerials() {
   const queryClient = useQueryClient();
-  const { orgHeaders, organizationId } = useOrgContext();
 
   const mutation = useMutation<
     BomItem[],
@@ -217,15 +209,13 @@ export function useBulkUpdateBomItemSerials() {
     BomMutationContext
   >({
     mutationFn: async ({ items }) => {
-      const { data } = await apiClient.patch<{ data: BomItem[] }>(
-        '/bom-items/bulk-serials',
-        { items },
-        { headers: orgHeaders },
-      );
+      const { data } = await apiClient.patch<{ data: BomItem[] }>('/bom-items/bulk-serials', {
+        items,
+      });
       return data.data;
     },
     onMutate: async ({ items }) => {
-      const targetKeyPrefix = bomResourceKeys.all(organizationId);
+      const targetKeyPrefix = bomResourceKeys.all();
       await queryClient.cancelQueries({ queryKey: targetKeyPrefix });
 
       const updatesById = new Map(items.map((item) => [item.id, item.serialNumber ?? undefined]));
@@ -242,7 +232,7 @@ export function useBulkUpdateBomItemSerials() {
     },
     onSuccess: (updatedItems) => {
       const updatesById = new Map(updatedItems.map((item) => [item.id, item]));
-      const targetKeyPrefix = bomResourceKeys.all(organizationId);
+      const targetKeyPrefix = bomResourceKeys.all();
       const snapshots = queryClient.getQueriesData<Bom | null>({ queryKey: targetKeyPrefix });
       for (const [queryKey, cachedBom] of snapshots) {
         if (!cachedBom) continue;
@@ -279,20 +269,18 @@ export function useBulkUpdateBomItemSerials() {
  */
 export function useSyncProjectBom(projectId: string) {
   const queryClient = useQueryClient();
-  const { orgHeaders, organizationId } = useOrgContext();
 
   const mutation = useMutation<{ message: string }, unknown>({
     mutationFn: async () => {
       const { data } = await apiClient.post<{ message: string }>(
         `/projects/${projectId}/sync-bom`,
         {},
-        { headers: orgHeaders },
       );
       return data;
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: [...bomResourceKeys.all(organizationId), 'project', projectId],
+        queryKey: [...bomResourceKeys.all(), 'project', projectId],
       });
       void queryClient.invalidateQueries({ queryKey: ['bom'] });
       showToast.success('BOM resynced from quote');
@@ -309,23 +297,18 @@ export function useSyncProjectBom(projectId: string) {
 }
 
 export function useBomSerialConflicts(serialNumber: string | undefined) {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const normalizedSerial = serialNumber?.trim() ?? '';
 
   return useQuery({
-    queryKey: [
-      ...bomResourceKeys.all(organizationId),
-      'serial-conflicts',
-      normalizedSerial,
-    ] as const,
+    queryKey: [...bomResourceKeys.all(), 'serial-conflicts', normalizedSerial] as const,
     queryFn: async ({ signal }): Promise<BomSerialConflict[]> => {
       const { data } = await apiClient.get<{ data: BomSerialConflict[] }>(
         `/bom-items/check-serial?serialNumber=${encodeURIComponent(normalizedSerial)}`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data.data ?? [];
     },
-    enabled: isReady && normalizedSerial.length > 0,
+    enabled: normalizedSerial.length > 0,
     staleTime: 15_000,
   });
 }

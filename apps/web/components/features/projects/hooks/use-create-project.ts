@@ -9,7 +9,6 @@ import { projectKeys } from './use-projects';
 import { propertyKeys } from '@/components/features/properties/hooks';
 import { quoteKeys } from '@/components/features/quotes';
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 export interface ConvertFromQuotePayload {
   name?: string;
@@ -38,8 +37,6 @@ interface ProjectResponse {
 }
 
 export function useConvertFromQuote() {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
   const queryClient = useQueryClient();
 
   return useMutation<
@@ -51,14 +48,13 @@ export function useConvertFromQuote() {
       const { data } = await apiClient.post<ProjectResponse>(
         `/projects/convert-from-quote/${quoteId}`,
         payload,
-        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: projectKeys.all(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: projectKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
     },
   });
 }

@@ -17,24 +17,19 @@ export class ReturnRequestService {
   /**
    * Create a return request manually or via BOM reconcile (over-dispatch path).
    */
-  async create(
-    organizationId: string,
-    dto: CreateReturnRequestDto,
-    createdBy: string,
-  ): Promise<ReturnRequestEntity> {
+  async create(dto: CreateReturnRequestDto, createdBy: string): Promise<ReturnRequestEntity> {
     const repo = this.dataSource.getRepository(ReturnRequestEntity);
 
     // Validate the allocation belongs to this org
     const allocationRepo = this.dataSource.getRepository(StockAllocationEntity);
     const allocation = await allocationRepo.findOne({
-      where: { id: dto.allocationId, organizationId },
+      where: { id: dto.allocationId },
     });
     if (!allocation) {
       throw new NotFoundException(`Stock allocation ${dto.allocationId} not found`);
     }
 
     const request = repo.create({
-      organizationId,
       allocationId: dto.allocationId,
       bomId: dto.bomId,
       quantity: dto.quantity,
@@ -48,19 +43,13 @@ export class ReturnRequestService {
   /**
    * List return requests with optional filters.
    */
-  async list(
-    organizationId: string,
-    filters?: {
-      status?: ReturnRequestStatus;
-      bomId?: string;
-      allocationId?: string;
-    },
-  ): Promise<ReturnRequestEntity[]> {
+  async list(filters?: {
+    status?: ReturnRequestStatus;
+    bomId?: string;
+    allocationId?: string;
+  }): Promise<ReturnRequestEntity[]> {
     const repo = this.dataSource.getRepository(ReturnRequestEntity);
-    const query = repo
-      .createQueryBuilder('rr')
-      .where('rr.organizationId = :organizationId', { organizationId })
-      .orderBy('rr.createdAt', 'DESC');
+    const query = repo.createQueryBuilder('rr').orderBy('rr.createdAt', 'DESC');
 
     if (filters?.status) {
       query.andWhere('rr.status = :status', { status: filters.status });
@@ -75,9 +64,9 @@ export class ReturnRequestService {
     return query.getMany();
   }
 
-  async findById(id: string, organizationId: string): Promise<ReturnRequestEntity> {
+  async findById(id: string): Promise<ReturnRequestEntity> {
     const repo = this.dataSource.getRepository(ReturnRequestEntity);
-    const request = await repo.findOne({ where: { id, organizationId } });
+    const request = await repo.findOne({ where: { id } });
     if (!request) throw new NotFoundException(`Return request ${id} not found`);
     return request;
   }
@@ -86,12 +75,8 @@ export class ReturnRequestService {
    * Complete a return request — PM has physically received the units.
    * Calls StockAllocationService.returnToStock to move qty back to available.
    */
-  async complete(
-    id: string,
-    organizationId: string,
-    completedBy: string,
-  ): Promise<ReturnRequestEntity> {
-    const request = await this.findById(id, organizationId);
+  async complete(id: string, completedBy: string): Promise<ReturnRequestEntity> {
+    const request = await this.findById(id);
 
     if (request.status === 'completed') {
       throw new BadRequestException('Return request is already completed');
@@ -103,7 +88,6 @@ export class ReturnRequestService {
     // Execute the physical return to stock
     await this.stockAllocationService.returnToStock(
       request.allocationId,
-      organizationId,
       request.quantity,
       request.reason,
       completedBy,
@@ -116,19 +100,15 @@ export class ReturnRequestService {
       completedBy,
     });
 
-    return this.findById(id, organizationId);
+    return this.findById(id);
   }
 
   /**
    * Cancel a return request — PM accepts the over-dispatch (scope creep / write-off).
    * No inventory change; the dispatched excess is simply accepted.
    */
-  async cancel(
-    id: string,
-    organizationId: string,
-    cancelledBy: string,
-  ): Promise<ReturnRequestEntity> {
-    const request = await this.findById(id, organizationId);
+  async cancel(id: string, cancelledBy: string): Promise<ReturnRequestEntity> {
+    const request = await this.findById(id);
 
     if (request.status === 'completed') {
       throw new BadRequestException('Cannot cancel a completed return request');
@@ -139,6 +119,6 @@ export class ReturnRequestService {
 
     const repo = this.dataSource.getRepository(ReturnRequestEntity);
     await repo.update(id, { status: 'cancelled', completedBy: cancelledBy });
-    return this.findById(id, organizationId);
+    return this.findById(id);
   }
 }

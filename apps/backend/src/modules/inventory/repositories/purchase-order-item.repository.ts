@@ -89,13 +89,12 @@ export class PurchaseOrderItemRepository {
   /**
    * Get total quantity ordered for a product
    */
-  async getTotalOrderedQuantity(productId: string, organizationId: string): Promise<number> {
+  async getTotalOrderedQuantity(productId: string): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('item')
       .innerJoin('item.purchaseOrder', 'purchaseOrder')
       .select('SUM(item.orderedQuantity)', 'totalQuantity')
       .where('item.productId = :productId', { productId })
-      .andWhere('purchaseOrder.organizationId = :organizationId', { organizationId })
       .andWhere('purchaseOrder.status IN (:...statuses)', {
         statuses: ['sent', 'confirmed', 'partially_received'],
       })
@@ -107,13 +106,12 @@ export class PurchaseOrderItemRepository {
   /**
    * Get total received quantity for a product
    */
-  async getTotalReceivedQuantity(productId: string, organizationId: string): Promise<number> {
+  async getTotalReceivedQuantity(productId: string): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('item')
       .innerJoin('item.purchaseOrder', 'purchaseOrder')
       .select('SUM(item.receivedQuantity)', 'totalQuantity')
       .where('item.productId = :productId', { productId })
-      .andWhere('purchaseOrder.organizationId = :organizationId', { organizationId })
       .getRawOne<{ totalQuantity: string }>();
 
     return result?.totalQuantity ? parseFloat(result.totalQuantity) : 0;

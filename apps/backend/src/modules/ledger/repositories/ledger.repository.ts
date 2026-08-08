@@ -60,7 +60,6 @@ export interface MilestoneAllocationRow {
 /** A row of `v_project_balance`. */
 export interface ProjectBalanceRow {
   projectId: string;
-  organizationId: string;
   customerId: string | null;
   contractPaise: number;
   /** The part of the contract that came from the signed quote. */
@@ -157,7 +156,6 @@ export class LedgerRepository {
    */
   async getMilestoneBalances(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
     forUpdate = false,
   ): Promise<MilestoneBalanceRow[]> {
@@ -166,10 +164,10 @@ export class LedgerRepository {
     if (forUpdate) {
       await exec.query(
         `SELECT id FROM payment_milestones
-          WHERE project_id = $1 AND organization_id = $2
+          WHERE project_id = $1
           ORDER BY display_order, id
           FOR UPDATE`,
-        [projectId, organizationId],
+        [projectId],
       );
     }
 
@@ -189,9 +187,9 @@ export class LedgerRepository {
          days_overdue          AS "daysOverdue",
          entry_count           AS "entryCount"
        FROM v_milestone_balance
-       WHERE project_id = $1 AND organization_id = $2
+       WHERE project_id = $1
        ORDER BY display_order`,
-      [projectId, organizationId],
+      [projectId],
     );
 
     return rows.map((r) => LedgerRepository.num(r, LedgerRepository.MILESTONE_NUMERIC));
@@ -210,7 +208,6 @@ export class LedgerRepository {
    */
   async getMilestoneAllocations(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<MilestoneAllocationRow[]> {
     const rows: MilestoneAllocationRow[] = await this.exec(manager).query(
@@ -234,9 +231,9 @@ export class LedgerRepository {
          JOIN ledger_entries e ON e.id = a.entry_id
          LEFT JOIN ledger_entries orig ON orig.id = e.reverses_id
          LEFT JOIN ledger_entries rev  ON rev.reverses_id = e.id
-        WHERE a.project_id = $1 AND e.organization_id = $2
+        WHERE a.project_id = $1
         ORDER BY e.value_date, e.created_at, a.created_at`,
-      [projectId, organizationId],
+      [projectId],
     );
     return rows.map((r) => LedgerRepository.num(r, LedgerRepository.ALLOCATION_NUMERIC));
   }
@@ -250,12 +247,11 @@ export class LedgerRepository {
    */
   async getMilestoneBalancesWithAllocations(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<Array<MilestoneBalanceRow & { allocations: MilestoneAllocationRow[] }>> {
     const [balances, allocations] = await Promise.all([
-      this.getMilestoneBalances(projectId, organizationId, manager),
-      this.getMilestoneAllocations(projectId, organizationId, manager),
+      this.getMilestoneBalances(projectId, manager),
+      this.getMilestoneAllocations(projectId, manager),
     ]);
 
     const byMilestone = new Map<string, MilestoneAllocationRow[]>();
@@ -273,13 +269,11 @@ export class LedgerRepository {
 
   async getProjectBalance(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<ProjectBalanceRow | null> {
     const rows: ProjectBalanceRow[] = await this.exec(manager).query(
       `SELECT
          project_id        AS "projectId",
-         organization_id   AS "organizationId",
          customer_id       AS "customerId",
          contract_paise      AS "contractPaise",
          quoted_paise        AS "quotedPaise",
@@ -294,50 +288,35 @@ export class LedgerRepository {
          receipt_count     AS "receiptCount",
          milestone_count   AS "milestoneCount"
        FROM v_project_balance
-       WHERE project_id = $1 AND organization_id = $2`,
-      [projectId, organizationId],
+       WHERE project_id = $1`,
+      [projectId],
     );
     const row = rows[0];
     return row ? LedgerRepository.num(row, LedgerRepository.PROJECT_NUMERIC) : null;
   }
 
   /**
-   * Does this project belong to the caller's organization?
+   * Does this project exist and is it live?
    *
-   * `projects` has no `organization_id` of its own, so ownership is a two-hop
-   * through `customer_properties`. Without this check the only guard on a ledger
-   * write is the FK to `projects(id)` — which ANY real project satisfies. A
-   * receipt posted to another org's project would insert cleanly, allocate
-   * nothing, become phantom credit, and count toward the caller's totals. And
-   * because the ledger is append-only, the bad row could only ever be reversed,
-   * never removed.
-   *
-   * This is tenancy, not the out-of-scope RBAC work.
+   * Was an org-ownership check before the app went single-tenant. The tenancy
+   * half is gone, but the check is not redundant: it still rejects a write to a
+   * soft-deleted project, which the FK to `projects(id)` happily accepts. The
+   * ledger is append-only, so a bad row could only ever be reversed, never
+   * removed — the guard stays.
    */
-  async projectBelongsToOrg(
-    projectId: string,
-    organizationId: string,
-    manager?: EntityManager,
-  ): Promise<boolean> {
+  async projectExists(projectId: string, manager?: EntityManager): Promise<boolean> {
     const rows = await this.exec(manager).query(
       `SELECT 1
          FROM projects p
-         JOIN customer_properties cp ON cp.id = p.property_id
-        WHERE p.id = $1 AND cp.organization_id = $2 AND p.deleted_at IS NULL
+        WHERE p.id = $1 AND p.deleted_at IS NULL
         LIMIT 1`,
-      [projectId, organizationId],
+      [projectId],
     );
     return rows.length > 0;
   }
 
-  async findEntryById(
-    id: string,
-    organizationId: string,
-    manager?: EntityManager,
-  ): Promise<LedgerEntryEntity | null> {
-    return this.exec(manager)
-      .getRepository(LedgerEntryEntity)
-      .findOne({ where: { id, organizationId } });
+  async findEntryById(id: string, manager?: EntityManager): Promise<LedgerEntryEntity | null> {
+    return this.exec(manager).getRepository(LedgerEntryEntity).findOne({ where: { id } });
   }
 
   /** The allocations of an entry — needed to build its reversal mirror. */
@@ -360,13 +339,12 @@ export class LedgerRepository {
 
   async listEntriesByProject(
     projectId: string,
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<LedgerEntryEntity[]> {
     return this.exec(manager)
       .getRepository(LedgerEntryEntity)
       .find({
-        where: { projectId, organizationId },
+        where: { projectId },
         order: { valueDate: 'DESC', createdAt: 'DESC' },
       });
   }

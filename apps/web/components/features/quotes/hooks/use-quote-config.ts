@@ -8,7 +8,6 @@ import type { QuoteConfigResponse, SubsidyConfigResponse } from '../types';
 import { apiClient } from '@/lib/api/client';
 import { useProductOptions } from '@/lib/hooks/resources';
 import { useProductTypeList, type ProductType } from '@/lib/hooks/resources/product-types';
-import { useAuth } from '@/providers/auth-provider';
 
 function getAttributeOptions(
   productTypes: ProductType[],
@@ -37,9 +36,9 @@ const PHASE_SUBTITLES: Record<string, string> = {
 // ============================================================================
 
 const quoteConfigKeys = {
-  all: (orgId?: string) => ['quote-config', orgId] as const,
-  config: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'config'] as const,
-  subsidyRules: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'subsidy-rules'] as const,
+  all: () => ['quote-config'] as const,
+  config: () => [...quoteConfigKeys.all(), 'config'] as const,
+  subsidyRules: () => [...quoteConfigKeys.all(), 'subsidy-rules'] as const,
 };
 
 // ============================================================================
@@ -55,11 +54,6 @@ export interface PhaseTypeOption {
 }
 
 export function useQuoteConfig() {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
-  const headers = useMemo(() => ({ 'X-Organization-Id': organizationId }), [organizationId]);
-
   const productOptions = useProductOptions();
 
   const { items: productTypes } = useProductTypeList({
@@ -83,29 +77,24 @@ export function useQuoteConfig() {
   }, [productTypes]);
 
   const configQuery = useQuery<QuoteConfigResponse>({
-    queryKey: quoteConfigKeys.config(organizationId),
+    queryKey: quoteConfigKeys.config(),
     queryFn: async (): Promise<QuoteConfigResponse> => {
-      const response = await apiClient.get<QuoteConfigResponse>('/quote-calculator/config', {
-        headers,
-      });
+      const response = await apiClient.get<QuoteConfigResponse>('/quote-calculator/config', {});
       return response.data as QuoteConfigResponse;
     },
     staleTime: FIVE_MINUTES,
-    enabled: !!organizationId,
   });
 
   const subsidyQuery = useQuery<SubsidyConfigResponse[]>({
-    queryKey: quoteConfigKeys.subsidyRules(organizationId),
+    queryKey: quoteConfigKeys.subsidyRules(),
     queryFn: async (): Promise<SubsidyConfigResponse[]> => {
       const response = await apiClient.get<SubsidyConfigResponse[]>(
         '/quote-calculator/subsidy-rules/all',
-        { headers },
       );
       const rows = response.data as SubsidyConfigResponse[];
       return rows;
     },
     staleTime: FIVE_MINUTES,
-    enabled: !!organizationId,
   });
 
   return {

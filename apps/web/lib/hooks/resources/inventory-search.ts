@@ -3,7 +3,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
-import { STALE_TIMES, useOrgContext } from '../core';
+import { STALE_TIMES } from '../core';
 
 import { apiClient } from '@/lib/api/client';
 
@@ -16,7 +16,7 @@ import { apiClient } from '@/lib/api/client';
  *
  *   * debounce the query so we don't fire a request on every keystroke;
  *   * skip below the backend's 2-character minimum (saves a 400);
- *   * cache results per (orgId, q, types) tuple so re-typing the same
+ *   * cache results per (q, types) tuple so re-typing the same
  *     query while the modal stays open is instant;
  *   * surface the `degraded` array so the consumer (the cmdk palette)
  *     can show a "results may be incomplete" hint when one bucket
@@ -83,7 +83,6 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 }
 
 export function useInventorySearch(opts: UseInventorySearchOptions): UseInventorySearchReturn {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const trimmed = opts.query.trim();
   const minLength = opts.minLength ?? 2;
   const debounceMs = opts.debounceMs ?? 200;
@@ -91,13 +90,13 @@ export function useInventorySearch(opts: UseInventorySearchOptions): UseInventor
 
   const isBelowMinLength = trimmed.length > 0 && trimmed.length < minLength;
   const isQueryReady = debounced.length >= minLength;
-  const enabled = (opts.enabled ?? true) && isReady && isQueryReady;
+  const enabled = (opts.enabled ?? true) && isQueryReady;
 
   const types = opts.types && opts.types.length > 0 ? [...opts.types].sort().join(',') : undefined;
 
   const queryKey = useMemo(
-    () => ['inventory-search', organizationId, debounced, types ?? 'all'] as const,
-    [organizationId, debounced, types],
+    () => ['inventory-search', debounced, types ?? 'all'] as const,
+    [debounced, types],
   );
 
   const query = useQuery<InventorySearchResponse>({
@@ -112,7 +111,7 @@ export function useInventorySearch(opts: UseInventorySearchOptions): UseInventor
       if (types) search.set('types', types);
       const { data } = await apiClient.get<InventorySearchResponse>(
         `/inventory/search?${search.toString()}`,
-        { headers: orgHeaders, signal },
+        { signal },
       );
       return data;
     },

@@ -333,7 +333,7 @@ export class ProjectTaskRepository {
         completedStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
       })
       .andWhere('task.end_date < CURRENT_DATE')
-      .orderBy('task.end_date', 'ASC')
+      .orderBy('task.endDate', 'ASC')
       .getMany();
     return this.resolveMany(tasks);
   }
@@ -358,7 +358,7 @@ export class ProjectTaskRepository {
       .createQueryBuilder('task')
       .where('task.project_id = :projectId', { projectId })
       .andWhere('task.code LIKE :pattern', { pattern: 'TASK-%' })
-      .orderBy('task.created_at', 'DESC')
+      .orderBy('task.createdAt', 'DESC')
       .getOne();
 
     if (!lastTask) {
@@ -495,7 +495,6 @@ export class ProjectTaskRepository {
 
   async findByUserId(
     userId: string,
-    organizationId: string,
     page: number,
     limit: number,
     filters: {
@@ -509,7 +508,6 @@ export class ProjectTaskRepository {
       deletedAt: IsNull(),
       status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
       project: {
-        property: { organizationId },
         status: Not(ProjectStatus.CANCELLED),
       },
     };
@@ -581,7 +579,6 @@ export class ProjectTaskRepository {
 
   async findAllByUserId(
     userId: string,
-    organizationId: string,
     filters: {
       status?: TaskStatus;
       priority?: string;
@@ -597,7 +594,6 @@ export class ProjectTaskRepository {
       .leftJoinAndSelect('task.workflowStep', 'workflowStep')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('task.deleted_at IS NULL')
-      .andWhere('property.organization_id = :organizationId', { organizationId })
       .andWhere('project.status != :cancelledStatus', { cancelledStatus: ProjectStatus.CANCELLED });
 
     // Status filter
@@ -657,7 +653,7 @@ export class ProjectTaskRepository {
     // Ownership: only tasks assigned to this user
     qb.andWhere('task.assigned_to_user_id = :userId', { userId });
 
-    qb.orderBy('task.end_date', 'ASC', 'NULLS LAST').addOrderBy('task.priority', 'DESC');
+    qb.orderBy('task.endDate', 'ASC', 'NULLS LAST').addOrderBy('task.priority', 'DESC');
 
     const results = await qb.getMany();
     return this.resolveMany(results);
@@ -666,25 +662,20 @@ export class ProjectTaskRepository {
   async findByIdForAssignee(
     taskId: string,
     userId: string,
-    organizationId: string,
     teamProjectIds: string[] = [],
     isAdmin = false,
   ): Promise<ProjectTaskEntity | null> {
-    const orgFilter = { project: { property: { organizationId } } };
-
     let whereConditions: Record<string, unknown>[];
 
     if (isAdmin) {
-      whereConditions = [{ id: taskId, deletedAt: IsNull(), ...orgFilter }];
+      whereConditions = [{ id: taskId, deletedAt: IsNull() }];
     } else if (teamProjectIds.length > 0) {
       whereConditions = [
-        { id: taskId, assignedToUserId: userId, deletedAt: IsNull(), ...orgFilter },
-        { id: taskId, projectId: In(teamProjectIds), deletedAt: IsNull(), ...orgFilter },
+        { id: taskId, assignedToUserId: userId, deletedAt: IsNull() },
+        { id: taskId, projectId: In(teamProjectIds), deletedAt: IsNull() },
       ];
     } else {
-      whereConditions = [
-        { id: taskId, assignedToUserId: userId, deletedAt: IsNull(), ...orgFilter },
-      ];
+      whereConditions = [{ id: taskId, assignedToUserId: userId, deletedAt: IsNull() }];
     }
 
     const task = await this.repository.findOne({
@@ -702,7 +693,6 @@ export class ProjectTaskRepository {
   async findByIdCrossProject(
     taskId: string,
     userId: string,
-    organizationId: string,
     teamProjectIds: string[] = [],
     isAdmin = false,
   ): Promise<ProjectTaskEntity | null> {
@@ -713,8 +703,7 @@ export class ProjectTaskRepository {
       .leftJoinAndSelect('task.workflowStep', 'workflowStep')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .where('task.id = :taskId', { taskId })
-      .andWhere('task.deleted_at IS NULL')
-      .andWhere('property.organization_id = :organizationId', { organizationId });
+      .andWhere('task.deleted_at IS NULL');
 
     if (isAdmin) {
       // Admin bypass — org filter is sufficient
@@ -731,11 +720,7 @@ export class ProjectTaskRepository {
     return task ? this.resolveTaskFields(task) : null;
   }
 
-  async countCompletedThisWeek(
-    userId: string,
-    organizationId: string,
-    projectId?: string,
-  ): Promise<number> {
+  async countCompletedThisWeek(userId: string, projectId?: string): Promise<number> {
     const startOfWeek = new Date();
     const day = startOfWeek.getDay();
     const diff = day === 0 ? 6 : day - 1;
@@ -746,7 +731,6 @@ export class ProjectTaskRepository {
       status: TaskStatus.DONE,
       deletedAt: IsNull(),
       updatedAt: MoreThanOrEqual(startOfWeek),
-      project: { property: { organizationId } },
     };
 
     if (projectId) {
@@ -760,7 +744,6 @@ export class ProjectTaskRepository {
 
   async findUserTaskProjects(
     userId: string,
-    organizationId: string,
   ): Promise<Array<{ id: string; name: string; projectNumber: string }>> {
     const qb = this.repository
       .createQueryBuilder('task')
@@ -774,7 +757,6 @@ export class ProjectTaskRepository {
       .andWhere('task.status NOT IN (:...excludedStatuses)', {
         excludedStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
       })
-      .andWhere('property.organization_id = :organizationId', { organizationId })
       .andWhere('task.assigned_to_user_id = :userId', { userId });
 
     return qb.getRawMany<{ id: string; name: string; projectNumber: string }>();
@@ -786,7 +768,6 @@ export class ProjectTaskRepository {
    */
   async countSummaryForUser(
     userId: string,
-    organizationId: string,
   ): Promise<{ total: number; overdue: number; dueToday: number }> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -795,7 +776,6 @@ export class ProjectTaskRepository {
       deletedAt: IsNull(),
       status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
       project: {
-        property: { organizationId },
         status: Not(ProjectStatus.CANCELLED),
       },
     };
@@ -832,7 +812,7 @@ export class ProjectTaskRepository {
       .andWhere('task.end_date IS NOT NULL')
       .andWhere('task.end_date <= :futureDate', { futureDate })
       .andWhere('task.end_date >= CURRENT_DATE')
-      .orderBy('task.end_date', 'ASC')
+      .orderBy('task.endDate', 'ASC')
       .getMany();
     return this.resolveMany(tasks);
   }

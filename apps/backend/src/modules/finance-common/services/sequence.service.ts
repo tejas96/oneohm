@@ -30,29 +30,24 @@ export class SequenceService {
   /**
    * Generate the next sequence number for a given scope.
    *
-   * @param organizationId Organization that owns the sequence (multi-tenant isolation).
-   * @param scope          Logical sequence (RECEIPT, EXPENSE).
-   * @param manager        Optional outer transaction manager — pass when this
-   *                       call must participate in an existing DB transaction.
+   * @param scope   Logical sequence (RECEIPT, EXPENSE).
+   * @param manager Optional outer transaction manager — pass when this call
+   *                must participate in an existing DB transaction.
    * @returns Formatted number string, e.g. `RCP-2026-27-000001`.
    */
-  async getNextNumber(
-    organizationId: string,
-    scope: FinanceSequenceScope,
-    manager?: EntityManager,
-  ): Promise<string> {
+  async getNextNumber(scope: FinanceSequenceScope, manager?: EntityManager): Promise<string> {
     const fy = this.computeFinancialYear(new Date());
     const sequenceKey = `${scope}-${fy}`;
     const prefix = this.getPrefix(scope);
 
     const exec = manager ?? this.dataSource.manager;
     const rows = await exec.query(
-      `INSERT INTO numbering_sequences (organization_id, sequence_key, last_value)
-       VALUES ($1, $2, 1)
-       ON CONFLICT (organization_id, sequence_key)
+      `INSERT INTO numbering_sequences (sequence_key, last_value)
+       VALUES ($1, 1)
+       ON CONFLICT (sequence_key)
        DO UPDATE SET last_value = numbering_sequences.last_value + 1, updated_at = CURRENT_TIMESTAMP
        RETURNING last_value`,
-      [organizationId, sequenceKey],
+      [sequenceKey],
     );
 
     const raw = rows[0]?.last_value;

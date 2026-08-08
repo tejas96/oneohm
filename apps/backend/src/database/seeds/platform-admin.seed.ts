@@ -54,7 +54,6 @@ async function seedPlatformAdmin() {
         name: 'Platform Administrator',
         code: 'platform_admin',
         description: 'Full system access - SaaS provider only',
-        organizationId: null, // ← Platform level role (NULL in DB)
         isSystemRole: true,
         level: 0,
       });
@@ -167,7 +166,6 @@ async function seedPlatformAdmin() {
         userId: platformUser.id,
         role: platformAdminRole.code, // Legacy role string (NOT NULL in DB)
         roleId: platformAdminRole.id, // New IAM role UUID
-        organizationId: null, // Platform level assignment
       });
       await userRoleRepository.repository.save(userRole);
       // eslint-disable-next-line no-console -- seed script progress output

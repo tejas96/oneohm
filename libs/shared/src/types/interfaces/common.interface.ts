@@ -200,14 +200,6 @@ export interface UuidIdentifier {
   id: string;
 }
 
-/**
- * Organization scoped entity
- * For multi-tenant entities
- */
-export interface OrganizationScoped {
-  organizationId: string;
-}
-
 // ============================================================================
 // Validation Interfaces
 // ============================================================================

@@ -10,10 +10,6 @@ export class ReturnRequestResponseDto {
 
   @Expose()
   @ApiProperty()
-  organizationId!: string;
-
-  @Expose()
-  @ApiProperty()
   allocationId!: string;
 
   @Expose()

@@ -40,7 +40,6 @@ export interface ResourceConfig<T = unknown, F extends BaseFilters = BaseFilters
   searchDebounceMs?: number;
   syncToUrl?: boolean;
   persistFilters?: boolean;
-  requiresOrg?: boolean;
   staleTime?: number;
   gcTime?: number;
   refetchInterval?: number | false;
@@ -68,7 +67,6 @@ export interface SubResourceConfig<T = unknown, F extends BaseFilters = BaseFilt
   parentIdParam?: string;
   parentIdInPath?: boolean;
   defaultFilters?: Partial<F>;
-  requiresOrg?: boolean;
   staleTime?: number;
   responseAdapter?: (raw: unknown) => ResourceListResponse<T>;
 }
@@ -78,7 +76,6 @@ export interface SubResourceConfig<T = unknown, F extends BaseFilters = BaseFilt
 export interface MutationConfig<T = unknown> {
   resource: string;
   endpoint: string;
-  requiresOrg?: boolean;
   endpoints?: {
     create?: string;
     update?: string;
@@ -119,7 +116,6 @@ export interface MutationToastConfig {
 export interface StatsConfig<TStats = Record<string, number>> {
   resource: string;
   endpoint: string;
-  requiresOrg?: boolean;
   staleTime?: number;
   transform?: (raw: unknown) => TStats;
 }

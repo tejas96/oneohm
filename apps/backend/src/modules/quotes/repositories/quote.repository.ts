@@ -50,9 +50,9 @@ export class QuoteRepository {
   /**
    * Find quote by ID
    */
-  async findById(id: string, organizationId: string): Promise<QuoteEntity> {
+  async findById(id: string): Promise<QuoteEntity> {
     const quote = await this.repository.findOne({
-      where: { id, organizationId },
+      where: { id },
       relations: ['customer', 'salesPerson', 'reseller', 'property', 'versions'],
     });
 
@@ -67,14 +67,10 @@ export class QuoteRepository {
    * Find quotes with comprehensive filtering, sorting, and pagination
    * Primary method for the quote list API
    *
-   * @param organizationId - Organization context
    * @param query - Query parameters (filters, sorting, pagination)
    * @returns Tuple of [quotes, total count]
    */
-  async findWithFilters(
-    organizationId: string,
-    query: QuoteQueryDto,
-  ): Promise<[QuoteEntity[], number]> {
+  async findWithFilters(query: QuoteQueryDto): Promise<[QuoteEntity[], number]> {
     const qb = this.repository
       .createQueryBuilder('quote')
       .leftJoinAndSelect('quote.versions', 'cv', latestVersionJoinCondition('quote'))
@@ -82,7 +78,6 @@ export class QuoteRepository {
       .leftJoinAndSelect('quote.salesPerson', 'salesPerson')
       .leftJoinAndSelect('quote.reseller', 'reseller')
       .leftJoinAndSelect('quote.property', 'property')
-      .where('quote.organizationId = :organizationId', { organizationId })
       .andWhere('quote.deletedAt IS NULL')
       .andWhere('quote.propertyId IS NOT NULL');
 
@@ -204,7 +199,7 @@ export class QuoteRepository {
     return [groupedQuotes.slice(start, end), total];
   }
 
-  async findAllByPropertyId(propertyId: string, organizationId: string): Promise<QuoteEntity[]> {
+  async findAllByPropertyId(propertyId: string): Promise<QuoteEntity[]> {
     return this.repository
       .createQueryBuilder('quote')
       .leftJoinAndSelect('quote.versions', 'cv', latestVersionJoinCondition('quote'))
@@ -212,7 +207,6 @@ export class QuoteRepository {
       .leftJoinAndSelect('quote.salesPerson', 'salesPerson')
       .leftJoinAndSelect('quote.reseller', 'reseller')
       .leftJoinAndSelect('quote.property', 'property')
-      .where('quote.organizationId = :organizationId', { organizationId })
       .andWhere('quote.propertyId = :propertyId', { propertyId })
       .andWhere('quote.deletedAt IS NULL')
       .orderBy('CASE WHEN quote.status = :acceptedStatus THEN 0 ELSE 1 END', 'ASC')
@@ -225,27 +219,23 @@ export class QuoteRepository {
   /**
    * Update quote
    */
-  async update(
-    id: string,
-    organizationId: string,
-    quoteData: Partial<QuoteEntity>,
-  ): Promise<QuoteEntity> {
+  async update(id: string, quoteData: Partial<QuoteEntity>): Promise<QuoteEntity> {
     await this.repository.update(
-      { id, organizationId },
+      { id },
       {
         ...quoteData,
         updatedAt: new Date(),
       } as QueryDeepPartialEntity<QuoteEntity>, // TypeORM has deep partial type limitations with relations
     );
 
-    return this.findById(id, organizationId);
+    return this.findById(id);
   }
 
   /**
    * Delete quote (soft delete)
    */
-  async delete(id: string, organizationId: string): Promise<void> {
-    const quote = await this.findById(id, organizationId);
+  async delete(id: string): Promise<void> {
+    const quote = await this.findById(id);
     await this.repository.softDelete(quote.id);
   }
 
@@ -314,12 +304,10 @@ export class QuoteRepository {
    */
   async findAcceptedByPropertyId(
     propertyId: string,
-    organizationId: string,
     excludeQuoteId?: string,
   ): Promise<QuoteEntity | null> {
     const qb = this.repository
       .createQueryBuilder('quote')
-      .where('quote.organizationId = :organizationId', { organizationId })
       .andWhere('quote.propertyId = :propertyId', { propertyId })
       .andWhere('quote.status = :status', { status: QuoteStatus.ACCEPTED })
       .andWhere('quote.deletedAt IS NULL');
@@ -334,12 +322,10 @@ export class QuoteRepository {
    * Uses PostgreSQL DISTINCT ON for efficient single-query retrieval
    *
    * @param propertyIds - Array of property IDs to look up
-   * @param organizationId - Organization context
    * @returns Map of propertyId -> latest quote info
    */
   async findLatestByPropertyIds(
     propertyIds: string[],
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<Map<string, LatestQuoteInfo>> {
     // Early return for empty array (no properties = no quotes to look up)
@@ -367,7 +353,6 @@ export class QuoteRepository {
       ])
       .distinctOn(['quote.propertyId'])
       .where('quote.propertyId IN (:...propertyIds)', { propertyIds })
-      .andWhere('quote.organizationId = :organizationId', { organizationId })
       .andWhere('quote.deletedAt IS NULL')
       .orderBy('quote.propertyId')
       .addOrderBy('quote.createdAt', 'DESC')

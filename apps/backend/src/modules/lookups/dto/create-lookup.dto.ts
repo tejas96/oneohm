@@ -63,7 +63,7 @@ export class CreateLookupDto {
 
   @ApiPropertyOptional({
     example: '550e8400-e29b-41d4-a716-446655440000',
-    description: 'Required when scopeType = organization',
+    description: 'Required when the lookup is record-scoped',
   })
   @IsUUID()
   @IsOptional()

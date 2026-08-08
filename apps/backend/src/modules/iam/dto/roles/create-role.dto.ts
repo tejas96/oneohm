@@ -1,10 +1,6 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateRoleDto {
-  @IsUUID()
-  @IsNotEmpty()
-  organizationId!: string;
-
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)

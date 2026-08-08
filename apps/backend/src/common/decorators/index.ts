@@ -8,7 +8,6 @@ export * from './api-read-one.decorator';
 export * from './api-update.decorator';
 
 // Context Decorators
-export * from './organization-context.decorator';
 
 // Security Decorators
 export * from './security-rate-limit.decorator';

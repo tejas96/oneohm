@@ -39,9 +39,8 @@ export type {
 // ============================================================================
 
 export const myTaskKeys = {
-  all: (orgId?: string) => ['my-tasks', orgId] as const,
-  grouped: (orgId: string | undefined, filters: MyTaskFilters) =>
-    [...myTaskKeys.all(orgId), 'grouped', filters] as const,
+  all: () => ['my-tasks'] as const,
+  grouped: (filters: MyTaskFilters) => [...myTaskKeys.all(), 'grouped', filters] as const,
 };
 
 // ============================================================================
@@ -50,10 +49,9 @@ export const myTaskKeys = {
 
 export function useMyTasks(filters: MyTaskFilters): UseQueryResult<GroupedMyTasksResponse> {
   const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: myTaskKeys.grouped(organizationId, filters),
+    queryKey: myTaskKeys.grouped(filters),
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters.groupBy) params.set('groupBy', filters.groupBy);
@@ -64,12 +62,10 @@ export function useMyTasks(filters: MyTaskFilters): UseQueryResult<GroupedMyTask
       if (filters.dueDateFilter) params.set('dueDateFilter', filters.dueDateFilter);
 
       const url = `/tasks/my?${params.toString()}`;
-      const { data } = await apiClient.get<GroupedMyTasksResponse>(url, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      const { data } = await apiClient.get<GroupedMyTasksResponse>(url, {});
       return data;
     },
-    enabled: !!user && !!organizationId,
+    enabled: !!user,
     // Always refetch when navigating to My Tasks so the user sees the latest state.
     staleTime: 0,
     refetchOnMount: true,
@@ -79,17 +75,11 @@ export function useMyTasks(filters: MyTaskFilters): UseQueryResult<GroupedMyTask
 }
 
 export function useUpdateTaskStatus() {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ taskId, status }: { taskId: string; status: TaskStatus }) => {
-      const { data } = await apiClient.patch<MyTask>(
-        `/tasks/${taskId}/status`,
-        { status },
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.patch<MyTask>(`/tasks/${taskId}/status`, { status }, {});
       return data;
     },
     onSuccess: (_data, variables) => {
@@ -97,8 +87,8 @@ export function useUpdateTaskStatus() {
       showToast.success(isDone ? 'Task marked as done' : 'Task status updated');
       // Invalidate the grouped task list AND the separate sidebar summary so both
       // update immediately without a hard refresh.
-      void queryClient.invalidateQueries({ queryKey: myTaskKeys.all(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: myTasksSummaryKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: myTaskKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: myTasksSummaryKeys.all() });
     },
     onError: (error) => {
       showToast.error(getErrorMessage(error));

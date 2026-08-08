@@ -9,17 +9,11 @@ import {
   IsObject,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   Min,
 } from 'class-validator';
 
 export class CreateWorkflowStepDto {
-  @ApiPropertyOptional({ description: 'Organization ID (injected by controller from header)' })
-  @IsUUID()
-  @IsOptional()
-  organizationId?: string;
-
   @ApiProperty({ description: 'Step name', maxLength: 255 })
   @IsString()
   @IsNotEmpty()

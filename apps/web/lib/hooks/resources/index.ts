@@ -185,7 +185,6 @@ export {
   useUserEmployeeProfile,
   type EmployeeProfile,
   type EmployeeProfileUser,
-  type EmployeeProfileOrganization,
 } from './profile';
 
 // Team Workload (FDAL — flat array endpoint)

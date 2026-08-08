@@ -30,13 +30,6 @@ export class AssignUserRoleDto {
   @IsOptional()
   @ValidateIf((o: AssignUserRoleDto) => !o.roleId)
   roleCode?: string;
-
-  @ApiProperty({
-    example: '00000000-0000-0000-0000-000000000001',
-    description: 'Organization ID for the role assignment',
-  })
-  @IsUUID()
-  organizationId!: string;
 }
 
 /**
@@ -68,11 +61,4 @@ export class BulkAssignUserRoleDto {
   @IsOptional()
   @ValidateIf((o: BulkAssignUserRoleDto) => !o.roleId)
   roleCode?: string;
-
-  @ApiProperty({
-    example: '00000000-0000-0000-0000-000000000001',
-    description: 'Organization ID for the role assignment',
-  })
-  @IsUUID()
-  organizationId!: string;
 }

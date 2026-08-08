@@ -25,7 +25,6 @@ import {
 import { showToast } from '@/components/ui/sonner';
 import { useRoleMutations } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
-import { useAuth } from '@/providers/auth-provider';
 
 interface CreateRoleModalProps {
   open: boolean;
@@ -33,7 +32,6 @@ interface CreateRoleModalProps {
 }
 
 export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps): JSX.Element {
-  const { user: currentUser } = useAuth();
   const mutations = useRoleMutations();
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
   const form = useForm<RoleFormData>({
@@ -55,7 +53,6 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps): J
     try {
       const payload: Record<string, unknown> = {
         ...data,
-        organizationId: currentUser?.organizationId || undefined,
       };
       if (!payload.description) delete payload.description;
       const result = await mutations.create.mutateAsync(

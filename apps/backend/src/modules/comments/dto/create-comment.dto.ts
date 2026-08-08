@@ -49,11 +49,6 @@ export class CommentAttachmentDto {
  * Create Comment DTO
  */
 export class CreateCommentDto {
-  @ApiProperty({ description: 'Organization ID' })
-  @IsUUID()
-  @IsNotEmpty()
-  organizationId!: string;
-
   @ApiProperty({
     description: 'Entity type',
     enum: CommentEntityType,

@@ -11,12 +11,10 @@ import { projectReportKeys } from '@/components/features/projects/hooks/use-proj
 import { showToast } from '@/components/ui';
 import { initializeReport, previewReport, saveReport } from '@/lib/api/reports';
 import { deleteFile, uploadFile } from '@/lib/api/storage';
-import { useOrgContext } from '@/lib/hooks/core';
 
 const PREVIEW_DEBOUNCE_MS = 400;
 
 export function useReportEditor(projectId: string, reportId: string | null, open: boolean) {
-  const { organizationId } = useOrgContext();
   const queryClient = useQueryClient();
   const [fields, setFields] = useState<Record<string, string>>({});
   const [previewHtml, setPreviewHtml] = useState('');
@@ -73,10 +71,7 @@ export function useReportEditor(projectId: string, reportId: string | null, open
       previewHtmlRef.current = '';
 
       try {
-        const result = await initializeReport(
-          { reportId, context, ignoreSavedDraft },
-          organizationId,
-        );
+        const result = await initializeReport({ reportId, context, ignoreSavedDraft });
         if (gen !== initGenRef.current) return;
 
         setFields(result.fields);
@@ -96,7 +91,7 @@ export function useReportEditor(projectId: string, reportId: string | null, open
         }
       }
     },
-    [reportId, projectId, context, organizationId],
+    [reportId, projectId, context],
   );
 
   useEffect(() => {
@@ -121,11 +116,11 @@ export function useReportEditor(projectId: string, reportId: string | null, open
     abortRef.current?.abort();
     abortRef.current = null;
 
-    const result = await previewReport({ reportId, context, fields }, organizationId);
+    const result = await previewReport({ reportId, context, fields });
     previewHtmlRef.current = result.html;
     setPreviewHtml(result.html);
     return result.html;
-  }, [reportId, context, fields, organizationId]);
+  }, [reportId, context, fields]);
 
   const schedulePreview = useCallback(
     (nextFields: Record<string, string>) => {
@@ -145,7 +140,6 @@ export function useReportEditor(projectId: string, reportId: string | null, open
           try {
             const result = await previewReport(
               { reportId: activeReportId, context, fields: nextFields },
-              organizationId,
               controller.signal,
             );
 
@@ -172,7 +166,7 @@ export function useReportEditor(projectId: string, reportId: string | null, open
         })();
       }, PREVIEW_DEBOUNCE_MS);
     },
-    [reportId, context, organizationId, isReady],
+    [reportId, context],
   );
 
   const handleFieldsChange = useCallback(
@@ -217,19 +211,16 @@ export function useReportEditor(projectId: string, reportId: string | null, open
       });
 
       try {
-        return await saveReport(
-          {
-            reportId,
-            context,
-            fields,
-            file: {
-              fileKey: upload.fileKey,
-              publicUrl: upload.publicUrl,
-              fileSizeBytes: blob.size,
-            },
+        return await saveReport({
+          reportId,
+          context,
+          fields,
+          file: {
+            fileKey: upload.fileKey,
+            publicUrl: upload.publicUrl,
+            fileSizeBytes: blob.size,
           },
-          organizationId,
-        );
+        });
       } catch (err) {
         try {
           await deleteFile(upload.fileKey);
@@ -242,12 +233,10 @@ export function useReportEditor(projectId: string, reportId: string | null, open
     onSuccess: () => {
       showToast.success('Report saved to project');
       setInitialSnapshot(JSON.stringify(fields));
-      if (organizationId) {
-        void queryClient.invalidateQueries({ queryKey: documentKeys.all(organizationId) });
-        void queryClient.invalidateQueries({
-          queryKey: projectReportKeys.byProject(organizationId, projectId),
-        });
-      }
+      void queryClient.invalidateQueries({ queryKey: documentKeys.all() });
+      void queryClient.invalidateQueries({
+        queryKey: projectReportKeys.byProject(projectId),
+      });
     },
     onError: (err: Error) => showToast.error(err.message || 'Failed to save report'),
   });

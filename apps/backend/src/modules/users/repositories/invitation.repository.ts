@@ -21,7 +21,6 @@ export class InvitationRepository {
   async create(data: {
     email: string;
     token: string;
-    organizationId: string;
     roleId: string;
     expiresAt: Date;
     invitedBy?: string;
@@ -36,7 +35,7 @@ export class InvitationRepository {
   async findById(id: string): Promise<InvitationEntity | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['organization', 'role'],
+      relations: ['role'],
     });
   }
 
@@ -46,19 +45,16 @@ export class InvitationRepository {
   async findAllPaginated(
     skip: number,
     take: number,
-    filters?: { organizationId?: string; status?: InvitationStatus },
+    filters?: { status?: InvitationStatus },
   ): Promise<[InvitationEntity[], number]> {
     const where: Record<string, unknown> = {};
-    if (filters?.organizationId) {
-      where.organizationId = filters.organizationId;
-    }
     if (filters?.status) {
       where.status = filters.status;
     }
 
     return this.repository.findAndCount({
       where,
-      relations: ['organization', 'role'],
+      relations: ['role'],
       order: { createdAt: 'DESC' },
       skip,
       take,
@@ -71,42 +67,35 @@ export class InvitationRepository {
   async findByToken(token: string): Promise<InvitationEntity | null> {
     return this.repository.findOne({
       where: { token },
-      relations: ['organization', 'role'],
+      relations: ['role'],
     });
   }
 
   /**
    * Find invitation by email and organization
    */
-  async findByEmailAndOrganization(
-    email: string,
-    organizationId: string,
-  ): Promise<InvitationEntity | null> {
+  async findByEmailAndOrganization(email: string): Promise<InvitationEntity | null> {
     return this.repository.findOne({
       where: {
         email,
-        organizationId,
         status: InvitationStatus.PENDING,
       },
-      relations: ['organization', 'role'],
+      relations: ['role'],
     });
   }
 
   /**
    * Find all invitations for an organization
    */
-  async findByOrganization(
-    organizationId: string,
-    status?: InvitationStatus,
-  ): Promise<InvitationEntity[]> {
-    const where: Record<string, unknown> = { organizationId };
+  async findByOrganization(status?: InvitationStatus): Promise<InvitationEntity[]> {
+    const where: Record<string, unknown> = {};
     if (status) {
       where.status = status;
     }
 
     return this.repository.find({
       where,
-      relations: ['organization', 'role'],
+      relations: ['role'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -165,11 +154,10 @@ export class InvitationRepository {
   /**
    * Cancel pending invitations for email and org (before creating new one)
    */
-  async cancelPendingInvitations(email: string, organizationId: string): Promise<void> {
+  async cancelPendingInvitations(email: string): Promise<void> {
     await this.repository.update(
       {
         email,
-        organizationId,
         status: InvitationStatus.PENDING,
       },
       {

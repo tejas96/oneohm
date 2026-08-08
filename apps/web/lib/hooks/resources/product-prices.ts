@@ -6,7 +6,6 @@ import { useResourceMutations, useResourceSubList } from '../core';
 
 export interface ProductPrice {
   id: string;
-  organizationId: string;
   productId: string;
   projectType?: ProjectType | null;
   unitPrice: number;

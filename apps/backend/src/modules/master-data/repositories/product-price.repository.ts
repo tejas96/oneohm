@@ -17,7 +17,6 @@ export class ProductPriceRepository {
    * Fallback: exact project_type match > NULL (universal).
    */
   async findActiveForProduct(
-    organizationId: string,
     productId: string,
     projectType?: string,
     asOfDate?: Date,
@@ -27,7 +26,6 @@ export class ProductPriceRepository {
 
     const query = this.repository
       .createQueryBuilder('price')
-      .where('price.organization_id = :organizationId', { organizationId })
       .andWhere('price.product_id = :productId', { productId })
       .andWhere('price.is_active = true')
       .andWhere('price.effective_from <= :date', { date: dateStr })
@@ -54,7 +52,6 @@ export class ProductPriceRepository {
    * Returns a Map of productId -> ProductPriceEntity.
    */
   async findActiveForProducts(
-    organizationId: string,
     productIds: string[],
     projectType?: string,
     asOfDate?: Date,
@@ -66,7 +63,6 @@ export class ProductPriceRepository {
 
     const query = this.repository
       .createQueryBuilder('price')
-      .where('price.organization_id = :organizationId', { organizationId })
       .andWhere('price.product_id IN (:...productIds)', { productIds })
       .andWhere('price.is_active = true')
       .andWhere('price.effective_from <= :date', { date: dateStr })
@@ -78,7 +74,7 @@ export class ProductPriceRepository {
       });
     }
 
-    query.orderBy('price.product_id', 'ASC');
+    query.orderBy('price.productId', 'ASC');
     if (projectType) {
       query.addOrderBy(
         `CASE WHEN price.project_type = :projectType THEN 0 WHEN price.project_type IS NULL THEN 1 ELSE 2 END`,
@@ -98,54 +94,39 @@ export class ProductPriceRepository {
     return resultMap;
   }
 
-  async findAllByProductId(
-    organizationId: string,
-    productId: string,
-  ): Promise<ProductPriceEntity[]> {
+  async findAllByProductId(productId: string): Promise<ProductPriceEntity[]> {
     return this.repository.find({
-      where: { organizationId, productId },
+      where: { productId },
       order: { effectiveFrom: 'DESC' },
     });
   }
 
-  async findById(
-    id: string,
-    organizationId: string,
-    productId?: string,
-  ): Promise<ProductPriceEntity | null> {
+  async findById(id: string, productId?: string): Promise<ProductPriceEntity | null> {
     return this.repository.findOne({
       where: {
         id,
-        organizationId,
         ...(productId ? { productId } : {}),
       },
     });
   }
 
-  async create(
-    organizationId: string,
-    data: Partial<ProductPriceEntity>,
-  ): Promise<ProductPriceEntity> {
-    const entity = this.repository.create({ ...data, organizationId });
+  async create(data: Partial<ProductPriceEntity>): Promise<ProductPriceEntity> {
+    const entity = this.repository.create({ ...data });
     return this.repository.save(entity);
   }
 
-  async update(
-    id: string,
-    organizationId: string,
-    data: Partial<ProductPriceEntity>,
-  ): Promise<ProductPriceEntity> {
-    await this.repository.update({ id, organizationId }, {
+  async update(id: string, data: Partial<ProductPriceEntity>): Promise<ProductPriceEntity> {
+    await this.repository.update({ id }, {
       ...data,
       updatedAt: new Date(),
     } as QueryDeepPartialEntity<ProductPriceEntity>);
-    const updated = await this.repository.findOne({ where: { id, organizationId } });
+    const updated = await this.repository.findOne({ where: { id } });
     if (!updated) throw new NotFoundException('Product price not found');
     return updated;
   }
 
-  async deactivate(id: string, organizationId: string): Promise<void> {
-    await this.repository.update({ id, organizationId }, { isActive: false });
+  async deactivate(id: string): Promise<void> {
+    await this.repository.update({ id }, { isActive: false });
   }
 
   private formatDate(value: Date): string {

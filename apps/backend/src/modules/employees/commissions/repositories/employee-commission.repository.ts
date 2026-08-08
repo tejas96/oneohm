@@ -38,9 +38,8 @@ export class EmployeeCommissionRepository {
   /**
    * Find all commissions for an organization (excluding soft-deleted records)
    */
-  async findAll(organizationId: string): Promise<EmployeeCommissionEntity[]> {
+  async findAll(): Promise<EmployeeCommissionEntity[]> {
     return this.repository.find({
-      where: { organizationId },
       relations: ['employee'],
       order: { createdAt: 'DESC' },
     });
@@ -59,12 +58,9 @@ export class EmployeeCommissionRepository {
   /**
    * Find commissions by status
    */
-  async findByStatus(
-    organizationId: string,
-    status: CommissionStatus,
-  ): Promise<EmployeeCommissionEntity[]> {
+  async findByStatus(status: CommissionStatus): Promise<EmployeeCommissionEntity[]> {
     return this.repository.find({
-      where: { organizationId, status },
+      where: { status },
       relations: ['employee'],
       order: { createdAt: 'DESC' },
     });

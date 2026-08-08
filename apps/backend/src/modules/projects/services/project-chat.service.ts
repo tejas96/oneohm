@@ -89,7 +89,6 @@ export class ProjectChatService {
         this.eventEmitter.emit(
           CONSUMER_EVENTS.CHAT_MESSAGE,
           new ChatMessageEvent(
-            project.property.organizationId,
             projectId,
             project.propertyId,
             message.id,

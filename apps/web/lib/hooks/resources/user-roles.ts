@@ -10,7 +10,6 @@ export interface UserRoleAssignment {
   roleId: string;
   roleCode: string;
   roleName?: string;
-  organizationId?: string;
   userName?: string;
   userEmail?: string;
   createdAt: string;

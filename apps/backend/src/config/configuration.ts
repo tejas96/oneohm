@@ -141,6 +141,5 @@ export default (): Configuration => ({
     platformAdminEmail: process.env.PLATFORM_ADMIN_EMAIL || 'tejas.patil@beyondnyx.com',
     platformAdminPhone: process.env.PLATFORM_ADMIN_PHONE || '+918087823247',
     platformAdminPassword: process.env.PLATFORM_ADMIN_PASSWORD || 'admin@123',
-    organizationId: process.env.SEED_ORG_ID || '7e5ce9c8-9c17-4a86-8fcd-da9ce182467b',
   },
 });

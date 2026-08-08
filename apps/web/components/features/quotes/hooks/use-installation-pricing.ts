@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 const DEBOUNCE_MS = 1000;
 
@@ -32,9 +31,6 @@ export interface InstallationPricingData {
  * (PostgreSQL/TypeORM behavior), so we coerce to number here.
  */
 export function useInstallationPricing(systemSizeKw: number) {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   const [debouncedSize, setDebouncedSize] = useState(systemSizeKw);
 
   useEffect(() => {
@@ -46,13 +42,12 @@ export function useInstallationPricing(systemSizeKw: number) {
   const isDebouncing = systemSizeKw !== debouncedSize;
 
   const query = useQuery<InstallationPricingData | null>({
-    queryKey: ['installation-pricing', organizationId, debouncedSize],
+    queryKey: ['installation-pricing', debouncedSize],
     queryFn: async () => {
       const { data } = await apiClient.get<InstallationPricingRaw | null>(
         '/quote-calculator/installation-pricing',
         {
           params: { systemSizeKw: debouncedSize },
-          headers: { 'X-Organization-Id': organizationId },
         },
       );
       if (!data) return null;
@@ -62,7 +57,7 @@ export function useInstallationPricing(systemSizeKw: number) {
         gstRate: Number(data.gstRate),
       };
     },
-    enabled: !!organizationId && debouncedSize > 0,
+    enabled: debouncedSize > 0,
     staleTime: 5 * 60 * 1000,
   });
 

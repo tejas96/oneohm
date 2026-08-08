@@ -20,7 +20,6 @@ export enum AuditAction {
  */
 export enum AuditEntityType {
   USER = 'user',
-  ORGANIZATION = 'organization',
   CUSTOMER = 'customer',
   RESELLER = 'reseller',
   PRODUCT = 'product',

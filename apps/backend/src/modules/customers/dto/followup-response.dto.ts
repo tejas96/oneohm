@@ -71,10 +71,6 @@ export class FollowupResponseDto {
   id!: string;
 
   @Expose()
-  @ApiProperty({ description: 'Organization ID' })
-  organizationId!: string;
-
-  @Expose()
   @ApiProperty({ description: 'Customer ID' })
   customerId!: string;
 

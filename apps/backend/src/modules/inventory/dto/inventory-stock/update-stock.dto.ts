@@ -68,5 +68,4 @@ export class UpdateStockDto {
   maximumStockLevel?: number;
 
   // Organization ID (injected by controller)
-  organizationId?: string;
 }

@@ -12,7 +12,6 @@ import { type TaskPriority, TaskStatus } from '../enums/project.enum';
 
 export interface WorkflowStep {
   id: string;
-  organizationId: string;
   name: string;
   code: string;
   description?: string;

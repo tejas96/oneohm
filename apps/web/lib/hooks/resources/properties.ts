@@ -18,7 +18,6 @@ import type { DiscomResponse } from '@/components/features/properties/hooks/use-
 export interface PropertyItem {
   id: string;
   customerId: string;
-  organizationId: string;
   propertyCode?: string;
   propertyName?: string;
   propertyType: PropertyType;

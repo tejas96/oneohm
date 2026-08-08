@@ -14,14 +14,6 @@ import { IsNotEmpty, IsString, IsEnum, IsOptional, IsObject } from 'class-valida
  */
 export class CreateProfileDto {
   @ApiProperty({
-    example: '00000000-0000-0000-0000-000000000001',
-    description: 'Organization ID where profile will be created',
-  })
-  @IsString()
-  @IsNotEmpty()
-  organizationId!: string;
-
-  @ApiProperty({
     enum: UserProfileType,
     example: 'employee',
     description:
@@ -101,16 +93,12 @@ export class ProfileSummaryResponseDto {
       type: 'object',
       properties: {
         type: { type: 'string', enum: Object.values(UserProfileType) },
-        organizationId: { type: 'string' },
-        organizationName: { type: 'string' },
         profileId: { type: 'string' },
       },
     },
   })
   profiles!: {
     type: UserProfileType;
-    organizationId: string;
-    organizationName?: string;
     profileId: string;
   }[];
 }

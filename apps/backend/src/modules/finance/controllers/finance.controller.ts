@@ -2,7 +2,6 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { type PaginatedResponse } from '@tejas96/shared/types';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import {
   CustomerAgingDto,
@@ -85,21 +84,19 @@ export class FinanceController {
       'today: money owed does not belong to a month.',
   })
   async getKpis(
-    @OrganizationContext() organizationId: string,
     @Query() query: DashboardQueryDto,
   ): Promise<Awaited<ReturnType<FinanceReportingService['getKpis']>>> {
     const { from, to } = resolveRange(query.from, query.to);
-    return this.reportingService.getKpis(organizationId, from, to);
+    return this.reportingService.getKpis(from, to);
   }
 
   @Get('cash-flow')
   @ApiOperation({ summary: 'Cash in/out over time, keyed on value date' })
   async getCashFlow(
-    @OrganizationContext() organizationId: string,
     @Query() query: CashFlowQueryDto,
   ): Promise<Awaited<ReturnType<FinanceReportingService['getCashFlow']>>> {
     const { from, to } = resolveRange(query.from, query.to);
-    return this.reportingService.getCashFlow(organizationId, from, to, query.grain ?? 'month');
+    return this.reportingService.getCashFlow(from, to, query.grain ?? 'month');
   }
 
   @Get('entries')
@@ -108,10 +105,9 @@ export class FinanceController {
     description: 'Replaces the separate receipts and expenses endpoints, which had drifted apart.',
   })
   async getEntries(
-    @OrganizationContext() organizationId: string,
     @Query() query: LedgerEntriesQueryDto,
   ): Promise<Awaited<ReturnType<FinanceReportingService['getEntries']>>> {
-    return this.reportingService.getEntries(organizationId, {
+    return this.reportingService.getEntries({
       direction: query.direction ?? null,
       from: query.from ?? null,
       to: query.to ?? null,
@@ -128,10 +124,9 @@ export class FinanceController {
       'Replaces the outstanding + customers-AR pair.',
   })
   async getReceivables(
-    @OrganizationContext() organizationId: string,
     @Query() query: ReceivablesQueryDto,
   ): Promise<Awaited<ReturnType<FinanceReportingService['getReceivables']>>> {
-    return this.reportingService.getReceivables(organizationId, {
+    return this.reportingService.getReceivables({
       page: query.page ?? 1,
       limit: query.limit ?? 25,
     });
@@ -150,11 +145,8 @@ export class FinanceController {
       'top 5 vendors by spend (in range), and last 10 activity items. ' +
       'Defaults range to the current calendar month if from/to omitted.',
   })
-  async getDashboard(
-    @OrganizationContext() organizationId: string,
-    @Query() query: DashboardQueryDto,
-  ): Promise<DashboardDto> {
-    return this.aggregationService.getDashboard(organizationId, query.from, query.to);
+  async getDashboard(@Query() query: DashboardQueryDto): Promise<DashboardDto> {
+    return this.aggregationService.getDashboard(query.from, query.to);
   }
 
   // ============================================
@@ -164,14 +156,13 @@ export class FinanceController {
   @ApiOperation({
     summary: 'Org-wide receipts ledger',
     description:
-      'Paginated list of receipts across all projects in the organization. ' +
+      'Paginated list of receipts across all projects. ' +
       'Includes joined project + customer fields so PDF templates work without an extra fetch.',
   })
   async getReceipts(
-    @OrganizationContext() organizationId: string,
     @Query() query: ReceiptsQueryDto,
   ): Promise<PaginatedResponse<ReceiptListItemDto>> {
-    return this.aggregationService.getReceipts(organizationId, query);
+    return this.aggregationService.getReceipts(query);
   }
 
   // ============================================
@@ -180,13 +171,12 @@ export class FinanceController {
   @Get('expenses')
   @ApiOperation({
     summary: 'Org-wide expenses ledger',
-    description: 'Paginated list of project expenses across the organization with project joins.',
+    description: 'Paginated list of project expenses with project joins.',
   })
   async getExpenses(
-    @OrganizationContext() organizationId: string,
     @Query() query: ExpensesQueryDto,
   ): Promise<PaginatedResponse<ExpenseListItemDto>> {
-    return this.aggregationService.getExpenses(organizationId, query);
+    return this.aggregationService.getExpenses(query);
   }
 
   // ============================================
@@ -201,10 +191,9 @@ export class FinanceController {
       'customer/project, and free-text search across project + customer + term name.',
   })
   async getOutstanding(
-    @OrganizationContext() organizationId: string,
     @Query() query: OutstandingQueryDto,
   ): Promise<PaginatedResponse<OutstandingTermDto>> {
-    return this.aggregationService.getOutstanding(organizationId, query);
+    return this.aggregationService.getOutstanding(query);
   }
 
   // ============================================
@@ -217,11 +206,8 @@ export class FinanceController {
       'Returns one row per customer with totalOutstanding broken into 5 aging ' +
       'buckets (current, 0-30, 31-60, 61-90, 90+). Optional asOfDate (default today).',
   })
-  async getCustomersAr(
-    @OrganizationContext() organizationId: string,
-    @Query() query: CustomersArQueryDto,
-  ): Promise<CustomerAgingDto[]> {
-    return this.aggregationService.getCustomersAr(organizationId, query);
+  async getCustomersAr(@Query() query: CustomersArQueryDto): Promise<CustomerAgingDto[]> {
+    return this.aggregationService.getCustomersAr(query);
   }
 
   // ============================================
@@ -235,11 +221,8 @@ export class FinanceController {
       'last expense, top category, reimbursed %, and per-category breakdown. ' +
       'Vendor matching is case-insensitive on TRIM(vendor_name).',
   })
-  async getVendorsSpend(
-    @OrganizationContext() organizationId: string,
-    @Query() query: VendorsSpendQueryDto,
-  ): Promise<VendorSpendDto[]> {
-    return this.aggregationService.getVendorsSpend(organizationId, query);
+  async getVendorsSpend(@Query() query: VendorsSpendQueryDto): Promise<VendorSpendDto[]> {
+    return this.aggregationService.getVendorsSpend(query);
   }
 
   // ============================================
@@ -253,9 +236,8 @@ export class FinanceController {
       'receivedAmount, totalSpend, margin (₹ + %), bomTarget vs actual variance.',
   })
   async getProfitability(
-    @OrganizationContext() organizationId: string,
     @Query() query: ProfitabilityQueryDto,
   ): Promise<PaginatedResponse<ProjectProfitabilityDto>> {
-    return this.aggregationService.getProfitability(organizationId, query);
+    return this.aggregationService.getProfitability(query);
   }
 }

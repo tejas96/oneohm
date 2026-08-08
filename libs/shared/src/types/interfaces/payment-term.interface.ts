@@ -7,7 +7,6 @@ import type { PaymentTermSource, PaymentTermStatus } from '../enums/finance.enum
  */
 export interface PaymentTerm {
   id: string;
-  organizationId: string;
   projectId: string;
 
   /** Audit reference to the source quote version (nullable on quote delete). */

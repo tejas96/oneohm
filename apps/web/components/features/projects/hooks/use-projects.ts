@@ -11,7 +11,6 @@ import type {
 import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Types
@@ -115,12 +114,11 @@ export interface ProjectListResponse {
 // ============================================================================
 
 export const projectKeys = {
-  all: (orgId?: string) => ['projects', orgId] as const,
-  lists: (orgId?: string) => [...projectKeys.all(orgId), 'list'] as const,
-  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
-    [...projectKeys.lists(orgId), filters] as const,
-  details: (orgId?: string) => [...projectKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) => [...projectKeys.details(orgId), id] as const,
+  all: () => ['projects'] as const,
+  lists: () => [...projectKeys.all(), 'list'] as const,
+  list: (filters: Record<string, unknown>) => [...projectKeys.lists(), filters] as const,
+  details: () => [...projectKeys.all(), 'detail'] as const,
+  detail: (id: string) => [...projectKeys.details(), id] as const,
 };
 
 // ============================================================================
@@ -130,12 +128,10 @@ export const projectKeys = {
 export function useProjects(
   filters: ProjectFilters = {},
 ): UseQueryResult<ProjectListResponse, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
   const { enabled: callerEnabled, ...queryFilters } = filters;
 
   return useQuery({
-    queryKey: projectKeys.list(organizationId, queryFilters as Record<string, unknown>),
+    queryKey: projectKeys.list(queryFilters as Record<string, unknown>),
     queryFn: async (): Promise<ProjectListResponse> => {
       const params = new URLSearchParams();
 
@@ -164,12 +160,13 @@ export function useProjects(
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
       if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 
-      const response = await apiClient.get<ProjectListResponse>(`/projects?${params.toString()}`, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      const response = await apiClient.get<ProjectListResponse>(
+        `/projects?${params.toString()}`,
+        {},
+      );
       return response.data as ProjectListResponse;
     },
-    enabled: !!organizationId && callerEnabled !== false,
+    enabled: callerEnabled !== false,
     placeholderData: keepPreviousData,
   });
 }

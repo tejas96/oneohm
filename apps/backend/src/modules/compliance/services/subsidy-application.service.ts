@@ -151,7 +151,7 @@ export class SubsidyApplicationService {
     });
   }
 
-  async getStatsByOrganization(organizationId: string): Promise<Record<string, unknown>> {
-    return this.repository.getStatsByOrganization(organizationId);
+  async getStatsByOrganization(): Promise<Record<string, unknown>> {
+    return this.repository.getStatsByOrganization();
   }
 }

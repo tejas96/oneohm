@@ -21,7 +21,6 @@ import { UserEntity } from '../../users/entities/user.entity';
  * Represents active approval workflow instances
  */
 @Entity('approval_requests')
-@Index(['organizationId'])
 @Index(['templateId'])
 @Index(['referenceType', 'referenceId'])
 @Index(['status'])
@@ -61,9 +60,6 @@ export class ApprovalRequestEntity {
   history!: ApprovalHistoryEntity[];
 
   // ==================== Foreign Keys ====================
-
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'template_id', type: 'uuid' })
   templateId!: string;

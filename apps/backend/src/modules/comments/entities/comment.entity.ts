@@ -13,7 +13,6 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -37,12 +36,6 @@ export class CommentEntity {
   // ============================================
   // RELATIONS
   // ============================================
-  @ManyToOne(() => OrganizationEntity, { nullable: false })
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
-
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'created_by' })

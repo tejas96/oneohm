@@ -16,10 +16,6 @@ import {
 export class CreateComplianceApplicationDto {
   @IsUUID()
   @IsNotEmpty()
-  organizationId: string;
-
-  @IsUUID()
-  @IsNotEmpty()
   projectId: string;
 
   @IsString()

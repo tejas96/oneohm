@@ -75,9 +75,6 @@ const AuthContext = createContext<AuthContextType | null>(null);
  */
 function transformAuthUser(authUser: AuthUser): User {
   // Find primary profile or first profile with organizationId
-  const primaryProfile = authUser.profiles?.find((p) => p.isPrimary);
-  const firstProfileWithOrg = authUser.profiles?.find((p) => p.organizationId);
-  const organizationId = primaryProfile?.organizationId ?? firstProfileWithOrg?.organizationId;
 
   return {
     id: authUser.id,
@@ -92,7 +89,6 @@ function transformAuthUser(authUser: AuthUser): User {
     emailVerified: authUser.emailVerified,
     phoneVerified: authUser.phoneVerified,
     profileCompleted: authUser.profileCompleted,
-    organizationId,
   };
 }
 

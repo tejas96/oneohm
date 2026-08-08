@@ -54,18 +54,15 @@ export class RoleController {
   @RequirePermission('iam:roles:create')
   @ApiOperation({
     summary: 'Create a new role',
-    description: 'Creates a new role for an organization',
+    description: 'Creates a new role',
   })
   async create(
     @Body() createRoleDto: CreateRoleDto,
     @CurrentUser() user: CurrentUserType,
   ): Promise<RoleResponseDto> {
-    const exists = await this.roleRepository.existsByCodeAndOrganization(
-      createRoleDto.code,
-      createRoleDto.organizationId,
-    );
+    const exists = await this.roleRepository.existsByCodeAndOrganization(createRoleDto.code);
     if (exists) {
-      throw new ConflictException('A role with this code already exists in this organization');
+      throw new ConflictException('A role with this code already exists');
     }
 
     const role = await this.roleRepository.create({
@@ -84,10 +81,9 @@ export class RoleController {
   @RequirePermission('iam:roles:read')
   @ApiOperation({
     summary: 'List all roles',
-    description: 'Get paginated list of roles for the organization',
+    description: 'Get paginated list of roles ',
   })
   async findAll(
-    @Query('organizationId') organizationId?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
     @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize: number = 10,
     @Query('search') search?: string,
@@ -95,7 +91,6 @@ export class RoleController {
   ): Promise<PaginatedRolesDto> {
     const skip = (page - 1) * pageSize;
     const [roles, total] = await this.roleRepository.findAllPaginated(skip, pageSize, {
-      organizationId,
       search,
       isSystemRole: isSystemRole !== undefined ? isSystemRole === 'true' : undefined,
     });

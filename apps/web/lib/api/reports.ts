@@ -3,10 +3,6 @@ import { DocumentEntityType } from '@tejas96/shared/types';
 import apiClient from './client';
 import type { DocumentRecord } from './documents';
 
-function orgHeader(orgId?: string): Record<string, string> {
-  return orgId ? { 'X-Organization-Id': orgId } : {};
-}
-
 export interface ReportContextPayload {
   entityType: DocumentEntityType;
   entityId: string;
@@ -45,17 +41,16 @@ export async function listReports(): Promise<ReportCatalogItem[]> {
   return data;
 }
 
-export async function initializeReport(
-  payload: {
-    reportId: string;
-    context: ReportContextPayload;
-    ignoreSavedDraft?: boolean;
-  },
-  organizationId?: string,
-): Promise<ReportInitializeResponse> {
-  const { data } = await apiClient.post<ReportInitializeResponse>('/reports/initialize', payload, {
-    headers: orgHeader(organizationId),
-  });
+export async function initializeReport(payload: {
+  reportId: string;
+  context: ReportContextPayload;
+  ignoreSavedDraft?: boolean;
+}): Promise<ReportInitializeResponse> {
+  const { data } = await apiClient.post<ReportInitializeResponse>(
+    '/reports/initialize',
+    payload,
+    {},
+  );
   return data;
 }
 
@@ -65,28 +60,22 @@ export async function previewReport(
     context: ReportContextPayload;
     fields: Record<string, string>;
   },
-  organizationId?: string,
   signal?: AbortSignal,
 ): Promise<ReportPreviewResponse> {
   const { data } = await apiClient.post<ReportPreviewResponse>('/reports/preview', payload, {
-    headers: orgHeader(organizationId),
     signal,
   });
   return data;
 }
 
-export async function saveReport(
-  payload: {
-    reportId: string;
-    context: ReportContextPayload;
-    fields: Record<string, string>;
-    file: ReportSaveFilePayload;
-  },
-  organizationId?: string,
-): Promise<ReportSaveResponse> {
+export async function saveReport(payload: {
+  reportId: string;
+  context: ReportContextPayload;
+  fields: Record<string, string>;
+  file: ReportSaveFilePayload;
+}): Promise<ReportSaveResponse> {
   const { data } = await apiClient.post<ReportSaveResponse>('/reports/save', payload, {
     timeout: 60_000,
-    headers: orgHeader(organizationId),
   });
   return data;
 }
@@ -118,13 +107,9 @@ export interface ReportsPendingSummary {
   saved: DocumentRecord[];
 }
 
-export async function getReportCompleteness(
-  projectId: string,
-  organizationId?: string,
-): Promise<ReportsPendingSummary> {
+export async function getReportCompleteness(projectId: string): Promise<ReportsPendingSummary> {
   const { data } = await apiClient.get<ReportsPendingSummary>('/reports/completeness', {
     params: { projectId },
-    headers: orgHeader(organizationId),
   });
   return data;
 }

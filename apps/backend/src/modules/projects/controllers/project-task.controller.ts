@@ -36,7 +36,6 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-  OrganizationContext,
 } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -76,14 +75,13 @@ export class ProjectTaskController {
   @ApiCreate({ responseType: ProjectTaskResponseDto, summary: 'Create a new project task' })
   async create(
     @CurrentUser() currentUser: CurrentUserType,
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Body() createDto: CreateProjectTaskDto,
   ): Promise<ProjectTaskResponseDto> {
     // Override projectId from route param
     createDto.projectId = projectId;
 
-    const task = await this.taskService.create(createDto, currentUser.id, organizationId);
+    const task = await this.taskService.create(createDto, currentUser.id);
     return plainToInstance(ProjectTaskResponseDto, task, {
       excludeExtraneousValues: true,
     });
@@ -217,10 +215,9 @@ export class ProjectTaskController {
   @Get('generate-code')
   @ApiOperation({ summary: 'Generate next task code' })
   async generateCode(
-    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<{ code: string }> {
-    const code = await this.taskService.generateTaskCode(projectId, organizationId);
+    const code = await this.taskService.generateTaskCode(projectId);
     return { code };
   }
 

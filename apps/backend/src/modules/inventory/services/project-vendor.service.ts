@@ -22,15 +22,14 @@ export class ProjectVendorService {
    * Assign vendor to project
    */
   async assignVendorToProject(
-    organizationId: string,
     createDto: CreateProjectVendorDto,
     createdBy: string,
   ): Promise<ProjectVendorEntity> {
     // Verify project exists
-    await this.projectRepository.findById(createDto.projectId, organizationId);
+    await this.projectRepository.findById(createDto.projectId);
 
     // Verify vendor exists
-    await this.vendorRepository.findById(createDto.vendorId, organizationId);
+    await this.vendorRepository.findById(createDto.vendorId);
 
     // Check if vendor is already assigned with the same role
     const isAssigned = await this.projectVendorRepository.isVendorAssignedToProject(
@@ -61,21 +60,21 @@ export class ProjectVendorService {
       createdBy,
     });
 
-    return this.projectVendorRepository.findById(projectVendor.id, organizationId);
+    return this.projectVendorRepository.findById(projectVendor.id);
   }
 
   /**
    * Find project-vendor by ID
    */
-  async findById(id: string, organizationId: string): Promise<ProjectVendorEntity> {
-    return this.projectVendorRepository.findById(id, organizationId);
+  async findById(id: string): Promise<ProjectVendorEntity> {
+    return this.projectVendorRepository.findById(id);
   }
 
   /**
    * Find all vendors for a project
    */
-  async findByProject(projectId: string, organizationId: string): Promise<ProjectVendorEntity[]> {
-    await this.projectRepository.findById(projectId, organizationId);
+  async findByProject(projectId: string): Promise<ProjectVendorEntity[]> {
+    await this.projectRepository.findById(projectId);
     return this.projectVendorRepository.findByProject(projectId);
   }
 
@@ -84,75 +83,57 @@ export class ProjectVendorService {
    */
   async findByVendor(
     vendorId: string,
-    organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
       status?: ProjectVendorStatus;
     },
   ): Promise<{ projectVendors: ProjectVendorEntity[]; total: number }> {
-    await this.vendorRepository.findById(vendorId, organizationId);
-    return this.projectVendorRepository.findByVendor(
-      vendorId,
-      organizationId,
-      page,
-      limit,
-      filters,
-    );
+    await this.vendorRepository.findById(vendorId);
+    return this.projectVendorRepository.findByVendor(vendorId, page, limit, filters);
   }
 
   /**
    * Update project-vendor relationship
    */
-  async update(
-    id: string,
-    organizationId: string,
-    updateDto: UpdateProjectVendorDto,
-  ): Promise<ProjectVendorEntity> {
-    return this.projectVendorRepository.update(id, organizationId, { ...updateDto });
+  async update(id: string, updateDto: UpdateProjectVendorDto): Promise<ProjectVendorEntity> {
+    return this.projectVendorRepository.update(id, { ...updateDto });
   }
 
   /**
    * Remove vendor from project
    */
-  async removeVendorFromProject(id: string, organizationId: string): Promise<void> {
-    const projectVendor = await this.projectVendorRepository.findById(id, organizationId);
+  async removeVendorFromProject(id: string): Promise<void> {
+    const projectVendor = await this.projectVendorRepository.findById(id);
 
     // Only allow removal if status is not active
     if (projectVendor.status === ProjectVendorStatus.ACTIVE) {
       throw new BadRequestException('Cannot remove active vendor. Change status first.');
     }
 
-    await this.projectVendorRepository.delete(id, organizationId);
+    await this.projectVendorRepository.delete(id);
   }
 
   /**
    * Change vendor status
    */
-  async changeStatus(
-    id: string,
-    organizationId: string,
-    status: ProjectVendorStatus,
-  ): Promise<ProjectVendorEntity> {
-    return this.projectVendorRepository.update(id, organizationId, { status });
+  async changeStatus(id: string, status: ProjectVendorStatus): Promise<ProjectVendorEntity> {
+    return this.projectVendorRepository.update(id, { status });
   }
 
   /**
    * Get total contract value for a project
    */
-  async getTotalContractValueByProject(projectId: string, organizationId: string): Promise<number> {
-    await this.projectRepository.findById(projectId, organizationId);
+  async getTotalContractValueByProject(projectId: string): Promise<number> {
+    await this.projectRepository.findById(projectId);
     return this.projectVendorRepository.getTotalContractValueByProject(projectId);
   }
 
   /**
    * Get active vendors for a project
    */
-  async getActiveVendorsByProject(
-    projectId: string,
-    organizationId: string,
-  ): Promise<ProjectVendorEntity[]> {
-    await this.projectRepository.findById(projectId, organizationId);
+  async getActiveVendorsByProject(projectId: string): Promise<ProjectVendorEntity[]> {
+    await this.projectRepository.findById(projectId);
     return this.projectVendorRepository.getActiveVendorsByProject(projectId);
   }
 }

@@ -11,7 +11,6 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -33,11 +32,8 @@ export class NotificationController {
   @RequirePermission('notifications:read')
   @Get('unread-count')
   @ApiOperation({ summary: 'Get unread notification count for current user' })
-  async getUnreadCount(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<{ count: number }> {
-    const count = await this.notificationService.getUnreadCount(currentUser.id, organizationId);
+  async getUnreadCount(@CurrentUser() currentUser: CurrentUserType): Promise<{ count: number }> {
+    const count = await this.notificationService.getUnreadCount(currentUser.id);
     return { count };
   }
 
@@ -47,11 +43,8 @@ export class NotificationController {
   @RequirePermission('notifications:read')
   @Post('mark-all-read')
   @ApiOperation({ summary: 'Mark all notifications as read for current user' })
-  async markAllRead(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<{ message: string }> {
-    await this.notificationService.markAllRead(currentUser.id, organizationId);
+  async markAllRead(@CurrentUser() currentUser: CurrentUserType): Promise<{ message: string }> {
+    await this.notificationService.markAllRead(currentUser.id);
     return { message: 'All notifications marked as read' };
   }
 
@@ -65,7 +58,6 @@ export class NotificationController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -76,7 +68,6 @@ export class NotificationController {
   }> {
     const { notifications, total } = await this.notificationService.list(
       currentUser.id,
-      organizationId,
       page,
       limit,
       unreadOnly,

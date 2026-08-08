@@ -17,12 +17,11 @@ import {
   type FollowupsListResponse,
 } from '@/components/features/customers/hooks';
 import { apiClient } from '@/lib/api/client';
-import { useAuth } from '@/providers/auth-provider';
 
 export const propertyFollowupKeys = {
-  all: (orgId?: string) => ['property-followups', orgId] as const,
-  byProperty: (orgId: string | undefined, propertyId: string, filters?: Record<string, unknown>) =>
-    [...propertyFollowupKeys.all(orgId), propertyId, filters ?? {}] as const,
+  all: () => ['property-followups'] as const,
+  byProperty: (propertyId: string, filters?: Record<string, unknown>) =>
+    [...propertyFollowupKeys.all(), propertyId, filters ?? {}] as const,
 };
 
 export function usePropertyFollowups(
@@ -35,9 +34,6 @@ export function usePropertyFollowups(
     limit?: number;
   },
 ): UseQueryResult<FollowupsListResponse, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
   const filters = {
     status: options?.status,
     from: options?.from,
@@ -46,7 +42,7 @@ export function usePropertyFollowups(
   };
 
   return useQuery({
-    queryKey: propertyFollowupKeys.byProperty(organizationId, propertyId, filters),
+    queryKey: propertyFollowupKeys.byProperty(propertyId, filters),
     queryFn: async (): Promise<FollowupsListResponse> => {
       const params = new URLSearchParams();
       params.append('propertyId', propertyId);
@@ -57,14 +53,12 @@ export function usePropertyFollowups(
 
       const { data } = await apiClient.get<FollowupsListResponse>(
         `/followups?${params.toString()}`,
-        {
-          headers: { 'X-Organization-Id': organizationId },
-        },
+        {},
       );
 
       return data;
     },
-    enabled: !!propertyId && !!organizationId && options?.enabled !== false,
+    enabled: !!propertyId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -75,24 +69,20 @@ export function useCreatePropertyFollowup(): UseMutationResult<
   CreateFollowupInput
 > {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (input): Promise<FollowupResponse> => {
-      const { data } = await apiClient.post<FollowupResponse>('/followups', input, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      const { data } = await apiClient.post<FollowupResponse>('/followups', input, {});
       return data;
     },
     onSuccess: (data) => {
       if (data.propertyId) {
         void queryClient.invalidateQueries({
-          queryKey: propertyFollowupKeys.byProperty(organizationId, data.propertyId),
+          queryKey: propertyFollowupKeys.byProperty(data.propertyId),
         });
       }
       void queryClient.invalidateQueries({
-        queryKey: followupKeys.byCustomer(organizationId, data.customerId),
+        queryKey: followupKeys.byCustomer(data.customerId),
       });
     },
   });
@@ -104,26 +94,20 @@ export function useCompletePropertyFollowup(): UseMutationResult<
   string
 > {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (id): Promise<FollowupResponse> => {
-      const { data } = await apiClient.post<FollowupResponse>(
-        `/followups/${id}/complete`,
-        {},
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.post<FollowupResponse>(`/followups/${id}/complete`, {});
       return data;
     },
     onSuccess: (data) => {
       if (data.propertyId) {
         void queryClient.invalidateQueries({
-          queryKey: propertyFollowupKeys.byProperty(organizationId, data.propertyId),
+          queryKey: propertyFollowupKeys.byProperty(data.propertyId),
         });
       }
       void queryClient.invalidateQueries({
-        queryKey: followupKeys.byCustomer(organizationId, data.customerId),
+        queryKey: followupKeys.byCustomer(data.customerId),
       });
     },
   });

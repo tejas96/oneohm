@@ -13,7 +13,6 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { QuoteStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -50,10 +49,9 @@ export class ConsumerQuotationController {
   })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not authorized' })
   async findByProperty(
-    @OrganizationContext() organizationId: string,
     @Param('propertyId', ParseUUIDPipe) propertyId: string,
   ): Promise<QuoteResponseDto[]> {
-    const quotes = await this.quoteService.findAllByPropertyId(propertyId, organizationId);
+    const quotes = await this.quoteService.findAllByPropertyId(propertyId);
 
     // Property ownership is already verified by CustomerOwnershipGuard; return all
     // non-draft quotes for this property (quote.customerId may differ on legacy rows).
@@ -77,10 +75,9 @@ export class ConsumerQuotationController {
   })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not authorized' })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @Param('quotationId', ParseUUIDPipe) quotationId: string,
   ): Promise<QuoteResponseDto> {
-    const quote = await this.quoteService.findById(quotationId, organizationId);
+    const quote = await this.quoteService.findById(quotationId);
 
     if (quote.status === QuoteStatus.DRAFT) {
       throw new ForbiddenException('Access denied: This quotation is not available yet');
@@ -112,14 +109,12 @@ export class ConsumerQuotationController {
   })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not authorized' })
   async accept(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('quotationId', ParseUUIDPipe) quotationId: string,
     @Body() body: ConsumerAcceptQuotationDto,
   ): Promise<QuoteResponseDto> {
     const quote = await this.quoteService.updateStatus(
       quotationId,
-      organizationId,
       {
         status: QuoteStatus.ACCEPTED,
         customerSignature: body.customerSignature,
@@ -151,14 +146,12 @@ export class ConsumerQuotationController {
   })
   @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not authorized' })
   async reject(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('quotationId', ParseUUIDPipe) quotationId: string,
     @Body() body: ConsumerRejectQuotationDto,
   ): Promise<QuoteResponseDto> {
     const quote = await this.quoteService.updateStatus(
       quotationId,
-      organizationId,
       {
         status: QuoteStatus.REJECTED,
         rejectionReason: body.rejectionReason,

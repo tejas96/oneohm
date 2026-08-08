@@ -1,3 +1,5 @@
+import { COMPANY } from '@tejas96/shared/constants';
+
 import { formatPaise } from '@/lib/utils/paise';
 
 /**
@@ -64,15 +66,15 @@ export interface ReceiptPdfData {
 }
 
 /**
- * Matches the quote PDF's hardcoded company block. `organizations` holds real
- * values and `organization_settings` is empty, so nothing reads from the DB
- * today — following the existing precedent rather than inventing a second one.
+ * The company block printed on receipts. Assembled from the shared COMPANY
+ * constant — never hardcode these strings again. GSTIN and PAN are deliberately
+ * absent: this document states it is not a tax invoice.
  */
-export const RECEIPT_DEFAULT_COMPANY: ReceiptPdfData['company'] = {
-  name: 'OneOhm Energy',
-  address: 'Sangli, Maharashtra, India',
-  phone: '+91 98508 08484',
-  email: 'info@oneohm.in',
+export const RECEIPT_COMPANY: ReceiptPdfData['company'] = {
+  name: COMPANY.name,
+  address: `${COMPANY.address}, ${COMPANY.state} ${COMPANY.pincode}`,
+  phone: COMPANY.phone,
+  email: COMPANY.email,
 };
 
 // Narrow rather than `unknown`: every call site passes a string or number, and

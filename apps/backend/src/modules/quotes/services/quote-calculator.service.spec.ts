@@ -30,8 +30,6 @@ describe('QuoteCalculatorService', () => {
   let installationPricingRepo: InstallationPricingRepository;
   let quoteConfigRepo: QuoteConfigurationRepository;
 
-  const mockOrganizationId = 'test-org-123';
-
   // Mock data
   const mockProductType = { id: 'pt-solar-panel', code: 'solar_panel', name: 'Solar Panel' };
   const mockInverterType = { id: 'pt-inverter', code: 'inverter', name: 'Inverter' };
@@ -229,14 +227,9 @@ describe('QuoteCalculatorService', () => {
           useFactory: (priceRepo: ProductPriceRepository) => ({
             getEffectiveUnitPrice: async (
               productId: string,
-              organizationId: string,
               opts: { projectType?: string } = {},
             ) => {
-              const price: any = await priceRepo.findActiveForProduct(
-                organizationId,
-                productId,
-                opts.projectType,
-              );
+              const price: any = await priceRepo.findActiveForProduct(productId, opts.projectType);
               if (!price) {
                 return {
                   productId,
@@ -261,11 +254,9 @@ describe('QuoteCalculatorService', () => {
             },
             getEffectiveUnitPrices: async (
               productIds: string[],
-              organizationId: string,
               opts: { projectType?: string } = {},
             ) => {
               const map: Map<string, any> = await priceRepo.findActiveForProducts(
-                organizationId,
                 productIds,
                 opts.projectType,
               );
@@ -357,7 +348,7 @@ describe('QuoteCalculatorService', () => {
         distanceKm: 30,
       };
 
-      const result = await service.calculateQuote(mockOrganizationId, input);
+      const result = await service.calculateQuote(input);
 
       // Verify system is all DCR (no split)
       expect(result.systemConfig.totalSystemSizeKw).toBe(5);
@@ -412,7 +403,7 @@ describe('QuoteCalculatorService', () => {
         structureType: StructureType.ALUMINUM_RAIL,
       };
 
-      const result = await service.calculateQuote(mockOrganizationId, input);
+      const result = await service.calculateQuote(input);
 
       // All DCR, no Non-DCR
       expect(result.systemConfig.dcrSizeKw).toBe(5);
@@ -454,7 +445,7 @@ describe('QuoteCalculatorService', () => {
         structureType: StructureType.ALUMINUM_RAIL,
       };
 
-      const result = await service.calculateQuote(mockOrganizationId, input);
+      const result = await service.calculateQuote(input);
 
       // All Non-DCR when NON_DCR_ONLY preference is set
       expect(result.systemConfig.dcrSizeKw).toBe(0);
@@ -530,7 +521,6 @@ describe('QuoteCalculatorService', () => {
 
       // Floor 1: 1500 * (1 + 0.05) = 1575
       const floor1Result = await (service as any).calculateInstallation(
-        mockOrganizationId,
         5,
         ProjectType.RESIDENTIAL,
         1, // floor 1
@@ -540,7 +530,6 @@ describe('QuoteCalculatorService', () => {
 
       // Floor 2: 1500 * (1 + 0.10) = 1650
       const floor2Result = await (service as any).calculateInstallation(
-        mockOrganizationId,
         5,
         ProjectType.RESIDENTIAL,
         2, // floor 2
@@ -550,7 +539,6 @@ describe('QuoteCalculatorService', () => {
 
       // Floor 3: 1500 * (1 + 0.15) = 1725
       const floor3Result = await (service as any).calculateInstallation(
-        mockOrganizationId,
         5,
         ProjectType.RESIDENTIAL,
         3, // floor 3
@@ -565,7 +553,6 @@ describe('QuoteCalculatorService', () => {
         .mockResolvedValue(mockInstallationPricing as any);
 
       const result = await (service as any).calculateInstallation(
-        mockOrganizationId,
         5,
         ProjectType.RESIDENTIAL,
         0, // ground floor
@@ -585,11 +572,7 @@ describe('QuoteCalculatorService', () => {
         { id: 'inv-10', specifications: { capacity_kw: 10 } },
       ] as ProductEntity[];
 
-      const result = (service as any).findOptimalInverterCombination(
-        mockInverters,
-        60,
-        mockOrganizationId,
-      );
+      const result = (service as any).findOptimalInverterCombination(mockInverters, 60);
 
       expect(result.length).toBe(2);
       const totalCapacity = result.reduce(
@@ -606,11 +589,7 @@ describe('QuoteCalculatorService', () => {
         { id: 'inv-5', specifications: { capacity_kw: 5 } },
       ] as ProductEntity[];
 
-      const result = (service as any).findOptimalInverterCombination(
-        mockInverters,
-        10,
-        mockOrganizationId,
-      );
+      const result = (service as any).findOptimalInverterCombination(mockInverters, 10);
 
       expect(result.length).toBe(1);
       expect(result[0].inverter.id).toBe('inv-10');
@@ -623,11 +602,7 @@ describe('QuoteCalculatorService', () => {
       ] as ProductEntity[];
 
       // 30KW system: should use 3x 10KW
-      const result = (service as any).findOptimalInverterCombination(
-        mockInverters,
-        30,
-        mockOrganizationId,
-      );
+      const result = (service as any).findOptimalInverterCombination(mockInverters, 30);
 
       expect(result.length).toBe(1);
       expect(result[0].inverter.id).toBe('inv-10');
@@ -659,7 +634,6 @@ describe('QuoteCalculatorService', () => {
       const result = await (service as any).calculatePanelQuantity(
         panelWithNominal,
         3, // 3KW
-        mockOrganizationId,
         ProjectType.RESIDENTIAL,
       );
 

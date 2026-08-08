@@ -7,24 +7,20 @@ import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
 export const taskDetailKeys = {
-  all: (orgId?: string) => ['task-detail', orgId] as const,
-  detail: (orgId: string | undefined, taskId: string) =>
-    [...taskDetailKeys.all(orgId), taskId] as const,
+  all: () => ['task-detail'] as const,
+  detail: (taskId: string) => [...taskDetailKeys.all(), taskId] as const,
 };
 
 export function useTaskDetail(taskId: string | null): UseQueryResult<MyTask> {
   const { user } = useAuth();
-  const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: taskDetailKeys.detail(organizationId, taskId ?? ''),
+    queryKey: taskDetailKeys.detail(taskId ?? ''),
     queryFn: async () => {
-      const { data } = await apiClient.get<MyTask>(`/tasks/${taskId}`, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      const { data } = await apiClient.get<MyTask>(`/tasks/${taskId}`, {});
       return data;
     },
-    enabled: !!user && !!organizationId && !!taskId,
+    enabled: !!user && !!taskId,
     refetchOnWindowFocus: true,
   });
 }

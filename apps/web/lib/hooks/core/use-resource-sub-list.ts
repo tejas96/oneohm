@@ -8,7 +8,6 @@ import { RESOURCE_QUERY_DEFAULTS, RESOURCE_QUERY_RETRY } from './query-defaults'
 import { stableHash } from './query-keys';
 import { defaultResponseAdapter } from './response-adapter';
 import type { SubResourceConfig, BaseFilters, ResourceListResponse } from './types';
-import { useOrgContext } from './use-org-context';
 
 export interface UseResourceSubListReturn<T> {
   items: T[];
@@ -27,13 +26,11 @@ export function useResourceSubList<T, F extends BaseFilters = BaseFilters>(
   parentId: string,
   filters?: Partial<F>,
 ): UseResourceSubListReturn<T> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const mergedFilters = { ...config.defaultFilters, ...filters } as F;
 
   const query = useQuery({
     queryKey: [
       config.resource,
-      organizationId,
       'by-parent',
       config.parentResource,
       parentId,
@@ -49,7 +46,6 @@ export function useResourceSubList<T, F extends BaseFilters = BaseFilters>(
         url = `${config.endpoint}?${params.toString()}`;
       }
       const { data } = await apiClient.get(url, {
-        headers: config.requiresOrg !== false ? orgHeaders : {},
         signal,
       });
       if (Array.isArray(data)) {
@@ -60,7 +56,7 @@ export function useResourceSubList<T, F extends BaseFilters = BaseFilters>(
       }
       return (config.responseAdapter ?? defaultResponseAdapter<T>)(data);
     },
-    enabled: !!parentId && (config.requiresOrg !== false ? isReady : true),
+    enabled: !!parentId && true,
     retry: RESOURCE_QUERY_RETRY,
     staleTime: config.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
     placeholderData: keepPreviousData,

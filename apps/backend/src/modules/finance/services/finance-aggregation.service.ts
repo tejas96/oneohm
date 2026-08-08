@@ -46,11 +46,7 @@ export class FinanceAggregationService {
   // ============================================
   // 1. DASHBOARD — single fat endpoint
   // ============================================
-  async getDashboard(
-    organizationId: string,
-    fromInput?: string,
-    toInput?: string,
-  ): Promise<DashboardDto> {
+  async getDashboard(fromInput?: string, toInput?: string): Promise<DashboardDto> {
     const { from, to } = this.resolveDateRange(fromInput, toInput);
 
     const [
@@ -61,12 +57,12 @@ export class FinanceAggregationService {
       topVendorsRows,
       activityRows,
     ] = await Promise.all([
-      this.queryDashboardKpis(organizationId, from, to),
-      this.queryCashFlowMonthly(organizationId),
-      this.querySpendByCategory(organizationId, from, to),
-      this.queryTopCustomersOutstanding(organizationId, 5),
-      this.queryTopVendorsSpend(organizationId, from, to, 5),
-      this.queryRecentActivity(organizationId, 10),
+      this.queryDashboardKpis(from, to),
+      this.queryCashFlowMonthly(),
+      this.querySpendByCategory(from, to),
+      this.queryTopCustomersOutstanding(5),
+      this.queryTopVendorsSpend(from, to, 5),
+      this.queryRecentActivity(10),
     ]);
 
     const revenueInRange = Number(kpisRow.revenueInRange ?? 0);
@@ -118,16 +114,13 @@ export class FinanceAggregationService {
   // ============================================
   // 2. RECEIPTS LEDGER (org-wide, paginated)
   // ============================================
-  async getReceipts(
-    organizationId: string,
-    query: ReceiptsQueryDto,
-  ): Promise<PaginatedResponse<ReceiptListItemDto>> {
+  async getReceipts(query: ReceiptsQueryDto): Promise<PaginatedResponse<ReceiptListItemDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
     const offset = (page - 1) * limit;
 
-    const params: unknown[] = [organizationId];
-    let where = ` p.organization_id = $1 AND p.deleted_at IS NULL `;
+    const params: unknown[] = [];
+    let where = ` p.deleted_at IS NULL `;
 
     if (query.status) {
       params.push(query.status);
@@ -225,16 +218,13 @@ export class FinanceAggregationService {
   // ============================================
   // 3. EXPENSES LEDGER (org-wide, paginated)
   // ============================================
-  async getExpenses(
-    organizationId: string,
-    query: ExpensesQueryDto,
-  ): Promise<PaginatedResponse<ExpenseListItemDto>> {
+  async getExpenses(query: ExpensesQueryDto): Promise<PaginatedResponse<ExpenseListItemDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
     const offset = (page - 1) * limit;
 
-    const params: unknown[] = [organizationId];
-    let where = ` e.organization_id = $1 AND e.deleted_at IS NULL `;
+    const params: unknown[] = [];
+    let where = ` e.deleted_at IS NULL `;
 
     if (query.category) {
       params.push(query.category);
@@ -314,18 +304,15 @@ export class FinanceAggregationService {
   // ============================================
   // 4. OUTSTANDING — org-wide unpaid payment terms
   // ============================================
-  async getOutstanding(
-    organizationId: string,
-    query: OutstandingQueryDto,
-  ): Promise<PaginatedResponse<OutstandingTermDto>> {
+  async getOutstanding(query: OutstandingQueryDto): Promise<PaginatedResponse<OutstandingTermDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
     const limit = Math.min(query.limit && query.limit > 0 ? query.limit : 25, 5000);
     const offset = (page - 1) * limit;
 
-    const params: unknown[] = [organizationId];
+    const params: unknown[] = [];
     let where = `
-      t.organization_id = $1
-      AND t.deleted_at IS NULL
+
+      t.deleted_at IS NULL
       AND t.status NOT IN ('waived','cancelled')
       AND t.expected_amount > t.paid_amount
     `;
@@ -444,10 +431,7 @@ export class FinanceAggregationService {
   // ============================================
   // 5. CUSTOMERS AR — per-customer aging buckets
   // ============================================
-  async getCustomersAr(
-    organizationId: string,
-    query: CustomersArQueryDto,
-  ): Promise<CustomerAgingDto[]> {
+  async getCustomersAr(query: CustomersArQueryDto): Promise<CustomerAgingDto[]> {
     const asOf = query.asOfDate ?? this.todayLocal();
 
     // The aging bucket expression here uses ($2::date) instead of CURRENT_DATE
@@ -459,25 +443,21 @@ export class FinanceAggregationService {
           cp.customer_id                          AS customer_id,
           (t.expected_amount - t.paid_amount)     AS outstanding,
           CASE
-            WHEN t.due_date IS NULL OR t.due_date >= $2::date THEN 'current'
-            WHEN ($2::date - t.due_date) BETWEEN 1  AND 30 THEN '0-30'
-            WHEN ($2::date - t.due_date) BETWEEN 31 AND 60 THEN '31-60'
-            WHEN ($2::date - t.due_date) BETWEEN 61 AND 90 THEN '61-90'
+            WHEN t.due_date IS NULL OR t.due_date >= $1::date THEN 'current'
+            WHEN ($1::date - t.due_date) BETWEEN 1  AND 30 THEN '0-30'
+            WHEN ($1::date - t.due_date) BETWEEN 31 AND 60 THEN '31-60'
+            WHEN ($1::date - t.due_date) BETWEEN 61 AND 90 THEN '61-90'
             ELSE '90+'
           END AS bucket
         FROM project_payment_terms t
         JOIN projects p             ON p.id = t.project_id
-        JOIN customer_properties cp ON cp.id = p.property_id
-        WHERE t.organization_id = $1
-          AND t.deleted_at IS NULL
+        JOIN customer_properties cp ON cp.id = p.property_id WHERE t.deleted_at IS NULL
           AND t.status NOT IN ('waived','cancelled')
           AND t.expected_amount > t.paid_amount
       ),
       last_receipt AS (
         SELECT pay.customer_id, MAX(pay.created_at) AS last_at
-        FROM payments pay
-        WHERE pay.organization_id = $1
-          AND pay.deleted_at IS NULL
+        FROM payments pay WHERE pay.deleted_at IS NULL
           AND pay.status IN ('received','verified','cleared')
         GROUP BY pay.customer_id
       )
@@ -500,7 +480,7 @@ export class FinanceAggregationService {
       GROUP BY c.id, c.first_name, c.last_name, c.phone, c.email, lr.last_at
       ORDER BY "totalOutstanding" DESC
     `;
-    const rows = await this.dataSource.query<RawCustomerAgingRow[]>(sql, [organizationId, asOf]);
+    const rows = await this.dataSource.query<RawCustomerAgingRow[]>(sql, [asOf]);
 
     return rows.map((r) => ({
       customerId: r.customerId,
@@ -521,12 +501,9 @@ export class FinanceAggregationService {
   // ============================================
   // 6. VENDORS SPEND — per-vendor analytics
   // ============================================
-  async getVendorsSpend(
-    organizationId: string,
-    query: VendorsSpendQueryDto,
-  ): Promise<VendorSpendDto[]> {
+  async getVendorsSpend(query: VendorsSpendQueryDto): Promise<VendorSpendDto[]> {
     const { from, to } = this.resolveDateRange(query.from, query.to);
-    const params: unknown[] = [organizationId, from, to];
+    const params: unknown[] = [from, to];
     let categoryFilter = '';
     if (query.category) {
       params.push(query.category);
@@ -544,12 +521,10 @@ export class FinanceAggregationService {
           e.created_at               AS created_at,
           e.reimbursement_status     AS reimb,
           e.paid_by                  AS paid_by
-        FROM project_expenses e
-        WHERE e.organization_id = $1
-          AND e.deleted_at IS NULL
+        FROM project_expenses e WHERE e.deleted_at IS NULL
           AND e.vendor_name IS NOT NULL
           AND TRIM(e.vendor_name) <> ''
-          AND e.expense_date BETWEEN $2::date AND $3::date
+          AND e.expense_date BETWEEN $1::date AND $2::date
           ${categoryFilter}
       ),
       per_vendor AS (
@@ -614,7 +589,6 @@ export class FinanceAggregationService {
   // 7. PROJECT PROFITABILITY
   // ============================================
   async getProfitability(
-    organizationId: string,
     query: ProfitabilityQueryDto,
   ): Promise<PaginatedResponse<ProjectProfitabilityDto>> {
     const page = query.page && query.page > 0 ? query.page : 1;
@@ -624,7 +598,7 @@ export class FinanceAggregationService {
     // Profitability = lifetime metric. Quoted revenue is always the latest
     // quote, and received/spend are all-time totals so the comparison is
     // apples-to-apples. (See ProfitabilityQueryDto comment.)
-    const params: unknown[] = [organizationId];
+    const params: unknown[] = [];
 
     const countSql = `
       SELECT COUNT(*)::int AS total
@@ -632,10 +606,10 @@ export class FinanceAggregationService {
       WHERE p.deleted_at IS NULL
         AND EXISTS (
           SELECT 1 FROM customer_properties cp
-          WHERE cp.id = p.property_id AND cp.organization_id = $1
+          WHERE cp.id = p.property_id
         )
     `;
-    const countRows = await this.dataSource.query<{ total: number }[]>(countSql, [organizationId]);
+    const countRows = await this.dataSource.query<{ total: number }[]>(countSql, []);
     const total = Number(countRows[0]?.total ?? 0);
 
     const dataParams = [...params, limit, offset];
@@ -675,7 +649,6 @@ export class FinanceAggregationService {
       ) spd ON TRUE
       LEFT JOIN bom bm ON bm.entity_type = 'project' AND bm.entity_id = p.id
       WHERE p.deleted_at IS NULL
-        AND cp.organization_id = $1
       ORDER BY (COALESCE(qv.final_price, 0) - COALESCE(spd.spend, 0)) DESC, p.created_at DESC
       LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}
     `;
@@ -726,24 +699,18 @@ export class FinanceAggregationService {
    *  - overdueCountNow  : count of open terms with due_date < today
    *  - avgDaysToCollect : avg(first_receipt.created_at - term.due_date) trailing 90d
    */
-  private async queryDashboardKpis(
-    organizationId: string,
-    from: string,
-    to: string,
-  ): Promise<RawKpiRow> {
+  private async queryDashboardKpis(from: string, to: string): Promise<RawKpiRow> {
     const sql = `
       WITH params AS (
         SELECT
-          $1::uuid       AS org_id,
-          $2::date       AS from_d,
-          $3::date       AS to_d,
+          $1::date       AS from_d,
+          $2::date       AS to_d,
           CURRENT_DATE   AS today
       ),
       revenue AS (
         SELECT COALESCE(SUM(p.paid_amount), 0)::numeric AS total
         FROM payments p, params
-        WHERE p.organization_id = params.org_id
-          AND p.deleted_at IS NULL
+          WHERE p.deleted_at IS NULL
           AND p.status IN ('received','verified','cleared')
           AND p.created_at >= params.from_d::timestamptz
           AND p.created_at <  (params.to_d::date + INTERVAL '1 day')
@@ -751,8 +718,7 @@ export class FinanceAggregationService {
       spend AS (
         SELECT COALESCE(SUM(e.amount), 0)::numeric AS total
         FROM project_expenses e, params
-        WHERE e.organization_id = params.org_id
-          AND e.deleted_at IS NULL
+          WHERE e.deleted_at IS NULL
           AND e.expense_date BETWEEN params.from_d AND params.to_d
       ),
       outstanding AS (
@@ -762,8 +728,7 @@ export class FinanceAggregationService {
             WHERE t.due_date IS NOT NULL AND t.due_date < (SELECT today FROM params)
           )::int AS overdue_count
         FROM project_payment_terms t, params
-        WHERE t.organization_id = params.org_id
-          AND t.deleted_at IS NULL
+          WHERE t.deleted_at IS NULL
           AND t.status NOT IN ('waived','cancelled')
           AND t.expected_amount > t.paid_amount
       ),
@@ -778,8 +743,7 @@ export class FinanceAggregationService {
             AND p.status IN ('received','verified','cleared')
         ) fr ON TRUE,
         params
-        WHERE t.organization_id = params.org_id
-          AND t.deleted_at IS NULL
+          WHERE t.deleted_at IS NULL
           AND t.due_date IS NOT NULL
           AND fr.first_receipt IS NOT NULL
           AND fr.first_receipt >= (params.today - INTERVAL '90 days')
@@ -792,7 +756,7 @@ export class FinanceAggregationService {
         COALESCE(collection.avg_days, 0) AS "avgDaysToCollect"
       FROM revenue, spend, outstanding, collection
     `;
-    const rows = await this.dataSource.query<RawKpiRow[]>(sql, [organizationId, from, to]);
+    const rows = await this.dataSource.query<RawKpiRow[]>(sql, [from, to]);
     return (
       rows[0] ?? {
         revenueInRange: 0,
@@ -805,7 +769,7 @@ export class FinanceAggregationService {
   }
 
   /** Last 12 calendar months including current. */
-  private async queryCashFlowMonthly(organizationId: string): Promise<RawCashFlowRow[]> {
+  private async queryCashFlowMonthly(): Promise<RawCashFlowRow[]> {
     const sql = `
       WITH months AS (
         SELECT TO_CHAR(d, 'YYYY-MM') AS month, d::date AS first_day
@@ -818,9 +782,7 @@ export class FinanceAggregationService {
       cash_in AS (
         SELECT TO_CHAR(DATE_TRUNC('month', p.created_at), 'YYYY-MM') AS month,
                SUM(p.paid_amount)::numeric AS total
-        FROM payments p
-        WHERE p.organization_id = $1
-          AND p.deleted_at IS NULL
+        FROM payments p WHERE p.deleted_at IS NULL
           AND p.status IN ('received','verified','cleared')
           AND p.created_at >= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months')
         GROUP BY 1
@@ -828,9 +790,7 @@ export class FinanceAggregationService {
       cash_out AS (
         SELECT TO_CHAR(DATE_TRUNC('month', e.expense_date), 'YYYY-MM') AS month,
                SUM(e.amount)::numeric AS total
-        FROM project_expenses e
-        WHERE e.organization_id = $1
-          AND e.deleted_at IS NULL
+        FROM project_expenses e WHERE e.deleted_at IS NULL
           AND e.expense_date >= (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months')::date
         GROUP BY 1
       )
@@ -843,30 +803,21 @@ export class FinanceAggregationService {
       LEFT JOIN cash_out ON cash_out.month = m.month
       ORDER BY m.month ASC
     `;
-    return this.dataSource.query<RawCashFlowRow[]>(sql, [organizationId]);
+    return this.dataSource.query<RawCashFlowRow[]>(sql, []);
   }
 
-  private async querySpendByCategory(
-    organizationId: string,
-    from: string,
-    to: string,
-  ): Promise<RawSpendByCategoryRow[]> {
+  private async querySpendByCategory(from: string, to: string): Promise<RawSpendByCategoryRow[]> {
     const sql = `
       SELECT e.category, COALESCE(SUM(e.amount), 0)::numeric AS total
-      FROM project_expenses e
-      WHERE e.organization_id = $1
-        AND e.deleted_at IS NULL
-        AND e.expense_date BETWEEN $2::date AND $3::date
+      FROM project_expenses e WHERE e.deleted_at IS NULL
+        AND e.expense_date BETWEEN $1::date AND $2::date
       GROUP BY e.category
       ORDER BY total DESC
     `;
-    return this.dataSource.query<RawSpendByCategoryRow[]>(sql, [organizationId, from, to]);
+    return this.dataSource.query<RawSpendByCategoryRow[]>(sql, [from, to]);
   }
 
-  private async queryTopCustomersOutstanding(
-    organizationId: string,
-    limit: number,
-  ): Promise<RawTopCustomerRow[]> {
+  private async queryTopCustomersOutstanding(limit: number): Promise<RawTopCustomerRow[]> {
     const sql = `
       SELECT
         c.id                                                              AS "customerId",
@@ -875,20 +826,17 @@ export class FinanceAggregationService {
       FROM project_payment_terms t
       JOIN projects p           ON p.id  = t.project_id
       JOIN customer_properties cp ON cp.id = p.property_id
-      JOIN customer_profiles c  ON c.id  = cp.customer_id
-      WHERE t.organization_id = $1
-        AND t.deleted_at IS NULL
+      JOIN customer_profiles c  ON c.id  = cp.customer_id WHERE t.deleted_at IS NULL
         AND t.status NOT IN ('waived','cancelled')
         AND t.expected_amount > t.paid_amount
       GROUP BY c.id, c.first_name, c.last_name
       ORDER BY outstanding DESC
-      LIMIT $2
+      LIMIT $1
     `;
-    return this.dataSource.query<RawTopCustomerRow[]>(sql, [organizationId, limit]);
+    return this.dataSource.query<RawTopCustomerRow[]>(sql, [limit]);
   }
 
   private async queryTopVendorsSpend(
-    organizationId: string,
     from: string,
     to: string,
     limit: number,
@@ -898,23 +846,18 @@ export class FinanceAggregationService {
         LOWER(TRIM(e.vendor_name))                          AS "vendorKey",
         (ARRAY_AGG(e.vendor_name ORDER BY e.created_at))[1] AS "vendorName",
         SUM(e.amount)::numeric                              AS "totalSpend"
-      FROM project_expenses e
-      WHERE e.organization_id = $1
-        AND e.deleted_at IS NULL
+      FROM project_expenses e WHERE e.deleted_at IS NULL
         AND e.vendor_name IS NOT NULL
         AND TRIM(e.vendor_name) <> ''
-        AND e.expense_date BETWEEN $2::date AND $3::date
+        AND e.expense_date BETWEEN $1::date AND $2::date
       GROUP BY LOWER(TRIM(e.vendor_name))
       ORDER BY "totalSpend" DESC
-      LIMIT $4
+      LIMIT $3
     `;
-    return this.dataSource.query<RawTopVendorRow[]>(sql, [organizationId, from, to, limit]);
+    return this.dataSource.query<RawTopVendorRow[]>(sql, [from, to, limit]);
   }
 
-  private async queryRecentActivity(
-    organizationId: string,
-    limit: number,
-  ): Promise<RawActivityRow[]> {
+  private async queryRecentActivity(limit: number): Promise<RawActivityRow[]> {
     const sql = `
       (
         SELECT
@@ -925,11 +868,9 @@ export class FinanceAggregationService {
           p.paid_amount::numeric  AS amount,
           p.created_at            AS at
         FROM payments p
-        LEFT JOIN projects proj ON proj.id = p.project_id
-        WHERE p.organization_id = $1
-          AND p.deleted_at IS NULL
+        LEFT JOIN projects proj ON proj.id = p.project_id WHERE p.deleted_at IS NULL
         ORDER BY p.created_at DESC
-        LIMIT $2
+        LIMIT $1
       )
       UNION ALL
       (
@@ -941,16 +882,14 @@ export class FinanceAggregationService {
           e.amount::numeric       AS amount,
           e.created_at            AS at
         FROM project_expenses e
-        LEFT JOIN projects proj ON proj.id = e.project_id
-        WHERE e.organization_id = $1
-          AND e.deleted_at IS NULL
+        LEFT JOIN projects proj ON proj.id = e.project_id WHERE e.deleted_at IS NULL
         ORDER BY e.created_at DESC
-        LIMIT $2
+        LIMIT $1
       )
       ORDER BY at DESC
-      LIMIT $2
+      LIMIT $1
     `;
-    return this.dataSource.query<RawActivityRow[]>(sql, [organizationId, limit]);
+    return this.dataSource.query<RawActivityRow[]>(sql, [limit]);
   }
 
   // ============================================

@@ -2,7 +2,6 @@ import { EmployeeProfileKind, UserGender, UserStatus } from '@tejas96/shared/typ
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -16,12 +15,12 @@ import { UserEntity } from '../../users/entities/user.entity';
  * profileKind='staff' rows.
  */
 @Entity('employee_profiles')
-@Index(['userId', 'organizationId'], { unique: true })
-@Index(['organizationId', 'status', 'deletedAt'])
-@Index(['organizationId', 'employeeId'], { unique: true })
+@Index(['userId'], { unique: true })
+@Index(['status', 'deletedAt'])
+@Index(['employeeId'], { unique: true })
 @Index(['department', 'deletedAt'])
-@Index(['organizationId', 'companyCode'], { unique: true, where: 'company_code IS NOT NULL' })
-@Index(['organizationId', 'profileKind', 'status', 'deletedAt'])
+@Index(['companyCode'], { unique: true, where: 'company_code IS NOT NULL' })
+@Index(['profileKind', 'status', 'deletedAt'])
 export class EmployeeProfileEntity extends BaseEntity {
   // ==================== RELATIONSHIPS ====================
   @Column({ name: 'user_id', type: 'uuid' })
@@ -30,13 +29,6 @@ export class EmployeeProfileEntity extends BaseEntity {
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'user_id' })
   user?: UserEntity;
-
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
-
-  @ManyToOne(() => OrganizationEntity, { nullable: false })
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   // ==================== Profile Kind ====================
   @Column({

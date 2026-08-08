@@ -1,7 +1,6 @@
 import { Controller, Get, HttpStatus, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -28,7 +27,7 @@ export class ConsumerPropertyController {
   @ApiOperation({
     summary: 'Get properties for the logged-in customer',
     description:
-      'Returns all active properties for the authenticated customer in the organization context, ' +
+      'Returns all active properties for the authenticated customer context, ' +
       'including quotes (with versions) and project details.',
   })
   @ApiResponse({
@@ -41,10 +40,9 @@ export class ConsumerPropertyController {
     description: 'No customer profile or not authorized',
   })
   async findProperties(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto[]> {
-    const properties = await this.propertyService.findMyProperties(currentUser.id, organizationId);
+    const properties = await this.propertyService.findMyProperties(currentUser.id);
     return toDtoArray(CustomerPropertyResponseDto, properties);
   }
 }

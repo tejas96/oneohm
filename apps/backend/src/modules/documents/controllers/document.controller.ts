@@ -14,7 +14,6 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -49,11 +48,9 @@ export class DocumentController {
   @ApiOperation({ summary: 'Create a document record' })
   @ApiResponse({ status: HttpStatus.CREATED, type: DocumentResponseDto })
   async create(
-    @OrganizationContext() organizationId: string,
     @Body() dto: CreateDocumentDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<DocumentResponseDto> {
-    dto.organizationId = organizationId;
     const document = await this.documentService.create(dto, currentUser.id);
     return toDto(DocumentResponseDto, document);
   }
@@ -63,13 +60,9 @@ export class DocumentController {
   @ApiOperation({ summary: 'Batch-create document records' })
   @ApiResponse({ status: HttpStatus.CREATED, type: [DocumentResponseDto] })
   async createBulk(
-    @OrganizationContext() organizationId: string,
     @Body() dto: BulkCreateDocumentDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<DocumentResponseDto[]> {
-    for (const doc of dto.documents) {
-      doc.organizationId = organizationId;
-    }
     const documents = await this.documentService.createBulk(dto.documents, currentUser.id);
     return toDtoArray(DocumentResponseDto, documents);
   }
@@ -77,17 +70,14 @@ export class DocumentController {
   @Get()
   @ApiOperation({ summary: 'List documents by entity with filters' })
   @ApiResponse({ status: HttpStatus.OK, type: [DocumentResponseDto] })
-  async findAll(
-    @OrganizationContext() organizationId: string,
-    @Query() queryDto: QueryDocumentsDto,
-  ): Promise<DocumentResponseDto[]> {
+  async findAll(@Query() queryDto: QueryDocumentsDto): Promise<DocumentResponseDto[]> {
     const page = queryDto.page ?? 1;
     const limit = queryDto.limit ?? 50;
     const tags = this.parseCsv(queryDto.tags);
 
     // Property-wide query (all entity types for a property)
     if (queryDto.propertyId) {
-      const docs = await this.documentService.findByProperty(queryDto.propertyId, organizationId, {
+      const docs = await this.documentService.findByProperty(queryDto.propertyId, {
         entityType: queryDto.entityType,
         category: queryDto.category,
         tag: queryDto.tag,
@@ -99,27 +89,21 @@ export class DocumentController {
     // Batch query by entityIds
     if (queryDto.entityType && queryDto.entityIds) {
       const ids = queryDto.entityIds.split(',').map((id) => id.trim());
-      const docs = await this.documentService.findByEntityBatch(
-        queryDto.entityType,
-        ids,
-        organizationId,
-      );
+      const docs = await this.documentService.findByEntityBatch(queryDto.entityType, ids);
       return toDtoArray(DocumentResponseDto, docs);
     }
 
     // Single entity query
     if (queryDto.entityType && queryDto.entityId) {
-      const docs = await this.documentService.findByEntity(
-        queryDto.entityType,
-        queryDto.entityId,
-        organizationId,
-        { tag: queryDto.tag, tags, category: queryDto.category },
-      );
+      const docs = await this.documentService.findByEntity(queryDto.entityType, queryDto.entityId, {
+        tag: queryDto.tag,
+        tags,
+        category: queryDto.category,
+      });
       return toDtoArray(DocumentResponseDto, docs);
     }
 
     const [docs] = await this.documentService.findByOrganization(
-      organizationId,
       {
         entityType: queryDto.entityType,
         category: queryDto.category,
@@ -135,11 +119,8 @@ export class DocumentController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a single document' })
   @ApiResponse({ status: HttpStatus.OK, type: DocumentResponseDto })
-  async findById(
-    @OrganizationContext() organizationId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<DocumentResponseDto> {
-    const document = await this.documentService.findById(id, organizationId);
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<DocumentResponseDto> {
+    const document = await this.documentService.findById(id);
     return toDto(DocumentResponseDto, document);
   }
 
@@ -147,12 +128,11 @@ export class DocumentController {
   @ApiOperation({ summary: 'Update document tag/metadata' })
   @ApiResponse({ status: HttpStatus.OK, type: DocumentResponseDto })
   async update(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateDocumentDto,
   ): Promise<DocumentResponseDto> {
-    const document = await this.documentService.update(id, dto, currentUser.id, organizationId);
+    const document = await this.documentService.update(id, dto, currentUser.id);
     return toDto(DocumentResponseDto, document);
   }
 
@@ -161,25 +141,21 @@ export class DocumentController {
   @ApiOperation({ summary: 'Delete a document (soft by default, permanent with ?permanent=true)' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT })
   async delete(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Query('permanent') permanent?: string,
   ): Promise<void> {
     if (permanent === 'true') {
-      await this.documentService.hardDelete(id, organizationId);
+      await this.documentService.hardDelete(id);
     } else {
-      await this.documentService.delete(id, organizationId);
+      await this.documentService.delete(id);
     }
   }
 
   @Get(':id/download')
   @ApiOperation({ summary: 'Get presigned download URL (placeholder)' })
   @ApiResponse({ status: HttpStatus.OK })
-  async download(
-    @OrganizationContext() organizationId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ url: string }> {
-    const document = await this.documentService.findById(id, organizationId);
+  async download(@Param('id', ParseUUIDPipe) id: string): Promise<{ url: string }> {
+    const document = await this.documentService.findById(id);
     return { url: document.fileUrl };
   }
 }

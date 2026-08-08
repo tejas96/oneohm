@@ -17,7 +17,6 @@ import {
 
 export interface MaterialDispatch {
   id: string;
-  organizationId: string;
   dispatchNumber: string;
   status: string;
   projectId?: string;

@@ -54,12 +54,12 @@ export class PaymentTermService {
   // READ
   // ============================================
 
-  async listForProject(projectId: string, organizationId: string): Promise<PaymentTermEntity[]> {
-    return this.termRepository.findByProject(projectId, organizationId);
+  async listForProject(projectId: string): Promise<PaymentTermEntity[]> {
+    return this.termRepository.findByProject(projectId);
   }
 
-  async findById(id: string, organizationId: string): Promise<PaymentTermEntity> {
-    const term = await this.termRepository.findById(id, organizationId);
+  async findById(id: string): Promise<PaymentTermEntity> {
+    const term = await this.termRepository.findById(id);
     if (!term) {
       throw new NotFoundException(`Payment term ${id} not found`);
     }
@@ -72,17 +72,14 @@ export class PaymentTermService {
 
   async create(
     projectId: string,
-    organizationId: string,
     dto: CreatePaymentTermDto,
     createdBy: string,
   ): Promise<PaymentTermEntity> {
     const displayOrder =
-      dto.displayOrder ??
-      (await this.termRepository.getMaxDisplayOrder(projectId, organizationId)) + 1;
+      dto.displayOrder ?? (await this.termRepository.getMaxDisplayOrder(projectId)) + 1;
 
     const repo = this.dataSource.getRepository(PaymentTermEntity);
     const entity = repo.create({
-      organizationId,
       projectId,
       source: PaymentTermSource.MANUAL,
       stage: dto.stage,
@@ -109,11 +106,10 @@ export class PaymentTermService {
 
   async update(
     id: string,
-    organizationId: string,
     dto: UpdatePaymentTermDto,
     updatedBy: string,
   ): Promise<PaymentTermEntity> {
-    const term = await this.findById(id, organizationId);
+    const term = await this.findById(id);
 
     if (term.status === PaymentTermStatus.WAIVED || term.status === PaymentTermStatus.CANCELLED) {
       throw new BadRequestException(
@@ -157,13 +153,8 @@ export class PaymentTermService {
   // STATUS ACTIONS — waive / cancel
   // ============================================
 
-  async waive(
-    id: string,
-    organizationId: string,
-    dto: WaivePaymentTermDto,
-    updatedBy: string,
-  ): Promise<PaymentTermEntity> {
-    const term = await this.findById(id, organizationId);
+  async waive(id: string, dto: WaivePaymentTermDto, updatedBy: string): Promise<PaymentTermEntity> {
+    const term = await this.findById(id);
 
     if (term.status === PaymentTermStatus.WAIVED) {
       throw new BadRequestException('Term is already waived');
@@ -184,8 +175,8 @@ export class PaymentTermService {
   // DELETE — only allowed when no linked receipts
   // ============================================
 
-  async delete(id: string, organizationId: string): Promise<void> {
-    const term = await this.findById(id, organizationId);
+  async delete(id: string): Promise<void> {
+    const term = await this.findById(id);
 
     const linked = await this.termRepository.countLinkedReceipts(term.id);
     if (linked > 0) {
@@ -211,7 +202,6 @@ export class PaymentTermService {
    * @param sourceVersionId    Quote version id for audit trail (nullable —
    *                           pass null to omit the FK).
    * @param milestones         Raw milestones array from the quote version.
-   * @param organizationId     Organization id (multi-tenant isolation).
    * @param createdBy          User id to record on each row.
    * @param manager            Outer transaction manager. Required.
    */
@@ -219,16 +209,15 @@ export class PaymentTermService {
     projectId: string;
     sourceVersionId: string | null;
     milestones: SnapshotableMilestone[] | null | undefined;
-    organizationId: string;
     createdBy: string;
     manager: EntityManager;
   }): Promise<PaymentTermEntity[]> {
-    const { projectId, sourceVersionId, milestones, organizationId, createdBy, manager } = params;
+    const { projectId, sourceVersionId, milestones, createdBy, manager } = params;
 
     const repo = manager.getRepository(PaymentTermEntity);
 
     const existing = await repo.find({
-      where: { projectId, organizationId, deletedAt: IsNull() },
+      where: { projectId, deletedAt: IsNull() },
       order: { displayOrder: 'ASC' },
     });
     if (existing.length > 0) {
@@ -251,7 +240,6 @@ export class PaymentTermService {
       .map((row) =>
         repo.create({
           ...row,
-          organizationId,
           projectId,
           sourceQuoteVersionId: sourceVersionId,
           source: PaymentTermSource.QUOTE_SNAPSHOT,
@@ -279,17 +267,13 @@ export class PaymentTermService {
    */
   async resnapshotFromLatestQuote(params: {
     projectId: string;
-    organizationId: string;
     sourceVersionId: string | null;
     milestones: SnapshotableMilestone[] | null | undefined;
     updatedBy: string;
   }): Promise<PaymentTermEntity[]> {
-    const { projectId, organizationId, sourceVersionId, milestones, updatedBy } = params;
+    const { projectId, sourceVersionId, milestones, updatedBy } = params;
 
-    const hasPayments = await this.termRepository.projectHasReceivedPayments(
-      projectId,
-      organizationId,
-    );
+    const hasPayments = await this.termRepository.projectHasReceivedPayments(projectId);
     if (hasPayments) {
       throw new ConflictException(
         'Cannot re-snapshot: at least one term already has received payments. Reconcile manually.',
@@ -305,7 +289,6 @@ export class PaymentTermService {
         .createQueryBuilder()
         .softDelete()
         .where('project_id = :projectId', { projectId })
-        .andWhere('organization_id = :organizationId', { organizationId })
         .andWhere('deleted_at IS NULL')
         .execute();
 
@@ -313,7 +296,6 @@ export class PaymentTermService {
         projectId,
         sourceVersionId,
         milestones,
-        organizationId,
         createdBy: updatedBy,
         manager,
       });

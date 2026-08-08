@@ -1,7 +1,6 @@
 import { Controller, Get, Query, StreamableFile, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { OrganizationContext } from '../../../common/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
 import { PermissionGuard } from '../../iam/guards/permission.guard';
@@ -60,22 +59,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('purchase-orders.csv')
   @ApiOperation({ summary: 'Stream CSV export of purchase orders (max 50k rows)' })
-  async exportPurchaseOrders(
-    @OrganizationContext() organizationId: string,
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportPurchaseOrders(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.poFilters(query);
-    const { total } = await this.purchaseOrderRepository.findAll(organizationId, 1, 1, filters);
+    const { total } = await this.purchaseOrderRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.purchaseOrderRepository.findAll(
-            organizationId,
-            page,
-            limit,
-            filters,
-          );
+          const r = await this.purchaseOrderRepository.findAll(page, limit, filters);
           return r.purchaseOrders;
         },
       },
@@ -87,22 +78,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('material-dispatches.csv')
   @ApiOperation({ summary: 'Stream CSV export of material dispatches (max 50k rows)' })
-  async exportDispatches(
-    @OrganizationContext() organizationId: string,
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportDispatches(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.dispatchFilters(query);
-    const { total } = await this.materialDispatchRepository.findAll(organizationId, 1, 1, filters);
+    const { total } = await this.materialDispatchRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.materialDispatchRepository.findAll(
-            organizationId,
-            page,
-            limit,
-            filters,
-          );
+          const r = await this.materialDispatchRepository.findAll(page, limit, filters);
           return r.dispatches;
         },
       },
@@ -114,22 +97,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('stock-allocations.csv')
   @ApiOperation({ summary: 'Stream CSV export of stock allocations (max 50k rows)' })
-  async exportAllocations(
-    @OrganizationContext() organizationId: string,
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportAllocations(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.allocationFilters(query);
-    const { total } = await this.stockAllocationRepository.findAll(organizationId, 1, 1, filters);
+    const { total } = await this.stockAllocationRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.stockAllocationRepository.findAll(
-            organizationId,
-            page,
-            limit,
-            filters,
-          );
+          const r = await this.stockAllocationRepository.findAll(page, limit, filters);
           return r.allocations;
         },
       },
@@ -141,22 +116,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('inventory-stock.csv')
   @ApiOperation({ summary: 'Stream CSV export of stock levels (max 50k rows)' })
-  async exportStock(
-    @OrganizationContext() organizationId: string,
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportStock(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.stockFilters(query);
-    const { total } = await this.inventoryStockRepository.findAll(organizationId, 1, 1, filters);
+    const { total } = await this.inventoryStockRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.inventoryStockRepository.findAll(
-            organizationId,
-            page,
-            limit,
-            filters,
-          );
+          const r = await this.inventoryStockRepository.findAll(page, limit, filters);
           return r.stocks;
         },
       },
@@ -168,27 +135,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('inventory-transactions.csv')
   @ApiOperation({ summary: 'Stream CSV export of inventory transactions (max 50k rows)' })
-  async exportTransactions(
-    @OrganizationContext() organizationId: string,
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportTransactions(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.txnFilters(query);
-    const { total } = await this.inventoryTransactionRepository.findAll(
-      organizationId,
-      1,
-      1,
-      filters,
-    );
+    const { total } = await this.inventoryTransactionRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.inventoryTransactionRepository.findAll(
-            organizationId,
-            page,
-            limit,
-            filters,
-          );
+          const r = await this.inventoryTransactionRepository.findAll(page, limit, filters);
           return r.transactions;
         },
       },
@@ -200,17 +154,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('vendors.csv')
   @ApiOperation({ summary: 'Stream CSV export of vendors (max 50k rows)' })
-  async exportVendors(
-    @OrganizationContext() organizationId: string,
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportVendors(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.vendorFilters(query);
-    const { total } = await this.vendorRepository.findAll(organizationId, 1, 1, filters);
+    const { total } = await this.vendorRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.vendorRepository.findAll(organizationId, page, limit, filters);
+          const r = await this.vendorRepository.findAll(page, limit, filters);
           return r.vendors;
         },
       },
@@ -222,17 +173,14 @@ export class InventoryExportController {
   @RequirePermission('inventory:export')
   @Get('warehouses.csv')
   @ApiOperation({ summary: 'Stream CSV export of warehouses (max 50k rows)' })
-  async exportWarehouses(
-    @OrganizationContext() organizationId: string,
-    @Query() query: Record<string, string>,
-  ): Promise<StreamableFile> {
+  async exportWarehouses(@Query() query: Record<string, string>): Promise<StreamableFile> {
     const filters = this.warehouseFilters(query);
-    const { total } = await this.warehouseRepository.findAll(organizationId, 1, 1, filters);
+    const { total } = await this.warehouseRepository.findAll(1, 1, filters);
     return buildCsvStream(
       {
         total,
         fetchPage: async (page, limit) => {
-          const r = await this.warehouseRepository.findAll(organizationId, page, limit, filters);
+          const r = await this.warehouseRepository.findAll(page, limit, filters);
           return r.warehouses;
         },
       },
@@ -254,7 +202,7 @@ export class InventoryExportController {
       fromDate: q.fromDate,
       toDate: q.toDate,
       search: q.search,
-    } as Parameters<PurchaseOrderRepository['findAll']>[3];
+    } as Parameters<PurchaseOrderRepository['findAll']>[2];
   }
 
   private dispatchFilters(q: Record<string, string>) {
@@ -265,7 +213,7 @@ export class InventoryExportController {
       fromDate: q.fromDate,
       toDate: q.toDate,
       search: q.search,
-    } as Parameters<MaterialDispatchRepository['findAll']>[3];
+    } as Parameters<MaterialDispatchRepository['findAll']>[2];
   }
 
   private allocationFilters(q: Record<string, string>) {
@@ -274,7 +222,7 @@ export class InventoryExportController {
       projectId: q.projectId,
       warehouseId: q.warehouseId,
       productId: q.productId,
-    } as Parameters<StockAllocationRepository['findAll']>[3];
+    } as Parameters<StockAllocationRepository['findAll']>[2];
   }
 
   private stockFilters(q: Record<string, string>) {
@@ -283,7 +231,7 @@ export class InventoryExportController {
       productId: q.productId,
       lowStock: q.lowStock === 'true',
       search: q.search,
-    } as Parameters<InventoryStockRepository['findAll']>[3];
+    } as Parameters<InventoryStockRepository['findAll']>[2];
   }
 
   private txnFilters(q: Record<string, string>) {
@@ -295,7 +243,7 @@ export class InventoryExportController {
       toDate: q.toDate,
       referenceType: q.referenceType,
       referenceId: q.referenceId,
-    } as Parameters<InventoryTransactionRepository['findAll']>[3];
+    } as Parameters<InventoryTransactionRepository['findAll']>[2];
   }
 
   private vendorFilters(q: Record<string, string>) {
@@ -303,7 +251,7 @@ export class InventoryExportController {
       status: q.status,
       vendorType: q.vendorType,
       search: q.search,
-    } as Parameters<VendorRepository['findAll']>[3];
+    } as Parameters<VendorRepository['findAll']>[2];
   }
 
   private warehouseFilters(q: Record<string, string>) {
@@ -312,7 +260,7 @@ export class InventoryExportController {
       warehouseType: q.warehouseType,
       warehouseManagerId: q.warehouseManagerId,
       search: q.search,
-    } as Parameters<WarehouseRepository['findAll']>[3];
+    } as Parameters<WarehouseRepository['findAll']>[2];
   }
 
   // Re-exported so it appears in coverage / introspection.

@@ -3,7 +3,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { STALE_TIMES, stableHash, useOrgContext } from '../core';
+import { STALE_TIMES, stableHash } from '../core';
 
 import { apiClient } from '@/lib/api/client';
 
@@ -194,17 +194,16 @@ interface StatsQueryArgs<TParams extends Record<string, unknown>> {
 function useStatsQuery<TParams extends Record<string, unknown>, TResponse>(
   args: StatsQueryArgs<TParams>,
 ): UseQueryResult<TResponse, unknown> {
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
   const { endpoint, key, params, enabled = true } = args;
 
   const queryKey = useMemo(
-    () => ['inventory-stats', organizationId, key, stableHash(params)] as const,
-    [organizationId, key, params],
+    () => ['inventory-stats', key, stableHash(params)] as const,
+    [key, params],
   );
 
   return useQuery<TResponse>({
     queryKey,
-    enabled: isReady && enabled,
+    enabled: enabled,
     staleTime: STALE_TIMES.standard,
     queryFn: async ({ signal }) => {
       const search = new URLSearchParams();
@@ -215,7 +214,6 @@ function useStatsQuery<TParams extends Record<string, unknown>, TResponse>(
       const qs = search.toString();
       const url = qs ? `${endpoint}?${qs}` : endpoint;
       const { data } = await apiClient.get<TResponse>(url, {
-        headers: orgHeaders,
         signal,
       });
       return data;

@@ -130,16 +130,9 @@ export class AuthController {
   })
   async getCurrentUser(@CurrentUser() user: CurrentUserType): Promise<UserResponseDto> {
     const fullUser = await this.userService.findById(user.id);
-    const profiles = await this.profileService.getUserProfileSummary(user.id);
-    const primaryProfile = profiles.profiles[0];
-
     const userDto = plainToInstance(UserResponseDto, fullUser, {
       excludeExtraneousValues: true,
     });
-
-    if (primaryProfile) {
-      userDto.organizationId = primaryProfile.organizationId;
-    }
 
     return userDto;
   }

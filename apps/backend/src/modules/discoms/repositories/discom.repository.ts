@@ -134,7 +134,7 @@ export class DiscomRepository {
     const query = this.repository
       .createQueryBuilder('discom')
       .select('DISTINCT discom.circle_name', 'circleName')
-      .orderBy('discom.circle_name', 'ASC');
+      .orderBy('discom.circleName', 'ASC');
 
     this.applyListFilters(query, filters);
 

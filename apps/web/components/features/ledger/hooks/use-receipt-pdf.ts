@@ -5,7 +5,7 @@ import { useCallback, useState } from 'react';
 
 import { generateReceiptPdfBlob, downloadReceiptPdf } from '../services/receipt-pdf.service';
 import {
-  RECEIPT_DEFAULT_COMPANY,
+  RECEIPT_COMPANY,
   type ReceiptAllocationLine,
   type ReceiptPdfData,
 } from '../services/receipt-pdf.template';
@@ -13,7 +13,6 @@ import {
 import type { ProjectDetail } from '@/components/features/projects/hooks/types';
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
-import { useOrgContext } from '@/lib/hooks/core';
 import type { LedgerEntry, ProjectLedgerSummary } from '@/lib/hooks/resources/ledger';
 import { getErrorMessage } from '@/lib/utils/error';
 
@@ -71,7 +70,7 @@ export function buildReceiptData(
       receivedPaise: summary.receivedPaise,
       outstandingPaise: summary.outstandingPaise,
     },
-    company: RECEIPT_DEFAULT_COMPANY,
+    company: RECEIPT_COMPANY,
   };
 }
 
@@ -92,7 +91,6 @@ interface UseReceiptPdfResult {
 }
 
 export function useReceiptPdf(): UseReceiptPdfResult {
-  const { orgHeaders } = useOrgContext();
   const queryClient = useQueryClient();
   const [isBusy, setIsBusy] = useState(false);
 
@@ -106,9 +104,7 @@ export function useReceiptPdf(): UseReceiptPdfResult {
         const form = new FormData();
         form.append('file', new File([blob], filename, { type: 'application/pdf' }));
 
-        await apiClient.post(`/ledger/entries/${entry.id}/receipt-document`, form, {
-          headers: orgHeaders,
-        });
+        await apiClient.post(`/ledger/entries/${entry.id}/receipt-document`, form);
 
         // The document list is a different query key; without this an already
         // open Documents tab keeps showing the pre-receipt list.
@@ -127,7 +123,7 @@ export function useReceiptPdf(): UseReceiptPdfResult {
         setIsBusy(false);
       }
     },
-    [orgHeaders, queryClient],
+    [queryClient],
   );
 
   const download = useCallback(

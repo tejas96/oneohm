@@ -18,7 +18,6 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-  OrganizationContext,
 } from '../../../../common/decorators';
 import { CurrentUser } from '../../../auth/decorators';
 import { JwtAuthGuard } from '../../../auth/guards';
@@ -60,15 +59,10 @@ export class EmployeeCommissionController {
     ],
   })
   async create(
-    @OrganizationContext() organizationId: string,
     @Body() createDto: CreateCommissionDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
-    const commission = await this.commissionService.create(
-      organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const commission = await this.commissionService.create(createDto, currentUser.id);
     return commission as CommissionResponseDto;
   }
 
@@ -77,7 +71,7 @@ export class EmployeeCommissionController {
    */
   @ApiReadAll({
     summary: 'Get all commissions',
-    description: 'Retrieve all commission records for the current organization.',
+    description: 'Retrieve all commission records.',
     responseType: CommissionResponseDto,
     additionalQueries: [
       {
@@ -95,22 +89,21 @@ export class EmployeeCommissionController {
     ],
   })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('status') status?: CommissionStatus,
     @Query('employeeId') employeeId?: string,
   ): Promise<CommissionResponseDto[]> {
     if (status) {
-      const commissions = await this.commissionService.findByStatus(organizationId, status);
+      const commissions = await this.commissionService.findByStatus(status);
       return commissions as CommissionResponseDto[];
     }
 
     if (employeeId) {
-      const commissions = await this.commissionService.findByEmployeeId(employeeId, organizationId);
+      const commissions = await this.commissionService.findByEmployeeId(employeeId);
       return commissions as CommissionResponseDto[];
     }
 
-    const commissions = await this.commissionService.findAll(organizationId);
+    const commissions = await this.commissionService.findAll();
     return commissions as CommissionResponseDto[];
   }
 
@@ -123,11 +116,10 @@ export class EmployeeCommissionController {
     responseType: CommissionResponseDto,
   })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
-    const commission = await this.commissionService.findById(id, organizationId);
+    const commission = await this.commissionService.findById(id);
     return commission as CommissionResponseDto;
   }
 
@@ -146,17 +138,11 @@ export class EmployeeCommissionController {
     ],
   })
   async update(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateCommissionDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
-    const commission = await this.commissionService.update(
-      id,
-      organizationId,
-      updateDto,
-      currentUser.id,
-    );
+    const commission = await this.commissionService.update(id, updateDto, currentUser.id);
     return commission as CommissionResponseDto;
   }
 
@@ -170,14 +156,12 @@ export class EmployeeCommissionController {
     responseType: CommissionResponseDto,
   })
   async updateStatus(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateCommissionStatusDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
     const commission = await this.commissionService.updateStatus(
       id,
-      organizationId,
       statusDto.status,
       currentUser.id,
     );
@@ -198,11 +182,10 @@ export class EmployeeCommissionController {
     ],
   })
   async delete(
-    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.commissionService.delete(id, organizationId);
+    await this.commissionService.delete(id);
   }
 
   /**
@@ -212,11 +195,10 @@ export class EmployeeCommissionController {
   @ApiOperation({ summary: 'Get total commission earned' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Total commission retrieved' })
   async getTotalCommissionEarned(
-    @OrganizationContext() organizationId: string,
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<{ employeeId: string; totalCommissionEarned: number }> {
-    const total = await this.commissionService.getTotalCommissionEarned(employeeId, organizationId);
+    const total = await this.commissionService.getTotalCommissionEarned(employeeId);
     return {
       employeeId,
       totalCommissionEarned: total,

@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { InventoryTransactionType } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
-import { ApiReadAll, ApiReadOne, OrganizationContext } from '../../../common/decorators';
+import { ApiReadAll, ApiReadOne } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -39,12 +39,11 @@ export class InventoryTransactionController {
   @ApiQuery({ name: 'fromDate', required: false, type: String })
   @ApiQuery({ name: 'toDate', required: false, type: String })
   async getSummary(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
   ) {
-    return this.inventoryTransactionService.getSummaryByType(organizationId, fromDate, toDate);
+    return this.inventoryTransactionService.getSummaryByType(fromDate, toDate);
   }
 
   @RequirePermission('inventory:read')
@@ -54,18 +53,12 @@ export class InventoryTransactionController {
   @ApiQuery({ name: 'toDate', required: false, type: String })
   @ApiQuery({ name: 'bucket', required: false, enum: ['day', 'week'] })
   async statsByTypeTrend(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('bucket') bucket?: string,
   ): Promise<TrendResponse> {
-    return this.inventoryStatsService.transactionsByTypeTrend(
-      organizationId,
-      fromDate,
-      toDate,
-      bucket,
-    );
+    return this.inventoryStatsService.transactionsByTypeTrend(fromDate, toDate, bucket);
   }
 
   /**
@@ -75,10 +68,9 @@ export class InventoryTransactionController {
   @Get('recent')
   @ApiOperation({ summary: 'Get most recent transactions (up to 10)' })
   async getRecent(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<InventoryTransactionResponseDto[]> {
-    const txns = await this.inventoryTransactionService.getRecentTransactions(organizationId);
+    const txns = await this.inventoryTransactionService.getRecentTransactions();
     return plainToInstance(InventoryTransactionResponseDto, txns, {
       excludeExtraneousValues: true,
     });
@@ -93,7 +85,6 @@ export class InventoryTransactionController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getProductHistory(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('productId', ParseUUIDPipe) productId: string,
     @Query('page') page?: number,
@@ -107,12 +98,7 @@ export class InventoryTransactionController {
       total,
       page: p,
       limit: l,
-    } = await this.inventoryTransactionService.findByProduct(
-      productId,
-      organizationId,
-      page,
-      limit,
-    );
+    } = await this.inventoryTransactionService.findByProduct(productId, page, limit);
 
     return {
       data: plainToInstance(InventoryTransactionResponseDto, transactions, {
@@ -147,7 +133,6 @@ export class InventoryTransactionController {
   @ApiQuery({ name: 'referenceType', required: false, type: String })
   @ApiQuery({ name: 'referenceId', required: false, type: String })
   async findAll(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -167,7 +152,7 @@ export class InventoryTransactionController {
       total,
       page: p,
       limit: l,
-    } = await this.inventoryTransactionService.findAll(organizationId, page, limit, {
+    } = await this.inventoryTransactionService.findAll(page, limit, {
       transactionType,
       warehouseId,
       productId,
@@ -194,11 +179,10 @@ export class InventoryTransactionController {
   @Get(':id')
   @ApiReadOne({ summary: 'Get transaction by ID', responseType: InventoryTransactionResponseDto })
   async findOne(
-    @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<InventoryTransactionResponseDto> {
-    const txn = await this.inventoryTransactionService.findById(id, organizationId);
+    const txn = await this.inventoryTransactionService.findById(id);
     return plainToInstance(InventoryTransactionResponseDto, txn, {
       excludeExtraneousValues: true,
     });

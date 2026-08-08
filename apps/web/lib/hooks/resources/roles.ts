@@ -8,7 +8,6 @@ import {
   useResourceDetail,
   useResourceMutations,
   useResourcePermissions,
-  useOrgContext,
   type ResourceConfig,
   type BaseFilters,
 } from '../core';
@@ -17,7 +16,6 @@ import {
 
 export interface AdminRole {
   id: string;
-  organizationId: string | null;
   name: string;
   code: string;
   description?: string;
@@ -31,7 +29,6 @@ export interface AdminRole {
 
 export interface RoleWithPermissions {
   id: string;
-  organizationId: string | null;
   name: string;
   code: string;
   description?: string;
@@ -45,7 +42,6 @@ export interface RoleWithPermissions {
 
 export interface RoleFilters extends BaseFilters {
   isSystemRole?: boolean;
-  organizationId?: string;
 }
 
 // ── Resource Registration ──────────────────────────────────────
@@ -72,7 +68,6 @@ defineResource<AdminRole>(
 export function useRoles(
   overrides?: Partial<ResourceConfig<AdminRole, RoleFilters>>,
 ): ReturnType<typeof useResourceList<AdminRole, RoleFilters>> {
-  const { organizationId } = useOrgContext();
   const config = getResourceConfig('roles') as ResourceConfig<AdminRole, RoleFilters>;
   return useResourceList<AdminRole, RoleFilters>({
     ...config,
@@ -80,7 +75,6 @@ export function useRoles(
     defaultFilters: {
       ...config.defaultFilters,
       ...overrides?.defaultFilters,
-      organizationId,
     } as Partial<RoleFilters>,
   });
 }

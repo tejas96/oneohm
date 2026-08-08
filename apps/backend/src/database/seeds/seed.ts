@@ -5,11 +5,10 @@ import dataSource from '../ormconfig';
 
 const config = loadConfig();
 
-const ORG_CODE = 'ONEOHM';
 const EMPLOYEE_PASSWORD = 'password@123';
 
 const ORG_ROLES = [
-  { code: 'super_admin', name: 'Super Admin', description: 'Full organization access', level: 1 },
+  { code: 'super_admin', name: 'Super Admin', description: 'Full access', level: 1 },
   { code: 'admin', name: 'Admin', description: 'Organization admin with broad access', level: 2 },
   {
     code: 'sales_executive',
@@ -204,67 +203,20 @@ async function seed(): Promise<void> {
 
   try {
     // ============================================
-    // 1. CREATE ORGANIZATION
-    // ============================================
-    console.error('📦 Seeding Organization...');
-
-    await queryRunner.query(
-      `
-      INSERT INTO organizations (
-        name, code, email, phone, address, city, state, country, pincode,
-        gstin, pan, timezone, currency, date_format,
-        default_project_timeline_weeks, default_quote_validity_days,
-        max_quote_versions, status
-      ) VALUES (
-        'OneOhm EPC Solutions',
-        $1,
-        'info@oneohm.com',
-        '+919876543210',
-        '123 Solar Park Road, Hinjewadi Phase 2',
-        'Pune',
-        'Maharashtra',
-        'India',
-        '411057',
-        '27ABCDE1234F1Z5',
-        'ABCDE1234F',
-        'Asia/Kolkata',
-        'INR',
-        'DD-MM-YYYY',
-        4, 30, 3,
-        'active'
-      )
-      ON CONFLICT (code) DO NOTHING;
-    `,
-      [ORG_CODE],
-    );
-
-    console.error('  ✓ Organization created');
-
-    // ============================================
     // 2. SEED ORG-LEVEL ROLES (idempotent)
     // ============================================
     console.error('\n🔐 Seeding Roles...');
 
-    const [org] = await queryRunner.query(`SELECT id FROM organizations WHERE code = $1`, [
-      ORG_CODE,
-    ]);
-
-    if (!org) {
-      throw new Error(`Organization with code '${ORG_CODE}' not found after insert`);
-    }
-
-    const orgId: string = org.id;
-
     for (const role of ORG_ROLES) {
       const existing = await queryRunner.query(
-        `SELECT id FROM roles WHERE organization_id = $1 AND code = $2 AND deleted_at IS NULL LIMIT 1`,
-        [orgId, role.code],
+        `SELECT id FROM roles WHERE code = $1 AND deleted_at IS NULL LIMIT 1`,
+        [role.code],
       );
       if (existing.length === 0) {
         await queryRunner.query(
-          `INSERT INTO roles (id, organization_id, code, name, description, is_system_role, level, created_at, updated_at)
-           VALUES (gen_random_uuid(), $1, $2, $3, $4, true, $5, NOW(), NOW())`,
-          [orgId, role.code, role.name, role.description, role.level],
+          `INSERT INTO roles (id, code, name, description, is_system_role, level, created_at, updated_at)
+           VALUES (gen_random_uuid(), $1, $2, $3, true, $4, NOW(), NOW())`,
+          [role.code, role.name, role.description, role.level],
         );
       }
     }
@@ -291,13 +243,13 @@ async function seed(): Promise<void> {
     }
 
     await queryRunner.query(
-      `INSERT INTO employee_profiles (user_id, organization_id, email, phone, designation, department, employee_id, status)
-       VALUES ($1, $2, $3, $4, 'Super Admin', 'Management', 'EMP-000', 'active')
-       ON CONFLICT (user_id, organization_id) DO NOTHING`,
-      [adminUser.id, orgId, adminEmail, adminPhone],
+      `INSERT INTO employee_profiles (user_id, email, phone, designation, department, employee_id, status)
+       VALUES ($1, $2, $3, 'Super Admin', 'Management', 'EMP-000', 'active')
+       ON CONFLICT (user_id) DO NOTHING`,
+      [adminUser.id, adminEmail, adminPhone],
     );
 
-    await assignRole(queryRunner, adminUser.id, orgId, 'super_admin');
+    await assignRole(queryRunner, adminUser.id, 'super_admin');
 
     console.error(`  ✓ Super Admin created (${adminEmail})`);
 
@@ -326,14 +278,14 @@ async function seed(): Promise<void> {
       }
 
       await queryRunner.query(
-        `INSERT INTO employee_profiles (user_id, organization_id, email, phone, designation, department, employee_id, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'active')
-         ON CONFLICT (user_id, organization_id) DO NOTHING`,
-        [user.id, orgId, emp.email, emp.phone, emp.designation, emp.department, emp.employeeId],
+        `INSERT INTO employee_profiles (user_id, email, phone, designation, department, employee_id, status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'active')
+         ON CONFLICT (user_id) DO NOTHING`,
+        [user.id, emp.email, emp.phone, emp.designation, emp.department, emp.employeeId],
       );
 
       for (const roleCode of emp.roles) {
-        await assignRole(queryRunner, user.id, orgId, roleCode);
+        await assignRole(queryRunner, user.id, roleCode);
       }
 
       console.error(`  ✓ ${emp.firstName} ${emp.lastName} → ${emp.roles.join(', ')}`);
@@ -367,24 +319,24 @@ async function seed(): Promise<void> {
 
     await queryRunner.query(
       `INSERT INTO customer_profiles (
-         user_id, organization_id, customer_code,
+         user_id, customer_code,
          first_name, last_name, email, phone,
          address, city, state, country, pincode,
          lead_source, status, created_by
        ) VALUES (
-         $1, $2, 'CUST-001',
-         'Amit', 'Patel', $3, $4,
+         $1, 'CUST-001',
+         'Amit', 'Patel', $2, $3,
          '101 Sunshine Apartments, MG Road',
          'Pune', 'Maharashtra', 'India', '411001',
-         'Website', 'active', $5
+         'Website', 'active', $4
        )
-       ON CONFLICT (user_id, organization_id) DO NOTHING`,
-      [customerUser.id, orgId, customerEmail, customerPhone, adminUser.id],
+       ON CONFLICT (user_id) DO NOTHING`,
+      [customerUser.id, customerEmail, customerPhone, adminUser.id],
     );
 
     const [customerProfile] = await queryRunner.query(
-      `SELECT id FROM customer_profiles WHERE user_id = $1 AND organization_id = $2`,
-      [customerUser.id, orgId],
+      `SELECT id FROM customer_profiles WHERE user_id = $1`,
+      [customerUser.id],
     );
 
     if (!customerProfile) {
@@ -393,24 +345,24 @@ async function seed(): Promise<void> {
 
     await queryRunner.query(
       `INSERT INTO customer_properties (
-         customer_id, organization_id, property_code, property_name,
+         customer_id, property_code, property_name,
          property_type, address, city, state, country, pincode,
          consumer_number, consumer_name, current_load,
          connection_type, sanctioned_load,
          lead_temperature, is_primary, status, created_by
        ) VALUES (
-         $1, $2, 'PROP-001', 'Sunshine Apartments',
+         $1, 'PROP-001', 'Sunshine Apartments',
          'residential', '101 Sunshine Apartments, MG Road',
          'Pune', 'Maharashtra', 'India', '411001',
          '279692003475', 'AMIT PATEL', '5 KW',
          'single_phase', 5.00,
-         'warm', true, 'active', $3
+         'warm', true, 'active', $2
        )
        ON CONFLICT (property_code) DO NOTHING`,
-      [customerProfile.id, orgId, adminUser.id],
+      [customerProfile.id, adminUser.id],
     );
 
-    await assignRole(queryRunner, customerUser.id, orgId, 'customer');
+    await assignRole(queryRunner, customerUser.id, 'customer');
 
     console.error('  ✓ Customer: Amit Patel + Property: Sunshine Apartments');
 
@@ -419,15 +371,11 @@ async function seed(): Promise<void> {
     // ============================================
     console.error('\n⚙️  Seeding Quote Configuration...');
 
-    const existingConfig = await queryRunner.query(
-      `SELECT id FROM quote_configurations WHERE organization_id = $1 LIMIT 1`,
-      [orgId],
-    );
+    const existingConfig = await queryRunner.query(`SELECT id FROM quote_configurations LIMIT 1`);
 
     if (existingConfig.length === 0) {
       await queryRunner.query(
         `INSERT INTO quote_configurations (
-           organization_id,
            default_validity_days,
            max_versions,
            default_completion_weeks,
@@ -436,13 +384,12 @@ async function seed(): Promise<void> {
            show_inventory_stock,
            is_active
          ) VALUES (
-           $1, 30, 3, 4,
+           30, 3, 4,
            '{"rate1": 5, "rate1Percentage": 70, "rate2": 18, "rate2Percentage": 30}',
            '[{"stage":"advance","name":"Advance","percentage":10,"order":1},{"stage":"installation_complete","name":"Installation Complete","percentage":85,"order":2},{"stage":"commissioning","name":"Commissioning","percentage":5,"order":3}]',
            true,
            true
          )`,
-        [orgId],
       );
     }
 
@@ -507,26 +454,25 @@ async function upsertUser(
 async function assignRole(
   queryRunner: import('typeorm').QueryRunner,
   userId: string,
-  orgId: string,
   roleCode: string,
 ): Promise<void> {
   const existing = await queryRunner.query(
     `SELECT 1 FROM user_roles ur
      JOIN roles r ON r.id = ur.role_id
-     WHERE ur.user_id = $1 AND r.code = $2::varchar AND r.organization_id = $3
+     WHERE ur.user_id = $1 AND r.code = $2::varchar
      LIMIT 1`,
-    [userId, roleCode, orgId],
+    [userId, roleCode],
   );
 
   if (existing.length > 0) return;
 
   await queryRunner.query(
-    `INSERT INTO user_roles (user_id, role, role_id, organization_id, created_by)
-     SELECT $1, $2::varchar, r.id, $3, $1
+    `INSERT INTO user_roles (user_id, role, role_id, created_by)
+     SELECT $1, $2::varchar, r.id, $1
      FROM roles r
-     WHERE r.code = $2::varchar AND r.organization_id = $3 AND r.deleted_at IS NULL
+     WHERE r.code = $2::varchar AND r.deleted_at IS NULL
      LIMIT 1`,
-    [userId, roleCode, orgId],
+    [userId, roleCode],
   );
 }
 

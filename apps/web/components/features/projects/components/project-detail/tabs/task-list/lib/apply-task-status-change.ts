@@ -27,14 +27,11 @@ export function resolveTaskStatusPayload(
 }
 
 /** Snapshot helper — used by the board DnD hook before the optimistic patch. */
-export function snapshotProjectTasksCaches(
-  queryClient: QueryClient,
-  organizationId: string | undefined,
-): CacheSnapshot[] {
+export function snapshotProjectTasksCaches(queryClient: QueryClient): CacheSnapshot[] {
   const snapshots: CacheSnapshot[] = [];
   queryClient
     .getQueryCache()
-    .findAll({ queryKey: PROJECT_TASKS_QUERY_KEY(organizationId) })
+    .findAll({ queryKey: PROJECT_TASKS_QUERY_KEY() })
     .forEach((q) => {
       snapshots.push({ key: q.queryKey, data: q.state.data });
     });
@@ -54,12 +51,11 @@ export function restoreProjectTasksCaches(
 /** Optimistically move a task to a new status in all matching cache entries. */
 export function optimisticallyMoveTaskStatus(
   queryClient: QueryClient,
-  organizationId: string | undefined,
   taskId: string,
   newStatus: string,
   newCompletionPct?: number,
 ): void {
-  const queryKey = PROJECT_TASKS_QUERY_KEY(organizationId);
+  const queryKey = PROJECT_TASKS_QUERY_KEY();
   queryClient.setQueriesData({ queryKey }, (old: unknown) => {
     if (!old || typeof old !== 'object') return old;
     const p = old as { data?: unknown[]; meta?: unknown };

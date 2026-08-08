@@ -8,7 +8,6 @@ import { projectDetailKeys } from './use-project-detail';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
-import { useOrgContext } from '@/lib/hooks/core';
 import { getErrorMessage } from '@/lib/utils';
 
 export interface CreateProjectTaskPayload {
@@ -26,24 +25,20 @@ export function useCreateProjectTask(
   projectId: string,
 ): UseMutationResult<void, unknown, CreateProjectTaskPayload> {
   const queryClient = useQueryClient();
-  const { organizationId, orgHeaders, isReady } = useOrgContext();
 
   return useMutation({
     mutationFn: async (payload: CreateProjectTaskPayload) => {
       if (!projectId) {
         throw new Error('Project ID is required');
       }
-      if (!isReady) {
-        throw new Error('Organization context is not ready');
-      }
 
-      await apiClient.post(`/projects/${projectId}/tasks`, payload, { headers: orgHeaders });
+      await apiClient.post(`/projects/${projectId}/tasks`, payload);
     },
     onSuccess: () => {
       showToast.success('Task created');
-      void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY() });
       void queryClient.invalidateQueries({
-        queryKey: projectDetailKeys.taskStats(organizationId, projectId),
+        queryKey: projectDetailKeys.taskStats(projectId),
       });
     },
     onError: (error) => {

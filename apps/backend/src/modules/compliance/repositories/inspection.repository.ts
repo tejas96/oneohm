@@ -27,7 +27,7 @@ export class InspectionRepository {
 
   async findAll(): Promise<InspectionEntity[]> {
     return this.repository.find({
-      relations: ['organization', 'project', 'createdByUser', 'updatedByUser'],
+      relations: ['project', 'createdByUser', 'updatedByUser'],
       order: { scheduledDate: 'DESC' },
     });
   }
@@ -35,7 +35,7 @@ export class InspectionRepository {
   async findById(id: string): Promise<InspectionEntity | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['organization', 'project', 'createdByUser', 'updatedByUser'],
+      relations: ['project', 'createdByUser', 'updatedByUser'],
     });
   }
 
@@ -56,9 +56,8 @@ export class InspectionRepository {
   // QUERY METHODS
   // ============================================
 
-  async findByOrganization(organizationId: string): Promise<InspectionEntity[]> {
+  async findByOrganization(): Promise<InspectionEntity[]> {
     return this.repository.find({
-      where: { organizationId },
       relations: ['project'],
       order: { scheduledDate: 'DESC' },
     });
@@ -90,7 +89,7 @@ export class InspectionRepository {
   async findByInspectionNumber(inspectionNumber: string): Promise<InspectionEntity | null> {
     return this.repository.findOne({
       where: { inspectionNumber },
-      relations: ['organization', 'project'],
+      relations: ['project'],
     });
   }
 
@@ -111,7 +110,7 @@ export class InspectionRepository {
         statuses: [InspectionStatus.SCHEDULED, InspectionStatus.IN_PROGRESS],
       })
       .leftJoinAndSelect('inspection.project', 'project')
-      .orderBy('inspection.scheduled_date', 'ASC')
+      .orderBy('inspection.scheduledDate', 'ASC')
       .getMany();
   }
 
@@ -139,7 +138,7 @@ export class InspectionRepository {
     const lastInspection = await this.repository
       .createQueryBuilder('inspection')
       .where('inspection.inspection_number LIKE :prefix', { prefix: `${prefix}%` })
-      .orderBy('inspection.inspection_number', 'DESC')
+      .orderBy('inspection.inspectionNumber', 'DESC')
       .getOne();
 
     if (!lastInspection) {
@@ -157,19 +156,16 @@ export class InspectionRepository {
   // STATISTICS
   // ============================================
 
-  async countByOrganization(organizationId: string): Promise<number> {
-    return this.repository.count({ where: { organizationId } });
+  async countByOrganization(): Promise<number> {
+    return this.repository.count();
   }
 
   async countByProject(projectId: string): Promise<number> {
     return this.repository.count({ where: { projectId } });
   }
 
-  async countByStatus(status: InspectionStatus, organizationId?: string): Promise<number> {
+  async countByStatus(status: InspectionStatus): Promise<number> {
     const where: Record<string, unknown> = { status };
-    if (organizationId) {
-      where.organizationId = organizationId;
-    }
     return this.repository.count({ where });
   }
 }

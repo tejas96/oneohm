@@ -17,7 +17,6 @@ import {
 
 export interface PurchaseOrder {
   id: string;
-  organizationId: string;
   poNumber: string;
   status: string;
   paymentStatus: string;

@@ -24,13 +24,12 @@ export class InvitationService {
    */
   async createInvitation(data: {
     email: string;
-    organizationId: string;
     roleId: string;
     invitedBy?: string;
     expiryDays?: number;
   }): Promise<InvitationEntity> {
     // Cancel any existing pending invitations for this email and org
-    await this.invitationRepository.cancelPendingInvitations(data.email, data.organizationId);
+    await this.invitationRepository.cancelPendingInvitations(data.email);
 
     // Generate secure token
     const token = this.generateInvitationToken();
@@ -44,13 +43,12 @@ export class InvitationService {
     const invitation = await this.invitationRepository.create({
       email: data.email,
       token,
-      organizationId: data.organizationId,
       roleId: data.roleId,
       expiresAt,
       invitedBy: data.invitedBy,
     });
 
-    this.logger.log(`Invitation created for ${data.email} in org ${data.organizationId}`);
+    this.logger.log(`Invitation created for ${data.email}`);
 
     return invitation;
   }
@@ -115,9 +113,7 @@ export class InvitationService {
       throw new NotFoundException('Invitation not found after accepting');
     }
 
-    this.logger.log(
-      `Invitation accepted for ${updatedInvitation.email} in org ${updatedInvitation.organizationId}`,
-    );
+    this.logger.log(`Invitation accepted for ${updatedInvitation.email}`);
 
     return updatedInvitation;
   }
@@ -151,7 +147,6 @@ export class InvitationService {
 
     return this.createInvitation({
       email: existing.email,
-      organizationId: existing.organizationId,
       roleId: existing.roleId,
       invitedBy: invitedBy ?? existing.invitedBy,
     });
@@ -160,11 +155,8 @@ export class InvitationService {
   /**
    * Get invitations by organization
    */
-  async getInvitationsByOrganization(
-    organizationId: string,
-    status?: InvitationStatus,
-  ): Promise<InvitationEntity[]> {
-    return this.invitationRepository.findByOrganization(organizationId, status);
+  async getInvitationsByOrganization(status?: InvitationStatus): Promise<InvitationEntity[]> {
+    return this.invitationRepository.findByOrganization(status);
   }
 
   /**

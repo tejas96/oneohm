@@ -126,16 +126,14 @@ export class MaintenanceTaskController {
     return this.maintenanceTaskService.findByStatus(status, includeRelations === 'true');
   }
 
-  @Get('statistics/:organizationId')
-  @ApiOperation({ summary: 'Get task statistics for organization' })
+  @Get('statistics')
+  @ApiOperation({ summary: 'Get task statistics' })
   @ApiResponse({
     status: 200,
     description: 'Statistics retrieved successfully',
   })
-  async getStatistics(
-    @Param('organizationId', ParseUUIDPipe) organizationId: string,
-  ): Promise<Record<string, unknown>> {
-    return this.maintenanceTaskService.getStatistics(organizationId);
+  async getStatistics(): Promise<Record<string, unknown>> {
+    return this.maintenanceTaskService.getStatistics();
   }
 
   @Get(':id')

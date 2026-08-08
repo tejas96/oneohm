@@ -38,7 +38,6 @@ export type DueDateSource = 'unset' | 'manual' | 'stage_event' | 'offset';
  */
 @Entity('payment_milestones')
 @Index(['projectId', 'displayOrder'])
-@Index(['organizationId'])
 export class PaymentMilestoneEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -48,9 +47,6 @@ export class PaymentMilestoneEntity {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
-
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;

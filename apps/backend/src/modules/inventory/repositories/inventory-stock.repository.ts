@@ -83,10 +83,8 @@ export class InventoryStockRepository {
   async findByWarehouseAndProduct(
     warehouseId: string,
     productId: string,
-    organizationId?: string,
   ): Promise<InventoryStockEntity | null> {
     const where: Record<string, string> = { warehouseId, productId };
-    if (organizationId) where.organizationId = organizationId;
     return this.repository.findOne({
       where,
       relations: ['warehouse', 'product'],
@@ -114,9 +112,8 @@ export class InventoryStockRepository {
   /**
    * Find stock by ID (optionally org-scoped)
    */
-  async findById(id: string, organizationId?: string): Promise<InventoryStockEntity> {
+  async findById(id: string): Promise<InventoryStockEntity> {
     const where: Record<string, string> = { id };
-    if (organizationId) where.organizationId = organizationId;
     const stock = await this.repository.findOne({
       where,
       relations: ['warehouse', 'product'],
@@ -182,7 +179,6 @@ export class InventoryStockRepository {
    * Find stock across organization with filters and pagination
    */
   async findAll(
-    organizationId: string,
     page = 1,
     limit = 50,
     filters?: {
@@ -198,7 +194,6 @@ export class InventoryStockRepository {
       .createQueryBuilder('stock')
       .leftJoinAndSelect('stock.product', 'product')
       .leftJoinAndSelect('stock.warehouse', 'warehouse')
-      .where('stock.organizationId = :organizationId', { organizationId })
       .andWhere('product.deletedAt IS NULL')
       .andWhere('warehouse.deletedAt IS NULL');
 
@@ -256,9 +251,9 @@ export class InventoryStockRepository {
   /**
    * Find all stock for a product across warehouses
    */
-  async findByProduct(productId: string, organizationId: string): Promise<InventoryStockEntity[]> {
+  async findByProduct(productId: string): Promise<InventoryStockEntity[]> {
     return this.repository.find({
-      where: { productId, organizationId },
+      where: { productId },
       relations: ['warehouse'],
       order: { warehouseId: 'ASC' },
     });
@@ -267,12 +262,11 @@ export class InventoryStockRepository {
   /**
    * Get low stock alerts
    */
-  async findLowStock(organizationId: string): Promise<InventoryStockEntity[]> {
+  async findLowStock(): Promise<InventoryStockEntity[]> {
     return this.repository
       .createQueryBuilder('stock')
       .leftJoinAndSelect('stock.warehouse', 'warehouse')
       .leftJoinAndSelect('stock.product', 'product')
-      .where('stock.organizationId = :organizationId', { organizationId })
       .andWhere('stock.minimumStockLevel IS NOT NULL')
       .andWhere('stock.minimumStockLevel > 0')
       .andWhere('stock.availableQuantity <= stock.minimumStockLevel')
@@ -307,7 +301,7 @@ export class InventoryStockRepository {
    * Get total stock value for organization
    * Uses weighted average unit price from received PO items (per warehouse + product).
    */
-  async getTotalStockValue(organizationId: string): Promise<number> {
+  async getTotalStockValue(): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('stock')
       .select(
@@ -317,14 +311,12 @@ export class InventoryStockRepository {
           FROM purchase_order_items poi
           INNER JOIN purchase_orders po ON po.id = poi.purchase_order_id
           WHERE poi.product_id = stock.product_id
-            AND po.organization_id = stock.organization_id
             AND po.warehouse_id = stock.warehouse_id
             AND po.deleted_at IS NULL
             AND poi.received_quantity > 0
         ), 0))`,
         'totalValue',
       )
-      .where('stock.organization_id = :organizationId', { organizationId })
       .getRawOne<{ totalValue: string }>();
 
     return result?.totalValue ? parseFloat(result.totalValue) : 0;
@@ -334,9 +326,7 @@ export class InventoryStockRepository {
    * Get stock summary by warehouse
    * Uses weighted average unit price from received PO items (per warehouse + product).
    */
-  async getStockSummaryByWarehouse(
-    organizationId: string,
-  ): Promise<
+  async getStockSummaryByWarehouse(): Promise<
     Array<{ warehouseId: string; warehouseName: string; totalItems: number; totalValue: number }>
   > {
     const rows = await this.repository
@@ -352,14 +342,12 @@ export class InventoryStockRepository {
           FROM purchase_order_items poi
           INNER JOIN purchase_orders po ON po.id = poi.purchase_order_id
           WHERE poi.product_id = stock.product_id
-            AND po.organization_id = stock.organization_id
             AND po.warehouse_id = stock.warehouse_id
             AND po.deleted_at IS NULL
             AND poi.received_quantity > 0
         ), 0))`,
         'totalValue',
       )
-      .where('stock.organization_id = :organizationId', { organizationId })
       .andWhere('warehouse.deleted_at IS NULL')
       .groupBy('warehouse.id')
       .addGroupBy('warehouse.name')

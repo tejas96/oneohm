@@ -8,6 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { COMPANY } from '@tejas96/shared/constants';
 import {
   type ChecklistProgress,
   LookupTypeCode,
@@ -26,7 +27,6 @@ import {
   CONSUMER_EVENTS,
   ProjectCompletedEvent,
 } from '../../notifications/events/consumer-notification.events';
-import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import {
   type CreateProjectTaskDto,
   type UpdateProjectTaskDto,
@@ -73,7 +73,6 @@ export class ProjectTaskService {
   constructor(
     private readonly taskRepository: ProjectTaskRepository,
     private readonly teamRepository: ProjectTeamRepository,
-    private readonly organizationRepository: OrganizationRepository,
     private readonly workflowEngine: WorkflowEngineService,
     private readonly projectRepository: ProjectRepository,
     private readonly lookupRepository: LookupRepository,
@@ -82,11 +81,7 @@ export class ProjectTaskService {
     private readonly changeRequestTaskService: ChangeRequestTaskService,
   ) {}
 
-  async create(
-    createDto: CreateProjectTaskDto,
-    currentUserId: string,
-    organizationId?: string,
-  ): Promise<ProjectTaskEntity> {
+  async create(createDto: CreateProjectTaskDto, currentUserId: string): Promise<ProjectTaskEntity> {
     if (!createDto.projectId) {
       throw new BadRequestException('Project ID is required');
     }
@@ -103,7 +98,7 @@ export class ProjectTaskService {
     }
 
     if (!createDto.code) {
-      createDto.code = await this.generateTaskCode(projectId, organizationId);
+      createDto.code = await this.generateTaskCode(projectId);
     }
 
     if (createDto.code) {
@@ -552,18 +547,13 @@ export class ProjectTaskService {
     return this.taskRepository.findOverdue(projectId);
   }
 
-  async generateTaskCode(_projectId: string, organizationId?: string): Promise<string> {
-    if (organizationId) {
-      try {
-        const org = await this.organizationRepository.findOneById(organizationId);
-        if (org) {
-          return this.taskRepository.generateTaskCode(org.code);
-        }
-      } catch (err) {
-        this.logger.warn(`Failed to generate global task code, falling back: ${String(err)}`);
-      }
+  async generateTaskCode(_projectId: string): Promise<string> {
+    try {
+      return await this.taskRepository.generateTaskCode(COMPANY.code);
+    } catch (err) {
+      this.logger.warn(`Failed to generate global task code, falling back: ${String(err)}`);
+      return this.taskRepository.getNextTaskCode(_projectId);
     }
-    return this.taskRepository.getNextTaskCode(_projectId);
   }
 
   async getKanbanColumn(
@@ -835,7 +825,6 @@ export class ProjectTaskService {
 
   async getMyTasks(
     userId: string,
-    organizationId: string,
     page: number,
     limit: number,
     filters: {
@@ -843,13 +832,7 @@ export class ProjectTaskService {
       priority?: string;
     } = {},
   ): Promise<PaginatedResponse<Record<string, unknown>>> {
-    const { data, total } = await this.taskRepository.findByUserId(
-      userId,
-      organizationId,
-      page,
-      limit,
-      filters,
-    );
+    const { data, total } = await this.taskRepository.findByUserId(userId, page, limit, filters);
 
     const flatData = data.map((task) => ({
       ...task,
@@ -870,11 +853,10 @@ export class ProjectTaskService {
 
   async getMyTasksSummary(
     userId: string,
-    organizationId: string,
   ): Promise<{ total: number; overdue: number; dueToday: number; completedThisWeek: number }> {
     // Delegate to getMyTasksGrouped so counts are dependency-aware and always match
     // what the user sees in the My Tasks list (sidebar badge = page stat chips).
-    const { summary } = await this.getMyTasksGrouped(userId, organizationId, 'dueDate', {});
+    const { summary } = await this.getMyTasksGrouped(userId, 'dueDate', {});
     return {
       total: summary.total,
       overdue: summary.overdue,
@@ -885,7 +867,6 @@ export class ProjectTaskService {
 
   async getMyTasksGrouped(
     userId: string,
-    organizationId: string,
     groupBy: 'dueDate' | 'priority' | 'project' | 'status',
     filters: {
       status?: TaskStatus;
@@ -912,16 +893,16 @@ export class ProjectTaskService {
         filters.dueDateFilter,
     );
 
-    const filteredTasksQuery = this.taskRepository.findAllByUserId(userId, organizationId, filters);
+    const filteredTasksQuery = this.taskRepository.findAllByUserId(userId, filters);
     const unfilteredTasksQuery = hasListFilters
-      ? this.taskRepository.findAllByUserId(userId, organizationId, {})
+      ? this.taskRepository.findAllByUserId(userId, {})
       : filteredTasksQuery;
 
     const [tasks, allTasksUnfiltered, completedThisWeek, statusMap, priorityMap] =
       await Promise.all([
         filteredTasksQuery,
         unfilteredTasksQuery,
-        this.taskRepository.countCompletedThisWeek(userId, organizationId),
+        this.taskRepository.countCompletedThisWeek(userId),
         this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
         this.getLookupMap(LookupTypeCode.PRIORITY),
       ]);
@@ -979,7 +960,6 @@ export class ProjectTaskService {
     taskId: string,
     status: TaskStatus,
     currentUserId: string,
-    organizationId: string,
     userRoles: string[] = [],
   ): Promise<ProjectTaskEntity> {
     const isAdmin = this.isAdminRole(userRoles);
@@ -987,7 +967,6 @@ export class ProjectTaskService {
     const task = await this.taskRepository.findByIdForAssignee(
       taskId,
       currentUserId,
-      organizationId,
       teamProjectIds,
       isAdmin,
     );
@@ -1000,7 +979,6 @@ export class ProjectTaskService {
     const updated = await this.taskRepository.findByIdForAssignee(
       taskId,
       currentUserId,
-      organizationId,
       teamProjectIds,
       isAdmin,
     );
@@ -1010,7 +988,6 @@ export class ProjectTaskService {
   async getTaskDetailCrossProject(
     taskId: string,
     currentUserId: string,
-    organizationId: string,
     userRoles: string[] = [],
   ): Promise<Record<string, unknown>> {
     const isAdmin = this.isAdminRole(userRoles);
@@ -1018,7 +995,6 @@ export class ProjectTaskService {
     const task = await this.taskRepository.findByIdCrossProject(
       taskId,
       currentUserId,
-      organizationId,
       teamProjectIds,
       isAdmin,
     );
@@ -1064,7 +1040,6 @@ export class ProjectTaskService {
     taskId: string,
     dto: UpdateTaskCrossProjectDto,
     currentUserId: string,
-    organizationId: string,
     userRoles: string[] = [],
   ): Promise<Record<string, unknown>> {
     const isAdmin = this.isAdminRole(userRoles);
@@ -1072,7 +1047,6 @@ export class ProjectTaskService {
     const task = await this.taskRepository.findByIdCrossProject(
       taskId,
       currentUserId,
-      organizationId,
       teamProjectIds,
       isAdmin,
     );
@@ -1250,7 +1224,6 @@ export class ProjectTaskService {
     const updated = await this.taskRepository.findByIdCrossProject(
       taskId,
       currentUserId,
-      organizationId,
       teamProjectIds,
       isAdmin,
     );
@@ -1291,7 +1264,6 @@ export class ProjectTaskService {
     taskId: string,
     comment: string,
     currentUserId: string,
-    organizationId: string,
     userRoles: string[] = [],
   ): Promise<void> {
     const isAdmin = this.isAdminRole(userRoles);
@@ -1299,7 +1271,6 @@ export class ProjectTaskService {
     const task = await this.taskRepository.findByIdCrossProject(
       taskId,
       currentUserId,
-      organizationId,
       teamProjectIds,
       isAdmin,
     );
@@ -1429,24 +1400,10 @@ export class ProjectTaskService {
     if (wasNotCompleted && progress === 100) {
       const updatedProject = await this.projectRepository.findOneById(projectId);
       if (updatedProject && updatedProject.status === ProjectStatus.COMPLETED) {
-        // Resolve organizationId from the property
-        const orgRows = await this.dataSource.query(
-          `SELECT organization_id AS "organizationId" FROM customer_properties WHERE id = $1 LIMIT 1`,
-          [updatedProject.propertyId],
+        this.eventEmitter.emit(
+          CONSUMER_EVENTS.PROJECT_COMPLETED,
+          new ProjectCompletedEvent(projectId, updatedProject.propertyId, updatedProject.name),
         );
-        const organizationId = (orgRows[0]?.organizationId as string) ?? '';
-
-        if (organizationId) {
-          this.eventEmitter.emit(
-            CONSUMER_EVENTS.PROJECT_COMPLETED,
-            new ProjectCompletedEvent(
-              organizationId,
-              projectId,
-              updatedProject.propertyId,
-              updatedProject.name,
-            ),
-          );
-        }
       }
     }
     // Milestone progress is now derived live from tasks — no separate update needed

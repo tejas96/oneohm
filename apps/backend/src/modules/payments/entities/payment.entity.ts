@@ -6,7 +6,6 @@ import { Entity, Column, ManyToOne, JoinColumn, Index, DeleteDateColumn } from '
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
@@ -15,7 +14,7 @@ import { UserEntity } from '../../users/entities/user.entity';
  * Tracks payments for projects
  */
 @Entity('payments')
-@Index(['organizationId', 'deletedAt'])
+@Index(['deletedAt'])
 @Index(['projectId', 'deletedAt'])
 @Index(['customerId'])
 @Index(['status', 'deletedAt'])
@@ -23,9 +22,6 @@ export class PaymentEntity extends BaseEntity {
   // ============================================
   // RELATIONS (Many-to-One)
   // ============================================
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 
   @ManyToOne(() => ProjectEntity)
   @JoinColumn({ name: 'project_id' })
@@ -42,8 +38,6 @@ export class PaymentEntity extends BaseEntity {
   // ============================================
   // FOREIGN KEYS
   // ============================================
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
 
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;

@@ -30,7 +30,7 @@ export class ComplianceApplicationRepository {
   async findAll(): Promise<ComplianceApplicationEntity[]> {
     return this.repository.find({
       where: { deletedAt: IsNull() },
-      relations: ['organization', 'project', 'submittedByUser', 'createdByUser', 'updatedByUser'],
+      relations: ['project', 'submittedByUser', 'createdByUser', 'updatedByUser'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -38,7 +38,7 @@ export class ComplianceApplicationRepository {
   async findById(id: string): Promise<ComplianceApplicationEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'submittedByUser', 'createdByUser', 'updatedByUser'],
+      relations: ['project', 'submittedByUser', 'createdByUser', 'updatedByUser'],
     });
   }
 
@@ -62,9 +62,9 @@ export class ComplianceApplicationRepository {
   // QUERY METHODS
   // ============================================
 
-  async findByOrganization(organizationId: string): Promise<ComplianceApplicationEntity[]> {
+  async findByOrganization(): Promise<ComplianceApplicationEntity[]> {
     return this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       relations: ['project'],
       order: { createdAt: 'DESC' },
     });
@@ -99,7 +99,7 @@ export class ComplianceApplicationRepository {
   ): Promise<ComplianceApplicationEntity | null> {
     return this.repository.findOne({
       where: { applicationNumber, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'submittedByUser'],
+      relations: ['project', 'submittedByUser'],
     });
   }
 
@@ -119,7 +119,7 @@ export class ComplianceApplicationRepository {
     const lastApplication = await this.repository
       .createQueryBuilder('ca')
       .where('ca.application_number LIKE :prefix', { prefix: `${prefix}%` })
-      .orderBy('ca.application_number', 'DESC')
+      .orderBy('ca.applicationNumber', 'DESC')
       .getOne();
 
     if (!lastApplication) {
@@ -137,9 +137,9 @@ export class ComplianceApplicationRepository {
   // STATISTICS
   // ============================================
 
-  async countByOrganization(organizationId: string): Promise<number> {
+  async countByOrganization(): Promise<number> {
     return this.repository.count({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
     });
   }
 
@@ -149,11 +149,8 @@ export class ComplianceApplicationRepository {
     });
   }
 
-  async countByStatus(status: ComplianceStatus, organizationId?: string): Promise<number> {
+  async countByStatus(status: ComplianceStatus): Promise<number> {
     const where: Record<string, unknown> = { status, deletedAt: IsNull() };
-    if (organizationId) {
-      where.organizationId = organizationId;
-    }
     return this.repository.count({ where });
   }
 }

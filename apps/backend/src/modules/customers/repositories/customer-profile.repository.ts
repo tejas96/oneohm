@@ -39,7 +39,7 @@ export interface SitePortfolioSummary {
   totalQuotedAmount: number;
 }
 
-/** Organisation-wide CRM roll-up behind the four KPI cards on the list page. */
+/** Company-wide CRM roll-up behind the four KPI cards on the list page. */
 export interface CustomerOverviewStats {
   customers: number;
   customersThisMonth: number;
@@ -66,15 +66,12 @@ const AWAITING_AGEING_DAYS = 7;
  * (`CustomerPropertyRepository.findWithFilters`) — three places computing
  * "latest" differently is exactly how a KPI drifts from the table beneath it.
  *
- * @param orgParam positional placeholder (e.g. `'$1'`) already bound to the
- *   organisation id by the caller.
  */
-function latestQuoteJoins(orgParam: string): string {
+function latestQuoteJoins(): string {
   return `
     LEFT JOIN quotes latest_quote ON latest_quote.id = (
       SELECT q2.id FROM quotes q2
       WHERE q2.property_id = prop.id
-        AND q2.organization_id = ${orgParam}
         AND q2.deleted_at IS NULL
       ORDER BY q2.created_at DESC, q2.id DESC
       LIMIT 1
@@ -144,19 +141,14 @@ function needsQuoteJoinForPropertyFilter(query: CustomerQueryDto): boolean {
 
 function applyMatchingPropertyFilter(
   qb: SelectQueryBuilder<CustomerProfileEntity>,
-  organizationId: string,
   query: CustomerQueryDto,
 ): void {
   if (!hasAnyCustomerPropertyFilter(query)) {
     return;
   }
 
-  const conditions: string[] = [
-    'prop.customer_id = customer.id',
-    'prop.deleted_at IS NULL',
-    'prop.organization_id = :propFilterOrgId',
-  ];
-  const params: Record<string, unknown> = { propFilterOrgId: organizationId };
+  const conditions: string[] = ['prop.customer_id = customer.id', 'prop.deleted_at IS NULL'];
+  const params: Record<string, unknown> = {};
 
   if (query.propertyType) {
     conditions.push('prop.property_type = :propertyType');
@@ -215,7 +207,6 @@ function applyMatchingPropertyFilter(
         LEFT JOIN quotes latest_quote ON latest_quote.id = (
           SELECT q2.id FROM quotes q2
           WHERE q2.property_id = prop.id
-            AND q2.organization_id = :propFilterOrgId
             AND q2.deleted_at IS NULL
           ORDER BY q2.created_at DESC, q2.id DESC
           LIMIT 1
@@ -251,34 +242,27 @@ export class CustomerProfileRepository {
   async findById(id: string): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['user', 'organization', 'creator', 'assignee'],
+      relations: ['user', 'creator', 'assignee'],
     });
   }
 
-  async findByUserAndOrganization(
-    userId: string,
-    organizationId: string,
-  ): Promise<CustomerProfileEntity | null> {
+  async findByUserAndOrganization(userId: string): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
-      where: { userId, organizationId, deletedAt: IsNull() },
-      relations: ['user', 'organization'],
+      where: { userId, deletedAt: IsNull() },
+      relations: ['user'],
     });
   }
 
   async findByUserId(userId: string): Promise<CustomerProfileEntity[]> {
     return this.repository.find({
       where: { userId, deletedAt: IsNull() },
-      relations: ['organization'],
+      relations: [],
     });
   }
 
-  async findByOrganization(
-    organizationId: string,
-    page = 1,
-    limit = 20,
-  ): Promise<[CustomerProfileEntity[], number]> {
+  async findByOrganization(page = 1, limit = 20): Promise<[CustomerProfileEntity[], number]> {
     return this.repository.findAndCount({
-      where: { organizationId, deletedAt: IsNull() },
+      where: { deletedAt: IsNull() },
       relations: ['user', 'properties'],
       skip: (page - 1) * limit,
       take: limit,
@@ -311,9 +295,9 @@ export class CustomerProfileRepository {
     return (result.affected ?? 0) > 0;
   }
 
-  async hardDelete(id: string, organizationId: string, manager?: EntityManager): Promise<boolean> {
+  async hardDelete(id: string, manager?: EntityManager): Promise<boolean> {
     const repo = manager ? manager.getRepository(CustomerProfileEntity) : this.repository;
-    const result = await repo.delete({ id, organizationId });
+    const result = await repo.delete({ id });
     return (result.affected ?? 0) > 0;
   }
 
@@ -322,7 +306,6 @@ export class CustomerProfileRepository {
    * Used for field workers to see their own and assigned customers.
    */
   async findByCreatedBy(
-    organizationId: string,
     userId: string,
     page = 1,
     limit = 20,
@@ -330,10 +313,8 @@ export class CustomerProfileRepository {
     return this.repository
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.user', 'user')
-      .leftJoinAndSelect('customer.organization', 'organization')
       .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
       .leftJoinAndSelect('customer.assignee', 'assignee')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL')
       .andWhere('(customer.createdBy = :userId OR customer.assigneeId = :userId)', { userId })
       .orderBy('customer.createdAt', 'DESC')
@@ -342,25 +323,21 @@ export class CustomerProfileRepository {
       .getManyAndCount();
   }
 
-  async findByPhone(organizationId: string, phone: string): Promise<CustomerProfileEntity[]> {
+  async findByPhone(phone: string): Promise<CustomerProfileEntity[]> {
     return this.repository.find({
-      where: { organizationId, phone, deletedAt: IsNull() },
+      where: { phone, deletedAt: IsNull() },
     });
   }
 
-  async findOneByPhone(
-    organizationId: string,
-    phone: string,
-  ): Promise<CustomerProfileEntity | null> {
+  async findOneByPhone(phone: string): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
-      where: { organizationId, phone, deletedAt: IsNull() },
+      where: { phone, deletedAt: IsNull() },
     });
   }
 
-  async findByEmail(organizationId: string, email: string): Promise<CustomerProfileEntity | null> {
+  async findByEmail(email: string): Promise<CustomerProfileEntity | null> {
     return this.repository
       .createQueryBuilder('cp')
-      .where('cp.organization_id = :organizationId', { organizationId })
       .andWhere('LOWER(cp.email) = LOWER(:email)', { email })
       .andWhere('cp.deleted_at IS NULL')
       .getOne();
@@ -371,23 +348,19 @@ export class CustomerProfileRepository {
    * @deprecated Consumer number is now on CustomerPropertyEntity
    * Consider using CustomerPropertyRepository.findByConsumerNumber instead
    */
-  async findByConsumerNumber(
-    organizationId: string,
-    consumerNumber: string,
-  ): Promise<CustomerProfileEntity | null> {
+  async findByConsumerNumber(consumerNumber: string): Promise<CustomerProfileEntity | null> {
     return this.repository
       .createQueryBuilder('customer')
       .innerJoin('customer.properties', 'property')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('property.consumerNumber = :consumerNumber', { consumerNumber })
       .andWhere('customer.deletedAt IS NULL')
       .andWhere('property.deletedAt IS NULL')
       .getOne();
   }
 
-  async countByStatus(organizationId: string, status: CustomerStatus): Promise<number> {
+  async countByStatus(status: CustomerStatus): Promise<number> {
     return this.repository.count({
-      where: { organizationId, status, deletedAt: IsNull() },
+      where: { status, deletedAt: IsNull() },
     });
   }
 
@@ -395,14 +368,11 @@ export class CustomerProfileRepository {
    * Get status statistics in a single query
    * Returns count of customers grouped by status
    */
-  async getStatusStats(
-    organizationId: string,
-  ): Promise<{ status: CustomerStatus; count: number }[]> {
+  async getStatusStats(): Promise<{ status: CustomerStatus; count: number }[]> {
     const result = await this.repository
       .createQueryBuilder('customer')
       .select('customer.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL')
       .groupBy('customer.status')
       .getRawMany<{ status: CustomerStatus; count: string }>();
@@ -437,7 +407,6 @@ export class CustomerProfileRepository {
    */
   async getSitePortfolioSummaries(
     customerIds: string[],
-    organizationId: string,
   ): Promise<Map<string, SitePortfolioSummary>> {
     const summaries = new Map<string, SitePortfolioSummary>();
     if (customerIds.length === 0) {
@@ -467,13 +436,11 @@ export class CustomerProfileRepository {
              ), 0)                                       AS "systemSizeKw",
              COALESCE(SUM(cv.final_price), 0)            AS "quotedAmount"
       FROM customer_properties prop
-      ${latestQuoteJoins('$1')}
-      WHERE prop.organization_id = $1
-        AND prop.customer_id = ANY($2::uuid[])
+      ${latestQuoteJoins()} WHERE prop.customer_id = ANY($1::uuid[])
         AND prop.deleted_at IS NULL
       GROUP BY prop.customer_id, prop.status
       `,
-      [organizationId, customerIds],
+      [customerIds],
     );
 
     for (const row of rows) {
@@ -501,7 +468,7 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * Organisation-wide CRM roll-up for the customer list's KPI cards.
+   * Company-wide CRM roll-up for the customer list's KPI cards.
    *
    * Two queries rather than one: the customer counts have no property join, and
    * forcing them through the property aggregate would either miss customers
@@ -511,7 +478,7 @@ export class CustomerProfileRepository {
    * is out, unanswered, and the site has not converted. Accepted and converted
    * value belongs to revenue, not pipeline; draft value was never offered.
    */
-  async getOverviewStats(organizationId: string): Promise<CustomerOverviewStats> {
+  async getOverviewStats(): Promise<CustomerOverviewStats> {
     const monthStart = startOfCurrentMonth();
     const ageingCutoff = ageingCutoffDate();
 
@@ -520,12 +487,10 @@ export class CustomerProfileRepository {
     >(
       `
       SELECT COUNT(*)                                                  AS "customers",
-             COUNT(*) FILTER (WHERE c.created_at >= $2)                AS "customersThisMonth"
-      FROM customer_profiles c
-      WHERE c.organization_id = $1
-        AND c.deleted_at IS NULL
+             COUNT(*) FILTER (WHERE c.created_at >= $1)                AS "customersThisMonth"
+      FROM customer_profiles c WHERE c.deleted_at IS NULL
       `,
-      [organizationId, monthStart],
+      [monthStart],
     );
 
     const [siteRow] = await this.repository.manager.query<
@@ -539,30 +504,22 @@ export class CustomerProfileRepository {
     >(
       `
       SELECT COUNT(*)                                     AS "sites",
-             COUNT(*) FILTER (WHERE prop.created_at >= $2) AS "sitesThisMonth",
+             COUNT(*) FILTER (WHERE prop.created_at >= $1) AS "sitesThisMonth",
              COALESCE(SUM(cv.final_price) FILTER (
-               WHERE prop.status <> $3
-                 AND latest_quote.status = ANY($4::varchar[])
+               WHERE prop.status <> $2
+                 AND latest_quote.status = ANY($3::varchar[])
              ), 0)                                        AS "pipelineValue",
              COUNT(*) FILTER (
-               WHERE latest_quote.status = ANY($4::varchar[])
+               WHERE latest_quote.status = ANY($3::varchar[])
              )                                            AS "awaitingReply",
              COUNT(*) FILTER (
-               WHERE latest_quote.status = ANY($4::varchar[])
-                 AND latest_quote.quote_date < $5::date
+               WHERE latest_quote.status = ANY($3::varchar[])
+                 AND latest_quote.quote_date < $4::date
              )                                            AS "awaitingAgeing"
       FROM customer_properties prop
-      ${latestQuoteJoins('$1')}
-      WHERE prop.organization_id = $1
-        AND prop.deleted_at IS NULL
+      ${latestQuoteJoins()} WHERE prop.deleted_at IS NULL
       `,
-      [
-        organizationId,
-        monthStart,
-        PropertyStatus.CONVERTED,
-        [...AWAITING_QUOTE_STATUSES],
-        ageingCutoff,
-      ],
+      [monthStart, PropertyStatus.CONVERTED, [...AWAITING_QUOTE_STATUSES], ageingCutoff],
     );
 
     return {
@@ -580,7 +537,6 @@ export class CustomerProfileRepository {
    * Search customers by name, phone, or email
    * Searches within the organization context
    *
-   * @param organizationId - Organization to search in
    * @param searchQuery - Search term (searches first name, last name, phone, email, group)
    * @param createdBy - Optional: filter by creator (for field workers)
    * @param page - Page number
@@ -588,7 +544,6 @@ export class CustomerProfileRepository {
    * @returns Matching customers with pagination
    */
   async search(
-    organizationId: string,
     searchQuery: string,
     createdBy?: string,
     page = 1,
@@ -600,10 +555,8 @@ export class CustomerProfileRepository {
     const qb = this.repository
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.user', 'user')
-      .leftJoinAndSelect('customer.organization', 'organization')
       .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
       .leftJoinAndSelect('customer.assignee', 'assignee')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL')
       .andWhere(
         `(
@@ -643,18 +596,13 @@ export class CustomerProfileRepository {
    * Find customers with comprehensive filtering, sorting, and pagination
    * This is the primary method for the customer list API
    *
-   * @param organizationId - Organization context
    * @param query - Query parameters (filters, sorting, pagination)
    * @returns Tuple of [customers, total count]
    */
-  async findWithFilters(
-    organizationId: string,
-    query: CustomerQueryDto,
-  ): Promise<[CustomerProfileEntity[], number]> {
+  async findWithFilters(query: CustomerQueryDto): Promise<[CustomerProfileEntity[], number]> {
     const qb = this.repository
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.user', 'user')
-      .leftJoinAndSelect('customer.organization', 'organization')
       .loadRelationCountAndMap(
         'customer.propertyCount',
         'customer.properties',
@@ -663,7 +611,6 @@ export class CustomerProfileRepository {
       )
       .leftJoinAndSelect('customer.creator', 'creator')
       .leftJoinAndSelect('customer.assignee', 'assignee')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL');
 
     // ===== Search (case-insensitive, multiple fields) =====
@@ -751,7 +698,7 @@ export class CustomerProfileRepository {
         }
       }
 
-      applyMatchingPropertyFilter(qb, organizationId, query);
+      applyMatchingPropertyFilter(qb, query);
     }
 
     if (query.fromDate) {
@@ -789,14 +736,11 @@ export class CustomerProfileRepository {
    * Returns all distinct (group_code, group_name) pairs for an organization.
    * Used to populate the group selector in the customer form.
    */
-  async findDistinctGroups(
-    organizationId: string,
-  ): Promise<{ groupCode: string; groupName: string }[]> {
+  async findDistinctGroups(): Promise<{ groupCode: string; groupName: string }[]> {
     const rows = await this.repository
       .createQueryBuilder('customer')
       .select('customer.groupCode', 'groupCode')
       .addSelect('customer.groupName', 'groupName')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.groupCode IS NOT NULL')
       .andWhere('customer.deletedAt IS NULL')
       .distinctOn(['customer.groupCode'])
@@ -811,14 +755,13 @@ export class CustomerProfileRepository {
    * Format: GRP-XXXX (e.g. GRP-0001, GRP-0042).
    * Uses withDeleted() so codes from soft-deleted records are never reused.
    */
-  async generateGroupCode(organizationId: string): Promise<string> {
+  async generateGroupCode(): Promise<string> {
     const pattern = 'GRP-%';
 
     const result = await this.repository
       .createQueryBuilder('customer')
       .withDeleted()
       .select('customer.groupCode', 'code')
-      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.groupCode LIKE :pattern', { pattern })
       .orderBy('customer.groupCode', 'DESC')
       .limit(1)
@@ -841,9 +784,9 @@ export class CustomerProfileRepository {
    * Checks whether a group code exists for the given organization.
    * Used for validation when a client provides a groupCode explicitly.
    */
-  async groupCodeExists(organizationId: string, groupCode: string): Promise<boolean> {
+  async groupCodeExists(groupCode: string): Promise<boolean> {
     const count = await this.repository.count({
-      where: { organizationId, groupCode, deletedAt: IsNull() },
+      where: { groupCode, deletedAt: IsNull() },
     });
     return count > 0;
   }
@@ -851,20 +794,13 @@ export class CustomerProfileRepository {
   /**
    * Returns human-readable reasons why a customer cannot be permanently deleted.
    */
-  async getCustomerDeleteBlockers(
-    customerId: string,
-    organizationId: string,
-    manager?: EntityManager,
-  ): Promise<string[]> {
-    const flags = await this.queryDeleteBlockerFlags([customerId], organizationId, manager);
+  async getCustomerDeleteBlockers(customerId: string, manager?: EntityManager): Promise<string[]> {
+    const flags = await this.queryDeleteBlockerFlags([customerId], manager);
     return this.mapDeleteBlockerFlags(flags.get(customerId));
   }
 
-  async getCustomerDeleteBlockersBatch(
-    customerIds: string[],
-    organizationId: string,
-  ): Promise<Map<string, string[]>> {
-    const flags = await this.queryDeleteBlockerFlags(customerIds, organizationId);
+  async getCustomerDeleteBlockersBatch(customerIds: string[]): Promise<Map<string, string[]>> {
+    const flags = await this.queryDeleteBlockerFlags(customerIds);
     const result = new Map<string, string[]>();
     for (const customerId of customerIds) {
       result.set(customerId, this.mapDeleteBlockerFlags(flags.get(customerId)));
@@ -914,7 +850,6 @@ export class CustomerProfileRepository {
 
   private async queryDeleteBlockerFlags(
     customerIds: string[],
-    organizationId: string,
     manager?: EntityManager,
   ): Promise<
     Map<
@@ -958,7 +893,6 @@ export class CustomerProfileRepository {
         `EXISTS(
           SELECT 1 FROM customer_properties cp
           WHERE cp.customer_id = customer.id
-            AND cp.organization_id = :organizationId
             AND cp.deleted_at IS NULL
         )`,
         'hasProperties',
@@ -968,7 +902,6 @@ export class CustomerProfileRepository {
           SELECT 1 FROM projects p
           INNER JOIN customer_properties cp ON cp.id = p.property_id
           WHERE cp.customer_id = customer.id
-            AND cp.organization_id = :organizationId
             AND p.deleted_at IS NULL
         )`,
         'hasProjects',
@@ -977,7 +910,6 @@ export class CustomerProfileRepository {
         `EXISTS(
           SELECT 1 FROM quotes q
           WHERE q.customer_id = customer.id
-            AND q.organization_id = :organizationId
             AND q.deleted_at IS NULL
         )`,
         'hasQuotes',
@@ -988,7 +920,6 @@ export class CustomerProfileRepository {
         `EXISTS(
           SELECT 1 FROM ledger_entries le
           WHERE le.customer_id = customer.id
-            AND le.organization_id = :organizationId
             AND le.direction = 'in'
         )`,
         'hasPayments',
@@ -997,7 +928,6 @@ export class CustomerProfileRepository {
         `EXISTS(
           SELECT 1 FROM service_requests sr
           WHERE sr.customer_id = customer.id
-            AND sr.organization_id = :organizationId
             AND sr.deleted_at IS NULL
         )`,
         'hasServiceRequests',
@@ -1027,8 +957,6 @@ export class CustomerProfileRepository {
         'hasFeedback',
       )
       .where('customer.id IN (:...customerIds)', { customerIds })
-      .andWhere('customer.organizationId = :organizationId', { organizationId })
-      .setParameters({ organizationId })
       .getRawMany<{
         customerId: string;
         hasProperties: boolean;

@@ -1,7 +1,6 @@
 import type { ReportSchema } from '@tejas96/shared/reports';
 
 export interface ReportEngineContext {
-  organizationId: string;
   entityType: import('@tejas96/shared/types').DocumentEntityType;
   entityId: string;
   userId: string;

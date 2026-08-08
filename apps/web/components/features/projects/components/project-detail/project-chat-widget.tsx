@@ -12,9 +12,9 @@ interface ProjectChatWidgetProps {
 }
 
 export function ProjectChatWidget({ projectId }: ProjectChatWidgetProps): React.JSX.Element {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
-  const { user } = useAuth();
 
   const formatTime = (dateStr: string) => {
     try {

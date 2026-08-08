@@ -57,7 +57,7 @@ export class CreateExpenseDto {
   paidBy?: ExpensePaidByType;
 
   @ApiPropertyOptional({
-    description: 'Required when paidBy=employee. Must belong to the same organization.',
+    description: 'Required when paidBy=employee. Must be an active employee.',
   })
   @ValidateIf((o: CreateExpenseDto) => o.paidBy === ExpensePaidByType.EMPLOYEE)
   @IsUUID()

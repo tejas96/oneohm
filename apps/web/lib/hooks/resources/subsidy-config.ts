@@ -16,7 +16,6 @@ import {
 
 export interface SubsidyConfigItem {
   id: string;
-  organizationId: string;
   schemeName: string;
   schemeCode?: string;
   schemeType: SubsidySchemeType;

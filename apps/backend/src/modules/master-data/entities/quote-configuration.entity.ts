@@ -1,8 +1,7 @@
 import type { GstConfig, PaymentMilestoneConfig, ProfitMarginTier } from '@tejas96/shared/types';
-import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 /**
  * Quote Configuration Entity
@@ -16,15 +15,13 @@ import { OrganizationEntity } from '../../organizations/entities/organization.en
  * - Default payment milestones
  */
 @Entity('quote_configurations')
-@Index(['organizationId', 'isActive'], { unique: true, where: '"is_active" = true' })
+@Index(['isActive'], { unique: true, where: '"is_active" = true' })
 export class QuoteConfiguration extends BaseEntity {
   // ==================== Foreign Keys ====================
 
   /**
    * Organization this configuration belongs to
    */
-  @Column({ type: 'uuid', name: 'organization_id' })
-  organizationId!: string;
 
   // ==================== Quote Settings ====================
 
@@ -173,8 +170,4 @@ export class QuoteConfiguration extends BaseEntity {
   updatedBy?: string;
 
   // ==================== Relationships ====================
-
-  @ManyToOne(() => OrganizationEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
 }
