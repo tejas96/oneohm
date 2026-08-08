@@ -256,3 +256,58 @@ Both mobile apps break the moment this deploys.
    app-store build). Should ship as close behind this as possible.
 2. Remove the org injection from `oneohm-consumer-mobo-app/src/core/api/interceptors.ts`.
 3. Re-point the PDF company block if the values in §5 turn out to be stale.
+
+---
+
+## 13. Execution record — 2026-08-08
+
+Completed on branch `refactor/remove-organizations`.
+
+**Migration applied to the working database** (`oneohm_epc`, a production clone:
+221 projects, 1,485 quotes, 1,183 customers, ₹1,84,11,280 of ledger).
+
+Before the irreversible DDL, a snapshot was taken **and verified** by restoring
+it into a scratch database and comparing row counts — the plan's §10 requirement.
+It lives at `oneohm_epc_presnapshot.sql` (20 MB) in the session scratch directory;
+copy it somewhere durable if it is still wanted.
+
+| Check | Result |
+|---|---|
+| Schema after migration | 0 org columns, 0 org tables, 0 FKs, 3 views, contract-composition columns intact |
+| Money checksum | **Unchanged across 221 projects** |
+| Row counts | projects/quotes/ledger/customers all identical pre and post |
+| Endpoint probe | **145 of 148** parameterless GETs pass |
+| Write path | receipt recorded (`RCP-2026-27-000215`), received +₹1,000, outstanding −₹1,000, then reversed; ledger sum back to 1841128000 |
+| Numbering sequences | keyed on `sequence_key` alone; produced 215 then 216 |
+| Append-only ledger | still enforced after migration (DELETE rejected) |
+| Typecheck / tests / web build | clean; 157 backend + 77 web tests pass |
+
+Two audit entries remain from the smoke test — `RCP-2026-27-000215` and its
+reversal `RCP-2026-27-000216`, netting to zero. They cannot be deleted; the
+ledger is append-only by design.
+
+### Pre-existing failures, NOT caused by this work
+
+Three endpoints return 500: `/approval-requests`, `/approval-templates`,
+`/audit-logs`. Proven pre-existing by running the pre-cleanup code against the
+unmigrated database — all three fail there too. Cause is a TypeORM
+`orderBy('request.submitted_at')` snake_case reference in the distinct-pagination
+path. Unrelated to organizations; needs its own fix.
+
+`master-data.seed.ts` was separately repaired: its cleanup step used to delete
+quotes and projects, which the append-only ledger now makes impossible and which
+was never a prerequisite for seeding master data.
+
+### Not verified
+
+The **web UI has not been rendered**. It typechecks, builds for production, and
+its 77 tests pass, but no page was loaded against the migrated backend — a second
+Next dev server could not start alongside the running one. Verify by pointing the
+web app at the migrated database and walking: customer list → project Money tab →
+receipt PDF.
+
+### Mobile — breaks now
+
+Both apps are broken against the migrated backend, as accepted in §11.
+`oneohm-mobile` has 572 references and 21 `?organizationId=` URLs (inventory in
+`tmp/mobile-org-breakage.txt`); `oneohm-consumer-mobo-app` has 7.
