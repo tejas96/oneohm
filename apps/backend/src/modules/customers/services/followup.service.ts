@@ -13,7 +13,7 @@ import { UpdateFollowupDto } from '../dto/update-followup.dto';
 import { FollowupEntity } from '../entities/followup.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
-import { FollowupRepository } from '../repositories/followup.repository';
+import { FollowupRepository, type FollowupGapRow } from '../repositories/followup.repository';
 
 /**
  * Followup Service
@@ -308,6 +308,103 @@ export class FollowupService {
 
       return completed;
     });
+  }
+
+  /**
+   * Move a followup to a different owner.
+   *
+   * Ownership of a lead IS the assignee of its pending followup, so this is how
+   * a lead changes hands — there is no separate owner field to keep in sync.
+   * Deliberately unrestricted: no RBAC in this feature.
+   */
+  async reassign(id: string, assignedToUserId: string, userId: string): Promise<FollowupEntity> {
+    await this.findById(id);
+    await this.assertUserExists(assignedToUserId);
+
+    const updated = await this.followupRepository.update(id, {
+      assignedToUserId,
+      updatedBy: userId,
+    });
+    if (!updated) {
+      throw new NotFoundException('Followup not found');
+    }
+    return updated;
+  }
+
+  /** Bulk variant for the handoff case — one person going on leave. */
+  async reassignMany(
+    ids: string[],
+    assignedToUserId: string,
+    userId: string,
+  ): Promise<{ updated: number }> {
+    await this.assertUserExists(assignedToUserId);
+
+    let updated = 0;
+    for (const id of ids) {
+      const result = await this.followupRepository.update(id, {
+        assignedToUserId,
+        updatedBy: userId,
+      });
+      if (result) updated += 1;
+    }
+
+    this.logger.log(`Reassigned ${updated} followup(s) to ${assignedToUserId}`);
+    return { updated };
+  }
+
+  /**
+   * Move the date without completing.
+   *
+   * The escape valve that stops people cancelling followups purely to get them
+   * off today's list — "he asked me to call Monday instead" is a reschedule,
+   * not an outcome.
+   */
+  async reschedule(id: string, scheduledAt: string, userId: string): Promise<FollowupEntity> {
+    const followup = await this.findById(id);
+    if (followup.status !== FollowupStatus.PENDING) {
+      throw new BadRequestException(`Cannot reschedule a ${followup.status} followup`);
+    }
+
+    const updated = await this.followupRepository.update(id, {
+      scheduledAt: new Date(scheduledAt),
+      updatedBy: userId,
+    });
+    if (!updated) {
+      throw new NotFoundException('Followup not found');
+    }
+    return updated;
+  }
+
+  /** Open lead units with nobody owing them an action. */
+  async gaps(): Promise<FollowupGapRow[]> {
+    return this.followupRepository.findGaps();
+  }
+
+  /** Badge counts. Pass null for everyone's followups. */
+  async summary(userId: string | null): Promise<{
+    overdue: number;
+    today: number;
+    upcoming: number;
+    gaps: number;
+  }> {
+    const [counts, gapRows] = await Promise.all([
+      this.followupRepository.summaryCounts(userId),
+      this.followupRepository.findGaps(),
+    ]);
+    return { ...counts, gaps: gapRows.length };
+  }
+
+  /**
+   * The assigned user must exist in the system.
+   *
+   * `findByUserAndOrganization` is an org-era name that now just checks the user
+   * has any role. Left alone because it has 10 callers across unrelated modules.
+   */
+  private async assertUserExists(userId: string): Promise<void> {
+    const roles = await this.userRoleRepository.findByUserAndOrganization(userId);
+    if (roles.length === 0) {
+      throw new BadRequestException('Assigned user not found');
+    }
   }
 
   /**

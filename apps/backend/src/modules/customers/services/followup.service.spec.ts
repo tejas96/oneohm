@@ -211,3 +211,81 @@ describe('FollowupService.complete', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
+
+describe('FollowupService.reassign and reschedule', () => {
+  let h: Harness;
+
+  beforeEach(async () => {
+    h = await makeService();
+  });
+
+  it('reassign changes only the assignee and stamps updatedBy', async () => {
+    await h.service.reassign('followup-1', '22222222-2222-2222-2222-222222222222', 'user-1');
+
+    const updates = h.followupRepo.update.mock.calls[0][1];
+    expect(updates.assignedToUserId).toBe('22222222-2222-2222-2222-222222222222');
+    expect(updates.updatedBy).toBe('user-1');
+    // Reassigning must not disturb the schedule or the state.
+    expect(updates.scheduledAt).toBeUndefined();
+    expect(updates.status).toBeUndefined();
+  });
+
+  it('reassign rejects a user who has no role', async () => {
+    const noRole = await makeService({ roles: [] });
+
+    await expect(
+      noRole.service.reassign('followup-1', '22222222-2222-2222-2222-222222222222', 'user-1'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('reassignMany moves every id and reports the count', async () => {
+    const result = await h.service.reassignMany(
+      ['followup-1', 'followup-2', 'followup-3'],
+      '22222222-2222-2222-2222-222222222222',
+      'user-1',
+    );
+
+    expect(h.followupRepo.update.mock.calls.length).toBe(3);
+    expect(result).toEqual({ updated: 3 });
+  });
+
+  it('reschedule changes only the date, with no outcome and no new record', async () => {
+    await h.service.reschedule('followup-1', '2026-09-01T09:00:00.000Z', 'user-1');
+
+    const updates = h.followupRepo.update.mock.calls[0][1];
+    expect(updates.scheduledAt).toBeInstanceOf(Date);
+    expect(updates.outcome).toBeUndefined();
+    expect(updates.status).toBeUndefined();
+    expect(h.followupRepo.create.mock.calls.length).toBe(0);
+  });
+
+  it('reschedule refuses a followup that is not pending', async () => {
+    h.followupRepo.findById.mockResolvedValue({
+      ...PENDING_FOLLOWUP,
+      status: FollowupStatus.COMPLETED,
+    });
+
+    await expect(
+      h.service.reschedule('followup-1', '2026-09-01T09:00:00.000Z', 'user-1'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('summary reports gap count alongside the date buckets', async () => {
+    h.followupRepo.summaryCounts = anyFn().mockResolvedValue({
+      overdue: 4,
+      today: 7,
+      upcoming: 12,
+    });
+    h.followupRepo.findGaps = anyFn().mockResolvedValue([
+      { kind: 'property' },
+      { kind: 'customer' },
+    ]);
+
+    expect(await h.service.summary('user-1')).toEqual({
+      overdue: 4,
+      today: 7,
+      upcoming: 12,
+      gaps: 2,
+    });
+  });
+});
