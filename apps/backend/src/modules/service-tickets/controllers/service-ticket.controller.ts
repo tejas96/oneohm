@@ -21,7 +21,9 @@ import {
   ServiceTicketListResponseDto,
   ServiceTicketQueryDto,
   ServiceTicketResponseDto,
+  ServiceTicketStatsDto,
   UpdateServiceTicketDto,
+  UpdateTicketStatusDto,
 } from '../dto';
 import { ServiceTicketService } from '../services';
 
@@ -70,6 +72,17 @@ export class ServiceTicketController {
     };
   }
 
+  /**
+   * Declared before `:id` — Nest matches in declaration order, so the other way
+   * round `/stats` would hit the id route and fail ParseUUIDPipe with a 400.
+   */
+  @Get('stats')
+  @ApiOperation({ summary: 'Ticket counts by status, plus the active urgent count' })
+  @ApiResponse({ status: HttpStatus.OK, type: ServiceTicketStatsDto })
+  async getStats(): Promise<ServiceTicketStatsDto> {
+    return this.ticketService.getStats();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a service ticket with its status history' })
   @ApiResponse({ status: HttpStatus.OK, type: ServiceTicketResponseDto })
@@ -92,6 +105,24 @@ export class ServiceTicketController {
     @CurrentUser() user: { id: string },
   ): Promise<ServiceTicketResponseDto> {
     return this.ticketService.toResponseDto(await this.ticketService.update(id, dto, user.id));
+  }
+
+  @Patch(':id/status')
+  @ApiOperation({ summary: 'Change ticket status' })
+  @ApiResponse({ status: HttpStatus.OK, type: ServiceTicketResponseDto })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Resolution note missing when resolving',
+  })
+  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Ticket is closed' })
+  async updateStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTicketStatusDto,
+    @CurrentUser() user: { id: string },
+  ): Promise<ServiceTicketResponseDto> {
+    return this.ticketService.toResponseDto(
+      await this.ticketService.updateStatus(id, dto, user.id),
+    );
   }
 
   // ============================================

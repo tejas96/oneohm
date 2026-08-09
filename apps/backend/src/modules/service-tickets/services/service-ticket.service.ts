@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { COMPANY } from '@tejas96/shared/constants';
 import { ServiceTicketStatus } from '@tejas96/shared/types';
@@ -10,7 +15,9 @@ import {
   type ServiceTicketListItemDto,
   type ServiceTicketQueryDto,
   type ServiceTicketResponseDto,
+  type ServiceTicketStatsDto,
   type UpdateServiceTicketDto,
+  type UpdateTicketStatusDto,
 } from '../dto';
 import { ServiceTicketEntity, ServiceTicketStatusHistoryEntity } from '../entities';
 import { ServiceTicketRepository } from '../repositories';
@@ -142,6 +149,58 @@ export class ServiceTicketService {
     return this.findById(id);
   }
 
+  /**
+   * Transitions are unrestricted among open / in_progress / resolved — a
+   * technician can move a ticket backwards when a fix does not hold. `closed`
+   * is the one terminal state.
+   */
+  async updateStatus(
+    id: string,
+    dto: UpdateTicketStatusDto,
+    userId: string,
+  ): Promise<ServiceTicketEntity> {
+    const ticket = await this.findById(id);
+    this.assertNotClosed(ticket);
+
+    if (dto.status === ticket.status) {
+      return ticket;
+    }
+
+    const note = dto.note?.trim() || null;
+
+    if (dto.status === ServiceTicketStatus.RESOLVED && !note) {
+      throw new BadRequestException('A resolution note is required when resolving a ticket.');
+    }
+
+    const now = new Date();
+    const fromStatus = ticket.status;
+
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(ServiceTicketEntity, id, {
+        status: dto.status,
+        updatedBy: userId,
+        ...(dto.status === ServiceTicketStatus.RESOLVED
+          ? { resolvedAt: now, resolutionNote: note }
+          : {}),
+        ...(dto.status === ServiceTicketStatus.CLOSED ? { closedAt: now } : {}),
+      });
+
+      await manager.save(ServiceTicketStatusHistoryEntity, {
+        ticketId: id,
+        fromStatus,
+        toStatus: dto.status,
+        note,
+        changedBy: userId,
+      });
+    });
+
+    return this.findById(id);
+  }
+
+  async getStats(): Promise<ServiceTicketStatsDto> {
+    return this.ticketRepository.getStats();
+  }
+
   // ============================================
   // DELETE
   // ============================================
@@ -161,7 +220,7 @@ export class ServiceTicketService {
    */
   protected assertNotClosed(ticket: ServiceTicketEntity): void {
     if (ticket.status === ServiceTicketStatus.CLOSED) {
-      throw new BadRequestException(
+      throw new ConflictException(
         `Ticket ${ticket.ticketNumber} is closed and can no longer be modified.`,
       );
     }
