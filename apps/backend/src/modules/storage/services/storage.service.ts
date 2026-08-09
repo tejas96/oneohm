@@ -32,6 +32,7 @@ const ALLOWED_MIME_TYPES: Record<FileCategory, string[]> = {
   [FileCategory.PROFILE]: ['image/jpeg', 'image/png', 'image/webp'],
   [FileCategory.QUOTE]: ['application/pdf', 'image/jpeg', 'image/png'],
   [FileCategory.PROJECT]: ['image/jpeg', 'image/png', 'application/pdf'],
+  [FileCategory.SERVICE]: ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'],
   [FileCategory.OTHER]: ['image/jpeg', 'image/png', 'application/pdf', 'application/octet-stream'],
 };
 
@@ -44,6 +45,7 @@ const MAX_FILE_SIZES: Record<FileCategory, number> = {
   [FileCategory.PROFILE]: 5 * 1024 * 1024, // 5MB
   [FileCategory.QUOTE]: 10 * 1024 * 1024, // 10MB
   [FileCategory.PROJECT]: 20 * 1024 * 1024, // 20MB
+  [FileCategory.SERVICE]: 10 * 1024 * 1024, // 10MB — issue photos from a phone camera
   [FileCategory.OTHER]: 10 * 1024 * 1024, // 10MB
 };
 

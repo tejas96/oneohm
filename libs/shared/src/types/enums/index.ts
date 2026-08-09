@@ -24,3 +24,4 @@ export * from './security-event.enum';
 export * from './site-status.enum';
 export * from './user.enum';
 export * from './notification.enum';
+export * from './service-ticket.enum';
