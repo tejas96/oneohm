@@ -5,13 +5,12 @@ import {
 } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
+import { ServiceTicketStatusHistoryEntity } from './service-ticket-status-history.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
-
-import { ServiceTicketStatusHistoryEntity } from './service-ticket-status-history.entity';
 
 /**
  * Service Ticket

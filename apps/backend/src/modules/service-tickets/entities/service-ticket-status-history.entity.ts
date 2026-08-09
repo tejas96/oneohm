@@ -9,9 +9,8 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { UserEntity } from '../../users/entities/user.entity';
-
 import { ServiceTicketEntity } from './service-ticket.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 
 /**
  * One row per status transition, including the ticket's creation
