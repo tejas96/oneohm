@@ -62,6 +62,7 @@ import {
   getCustomerDeleteBlockReasons,
   ORG_ADMIN_ROLES,
 } from '@/components/features/properties/utils/delete-eligibility';
+import { ActiveTicketsChip } from '@/components/features/service-tickets';
 import type { ColumnConfig } from '@/components/shared/advanced-table';
 import {
   CRM_TONE_FILL,
@@ -199,6 +200,8 @@ function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilte
             : filters.name === 'false' || filters.name === false
               ? false
               : undefined,
+    hasActiveTickets:
+      filters.hasActiveTickets === 'true' || filters.hasActiveTickets === true ? true : undefined,
     createdBy:
       typeof filters.createdBy === 'string' && filters.createdBy ? filters.createdBy : undefined,
     assigneeId:
@@ -504,6 +507,7 @@ function CustomerCell({ row }: { row: Customer }): JSX.Element {
             {groupLabel}
           </Box>
         ) : null}
+        <ActiveTicketsChip count={row.activeTicketCount} />
       </Box>
     </MuiLink>
   );
@@ -781,6 +785,17 @@ const FILTER_COLUMNS: ColumnConfig<Customer>[] = [
     filterOptions: STATUS_OPTIONS,
   },
   {
+    // Declared so the active-filter chip reads "Service tickets: Has active
+    // tickets" rather than a bare "true", and so the filter is reachable from
+    // the popover as well as the quick-filter chip — the same dual path status
+    // already has.
+    field: 'hasActiveTickets',
+    headerName: 'Service tickets',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [{ label: 'Has active tickets', value: 'true' }],
+  },
+  {
     // Options injected at render time from useCustomerGroups().
     field: 'groupSearch',
     headerName: 'Group',
@@ -957,6 +972,23 @@ export function CustomerListPage(): JSX.Element {
     [urlState.setFilters],
   );
 
+  /**
+   * Service tickets sit on a different axis from customer status, so they get
+   * the secondary chip row rather than competing for the same selection.
+   */
+  const activeTicketsFilter =
+    urlState.state.filters.hasActiveTickets === 'true' ? 'active-tickets' : '';
+
+  const handleTicketFilterChange = useCallback(
+    (key: string) => {
+      const next = { ...filtersRef.current };
+      if (key === 'active-tickets') next.hasActiveTickets = 'true';
+      else delete next.hasActiveTickets;
+      urlState.setFilters(next);
+    },
+    [urlState.setFilters],
+  );
+
   // Fetch active employees
   const { data: employees = [] } = useEmployees();
 
@@ -982,6 +1014,23 @@ export function CustomerListPage(): JSX.Element {
       })),
     ];
   }, [statusStats]);
+
+  /** Count comes from the same filtered query the chip applies, so the two agree. */
+  const { data: activeTicketCustomers } = useCustomers({ hasActiveTickets: true, limit: 1 });
+
+  const ticketQuickFilters = useMemo<CrmQuickFilter[]>(
+    () => [
+      { key: '', label: 'All customers', tone: 'neutral', dot: false },
+      {
+        key: 'active-tickets',
+        label: 'Has active tickets',
+        count: activeTicketCustomers?.meta?.total,
+        tone: 'warning',
+        dot: true,
+      },
+    ],
+    [activeTicketCustomers?.meta?.total],
+  );
 
   // Memoize sorted base employee options
   const baseEmployeeOptions = useMemo(() => {
@@ -1414,6 +1463,9 @@ export function CustomerListPage(): JSX.Element {
         quickFilters={quickFilters}
         activeQuickFilter={activeStatusFilter}
         onQuickFilterChange={handleQuickFilterChange}
+        secondaryQuickFilters={ticketQuickFilters}
+        activeSecondaryQuickFilter={activeTicketsFilter}
+        onSecondaryQuickFilterChange={handleTicketFilterChange}
         filterColumns={filterColumns}
         filterModel={urlState.state.filters}
         onFilterChange={handleFilterChange}

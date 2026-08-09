@@ -1,5 +1,6 @@
 export { ServiceTicketsPage } from './components/service-tickets-page';
 export { ServiceTicketStatTiles } from './components/service-ticket-stat-tiles';
+export { ActiveTicketsChip } from './components/active-tickets-chip';
 export { ServiceTicketFormDialog } from './components/service-ticket-form-dialog';
 export { ServiceTicketPhotos } from './components/service-ticket-photos';
 export { ServiceTicketDetailPage } from './components/service-ticket-detail-page';

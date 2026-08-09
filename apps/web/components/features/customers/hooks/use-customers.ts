@@ -49,6 +49,8 @@ export interface CustomerFilters {
   createdBy?: string; // 'me' for field workers or actual userId
   assigneeId?: string; // 'me' or actual userId
   hasProperty?: boolean;
+  /** Customers with (true) or without (false) open or in-progress tickets. */
+  hasActiveTickets?: boolean;
   fromDate?: string; // ISO date string (YYYY-MM-DD)
   toDate?: string; // ISO date string (YYYY-MM-DD)
   groupSearch?: string; // filter by group name or code (partial match)
@@ -106,6 +108,8 @@ export interface Customer {
   groupName?: string;
   status: CustomerStatus;
   propertyCount: number;
+  /** Open or in-progress service tickets. Drives the active-tickets chip. */
+  activeTicketCount: number;
   /** List responses only; omitted on single-customer reads. */
   sitePortfolio?: SitePortfolio;
   deleteBlockReasons?: string[];
@@ -215,6 +219,8 @@ export function useCustomers(
       if (queryFilters.assigneeId) params.append('assigneeId', queryFilters.assigneeId);
       if (queryFilters.hasProperty !== undefined)
         params.append('hasProperty', String(queryFilters.hasProperty));
+      if (queryFilters.hasActiveTickets !== undefined)
+        params.append('hasActiveTickets', String(queryFilters.hasActiveTickets));
       if (queryFilters.fromDate) params.append('fromDate', queryFilters.fromDate);
       if (queryFilters.toDate) params.append('toDate', queryFilters.toDate);
       if (queryFilters.groupSearch) params.append('groupSearch', queryFilters.groupSearch);
