@@ -9,6 +9,7 @@ import { COMPANY } from '@tejas96/shared/constants';
 import { ServiceTicketStatus } from '@tejas96/shared/types';
 import { DataSource, Repository } from 'typeorm';
 
+import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import {
   type CreateServiceTicketDto,
@@ -30,6 +31,8 @@ export class ServiceTicketService {
     private readonly dataSource: DataSource,
     @InjectRepository(ProjectEntity)
     private readonly projectRepository: Repository<ProjectEntity>,
+    @InjectRepository(EmployeeProfileEntity)
+    private readonly employeeRepository: Repository<EmployeeProfileEntity>,
   ) {}
 
   // ============================================
@@ -38,6 +41,7 @@ export class ServiceTicketService {
 
   async create(dto: CreateServiceTicketDto, userId: string): Promise<ServiceTicketEntity> {
     await this.assertProjectBelongsToCustomer(dto.projectId, dto.customerId);
+    await this.assertEmployeeExists(dto.assignedToEmployeeId);
 
     return this.dataSource.transaction(async (manager) => {
       const ticketNumber = await this.ticketRepository.generateTicketNumber(COMPANY.code, manager);
@@ -100,6 +104,20 @@ export class ServiceTicketService {
     }
   }
 
+  /**
+   * Without this the assigned_to_employee_id foreign key raises a raw driver
+   * error and Nest returns a bare 500. Checked up front so an unknown id is a
+   * 404 the client can act on.
+   */
+  private async assertEmployeeExists(employeeId?: string | null): Promise<void> {
+    if (!employeeId) return;
+
+    const exists = await this.employeeRepository.countBy({ id: employeeId });
+    if (exists === 0) {
+      throw new NotFoundException(`Employee ${employeeId} not found`);
+    }
+  }
+
   // ============================================
   // READ
   // ============================================
@@ -129,6 +147,7 @@ export class ServiceTicketService {
   ): Promise<ServiceTicketEntity> {
     const ticket = await this.findById(id);
     this.assertNotClosed(ticket);
+    await this.assertEmployeeExists(dto.assignedToEmployeeId);
 
     const assigneeChanged =
       dto.assignedToEmployeeId !== undefined &&

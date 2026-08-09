@@ -5,6 +5,7 @@ import { ServiceTicketController } from './controllers';
 import { ServiceTicketEntity, ServiceTicketStatusHistoryEntity } from './entities';
 import { ServiceTicketRepository } from './repositories';
 import { ServiceTicketService } from './services';
+import { EmployeeProfileEntity } from '../employees/entities/employee-profile.entity';
 import { ProjectEntity } from '../projects/entities/project.entity';
 
 /**
@@ -19,6 +20,7 @@ import { ProjectEntity } from '../projects/entities/project.entity';
       ServiceTicketEntity,
       ServiceTicketStatusHistoryEntity,
       ProjectEntity,
+      EmployeeProfileEntity,
     ]),
   ],
   controllers: [ServiceTicketController],
