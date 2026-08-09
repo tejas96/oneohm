@@ -813,7 +813,6 @@ export class CustomerProfileRepository {
     hasProjects: boolean;
     hasQuotes: boolean;
     hasPayments: boolean;
-    hasServiceRequests: boolean;
     hasLoans: boolean;
     hasSubsidies: boolean;
     hasFeedback: boolean;
@@ -831,9 +830,6 @@ export class CustomerProfileRepository {
     }
     if (row?.hasPayments) {
       reasons.push('Cannot delete: customer has payment records');
-    }
-    if (row?.hasServiceRequests) {
-      reasons.push('Cannot delete: customer has service requests');
     }
     if (row?.hasLoans) {
       reasons.push('Cannot delete: customer has loan applications');
@@ -859,7 +855,6 @@ export class CustomerProfileRepository {
         hasProjects: boolean;
         hasQuotes: boolean;
         hasPayments: boolean;
-        hasServiceRequests: boolean;
         hasLoans: boolean;
         hasSubsidies: boolean;
         hasFeedback: boolean;
@@ -873,7 +868,6 @@ export class CustomerProfileRepository {
         hasProjects: boolean;
         hasQuotes: boolean;
         hasPayments: boolean;
-        hasServiceRequests: boolean;
         hasLoans: boolean;
         hasSubsidies: boolean;
         hasFeedback: boolean;
@@ -926,14 +920,6 @@ export class CustomerProfileRepository {
       )
       .addSelect(
         `EXISTS(
-          SELECT 1 FROM service_requests sr
-          WHERE sr.customer_id = customer.id
-            AND sr.deleted_at IS NULL
-        )`,
-        'hasServiceRequests',
-      )
-      .addSelect(
-        `EXISTS(
           SELECT 1 FROM loan_applications la
           WHERE la.customer_id = customer.id
             AND la.deleted_at IS NULL
@@ -963,7 +949,6 @@ export class CustomerProfileRepository {
         hasProjects: boolean;
         hasQuotes: boolean;
         hasPayments: boolean;
-        hasServiceRequests: boolean;
         hasLoans: boolean;
         hasSubsidies: boolean;
         hasFeedback: boolean;
@@ -975,7 +960,6 @@ export class CustomerProfileRepository {
         hasProjects: row.hasProjects,
         hasQuotes: row.hasQuotes,
         hasPayments: row.hasPayments,
-        hasServiceRequests: row.hasServiceRequests,
         hasLoans: row.hasLoans,
         hasSubsidies: row.hasSubsidies,
         hasFeedback: row.hasFeedback,

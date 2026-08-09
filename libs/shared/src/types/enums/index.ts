@@ -21,7 +21,6 @@ export * from './product.enum';
 export * from './project.enum';
 export * from './quote.enum';
 export * from './security-event.enum';
-export * from './service-maintenance.enum';
 export * from './site-status.enum';
 export * from './user.enum';
 export * from './notification.enum';
