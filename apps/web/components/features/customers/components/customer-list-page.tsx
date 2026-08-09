@@ -1044,8 +1044,7 @@ export function CustomerListPage(): JSX.Element {
    * page-0 reset and URL persistence `urlState.setFilters` already provides.
    */
   const activeSecondaryQuickFilter =
-    urlState.state.filters.needsFollowup === 'true' ||
-    urlState.state.filters.needsFollowup === true
+    urlState.state.filters.needsFollowup === 'true' || urlState.state.filters.needsFollowup === true
       ? 'needs-followup'
       : urlState.state.filters.hasActiveTickets === 'true'
         ? 'active-tickets'

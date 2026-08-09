@@ -126,4 +126,3 @@ export function getCountByPath(counts: NavigationCounts, path: string): number |
 export function getInventoryBadgeCount(counts: NavigationCounts): number {
   return counts.inventory.lowStock + counts.inventory.outOfStock;
 }
-
