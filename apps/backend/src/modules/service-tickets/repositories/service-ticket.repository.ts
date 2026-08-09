@@ -76,6 +76,10 @@ export class ServiceTicketRepository {
       .leftJoinAndSelect('ticket.project', 'project')
       .leftJoinAndSelect('project.property', 'property')
       .leftJoinAndSelect('ticket.assignedToEmployee', 'assignee')
+      // The employee row carries no name — it hangs off the user. Without this
+      // join the mapper falls back to "Unnamed employee" on every list row and
+      // in all three entity tabs, while the detail screen showed the real name.
+      .leftJoinAndSelect('assignee.user', 'assigneeUser')
       .where('ticket.deletedAt IS NULL');
   }
 
@@ -134,7 +138,6 @@ export class ServiceTicketRepository {
       .leftJoinAndSelect('ticket.statusHistory', 'history')
       .leftJoinAndSelect('history.changedByUser', 'historyUser')
       .leftJoinAndSelect('ticket.createdByUser', 'creator')
-      .leftJoinAndSelect('assignee.user', 'assigneeUser')
       .andWhere('ticket.id = :id', { id })
       .orderBy('history.createdAt', 'ASC')
       .getOne();

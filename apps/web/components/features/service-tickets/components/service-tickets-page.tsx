@@ -53,6 +53,21 @@ function ticketDetailHref(id: string): string {
   return buildRoute(ROUTES.SERVICE.DETAIL, { id });
 }
 
+/**
+ * CrmTable's grid has no column gap, so cells sit flush and a long value runs
+ * straight into its neighbour — the project number was colliding with the
+ * priority pill. Applied per column here rather than as a grid gap, which would
+ * reflow the customers and discom tables too.
+ */
+const CELL_GUTTER = { pr: 2 } as const;
+
+/** Truncate with an ellipsis instead of overflowing into the next column. */
+const ellipsisSx = {
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const;
+
 const COLUMNS: CrmColumn<TicketRow>[] = [
   {
     field: 'ticketNumber',
@@ -60,11 +75,13 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
     track: crm['col-ticket-number'],
     sortable: true,
     stopPropagation: true,
+    cellSx: CELL_GUTTER,
     renderCell: (row) => (
       <MuiLink
         component={NextLink}
         href={ticketDetailHref(row.id)}
         underline="hover"
+        title={row.ticketNumber}
         sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}
       >
         {row.ticketNumber}
@@ -76,8 +93,9 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
     header: 'Issue',
     track: crm['col-ticket-title'],
     sortable: true,
+    cellSx: CELL_GUTTER,
     renderCell: (row) => (
-      <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 500 }}>
+      <MUITypography variant="bodyPrimary" noWrap title={row.title} sx={{ fontWeight: 500 }}>
         {row.title}
       </MUITypography>
     ),
@@ -86,9 +104,16 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
     field: 'customerName',
     header: 'Customer',
     track: crm['col-ticket-customer'],
+    cellSx: CELL_GUTTER,
     renderCell: (row) =>
       row.customerName ? (
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          title={row.customerName}
+          sx={{ minWidth: 0 }}
+        >
           <MUIAvatar name={row.customerName} size="sm" sx={{ flexShrink: 0 }} />
           <MUITypography variant="bodyPrimary" noWrap>
             {row.customerName}
@@ -103,12 +128,16 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
     header: 'Project',
     track: crm['col-ticket-project'],
     stopPropagation: true,
+    cellSx: CELL_GUTTER,
     renderCell: (row) => (
       <MuiLink
         component={NextLink}
         href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: row.projectId })}
         underline="hover"
-        sx={{ whiteSpace: 'nowrap' }}
+        // Project name is not in the list payload, so the number is the fullest
+        // label available; the tooltip still helps when the column is narrowed.
+        title={row.projectNumber}
+        sx={{ display: 'block', ...ellipsisSx }}
       >
         {row.projectNumber}
       </MuiLink>
@@ -119,6 +148,7 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
     header: 'Priority',
     track: crm['col-ticket-priority'],
     sortable: true,
+    cellSx: CELL_GUTTER,
     renderCell: (row) => (
       <CrmStatusPill
         label={SERVICE_TICKET_PRIORITY_LABELS[row.priority]}
@@ -132,6 +162,7 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
     header: 'Status',
     track: crm['col-ticket-status'],
     sortable: true,
+    cellSx: CELL_GUTTER,
     renderCell: (row) => (
       <CrmStatusPill
         label={SERVICE_TICKET_STATUS_LABELS[row.status]}
@@ -143,9 +174,16 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
     field: 'assigneeName',
     header: 'Assignee',
     track: crm['col-ticket-assignee'],
+    cellSx: CELL_GUTTER,
     renderCell: (row) =>
       row.assigneeName ? (
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          title={row.assigneeName}
+          sx={{ minWidth: 0 }}
+        >
           <MUIAvatar name={row.assigneeName} size="sm" sx={{ flexShrink: 0 }} />
           <MUITypography variant="bodyPrimary" noWrap>
             {row.assigneeName}
