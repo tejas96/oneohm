@@ -26,6 +26,8 @@ export interface ProjectFilters {
   projectType?: string;
   /** Scopes to one customer — resolved server-side through property.customerId. */
   customerId?: string;
+  /** Projects with (true) or without (false) open or in-progress tickets. */
+  hasActiveTickets?: boolean;
   fromDate?: string;
   toDate?: string;
   startDateFrom?: string;
@@ -77,6 +79,8 @@ export interface ProjectListItem {
   projectType: string;
   status: ProjectStatus;
   priority: ProjectPriority;
+  /** Open or in-progress service tickets. Drives the active-tickets chip. */
+  activeTicketCount: number;
   progressPercentage: number;
   totalTasks?: number;
   completedTasks?: number;
@@ -155,6 +159,8 @@ export function useProjects(
       if (queryFilters.endDateFrom) params.append('endDateFrom', queryFilters.endDateFrom);
       if (queryFilters.endDateTo) params.append('endDateTo', queryFilters.endDateTo);
       if (queryFilters.customerId) params.append('customerId', queryFilters.customerId);
+      if (queryFilters.hasActiveTickets !== undefined)
+        params.append('hasActiveTickets', String(queryFilters.hasActiveTickets));
       if (queryFilters.memberId) params.append('memberId', queryFilters.memberId);
       if (queryFilters.pendingWorkflowStepId)
         params.append('pendingWorkflowStepId', queryFilters.pendingWorkflowStepId);
