@@ -135,6 +135,14 @@ export class CustomerQueryDto {
     example: true,
   })
   @IsOptional()
+  /**
+   * `@Type(() => String)` is load-bearing — see `hasActiveTickets` below.
+   * Without it the global ValidationPipe's `enableImplicitConversion` coerces
+   * the query string with `Boolean('false')`, which is `true`, so
+   * `?hasProperty=false` silently behaved as `?hasProperty=true` and returned
+   * customers that DO have properties.
+   */
+  @Type(() => String)
   @Transform(({ value }: { value: unknown }) => {
     if (value === 'true' || value === true) return true;
     if (value === 'false' || value === false) return false;

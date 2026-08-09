@@ -845,6 +845,7 @@ export class CustomerProfileRepository {
     hasLoans: boolean;
     hasSubsidies: boolean;
     hasFeedback: boolean;
+    hasServiceTickets: boolean;
   }): string[] {
     const reasons: string[] = [];
 
@@ -865,6 +866,9 @@ export class CustomerProfileRepository {
     }
     if (row?.hasSubsidies) {
       reasons.push('Cannot delete: customer has subsidy applications');
+    }
+    if (row?.hasServiceTickets) {
+      reasons.push('Cannot delete: customer has service tickets');
     }
     if (row?.hasFeedback) {
       reasons.push('Cannot delete: customer has feedback records');
@@ -887,6 +891,7 @@ export class CustomerProfileRepository {
         hasLoans: boolean;
         hasSubsidies: boolean;
         hasFeedback: boolean;
+        hasServiceTickets: boolean;
       }
     >
   > {
@@ -900,6 +905,7 @@ export class CustomerProfileRepository {
         hasLoans: boolean;
         hasSubsidies: boolean;
         hasFeedback: boolean;
+        hasServiceTickets: boolean;
       }
     >();
 
@@ -971,6 +977,14 @@ export class CustomerProfileRepository {
         )`,
         'hasFeedback',
       )
+      .addSelect(
+        `EXISTS(
+          SELECT 1 FROM service_tickets st
+          WHERE st.customer_id = customer.id
+            AND st.deleted_at IS NULL
+        )`,
+        'hasServiceTickets',
+      )
       .where('customer.id IN (:...customerIds)', { customerIds })
       .getRawMany<{
         customerId: string;
@@ -981,6 +995,7 @@ export class CustomerProfileRepository {
         hasLoans: boolean;
         hasSubsidies: boolean;
         hasFeedback: boolean;
+        hasServiceTickets: boolean;
       }>();
 
     for (const row of rows) {
@@ -992,6 +1007,7 @@ export class CustomerProfileRepository {
         hasLoans: row.hasLoans,
         hasSubsidies: row.hasSubsidies,
         hasFeedback: row.hasFeedback,
+        hasServiceTickets: row.hasServiceTickets,
       });
     }
 
