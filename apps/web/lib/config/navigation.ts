@@ -100,7 +100,7 @@ export const navigationConfig: NavigationConfig = {
     {
       id: 'service',
       icon: Wrench,
-      label: 'Service & AMC',
+      label: 'Service',
       href: ROUTES.SERVICE.HOME,
       panelKey: 'service',
     },
@@ -435,23 +435,13 @@ export const navigationConfig: NavigationConfig = {
     },
 
     service: {
-      title: 'Service & AMC',
+      title: 'Service',
       sections: [
         {
           title: 'Tickets',
           items: [
             { id: 'all-service', icon: Wrench, label: 'All Tickets', href: ROUTES.SERVICE.HOME },
-            {
-              id: 'open-tickets',
-              icon: Wrench,
-              label: 'Open',
-              href: `${ROUTES.SERVICE.HOME}?status=open`,
-            },
           ],
-        },
-        {
-          title: 'Contracts',
-          items: [{ id: 'amc', icon: FileText, label: 'AMC Contracts', href: ROUTES.SERVICE.AMC }],
         },
       ],
     },

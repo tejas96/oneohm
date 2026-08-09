@@ -55,16 +55,6 @@ export interface InventoryCounts {
   pendingPOs: number;
 }
 
-/** Service-related counts */
-export interface ServiceCounts {
-  /** Open tickets */
-  openTickets: number;
-  /** Urgent/high priority tickets */
-  urgentTickets: number;
-  /** AMC renewals due this month */
-  amcRenewalsDue: number;
-}
-
 /** Finance-related counts */
 export interface FinanceCounts {
   /** Pending invoices */
@@ -89,7 +79,6 @@ export interface NavigationCounts {
   quotes: QuotesCounts;
   projects: ProjectsCounts;
   inventory: InventoryCounts;
-  service: ServiceCounts;
   finance: FinanceCounts;
   tasks: TaskCounts;
   /** Last updated timestamp */
@@ -130,11 +119,6 @@ export const DEFAULT_NAVIGATION_COUNTS: NavigationCounts = {
     lowStock: 0,
     outOfStock: 0,
     pendingPOs: 0,
-  },
-  service: {
-    openTickets: 0,
-    urgentTickets: 0,
-    amcRenewalsDue: 0,
   },
   finance: {
     pendingInvoices: 0,

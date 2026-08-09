@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  ACTIVE_TICKET_STATUSES,
   CustomerSortField,
   CustomerStatus,
   LeadSource,
@@ -634,6 +635,17 @@ export class CustomerProfileRepository {
         'propertyCountRel',
         (qb) => qb.where('propertyCountRel.deletedAt IS NULL'),
       )
+      .loadRelationCountAndMap(
+        'customer.activeTicketCount',
+        'customer.serviceTickets',
+        'activeTicketRel',
+        (countQb) =>
+          countQb
+            .where('activeTicketRel.deletedAt IS NULL')
+            .andWhere('activeTicketRel.status IN (:...activeTicketStatuses)', {
+              activeTicketStatuses: [...ACTIVE_TICKET_STATUSES],
+            }),
+      )
       .leftJoinAndSelect('customer.creator', 'creator')
       .leftJoinAndSelect('customer.assignee', 'assignee')
       .andWhere('customer.deletedAt IS NULL');
@@ -724,6 +736,23 @@ export class CustomerProfileRepository {
       }
 
       applyMatchingPropertyFilter(qb, query);
+    }
+
+    // Same predicate as the activeTicketCount mapping above, so the chip a row
+    // shows and this filter can never disagree about what "active" means.
+    if (query.hasActiveTickets !== undefined) {
+      const activeTicketSubQuery = `
+        SELECT 1 FROM service_tickets st
+        WHERE st.customer_id = customer.id
+          AND st.status IN (:...activeTicketFilterStatuses)
+          AND st.deleted_at IS NULL
+      `;
+      qb.andWhere(
+        query.hasActiveTickets
+          ? `EXISTS (${activeTicketSubQuery})`
+          : `NOT EXISTS (${activeTicketSubQuery})`,
+        { activeTicketFilterStatuses: [...ACTIVE_TICKET_STATUSES] },
+      );
     }
 
     if (query.fromDate) {
@@ -842,10 +871,10 @@ export class CustomerProfileRepository {
     hasProjects: boolean;
     hasQuotes: boolean;
     hasPayments: boolean;
-    hasServiceRequests: boolean;
     hasLoans: boolean;
     hasSubsidies: boolean;
     hasFeedback: boolean;
+    hasServiceTickets: boolean;
   }): string[] {
     const reasons: string[] = [];
 
@@ -861,14 +890,14 @@ export class CustomerProfileRepository {
     if (row?.hasPayments) {
       reasons.push('Cannot delete: customer has payment records');
     }
-    if (row?.hasServiceRequests) {
-      reasons.push('Cannot delete: customer has service requests');
-    }
     if (row?.hasLoans) {
       reasons.push('Cannot delete: customer has loan applications');
     }
     if (row?.hasSubsidies) {
       reasons.push('Cannot delete: customer has subsidy applications');
+    }
+    if (row?.hasServiceTickets) {
+      reasons.push('Cannot delete: customer has service tickets');
     }
     if (row?.hasFeedback) {
       reasons.push('Cannot delete: customer has feedback records');
@@ -888,10 +917,10 @@ export class CustomerProfileRepository {
         hasProjects: boolean;
         hasQuotes: boolean;
         hasPayments: boolean;
-        hasServiceRequests: boolean;
         hasLoans: boolean;
         hasSubsidies: boolean;
         hasFeedback: boolean;
+        hasServiceTickets: boolean;
       }
     >
   > {
@@ -902,10 +931,10 @@ export class CustomerProfileRepository {
         hasProjects: boolean;
         hasQuotes: boolean;
         hasPayments: boolean;
-        hasServiceRequests: boolean;
         hasLoans: boolean;
         hasSubsidies: boolean;
         hasFeedback: boolean;
+        hasServiceTickets: boolean;
       }
     >();
 
@@ -955,14 +984,6 @@ export class CustomerProfileRepository {
       )
       .addSelect(
         `EXISTS(
-          SELECT 1 FROM service_requests sr
-          WHERE sr.customer_id = customer.id
-            AND sr.deleted_at IS NULL
-        )`,
-        'hasServiceRequests',
-      )
-      .addSelect(
-        `EXISTS(
           SELECT 1 FROM loan_applications la
           WHERE la.customer_id = customer.id
             AND la.deleted_at IS NULL
@@ -985,6 +1006,14 @@ export class CustomerProfileRepository {
         )`,
         'hasFeedback',
       )
+      .addSelect(
+        `EXISTS(
+          SELECT 1 FROM service_tickets st
+          WHERE st.customer_id = customer.id
+            AND st.deleted_at IS NULL
+        )`,
+        'hasServiceTickets',
+      )
       .where('customer.id IN (:...customerIds)', { customerIds })
       .getRawMany<{
         customerId: string;
@@ -992,10 +1021,10 @@ export class CustomerProfileRepository {
         hasProjects: boolean;
         hasQuotes: boolean;
         hasPayments: boolean;
-        hasServiceRequests: boolean;
         hasLoans: boolean;
         hasSubsidies: boolean;
         hasFeedback: boolean;
+        hasServiceTickets: boolean;
       }>();
 
     for (const row of rows) {
@@ -1004,10 +1033,10 @@ export class CustomerProfileRepository {
         hasProjects: row.hasProjects,
         hasQuotes: row.hasQuotes,
         hasPayments: row.hasPayments,
-        hasServiceRequests: row.hasServiceRequests,
         hasLoans: row.hasLoans,
         hasSubsidies: row.hasSubsidies,
         hasFeedback: row.hasFeedback,
+        hasServiceTickets: row.hasServiceTickets,
       });
     }
 

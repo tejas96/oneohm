@@ -382,6 +382,23 @@ const root = {
     'col-discom-actions': '44px',
     'grid-min-width-discom': '1360px',
     'toolbar-search-width-discom': '250px',
+    // Service tickets grid (design min-width 1240px).
+    // Ticket numbers are `TKT-ONEOHM_EPC-2026-0001` — 24 characters, wider than
+    // any other code in the app, so this track is sized to hold one unclipped.
+    'col-ticket-number': '224px',
+    'col-ticket-title': 'minmax(220px,1.8fr)',
+    'col-ticket-customer': 'minmax(160px,1.2fr)',
+    // Same width as the ticket number: both hold a 24-char code
+    // (PRJ-ONEOHM_EPC-2026-0220), and at 180px it collided with Priority.
+    'col-ticket-project': '224px',
+    'col-ticket-priority': '104px',
+    'col-ticket-status': '116px',
+    'col-ticket-assignee': 'minmax(130px,1fr)',
+    'col-ticket-created': '104px',
+    // Sum of the ticket columns' minimum tracks (224+220+160+224+104+116+130+104
+    // = 1282) plus headroom, so the grid scrolls rather than squeezing the
+    // flexible columns below their minmax floors.
+    'grid-min-width-ticket': '1320px',
     'grid-min-width': '1280px',
     'row-gutter': '16px',
     'head-height': '40px',

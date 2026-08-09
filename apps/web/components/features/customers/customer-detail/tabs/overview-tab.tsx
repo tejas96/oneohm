@@ -3,7 +3,6 @@
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
-import SupportAgentOutlinedIcon from '@mui/icons-material/SupportAgentOutlined';
 import {
   Box,
   Button,
@@ -12,12 +11,11 @@ import {
   Chip,
   Divider,
   Grid,
-  Link as MuiLink,
   Skeleton,
   Stack,
   Typography,
 } from '@mui/material';
-import { FollowupStatus, ServiceRequestStatus } from '@tejas96/shared/types';
+import { FollowupStatus } from '@tejas96/shared/types';
 import { type JSX, useMemo, useState } from 'react';
 
 import { LEAD_SOURCE_LABELS, type CustomerDetailTab } from '../../constants';
@@ -26,7 +24,6 @@ import {
   type CustomerPropertyResponse,
   useAssignCustomer,
   useCustomerFollowups,
-  useCustomerServiceRequests,
 } from '../../hooks';
 import { isTabActive } from '../utils';
 
@@ -36,13 +33,6 @@ import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { MUIUserAssigneeSelector } from '@/components/ui';
 import { useOrgCustomersAr } from '@/lib/hooks/resources';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
-
-const OPEN_SERVICE_STATUSES: ServiceRequestStatus[] = [
-  ServiceRequestStatus.OPEN,
-  ServiceRequestStatus.ASSIGNED,
-  ServiceRequestStatus.IN_PROGRESS,
-  ServiceRequestStatus.ON_HOLD,
-];
 
 export interface OverviewTabProps {
   customer: Customer;
@@ -311,16 +301,6 @@ export function OverviewTab({
   });
   const pendingFollowups = followupsData?.data ?? [];
 
-  const { data: serviceRequests, isLoading: serviceLoading } = useCustomerServiceRequests(
-    customerId,
-    { enabled: isOverviewActive },
-  );
-  const openTickets = useMemo(
-    () =>
-      (serviceRequests ?? []).filter((request) => OPEN_SERVICE_STATUSES.includes(request.status)),
-    [serviceRequests],
-  );
-
   return (
     <Box sx={{ p: 2 }}>
       <Grid container spacing={2}>
@@ -366,7 +346,8 @@ export function OverviewTab({
             </SectionCard>
 
             <Grid container spacing={2}>
-              <Grid size={{ xs: 12, lg: 6 }}>
+              {/* Full width since the service tickets card that shared this row was removed. */}
+              <Grid size={{ xs: 12 }}>
                 <SectionCard
                   title="Upcoming Follow-ups"
                   action={
@@ -406,55 +387,6 @@ export function OverviewTab({
                       <Button size="small" onClick={() => onTabChange('followups')}>
                         View all follow-ups
                       </Button>
-                    </Stack>
-                  )}
-                </SectionCard>
-              </Grid>
-
-              <Grid size={{ xs: 12, lg: 6 }}>
-                <SectionCard
-                  title="Open Service Tickets"
-                  action={
-                    <Button size="small" onClick={() => onTabChange('service')}>
-                      View service
-                    </Button>
-                  }
-                >
-                  {serviceLoading ? (
-                    <Stack spacing={1}>
-                      <Skeleton height={36} />
-                      <Skeleton height={36} />
-                    </Stack>
-                  ) : openTickets.length === 0 ? (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <SupportAgentOutlinedIcon fontSize="small" color="disabled" />
-                      <Typography variant="body2" color="text.secondary">
-                        No open service tickets.
-                      </Typography>
-                    </Stack>
-                  ) : (
-                    <Stack spacing={1} divider={<Divider flexItem />}>
-                      {openTickets.slice(0, 5).map((ticket) => (
-                        <Box key={ticket.id}>
-                          <Typography variant="body2" fontWeight={500}>
-                            {ticket.issueTitle}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {ticket.requestNumber} · {toTitleLabel(ticket.status)} ·{' '}
-                            {toTitleLabel(ticket.priority)}
-                          </Typography>
-                        </Box>
-                      ))}
-                      {openTickets.length > 5 && (
-                        <MuiLink
-                          component="button"
-                          variant="body2"
-                          onClick={() => onTabChange('service')}
-                          sx={{ textAlign: 'left' }}
-                        >
-                          +{openTickets.length - 5} more open tickets
-                        </MuiLink>
-                      )}
                     </Stack>
                   )}
                 </SectionCard>

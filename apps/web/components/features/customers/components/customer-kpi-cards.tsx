@@ -5,7 +5,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import { Box, Skeleton } from '@mui/material';
 import { type JSX, useMemo } from 'react';
 
-import { useCustomerOverviewStats } from '../hooks/use-customers';
+import { useCustomerOverviewStats, useCustomers } from '../hooks/use-customers';
 
 import { color, crm, radius, shadow } from '@/lib/theme/tokens';
 import { formatCurrencyCompact, formatNumber } from '@/lib/utils';
@@ -104,6 +104,16 @@ function StatCard({ label, value, delta, deltaDir, loading }: StatCardProps): JS
 export function CustomerKpiCards(): JSX.Element {
   const { data, isLoading } = useCustomerOverviewStats();
 
+  /**
+   * Counts CUSTOMERS with at least one active ticket, not tickets. Sourced from
+   * the same filtered query the "Has active tickets" chip applies, so the tile
+   * and the filtered row count always agree.
+   */
+  const { data: activeTicketCustomers, isLoading: ticketsLoading } = useCustomers({
+    hasActiveTickets: true,
+    limit: 1,
+  });
+
   const cards = useMemo<Omit<StatCardProps, 'loading'>[]>(() => {
     const stats = data;
     return [
@@ -131,20 +141,38 @@ export function CustomerKpiCards(): JSX.Element {
         delta: `${formatNumber(stats?.awaitingAgeing ?? 0)} ageing`,
         deltaDir: 'down',
       },
+      {
+        label: 'Active tickets',
+        value: formatNumber(activeTicketCustomers?.meta?.total ?? 0),
+        delta: 'customers affected',
+        // The number rising is bad news, matching the convention on StatCardProps.
+        deltaDir: 'down',
+      },
     ];
-  }, [data]);
+  }, [data, activeTicketCustomers?.meta?.total]);
 
   return (
     <Box
       sx={{
+        // Five fixed cards, laid out explicitly. With auto-fit at
+        // `kpi-min-width` the fifth wrapped onto its own row once the side
+        // panel is open, reading as a separate, unrelated card.
         display: 'grid',
-        gridTemplateColumns: `repeat(auto-fit, minmax(${crm['kpi-min-width']}, 1fr))`,
+        gridTemplateColumns: {
+          xs: 'repeat(2, 1fr)',
+          sm: 'repeat(3, 1fr)',
+          lg: 'repeat(5, 1fr)',
+        },
         gap: 1.5,
         flexShrink: 0,
       }}
     >
       {cards.map((card) => (
-        <StatCard key={card.label} {...card} loading={isLoading} />
+        <StatCard
+          key={card.label}
+          {...card}
+          loading={card.label === 'Active tickets' ? ticketsLoading : isLoading}
+        />
       ))}
     </Box>
   );

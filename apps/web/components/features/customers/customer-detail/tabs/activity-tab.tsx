@@ -8,11 +8,14 @@ import {
   useCustomerFollowups,
   useCustomerProjects,
   useCustomerQuotes,
-  useCustomerServiceRequests,
 } from '../../hooks';
 import { TabSkeleton } from '../tab-skeleton';
 
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
+import {
+  SERVICE_TICKET_STATUS_LABELS,
+  useServiceTickets,
+} from '@/components/features/service-tickets';
 import { useOrgReceipts } from '@/lib/hooks/resources';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
 
@@ -60,11 +63,11 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
     { customerId, page: 1, limit: 20 },
     { enabled },
   );
-  const { data: serviceRequests, isLoading: serviceLoading } = useCustomerServiceRequests(
-    customerId,
-    { enabled },
-  );
   const { data: projects } = useCustomerProjects(customerId, { enabled });
+  const { data: ticketData, isLoading: ticketsLoading } = useServiceTickets(
+    { customerId, limit: 50 },
+    enabled,
+  );
 
   const propertyMap = useMemo(
     () => new Map(properties.map((property) => [property.id, property])),
@@ -123,16 +126,14 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
       });
     }
 
-    for (const request of serviceRequests ?? []) {
-      const project = projectMap.get(request.projectId);
-      const propertyLabel = project ? getPropertyDisplayName(project.property) : '—';
+    for (const ticket of ticketData?.items ?? []) {
       items.push({
-        id: `service-${request.id}`,
+        id: `service-${ticket.id}`,
         kind: 'service',
-        title: request.issueTitle,
-        subtitle: `${request.requestNumber} · ${toTitleLabel(request.status)} · ${propertyLabel}`,
-        date: request.requestDate,
-        timestamp: new Date(request.requestDate).getTime(),
+        title: ticket.title,
+        subtitle: `${ticket.ticketNumber} · ${SERVICE_TICKET_STATUS_LABELS[ticket.status]} · ${ticket.projectNumber}`,
+        date: ticket.createdAt,
+        timestamp: new Date(ticket.createdAt).getTime(),
       });
     }
 
@@ -141,12 +142,12 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
     followupsData?.data,
     quotesData?.data,
     receiptsData?.data,
-    serviceRequests,
+    ticketData?.items,
     propertyMap,
     projectMap,
   ]);
 
-  const isLoading = followupsLoading || quotesLoading || receiptsLoading || serviceLoading;
+  const isLoading = followupsLoading || quotesLoading || receiptsLoading || ticketsLoading;
 
   if (isLoading && events.length === 0) {
     return <TabSkeleton />;
@@ -159,7 +160,7 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
           No activity yet
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Follow-ups, quotes, receipts, and service requests will appear here.
+          Follow-ups, quotes, receipts and service tickets will appear here.
         </Typography>
       </Box>
     );

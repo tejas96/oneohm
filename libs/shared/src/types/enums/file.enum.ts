@@ -4,5 +4,6 @@ export enum FileCategory {
   PROFILE = 'profile',
   QUOTE = 'quote',
   PROJECT = 'project',
+  SERVICE = 'service',
   OTHER = 'other',
 }

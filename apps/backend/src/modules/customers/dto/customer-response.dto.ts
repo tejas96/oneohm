@@ -184,6 +184,15 @@ export class CustomerResponseDto {
   propertyCount!: number;
 
   /**
+   * Open or in-progress service tickets. Drives the active-tickets chip on the
+   * customers list; 0 on single-customer reads, which do not compute it.
+   */
+  @ApiProperty({ description: 'Number of open or in-progress service tickets' })
+  @Expose()
+  @Transform(({ obj }) => obj.activeTicketCount ?? 0)
+  activeTicketCount!: number;
+
+  /**
    * Present on list responses; omitted on single-customer reads, which have no
    * portfolio column to fill and would pay for the aggregate for nothing.
    */

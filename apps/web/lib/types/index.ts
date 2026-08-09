@@ -42,7 +42,6 @@ export type {
   QuotesCounts,
   ProjectsCounts,
   InventoryCounts,
-  ServiceCounts,
   FinanceCounts,
   TaskCounts,
   NavigationCounts,

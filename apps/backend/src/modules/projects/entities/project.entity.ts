@@ -21,6 +21,7 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
 import { WarehouseEntity } from '../../inventory/entities/warehouse.entity';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
+import { ServiceTicketEntity } from '../../service-tickets/entities/service-ticket.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -146,6 +147,19 @@ export class ProjectEntity extends BaseEntity {
 
   @OneToMany(() => ProjectMaterialEntity, (material) => material.project)
   materials!: ProjectMaterialEntity[];
+
+  /**
+   * Declared purely so the list query can `loadRelationCountAndMap` the active
+   * ticket count onto `activeTicketCount`. Never eagerly selected.
+   */
+  @OneToMany(() => ServiceTicketEntity, (ticket) => ticket.project)
+  serviceTickets?: ServiceTicketEntity[];
+
+  /**
+   * Open or in-progress tickets. Not a column — populated by
+   * `loadRelationCountAndMap` on list queries only.
+   */
+  activeTicketCount?: number;
 
   @OneToMany(() => ProjectTeamMemberEntity, (teamMember) => teamMember.project)
   teamMembers!: ProjectTeamMemberEntity[];

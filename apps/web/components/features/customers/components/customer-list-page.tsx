@@ -63,6 +63,7 @@ import {
   getCustomerDeleteBlockReasons,
   ORG_ADMIN_ROLES,
 } from '@/components/features/properties/utils/delete-eligibility';
+import { ActiveTicketsChip } from '@/components/features/service-tickets';
 import type { ColumnConfig } from '@/components/shared/advanced-table';
 import {
   CRM_TONE_FILL,
@@ -200,6 +201,8 @@ function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilte
             : filters.name === 'false' || filters.name === false
               ? false
               : undefined,
+    hasActiveTickets:
+      filters.hasActiveTickets === 'true' || filters.hasActiveTickets === true ? true : undefined,
     createdBy:
       typeof filters.createdBy === 'string' && filters.createdBy ? filters.createdBy : undefined,
     assigneeId:
@@ -507,6 +510,7 @@ function CustomerCell({ row }: { row: Customer }): JSX.Element {
             {groupLabel}
           </Box>
         ) : null}
+        <ActiveTicketsChip count={row.activeTicketCount} />
       </Box>
     </MuiLink>
   );
@@ -784,6 +788,17 @@ const FILTER_COLUMNS: ColumnConfig<Customer>[] = [
     filterOptions: STATUS_OPTIONS,
   },
   {
+    // Declared so the active-filter chip reads "Service tickets: Has active
+    // tickets" rather than a bare "true", and so the filter is reachable from
+    // the popover as well as the quick-filter chip — the same dual path status
+    // already has.
+    field: 'hasActiveTickets',
+    headerName: 'Service tickets',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [{ label: 'Has active tickets', value: 'true' }],
+  },
+  {
     // Options injected at render time from useCustomerGroups().
     field: 'groupSearch',
     headerName: 'Group',
@@ -990,12 +1005,21 @@ export function CustomerListPage(): JSX.Element {
   // page by CustomerKpiCards, so TanStack Query dedupes the request.
   const { data: overviewStats } = useCustomerOverviewStats();
 
+  /** Count comes from the same filtered query the chip applies, so the two agree. */
+  const { data: activeTicketCustomers } = useCustomers({ hasActiveTickets: true, limit: 1 });
+
   /**
-   * A second chip row CrmTable already supports and nothing used until now.
-   * Selecting it turns the main CRM screen into a worklist.
+   * The secondary chip row holds the worklist views — "who needs my attention"
+   * — as opposed to the status row above, which describes what a customer *is*.
+   *
+   * Both worklists share this one row because CrmTable tracks a single
+   * `activeSecondaryQuickFilter`, so they are mutually exclusive by
+   * construction. That is the right semantic anyway: they are two different
+   * worklists, and the leading "All customers" chip is how you leave either.
    */
-  const needsFollowupFilters = useMemo<CrmQuickFilter[]>(
+  const secondaryQuickFilters = useMemo<CrmQuickFilter[]>(
     () => [
+      { key: '', label: 'All customers', tone: 'neutral', dot: false },
       {
         key: 'needs-followup',
         label: 'Needs follow-up',
@@ -1003,26 +1027,38 @@ export function CustomerListPage(): JSX.Element {
         tone: 'danger',
         dot: true,
       },
+      {
+        key: 'active-tickets',
+        label: 'Has active tickets',
+        count: activeTicketCustomers?.meta?.total,
+        tone: 'warning',
+        dot: true,
+      },
     ],
-    [overviewStats?.needsFollowup],
+    [overviewStats?.needsFollowup, activeTicketCustomers?.meta?.total],
   );
 
   /**
-   * `needs-followup` is a shortcut into the same URL filter state as every
-   * other filter on this page — not a parallel piece of React state — so
-   * toggling it inherits the page-0 reset and URL persistence that
-   * `urlState.setFilters` already provides.
+   * Both chips are shortcuts into the same URL filter state as every other
+   * filter on this page — not parallel React state — so they inherit the
+   * page-0 reset and URL persistence `urlState.setFilters` already provides.
    */
-  const needsFollowupActive =
-    urlState.state.filters.needsFollowup === 'true' ||
-    urlState.state.filters.needsFollowup === true;
+  const activeSecondaryQuickFilter =
+    urlState.state.filters.needsFollowup === 'true' || urlState.state.filters.needsFollowup === true
+      ? 'needs-followup'
+      : urlState.state.filters.hasActiveTickets === 'true'
+        ? 'active-tickets'
+        : '';
 
   const handleSecondaryQuickFilterChange = useCallback(
     (key: string) => {
       const next = { ...filtersRef.current };
+      // Selecting either worklist clears the other — one row, one selection.
+      delete next.needsFollowup;
+      delete next.hasActiveTickets;
       if (key === 'needs-followup') next.needsFollowup = 'true';
-      else delete next.needsFollowup;
-      urlState.setFilters(reconcileContradictoryCustomerFilters(next, 'needsFollowup'));
+      else if (key === 'active-tickets') next.hasActiveTickets = 'true';
+      urlState.setFilters(reconcileContradictoryCustomerFilters(next, key || undefined));
     },
     [urlState.setFilters],
   );
@@ -1458,8 +1494,8 @@ export function CustomerListPage(): JSX.Element {
         quickFilters={quickFilters}
         activeQuickFilter={activeStatusFilter}
         onQuickFilterChange={handleQuickFilterChange}
-        secondaryQuickFilters={needsFollowupFilters}
-        activeSecondaryQuickFilter={needsFollowupActive ? 'needs-followup' : ''}
+        secondaryQuickFilters={secondaryQuickFilters}
+        activeSecondaryQuickFilter={activeSecondaryQuickFilter}
         onSecondaryQuickFilterChange={handleSecondaryQuickFilterChange}
         filterColumns={filterColumns}
         filterModel={urlState.state.filters}

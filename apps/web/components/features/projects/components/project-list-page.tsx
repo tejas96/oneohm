@@ -40,6 +40,7 @@ import { type ProjectFilters, type ProjectListItem, useEmployees, useProjects } 
 import { ProjectCard } from './project-card';
 import { TeamAvatarGroup } from './team-avatar-group';
 
+import { ActiveTicketsChip } from '@/components/features/service-tickets';
 import {
   AdvancedTable,
   type BulkAction,
@@ -170,6 +171,11 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
     result.address = address;
   }
 
+  // Only the two explicit strings are meaningful; anything else means "don't filter".
+  const hasActiveTickets = raw.hasActiveTickets;
+  if (hasActiveTickets === 'true') result.hasActiveTickets = true;
+  else if (hasActiveTickets === 'false') result.hasActiveTickets = false;
+
   const createdBy = raw.createdBy;
   if (createdBy && typeof createdBy === 'string' && createdBy !== 'all') {
     result.createdBy = createdBy;
@@ -239,7 +245,15 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
           >
             {project.projectNumber}
           </MuiLink>
-          <Stack direction="row" spacing={0.5} alignItems="center">
+          {/* Wraps: status + priority + the ticket chip overflow 210px on one line. */}
+          <Stack
+            direction="row"
+            spacing={0.5}
+            rowGap={0.5}
+            alignItems="center"
+            flexWrap="wrap"
+            useFlexGap
+          >
             <MUIStatusChip
               label={PROJECT_STATUS_LABELS[project.status] ?? toTitleLabel(project.status)}
               colorSeed={project.status}
@@ -248,6 +262,8 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
               label={PROJECT_PRIORITY_LABELS[project.priority] ?? toTitleLabel(project.priority)}
               colorSeed={project.priority}
             />
+            {/* Same component the customers list renders — do not restyle here. */}
+            <ActiveTicketsChip count={project.activeTicketCount} />
           </Stack>
         </Box>
       );
@@ -563,6 +579,24 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
     defaultHidden: true,
     width: 150,
     renderCell: (): JSX.Element => <></>,
+  },
+  {
+    // This grid is AdvancedTable, which has no quick-filter chip row, so the
+    // ticket filter lives in the filter panel. Hidden as a column because the
+    // chip already rides along in the project cell.
+    field: 'hasActiveTickets',
+    headerName: 'Service Tickets',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: [
+      { label: 'Has active tickets', value: 'true' },
+      { label: 'No active tickets', value: 'false' },
+    ],
+    defaultHidden: true,
+    width: 150,
+    renderCell: ({ row }): JSX.Element => (
+      <ActiveTicketsChip count={(row as ProjectListItem).activeTicketCount} />
+    ),
   },
   {
     field: 'payment',

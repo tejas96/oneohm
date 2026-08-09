@@ -37,7 +37,7 @@ import { QuotesModule } from './modules/quotes/quotes.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { SavedViewsModule } from './modules/saved-views/saved-views.module';
 import { SecurityEventsModule } from './modules/security-events/security-events.module';
-import { ServiceMaintenanceModule } from './modules/service-maintenance/service-maintenance.module';
+import { ServiceTicketsModule } from './modules/service-tickets/service-tickets.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -89,8 +89,8 @@ import { UsersModule } from './modules/users/users.module';
     CommentsModule,
     DocumentsModule,
     IntegrationsModule,
-    ServiceMaintenanceModule,
     CustomerFeedbackModule,
+    ServiceTicketsModule,
     LoanFinanceModule,
     ComplianceModule,
     AuditModule,

@@ -142,7 +142,6 @@ export const ROUTES = {
   // Service
   SERVICE: {
     HOME: '/service',
-    AMC: '/service/amc',
     DETAIL: '/service/[id]',
   },
 
@@ -263,7 +262,7 @@ export interface RouteParamTypes {
     filter?: string;
   };
   '/inventory': { filter?: 'low-stock' };
-  '/service': { status?: 'open' | 'closed' };
+  '/service': { status?: 'open' | 'in_progress' | 'resolved' | 'closed' };
   '/onboarding/new': { customerId?: string };
 }
 
@@ -447,7 +446,6 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
 
   // Service routes
   [ROUTES.SERVICE.HOME]: 'service',
-  [ROUTES.SERVICE.AMC]: 'service',
 
   // Help routes
   [ROUTES.HELP.HOME]: 'help',

@@ -23,6 +23,7 @@ import { useProjectReports } from '../../hooks/use-project-reports';
 
 import { ProjectAllocationsTab } from '@/components/features/inventory';
 import { ProjectMoneyTab } from '@/components/features/ledger/project-money-tab';
+import { EntityServiceTicketsTab } from '@/components/features/service-tickets';
 import { Alert } from '@/components/shared/alerts/alert';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -225,6 +226,15 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
 
         <Box sx={{ display: activeTab === 'surveys' ? 'block' : 'none' }}>
           <ProjectSurveysTab propertyId={project.propertyId} />
+        </Box>
+
+        <Box sx={{ display: activeTab === 'service' ? 'block' : 'none' }}>
+          <EntityServiceTicketsTab
+            scope="project"
+            id={projectId}
+            customerId={project.property?.customerId}
+            enabled={activeTab === 'service'}
+          />
         </Box>
       </Box>
 

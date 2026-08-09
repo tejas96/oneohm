@@ -2,6 +2,7 @@
 
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
+import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
@@ -30,6 +31,7 @@ const TAB_ICONS: Record<ProjectDetailTab, React.ReactElement> = {
   allocations: <AssignmentTurnedInOutlinedIcon />,
   reports: <AssessmentOutlinedIcon />,
   surveys: <MapOutlinedIcon />,
+  service: <BuildOutlinedIcon />,
 };
 
 export const ProjectDetailTabs = React.memo(

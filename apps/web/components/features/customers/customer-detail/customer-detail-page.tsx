@@ -78,12 +78,13 @@ const FollowupsTab = dynamic(() => import('./tabs/followups-tab').then((m) => m.
 const FinanceTab = dynamic(() => import('./tabs/finance-tab').then((m) => m.FinanceTab), {
   loading: () => <TabSkeleton />,
 });
-const ServiceTab = dynamic(() => import('./tabs/service-tab').then((m) => m.ServiceTab), {
-  loading: () => <TabSkeleton />,
-});
 const ActivityTab = dynamic(() => import('./tabs/activity-tab').then((m) => m.ActivityTab), {
   loading: () => <TabSkeleton />,
 });
+const ServiceTicketsTab = dynamic(
+  () => import('@/components/features/service-tickets').then((m) => m.EntityServiceTicketsTab),
+  { loading: () => <TabSkeleton />, ssr: false },
+);
 
 const TAB_MODULE_PRELOADERS: Record<CustomerDetailTab, () => Promise<unknown>> = {
   overview: () => import('./tabs/overview-tab'),
@@ -93,7 +94,7 @@ const TAB_MODULE_PRELOADERS: Record<CustomerDetailTab, () => Promise<unknown>> =
   documents: () => import('./tabs/documents-tab'),
   followups: () => import('./tabs/followups-tab'),
   finance: () => import('./tabs/finance-tab'),
-  service: () => import('./tabs/service-tab'),
+  service: () => import('@/components/features/service-tickets'),
   activity: () => import('./tabs/activity-tab'),
 };
 
@@ -490,7 +491,11 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
               />
             )}
             {activeTab === 'service' && (
-              <ServiceTab customerId={customerId} enabled={isTabEnabled('service')} />
+              <ServiceTicketsTab
+                scope="customer"
+                id={customerId}
+                enabled={isTabEnabled('service')}
+              />
             )}
             {activeTab === 'activity' && (
               <ActivityTab
