@@ -288,8 +288,8 @@ export function ServiceTicketFormDialog({
               {customerHasNoProjects && (
                 <Alert severity="info" sx={{ mt: 1 }}>
                   This customer has no project yet, and a service ticket has to be raised against
-                  one. Create the project first, or log a <strong>Follow-up</strong> on the
-                  customer instead if this is a pre-installation query.
+                  one. Create the project first, or log a <strong>Follow-up</strong> on the customer
+                  instead if this is a pre-installation query.
                 </Alert>
               )}
             </Box>
