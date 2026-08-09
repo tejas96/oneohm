@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, Stack } from '@mui/material';
+import { Alert, Box, Button, Stack } from '@mui/material';
 import { ServiceTicketPriority, type ServiceTicketPhoto } from '@tejas96/shared/types';
 import { type JSX, useEffect, useMemo, useState } from 'react';
 
@@ -142,6 +142,13 @@ export function ServiceTicketFormDialog({
     [employees],
   );
 
+  /**
+   * True only once the projects query has settled — otherwise the warning
+   * flashes for a moment on every customer while their projects load.
+   */
+  const customerHasNoProjects =
+    Boolean(customerId) && !projectLocked && !projectsLoading && projectOptions.length === 0;
+
   const selectedCustomer = useMemo(
     () => customerOptions.find((option) => option.value === customerId) ?? null,
     [customerOptions, customerId],
@@ -164,7 +171,11 @@ export function ServiceTicketFormDialog({
     if (title.length > 255) next.title = 'Title must be 255 characters or fewer';
     if (!description.trim()) next.description = 'Description is required';
     if (!customerId) next.customerId = 'Customer is required';
-    if (!projectId) next.projectId = 'Project is required';
+    if (!projectId) {
+      next.projectId = customerHasNoProjects
+        ? 'This customer has no project to raise a ticket against'
+        : 'Project is required';
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -250,20 +261,38 @@ export function ServiceTicketFormDialog({
           )}
 
           {!projectLocked && (
-            <MUIInput
-              mode="autocomplete"
-              fieldLabel="Project"
-              required
-              options={projectOptions}
-              value={selectedProject}
-              onChange={(next) => setProjectId((next as Option | null)?.value ?? '')}
-              loading={projectsLoading}
-              disabled={!customerId}
-              error={errors.projectId}
-              textFieldProps={{
-                placeholder: customerId ? 'Select a project' : 'Choose a customer first',
-              }}
-            />
+            <Box>
+              <MUIInput
+                mode="autocomplete"
+                fieldLabel="Project"
+                required
+                options={projectOptions}
+                value={selectedProject}
+                onChange={(next) => setProjectId((next as Option | null)?.value ?? '')}
+                loading={projectsLoading}
+                disabled={!customerId || customerHasNoProjects}
+                error={errors.projectId}
+                noOptionsText="This customer has no project yet"
+                textFieldProps={{
+                  placeholder: customerId ? 'Select a project' : 'Choose a customer first',
+                }}
+              />
+
+              {/*
+                A service ticket is raised against an installation, so it needs a
+                project. Without this the field just said "No options" once you
+                opened it — a dead end with no way forward. Roughly four in five
+                customers have no project yet, so this is the common case, not
+                the edge one.
+              */}
+              {customerHasNoProjects && (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  This customer has no project yet, and a service ticket has to be raised against
+                  one. Create the project first, or log a <strong>Follow-up</strong> on the
+                  customer instead if this is a pre-installation query.
+                </Alert>
+              )}
+            </Box>
           )}
 
           <MUISelect
