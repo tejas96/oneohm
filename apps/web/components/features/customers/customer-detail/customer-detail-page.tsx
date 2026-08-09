@@ -81,6 +81,10 @@ const FinanceTab = dynamic(() => import('./tabs/finance-tab').then((m) => m.Fina
 const ActivityTab = dynamic(() => import('./tabs/activity-tab').then((m) => m.ActivityTab), {
   loading: () => <TabSkeleton />,
 });
+const ServiceTicketsTab = dynamic(
+  () => import('@/components/features/service-tickets').then((m) => m.EntityServiceTicketsTab),
+  { loading: () => <TabSkeleton />, ssr: false },
+);
 
 const TAB_MODULE_PRELOADERS: Record<CustomerDetailTab, () => Promise<unknown>> = {
   overview: () => import('./tabs/overview-tab'),
@@ -90,6 +94,7 @@ const TAB_MODULE_PRELOADERS: Record<CustomerDetailTab, () => Promise<unknown>> =
   documents: () => import('./tabs/documents-tab'),
   followups: () => import('./tabs/followups-tab'),
   finance: () => import('./tabs/finance-tab'),
+  service: () => import('@/components/features/service-tickets'),
   activity: () => import('./tabs/activity-tab'),
 };
 
@@ -483,6 +488,13 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 customerId={customerId}
                 customerName={customerName}
                 enabled={isTabEnabled('finance')}
+              />
+            )}
+            {activeTab === 'service' && (
+              <ServiceTicketsTab
+                scope="customer"
+                id={customerId}
+                enabled={isTabEnabled('service')}
               />
             )}
             {activeTab === 'activity' && (

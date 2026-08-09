@@ -99,6 +99,10 @@ const FollowupsTab = dynamic(() => import('./tabs/followups-tab').then((m) => m.
 const ActivityTab = dynamic(() => import('./tabs/activity-tab').then((m) => m.ActivityTab), {
   loading: () => <TabSkeleton />,
 });
+const ServiceTicketsTab = dynamic(
+  () => import('@/components/features/service-tickets').then((m) => m.EntityServiceTicketsTab),
+  { loading: () => <TabSkeleton />, ssr: false },
+);
 
 const TAB_MODULE_PRELOADERS: Record<PropertyDetailTab, () => Promise<unknown>> = {
   overview: () => import('./tabs/overview-tab'),
@@ -107,6 +111,7 @@ const TAB_MODULE_PRELOADERS: Record<PropertyDetailTab, () => Promise<unknown>> =
   finance: () => import('./tabs/finance-tab'),
   project: () => import('./tabs/project-tab'),
   followups: () => import('./tabs/followups-tab'),
+  service: () => import('@/components/features/service-tickets'),
   activity: () => import('./tabs/activity-tab'),
 };
 
@@ -534,6 +539,15 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 propertyId={property.id}
                 enabled={activeTab === 'followups'}
                 onLogFollowup={() => setFollowupDrawerOpen(true)}
+              />
+            )}
+            {activeTab === 'service' && (
+              <ServiceTicketsTab
+                scope="property"
+                id={propertyId}
+                customerId={property.customerId}
+                projectId={linkedProjectId ?? undefined}
+                enabled={activeTab === 'service'}
               />
             )}
             {activeTab === 'activity' && (

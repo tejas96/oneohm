@@ -378,6 +378,7 @@ export const PROJECT_DETAIL_TABS = [
   { value: 'allocations', label: 'Allocations' },
   { value: 'reports', label: 'Reports' },
   { value: 'surveys', label: 'Surveys' },
+  { value: 'service', label: 'Service Tickets' },
 ] as const;
 
 export type ProjectDetailTab = (typeof PROJECT_DETAIL_TABS)[number]['value'];

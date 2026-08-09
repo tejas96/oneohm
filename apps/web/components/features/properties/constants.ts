@@ -63,6 +63,7 @@ export const PROPERTY_DETAIL_TABS = [
   { value: 'finance', label: 'Finance' },
   { value: 'project', label: 'Project' },
   { value: 'followups', label: 'Follow-ups' },
+  { value: 'service', label: 'Service Tickets' },
   { value: 'activity', label: 'Activity' },
 ] as const;
 
