@@ -35,7 +35,6 @@ import {
 } from '../hooks';
 import { CustomerAttentionPanel, type AttentionItem } from './attention-panel';
 import { CustomerEditDrawer } from './customer-edit-drawer';
-import { FollowupDrawer } from './followup-drawer';
 import { CustomerDetailHeader } from './header';
 import { CustomerDetailKpiStrip } from './kpi-strip';
 import { PropertyDetailDrawer } from './property-detail-drawer';
@@ -43,6 +42,7 @@ import { PageSkeleton, TabSkeleton } from './tab-skeleton';
 import { getCustomerDisplayName, isValidUuid } from './utils';
 import { PropertySelectModal } from '../components/property-select-modal';
 
+import { FollowupDrawer } from '@/components/features/followups';
 import {
   formatDeleteBlockTooltip,
   getCustomerDeleteBlockReasons,

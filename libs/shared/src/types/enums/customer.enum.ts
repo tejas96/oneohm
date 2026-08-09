@@ -7,6 +7,7 @@ export enum CustomerStatus {
   PROSPECT = 'prospect', // Qualified lead with potential
   ACTIVE = 'active', // Active customer with projects
   INACTIVE = 'inactive', // No longer active
+  LOST = 'lost', // Enquiry died before any property was created
 }
 
 /**
@@ -31,6 +32,7 @@ export enum PropertyStatus {
   INACTIVE = 'inactive',
   PENDING_VERIFICATION = 'pending_verification',
   CONVERTED = 'converted',
+  LOST = 'lost',
 }
 
 /**
@@ -101,6 +103,26 @@ export enum FollowupPriority {
   LOW = 'low',
   NORMAL = 'normal',
   HIGH = 'high',
+}
+
+/**
+ * Followup Outcome Enum
+ * What actually happened on a followup, captured at completion.
+ *
+ * `OTHER` requires notes. Without a catch-all users pick a wrong-but-close
+ * value to get past the dialog, which corrupts the data more quietly than an
+ * honest "other". If OTHER exceeds ~10% of completions, read those notes and
+ * promote a real value here.
+ */
+export enum FollowupOutcome {
+  NOT_REACHABLE = 'not_reachable',
+  CALL_BACK_LATER = 'call_back_later',
+  INTERESTED = 'interested',
+  SITE_VISIT_DONE = 'site_visit_done',
+  DOCUMENTS_PENDING = 'documents_pending',
+  NEGOTIATING = 'negotiating',
+  NOT_INTERESTED = 'not_interested',
+  OTHER = 'other',
 }
 
 /**

@@ -7,8 +7,6 @@ export { PropertyPipelineStrip } from '@/components/features/properties/property
 export { TabSkeleton, PageSkeleton } from './tab-skeleton';
 export { PropertyDetailDrawer } from './property-detail-drawer';
 export type { PropertyDetailDrawerProps } from './property-detail-drawer';
-export { FollowupDrawer } from './followup-drawer';
-export type { FollowupDrawerProps } from './followup-drawer';
 export { CustomerEditDrawer } from './customer-edit-drawer';
 export type { CustomerEditDrawerProps } from './customer-edit-drawer';
 

@@ -1,4 +1,9 @@
-import { FollowupPriority, FollowupStatus, FollowupType } from '@tejas96/shared/types';
+import {
+  FollowupOutcome,
+  FollowupPriority,
+  FollowupStatus,
+  FollowupType,
+} from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { CustomerProfileEntity } from './customer-profile.entity';
@@ -20,8 +25,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['propertyId'], { where: 'deleted_at IS NULL' })
 @Index(['scheduledAt', 'status'], { where: 'deleted_at IS NULL' })
 export class FollowupEntity extends BaseEntity {
-  // ==================== ORGANIZATION ====================
-
   // ==================== CUSTOMER (Required) ====================
   @Column({ name: 'customer_id', type: 'uuid' })
   customerId!: string;
@@ -63,6 +66,14 @@ export class FollowupEntity extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
+
+  // ==================== COMPLETION ====================
+  /** What happened. Set when the followup is completed; null while pending. */
+  @Column({ type: 'varchar', length: 30, nullable: true })
+  outcome?: FollowupOutcome;
+
+  @Column({ name: 'completed_at', type: 'timestamptz', nullable: true })
+  completedAt?: Date;
 
   // ==================== AUDIT FIELDS ====================
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })

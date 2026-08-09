@@ -38,14 +38,7 @@ export class MaintenanceTaskService {
    */
   async findAll(includeRelations: boolean = false): Promise<MaintenanceTaskResponseDto[]> {
     const relations = includeRelations
-      ? [
-          'organization',
-          'project',
-          'maintenanceConfig',
-          'assignedToUser',
-          'createdByUser',
-          'updatedByUser',
-        ]
+      ? ['project', 'maintenanceConfig', 'assignedToUser', 'createdByUser', 'updatedByUser']
       : [];
     const tasks = await this.maintenanceTaskRepository.findAll({ relations });
 
@@ -64,14 +57,7 @@ export class MaintenanceTaskService {
     includeRelations: boolean = false,
   ): Promise<MaintenanceTaskResponseDto> {
     const relations = includeRelations
-      ? [
-          'organization',
-          'project',
-          'maintenanceConfig',
-          'assignedToUser',
-          'createdByUser',
-          'updatedByUser',
-        ]
+      ? ['project', 'maintenanceConfig', 'assignedToUser', 'createdByUser', 'updatedByUser']
       : [];
     const task = await this.maintenanceTaskRepository.findById(id, { relations });
 
@@ -91,9 +77,7 @@ export class MaintenanceTaskService {
     projectId: string,
     includeRelations: boolean = false,
   ): Promise<MaintenanceTaskResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'maintenanceConfig', 'assignedToUser']
-      : [];
+    const relations = includeRelations ? ['maintenanceConfig', 'assignedToUser'] : [];
     const tasks = await this.maintenanceTaskRepository.findByProject(projectId, { relations });
 
     return tasks.map((task) =>
@@ -110,7 +94,7 @@ export class MaintenanceTaskService {
     userId: string,
     includeRelations: boolean = false,
   ): Promise<MaintenanceTaskResponseDto[]> {
-    const relations = includeRelations ? ['organization', 'project', 'maintenanceConfig'] : [];
+    const relations = includeRelations ? ['project', 'maintenanceConfig'] : [];
     const tasks = await this.maintenanceTaskRepository.findByAssignedUser(userId, { relations });
 
     return tasks.map((task) =>
@@ -127,9 +111,7 @@ export class MaintenanceTaskService {
     status: MaintenanceTaskStatus,
     includeRelations: boolean = false,
   ): Promise<MaintenanceTaskResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'maintenanceConfig', 'assignedToUser']
-      : [];
+    const relations = includeRelations ? ['project', 'maintenanceConfig', 'assignedToUser'] : [];
     const tasks = await this.maintenanceTaskRepository.findByStatus(status, { relations });
 
     return tasks.map((task) =>
@@ -143,9 +125,7 @@ export class MaintenanceTaskService {
    * Find overdue tasks
    */
   async findOverdue(includeRelations: boolean = false): Promise<MaintenanceTaskResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'maintenanceConfig', 'assignedToUser']
-      : [];
+    const relations = includeRelations ? ['project', 'maintenanceConfig', 'assignedToUser'] : [];
     const tasks = await this.maintenanceTaskRepository.findOverdue({ relations });
 
     return tasks.map((task) =>
@@ -162,9 +142,7 @@ export class MaintenanceTaskService {
     days: number = 7,
     includeRelations: boolean = false,
   ): Promise<MaintenanceTaskResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'maintenanceConfig', 'assignedToUser']
-      : [];
+    const relations = includeRelations ? ['project', 'maintenanceConfig', 'assignedToUser'] : [];
     const tasks = await this.maintenanceTaskRepository.findUpcoming(days, { relations });
 
     return tasks.map((task) =>

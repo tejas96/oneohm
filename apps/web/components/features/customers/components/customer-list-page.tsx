@@ -44,8 +44,9 @@ import {
 import {
   Customer as CustomerBase,
   type CustomerFilters,
-  useCustomers,
   useCustomerGroups,
+  useCustomerOverviewStats,
+  useCustomers,
   useCustomerStats,
   useDeleteCustomer,
 } from '../hooks/use-customers';
@@ -239,6 +240,8 @@ function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilte
       typeof raw.propertyConsumerNumber === 'string' && raw.propertyConsumerNumber
         ? raw.propertyConsumerNumber
         : undefined,
+    needsFollowup:
+      filters.needsFollowup === 'true' || filters.needsFollowup === true ? true : undefined,
   };
 }
 
@@ -983,6 +986,47 @@ export function CustomerListPage(): JSX.Element {
     ];
   }, [statusStats]);
 
+  // Company-wide roll-up used for the KPI cards below — also rendered on this
+  // page by CustomerKpiCards, so TanStack Query dedupes the request.
+  const { data: overviewStats } = useCustomerOverviewStats();
+
+  /**
+   * A second chip row CrmTable already supports and nothing used until now.
+   * Selecting it turns the main CRM screen into a worklist.
+   */
+  const needsFollowupFilters = useMemo<CrmQuickFilter[]>(
+    () => [
+      {
+        key: 'needs-followup',
+        label: 'Needs follow-up',
+        count: overviewStats?.needsFollowup,
+        tone: 'danger',
+        dot: true,
+      },
+    ],
+    [overviewStats?.needsFollowup],
+  );
+
+  /**
+   * `needs-followup` is a shortcut into the same URL filter state as every
+   * other filter on this page — not a parallel piece of React state — so
+   * toggling it inherits the page-0 reset and URL persistence that
+   * `urlState.setFilters` already provides.
+   */
+  const needsFollowupActive =
+    urlState.state.filters.needsFollowup === 'true' ||
+    urlState.state.filters.needsFollowup === true;
+
+  const handleSecondaryQuickFilterChange = useCallback(
+    (key: string) => {
+      const next = { ...filtersRef.current };
+      if (key === 'needs-followup') next.needsFollowup = 'true';
+      else delete next.needsFollowup;
+      urlState.setFilters(reconcileContradictoryCustomerFilters(next, 'needsFollowup'));
+    },
+    [urlState.setFilters],
+  );
+
   // Memoize sorted base employee options
   const baseEmployeeOptions = useMemo(() => {
     const list = employees.map((emp) => {
@@ -1414,6 +1458,9 @@ export function CustomerListPage(): JSX.Element {
         quickFilters={quickFilters}
         activeQuickFilter={activeStatusFilter}
         onQuickFilterChange={handleQuickFilterChange}
+        secondaryQuickFilters={needsFollowupFilters}
+        activeSecondaryQuickFilter={needsFollowupActive ? 'needs-followup' : ''}
+        onSecondaryQuickFilterChange={handleSecondaryQuickFilterChange}
         filterColumns={filterColumns}
         filterModel={urlState.state.filters}
         onFilterChange={handleFilterChange}

@@ -29,13 +29,12 @@ async function validateInstallationPricing(): Promise<void> {
     // 1. Check for overlapping ranges
     console.log('📊 Checking for overlapping ranges...');
     const overlapping = await dataSource.query(`
-      SELECT a.organization_id, COUNT(*) as conflicts
+      SELECT COUNT(*) as conflicts
       FROM installation_pricing a JOIN installation_pricing b
-        ON a.organization_id = b.organization_id
-        AND a.id < b.id AND a.is_active = true AND b.is_active = true
+        ON a.id < b.id AND a.is_active = true AND b.is_active = true
       WHERE (a.min_system_size_kw <= COALESCE(b.max_system_size_kw, 999999) 
              AND COALESCE(a.max_system_size_kw, 999999) >= b.min_system_size_kw)
-      GROUP BY a.organization_id;
+      HAVING COUNT(*) > 0;
     `);
 
     if (overlapping.length > 0) {
@@ -92,7 +91,7 @@ async function validateInstallationPricing(): Promise<void> {
     console.log('\n📊 Checking for missing required fields...');
     const [missingFields] = await dataSource.query(`
       SELECT COUNT(*) as missing_required_fields FROM installation_pricing
-      WHERE (organization_id IS NULL 
+      WHERE (
          OR min_system_size_kw IS NULL 
          OR transport_rate_per_km IS NULL
          OR floor_increment_percent IS NULL
@@ -114,10 +113,10 @@ async function validateInstallationPricing(): Promise<void> {
     // 9. Check for duplicates
     console.log('\n📊 Checking for duplicates...');
     const duplicates = await dataSource.query(`
-      SELECT organization_id, min_system_size_kw, max_system_size_kw, COUNT(*) as duplicates
+      SELECT min_system_size_kw, max_system_size_kw, COUNT(*) as duplicates
       FROM installation_pricing
       WHERE is_active = true
-      GROUP BY organization_id, min_system_size_kw, max_system_size_kw
+      GROUP BY min_system_size_kw, max_system_size_kw
       HAVING COUNT(*) > 1;
     `);
 
@@ -133,7 +132,6 @@ async function validateInstallationPricing(): Promise<void> {
       SELECT 
           COUNT(*) as total_rows,
           COUNT(CASE WHEN is_active = true THEN 1 END) as active_rows,
-          COUNT(DISTINCT organization_id) as organizations,
           MIN(min_system_size_kw) as min_size,
           MAX(COALESCE(max_system_size_kw, 999)) as max_size,
           AVG(gst_rate) as avg_gst_rate

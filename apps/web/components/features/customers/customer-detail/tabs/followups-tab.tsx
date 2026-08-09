@@ -1,6 +1,5 @@
 'use client';
 
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import {
   Box,
@@ -17,17 +16,24 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { FollowupPriority, FollowupStatus } from '@tejas96/shared/types';
-import type { JSX } from 'react';
+import { FollowupStatus } from '@tejas96/shared/types';
+import { useMemo, useState, type JSX } from 'react';
 
-import {
-  useCompleteFollowup,
-  useCustomerFollowups,
-  type CustomerPropertyResponse,
-} from '../../hooks';
+import { useCustomerFollowups, type CustomerPropertyResponse } from '../../hooks';
 import { TabSkeleton } from '../tab-skeleton';
 
+import {
+  FollowupCompleteDialog,
+  FollowupReassignDialog,
+  FollowupRescheduleDialog,
+  FollowupRowActions,
+  OUTCOME_LABELS,
+  useCancelFollowup,
+  type FollowupResponse,
+} from '@/components/features/followups';
+import { MarkAsLostDialog } from '@/components/features/properties';
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
+import { showToast } from '@/components/ui';
 import { formatDate, getErrorMessage, toTitleLabel } from '@/lib/utils';
 
 export interface FollowupsTabProps {
@@ -43,18 +49,43 @@ function getScopeLabel(
   return getPropertyDisplayName(property as CustomerPropertyResponse);
 }
 
+/** The assignee is the lead's owner — there is no separate owner field. */
+function ownerName(followup: FollowupResponse): string {
+  return (
+    [followup.assignedToUser?.firstName, followup.assignedToUser?.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim() || 'Unassigned'
+  );
+}
+
 export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabProps): JSX.Element {
   const { data, isLoading } = useCustomerFollowups(customerId, { enabled });
-  const completeMutation = useCompleteFollowup();
   const followups = data?.data ?? [];
 
-  const handleComplete = (id: string): void => {
-    completeMutation.mutate(id, {
-      onError: (error) => {
-        console.error(getErrorMessage(error));
-      },
-    });
-  };
+  const [completing, setCompleting] = useState<FollowupResponse | null>(null);
+  const [markingLost, setMarkingLost] = useState<{ id: string; name: string } | null>(null);
+  const [rescheduling, setRescheduling] = useState<FollowupResponse | null>(null);
+  const [reassigning, setReassigning] = useState<FollowupResponse[]>([]);
+  const cancelMutation = useCancelFollowup();
+
+  /**
+   * Pending followups on the SAME lead unit as the one being completed.
+   *
+   * This list spans the whole customer, so it must be narrowed to the matching
+   * propertyId — counting a sibling property's followups here would wrongly
+   * make the next-followup block optional and let a site go dark.
+   */
+  const pendingSiblings = useMemo(() => {
+    if (!completing) return 0;
+    const unitId = completing.propertyId ?? null;
+    return followups.filter(
+      (f) =>
+        f.status === FollowupStatus.PENDING &&
+        f.id !== completing.id &&
+        (f.propertyId ?? null) === unitId,
+    ).length;
+  }, [followups, completing]);
 
   if (isLoading && followups.length === 0) {
     return <TabSkeleton />;
@@ -99,8 +130,9 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                 <TableCell>Type</TableCell>
                 <TableCell>Scope</TableCell>
                 <TableCell>Scheduled</TableCell>
-                <TableCell>Priority</TableCell>
+                <TableCell>Owner</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell>Outcome</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -128,19 +160,7 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                       <TableCell>{toTitleLabel(followup.type)}</TableCell>
                       <TableCell>{getScopeLabel(followup.property)}</TableCell>
                       <TableCell>{formatDate(followup.scheduledAt)}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={toTitleLabel(followup.priority)}
-                          size="small"
-                          color={
-                            followup.priority === FollowupPriority.HIGH
-                              ? 'warning'
-                              : followup.priority === FollowupPriority.LOW
-                                ? 'default'
-                                : 'info'
-                          }
-                        />
-                      </TableCell>
+                      <TableCell>{ownerName(followup)}</TableCell>
                       <TableCell>
                         <Chip
                           label={toTitleLabel(followup.status)}
@@ -150,22 +170,25 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                           }
                         />
                       </TableCell>
+                      <TableCell>
+                        {followup.outcome ? OUTCOME_LABELS[followup.outcome] : '—'}
+                      </TableCell>
                       <TableCell align="right">
-                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                          {followup.status === FollowupStatus.PENDING && (
-                            <Button
-                              size="small"
-                              startIcon={<CheckCircleOutlineIcon />}
-                              onClick={() => handleComplete(followup.id)}
-                              disabled={completeMutation.isPending}
-                            >
-                              Complete
-                            </Button>
-                          )}
-                          <Button size="small" onClick={onSchedule}>
-                            Schedule
-                          </Button>
-                        </Stack>
+                        <FollowupRowActions
+                          followup={followup}
+                          onComplete={setCompleting}
+                          onReschedule={setRescheduling}
+                          onReassign={(f) => setReassigning([f])}
+                          onCancel={(f) =>
+                            cancelMutation.mutate(f.id, {
+                              onSuccess: () =>
+                                showToast.success(
+                                  'Follow-up cancelled — the lead now needs a new one',
+                                ),
+                              onError: (error) => showToast.error(getErrorMessage(error)),
+                            })
+                          }
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -173,6 +196,42 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
           </Table>
         </TableContainer>
       )}
+
+      <FollowupCompleteDialog
+        open={Boolean(completing)}
+        followup={completing}
+        pendingSiblings={pendingSiblings}
+        onClose={() => setCompleting(null)}
+        /*
+         * Only property-level followups can be marked lost from here — losing a
+         * site is a per-site action. A customer-level lead has no site to lose,
+         * so the path is correctly absent there.
+         */
+        onMarkLost={
+          completing?.propertyId
+            ? () => {
+                const target = {
+                  id: completing.propertyId as string,
+                  name: getScopeLabel(completing.property),
+                };
+                setCompleting(null);
+                setMarkingLost(target);
+              }
+            : undefined
+        }
+      />
+
+      {markingLost && (
+        <MarkAsLostDialog
+          open
+          onClose={() => setMarkingLost(null)}
+          propertyId={markingLost.id}
+          propertyName={markingLost.name}
+        />
+      )}
+
+      <FollowupRescheduleDialog followup={rescheduling} onClose={() => setRescheduling(null)} />
+      <FollowupReassignDialog followups={reassigning} onClose={() => setReassigning([])} />
     </Box>
   );
 }

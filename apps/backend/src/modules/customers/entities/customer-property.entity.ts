@@ -168,6 +168,14 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 20, default: PropertyStatus.ACTIVE })
   status!: PropertyStatus;
 
+  // ==================== LOST TRACKING ====================
+  /** Set together with status = LOST. Captured at the moment someone knows why. */
+  @Column({ name: 'lost_reason', type: 'text', nullable: true })
+  lostReason?: string;
+
+  @Column({ name: 'lost_at', type: 'timestamptz', nullable: true })
+  lostAt?: Date;
+
   // ==================== NOTES ====================
   @Column({ type: 'text', nullable: true })
   notes?: string;

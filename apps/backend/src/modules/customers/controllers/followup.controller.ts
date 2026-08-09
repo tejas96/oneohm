@@ -5,10 +5,11 @@ import {
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { FollowupStatus, type PaginatedResponse } from '@tejas96/shared/types';
 
 import {
@@ -23,8 +24,13 @@ import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
+import { CompleteFollowupDto } from '../dto/complete-followup.dto';
 import { CreateFollowupDto } from '../dto/create-followup.dto';
+import { FollowupGapResponseDto } from '../dto/followup-gap-response.dto';
 import { FollowupResponseDto } from '../dto/followup-response.dto';
+import { FollowupSummaryResponseDto } from '../dto/followup-summary-response.dto';
+import { ReassignFollowupDto, ReassignFollowupsBulkDto } from '../dto/reassign-followup.dto';
+import { RescheduleFollowupDto } from '../dto/reschedule-followup.dto';
 import { UpdateFollowupDto } from '../dto/update-followup.dto';
 import { FollowupService } from '../services/followup.service';
 
@@ -98,6 +104,58 @@ export class FollowupController {
 
     const result = await this.followupService.findAll(page, limit);
     return toPaginatedResponse(FollowupResponseDto, result.data, result.total, page, limit);
+  }
+
+  /**
+   * Open lead units with no pending followup — the safety net.
+   *
+   * Declared above any `:id` route, or Nest matches "gaps" as an id.
+   */
+  @Get('gaps')
+  @ApiOperation({
+    summary: 'Open lead units with no pending followup',
+    description:
+      'Records created by import or direct API call never pass through the UI gates, so anything that slipped appears here with a name against it.',
+  })
+  @ApiOkResponse({ type: [FollowupGapResponseDto] })
+  async gaps(): Promise<FollowupGapResponseDto[]> {
+    return this.followupService.gaps();
+  }
+
+  /**
+   * Badge counts. Declared above any `:id` route for the same reason as gaps.
+   */
+  @Get('summary')
+  @ApiOperation({ summary: 'Followup counts for the nav badge' })
+  @ApiQuery({
+    name: 'mine',
+    required: false,
+    type: Boolean,
+    description: 'Defaults to true. Pass false for everyone’s followups.',
+  })
+  @ApiOkResponse({ type: FollowupSummaryResponseDto })
+  async summary(
+    @CurrentUser() currentUser: CurrentUserType,
+    @Query('mine') mine?: string,
+  ): Promise<FollowupSummaryResponseDto> {
+    return this.followupService.summary(mine === 'false' ? null : currentUser.id);
+  }
+
+  /**
+   * Reassign many followups at once — the handoff case.
+   *
+   * Above `:id` so "reassign" is not read as an id.
+   */
+  @Post('reassign')
+  @ApiOperation({
+    summary: 'Reassign many followups',
+    description: 'Moves ownership of several leads at once. Any user may reassign to any user.',
+  })
+  async reassignMany(
+    @Body() dto: ReassignFollowupsBulkDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<{ updated: number }> {
+    return this.followupService.reassignMany(dto.ids, dto.assignedToUserId, currentUser.id);
   }
 
   /**
@@ -206,19 +264,58 @@ export class FollowupController {
   }
 
   /**
-   * Mark followup as completed
+   * Complete a followup and open the next one
    */
   @ApiAction({
     path: 'complete',
-    summary: 'Mark followup as completed',
-    description: 'Update followup status to completed',
+    summary: 'Complete a followup',
+    description:
+      'Records the outcome and creates the next followup in one transaction. A next followup is required when this is the last pending one on the lead unit, unless terminal is set.',
     responseType: FollowupResponseDto,
   })
-  async markAsCompleted(
+  async complete(
     @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CompleteFollowupDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<FollowupResponseDto> {
-    const followup = await this.followupService.markAsCompleted(id, currentUser.id);
+    const followup = await this.followupService.complete(id, dto, currentUser.id);
+    return toDto(FollowupResponseDto, followup);
+  }
+
+  /**
+   * Reassign a followup — how a lead changes hands
+   */
+  @ApiAction({
+    path: 'reassign',
+    summary: 'Reassign a followup',
+    description:
+      'Ownership of a lead is the assignee of its pending followup, so this moves the lead. No role restriction.',
+    responseType: FollowupResponseDto,
+  })
+  async reassign(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReassignFollowupDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<FollowupResponseDto> {
+    const followup = await this.followupService.reassign(id, dto.assignedToUserId, currentUser.id);
+    return toDto(FollowupResponseDto, followup);
+  }
+
+  /**
+   * Reschedule without completing
+   */
+  @ApiAction({
+    path: 'reschedule',
+    summary: 'Reschedule a followup',
+    description: 'Moves the date without completing it. No outcome, no new record.',
+    responseType: FollowupResponseDto,
+  })
+  async reschedule(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RescheduleFollowupDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<FollowupResponseDto> {
+    const followup = await this.followupService.reschedule(id, dto.scheduledAt, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
 

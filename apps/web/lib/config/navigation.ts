@@ -176,6 +176,14 @@ export const navigationConfig: NavigationConfig = {
           title: 'Pipeline',
           items: [
             {
+              id: 'followups',
+              icon: Calendar,
+              label: 'Follow-ups',
+              href: ROUTES.FOLLOWUPS.LIST,
+              // badge: overdue + today, via useFollowupSummary in the nav component.
+              // Deliberately NOT useNavigationCounts — that hook is mock data.
+            },
+            {
               id: 'pipeline',
               icon: TrendingUp,
               label: 'Sales Funnel',

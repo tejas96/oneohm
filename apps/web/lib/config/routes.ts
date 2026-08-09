@@ -88,6 +88,11 @@ export const ROUTES = {
     HOME: '/pipeline',
   },
 
+  // Follow-ups
+  FOLLOWUPS: {
+    LIST: '/followups',
+  },
+
   // Properties
   PROPERTIES: {
     DETAIL: '/properties/[id]',

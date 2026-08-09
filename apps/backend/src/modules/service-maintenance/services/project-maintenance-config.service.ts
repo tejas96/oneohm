@@ -50,9 +50,7 @@ export class ProjectMaintenanceConfigService {
    * Find all maintenance configs
    */
   async findAll(includeRelations: boolean = false): Promise<MaintenanceConfigResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'createdByUser', 'updatedByUser']
-      : [];
+    const relations = includeRelations ? ['project', 'createdByUser', 'updatedByUser'] : [];
     const configs = await this.maintenanceConfigRepository.findAll({ relations });
 
     return configs.map((config) =>
@@ -69,9 +67,7 @@ export class ProjectMaintenanceConfigService {
     id: string,
     includeRelations: boolean = false,
   ): Promise<MaintenanceConfigResponseDto> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'createdByUser', 'updatedByUser']
-      : [];
+    const relations = includeRelations ? ['project', 'createdByUser', 'updatedByUser'] : [];
     const config = await this.maintenanceConfigRepository.findById(id, { relations });
 
     if (!config) {
@@ -90,9 +86,7 @@ export class ProjectMaintenanceConfigService {
     projectId: string,
     includeRelations: boolean = false,
   ): Promise<MaintenanceConfigResponseDto> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'createdByUser', 'updatedByUser']
-      : [];
+    const relations = includeRelations ? ['project', 'createdByUser', 'updatedByUser'] : [];
     const config = await this.maintenanceConfigRepository.findByProjectId(projectId, { relations });
 
     if (!config) {
@@ -110,9 +104,7 @@ export class ProjectMaintenanceConfigService {
   async findByOrganization(
     includeRelations: boolean = false,
   ): Promise<MaintenanceConfigResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'createdByUser', 'updatedByUser']
-      : [];
+    const relations = includeRelations ? ['project', 'createdByUser', 'updatedByUser'] : [];
     const configs = await this.maintenanceConfigRepository.findByOrganization({
       relations,
     });
@@ -128,9 +120,7 @@ export class ProjectMaintenanceConfigService {
    * Find active configs
    */
   async findActive(includeRelations: boolean = false): Promise<MaintenanceConfigResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'createdByUser', 'updatedByUser']
-      : [];
+    const relations = includeRelations ? ['project', 'createdByUser', 'updatedByUser'] : [];
     const configs = await this.maintenanceConfigRepository.findActive({ relations });
 
     return configs.map((config) =>
@@ -147,9 +137,7 @@ export class ProjectMaintenanceConfigService {
     date?: Date,
     includeRelations: boolean = false,
   ): Promise<MaintenanceConfigResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'createdByUser', 'updatedByUser']
-      : [];
+    const relations = includeRelations ? ['project', 'createdByUser', 'updatedByUser'] : [];
     const configs = await this.maintenanceConfigRepository.findUpcomingMaintenance(date, {
       relations,
     });

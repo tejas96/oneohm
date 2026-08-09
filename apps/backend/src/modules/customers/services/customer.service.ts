@@ -12,6 +12,7 @@ import { CustomerStatus, UserProfileType, UserStatus } from '@tejas96/shared/typ
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource, In, IsNull } from 'typeorm';
 
+import { LeadClosureService } from './lead-closure.service';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
@@ -74,6 +75,7 @@ export class CustomerService {
     private readonly employeeProfileRepository: EmployeeProfileRepository,
     private readonly storageService: StorageService,
     private readonly dataSource: DataSource,
+    private readonly leadClosureService: LeadClosureService,
   ) {}
 
   /**
@@ -144,7 +146,7 @@ export class CustomerService {
   }
 
   /**
-   * Find all customers for an organization with filters, sorting, and pagination
+   * Find all customers with filters, sorting, and pagination
    * Supports both legacy signature (page, limit) and new query DTO
    *
    * @overload Legacy signature for backward compatibility
@@ -482,18 +484,40 @@ export class CustomerService {
   }
 
   /**
+   * Close an enquiry that never got a property.
+   *
+   * A customer who already has sites is never marked lost this way — losing a
+   * site is a property-level action.
+   */
+  async markLost(id: string, reason: string, userId: string): Promise<CustomerProfileEntity> {
+    const customer = await this.customerRepository.findById(id);
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+    if (customer.status === CustomerStatus.LOST) {
+      throw new BadRequestException('Customer is already marked lost');
+    }
+
+    await this.leadClosureService.markCustomerLost(id, reason, userId);
+
+    const updated = await this.customerRepository.findById(id);
+    if (!updated) {
+      throw new NotFoundException('Customer not found');
+    }
+    return updated;
+  }
+
+  /**
    * Get customer statistics by status (optimized single query)
    */
   async getStatusStatistics(): Promise<Record<string, number>> {
     const stats = await this.customerRepository.getStatusStats();
 
-    // Initialize all statuses with 0
-    const result: Record<string, number> = {
-      [CustomerStatus.LEAD]: 0,
-      [CustomerStatus.PROSPECT]: 0,
-      [CustomerStatus.ACTIVE]: 0,
-      [CustomerStatus.INACTIVE]: 0,
-    };
+    // Initialize every status with 0. Derived from the enum rather than listed
+    // by hand so a new status cannot silently go missing from the response.
+    const result: Record<string, number> = Object.fromEntries(
+      Object.values(CustomerStatus).map((status) => [status, 0]),
+    );
 
     // Fill in actual counts from the single grouped query
     for (const stat of stats) {
@@ -586,7 +610,7 @@ export class CustomerService {
    *
    * Validations when assigning:
    * - Assignee user must exist
-   * - Assignee must have an active employee profile in the same organization
+   * - Assignee must have an active employee profile
    */
   async assignCustomer(
     id: string,
@@ -604,7 +628,7 @@ export class CustomerService {
         throw new NotFoundException(`User with ID '${assigneeId}' not found`);
       }
 
-      // Validate assignee has an employee profile in the same organization (cross-org guard)
+      // Validate the assignee has an employee profile
       const employeeProfile =
         await this.employeeProfileRepository.findByUserAndOrganization(assigneeId);
       if (!employeeProfile) {
@@ -687,7 +711,7 @@ export class CustomerService {
   }
 
   /**
-   * Returns distinct customer groups for an organization.
+   * Returns distinct customer groups.
    * Used by the GET /customers/groups endpoint.
    */
   async getDistinctGroups(): Promise<{ groupCode: string; groupName: string }[]> {

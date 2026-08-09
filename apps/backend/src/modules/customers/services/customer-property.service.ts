@@ -19,6 +19,7 @@ import {
 } from '@tejas96/shared/types';
 import { DataSource, IsNull, Not, type EntityManager } from 'typeorm';
 
+import { LeadClosureService } from './lead-closure.service';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { DiscomService } from '../../discoms/services/discom.service';
 import { DocumentEntity } from '../../documents/entities/document.entity';
@@ -60,6 +61,8 @@ type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   latestQuoteDate?: Date;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;
+  nextFollowupAt?: Date;
+  needsFollowup?: boolean;
 };
 
 /**
@@ -79,7 +82,36 @@ export class CustomerPropertyService {
     private readonly storageService: StorageService,
     private readonly eventEmitter: EventEmitter2,
     private readonly dataSource: DataSource,
+    private readonly leadClosureService: LeadClosureService,
   ) {}
+
+  /**
+   * Close this site as lost.
+   *
+   * Per-property by design: one customer can have three sites and losing one
+   * must not remove the other two from the pipeline. Cancels this property's
+   * pending followups so a dead lead stops nagging.
+   */
+  async markLost(id: string, reason: string, userId: string): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findById(id);
+    if (!property) {
+      throw new NotFoundException('Property not found');
+    }
+    if (property.status === PropertyStatus.LOST) {
+      throw new BadRequestException('Property is already marked lost');
+    }
+    if (property.status === PropertyStatus.CONVERTED) {
+      throw new BadRequestException('Cannot mark a converted property as lost');
+    }
+
+    await this.leadClosureService.markPropertyLost(id, property.customerId, reason, userId);
+
+    const updated = await this.propertyRepository.findById(id);
+    if (!updated) {
+      throw new NotFoundException('Property not found');
+    }
+    return updated;
+  }
 
   /**
    * Create a new customer property
@@ -90,7 +122,7 @@ export class CustomerPropertyService {
   ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Creating property for customer: ${createDto.customerId}`);
 
-    // Verify customer exists and belongs to organization
+    // Verify customer exists
     const customer = await this.customerRepository.findById(createDto.customerId);
     if (!customer) {
       throw new NotFoundException('Customer not found');
@@ -172,19 +204,33 @@ export class CustomerPropertyService {
 
   /**
    * Find property by ID
+   *
+   * Enriches with the shared follow-up predicate (via the same batch lookup
+   * `findAll`/`findByCustomer` use, single-element array) so `needsFollowup`
+   * is always present on the single-property response and never silently
+   * dropped by the DTO's @Exclude()-by-default.
    */
-  async findById(id: string): Promise<CustomerPropertyEntity> {
+  async findById(id: string): Promise<PropertyWithQuoteInfo> {
     const property = await this.propertyRepository.findByIdAndOrganization(id);
 
     if (!property) {
       throw new NotFoundException(`Property with ID '${id}' not found`);
     }
 
-    return property;
+    const followupStateMap = await this.propertyRepository.findFollowupStateByPropertyIds([
+      property.id,
+    ]);
+    const followupState = followupStateMap.get(property.id);
+
+    return {
+      ...property,
+      nextFollowupAt: followupState?.nextAt ?? undefined,
+      needsFollowup: followupState?.needsFollowup ?? false,
+    };
   }
 
   /**
-   * Find all properties for an organization with filters, sorting, and pagination
+   * Find all properties with filters, sorting, and pagination
    * Enriches results with latest quote info per property
    *
    * @param query - Query parameters (filters, sorting, pagination)
@@ -206,6 +252,8 @@ export class CustomerPropertyService {
     const projectIdMap = await this.propertyRepository.findProjectIdsByPropertyIds(propertyIds);
     const activeLoanPropertyIds =
       await this.loanApplicationRepository.findPropertyIdsWithActiveLoans(propertyIds);
+    const followupStateMap =
+      await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
 
     const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
@@ -222,6 +270,8 @@ export class CustomerPropertyService {
           quoteInfo?.totalWattageWp != null && quoteInfo.totalWattageWp > 0
             ? Number(quoteInfo.totalWattageWp) / 1000
             : quoteInfo?.systemSizeKw,
+        nextFollowupAt: followupStateMap.get(property.id)?.nextAt ?? undefined,
+        needsFollowup: followupStateMap.get(property.id)?.needsFollowup ?? false,
       };
     });
 
@@ -238,7 +288,7 @@ export class CustomerPropertyService {
    * This avoids N+1 queries and is performant for customers with many properties.
    */
   async findByCustomer(customerId: string): Promise<PropertyWithQuoteInfo[]> {
-    // Verify customer belongs to organization
+    // Verify customer exists
     const customer = await this.customerRepository.findById(customerId);
     if (!customer) {
       throw new NotFoundException('Customer not found');
@@ -255,6 +305,8 @@ export class CustomerPropertyService {
     // Query 2: Get latest quotes for all properties (single batch query)
     const propertyIds = properties.map((p) => p.id);
     const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
+    const followupStateMap =
+      await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
 
     // Enrich properties with quote data
     return properties.map((property) => {
@@ -270,6 +322,8 @@ export class CustomerPropertyService {
           quoteInfo?.totalWattageWp != null && quoteInfo.totalWattageWp > 0
             ? Number(quoteInfo.totalWattageWp) / 1000
             : quoteInfo?.systemSizeKw,
+        nextFollowupAt: followupStateMap.get(property.id)?.nextAt ?? undefined,
+        needsFollowup: followupStateMap.get(property.id)?.needsFollowup ?? false,
       };
     });
   }
@@ -321,7 +375,7 @@ export class CustomerPropertyService {
   ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Updating property: ${id}`);
 
-    // Verify property exists and belongs to organization
+    // Verify property exists
     const property = await this.findById(id);
 
     // Validate loan status if trying to disable loan

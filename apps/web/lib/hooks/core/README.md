@@ -41,7 +41,6 @@ lib/hooks/core/                        ← FDAL engine (never edit for new resou
   query-defaults.ts                      RESOURCE_QUERY_DEFAULTS, RESOURCE_MUTATION_DEFAULTS, STALE_TIMES
   response-adapter.ts                    defaultResponseAdapter (normalizes 3 API formats)
   error-adapter.ts                       normalizeApiError (Axios → NormalizedError)
-  use-org-context.ts                     useOrgContext ()
   use-query-state.ts                     useQueryState (search, filters, pagination, sorting, URL sync)
   use-resource-list.ts                   useResourceList (paginated list hook)
   use-resource-detail.ts                 useResourceDetail, prefetchResourceDetail
@@ -703,19 +702,11 @@ Events are emitted automatically by `useResourceMutations` after successful muta
 
 ---
 
-## Multi-Tenant Org Context
+## Org context (removed)
 
-`useOrgContext()` provides the authenticated user's organization info. All core hooks use it internally.
-
-```typescript
-// : string | undefined
-// : { 'X-Organization-Id': string } | {}
-// : boolean (true when org is available)
-```
-
-Queries with `requiresOrg: true` (default) are disabled until ``is`true`.
-
----
+The app is single-tenant. `useOrgContext()` and the `X-Organization-Id` header
+it produced were deleted with the organization model — core hooks now call the
+API directly with no tenant scoping.
 
 ## Error Normalization
 

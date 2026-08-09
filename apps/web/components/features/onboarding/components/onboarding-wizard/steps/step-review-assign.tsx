@@ -13,6 +13,7 @@ import {
 } from '@/components/features/properties/components/property-fields';
 import { type DraftDocument } from '@/components/shared/document-manager';
 import { MUISelect } from '@/components/ui';
+import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { color, radius } from '@/lib/theme/tokens';
 
 interface StepReviewAssignProps {
@@ -56,6 +57,71 @@ export function StepReviewAssign({
         onJumpToStep={onJumpToStep}
         stepIndices={stepIndices}
       />
+
+      <Box sx={{ height: 1, background: color['canvas-sunken'] }} />
+
+      {/*
+        The first follow-up is required, and this is the only place it can be
+        captured before the site exists. Without it a freshly created lead has
+        nobody owing it an action from the moment it is saved.
+      */}
+      <Box>
+        <Box sx={{ fontSize: 13.5, fontWeight: 700, letterSpacing: '-0.01em' }}>
+          First follow-up
+        </Box>
+        <Box
+          sx={{
+            fontSize: 12.5,
+            color: color['text-secondary'],
+            mt: '2px',
+            mb: 1.75,
+            maxWidth: 540,
+          }}
+        >
+          Required. The date is prefilled from the lead temperature you picked — change it freely.
+        </Box>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+            gap: 2,
+            p: '13px 15px',
+            borderRadius: radius['rf-lg'],
+            background: color['canvas-sunken'],
+          }}
+        >
+          <Controller
+            name="nextFollowupDate"
+            control={control}
+            render={({ field, fieldState }) => (
+              <MUIDatePicker
+                fieldLabel="Next follow-up"
+                required
+                value={field.value ?? null}
+                onChange={field.onChange}
+                error={fieldState.error?.message}
+                fullWidth
+              />
+            )}
+          />
+          <Controller
+            name="nextFollowupAssignee"
+            control={control}
+            render={({ field, fieldState }) => (
+              <MUISelect
+                fieldLabel="Owner"
+                required
+                placeholder="Pick who owns this lead"
+                disabled={employeesLoading}
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value)}
+                options={employeeOptions}
+                error={fieldState.error?.message}
+              />
+            )}
+          />
+        </Box>
+      </Box>
 
       <Box sx={{ height: 1, background: color['canvas-sunken'] }} />
 

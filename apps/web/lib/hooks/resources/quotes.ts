@@ -71,7 +71,7 @@ export const quoteResourceKeys = createResourceKeys('quotes');
  *
  * Accepts explicit `filters` driven by `useTableUrlState` in the page component
  * so that URL sync is owned by a single source of truth (the table).
- * Uses shared FDAL utilities (buildQueryParams, useOrgContext, createResourceKeys)
+ * Uses shared FDAL utilities (buildQueryParams, createResourceKeys)
  * replacing the hand-rolled URLSearchParams construction in the legacy useQuotes hook.
  */
 export function useQuoteListResource(filters: QuoteListFilters = {}) {

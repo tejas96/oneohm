@@ -14,6 +14,7 @@ import {
 } from '@tejas96/shared/utils';
 import { IsNull, Repository, type EntityManager, type SelectQueryBuilder } from 'typeorm';
 
+import { CUSTOMER_NEEDS_FOLLOWUP } from './followup-predicates';
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 
@@ -51,6 +52,8 @@ export interface CustomerOverviewStats {
   awaitingReply: number;
   /** Of those, unanswered for longer than `AWAITING_AGEING_DAYS`. */
   awaitingAgeing: number;
+  /** Customers with at least one open site nobody owes an action. */
+  needsFollowup: number;
 }
 
 /** A quote sitting unanswered longer than this is flagged as ageing. */
@@ -284,6 +287,26 @@ export class CustomerProfileRepository {
     return this.findById(id);
   }
 
+  /**
+   * Close an enquiry that never got a property. The property-level equivalent
+   * lives on CustomerPropertyRepository; a customer with sites is never marked
+   * lost this way, because losing one site does not kill the account.
+   */
+  async markLost(
+    id: string,
+    reason: string,
+    updatedBy: string,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = manager ? manager.getRepository(CustomerProfileEntity) : this.repository;
+    await repo.update({ id }, {
+      status: CustomerStatus.LOST,
+      lostReason: reason,
+      lostAt: new Date(),
+      updatedBy,
+    } as Record<string, unknown>);
+  }
+
   async softDelete(id: string, deletedBy?: string): Promise<boolean> {
     const result = await this.repository.update(
       { id },
@@ -483,11 +506,12 @@ export class CustomerProfileRepository {
     const ageingCutoff = ageingCutoffDate();
 
     const [customerRow] = await this.repository.manager.query<
-      { customers: string; customersThisMonth: string }[]
+      { customers: string; customersThisMonth: string; needsFollowup: string }[]
     >(
       `
-      SELECT COUNT(*)                                                  AS "customers",
-             COUNT(*) FILTER (WHERE c.created_at >= $1)                AS "customersThisMonth"
+      SELECT COUNT(*)                                     AS "customers",
+             COUNT(*) FILTER (WHERE c.created_at >= $1)   AS "customersThisMonth",
+             COUNT(*) FILTER (WHERE ${CUSTOMER_NEEDS_FOLLOWUP('c')}) AS "needsFollowup"
       FROM customer_profiles c WHERE c.deleted_at IS NULL
       `,
       [monthStart],
@@ -525,6 +549,7 @@ export class CustomerProfileRepository {
     return {
       customers: Number(customerRow?.customers ?? 0),
       customersThisMonth: Number(customerRow?.customersThisMonth ?? 0),
+      needsFollowup: Number(customerRow?.needsFollowup ?? 0),
       sites: Number(siteRow?.sites ?? 0),
       sitesThisMonth: Number(siteRow?.sitesThisMonth ?? 0),
       pipelineValue: Number(siteRow?.pipelineValue ?? 0),
@@ -535,7 +560,7 @@ export class CustomerProfileRepository {
 
   /**
    * Search customers by name, phone, or email
-   * Searches within the organization context
+   * Full-text-ish search across customer fields
    *
    * @param searchQuery - Search term (searches first name, last name, phone, email, group)
    * @param createdBy - Optional: filter by creator (for field workers)
@@ -716,6 +741,10 @@ export class CustomerProfileRepository {
       });
     }
 
+    if (query.needsFollowup) {
+      qb.andWhere(`(${CUSTOMER_NEEDS_FOLLOWUP('customer')})`);
+    }
+
     // ===== Sorting (using safe field mapping) =====
     const sortColumn = SORT_FIELD_MAP[query.sortBy];
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
@@ -733,7 +762,7 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * Returns all distinct (group_code, group_name) pairs for an organization.
+   * Returns all distinct (group_code, group_name) pairs.
    * Used to populate the group selector in the customer form.
    */
   async findDistinctGroups(): Promise<{ groupCode: string; groupName: string }[]> {
@@ -751,7 +780,7 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * Generates the next available group code for an organization.
+   * Generates the next available group code.
    * Format: GRP-XXXX (e.g. GRP-0001, GRP-0042).
    * Uses withDeleted() so codes from soft-deleted records are never reused.
    */
@@ -781,7 +810,7 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * Checks whether a group code exists for the given organization.
+   * Checks whether a group code already exists.
    * Used for validation when a client provides a groupCode explicitly.
    */
   async groupCodeExists(groupCode: string): Promise<boolean> {

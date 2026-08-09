@@ -13,6 +13,7 @@ import { FollowupRepository } from './repositories/followup.repository';
 import { CustomerPropertyService } from './services/customer-property.service';
 import { CustomerService } from './services/customer.service';
 import { FollowupService } from './services/followup.service';
+import { LeadClosureService } from './services/lead-closure.service';
 import { DiscomsModule } from '../discoms/discoms.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
@@ -42,6 +43,7 @@ import { UsersModule } from '../users/users.module';
     CustomerService,
     CustomerPropertyService,
     FollowupService,
+    LeadClosureService,
     CustomerProfileRepository,
     CustomerPropertyRepository,
     FollowupRepository,
@@ -50,6 +52,7 @@ import { UsersModule } from '../users/users.module';
     CustomerService,
     CustomerPropertyService,
     FollowupService,
+    LeadClosureService,
     CustomerProfileRepository,
     CustomerPropertyRepository,
     FollowupRepository,
