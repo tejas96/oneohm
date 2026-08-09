@@ -232,6 +232,15 @@ export class ProjectListItemDto {
   @Expose()
   createdBy?: string;
 
+  /**
+   * Open or in-progress service tickets. Drives the active-tickets chip on the
+   * projects list.
+   */
+  @ApiProperty({ description: 'Number of open or in-progress service tickets' })
+  @Expose()
+  @Transform(({ obj }) => obj.activeTicketCount ?? 0)
+  activeTicketCount!: number;
+
   @ApiPropertyOptional({ description: 'Name of the user who created this project' })
   @Expose()
   @Transform(({ obj }) => {

@@ -163,6 +163,13 @@ export class ProjectController {
     description: 'Filter by creator - use "me" for current user or provide userId',
   })
   @ApiQuery({
+    name: 'hasActiveTickets',
+    required: false,
+    type: Boolean,
+    description:
+      'Filter by whether the project has open or in-progress service tickets (true) or none (false)',
+  })
+  @ApiQuery({
     name: 'sortBy',
     required: false,
     type: String,
@@ -206,6 +213,7 @@ export class ProjectController {
     pendingWorkflowStepId?: string,
     @Query('healthStatus') healthStatusRaw?: string,
     @Query('createdBy') createdBy?: string,
+    @Query('hasActiveTickets') hasActiveTicketsRaw?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ): Promise<PaginatedResponse<ProjectListItemDto>> {
@@ -221,6 +229,10 @@ export class ProjectController {
     if (effectiveCreatedBy === 'me') {
       effectiveCreatedBy = currentUser.id;
     }
+
+    // Absent means "don't filter"; only the two explicit strings are meaningful.
+    const hasActiveTickets =
+      hasActiveTicketsRaw === 'true' ? true : hasActiveTicketsRaw === 'false' ? false : undefined;
 
     const isAdmin = hasAdminBypassRole(currentUser.roles || []);
     const effectiveMemberId = isAdmin ? memberId : currentUser.id;
@@ -243,6 +255,7 @@ export class ProjectController {
       pendingWorkflowStepId,
       healthStatus,
       createdBy: effectiveCreatedBy,
+      hasActiveTickets,
       sortBy,
       sortOrder,
     });

@@ -109,6 +109,7 @@ export class ProjectService {
       pendingWorkflowStepId?: string;
       healthStatus?: string;
       createdBy?: string;
+      hasActiveTickets?: boolean;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  ACTIVE_TICKET_STATUSES,
   CustomerSortField,
   CustomerStatus,
   LeadSource,
@@ -609,6 +610,17 @@ export class CustomerProfileRepository {
         'propertyCountRel',
         (qb) => qb.where('propertyCountRel.deletedAt IS NULL'),
       )
+      .loadRelationCountAndMap(
+        'customer.activeTicketCount',
+        'customer.serviceTickets',
+        'activeTicketRel',
+        (countQb) =>
+          countQb
+            .where('activeTicketRel.deletedAt IS NULL')
+            .andWhere('activeTicketRel.status IN (:...activeTicketStatuses)', {
+              activeTicketStatuses: [...ACTIVE_TICKET_STATUSES],
+            }),
+      )
       .leftJoinAndSelect('customer.creator', 'creator')
       .leftJoinAndSelect('customer.assignee', 'assignee')
       .andWhere('customer.deletedAt IS NULL');
@@ -699,6 +711,23 @@ export class CustomerProfileRepository {
       }
 
       applyMatchingPropertyFilter(qb, query);
+    }
+
+    // Same predicate as the activeTicketCount mapping above, so the chip a row
+    // shows and this filter can never disagree about what "active" means.
+    if (query.hasActiveTickets !== undefined) {
+      const activeTicketSubQuery = `
+        SELECT 1 FROM service_tickets st
+        WHERE st.customer_id = customer.id
+          AND st.status IN (:...activeTicketFilterStatuses)
+          AND st.deleted_at IS NULL
+      `;
+      qb.andWhere(
+        query.hasActiveTickets
+          ? `EXISTS (${activeTicketSubQuery})`
+          : `NOT EXISTS (${activeTicketSubQuery})`,
+        { activeTicketFilterStatuses: [...ACTIVE_TICKET_STATUSES] },
+      );
     }
 
     if (query.fromDate) {

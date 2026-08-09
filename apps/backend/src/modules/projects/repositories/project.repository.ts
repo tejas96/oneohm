@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProjectPriority, ProjectStatus, TaskStatus } from '@tejas96/shared/types';
+import {
+  ACTIVE_TICKET_STATUSES,
+  ProjectPriority,
+  ProjectStatus,
+  TaskStatus,
+} from '@tejas96/shared/types';
 import { type EntityManager, IsNull, Repository } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
@@ -140,12 +145,24 @@ export class ProjectRepository {
       pendingWorkflowStepId?: string;
       healthStatus?: string;
       createdBy?: string;
+      hasActiveTickets?: boolean;
       sortBy?: string;
       sortOrder?: 'ASC' | 'DESC';
     },
   ): Promise<{ projects: ProjectEntity[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('project')
+      .loadRelationCountAndMap(
+        'project.activeTicketCount',
+        'project.serviceTickets',
+        'activeTicketRel',
+        (countQb) =>
+          countQb
+            .where('activeTicketRel.deletedAt IS NULL')
+            .andWhere('activeTicketRel.status IN (:...activeTicketStatuses)', {
+              activeTicketStatuses: [...ACTIVE_TICKET_STATUSES],
+            }),
+      )
       .innerJoinAndSelect('project.property', 'property')
       .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
@@ -227,6 +244,23 @@ export class ProjectRepository {
 
     if (filters?.createdBy) {
       query.andWhere('project.createdBy = :createdBy', { createdBy: filters.createdBy });
+    }
+
+    // Same predicate as the activeTicketCount mapping above, so the chip a row
+    // shows and this filter can never disagree about what "active" means.
+    if (filters?.hasActiveTickets !== undefined) {
+      const activeTicketSubQuery = `
+        SELECT 1 FROM service_tickets st
+        WHERE st.project_id = project.id
+          AND st.status IN (:...activeTicketFilterStatuses)
+          AND st.deleted_at IS NULL
+      `;
+      query.andWhere(
+        filters.hasActiveTickets
+          ? `EXISTS (${activeTicketSubQuery})`
+          : `NOT EXISTS (${activeTicketSubQuery})`,
+        { activeTicketFilterStatuses: [...ACTIVE_TICKET_STATUSES] },
+      );
     }
 
     const isSmartSort = filters?.sortBy === 'smartSort';

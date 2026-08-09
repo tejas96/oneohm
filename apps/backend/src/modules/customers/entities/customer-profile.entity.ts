@@ -4,6 +4,7 @@ import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMa
 import { CustomerPropertyEntity } from './customer-property.entity';
 import { FollowupEntity } from './followup.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { ServiceTicketEntity } from '../../service-tickets/entities/service-ticket.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -35,6 +36,20 @@ export class CustomerProfileEntity extends BaseEntity {
   // ==================== FOLLOWUPS (One-to-Many) ====================
   @OneToMany(() => FollowupEntity, (followup) => followup.customer)
   followups?: FollowupEntity[];
+
+  // ==================== SERVICE TICKETS (One-to-Many) ====================
+  /**
+   * Declared purely so the list query can `loadRelationCountAndMap` the active
+   * ticket count onto `activeTicketCount`. Never eagerly selected.
+   */
+  @OneToMany(() => ServiceTicketEntity, (ticket) => ticket.customer)
+  serviceTickets?: ServiceTicketEntity[];
+
+  /**
+   * Open or in-progress tickets. Not a column — populated by
+   * `loadRelationCountAndMap` on list queries only, and 0/undefined elsewhere.
+   */
+  activeTicketCount?: number;
 
   // ==================== Human-readable Code ====================
   @Column({ name: 'customer_code', type: 'varchar', length: 50, nullable: true, unique: true })
