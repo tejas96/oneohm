@@ -11,54 +11,30 @@ Each case carries a status:
 
 ---
 
-## 0. Before you start
+## Environment — already set up, nothing to do
 
-### 0.1 Restart both servers — required
+Migrations are applied, both servers are running on their normal ports
+(`:8085` API, `:3001` web, per `apps/web/.env.local`), and the fixtures below
+are seeded. **Start at section 1.**
 
-The backend running on **:8085 was started before this branch existed**. It has
-the deleted `service-maintenance` module loaded and no `/service-tickets`
-routes, and the three tables it expects have been dropped. **The new screens
-cannot work against it.**
+### Seeded fixtures
 
-```bash
-cd apps/backend && npm run migration:run
-```
+Referenced by ticket number and name throughout the plan.
 
-Then restart the API and the web app:
+| Customer | Active | Covers |
+|---|---|---|
+| **Vjay Chipade** | 2 | **Two properties, each with its own project and one ticket** — the property-derivation cases. `TKT-…-0009` on property *Sangli / PRJ-…-0122*, `TKT-…-0010` on property *Sangli / PRJ-…-0138* |
+| **Hanmant Kharade** | 3 | Plural chip wording; a project (`PRJ-…-0221`) carrying multiple tickets |
+| **Dudheshwar Hingalje** | 1 | Singular chip wording; pre-assigned; **urgent** priority; use for "resolve the last active ticket" |
+| **QA-0809 Test Customer** | 0 | Closed tickets only (`0001`, `0007`) — one carries a photo |
+| **QA-0808 Test Customer** / **Pandurang Naikwadi** | 0 | Resolved tickets only |
+| ~1,180 others | 0 | Empty states and the negative filter |
 
-```bash
-npm run backend:dev
-```
+Every status is represented: **open 5, in progress 1, resolved 2, closed 2**,
+with 1 urgent. One ticket is soft-deleted (`TKT-…-0002`) for the delete cases.
 
-```bash
-npm run web:dev
-```
-
-`apps/web/.env.local` points the web app at `http://192.168.1.4:8085/api/v1`, so
-the restarted backend must be the one on 8085.
-
-### 0.2 Confirm the migrations applied
-
-```bash
-cd apps/backend && npm run migration:show
-```
-
-Expect `DropServiceMaintenanceTables1854000000000` and
-`CreateServiceTicketTables1854000000001` both marked `[X]`.
-
-### 0.3 Test data you will need
-
-| Need | Why |
-|---|---|
-| A customer with **two or more properties**, each with its own project | The only way to prove the property tab filters rather than showing everything |
-| A customer with **exactly one** active ticket | Singular chip wording, and the "last ticket resolved" transition |
-| A customer with **two or more** active tickets | Plural wording, and that the count is per-customer not per-ticket |
-| A customer with **no** tickets | Empty states and the negative filter |
-| Two customers who each own projects | The mismatched customer/project rejection |
-| At least one employee profile | Assignment |
-
-> **Note on migration numbering.** These migrations are `1854…`, not `1853…`.
-> An unmerged branch (commit `52ba0a30`) already uses `1853000000000` for
+> **Migration numbering.** These are `1854…`, not `1853…` — an unmerged branch
+> (commit `52ba0a30`) already uses `1853000000000` for
 > `AddFollowupOutcomeAndLostTracking`. If that branch merges, check no third
 > migration collides.
 
@@ -82,11 +58,12 @@ Click the ticket number.
 (customer / project / property / assignee / raised by / raised on, all three
 entity names linking correctly), and a **Status history** showing `Created`.
 
-**HP-4 Assign** — [TO RUN]
-Edit → pick an assignee → save.
+**HP-4 Assign** — [VERIFIED at API; UI TO RUN]
+Edit → pick an assignee → save. `TKT-…-0011` is already assigned if you want a
+starting point.
 *Expect:* assignee shows on the detail screen, in the list's Assignee column,
-and in the entity tabs. `assigned_at` is stamped (checked in DB). — the API
-half of this is [VERIFIED].
+and in the entity tabs. `assigned_at` is stamped, and the `assigneeId` filter
+returns the ticket — both confirmed at the API.
 
 **HP-5 Open → In Progress** — [VERIFIED]
 Change Status → In Progress, add a note.
@@ -181,16 +158,18 @@ confirm the prefix scan is year-scoped so a new year does not collide.
 ### 3.2 Counts and pluralisation
 
 **E-4 Singular vs plural chip** — [VERIFIED]
-One active ticket → "1 active ticket". Two or more → "2 active tickets".
+**Dudheshwar Hingalje** (1) → "1 active ticket". **Vjay Chipade** (2) → "2
+active tickets". **Hanmant Kharade** (3) → "3 active tickets".
 
 **E-5 Zero renders nothing** — [VERIFIED]
 A customer or project with no active tickets shows **no chip at all**, not a
 "0" chip.
 
 **E-6 Resolved and closed do not count as active** — [VERIFIED]
-Resolve a customer's only ticket.
-*Expect:* chip disappears, KPI tile decrements, the customer leaves the
-"Has active tickets" filter. Same for closing.
+Resolve **Dudheshwar Hingalje**'s only ticket (`TKT-…-0011`).
+*Expect:* chip disappears, KPI tile decrements 3 → 2, the customer leaves the
+"Has active tickets" filter. Same for closing. Verified previously on another
+customer with the counts moving in lockstep.
 
 **E-7 Counts are per-entity, not global** — [VERIFIED]
 A customer with 2 tickets on one project shows "2 active tickets" on both the
@@ -202,10 +181,10 @@ This is the highest-value check: the chip and the filter must never disagree.
 
 **E-8 Customers partition** — [VERIFIED]
 `hasActiveTickets=true` count + `hasActiveTickets=false` count == total
-customers. Measured 3 + 1185 = 1188.
+customers. Measured **3 + 1185 = 1188** with the seeded fixtures.
 
 **E-9 Projects partition** — [VERIFIED]
-Measured 1 + 223 = 224.
+Measured **4 + 220 = 224** with the seeded fixtures.
 
 **E-10 No violations in either direction** — [VERIFIED]
 Every row in the `true` set has `activeTicketCount > 0`; every row in the
@@ -234,17 +213,20 @@ chip → the Open tile shows selected.
 
 ### 3.4 Property derivation
 
-**E-16 Property tab excludes other properties** — [TO RUN — important]
-Use a customer with **two** properties, each with a project, and a ticket on
-each.
-*Expect:* each property tab shows **only** its own ticket. The customer tab
-shows both. This is the derived `project.property_id` join; if it shows both on
-each property, the derivation is broken.
+**E-16 Property tab excludes other properties** — [VERIFIED]
+Use **Vjay Chipade**, who owns two properties each with its own project and one
+ticket.
+*Expect:* the customer tab shows **both** (2); each property tab shows **only
+its own** (1) — property *PRJ-…-0122* shows `TKT-…-0009`, property *PRJ-…-0138*
+shows `TKT-…-0010`. This is the derived `project.property_id` join; if a
+property tab showed both, the derivation would be broken. Confirmed at both the
+API and the rendered tab.
 
 **E-17 Creating from a property tab stays on that property** — [TO RUN]
-**New Ticket** from property A's tab on a customer who also owns property B.
-*Expect:* the project is locked to property A's project, so the ticket cannot
-land on property B and vanish from the tab you created it in.
+**New Ticket** from Vjay Chipade's *PRJ-…-0122* property tab.
+*Expect:* the project is locked to that property's project (no project field
+shown), so the ticket cannot land on the other property and vanish from the tab
+you created it in.
 
 ### 3.5 Form behaviour
 
@@ -354,6 +336,8 @@ The nav entry has no role restriction. Confirm that is intended.
 ### 3.10 Empty and loading states
 
 **E-42 No tickets at all** — [TO RUN]
+The fixtures deliberately leave tickets in place, so reach this by filtering to
+a status with no matches, or point at an empty database.
 *Expect:* Service list shows "No service tickets yet.", all tiles read 0, no
 crash.
 
