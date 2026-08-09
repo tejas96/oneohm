@@ -128,6 +128,7 @@ export const PROPERTY_STATUS_BAR_ORDER: readonly PropertyStatus[] = [
   PropertyStatus.ACTIVE,
   PropertyStatus.PENDING_VERIFICATION,
   PropertyStatus.INACTIVE,
+  PropertyStatus.LOST,
 ];
 
 /** Latest-quote status → DS tone. */
