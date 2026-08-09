@@ -8,6 +8,11 @@ export interface KpiItem {
   value: string;
   hint?: string;
   tone?: 'default' | 'warning' | 'error';
+  /**
+   * Makes the tile a button. Set only where there is something to fix — a tile
+   * that merely reports a value should not look actionable.
+   */
+  onClick?: () => void;
 }
 
 interface CustomerDetailKpiStripProps {
@@ -47,7 +52,30 @@ export function CustomerDetailKpiStrip({
       aria-label="Key metrics"
     >
       {items.map((item) => (
-        <Card key={item.label} variant="outlined" sx={{ borderRadius: 1 }}>
+        <Card
+          key={item.label}
+          variant="outlined"
+          onClick={item.onClick}
+          role={item.onClick ? 'button' : undefined}
+          tabIndex={item.onClick ? 0 : undefined}
+          onKeyDown={
+            item.onClick
+              ? (event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    item.onClick?.();
+                  }
+                }
+              : undefined
+          }
+          sx={{
+            borderRadius: 1,
+            ...(item.onClick && {
+              cursor: 'pointer',
+              '&:hover': { bgcolor: 'action.hover' },
+            }),
+          }}
+        >
           <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Typography
               variant="caption"

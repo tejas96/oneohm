@@ -2,13 +2,12 @@
 -- Run these after migration to ensure data integrity
 
 -- 1. Check for overlapping ranges (updated for new schema without project_type/deleted_at)
-SELECT a.organization_id, COUNT(*) as conflicts
+SELECT COUNT(*) as conflicts
 FROM installation_pricing a JOIN installation_pricing b
-  ON a.organization_id = b.organization_id
-  AND a.id < b.id AND a.is_active = true AND b.is_active = true
+  ON a.id < b.id AND a.is_active = true AND b.is_active = true
 WHERE (a.min_system_size_kw <= COALESCE(b.max_system_size_kw, 999999) 
        AND COALESCE(a.max_system_size_kw, 999999) >= b.min_system_size_kw)
-GROUP BY a.organization_id;
+HAVING COUNT(*) > 0;
 
 -- 2. Check for invalid ranges
 SELECT COUNT(*) as invalid_size_ranges FROM installation_pricing
@@ -36,7 +35,7 @@ WHERE (cost_components ? 'structure_cost'
 
 -- 7. Check for missing required fields
 SELECT COUNT(*) as missing_required_fields FROM installation_pricing
-WHERE (organization_id IS NULL 
+WHERE (
    OR min_system_size_kw IS NULL 
    OR transport_rate_per_km IS NULL
    OR floor_increment_percent IS NULL
@@ -50,17 +49,16 @@ SELECT COUNT(*) as invalid_date_ranges FROM installation_pricing
 WHERE effective_to IS NOT NULL AND effective_from > effective_to;
 
 -- 9. Check for duplicate tiers (should be 0 with unique constraint)
-SELECT organization_id, min_system_size_kw, max_system_size_kw, COUNT(*) as duplicates
+SELECT min_system_size_kw, max_system_size_kw, COUNT(*) as duplicates
 FROM installation_pricing
 WHERE is_active = true
-GROUP BY organization_id, min_system_size_kw, max_system_size_kw
+GROUP BY min_system_size_kw, max_system_size_kw
 HAVING COUNT(*) > 1;
 
 -- 10. Summary statistics
 SELECT 
     COUNT(*) as total_rows,
     COUNT(CASE WHEN is_active = true THEN 1 END) as active_rows,
-    COUNT(DISTINCT organization_id) as organizations,
     MIN(min_system_size_kw) as min_size,
     MAX(COALESCE(max_system_size_kw, 999)) as max_size,
     AVG(gst_rate) as avg_gst_rate

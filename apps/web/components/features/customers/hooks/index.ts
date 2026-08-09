@@ -41,12 +41,7 @@ export { useCustomerQuotes, quoteKeys } from './use-customer-quotes';
 export type { CustomerQuote, CustomerQuotesResponse } from './use-customer-quotes';
 
 // Customer follow-ups
-export {
-  useCustomerFollowups,
-  useCreateFollowup,
-  useCompleteFollowup,
-  followupKeys,
-} from './use-customer-followups';
+export { useCustomerFollowups, followupKeys } from './use-customer-followups';
 export type {
   FollowupResponse,
   CreateFollowupInput,

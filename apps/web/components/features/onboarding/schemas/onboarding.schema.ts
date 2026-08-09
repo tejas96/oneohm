@@ -24,6 +24,13 @@ const wizardOnlyFields = {
   siteVisitAssignee: z.string().uuid().optional().or(z.literal('')),
   siteSurveyAssignee: z.string().uuid().optional().or(z.literal('')),
   /**
+   * First followup. Optional here because the edit flows reuse this shape and
+   * must not demand a new followup to save a name change; the create flows
+   * layer the requirement on top (see requiredFirstFollowup).
+   */
+  nextFollowupDate: z.date().optional(),
+  nextFollowupAssignee: z.string().uuid().optional().or(z.literal('')),
+  /**
    * Billing-address map state. The customer API fixes country to India and
    * stores no coordinates, so these back the Places lookup and map pin only —
    * they're stripped before any request.
@@ -33,6 +40,15 @@ const wizardOnlyFields = {
   customerLongitude: z.number({ coerce: true }).optional(),
 };
 
+/**
+ * Creating a lead means committing to chase it, so both flows that create one
+ * require a first followup. Editing does not.
+ */
+const requiredFirstFollowup = {
+  nextFollowupDate: z.date({ message: 'Schedule the first follow-up' }),
+  nextFollowupAssignee: z.string().uuid({ message: 'Pick who owns this lead' }),
+};
+
 /** Property fields relaxed to optional — used where only the customer is being edited. */
 const optionalPropertyShape = addPropertySchema.partial().shape;
 
@@ -40,6 +56,7 @@ const optionalPropertyShape = addPropertySchema.partial().shape;
 export const onboardingCreateSchema = z
   .object({
     ...wizardOnlyFields,
+    ...requiredFirstFollowup,
     customer: createCustomerProfileSchema.optional(),
     ...addPropertySchema.shape,
   })
@@ -70,9 +87,17 @@ export const onboardingCustomerSchema = z.object({
   ...optionalPropertyShape,
 });
 
-/** Editing a site, or adding one to a known customer: property fields only. */
+/** Editing a site: property fields only, no new followup demanded. */
 export const onboardingPropertySchema = z.object({
   ...wizardOnlyFields,
+  customer: createCustomerProfileSchema.optional(),
+  ...addPropertySchema.shape,
+});
+
+/** Adding a site to a known customer — a new lead, so a first followup is required. */
+export const onboardingCreateSiteSchema = z.object({
+  ...wizardOnlyFields,
+  ...requiredFirstFollowup,
   customer: createCustomerProfileSchema.optional(),
   ...addPropertySchema.shape,
 });
@@ -81,6 +106,7 @@ export type OnboardingFormData = z.infer<typeof onboardingCreateSchema>;
 
 export function getOnboardingResolverSchema(mode: OnboardingMode): z.ZodTypeAny {
   if (mode === 'edit-customer') return onboardingCustomerSchema;
-  if (mode === 'edit-property' || mode === 'create-site') return onboardingPropertySchema;
+  if (mode === 'create-site') return onboardingCreateSiteSchema;
+  if (mode === 'edit-property') return onboardingPropertySchema;
   return onboardingCreateSchema;
 }

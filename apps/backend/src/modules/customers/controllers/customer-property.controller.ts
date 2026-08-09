@@ -37,6 +37,7 @@ import {
   PropertyQueryDto,
   UpdateCustomerPropertyDto,
 } from '../dto';
+import { MarkLostDto } from '../dto/mark-lost.dto';
 import { CustomerPropertyService } from '../services/customer-property.service';
 
 /**
@@ -455,5 +456,25 @@ export class CustomerPropertyController {
   ): Promise<CustomerPropertyResponseDto> {
     const updated = await this.propertyService.cancelSiteActivity(propertyId, currentUser.id);
     return toDto(CustomerPropertyResponseDto, updated);
+  }
+
+  /**
+   * Mark a site as lost.
+   *
+   * Per-property by design: one customer can have three sites, and losing one
+   * must not remove the other two from the pipeline.
+   */
+  @Post(':id/lost')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Mark a property as lost' })
+  @ApiParam({ name: 'id', description: 'Property ID', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: CustomerPropertyResponseDto })
+  async markLost(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: MarkLostDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerPropertyResponseDto> {
+    const property = await this.propertyService.markLost(id, dto.reason, currentUser.id);
+    return toDto(CustomerPropertyResponseDto, property);
   }
 }

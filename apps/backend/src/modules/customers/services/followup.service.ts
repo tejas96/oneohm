@@ -1,13 +1,20 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { FollowupStatus } from '@tejas96/shared/types';
+import {
+  FollowupOutcome,
+  FollowupPriority,
+  FollowupStatus,
+  FollowupType,
+} from '@tejas96/shared/types';
 
+import { LeadClosureService } from './lead-closure.service';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
+import { CompleteFollowupDto } from '../dto/complete-followup.dto';
 import { CreateFollowupDto } from '../dto/create-followup.dto';
 import { UpdateFollowupDto } from '../dto/update-followup.dto';
 import { FollowupEntity } from '../entities/followup.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
-import { FollowupRepository } from '../repositories/followup.repository';
+import { FollowupRepository, type FollowupGapRow } from '../repositories/followup.repository';
 
 /**
  * Followup Service
@@ -22,6 +29,7 @@ export class FollowupService {
     private readonly customerRepository: CustomerProfileRepository,
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly userRoleRepository: UserRoleRepository,
+    private readonly leadClosureService: LeadClosureService,
   ) {}
 
   /**
@@ -67,10 +75,10 @@ export class FollowupService {
   }
 
   /**
-   * Find all followups for an organization
+   * Find all followups
    */
   async findAll(page = 1, limit = 20): Promise<{ data: FollowupEntity[]; total: number }> {
-    const [data, total] = await this.followupRepository.findByOrganization(page, limit);
+    const [data, total] = await this.followupRepository.findAll(page, limit);
     return { data, total };
   }
 
@@ -196,6 +204,225 @@ export class FollowupService {
 
     this.logger.log(`Followup updated: ${id}`);
     return updatedFollowup;
+  }
+
+  /**
+   * Complete a followup and, unless the lead is closing, open the next one.
+   *
+   * The next followup is mandatory only when this is the LAST pending followup
+   * on the lead unit — that is precisely when completing it would leave the lead
+   * with nobody owing it an action. With siblings still pending the rule is
+   * already satisfied, and demanding another would make parallel chases absurd:
+   * finishing a document chase would insist on a second document chase while the
+   * quote-decision followup sits open.
+   *
+   * The check is made server-side against the database; the client's opinion
+   * about how many siblings exist is never trusted.
+   */
+  async complete(id: string, dto: CompleteFollowupDto, userId: string): Promise<FollowupEntity> {
+    const followup = await this.findById(id);
+
+    if (followup.status !== FollowupStatus.PENDING) {
+      throw new BadRequestException(`Followup is already ${followup.status}`);
+    }
+
+    // Without a catch-all people pick a wrong-but-close outcome to get past the
+    // dialog, which corrupts the data more quietly than an honest "other".
+    // Requiring notes is what keeps that escape hatch honest.
+    if (dto.outcome === FollowupOutcome.OTHER && !dto.notes?.trim()) {
+      throw new BadRequestException('Notes are required when the outcome is "other"');
+    }
+
+    if (dto.terminal === 'lost' && !dto.lostReason?.trim()) {
+      throw new BadRequestException('A reason is required when marking a lead lost');
+    }
+
+    const propertyId = followup.propertyId ?? null;
+
+    if (!dto.terminal && !dto.next) {
+      const siblings = await this.followupRepository.countPendingForUnit(
+        followup.customerId,
+        propertyId,
+        id,
+      );
+      if (siblings === 0) {
+        throw new BadRequestException(
+          'This is the only open follow-up. Schedule the next one, or close the lead as won or lost.',
+        );
+      }
+    }
+
+    return this.followupRepository.repository.manager.transaction(async (manager) => {
+      const completed = await this.followupRepository.update(
+        id,
+        {
+          status: FollowupStatus.COMPLETED,
+          outcome: dto.outcome,
+          completedAt: new Date(),
+          notes: dto.notes?.trim() || followup.notes,
+          updatedBy: userId,
+        },
+        manager,
+      );
+      if (!completed) {
+        throw new NotFoundException('Followup not found');
+      }
+
+      // Every terminal path goes through LeadClosureService so this and quote
+      // acceptance cannot drift apart on what "closing a lead" means.
+      if (dto.terminal) {
+        if (dto.terminal === 'lost') {
+          if (propertyId) {
+            await this.leadClosureService.markPropertyLost(
+              propertyId,
+              followup.customerId,
+              dto.lostReason!,
+              userId,
+            );
+          } else {
+            await this.leadClosureService.markCustomerLost(
+              followup.customerId,
+              dto.lostReason!,
+              userId,
+            );
+          }
+        } else {
+          await this.leadClosureService.closeProperty(
+            propertyId!,
+            followup.customerId,
+            userId,
+            manager,
+          );
+        }
+        return completed;
+      }
+
+      if (dto.next) {
+        await this.followupRepository.create(
+          {
+            customerId: followup.customerId,
+            propertyId: propertyId ?? undefined,
+            type: dto.next.type ?? FollowupType.TASK,
+            subject: dto.next.subject.trim(),
+            scheduledAt: new Date(dto.next.scheduledAt),
+            assignedToUserId: dto.next.assignedToUserId,
+            priority: dto.next.priority ?? FollowupPriority.NORMAL,
+            notes: dto.next.notes,
+            status: FollowupStatus.PENDING,
+            createdBy: userId,
+          },
+          manager,
+        );
+      }
+
+      return completed;
+    });
+  }
+
+  /**
+   * Move a followup to a different owner.
+   *
+   * Ownership of a lead IS the assignee of its pending followup, so this is how
+   * a lead changes hands — there is no separate owner field to keep in sync.
+   * Deliberately unrestricted: no RBAC in this feature.
+   */
+  async reassign(id: string, assignedToUserId: string, userId: string): Promise<FollowupEntity> {
+    await this.findById(id);
+    await this.assertUserExists(assignedToUserId);
+
+    const updated = await this.followupRepository.update(id, {
+      assignedToUserId,
+      updatedBy: userId,
+    });
+    if (!updated) {
+      throw new NotFoundException('Followup not found');
+    }
+    return updated;
+  }
+
+  /** Bulk variant for the handoff case — one person going on leave. */
+  async reassignMany(
+    ids: string[],
+    assignedToUserId: string,
+    userId: string,
+  ): Promise<{ updated: number }> {
+    await this.assertUserExists(assignedToUserId);
+
+    let updated = 0;
+    for (const id of ids) {
+      const result = await this.followupRepository.update(id, {
+        assignedToUserId,
+        updatedBy: userId,
+      });
+      if (result) updated += 1;
+    }
+
+    this.logger.log(`Reassigned ${updated} followup(s) to ${assignedToUserId}`);
+    return { updated };
+  }
+
+  /**
+   * Move the date without completing.
+   *
+   * The escape valve that stops people cancelling followups purely to get them
+   * off today's list — "he asked me to call Monday instead" is a reschedule,
+   * not an outcome.
+   */
+  async reschedule(id: string, scheduledAt: string, userId: string): Promise<FollowupEntity> {
+    const followup = await this.findById(id);
+    if (followup.status !== FollowupStatus.PENDING) {
+      throw new BadRequestException(`Cannot reschedule a ${followup.status} followup`);
+    }
+
+    const updated = await this.followupRepository.update(id, {
+      scheduledAt: new Date(scheduledAt),
+      updatedBy: userId,
+    });
+    if (!updated) {
+      throw new NotFoundException('Followup not found');
+    }
+    return updated;
+  }
+
+  /** Open lead units with nobody owing them an action. */
+  async gaps(): Promise<FollowupGapRow[]> {
+    return this.followupRepository.findGaps();
+  }
+
+  /** Badge counts. Pass null for everyone's followups. */
+  async summary(userId: string | null): Promise<{
+    overdue: number;
+    today: number;
+    upcoming: number;
+    gaps: number;
+  }> {
+    const [counts, gapRows] = await Promise.all([
+      this.followupRepository.summaryCounts(userId),
+      this.followupRepository.findGaps(),
+    ]);
+
+    // Gaps must respect the same scope as the date buckets. Counting all of
+    // them while the list filters to one user leaves the badge and the list
+    // disagreeing, which is exactly the kind of thing that makes people stop
+    // believing the numbers.
+    const gaps = userId
+      ? gapRows.filter((row) => row.attributedUserId === userId).length
+      : gapRows.length;
+
+    return { ...counts, gaps };
+  }
+
+  /**
+   * The assigned user must exist in the system.
+   *
+   * `findByUserAndOrganization` is an org-era name that now just checks the user
+   * has any role. Left alone because it has 10 callers across unrelated modules.
+   */
+  private async assertUserExists(userId: string): Promise<void> {
+    const roles = await this.userRoleRepository.findByUserAndOrganization(userId);
+    if (roles.length === 0) {
+      throw new BadRequestException('Assigned user not found');
+    }
   }
 
   /**

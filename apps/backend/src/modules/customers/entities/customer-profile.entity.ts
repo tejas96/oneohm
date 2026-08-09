@@ -10,7 +10,7 @@ import { UserEntity } from '../../users/entities/user.entity';
 /**
  * Customer Profile Entity
  * Stores customer-specific profile data
- * A user can have one customer profile per organization
+ * A user has at most one customer profile
  */
 @Entity('customer_profiles')
 @Index(['userId'], { unique: true })
@@ -112,6 +112,14 @@ export class CustomerProfileEntity extends BaseEntity {
     default: CustomerStatus.ACTIVE,
   })
   status!: CustomerStatus;
+
+  // ==================== LOST TRACKING ====================
+  /** Set together with status = LOST, for an enquiry that never got a property. */
+  @Column({ name: 'lost_reason', type: 'text', nullable: true })
+  lostReason?: string;
+
+  @Column({ name: 'lost_at', type: 'timestamptz', nullable: true })
+  lostAt?: Date;
 
   // ==================== Audit Fields ====================
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })

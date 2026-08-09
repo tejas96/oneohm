@@ -45,7 +45,6 @@ import {
   usePropertyFollowups,
   usePropertyLoan,
 } from '../hooks';
-import { FollowupDrawer } from './followup-drawer';
 import { MarkAsLostDialog } from './mark-as-lost-dialog';
 import { useDeleteProperty } from '../hooks/use-properties';
 import { getPropertyDisplayName } from '../utils';
@@ -62,6 +61,7 @@ import {
 } from '@/components/features/customers/customer-detail';
 import { stickyHeaderPaperSx } from '@/components/features/customers/customer-detail/styles';
 import { useCustomer } from '@/components/features/customers/hooks';
+import { FollowupDrawer } from '@/components/features/followups';
 import { usePropertyLockStatus } from '@/components/features/quotes/hooks/use-quotes';
 import { EmptyState } from '@/components/shared';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
@@ -331,8 +331,27 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
           : ('default' as const),
     },
     {
+      /**
+       * An open lead with nothing pending is the state this whole feature
+       * exists to prevent, so it reads as a problem rather than an empty dash.
+       * Converted and lost sites are finished — no chase is owed there.
+       *
+       * Driven by the server-computed `needsFollowup` flag (shared predicate
+       * in followup-predicates.ts) rather than re-deriving "closed" from
+       * status/latestQuoteStatus here — a re-derived condition can drift from
+       * the chip/dot definition (e.g. a re-quote after acceptance), flipping
+       * this tile red and clickable for a site the rest of the feature
+       * already excludes.
+       */
       label: 'Next Follow-up',
-      value: nextFollowup ? formatDate(nextFollowup.scheduledAt) : '—',
+      value: nextFollowup
+        ? formatDate(nextFollowup.scheduledAt)
+        : property.needsFollowup
+          ? 'None scheduled'
+          : '—',
+      tone: !nextFollowup && property.needsFollowup ? ('error' as const) : ('default' as const),
+      onClick:
+        !nextFollowup && property.needsFollowup ? () => setFollowupDrawerOpen(true) : undefined,
     },
     {
       label: 'Project',
@@ -539,6 +558,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 propertyId={property.id}
                 enabled={activeTab === 'followups'}
                 onLogFollowup={() => setFollowupDrawerOpen(true)}
+                onMarkLost={() => setMarkLostOpen(true)}
               />
             )}
             {activeTab === 'service' && (
@@ -560,12 +580,14 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
       <FollowupDrawer
         open={followupDrawerOpen}
         onClose={() => setFollowupDrawerOpen(false)}
-        property={property}
         customerId={property.customerId}
+        propertyId={property.id}
+        leadTemperature={property.leadTemperature}
       />
       <MarkAsLostDialog
         open={markLostOpen}
         onClose={() => setMarkLostOpen(false)}
+        propertyId={property.id}
         propertyName={propertyName}
       />
 

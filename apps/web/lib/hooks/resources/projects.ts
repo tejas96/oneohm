@@ -157,7 +157,6 @@ export function useProjectSummary(
 
 // ── Task List Hook ──────────────────────────────────────────────
 // Paginated, filtered list of tasks for a single project.
-// Uses useOrgContext (FDAL) instead of raw useAuth — orgHeaders
 
 const taskListKeys = createResourceKeys('project-tasks');
 

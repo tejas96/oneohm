@@ -37,6 +37,7 @@ import {
   UpdateCustomerDto,
   UpdateCustomerStatusDto,
 } from '../dto';
+import { MarkLostDto } from '../dto/mark-lost.dto';
 import { CustomerService } from '../services/customer.service';
 
 /**
@@ -201,7 +202,7 @@ export class CustomerController {
   @Get('statistics/status')
   @ApiOperation({
     summary: 'Get customer status statistics',
-    description: 'Returns count of customers grouped by status for the specified organization.',
+    description: 'Returns count of customers grouped by status.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -318,7 +319,7 @@ export class CustomerController {
     summary: 'Assign or unassign a customer',
     description:
       'Assign a customer to a user (field worker). Send assigneeId as a UUID to assign, or null to unassign. ' +
-      'Assignee must be an active employee in the same organization. ' +
+      'Assignee must be an active employee. ' +
       '',
   })
   @ApiResponse({
@@ -360,5 +361,24 @@ export class CustomerController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     await this.customerService.delete(id, currentUser.id);
+  }
+
+  /**
+   * Mark a property-less enquiry as lost
+   */
+  @ApiAction({
+    path: 'lost',
+    summary: 'Mark a customer lead as lost',
+    description:
+      'For an enquiry that never got a property. Sets status LOST with a reason and cancels the customer-level followups.',
+    responseType: CustomerResponseDto,
+  })
+  async markLost(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: MarkLostDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerResponseDto> {
+    const customer = await this.customerService.markLost(id, dto.reason, currentUser.id);
+    return toDto(CustomerResponseDto, customer);
   }
 }

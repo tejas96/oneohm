@@ -102,6 +102,9 @@ export interface CustomerPropertyResponse {
     status: string;
     name: string;
   };
+  // Follow-up state (enriched via shared predicate — do not re-derive on the client)
+  nextFollowupAt?: string | null;
+  needsFollowup?: boolean;
 }
 
 // ============================================================================

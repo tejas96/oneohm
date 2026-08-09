@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -25,6 +26,7 @@ import {
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource } from 'typeorm';
 
+import { LeadClosureService } from '../../customers/services/lead-closure.service';
 import type { DocumentEntity } from '../../documents/entities/document.entity';
 import { DocumentService } from '../../documents/services';
 import { IntegrationService } from '../../integrations/services';
@@ -59,6 +61,8 @@ const CENTS_ROUNDING_FACTOR = 100;
  */
 @Injectable()
 export class QuoteService {
+  private readonly logger = new Logger(QuoteService.name);
+
   constructor(
     private readonly quoteRepository: QuoteRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
@@ -68,6 +72,7 @@ export class QuoteService {
     private readonly storageService: StorageService,
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
+    private readonly leadClosureService: LeadClosureService,
   ) {}
 
   /**
@@ -582,6 +587,19 @@ export class QuoteService {
         this.eventEmitter.emit(
           CONSUMER_EVENTS.QUOTATION_CREATED,
           new QuotationCreatedEvent(id, quote.propertyId, quote.customerId, quote.quoteNumber),
+        );
+      }
+    }
+
+    // A won deal must stop nagging without anyone clicking twice. Best-effort:
+    // the quote is already accepted by this point, so a failure here should not
+    // read as "the acceptance did not save".
+    if (statusDto.status === QuoteStatus.ACCEPTED && quote.propertyId && quote.customerId) {
+      try {
+        await this.leadClosureService.closeProperty(quote.propertyId, quote.customerId, updatedBy);
+      } catch (error) {
+        this.logger.error(
+          `Quote ${id} accepted but its followups could not be closed: ${String(error)}`,
         );
       }
     }

@@ -9,7 +9,7 @@ import FactoryOutlinedIcon from '@mui/icons-material/FactoryOutlined';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
-import { Box, Button, CircularProgress, Skeleton } from '@mui/material';
+import { Box, Button, CircularProgress, Skeleton, Tooltip } from '@mui/material';
 import { PropertyStatus, PropertyType } from '@tejas96/shared/types';
 import { useRouter } from 'next/navigation';
 import { type ComponentType, type JSX, useCallback, useMemo, useState } from 'react';
@@ -39,7 +39,7 @@ import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmatio
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { color, crm, gradient, radius, shadow } from '@/lib/theme/tokens';
-import { formatCurrency, toTitleLabel } from '@/lib/utils';
+import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
@@ -254,20 +254,55 @@ function SiteRow({
           <TypeIcon sx={{ fontSize: 15 }} />
         </Box>
         <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1px' }}>
-          <Box
-            component="span"
-            sx={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 12,
-              fontWeight: 500,
-              color: property.consumerNumber ? color['text-primary'] : color['text-tertiary'],
-              fontStyle: property.consumerNumber ? 'normal' : 'italic',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {property.consumerNumber || 'Consumer no. not available'}
+          <Box className="flex items-center gap-1.5" sx={{ minWidth: 0 }}>
+            {(() => {
+              // Server-computed: do NOT re-derive from status + nextFollowupAt here, or the
+              // dot drifts from the chip on sites with an accepted-but-unconverted quote.
+              if (!property.needsFollowup && !property.nextFollowupAt) return null;
+              return property.nextFollowupAt ? (
+                <Tooltip title={`Next follow-up ${formatDate(property.nextFollowupAt)}`}>
+                  <Box
+                    component="span"
+                    sx={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      bgcolor: 'success.main',
+                      flexShrink: 0,
+                    }}
+                  />
+                </Tooltip>
+              ) : (
+                <Tooltip title="No follow-up scheduled">
+                  <Box
+                    component="span"
+                    aria-label="No follow-up scheduled"
+                    sx={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      bgcolor: 'error.main',
+                      flexShrink: 0,
+                    }}
+                  />
+                </Tooltip>
+              );
+            })()}
+            <Box
+              component="span"
+              sx={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 12,
+                fontWeight: 500,
+                color: property.consumerNumber ? color['text-primary'] : color['text-tertiary'],
+                fontStyle: property.consumerNumber ? 'normal' : 'italic',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {property.consumerNumber || 'Consumer no. not available'}
+            </Box>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
             {property.isPrimary ? (
@@ -716,11 +751,14 @@ export function CustomerPropertiesExpandedRow({
         ))}
       </Box>
 
-      <MarkAsLostDialog
-        open={!!markLostTarget}
-        onClose={() => setMarkLostTarget(null)}
-        propertyName={markLostTarget?.propertyName ?? markLostTarget?.propertyCode}
-      />
+      {markLostTarget && (
+        <MarkAsLostDialog
+          open
+          onClose={() => setMarkLostTarget(null)}
+          propertyId={markLostTarget.id}
+          propertyName={markLostTarget.propertyName ?? markLostTarget.propertyCode}
+        />
+      )}
 
       <DeleteConfirmationDialog
         open={deleteConfirmation.isOpen}

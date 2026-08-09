@@ -54,6 +54,7 @@ export const CUSTOMER_STATUS_CHIP_COLOR: Record<CustomerStatus, StatusChipColor>
   prospect: 'warning',
   active: 'success',
   inactive: 'default',
+  lost: 'error',
 };
 
 // ============================================================================
@@ -86,6 +87,7 @@ export const CUSTOMER_STATUS_TONE: Record<CustomerStatus, CrmTone> = {
   prospect: 'info',
   active: 'success',
   inactive: 'danger',
+  lost: 'danger',
 };
 
 /**
@@ -113,6 +115,7 @@ export const PROPERTY_STATUS_TONE: Record<PropertyStatus, CrmTone> = {
   [PropertyStatus.CONVERTED]: 'success',
   [PropertyStatus.PENDING_VERIFICATION]: 'warning',
   [PropertyStatus.INACTIVE]: 'danger',
+  [PropertyStatus.LOST]: 'danger',
 };
 
 /**
@@ -125,6 +128,7 @@ export const PROPERTY_STATUS_BAR_ORDER: readonly PropertyStatus[] = [
   PropertyStatus.ACTIVE,
   PropertyStatus.PENDING_VERIFICATION,
   PropertyStatus.INACTIVE,
+  PropertyStatus.LOST,
 ];
 
 /** Latest-quote status → DS tone. */

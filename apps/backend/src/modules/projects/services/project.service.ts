@@ -23,7 +23,9 @@ import { DataSource, type EntityManager } from 'typeorm';
 
 import { ChangeRequestTaskService } from './change-request-task.service';
 import { BomService } from '../../bom/services/bom.service';
+import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
+import { LeadClosureService } from '../../customers/services/lead-closure.service';
 import { rupeesToPaise } from '../../ledger/domain/paise';
 import { MilestoneService } from '../../ledger/services/milestone.service';
 import { LookupRepository } from '../../lookups/repositories/lookup.repository';
@@ -83,6 +85,7 @@ export class ProjectService {
     private readonly milestoneService: MilestoneService,
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
+    private readonly leadClosureService: LeadClosureService,
   ) {}
 
   /**
@@ -849,6 +852,24 @@ export class ProjectService {
         PropertyStatus.CONVERTED,
         manager,
       );
+
+      // 3b. Project tasks take over from here, so the sales chase is finished.
+      // Same transaction as the conversion: a property cannot end up converted
+      // while still carrying pending sales followups.
+      //
+      // ProjectEntity has no customerId of its own — it is derived from the
+      // property — so read it back rather than threading it through the params.
+      const converted = await manager
+        .getRepository(CustomerPropertyEntity)
+        .findOne({ where: { id: propertyId }, select: { id: true, customerId: true } });
+      if (converted) {
+        await this.leadClosureService.closeProperty(
+          propertyId,
+          converted.customerId,
+          createdBy,
+          manager,
+        );
+      }
 
       // 4. Set excluded steps on project
       await this.projectRepository.updateById(

@@ -161,7 +161,10 @@ export const ONBOARDING_STEPS: OnboardingStepConfig[] = [
     group: 'Finish',
     overline: 'Finish · Review',
     title: 'Check it over',
-    fields: [],
+    // Validated before submit, so a lead cannot be created with nobody owing
+    // it an action. Harmless in the edit flows, where the schema makes them
+    // optional.
+    fields: ['nextFollowupDate', 'nextFollowupAssignee'],
   },
 ];
 

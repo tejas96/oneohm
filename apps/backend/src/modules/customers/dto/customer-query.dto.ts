@@ -294,6 +294,16 @@ export class CustomerQueryDto {
   @Transform(({ value }: { value: string }) => value?.trim())
   propertyConsumerNumber?: string;
 
+  @ApiPropertyOptional({
+    type: Boolean,
+    description:
+      'Only customers with at least one open site that has no pending follow-up, or a property-less lead with none.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  needsFollowup?: boolean;
+
   // ==================== Sorting ====================
 
   @ApiPropertyOptional({

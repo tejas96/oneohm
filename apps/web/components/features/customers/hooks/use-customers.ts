@@ -51,6 +51,7 @@ export interface CustomerFilters {
   hasProperty?: boolean;
   /** Customers with (true) or without (false) open or in-progress tickets. */
   hasActiveTickets?: boolean;
+  needsFollowup?: boolean;
   fromDate?: string; // ISO date string (YYYY-MM-DD)
   toDate?: string; // ISO date string (YYYY-MM-DD)
   groupSearch?: string; // filter by group name or code (partial match)
@@ -134,6 +135,7 @@ export interface CustomerStatsResponse {
   prospect: number;
   active: number;
   inactive: number;
+  lost: number;
 }
 
 /**
@@ -150,6 +152,8 @@ export interface CustomerOverviewStats {
   awaitingReply: number;
   /** Of `awaitingReply`, unanswered for more than 7 days. */
   awaitingAgeing: number;
+  /** Customers with at least one open site nobody owes an action. */
+  needsFollowup: number;
 }
 
 export interface UpdateCustomerData {
@@ -221,6 +225,8 @@ export function useCustomers(
         params.append('hasProperty', String(queryFilters.hasProperty));
       if (queryFilters.hasActiveTickets !== undefined)
         params.append('hasActiveTickets', String(queryFilters.hasActiveTickets));
+      if (queryFilters.needsFollowup !== undefined)
+        params.append('needsFollowup', String(queryFilters.needsFollowup));
       if (queryFilters.fromDate) params.append('fromDate', queryFilters.fromDate);
       if (queryFilters.toDate) params.append('toDate', queryFilters.toDate);
       if (queryFilters.groupSearch) params.append('groupSearch', queryFilters.groupSearch);

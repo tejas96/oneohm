@@ -16,7 +16,7 @@ export type { PropertyDetailTab } from './constants';
 // Components
 export { PropertyDetailPage } from './components/property-detail-page';
 export { PropertyRowActionsMenu } from './components/property-row-actions-menu';
-export { PropertyPipelineStrip, FollowupDrawer, MarkAsLostDialog } from './property-detail';
+export { PropertyPipelineStrip, MarkAsLostDialog } from './property-detail';
 
 // Property-domain field groups — consumed by the onboarding wizard, which
 // supplies the surrounding card chrome.
@@ -44,8 +44,6 @@ export {
   usePropertyQuotes,
   usePropertyLoan,
   usePropertyFollowups,
-  useCreatePropertyFollowup,
-  useCompletePropertyFollowup,
 } from './hooks';
 
 export type {

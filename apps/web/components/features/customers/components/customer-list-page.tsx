@@ -44,8 +44,9 @@ import {
 import {
   Customer as CustomerBase,
   type CustomerFilters,
-  useCustomers,
   useCustomerGroups,
+  useCustomerOverviewStats,
+  useCustomers,
   useCustomerStats,
   useDeleteCustomer,
 } from '../hooks/use-customers';
@@ -242,6 +243,8 @@ function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilte
       typeof raw.propertyConsumerNumber === 'string' && raw.propertyConsumerNumber
         ? raw.propertyConsumerNumber
         : undefined,
+    needsFollowup:
+      filters.needsFollowup === 'true' || filters.needsFollowup === true ? true : undefined,
   };
 }
 
@@ -972,23 +975,6 @@ export function CustomerListPage(): JSX.Element {
     [urlState.setFilters],
   );
 
-  /**
-   * Service tickets sit on a different axis from customer status, so they get
-   * the secondary chip row rather than competing for the same selection.
-   */
-  const activeTicketsFilter =
-    urlState.state.filters.hasActiveTickets === 'true' ? 'active-tickets' : '';
-
-  const handleTicketFilterChange = useCallback(
-    (key: string) => {
-      const next = { ...filtersRef.current };
-      if (key === 'active-tickets') next.hasActiveTickets = 'true';
-      else delete next.hasActiveTickets;
-      urlState.setFilters(next);
-    },
-    [urlState.setFilters],
-  );
-
   // Fetch active employees
   const { data: employees = [] } = useEmployees();
 
@@ -1015,12 +1001,32 @@ export function CustomerListPage(): JSX.Element {
     ];
   }, [statusStats]);
 
+  // Company-wide roll-up used for the KPI cards below — also rendered on this
+  // page by CustomerKpiCards, so TanStack Query dedupes the request.
+  const { data: overviewStats } = useCustomerOverviewStats();
+
   /** Count comes from the same filtered query the chip applies, so the two agree. */
   const { data: activeTicketCustomers } = useCustomers({ hasActiveTickets: true, limit: 1 });
 
-  const ticketQuickFilters = useMemo<CrmQuickFilter[]>(
+  /**
+   * The secondary chip row holds the worklist views — "who needs my attention"
+   * — as opposed to the status row above, which describes what a customer *is*.
+   *
+   * Both worklists share this one row because CrmTable tracks a single
+   * `activeSecondaryQuickFilter`, so they are mutually exclusive by
+   * construction. That is the right semantic anyway: they are two different
+   * worklists, and the leading "All customers" chip is how you leave either.
+   */
+  const secondaryQuickFilters = useMemo<CrmQuickFilter[]>(
     () => [
       { key: '', label: 'All customers', tone: 'neutral', dot: false },
+      {
+        key: 'needs-followup',
+        label: 'Needs follow-up',
+        count: overviewStats?.needsFollowup,
+        tone: 'danger',
+        dot: true,
+      },
       {
         key: 'active-tickets',
         label: 'Has active tickets',
@@ -1029,7 +1035,33 @@ export function CustomerListPage(): JSX.Element {
         dot: true,
       },
     ],
-    [activeTicketCustomers?.meta?.total],
+    [overviewStats?.needsFollowup, activeTicketCustomers?.meta?.total],
+  );
+
+  /**
+   * Both chips are shortcuts into the same URL filter state as every other
+   * filter on this page — not parallel React state — so they inherit the
+   * page-0 reset and URL persistence `urlState.setFilters` already provides.
+   */
+  const activeSecondaryQuickFilter =
+    urlState.state.filters.needsFollowup === 'true' ||
+    urlState.state.filters.needsFollowup === true
+      ? 'needs-followup'
+      : urlState.state.filters.hasActiveTickets === 'true'
+        ? 'active-tickets'
+        : '';
+
+  const handleSecondaryQuickFilterChange = useCallback(
+    (key: string) => {
+      const next = { ...filtersRef.current };
+      // Selecting either worklist clears the other — one row, one selection.
+      delete next.needsFollowup;
+      delete next.hasActiveTickets;
+      if (key === 'needs-followup') next.needsFollowup = 'true';
+      else if (key === 'active-tickets') next.hasActiveTickets = 'true';
+      urlState.setFilters(reconcileContradictoryCustomerFilters(next, key || undefined));
+    },
+    [urlState.setFilters],
   );
 
   // Memoize sorted base employee options
@@ -1463,9 +1495,9 @@ export function CustomerListPage(): JSX.Element {
         quickFilters={quickFilters}
         activeQuickFilter={activeStatusFilter}
         onQuickFilterChange={handleQuickFilterChange}
-        secondaryQuickFilters={ticketQuickFilters}
-        activeSecondaryQuickFilter={activeTicketsFilter}
-        onSecondaryQuickFilterChange={handleTicketFilterChange}
+        secondaryQuickFilters={secondaryQuickFilters}
+        activeSecondaryQuickFilter={activeSecondaryQuickFilter}
+        onSecondaryQuickFilterChange={handleSecondaryQuickFilterChange}
         filterColumns={filterColumns}
         filterModel={urlState.state.filters}
         onFilterChange={handleFilterChange}
