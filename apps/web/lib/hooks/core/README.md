@@ -708,7 +708,6 @@ The app is single-tenant. `useOrgContext()` and the `X-Organization-Id` header
 it produced were deleted with the organization model — core hooks now call the
 API directly with no tenant scoping.
 
-
 ## Error Normalization
 
 All query and mutation errors are normalized via `normalizeApiError`:

@@ -27,7 +27,6 @@ import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource } from 'typeorm';
 
 import { LeadClosureService } from '../../customers/services/lead-closure.service';
-
 import type { DocumentEntity } from '../../documents/entities/document.entity';
 import { DocumentService } from '../../documents/services';
 import { IntegrationService } from '../../integrations/services';
