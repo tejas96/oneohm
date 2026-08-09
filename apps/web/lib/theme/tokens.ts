@@ -382,6 +382,18 @@ const root = {
     'col-discom-actions': '44px',
     'grid-min-width-discom': '1360px',
     'toolbar-search-width-discom': '250px',
+    // Service tickets grid (design min-width 1240px).
+    // Ticket numbers are `TKT-ONEOHM_EPC-2026-0001` — 24 characters, wider than
+    // any other code in the app, so this track is sized to hold one unclipped.
+    'col-ticket-number': '224px',
+    'col-ticket-title': 'minmax(220px,1.8fr)',
+    'col-ticket-customer': 'minmax(160px,1.2fr)',
+    'col-ticket-project': '180px',
+    'col-ticket-priority': '104px',
+    'col-ticket-status': '116px',
+    'col-ticket-assignee': 'minmax(130px,1fr)',
+    'col-ticket-created': '104px',
+    'grid-min-width-ticket': '1240px',
     'grid-min-width': '1280px',
     'row-gutter': '16px',
     'head-height': '40px',
