@@ -37,11 +37,6 @@ const MOCK_NAVIGATION_COUNTS: NavigationCounts = {
     outOfStock: 2,
     pendingPOs: 5,
   },
-  service: {
-    openTickets: 14,
-    urgentTickets: 3,
-    amcRenewalsDue: 6,
-  },
   finance: {
     pendingInvoices: 18,
     overduePayments: 4,
@@ -132,10 +127,3 @@ export function getInventoryBadgeCount(counts: NavigationCounts): number {
   return counts.inventory.lowStock + counts.inventory.outOfStock;
 }
 
-/**
- * Get total service badge count (for rail item)
- * Shows urgent tickets count
- */
-export function getServiceBadgeCount(counts: NavigationCounts): number {
-  return counts.service.urgentTickets;
-}

@@ -53,13 +53,9 @@ export type {
   FollowupsListResponse,
 } from './use-customer-followups';
 
-// Customer service
-export {
-  useCustomerServiceRequests,
-  useCustomerFeedback,
-  customerServiceKeys,
-} from './use-customer-service';
-export type { CustomerServiceRequest, CustomerFeedbackItem } from './use-customer-service';
+// Customer feedback
+export { useCustomerFeedback, customerServiceKeys } from './use-customer-service';
+export type { CustomerFeedbackItem } from './use-customer-service';
 
 // Customer loans
 export { useCustomerLoans, customerLoanKeys } from './use-customer-loans';

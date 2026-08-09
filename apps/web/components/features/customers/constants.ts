@@ -29,7 +29,6 @@ export const CUSTOMER_DETAIL_TABS = [
   { value: 'documents', label: 'Documents' },
   { value: 'followups', label: 'Follow-ups' },
   { value: 'finance', label: 'Finance' },
-  { value: 'service', label: 'Service' },
   { value: 'activity', label: 'Activity' },
 ] as const;
 

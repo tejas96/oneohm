@@ -8,7 +8,6 @@ import {
   useCustomerFollowups,
   useCustomerProjects,
   useCustomerQuotes,
-  useCustomerServiceRequests,
 } from '../../hooks';
 import { TabSkeleton } from '../tab-skeleton';
 
@@ -22,7 +21,7 @@ export interface ActivityTabProps {
   enabled: boolean;
 }
 
-type ActivityKind = 'followup' | 'quote' | 'receipt' | 'service';
+type ActivityKind = 'followup' | 'quote' | 'receipt';
 
 interface ActivityEvent {
   id: string;
@@ -37,14 +36,12 @@ const KIND_LABELS: Record<ActivityKind, string> = {
   followup: 'Follow-up',
   quote: 'Quote',
   receipt: 'Receipt',
-  service: 'Service',
 };
 
 const KIND_COLORS: Record<ActivityKind, 'default' | 'primary' | 'success' | 'warning' | 'info'> = {
   followup: 'warning',
   quote: 'primary',
   receipt: 'success',
-  service: 'info',
 };
 
 export function ActivityTab({ customerId, properties, enabled }: ActivityTabProps): JSX.Element {
@@ -58,10 +55,6 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
   });
   const { data: receiptsData, isLoading: receiptsLoading } = useOrgReceipts(
     { customerId, page: 1, limit: 20 },
-    { enabled },
-  );
-  const { data: serviceRequests, isLoading: serviceLoading } = useCustomerServiceRequests(
-    customerId,
     { enabled },
   );
   const { data: projects } = useCustomerProjects(customerId, { enabled });
@@ -123,30 +116,10 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
       });
     }
 
-    for (const request of serviceRequests ?? []) {
-      const project = projectMap.get(request.projectId);
-      const propertyLabel = project ? getPropertyDisplayName(project.property) : '—';
-      items.push({
-        id: `service-${request.id}`,
-        kind: 'service',
-        title: request.issueTitle,
-        subtitle: `${request.requestNumber} · ${toTitleLabel(request.status)} · ${propertyLabel}`,
-        date: request.requestDate,
-        timestamp: new Date(request.requestDate).getTime(),
-      });
-    }
-
     return items.sort((a, b) => b.timestamp - a.timestamp);
-  }, [
-    followupsData?.data,
-    quotesData?.data,
-    receiptsData?.data,
-    serviceRequests,
-    propertyMap,
-    projectMap,
-  ]);
+  }, [followupsData?.data, quotesData?.data, receiptsData?.data, propertyMap, projectMap]);
 
-  const isLoading = followupsLoading || quotesLoading || receiptsLoading || serviceLoading;
+  const isLoading = followupsLoading || quotesLoading || receiptsLoading;
 
   if (isLoading && events.length === 0) {
     return <TabSkeleton />;
@@ -159,7 +132,7 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
           No activity yet
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Follow-ups, quotes, receipts, and service requests will appear here.
+          Follow-ups, quotes and receipts will appear here.
         </Typography>
       </Box>
     );

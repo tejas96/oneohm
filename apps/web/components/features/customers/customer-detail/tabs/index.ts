@@ -19,8 +19,6 @@ export type { FollowupsTabProps } from './followups-tab';
 export { FinanceTab } from './finance-tab';
 export type { FinanceTabProps } from './finance-tab';
 
-export { ServiceTab } from './service-tab';
-export type { ServiceTabProps } from './service-tab';
 
 export { ActivityTab } from './activity-tab';
 export type { ActivityTabProps } from './activity-tab';
