@@ -316,10 +316,30 @@ Open the same ticket in two tabs, close it in one, then act in the other.
 *Expect:* the second gets a 409 with a clear message, not a silent failure or a
 500.
 
-**E-39 Simultaneous creates** — [TO RUN]
-Fire several creates at once (`for i in 1 2 3 4 5; do curl … & done`).
-*Expect:* five distinct sequential numbers, no unique-constraint 500. The
-generator takes a pessimistic lock inside a transaction for exactly this.
+**E-39 Simultaneous creates** — [VERIFIED — found and fixed a real defect]
+Fire ten creates at once against the same customer and project:
+
+```bash
+for i in $(seq 1 10); do curl -s -X POST "$API/service-tickets" -H "$AUTH" -H "$JSON" -d "$BODY" & done; wait
+```
+
+*Expect:* ten distinct sequential numbers, no unique-constraint 500.
+
+**This failed on first run: 2 succeeded, 8 returned 500** with
+`duplicate key value violates unique constraint "uq_service_tickets_number"`.
+
+Cause: `SELECT … FOR UPDATE` (`setLock('pessimistic_write')`) locks only rows
+that **already exist**. Two concurrent creates both read the same latest ticket,
+both compute the same next number, and the loser dies on the unique index — a
+row lock cannot prevent a phantom insert. Fixed with
+`pg_advisory_xact_lock(hashtext(prefix))` taken inside the transaction, which
+covers the gap where the contended row does not yet exist and is released
+automatically at commit. Re-run: **10/10 succeeded, 10 distinct numbers, zero
+errors.**
+
+> **Do not accept a code-reading as evidence for this case.** The presence of
+> `setLock('pessimistic_write')` is exactly what made the original code look
+> safe. Only an actual parallel run proves it.
 
 ### 3.9 Permissions and visibility
 
@@ -510,7 +530,41 @@ Seed a few thousand tickets and page through.
 
 ---
 
-## 8. Known limitations — by design, not defects
+## 8. Open finding — outside this feature, not fixed here
+
+**F-1 The same number-generation race exists elsewhere in the app.**
+
+E-39 proved the pattern is broken for service tickets and it is now fixed
+there. The identical read-then-compute shape appears in two other places,
+neither touched by this branch:
+
+| Location | Lock | Generates |
+|---|---|---|
+| `quotes/repositories/quote.repository.ts` → `generateQuoteNumber` | `setLock('pessimistic_write')` — the same ineffective lock tickets had | `QT-…` |
+| `common/utils/code-generator.util.ts` → `generateEntityCode` | **none at all** | `CUST-…`, `PROP-…`, `PRJ-…`, `TSK-…` |
+
+`generateEntityCode` is the shared helper behind customer codes, property
+codes, project numbers and task codes, and it takes no lock whatsoever, so it
+is strictly more exposed than the ticket generator was.
+
+**Evidence status:** proven by execution for service tickets; identified by
+code shape for these two. I have **not** run a race against quote or customer
+creation — doing so would write junk rows to a prod-synced database on paths
+that mint contracts.
+
+**Suggested fix:** the same one line, inside the existing transaction, before
+the scan:
+
+```ts
+await repo.query('SELECT pg_advisory_xact_lock(hashtext($1))', [prefix]);
+```
+
+Out of scope for this branch: it changes behaviour on customer, property,
+project, task and quote creation. Worth its own change with its own test.
+
+---
+
+## 9. Known limitations — by design, not defects
 
 These were explicitly scoped out. They are listed so QA does not raise them as
 bugs.

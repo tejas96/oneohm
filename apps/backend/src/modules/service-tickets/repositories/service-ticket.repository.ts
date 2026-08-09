@@ -26,11 +26,24 @@ export class ServiceTicketRepository {
   ) {}
 
   /**
-   * Generate the next ticket number. Must run inside a transaction so the
-   * pessimistic lock actually serialises concurrent creates.
+   * Generate the next ticket number.
    *
-   * `withDeleted()` matters: a soft-deleted ticket keeps its number, so the
-   * sequence has to see it or the next create would collide on the unique index.
+   * MUST be called with `manager` — i.e. inside a transaction — or the advisory
+   * lock below releases immediately and buys nothing.
+   *
+   * Why an advisory lock and not `SELECT … FOR UPDATE`: a row lock only locks
+   * rows that already exist. Two concurrent creates both read the same latest
+   * ticket, both compute the same next number, and the loser dies on
+   * `uq_service_tickets_number`. Measured: 10 parallel creates produced 2
+   * successes and 8 duplicate-key 500s. The advisory lock covers the gap where
+   * the row being contended does not exist yet, and Postgres releases it
+   * automatically at commit or rollback.
+   *
+   * The lock is keyed on the prefix, so it serialises only creates competing
+   * for the same year's sequence.
+   *
+   * `withDeleted()` matters separately: a soft-deleted ticket keeps its number,
+   * so the scan has to see it or the next create would reuse and collide.
    */
   async generateTicketNumber(companyCode: string, manager?: EntityManager): Promise<string> {
     const year = new Date().getFullYear();
@@ -38,12 +51,13 @@ export class ServiceTicketRepository {
 
     const repo = manager ? manager.getRepository(ServiceTicketEntity) : this.repository;
 
+    await repo.query('SELECT pg_advisory_xact_lock(hashtext($1))', [prefix]);
+
     const latest = await repo
       .createQueryBuilder('ticket')
       .withDeleted()
       .where('ticket.ticketNumber LIKE :prefix', { prefix: `${prefix}%` })
       .orderBy('ticket.ticketNumber', 'DESC')
-      .setLock('pessimistic_write')
       .getOne();
 
     let sequence = 1;
