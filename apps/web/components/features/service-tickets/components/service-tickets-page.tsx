@@ -1,13 +1,10 @@
 'use client';
 
-import { Box, Link as MuiLink, Stack } from '@mui/material';
-import {
-  ServiceTicketPriority,
-  ServiceTicketStatus,
-  type ServiceTicketPhoto,
-} from '@tejas96/shared/types';
+import AddIcon from '@mui/icons-material/Add';
+import { Box, Button, Link as MuiLink, Stack } from '@mui/material';
+import { ServiceTicketPriority, ServiceTicketStatus } from '@tejas96/shared/types';
 import NextLink from 'next/link';
-import { type JSX, useCallback, useMemo } from 'react';
+import { type JSX, useCallback, useMemo, useState } from 'react';
 
 import {
   SERVICE_TICKET_PRIORITY_LABELS,
@@ -16,6 +13,7 @@ import {
   SERVICE_TICKET_STATUS_LABELS,
   SERVICE_TICKET_STATUS_TONE,
 } from '../constants';
+import { ServiceTicketFormDialog } from './service-ticket-form-dialog';
 import { ServiceTicketStatTiles, type TicketTileKey } from './service-ticket-stat-tiles';
 import {
   useServiceTickets,
@@ -170,13 +168,9 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
   },
 ];
 
-export interface ServiceTicketsPageProps {
-  /** Rendered to the right of the toolbar — the New Ticket button lives here. */
-  toolbarActions?: React.ReactNode;
-}
-
-export function ServiceTicketsPage({ toolbarActions }: ServiceTicketsPageProps = {}): JSX.Element {
+export function ServiceTicketsPage(): JSX.Element {
   const urlState = useTableUrlState({ prefix: 'tkt', defaultPageSize: 20 });
+  const [formOpen, setFormOpen] = useState(false);
 
   const statusFilter = (urlState.state.filters[STATUS_FILTER_KEY] as string | undefined) ?? '';
   const priorityFilter = (urlState.state.filters[PRIORITY_FILTER_KEY] as string | undefined) ?? '';
@@ -284,26 +278,37 @@ export function ServiceTicketsPage({ toolbarActions }: ServiceTicketsPageProps =
         minHeight: 0,
       }}
     >
-      <Box>
-        <Box
-          component="h1"
-          sx={{
-            m: 0,
-            mb: '3px',
-            fontSize: crm['text-page-title'],
-            fontWeight: 700,
-            letterSpacing: crm['text-page-title-track'],
-          }}
-        >
-          Service Tickets
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+        <Box>
+          <Box
+            component="h1"
+            sx={{
+              m: 0,
+              mb: '3px',
+              fontSize: crm['text-page-title'],
+              fontWeight: 700,
+              letterSpacing: crm['text-page-title-track'],
+            }}
+          >
+            Service Tickets
+          </Box>
+          <Box
+            component="p"
+            sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
+          >
+            Complaints, AMC queries and issues raised after handover.
+          </Box>
         </Box>
-        <Box
-          component="p"
-          sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
+
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setFormOpen(true)}
+          sx={{ flexShrink: 0 }}
         >
-          Complaints, AMC queries and issues raised after handover.
-        </Box>
-      </Box>
+          New Ticket
+        </Button>
+      </Stack>
 
       <ServiceTicketStatTiles
         stats={stats}
@@ -334,10 +339,9 @@ export function ServiceTicketsPage({ toolbarActions }: ServiceTicketsPageProps =
         itemLabel="tickets"
         emptyMessage="No service tickets yet."
         gridMinWidth={crm['grid-min-width-ticket']}
-        toolbarActions={toolbarActions}
       />
+
+      <ServiceTicketFormDialog open={formOpen} onClose={() => setFormOpen(false)} />
     </Box>
   );
 }
-
-export type { ServiceTicketPhoto };
