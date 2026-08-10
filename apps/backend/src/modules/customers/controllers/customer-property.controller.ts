@@ -105,6 +105,15 @@ export class CustomerPropertyController {
       query.createdBy = currentUser.id;
     }
 
+    // Same substitution for the site assignee filters
+    if (query.siteVisitAssignee === 'me') {
+      query.siteVisitAssignee = currentUser.id;
+    }
+
+    if (query.siteSurveyAssignee === 'me') {
+      query.siteSurveyAssignee = currentUser.id;
+    }
+
     const result = await this.propertyService.findAll(query);
     return toPaginatedResponse(
       CustomerPropertyResponseDto,

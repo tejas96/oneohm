@@ -17,6 +17,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   Min,
   MinLength,
@@ -146,6 +147,28 @@ export class PropertyQueryDto {
   @IsOptional()
   @IsString()
   createdBy?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by site visit assignee - use "me" for current user or provide a userId',
+    example: 'me',
+  })
+  @IsOptional()
+  // Unlike `createdBy` above, the value is UUID-validated (with `me` exempted
+  // because the controller substitutes it before the repository sees it).
+  // `createdBy` accepts any string, so a non-UUID reaches the uuid column
+  // comparison and Postgres raises 22P02 — a 500 for what is a bad request.
+  @ValidateIf((o: PropertyQueryDto) => o.siteVisitAssignee !== 'me')
+  @IsUUID(undefined, { message: 'siteVisitAssignee must be a UUID or "me"' })
+  siteVisitAssignee?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by site survey assignee - use "me" for current user or provide a userId',
+    example: 'me',
+  })
+  @IsOptional()
+  @ValidateIf((o: PropertyQueryDto) => o.siteSurveyAssignee !== 'me')
+  @IsUUID(undefined, { message: 'siteSurveyAssignee must be a UUID or "me"' })
+  siteSurveyAssignee?: string;
 
   @ApiPropertyOptional({
     description: 'Filter from date (ISO 8601 format)',

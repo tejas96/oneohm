@@ -363,6 +363,18 @@ export class CustomerPropertyRepository {
       qb.andWhere('property.created_by = :createdBy', { createdBy: query.createdBy });
     }
 
+    if (query.siteVisitAssignee) {
+      qb.andWhere('property.siteVisitAssignee = :siteVisitAssignee', {
+        siteVisitAssignee: query.siteVisitAssignee,
+      });
+    }
+
+    if (query.siteSurveyAssignee) {
+      qb.andWhere('property.siteSurveyAssignee = :siteSurveyAssignee', {
+        siteSurveyAssignee: query.siteSurveyAssignee,
+      });
+    }
+
     if (query.fromDate) {
       qb.andWhere('property.created_at >= :fromDate', { fromDate: query.fromDate });
     }
