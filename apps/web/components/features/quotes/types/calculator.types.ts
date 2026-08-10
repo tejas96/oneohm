@@ -12,6 +12,7 @@ import type {
   CalculatedPanelConfig,
   CalculatedInstallationCost,
   GstConfig,
+  BomItem,
 } from '@tejas96/shared/types';
 
 // Re-export shared types that consumers already reference by local names
@@ -93,6 +94,7 @@ export interface InverterItem {
   productId: string;
   name: string;
   brand: string;
+  description?: string;
   capacityKw: number;
   quantity: number;
   unitPrice: number;
@@ -112,6 +114,7 @@ export interface CalculatedInverter {
 export interface CalculatedStructure {
   productId: string;
   name: string;
+  description?: string;
   structureType: string;
   quantity: number;
   unitPrice: number;
@@ -310,4 +313,6 @@ export interface QuotePdfData {
   gstConfig: QuoteConfigResponse['gstConfig'];
   companyInfo?: Partial<PdfCompanyInfo>;
   orgConfig?: Partial<QuotePdfOrgConfig>;
+  bomItems?: BomItem[];
+  customerNotes?: string;
 }

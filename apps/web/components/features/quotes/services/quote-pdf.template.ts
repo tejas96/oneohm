@@ -160,6 +160,54 @@ function consolidateRows<T extends { quantity: number; productId: string }>(rows
   return Array.from(map.values());
 }
 
+function formatFullAddress(info?: {
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+}): string {
+  if (!info) return '';
+  const parts: string[] = [];
+  const rawAddr = info.address?.trim();
+  if (rawAddr) {
+    parts.push(rawAddr);
+  }
+  const lowerAddr = rawAddr?.toLowerCase() ?? '';
+
+  if (info.city?.trim() && !lowerAddr.includes(info.city.trim().toLowerCase())) {
+    parts.push(info.city.trim());
+  }
+  if (info.state?.trim() && !lowerAddr.includes(info.state.trim().toLowerCase())) {
+    parts.push(info.state.trim());
+  }
+  if (info.pincode?.trim() && !lowerAddr.includes(info.pincode.trim().toLowerCase())) {
+    parts.push(`PIN:\u00A0${info.pincode.trim()}`);
+  }
+
+  return parts.join(', ');
+}
+
+function escapeHtml(text?: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatProductName(brand?: string, name?: string): string {
+  const brandStr = brand?.trim() ?? '';
+  const nameStr = name?.trim() ?? '';
+  if (!brandStr) return nameStr;
+  if (!nameStr) return brandStr;
+  if (nameStr.toLowerCase().startsWith(brandStr.toLowerCase())) {
+    return nameStr;
+  }
+  return `${brandStr} ${nameStr}`;
+}
+
 // ============================================================================
 // HTML GENERATION
 // ============================================================================
@@ -176,7 +224,11 @@ export function generateQuoteHtml(data: QuotePdfData): string {
     gstConfig,
     companyInfo,
     orgConfig,
+    customerNotes,
   } = data;
+
+  const hasCustomerNotes = Boolean(customerNotes?.trim());
+  const formattedCustomerNotes = hasCustomerNotes ? escapeHtml(customerNotes?.trim()) : '';
 
   const co = resolvePdfCompany(companyInfo, normalizeOrgConfigForPdf(orgConfig));
 
@@ -199,34 +251,60 @@ export function generateQuoteHtml(data: QuotePdfData): string {
 
   const milestones = paymentMilestones || [];
 
-  const fullAddress = [property.address, property.city, property.state].filter(Boolean).join(', ');
+  const propertyFullAddr = formatFullAddress(property);
+  const customerFullAddr = formatFullAddress(customer);
+  const fullAddress = propertyFullAddr || customerFullAddr;
 
   const panelRows = [...dcrPanels, ...nonDcrPanels]
-    .map(
-      (panel) => `
+    .map((panel) => {
+      const specDetails = [
+        formatProductName(panel.brand, panel.name),
+        `${panel.wattagePerPanel}Wp per panel`,
+        panel.isDcr ? 'DCR Compliant - Subsidy Eligible' : undefined,
+      ]
+        .filter(Boolean)
+        .join(' | ');
+
+      const descriptionContent = panel.description
+        ? `<div>${panel.description}</div><div class="text-subtle">${specDetails}</div>`
+        : specDetails;
+
+      return `
             <tr>
               <td><span class="bom-item-name">Solar Panels${panel.isDcr ? ' (DCR)' : ''}</span></td>
               <td>
                 <div class="bom-item-specs">
-                  ${panel.brand} ${panel.name} | ${panel.wattagePerPanel}Wp per panel${panel.isDcr ? '<br>DCR Compliant - Subsidy Eligible' : ''}
+                  ${descriptionContent}
                 </div>
                 <span class="bom-warranty">${formatBomPanelWarranty(panel)}</span>
               </td>
               <td>${panel.quantity} nos</td>
-            </tr>`,
-    )
+            </tr>`;
+    })
     .join('');
 
   const consolidatedInverters = consolidateRows(calculation.inverters.inverters);
   const inverterRows = consolidatedInverters
-    .map(
-      (inv) => `
+    .map((inv) => {
+      const phaseLabel = PHASE_TYPE_LABELS[calculation.systemConfig.phaseType] || '';
+      const specDetails = [
+        formatProductName(inv.brand, inv.name),
+        phaseLabel ? phaseLabel : undefined,
+        `${inv.capacityKw} kWp capacity`,
+      ]
+        .filter(Boolean)
+        .join(' | ');
+
+      const descriptionContent = inv.description
+        ? `<div>${inv.description}</div><div class="text-subtle">${specDetails}</div>`
+        : specDetails;
+
+      return `
             <tr>
               <td><span class="bom-item-name">Inverter</span></td>
               <td>
                 <div class="bom-item-specs">
-                  ${inv.brand} ${inv.name} | ${PHASE_TYPE_LABELS[calculation.systemConfig.phaseType] || 'N/A'} | ${inv.capacityKw} kWp capacity<br>
-                  WiFi/GSM monitoring
+                  ${descriptionContent}
                 </div>
                 <span class="bom-warranty">${
                   inv.productWarrantyYears != null && inv.productWarrantyYears > 0
@@ -235,9 +313,90 @@ export function generateQuoteHtml(data: QuotePdfData): string {
                 }</span>
               </td>
               <td>${inv.quantity} nos</td>
-            </tr>`,
-    )
+            </tr>`;
+    })
     .join('');
+
+  const structureTypeStr = formatStructureType(
+    calculation.structure.name || calculation.structure.structureType,
+  );
+  const structureDescriptionHtml = calculation.structure.description
+    ? `<div>${calculation.structure.description}</div><div class="text-subtle">${structureTypeStr}</div>`
+    : `${structureTypeStr} | Hot-Dip Galvanized / Aluminium Structure with Certified Fasteners`;
+
+  const additionalBomItems = (data.bomItems ?? []).filter(
+    (i) => i.itemType !== 'panel' && i.itemType !== 'inverter' && i.itemType !== 'structure',
+  );
+
+  const electricalSafetyItems = additionalBomItems.filter(
+    (i) =>
+      i.itemType === 'cables' ||
+      i.itemType === 'earthing' ||
+      i.itemType === 'lightning_arrestor' ||
+      i.itemType === 'safety' ||
+      i.itemType === 'electrical',
+  );
+
+  const meteringItems = additionalBomItems.filter(
+    (i) => i.itemType === 'meter' || i.itemType === 'metering' || i.itemType === 'monitoring',
+  );
+
+  const electricalSafetyRows =
+    electricalSafetyItems.length > 0
+      ? electricalSafetyItems
+          .map(
+            (item) => `
+              <tr>
+                <td><span class="bom-item-name">${item.name}</span></td>
+                <td><div class="bom-item-specs">${(item.specifications?.description as string) || (item.specifications?.specifications as string) || (item.brand ? `${item.brand} ${item.name}` : item.name)}</div></td>
+                <td>${item.quantity} ${item.unit || 'nos'}</td>
+              </tr>`,
+          )
+          .join('')
+      : `
+              <tr>
+                <td><span class="bom-item-name">DC Cables</span></td>
+                <td><div class="bom-item-specs">Solar-grade UV-Protected 1100V DC Cable</div></td>
+                <td>As req.</td>
+              </tr>
+              <tr>
+                <td><span class="bom-item-name">AC Cables &amp; ACDB</span></td>
+                <td><div class="bom-item-specs">Multi-core AC Cables with ACDB (MCB + SPD)</div></td>
+                <td>As req.</td>
+              </tr>
+              <tr>
+                <td><span class="bom-item-name">Earthing System</span></td>
+                <td><div class="bom-item-specs">Maintenance-Free Copper-Bonded Earthing System (IS/IEC Certified)</div></td>
+                <td>1 set</td>
+              </tr>
+              <tr>
+                <td><span class="bom-item-name">Lightning Arrestor</span></td>
+                <td><div class="bom-item-specs">IS/IEC 62305 Certified Lightning Protection System</div></td>
+                <td>1 nos</td>
+              </tr>`;
+
+  const meteringRows =
+    meteringItems.length > 0
+      ? meteringItems
+          .map(
+            (item) => `
+              <tr>
+                <td><span class="bom-item-name">${item.name}</span></td>
+                <td><div class="bom-item-specs">${(item.specifications?.description as string) || item.name}</div></td>
+                <td>${item.quantity} ${item.unit || 'nos'}</td>
+              </tr>`,
+          )
+          .join('')
+      : `
+              <tr>
+                <td><span class="bom-item-name">Meters</span></td>
+                <td>
+                  <div class="bom-item-specs">
+                    Generation Meter &amp; Net Meter as per DISCOM approved guidelines (${PHASE_TYPE_LABELS[calculation.systemConfig.phaseType] || 'Standard'})
+                  </div>
+                </td>
+                <td>2 nos</td>
+              </tr>`;
 
   const paymentCards =
     milestones.length > 0
@@ -466,11 +625,10 @@ ${getQuoteStyles()}
                 <td><span class="bom-item-name">Mounting Structure</span></td>
                 <td>
                   <div class="bom-item-specs">
-                    ${formatStructureType(calculation.structure.name || calculation.structure.structureType)} | Hot-Dip Galvanized MS<br>
-                    SS304 Fasteners | A-Raymond Clamps | IS 875 Certified
+                    ${structureDescriptionHtml}
                   </div>
                 </td>
-                <td>1 set</td>
+                <td>${calculation.structure.quantity || 1} set</td>
               </tr>
             </tbody>
           </table>
@@ -487,26 +645,7 @@ ${getQuoteStyles()}
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><span class="bom-item-name">DC Cables</span></td>
-                <td><div class="bom-item-specs">Polycab/KEI/RR | 4 Sq.mm Solar-grade | UV Protected | 1100V</div></td>
-                <td>As req.</td>
-              </tr>
-              <tr>
-                <td><span class="bom-item-name">AC Cables &amp; ACDB</span></td>
-                <td><div class="bom-item-specs">Multi-core Al/Cu cables | ACDB with MCB + SPD</div></td>
-                <td>As req.</td>
-              </tr>
-              <tr>
-                <td><span class="bom-item-name">Earthing System</span></td>
-                <td><div class="bom-item-specs">Maintenance-Free Copper Bonded | 1.2m Rod | IEC/IS 62305</div></td>
-                <td>1 set</td>
-              </tr>
-              <tr>
-                <td><span class="bom-item-name">Lightning Arrestor</span></td>
-                <td><div class="bom-item-specs">BS EN/IEC 62305 Certified | NFC &amp; CPRI Tested</div></td>
-                <td>1 nos</td>
-              </tr>
+              ${electricalSafetyRows}
             </tbody>
           </table>
         </div>
@@ -522,20 +661,20 @@ ${getQuoteStyles()}
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><span class="bom-item-name">Meters</span></td>
-                <td>
-                  <div class="bom-item-specs">
-                    Generation Meter: MSEDCL Approved HPL/L&amp;T | ${PHASE_TYPE_LABELS[calculation.systemConfig.phaseType] || 'N/A'}<br>
-                    Net Meter: Installed by MSEDCL approved vendors
-                  </div>
-                </td>
-                <td>2 nos</td>
-              </tr>
+              ${meteringRows}
             </tbody>
           </table>
         </div>
       </section>
+
+      ${
+        hasCustomerNotes
+          ? `<section class="section pdf-block">
+        <h2 class="section-title">Special Notes &amp; Instructions</h2>
+        <div class="customer-notes-box">${formattedCustomerNotes}</div>
+      </section>`
+          : ''
+      }
 
       <!-- Terms & Conditions -->
       <section class="section pdf-block">
@@ -597,11 +736,16 @@ ${getQuoteStyles()}
       <!-- Signatures -->
       <div class="signatures pdf-block">
         <div class="signature-box">
-          <img src="${DIRECTOR_STAMP_BASE64}" class="stamp-img" alt="Director Stamp" />
+          <div class="signature-space">
+            <img src="${DIRECTOR_STAMP_BASE64}" class="stamp-img" alt="Director Stamp" />
+          </div>
+          <div class="signature-line"></div>
           <div class="signature-label">For ${co.legalEntityName}</div>
           <div class="signature-name">Authorized Signatory</div>
         </div>
         <div class="signature-box">
+          <div class="signature-space"></div>
+          <div class="signature-line"></div>
           <div class="signature-label">Customer Acceptance</div>
           <div class="signature-name">${customer.name}</div>
         </div>
@@ -1078,6 +1222,25 @@ body {
   line-height: 1.5;
 }
 
+.text-subtle {
+  font-size: .74rem;
+  color: var(--gray-500);
+  margin-top: 2px;
+}
+
+.customer-notes-box {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-left: 4px solid var(--primary-dark, #059669);
+  border-radius: var(--radius-sm, 6px);
+  padding: 12px 16px;
+  font-size: .82rem;
+  color: var(--gray-800);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .bom-warranty {
   display: inline-block;
   padding: 2px 8px;
@@ -1208,13 +1371,32 @@ body {
   grid-template-columns: repeat(2, 1fr);
   gap: 40px;
   margin-top: 36px;
-  padding-top: 20px;
-  border-top: 1px solid var(--gray-200);
 }
 
 .signature-box {
-  padding-top: 56px;
+  display: flex;
+  flex-direction: column;
+}
+
+.signature-space {
+  height: 64px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  margin-bottom: 6px;
+}
+
+.stamp-img {
+  max-width: 120px;
+  max-height: 56px;
+  object-fit: contain;
+  display: block;
+}
+
+.signature-line {
   border-top: 1px solid var(--gray-300);
+  margin-bottom: 8px;
+  width: 100%;
 }
 
 .signature-label {
@@ -1227,13 +1409,6 @@ body {
   font-size: .85rem;
   font-weight: 600;
   color: var(--gray-800);
-}
-
-.stamp-img {
-  width: 110px;
-  height: auto;
-  margin-bottom: 8px;
-  display: block;
 }
 `;
 }

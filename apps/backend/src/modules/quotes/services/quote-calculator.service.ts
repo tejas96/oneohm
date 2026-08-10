@@ -509,6 +509,7 @@ export class QuoteCalculatorService {
         productId: panel.id,
         name: panel.name,
         brand: panel.brand?.name || 'Unknown',
+        description: panel.description,
         isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
         technology: (specs.technology as string) || undefined,
         wattagePerPanel: wattage,
@@ -744,6 +745,7 @@ export class QuoteCalculatorService {
         productId: bestPanel.id,
         name: bestPanel.name,
         brand: bestPanel.brand?.name || 'Unknown',
+        description: bestPanel.description,
         isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
         technology: (specs.technology as string) || undefined,
         wattagePerPanel: nominalWattage,
@@ -807,6 +809,7 @@ export class QuoteCalculatorService {
       productId: selectedPanel.id,
       name: selectedPanel.name,
       brand: selectedPanel.brand?.name || 'Unknown',
+      description: selectedPanel.description,
       isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
       technology: (specs.technology as string) || undefined,
       wattagePerPanel: nominalWattage,
@@ -881,6 +884,7 @@ export class QuoteCalculatorService {
       productId: panel.id,
       name: panel.name,
       brand: panel.brand?.name || 'Unknown',
+      description: panel.description,
       isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
       technology: (specs.technology as string) || undefined,
       wattagePerPanel: nominalWattage,
@@ -972,6 +976,7 @@ export class QuoteCalculatorService {
         productId: inverter.id,
         name: inverter.name,
         brand: inverter.brand?.name || 'Unknown',
+        description: inverter.description,
         capacityKw: Number(inverter.specifications?.capacity_kw || 0),
         quantity,
         unitPrice: pricing.basePrice,
@@ -1040,6 +1045,7 @@ export class QuoteCalculatorService {
         productId: inverter.id,
         name: inverter.name,
         brand: inverter.brand?.name || 'Unknown',
+        description: inverter.description,
         capacityKw,
         quantity: override.quantity,
         unitPrice: basePrice,
@@ -1166,6 +1172,7 @@ export class QuoteCalculatorService {
         productId: inverter.id,
         name: inverter.name,
         brand: inverter.brand?.name || 'Unknown',
+        description: inverter.description,
         capacityKw: Number(inverter.specifications?.capacity_kw || 0),
         quantity,
         unitPrice: pricing.basePrice,
@@ -1787,6 +1794,7 @@ export class QuoteCalculatorService {
   ): Promise<{
     productId: string;
     name: string;
+    description?: string;
     structureType: string;
     quantity: number;
     unitPrice: number;
@@ -1825,6 +1833,7 @@ export class QuoteCalculatorService {
     return {
       productId: structureProduct.id,
       name: structureProduct.name,
+      description: structureProduct.description,
       structureType: normalizedStructureType,
       quantity: 1,
       unitPrice: structureCost,

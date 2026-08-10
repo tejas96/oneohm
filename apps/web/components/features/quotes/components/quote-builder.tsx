@@ -101,6 +101,10 @@ interface QuoteCustomer {
   phone: string;
   email?: string;
   status?: CustomerStatus;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
 }
 
 // ============================================================================
@@ -124,7 +128,7 @@ export function QuoteBuilder(): JSX.Element {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(customerSearch), 550);
+    const timer = setTimeout(() => setDebouncedSearch(customerSearch), 300);
     return () => clearTimeout(timer);
   }, [customerSearch]);
 
@@ -140,6 +144,10 @@ export function QuoteBuilder(): JSX.Element {
         phone: c.phone,
         email: c.email,
         status: c.status,
+        address: c.address,
+        city: c.city,
+        state: c.state,
+        pincode: c.pincode,
       })),
     [customerList],
   );
@@ -156,6 +164,10 @@ export function QuoteBuilder(): JSX.Element {
         phone: preselectedCustomerData.phone,
         email: preselectedCustomerData.email,
         status: preselectedCustomerData.status,
+        address: preselectedCustomerData.address,
+        city: preselectedCustomerData.city,
+        state: preselectedCustomerData.state,
+        pincode: preselectedCustomerData.pincode,
       });
     }
   }, [preselectedCustomerData, preselectedCustomerId]);
@@ -606,6 +618,11 @@ export function QuoteBuilder(): JSX.Element {
           name: `${cust.firstName} ${cust.lastName}`.trim(),
           phone: cust?.phone,
           email: cust?.email,
+          address: cust?.address,
+          city: cust?.city,
+          state: cust?.state,
+          pincode: cust?.pincode,
+          consumerNumber: prop?.consumerNumber,
         },
         property: {
           propertyName: prop?.propertyName,
@@ -639,6 +656,7 @@ export function QuoteBuilder(): JSX.Element {
           ),
         discountAmount: discount,
         gstConfig: gstCfg,
+        customerNotes: form.getValues('customerNotes') || undefined,
       });
       showToast.success('PDF downloaded');
     } catch {

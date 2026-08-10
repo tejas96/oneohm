@@ -31,6 +31,9 @@ export class CalculatedPanelDto {
   @ApiProperty({ description: 'Brand', example: 'Adani' })
   brand!: string;
 
+  @ApiPropertyOptional({ description: 'Product description' })
+  description?: string;
+
   @ApiProperty({ description: 'Whether DCR panel', example: true })
   isDcr!: boolean;
 
@@ -77,6 +80,9 @@ export class InverterItemDto {
 
   @ApiProperty({ description: 'Brand', example: 'Sungrow' })
   brand!: string;
+
+  @ApiPropertyOptional({ description: 'Product description' })
+  description?: string;
 
   @ApiProperty({ description: 'Capacity in kW', example: 5 })
   capacityKw!: number;
@@ -129,6 +135,9 @@ export class CalculatedStructureDto {
 
   @ApiProperty({ description: 'Structure name', example: 'Aluminum Rail Mount' })
   name!: string;
+
+  @ApiPropertyOptional({ description: 'Product description' })
+  description?: string;
 
   @ApiProperty({ description: 'Structure type' })
   structureType!: string;

@@ -19,9 +19,17 @@ export interface QuoteDetail {
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
+  customerAddress?: string;
+  customerCity?: string;
+  customerState?: string;
+  customerPincode?: string;
   propertyId?: string;
   propertyName?: string;
   propertyAddress?: string;
+  propertyCity?: string;
+  propertyState?: string;
+  propertyPincode?: string;
+  consumerNumber?: string;
   salesPersonId?: string;
   salesPersonName?: string;
   resellerId?: string;
