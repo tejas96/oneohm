@@ -52,11 +52,27 @@ jobs:
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
-          # Capture output directly (no pipe) so npm's exit code is not swallowed.
-          # The old `npm view ... | grep -q` pattern set already_published=false
-          # whenever npm failed silently — causing a 409 Conflict on re-publish.
-          PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${CURRENT_VERSION}" version \
-            --registry https://npm.pkg.github.com 2>/dev/null || echo "")
+          # No explicit --registry. setup-node wrote an .npmrc mapping the
+          # @tejas96 scope to GitHub Packages together with the NODE_AUTH_TOKEN
+          # line; passing --registry bypasses that mapping, so `npm view`
+          # answered 401. The old code sent both stderr and the exit code to
+          # /dev/null, turning that 401 into an empty string and therefore into
+          # "not yet published" — after which publish hit 409 Conflict. Every
+          # run from 2026-07-28 onward failed this way, which is why the
+          # package stopped publishing while the checks all looked green.
+          set +e
+          PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${CURRENT_VERSION}" version 2>view_err.log)
+          VIEW_EXIT=$?
+          set -e
+
+          # E404 is the ONLY acceptable failure — it genuinely means "not
+          # published". Anything else (401, network, registry outage) must fail
+          # loudly rather than be misread as a green light to publish.
+          if [ $VIEW_EXIT -ne 0 ] && ! grep -q "E404" view_err.log; then
+            echo "::error::npm view failed for ${PACKAGE_NAME}@${CURRENT_VERSION}"
+            cat view_err.log
+            exit 1
+          fi
 
           if [ "$PUBLISHED_VERSION" = "$CURRENT_VERSION" ]; then
             echo "already_published=true" >> $GITHUB_OUTPUT
