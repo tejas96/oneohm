@@ -77,6 +77,26 @@ export class QuoteResponseDto {
   @Transform(({ obj }) => obj.customer?.email ?? undefined)
   customerEmail?: string;
 
+  @ApiPropertyOptional({ example: 'Flat 101, Shanti Nivas, MG Road' })
+  @Expose()
+  @Transform(({ obj }) => obj.customer?.address ?? undefined)
+  customerAddress?: string;
+
+  @ApiPropertyOptional({ example: 'Pune' })
+  @Expose()
+  @Transform(({ obj }) => obj.customer?.city ?? undefined)
+  customerCity?: string;
+
+  @ApiPropertyOptional({ example: 'Maharashtra' })
+  @Expose()
+  @Transform(({ obj }) => obj.customer?.state ?? undefined)
+  customerState?: string;
+
+  @ApiPropertyOptional({ example: '411038' })
+  @Expose()
+  @Transform(({ obj }) => obj.customer?.pincode ?? undefined)
+  customerPincode?: string;
+
   @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   propertyId?: string;
@@ -90,6 +110,26 @@ export class QuoteResponseDto {
   @Expose()
   @Transform(({ obj }) => obj.property?.address ?? undefined)
   propertyAddress?: string;
+
+  @ApiPropertyOptional({ example: 'Pune' })
+  @Expose()
+  @Transform(({ obj }) => obj.property?.city ?? undefined)
+  propertyCity?: string;
+
+  @ApiPropertyOptional({ example: 'Maharashtra' })
+  @Expose()
+  @Transform(({ obj }) => obj.property?.state ?? undefined)
+  propertyState?: string;
+
+  @ApiPropertyOptional({ example: '411038' })
+  @Expose()
+  @Transform(({ obj }) => obj.property?.pincode ?? undefined)
+  propertyPincode?: string;
+
+  @ApiPropertyOptional({ example: '123456789012' })
+  @Expose()
+  @Transform(({ obj }) => obj.property?.consumerNumber ?? undefined)
+  consumerNumber?: string;
 
   @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()

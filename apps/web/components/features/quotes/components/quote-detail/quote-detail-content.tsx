@@ -44,6 +44,7 @@ function buildCalculationFromBom(quote: QuoteDetail, bom: Bom): CalculateQuoteRe
     productId: p.productId ?? '',
     name: p.name,
     brand: p.brand ?? '',
+    description: p.specifications.description as string | undefined,
     isDcr: (p.specifications.isDcr as boolean) ?? false,
     technology: p.specifications.technology as string | undefined,
     wattagePerPanel: (p.specifications.wattagePerPanel as number) ?? 0,
@@ -61,6 +62,7 @@ function buildCalculationFromBom(quote: QuoteDetail, bom: Bom): CalculateQuoteRe
     productId: inv.productId ?? '',
     name: inv.name,
     brand: inv.brand ?? '',
+    description: inv.specifications.description as string | undefined,
     capacityKw: (inv.specifications.capacityKw as number) ?? 0,
     quantity: inv.quantity,
     unitPrice: inv.unitPrice ?? 0,
@@ -74,6 +76,7 @@ function buildCalculationFromBom(quote: QuoteDetail, bom: Bom): CalculateQuoteRe
     ? {
         productId: structureItem.productId ?? '',
         name: structureItem.name,
+        description: structureItem.specifications.description as string | undefined,
         structureType:
           (structureItem.specifications.structure_type as string | undefined) ??
           (structureItem.specifications.structureType as string | undefined) ??
@@ -252,10 +255,18 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
         name: quote.customerName ?? '',
         phone: quote.customerPhone ?? '',
         email: quote.customerEmail ?? '',
+        address: quote.customerAddress ?? '',
+        city: quote.customerCity ?? '',
+        state: quote.customerState ?? '',
+        pincode: quote.customerPincode ?? '',
+        consumerNumber: quote.consumerNumber ?? '',
       },
       property: {
         propertyName: quote.propertyName ?? '',
         address: quote.propertyAddress ?? '',
+        city: quote.propertyCity ?? '',
+        state: quote.propertyState ?? '',
+        pincode: quote.propertyPincode ?? '',
       },
       quoteNumber: quote.quoteNumber,
       validityDays: Math.ceil(
@@ -265,6 +276,8 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
       discountAmount:
         quote.quoteSnapshot?.pricing?.discountAmount ?? quote.pricingBreakdown?.discountAmount,
       gstConfig: quoteConfig?.gstConfig ?? defaultGstConfig,
+      bomItems: bom?.items,
+      customerNotes: quote.customerNotes,
     };
   }, [bom, quote, quoteConfig, hasStoredCalc, activeSnapshot]);
 

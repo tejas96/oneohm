@@ -246,6 +246,8 @@ export interface CalculatedPanelConfig {
   name: string;
   /** Brand */
   brand: string;
+  /** Product description */
+  description?: string;
   /** Whether DCR panel */
   isDcr: boolean;
   /** Technology (optional - may not be specified in specs) */
@@ -279,6 +281,7 @@ export interface CalculatedInverterConfig {
     productId: string;
     name: string;
     brand: string;
+    description?: string;
     capacityKw: number;
     quantity: number;
     unitPrice: number;
@@ -404,6 +407,7 @@ export interface QuoteCalculationResult {
   structure: {
     productId: string;
     name: string;
+    description?: string;
     structureType: string;
     quantity: number;
     unitPrice: number;
