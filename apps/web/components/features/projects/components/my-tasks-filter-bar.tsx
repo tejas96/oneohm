@@ -197,53 +197,46 @@ export function MyTasksFilterBar({
         }}
       />
 
-      {/*
-        `MUIInput` (autocomplete mode) renders `<div><Autocomplete sx={sx} /></div>`,
-        so `sx` reaches the Autocomplete but the wrapping div is the flex item.
-        Flex sizing has to go on this Box; the field then fills it at 100%.
-      */}
-      <Box sx={{ flex: '2 1 245px', minWidth: 0, maxWidth: { md: 400 } }}>
-        <MUIInput
-          mode="autocomplete"
-          options={searchableProjectOptions}
-          value={selectedProject}
-          onChange={(opt) => {
-            const next = opt && typeof opt === 'object' && 'value' in opt ? String(opt.value) : '';
-            onFilterChange('projectId', next);
-          }}
-          clearable
-          onClear={() => onFilterChange('projectId', '')}
-          openOnFocus
-          disablePortal
-          sx={{ width: '100%' }}
-          textFieldProps={{
-            size: 'small',
-            placeholder: 'All projects',
-            'aria-label': 'Filter by project',
-          }}
-          noOptionsText="No matches"
-          isOptionEqualToValue={(a, b) => {
-            const av = typeof a === 'object' && a !== null ? a.value : a;
-            const bv = typeof b === 'object' && b !== null ? b.value : b;
-            return av === bv;
-          }}
-          getOptionLabel={(option) =>
-            typeof option === 'string' ? option : (option.label ?? String(option.value ?? ''))
-          }
-          slotProps={{
-            popper: {
-              sx: {
-                width: 'auto !important',
-                minWidth: 280,
-                maxWidth: 400,
-              },
+      <MUIInput
+        mode="autocomplete"
+        options={searchableProjectOptions}
+        value={selectedProject}
+        onChange={(opt) => {
+          const next = opt && typeof opt === 'object' && 'value' in opt ? String(opt.value) : '';
+          onFilterChange('projectId', next);
+        }}
+        clearable
+        onClear={() => onFilterChange('projectId', '')}
+        openOnFocus
+        disablePortal
+        sx={{ flex: '2 1 245px', minWidth: 0, maxWidth: { md: 400 } }}
+        textFieldProps={{
+          size: 'small',
+          placeholder: 'All projects',
+          'aria-label': 'Filter by project',
+        }}
+        noOptionsText="No matches"
+        isOptionEqualToValue={(a, b) => {
+          const av = typeof a === 'object' && a !== null ? a.value : a;
+          const bv = typeof b === 'object' && b !== null ? b.value : b;
+          return av === bv;
+        }}
+        getOptionLabel={(option) =>
+          typeof option === 'string' ? option : (option.label ?? String(option.value ?? ''))
+        }
+        slotProps={{
+          popper: {
+            sx: {
+              width: 'auto !important',
+              minWidth: 280,
+              maxWidth: 400,
             },
-            listbox: {
-              sx: { maxHeight: 280 },
-            },
-          }}
-        />
-      </Box>
+          },
+          listbox: {
+            sx: { maxHeight: 280 },
+          },
+        }}
+      />
 
       <FormControl size="small" sx={{ flex: '0.5 1 105px', minWidth: 0, maxWidth: { md: 150 } }}>
         <Select
