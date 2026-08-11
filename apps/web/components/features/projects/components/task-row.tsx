@@ -10,14 +10,15 @@ import {
   TaskStatus,
   TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
+  type MyTaskListItem,
+  type MyTasksProjectMeta,
 } from '@tejas96/shared/types';
 import Link from 'next/link';
 import type { JSX } from 'react';
 
 import { STALE_THRESHOLDS, TASK_PRIORITY_HEX_COLOR } from '../constants';
-import type { MyTask } from '../hooks';
 import { ColorDotLabel, QuickSelect, type MUISelectOption } from './quick-select';
-import { collapseCommentPreview, getLatestTaskComment } from '../utils/task-activity';
+import { collapseCommentPreview } from '../utils/task-activity';
 
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import {
@@ -52,11 +53,36 @@ const DEFAULT_STATUS_COLOR: Record<string, string> = {
   [TaskStatus.CANCELLED]: '#6b7280',
 };
 
+/**
+ * Column track shared with the header strip in `collapsible-task-group.tsx`.
+ * Kept here so the two never drift — the header imports it rather than
+ * repeating the string.
+ *
+ * The comment preview only earns a column at `lg` (1200px); below that it
+ * would squeeze the task name, which is the one thing that must stay
+ * readable. It takes 0.6fr against the task cell's 1fr, so the name keeps
+ * the larger share whenever both are shown.
+ */
+export const TASK_ROW_GRID = {
+  xs: 'minmax(0,1fr) auto',
+  md: 'minmax(0,1fr) 96px 104px 88px 116px',
+  lg: 'minmax(0,1fr) minmax(0,0.6fr) 96px 104px 88px 116px',
+} as const;
+
+/** Left accent spine. Overdue always wins; otherwise only the loud priorities show. */
+function getSpineColor(isOverdue: boolean, priority: TaskPriority): string | null {
+  if (isOverdue) return 'var(--ds-danger)';
+  if (priority === TaskPriority.URGENT) return 'var(--ds-danger)';
+  if (priority === TaskPriority.HIGH) return 'var(--ds-warning-main)';
+  return null;
+}
+
 // ── Props ────────────────────────────────────────────────────────────────────
 
 export interface TaskRowProps {
-  task: MyTask;
-  onOpenDrawer: (task: MyTask) => void;
+  task: MyTaskListItem;
+  projectMeta?: MyTasksProjectMeta;
+  onOpenDrawer: (task: MyTaskListItem) => void;
   onStatusChange?: (
     taskId: string,
     newStatus: string,
@@ -71,6 +97,7 @@ export interface TaskRowProps {
 
 export function TaskRow({
   task,
+  projectMeta,
   onOpenDrawer,
   onStatusChange,
   onPriorityChange,
@@ -85,7 +112,7 @@ export function TaskRow({
   const priorityColor = TASK_PRIORITY_HEX_COLOR[task.priority] ?? '#94a3b8';
   const priorityLabel = TASK_PRIORITY_LABELS[task.priority] ?? task.priority;
 
-  const projectStatuses = task.projectTaskStatuses ?? [];
+  const projectStatuses = projectMeta?.taskStatuses ?? [];
   const statusOptions: MUISelectOption[] = projectStatuses.map((s) => ({
     value: s.code,
     label: <ColorDotLabel color={s.color} label={s.label} />,
@@ -96,8 +123,9 @@ export function TaskRow({
 
   const dueDateMuiColor = task.endDate ? getDueDateMuiColor(task.endDate) : 'text.disabled';
   const dueDatePendingLabel = task.endDate ? formatDueDatePendingLabel(task.endDate) : '';
-  const latestComment = getLatestTaskComment(task.activityLog);
+  const latestComment = task.latestCommentPreview;
   const commentPreview = latestComment ? collapseCommentPreview(latestComment) : null;
+  const spineColor = getSpineColor(isOverdue, task.priority);
 
   return (
     <Box
@@ -114,164 +142,185 @@ export function TaskRow({
       sx={{
         position: 'relative',
         display: 'grid',
-        gridTemplateColumns: {
-          xs: '72px 1fr',
-          md: '72px 1fr 112px 96px 80px 80px 104px',
-        },
-        alignItems: 'start',
-        gap: { xs: 1, md: 1.5 },
-        px: 1.5,
-        py: 1,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
+        gridTemplateColumns: TASK_ROW_GRID,
+        alignItems: 'center',
+        columnGap: { xs: 1.5, md: 2 },
+        pl: 2.5,
+        pr: 2,
+        py: 1.25,
         cursor: 'pointer',
-        transition: 'background-color 0.15s',
-        bgcolor: isOverdue ? 'rgba(220,38,38,0.06)' : 'background.paper',
+        transition: 'background-color var(--dur-micro) var(--ease-standard)',
+        bgcolor: isFocused ? 'var(--ds-accent-subtle)' : 'transparent',
+        // Hairline in the sunken-canvas tone rather than `divider` — present
+        // enough to keep a 40-row list scannable, quiet enough not to read as
+        // a table border.
+        boxShadow: 'inset 0 -1px 0 var(--ds-canvas-sunken)',
         outline: isFocused ? '2px solid' : 'none',
         outlineColor: 'primary.main',
         outlineOffset: '-2px',
-        '&:last-of-type': { borderBottom: 'none' },
+        '&:last-of-type': { boxShadow: 'none' },
         '&:hover': {
-          bgcolor: isOverdue ? 'rgba(220,38,38,0.1)' : 'action.hover',
+          bgcolor: isFocused ? 'var(--ds-accent-subtle)' : 'var(--ds-surface-alt)',
         },
       }}
     >
-      {/* Left priority accent stripe */}
-      {(isOverdue || task.priority === TaskPriority.URGENT) && (
+      {/* Left accent spine — carries overdue / urgency, replacing a row-wide tint */}
+      {spineColor && (
         <Box
           aria-hidden="true"
           sx={{
             position: 'absolute',
             left: 0,
-            top: 0,
-            bottom: 0,
+            top: 6,
+            bottom: 6,
             width: 3,
-            bgcolor: isOverdue ? 'error.main' : 'warning.main',
-            borderRadius: '2px 0 0 2px',
+            bgcolor: spineColor,
+            borderRadius: '0 3px 3px 0',
           }}
         />
       )}
 
-      {/* Col 1 — Key */}
-      <Typography
-        variant="caption"
-        noWrap
-        sx={{ fontFamily: 'monospace', color: 'text.secondary', fontWeight: 500 }}
-      >
-        {task.code}
-      </Typography>
-
-      {/* Col 2 — Summary */}
-      <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+      {/* Col 1 — Task: name on top, identifiers beneath */}
+      <Box sx={{ minWidth: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
           {isOverdue && (
-            <WarningAmberIcon sx={{ fontSize: 13, color: 'error.main', flexShrink: 0 }} />
+            <Tooltip title="Overdue" placement="top">
+              <WarningAmberIcon sx={{ fontSize: 14, color: 'error.main', flexShrink: 0 }} />
+            </Tooltip>
           )}
           <Typography
-            variant="body2"
-            fontWeight={500}
             noWrap
             sx={{
+              fontSize: '13.5px',
+              fontWeight: 500,
+              letterSpacing: '-0.01em',
               color: 'text.primary',
-              lineHeight: 1.4,
-              flexShrink: 1,
+              lineHeight: 1.35,
               minWidth: 0,
-              maxWidth: latestComment ? '42%' : '100%',
             }}
           >
             {task.name || task.code || 'Untitled'}
           </Typography>
-          {latestComment && (
-            <Tooltip
-              title={
-                <Box component="span" sx={{ whiteSpace: 'pre-wrap' }}>
-                  {latestComment}
-                </Box>
-              }
-              placement="top"
-              describeChild
-              slotProps={{ tooltip: { sx: { maxWidth: 360 } } }}
-            >
-              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'flex-end' }}>
-                <Typography
-                  variant="caption"
-                  noWrap
-                  aria-hidden="true"
-                  sx={{
-                    color: 'text.disabled',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    lineHeight: 1.4,
-                    maxWidth: '100%',
-                  }}
-                >
-                  {commentPreview}
-                </Typography>
-              </Box>
-            </Tooltip>
-          )}
           {task.hasDependencyBlockers && (
             <Tooltip title="Blocked by incomplete dependencies" placement="top">
-              <LockOutlinedIcon sx={{ fontSize: 13, color: 'warning.main', flexShrink: 0 }} />
+              <LockOutlinedIcon sx={{ fontSize: 14, color: 'warning.dark', flexShrink: 0 }} />
             </Tooltip>
           )}
           {isStale && (
             <Tooltip title={`No updates in ${daysStale} days`} placement="top">
-              <Typography
+              <Box
                 component="span"
-                variant="caption"
-                sx={{ color: 'warning.main', flexShrink: 0, fontSize: '0.6875rem' }}
+                sx={{
+                  flexShrink: 0,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  fontWeight: 500,
+                  lineHeight: '15px',
+                  px: 0.625,
+                  borderRadius: 'var(--radius-pill)',
+                  color: 'var(--ds-warning)',
+                  bgcolor: 'var(--ds-warning-bg)',
+                }}
               >
                 {daysStale}d
-              </Typography>
+              </Box>
             </Tooltip>
           )}
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+
+        {/* Identifier line — code · project · milestone */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            mt: 0.25,
+            minWidth: 0,
+            color: 'var(--ds-text-tertiary)',
+            fontSize: '11px',
+            lineHeight: 1.4,
+          }}
+        >
+          <Box component="span" sx={{ fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
+            {task.code}
+          </Box>
+          <Box component="span" aria-hidden="true" sx={{ flexShrink: 0 }}>
+            ·
+          </Box>
           <Link
             href={projectDetailHref}
             onClick={(e) => e.stopPropagation()}
-            style={{ textDecoration: 'none' }}
+            style={{ textDecoration: 'none', flexShrink: 0 }}
           >
-            <Typography
-              variant="caption"
+            <Box
+              component="span"
               sx={{
-                fontFamily: 'monospace',
-                color: 'text.disabled',
-                '&:hover': { color: 'primary.main' },
-                transition: 'color 0.15s',
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--ds-text-tertiary)',
+                transition: 'color var(--dur-micro) var(--ease-standard)',
+                '&:hover': { color: 'var(--ds-link)' },
               }}
             >
               {task.projectNumber}
-            </Typography>
+            </Box>
           </Link>
+          {task.milestoneName && (
+            <>
+              <Box component="span" aria-hidden="true" sx={{ flexShrink: 0 }}>
+                ·
+              </Box>
+              <Box
+                component="span"
+                sx={{
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {task.milestoneName}
+              </Box>
+            </>
+          )}
         </Box>
       </Box>
 
-      {/* Col 3 — Milestone (desktop only) */}
-      <Typography
-        variant="caption"
-        noWrap
-        sx={{ color: 'text.secondary', display: { xs: 'none', md: 'block' } }}
-      >
-        {task.milestoneName ?? (
-          <Typography
-            component="span"
-            variant="caption"
-            sx={{ color: 'text.disabled', fontStyle: 'italic' }}
+      {/* Col 2 — Latest comment (lg and up; below that the name needs the room) */}
+      <Box sx={{ display: { xs: 'none', lg: 'block' }, minWidth: 0 }}>
+        {commentPreview ? (
+          <Tooltip
+            title={
+              <Box component="span" sx={{ whiteSpace: 'pre-wrap' }}>
+                {latestComment}
+              </Box>
+            }
+            placement="top"
+            describeChild
+            slotProps={{ tooltip: { sx: { maxWidth: 360 } } }}
           >
-            —
-          </Typography>
-        )}
-      </Typography>
+            <Typography
+              noWrap
+              aria-hidden="true"
+              sx={{
+                fontSize: '11.5px',
+                lineHeight: 1.45,
+                color: 'var(--ds-text-tertiary)',
+              }}
+            >
+              {commentPreview}
+            </Typography>
+          </Tooltip>
+        ) : null}
+      </Box>
 
-      {/* Col 4 — Priority (desktop only) */}
+      {/* Col 3 — Priority */}
       <Box
         sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}
         onClick={(e) => e.stopPropagation()}
       >
         {onPriorityChange ? (
           <QuickSelect
+            pill
             value={task.priority}
             color={priorityColor}
             label={priorityLabel}
@@ -283,33 +332,31 @@ export function TaskRow({
             <Box
               component="span"
               sx={{
-                width: 8,
-                height: 8,
+                width: 6,
+                height: 6,
                 borderRadius: '50%',
                 flexShrink: 0,
                 bgcolor: priorityColor,
               }}
             />
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', textTransform: 'capitalize' }}
-            >
+            <Typography sx={{ fontSize: '11px', color: 'text.secondary' }}>
               {priorityLabel}
             </Typography>
           </Box>
         )}
       </Box>
 
-      {/* Col 5 — Due date (desktop only) */}
-      <Box sx={{ display: { xs: 'none', md: 'flex' }, flexDirection: 'column', gap: 0.25 }}>
+      {/* Col 4 — Due date */}
+      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
         {task.endDate ? (
           <Tooltip title={formatRelativeDate(task.endDate)} placement="top">
             <Box>
               <Typography
-                variant="caption"
                 sx={{
                   whiteSpace: 'nowrap',
+                  fontSize: '12.5px',
                   fontWeight: isOverdue ? 600 : 400,
+                  lineHeight: 1.3,
                   color: dueDateMuiColor,
                 }}
               >
@@ -317,13 +364,13 @@ export function TaskRow({
               </Typography>
               {dueDatePendingLabel ? (
                 <Typography
-                  variant="caption"
                   sx={{
                     display: 'block',
                     whiteSpace: 'nowrap',
-                    fontSize: '0.625rem',
+                    fontSize: '10.5px',
+                    lineHeight: 1.4,
                     fontWeight: isOverdue ? 500 : 400,
-                    color: dueDateMuiColor,
+                    color: isOverdue ? dueDateMuiColor : 'var(--ds-text-tertiary)',
                   }}
                 >
                   {dueDatePendingLabel}
@@ -332,46 +379,59 @@ export function TaskRow({
             </Box>
           </Tooltip>
         ) : (
-          <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
-            —
-          </Typography>
+          <Typography sx={{ fontSize: '12.5px', color: 'var(--ds-text-tertiary)' }}>—</Typography>
         )}
       </Box>
 
-      {/* Col 7 — Progress (desktop only) */}
-      <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.75 }}>
+      {/* Col 5 — Progress */}
+      <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
         <Box
           sx={{
-            width: 40,
-            height: 5,
-            borderRadius: 1,
-            bgcolor: 'action.hover',
+            flex: 1,
+            minWidth: 0,
+            height: 4,
+            borderRadius: 'var(--radius-pill)',
+            bgcolor: 'var(--ds-canvas-sunken)',
             overflow: 'hidden',
-            flexShrink: 0,
           }}
         >
           <Box
             sx={{
               height: '100%',
-              borderRadius: 1,
-              bgcolor: 'primary.main',
+              borderRadius: 'var(--radius-pill)',
+              bgcolor:
+                task.completionPercentage >= 100 ? 'var(--ds-success-main)' : 'var(--ds-primary)',
               width: `${task.completionPercentage}%`,
-              transition: 'width 0.3s ease',
+              transition: 'width var(--dur-emphasised) var(--ease-standard)',
             }}
           />
         </Box>
-        <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
+        <Typography
+          sx={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10.5px',
+            color: 'text.secondary',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {task.completionPercentage}%
         </Typography>
       </Box>
 
-      {/* Col 8 — Status dropdown (desktop only) */}
+      {/* Col 6 — Status */}
       <Box
-        sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          minWidth: 0,
+          // Hug the label — stretching would make every chip the same wide box.
+          justifySelf: { xs: 'end', md: 'start' },
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {onStatusChange && statusOptions.length > 0 ? (
           <QuickSelect
+            pill
             value={task.status}
             color={statusColor}
             label={statusLabel}
@@ -386,26 +446,21 @@ export function TaskRow({
               alignItems: 'center',
               gap: 0.75,
               px: 1,
-              py: 0.25,
-              borderRadius: 10,
-              border: '1px solid',
-              borderColor: `${statusColor}30`,
-              bgcolor: `${statusColor}15`,
+              height: 23,
+              borderRadius: 'var(--radius-pill)',
+              bgcolor: `${statusColor}14`,
             }}
           >
             <Box
               sx={{
-                width: 6,
-                height: 6,
+                width: 5,
+                height: 5,
                 borderRadius: '50%',
                 bgcolor: statusColor,
                 flexShrink: 0,
               }}
             />
-            <Typography
-              variant="caption"
-              sx={{ color: statusColor, fontWeight: 500, fontSize: '11px' }}
-            >
+            <Typography sx={{ color: statusColor, fontWeight: 500, fontSize: '11px' }}>
               {statusLabel}
             </Typography>
           </Box>

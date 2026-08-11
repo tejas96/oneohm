@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 import { useFollowupSummary } from '@/components/features/followups';
 import { useMyTasksSummary } from '@/components/features/tasks';
 import { Badge } from '@/components/ui/badge';
+import { ROUTES } from '@/lib/config/routes';
 import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
 import type { NavItem, NavBadgeVariant, StatusDotColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -54,7 +55,8 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
   const { pathname, searchParams } = useRoutes();
   const { navigation } = useFilteredNavigation();
   const panelData = getFilteredPanelByPath(navigation, pathname);
-  const { data: tasksSummary } = useMyTasksSummary();
+  const isMyTasksPage = pathname === ROUTES.PROJECTS.MY_TASKS;
+  const { data: tasksSummary } = useMyTasksSummary({ enabled: !isMyTasksPage });
   const { data: followupSummary } = useFollowupSummary(true);
 
   const dynamicBadges = useMemo<

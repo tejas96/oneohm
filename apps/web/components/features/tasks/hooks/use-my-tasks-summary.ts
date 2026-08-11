@@ -20,8 +20,11 @@ export const myTasksSummaryKeys = {
  * Lightweight hook that fetches only summary counts (no task data).
  * Used for navigation badge rendering without loading the full task list.
  */
-export function useMyTasksSummary(): UseQueryResult<MyTasksSummaryResponse> {
+export function useMyTasksSummary(options?: {
+  enabled?: boolean;
+}): UseQueryResult<MyTasksSummaryResponse> {
   const { user } = useAuth();
+  const queryEnabled = options?.enabled ?? true;
 
   return useQuery({
     queryKey: myTasksSummaryKeys.all(),
@@ -29,7 +32,7 @@ export function useMyTasksSummary(): UseQueryResult<MyTasksSummaryResponse> {
       const { data } = await apiClient.get<MyTasksSummaryResponse>('/tasks/my/summary', {});
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && queryEnabled,
     staleTime: 60_000,
     refetchInterval: 120_000,
     refetchOnWindowFocus: true,

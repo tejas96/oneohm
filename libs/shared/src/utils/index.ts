@@ -12,3 +12,5 @@ export * from './avatar';
 export * from './solar-impact';
 export * from './milestone';
 export * from './customer-property-filters';
+export * from './sql';
+export * from './my-tasks-filters';

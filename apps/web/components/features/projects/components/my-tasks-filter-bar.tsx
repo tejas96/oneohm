@@ -1,14 +1,15 @@
 'use client';
 
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import CloseIcon from '@mui/icons-material/Close';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SearchIcon from '@mui/icons-material/Search';
+import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
-import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import type { SxProps, Theme } from '@mui/material/styles';
@@ -31,6 +32,8 @@ interface MyTasksFilterBarProps {
   searchInput: string;
   onSearchChange: (value: string) => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
+  addressInput: string;
+  onAddressChange: (value: string) => void;
   projectFilter: string;
   projectFilterOptions: FilterOption[];
   statusFilter: string;
@@ -41,16 +44,40 @@ interface MyTasksFilterBarProps {
   onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
+  isSearchPending?: boolean;
+  isAddressPending?: boolean;
   allExpanded: boolean;
   onExpandAll: () => void;
   onCollapseAll: () => void;
   sx?: SxProps<Theme>;
 }
 
+/** "Group by: Due Date" → "Due date" — the segmented control carries the context. */
+function shortGroupLabel(label: string): string {
+  const stripped = label.replace(/^Group by:\s*/i, '');
+  return stripped.charAt(0) + stripped.slice(1).toLowerCase();
+}
+
+const SEGMENT_SX = {
+  border: 'none',
+  cursor: 'pointer',
+  height: 26,
+  px: 1.25,
+  borderRadius: 'var(--radius-pill)',
+  fontFamily: 'inherit',
+  fontSize: '11.5px',
+  fontWeight: 500,
+  letterSpacing: '-0.005em',
+  whiteSpace: 'nowrap',
+  transition: 'color var(--dur-micro) var(--ease-standard)',
+} as const;
+
 export function MyTasksFilterBar({
   searchInput,
   onSearchChange,
   searchInputRef,
+  addressInput,
+  onAddressChange,
   projectFilter,
   projectFilterOptions,
   statusFilter,
@@ -61,6 +88,8 @@ export function MyTasksFilterBar({
   onFilterChange,
   onClearFilters,
   hasActiveFilters,
+  isSearchPending = false,
+  isAddressPending = false,
   allExpanded,
   onExpandAll,
   onCollapseAll,
@@ -77,20 +106,94 @@ export function MyTasksFilterBar({
   );
 
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, ...sx }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 1,
+        p: 1,
+        bgcolor: 'var(--ds-surface)',
+        borderRadius: 'var(--radius-card-functional)',
+        boxShadow: 'var(--shadow-e1)',
+        ...sx,
+      }}
+    >
+      {/*
+        One row, wrapping. Every field carries a modest flex-basis, `minWidth: 0`
+        and shrink enabled, so the line compresses before anything is forced to
+        wrap and nothing can overflow the card. Bases total ~765px, which leaves
+        the group-by cluster room on one line at 1440; below that the cluster is
+        what drops to a second line, right-aligned.
+
+        Widths are weighted by what each control actually has to show. Project
+        renders "PRJ-0231: Long Project Name", so it takes the widest basis and
+        the largest grow factor; Status and Priority hold short fixed options and
+        stay narrow.
+      */}
       <TextField
         inputRef={searchInputRef}
         size="small"
-        placeholder="Search tasks… (press /)"
+        placeholder="Search tasks"
+        aria-label="Search tasks"
         value={searchInput}
         onChange={(e) => onSearchChange(e.target.value)}
-        sx={{ width: 220 }}
+        sx={{ flex: '1.2 1 175px', minWidth: 0, maxWidth: { md: 300 } }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
+              <SearchIcon sx={{ fontSize: 17, color: 'var(--ds-text-tertiary)' }} />
             </InputAdornment>
           ),
+          endAdornment: isSearchPending ? (
+            <InputAdornment position="end">
+              <CircularProgress size={14} />
+            </InputAdornment>
+          ) : (
+            // Keyboard shortcut hint — `/` focuses this field (see use-task-keyboard-nav).
+            !searchInput && (
+              <InputAdornment position="end">
+                <Box
+                  component="kbd"
+                  aria-hidden="true"
+                  sx={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    lineHeight: '16px',
+                    minWidth: 16,
+                    textAlign: 'center',
+                    px: 0.5,
+                    borderRadius: 'var(--radius-rf-xs)',
+                    color: 'var(--ds-text-tertiary)',
+                    bgcolor: 'var(--ds-canvas-sunken)',
+                  }}
+                >
+                  /
+                </Box>
+              </InputAdornment>
+            )
+          ),
+        }}
+      />
+
+      <TextField
+        size="small"
+        placeholder="Pincode, city or address"
+        aria-label="Filter by pincode, city or address"
+        value={addressInput}
+        onChange={(e) => onAddressChange(e.target.value)}
+        sx={{ flex: '1 1 135px', minWidth: 0, maxWidth: { md: 220 } }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <LocationOnIcon sx={{ fontSize: 17, color: 'var(--ds-text-tertiary)' }} />
+            </InputAdornment>
+          ),
+          endAdornment: isAddressPending ? (
+            <InputAdornment position="end">
+              <CircularProgress size={14} />
+            </InputAdornment>
+          ) : undefined,
         }}
       />
 
@@ -106,11 +209,11 @@ export function MyTasksFilterBar({
         onClear={() => onFilterChange('projectId', '')}
         openOnFocus
         disablePortal
-        sx={{ width: 192 }}
+        sx={{ flex: '2 1 245px', minWidth: 0, maxWidth: { md: 400 } }}
         textFieldProps={{
-          label: 'Project',
           size: 'small',
-          placeholder: 'All Projects',
+          placeholder: 'All projects',
+          'aria-label': 'Filter by project',
         }}
         noOptionsText="No matches"
         isOptionEqualToValue={(a, b) => {
@@ -135,12 +238,10 @@ export function MyTasksFilterBar({
         }}
       />
 
-      <FormControl size="small" sx={{ width: 144 }}>
-        <InputLabel shrink>Status</InputLabel>
+      <FormControl size="small" sx={{ flex: '0.5 1 105px', minWidth: 0, maxWidth: { md: 150 } }}>
         <Select
-          label="Status"
           displayEmpty
-          notched
+          aria-label="Filter by status"
           value={statusFilter || ''}
           onChange={(e) => onFilterChange('status', e.target.value)}
         >
@@ -152,12 +253,10 @@ export function MyTasksFilterBar({
         </Select>
       </FormControl>
 
-      <FormControl size="small" sx={{ width: 144 }}>
-        <InputLabel shrink>Priority</InputLabel>
+      <FormControl size="small" sx={{ flex: '0.5 1 105px', minWidth: 0, maxWidth: { md: 150 } }}>
         <Select
-          label="Priority"
           displayEmpty
-          notched
+          aria-label="Filter by priority"
           value={priorityFilter || ''}
           onChange={(e) => onFilterChange('priority', e.target.value)}
         >
@@ -169,46 +268,90 @@ export function MyTasksFilterBar({
         </Select>
       </FormControl>
 
-      <FormControl size="small" sx={{ width: 176 }}>
-        <InputLabel shrink>Group By</InputLabel>
-        <Select
-          label="Group By"
-          displayEmpty
-          notched
-          value={groupBy}
-          onChange={(e) => onFilterChange('groupBy', e.target.value as string)}
-        >
-          {TASK_GROUP_BY_OPTIONS.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
       {hasActiveFilters && (
-        <Chip
-          label="Clear"
-          size="small"
-          variant="outlined"
-          onDelete={onClearFilters}
+        <Box
+          component="button"
+          type="button"
           onClick={onClearFilters}
-        />
+          sx={{
+            ...SEGMENT_SX,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            height: 30,
+            flexShrink: 0,
+            color: 'var(--ds-text-secondary)',
+            bgcolor: 'transparent',
+            '&:hover': { bgcolor: 'var(--ds-canvas-sunken)', color: 'var(--ds-text-primary)' },
+          }}
+        >
+          <CloseIcon sx={{ fontSize: 14 }} />
+          Clear
+        </Box>
       )}
 
-      <Tooltip title={allExpanded ? 'Collapse all' : 'Expand all'}>
-        <IconButton
-          size="small"
-          onClick={allExpanded ? onCollapseAll : onExpandAll}
-          sx={{ ml: 'auto', borderLeft: '1px solid', borderColor: 'divider', pl: 1.5 }}
+      {/*
+          Pinned right by `ml: auto` and never shrinks, so it is the one item
+          that drops to a second line when the row runs out of room — and it
+          stays right-aligned there rather than stranding itself mid-row.
+        */}
+      <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+        <Box
+          role="group"
+          aria-label="Group tasks by"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.25,
+            p: 0.5,
+            borderRadius: 'var(--radius-pill)',
+            bgcolor: 'var(--ds-canvas-sunken)',
+          }}
         >
-          {allExpanded ? (
-            <KeyboardArrowUpIcon fontSize="small" />
-          ) : (
-            <KeyboardArrowDownIcon fontSize="small" />
-          )}
-        </IconButton>
-      </Tooltip>
+          {TASK_GROUP_BY_OPTIONS.map((opt) => {
+            const active = groupBy === opt.value;
+            return (
+              <Box
+                key={opt.value}
+                component="button"
+                type="button"
+                aria-pressed={active}
+                onClick={() => onFilterChange('groupBy', opt.value)}
+                sx={{
+                  ...SEGMENT_SX,
+                  color: active ? 'var(--ds-text-primary)' : 'var(--ds-text-secondary)',
+                  bgcolor: active ? 'var(--ds-surface)' : 'transparent',
+                  boxShadow: active ? 'var(--shadow-e1)' : 'none',
+                  '&:hover': { color: 'var(--ds-text-primary)' },
+                }}
+              >
+                {shortGroupLabel(opt.label)}
+              </Box>
+            );
+          })}
+        </Box>
+
+        <Tooltip title={allExpanded ? 'Collapse all groups' : 'Expand all groups'}>
+          <IconButton
+            size="small"
+            aria-label={allExpanded ? 'Collapse all groups' : 'Expand all groups'}
+            onClick={allExpanded ? onCollapseAll : onExpandAll}
+            sx={{
+              width: 34,
+              height: 34,
+              borderRadius: 'var(--radius-rf-md)',
+              color: 'var(--ds-text-secondary)',
+              '&:hover': { bgcolor: 'var(--ds-canvas-sunken)', color: 'var(--ds-text-primary)' },
+            }}
+          >
+            {allExpanded ? (
+              <UnfoldLessIcon sx={{ fontSize: 18 }} />
+            ) : (
+              <UnfoldMoreIcon sx={{ fontSize: 18 }} />
+            )}
+          </IconButton>
+        </Tooltip>
+      </Box>
     </Box>
   );
 }

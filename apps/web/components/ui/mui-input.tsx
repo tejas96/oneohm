@@ -243,6 +243,24 @@ const MUIInputInner = (
       ...autocompleteProps
     } = props;
 
+    /**
+     * `sx` styles the *container*, not the Autocomplete.
+     *
+     * This mode renders `<container><label/><Autocomplete/></container>`, so
+     * the container — never the Autocomplete — is what a parent flex or grid
+     * lays out. Spreading `sx` onto the Autocomplete therefore made layout
+     * props silently inert: `width: 192` happened to work (a fixed width
+     * propagates back out through a shrink-to-fit block), but `flex`,
+     * `flexBasis` and `alignSelf` did nothing at all, leaving the field to
+     * collapse to its intrinsic size inside a flex row.
+     *
+     * Hoisting `sx` here fixes that while keeping every existing caller
+     * intact: descendant selectors (`& .MuiOutlinedInput-root`) still match
+     * from the container, spacing lands identically, and a fixed width now
+     * reaches the Autocomplete through `width: '100%'` below.
+     */
+    const { sx: containerSx, ...autocompleteRest } = autocompleteProps;
+
     const tfProps = textFieldProps ?? {};
     const tfNativeInputProps = tfProps.inputProps;
     const color: TextFieldProps['color'] =
@@ -301,9 +319,10 @@ const MUIInputInner = (
     const resolvedRenderOption = callerRenderOption ?? avatarRenderOption;
 
     return (
-      <div>
+      <Box sx={containerSx}>
         <MUIFieldLabel fieldLabel={fieldLabel} required={labelRequired} tooltip={tooltip} />
         <Autocomplete
+          sx={{ width: '100%' }}
           options={options}
           value={value}
           freeSolo={freeSolo}
@@ -355,9 +374,9 @@ const MUIInputInner = (
               }}
             />
           )}
-          {...autocompleteProps}
+          {...autocompleteRest}
         />
-      </div>
+      </Box>
     );
   }
 

@@ -2,31 +2,40 @@
 
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CloseIcon from '@mui/icons-material/Close';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import InboxIcon from '@mui/icons-material/Inbox';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { LookupTypeCode, TaskPriority, TaskStatus } from '@tejas96/shared/types';
+import { useQueryClient } from '@tanstack/react-query';
+import { MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD } from '@tejas96/shared/constants';
+import {
+  type MyTaskListItem,
+  LookupTypeCode,
+  TaskPriority,
+  TaskStatus,
+} from '@tejas96/shared/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-  useMyTasks,
-  useUpdateTaskStatus,
-  type GroupByMode,
-  type MyTask,
-  type MyTaskFilters,
-} from '../hooks';
-import { CollapsibleTaskGroup } from './collapsible-task-group';
+  MY_TASKS_ADDRESS_DEBOUNCE_MS,
+  MY_TASKS_SEARCH_DEBOUNCE_MS,
+  VISIBLE_GROUPS_BATCH,
+} from '../constants';
+import { useMyTasks, useUpdateTaskStatus, type GroupByMode, type MyTaskFilters } from '../hooks';
 import { MyTasksFilterBar } from './my-tasks-filter-bar';
+import { MyTasksGroupSection } from './my-tasks-group-section';
 import { MyTasksSkeleton, SummaryChipsSkeleton } from './my-tasks-skeleton';
 import { useCollapsedGroups } from '../hooks/use-collapsed-groups';
 import { useTaskKeyboardNav } from '../hooks/use-task-keyboard-nav';
 
 import { TaskDrawer, useUpdateTask } from '@/components/features/tasks';
+import { myTasksSummaryKeys } from '@/components/features/tasks/hooks/use-my-tasks-summary';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
+import { showToast } from '@/components/ui/sonner';
 import { useDebounce, useUrlFilters } from '@/lib/hooks';
 import { useLookupOptions } from '@/lib/hooks/resources';
 
@@ -41,7 +50,107 @@ const MY_TASKS_URL_DEFAULTS = {
   groupBy: 'dueDate',
   search: '',
   dueDateFilter: '',
+  address: '',
 };
+
+// ---------------------------------------------------------------------------
+// Summary stat pill
+// ---------------------------------------------------------------------------
+
+interface StatPillProps {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  /** Semantic accent, applied only when the count is non-zero. */
+  tone: 'neutral' | 'danger' | 'warning' | 'success';
+  active?: boolean;
+  onClick?: () => void;
+}
+
+const STAT_TONE: Record<StatPillProps['tone'], { ink: string; tint: string }> = {
+  neutral: { ink: 'var(--ds-text-secondary)', tint: 'var(--ds-canvas-sunken)' },
+  danger: { ink: 'var(--ds-danger)', tint: 'var(--ds-danger-bg)' },
+  warning: { ink: 'var(--ds-warning)', tint: 'var(--ds-warning-bg)' },
+  success: { ink: 'var(--ds-success)', tint: 'var(--ds-success-bg)' },
+};
+
+function StatPill({ icon, label, value, tone, active, onClick }: StatPillProps): React.JSX.Element {
+  // A zero count carries no urgency, so it drops back to neutral.
+  const accent = STAT_TONE[value > 0 ? tone : 'neutral'];
+  const interactive = Boolean(onClick);
+
+  return (
+    <Box
+      component={interactive ? 'button' : 'div'}
+      type={interactive ? 'button' : undefined}
+      onClick={onClick}
+      aria-pressed={interactive ? Boolean(active) : undefined}
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 1,
+        height: 36,
+        pl: 0.75,
+        pr: 1.5,
+        border: 'none',
+        borderRadius: 'var(--radius-pill)',
+        cursor: interactive ? 'pointer' : 'default',
+        bgcolor: active ? accent.tint : 'var(--ds-surface)',
+        boxShadow: active ? 'none' : 'var(--shadow-e1)',
+        transition:
+          'background-color var(--dur-micro) var(--ease-standard), box-shadow var(--dur-micro)',
+        '&:hover': interactive
+          ? {
+              bgcolor: active ? accent.tint : 'var(--ds-surface-alt)',
+              boxShadow: 'var(--shadow-e2)',
+            }
+          : undefined,
+      }}
+    >
+      {/* Signature circular icon container */}
+      <Box
+        aria-hidden="true"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 24,
+          height: 24,
+          flexShrink: 0,
+          borderRadius: '50%',
+          color: accent.ink,
+          bgcolor: accent.tint,
+          '& .MuiSvgIcon-root': { fontSize: 14 },
+        }}
+      >
+        {icon}
+      </Box>
+      <Box
+        component="span"
+        sx={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '13px',
+          fontWeight: 600,
+          lineHeight: 1,
+          color: value > 0 ? accent.ink : 'var(--ds-text-primary)',
+        }}
+      >
+        {value}
+      </Box>
+      <Box
+        component="span"
+        sx={{
+          fontSize: '12px',
+          lineHeight: 1,
+          whiteSpace: 'nowrap',
+          color: 'var(--ds-text-secondary)',
+        }}
+      >
+        {label}
+      </Box>
+    </Box>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Morning brief
@@ -65,6 +174,7 @@ function getMorningBrief(overdue: number, dueToday: number): string | null {
 // ---------------------------------------------------------------------------
 
 export function ProjectMyTasksPage(): React.JSX.Element {
+  const queryClient = useQueryClient();
   const { filters: urlFilters, setFilter } = useUrlFilters(MY_TASKS_URL_DEFAULTS);
 
   const projectFilter = urlFilters.projectId;
@@ -73,7 +183,11 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const dueDateFilter = urlFilters.dueDateFilter;
   const groupBy = (urlFilters.groupBy || 'dueDate') as GroupByMode;
   const [searchInput, setSearchInput] = useState(urlFilters.search || '');
-  const debouncedSearch = useDebounce(searchInput, 300);
+  const debouncedSearch = useDebounce(searchInput, MY_TASKS_SEARCH_DEBOUNCE_MS);
+  const [addressInput, setAddressInput] = useState(urlFilters.address || '');
+  const debouncedAddress = useDebounce(addressInput, MY_TASKS_ADDRESS_DEBOUNCE_MS);
+
+  const textFiltersReady = searchInput === debouncedSearch && addressInput === debouncedAddress;
 
   // Keep a ref to setFilter so the sync effect always has a stable dep array.
   // setFilter itself is stable (empty useCallback deps in useUrlFilters) but React's
@@ -85,6 +199,10 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   useEffect(() => {
     setFilterRef.current('search', debouncedSearch);
   }, [debouncedSearch]);
+
+  useEffect(() => {
+    setFilterRef.current('address', debouncedAddress);
+  }, [debouncedAddress]);
 
   // Drawer state
   const [drawerTaskId, setDrawerTaskId] = useState<string | null>(null);
@@ -101,11 +219,22 @@ export function ProjectMyTasksPage(): React.JSX.Element {
       projectId: projectFilter || undefined,
       search: debouncedSearch || undefined,
       dueDateFilter: (dueDateFilter as MyTaskFilters['dueDateFilter']) || undefined,
+      address: debouncedAddress || undefined,
     }),
-    [groupBy, statusFilter, priorityFilter, projectFilter, debouncedSearch, dueDateFilter],
+    [
+      groupBy,
+      statusFilter,
+      priorityFilter,
+      projectFilter,
+      debouncedSearch,
+      dueDateFilter,
+      debouncedAddress,
+    ],
   );
 
-  const { data, isLoading, isError, refetch } = useMyTasks(filters);
+  const { data, isLoading, isFetching, isPlaceholderData, isError, refetch } = useMyTasks(filters, {
+    enabled: textFiltersReady,
+  });
   const updateStatus = useUpdateTaskStatus();
   const updateTask = useUpdateTask();
   const {
@@ -121,26 +250,73 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   const summary = data?.summary;
   const groups = data?.groups ?? [];
-  const projectsForFilter = summary?.projects ?? [];
+  const projectMeta = data?.projectMeta ?? {};
+  const projectsForFilter = data?.allProjects ?? [];
+
+  const isLazyProjectGroups =
+    groupBy === 'project' && groups.length > MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD;
+
+  const [visibleGroupCount, setVisibleGroupCount] = useState(VISIBLE_GROUPS_BATCH);
+  const [groupTasksCache, setGroupTasksCache] = useState<Record<string, MyTaskListItem[]>>({});
+
+  useEffect(() => {
+    setVisibleGroupCount(VISIBLE_GROUPS_BATCH);
+    setGroupTasksCache({});
+  }, [
+    filters.groupBy,
+    filters.status,
+    filters.priority,
+    filters.projectId,
+    filters.search,
+    filters.dueDateFilter,
+    filters.address,
+    groupBy,
+  ]);
+
+  const visibleGroups = useMemo(
+    () => (groupBy === 'project' ? groups.slice(0, visibleGroupCount) : groups),
+    [groups, groupBy, visibleGroupCount],
+  );
+
+  const handleTasksLoaded = useCallback((groupKey: string, tasks: MyTaskListItem[]) => {
+    setGroupTasksCache((prev) => ({ ...prev, [groupKey]: tasks }));
+  }, []);
+
+  // keepPreviousData shows stale groups while refetching — hide them and show loading instead.
+  const isListRefreshing = isFetching && isPlaceholderData;
+  const showListLoading = isLoading || isListRefreshing;
+  const isSearchDebouncing = searchInput !== debouncedSearch;
+  const isAddressDebouncing = addressInput !== debouncedAddress;
+  const isSearchPending = isSearchDebouncing || isListRefreshing;
+  const isAddressPending = isAddressDebouncing || isListRefreshing;
 
   // Clear stale deep-linked projectId once data loads and the id is not actionable.
   useEffect(() => {
-    if (!projectFilter || isLoading) return;
+    if (!projectFilter || showListLoading) return;
     const isKnownProject = projectsForFilter.some((p) => p.id === projectFilter);
     if (!isKnownProject) {
       setFilter('projectId', '');
     }
-  }, [projectFilter, projectsForFilter, isLoading, setFilter]);
-
-  // All tasks flat for keyboard nav indexing
-  const allTasks = useMemo(() => groups.flatMap((g) => g.tasks), [groups]);
+  }, [projectFilter, projectsForFilter, showListLoading, setFilter]);
 
   // Collapse state
   const groupKeys = useMemo(() => groups.map((g) => g.key), [groups]);
-  const { isExpanded, toggle, expandAll, collapseAll, allExpanded } = useCollapsedGroups(
-    groupBy,
-    groupKeys,
-  );
+  const { isExpanded, canLazyFetch, toggle, expandAll, expandOnly, collapseAll, allExpanded } =
+    useCollapsedGroups(groupBy, groupKeys, { lazyProjectGroups: isLazyProjectGroups });
+
+  // Reuse grouped summary for nav badge cache — avoids a duplicate /tasks/my/summary call.
+  useEffect(() => {
+    if (!summary) return;
+    queryClient.setQueryData(myTasksSummaryKeys.all(), summary);
+  }, [summary, queryClient]);
+
+  // All tasks flat for keyboard nav indexing
+  const allTasks = useMemo(() => {
+    if (!isLazyProjectGroups) {
+      return groups.flatMap((g) => g.tasks);
+    }
+    return visibleGroups.flatMap((g) => (isExpanded(g.key) ? (groupTasksCache[g.key] ?? []) : []));
+  }, [groups, visibleGroups, isLazyProjectGroups, groupTasksCache, isExpanded]);
 
   // Project filter options
   const projectFilterOptions = useMemo(
@@ -182,6 +358,23 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     [setFilter],
   );
 
+  const handleExpandAll = useCallback(() => {
+    if (isLazyProjectGroups) {
+      expandOnly(visibleGroups.map((g) => g.key));
+      if (groups.length > visibleGroups.length) {
+        showToast.info(
+          `Expanded ${visibleGroups.length} visible groups. Load more groups to expand the rest.`,
+        );
+      }
+      return;
+    }
+    expandAll();
+  }, [expandAll, expandOnly, groups.length, isLazyProjectGroups, visibleGroups]);
+
+  const handleCollapseAll = useCallback(() => {
+    collapseAll();
+  }, [collapseAll]);
+
   const handleClearFilters = useCallback(() => {
     setFilter({
       projectId: '',
@@ -189,8 +382,10 @@ export function ProjectMyTasksPage(): React.JSX.Element {
       priority: '',
       search: '',
       dueDateFilter: '',
+      address: '',
     });
     setSearchInput('');
+    setAddressInput('');
   }, [setFilter]);
 
   const handleMarkDone = useCallback(
@@ -207,7 +402,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     [updateStatus],
   );
 
-  const handleOpenDrawer = useCallback((task: MyTask) => {
+  const handleOpenDrawer = useCallback((task: MyTaskListItem) => {
     setDrawerTaskId(task.id);
     setDrawerOpen(true);
   }, []);
@@ -264,8 +459,8 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     onOpenDrawer: keyboardOpenDrawer,
     onMarkDone: keyboardMarkDone,
     onStartTask: keyboardStartTask,
-    onExpandAll: expandAll,
-    onCollapseAll: collapseAll,
+    onExpandAll: handleExpandAll,
+    onCollapseAll: handleCollapseAll,
     searchInputRef,
     drawerOpen,
     onCloseDrawer: handleCloseDrawer,
@@ -274,9 +469,16 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const focusedTaskId = focusedIndex >= 0 ? allTasks[focusedIndex]?.id : undefined;
 
   const hasActiveFilters =
-    projectFilter || statusFilter || priorityFilter || debouncedSearch || dueDateFilter;
+    projectFilter ||
+    statusFilter ||
+    priorityFilter ||
+    debouncedSearch ||
+    dueDateFilter ||
+    debouncedAddress;
   const morningBrief =
-    summary && !briefDismissed ? getMorningBrief(summary.overdue, summary.dueToday) : null;
+    !showListLoading && summary && !briefDismissed
+      ? getMorningBrief(summary.overdue, summary.dueToday)
+      : null;
 
   // ---------------------------------------------------------------------------
   // Render
@@ -284,87 +486,133 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   return (
     <div className="space-y-3">
-      {/* Page Header */}
-      <div>
-        <Typography variant="h6" fontWeight={600}>
-          My Tasks
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-          All tasks assigned to you across projects
-        </Typography>
-      </div>
+      {/* Header band — title and today's brief on the left, counts on the right */}
+      <Box
+        sx={{
+          position: 'relative',
+          overflow: 'hidden',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          px: 2.5,
+          py: 2,
+          borderRadius: 'var(--radius-card-functional)',
+          bgcolor: 'var(--ds-surface)',
+          boxShadow: 'var(--shadow-e2)',
+        }}
+      >
+        {/* Ambient brand bloom — atmosphere only, never a fill */}
+        <Box
+          aria-hidden="true"
+          sx={{
+            position: 'absolute',
+            top: -140,
+            right: -60,
+            width: 320,
+            height: 320,
+            pointerEvents: 'none',
+            background: 'var(--gradient-glow)',
+            opacity: 0.7,
+          }}
+        />
 
-      {/* Summary Stat Chips */}
-      {isLoading ? (
-        <SummaryChipsSkeleton />
-      ) : (
-        summary && (
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {/* Total */}
-            <Chip
-              icon={<FormatListBulletedIcon fontSize="small" />}
-              label={`${summary.total} Total`}
-              size="small"
-              variant={dueDateFilter ? 'outlined' : 'filled'}
-              onClick={handleClearFilters}
-              sx={{ cursor: 'pointer' }}
-            />
-            {/* Overdue */}
-            <Chip
-              icon={<WarningAmberIcon fontSize="small" />}
-              label={`${summary.overdue} Overdue`}
-              size="small"
-              color={summary.overdue > 0 ? 'error' : 'default'}
-              variant={dueDateFilter === 'overdue' ? 'filled' : 'outlined'}
-              onClick={() =>
-                setFilter({
-                  status: '',
-                  priority: '',
-                  dueDateFilter: dueDateFilter === 'overdue' ? '' : 'overdue',
-                })
-              }
-              sx={{ cursor: 'pointer' }}
-            />
-            {/* Due Today */}
-            <Chip
-              icon={<CalendarTodayIcon fontSize="small" />}
-              label={`${summary.dueToday} Due Today`}
-              size="small"
-              color={summary.dueToday > 0 ? 'warning' : 'default'}
-              variant={dueDateFilter === 'dueToday' ? 'filled' : 'outlined'}
-              onClick={() =>
-                setFilter({
-                  status: '',
-                  priority: '',
-                  dueDateFilter: dueDateFilter === 'dueToday' ? '' : 'dueToday',
-                })
-              }
-              sx={{ cursor: 'pointer' }}
-            />
-            {/* Done This Week */}
-            <Chip
-              icon={<CheckCircleOutlineIcon fontSize="small" />}
-              label={`${summary.completedThisWeek} Done This Week`}
-              size="small"
-              color={summary.completedThisWeek > 0 ? 'success' : 'default'}
-              variant="outlined"
-            />
-          </Box>
-        )
-      )}
+        <Box sx={{ position: 'relative', minWidth: 0 }}>
+          <Typography
+            component="h1"
+            sx={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2 }}
+          >
+            My tasks
+          </Typography>
+          {morningBrief ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+              <Typography sx={{ fontSize: '13px', color: 'var(--ds-text-secondary)' }}>
+                {morningBrief}
+              </Typography>
+              <IconButton
+                size="small"
+                aria-label="Dismiss today's brief"
+                onClick={() => setBriefDismissed(true)}
+                sx={{
+                  width: 18,
+                  height: 18,
+                  color: 'var(--ds-text-tertiary)',
+                  '&:hover': { color: 'var(--ds-text-secondary)' },
+                }}
+              >
+                <CloseIcon sx={{ fontSize: 13 }} />
+              </IconButton>
+            </Box>
+          ) : (
+            <Typography sx={{ fontSize: '13px', color: 'var(--ds-text-secondary)', mt: 0.5 }}>
+              Everything assigned to you, across every project
+            </Typography>
+          )}
+        </Box>
 
-      {/* Morning Brief Banner */}
-      {morningBrief && (
-        <Alert severity="info" onClose={() => setBriefDismissed(true)} sx={{ py: 0.5 }}>
-          {morningBrief}
-        </Alert>
-      )}
+        {/* Summary counts — each one is also a filter */}
+        <Box sx={{ position: 'relative', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {showListLoading ? (
+            <SummaryChipsSkeleton />
+          ) : (
+            summary && (
+              <>
+                <StatPill
+                  icon={<FormatListBulletedIcon />}
+                  label="Total"
+                  value={summary.total}
+                  tone="neutral"
+                  active={!dueDateFilter}
+                  onClick={handleClearFilters}
+                />
+                <StatPill
+                  icon={<WarningAmberIcon />}
+                  label="Overdue"
+                  value={summary.overdue}
+                  tone="danger"
+                  active={dueDateFilter === 'overdue'}
+                  onClick={() => {
+                    setFilter({
+                      status: '',
+                      priority: '',
+                      dueDateFilter: dueDateFilter === 'overdue' ? '' : 'overdue',
+                    });
+                  }}
+                />
+                <StatPill
+                  icon={<CalendarTodayIcon />}
+                  label="Due today"
+                  value={summary.dueToday}
+                  tone="warning"
+                  active={dueDateFilter === 'dueToday'}
+                  onClick={() => {
+                    setFilter({
+                      status: '',
+                      priority: '',
+                      dueDateFilter: dueDateFilter === 'dueToday' ? '' : 'dueToday',
+                    });
+                  }}
+                />
+                <StatPill
+                  icon={<CheckCircleOutlineIcon />}
+                  label="Done this week"
+                  value={summary.completedThisWeek}
+                  tone="success"
+                />
+              </>
+            )
+          )}
+        </Box>
+      </Box>
 
       {/* Filter Row — search first, then dropdowns */}
       <MyTasksFilterBar
         searchInput={searchInput}
         onSearchChange={setSearchInput}
         searchInputRef={searchInputRef}
+        addressInput={addressInput}
+        onAddressChange={setAddressInput}
         projectFilter={projectFilter}
         projectFilterOptions={projectFilterOptions}
         statusFilter={statusFilter}
@@ -375,10 +623,11 @@ export function ProjectMyTasksPage(): React.JSX.Element {
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}
         hasActiveFilters={!!hasActiveFilters}
+        isSearchPending={isSearchPending}
+        isAddressPending={isAddressPending}
         allExpanded={allExpanded}
-        onExpandAll={expandAll}
-        onCollapseAll={collapseAll}
-        sx={{ mt: 1 }}
+        onExpandAll={handleExpandAll}
+        onCollapseAll={handleCollapseAll}
       />
 
       {/* Error State */}
@@ -387,33 +636,33 @@ export function ProjectMyTasksPage(): React.JSX.Element {
       {/* Content */}
       {!isError && (
         <div ref={containerRef}>
-          {isLoading && <MyTasksSkeleton />}
+          {showListLoading && <MyTasksSkeleton />}
 
           {/* Empty state */}
-          {!isLoading && groups.length === 0 && (
+          {!showListLoading && groups.length === 0 && (
             <Box
               sx={{
-                bgcolor: 'background.paper',
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
+                bgcolor: 'var(--ds-surface)',
+                borderRadius: 'var(--radius-card-functional)',
+                boxShadow: 'var(--shadow-e2)',
                 overflow: 'hidden',
-                p: 4,
+                px: 4,
+                py: 6,
               }}
             >
               <EmptyState
-                title="No tasks assigned to you"
+                title={hasActiveFilters ? 'No tasks match these filters' : 'You are all caught up'}
                 description={
                   hasActiveFilters
-                    ? 'No tasks match the selected filters. Try different filter options.'
-                    : 'You don\u2019t have any incomplete tasks right now. Tasks assigned to you will appear here.'
+                    ? 'Widen the search, or clear the filters to see everything assigned to you.'
+                    : 'Nothing is open on your plate right now. New tasks assigned to you land here.'
                 }
                 icon={<InboxIcon sx={{ width: '100%', height: '100%' }} />}
                 iconColor={hasActiveFilters ? 'muted' : 'primary'}
                 action={
                   hasActiveFilters
                     ? {
-                        label: 'Clear Filters',
+                        label: 'Clear filters',
                         onClick: handleClearFilters,
                       }
                     : undefined
@@ -423,23 +672,54 @@ export function ProjectMyTasksPage(): React.JSX.Element {
           )}
 
           {/* Grouped Task List */}
-          {!isLoading && (
+          {!showListLoading && (
             <div className="space-y-1.5">
-              {groups.map((group) => (
-                <CollapsibleTaskGroup
+              {visibleGroups.map((group) => (
+                <MyTasksGroupSection
                   key={group.key}
-                  groupKey={group.key}
-                  label={group.label}
-                  count={group.count}
-                  tasks={group.tasks}
+                  group={group}
+                  filters={filters}
+                  isLazyMode={isLazyProjectGroups}
                   expanded={isExpanded(group.key)}
                   onToggleExpand={() => toggle(group.key)}
                   onOpenDrawer={handleOpenDrawer}
                   onStatusChange={handleInlineStatusChange}
                   onPriorityChange={handleInlinePriorityChange}
                   focusedTaskId={focusedTaskId}
+                  projectMeta={projectMeta}
+                  onTasksLoaded={handleTasksLoaded}
+                  fetchEnabled={textFiltersReady}
+                  lazyFetchAllowed={canLazyFetch(group.key)}
                 />
               ))}
+              {groupBy === 'project' && groups.length > visibleGroupCount && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 1.5 }}>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() =>
+                      setVisibleGroupCount((prev) =>
+                        Math.min(prev + VISIBLE_GROUPS_BATCH, groups.length),
+                      )
+                    }
+                    sx={{
+                      borderRadius: 'var(--radius-pill)',
+                      px: 2,
+                      fontSize: '12px',
+                      color: 'var(--ds-text-secondary)',
+                      bgcolor: 'var(--ds-surface)',
+                      boxShadow: 'var(--shadow-e1)',
+                      '&:hover': {
+                        bgcolor: 'var(--ds-surface)',
+                        boxShadow: 'var(--shadow-e2)',
+                        color: 'var(--ds-text-primary)',
+                      },
+                    }}
+                  >
+                    Load {groups.length - visibleGroupCount} more groups
+                  </Button>
+                </Box>
+              )}
             </div>
           )}
         </div>

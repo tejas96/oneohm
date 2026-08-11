@@ -4,13 +4,14 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import CommentIcon from '@mui/icons-material/Comment';
 import EditIcon from '@mui/icons-material/Edit';
-import { Box, Button, Chip, Divider, IconButton, TextField } from '@mui/material';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
+import { Box, Button, IconButton, TextField, Typography } from '@mui/material';
 import type { TaskActivityEntry } from '@tejas96/shared/types';
 import { useCallback, useEffect, useState } from 'react';
 
 import { ACTIVITY_TYPE_LABELS } from '../constants';
 
-import { MUITypography } from '@/components/ui/mui-typography';
 import { formatRelativeDate } from '@/lib/utils';
 
 interface TaskDrawerMainContentProps {
@@ -25,6 +26,124 @@ interface TaskDrawerMainContentProps {
   hasExtraSections?: boolean;
   /** Rendered between description and activity (e.g. checklist, dependencies) */
   children?: React.ReactNode;
+}
+
+/** Signature overline micro-label used for every section in the drawer. */
+export function SectionHeading({
+  children,
+  action,
+}: {
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 1,
+        minHeight: 24,
+        mb: 1.5,
+      }}
+    >
+      <Typography
+        component="h3"
+        sx={{
+          fontSize: '10px',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.12em',
+          lineHeight: 1,
+          color: 'var(--ds-text-tertiary)',
+        }}
+      >
+        {children}
+      </Typography>
+      {action}
+    </Box>
+  );
+}
+
+/**
+ * Flat semantic callout — a tint plus the signature circular icon container.
+ * Replaces the previous `error.50` / `warning.50` backgrounds, which resolved
+ * to `undefined` against this theme's palette and rendered transparent.
+ */
+function Callout({
+  tone,
+  icon,
+  title,
+  children,
+}: {
+  tone: 'danger' | 'warning';
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  const ink = tone === 'danger' ? 'var(--ds-danger)' : 'var(--ds-warning)';
+  const tint = tone === 'danger' ? 'var(--ds-danger-bg)' : 'var(--ds-warning-bg)';
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        gap: 1.5,
+        px: 2,
+        py: 1.5,
+        borderRadius: 'var(--radius-card-functional)',
+        bgcolor: tint,
+      }}
+    >
+      <Box
+        aria-hidden="true"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 28,
+          height: 28,
+          flexShrink: 0,
+          borderRadius: '50%',
+          color: ink,
+          bgcolor: 'var(--ds-surface)',
+          '& .MuiSvgIcon-root': { fontSize: 16 },
+        }}
+      >
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography sx={{ fontSize: '12.5px', fontWeight: 600, color: ink, lineHeight: 1.4 }}>
+          {title}
+        </Typography>
+        <Typography sx={{ fontSize: '12.5px', color: 'var(--ds-text-secondary)', lineHeight: 1.5 }}>
+          {children}
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
+/** Small tinted pill used for the from → to values in a status/priority change. */
+function ValuePill({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        height: 19,
+        px: 0.875,
+        borderRadius: 'var(--radius-pill)',
+        fontSize: '10.5px',
+        fontWeight: 500,
+        color: 'var(--ds-text-secondary)',
+        bgcolor: 'var(--ds-canvas-sunken)',
+      }}
+    >
+      {children}
+    </Box>
+  );
 }
 
 export function TaskDrawerMainContent({
@@ -73,42 +192,18 @@ export function TaskDrawerMainContent({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Alerts */}
       {blockedReason && (
-        <Box
-          sx={{
-            px: 2,
-            py: 1.5,
-            bgcolor: 'error.50',
-            borderLeft: 3,
-            borderColor: 'error.main',
-            borderRadius: 1,
-          }}
-        >
-          <MUITypography variant="alertTitle" sx={{ color: 'error.main' }}>
-            Blocked
-          </MUITypography>
-          <MUITypography variant="body">{blockedReason}</MUITypography>
-        </Box>
+        <Callout tone="danger" icon={<ReportProblemOutlinedIcon />} title="This task is blocked">
+          {blockedReason}
+        </Callout>
       )}
 
       {hasDependencyBlockers && (
-        <Box
-          sx={{
-            px: 2,
-            py: 1.5,
-            bgcolor: 'warning.50',
-            borderLeft: 3,
-            borderColor: 'warning.main',
-            borderRadius: 1,
-          }}
-        >
-          <MUITypography variant="alertTitle" sx={{ color: 'warning.main' }}>
-            Blocked by Dependencies
-          </MUITypography>
-          <MUITypography variant="body">Some dependency tasks are not yet complete</MUITypography>
-        </Box>
+        <Callout tone="warning" icon={<LockOutlinedIcon />} title="Waiting on dependencies">
+          Some tasks this one depends on are still open.
+        </Callout>
       )}
 
-      {/* Progress indicator */}
+      {/* Progress */}
       {completionPercentage !== undefined &&
         completionPercentage > 0 &&
         completionPercentage < 100 && (
@@ -117,22 +212,37 @@ export function TaskDrawerMainContent({
               sx={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 0.75,
+                alignItems: 'baseline',
+                mb: 1,
               }}
             >
-              <MUITypography variant="alertTitle" sx={{ color: 'text.secondary' }}>
+              <Typography
+                sx={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  color: 'var(--ds-text-tertiary)',
+                }}
+              >
                 Progress
-              </MUITypography>
-              <MUITypography variant="alertTitle" sx={{ color: 'text.primary' }}>
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: 'var(--ds-text-primary)',
+                }}
+              >
                 {completionPercentage}%
-              </MUITypography>
+              </Typography>
             </Box>
             <Box
               sx={{
-                height: 6,
-                bgcolor: 'action.hover',
-                borderRadius: 1,
+                height: 5,
+                bgcolor: 'var(--ds-canvas-sunken)',
+                borderRadius: 'var(--radius-pill)',
                 overflow: 'hidden',
               }}
             >
@@ -140,33 +250,45 @@ export function TaskDrawerMainContent({
                 sx={{
                   height: '100%',
                   width: `${completionPercentage}%`,
-                  bgcolor: 'primary.main',
-                  transition: 'width 0.3s ease',
+                  borderRadius: 'var(--radius-pill)',
+                  bgcolor: 'var(--ds-primary)',
+                  transition: 'width var(--dur-emphasised) var(--ease-standard)',
                 }}
               />
             </Box>
           </Box>
         )}
 
-      {/* Description Section */}
+      {/* Description */}
       <Box>
-        <Box
-          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}
+        <SectionHeading
+          action={
+            onDescriptionChange && !isEditingDescription ? (
+              <IconButton
+                size="small"
+                aria-label="Edit description"
+                onClick={() => {
+                  setDraftDescription(description ?? '');
+                  setIsEditingDescription(true);
+                }}
+                sx={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 'var(--radius-rf-sm)',
+                  color: 'var(--ds-text-tertiary)',
+                  '&:hover': {
+                    bgcolor: 'var(--ds-canvas-sunken)',
+                    color: 'var(--ds-text-primary)',
+                  },
+                }}
+              >
+                <EditIcon sx={{ fontSize: 15 }} />
+              </IconButton>
+            ) : undefined
+          }
         >
-          <MUITypography variant="sectionTitle">Description</MUITypography>
-          {onDescriptionChange && !isEditingDescription && (
-            <IconButton
-              size="small"
-              onClick={() => {
-                setDraftDescription(description ?? '');
-                setIsEditingDescription(true);
-              }}
-              sx={{ color: 'text.secondary' }}
-            >
-              <EditIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          )}
-        </Box>
+          Description
+        </SectionHeading>
 
         {isEditingDescription ? (
           <Box>
@@ -176,12 +298,16 @@ export function TaskDrawerMainContent({
               multiline
               rows={6}
               fullWidth
-              placeholder="Add a description..."
+              placeholder="What needs to happen, and anything the next person should know."
               autoFocus
               sx={{
                 '& .MuiInputBase-root': {
-                  fontSize: '0.875rem',
+                  height: 'auto',
+                  fontSize: '13px',
+                  lineHeight: 1.6,
                   fontFamily: 'inherit',
+                  borderRadius: 'var(--radius-card-functional)',
+                  padding: '12px 14px',
                 },
               }}
             />
@@ -191,61 +317,81 @@ export function TaskDrawerMainContent({
                 size="small"
                 onClick={handleSaveDescription}
                 startIcon={<CheckIcon />}
-                sx={{ textTransform: 'none' }}
+                sx={{ textTransform: 'none', borderRadius: 'var(--radius-pill)', px: 2 }}
               >
-                Save
+                Save description
               </Button>
               <Button
-                variant="outlined"
+                variant="text"
                 size="small"
                 onClick={handleCancelDescription}
                 startIcon={<CloseIcon />}
-                sx={{ textTransform: 'none' }}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 'var(--radius-pill)',
+                  px: 2,
+                  color: 'var(--ds-text-secondary)',
+                  '&:hover': { bgcolor: 'var(--ds-canvas-sunken)' },
+                }}
               >
                 Cancel
               </Button>
             </Box>
           </Box>
         ) : description ? (
-          <MUITypography variant="body" sx={{ whiteSpace: 'pre-line', lineHeight: 1.6 }}>
+          <Typography
+            sx={{
+              fontSize: '13px',
+              whiteSpace: 'pre-line',
+              lineHeight: 1.65,
+              color: 'var(--ds-text-secondary)',
+            }}
+          >
             {description}
-          </MUITypography>
+          </Typography>
         ) : (
-          <MUITypography
-            variant="placeholder"
-            sx={{ cursor: onDescriptionChange ? 'pointer' : 'default' }}
+          <Box
+            component={onDescriptionChange ? 'button' : 'div'}
+            type={onDescriptionChange ? 'button' : undefined}
             onClick={() => {
               if (onDescriptionChange) {
                 setIsEditingDescription(true);
               }
             }}
+            sx={{
+              display: 'block',
+              width: '100%',
+              textAlign: 'left',
+              border: 'none',
+              px: 1.75,
+              py: 1.5,
+              fontFamily: 'inherit',
+              fontSize: '13px',
+              borderRadius: 'var(--radius-card-functional)',
+              color: 'var(--ds-text-tertiary)',
+              bgcolor: 'var(--ds-canvas-sunken)',
+              cursor: onDescriptionChange ? 'pointer' : 'default',
+              transition: 'color var(--dur-micro) var(--ease-standard)',
+              '&:hover': onDescriptionChange ? { color: 'var(--ds-text-secondary)' } : undefined,
+            }}
           >
-            Add a description...
-          </MUITypography>
+            Add a description
+          </Box>
         )}
       </Box>
 
-      {hasExtraSections && (
-        <>
-          <Divider />
-          {children}
-        </>
-      )}
+      {hasExtraSections && children}
 
-      <Divider />
-
-      {/* Activity Section */}
+      {/* Activity */}
       <Box>
-        <MUITypography variant="sectionTitle" sx={{ mb: 2 }}>
-          Activity
-        </MUITypography>
+        <SectionHeading>Activity</SectionHeading>
 
         {/* Comment input */}
-        <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2.5 }}>
           <TextField
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Add a comment..."
+            placeholder="Write a comment"
             fullWidth
             size="small"
             onKeyDown={(e) => {
@@ -254,112 +400,154 @@ export function TaskDrawerMainContent({
                 handleSubmitComment();
               }
             }}
-            sx={{
-              '& .MuiInputBase-root': {
-                fontSize: '0.875rem',
-              },
-            }}
+            sx={{ '& .MuiInputBase-root': { fontSize: '13px' } }}
           />
           <Button
             variant="contained"
             size="small"
             onClick={handleSubmitComment}
             disabled={!commentText.trim() || isAddingComment}
-            sx={{ textTransform: 'none', minWidth: 70 }}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 'var(--radius-pill)',
+              minWidth: 72,
+              flexShrink: 0,
+            }}
           >
             Send
           </Button>
         </Box>
 
-        {/* Activity timeline */}
+        {/* Timeline */}
         {activityLog.length === 0 ? (
-          <Box sx={{ py: 4, textAlign: 'center' }}>
-            <MUITypography variant="body">No activity yet</MUITypography>
+          <Box
+            sx={{
+              py: 4,
+              textAlign: 'center',
+              borderRadius: 'var(--radius-card-functional)',
+              bgcolor: 'var(--ds-canvas-sunken)',
+            }}
+          >
+            <Typography sx={{ fontSize: '12.5px', color: 'var(--ds-text-tertiary)' }}>
+              Nothing has happened on this task yet.
+            </Typography>
           </Box>
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            {activityLog.map((entry) => (
-              <Box key={entry.id} sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {activityLog.map((entry) => {
+              const isComment = entry.activityType === 'commented';
+              return (
                 <Box
+                  key={entry.id}
                   sx={{
-                    mt: 0.5,
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    bgcolor: entry.activityType === 'commented' ? 'primary.50' : 'action.hover',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    gap: 1.5,
+                    // Connector runs from below this marker to the next one.
+                    '&:not(:last-of-type) .timeline-connector': {
+                      content: '""',
+                      position: 'absolute',
+                      left: '50%',
+                      top: 28,
+                      bottom: -22,
+                      width: '1px',
+                      transform: 'translateX(-50%)',
+                      bgcolor: 'var(--ds-hairline)',
+                    },
                   }}
                 >
-                  {entry.activityType === 'commented' ? (
-                    <CommentIcon sx={{ fontSize: 14, color: 'primary.main' }} />
-                  ) : (
+                  <Box sx={{ position: 'relative', flexShrink: 0, width: 24 }}>
+                    <Box className="timeline-connector" aria-hidden="true" />
                     <Box
                       sx={{
-                        width: 6,
-                        height: 6,
+                        position: 'relative',
+                        mt: 0.25,
+                        width: 24,
+                        height: 24,
                         borderRadius: '50%',
-                        bgcolor: 'text.disabled',
-                      }}
-                    />
-                  )}
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  {entry.activityType === 'commented' ? (
-                    <Box
-                      sx={{
-                        bgcolor: 'action.hover',
-                        borderRadius: 1,
-                        px: 2,
-                        py: 1.5,
-                      }}
-                    >
-                      <MUITypography variant="bodyPrimary">{entry.newValue}</MUITypography>
-                    </Box>
-                  ) : (
-                    <Box
-                      sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: 0.5,
+                        justifyContent: 'center',
+                        color: isComment ? 'var(--ds-accent-ink)' : 'var(--ds-text-tertiary)',
+                        bgcolor: isComment ? 'var(--ds-accent-subtle)' : 'var(--ds-canvas-sunken)',
                       }}
                     >
-                      <MUITypography variant="body" component="span">
-                        {ACTIVITY_TYPE_LABELS[entry.activityType] ?? entry.activityType}
-                      </MUITypography>
-                      {(entry.fieldName === 'status' || entry.fieldName === 'priority') &&
-                        entry.oldValue &&
-                        entry.newValue && (
-                          <>
-                            <MUITypography variant="body" component="span">
-                              from
-                            </MUITypography>
-                            <Chip
-                              label={entry.oldValue}
-                              size="small"
-                              sx={{ height: 18, fontSize: '0.7rem' }}
-                            />
-                            <MUITypography variant="body" component="span">
-                              to
-                            </MUITypography>
-                            <Chip
-                              label={entry.newValue}
-                              size="small"
-                              sx={{ height: 18, fontSize: '0.7rem' }}
-                            />
-                          </>
-                        )}
+                      {isComment ? (
+                        <CommentIcon sx={{ fontSize: 13 }} />
+                      ) : (
+                        <Box
+                          sx={{
+                            width: 5,
+                            height: 5,
+                            borderRadius: '50%',
+                            bgcolor: 'var(--ds-text-tertiary)',
+                          }}
+                        />
+                      )}
                     </Box>
-                  )}
-                  <MUITypography variant="finePrint">
-                    {formatRelativeDate(entry.createdAt)}
-                  </MUITypography>
+                  </Box>
+
+                  <Box sx={{ flex: 1, minWidth: 0, pt: 0.125 }}>
+                    {isComment ? (
+                      <Box
+                        sx={{
+                          bgcolor: 'var(--ds-surface-alt)',
+                          borderRadius: 'var(--radius-card-functional)',
+                          boxShadow: 'var(--shadow-e1)',
+                          px: 1.75,
+                          py: 1.25,
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontSize: '13px',
+                            lineHeight: 1.55,
+                            whiteSpace: 'pre-line',
+                            color: 'var(--ds-text-primary)',
+                          }}
+                        >
+                          {entry.newValue}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: 0.625,
+                          fontSize: '12.5px',
+                          color: 'var(--ds-text-secondary)',
+                        }}
+                      >
+                        <Box component="span">
+                          {ACTIVITY_TYPE_LABELS[entry.activityType] ?? entry.activityType}
+                        </Box>
+                        {(entry.fieldName === 'status' || entry.fieldName === 'priority') &&
+                          entry.oldValue &&
+                          entry.newValue && (
+                            <>
+                              <ValuePill>{entry.oldValue}</ValuePill>
+                              <Box component="span" aria-hidden="true">
+                                →
+                              </Box>
+                              <ValuePill>{entry.newValue}</ValuePill>
+                            </>
+                          )}
+                      </Box>
+                    )}
+                    <Typography
+                      sx={{
+                        mt: 0.5,
+                        fontSize: '11px',
+                        color: 'var(--ds-text-tertiary)',
+                      }}
+                    >
+                      {formatRelativeDate(entry.createdAt)}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
         )}
       </Box>

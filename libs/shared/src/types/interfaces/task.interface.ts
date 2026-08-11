@@ -97,10 +97,33 @@ export interface MyTask extends ProjectTask {
   projectTaskStatuses?: TaskStatusConfig[];
 }
 
+/** Slim task shape for My Tasks list rows (no activityLog, checklist, attachments). */
+export interface MyTaskListItem {
+  id: string;
+  projectId: string;
+  code: string;
+  name: string;
+  milestoneName?: string | null;
+  priority: TaskPriority;
+  status: TaskStatus;
+  endDate?: string;
+  completionPercentage: number;
+  projectNumber: string;
+  projectName: string;
+  isOverdue?: boolean;
+  daysSinceLastUpdate?: number;
+  hasDependencyBlockers?: boolean;
+  latestCommentPreview?: string;
+}
+
 export interface MyTasksProject {
   id: string;
   name: string;
   projectNumber: string;
+}
+
+export interface MyTasksProjectMeta {
+  taskStatuses: TaskStatusConfig[];
 }
 
 export interface MyTasksSummary {
@@ -108,8 +131,6 @@ export interface MyTasksSummary {
   overdue: number;
   dueToday: number;
   completedThisWeek: number;
-  /** Projects with actionable tasks for the filter dropdown (unfiltered by list filters). */
-  projects: MyTasksProject[];
 }
 
 export interface MyTasksGroup {
@@ -117,12 +138,20 @@ export interface MyTasksGroup {
   label: string;
   count: number;
   variant: string;
-  tasks: MyTask[];
+  tasks: MyTaskListItem[];
 }
 
 export interface GroupedMyTasksResponse {
   groups: MyTasksGroup[];
   summary: MyTasksSummary;
+  /** Status dropdown configs keyed by projectId (deduped from visible tasks). */
+  projectMeta: Record<string, MyTasksProjectMeta>;
+  /** Actionable projects for filter dropdown (unfiltered when list filters are active). */
+  allProjects: MyTasksProject[];
+}
+
+export interface MyTasksGroupTasksResponse {
+  tasks: MyTaskListItem[];
 }
 
 export type GroupByMode = 'dueDate' | 'priority' | 'project' | 'status';
@@ -136,6 +165,7 @@ export interface MyTaskFilters {
   projectId?: string;
   search?: string;
   dueDateFilter?: DueDateFilter;
+  address?: string;
 }
 
 // ============================================================================
