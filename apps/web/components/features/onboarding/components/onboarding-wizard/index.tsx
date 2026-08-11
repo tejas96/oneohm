@@ -17,6 +17,10 @@ import * as React from 'react';
 import { FormProvider, useForm, type DefaultValues, type Resolver } from 'react-hook-form';
 
 import {
+  ScheduleCustomerFollowupDialog,
+  type CustomerFollowupFields,
+} from './schedule-customer-followup-dialog';
+import {
   Step0FindCustomer,
   Step1CustomerIdentity,
   Step2BillingAddress,
@@ -207,6 +211,8 @@ export function OnboardingWizard({
   );
   const [customerLocked, setCustomerLocked] = React.useState(!isCreate);
   const [isSavingCustomer, setIsSavingCustomer] = React.useState(false);
+  const [followupDialogOpen, setFollowupDialogOpen] = React.useState(false);
+  const [isConfirmingSaveCustomerOnly, setIsConfirmingSaveCustomerOnly] = React.useState(false);
   const [blocked, setBlocked] = React.useState<{ title: string; body: string } | null>(null);
   const [showErrors, setShowErrors] = React.useState(false);
 
@@ -245,7 +251,9 @@ export function OnboardingWizard({
     createPropertyMutation.isPending ||
     updatePropertyMutation.isPending ||
     updateCustomerMutation.isPending ||
-    isSavingCustomer;
+    createFollowupMutation.isPending ||
+    isSavingCustomer ||
+    isConfirmingSaveCustomerOnly;
 
   const convertedChangeRequests = React.useMemo(
     () => getConvertedChangeRequests(property?.changeRequests) as StoredChangeRequest[],
@@ -575,10 +583,41 @@ export function OnboardingWizard({
       setShowErrors(true);
       return;
     }
-    const id = await ensureCustomerCreated();
-    if (!id) return;
-    showToast.success('Customer created successfully');
-    router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id }));
+    setShowErrors(false);
+    setFollowupDialogOpen(true);
+  };
+
+  const handleConfirmSaveCustomerOnly = async (
+    followupFields: CustomerFollowupFields,
+  ): Promise<void> => {
+    setIsConfirmingSaveCustomerOnly(true);
+    try {
+      const id = await ensureCustomerCreated();
+      if (!id) {
+        setIsConfirmingSaveCustomerOnly(false);
+        return;
+      }
+
+      try {
+        await createFollowupMutation.mutateAsync({
+          customerId: id,
+          type: FollowupType.TASK,
+          subject: followupFields.subject,
+          scheduledAt: followupFields.scheduledAt.toISOString(),
+          assignedToUserId: followupFields.assignedToUserId,
+          notes: followupFields.notes,
+        });
+        showToast.success('Customer created — follow-up scheduled');
+      } catch {
+        showToast.warning('Customer created — schedule a follow-up from the customer record.');
+      }
+
+      setFollowupDialogOpen(false);
+      router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id }));
+      // Keep isConfirmingSaveCustomerOnly true until navigation unmounts this wizard.
+    } catch {
+      setIsConfirmingSaveCustomerOnly(false);
+    }
   };
 
   const handleStepClick = (index: number): void => {
@@ -781,6 +820,9 @@ export function OnboardingWizard({
     );
   };
 
+  const isSaveCustomerOnlySubmitting =
+    isConfirmingSaveCustomerOnly || isSavingCustomer || createFollowupMutation.isPending;
+
   return (
     <Box sx={{ maxWidth: 1152, mx: 'auto', px: 2, pb: 6 }}>
       <Box sx={{ mb: 3 }}>
@@ -848,7 +890,7 @@ export function OnboardingWizard({
                   variant="outlined"
                   size="small"
                   onClick={() => void handleSaveCustomerOnly()}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || followupDialogOpen}
                 >
                   Save customer, add a site later
                 </Button>
@@ -869,6 +911,13 @@ export function OnboardingWizard({
           </Box>
         </FormProvider>
       </Box>
+
+      <ScheduleCustomerFollowupDialog
+        open={followupDialogOpen}
+        onBack={() => setFollowupDialogOpen(false)}
+        onConfirm={(fields) => void handleConfirmSaveCustomerOnly(fields)}
+        isSubmitting={isSaveCustomerOnlySubmitting}
+      />
     </Box>
   );
 }
