@@ -451,8 +451,9 @@ export function EditSiteDataModal({
 
         {/* Upload Documents Reminder */}
         <Alert severity="info" sx={{ borderRadius: 1.5 }}>
-          Site images and documentation (such as FRONT_VIEW, ROOF_VIEW, METER_BOX) can be uploaded
-          and managed directly under the <strong>Documents</strong> tab.
+          Site images and documentation (such as Front View, Roof View, Meter Box, or Panel /
+          Structure Installation View) can be uploaded and managed directly under the{' '}
+          <strong>Documents</strong> tab.
         </Alert>
       </DialogContent>
       <DialogActions

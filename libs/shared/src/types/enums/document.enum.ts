@@ -18,6 +18,7 @@ export enum DocumentTag {
   FRONT_VIEW = 'front_view',
   ROOF_VIEW = 'roof_view',
   METER_BOX = 'meter_box',
+  PANEL_STRUCTURE_INSTALLATION_VIEW = 'panel_structure_installation_view',
   REPORT = 'report',
   CONTRACT = 'contract',
   INVOICE = 'invoice',
