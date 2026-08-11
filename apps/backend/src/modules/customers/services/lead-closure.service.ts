@@ -59,4 +59,15 @@ export class LeadClosureService {
     await this.customerRepository.markLost(customerId, reason, userId);
     await this.followupRepository.cancelPendingFor(customerId, null, userId);
   }
+
+  /** First site created — enquiry graduated to property lead; drop stale customer-level tasks. */
+  async closeCustomerLeadEnquiry(customerId: string, userId: string): Promise<number> {
+    const cancelled = await this.followupRepository.cancelPendingFor(customerId, null, userId);
+    if (cancelled > 0) {
+      this.logger.log(
+        `Closed ${cancelled} pending customer-level followup(s) for customer ${customerId}`,
+      );
+    }
+    return cancelled;
+  }
 }

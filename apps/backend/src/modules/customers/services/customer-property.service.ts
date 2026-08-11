@@ -186,6 +186,16 @@ export class CustomerPropertyService {
 
     this.logger.log(`✅ Property created: ${property.id}`);
 
+    if (existingProperties === 0 && createdBy) {
+      try {
+        await this.leadClosureService.closeCustomerLeadEnquiry(createDto.customerId, createdBy);
+      } catch (err) {
+        this.logger.warn(
+          `Failed to close customer-level followups for ${createDto.customerId}: ${String(err)}`,
+        );
+      }
+    }
+
     const createdProperty =
       (await this.propertyRepository.findByIdAndOrganization(property.id)) ?? property;
 

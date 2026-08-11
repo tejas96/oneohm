@@ -340,6 +340,8 @@ export interface MUIUserAssigneeSelectorProps {
    * Required when used inside Radix UI Sheet/Dialog to prevent focus-trap click-through.
    */
   disablePortal?: boolean;
+  /** Where the options popover opens relative to the trigger */
+  popoverPlacement?: 'above' | 'below';
 
   // ── Presentation ───────────────────────────────────────────────────────────
   /** Label rendered above the trigger — uses shared MUIFieldLabel for consistent sizing */
@@ -380,6 +382,7 @@ export function MUIUserAssigneeSelector({
   allowUnassign = false,
   readOnly = false,
   disablePortal = false,
+  popoverPlacement = 'below',
   fieldLabel,
   label,
   required,
@@ -552,13 +555,19 @@ export function MUIUserAssigneeSelector({
           setSearch('');
         }}
         disablePortal={disablePortal}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        anchorOrigin={{
+          vertical: popoverPlacement === 'above' ? 'top' : 'bottom',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: popoverPlacement === 'above' ? 'bottom' : 'top',
+          horizontal: 'left',
+        }}
         slotProps={{
           paper: {
             elevation: 4,
             sx: {
-              mt: 0.5,
+              ...(popoverPlacement === 'above' ? { mb: 0.5 } : { mt: 0.5 }),
               minWidth: triggerMinWidth,
               maxWidth: 320,
               borderRadius: 1.5,
