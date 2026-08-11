@@ -129,6 +129,11 @@ export class UserController {
     required: false,
     description: 'Show only archived/deleted users',
   })
+  @ApiQuery({
+    name: 'employeeOnly',
+    required: false,
+    description: 'When true, return only users with an employee profile (OneOhm staff or reseller)',
+  })
   @ApiQuery({ name: 'sortBy', required: false, example: 'createdAt' })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
   @ApiQuery({
@@ -148,6 +153,7 @@ export class UserController {
     @Query('search') search?: string,
     @Query('roleId') roleId?: string,
     @Query('showDeleted') showDeleted?: string,
+    @Query('employeeOnly') employeeOnly?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
     @Query('fromDate') fromDate?: string,
@@ -178,6 +184,7 @@ export class UserController {
       search,
       roleId,
       showDeleted: showDeleted === 'true',
+      employeeOnly: employeeOnly === 'true',
       sortBy: validatedSortBy,
       sortOrder: validatedSortOrder,
       fromDate,

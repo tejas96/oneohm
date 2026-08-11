@@ -52,6 +52,7 @@ export interface AdminUserListFilters {
   status?: string;
   roleId?: string;
   showDeleted?: boolean;
+  employeeOnly?: boolean;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
   fromDate?: string;
@@ -153,6 +154,7 @@ export function useAdminUsersList(
       if (filters.status) params.append('status', filters.status);
       if (filters.roleId) params.append('roleId', filters.roleId);
       if (filters.showDeleted) params.append('showDeleted', 'true');
+      if (filters.employeeOnly != null) params.append('employeeOnly', String(filters.employeeOnly));
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
       if (filters.fromDate) params.append('fromDate', filters.fromDate);

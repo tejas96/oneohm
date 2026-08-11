@@ -26,8 +26,9 @@ import { cn } from '@/lib/utils';
  *     </DialogFooter>
  *   </DialogContent>
  *
- * For forms that wrap DialogBody + DialogFooter, use DialogForm so the body
- * scrolls while the footer stays pinned:
+ * DialogContent scrolls when tall; DialogHeader and DialogFooter are sticky so
+ * action buttons stay reachable. For forms, wrap DialogBody + DialogFooter in
+ * DialogForm:
  *   <DialogForm onSubmit={...}>
  *     <DialogBody>...</DialogBody>
  *     <DialogFooter>...</DialogFooter>
@@ -73,7 +74,7 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const dialogContentVariants = cva(
   [
     'fixed left-[50%] top-[50%] z-modal',
-    'flex flex-col w-full max-h-[calc(100vh-2rem)] overflow-hidden translate-x-[-50%] translate-y-[-50%]',
+    'flex flex-col w-full max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain translate-x-[-50%] translate-y-[-50%]',
     // Borderless; `e5` is the modal step of the elevation ladder.
     'bg-background rounded-xl shadow-e5',
     'duration-normal',
@@ -130,7 +131,7 @@ interface DialogHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
 const DialogHeader = ({ className, hideCloseButton, children, ...props }: DialogHeaderProps) => (
   <div
     className={cn(
-      'flex shrink-0 items-start justify-between gap-4 px-6 py-4 border-b border-border-light',
+      'sticky top-0 z-10 flex shrink-0 items-start justify-between gap-4 border-b border-border-light bg-background px-6 py-4',
       className,
     )}
     {...props}
@@ -149,7 +150,7 @@ DialogHeader.displayName = 'DialogHeader';
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'flex shrink-0 items-center justify-end gap-3 px-6 py-4 border-t border-border-light bg-background-secondary rounded-b-lg',
+      'sticky bottom-0 z-10 flex shrink-0 items-center justify-end gap-3 border-t border-border-light bg-background-secondary px-6 py-4 rounded-b-lg',
       className,
     )}
     {...props}
@@ -158,12 +159,12 @@ const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 DialogFooter.displayName = 'DialogFooter';
 
 const DialogBody = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('min-h-0 flex-1 overflow-y-auto p-6', className)} {...props} />
+  <div className={cn('p-6', className)} {...props} />
 );
 DialogBody.displayName = 'DialogBody';
 
 const DialogForm = ({ className, ...props }: React.FormHTMLAttributes<HTMLFormElement>) => (
-  <form className={cn('flex min-h-0 flex-1 flex-col overflow-hidden', className)} {...props} />
+  <form className={cn('flex flex-col', className)} {...props} />
 );
 DialogForm.displayName = 'DialogForm';
 

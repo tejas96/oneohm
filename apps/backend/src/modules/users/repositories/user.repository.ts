@@ -20,6 +20,7 @@ export interface UserListFilters {
   search?: string;
   roleId?: string;
   showDeleted?: boolean;
+  employeeOnly?: boolean;
   sortBy?: UserSortField;
   sortOrder?: SortOrder;
   fromDate?: string;
@@ -146,6 +147,16 @@ export class UserRepository {
     }
     if (filters?.toDate) {
       qb.andWhere('user.created_at <= :toDate', { toDate: filters.toDate });
+    }
+
+    if (filters?.employeeOnly) {
+      // Staff and resellers both live in employee_profiles (profile_kind distinguishes them).
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM employee_profiles ep
+          WHERE ep.user_id = user.id AND ep.deleted_at IS NULL
+        )`,
+      );
     }
 
     const total = await qb.getCount();

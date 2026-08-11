@@ -50,7 +50,7 @@ export function PipelineFiltersBar(): React.JSX.Element {
   const toDate = searchParams.get('toDate') ?? '';
   const salesPersonId = searchParams.get('salesPersonId') ?? PIPELINE_SALESPERSON_ALL;
 
-  const { data: usersData } = useAdminUsersList({ limit: 100 });
+  const { data: usersData } = useAdminUsersList({ limit: 100, employeeOnly: true });
   const users = usersData?.items ?? [];
 
   const writeParams = React.useCallback(
