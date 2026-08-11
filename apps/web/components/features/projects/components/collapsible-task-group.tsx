@@ -1,19 +1,15 @@
 'use client';
 
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
-import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
-import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import type { MyTaskListItem, MyTasksProjectMeta } from '@tejas96/shared/types';
 import { useEffect, useState } from 'react';
 
 import { TASK_GROUP_VARIANT_MAP } from '../constants';
-import { TaskRow } from './task-row';
+import { TaskRow, TASK_ROW_GRID } from './task-row';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -24,31 +20,38 @@ const DEFAULT_GROUP_VARIANT = {
   badge: 'secondary',
 };
 
-/** Map our internal badge variant name to MUI Chip color */
-function badgeToMuiColor(badge: string): 'error' | 'warning' | 'info' | 'success' | 'default' {
-  switch (badge) {
-    case 'error':
-      return 'error';
-    case 'warning':
-      return 'warning';
-    case 'info':
-      return 'info';
-    case 'success':
-      return 'success';
-    default:
-      return 'default';
-  }
+/**
+ * Group accent — a readable ink for the overline plus a matching tint for the
+ * count pill. Derived from the existing variant map's dot class so group
+ * colours stay defined in one place.
+ */
+const GROUP_ACCENT = {
+  error: { ink: 'var(--ds-danger)', tint: 'var(--ds-danger-bg)' },
+  warning: { ink: 'var(--ds-warning)', tint: 'var(--ds-warning-bg)' },
+  info: { ink: 'var(--ds-info)', tint: 'var(--ds-info-bg)' },
+  success: { ink: 'var(--ds-success)', tint: 'var(--ds-success-bg)' },
+  primary: { ink: 'var(--ds-accent-ink)', tint: 'var(--ds-accent-subtle)' },
+  neutral: { ink: 'var(--ds-text-secondary)', tint: 'var(--ds-canvas-sunken)' },
+} satisfies Record<string, { ink: string; tint: string }>;
+
+function accentFromDotClass(dotClass: string): { ink: string; tint: string } {
+  if (dotClass.includes('error')) return GROUP_ACCENT.error;
+  if (dotClass.includes('warning')) return GROUP_ACCENT.warning;
+  if (dotClass.includes('info')) return GROUP_ACCENT.info;
+  if (dotClass.includes('success')) return GROUP_ACCENT.success;
+  if (dotClass.includes('primary')) return GROUP_ACCENT.primary;
+  return GROUP_ACCENT.neutral;
 }
 
-/** Map our internal dot CSS class to an MUI palette color */
-function dotClassToColor(dotClass: string): string {
-  if (dotClass.includes('error')) return 'error.main';
-  if (dotClass.includes('warning')) return 'warning.main';
-  if (dotClass.includes('info')) return 'info.main';
-  if (dotClass.includes('success')) return 'success.main';
-  if (dotClass.includes('primary')) return 'primary.main';
-  return 'text.disabled';
-}
+/** Header labels, in the same order as the row's grid tracks. */
+const COLUMNS = [
+  { label: 'Task', from: 'md' },
+  { label: 'Latest activity', from: 'lg' },
+  { label: 'Priority', from: 'md' },
+  { label: 'Due', from: 'md' },
+  { label: 'Progress', from: 'md' },
+  { label: 'Status', from: 'md' },
+] as const;
 
 interface CollapsibleTaskGroupProps {
   groupKey: string;
@@ -102,134 +105,137 @@ export function CollapsibleTaskGroup({
   const variant = TASK_GROUP_VARIANT_MAP[groupKey] ?? DEFAULT_GROUP_VARIANT;
   const visibleTasks = showAll ? tasks : tasks.slice(0, INITIAL_VISIBLE_COUNT);
   const hiddenCount = Math.max(0, tasks.length - INITIAL_VISIBLE_COUNT);
-  const chipColor = badgeToMuiColor(variant.badge);
-  const dotColor = dotClassToColor(variant.dot);
-
-  /** Left-edge accent color derived from dot class */
-  const leftAccentColor = dotColor;
+  const accent = accentFromDotClass(variant.dot);
 
   return (
     <Box>
-      {/* Group header */}
+      {/* Group header — overline micro-label on the bare canvas */}
       <Box
         component="button"
         type="button"
         onClick={onToggleExpand}
+        aria-expanded={expanded}
         sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 0.75,
+          gap: 1,
           width: '100%',
           textAlign: 'left',
           background: 'none',
           border: 'none',
           cursor: 'pointer',
-          py: 0.75,
-          px: 0,
+          py: 1,
+          px: 0.5,
           color: 'inherit',
-          '&:hover .group-label': { color: 'text.primary' },
+          '&:hover .group-caret': { color: 'var(--ds-text-secondary)' },
         }}
       >
-        {expanded ? (
-          <ExpandMoreIcon sx={{ fontSize: 16, color: 'text.disabled', flexShrink: 0 }} />
-        ) : (
-          <ChevronRightIcon sx={{ fontSize: 16, color: 'text.disabled', flexShrink: 0 }} />
-        )}
-
-        {/* Colored dot */}
-        <Box
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            bgcolor: dotColor,
-            flexShrink: 0,
-          }}
-        />
-
-        {/* Label */}
         <Typography
-          className="group-label"
-          variant="caption"
-          fontWeight={600}
+          component="span"
           sx={{
+            fontSize: '11px',
+            fontWeight: 700,
             textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'text.secondary',
-            transition: 'color 0.15s',
+            letterSpacing: '0.12em',
+            lineHeight: 1,
+            color: accent.ink,
           }}
         >
           {label}
         </Typography>
 
-        {/* Count badge */}
-        <Chip
-          label={count}
-          size="small"
-          color={chipColor}
-          variant="outlined"
-          sx={{ height: 18, fontSize: '0.65rem', '& .MuiChip-label': { px: 0.75 } }}
+        <Box
+          component="span"
+          sx={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10.5px',
+            fontWeight: 500,
+            lineHeight: '18px',
+            minWidth: 18,
+            px: 0.75,
+            textAlign: 'center',
+            borderRadius: 'var(--radius-pill)',
+            color: accent.ink,
+            bgcolor: accent.tint,
+          }}
+        >
+          {count}
+        </Box>
+
+        {/* Hairline reaching to the caret — reads as a rule, not a border */}
+        <Box
+          aria-hidden="true"
+          sx={{ flex: 1, height: '1px', bgcolor: 'var(--ds-canvas-sunken)' }}
+        />
+
+        <ExpandMoreIcon
+          className="group-caret"
+          sx={{
+            fontSize: 18,
+            color: 'var(--ds-text-tertiary)',
+            flexShrink: 0,
+            transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+            transition: 'transform var(--dur-standard) var(--ease-standard), color var(--dur-micro)',
+          }}
         />
       </Box>
 
-      {/* Collapsible task list */}
+      {/* Task card */}
       <Collapse in={expanded} timeout={200}>
-        <Paper
-          variant="outlined"
+        <Box
           sx={{
-            borderRadius: 1,
-            borderLeft: '3px solid',
-            borderLeftColor: leftAccentColor,
+            bgcolor: 'var(--ds-surface)',
+            borderRadius: 'var(--radius-card-functional)',
+            boxShadow: 'var(--shadow-e2)',
             overflow: 'hidden',
-            mb: 0.5,
+            mb: 1.5,
+            transition: 'box-shadow var(--dur-standard) var(--ease-standard)',
+            '&:hover': { boxShadow: 'var(--shadow-e3)' },
           }}
         >
-          {/* Column header — mirrors the grid in TaskRow */}
+          {/* Column header — same grid tracks as the row */}
           <Box
             sx={{
               display: { xs: 'none', md: 'grid' },
-              gridTemplateColumns: '72px 1fr 112px 96px 80px 80px 104px',
+              gridTemplateColumns: TASK_ROW_GRID,
               alignItems: 'center',
-              gap: 1.5,
-              px: 1.5,
-              py: 0.75,
-              bgcolor: 'action.hover',
-              borderBottom: '1px solid',
-              borderColor: 'divider',
+              columnGap: 2,
+              pl: 2.5,
+              pr: 2,
+              py: 1,
+              bgcolor: 'var(--ds-surface-alt)',
             }}
           >
-            {(
-              ['Key', 'Summary', 'Milestone', 'Priority', 'Due Date', 'Progress', 'Status'] as const
-            ).map((col) => (
+            {COLUMNS.map((col) => (
               <Typography
-                key={col}
-                variant="caption"
+                key={col.label}
                 noWrap
                 sx={{
-                  color: 'text.disabled',
-                  fontWeight: 600,
+                  display: col.from === 'lg' ? { xs: 'none', lg: 'block' } : 'block',
+                  color: 'var(--ds-text-tertiary)',
+                  fontWeight: 500,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  fontSize: '10px',
+                  letterSpacing: '0.1em',
+                  fontSize: '9.5px',
+                  lineHeight: 1.4,
                 }}
               >
-                {col}
+                {col.label}
               </Typography>
             ))}
           </Box>
 
           {isTasksError && !isLoadingTasks ? (
-            <Box sx={{ px: 1.5, py: 1.5, textAlign: 'center' }}>
-              <Typography variant="caption" color="error" sx={{ display: 'block', mb: 1 }}>
+            <Box sx={{ px: 2, py: 2, textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '12px', color: 'error.main', display: 'block', mb: 1 }}>
                 Could not load tasks for this group.
               </Typography>
               {onRetryTasks ? (
                 <Link
                   component="button"
                   type="button"
-                  variant="caption"
                   underline="hover"
-                  sx={{ cursor: 'pointer' }}
+                  sx={{ cursor: 'pointer', fontSize: '12px' }}
                   onClick={(e) => {
                     e.stopPropagation();
                     onRetryTasks();
@@ -242,9 +248,9 @@ export function CollapsibleTaskGroup({
           ) : null}
 
           {isLoadingTasks && tasks.length === 0 && !isTasksError ? (
-            <Box sx={{ px: 1.5, py: 1.5 }}>
+            <Box sx={{ px: 2.5, py: 2 }}>
               {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="mb-1 h-10 w-full" />
+                <Skeleton key={i} className="mb-2 h-8 w-full rounded-md" />
               ))}
             </Box>
           ) : null}
@@ -262,26 +268,32 @@ export function CollapsibleTaskGroup({
           ))}
 
           {hiddenCount > 0 && (
-            <>
-              <Divider />
-              <Box sx={{ textAlign: 'center', py: 1 }}>
-                <Link
-                  component="button"
-                  type="button"
-                  variant="caption"
-                  underline="hover"
-                  sx={{ color: 'text.disabled', cursor: 'pointer' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAll((prev) => !prev);
-                  }}
-                >
-                  {showAll ? 'Show less' : `Show ${hiddenCount} more\u2026`}
-                </Link>
-              </Box>
-            </>
+            <Box
+              component="button"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowAll((prev) => !prev);
+              }}
+              sx={{
+                display: 'block',
+                width: '100%',
+                border: 'none',
+                cursor: 'pointer',
+                py: 1.25,
+                fontSize: '11.5px',
+                fontWeight: 500,
+                letterSpacing: '0.01em',
+                color: 'var(--ds-text-secondary)',
+                bgcolor: 'var(--ds-surface-alt)',
+                transition: 'background-color var(--dur-micro) var(--ease-standard)',
+                '&:hover': { bgcolor: 'var(--ds-canvas-sunken)', color: 'var(--ds-text-primary)' },
+              }}
+            >
+              {showAll ? 'Show less' : `Show ${hiddenCount} more`}
+            </Box>
           )}
-        </Paper>
+        </Box>
       </Collapse>
     </Box>
   );

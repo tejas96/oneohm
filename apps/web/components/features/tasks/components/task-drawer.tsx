@@ -1,14 +1,15 @@
 'use client';
 
+import CheckIcon from '@mui/icons-material/Check';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Box, Divider } from '@mui/material';
+import { Box } from '@mui/material';
 import { TaskStatus, type TaskChecklist, type TaskPriority } from '@tejas96/shared/types';
 import { useCallback } from 'react';
 
 import { TaskDrawerChecklist } from './task-drawer-checklist';
 import { TaskDrawerDependencies } from './task-drawer-dependencies';
 import { TaskDrawerHeader } from './task-drawer-header';
-import { TaskDrawerMainContent } from './task-drawer-main-content';
+import { TaskDrawerMainContent, SectionHeading } from './task-drawer-main-content';
 import { TaskDrawerMetadata } from './task-drawer-metadata';
 import { useProjectTaskStatuses } from '../../projects/hooks/use-project-task-statuses';
 import { useTaskDetail } from '../hooks/use-task-detail';
@@ -150,11 +151,14 @@ export function TaskDrawer({
 
   const canComplete = task ? task.status !== TaskStatus.DONE && !task.hasDependencyBlockers : false;
 
+  // Surfaced in the footer so the checklist isn't silently skipped on complete.
+  const openChecklistCount = task?.checklist?.items.filter((item) => !item.isCompleted).length ?? 0;
+
   if (!open) {
     return (
       <Sheet open={false}>
         <SheetContent side="right" className="w-full sm:max-w-4xl">
-          <SheetTitle className="sr-only">Task Details</SheetTitle>
+          <SheetTitle className="sr-only">Task details</SheetTitle>
         </SheetContent>
       </Sheet>
     );
@@ -163,7 +167,7 @@ export function TaskDrawer({
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-4xl flex flex-col p-0">
-        <SheetTitle className="sr-only">{task?.name ?? 'Task Details'}</SheetTitle>
+        <SheetTitle className="sr-only">{task?.name ?? 'Task details'}</SheetTitle>
         {isError ? (
           <Box
             sx={{
@@ -171,45 +175,74 @@ export function TaskDrawer({
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 1.5,
-              p: 3,
-              pt: 8,
+              gap: 2,
+              px: 3,
+              py: 10,
               textAlign: 'center',
             }}
           >
-            <ErrorOutlineIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
-            <Box>
-              {(() => {
-                const status =
-                  (error as { response?: { status?: number } } | null)?.response?.status ?? 0;
-                const isAccessDenied = [403, 404].includes(status);
-                return (
-                  <>
-                    <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500, mb: 0.5 }}>
-                      {isAccessDenied ? 'Access Denied' : 'Failed to load task'}
-                    </MUITypography>
-                    <MUITypography variant="body">
+            {(() => {
+              const status =
+                (error as { response?: { status?: number } } | null)?.response?.status ?? 0;
+              const isAccessDenied = [403, 404].includes(status);
+              return (
+                <>
+                  {/* Signature circular icon container */}
+                  <Box
+                    aria-hidden="true"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 48,
+                      height: 48,
+                      borderRadius: '50%',
+                      color: 'var(--ds-text-tertiary)',
+                      bgcolor: 'var(--ds-canvas-sunken)',
+                    }}
+                  >
+                    <ErrorOutlineIcon sx={{ fontSize: 24 }} />
+                  </Box>
+                  <Box sx={{ maxWidth: 340 }}>
+                    <MUITypography variant="bodyPrimary" sx={{ fontWeight: 600, mb: 0.5 }}>
                       {isAccessDenied
-                        ? "You don't have permission to view this task's details"
-                        : 'Something went wrong. Please try again later.'}
+                        ? 'You don’t have access to this task'
+                        : 'Couldn’t load this task'}
                     </MUITypography>
-                  </>
-                );
-              })()}
-            </Box>
-            <Button variant="outline" size="sm" onClick={onClose}>
-              Close
-            </Button>
+                    <MUITypography variant="body" sx={{ color: 'var(--ds-text-secondary)' }}>
+                      {isAccessDenied
+                        ? 'Ask a project admin to add you to the project, then reopen it.'
+                        : 'The request didn’t come back. Close this and open the task again.'}
+                    </MUITypography>
+                  </Box>
+                  <Button variant="outline" size="sm" onClick={onClose}>
+                    Close
+                  </Button>
+                </>
+              );
+            })()}
           </Box>
         ) : isLoading || !task ? (
-          <div className="p-6 space-y-4">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-5 w-24" />
-            <div className="space-y-3 pt-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+          <div className="space-y-5 p-6">
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-6 w-64" />
+            </div>
+            <div className="grid gap-6 md:grid-cols-[288px_1fr]">
+              <div className="space-y-4">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-1.5">
+                    <Skeleton className="h-2.5 w-16" />
+                    <Skeleton className="h-8 w-full rounded-lg" />
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-2.5 w-20" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-11/12" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
             </div>
           </div>
         ) : (
@@ -222,17 +255,24 @@ export function TaskDrawer({
               name={task.name}
             />
 
-            {/* Two-column layout: Metadata sidebar (left) + Main content (right) */}
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '300px 1fr' }}>
-                {/* Metadata sidebar */}
+            {/* Two-column layout: Metadata sidebar (left) + Main content (right).
+                Stacks below `md` so the drawer stays usable at phone width. */}
+            <Box sx={{ flex: 1, overflow: 'auto', bgcolor: 'var(--ds-surface)' }}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '288px 1fr' },
+                  alignItems: 'start',
+                  minHeight: '100%',
+                }}
+              >
+                {/* Metadata sidebar — separated by luminance, not a border */}
                 <Box
                   sx={{
-                    borderRight: 1,
-                    borderColor: 'divider',
                     px: 2.5,
                     py: 2.5,
-                    bgcolor: 'action.hover',
+                    bgcolor: 'var(--ds-canvas-sunken)',
+                    alignSelf: 'stretch',
                   }}
                 >
                   <TaskDrawerMetadata
@@ -256,7 +296,7 @@ export function TaskDrawer({
                 </Box>
 
                 {/* Main content area */}
-                <Box sx={{ px: 3, py: 2.5 }}>
+                <Box sx={{ px: 3, py: 2.5, minWidth: 0 }}>
                   <TaskDrawerMainContent
                     description={task.description}
                     activityLog={task.activityLog}
@@ -275,9 +315,7 @@ export function TaskDrawer({
                     {/* Checklist — shown before activity */}
                     {task.checklist?.items && task.checklist.items.length > 0 && (
                       <Box>
-                        <MUITypography variant="sectionTitle" sx={{ mb: 1.5 }}>
-                          Checklist
-                        </MUITypography>
+                        <SectionHeading>Checklist</SectionHeading>
                         <TaskDrawerChecklist
                           checklist={task.checklist}
                           onToggleItem={handleChecklistToggle}
@@ -285,24 +323,13 @@ export function TaskDrawer({
                       </Box>
                     )}
 
-                    {/* Divider between checklist and dependencies when both are present */}
-                    {(task.checklist?.items.length ?? 0) > 0 &&
-                      ((task.dependsOnTaskIds?.length ?? 0) > 0 || task.hasDependencyBlockers) && (
-                        <Divider />
-                      )}
-
-                    {/* Dependencies — shown before activity */}
+                    {/* Dependencies — brings its own heading and "Link a task" action */}
                     {((task.dependsOnTaskIds && task.dependsOnTaskIds.length > 0) ||
                       task.hasDependencyBlockers) && (
-                      <Box>
-                        <MUITypography variant="sectionTitle" sx={{ mb: 1.5 }}>
-                          Dependencies
-                        </MUITypography>
-                        <TaskDrawerDependencies
-                          task={task}
-                          onDependenciesChange={handleDependenciesChange}
-                        />
-                      </Box>
+                      <TaskDrawerDependencies
+                        task={task}
+                        onDependenciesChange={handleDependenciesChange}
+                      />
                     )}
                   </TaskDrawerMainContent>
                 </Box>
@@ -310,9 +337,21 @@ export function TaskDrawer({
             </Box>
 
             {canComplete && (
-              <SheetFooter className="p-4 bg-white">
-                <Button className="w-full" onClick={handleComplete} disabled={updateTask.isPending}>
-                  Complete Task
+              <SheetFooter className="flex-col items-stretch gap-2 bg-background px-6 py-3 shadow-[0_-1px_0_var(--ds-canvas-sunken)] sm:flex-row sm:items-center sm:justify-between sm:space-x-0">
+                {/* Left slot keeps the bar balanced and earns its height */}
+                <p className="text-2xs text-foreground-tertiary">
+                  {openChecklistCount > 0
+                    ? `${openChecklistCount} checklist ${openChecklistCount === 1 ? 'item is' : 'items are'} still open`
+                    : 'Closes the task and stops it appearing in My tasks'}
+                </p>
+                <Button
+                  size="lg"
+                  loading={updateTask.isPending}
+                  onClick={handleComplete}
+                  className="w-full shrink-0 sm:w-auto sm:min-w-[152px]"
+                >
+                  {!updateTask.isPending && <CheckIcon />}
+                  Mark complete
                 </Button>
               </SheetFooter>
             )}

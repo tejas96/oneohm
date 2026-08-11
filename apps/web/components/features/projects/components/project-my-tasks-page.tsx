@@ -2,13 +2,13 @@
 
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CloseIcon from '@mui/icons-material/Close';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import InboxIcon from '@mui/icons-material/Inbox';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import { useQueryClient } from '@tanstack/react-query';
 import { MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD } from '@tejas96/shared/constants';
@@ -52,6 +52,101 @@ const MY_TASKS_URL_DEFAULTS = {
   dueDateFilter: '',
   address: '',
 };
+
+// ---------------------------------------------------------------------------
+// Summary stat pill
+// ---------------------------------------------------------------------------
+
+interface StatPillProps {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  /** Semantic accent, applied only when the count is non-zero. */
+  tone: 'neutral' | 'danger' | 'warning' | 'success';
+  active?: boolean;
+  onClick?: () => void;
+}
+
+const STAT_TONE: Record<StatPillProps['tone'], { ink: string; tint: string }> = {
+  neutral: { ink: 'var(--ds-text-secondary)', tint: 'var(--ds-canvas-sunken)' },
+  danger: { ink: 'var(--ds-danger)', tint: 'var(--ds-danger-bg)' },
+  warning: { ink: 'var(--ds-warning)', tint: 'var(--ds-warning-bg)' },
+  success: { ink: 'var(--ds-success)', tint: 'var(--ds-success-bg)' },
+};
+
+function StatPill({ icon, label, value, tone, active, onClick }: StatPillProps): React.JSX.Element {
+  // A zero count carries no urgency, so it drops back to neutral.
+  const accent = STAT_TONE[value > 0 ? tone : 'neutral'];
+  const interactive = Boolean(onClick);
+
+  return (
+    <Box
+      component={interactive ? 'button' : 'div'}
+      type={interactive ? 'button' : undefined}
+      onClick={onClick}
+      aria-pressed={interactive ? Boolean(active) : undefined}
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 1,
+        height: 36,
+        pl: 0.75,
+        pr: 1.5,
+        border: 'none',
+        borderRadius: 'var(--radius-pill)',
+        cursor: interactive ? 'pointer' : 'default',
+        bgcolor: active ? accent.tint : 'var(--ds-surface)',
+        boxShadow: active ? 'none' : 'var(--shadow-e1)',
+        transition: 'background-color var(--dur-micro) var(--ease-standard), box-shadow var(--dur-micro)',
+        '&:hover': interactive
+          ? { bgcolor: active ? accent.tint : 'var(--ds-surface-alt)', boxShadow: 'var(--shadow-e2)' }
+          : undefined,
+      }}
+    >
+      {/* Signature circular icon container */}
+      <Box
+        aria-hidden="true"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 24,
+          height: 24,
+          flexShrink: 0,
+          borderRadius: '50%',
+          color: accent.ink,
+          bgcolor: accent.tint,
+          '& .MuiSvgIcon-root': { fontSize: 14 },
+        }}
+      >
+        {icon}
+      </Box>
+      <Box
+        component="span"
+        sx={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '13px',
+          fontWeight: 600,
+          lineHeight: 1,
+          color: value > 0 ? accent.ink : 'var(--ds-text-primary)',
+        }}
+      >
+        {value}
+      </Box>
+      <Box
+        component="span"
+        sx={{
+          fontSize: '12px',
+          lineHeight: 1,
+          whiteSpace: 'nowrap',
+          color: 'var(--ds-text-secondary)',
+        }}
+      >
+        {label}
+      </Box>
+    </Box>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Morning brief
@@ -387,81 +482,125 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   return (
     <div className="space-y-3">
-      {/* Page Header */}
-      <div>
-        <Typography variant="h6" fontWeight={600}>
-          My Tasks
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-          All tasks assigned to you across projects
-        </Typography>
-      </div>
+      {/* Header band — title and today's brief on the left, counts on the right */}
+      <Box
+        sx={{
+          position: 'relative',
+          overflow: 'hidden',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          px: 2.5,
+          py: 2,
+          borderRadius: 'var(--radius-card-functional)',
+          bgcolor: 'var(--ds-surface)',
+          boxShadow: 'var(--shadow-e2)',
+        }}
+      >
+        {/* Ambient brand bloom — atmosphere only, never a fill */}
+        <Box
+          aria-hidden="true"
+          sx={{
+            position: 'absolute',
+            top: -140,
+            right: -60,
+            width: 320,
+            height: 320,
+            pointerEvents: 'none',
+            background: 'var(--gradient-glow)',
+            opacity: 0.7,
+          }}
+        />
 
-      {/* Summary Stat Chips */}
-      {showListLoading ? (
-        <SummaryChipsSkeleton />
-      ) : (
-        summary && (
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {/* Total */}
-            <Chip
-              icon={<FormatListBulletedIcon fontSize="small" />}
-              label={`${summary.total} Total`}
-              size="small"
-              variant={dueDateFilter ? 'outlined' : 'filled'}
-              onClick={handleClearFilters}
-              sx={{ cursor: 'pointer' }}
-            />
-            {/* Overdue */}
-            <Chip
-              icon={<WarningAmberIcon fontSize="small" />}
-              label={`${summary.overdue} Overdue`}
-              size="small"
-              color={summary.overdue > 0 ? 'error' : 'default'}
-              variant={dueDateFilter === 'overdue' ? 'filled' : 'outlined'}
-              onClick={() =>
-                setFilter({
-                  status: '',
-                  priority: '',
-                  dueDateFilter: dueDateFilter === 'overdue' ? '' : 'overdue',
-                })
-              }
-              sx={{ cursor: 'pointer' }}
-            />
-            {/* Due Today */}
-            <Chip
-              icon={<CalendarTodayIcon fontSize="small" />}
-              label={`${summary.dueToday} Due Today`}
-              size="small"
-              color={summary.dueToday > 0 ? 'warning' : 'default'}
-              variant={dueDateFilter === 'dueToday' ? 'filled' : 'outlined'}
-              onClick={() =>
-                setFilter({
-                  status: '',
-                  priority: '',
-                  dueDateFilter: dueDateFilter === 'dueToday' ? '' : 'dueToday',
-                })
-              }
-              sx={{ cursor: 'pointer' }}
-            />
-            {/* Done This Week */}
-            <Chip
-              icon={<CheckCircleOutlineIcon fontSize="small" />}
-              label={`${summary.completedThisWeek} Done This Week`}
-              size="small"
-              color={summary.completedThisWeek > 0 ? 'success' : 'default'}
-              variant="outlined"
-            />
-          </Box>
-        )
-      )}
+        <Box sx={{ position: 'relative', minWidth: 0 }}>
+          <Typography
+            component="h1"
+            sx={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2 }}
+          >
+            My tasks
+          </Typography>
+          {morningBrief ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+              <Typography sx={{ fontSize: '13px', color: 'var(--ds-text-secondary)' }}>
+                {morningBrief}
+              </Typography>
+              <IconButton
+                size="small"
+                aria-label="Dismiss today's brief"
+                onClick={() => setBriefDismissed(true)}
+                sx={{
+                  width: 18,
+                  height: 18,
+                  color: 'var(--ds-text-tertiary)',
+                  '&:hover': { color: 'var(--ds-text-secondary)' },
+                }}
+              >
+                <CloseIcon sx={{ fontSize: 13 }} />
+              </IconButton>
+            </Box>
+          ) : (
+            <Typography sx={{ fontSize: '13px', color: 'var(--ds-text-secondary)', mt: 0.5 }}>
+              Everything assigned to you, across every project
+            </Typography>
+          )}
+        </Box>
 
-      {/* Morning Brief Banner */}
-      {morningBrief && (
-        <Alert severity="info" onClose={() => setBriefDismissed(true)} sx={{ py: 0.5 }}>
-          {morningBrief}
-        </Alert>
-      )}
+        {/* Summary counts — each one is also a filter */}
+        <Box sx={{ position: 'relative', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {showListLoading ? (
+            <SummaryChipsSkeleton />
+          ) : (
+            summary && (
+              <>
+                <StatPill
+                  icon={<FormatListBulletedIcon />}
+                  label="Total"
+                  value={summary.total}
+                  tone="neutral"
+                  active={!dueDateFilter}
+                  onClick={handleClearFilters}
+                />
+                <StatPill
+                  icon={<WarningAmberIcon />}
+                  label="Overdue"
+                  value={summary.overdue}
+                  tone="danger"
+                  active={dueDateFilter === 'overdue'}
+                  onClick={() => {
+                    setFilter({
+                      status: '',
+                      priority: '',
+                      dueDateFilter: dueDateFilter === 'overdue' ? '' : 'overdue',
+                    });
+                  }}
+                />
+                <StatPill
+                  icon={<CalendarTodayIcon />}
+                  label="Due today"
+                  value={summary.dueToday}
+                  tone="warning"
+                  active={dueDateFilter === 'dueToday'}
+                  onClick={() => {
+                    setFilter({
+                      status: '',
+                      priority: '',
+                      dueDateFilter: dueDateFilter === 'dueToday' ? '' : 'dueToday',
+                    });
+                  }}
+                />
+                <StatPill
+                  icon={<CheckCircleOutlineIcon />}
+                  label="Done this week"
+                  value={summary.completedThisWeek}
+                  tone="success"
+                />
+              </>
+            )
+          )}
+        </Box>
+      </Box>
 
       {/* Filter Row — search first, then dropdowns */}
       <MyTasksFilterBar
@@ -485,7 +624,6 @@ export function ProjectMyTasksPage(): React.JSX.Element {
         allExpanded={allExpanded}
         onExpandAll={handleExpandAll}
         onCollapseAll={handleCollapseAll}
-        sx={{ mt: 1 }}
       />
 
       {/* Error State */}
@@ -500,27 +638,27 @@ export function ProjectMyTasksPage(): React.JSX.Element {
           {!showListLoading && groups.length === 0 && (
             <Box
               sx={{
-                bgcolor: 'background.paper',
-                borderRadius: 1,
-                border: '1px solid',
-                borderColor: 'divider',
+                bgcolor: 'var(--ds-surface)',
+                borderRadius: 'var(--radius-card-functional)',
+                boxShadow: 'var(--shadow-e2)',
                 overflow: 'hidden',
-                p: 4,
+                px: 4,
+                py: 6,
               }}
             >
               <EmptyState
-                title="No tasks assigned to you"
+                title={hasActiveFilters ? 'No tasks match these filters' : 'You are all caught up'}
                 description={
                   hasActiveFilters
-                    ? 'No tasks match the selected filters. Try different filter options.'
-                    : 'You don\u2019t have any incomplete tasks right now. Tasks assigned to you will appear here.'
+                    ? 'Widen the search, or clear the filters to see everything assigned to you.'
+                    : 'Nothing is open on your plate right now. New tasks assigned to you land here.'
                 }
                 icon={<InboxIcon sx={{ width: '100%', height: '100%' }} />}
                 iconColor={hasActiveFilters ? 'muted' : 'primary'}
                 action={
                   hasActiveFilters
                     ? {
-                        label: 'Clear Filters',
+                        label: 'Clear filters',
                         onClick: handleClearFilters,
                       }
                     : undefined
@@ -551,17 +689,30 @@ export function ProjectMyTasksPage(): React.JSX.Element {
                 />
               ))}
               {groupBy === 'project' && groups.length > visibleGroupCount && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 1.5 }}>
                   <Button
                     size="small"
-                    variant="outlined"
+                    variant="text"
                     onClick={() =>
                       setVisibleGroupCount((prev) =>
                         Math.min(prev + VISIBLE_GROUPS_BATCH, groups.length),
                       )
                     }
+                    sx={{
+                      borderRadius: 'var(--radius-pill)',
+                      px: 2,
+                      fontSize: '12px',
+                      color: 'var(--ds-text-secondary)',
+                      bgcolor: 'var(--ds-surface)',
+                      boxShadow: 'var(--shadow-e1)',
+                      '&:hover': {
+                        bgcolor: 'var(--ds-surface)',
+                        boxShadow: 'var(--shadow-e2)',
+                        color: 'var(--ds-text-primary)',
+                      },
+                    }}
                   >
-                    Load more groups ({groups.length - visibleGroupCount} remaining)
+                    Load {groups.length - visibleGroupCount} more groups
                   </Button>
                 </Box>
               )}

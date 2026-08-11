@@ -1,7 +1,6 @@
 'use client';
 
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import { MenuItem, Box, Divider, Link as MuiLink, Skeleton } from '@mui/material';
+import { MenuItem, Box, Link as MuiLink, Skeleton, Typography } from '@mui/material';
 import { type TaskPriority, type TaskStatus, type TaskStatusConfig } from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { useMemo, useCallback } from 'react';
@@ -11,14 +10,12 @@ import { useProjectTeam, type ProjectTeamMember } from '../../projects/hooks';
 
 import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { MUISelect } from '@/components/ui/mui-select';
-import { MUITypography } from '@/components/ui/mui-typography';
 import {
   MUIUserAssigneeSelector,
   type AssigneeOption,
 } from '@/components/ui/mui-user-assignee-selector';
 import { PriorityDropdown } from '@/components/ui/priority-dropdown';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { MUI_LABEL_FONT_SIZE } from '@/lib/theme/mui-theme';
 import { formatDate } from '@/lib/utils';
 
 interface TaskDrawerMetadataProps {
@@ -46,6 +43,48 @@ function getMemberDisplayName(member: ProjectTeamMember): string {
     return name || member.user.email || member.userId;
   }
   return member.userId;
+}
+
+/** Signature overline micro-label — 11px / 700 / 0.12em, sentence content in caps. */
+function FieldLabel({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return (
+    <Typography
+      component="div"
+      sx={{
+        fontSize: '10px',
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        letterSpacing: '0.12em',
+        lineHeight: 1,
+        color: 'var(--ds-text-tertiary)',
+        mb: 0.875,
+      }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+/** Helper copy under a field. */
+function FieldHint({
+  children,
+  tone = 'muted',
+}: {
+  children: React.ReactNode;
+  tone?: 'muted' | 'warning';
+}): React.JSX.Element {
+  return (
+    <Typography
+      sx={{
+        mt: 0.75,
+        fontSize: '11px',
+        lineHeight: 1.45,
+        color: tone === 'warning' ? 'var(--ds-warning)' : 'var(--ds-text-tertiary)',
+      }}
+    >
+      {children}
+    </Typography>
+  );
 }
 
 export function TaskDrawerMetadata({
@@ -106,11 +145,9 @@ export function TaskDrawerMetadata({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
       {/* Status */}
       <Box>
-        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
-          Status
-        </MUITypography>
+        <FieldLabel>Status</FieldLabel>
         {statusesLoading ? (
-          <Skeleton variant="rounded" height={31} />
+          <Skeleton variant="rounded" height={34} sx={{ borderRadius: 'var(--radius-rf-md)' }} />
         ) : (
           <MUISelect
             value={status}
@@ -132,27 +169,13 @@ export function TaskDrawerMetadata({
           </MUISelect>
         )}
         {hasDependencyBlockers && !statusesLoading && (
-          <MUITypography
-            variant="body"
-            sx={{
-              mt: 0.5,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              color: 'warning.main',
-              fontSize: 11,
-            }}
-          >
-            Complete all dependencies before changing status.
-          </MUITypography>
+          <FieldHint tone="warning">Complete every dependency before changing status.</FieldHint>
         )}
       </Box>
 
       {/* Priority */}
       <Box>
-        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
-          Priority
-        </MUITypography>
+        <FieldLabel>Priority</FieldLabel>
         <PriorityDropdown
           value={priority}
           onChange={(e) => onPriorityChange(e.target.value as TaskPriority)}
@@ -163,9 +186,7 @@ export function TaskDrawerMetadata({
 
       {/* Assignee */}
       <Box>
-        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
-          Assignee
-        </MUITypography>
+        <FieldLabel>Assignee</FieldLabel>
         <MUIUserAssigneeSelector
           value={assignedToUserId ?? null}
           onChange={onAssigneeChange}
@@ -180,11 +201,9 @@ export function TaskDrawerMetadata({
         />
       </Box>
 
-      {/* Due Date */}
+      {/* Due date */}
       <Box>
-        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
-          Due Date
-        </MUITypography>
+        <FieldLabel>Due date</FieldLabel>
         <MUIDatePicker
           value={endDate ?? null}
           onChange={handleDateChange}
@@ -199,45 +218,64 @@ export function TaskDrawerMetadata({
             },
           }}
         />
-        <MUITypography variant="body" sx={{ mt: 0.75, color: 'text.secondary', fontSize: 11 }}>
-          Initial due date is auto-set from workflow step effort days. You can edit it anytime.
-        </MUITypography>
+        <FieldHint>Set from the workflow step&rsquo;s effort days. Edit it any time.</FieldHint>
       </Box>
 
-      <Divider />
+      {/* Project — separated by a hairline rule rather than a full divider */}
+      <Box sx={{ height: '1px', bgcolor: 'var(--ds-hairline)', mt: 0.5 }} aria-hidden="true" />
 
-      {/* Project */}
       <Box>
-        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
-          Project
-        </MUITypography>
+        <FieldLabel>Project</FieldLabel>
+        {/* Normal text flow, not flex — the name has to wrap inside a 288px rail. */}
         <MuiLink
           component={NextLink}
           href={projectHref}
           sx={{
-            fontSize: MUI_LABEL_FONT_SIZE,
-            color: 'primary.main',
+            display: 'block',
+            fontSize: '13px',
+            lineHeight: 1.5,
+            color: 'var(--ds-link)',
             textDecoration: 'none',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.75,
-            '&:hover': { textDecoration: 'underline' },
+            overflowWrap: 'anywhere',
+            '&:hover': { color: 'var(--ds-link-hover)', textDecoration: 'underline' },
           }}
         >
-          {projectNumber} - {projectName}
+          <Box component="span" sx={{ fontFamily: 'var(--font-mono)', mr: 0.75 }}>
+            {projectNumber}
+          </Box>
+          {projectName}
         </MuiLink>
       </Box>
 
       {/* Timestamps */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <CalendarTodayIcon sx={{ fontSize: 12, color: 'text.disabled' }} />
-          <MUITypography variant="timestamp">Created {formatDate(createdAt)}</MUITypography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <CalendarTodayIcon sx={{ fontSize: 12, color: 'text.disabled' }} />
-          <MUITypography variant="timestamp">Updated {formatDate(updatedAt)}</MUITypography>
-        </Box>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        {[
+          { label: 'Created', value: createdAt },
+          { label: 'Updated', value: updatedAt },
+        ].map((stamp) => (
+          <Box
+            key={stamp.label}
+            sx={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 1,
+            }}
+          >
+            <Typography sx={{ fontSize: '11px', color: 'var(--ds-text-tertiary)' }}>
+              {stamp.label}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                color: 'var(--ds-text-secondary)',
+              }}
+            >
+              {formatDate(stamp.value)}
+            </Typography>
+          </Box>
+        ))}
       </Box>
     </Box>
   );
