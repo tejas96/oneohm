@@ -266,6 +266,9 @@ export { MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD as PROJECT_LAZY_GROUP_THRESHOLD }
 /** Initial number of project group headers rendered before "Load more groups". */
 export const VISIBLE_GROUPS_BATCH = 30;
 
+/** Max project groups auto-expanded (and fetched) on load in lazy mode. */
+export const LAZY_PROJECT_INITIAL_EXPAND_COUNT = 3;
+
 /** Debounce delays for My Tasks text filters (ms). */
 export const MY_TASKS_SEARCH_DEBOUNCE_MS = 700;
 export const MY_TASKS_ADDRESS_DEBOUNCE_MS = 700;

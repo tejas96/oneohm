@@ -10,6 +10,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
+import { useQueryClient } from '@tanstack/react-query';
 import { MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD } from '@tejas96/shared/constants';
 import {
   type MyTaskListItem,
@@ -32,6 +33,7 @@ import { useCollapsedGroups } from '../hooks/use-collapsed-groups';
 import { useTaskKeyboardNav } from '../hooks/use-task-keyboard-nav';
 
 import { TaskDrawer, useUpdateTask } from '@/components/features/tasks';
+import { myTasksSummaryKeys } from '@/components/features/tasks/hooks/use-my-tasks-summary';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { showToast } from '@/components/ui/sonner';
 import { useDebounce, useUrlFilters } from '@/lib/hooks';
@@ -73,6 +75,7 @@ function getMorningBrief(overdue: number, dueToday: number): string | null {
 // ---------------------------------------------------------------------------
 
 export function ProjectMyTasksPage(): React.JSX.Element {
+  const queryClient = useQueryClient();
   const { filters: urlFilters, setFilter } = useUrlFilters(MY_TASKS_URL_DEFAULTS);
 
   const projectFilter = urlFilters.projectId;
@@ -199,8 +202,14 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   // Collapse state
   const groupKeys = useMemo(() => groups.map((g) => g.key), [groups]);
-  const { isExpanded, toggle, expandAll, expandOnly, collapseAll, allExpanded } =
-    useCollapsedGroups(groupBy, groupKeys);
+  const { isExpanded, canLazyFetch, toggle, expandAll, expandOnly, collapseAll, allExpanded } =
+    useCollapsedGroups(groupBy, groupKeys, { lazyProjectGroups: isLazyProjectGroups });
+
+  // Reuse grouped summary for nav badge cache — avoids a duplicate /tasks/my/summary call.
+  useEffect(() => {
+    if (!summary) return;
+    queryClient.setQueryData(myTasksSummaryKeys.all(), summary);
+  }, [summary, queryClient]);
 
   // All tasks flat for keyboard nav indexing
   const allTasks = useMemo(() => {
@@ -538,6 +547,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
                   projectMeta={projectMeta}
                   onTasksLoaded={handleTasksLoaded}
                   fetchEnabled={textFiltersReady}
+                  lazyFetchAllowed={canLazyFetch(group.key)}
                 />
               ))}
               {groupBy === 'project' && groups.length > visibleGroupCount && (

@@ -13,6 +13,7 @@ import {
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/utils/error';
+import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Types
@@ -77,14 +78,18 @@ export function useNotifications(
 }
 
 export function useNotificationUnreadCount() {
+  const { hasPermission } = useAuth();
+  const canReadNotifications = hasPermission('notifications:read');
+
   return useQuery<{ count: number }>({
     queryKey: ['notifications', 'unread-count'],
     queryFn: async () => {
       const { data } = await apiClient.get<{ count: number }>('/notifications/unread-count');
       return data;
     },
+    enabled: canReadNotifications,
     placeholderData: keepPreviousData,
-    refetchInterval: 30_000,
+    refetchInterval: canReadNotifications ? 30_000 : false,
     staleTime: 15_000,
   });
 }

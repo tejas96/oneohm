@@ -10,6 +10,7 @@ import { UserMenu } from './user-menu';
 import { SearchTrigger } from '@/components/shared/search';
 import { useNotificationUnreadCount } from '@/lib/hooks/resources/notifications';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 
 interface GlobalHeaderProps {
   className?: string;
@@ -22,6 +23,8 @@ interface GlobalHeaderProps {
  */
 export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
   const router = useRouter();
+  const { hasPermission } = useAuth();
+  const canViewNotifications = hasPermission('notifications:read');
   const { data: unreadData } = useNotificationUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
 
@@ -57,24 +60,26 @@ export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
 
       {/* Right: Actions */}
       <div className="flex items-center space-x-1 lg:space-x-2">
-        {/* Notifications */}
-        <Tooltip title="Notifications">
-          <IconButton
-            size="small"
-            aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
-            onClick={() => router.push('/notifications')}
-            sx={{ borderRadius: '8px' }}
-          >
-            <Badge
-              badgeContent={unreadCount > 0 ? unreadCount : undefined}
-              color="error"
-              max={99}
-              sx={{ '& .MuiBadge-badge': { fontSize: 10, minWidth: 16, height: 16 } }}
+        {/* Notifications — only for users with notifications:read */}
+        {canViewNotifications ? (
+          <Tooltip title="Notifications">
+            <IconButton
+              size="small"
+              aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+              onClick={() => router.push('/notifications')}
+              sx={{ borderRadius: '8px' }}
             >
-              <NotificationsIcon sx={{ fontSize: 20, color: 'var(--color-muted-foreground)' }} />
-            </Badge>
-          </IconButton>
-        </Tooltip>
+              <Badge
+                badgeContent={unreadCount > 0 ? unreadCount : undefined}
+                color="error"
+                max={99}
+                sx={{ '& .MuiBadge-badge': { fontSize: 10, minWidth: 16, height: 16 } }}
+              >
+                <NotificationsIcon sx={{ fontSize: 20, color: 'var(--color-muted-foreground)' }} />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+        ) : null}
 
         {/* User Menu */}
         <UserMenu />

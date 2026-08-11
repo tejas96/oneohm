@@ -29,6 +29,7 @@ interface MyTasksGroupSectionProps {
   projectMeta: Record<string, MyTasksProjectMeta>;
   onTasksLoaded?: (groupKey: string, tasks: MyTaskListItem[]) => void;
   fetchEnabled?: boolean;
+  lazyFetchAllowed?: boolean;
 }
 
 export function MyTasksGroupSection({
@@ -44,8 +45,9 @@ export function MyTasksGroupSection({
   projectMeta,
   onTasksLoaded,
   fetchEnabled = true,
+  lazyFetchAllowed = true,
 }: MyTasksGroupSectionProps): React.JSX.Element {
-  const shouldFetch = isLazyMode && expanded && fetchEnabled;
+  const shouldFetch = isLazyMode && expanded && fetchEnabled && lazyFetchAllowed;
   const { data, isLoading, isError, isFetched, refetch } = useMyTasksGroupTasks(
     filters,
     group.key,
