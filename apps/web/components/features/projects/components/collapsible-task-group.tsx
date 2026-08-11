@@ -175,7 +175,8 @@ export function CollapsibleTaskGroup({
             color: 'var(--ds-text-tertiary)',
             flexShrink: 0,
             transform: expanded ? 'rotate(0deg)' : 'rotate(-90deg)',
-            transition: 'transform var(--dur-standard) var(--ease-standard), color var(--dur-micro)',
+            transition:
+              'transform var(--dur-standard) var(--ease-standard), color var(--dur-micro)',
           }}
         />
       </Box>

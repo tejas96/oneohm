@@ -271,7 +271,12 @@ export function TaskRow({
               </Box>
               <Box
                 component="span"
-                sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                sx={{
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
               >
                 {task.milestoneName}
               </Box>

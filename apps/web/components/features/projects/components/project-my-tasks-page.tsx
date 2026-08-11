@@ -97,9 +97,13 @@ function StatPill({ icon, label, value, tone, active, onClick }: StatPillProps):
         cursor: interactive ? 'pointer' : 'default',
         bgcolor: active ? accent.tint : 'var(--ds-surface)',
         boxShadow: active ? 'none' : 'var(--shadow-e1)',
-        transition: 'background-color var(--dur-micro) var(--ease-standard), box-shadow var(--dur-micro)',
+        transition:
+          'background-color var(--dur-micro) var(--ease-standard), box-shadow var(--dur-micro)',
         '&:hover': interactive
-          ? { bgcolor: active ? accent.tint : 'var(--ds-surface-alt)', boxShadow: 'var(--shadow-e2)' }
+          ? {
+              bgcolor: active ? accent.tint : 'var(--ds-surface-alt)',
+              boxShadow: 'var(--shadow-e2)',
+            }
           : undefined,
       }}
     >

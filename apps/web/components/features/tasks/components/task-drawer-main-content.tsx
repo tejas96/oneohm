@@ -192,11 +192,7 @@ export function TaskDrawerMainContent({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Alerts */}
       {blockedReason && (
-        <Callout
-          tone="danger"
-          icon={<ReportProblemOutlinedIcon />}
-          title="This task is blocked"
-        >
+        <Callout tone="danger" icon={<ReportProblemOutlinedIcon />} title="This task is blocked">
           {blockedReason}
         </Callout>
       )}
@@ -376,9 +372,7 @@ export function TaskDrawerMainContent({
               bgcolor: 'var(--ds-canvas-sunken)',
               cursor: onDescriptionChange ? 'pointer' : 'default',
               transition: 'color var(--dur-micro) var(--ease-standard)',
-              '&:hover': onDescriptionChange
-                ? { color: 'var(--ds-text-secondary)' }
-                : undefined,
+              '&:hover': onDescriptionChange ? { color: 'var(--ds-text-secondary)' } : undefined,
             }}
           >
             Add a description
@@ -474,9 +468,7 @@ export function TaskDrawerMainContent({
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: isComment ? 'var(--ds-accent-ink)' : 'var(--ds-text-tertiary)',
-                        bgcolor: isComment
-                          ? 'var(--ds-accent-subtle)'
-                          : 'var(--ds-canvas-sunken)',
+                        bgcolor: isComment ? 'var(--ds-accent-subtle)' : 'var(--ds-canvas-sunken)',
                       }}
                     >
                       {isComment ? (
