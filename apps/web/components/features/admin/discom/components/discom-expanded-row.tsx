@@ -6,7 +6,7 @@ import { type JSX } from 'react';
 import type { DiscomAdmin } from '../hooks/use-discoms-admin';
 import { buildDiscomPreviewLabel, formatDiscomGeo } from '../utils/discom-display.util';
 
-import { color, crm, gradient, radius, shadow } from '@/lib/theme/tokens';
+import { color, crm, radius, shadow } from '@/lib/theme/tokens';
 import { formatDate } from '@/lib/utils';
 
 interface DiscomExpandedRowProps {
@@ -73,7 +73,6 @@ export function DiscomExpandedRow({ discom, onEdit }: DiscomExpandedRowProps): J
   return (
     <Box
       sx={{
-        position: 'relative',
         mx: 1,
         mb: 1,
         borderRadius: radius['rf-lg'],
@@ -82,18 +81,7 @@ export function DiscomExpandedRow({ discom, onEdit }: DiscomExpandedRowProps): J
         overflow: 'hidden',
       }}
     >
-      <Box
-        sx={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: crm['spine-width'],
-          background: gradient.brand,
-          borderRadius: crm['spine-radius'],
-        }}
-      />
-      <Box sx={{ pl: 2.5, pr: 2, py: 1.75 }}>
+      <Box sx={{ px: 2, py: 1.75 }}>
         <Box
           sx={{
             display: 'flex',

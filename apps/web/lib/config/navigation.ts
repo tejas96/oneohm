@@ -556,12 +556,6 @@ export const navigationConfig: NavigationConfig = {
           roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {
-              id: 'general-settings',
-              icon: Settings,
-              label: 'General Settings',
-              href: ROUTES.ADMIN.SETTINGS,
-            },
-            {
               id: 'admin-lookups',
               icon: List,
               label: 'Lookups',

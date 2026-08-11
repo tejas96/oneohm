@@ -238,6 +238,7 @@ export function AdminUsersListPage(): JSX.Element {
       search: urlState.state.search || undefined,
       sortBy: toApiSortField(urlState.state.sortModel),
       sortOrder: toApiSortOrder(urlState.state.sortModel),
+      employeeOnly: true,
       ...toUserFilters(urlState.state.filters),
     }),
     [urlState.state],
