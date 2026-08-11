@@ -49,6 +49,7 @@ export function DocumentFields({
         DocumentTag.FRONT_VIEW,
         DocumentTag.ROOF_VIEW,
         DocumentTag.METER_BOX,
+        DocumentTag.PANEL_STRUCTURE_INSTALLATION_VIEW,
         DocumentTag.ANNEXURE_PROFORMA_A,
         DocumentTag.NET_METERING_AGREEMENT,
         DocumentTag.WCR,

@@ -209,5 +209,6 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   bank_statement: 'Bank Statement',
   technical_drawing: 'Technical Drawing',
   compliance_certificate: 'Compliance Certificate',
+  panel_structure_installation_view: 'Panel / Structure Installation View',
   other: 'Other',
 };

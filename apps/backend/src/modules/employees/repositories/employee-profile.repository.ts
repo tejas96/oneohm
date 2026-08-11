@@ -110,6 +110,19 @@ export class EmployeeProfileRepository {
   }
 
   /**
+   * Find by Aadhaar number (reseller-kind profiles)
+   */
+  async findByAadhaarNumber(aadhaarNumber: string): Promise<EmployeeProfileEntity | null> {
+    return this.repository.findOne({
+      where: {
+        aadhaarNumber,
+        profileKind: EmployeeProfileKind.RESELLER,
+        deletedAt: IsNull(),
+      },
+    });
+  }
+
+  /**
    * Find by email within an organization (used for reseller-kind uniqueness checks)
    * Ported from ResellerProfileRepository.findByEmail
    */

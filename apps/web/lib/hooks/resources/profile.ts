@@ -53,6 +53,9 @@ export interface EmployeeProfile {
   accountNumber?: string;
   ifscCode?: string;
   accountHolderName?: string;
+  aadhaarNumberMasked?: string;
+  currentProfession?: string;
+  yearsOfExperience?: number;
   user?: EmployeeProfileUser;
   roles?: string[];
   createdAt: string;

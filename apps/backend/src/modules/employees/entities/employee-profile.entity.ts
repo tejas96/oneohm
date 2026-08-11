@@ -20,6 +20,10 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['employeeId'], { unique: true })
 @Index(['department', 'deletedAt'])
 @Index(['companyCode'], { unique: true, where: 'company_code IS NOT NULL' })
+@Index(['aadhaarNumber'], {
+  unique: true,
+  where: "aadhaar_number IS NOT NULL AND profile_kind = 'reseller' AND deleted_at IS NULL",
+})
 @Index(['profileKind', 'status', 'deletedAt'])
 export class EmployeeProfileEntity extends BaseEntity {
   // ==================== RELATIONSHIPS ====================
@@ -92,6 +96,16 @@ export class EmployeeProfileEntity extends BaseEntity {
 
   @Column({ name: 'joining_date', type: 'date', nullable: true })
   joiningDate?: Date;
+
+  // ==================== Reseller: Personal Details ====================
+  @Column({ name: 'aadhaar_number', type: 'varchar', length: 12, nullable: true })
+  aadhaarNumber?: string;
+
+  @Column({ name: 'current_profession', type: 'varchar', length: 100, nullable: true })
+  currentProfession?: string;
+
+  @Column({ name: 'years_of_experience', type: 'integer', nullable: true })
+  yearsOfExperience?: number;
 
   // ==================== Reseller: Company Details ====================
   @Column({ name: 'company_name', type: 'varchar', length: 255, nullable: true })

@@ -75,6 +75,7 @@ export const DOCUMENT_TAG_LABELS: Record<DocumentTag, string> = {
   [DocumentTag.FRONT_VIEW]: 'Front View',
   [DocumentTag.ROOF_VIEW]: 'Roof View',
   [DocumentTag.METER_BOX]: 'Meter Box',
+  [DocumentTag.PANEL_STRUCTURE_INSTALLATION_VIEW]: 'Panel / Structure Installation View',
   [DocumentTag.WCR]: 'Work Completion Report',
   [DocumentTag.ANNEXURE_PROFORMA_A]: 'Annexure-I & Proforma-A',
   [DocumentTag.NET_METERING_AGREEMENT]: 'Net Metering Connection Agreement',

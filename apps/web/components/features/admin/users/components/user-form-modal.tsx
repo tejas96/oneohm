@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { normalizeBusinessIdentifier } from '@tejas96/shared/utils';
+import { normalizeAadhaar, normalizeBusinessIdentifier } from '@tejas96/shared/utils';
 import { AlertCircle, Info, Loader2 } from 'lucide-react';
 import { useEffect, useRef, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
@@ -89,6 +89,9 @@ export function UserFormModal({
       accountNumber: '',
       ifscCode: '',
       accountHolderName: '',
+      aadhaarNumber: '',
+      currentProfession: '',
+      yearsOfExperience: '',
       status: 'active',
     },
   });
@@ -139,6 +142,13 @@ export function UserFormModal({
         accountNumber: employeeProfileData?.accountNumber ?? '',
         ifscCode: employeeProfileData?.ifscCode ?? '',
         accountHolderName: employeeProfileData?.accountHolderName ?? '',
+        aadhaarNumber: '',
+        currentProfession: employeeProfileData?.currentProfession ?? '',
+        yearsOfExperience:
+          employeeProfileData?.yearsOfExperience !== undefined &&
+          employeeProfileData?.yearsOfExperience !== null
+            ? String(employeeProfileData.yearsOfExperience)
+            : '',
         status: userData.status as 'active' | 'inactive' | 'suspended',
       });
       originalValues.current = { email, phone };
@@ -201,6 +211,11 @@ export function UserFormModal({
         if (data.accountNumber) profileData.accountNumber = data.accountNumber;
         if (data.ifscCode) profileData.ifscCode = normalizeBusinessIdentifier(data.ifscCode);
         if (data.accountHolderName) profileData.accountHolderName = data.accountHolderName;
+        if (data.aadhaarNumber) profileData.aadhaarNumber = normalizeAadhaar(data.aadhaarNumber);
+        if (data.currentProfession) profileData.currentProfession = data.currentProfession.trim();
+        if (data.yearsOfExperience) {
+          profileData.yearsOfExperience = parseInt(data.yearsOfExperience, 10);
+        }
       } else {
         if (data.employeeId) profileData.employeeId = data.employeeId;
         if (data.department) profileData.department = data.department;
@@ -266,6 +281,10 @@ export function UserFormModal({
       } else if (lowerMsg.includes('company code') && lowerMsg.includes('already')) {
         form.setError('companyCode', {
           message: 'This Company Code already exists',
+        });
+      } else if (lowerMsg.includes('aadhaar') && lowerMsg.includes('already')) {
+        form.setError('aadhaarNumber', {
+          message: 'This Aadhaar number is already registered',
         });
       }
     }
@@ -465,6 +484,65 @@ export function UserFormModal({
               ) : (
                 <div className="space-y-4">
                   <p className="text-sm font-medium text-foreground-secondary">Reseller Profile</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="aadhaarNumber">Aadhaar Number</Label>
+                      {isEdit && employeeProfileData?.aadhaarNumberMasked ? (
+                        <p className="text-xs text-foreground-secondary">
+                          On file: {employeeProfileData.aadhaarNumberMasked} (enter a new number to
+                          change)
+                        </p>
+                      ) : null}
+                      <Input
+                        id="aadhaarNumber"
+                        inputMode="numeric"
+                        maxLength={12}
+                        placeholder={
+                          isEdit && employeeProfileData?.aadhaarNumberMasked
+                            ? 'Enter new Aadhaar number'
+                            : 'e.g., 234567890123'
+                        }
+                        {...form.register('aadhaarNumber')}
+                      />
+                      {form.formState.errors.aadhaarNumber && (
+                        <p className="text-xs text-error">
+                          {(form.formState.errors.aadhaarNumber as { message?: string }).message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="currentProfession">Current Profession</Label>
+                      <Input
+                        id="currentProfession"
+                        placeholder="e.g., Solar Sales Consultant"
+                        {...form.register('currentProfession')}
+                      />
+                      {form.formState.errors.currentProfession && (
+                        <p className="text-xs text-error">
+                          {
+                            (form.formState.errors.currentProfession as { message?: string })
+                              .message
+                          }
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="yearsOfExperience">Years of Experience</Label>
+                    <Input
+                      id="yearsOfExperience"
+                      type="number"
+                      min={0}
+                      max={60}
+                      placeholder="e.g., 5"
+                      {...form.register('yearsOfExperience')}
+                    />
+                    {form.formState.errors.yearsOfExperience && (
+                      <p className="text-xs text-error">
+                        {(form.formState.errors.yearsOfExperience as { message?: string }).message}
+                      </p>
+                    )}
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label htmlFor="companyName">Company Name *</Label>

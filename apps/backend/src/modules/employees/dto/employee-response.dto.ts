@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EmployeeProfileKind, UserGender, UserStatus } from '@tejas96/shared/types';
+import { maskAadhaar } from '@tejas96/shared/utils';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../common/utils';
@@ -130,6 +131,23 @@ export class EmployeeResponseDto {
   @Expose()
   @ApiProperty({ enum: EmployeeProfileKind })
   profileKind!: EmployeeProfileKind;
+
+  // ==================== Reseller: Personal Details ====================
+  @Expose()
+  @ApiPropertyOptional({
+    description: 'Masked Aadhaar number (last 4 digits only). Full value is never returned.',
+    example: 'XXXX-XXXX-0123',
+  })
+  @Transform(({ obj }: { obj: { aadhaarNumber?: string } }) => maskAadhaar(obj.aadhaarNumber))
+  aadhaarNumberMasked?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  currentProfession?: string;
+
+  @Expose()
+  @ApiPropertyOptional()
+  yearsOfExperience?: number;
 
   // ==================== Reseller: Company Details ====================
   @Expose()
