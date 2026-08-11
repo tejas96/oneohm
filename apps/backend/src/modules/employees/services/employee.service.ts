@@ -7,7 +7,8 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { EmployeeProfileKind, UserStatus } from '@tejas96/shared/types';
+import { EmployeeProfileKind, UserProfileType, UserStatus } from '@tejas96/shared/types';
+import { AADHAAR_ALREADY_REGISTERED_MESSAGE } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
@@ -16,6 +17,10 @@ import { ProfileService } from '../../users/services/profile.service';
 import { CreateEmployeeDto, EmployeeResponseDto, UpdateEmployeeDto } from '../dto';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
 import { EmployeeProfileRepository } from '../repositories/employee-profile.repository';
+import {
+  assertNoResellerFieldsOnStaffProfile,
+  prepareEmployeeProfileData,
+} from '../utils/employee-profile-data.util';
 
 /**
  * Employee Service
@@ -47,20 +52,41 @@ export class EmployeeService {
     }
 
     const profileKind = dto.profileKind ?? EmployeeProfileKind.STAFF;
+    const profileType =
+      profileKind === EmployeeProfileKind.RESELLER
+        ? UserProfileType.RESELLER
+        : UserProfileType.EMPLOYEE;
+
+    const { userId, joiningDate, dateOfBirth, status, ...restDto } = dto;
+    const { profileKind: profileKindFromDto, ...profileFields } = restDto;
+    void profileKindFromDto;
+
+    const validatedProfileFields = await prepareEmployeeProfileData(
+      profileType,
+      profileFields as Record<string, unknown>,
+    );
+
     let commissionDefaults: Partial<CreateEmployeeDto> = {};
 
     if (profileKind === EmployeeProfileKind.RESELLER) {
-      commissionDefaults = await this.validateResellerFields(dto);
+      commissionDefaults = await this.validateResellerFields({
+        ...validatedProfileFields,
+        companyCode: validatedProfileFields.companyCode as string | undefined,
+        email: validatedProfileFields.email as string | undefined,
+        commissionPercentage: validatedProfileFields.commissionPercentage as number | undefined,
+        aadhaarNumber: validatedProfileFields.aadhaarNumber as string | undefined,
+      });
     }
 
     // Create profile
     const profile = await this.employeeRepository.create({
-      ...dto,
+      userId,
+      ...validatedProfileFields,
       ...commissionDefaults,
       profileKind,
-      joiningDate: dto.joiningDate ? new Date(dto.joiningDate) : undefined,
-      dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
-      status: dto.status ?? UserStatus.ACTIVE,
+      joiningDate: joiningDate ? new Date(joiningDate) : undefined,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      status: status ?? UserStatus.ACTIVE,
       createdBy,
     });
 
@@ -78,7 +104,10 @@ export class EmployeeService {
    * and return the default commission percentage. Ported from ResellerService.create.
    */
   private async validateResellerFields(
-    dto: Pick<CreateEmployeeDto, 'companyCode' | 'email' | 'commissionPercentage'>,
+    dto: Pick<
+      CreateEmployeeDto,
+      'companyCode' | 'email' | 'commissionPercentage' | 'aadhaarNumber'
+    >,
   ): Promise<Partial<CreateEmployeeDto>> {
     if (dto.companyCode) {
       const existingByCode = await this.employeeRepository.findByCompanyCode(dto.companyCode);
@@ -93,6 +122,15 @@ export class EmployeeService {
       const existingByEmail = await this.employeeRepository.findByEmail(dto.email);
       if (existingByEmail) {
         throw new ConflictException(`Reseller with email '${dto.email}' already exists`);
+      }
+    }
+
+    if (dto.aadhaarNumber) {
+      const existingByAadhaar = await this.employeeRepository.findByAadhaarNumber(
+        dto.aadhaarNumber,
+      );
+      if (existingByAadhaar) {
+        throw new ConflictException(AADHAAR_ALREADY_REGISTERED_MESSAGE);
       }
     }
 
@@ -235,12 +273,25 @@ export class EmployeeService {
       throw new NotFoundException('Employee not found');
     }
 
+    if (existing.profileKind === EmployeeProfileKind.STAFF) {
+      assertNoResellerFieldsOnStaffProfile(dto as Record<string, unknown>);
+    }
+
     if (existing.profileKind === EmployeeProfileKind.RESELLER) {
       // Check for email conflicts (if email is being updated)
       if (dto.email) {
         const existingByEmail = await this.employeeRepository.findByEmail(dto.email);
         if (existingByEmail && existingByEmail.id !== id) {
           throw new ConflictException(`Reseller with email '${dto.email}' already exists`);
+        }
+      }
+
+      if (dto.aadhaarNumber) {
+        const existingByAadhaar = await this.employeeRepository.findByAadhaarNumber(
+          dto.aadhaarNumber,
+        );
+        if (existingByAadhaar && existingByAadhaar.id !== id) {
+          throw new ConflictException(AADHAAR_ALREADY_REGISTERED_MESSAGE);
         }
       }
     }

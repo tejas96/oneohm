@@ -4,11 +4,13 @@ import {
   IsDateString,
   IsEmail,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -190,6 +192,36 @@ export class CreateEmployeeDto {
   @IsEnum(EmployeeProfileKind)
   @IsOptional()
   profileKind?: EmployeeProfileKind;
+
+  // ==================== Reseller: Personal Details ====================
+  @ApiPropertyOptional({
+    example: '234567890123',
+    description: '12-digit Aadhaar number (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(12)
+  @Matches(/^[2-9]\d{11}$/, { message: 'aadhaarNumber must be a valid 12-digit Aadhaar number' })
+  aadhaarNumber?: string;
+
+  @ApiPropertyOptional({
+    example: 'Solar Sales Consultant',
+    description: 'Current profession (reseller profiles only)',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  currentProfession?: string;
+
+  @ApiPropertyOptional({
+    example: 5,
+    description: 'Years of professional experience (reseller profiles only)',
+  })
+  @IsInt()
+  @IsOptional()
+  @Min(0)
+  @Max(60)
+  yearsOfExperience?: number;
 
   // ==================== Reseller: Company Details ====================
   @ApiPropertyOptional({

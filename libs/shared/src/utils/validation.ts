@@ -20,6 +20,12 @@ export const IFSC_LENGTH = 11;
 export const IFSC_LENGTH_MESSAGE = 'IFSC code must be 11 characters';
 export const IFSC_FORMAT_MESSAGE = 'Invalid IFSC code format (e.g., SBIN0001234)';
 
+export const AADHAAR_REGEX = /^[2-9]\d{11}$/;
+export const AADHAAR_LENGTH = 12;
+export const AADHAAR_LENGTH_MESSAGE = 'Aadhaar must be 12 digits';
+export const AADHAAR_FORMAT_MESSAGE = 'Invalid Aadhaar number';
+export const AADHAAR_ALREADY_REGISTERED_MESSAGE = 'This Aadhaar number is already registered';
+
 /**
  * Validate phone number (international format: 10-15 digits, optional + prefix)
  */
@@ -91,4 +97,31 @@ export function isValidPan(value: string): boolean {
 export function isValidIfscCode(value: string): boolean {
   const ifsc = value.trim().toUpperCase();
   return ifsc.length === IFSC_LENGTH && IFSC_REGEX.test(ifsc);
+}
+
+/**
+ * Strip non-digits and cap at 12 chars for Indian Aadhaar numbers.
+ */
+export function normalizeAadhaar(value: string): string {
+  return value.replace(/\D/g, '').slice(0, 12);
+}
+
+/**
+ * Validate Indian Aadhaar number (12 digits, first digit 2-9).
+ */
+export function isValidAadhaar(value: string): boolean {
+  return AADHAAR_REGEX.test(normalizeAadhaar(value));
+}
+
+/**
+ * Mask an Aadhaar number for API responses (e.g. XXXX-XXXX-1234).
+ * Never expose full Aadhaar in list or detail payloads.
+ */
+export function maskAadhaar(value: string | null | undefined): string | undefined {
+  const normalized = normalizeAadhaar(value ?? '');
+  if (normalized.length !== AADHAAR_LENGTH) {
+    return undefined;
+  }
+
+  return `XXXX-XXXX-${normalized.slice(-4)}`;
 }

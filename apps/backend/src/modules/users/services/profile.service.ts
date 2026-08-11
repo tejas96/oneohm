@@ -6,11 +6,13 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { EmployeeProfileKind, UserProfileType } from '@tejas96/shared/types';
+import { AADHAAR_ALREADY_REGISTERED_MESSAGE } from '@tejas96/shared/utils';
 
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
 import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
+import { prepareEmployeeProfileData } from '../../employees/utils/employee-profile-data.util';
 import { RoleRepository } from '../../iam/repositories/role.repository';
 import { UserRoleRepository } from '../repositories/user-role.repository';
 import { UserRepository } from '../repositories/user.repository';
@@ -126,6 +128,22 @@ export class ProfileService {
 
     let profile: CustomerProfileEntity | EmployeeProfileEntity;
     let defaultRoleCode: string;
+    let employeeProfileData = profileData;
+
+    if (profileType === UserProfileType.RESELLER || profileType === UserProfileType.EMPLOYEE) {
+      employeeProfileData = await prepareEmployeeProfileData(profileType, profileData);
+
+      if (profileType === UserProfileType.RESELLER) {
+        const aadhaarNumber = employeeProfileData.aadhaarNumber;
+        if (typeof aadhaarNumber === 'string' && aadhaarNumber.length > 0) {
+          const existingByAadhaar =
+            await this.employeeProfileRepository.findByAadhaarNumber(aadhaarNumber);
+          if (existingByAadhaar) {
+            throw new ConflictException(AADHAAR_ALREADY_REGISTERED_MESSAGE);
+          }
+        }
+      }
+    }
 
     try {
       switch (profileType) {
@@ -142,7 +160,7 @@ export class ProfileService {
         case UserProfileType.RESELLER:
           profile = await this.employeeProfileRepository.create({
             userId,
-            ...profileData,
+            ...employeeProfileData,
             profileKind: EmployeeProfileKind.RESELLER,
             createdBy,
           });
@@ -153,7 +171,7 @@ export class ProfileService {
         case UserProfileType.EMPLOYEE:
           profile = await this.employeeProfileRepository.create({
             userId,
-            ...profileData,
+            ...employeeProfileData,
             profileKind: EmployeeProfileKind.STAFF,
             createdBy,
           });
@@ -175,6 +193,9 @@ export class ProfileService {
         if (constraint.includes('company_code')) {
           const pd = profileData as Record<string, string | undefined>;
           throw new ConflictException(`Company code "${pd.companyCode ?? ''}" already exists`);
+        }
+        if (constraint.includes('aadhaar_number')) {
+          throw new ConflictException(AADHAAR_ALREADY_REGISTERED_MESSAGE);
         }
         throw new ConflictException(`A ${profileType} profile with this data already exists`);
       }

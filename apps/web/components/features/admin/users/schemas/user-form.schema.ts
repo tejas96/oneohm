@@ -1,10 +1,14 @@
 import {
+  AADHAAR_FORMAT_MESSAGE,
+  AADHAAR_LENGTH,
+  AADHAAR_LENGTH_MESSAGE,
   GSTIN_FORMAT_MESSAGE,
   GSTIN_LENGTH,
   GSTIN_LENGTH_MESSAGE,
   IFSC_FORMAT_MESSAGE,
   IFSC_LENGTH,
   IFSC_LENGTH_MESSAGE,
+  isValidAadhaar,
   isValidGstin,
   isValidIfscCode,
   isValidPan,
@@ -39,6 +43,10 @@ const baseUserFields = {
   accountNumber: z.string().max(50).optional().or(z.literal('')),
   ifscCode: z.string().max(20).optional().or(z.literal('')),
   accountHolderName: z.string().max(100).optional().or(z.literal('')),
+  // Reseller personal fields
+  aadhaarNumber: z.string().max(12).optional().or(z.literal('')),
+  currentProfession: z.string().max(100).optional().or(z.literal('')),
+  yearsOfExperience: z.string().optional().or(z.literal('')),
 };
 
 const validateProfileFields = (data: any, ctx: z.RefinementCtx) => {
@@ -132,9 +140,53 @@ const validateOptionalBusinessIdentifiers = (
   }
 };
 
+const validateOptionalResellerPersonalFields = (
+  data: {
+    profileKind?: string;
+    aadhaarNumber?: string;
+    currentProfession?: string;
+    yearsOfExperience?: string;
+  },
+  ctx: z.RefinementCtx,
+) => {
+  if (data.profileKind !== 'reseller') {
+    return;
+  }
+
+  const aadhaarNumber = (data.aadhaarNumber ?? '').replace(/\D/g, '');
+  if (aadhaarNumber.length > 0) {
+    if (aadhaarNumber.length !== AADHAAR_LENGTH) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: AADHAAR_LENGTH_MESSAGE,
+        path: ['aadhaarNumber'],
+      });
+    } else if (!isValidAadhaar(aadhaarNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: AADHAAR_FORMAT_MESSAGE,
+        path: ['aadhaarNumber'],
+      });
+    }
+  }
+
+  const yearsOfExperience = (data.yearsOfExperience ?? '').trim();
+  if (yearsOfExperience.length > 0) {
+    const val = parseInt(yearsOfExperience, 10);
+    if (Number.isNaN(val) || val < 0 || val > 60) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Years of experience must be a whole number between 0 and 60',
+        path: ['yearsOfExperience'],
+      });
+    }
+  }
+};
+
 const validateUserForm = (data: any, ctx: z.RefinementCtx) => {
   validateProfileFields(data, ctx);
   validateOptionalBusinessIdentifiers(data, ctx);
+  validateOptionalResellerPersonalFields(data, ctx);
 };
 
 export const createUserSchema = z
