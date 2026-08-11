@@ -24,6 +24,48 @@ export const RESELLER_ONLY_PROFILE_FIELDS = [
   'accountHolderName',
 ] as const;
 
+/** Allowed keys on inline employee/reseller profile payloads (CreateEmployeeDto minus userId). */
+export const EMPLOYEE_PROFILE_DATA_FIELDS = [
+  'employeeId',
+  'designation',
+  'department',
+  'joiningDate',
+  'email',
+  'phone',
+  'alternatePhone',
+  'dateOfBirth',
+  'gender',
+  'avatarUrl',
+  'address',
+  'city',
+  'state',
+  'country',
+  'pincode',
+  'status',
+  'profileKind',
+  ...RESELLER_ONLY_PROFILE_FIELDS,
+] as const;
+
+function getProvidedProfileDataKeys(profileData: Record<string, unknown>): Set<string> {
+  const keys = new Set<string>();
+  for (const field of EMPLOYEE_PROFILE_DATA_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(profileData, field)) {
+      keys.add(field);
+    }
+  }
+  return keys;
+}
+
+function pickAllowedProfileData(profileData: Record<string, unknown>): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {};
+  for (const field of EMPLOYEE_PROFILE_DATA_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(profileData, field)) {
+      sanitized[field] = profileData[field];
+    }
+  }
+  return sanitized;
+}
+
 export type ResellerOnlyProfileField = (typeof RESELLER_ONLY_PROFILE_FIELDS)[number];
 
 function hasProfileFieldValue(value: unknown): boolean {
@@ -75,9 +117,11 @@ export async function prepareEmployeeProfileData(
     assertNoResellerFieldsOnStaffProfile(profileData);
   }
 
+  const sanitizedProfileData = pickAllowedProfileData(profileData);
+
   const dto = plainToInstance(
     EmployeeProfileDataDto,
-    { ...profileData, profileKind },
+    { ...sanitizedProfileData, profileKind },
     { enableImplicitConversion: true },
   );
 
@@ -87,18 +131,24 @@ export async function prepareEmployeeProfileData(
     forbidNonWhitelisted: false,
   });
 
-  const providedKeys = new Set(Object.keys(profileData));
+  const providedKeys = getProvidedProfileDataKeys(sanitizedProfileData);
   const relevantErrors = errors.filter((error) => providedKeys.has(error.property));
 
   if (relevantErrors.length > 0) {
     throw new BadRequestException(formatValidationErrors(relevantErrors));
   }
 
+  const dtoRecord = dto as Record<string, unknown>;
   const result: Record<string, unknown> = {};
-  for (const key of Object.keys(profileData)) {
-    const value = (dto as Record<string, unknown>)[key];
+
+  for (const field of EMPLOYEE_PROFILE_DATA_FIELDS) {
+    if (!providedKeys.has(field)) {
+      continue;
+    }
+
+    const value = dtoRecord[field];
     if (value !== undefined) {
-      result[key] = value;
+      result[field] = value;
     }
   }
 

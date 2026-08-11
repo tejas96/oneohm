@@ -81,5 +81,20 @@ describe('employee-profile-data.util', () => {
         yearsOfExperience: 8,
       });
     });
+
+    it('ignores unknown or unsafe profile keys', async () => {
+      const result = await prepareEmployeeProfileData(UserProfileType.EMPLOYEE, {
+        department: 'Sales',
+        designation: 'Executive',
+        __proto__: { polluted: true },
+        constructor: { polluted: true },
+      } as Record<string, unknown>);
+
+      expect(result).toEqual({
+        department: 'Sales',
+        designation: 'Executive',
+      });
+      expect(Object.prototype.hasOwnProperty.call(result, '__proto__')).toBe(false);
+    });
   });
 });
