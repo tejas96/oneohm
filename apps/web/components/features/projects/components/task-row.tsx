@@ -10,14 +10,15 @@ import {
   TaskStatus,
   TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
+  type MyTaskListItem,
+  type MyTasksProjectMeta,
 } from '@tejas96/shared/types';
 import Link from 'next/link';
 import type { JSX } from 'react';
 
 import { STALE_THRESHOLDS, TASK_PRIORITY_HEX_COLOR } from '../constants';
-import type { MyTask } from '../hooks';
 import { ColorDotLabel, QuickSelect, type MUISelectOption } from './quick-select';
-import { collapseCommentPreview, getLatestTaskComment } from '../utils/task-activity';
+import { collapseCommentPreview } from '../utils/task-activity';
 
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import {
@@ -55,8 +56,9 @@ const DEFAULT_STATUS_COLOR: Record<string, string> = {
 // ── Props ────────────────────────────────────────────────────────────────────
 
 export interface TaskRowProps {
-  task: MyTask;
-  onOpenDrawer: (task: MyTask) => void;
+  task: MyTaskListItem;
+  projectMeta?: MyTasksProjectMeta;
+  onOpenDrawer: (task: MyTaskListItem) => void;
   onStatusChange?: (
     taskId: string,
     newStatus: string,
@@ -71,6 +73,7 @@ export interface TaskRowProps {
 
 export function TaskRow({
   task,
+  projectMeta,
   onOpenDrawer,
   onStatusChange,
   onPriorityChange,
@@ -85,7 +88,7 @@ export function TaskRow({
   const priorityColor = TASK_PRIORITY_HEX_COLOR[task.priority] ?? '#94a3b8';
   const priorityLabel = TASK_PRIORITY_LABELS[task.priority] ?? task.priority;
 
-  const projectStatuses = task.projectTaskStatuses ?? [];
+  const projectStatuses = projectMeta?.taskStatuses ?? [];
   const statusOptions: MUISelectOption[] = projectStatuses.map((s) => ({
     value: s.code,
     label: <ColorDotLabel color={s.color} label={s.label} />,
@@ -96,7 +99,7 @@ export function TaskRow({
 
   const dueDateMuiColor = task.endDate ? getDueDateMuiColor(task.endDate) : 'text.disabled';
   const dueDatePendingLabel = task.endDate ? formatDueDatePendingLabel(task.endDate) : '';
-  const latestComment = getLatestTaskComment(task.activityLog);
+  const latestComment = task.latestCommentPreview;
   const commentPreview = latestComment ? collapseCommentPreview(latestComment) : null;
 
   return (

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 
-import { MyTaskResponseDto } from './my-task-response.dto';
+import { MyTaskListItemDto } from './my-task-list-item.dto';
 
 export class MyTasksProjectDto {
   @ApiProperty()
@@ -33,15 +33,6 @@ export class MyTasksSummaryDto {
   @ApiProperty({ example: 5, description: 'Tasks completed this week (count only, not in list)' })
   @Expose()
   completedThisWeek!: number;
-
-  @ApiProperty({
-    type: [MyTasksProjectDto],
-    description:
-      'Projects with at least one actionable task for this user (unfiltered by list filters; excludes dependency-blocked-only projects)',
-  })
-  @Expose()
-  @Type(() => MyTasksProjectDto)
-  projects!: MyTasksProjectDto[];
 }
 
 export class MyTasksGroupDto {
@@ -64,10 +55,10 @@ export class MyTasksGroupDto {
   @Expose()
   variant!: string;
 
-  @ApiProperty({ type: [MyTaskResponseDto] })
+  @ApiProperty({ type: [MyTaskListItemDto] })
   @Expose()
-  @Type(() => MyTaskResponseDto)
-  tasks!: MyTaskResponseDto[];
+  @Type(() => MyTaskListItemDto)
+  tasks!: MyTaskListItemDto[];
 }
 
 export class GroupedMyTasksResponseDto {
@@ -80,4 +71,21 @@ export class GroupedMyTasksResponseDto {
   @Expose()
   @Type(() => MyTasksSummaryDto)
   summary!: MyTasksSummaryDto;
+
+  @ApiProperty({
+    description: 'Status dropdown configs keyed by projectId',
+    type: 'object',
+    additionalProperties: { type: 'object' },
+  })
+  @Expose()
+  projectMeta!: Record<string, { taskStatuses: unknown[] }>;
+
+  @ApiProperty({
+    type: [MyTasksProjectDto],
+    description:
+      'Projects with at least one actionable task (unfiltered when list filters are active)',
+  })
+  @Expose()
+  @Type(() => MyTasksProjectDto)
+  allProjects!: MyTasksProjectDto[];
 }

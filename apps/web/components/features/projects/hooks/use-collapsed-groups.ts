@@ -79,7 +79,21 @@ export function useCollapsedGroups(groupBy: GroupByMode, groupKeys: string[]) {
     writeToStorage(groupBy, next);
   }, [groupBy, groupKeys]);
 
+  const expandOnly = useCallback(
+    (keys: string[]) => {
+      setExpandedState((prev) => {
+        const next = { ...prev };
+        for (const key of keys) {
+          next[key] = true;
+        }
+        writeToStorage(groupBy, next);
+        return next;
+      });
+    },
+    [groupBy],
+  );
+
   const allExpanded = groupKeys.length > 0 && groupKeys.every((k) => isExpanded(k));
 
-  return { isExpanded, toggle, expandAll, collapseAll, allExpanded };
+  return { isExpanded, toggle, expandAll, expandOnly, collapseAll, allExpanded };
 }

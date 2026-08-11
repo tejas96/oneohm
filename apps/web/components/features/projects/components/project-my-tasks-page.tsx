@@ -7,26 +7,33 @@ import InboxIcon from '@mui/icons-material/Inbox';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
-import { LookupTypeCode, TaskPriority, TaskStatus } from '@tejas96/shared/types';
+import { MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD } from '@tejas96/shared/constants';
+import {
+  type MyTaskListItem,
+  LookupTypeCode,
+  TaskPriority,
+  TaskStatus,
+} from '@tejas96/shared/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-  useMyTasks,
-  useUpdateTaskStatus,
-  type GroupByMode,
-  type MyTask,
-  type MyTaskFilters,
-} from '../hooks';
-import { CollapsibleTaskGroup } from './collapsible-task-group';
+  MY_TASKS_ADDRESS_DEBOUNCE_MS,
+  MY_TASKS_SEARCH_DEBOUNCE_MS,
+  VISIBLE_GROUPS_BATCH,
+} from '../constants';
+import { useMyTasks, useUpdateTaskStatus, type GroupByMode, type MyTaskFilters } from '../hooks';
 import { MyTasksFilterBar } from './my-tasks-filter-bar';
+import { MyTasksGroupSection } from './my-tasks-group-section';
 import { MyTasksSkeleton, SummaryChipsSkeleton } from './my-tasks-skeleton';
 import { useCollapsedGroups } from '../hooks/use-collapsed-groups';
 import { useTaskKeyboardNav } from '../hooks/use-task-keyboard-nav';
 
 import { TaskDrawer, useUpdateTask } from '@/components/features/tasks';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
+import { showToast } from '@/components/ui/sonner';
 import { useDebounce, useUrlFilters } from '@/lib/hooks';
 import { useLookupOptions } from '@/lib/hooks/resources';
 
@@ -41,6 +48,7 @@ const MY_TASKS_URL_DEFAULTS = {
   groupBy: 'dueDate',
   search: '',
   dueDateFilter: '',
+  address: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -73,7 +81,11 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const dueDateFilter = urlFilters.dueDateFilter;
   const groupBy = (urlFilters.groupBy || 'dueDate') as GroupByMode;
   const [searchInput, setSearchInput] = useState(urlFilters.search || '');
-  const debouncedSearch = useDebounce(searchInput, 300);
+  const debouncedSearch = useDebounce(searchInput, MY_TASKS_SEARCH_DEBOUNCE_MS);
+  const [addressInput, setAddressInput] = useState(urlFilters.address || '');
+  const debouncedAddress = useDebounce(addressInput, MY_TASKS_ADDRESS_DEBOUNCE_MS);
+
+  const textFiltersReady = searchInput === debouncedSearch && addressInput === debouncedAddress;
 
   // Keep a ref to setFilter so the sync effect always has a stable dep array.
   // setFilter itself is stable (empty useCallback deps in useUrlFilters) but React's
@@ -85,6 +97,10 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   useEffect(() => {
     setFilterRef.current('search', debouncedSearch);
   }, [debouncedSearch]);
+
+  useEffect(() => {
+    setFilterRef.current('address', debouncedAddress);
+  }, [debouncedAddress]);
 
   // Drawer state
   const [drawerTaskId, setDrawerTaskId] = useState<string | null>(null);
@@ -101,11 +117,22 @@ export function ProjectMyTasksPage(): React.JSX.Element {
       projectId: projectFilter || undefined,
       search: debouncedSearch || undefined,
       dueDateFilter: (dueDateFilter as MyTaskFilters['dueDateFilter']) || undefined,
+      address: debouncedAddress || undefined,
     }),
-    [groupBy, statusFilter, priorityFilter, projectFilter, debouncedSearch, dueDateFilter],
+    [
+      groupBy,
+      statusFilter,
+      priorityFilter,
+      projectFilter,
+      debouncedSearch,
+      dueDateFilter,
+      debouncedAddress,
+    ],
   );
 
-  const { data, isLoading, isError, refetch } = useMyTasks(filters);
+  const { data, isLoading, isFetching, isPlaceholderData, isError, refetch } = useMyTasks(filters, {
+    enabled: textFiltersReady,
+  });
   const updateStatus = useUpdateTaskStatus();
   const updateTask = useUpdateTask();
   const {
@@ -121,26 +148,67 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   const summary = data?.summary;
   const groups = data?.groups ?? [];
-  const projectsForFilter = summary?.projects ?? [];
+  const projectMeta = data?.projectMeta ?? {};
+  const projectsForFilter = data?.allProjects ?? [];
+
+  const isLazyProjectGroups =
+    groupBy === 'project' && groups.length > MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD;
+
+  const [visibleGroupCount, setVisibleGroupCount] = useState(VISIBLE_GROUPS_BATCH);
+  const [groupTasksCache, setGroupTasksCache] = useState<Record<string, MyTaskListItem[]>>({});
+
+  useEffect(() => {
+    setVisibleGroupCount(VISIBLE_GROUPS_BATCH);
+    setGroupTasksCache({});
+  }, [
+    filters.groupBy,
+    filters.status,
+    filters.priority,
+    filters.projectId,
+    filters.search,
+    filters.dueDateFilter,
+    filters.address,
+    groupBy,
+  ]);
+
+  const visibleGroups = useMemo(
+    () => (groupBy === 'project' ? groups.slice(0, visibleGroupCount) : groups),
+    [groups, groupBy, visibleGroupCount],
+  );
+
+  const handleTasksLoaded = useCallback((groupKey: string, tasks: MyTaskListItem[]) => {
+    setGroupTasksCache((prev) => ({ ...prev, [groupKey]: tasks }));
+  }, []);
+
+  // keepPreviousData shows stale groups while refetching — hide them and show loading instead.
+  const isListRefreshing = isFetching && isPlaceholderData;
+  const showListLoading = isLoading || isListRefreshing;
+  const isSearchDebouncing = searchInput !== debouncedSearch;
+  const isAddressDebouncing = addressInput !== debouncedAddress;
+  const isSearchPending = isSearchDebouncing || isListRefreshing;
+  const isAddressPending = isAddressDebouncing || isListRefreshing;
 
   // Clear stale deep-linked projectId once data loads and the id is not actionable.
   useEffect(() => {
-    if (!projectFilter || isLoading) return;
+    if (!projectFilter || showListLoading) return;
     const isKnownProject = projectsForFilter.some((p) => p.id === projectFilter);
     if (!isKnownProject) {
       setFilter('projectId', '');
     }
-  }, [projectFilter, projectsForFilter, isLoading, setFilter]);
-
-  // All tasks flat for keyboard nav indexing
-  const allTasks = useMemo(() => groups.flatMap((g) => g.tasks), [groups]);
+  }, [projectFilter, projectsForFilter, showListLoading, setFilter]);
 
   // Collapse state
   const groupKeys = useMemo(() => groups.map((g) => g.key), [groups]);
-  const { isExpanded, toggle, expandAll, collapseAll, allExpanded } = useCollapsedGroups(
-    groupBy,
-    groupKeys,
-  );
+  const { isExpanded, toggle, expandAll, expandOnly, collapseAll, allExpanded } =
+    useCollapsedGroups(groupBy, groupKeys);
+
+  // All tasks flat for keyboard nav indexing
+  const allTasks = useMemo(() => {
+    if (!isLazyProjectGroups) {
+      return groups.flatMap((g) => g.tasks);
+    }
+    return visibleGroups.flatMap((g) => (isExpanded(g.key) ? (groupTasksCache[g.key] ?? []) : []));
+  }, [groups, visibleGroups, isLazyProjectGroups, groupTasksCache, isExpanded]);
 
   // Project filter options
   const projectFilterOptions = useMemo(
@@ -182,6 +250,23 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     [setFilter],
   );
 
+  const handleExpandAll = useCallback(() => {
+    if (isLazyProjectGroups) {
+      expandOnly(visibleGroups.map((g) => g.key));
+      if (groups.length > visibleGroups.length) {
+        showToast.info(
+          `Expanded ${visibleGroups.length} visible groups. Load more groups to expand the rest.`,
+        );
+      }
+      return;
+    }
+    expandAll();
+  }, [expandAll, expandOnly, groups.length, isLazyProjectGroups, visibleGroups]);
+
+  const handleCollapseAll = useCallback(() => {
+    collapseAll();
+  }, [collapseAll]);
+
   const handleClearFilters = useCallback(() => {
     setFilter({
       projectId: '',
@@ -189,8 +274,10 @@ export function ProjectMyTasksPage(): React.JSX.Element {
       priority: '',
       search: '',
       dueDateFilter: '',
+      address: '',
     });
     setSearchInput('');
+    setAddressInput('');
   }, [setFilter]);
 
   const handleMarkDone = useCallback(
@@ -207,7 +294,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     [updateStatus],
   );
 
-  const handleOpenDrawer = useCallback((task: MyTask) => {
+  const handleOpenDrawer = useCallback((task: MyTaskListItem) => {
     setDrawerTaskId(task.id);
     setDrawerOpen(true);
   }, []);
@@ -264,8 +351,8 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     onOpenDrawer: keyboardOpenDrawer,
     onMarkDone: keyboardMarkDone,
     onStartTask: keyboardStartTask,
-    onExpandAll: expandAll,
-    onCollapseAll: collapseAll,
+    onExpandAll: handleExpandAll,
+    onCollapseAll: handleCollapseAll,
     searchInputRef,
     drawerOpen,
     onCloseDrawer: handleCloseDrawer,
@@ -274,9 +361,16 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const focusedTaskId = focusedIndex >= 0 ? allTasks[focusedIndex]?.id : undefined;
 
   const hasActiveFilters =
-    projectFilter || statusFilter || priorityFilter || debouncedSearch || dueDateFilter;
+    projectFilter ||
+    statusFilter ||
+    priorityFilter ||
+    debouncedSearch ||
+    dueDateFilter ||
+    debouncedAddress;
   const morningBrief =
-    summary && !briefDismissed ? getMorningBrief(summary.overdue, summary.dueToday) : null;
+    !showListLoading && summary && !briefDismissed
+      ? getMorningBrief(summary.overdue, summary.dueToday)
+      : null;
 
   // ---------------------------------------------------------------------------
   // Render
@@ -295,7 +389,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
       </div>
 
       {/* Summary Stat Chips */}
-      {isLoading ? (
+      {showListLoading ? (
         <SummaryChipsSkeleton />
       ) : (
         summary && (
@@ -365,6 +459,8 @@ export function ProjectMyTasksPage(): React.JSX.Element {
         searchInput={searchInput}
         onSearchChange={setSearchInput}
         searchInputRef={searchInputRef}
+        addressInput={addressInput}
+        onAddressChange={setAddressInput}
         projectFilter={projectFilter}
         projectFilterOptions={projectFilterOptions}
         statusFilter={statusFilter}
@@ -375,9 +471,11 @@ export function ProjectMyTasksPage(): React.JSX.Element {
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}
         hasActiveFilters={!!hasActiveFilters}
+        isSearchPending={isSearchPending}
+        isAddressPending={isAddressPending}
         allExpanded={allExpanded}
-        onExpandAll={expandAll}
-        onCollapseAll={collapseAll}
+        onExpandAll={handleExpandAll}
+        onCollapseAll={handleCollapseAll}
         sx={{ mt: 1 }}
       />
 
@@ -387,10 +485,10 @@ export function ProjectMyTasksPage(): React.JSX.Element {
       {/* Content */}
       {!isError && (
         <div ref={containerRef}>
-          {isLoading && <MyTasksSkeleton />}
+          {showListLoading && <MyTasksSkeleton />}
 
           {/* Empty state */}
-          {!isLoading && groups.length === 0 && (
+          {!showListLoading && groups.length === 0 && (
             <Box
               sx={{
                 bgcolor: 'background.paper',
@@ -423,23 +521,40 @@ export function ProjectMyTasksPage(): React.JSX.Element {
           )}
 
           {/* Grouped Task List */}
-          {!isLoading && (
+          {!showListLoading && (
             <div className="space-y-1.5">
-              {groups.map((group) => (
-                <CollapsibleTaskGroup
+              {visibleGroups.map((group) => (
+                <MyTasksGroupSection
                   key={group.key}
-                  groupKey={group.key}
-                  label={group.label}
-                  count={group.count}
-                  tasks={group.tasks}
+                  group={group}
+                  filters={filters}
+                  isLazyMode={isLazyProjectGroups}
                   expanded={isExpanded(group.key)}
                   onToggleExpand={() => toggle(group.key)}
                   onOpenDrawer={handleOpenDrawer}
                   onStatusChange={handleInlineStatusChange}
                   onPriorityChange={handleInlinePriorityChange}
                   focusedTaskId={focusedTaskId}
+                  projectMeta={projectMeta}
+                  onTasksLoaded={handleTasksLoaded}
+                  fetchEnabled={textFiltersReady}
                 />
               ))}
+              {groupBy === 'project' && groups.length > visibleGroupCount && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() =>
+                      setVisibleGroupCount((prev) =>
+                        Math.min(prev + VISIBLE_GROUPS_BATCH, groups.length),
+                      )
+                    }
+                  >
+                    Load more groups ({groups.length - visibleGroupCount} remaining)
+                  </Button>
+                </Box>
+              )}
             </div>
           )}
         </div>

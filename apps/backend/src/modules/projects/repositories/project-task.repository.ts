@@ -6,6 +6,7 @@ import {
   ProjectStatus,
   LookupTypeCode,
 } from '@tejas96/shared/types';
+import { escapeIlikePattern } from '@tejas96/shared/utils';
 import {
   DataSource,
   type EntityManager,
@@ -585,6 +586,8 @@ export class ProjectTaskRepository {
       projectId?: string;
       search?: string;
       dueDateFilter?: string;
+      dueDateBucket?: string;
+      address?: string;
     } = {},
   ): Promise<ProjectTaskEntity[]> {
     const qb = this.repository
@@ -648,6 +651,52 @@ export class ProjectTaskRepository {
           .andWhere('task.end_date > :todayStr', { todayStr })
           .andWhere('task.end_date <= :endOfWeekStr', { endOfWeekStr });
       }
+    }
+
+    // Due date bucket filter (for groupKey lazy-load by dueDate group)
+    if (filters.dueDateBucket) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const endOfWeek = new Date(today);
+      const dayOfWeek = endOfWeek.getDay();
+      const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+      endOfWeek.setDate(endOfWeek.getDate() + daysUntilSunday);
+      endOfWeek.setHours(23, 59, 59, 999);
+      const endOfWeekStr = `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`;
+
+      switch (filters.dueDateBucket) {
+        case 'overdue':
+          qb.andWhere('task.end_date IS NOT NULL').andWhere('task.end_date < :todayStr', {
+            todayStr,
+          });
+          break;
+        case 'due_today':
+          qb.andWhere('task.end_date = :todayStr', { todayStr });
+          break;
+        case 'this_week':
+          qb.andWhere('task.end_date IS NOT NULL')
+            .andWhere('task.end_date > :todayStr', { todayStr })
+            .andWhere('task.end_date <= :endOfWeekStr', { endOfWeekStr });
+          break;
+        case 'later':
+          qb.andWhere('task.end_date IS NOT NULL').andWhere('task.end_date > :endOfWeekStr', {
+            endOfWeekStr,
+          });
+          break;
+        case 'no_date':
+          qb.andWhere('task.end_date IS NULL');
+          break;
+      }
+    }
+
+    const addressQuery = filters.address?.trim();
+    if (addressQuery) {
+      const escaped = escapeIlikePattern(addressQuery);
+      qb.andWhere(
+        `(property.address ILIKE :address ESCAPE '\\' OR property.city ILIKE :address ESCAPE '\\' OR property.pincode ILIKE :address ESCAPE '\\' OR property.state ILIKE :address ESCAPE '\\')`,
+        { address: `%${escaped}%` },
+      );
     }
 
     // Ownership: only tasks assigned to this user

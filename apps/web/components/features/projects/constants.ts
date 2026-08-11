@@ -260,6 +260,16 @@ export const TASK_GROUP_VARIANT_MAP: Record<
   },
 };
 
+/** When groupBy=project exceeds this count, tasks load on group expand. */
+export { MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD as PROJECT_LAZY_GROUP_THRESHOLD } from '@tejas96/shared/constants';
+
+/** Initial number of project group headers rendered before "Load more groups". */
+export const VISIBLE_GROUPS_BATCH = 30;
+
+/** Debounce delays for My Tasks text filters (ms). */
+export const MY_TASKS_SEARCH_DEBOUNCE_MS = 700;
+export const MY_TASKS_ADDRESS_DEBOUNCE_MS = 700;
+
 export const SMART_EXPAND_DEFAULTS: Record<string, Record<string, boolean>> = {
   dueDate: { overdue: true, due_today: true, this_week: true, later: false, no_date: false },
   priority: {

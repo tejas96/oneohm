@@ -8,7 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { COMPANY } from '@tejas96/shared/constants';
+import { COMPANY, MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD } from '@tejas96/shared/constants';
 import {
   type ChecklistProgress,
   LookupTypeCode,
@@ -44,6 +44,10 @@ const SERVICE_CONSTANTS = {
   DEFAULT_ACTIVITY_LOG_LIMIT: 100,
 } as const;
 
+const MY_TASKS_CONSTANTS = {
+  PROJECT_LAZY_GROUP_THRESHOLD: MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD,
+} as const;
+
 interface TaskGroup {
   key: string;
   label: string;
@@ -64,6 +68,8 @@ type EnrichedMyTask = Record<string, unknown> & {
   projectNumber: string;
   projectName: string;
   milestoneName?: string | null;
+  projectTaskStatuses?: TaskStatusConfig[];
+  activityLog?: TaskActivityEntry[];
 };
 
 @Injectable()
@@ -854,14 +860,30 @@ export class ProjectTaskService {
   async getMyTasksSummary(
     userId: string,
   ): Promise<{ total: number; overdue: number; dueToday: number; completedThisWeek: number }> {
-    // Delegate to getMyTasksGrouped so counts are dependency-aware and always match
-    // what the user sees in the My Tasks list (sidebar badge = page stat chips).
-    const { summary } = await this.getMyTasksGrouped(userId, 'dueDate', {});
+    const [allTasks, completedThisWeek, statusMap, priorityMap] = await Promise.all([
+      this.taskRepository.findAllByUserId(userId, {}),
+      this.taskRepository.countCompletedThisWeek(userId),
+      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
+      this.getLookupMap(LookupTypeCode.PRIORITY),
+    ]);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const enrichedTasks = await this.resolveVisibleMyTasks(allTasks, today, statusMap, priorityMap);
+
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
     return {
-      total: summary.total,
-      overdue: summary.overdue,
-      dueToday: summary.dueToday,
-      completedThisWeek: summary.completedThisWeek,
+      total: enrichedTasks.length,
+      overdue: enrichedTasks.filter((t) => {
+        const dateStr = this.normalizeTaskDateString(t.endDate as string | Date | undefined);
+        return dateStr != null && dateStr < todayStr;
+      }).length,
+      dueToday: enrichedTasks.filter(
+        (t) => this.normalizeTaskDateString(t.endDate as string | Date | undefined) === todayStr,
+      ).length,
+      completedThisWeek,
     };
   }
 
@@ -874,6 +896,7 @@ export class ProjectTaskService {
       projectId?: string;
       search?: string;
       dueDateFilter?: string;
+      address?: string;
     } = {},
   ): Promise<{
     groups: TaskGroup[];
@@ -882,78 +905,261 @@ export class ProjectTaskService {
       overdue: number;
       dueToday: number;
       completedThisWeek: number;
-      projects: Array<{ id: string; name: string; projectNumber: string }>;
     };
+    projectMeta: Record<string, { taskStatuses: TaskStatusConfig[] }>;
+    allProjects: Array<{ id: string; name: string; projectNumber: string }>;
   }> {
-    const hasListFilters = Boolean(
-      filters.status ||
-        filters.priority ||
-        filters.projectId ||
-        filters.search ||
-        filters.dueDateFilter,
-    );
-
-    const filteredTasksQuery = this.taskRepository.findAllByUserId(userId, filters);
-    const unfilteredTasksQuery = hasListFilters
-      ? this.taskRepository.findAllByUserId(userId, {})
-      : filteredTasksQuery;
-
-    const [tasks, allTasksUnfiltered, completedThisWeek, statusMap, priorityMap] =
-      await Promise.all([
-        filteredTasksQuery,
-        unfilteredTasksQuery,
-        this.taskRepository.countCompletedThisWeek(userId),
-        this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
-        this.getLookupMap(LookupTypeCode.PRIORITY),
-      ]);
+    const [allTasks, completedThisWeek, statusMap, priorityMap] = await Promise.all([
+      this.taskRepository.findAllByUserId(userId, {}),
+      this.taskRepository.countCompletedThisWeek(userId),
+      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
+      this.getLookupMap(LookupTypeCode.PRIORITY),
+    ]);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const enrichedTasks = await this.resolveVisibleMyTasks(tasks, today, statusMap, priorityMap);
+    const allEnriched = await this.resolveVisibleMyTasks(allTasks, today, statusMap, priorityMap);
+    const enrichedTasks = this.applyMyTaskListFilters(allEnriched, filters, today);
+    const allProjects = this.extractMyTaskProjects(allEnriched);
 
-    const allVisibleTasks = hasListFilters
-      ? await this.resolveVisibleMyTasks(allTasksUnfiltered, today, statusMap, priorityMap)
-      : enrichedTasks;
-
-    const projects = this.extractMyTaskProjects(allVisibleTasks);
-
-    // Summary counts are derived from enrichedTasks (post-filter) rather than independent DB
-    // queries. This is a deliberate exception to the "aggregate counts must be independent"
-    // rule: hasDependencyBlockers is a runtime computation (requires joining dependency statuses
-    // across a lookup map) and cannot be expressed as a SQL predicate. The counts therefore
-    // MUST be computed after the in-process filter to guarantee they match what the user sees.
-    // completedThisWeek is exempt — done tasks have no dependency-blocker concept.
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const visibleTotal = enrichedTasks.length;
     const visibleOverdue = enrichedTasks.filter((t) => {
-      const d = t.endDate as string | undefined;
-      return d != null && d < todayStr;
+      const d = t.endDate as string | Date | undefined;
+      const dateStr = this.normalizeTaskDateString(d);
+      return dateStr != null && dateStr < todayStr;
     }).length;
     const visibleDueToday = enrichedTasks.filter(
-      (t) => (t.endDate as string | undefined) === todayStr,
+      (t) => this.normalizeTaskDateString(t.endDate as string | Date | undefined) === todayStr,
     ).length;
 
-    // Project filter dropdown: projects with at least one actionable (non-blocked) task,
-    // ignoring list filters so users can switch projects without clearing status/search first.
     const summary = {
       total: visibleTotal,
       overdue: visibleOverdue,
       dueToday: visibleDueToday,
       completedThisWeek,
-      projects,
     };
 
     const groups = await this.buildGroups(enrichedTasks, groupBy, today, statusMap, priorityMap);
 
-    // Sort tasks within each group by urgencyScore DESC
     for (const group of groups) {
       (group.tasks as EnrichedMyTask[]).sort(
         (a, b) => (b.urgencyScore ?? 0) - (a.urgencyScore ?? 0),
       );
     }
 
-    return { groups, summary };
+    const useLazyInline =
+      groupBy === 'project' && groups.length > MY_TASKS_CONSTANTS.PROJECT_LAZY_GROUP_THRESHOLD;
+
+    if (!useLazyInline) {
+      for (const group of groups) {
+        group.tasks = (group.tasks as EnrichedMyTask[]).map((t) => this.toMyTaskListItem(t));
+      }
+    } else {
+      for (const group of groups) {
+        group.tasks = [];
+      }
+    }
+
+    const projectMeta = this.extractMyTaskProjectMeta(enrichedTasks);
+
+    return { groups, summary, projectMeta, allProjects };
+  }
+
+  async getMyTasksGroupTasks(
+    userId: string,
+    groupBy: 'dueDate' | 'priority' | 'project' | 'status',
+    groupKey: string,
+    filters: {
+      status?: TaskStatus;
+      priority?: string;
+      projectId?: string;
+      search?: string;
+      dueDateFilter?: string;
+      address?: string;
+    } = {},
+  ): Promise<{ tasks: Record<string, unknown>[] }> {
+    const narrowedFilters = this.buildGroupKeyFilters(groupBy, groupKey, filters);
+
+    const [tasks, statusMap, priorityMap] = await Promise.all([
+      this.taskRepository.findAllByUserId(userId, narrowedFilters),
+      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
+      this.getLookupMap(LookupTypeCode.PRIORITY),
+    ]);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const enrichedTasks = await this.resolveVisibleMyTasks(tasks, today, statusMap, priorityMap);
+
+    enrichedTasks.sort((a, b) => (b.urgencyScore ?? 0) - (a.urgencyScore ?? 0));
+
+    return {
+      tasks: enrichedTasks.map((t) => this.toMyTaskListItem(t)),
+    };
+  }
+
+  private buildGroupKeyFilters(
+    groupBy: 'dueDate' | 'priority' | 'project' | 'status',
+    groupKey: string,
+    filters: {
+      status?: TaskStatus;
+      priority?: string;
+      projectId?: string;
+      search?: string;
+      dueDateFilter?: string;
+      address?: string;
+    },
+  ): {
+    status?: TaskStatus;
+    priority?: string;
+    projectId?: string;
+    search?: string;
+    dueDateFilter?: string;
+    dueDateBucket?: string;
+    address?: string;
+  } {
+    const merged = { ...filters };
+    if (groupBy === 'project') {
+      merged.projectId = groupKey;
+    } else if (groupBy === 'status') {
+      merged.status = groupKey as TaskStatus;
+    } else if (groupBy === 'priority') {
+      merged.priority = groupKey;
+    } else if (groupBy === 'dueDate') {
+      return { ...merged, dueDateBucket: groupKey };
+    }
+    return merged;
+  }
+
+  private normalizeTaskDateString(d: string | Date | undefined): string | undefined {
+    if (!d) return undefined;
+    if (d instanceof Date) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    return d.split('T')[0];
+  }
+
+  private applyMyTaskListFilters(
+    tasks: EnrichedMyTask[],
+    filters: {
+      status?: TaskStatus;
+      priority?: string;
+      projectId?: string;
+      search?: string;
+      dueDateFilter?: string;
+      address?: string;
+    },
+    today: Date,
+  ): EnrichedMyTask[] {
+    const hasListFilters = Boolean(
+      filters.status ||
+        filters.priority ||
+        filters.projectId ||
+        filters.search ||
+        filters.dueDateFilter ||
+        filters.address,
+    );
+    if (!hasListFilters) return tasks;
+
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const searchLower = filters.search?.trim().toLowerCase();
+    const addressLower = filters.address?.trim().toLowerCase();
+
+    return tasks.filter((task) => {
+      if (filters.status && task.status !== filters.status) return false;
+      if (filters.priority && task.priority !== filters.priority) return false;
+      if (filters.projectId && task.projectId !== filters.projectId) return false;
+
+      if (searchLower) {
+        const entity = task as unknown as ProjectTaskEntity;
+        const name = String(entity.nameOverride ?? entity.name ?? '').toLowerCase();
+        const code = String(entity.code ?? '').toLowerCase();
+        const stepName = String(entity.workflowStep?.name ?? '').toLowerCase();
+        if (
+          !name.includes(searchLower) &&
+          !code.includes(searchLower) &&
+          !stepName.includes(searchLower)
+        ) {
+          return false;
+        }
+      }
+
+      if (filters.dueDateFilter) {
+        const endDateStr = this.normalizeTaskDateString(task.endDate as string | Date | undefined);
+        if (filters.dueDateFilter === 'overdue') {
+          if (!endDateStr || endDateStr >= todayStr) return false;
+        } else if (filters.dueDateFilter === 'dueToday') {
+          if (endDateStr !== todayStr) return false;
+        } else if (filters.dueDateFilter === 'thisWeek') {
+          const endOfWeek = new Date(today);
+          endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
+          const endOfWeekStr = `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`;
+          if (!endDateStr || endDateStr <= todayStr || endDateStr > endOfWeekStr) return false;
+        }
+      }
+
+      if (addressLower) {
+        const property = (task as unknown as ProjectTaskEntity).project?.property;
+        const fields = [property?.address, property?.city, property?.pincode, property?.state]
+          .filter(Boolean)
+          .map((v) => String(v).toLowerCase());
+        if (!fields.some((f) => f.includes(addressLower))) return false;
+      }
+
+      return true;
+    });
+  }
+
+  private toMyTaskListItem(task: EnrichedMyTask): Record<string, unknown> {
+    const activityLog = task.activityLog;
+    const endDateRaw = task.endDate as Date | string | undefined;
+    let endDate: string | undefined;
+    if (endDateRaw) {
+      if (typeof endDateRaw === 'string') {
+        endDate = endDateRaw.split('T')[0];
+      } else {
+        endDate = `${endDateRaw.getFullYear()}-${String(endDateRaw.getMonth() + 1).padStart(2, '0')}-${String(endDateRaw.getDate()).padStart(2, '0')}`;
+      }
+    }
+
+    return {
+      id: task.id,
+      projectId: task.projectId,
+      code: task.code,
+      name: task.name as string,
+      milestoneName: task.milestoneName ?? undefined,
+      priority: task.priority,
+      status: task.status,
+      endDate,
+      completionPercentage: task.completionPercentage,
+      projectNumber: task.projectNumber,
+      projectName: task.projectName,
+      isOverdue: task.isOverdue,
+      daysSinceLastUpdate: task.daysSinceLastUpdate,
+      hasDependencyBlockers: task.hasDependencyBlockers,
+      latestCommentPreview: this.extractLatestCommentPreview(activityLog),
+    };
+  }
+
+  private extractLatestCommentPreview(activityLog?: TaskActivityEntry[]): string | undefined {
+    const entry = (activityLog ?? []).find(
+      (e) => e.activityType === 'commented' && e.newValue?.trim(),
+    );
+    return entry?.newValue?.trim() ?? undefined;
+  }
+
+  private extractMyTaskProjectMeta(
+    tasks: EnrichedMyTask[],
+  ): Record<string, { taskStatuses: TaskStatusConfig[] }> {
+    const meta: Record<string, { taskStatuses: TaskStatusConfig[] }> = {};
+    for (const task of tasks) {
+      const pid = task.projectId as string;
+      if (!pid || meta[pid]) continue;
+      meta[pid] = { taskStatuses: task.projectTaskStatuses ?? [] };
+    }
+    return meta;
   }
 
   async updateTaskStatusCrossProject(

@@ -16,13 +16,15 @@ export type { TeamWorkloadItem } from './use-team-workload';
 export { useConvertFromQuote } from './use-create-project';
 export type { ConvertFromQuotePayload } from './use-create-project';
 
-export { myTaskKeys, useMyTasks, useUpdateTaskStatus } from './use-my-tasks';
+export { myTaskKeys, useMyTasks, useMyTasksGroupTasks, useUpdateTaskStatus } from './use-my-tasks';
 export type {
   GroupByMode,
   GroupedMyTasksResponse,
   MyTask,
   MyTaskFilters,
+  MyTaskListItem,
   MyTasksGroup,
+  MyTasksGroupTasksResponse,
   MyTasksProject,
   MyTasksSummary,
 } from './use-my-tasks';

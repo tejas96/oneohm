@@ -25,6 +25,7 @@ import type { CurrentUserType } from '../../auth/types';
 import {
   AddCommentDto,
   GroupedMyTasksResponseDto,
+  MyTasksGroupTasksResponseDto,
   MyTaskResponseDto,
   ProjectTaskResponseDto,
   UpdateTaskCrossProjectDto,
@@ -59,6 +60,18 @@ export class TasksController {
   @ApiQuery({ name: 'projectId', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'dueDateFilter', required: false, enum: ['overdue', 'dueToday', 'thisWeek'] })
+  @ApiQuery({
+    name: 'address',
+    required: false,
+    type: String,
+    description: 'Search by property pincode, city, state, or address',
+  })
+  @ApiQuery({
+    name: 'groupKey',
+    required: false,
+    type: String,
+    description: 'Load tasks for a single group (lazy expand)',
+  })
   async getMyTasks(
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: string,
@@ -69,7 +82,33 @@ export class TasksController {
     @Query('projectId') projectId?: string,
     @Query('search') search?: string,
     @Query('dueDateFilter') dueDateFilter?: DueDateFilter,
-  ): Promise<GroupedMyTasksResponseDto | PaginatedResponse<ProjectTaskResponseDto>> {
+    @Query('address') address?: string,
+    @Query('groupKey') groupKey?: string,
+  ): Promise<
+    | GroupedMyTasksResponseDto
+    | MyTasksGroupTasksResponseDto
+    | PaginatedResponse<ProjectTaskResponseDto>
+  > {
+    if (groupBy && groupKey) {
+      const result = await this.taskService.getMyTasksGroupTasks(
+        currentUser.id,
+        groupBy,
+        groupKey,
+        {
+          status,
+          priority,
+          projectId,
+          search,
+          dueDateFilter,
+          address,
+        },
+      );
+
+      return plainToInstance(MyTasksGroupTasksResponseDto, result, {
+        excludeExtraneousValues: true,
+      });
+    }
+
     if (groupBy) {
       const result = await this.taskService.getMyTasksGrouped(currentUser.id, groupBy, {
         status,
@@ -77,6 +116,7 @@ export class TasksController {
         projectId,
         search,
         dueDateFilter,
+        address,
       });
 
       return plainToInstance(GroupedMyTasksResponseDto, result, {

@@ -9,13 +9,13 @@ import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
+import type { MyTaskListItem, MyTasksProjectMeta } from '@tejas96/shared/types';
 import { useEffect, useState } from 'react';
 
 import { TASK_GROUP_VARIANT_MAP } from '../constants';
-import type { MyTask } from '../hooks';
 import { TaskRow } from './task-row';
 
-const INITIAL_VISIBLE_COUNT = 5;
+import { Skeleton } from '@/components/ui/skeleton';
 
 const DEFAULT_GROUP_VARIANT = {
   dot: 'bg-foreground-tertiary',
@@ -54,10 +54,10 @@ interface CollapsibleTaskGroupProps {
   groupKey: string;
   label: string;
   count: number;
-  tasks: MyTask[];
+  tasks: MyTaskListItem[];
   expanded: boolean;
   onToggleExpand: () => void;
-  onOpenDrawer: (task: MyTask) => void;
+  onOpenDrawer: (task: MyTaskListItem) => void;
   onStatusChange?: (
     taskId: string,
     newStatus: string,
@@ -66,7 +66,13 @@ interface CollapsibleTaskGroupProps {
   ) => void;
   onPriorityChange?: (taskId: string, newPriority: string) => void;
   focusedTaskId?: string;
+  projectMeta?: Record<string, MyTasksProjectMeta>;
+  isLoadingTasks?: boolean;
+  isTasksError?: boolean;
+  onRetryTasks?: () => void;
 }
+
+const INITIAL_VISIBLE_COUNT = 5;
 
 export function CollapsibleTaskGroup({
   groupKey,
@@ -79,6 +85,10 @@ export function CollapsibleTaskGroup({
   onStatusChange,
   onPriorityChange,
   focusedTaskId,
+  projectMeta = {},
+  isLoadingTasks = false,
+  isTasksError = false,
+  onRetryTasks,
 }: CollapsibleTaskGroupProps): React.JSX.Element {
   const [showAll, setShowAll] = useState(false);
 
@@ -208,10 +218,42 @@ export function CollapsibleTaskGroup({
             ))}
           </Box>
 
+          {isTasksError && !isLoadingTasks ? (
+            <Box sx={{ px: 1.5, py: 1.5, textAlign: 'center' }}>
+              <Typography variant="caption" color="error" sx={{ display: 'block', mb: 1 }}>
+                Could not load tasks for this group.
+              </Typography>
+              {onRetryTasks ? (
+                <Link
+                  component="button"
+                  type="button"
+                  variant="caption"
+                  underline="hover"
+                  sx={{ cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRetryTasks();
+                  }}
+                >
+                  Retry
+                </Link>
+              ) : null}
+            </Box>
+          ) : null}
+
+          {isLoadingTasks && tasks.length === 0 && !isTasksError ? (
+            <Box sx={{ px: 1.5, py: 1.5 }}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="mb-1 h-10 w-full" />
+              ))}
+            </Box>
+          ) : null}
+
           {visibleTasks.map((task) => (
             <TaskRow
               key={task.id}
               task={task}
+              projectMeta={projectMeta[task.projectId]}
               onOpenDrawer={onOpenDrawer}
               onStatusChange={onStatusChange}
               onPriorityChange={onPriorityChange}

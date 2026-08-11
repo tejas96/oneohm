@@ -2,9 +2,11 @@
 
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -31,6 +33,8 @@ interface MyTasksFilterBarProps {
   searchInput: string;
   onSearchChange: (value: string) => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
+  addressInput: string;
+  onAddressChange: (value: string) => void;
   projectFilter: string;
   projectFilterOptions: FilterOption[];
   statusFilter: string;
@@ -41,6 +45,8 @@ interface MyTasksFilterBarProps {
   onFilterChange: (key: string, value: string) => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
+  isSearchPending?: boolean;
+  isAddressPending?: boolean;
   allExpanded: boolean;
   onExpandAll: () => void;
   onCollapseAll: () => void;
@@ -51,6 +57,8 @@ export function MyTasksFilterBar({
   searchInput,
   onSearchChange,
   searchInputRef,
+  addressInput,
+  onAddressChange,
   projectFilter,
   projectFilterOptions,
   statusFilter,
@@ -61,6 +69,8 @@ export function MyTasksFilterBar({
   onFilterChange,
   onClearFilters,
   hasActiveFilters,
+  isSearchPending = false,
+  isAddressPending = false,
   allExpanded,
   onExpandAll,
   onCollapseAll,
@@ -91,6 +101,31 @@ export function MyTasksFilterBar({
               <SearchIcon fontSize="small" />
             </InputAdornment>
           ),
+          endAdornment: isSearchPending ? (
+            <InputAdornment position="end">
+              <CircularProgress size={16} />
+            </InputAdornment>
+          ) : undefined,
+        }}
+      />
+
+      <TextField
+        size="small"
+        placeholder="Pincode/City/Address"
+        value={addressInput}
+        onChange={(e) => onAddressChange(e.target.value)}
+        sx={{ width: 220 }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <LocationOnIcon fontSize="small" />
+            </InputAdornment>
+          ),
+          endAdornment: isAddressPending ? (
+            <InputAdornment position="end">
+              <CircularProgress size={16} />
+            </InputAdornment>
+          ) : undefined,
         }}
       />
 
