@@ -1,14 +1,14 @@
 'use client';
 
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import { Box, MenuItem, TextField } from '@mui/material';
+import HomeWorkOutlinedIcon from '@mui/icons-material/HomeWorkOutlined';
+import { Box, MenuItem, Stack, TextField } from '@mui/material';
 import { DocumentEntityType } from '@tejas96/shared/types';
 import React from 'react';
 
+import { DetailCard, EmptyPane, SectionHeading } from '../customer-detail/primitives';
 import type { CustomerPropertyResponse } from '../hooks';
 
 import { PropertyDocumentHub } from '@/components/shared/document-manager';
-import { EmptyState } from '@/components/shared/feedback/empty-state';
 
 interface CustomerDocumentsTabProps {
   properties: CustomerPropertyResponse[];
@@ -23,13 +23,14 @@ export function CustomerDocumentsTab({
 }: CustomerDocumentsTabProps): React.JSX.Element {
   if (properties.length === 0) {
     return (
-      <Box sx={{ p: 2 }}>
-        <EmptyState
-          icon={<InsertDriveFileIcon sx={{ width: '100%', height: '100%' }} />}
-          title="No properties yet"
-          description="Add a property first to upload and manage documents."
+      <DetailCard>
+        <EmptyPane
+          size="page"
+          icon={<HomeWorkOutlinedIcon />}
+          title="No sites yet"
+          description="Documents hang off a site — bills, ID proofs, survey photos. Add a site first and the uploader appears here."
         />
-      </Box>
+      </DetailCard>
     );
   }
 
@@ -39,21 +40,34 @@ export function CustomerDocumentsTab({
     : (properties.find((p) => p.isPrimary)?.id ?? properties[0]?.id ?? '');
 
   return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <PropertyFilterSelect
-          properties={properties}
-          value={activePropertyId}
-          onChange={onPropertyFilterChange}
+    <Stack gap={1.5}>
+      <SectionHeading
+        sx={{ mb: 0 }}
+        action={
+          <PropertyFilterSelect
+            properties={properties}
+            value={activePropertyId}
+            onChange={onPropertyFilterChange}
+          />
+        }
+      >
+        Documents by site
+      </SectionHeading>
+
+      {/*
+       * `PropertyDocumentHub` is shared with the property and project pages and
+       * brings its own surfaces, so it is left to paint itself rather than
+       * being wrapped in a card that would double the chrome.
+       */}
+      <Box sx={{ minWidth: 0 }}>
+        <PropertyDocumentHub
+          propertyId={activePropertyId}
+          allowUpload
+          defaultUploadEntityType={DocumentEntityType.PROPERTY}
+          defaultUploadEntityId={activePropertyId}
         />
       </Box>
-      <PropertyDocumentHub
-        propertyId={activePropertyId}
-        allowUpload
-        defaultUploadEntityType={DocumentEntityType.PROPERTY}
-        defaultUploadEntityId={activePropertyId}
-      />
-    </Box>
+    </Stack>
   );
 }
 
@@ -72,11 +86,12 @@ function PropertyFilterSelect({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       size="small"
-      sx={{ width: 220 }}
+      aria-label="Filter documents by site"
+      sx={{ width: 240 }}
     >
       {properties.map((p) => (
         <MenuItem key={p.id} value={p.id}>
-          {p.propertyName || p.address || 'Unnamed'}
+          {p.propertyName || p.address || 'Unnamed site'}
         </MenuItem>
       ))}
     </TextField>

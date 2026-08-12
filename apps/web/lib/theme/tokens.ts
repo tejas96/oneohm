@@ -399,6 +399,38 @@ const root = {
     // = 1282) plus headroom, so the grid scrolls rather than squeezing the
     // flexible columns below their minmax floors.
     'grid-min-width-ticket': '1320px',
+
+    // ── Project grid: column tracks ────────────────────────────────────
+    /**
+     * These mirror the widths the project list carried as an `AdvancedTable`,
+     * so migrating the grid did not silently re-proportion columns whose cells
+     * were already tuned to them — the project cell wraps three chips under the
+     * code at 210px, and the contract cell holds a change-order line at 190px.
+     */
+    'col-project-name': '210px',
+    /** Was `flex: 2` — the only column that should absorb spare width. */
+    'col-project-customer': 'minmax(220px,2fr)',
+    'col-project-size': '165px',
+    'col-project-contract': '190px',
+    'col-project-progress': '180px',
+    'col-project-phase': '130px',
+    'col-project-type': '140px',
+    'col-project-start': '130px',
+    'col-project-due': '130px',
+    'col-project-team': '140px',
+    'col-project-actions': '48px',
+    // Hidden by default, but they still need a track to reappear into.
+    'col-project-status': '130px',
+    'col-project-priority': '110px',
+    'col-project-creator': '140px',
+    'col-project-pending-task': '150px',
+    'col-project-tickets': '150px',
+    'col-project-address': 'minmax(240px,1.4fr)',
+    // Sum of the default-visible tracks (210+220+165+190+180+130+140+130+130
+    // +140+48 = 1683) plus the 16px gutters between them, so the grid scrolls
+    // rather than squeezing Customer below its floor.
+    'grid-min-width-project': '1840px',
+
     'grid-min-width': '1280px',
     'row-gutter': '16px',
     'head-height': '40px',

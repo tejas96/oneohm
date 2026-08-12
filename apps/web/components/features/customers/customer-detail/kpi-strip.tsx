@@ -3,6 +3,14 @@
 import { Box, Card, CardContent, Skeleton, Typography } from '@mui/material';
 import type { JSX } from 'react';
 
+/**
+ * NOTE: this component is shared with the **property** detail page
+ * (`features/properties/property-detail/property-detail-page.tsx`), which is
+ * not part of the customer redesign. It is deliberately left as-is so that
+ * page keeps rendering exactly as before; the customer detail page no longer
+ * uses it and renders the shared `KpiStripe` tiles instead.
+ */
+
 export interface KpiItem {
   label: string;
   value: string;

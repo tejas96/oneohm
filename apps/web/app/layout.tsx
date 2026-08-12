@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 
 import { geistFontVariables } from '@/lib/fonts/geist';
-import { reportFontVariables } from '@/lib/fonts/report-fonts';
 import { Providers } from '@/providers';
 
 import './globals.css';
@@ -27,7 +26,7 @@ export default function RootLayout({
 }>): React.JSX.Element {
   const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   return (
-    <html lang="en" className={`${geistFontVariables} ${reportFontVariables}`}>
+    <html lang="en" className={geistFontVariables}>
       <body className="min-h-screen bg-background text-foreground font-sans antialiased">
         <Providers mapsApiKey={mapsApiKey}>{children}</Providers>
       </body>

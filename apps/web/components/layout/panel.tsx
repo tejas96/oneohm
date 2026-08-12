@@ -7,7 +7,7 @@ import { useMemo } from 'react';
 import { useFollowupSummary } from '@/components/features/followups';
 import { useMyTasksSummary } from '@/components/features/tasks';
 import { Badge } from '@/components/ui/badge';
-import { ROUTES } from '@/lib/config/routes';
+import { isAllProjectsNavActive, isProjectStatusSubItemActive, ROUTES } from '@/lib/config';
 import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
 import type { NavItem, NavBadgeVariant, StatusDotColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -106,35 +106,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
     if (hasQueryParams) {
       // Filtered views: exact full URL match only
       if (item.href.startsWith('/projects')) {
-        // Extract status and healthStatus from item.href
-        const urlObj = new URL(item.href, 'http://localhost');
-        const targetStatus = urlObj.searchParams.get('status');
-        const targetHealth = urlObj.searchParams.get('healthStatus');
-
-        // Extract status and healthStatus from current URL (prefixed or unprefixed)
-        let currentStatus = searchParams.get('status');
-        let currentHealth = searchParams.get('healthStatus');
-        if (!currentStatus) {
-          const prefFilters = searchParams.get('projects_filters');
-          if (prefFilters) {
-            try {
-              const parsedFilters = JSON.parse(prefFilters);
-              currentStatus = parsedFilters.status;
-              currentHealth = parsedFilters.healthStatus ?? null;
-            } catch (error) {
-              console.log(error);
-            }
-          }
-        }
-        // If neither exists, and targetStatus is 'active' with no healthStatus, highlight as default!
-        if (!currentStatus && targetStatus === 'active' && !targetHealth) {
-          isActive = true;
-        } else {
-          const statusMatch = currentStatus === targetStatus;
-          // Both must match: items without healthStatus only match when current also has none
-          const healthMatch = (targetHealth ?? null) === (currentHealth ?? null);
-          isActive = statusMatch && healthMatch;
-        }
+        isActive = isProjectStatusSubItemActive(pathname, item.href, searchParams);
       } else {
         isActive = currentFullUrl === item.href;
       }
@@ -159,7 +131,11 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         isNestedDynamic = isLikelyDynamicId;
       }
 
-      isActive = isExact || isNestedDynamic;
+      if (item.id === 'all-projects') {
+        isActive = isAllProjectsNavActive(pathname, item.href, searchParams) || isNestedDynamic;
+      } else {
+        isActive = isExact || isNestedDynamic;
+      }
     }
 
     const Icon = item.icon;

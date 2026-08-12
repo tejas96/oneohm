@@ -4,9 +4,6 @@ import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import {
   Box,
   Button,
-  Chip,
-  Paper,
-  Skeleton,
   Stack,
   Table,
   TableBody,
@@ -20,7 +17,18 @@ import { FollowupStatus } from '@tejas96/shared/types';
 import { useMemo, useState, type JSX } from 'react';
 
 import { useCustomerFollowups, type CustomerPropertyResponse } from '../../hooks';
-import { TabSkeleton } from '../tab-skeleton';
+import {
+  DetailCard,
+  EmptyPane,
+  IconCircle,
+  Mono,
+  RowSkeleton,
+  SectionHeading,
+  TonePill,
+  TONE_INK,
+  type DetailTone,
+} from '../primitives';
+import { detailTableSx, tableCardSx } from '../styles';
 
 import {
   FollowupCompleteDialog,
@@ -42,6 +50,12 @@ export interface FollowupsTabProps {
   onSchedule: () => void;
 }
 
+const STATUS_TONE = {
+  [FollowupStatus.PENDING]: 'warning',
+  [FollowupStatus.COMPLETED]: 'success',
+  [FollowupStatus.CANCELLED]: 'neutral',
+} satisfies Record<FollowupStatus, DetailTone>;
+
 function getScopeLabel(
   property?: { id: string; propertyName?: string; city?: string } | null,
 ): string {
@@ -61,7 +75,7 @@ function ownerName(followup: FollowupResponse): string {
 
 export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabProps): JSX.Element {
   const { data, isLoading } = useCustomerFollowups(customerId, { enabled });
-  const followups = data?.data ?? [];
+  const followups = useMemo(() => data?.data ?? [], [data?.data]);
 
   const [completing, setCompleting] = useState<FollowupResponse | null>(null);
   const [markingLost, setMarkingLost] = useState<{ id: string; name: string } | null>(null);
@@ -87,115 +101,185 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
     ).length;
   }, [followups, completing]);
 
+  const overdueCount = useMemo(
+    () =>
+      followups.filter(
+        (f) =>
+          f.status === FollowupStatus.PENDING && new Date(f.scheduledAt).getTime() < Date.now(),
+      ).length,
+    [followups],
+  );
+
   if (isLoading && followups.length === 0) {
-    return <TabSkeleton />;
+    return (
+      <Box sx={tableCardSx}>
+        <RowSkeleton rows={5} />
+      </Box>
+    );
   }
 
-  return (
-    <Box sx={{ p: 2 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="subtitle2" fontWeight={600}>
-          Follow-ups ({followups.length})
-        </Typography>
-        <Button
-          size="small"
-          variant="contained"
-          startIcon={<EventNoteOutlinedIcon />}
-          onClick={onSchedule}
-        >
-          Schedule
-        </Button>
-      </Stack>
+  const scheduleButton = (
+    <Button
+      size="small"
+      variant="contained"
+      startIcon={<EventNoteOutlinedIcon />}
+      onClick={onSchedule}
+    >
+      Schedule
+    </Button>
+  );
 
-      {followups.length === 0 ? (
-        <Box sx={{ py: 4, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary" mb={2}>
-            No follow-ups scheduled yet.
-          </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<EventNoteOutlinedIcon />}
-            onClick={onSchedule}
-          >
-            Schedule follow-up
-          </Button>
-        </Box>
-      ) : (
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Subject</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Scope</TableCell>
-                <TableCell>Scheduled</TableCell>
-                <TableCell>Owner</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Outcome</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {isLoading
-                ? Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell colSpan={7}>
-                        <Skeleton height={32} />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : followups.map((followup) => (
-                    <TableRow key={followup.id} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={500}>
-                          {followup.subject}
-                        </Typography>
-                        {followup.notes && (
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            {followup.notes}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>{toTitleLabel(followup.type)}</TableCell>
-                      <TableCell>{getScopeLabel(followup.property)}</TableCell>
-                      <TableCell>{formatDate(followup.scheduledAt)}</TableCell>
-                      <TableCell>{ownerName(followup)}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={toTitleLabel(followup.status)}
-                          size="small"
-                          color={
-                            followup.status === FollowupStatus.COMPLETED ? 'success' : 'warning'
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {followup.outcome ? OUTCOME_LABELS[followup.outcome] : '—'}
-                      </TableCell>
-                      <TableCell align="right">
-                        <FollowupRowActions
-                          followup={followup}
-                          onComplete={setCompleting}
-                          onReschedule={setRescheduling}
-                          onReassign={(f) => setReassigning([f])}
-                          onCancel={(f) =>
-                            cancelMutation.mutate(f.id, {
-                              onSuccess: () =>
-                                showToast.success(
-                                  'Follow-up cancelled — the lead now needs a new one',
-                                ),
-                              onError: (error) => showToast.error(getErrorMessage(error)),
-                            })
-                          }
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+  return (
+    <>
+      <Stack gap={1.5}>
+        <SectionHeading
+          count={followups.length || undefined}
+          sx={{ mb: 0 }}
+          action={scheduleButton}
+        >
+          Follow-ups
+        </SectionHeading>
+
+        {overdueCount > 0 && (
+          <TonePill
+            label={`${overdueCount} pending follow-up${overdueCount > 1 ? 's are' : ' is'} past due`}
+            tone="danger"
+            dot
+          />
+        )}
+
+        {followups.length === 0 ? (
+          <DetailCard>
+            <EmptyPane
+              size="page"
+              icon={<EventNoteOutlinedIcon />}
+              title="No follow-ups yet"
+              description="Schedule the next conversation so this customer stays on someone's list."
+              action={scheduleButton}
+            />
+          </DetailCard>
+        ) : (
+          <Box sx={tableCardSx}>
+            <TableContainer>
+              <Table size="small" sx={detailTableSx}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ minWidth: 240 }}>Follow-up</TableCell>
+                    <TableCell sx={{ minWidth: 140 }}>Scope</TableCell>
+                    <TableCell sx={{ minWidth: 130 }}>Scheduled</TableCell>
+                    <TableCell sx={{ minWidth: 130 }}>Owner</TableCell>
+                    <TableCell sx={{ minWidth: 130 }}>Status</TableCell>
+                    <TableCell align="right" sx={{ width: 60 }} />
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {followups.map((followup) => {
+                    const tone: DetailTone = STATUS_TONE[followup.status] ?? 'neutral';
+                    const isOverdue =
+                      followup.status === FollowupStatus.PENDING &&
+                      new Date(followup.scheduledAt).getTime() < Date.now();
+
+                    return (
+                      <TableRow key={followup.id}>
+                        <TableCell>
+                          <Stack direction="row" gap={1.25} sx={{ minWidth: 0 }}>
+                            <IconCircle tone={isOverdue ? 'danger' : tone}>
+                              <EventNoteOutlinedIcon />
+                            </IconCircle>
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography
+                                sx={{
+                                  fontSize: '0.8125rem',
+                                  fontWeight: 600,
+                                  color: 'var(--ds-text-primary)',
+                                  lineHeight: 1.35,
+                                }}
+                              >
+                                {followup.subject}
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  fontSize: '0.6875rem',
+                                  color: 'var(--ds-text-tertiary)',
+                                  lineHeight: 1.4,
+                                }}
+                              >
+                                {toTitleLabel(followup.type)}
+                                {followup.notes ? ` · ${followup.notes}` : ''}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </TableCell>
+
+                        <TableCell sx={{ color: 'var(--ds-text-secondary)' }}>
+                          {getScopeLabel(followup.property)}
+                        </TableCell>
+
+                        <TableCell>
+                          <Mono
+                            sx={{
+                              color: isOverdue ? TONE_INK.danger.ink : 'var(--ds-text-primary)',
+                              fontWeight: isOverdue ? 600 : 400,
+                            }}
+                          >
+                            {formatDate(followup.scheduledAt)}
+                          </Mono>
+                          {isOverdue && (
+                            <Typography
+                              sx={{
+                                fontSize: '0.6875rem',
+                                fontWeight: 600,
+                                color: TONE_INK.danger.ink,
+                              }}
+                            >
+                              Past due
+                            </Typography>
+                          )}
+                        </TableCell>
+
+                        <TableCell sx={{ color: 'var(--ds-text-secondary)' }}>
+                          {ownerName(followup)}
+                        </TableCell>
+
+                        <TableCell>
+                          <Stack gap={0.5} alignItems="flex-start">
+                            <TonePill label={toTitleLabel(followup.status)} tone={tone} dot />
+                            {followup.outcome && (
+                              <Typography
+                                sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)' }}
+                              >
+                                {OUTCOME_LABELS[followup.outcome]}
+                              </Typography>
+                            )}
+                          </Stack>
+                        </TableCell>
+
+                        <TableCell align="right">
+                          <FollowupRowActions
+                            followup={followup}
+                            onComplete={setCompleting}
+                            onReschedule={setRescheduling}
+                            onReassign={(f) => setReassigning([f])}
+                            onCancel={(f) =>
+                              cancelMutation.mutate(f.id, {
+                                onSuccess: () =>
+                                  showToast.success(
+                                    'Follow-up cancelled — the lead now needs a new one',
+                                  ),
+                                onError: (error) => showToast.error(getErrorMessage(error)),
+                              })
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        )}
+      </Stack>
 
       <FollowupCompleteDialog
         open={Boolean(completing)}
@@ -232,6 +316,6 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
 
       <FollowupRescheduleDialog followup={rescheduling} onClose={() => setRescheduling(null)} />
       <FollowupReassignDialog followups={reassigning} onClose={() => setReassigning([])} />
-    </Box>
+    </>
   );
 }

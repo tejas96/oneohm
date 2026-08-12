@@ -266,53 +266,15 @@ export const navigationConfig: NavigationConfig = {
             {
               id: 'all-projects',
               icon: List,
-              label: 'All Projects',
+              label: 'Projects',
               href: ROUTES.PROJECTS.LIST,
               // badge: dynamically set via useNavigationCounts (projects.totalProjects)
-              children: [
-                {
-                  id: 'projects-active',
-                  label: 'Active',
-                  href: `${ROUTES.PROJECTS.LIST}?status=active`,
-                  statusDot: 'active' as const,
-                },
-                {
-                  id: 'projects-overdue',
-                  label: 'Overdue',
-                  href: `${ROUTES.PROJECTS.LIST}?status=active&healthStatus=delayed`,
-                  statusDot: 'overdue' as const,
-                },
-                {
-                  id: 'projects-at-risk',
-                  label: 'At Risk',
-                  href: `${ROUTES.PROJECTS.LIST}?status=active&healthStatus=at_risk`,
-                  statusDot: 'at_risk' as const,
-                },
-                {
-                  id: 'projects-planning',
-                  label: 'Planning',
-                  href: `${ROUTES.PROJECTS.LIST}?status=planning`,
-                  statusDot: 'planning' as const,
-                },
-                {
-                  id: 'projects-on-hold',
-                  label: 'On Hold',
-                  href: `${ROUTES.PROJECTS.LIST}?status=on_hold`,
-                  statusDot: 'on_hold' as const,
-                },
-                {
-                  id: 'projects-completed',
-                  label: 'Completed',
-                  href: `${ROUTES.PROJECTS.LIST}?status=completed`,
-                  statusDot: 'completed_project' as const,
-                },
-                {
-                  id: 'projects-cancelled',
-                  label: 'Cancelled',
-                  href: `${ROUTES.PROJECTS.LIST}?status=cancelled`,
-                  statusDot: 'cancelled' as const,
-                },
-              ],
+              //
+              // The per-status children (Active / Overdue / At risk / Planning /
+              // On hold / Completed / Cancelled) were removed: the list page now
+              // carries the same seven views as quick-filter chips above the
+              // grid, where the current selection is visible rather than implied
+              // by which sidebar link you last clicked.
             },
           ],
         },
@@ -610,9 +572,72 @@ export function getPanelConfigByPath(pathname: string): { key: string; config: P
   };
 }
 
+/** Read project list status/health filters from URL or table filter params. */
+export function getProjectListFilterFromSearchParams(searchParams: {
+  get(name: string): string | null;
+}): { status: string | null; healthStatus: string | null } {
+  let status = searchParams.get('status');
+  let healthStatus = searchParams.get('healthStatus');
+
+  if (!status) {
+    const prefFilters = searchParams.get('projects_filters');
+    if (prefFilters) {
+      try {
+        const parsed = JSON.parse(prefFilters) as { status?: string; healthStatus?: string };
+        status = parsed.status ?? null;
+        healthStatus = parsed.healthStatus ?? null;
+        if (status?.startsWith('health:')) {
+          healthStatus = status.slice('health:'.length);
+          status = 'active';
+        }
+      } catch {
+        // ignore malformed filters
+      }
+    }
+  }
+
+  return { status, healthStatus };
+}
+
+/** Whether a project status sub-menu item matches the current list filter. */
+export function isProjectStatusSubItemActive(
+  pathname: string,
+  itemHref: string,
+  searchParams: { get(name: string): string | null },
+): boolean {
+  if (pathname !== ROUTES.PROJECTS.LIST) return false;
+
+  const urlObj = new URL(itemHref, 'http://localhost');
+  const targetStatus = urlObj.searchParams.get('status');
+  const targetHealth = urlObj.searchParams.get('healthStatus');
+  const { status: currentStatus, healthStatus: currentHealth } =
+    getProjectListFilterFromSearchParams(searchParams);
+
+  if (!currentStatus && !currentHealth) return false;
+
+  return currentStatus === targetStatus && (targetHealth ?? null) === (currentHealth ?? null);
+}
+
 /**
- * Check if a nav item is active based on current pathname
+ * Whether the "Projects" nav item should be highlighted.
+ *
+ * This used to require *no* status filter, because a status filter meant one of
+ * the per-status children owned the highlight instead. Those children are gone,
+ * and the list page now always carries a status filter (it defaults to Active),
+ * so that test would leave the item permanently unhighlighted. Being on the page
+ * is the whole condition now.
+ *
+ * `searchParams` is kept in the signature so the two call sites — `panel.tsx`
+ * and `mobile-nav.tsx` — need no edit.
  */
+export function isAllProjectsNavActive(
+  pathname: string,
+  itemHref: string,
+  _searchParams: { get(name: string): string | null },
+): boolean {
+  return pathname === itemHref;
+}
+
 /**
  * Check if a navigation rail item should be active based on current pathname.
  * Uses ROUTE_TO_PANEL_MAP to handle cases where multiple routes belong to the same section.
