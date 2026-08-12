@@ -10,6 +10,7 @@ import { DataSource, EntityManager } from 'typeorm';
 
 import { AuditLogService } from '../../audit/services/audit-log.service';
 import { rupeesToPaise, splitByPercentage } from '../domain/paise';
+import { reconcileToContract } from '../domain/schedule';
 import { PaymentMilestoneEntity } from '../entities';
 import { CreditSweepService } from './credit-sweep.service';
 import { LedgerRepository } from '../repositories/ledger.repository';
@@ -119,9 +120,10 @@ export class MilestoneService {
    *    contract total is available, and otherwise the whole snapshot fails. The
    *    old behaviour produced projects whose schedule summed to less than the
    *    contract, with a server log as the only trace.
-   *  - When amounts come from percentages, `splitByPercentage` puts the
-   *    remainder on the final milestone so the schedule sums EXACTLY to the
-   *    contract — no perpetual "₹0.01 pending".
+   *  - The schedule always sums EXACTLY to the contract. Percentage-derived
+   *    amounts get their remainder from `splitByPercentage`; quote-supplied
+   *    amounts are reconciled by `reconcileToContract`, which absorbs a
+   *    rounding-sized difference and throws on anything larger.
    */
   async snapshotFromQuoteVersion(params: SnapshotParams): Promise<PaymentMilestoneEntity[]> {
     const { projectId, sourceVersionId, milestones, contractPaise, createdBy, manager } = params;
@@ -431,7 +433,12 @@ export class MilestoneService {
     );
 
     if (explicit.every((a): a is number => a !== null)) {
-      return explicit;
+      // The quote's amounts are already rounded to two decimals, so they can
+      // miss the contract by a few paise. Without this the project can never
+      // be exactly settled — see reconcileToContract.
+      return contractPaise && contractPaise > 0
+        ? reconcileToContract(explicit, contractPaise)
+        : explicit;
     }
 
     const percentages = milestones.map((m) => m.percentage);

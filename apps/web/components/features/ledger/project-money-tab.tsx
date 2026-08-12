@@ -22,6 +22,7 @@ import { ChangeOrderDialog, ReverseEntryDialog, WaiveMilestoneDialog } from './c
 import { formatExpenseCategory } from './format-expense-category';
 import { useReceiptPdf } from './hooks/use-receipt-pdf';
 import { MilestoneWaterfall } from './milestone-waterfall';
+import { ReceiptDates } from './receipt-dates';
 import { RecordMoneyDialog } from './record-money-dialog';
 
 import type { ProjectDetail } from '@/components/features/projects/hooks/types';
@@ -130,9 +131,12 @@ export function ProjectMoneyTab({
               the chase list. Change orders now sweep credit on creation, so
               this branch should be unreachable; leaving it in makes the page
               its own regression detector. */}
+          {/* Neither branch offers a refund: there is no refund entry type
+              wired up anywhere, so promising one sent operators looking for a
+              control that does not exist. */}
           {s.outstandingPaise > 0
-            ? `${formatPaise(s.outstandingPaise)} still shows as outstanding below and this credit has not been applied to it. Record it against the milestone, or refund the customer.`
-            : 'Everything owed on this project is covered. This sits as credit on the customer’s account: it is applied automatically to the next change order raised here, and can be refunded until then.'}
+            ? `${formatPaise(s.outstandingPaise)} still shows as outstanding below and this credit has not been applied to it. Record it against the milestone.`
+            : 'Everything owed on this project is covered. This sits as credit on the customer’s account and is applied automatically to the next change order raised here.'}
         </Alert>
       )}
 
@@ -152,6 +156,7 @@ export function ProjectMoneyTab({
         isLoading={entries.isLoading}
         onReverse={setReversing}
         onRegenerateReceipt={project ? regenerateReceipt : undefined}
+        receiptBusy={receiptPdf.isBusy}
       />
 
       {(dialog === 'receipt' || dialog === 'expense') && (
@@ -335,12 +340,15 @@ function ProjectEntries({
   isLoading,
   onReverse,
   onRegenerateReceipt,
+  receiptBusy,
 }: {
   entries: LedgerEntry[];
   isLoading: boolean;
   onReverse: (entry: LedgerEntry) => void;
   /** Omitted when the project header data needed to render a receipt is absent. */
   onRegenerateReceipt?: (entry: LedgerEntry) => Promise<void>;
+  /** Filing in progress. The hook refuses re-entry anyway; this makes it visible. */
+  receiptBusy?: boolean;
 }): JSX.Element {
   // Which entries already carry a reversal.
   //
@@ -392,13 +400,12 @@ function ProjectEntries({
                 hover
                 sx={e.reversesId ? { backgroundColor: 'action.hover' } : undefined}
               >
-                <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>
-                  {e.valueDate}
-                  {e.valueDateIsInferred && (
-                    <Tooltip title="Date inferred from the record's creation time">
-                      <span> ~</span>
-                    </Tooltip>
-                  )}
+                <TableCell>
+                  <ReceiptDates
+                    valueDate={e.valueDate}
+                    createdAt={e.createdAt}
+                    valueDateIsInferred={e.valueDateIsInferred}
+                  />
                 </TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace', fontSize: 12 }}>
                   {e.entryNo}
@@ -443,9 +450,20 @@ function ProjectEntries({
                           receipt for cash that bounced is worse than none. */}
                       {e.direction === 'in' && onRegenerateReceipt && (
                         <Tooltip title="Generate the receipt again and file it in the customer's documents">
-                          <Button size="small" onClick={() => void onRegenerateReceipt(e)}>
-                            Receipt
-                          </Button>
+                          {/* Disabled while a receipt is being filed. The hook
+                              refuses re-entry regardless; this stops the button
+                              looking clickable while it works, which is what
+                              produced duplicate copies in the customer's
+                              documents. */}
+                          <span>
+                            <Button
+                              size="small"
+                              disabled={receiptBusy}
+                              onClick={() => void onRegenerateReceipt(e)}
+                            >
+                              Receipt
+                            </Button>
+                          </span>
                         </Tooltip>
                       )}
                       <Button size="small" color="inherit" onClick={() => onReverse(e)}>

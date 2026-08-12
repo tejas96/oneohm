@@ -17,11 +17,10 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { PaymentMethod, PaymentTransactionStatus } from '@tejas96/shared/types';
+import { PaymentMethod } from '@tejas96/shared/types';
 import type { JSX } from 'react';
 
 import {
-  isSettledPayment,
   PROPERTY_FINANCE_PAGE_LIMIT,
   usePropertyFinanceSnapshot,
   usePropertyLoan,
@@ -39,27 +38,16 @@ import {
   type DetailTone,
 } from '@/components/features/customers/customer-detail/primitives';
 import { detailTableSx, tableCardSx } from '@/components/features/customers/customer-detail/styles';
+import { ReceiptDates } from '@/components/features/ledger/receipt-dates';
 import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
+import { formatPaise } from '@/lib/utils/paise';
 
 export interface FinanceTabProps {
   propertyId: string;
   projectId: string | null;
   enabled: boolean;
   onGoToProject: () => void;
-}
-
-const PAYMENT_STATUS_TONE = {
-  [PaymentTransactionStatus.PENDING]: 'warning',
-  [PaymentTransactionStatus.RECEIVED]: 'success',
-  [PaymentTransactionStatus.VERIFIED]: 'success',
-  [PaymentTransactionStatus.CLEARED]: 'success',
-  [PaymentTransactionStatus.BOUNCED]: 'danger',
-  [PaymentTransactionStatus.REFUNDED]: 'neutral',
-} satisfies Record<PaymentTransactionStatus, DetailTone>;
-
-function paymentTone(status: PaymentTransactionStatus): DetailTone {
-  return (PAYMENT_STATUS_TONE as Record<string, DetailTone | undefined>)[status] ?? 'neutral';
 }
 
 /**
@@ -78,7 +66,7 @@ const PAYMENT_METHOD_LABEL = {
   [PaymentMethod.DEMAND_DRAFT]: 'Demand draft',
 } satisfies Record<PaymentMethod, string>;
 
-function methodLabel(method: PaymentMethod): string {
+function methodLabel(method: string): string {
   return (
     (PAYMENT_METHOD_LABEL as Record<string, string | undefined>)[method] ?? toTitleLabel(method)
   );
@@ -240,8 +228,8 @@ export function FinanceTab({
                 label: 'Last receipt',
                 value: snapshot.lastReceiptDate ? formatDate(snapshot.lastReceiptDate) : '—',
                 secondary: snapshot.lastReceiptDate
-                  ? 'Most recent cleared payment'
-                  : 'No cleared payments yet',
+                  ? 'Most recent payment received'
+                  : 'No payments yet',
               },
             ]}
           />
@@ -422,11 +410,14 @@ export function FinanceTab({
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {receipts.map((receipt) => {
-                        const tone = paymentTone(receipt.status);
-                        const settled = isSettledPayment(receipt.status);
+                      {receipts.map((entry) => {
+                        const isReversal = Boolean(entry.reversesId);
+                        const tone: DetailTone = isReversal ? 'warning' : 'success';
                         return (
-                          <TableRow key={receipt.id}>
+                          <TableRow
+                            key={entry.id}
+                            sx={isReversal ? { backgroundColor: 'action.hover' } : undefined}
+                          >
                             <TableCell>
                               <Stack direction="row" alignItems="center" gap={1.25}>
                                 <IconCircle tone={tone}>
@@ -434,16 +425,16 @@ export function FinanceTab({
                                 </IconCircle>
                                 <Box sx={{ minWidth: 0 }}>
                                   <Mono sx={{ fontWeight: 600, display: 'block' }}>
-                                    {receipt.paymentNumber}
+                                    {entry.entryNo}
                                   </Mono>
-                                  {receipt.paymentReference && (
+                                  {entry.reference && (
                                     <Typography
                                       sx={{
                                         fontSize: '0.6875rem',
                                         color: 'var(--ds-text-tertiary)',
                                       }}
                                     >
-                                      Ref {receipt.paymentReference}
+                                      Ref {entry.reference}
                                     </Typography>
                                   )}
                                 </Box>
@@ -451,32 +442,32 @@ export function FinanceTab({
                             </TableCell>
 
                             <TableCell sx={{ color: 'var(--ds-text-secondary)' }}>
-                              {methodLabel(receipt.paymentMethod)}
+                              {entry.paymentMethod ? methodLabel(entry.paymentMethod) : '—'}
                             </TableCell>
 
                             <TableCell>
-                              {/*
-                               * The receipts endpoint applies no status filter,
-                               * so this list carries pending, bounced and
-                               * refunded payments too. Only settled rows count
-                               * toward the Received tile above.
-                               */}
-                              <TonePill label={toTitleLabel(receipt.status)} tone={tone} dot />
+                              {isReversal ? (
+                                <TonePill
+                                  label={`Reversal — ${entry.reversalReason ?? 'correction'}`}
+                                  tone="warning"
+                                  dot
+                                />
+                              ) : (
+                                <TonePill label="Received" tone="success" dot />
+                              )}
                             </TableCell>
 
                             <TableCell>
-                              <Mono>{formatDate(receipt.createdAt)}</Mono>
+                              <ReceiptDates
+                                valueDate={entry.valueDate}
+                                createdAt={entry.createdAt}
+                                valueDateIsInferred={entry.valueDateIsInferred}
+                              />
                             </TableCell>
 
                             <TableCell align="right">
-                              <Mono
-                                sx={{
-                                  fontWeight: 600,
-                                  ...(settled ? {} : { textDecoration: 'line-through' }),
-                                }}
-                                tone={settled ? 'success' : tone}
-                              >
-                                {formatCurrency(Number(receipt.paidAmount))}
+                              <Mono sx={{ fontWeight: 600 }} tone={tone}>
+                                {formatPaise(entry.amountPaise)}
                               </Mono>
                             </TableCell>
                           </TableRow>

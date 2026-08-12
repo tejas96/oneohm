@@ -40,6 +40,7 @@ import { useEmployees } from '@/components/features/employees';
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { MUIUserAssigneeSelector } from '@/components/ui';
 import { useOrgCustomersAr } from '@/lib/hooks/resources';
+import { useLedgerEntries, lastReceiptValueDate } from '@/lib/hooks/resources/ledger';
 import { formatCurrency, formatDate, formatSystemSize, toTitleLabel } from '@/lib/utils';
 
 export interface OverviewTabProps {
@@ -189,10 +190,18 @@ function MoneyCard({
   enabled: boolean;
   onViewFinance: () => void;
 }): JSX.Element {
-  const { data: arRows, isLoading } = useOrgCustomersAr(undefined, { enabled });
+  const { data: arRows, isLoading } = useOrgCustomersAr({ enabled });
+  const ledgerQ = useLedgerEntries(
+    { customerId, direction: 'in', page: 1, limit: 100 },
+    { enabled },
+  );
   const aging = useMemo(
     () => arRows?.find((row) => row.customerId === customerId),
     [arRows, customerId],
+  );
+  const lastReceiptDate = useMemo(
+    () => lastReceiptValueDate(ledgerQ.data?.data ?? []),
+    [ledgerQ.data?.data],
   );
 
   const segments = useMemo((): AgingSegment[] => {
@@ -232,10 +241,24 @@ function MoneyCard({
           <Skeleton height={24} />
         </Stack>
       ) : !aging ? (
-        <EmptyPane
-          title="Nothing outstanding"
-          description="No open payment terms for this customer."
-        />
+        lastReceiptDate ? (
+          <Stack direction="row" alignItems="flex-end" justifyContent="space-between" gap={2}>
+            <Typography sx={{ fontSize: '0.8125rem', color: 'var(--ds-text-secondary)' }}>
+              All settled — nothing outstanding
+            </Typography>
+            <Box sx={{ textAlign: 'right' }}>
+              <Typography sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)' }}>
+                Last receipt
+              </Typography>
+              <Mono>{formatDate(lastReceiptDate)}</Mono>
+            </Box>
+          </Stack>
+        ) : (
+          <EmptyPane
+            title="Nothing outstanding"
+            description="No open payment terms for this customer."
+          />
+        )
       ) : (
         <>
           <Stack direction="row" alignItems="flex-end" justifyContent="space-between" gap={2}>
@@ -264,7 +287,7 @@ function MoneyCard({
               <Typography sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)' }}>
                 Last receipt
               </Typography>
-              <Mono>{aging.lastReceiptDate ? formatDate(aging.lastReceiptDate) : '—'}</Mono>
+              <Mono>{lastReceiptDate ? formatDate(lastReceiptDate) : '—'}</Mono>
             </Box>
           </Stack>
 

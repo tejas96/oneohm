@@ -102,6 +102,7 @@ export function RecordMoneyDialog({
   const [category, setCategory] = useState<string>(ExpenseCategory.MATERIALS);
   const [categoryOther, setCategoryOther] = useState('');
   const [categoryOtherTouched, setCategoryOtherTouched] = useState(false);
+  const [amountTouched, setAmountTouched] = useState(false);
   const [payee, setPayee] = useState('');
   const [notes, setNotes] = useState('');
   const [proof, setProof] = useState<ProofDocumentInput | null>(null);
@@ -121,6 +122,12 @@ export function RecordMoneyDialog({
     category === CATEGORY_OTHER &&
     (categoryOtherTouched || amountPaise > 0) &&
     !categoryOther.trim();
+  // Submit is disabled on these, and without a reason the operator just sees a
+  // dead button. The category length is not covered here on purpose: the input
+  // carries maxLength=30, so the browser refuses the 31st character and a
+  // message for it could never be reached.
+  const showAmountError = amountTouched && amountPaise <= 0;
+  const showFutureDateError = valueDate > todayIst();
   const valid = amountPaise > 0 && valueDate <= todayIst() && categoryValid;
 
   const reset = (): void => {
@@ -131,6 +138,7 @@ export function RecordMoneyDialog({
     setCategory(ExpenseCategory.MATERIALS);
     setCategoryOther('');
     setCategoryOtherTouched(false);
+    setAmountTouched(false);
     setPayee('');
     setNotes('');
     setProof(null);
@@ -194,8 +202,10 @@ export function RecordMoneyDialog({
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            onBlur={() => setAmountTouched(true)}
             placeholder="0.00"
             autoFocus
+            error={showAmountError ? 'Enter an amount greater than zero.' : undefined}
           />
 
           <MUIInput
@@ -205,6 +215,11 @@ export function RecordMoneyDialog({
             onChange={(e) => setValueDate(e.target.value)}
             InputLabelProps={{ shrink: true }}
             inputProps={{ max: todayIst() }}
+            error={
+              showFutureDateError
+                ? `Pick today or earlier — money cannot arrive in the future.`
+                : undefined
+            }
           />
 
           <MUISelect

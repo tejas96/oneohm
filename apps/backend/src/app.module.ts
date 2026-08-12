@@ -74,16 +74,22 @@ import { UsersModule } from './modules/users/users.module';
     NotificationsModule,
     ApprovalModule,
     FinanceCommonModule,
-    // The ledger is now the only mounted money module. PaymentsModule,
-    // PaymentTermsModule and ProjectExpensesModule are unmounted: nothing
-    // imports their services any more, and leaving them mounted kept the
-    // legacy PATCH/DELETE /payments endpoints live — the unscoped, non-
-    // transactional writes that silently desynced project_payment_terms.paid_amount
-    // in the first place.
+    // The ledger is the only money module.
     //
-    // The module CODE and the underlying tables are deliberately retained: the
-    // `payments` rows are the reconciliation source and the rollback artefact
-    // until cutover has been green for a full cycle.
+    // PaymentsModule, PaymentTermsModule and ProjectExpensesModule were
+    // unmounted at cutover — leaving them mounted kept the legacy
+    // PATCH/DELETE /payments endpoints live, and those unscoped,
+    // non-transactional writes are what silently desynced
+    // project_payment_terms.paid_amount in the first place. Their code has now
+    // been deleted, along with finance-aggregation.service.ts, which was the
+    // last thing in the app still reading their tables.
+    //
+    // The `payments`, `project_payment_terms`, `project_expenses` and
+    // `expense_product_links` TABLES are still present and deliberately so:
+    // they are the rollback artefact. Nothing reads them. They are dropped by
+    // a separate migration once cutover has been green for an agreed period —
+    // see docs/plans/2026-08-12-finance-legacy-removal-design.md. Note that
+    // scripts/ledger-dry-run.ts reads them by design and goes with them.
     LedgerModule,
     FinanceModule,
     CommentsModule,

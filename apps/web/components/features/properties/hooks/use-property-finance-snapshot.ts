@@ -1,52 +1,25 @@
 'use client';
 
-import { PaymentTransactionStatus } from '@tejas96/shared/types';
 import { useMemo } from 'react';
 
+import { useOrgOutstanding, type OutstandingTerm } from '@/lib/hooks/resources';
 import {
-  useOrgOutstanding,
-  useOrgReceipts,
-  type OrgReceiptListItem,
-  type OutstandingTerm,
-} from '@/lib/hooks/resources';
+  useProjectEntries,
+  useProjectLedger,
+  type LedgerEntry,
+} from '@/lib/hooks/resources/ledger';
 
-/**
- * Payment states that mean the money actually arrived.
- *
- * Mirrors the `status IN ('received','verified','cleared')` filter the AR
- * report applies. The receipts endpoint applies no status filter at all, so
- * its rows include pending, bounced and refunded payments — money that is not
- * in the bank. Summing them, or reading the newest one as "last receipt",
- * reports a bounced cheque as a payment.
- */
-const SETTLED_PAYMENT_STATUSES: readonly PaymentTransactionStatus[] = [
-  PaymentTransactionStatus.RECEIVED,
-  PaymentTransactionStatus.VERIFIED,
-  PaymentTransactionStatus.CLEARED,
-];
-
-export function isSettledPayment(status: PaymentTransactionStatus): boolean {
-  return SETTLED_PAYMENT_STATUSES.includes(status);
-}
-
-/** Both queries are capped here; callers surface a note when the cap bites. */
+/** Open-term query cap; callers surface a note when the cap bites. */
 export const PROPERTY_FINANCE_PAGE_LIMIT = 100;
 
 export interface PropertyFinanceSnapshot {
   totalOutstanding: number;
-  /**
-   * The part of `totalOutstanding` that is actually past its due date.
-   *
-   * Kept separate because the two are usually different: a project can owe
-   * ₹33,815 across three terms of which only ₹15,000 is late. `daysOverdue` is
-   * null for terms with no due date and negative for terms not yet due, so
-   * only strictly-positive values count.
-   */
   overdueAmount: number;
   maxDaysOverdue: number;
   openTermCount: number;
-  /** Sum of settled receipts against this project. */
+  /** Total received from ledger summary (rupees). */
   receivedAmount: number;
+  /** Most recent received date (YYYY-MM-DD), not record date. */
   lastReceiptDate: string | null;
   hasProject: boolean;
 }
@@ -54,8 +27,8 @@ export interface PropertyFinanceSnapshot {
 export interface UsePropertyFinanceSnapshotResult {
   snapshot: PropertyFinanceSnapshot;
   openTerms: OutstandingTerm[];
-  receipts: OrgReceiptListItem[];
-  /** True when either list hit `PROPERTY_FINANCE_PAGE_LIMIT`. */
+  receipts: LedgerEntry[];
+  /** True when the open-term list hit `PROPERTY_FINANCE_PAGE_LIMIT`. */
   isTruncated: boolean;
   isLoading: boolean;
   hasProject: boolean;
@@ -72,12 +45,15 @@ const EMPTY_SNAPSHOT: PropertyFinanceSnapshot = {
 };
 
 const EMPTY_TERMS: OutstandingTerm[] = [];
-const EMPTY_RECEIPTS: OrgReceiptListItem[] = [];
+const EMPTY_ENTRIES: LedgerEntry[] = [];
+
+function isReceiptEntry(entry: LedgerEntry): boolean {
+  return entry.entryType === 'receipt' && entry.direction === 'in';
+}
 
 /**
- * Property-scoped finance, derived from the linked project's payment terms.
- * Returns zeros when the property has no project — never customer-wide AR,
- * which would attribute a sibling site's debt to this one.
+ * Property-scoped finance from the project ledger (not legacy payments).
+ * Returns zeros when the property has no project.
  */
 export function usePropertyFinanceSnapshot(
   projectId: string | undefined | null,
@@ -87,24 +63,22 @@ export function usePropertyFinanceSnapshot(
   const hasProject = Boolean(projectId);
   const queryEnabled = baseEnabled && hasProject;
 
+  // Ordered by days overdue, descending — the endpoint's fixed ordering.
   const outstandingQ = useOrgOutstanding(
     {
       projectId: projectId ?? undefined,
-      sort: 'daysOverdue',
-      sortOrder: 'DESC',
       page: 1,
       limit: PROPERTY_FINANCE_PAGE_LIMIT,
     },
     { enabled: queryEnabled },
   );
 
-  const receiptsQ = useOrgReceipts(
-    { projectId: projectId ?? undefined, page: 1, limit: PROPERTY_FINANCE_PAGE_LIMIT },
-    { enabled: queryEnabled },
-  );
+  const ledgerQ = useProjectLedger(projectId ?? '', { enabled: queryEnabled });
+  const entriesQ = useProjectEntries(projectId ?? '', { enabled: queryEnabled });
 
   const openTerms = outstandingQ.data?.data ?? EMPTY_TERMS;
-  const receipts = receiptsQ.data?.data ?? EMPTY_RECEIPTS;
+  const allEntries = entriesQ.data ?? EMPTY_ENTRIES;
+  const receipts = useMemo(() => allEntries.filter(isReceiptEntry), [allEntries]);
 
   const snapshot = useMemo((): PropertyFinanceSnapshot => {
     if (!hasProject) return EMPTY_SNAPSHOT;
@@ -122,13 +96,14 @@ export function usePropertyFinanceSnapshot(
       }
     }
 
-    let receivedAmount = 0;
+    const ledger = ledgerQ.data;
+    const receivedAmount = ledger ? ledger.receivedPaise / 100 : 0;
+
     let lastReceiptDate: string | null = null;
-    for (const receipt of receipts) {
-      if (!isSettledPayment(receipt.status)) continue;
-      receivedAmount += Number(receipt.paidAmount);
-      if (!lastReceiptDate || receipt.createdAt > lastReceiptDate) {
-        lastReceiptDate = receipt.createdAt;
+    for (const entry of receipts) {
+      if (entry.reversesId) continue;
+      if (!lastReceiptDate || entry.valueDate > lastReceiptDate) {
+        lastReceiptDate = entry.valueDate;
       }
     }
 
@@ -141,12 +116,11 @@ export function usePropertyFinanceSnapshot(
       lastReceiptDate,
       hasProject: true,
     };
-  }, [hasProject, openTerms, receipts]);
+  }, [hasProject, openTerms, ledgerQ.data, receipts]);
 
-  const isLoading = hasProject && (outstandingQ.isLoading || receiptsQ.isLoading);
-  const isTruncated =
-    openTerms.length >= PROPERTY_FINANCE_PAGE_LIMIT ||
-    receipts.length >= PROPERTY_FINANCE_PAGE_LIMIT;
+  const isLoading =
+    hasProject && (outstandingQ.isLoading || ledgerQ.isLoading || entriesQ.isLoading);
+  const isTruncated = openTerms.length >= PROPERTY_FINANCE_PAGE_LIMIT;
 
   return { snapshot, openTerms, receipts, isTruncated, isLoading, hasProject };
 }

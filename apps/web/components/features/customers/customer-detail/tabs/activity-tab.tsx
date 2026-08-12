@@ -29,8 +29,9 @@ import {
   SERVICE_TICKET_STATUS_LABELS,
   useServiceTickets,
 } from '@/components/features/service-tickets';
-import { useOrgReceipts } from '@/lib/hooks/resources';
+import { useLedgerEntries } from '@/lib/hooks/resources/ledger';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
+import { formatPaise } from '@/lib/utils/paise';
 
 export interface ActivityTabProps {
   customerId: string;
@@ -83,8 +84,8 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
     limit: 20,
     page: 1,
   });
-  const { data: receiptsData, isLoading: receiptsLoading } = useOrgReceipts(
-    { customerId, page: 1, limit: 20 },
+  const { data: ledgerReceiptsData, isLoading: receiptsLoading } = useLedgerEntries(
+    { customerId, direction: 'in', page: 1, limit: 20 },
     { enabled },
   );
   const { data: projects } = useCustomerProjects(customerId, { enabled });
@@ -136,17 +137,22 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
       });
     }
 
-    for (const receipt of receiptsData?.data ?? []) {
-      const project = projectMap.get(receipt.projectId);
+    for (const entry of ledgerReceiptsData?.data ?? []) {
+      if (entry.entryType !== 'receipt' || entry.direction !== 'in') continue;
+      const project = projectMap.get(entry.projectId ?? '');
+      const recordedNote =
+        entry.valueDate !== entry.createdAt.slice(0, 10)
+          ? ` · recorded ${formatDate(entry.createdAt)}`
+          : '';
       items.push({
-        id: `receipt-${receipt.id}`,
+        id: `receipt-${entry.id}`,
         kind: 'receipt',
-        title: receipt.paymentNumber,
-        subtitle: `${receipt.projectNumber}${
+        title: entry.entryNo,
+        subtitle: `${entry.projectNumber ?? project?.projectNumber ?? '—'}${
           project ? ` · ${project.name}` : ''
-        } · ${formatCurrency(Number(receipt.paidAmount))}`,
-        date: receipt.createdAt,
-        timestamp: new Date(receipt.createdAt).getTime(),
+        } · ${formatPaise(entry.amountPaise)}${recordedNote}`,
+        date: entry.valueDate,
+        timestamp: new Date(entry.valueDate).getTime(),
       });
     }
 
@@ -165,7 +171,7 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
   }, [
     followupsData?.data,
     quotesData?.data,
-    receiptsData?.data,
+    ledgerReceiptsData?.data,
     ticketData?.items,
     propertyMap,
     projectMap,

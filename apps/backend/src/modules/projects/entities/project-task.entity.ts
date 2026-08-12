@@ -96,6 +96,21 @@ export class ProjectTaskEntity extends BaseEntity {
   @Column({ name: 'end_date', type: 'date', nullable: true })
   endDate?: Date;
 
+  /**
+   * When the work actually finished. Distinct from `endDate`, which is a plain
+   * date and is also used as a planned end.
+   *
+   * The column was added by the ledger backfill (migration 1851000000007) and
+   * is read by two things outside this module: the milestone due-date
+   * derivation in `MilestoneScheduleService`, which makes a payment milestone
+   * due once every task carrying its stage name is complete, and the
+   * meter-installation KPI on the finance dashboard. It was never mapped here,
+   * so nothing wrote it after the backfill and both of those quietly stopped
+   * working. Keep it set alongside `endDate` in `updateStatus`.
+   */
+  @Column({ name: 'completed_at', type: 'timestamptz', nullable: true })
+  completedAt?: Date | null;
+
   // ==================== Status & Priority ====================
 
   @Column({

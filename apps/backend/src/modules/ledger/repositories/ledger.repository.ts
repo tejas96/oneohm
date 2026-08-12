@@ -44,6 +44,7 @@ export interface MilestoneAllocationRow {
   entryAmountPaise: number;
   valueDate: string;
   valueDateIsInferred: boolean;
+  entryCreatedAt: string;
   paymentMethod: string | null;
   reference: string | null;
   /** Set when this row belongs to a reversing entry. */
@@ -220,6 +221,7 @@ export class LedgerRepository {
               e.amount_paise            AS "entryAmountPaise",
               to_char(e.value_date, 'YYYY-MM-DD') AS "valueDate",
               e.value_date_is_inferred  AS "valueDateIsInferred",
+              e.created_at              AS "entryCreatedAt",
               e.payment_method          AS "paymentMethod",
               e.reference,
               e.reverses_id             AS "reversesId",

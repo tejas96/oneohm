@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsDateString, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
 
 /**
  * Query DTOs for the ledger reporting endpoints.
@@ -46,6 +46,20 @@ export class LedgerEntriesQueryDto extends LedgerRangeQueryDto {
   // treat it as absent rather than letting it fail validation.
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))
   direction?: 'in' | 'out';
+
+  @ApiPropertyOptional({ description: 'Filter to a single project' })
+  @IsUUID()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  projectId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter to projects owned by this customer (via property join)',
+  })
+  @IsUUID()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  customerId?: string;
 
   @ApiPropertyOptional({ default: 1 })
   @Type(() => Number)

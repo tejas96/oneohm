@@ -17,7 +17,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { PaymentMethod, PaymentTransactionStatus } from '@tejas96/shared/types';
+import { PaymentMethod } from '@tejas96/shared/types';
 import { useRouter } from 'next/navigation';
 import { type JSX, useMemo } from 'react';
 
@@ -39,10 +39,17 @@ import {
 import { detailTableSx, tableCardSx } from '../styles';
 import { getBalanceTone, getOverdueAmount } from '../utils';
 
+import { ReceiptDates } from '@/components/features/ledger/receipt-dates';
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
-import { useOrgCustomersAr, useOrgOutstanding, useOrgReceipts } from '@/lib/hooks/resources';
+import { useOrgCustomersAr, useOrgOutstanding } from '@/lib/hooks/resources';
+import {
+  useLedgerEntries,
+  lastReceiptValueDate,
+  type LedgerEntry,
+} from '@/lib/hooks/resources/ledger';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
+import { formatPaise } from '@/lib/utils/paise';
 
 export interface FinanceTabProps {
   customerId: string;
@@ -52,36 +59,10 @@ export interface FinanceTabProps {
 
 /** The page caps the open-term query here; the UI says so when it bites. */
 const TERM_PAGE_LIMIT = 100;
+const RECEIPT_PAGE_LIMIT = 100;
 
-/**
- * Payment states that mean the money actually arrived.
- *
- * Mirrors the `status IN ('received','verified','cleared')` filter the AR
- * report applies when it computes `lastReceiptDate`. The receipts endpoint
- * applies no status filter at all, so its rows include pending, bounced and
- * refunded payments — money that is not in the bank.
- */
-const SETTLED_PAYMENT_STATUSES: readonly PaymentTransactionStatus[] = [
-  PaymentTransactionStatus.RECEIVED,
-  PaymentTransactionStatus.VERIFIED,
-  PaymentTransactionStatus.CLEARED,
-];
-
-const PAYMENT_STATUS_TONE = {
-  [PaymentTransactionStatus.PENDING]: 'warning',
-  [PaymentTransactionStatus.RECEIVED]: 'success',
-  [PaymentTransactionStatus.VERIFIED]: 'success',
-  [PaymentTransactionStatus.CLEARED]: 'success',
-  [PaymentTransactionStatus.BOUNCED]: 'danger',
-  [PaymentTransactionStatus.REFUNDED]: 'neutral',
-} satisfies Record<PaymentTransactionStatus, DetailTone>;
-
-function paymentTone(status: PaymentTransactionStatus): DetailTone {
-  return (PAYMENT_STATUS_TONE as Record<string, DetailTone | undefined>)[status] ?? 'neutral';
-}
-
-function isSettled(status: PaymentTransactionStatus): boolean {
-  return SETTLED_PAYMENT_STATUSES.includes(status);
+function isReceiptEntry(entry: LedgerEntry): boolean {
+  return entry.entryType === 'receipt' && entry.direction === 'in';
 }
 
 /**
@@ -100,7 +81,7 @@ const PAYMENT_METHOD_LABEL = {
   [PaymentMethod.DEMAND_DRAFT]: 'Demand draft',
 } satisfies Record<PaymentMethod, string>;
 
-function methodLabel(method: PaymentMethod): string {
+function methodLabel(method: string): string {
   return (
     (PAYMENT_METHOD_LABEL as Record<string, string | undefined>)[method] ?? toTitleLabel(method)
   );
@@ -167,11 +148,15 @@ function SectionEmpty({ description }: { description: string }): JSX.Element {
 export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Element {
   const router = useRouter();
 
+  // Ordered by days overdue, descending — the endpoint's fixed ordering.
   const outstandingQ = useOrgOutstanding(
-    { customerId, sort: 'daysOverdue', sortOrder: 'DESC', page: 1, limit: TERM_PAGE_LIMIT },
+    { customerId, page: 1, limit: TERM_PAGE_LIMIT },
     { enabled },
   );
-  const receiptsQ = useOrgReceipts({ customerId, page: 1, limit: 10 }, { enabled });
+  const ledgerEntriesQ = useLedgerEntries(
+    { customerId, direction: 'in', page: 1, limit: RECEIPT_PAGE_LIMIT },
+    { enabled },
+  );
   const loansQ = useCustomerLoans(customerId, { enabled });
   const subsidiesQ = useCustomerSubsidies(customerId, { enabled });
   const projectsQ = useCustomerProjects(customerId, { enabled });
@@ -186,10 +171,14 @@ export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Elemen
    * below is presented as the breakdown it actually is. The query key matches
    * the page's, so this costs no extra request.
    */
-  const arQ = useOrgCustomersAr(undefined, { enabled });
+  const arQ = useOrgCustomersAr({ enabled });
 
   const openTerms = useMemo(() => outstandingQ.data?.data ?? [], [outstandingQ.data?.data]);
-  const recentReceipts = useMemo(() => receiptsQ.data?.data ?? [], [receiptsQ.data?.data]);
+  const ledgerReceipts = useMemo(
+    () => (ledgerEntriesQ.data?.data ?? []).filter(isReceiptEntry),
+    [ledgerEntriesQ.data?.data],
+  );
+  const recentReceipts = ledgerReceipts;
   const loans = useMemo(() => loansQ.data ?? [], [loansQ.data]);
   const subsidies = subsidiesQ.data ?? [];
   const projects = projectsQ.data ?? [];
@@ -199,20 +188,10 @@ export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Elemen
     [arQ.data, customerId],
   );
 
-  /*
-   * The AR report INNER JOINs its open-terms CTE, so a customer who owes
-   * nothing produces no row at all — and `lastReceiptDate` disappears with it.
-   * Reading the date straight off `aging` therefore told a customer who had
-   * paid in full that they had never paid anything. The receipts query is
-   * ordered `created_at DESC`, so the first settled row in it is the same date
-   * the AR report would have reported.
-   */
-  const lastReceiptDate = useMemo((): string | null => {
-    const fromAr = aging?.lastReceiptDate;
-    if (fromAr) return typeof fromAr === 'string' ? fromAr : new Date(fromAr).toISOString();
-    const settled = recentReceipts.find((receipt) => isSettled(receipt.status));
-    return settled?.createdAt ?? null;
-  }, [aging?.lastReceiptDate, recentReceipts]);
+  const lastReceiptDate = useMemo(
+    (): string | null => lastReceiptValueDate(ledgerReceipts),
+    [ledgerReceipts],
+  );
 
   const projectGroups = useMemo((): ProjectGroup[] => {
     const map = new Map<string, ProjectGroup>();
@@ -255,7 +234,7 @@ export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Elemen
 
   const isLoading =
     outstandingQ.isLoading ||
-    receiptsQ.isLoading ||
+    ledgerEntriesQ.isLoading ||
     loansQ.isLoading ||
     subsidiesQ.isLoading ||
     projectsQ.isLoading;
@@ -332,8 +311,8 @@ export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Elemen
             id: 'fin-last-receipt',
             label: 'Last receipt',
             value: lastReceiptDate ? formatDate(lastReceiptDate) : '—',
-            isLoading: arQ.isLoading || receiptsQ.isLoading,
-            secondary: lastReceiptDate ? 'Most recent cleared payment' : 'No cleared payments yet',
+            isLoading: ledgerEntriesQ.isLoading,
+            secondary: lastReceiptDate ? 'Most recent payment received' : 'No payments yet',
           },
         ]}
       />
@@ -616,11 +595,14 @@ export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Elemen
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {recentReceipts.map((receipt) => {
-                    const tone = paymentTone(receipt.status);
-                    const settled = isSettled(receipt.status);
+                  {recentReceipts.map((entry) => {
+                    const isReversal = Boolean(entry.reversesId);
+                    const tone: DetailTone = isReversal ? 'warning' : 'success';
                     return (
-                      <TableRow key={receipt.id}>
+                      <TableRow
+                        key={entry.id}
+                        sx={isReversal ? { backgroundColor: 'action.hover' } : undefined}
+                      >
                         <TableCell>
                           <Stack direction="row" alignItems="center" gap={1.25}>
                             <IconCircle tone={tone}>
@@ -628,45 +610,45 @@ export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Elemen
                             </IconCircle>
                             <Box sx={{ minWidth: 0 }}>
                               <Mono sx={{ fontWeight: 600, display: 'block' }}>
-                                {receipt.paymentNumber}
+                                {entry.entryNo}
                               </Mono>
-                              {receipt.paymentReference && (
+                              {entry.reference && (
                                 <Typography
                                   sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)' }}
                                 >
-                                  Ref {receipt.paymentReference}
+                                  Ref {entry.reference}
                                 </Typography>
                               )}
                             </Box>
                           </Stack>
                         </TableCell>
                         <TableCell sx={{ color: 'var(--ds-text-secondary)' }}>
-                          {receipt.projectNumber}
+                          {entry.projectNumber ?? '—'}
                         </TableCell>
                         <TableCell sx={{ color: 'var(--ds-text-secondary)' }}>
-                          {methodLabel(receipt.paymentMethod)}
+                          {entry.paymentMethod ? methodLabel(entry.paymentMethod) : '—'}
                         </TableCell>
                         <TableCell>
-                          {/*
-                           * The receipts endpoint applies no status filter, so
-                           * this list carries pending, bounced and refunded
-                           * payments too. Painting every row success-green made
-                           * a bounced cheque look like money in the bank.
-                           */}
-                          <TonePill label={toTitleLabel(receipt.status)} tone={tone} dot />
+                          {isReversal ? (
+                            <TonePill
+                              label={`Reversal — ${entry.reversalReason ?? 'correction'}`}
+                              tone="warning"
+                              dot
+                            />
+                          ) : (
+                            <TonePill label="Received" tone="success" dot />
+                          )}
                         </TableCell>
                         <TableCell>
-                          <Mono>{formatDate(receipt.createdAt)}</Mono>
+                          <ReceiptDates
+                            valueDate={entry.valueDate}
+                            createdAt={entry.createdAt}
+                            valueDateIsInferred={entry.valueDateIsInferred}
+                          />
                         </TableCell>
                         <TableCell align="right">
-                          <Mono
-                            sx={{
-                              fontWeight: 600,
-                              ...(settled ? {} : { textDecoration: 'line-through' }),
-                            }}
-                            tone={settled ? 'success' : tone}
-                          >
-                            {formatCurrency(Number(receipt.paidAmount))}
+                          <Mono sx={{ fontWeight: 600 }} tone={tone}>
+                            {formatPaise(entry.amountPaise)}
                           </Mono>
                         </TableCell>
                       </TableRow>

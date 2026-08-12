@@ -1,12 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { type PaginatedResponse } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
+import { CustomerAgingDto, OutstandingTermDto } from '../dto';
 import {
   CASH_FLOW_SQL,
+  CUSTOMERS_AR_SQL,
   KPIS_SQL,
   LEDGER_COUNT_SQL,
   LEDGER_PAGE_SQL,
+  OUTSTANDING_COUNT_SQL,
+  OUTSTANDING_SQL,
   RECEIVABLES_COUNT_SQL,
   RECEIVABLES_SQL,
   SPEND_BY_CATEGORY_SQL,
@@ -115,6 +120,52 @@ export class FinanceReportingService {
   }
 
   /**
+   * Per-customer AR ageing.
+   *
+   * The query already returns rupees under the DTO's own property names, so
+   * rows pass straight through. `limit` is generous by default: this feeds the
+   * customer Finance tab, which looks a single customer up in the result, so
+   * truncating the list silently hides that customer's balance.
+   */
+  async getCustomersAr(limit = 1000): Promise<CustomerAgingDto[]> {
+    return this.dataSource.query<CustomerAgingDto[]>(CUSTOMERS_AR_SQL, [limit]);
+  }
+
+  /**
+   * Open payment terms — one row per unpaid milestone.
+   *
+   * Ordering is fixed at `days_overdue DESC`, which is what the only caller
+   * asks for; see OutstandingQueryDto for why the other sort keys are gone.
+   */
+  async getOutstanding(opts: {
+    customerId?: string | null;
+    projectId?: string | null;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<OutstandingTermDto>> {
+    const page = Math.max(1, opts.page ?? 1);
+    const limit = Math.min(200, Math.max(1, opts.limit ?? 20));
+    const customerId = opts.customerId ?? null;
+    const projectId = opts.projectId ?? null;
+
+    const [rows, countRows] = await Promise.all([
+      this.dataSource.query<OutstandingTermDto[]>(OUTSTANDING_SQL, [
+        limit,
+        (page - 1) * limit,
+        customerId,
+        projectId,
+      ]),
+      this.dataSource.query<{ count: number }[]>(OUTSTANDING_COUNT_SQL, [customerId, projectId]),
+    ]);
+
+    const total = Number(countRows[0]?.count ?? 0);
+    return {
+      data: rows,
+      meta: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    };
+  }
+
+  /**
    * One paginated ledger for both directions.
    *
    * Replaces the separate receipts and expenses queries, which duplicated their
@@ -124,12 +175,20 @@ export class FinanceReportingService {
     direction?: 'in' | 'out' | null;
     from?: string | null;
     to?: string | null;
+    projectId?: string | null;
+    customerId?: string | null;
     page?: number;
     limit?: number;
   }): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
-    const params = [opts.direction ?? null, opts.from ?? null, opts.to ?? null];
+    const params = [
+      opts.direction ?? null,
+      opts.from ?? null,
+      opts.to ?? null,
+      opts.projectId ?? null,
+      opts.customerId ?? null,
+    ];
 
     const [rows, [countRow]] = await Promise.all([
       this.dataSource.query(LEDGER_PAGE_SQL, [...params, limit, (page - 1) * limit]),

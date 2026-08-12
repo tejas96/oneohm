@@ -29,6 +29,7 @@ import {
 } from '@/components/features/customers/customer-detail/primitives';
 import { useProject } from '@/components/features/projects/hooks/use-project-detail';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
+import { formatPaise } from '@/lib/utils/paise';
 
 export interface ActivityTabProps {
   property: CustomerPropertyResponse;
@@ -160,15 +161,17 @@ export function ActivityTab({ property, enabled }: ActivityTabProps): JSX.Elemen
     }
 
     for (const receipt of receipts) {
+      const recordedNote =
+        receipt.valueDate !== receipt.createdAt.slice(0, 10)
+          ? ` · recorded ${formatDate(receipt.createdAt)}`
+          : '';
       items.push({
         id: `receipt-${receipt.id}`,
         kind: 'receipt',
-        title: receipt.paymentNumber,
-        subtitle: `${formatCurrency(Number(receipt.paidAmount))} · ${toTitleLabel(
-          receipt.paymentMethod,
-        )} · ${toTitleLabel(receipt.status)}`,
-        date: receipt.createdAt,
-        timestamp: new Date(receipt.createdAt).getTime(),
+        title: receipt.entryNo,
+        subtitle: `${formatPaise(receipt.amountPaise)} · ${receipt.paymentMethod ? toTitleLabel(receipt.paymentMethod) : 'Payment'}${recordedNote}`,
+        date: receipt.valueDate,
+        timestamp: new Date(receipt.valueDate).getTime(),
       });
     }
 

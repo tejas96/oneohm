@@ -3,28 +3,13 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { type PaginatedResponse } from '@tejas96/shared/types';
 
 import { JwtAuthGuard } from '../../auth/guards';
-import {
-  CustomerAgingDto,
-  CustomersArQueryDto,
-  DashboardDto,
-  DashboardQueryDto,
-  ExpenseListItemDto,
-  ExpensesQueryDto,
-  OutstandingQueryDto,
-  OutstandingTermDto,
-  ProfitabilityQueryDto,
-  ProjectProfitabilityDto,
-  ReceiptListItemDto,
-  ReceiptsQueryDto,
-  VendorsSpendQueryDto,
-  VendorSpendDto,
-} from '../dto';
+import { CustomerAgingDto, OutstandingQueryDto, OutstandingTermDto } from '../dto';
 import {
   CashFlowQueryDto,
   LedgerEntriesQueryDto,
+  LedgerRangeQueryDto,
   ReceivablesQueryDto,
 } from '../dto/ledger-query.dto';
-import { FinanceAggregationService } from '../services/finance-aggregation.service';
 import { FinanceReportingService } from '../services/finance-reporting.service';
 
 /**
@@ -57,10 +42,7 @@ function resolveRange(from?: string, to?: string): { from: string; to: string } 
 @Controller('finance')
 @UseGuards(JwtAuthGuard)
 export class FinanceController {
-  constructor(
-    private readonly aggregationService: FinanceAggregationService,
-    private readonly reportingService: FinanceReportingService,
-  ) {}
+  constructor(private readonly reportingService: FinanceReportingService) {}
 
   // ============================================
   // 1. DASHBOARD
@@ -84,7 +66,7 @@ export class FinanceController {
       'today: money owed does not belong to a month.',
   })
   async getKpis(
-    @Query() query: DashboardQueryDto,
+    @Query() query: LedgerRangeQueryDto,
   ): Promise<Awaited<ReturnType<FinanceReportingService['getKpis']>>> {
     const { from, to } = resolveRange(query.from, query.to);
     return this.reportingService.getKpis(from, to);
@@ -111,6 +93,8 @@ export class FinanceController {
       direction: query.direction ?? null,
       from: query.from ?? null,
       to: query.to ?? null,
+      projectId: query.projectId ?? null,
+      customerId: query.customerId ?? null,
       page: query.page ?? 1,
       limit: query.limit ?? 25,
     });
@@ -133,54 +117,7 @@ export class FinanceController {
   }
 
   // ============================================
-  // LEGACY — retired with the pages that call them
-  // ============================================
-
-  @Get('dashboard')
-  @ApiOperation({
-    summary: 'Org finance dashboard',
-    description:
-      'Single fat endpoint that returns 6 KPIs, 12-month cash-flow trend, ' +
-      'spend-by-category breakdown, top 5 customers outstanding (point-in-time), ' +
-      'top 5 vendors by spend (in range), and last 10 activity items. ' +
-      'Defaults range to the current calendar month if from/to omitted.',
-  })
-  async getDashboard(@Query() query: DashboardQueryDto): Promise<DashboardDto> {
-    return this.aggregationService.getDashboard(query.from, query.to);
-  }
-
-  // ============================================
-  // 2. RECEIPTS LEDGER
-  // ============================================
-  @Get('receipts')
-  @ApiOperation({
-    summary: 'Org-wide receipts ledger',
-    description:
-      'Paginated list of receipts across all projects. ' +
-      'Includes joined project + customer fields so PDF templates work without an extra fetch.',
-  })
-  async getReceipts(
-    @Query() query: ReceiptsQueryDto,
-  ): Promise<PaginatedResponse<ReceiptListItemDto>> {
-    return this.aggregationService.getReceipts(query);
-  }
-
-  // ============================================
-  // 3. EXPENSES LEDGER
-  // ============================================
-  @Get('expenses')
-  @ApiOperation({
-    summary: 'Org-wide expenses ledger',
-    description: 'Paginated list of project expenses with project joins.',
-  })
-  async getExpenses(
-    @Query() query: ExpensesQueryDto,
-  ): Promise<PaginatedResponse<ExpenseListItemDto>> {
-    return this.aggregationService.getExpenses(query);
-  }
-
-  // ============================================
-  // 4. OUTSTANDING — unpaid payment terms
+  // OUTSTANDING — unpaid payment terms
   // ============================================
   @Get('outstanding')
   @ApiOperation({
@@ -193,51 +130,24 @@ export class FinanceController {
   async getOutstanding(
     @Query() query: OutstandingQueryDto,
   ): Promise<PaginatedResponse<OutstandingTermDto>> {
-    return this.aggregationService.getOutstanding(query);
+    return this.reportingService.getOutstanding(query);
   }
 
   // ============================================
-  // 5. CUSTOMERS AR — aging buckets per customer
+  // CUSTOMERS AR — aging buckets per customer
   // ============================================
   @Get('customers/ar')
   @ApiOperation({
     summary: 'Per-customer AR aging buckets',
     description:
-      'Returns one row per customer with totalOutstanding broken into 5 aging ' +
-      'buckets (current, 0-30, 31-60, 61-90, 90+). Optional asOfDate (default today).',
+      'One row per customer with totalOutstanding broken into 5 aging buckets ' +
+      '(current, 0-30, 31-60, 61-90, 90+), derived from the ledger. ' +
+      'Ageing is always as of today: the legacy asOfDate parameter was dropped ' +
+      'because no caller used it and the milestone view computes days overdue ' +
+      'against the current date, so honouring it would have required a ' +
+      'different query rather than a silently ignored argument.',
   })
-  async getCustomersAr(@Query() query: CustomersArQueryDto): Promise<CustomerAgingDto[]> {
-    return this.aggregationService.getCustomersAr(query);
-  }
-
-  // ============================================
-  // 6. VENDORS SPEND
-  // ============================================
-  @Get('vendors/spend')
-  @ApiOperation({
-    summary: 'Per-vendor spend analytics',
-    description:
-      'Vendor analytics over a date range: total spend, expense count, ' +
-      'last expense, top category, reimbursed %, and per-category breakdown. ' +
-      'Vendor matching is case-insensitive on TRIM(vendor_name).',
-  })
-  async getVendorsSpend(@Query() query: VendorsSpendQueryDto): Promise<VendorSpendDto[]> {
-    return this.aggregationService.getVendorsSpend(query);
-  }
-
-  // ============================================
-  // 7. PROJECT PROFITABILITY
-  // ============================================
-  @Get('projects/profitability')
-  @ApiOperation({
-    summary: 'Project profitability table',
-    description:
-      'Per-project: quotedRevenue (latest quote_versions.final_price via LATERAL join), ' +
-      'receivedAmount, totalSpend, margin (₹ + %), bomTarget vs actual variance.',
-  })
-  async getProfitability(
-    @Query() query: ProfitabilityQueryDto,
-  ): Promise<PaginatedResponse<ProjectProfitabilityDto>> {
-    return this.aggregationService.getProfitability(query);
+  async getCustomersAr(): Promise<CustomerAgingDto[]> {
+    return this.reportingService.getCustomersAr();
   }
 }

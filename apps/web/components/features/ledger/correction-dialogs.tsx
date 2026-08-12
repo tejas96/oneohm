@@ -17,6 +17,7 @@ import {
   type LedgerEntry,
   type MilestoneBalance,
 } from '@/lib/hooks/resources/ledger';
+import { formatDate } from '@/lib/utils';
 import { formatPaise, rupeesToPaise } from '@/lib/utils/paise';
 
 /**
@@ -62,7 +63,8 @@ export function ReverseEntryDialog({
       <MUIDialogHeader>
         <MUIDialogTitle>Reverse {entry.entryNo}</MUIDialogTitle>
         <MUIDialogDescription>
-          {formatPaise(entry.amountPaise)} dated {entry.valueDate}
+          {formatPaise(entry.amountPaise)} received {entry.valueDate}
+          {entry.valueDateIsInferred ? ' (approx)' : ''}, recorded {formatDate(entry.createdAt)}
         </MUIDialogDescription>
       </MUIDialogHeader>
 

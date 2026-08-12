@@ -44,6 +44,11 @@ export interface LedgerEntry {
   reversalReason?: string | null;
   createdAt: string;
   createdBy: string;
+  /** Present on org-wide `/finance/entries` rows. */
+  projectId?: string;
+  projectNumber?: string;
+  projectName?: string;
+  customerName?: string;
 }
 
 /**
@@ -65,6 +70,7 @@ export interface MilestoneAllocation {
   entryAmountPaise: Paise;
   valueDate: string;
   valueDateIsInferred: boolean;
+  entryCreatedAt: string;
   paymentMethod?: string | null;
   reference?: string | null;
   /** Set when this row belongs to a reversing entry. */
@@ -160,10 +166,21 @@ export interface Paginated<T> {
   limit: number;
 }
 
+export function lastReceiptValueDate(entries: LedgerEntry[]): string | null {
+  let last: string | null = null;
+  for (const entry of entries) {
+    if (entry.entryType !== 'receipt' || entry.direction !== 'in' || entry.reversesId) continue;
+    if (!last || entry.valueDate > last) last = entry.valueDate;
+  }
+  return last;
+}
+
 export interface LedgerFilters {
   direction?: LedgerDirection;
   from?: string;
   to?: string;
+  projectId?: string;
+  customerId?: string;
   page?: number;
   limit?: number;
 }
@@ -231,6 +248,7 @@ export function useCashFlow(
 
 export function useLedgerEntries(
   filters: LedgerFilters = {},
+  options?: { enabled?: boolean },
 ): UseQueryResult<Paginated<LedgerEntry>, AxiosError> {
   return useQuery({
     queryKey: ledgerKeys.entries(filters),
@@ -241,6 +259,7 @@ export function useLedgerEntries(
       });
       return data;
     },
+    enabled: options?.enabled !== false,
     staleTime: 30_000,
   });
 }

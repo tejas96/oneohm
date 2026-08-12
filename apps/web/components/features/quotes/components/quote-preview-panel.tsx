@@ -196,13 +196,14 @@ export function QuotePreviewPanel({
     );
   }
 
-  // Display-consistent rounding: integer-round each GST part independently so that
-  // the displayed "Total GST" always equals gst_rate1_row + gst_rate2_row.
-  const displayGst5 = Math.round(discounted.gst5);
-  const displayGst18 = Math.round(discounted.gst18);
-  const displayTotalGst = displayGst5 + displayGst18;
-  const displayDiscountedBase = Math.round(discounted.discountedBase);
-  const displayGrossTotal = displayDiscountedBase + displayTotalGst;
+  // Carry the true values and let formatCurrency round each at render, exactly
+  // as the quote detail page does. Rounding each part first and then summing
+  // made the displayed GST rows tally, but overstated the headline: a 3 kW
+  // quote whose finalPrice is 162715.66 showed "You Pay ₹1,62,717" here while
+  // the proposal the customer receives said ₹1,62,716. The rows adding up
+  // matters less than the total being the amount actually contracted.
+  const displayTotalGst = discounted.gst5 + discounted.gst18;
+  const displayGrossTotal = discounted.discountedBase + displayTotalGst;
 
   const pricePerWatt =
     calculation.actualTotalWattage > 0 ? displayGrossTotal / calculation.actualTotalWattage : 0;
@@ -784,9 +785,7 @@ export function QuotePreviewPanel({
                 permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
                 fallback={<span className="text-foreground-secondary">—</span>}
               >
-                <span>
-                  {formatCurrency(Math.round(discounted.gst5) + Math.round(discounted.gst18))}
-                </span>
+                <span>{formatCurrency(displayTotalGst)}</span>
               </Can>
             </div>
             <div className="flex items-center justify-between pt-1.5 text-sm font-medium">
@@ -795,13 +794,7 @@ export function QuotePreviewPanel({
                 permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
                 fallback={<span className="font-medium text-foreground-secondary">—</span>}
               >
-                <span>
-                  {formatCurrency(
-                    Math.round(discounted.discountedBase) +
-                      Math.round(discounted.gst5) +
-                      Math.round(discounted.gst18),
-                  )}
-                </span>
+                <span>{formatCurrency(displayGrossTotal)}</span>
               </Can>
             </div>
             {calculation.subsidy.isApplicable && calculation.subsidy.amount > 0 && (

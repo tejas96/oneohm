@@ -5,6 +5,7 @@ import { type JSX, useState } from 'react';
 
 import { MUIStatusChip, MUITypography, type StatusChipColor } from '@/components/ui';
 import type { MilestoneBalance } from '@/lib/hooks/resources/ledger';
+import { formatDate } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 interface MilestoneWaterfallProps {
@@ -239,6 +240,14 @@ export function MilestoneWaterfall({
                             </Box>
                             <Box component="span" color="text.secondary">
                               {a.valueDate}
+                              {a.entryCreatedAt && (
+                                <Box
+                                  component="span"
+                                  sx={{ display: 'block', fontSize: 11, color: 'text.disabled' }}
+                                >
+                                  Recorded {formatDate(a.entryCreatedAt)}
+                                </Box>
+                              )}
                             </Box>
                             {a.valueDateIsInferred && (
                               /* Historical rows have no recoverable value date —
