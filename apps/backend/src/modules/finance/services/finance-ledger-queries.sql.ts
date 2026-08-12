@@ -156,6 +156,7 @@ export const LEDGER_PAGE_SQL = `
     e.payment_method        AS "paymentMethod",
     e.reference, e.counterparty, e.category, e.notes,
     e.reverses_id           AS "reversesId",
+    e.reversal_reason       AS "reversalReason",
     e.created_at            AS "createdAt",
     pr.id                   AS "projectId",
     pr.project_number       AS "projectNumber",
