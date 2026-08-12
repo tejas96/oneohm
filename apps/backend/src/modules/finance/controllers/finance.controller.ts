@@ -111,6 +111,8 @@ export class FinanceController {
       direction: query.direction ?? null,
       from: query.from ?? null,
       to: query.to ?? null,
+      projectId: query.projectId ?? null,
+      customerId: query.customerId ?? null,
       page: query.page ?? 1,
       limit: query.limit ?? 25,
     });

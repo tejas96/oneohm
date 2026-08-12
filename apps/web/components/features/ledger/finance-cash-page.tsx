@@ -18,6 +18,7 @@ import {
 import { type JSX, useState } from 'react';
 
 import { formatExpenseCategory } from './format-expense-category';
+import { ReceiptDates } from './receipt-dates';
 
 import { MUITypography } from '@/components/ui';
 import {
@@ -358,13 +359,12 @@ function EntriesTable({
         <TableBody>
           {entries.map((e) => (
             <TableRow key={e.id} hover>
-              <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>
-                {e.valueDate}
-                {e.valueDateIsInferred && (
-                  <Tooltip title="Date inferred from the record's creation time">
-                    <span> ~</span>
-                  </Tooltip>
-                )}
+              <TableCell>
+                <ReceiptDates
+                  valueDate={e.valueDate}
+                  createdAt={e.createdAt}
+                  valueDateIsInferred={e.valueDateIsInferred}
+                />
               </TableCell>
               <TableCell sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace', fontSize: 12 }}>
                 {e.entryNo}

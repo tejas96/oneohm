@@ -51,13 +51,8 @@ import { showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useOrgCustomersAr } from '@/lib/hooks/resources';
-import {
-  formatCurrency,
-  formatDate,
-  formatNumber,
-  formatSystemSize,
-  recordRecentView,
-} from '@/lib/utils';
+import { useLedgerEntries, lastReceiptValueDate } from '@/lib/hooks/resources/ledger';
+import { formatCurrency, formatDate, formatNumber, formatSystemSize, recordRecentView } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 const OverviewTab = dynamic(() => import('./tabs/overview-tab').then((m) => m.OverviewTab), {
@@ -261,6 +256,14 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     [properties, propertyDrawerId],
   );
 
+  const ledgerReceiptsQ = useLedgerEntries(
+    { customerId, direction: 'in', page: 1, limit: 100 },
+    { enabled: customerReady },
+  );
+  const lastReceiptFromLedger = useMemo(
+    () => lastReceiptValueDate(ledgerReceiptsQ.data?.data ?? []),
+    [ledgerReceiptsQ.data?.data],
+  );
   const aging = useMemo(
     () => arRows?.find((row) => row.customerId === customerId),
     [arRows, customerId],
@@ -363,7 +366,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
       if (over90 > 0) return `${formatCurrency(over90)} over 90 days`;
       if (overdueAmount > 0) return `${formatCurrency(overdueAmount)} overdue`;
       if (outstanding > 0) return 'All on schedule';
-      if (aging?.lastReceiptDate) return `Last receipt ${formatDate(aging.lastReceiptDate)}`;
+      if (lastReceiptFromLedger) return `Last receipt ${formatDate(lastReceiptFromLedger)}`;
       return 'Nothing outstanding';
     })();
 
@@ -423,6 +426,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     arLoading,
     nextFollowup,
     overdueFollowupCount,
+    lastReceiptFromLedger,
     goToTab,
   ]);
 

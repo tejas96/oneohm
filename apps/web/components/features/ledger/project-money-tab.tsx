@@ -23,6 +23,7 @@ import { formatExpenseCategory } from './format-expense-category';
 import { useReceiptPdf } from './hooks/use-receipt-pdf';
 import { MilestoneWaterfall } from './milestone-waterfall';
 import { RecordMoneyDialog } from './record-money-dialog';
+import { ReceiptDates } from './receipt-dates';
 
 import type { ProjectDetail } from '@/components/features/projects/hooks/types';
 import { MUITypography } from '@/components/ui';
@@ -392,13 +393,12 @@ function ProjectEntries({
                 hover
                 sx={e.reversesId ? { backgroundColor: 'action.hover' } : undefined}
               >
-                <TableCell sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>
-                  {e.valueDate}
-                  {e.valueDateIsInferred && (
-                    <Tooltip title="Date inferred from the record's creation time">
-                      <span> ~</span>
-                    </Tooltip>
-                  )}
+                <TableCell>
+                  <ReceiptDates
+                    valueDate={e.valueDate}
+                    createdAt={e.createdAt}
+                    valueDateIsInferred={e.valueDateIsInferred}
+                  />
                 </TableCell>
                 <TableCell sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace', fontSize: 12 }}>
                   {e.entryNo}

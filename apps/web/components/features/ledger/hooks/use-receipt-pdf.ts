@@ -43,6 +43,7 @@ export function buildReceiptData(
       entryNo: entry.entryNo,
       amountPaise: entry.amountPaise,
       valueDate: entry.valueDate,
+      recordedAt: entry.createdAt,
       paymentMethod: entry.paymentMethod,
       reference: entry.reference,
       notes: entry.notes,

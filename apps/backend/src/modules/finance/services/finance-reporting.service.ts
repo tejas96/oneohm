@@ -124,12 +124,20 @@ export class FinanceReportingService {
     direction?: 'in' | 'out' | null;
     from?: string | null;
     to?: string | null;
+    projectId?: string | null;
+    customerId?: string | null;
     page?: number;
     limit?: number;
   }): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
-    const params = [opts.direction ?? null, opts.from ?? null, opts.to ?? null];
+    const params = [
+      opts.direction ?? null,
+      opts.from ?? null,
+      opts.to ?? null,
+      opts.projectId ?? null,
+      opts.customerId ?? null,
+    ];
 
     const [rows, [countRow]] = await Promise.all([
       this.dataSource.query(LEDGER_PAGE_SQL, [...params, limit, (page - 1) * limit]),

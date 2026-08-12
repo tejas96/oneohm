@@ -117,6 +117,7 @@ export class ReceiptDocumentService {
           projectId: entry.projectId,
           amountPaise: entry.amountPaise,
           valueDate: entry.valueDate,
+          createdAt: entry.createdAt,
           source: 'ledger_receipt',
           storageKey: upload.fileKey,
         },

@@ -27,6 +27,7 @@ export interface ReceiptPdfData {
     entryNo: string;
     amountPaise: number;
     valueDate: string;
+    recordedAt: string;
     paymentMethod?: string | null;
     reference?: string | null;
     notes?: string | null;
@@ -117,6 +118,26 @@ function formatDate(iso: string): string {
   return `${String(d).padStart(2, '0')} ${months[m - 1]} ${y}`;
 }
 
+function formatRecordedAt(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 function siteLine(site: ReceiptPdfData['site']): string {
   return [site.address, site.city, site.state, site.pincode].filter(Boolean).join(', ');
 }
@@ -157,7 +178,8 @@ export function generateReceiptHtml(data: ReceiptPdfData): string {
     <div class="right">
       <div class="title">PAYMENT RECEIPT</div>
       <div class="rno">${escapeHtml(entry.entryNo)}</div>
-      <div class="muted sm">${escapeHtml(formatDate(entry.valueDate))}</div>
+      <div class="muted sm">Date received: ${escapeHtml(formatDate(entry.valueDate))}</div>
+      <div class="muted sm">Recorded on: ${escapeHtml(formatRecordedAt(entry.recordedAt))}</div>
     </div>
   </div>
 

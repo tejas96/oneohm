@@ -168,16 +168,22 @@ export const LEDGER_PAGE_SQL = `
   WHERE ($1::text IS NULL OR e.direction = $1)
     AND ($2::date IS NULL OR e.value_date >= $2)
     AND ($3::date IS NULL OR e.value_date <= $3)
+    AND ($4::uuid IS NULL OR e.project_id = $4)
+    AND ($5::uuid IS NULL OR prop.customer_id = $5)
   ORDER BY e.value_date DESC, e.created_at DESC
-  LIMIT $4 OFFSET $5
+  LIMIT $6 OFFSET $7
 `;
 
 export const LEDGER_COUNT_SQL = `
   SELECT COUNT(*)::int AS count
   FROM ledger_entries e
+  JOIN projects pr              ON pr.id = e.project_id
+  LEFT JOIN customer_properties prop ON prop.id = pr.property_id
   WHERE ($1::text IS NULL OR e.direction = $1)
     AND ($2::date IS NULL OR e.value_date >= $2)
     AND ($3::date IS NULL OR e.value_date <= $3)
+    AND ($4::uuid IS NULL OR e.project_id = $4)
+    AND ($5::uuid IS NULL OR prop.customer_id = $5)
 `;
 
 /** Every open milestone across the org — the receivables screen. */

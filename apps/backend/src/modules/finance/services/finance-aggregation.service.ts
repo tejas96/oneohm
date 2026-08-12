@@ -456,7 +456,7 @@ export class FinanceAggregationService {
           AND t.expected_amount > t.paid_amount
       ),
       last_receipt AS (
-        SELECT pay.customer_id, MAX(pay.created_at) AS last_at
+        SELECT pay.customer_id, MAX(pay.paid_at) AS last_at
         FROM payments pay WHERE pay.deleted_at IS NULL
           AND pay.status IN ('received','verified','cleared')
         GROUP BY pay.customer_id

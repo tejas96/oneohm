@@ -18,6 +18,7 @@ import {
   type MilestoneBalance,
 } from '@/lib/hooks/resources/ledger';
 import { formatPaise, rupeesToPaise } from '@/lib/utils/paise';
+import { formatDate } from '@/lib/utils';
 
 /**
  * Reverse an entry — a bounced cheque, or a wrong amount.
@@ -62,7 +63,8 @@ export function ReverseEntryDialog({
       <MUIDialogHeader>
         <MUIDialogTitle>Reverse {entry.entryNo}</MUIDialogTitle>
         <MUIDialogDescription>
-          {formatPaise(entry.amountPaise)} dated {entry.valueDate}
+          {formatPaise(entry.amountPaise)} received {entry.valueDate}
+          {entry.valueDateIsInferred ? ' (approx)' : ''}, recorded {formatDate(entry.createdAt)}
         </MUIDialogDescription>
       </MUIDialogHeader>
 

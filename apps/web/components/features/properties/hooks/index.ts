@@ -53,7 +53,6 @@ export { usePropertyFollowups } from './use-property-followups';
 
 export {
   usePropertyFinanceSnapshot,
-  isSettledPayment,
   PROPERTY_FINANCE_PAGE_LIMIT,
   type PropertyFinanceSnapshot,
   type UsePropertyFinanceSnapshotResult,

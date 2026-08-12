@@ -123,6 +123,11 @@ export class MilestoneAllocationResponseDto {
   @Expose()
   valueDateIsInferred!: boolean;
 
+  @ApiProperty({ description: 'When the ledger entry was recorded' })
+  @Expose()
+  @Type(() => Date)
+  entryCreatedAt!: Date;
+
   @ApiPropertyOptional()
   @Expose()
   paymentMethod?: string | null;
