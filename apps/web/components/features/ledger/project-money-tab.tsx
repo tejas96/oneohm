@@ -156,6 +156,7 @@ export function ProjectMoneyTab({
         isLoading={entries.isLoading}
         onReverse={setReversing}
         onRegenerateReceipt={project ? regenerateReceipt : undefined}
+        receiptBusy={receiptPdf.isBusy}
       />
 
       {(dialog === 'receipt' || dialog === 'expense') && (
@@ -339,12 +340,15 @@ function ProjectEntries({
   isLoading,
   onReverse,
   onRegenerateReceipt,
+  receiptBusy,
 }: {
   entries: LedgerEntry[];
   isLoading: boolean;
   onReverse: (entry: LedgerEntry) => void;
   /** Omitted when the project header data needed to render a receipt is absent. */
   onRegenerateReceipt?: (entry: LedgerEntry) => Promise<void>;
+  /** Filing in progress. The hook refuses re-entry anyway; this makes it visible. */
+  receiptBusy?: boolean;
 }): JSX.Element {
   // Which entries already carry a reversal.
   //
@@ -446,9 +450,20 @@ function ProjectEntries({
                           receipt for cash that bounced is worse than none. */}
                       {e.direction === 'in' && onRegenerateReceipt && (
                         <Tooltip title="Generate the receipt again and file it in the customer's documents">
-                          <Button size="small" onClick={() => void onRegenerateReceipt(e)}>
-                            Receipt
-                          </Button>
+                          {/* Disabled while a receipt is being filed. The hook
+                              refuses re-entry regardless; this stops the button
+                              looking clickable while it works, which is what
+                              produced duplicate copies in the customer's
+                              documents. */}
+                          <span>
+                            <Button
+                              size="small"
+                              disabled={receiptBusy}
+                              onClick={() => void onRegenerateReceipt(e)}
+                            >
+                              Receipt
+                            </Button>
+                          </span>
                         </Tooltip>
                       )}
                       <Button size="small" color="inherit" onClick={() => onReverse(e)}>

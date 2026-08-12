@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { generateReceiptPdfBlob, downloadReceiptPdf } from '../services/receipt-pdf.service';
 import {
@@ -94,9 +94,27 @@ interface UseReceiptPdfResult {
 export function useReceiptPdf(): UseReceiptPdfResult {
   const queryClient = useQueryClient();
   const [isBusy, setIsBusy] = useState(false);
+  /**
+   * Re-entry guard. `isBusy` cannot do this job on its own: setState is async,
+   * so a second click arriving before React re-renders still reads the stale
+   * `false` and proceeds. A ref updates synchronously, so the second call sees
+   * the first one already running.
+   *
+   * Without it, filing is not idempotent in the way that matters. The endpoint
+   * is deliberately safe to call again — the receipt is derived from data, so
+   * regenerating is legitimate — but each call files ANOTHER copy. Measured
+   * before this guard: two rapid clicks on Receipt produced two identical PDFs,
+   * and the property's Documents tab read "Payment Documents (5)" for a single
+   * payment, with nothing to tell the copies apart.
+   */
+  const inFlight = useRef(false);
 
   const generateAndFile = useCallback(
     async (entry: LedgerEntry, summary: ProjectLedgerSummary, project: ProjectDetail) => {
+      // Not an error: the operator asked for the same thing twice. Returning
+      // false simply skips the success toast the caller would otherwise show.
+      if (inFlight.current) return false;
+      inFlight.current = true;
       setIsBusy(true);
       try {
         const data = buildReceiptData(entry, summary, project);
@@ -121,6 +139,7 @@ export function useReceiptPdf(): UseReceiptPdfResult {
         );
         return false;
       } finally {
+        inFlight.current = false;
         setIsBusy(false);
       }
     },
@@ -129,12 +148,17 @@ export function useReceiptPdf(): UseReceiptPdfResult {
 
   const download = useCallback(
     async (entry: LedgerEntry, summary: ProjectLedgerSummary, project: ProjectDetail) => {
+      // Guarded for the same reason, though a repeated download only costs the
+      // operator a duplicate file rather than polluting customer documents.
+      if (inFlight.current) return;
+      inFlight.current = true;
       setIsBusy(true);
       try {
         await downloadReceiptPdf(buildReceiptData(entry, summary, project));
       } catch (error) {
         showToast.error(getErrorMessage(error));
       } finally {
+        inFlight.current = false;
         setIsBusy(false);
       }
     },
