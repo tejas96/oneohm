@@ -68,6 +68,67 @@ export class MilestoneScheduleService {
   }
 
   /**
+   * Set due dates for milestones that have no workflow event to wait for.
+   *
+   * `fn_payment_stage_work_key` returns NULL for `advance` on purpose — an
+   * advance falls due on order confirmation, not on any task finishing, so it
+   * has no stage to watch (see migration 11-milestone-stage-mapping). That
+   * migration names the offset path as where its due date should come from,
+   * and `chk_payment_milestones_due_source` already permits `'offset'`, but
+   * nothing ever wrote it: zero rows carried that source.
+   *
+   * The cost of the gap was that the advance — 105 unpaid milestones and
+   * ₹89.3 lakh, the single largest category of receivables — could never age
+   * past `current` and so never appeared on the chase list, however long it
+   * went unpaid.
+   *
+   * The basis is the LATER of the project starting and the milestone being
+   * created. For an advance, created with the project, that is the project
+   * start. For a change order raised months in, it is the day the change order
+   * was agreed — which is what a customer would expect to be measured from.
+   *
+   * Same guarantees as the stage-event path: only fills a `due_date` that is
+   * still NULL, never overwrites a manual date, and is idempotent.
+   */
+  @Cron(CronExpression.EVERY_HOUR, { name: 'ledger:derive-offset-due-dates' })
+  async deriveDueDatesFromOffset(): Promise<number> {
+    const [rows] = await this.dataSource.query(
+      `UPDATE payment_milestones m
+          SET due_date = (
+                GREATEST(
+                  COALESCE(pr.start_date, pr.created_at::date),
+                  m.created_at::date
+                ) + COALESCE(m.due_offset_days, $1)
+              ),
+              due_date_source = 'offset',
+              updated_at = CURRENT_TIMESTAMP
+         FROM projects pr
+         LEFT JOIN LATERAL (SELECT 1) _ ON TRUE
+        WHERE pr.id = m.project_id
+          AND pr.deleted_at IS NULL
+          AND m.status = 'active'
+          AND m.due_date IS NULL
+          AND m.due_date_source IN ('unset', 'offset')
+          -- Only milestones with no stage to wait for. Anything mapped to a
+          -- work stage belongs to the stage-event path above, even if that
+          -- stage has not completed yet — giving it an offset date here would
+          -- make it due before the work it is meant to follow.
+          AND COALESCE(
+                NULLIF(BTRIM(m.due_basis_stage), ''),
+                fn_payment_stage_work_key(m.stage)
+              ) IS NULL
+        RETURNING m.id`,
+      [MilestoneScheduleService.DEFAULT_OFFSET_DAYS],
+    );
+
+    const count = rows?.length ?? 0;
+    if (count > 0) {
+      this.logger.log(`Derived due dates for ${count} milestone(s) from their start offset`);
+    }
+    return count;
+  }
+
+  /**
    * Daily sweep for receivables that have stopped moving.
    *
    * Reports rather than notifies, for now: the notification module has no

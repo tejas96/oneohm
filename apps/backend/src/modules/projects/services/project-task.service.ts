@@ -385,6 +385,17 @@ export class ProjectTaskService {
       if (!existingTask.endDate) updateData.endDate = new Date();
       if (meta.autoCompletePct !== undefined)
         updateData.completionPercentage = meta.autoCompletePct;
+      // Payment milestones fall due when the tasks carrying their stage name
+      // finish, and the finance dashboard counts meter installations by this
+      // timestamp. Both read `completed_at`; neither could see anything before
+      // this was written, because the column was mapped only in the ledger's
+      // backfill migration. Unlike endDate this is refreshed on re-completion:
+      // a task reopened and finished again completed at the later moment.
+      updateData.completedAt = new Date();
+    } else if (existingTask.completedAt) {
+      // Moved back out of a final status — the work is no longer complete, so
+      // the milestone it feeds must not stay due on the old date.
+      updateData.completedAt = null;
     }
 
     const activityEntries: TaskActivityEntry[] = [];

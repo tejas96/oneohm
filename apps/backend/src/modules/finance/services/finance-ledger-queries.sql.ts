@@ -48,9 +48,17 @@ export const KPIS_SQL = `
       AND balance_paise > 0
   ),
   -- Client requirement: "number of meter installations done on the selected date".
-  -- Counted from workflow tasks, dated by completed_at (recovered from the
-  -- task activity log in migration 1851000000007) - never by a planned end_date,
-  -- which is a schedule, not a fact.
+  -- Dated by completed_at - never by end_date, which is a schedule, not a fact.
+  --
+  -- Matched on milestone_name, the workflow stage the task belongs to. The
+  -- original filter tested t.name ILIKE '%meter%' OR t.code ILIKE '%LIA-011%'
+  -- and could never match: project_tasks.name is empty on all 9,778 rows, and
+  -- code holds a generated task number (TSK-ONEOHM_EPC-YYYY-NNNN) rather than a
+  -- workflow code. This KPI therefore reported 0 permanently.
+  --
+  -- 'Net Metering Application' is deliberately excluded - applying to the DISCOM
+  -- is not the same event as the meter going in, and counting both would roughly
+  -- double the figure.
   meters AS (
     SELECT COUNT(*)::int AS meter_installations
     FROM project_tasks t
@@ -59,7 +67,7 @@ export const KPIS_SQL = `
     WHERE t.deleted_at IS NULL
       AND t.status = 'done'
       AND t.completed_at IS NOT NULL
-      AND (t.name ILIKE '%meter%' OR t.code ILIKE '%LIA-011%')
+      AND BTRIM(LOWER(t.milestone_name)) LIKE 'net meter installation%'
       AND t.completed_at::date >= $1::date
       AND t.completed_at::date <= $2::date
   ),
