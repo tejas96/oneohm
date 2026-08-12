@@ -131,9 +131,12 @@ export function ProjectMoneyTab({
               the chase list. Change orders now sweep credit on creation, so
               this branch should be unreachable; leaving it in makes the page
               its own regression detector. */}
+          {/* Neither branch offers a refund: there is no refund entry type
+              wired up anywhere, so promising one sent operators looking for a
+              control that does not exist. */}
           {s.outstandingPaise > 0
-            ? `${formatPaise(s.outstandingPaise)} still shows as outstanding below and this credit has not been applied to it. Record it against the milestone, or refund the customer.`
-            : 'Everything owed on this project is covered. This sits as credit on the customer’s account: it is applied automatically to the next change order raised here, and can be refunded until then.'}
+            ? `${formatPaise(s.outstandingPaise)} still shows as outstanding below and this credit has not been applied to it. Record it against the milestone.`
+            : 'Everything owed on this project is covered. This sits as credit on the customer’s account and is applied automatically to the next change order raised here.'}
         </Alert>
       )}
 
