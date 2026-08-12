@@ -6,7 +6,11 @@ import { useEffect, useState } from 'react';
 
 import { Badge, CountBadge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { isNavItemActive } from '@/lib/config';
+import {
+  isAllProjectsNavActive,
+  isNavItemActive,
+  isProjectStatusSubItemActive,
+} from '@/lib/config';
 import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
 import type { NavItem, StatusDotColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -66,33 +70,8 @@ export function MobileNav() {
     let isActive = false;
 
     if (hasQueryParams) {
-      // Exact full URL matching or query parameters extraction
       if (item.href.startsWith('/projects')) {
-        const urlObj = new URL(item.href, 'http://localhost');
-        const targetStatus = urlObj.searchParams.get('status');
-        const targetHealth = urlObj.searchParams.get('healthStatus');
-
-        let currentStatus = searchParams.get('status');
-        let currentHealth = searchParams.get('healthStatus');
-        if (!currentStatus) {
-          const prefFilters = searchParams.get('projects_filters');
-          if (prefFilters) {
-            try {
-              const parsedFilters = JSON.parse(prefFilters);
-              currentStatus = parsedFilters.status;
-              currentHealth = parsedFilters.healthStatus ?? null;
-            } catch (error) {
-              console.log(error);
-            }
-          }
-        }
-        if (!currentStatus && targetStatus === 'active' && !targetHealth) {
-          isActive = true;
-        } else {
-          const statusMatch = currentStatus === targetStatus;
-          const healthMatch = (targetHealth ?? null) === (currentHealth ?? null);
-          isActive = statusMatch && healthMatch;
-        }
+        isActive = isProjectStatusSubItemActive(pathname, item.href, searchParams);
       } else {
         isActive = currentFullUrl === item.href;
       }
@@ -107,7 +86,11 @@ export function MobileNav() {
         const isLikelyDynamicId = /^[0-9a-f-]{8,}$/i.test(nextSegment) || /^\d+$/.test(nextSegment);
         isNestedDynamic = isLikelyDynamicId;
       }
-      isActive = isExact || isNestedDynamic;
+      if (item.id === 'all-projects') {
+        isActive = isAllProjectsNavActive(pathname, item.href, searchParams) || isNestedDynamic;
+      } else {
+        isActive = isExact || isNestedDynamic;
+      }
     }
 
     const Icon = item.icon;

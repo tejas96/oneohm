@@ -7,7 +7,14 @@ export * from './config.interface';
 export { config, WebConfigService } from './config';
 
 // Navigation configuration
-export { navigationConfig, getPanelConfigByPath, isNavItemActive } from './navigation';
+export {
+  navigationConfig,
+  getPanelConfigByPath,
+  isNavItemActive,
+  getProjectListFilterFromSearchParams,
+  isProjectStatusSubItemActive,
+  isAllProjectsNavActive,
+} from './navigation';
 
 // Routes configuration
 export {
