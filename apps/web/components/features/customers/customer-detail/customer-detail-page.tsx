@@ -8,15 +8,12 @@ import {
   Box,
   Breadcrumbs,
   Link as MuiLink,
-  Paper,
   SpeedDial,
   SpeedDialAction,
   SpeedDialIcon,
-  Tab,
-  Tabs,
   Typography,
 } from '@mui/material';
-import { CustomerStatus, FollowupStatus, PropertyStatus } from '@tejas96/shared/types';
+import { CustomerStatus, FollowupStatus, PropertyStatus, QuoteStatus } from '@tejas96/shared/types';
 import dynamic from 'next/dynamic';
 import NextLink from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -33,13 +30,11 @@ import {
   useCustomerProperties,
   useDeleteCustomer,
 } from '../hooks';
-import { CustomerAttentionPanel, type AttentionItem } from './attention-panel';
-import { CustomerEditDrawer } from './customer-edit-drawer';
-import { CustomerDetailHeader } from './header';
-import { CustomerDetailKpiStrip } from './kpi-strip';
+import { CustomerDetailHeader, type HeaderSignal } from './header';
 import { PropertyDetailDrawer } from './property-detail-drawer';
+import { CustomerTabRail } from './tab-rail';
 import { PageSkeleton, TabSkeleton } from './tab-skeleton';
-import { getCustomerDisplayName, isValidUuid } from './utils';
+import { getBalanceTone, getCustomerDisplayName, getOverdueAmount, isValidUuid } from './utils';
 import { PropertySelectModal } from '../components/property-select-modal';
 
 import { FollowupDrawer } from '@/components/features/followups';
@@ -50,11 +45,19 @@ import {
 } from '@/components/features/properties/utils/delete-eligibility';
 import { EmptyState } from '@/components/shared';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
+import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
+import type { MetricTileProps } from '@/components/shared/inventory/metric-tile';
 import { showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useOrgCustomersAr } from '@/lib/hooks/resources';
-import { formatCurrency, formatDate, recordRecentView } from '@/lib/utils';
+import {
+  formatCurrency,
+  formatDate,
+  formatNumber,
+  formatSystemSize,
+  recordRecentView,
+} from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 const OverviewTab = dynamic(() => import('./tabs/overview-tab').then((m) => m.OverviewTab), {
@@ -127,7 +130,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
   const [propertySelectOpen, setPropertySelectOpen] = useState(false);
   const [followupDrawerOpen, setFollowupDrawerOpen] = useState(false);
-  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
   const [propertyDrawerId, setPropertyDrawerId] = useState<string | null>(null);
   const [speedDialOpen, setSpeedDialOpen] = useState(false);
 
@@ -195,6 +197,13 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     [pathname, router, searchParams],
   );
 
+  const goToTab = useCallback(
+    (tab: CustomerDetailTab) => {
+      handleTabChange({} as React.SyntheticEvent, tab);
+    },
+    [handleTabChange],
+  );
+
   const setPropertyFilterParam = useCallback(
     (value: string) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -208,9 +217,15 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     [pathname, router, searchParams],
   );
 
-  const handleEdit = (): void => {
-    setEditDrawerOpen(true);
-  };
+  /*
+   * Editing is a full page, not a drawer. The wizard at
+   * `/customers/[id]/edit` is the same flow that creates a customer, so it
+   * owns validation, the availability check and the multi-step layout; the
+   * drawer was a second, thinner editor for the same record.
+   */
+  const handleEdit = useCallback((): void => {
+    router.push(buildRoute(ROUTES.CUSTOMERS.EDIT, { id: customerId }));
+  }, [router, customerId]);
 
   const prefetchTab = useCallback((tab: CustomerDetailTab) => {
     void TAB_MODULE_PRELOADERS[tab]?.();
@@ -251,7 +266,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     [arRows, customerId],
   );
 
-  const pendingFollowups = followupsPreview?.data ?? [];
+  const pendingFollowups = useMemo(() => followupsPreview?.data ?? [], [followupsPreview?.data]);
   const nextFollowup = useMemo(() => {
     const sorted = [...pendingFollowups].sort(
       (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
@@ -259,60 +274,165 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     return sorted[0];
   }, [pendingFollowups]);
 
-  const overdueFollowups = pendingFollowups.filter(
-    (f) => new Date(f.scheduledAt).getTime() < Date.now(),
+  const overdueFollowupCount = useMemo(
+    () => pendingFollowups.filter((f) => new Date(f.scheduledAt).getTime() < Date.now()).length,
+    [pendingFollowups],
   );
 
-  const projectCount = useMemo(
-    () => properties.filter((p) => p.projectId || p.status === PropertyStatus.CONVERTED).length,
-    [properties],
-  );
+  /**
+   * Site roll-up.
+   *
+   * `sitePortfolio` is a list-response field only — a single-customer read
+   * omits it — so the same figures are derived here from the properties the
+   * page already loaded rather than by firing another request.
+   */
+  const portfolio = useMemo(() => {
+    let converted = 0;
+    let quotedSites = 0;
+    let quotedKw = 0;
+    let pipelineValue = 0;
+    let pipelineSites = 0;
+    for (const property of properties) {
+      if (property.status === PropertyStatus.CONVERTED) converted += 1;
+      if (property.latestQuoteId) {
+        quotedSites += 1;
+        quotedKw += property.latestQuoteSystemSizeKw ?? 0;
+      }
+      /*
+       * Pipeline counts only quotes that are actually sitting with the
+       * customer. Summing every latest quote — which is what a "Quoted value"
+       * tile would do — silently folds in rejected and expired quotes plus
+       * sites already converted to projects, producing a number that is a
+       * total of nothing in particular.
+       */
+      if (
+        property.latestQuoteStatus === QuoteStatus.SENT ||
+        property.latestQuoteStatus === QuoteStatus.VIEWED
+      ) {
+        pipelineSites += 1;
+        pipelineValue += property.latestQuoteFinalPrice ?? 0;
+      }
+    }
+    return { converted, quotedSites, quotedKw, pipelineValue, pipelineSites };
+  }, [properties]);
 
-  const quotedCount = useMemo(
-    () => properties.filter((p) => p.latestQuoteStatus).length,
-    [properties],
-  );
+  const activeTicketCount = customer?.activeTicketCount ?? 0;
 
-  const attentionItems = useMemo((): AttentionItem[] => {
-    const items: AttentionItem[] = [];
-    if (overdueFollowups.length > 0) {
+  const signals = useMemo((): HeaderSignal[] => {
+    const items: HeaderSignal[] = [];
+    if (overdueFollowupCount > 0) {
       items.push({
         id: 'overdue-followups',
-        label: `${overdueFollowups.length} overdue follow-up${overdueFollowups.length > 1 ? 's' : ''}`,
-        tab: 'followups',
+        label: `${overdueFollowupCount} overdue follow-up${overdueFollowupCount > 1 ? 's' : ''}`,
+        tone: 'danger',
+        onClick: () => goToTab('followups'),
       });
     }
-    if (aging && aging.totalOutstanding > 0) {
+    /*
+     * Only *late* money belongs in the attention row. A balance that is owed
+     * but not yet due needs no action today, and flagging it amber next to a
+     * genuine overdue follow-up devalues both. The exact balance is one row
+     * down in the Outstanding tile regardless.
+     */
+    const overdueAmount = getOverdueAmount(aging);
+    if (overdueAmount > 0) {
       items.push({
-        id: 'outstanding',
-        label: `${formatCurrency(aging.totalOutstanding)} outstanding`,
-        tab: 'finance',
+        id: 'overdue-money',
+        label: `${formatCurrency(overdueAmount)} overdue`,
+        tone: (aging?.bucket90plus ?? 0) > 0 ? 'danger' : 'warning',
+        onClick: () => goToTab('finance'),
+      });
+    }
+    if (activeTicketCount > 0) {
+      items.push({
+        id: 'tickets',
+        label: `${activeTicketCount} open service ticket${activeTicketCount > 1 ? 's' : ''}`,
+        tone: 'info',
+        onClick: () => goToTab('service'),
       });
     }
     return items;
-  }, [overdueFollowups.length, aging]);
+  }, [overdueFollowupCount, aging, activeTicketCount, goToTab]);
 
-  const kpiItems = useMemo(
-    () => [
-      { label: 'Properties', value: String(properties.length) },
-      { label: 'With Quotes', value: String(quotedCount) },
-      { label: 'Projects', value: String(projectCount) },
+  const kpiTiles = useMemo((): Array<MetricTileProps & { id: string }> => {
+    const outstanding = aging?.totalOutstanding ?? 0;
+    const over90 = aging?.bucket90plus ?? 0;
+
+    const overdueAmount = getOverdueAmount(aging);
+    const outstandingSecondary = ((): string => {
+      if (over90 > 0) return `${formatCurrency(over90)} over 90 days`;
+      if (overdueAmount > 0) return `${formatCurrency(overdueAmount)} overdue`;
+      if (outstanding > 0) return 'All on schedule';
+      if (aging?.lastReceiptDate) return `Last receipt ${formatDate(aging.lastReceiptDate)}`;
+      return 'Nothing outstanding';
+    })();
+
+    return [
       {
+        id: 'sites',
+        label: 'Sites',
+        value: formatNumber(properties.length),
+        isLoading: isLoadingProperties,
+        secondary:
+          properties.length === 0
+            ? 'No sites yet'
+            : `${portfolio.converted} converted · ${formatSystemSize(portfolio.quotedKw)} kW quoted`,
+        onClick: () => goToTab('properties'),
+      },
+      {
+        id: 'open-pipeline',
+        label: 'Open pipeline',
+        value: formatCurrency(portfolio.pipelineValue),
+        isLoading: isLoadingProperties,
+        secondary:
+          portfolio.pipelineSites === 0
+            ? `${portfolio.quotedSites} of ${properties.length} site${
+                properties.length === 1 ? '' : 's'
+              } quoted`
+            : `${portfolio.pipelineSites} quote${
+                portfolio.pipelineSites === 1 ? '' : 's'
+              } awaiting a decision`,
+        onClick: () => goToTab('quotes'),
+      },
+      {
+        id: 'outstanding',
         label: 'Outstanding',
-        value: arLoading ? '…' : formatCurrency(aging?.totalOutstanding ?? 0),
-        tone: (aging?.totalOutstanding ?? 0) > 0 ? ('warning' as const) : ('default' as const),
-        hint: 'from AR',
+        value: formatCurrency(outstanding),
+        isLoading: arLoading,
+        intent: getBalanceTone(aging),
+        secondary: outstandingSecondary,
+        onClick: () => goToTab('finance'),
       },
       {
-        label: 'Next Follow-up',
+        id: 'next-followup',
+        label: 'Next follow-up',
         value: nextFollowup ? formatDate(nextFollowup.scheduledAt) : '—',
+        intent: overdueFollowupCount > 0 ? 'danger' : 'neutral',
+        secondary:
+          overdueFollowupCount > 0
+            ? `${overdueFollowupCount} overdue`
+            : (nextFollowup?.subject ?? 'Nothing scheduled'),
+        onClick: () => goToTab('followups'),
       },
-      {
-        label: 'Open Terms',
-        value: arLoading ? '…' : String(aging?.openTermCount ?? 0),
-      },
-    ],
-    [properties.length, quotedCount, projectCount, arLoading, aging, nextFollowup],
+    ];
+  }, [
+    aging,
+    properties.length,
+    portfolio,
+    isLoadingProperties,
+    arLoading,
+    nextFollowup,
+    overdueFollowupCount,
+    goToTab,
+  ]);
+
+  const tabCounts = useMemo(
+    () => ({
+      properties: properties.length,
+      followups: pendingFollowups.length,
+      service: activeTicketCount,
+    }),
+    [properties.length, pendingFollowups.length, activeTicketCount],
   );
 
   if (!isCustomerIdValid) {
@@ -359,16 +479,24 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
   return (
     <Box sx={{ pb: 10 }}>
-      <Breadcrumbs aria-label="Breadcrumb" sx={{ mb: 2, fontSize: '0.75rem' }}>
+      <Breadcrumbs
+        aria-label="Breadcrumb"
+        separator="/"
+        sx={{
+          mb: 1.5,
+          fontSize: '0.75rem',
+          '& .MuiBreadcrumbs-separator': { color: 'var(--ds-text-tertiary)', mx: 0.75 },
+        }}
+      >
         <MuiLink
           component={NextLink}
           href={ROUTES.CUSTOMERS.LIST}
           underline="hover"
-          color="inherit"
+          sx={{ color: 'var(--ds-text-secondary)', fontSize: '0.75rem' }}
         >
           Customers
         </MuiLink>
-        <Typography color="text.primary" variant="caption">
+        <Typography sx={{ color: 'var(--ds-text-primary)', fontSize: '0.75rem', fontWeight: 500 }}>
           {customerName}
         </Typography>
       </Breadcrumbs>
@@ -385,128 +513,87 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         deleteDisabled={customerDeleteDisabled}
         deleteTooltip={customerDeleteTooltip}
         onDelete={() => deleteConfirmation.requestDelete(customer)}
+        signals={signals}
       />
 
-      <CustomerDetailKpiStrip items={kpiItems} />
+      <KpiStripe className="mb-1" columns={4} tiles={kpiTiles} />
 
-      <CustomerAttentionPanel
-        items={attentionItems}
-        onViewAll={
-          attentionItems.length > 0
-            ? () =>
-                handleTabChange({} as React.SyntheticEvent, attentionItems[0]?.tab ?? 'overview')
-            : undefined
-        }
+      <CustomerTabRail
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onPrefetch={prefetchTab}
+        counts={tabCounts}
       />
 
-      <Paper variant="outlined" sx={{ borderRadius: 1, overflow: 'hidden' }}>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          aria-label="Customer sections"
-          sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            minHeight: 42,
-            bgcolor: 'background.paper',
-            '& .MuiTab-root': {
-              minHeight: 42,
-              fontSize: '0.8125rem',
-              fontWeight: 500,
-              textTransform: 'none',
-              color: 'text.secondary',
-            },
-            '& .Mui-selected': {
-              color: 'primary.main',
-              fontWeight: 600,
-            },
-          }}
-        >
-          {CUSTOMER_DETAIL_TABS.map((tab) => (
-            <Tab
-              key={tab.value}
-              value={tab.value}
-              label={tab.label}
-              id={`tab-${tab.value}`}
-              onMouseEnter={() => prefetchTab(tab.value)}
+      <Box role="tabpanel" aria-labelledby={`tab-${activeTab}`} aria-busy={isLoadingProperties}>
+        <Suspense fallback={<TabSkeleton />}>
+          {activeTab === 'overview' && (
+            <OverviewTab
+              customer={customer}
+              properties={properties}
+              customerId={customerId}
+              activeTab={activeTab}
+              onTabChange={goToTab}
+              onOpenProperty={handleOpenProperty}
+              onLogFollowup={() => setFollowupDrawerOpen(true)}
+              onAddProperty={handleAddProperty}
+              isInactive={isInactive}
             />
-          ))}
-        </Tabs>
-
-        <Box role="tabpanel" aria-labelledby={`tab-${activeTab}`} aria-busy={isLoadingProperties}>
-          <Suspense fallback={<TabSkeleton />}>
-            {activeTab === 'overview' && (
-              <OverviewTab
-                customer={customer}
-                properties={properties}
-                customerId={customerId}
-                activeTab={activeTab}
-                onTabChange={(tab) => handleTabChange({} as React.SyntheticEvent, tab)}
-                onOpenProperty={handleOpenProperty}
-                onLogFollowup={() => setFollowupDrawerOpen(true)}
-              />
-            )}
-            {activeTab === 'properties' && (
-              <PropertiesTab
-                customerId={customerId}
-                properties={properties}
-                isLoading={isLoadingProperties}
-                isInactive={isInactive}
-                onAddProperty={handleAddProperty}
-                onOpenProperty={handleOpenProperty}
-              />
-            )}
-            {activeTab === 'quotes' && (
-              <QuotesTab
-                customerId={customerId}
-                enabled={isTabEnabled('quotes')}
-                isInactive={isInactive}
-                onCreateQuote={handleCreateQuote}
-              />
-            )}
-            {activeTab === 'projects' && (
-              <ProjectsTab customerId={customerId} enabled={isTabEnabled('projects')} />
-            )}
-            {activeTab === 'documents' && (
-              <DocumentsTab
-                properties={properties}
-                propertyFilter={propertyFilter}
-                onPropertyFilterChange={setPropertyFilterParam}
-              />
-            )}
-            {activeTab === 'followups' && (
-              <FollowupsTab
-                customerId={customerId}
-                enabled={isTabEnabled('followups')}
-                onSchedule={() => setFollowupDrawerOpen(true)}
-              />
-            )}
-            {activeTab === 'finance' && (
-              <FinanceTab
-                customerId={customerId}
-                customerName={customerName}
-                enabled={isTabEnabled('finance')}
-              />
-            )}
-            {activeTab === 'service' && (
-              <ServiceTicketsTab
-                scope="customer"
-                id={customerId}
-                enabled={isTabEnabled('service')}
-              />
-            )}
-            {activeTab === 'activity' && (
-              <ActivityTab
-                customerId={customerId}
-                properties={properties}
-                enabled={isTabEnabled('activity')}
-              />
-            )}
-          </Suspense>
-        </Box>
-      </Paper>
+          )}
+          {activeTab === 'properties' && (
+            <PropertiesTab
+              customerId={customerId}
+              properties={properties}
+              isLoading={isLoadingProperties}
+              isInactive={isInactive}
+              onAddProperty={handleAddProperty}
+              onOpenProperty={handleOpenProperty}
+            />
+          )}
+          {activeTab === 'quotes' && (
+            <QuotesTab
+              customerId={customerId}
+              enabled={isTabEnabled('quotes')}
+              isInactive={isInactive}
+              onCreateQuote={handleCreateQuote}
+            />
+          )}
+          {activeTab === 'projects' && (
+            <ProjectsTab customerId={customerId} enabled={isTabEnabled('projects')} />
+          )}
+          {activeTab === 'documents' && (
+            <DocumentsTab
+              properties={properties}
+              propertyFilter={propertyFilter}
+              onPropertyFilterChange={setPropertyFilterParam}
+            />
+          )}
+          {activeTab === 'followups' && (
+            <FollowupsTab
+              customerId={customerId}
+              enabled={isTabEnabled('followups')}
+              onSchedule={() => setFollowupDrawerOpen(true)}
+            />
+          )}
+          {activeTab === 'finance' && (
+            <FinanceTab
+              customerId={customerId}
+              customerName={customerName}
+              enabled={isTabEnabled('finance')}
+            />
+          )}
+          {activeTab === 'service' && (
+            <ServiceTicketsTab scope="customer" id={customerId} enabled={isTabEnabled('service')} />
+          )}
+          {activeTab === 'activity' && (
+            <ActivityTab
+              customerId={customerId}
+              properties={properties}
+              enabled={isTabEnabled('activity')}
+            />
+          )}
+        </Suspense>
+      </Box>
 
       <PropertySelectModal
         open={propertySelectOpen}
@@ -529,12 +616,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         properties={properties}
       />
 
-      <CustomerEditDrawer
-        open={editDrawerOpen}
-        onClose={() => setEditDrawerOpen(false)}
-        customer={customer}
-      />
-
       <Box sx={{ display: { xs: 'block', md: 'none' } }}>
         <SpeedDial
           ariaLabel="Customer actions"
@@ -554,7 +635,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           />
           <SpeedDialAction
             icon={<AddBusinessOutlinedIcon />}
-            slotProps={{ tooltip: { title: 'Add Property' } }}
+            slotProps={{ tooltip: { title: 'Add site' } }}
             onClick={() => {
               setSpeedDialOpen(false);
               handleAddProperty();
@@ -562,7 +643,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           />
           <SpeedDialAction
             icon={<PostAddOutlinedIcon />}
-            slotProps={{ tooltip: { title: 'Create Quote' } }}
+            slotProps={{ tooltip: { title: 'New quote' } }}
             onClick={() => {
               setSpeedDialOpen(false);
               handleCreateQuote();
@@ -570,7 +651,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           />
           <SpeedDialAction
             icon={<EventNoteOutlinedIcon />}
-            slotProps={{ tooltip: { title: 'Log Follow-up' } }}
+            slotProps={{ tooltip: { title: 'Log follow-up' } }}
             onClick={() => {
               setSpeedDialOpen(false);
               setFollowupDrawerOpen(true);

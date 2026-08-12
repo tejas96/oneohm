@@ -2,25 +2,18 @@
 
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import {
-  Box,
-  Button,
-  Chip,
-  Divider,
-  Drawer,
-  Grid,
-  IconButton,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Drawer, IconButton, Stack, Typography } from '@mui/material';
 import NextLink from 'next/link';
 import type { JSX } from 'react';
 
+import { PROPERTY_STATUS_TONE, PROPERTY_TYPE_TONE, QUOTE_STATUS_TONE } from '../constants';
 import { type CustomerPropertyResponse } from '../hooks';
+import { FieldGrid, SectionHeading, TonePill, type DetailTone } from './primitives';
+import { SiteStageBar } from './site-stage';
 
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { toTitleLabel } from '@/lib/utils';
+import { formatCurrency, formatDate, formatSystemSize, toTitleLabel } from '@/lib/utils';
 
 export interface PropertyDetailDrawerProps {
   open: boolean;
@@ -29,19 +22,11 @@ export interface PropertyDetailDrawerProps {
   customerId: string;
 }
 
-function FieldRow({ label, value }: { label: string; value: React.ReactNode }): JSX.Element {
+function Section({ title, children }: { title: string; children: React.ReactNode }): JSX.Element {
   return (
     <Box>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '0.625rem' }}
-      >
-        {label}
-      </Typography>
-      <Typography variant="body2" sx={{ mt: 0.25 }}>
-        {value || '—'}
-      </Typography>
+      <SectionHeading>{title}</SectionHeading>
+      {children}
     </Box>
   );
 }
@@ -56,17 +41,31 @@ export function PropertyDetailDrawer({
     ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id })
     : undefined;
 
+  const statusTone: DetailTone = property
+    ? (PROPERTY_STATUS_TONE[property.status] ?? 'neutral')
+    : 'neutral';
+  const typeTone: DetailTone = property
+    ? (PROPERTY_TYPE_TONE[property.propertyType] ?? 'neutral')
+    : 'neutral';
+  const quoteStatus = property?.latestQuoteStatus;
+  const quoteTone: DetailTone = quoteStatus
+    ? (QUOTE_STATUS_TONE[quoteStatus] ?? 'neutral')
+    : 'neutral';
+
   return (
     <Drawer
       anchor="right"
       open={open}
       onClose={onClose}
-      PaperProps={{
-        sx: {
-          width: { xs: '100%', sm: 380 },
-          maxWidth: '100vw',
-          display: 'flex',
-          flexDirection: 'column',
+      slotProps={{
+        paper: {
+          sx: {
+            width: { xs: '100%', sm: 420 },
+            maxWidth: '100vw',
+            display: 'flex',
+            flexDirection: 'column',
+            bgcolor: 'var(--ds-canvas)',
+          },
         },
       }}
     >
@@ -75,131 +74,226 @@ export function PropertyDetailDrawer({
           position: 'sticky',
           top: 0,
           zIndex: 1,
-          bgcolor: 'background.paper',
-          borderBottom: 1,
-          borderColor: 'divider',
+          bgcolor: 'var(--ds-surface)',
+          boxShadow: 'var(--shadow-e1)',
           px: 2.5,
           py: 1.75,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 2,
         }}
       >
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="subtitle1" fontWeight={600} noWrap>
-            {property ? getPropertyDisplayName(property) : 'Property'}
-          </Typography>
-          {property && (
-            <Typography variant="caption" color="text.secondary" display="block">
-              {[property.city, property.state, property.pincode].filter(Boolean).join(', ')}
-            </Typography>
-          )}
-        </Box>
-        <Stack direction="row" spacing={0.5}>
-          {propertyHref && (
-            <Button
-              component={NextLink}
-              href={propertyHref}
-              size="small"
-              variant="outlined"
-              startIcon={<OpenInNewIcon />}
+        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={1.5}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              sx={{
+                fontSize: '1rem',
+                fontWeight: 700,
+                letterSpacing: '-0.015em',
+                color: 'var(--ds-text-primary)',
+                lineHeight: 1.25,
+                overflowWrap: 'anywhere',
+              }}
             >
-              Open
-            </Button>
-          )}
-          <IconButton size="small" aria-label="Close" onClick={onClose}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
+              {property ? getPropertyDisplayName(property) : 'Site'}
+            </Typography>
+            {property && (
+              <Typography sx={{ fontSize: '0.75rem', color: 'var(--ds-text-tertiary)', mt: 0.25 }}>
+                {[property.city, property.state, property.pincode].filter(Boolean).join(', ')}
+              </Typography>
+            )}
+          </Box>
+          <Stack direction="row" gap={0.5} sx={{ flexShrink: 0 }}>
+            {propertyHref && (
+              <Button
+                component={NextLink}
+                href={propertyHref}
+                size="small"
+                variant="outlined"
+                startIcon={<OpenInNewIcon />}
+              >
+                Open
+              </Button>
+            )}
+            <IconButton size="small" aria-label="Close" onClick={onClose}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Stack>
         </Stack>
+
+        {property && (
+          <Stack direction="row" gap={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
+            <TonePill label={toTitleLabel(property.status)} tone={statusTone} dot />
+            <TonePill label={toTitleLabel(property.propertyType)} tone={typeTone} />
+            {property.isPrimary && <TonePill label="Primary" tone="accent" />}
+            {property.wantsLoan && <TonePill label="Wants loan" tone="warning" />}
+            {property.needsFollowup && <TonePill label="Needs follow-up" tone="danger" dot />}
+          </Stack>
+        )}
       </Box>
 
-      <Box sx={{ flex: 1, overflow: 'auto', px: 2.5, py: 2 }}>
+      <Box sx={{ flex: 1, overflow: 'auto', px: 2.5, py: 2.5 }}>
         {!property ? (
-          <Typography variant="body2" color="text.secondary">
-            Select a property to view details.
+          <Typography sx={{ fontSize: '0.8125rem', color: 'var(--ds-text-secondary)' }}>
+            Select a site to view its details.
           </Typography>
         ) : (
-          <Stack spacing={2}>
-            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-              <Chip label={toTitleLabel(property.propertyType)} size="small" />
-              <Chip label={toTitleLabel(property.status)} size="small" color="info" />
-              {property.isPrimary && <Chip label="Primary" size="small" color="primary" />}
-              {property.wantsLoan && <Chip label="Wants loan" size="small" color="warning" />}
-            </Stack>
-
+          <Stack gap={3}>
             <Box>
-              <Typography variant="subtitle2" fontWeight={600} mb={1}>
-                Utility Details
-              </Typography>
-              <Grid container spacing={1.5}>
-                <Grid size={{ xs: 6 }}>
-                  <FieldRow label="Consumer Number" value={property.consumerNumber} />
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <FieldRow label="Consumer Name" value={property.consumerName} />
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <FieldRow label="DISCOM" value={property.discom?.label} />
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <FieldRow
-                    label="Connection Type"
-                    value={toTitleLabel(property.connectionType ?? '')}
-                  />
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <FieldRow label="Current Load" value={property.currentLoad} />
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <FieldRow
-                    label="Sanctioned Load"
-                    value={
-                      property.sanctionedLoad != null ? `${property.sanctionedLoad} kW` : undefined
-                    }
-                  />
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <FieldRow label="Meter Number" value={property.meterNumber} />
-                </Grid>
-                <Grid size={{ xs: 6 }}>
-                  <FieldRow
-                    label="Lead Temperature"
-                    value={toTitleLabel(property.leadTemperature)}
-                  />
-                </Grid>
-              </Grid>
+              <SectionHeading>Pipeline</SectionHeading>
+              <SiteStageBar property={property} />
             </Box>
 
-            <Divider />
+            {/*
+             * Survey state was never shown in this drawer even though it is the
+             * thing that gates every next step — you had to open the full site
+             * page to find out whether anyone had been to the roof.
+             */}
+            <Section title="Site & survey">
+              <FieldGrid
+                fields={[
+                  {
+                    label: 'Site visit',
+                    value: property.siteVisitDone ? (
+                      <TonePill
+                        label={
+                          property.siteVisitCompletedAt
+                            ? `Done ${formatDate(property.siteVisitCompletedAt)}`
+                            : 'Done'
+                        }
+                        tone="success"
+                        dot
+                      />
+                    ) : (
+                      <TonePill label="Not done" tone="neutral" dot />
+                    ),
+                  },
+                  {
+                    label: 'Survey',
+                    value: property.surveyDone ? (
+                      <TonePill
+                        label={
+                          property.siteSurveyCompletedAt
+                            ? `Done ${formatDate(property.siteSurveyCompletedAt)}`
+                            : 'Done'
+                        }
+                        tone="success"
+                        dot
+                      />
+                    ) : (
+                      <TonePill label="Not done" tone="neutral" dot />
+                    ),
+                  },
+                  { label: 'Visit assignee', value: property.siteVisitAssigneeName || '—' },
+                  { label: 'Survey assignee', value: property.siteSurveyAssigneeName || '—' },
+                  {
+                    label: 'Usable roof area',
+                    value: property.availableRoofAreaSqft
+                      ? `${property.availableRoofAreaSqft} sq ft`
+                      : '—',
+                    mono: true,
+                  },
+                  {
+                    label: 'Lead temperature',
+                    value: toTitleLabel(property.leadTemperature),
+                  },
+                  {
+                    label: 'Next follow-up',
+                    value: property.nextFollowupAt ? formatDate(property.nextFollowupAt) : '—',
+                    mono: true,
+                  },
+                  { label: 'Site code', value: property.propertyCode || '—', mono: true },
+                ]}
+              />
+            </Section>
 
-            <Box>
-              <Typography variant="subtitle2" fontWeight={600} mb={1}>
-                Address
-              </Typography>
-              <FieldRow label="Street" value={property.address} />
-              <Box sx={{ mt: 1 }}>
-                <FieldRow
-                  label="City / State / PIN"
-                  value={[property.city, property.state, property.pincode]
-                    .filter(Boolean)
-                    .join(', ')}
+            {quoteStatus && (
+              <Section title="Latest quote">
+                <FieldGrid
+                  fields={[
+                    {
+                      label: 'Quote number',
+                      value: property.latestQuoteNumber || '—',
+                      mono: true,
+                    },
+                    {
+                      label: 'Status',
+                      value: <TonePill label={toTitleLabel(quoteStatus)} tone={quoteTone} dot />,
+                    },
+                    {
+                      label: 'Value',
+                      value: property.latestQuoteFinalPrice
+                        ? formatCurrency(property.latestQuoteFinalPrice)
+                        : '—',
+                      mono: true,
+                    },
+                    {
+                      label: 'System size',
+                      value: property.latestQuoteSystemSizeKw
+                        ? `${formatSystemSize(property.latestQuoteSystemSizeKw)} kW`
+                        : '—',
+                      mono: true,
+                    },
+                    {
+                      label: 'Quoted on',
+                      value: property.latestQuoteDate ? formatDate(property.latestQuoteDate) : '—',
+                      mono: true,
+                    },
+                  ]}
                 />
-              </Box>
-            </Box>
+              </Section>
+            )}
 
-            <Divider />
+            <Section title="Utility connection">
+              <FieldGrid
+                fields={[
+                  { label: 'Consumer number', value: property.consumerNumber || '—', mono: true },
+                  { label: 'Consumer name', value: property.consumerName || '—' },
+                  { label: 'DISCOM', value: property.discom?.label || '—' },
+                  {
+                    label: 'Connection type',
+                    value: property.connectionType ? toTitleLabel(property.connectionType) : '—',
+                  },
+                  { label: 'Current load', value: property.currentLoad || '—', mono: true },
+                  {
+                    label: 'Sanctioned load',
+                    value:
+                      property.sanctionedLoad != null
+                        ? `${formatSystemSize(property.sanctionedLoad)} kW`
+                        : '—',
+                    mono: true,
+                  },
+                  { label: 'Meter number', value: property.meterNumber || '—', mono: true },
+                ]}
+              />
+            </Section>
+
+            <Section title="Address">
+              <FieldGrid
+                columns={1}
+                fields={[
+                  { label: 'Street', value: property.address || '—' },
+                  {
+                    label: 'City / state / PIN',
+                    value:
+                      [property.city, property.state, property.pincode]
+                        .filter(Boolean)
+                        .join(', ') || '—',
+                  },
+                ]}
+              />
+            </Section>
+
             {property.notes && (
-              <>
-                <Box>
-                  <Typography variant="subtitle2" fontWeight={600} mb={1}>
-                    Notes
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {property.notes}
-                  </Typography>
-                </Box>
-              </>
+              <Section title="Notes">
+                <Typography
+                  sx={{
+                    fontSize: '0.8125rem',
+                    color: 'var(--ds-text-secondary)',
+                    lineHeight: 1.55,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {property.notes}
+                </Typography>
+              </Section>
             )}
           </Stack>
         )}

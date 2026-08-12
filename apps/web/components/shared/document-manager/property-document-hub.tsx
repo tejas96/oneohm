@@ -117,11 +117,16 @@ export function PropertyDocumentHub({
   if (isEmpty) {
     return (
       <Box className={className}>
+        {/*
+         * `title` is a NOUN — `DocumentManager` renders it as
+         * `No ${title.toLowerCase()}`. Passing the finished sentence here
+         * produced "No no documents yet" on the customer, project and property
+         * document tabs. Omitting it uses the component's own default.
+         */}
         <DocumentManager
           entityType={defaultUploadEntityType || DocumentEntityType.PROPERTY}
           entityId={defaultUploadEntityId || propertyId}
           readOnly={readOnly}
-          title="No documents yet"
         />
       </Box>
     );
