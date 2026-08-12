@@ -19,7 +19,14 @@ export interface CustomerProjectItem {
   status: ProjectStatus;
   priority: ProjectPriority;
   progressPercentage: number;
+  /** The capacity that was selected and quoted — what the subsidy is rated on. */
   systemSizeKw?: number;
+  /**
+   * The capacity actually installed, once the panel count is rounded to whole
+   * modules. The endpoint has always returned it; this type omitted it, so the
+   * list showed "3 kW" beside a project whose own name reads "3.24kW".
+   */
+  actualSystemSizeKw?: number;
   startDate?: string;
   endDate?: string;
   property: CustomerPropertyResponse;

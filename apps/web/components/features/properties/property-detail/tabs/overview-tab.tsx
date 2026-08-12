@@ -1,478 +1,898 @@
 'use client';
 
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
+import { Box, Button, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Divider,
-  Grid,
-  Link as MuiLink,
-  Stack,
-  Typography,
-  Chip,
-} from '@mui/material';
-import { LeadTemperature, SiteStatus } from '@tejas96/shared/types';
-import { useState, type JSX } from 'react';
+  ChangeRequestStatus,
+  FollowupStatus,
+  LeadTemperature,
+  PropertyStatus,
+  QuoteStatus,
+  SiteStatus,
+} from '@tejas96/shared/types';
+import { useState, type JSX, type ReactNode } from 'react';
 
-import { LEAD_TEMPERATURE_CONFIG } from '../../constants';
 import {
-  useUpdateProperty,
-  useCompletePropertyVisit,
-  useCompletePropertySurvey,
+  LEAD_TEMPERATURE_CONFIG,
+  LEAD_TEMPERATURE_TONE,
+  PROPERTY_TYPE_LABELS,
+  type PropertyDetailTab,
+} from '../../constants';
+import {
   useCancelPropertySiteActivity,
+  useCompletePropertySurvey,
+  useCompletePropertyVisit,
+  usePropertyFinanceSnapshot,
+  usePropertyFollowups,
+  usePropertyQuoteSummary,
+  useUpdateProperty,
   type CustomerPropertyResponse,
-  type PropertyFinanceSnapshot,
 } from '../../hooks';
+import {
+  getChangeRequestLabel,
+  formatChangeRequestSummary,
+} from '../../utils/change-request-display';
 import { EditSiteDataModal } from '../components/edit-site-data-modal';
-import { PropertyPipelineStrip } from '../pipeline-strip';
 
-import type { Customer } from '@/components/features/customers/hooks';
+import { PROPERTY_STATUS_TONE, QUOTE_STATUS_TONE } from '@/components/features/customers/constants';
+import {
+  DetailCard,
+  EmptyPane,
+  Field,
+  FieldGrid,
+  IconCircle,
+  Mono,
+  SectionHeading,
+  TonePill,
+  TONE_INK,
+  type DetailTone,
+} from '@/components/features/customers/customer-detail/primitives';
+import { SiteStageBar } from '@/components/features/customers/customer-detail/site-stage';
 import { showToast } from '@/components/ui';
-import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
 
-interface OverviewTabProps {
+export interface OverviewTabProps {
+  /**
+   * Enriched by the page with the `latestQuote*` fields — the single-site
+   * endpoint omits them, and `SiteStageBar` reads them to place the site on
+   * its rail.
+   */
   property: CustomerPropertyResponse;
-  customer: Customer | null;
-  financeSnapshot: PropertyFinanceSnapshot;
-  financeLoading: boolean;
+  enabled: boolean;
+  onTabChange: (tab: PropertyDetailTab) => void;
   onLogFollowup: () => void;
+  onCreateQuote: () => void;
+  onGoToProject: () => void;
+  isInactiveCustomer: boolean;
+  quoteLocked: boolean;
 }
 
-function FieldRow({ label, value }: { label: string; value: React.ReactNode }): JSX.Element {
+const VIEW_ALL_SX = { fontSize: '0.75rem', minWidth: 0, px: 1 } as const;
+
+/** Statuses where the site is still being worked, so temperature still means something. */
+const IN_PLAY_STATUSES: readonly PropertyStatus[] = [
+  PropertyStatus.ACTIVE,
+  PropertyStatus.PENDING_VERIFICATION,
+];
+
+// ============================================================================
+// Site profile
+// ============================================================================
+
+function LeadTemperatureControl({ property }: { property: CustomerPropertyResponse }): JSX.Element {
+  const updateProperty = useUpdateProperty();
+
   return (
-    <Box>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '0.625rem' }}
-      >
-        {label}
-      </Typography>
-      <Typography variant="body2" sx={{ mt: 0.25 }}>
-        {value || '—'}
-      </Typography>
-    </Box>
+    <Stack direction="row" gap={0.75} flexWrap="wrap" useFlexGap>
+      {(Object.keys(LEAD_TEMPERATURE_CONFIG) as LeadTemperature[]).map((temperature) => {
+        const active = property.leadTemperature === temperature;
+        const tone = LEAD_TEMPERATURE_TONE[temperature] ?? 'neutral';
+        const { ink, tint } = TONE_INK[tone];
+        return (
+          <Box
+            key={temperature}
+            component="button"
+            type="button"
+            disabled={updateProperty.isPending}
+            onClick={() => {
+              if (active || updateProperty.isPending) return;
+              updateProperty.mutate({ id: property.id, data: { leadTemperature: temperature } });
+            }}
+            sx={{
+              px: 1.25,
+              height: 26,
+              borderRadius: 'var(--radius-pill)',
+              border: 'none',
+              font: 'inherit',
+              fontSize: '0.75rem',
+              fontWeight: active ? 700 : 500,
+              cursor: updateProperty.isPending ? 'default' : 'pointer',
+              bgcolor: active ? ink : tint,
+              color: active ? 'var(--ds-primary-contrast)' : ink,
+              transition: 'filter 120ms var(--ease-standard)',
+              '&:hover:not(:disabled)': { filter: 'brightness(0.95)' },
+              '&:focus-visible': { outline: '2px solid var(--ds-accent)', outlineOffset: 2 },
+            }}
+          >
+            {LEAD_TEMPERATURE_CONFIG[temperature].label}
+          </Box>
+        );
+      })}
+    </Stack>
   );
 }
 
-function SiteProgressCard({ property }: { property: CustomerPropertyResponse }): JSX.Element {
+function SiteProfileCard({ property }: { property: CustomerPropertyResponse }): JSX.Element {
+  const address =
+    [property.address, property.city, property.state, property.pincode]
+      .filter(Boolean)
+      .join(', ') || '—';
+  const isInPlay = IN_PLAY_STATUSES.includes(property.status);
+
+  return (
+    <DetailCard>
+      <SectionHeading>Site profile</SectionHeading>
+      <FieldGrid
+        fields={[
+          { label: 'Site name', value: property.propertyName || '—' },
+          { label: 'Site code', value: property.propertyCode || '—', mono: true },
+          {
+            label: 'Type',
+            value:
+              PROPERTY_TYPE_LABELS[property.propertyType] ?? toTitleLabel(property.propertyType),
+          },
+          {
+            label: 'Status',
+            value: (
+              <TonePill
+                label={toTitleLabel(property.status)}
+                tone={PROPERTY_STATUS_TONE[property.status] ?? 'neutral'}
+                dot
+              />
+            ),
+          },
+          { label: 'Address', value: address, wide: true },
+          { label: 'Added by', value: property.creatorName || '—' },
+          { label: 'Added on', value: formatDate(property.createdAt) },
+          ...(property.notes ? [{ label: 'Notes', value: property.notes, wide: true }] : []),
+        ]}
+      />
+
+      {/*
+       * Temperature is an editable control, not a read-only field — it is the
+       * one property attribute a rep changes from this page daily. It is
+       * hidden once the site is converted or lost, where it means nothing.
+       */}
+      {isInPlay && (
+        <Box sx={{ mt: 2.25 }}>
+          <Field label="Lead temperature" value={<LeadTemperatureControl property={property} />} />
+        </Box>
+      )}
+    </DetailCard>
+  );
+}
+
+// ============================================================================
+// Electricity connection
+// ============================================================================
+
+function ConnectionCard({ property }: { property: CustomerPropertyResponse }): JSX.Element {
+  const pendingChangeRequests = (property.changeRequests ?? []).filter(
+    (request) => request.status === ChangeRequestStatus.PENDING,
+  );
+
+  return (
+    <DetailCard>
+      <SectionHeading>Electricity connection</SectionHeading>
+      <FieldGrid
+        fields={[
+          { label: 'DISCOM', value: property.discom?.label || '—', wide: true },
+          { label: 'Consumer number', value: property.consumerNumber || '—', mono: true },
+          { label: 'Consumer name', value: property.consumerName || '—' },
+          {
+            label: 'Connection',
+            value: property.connectionType ? toTitleLabel(property.connectionType) : '—',
+          },
+          {
+            label: 'Sanctioned load',
+            value: property.sanctionedLoad != null ? `${property.sanctionedLoad} kW` : '—',
+            mono: true,
+          },
+          { label: 'Current load', value: property.currentLoad || '—', mono: true },
+          { label: 'Meter number', value: property.meterNumber || '—', mono: true },
+        ]}
+      />
+
+      {/*
+       * Pending DISCOM change requests were captured at onboarding and then
+       * never shown anywhere on this page — yet a pending load change is
+       * exactly what blocks a connection from being commissioned.
+       */}
+      {pendingChangeRequests.length > 0 && (
+        <Box sx={{ mt: 2.25 }}>
+          <Field
+            label={`Pending DISCOM requests (${pendingChangeRequests.length})`}
+            value={
+              <Stack gap={0.75} sx={{ width: '100%' }}>
+                {pendingChangeRequests.map((request, index) => (
+                  <Stack
+                    key={`${request.type}-${index}`}
+                    direction="row"
+                    alignItems="center"
+                    gap={0.75}
+                    sx={{ minWidth: 0 }}
+                  >
+                    <TonePill label={getChangeRequestLabel(request.type)} tone="warning" dot />
+                    <Typography
+                      sx={{ fontSize: '0.75rem', color: 'var(--ds-text-secondary)', minWidth: 0 }}
+                    >
+                      {formatChangeRequestSummary(request)}
+                    </Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            }
+          />
+        </Box>
+      )}
+    </DetailCard>
+  );
+}
+
+// ============================================================================
+// Journey
+// ============================================================================
+
+interface Milestone {
+  label: string;
+  detail: string;
+  done: boolean;
+  tone: DetailTone;
+}
+
+/**
+ * Where the site has got to, and what closes the next gap.
+ *
+ * Replaces the chip chain that used to live here, which spent a full row of
+ * width announcing what had *not* happened ("No quote → No project yet") and,
+ * because it read `latestQuoteStatus` — a field the single-site endpoint never
+ * returns — said "No quote" on sites holding an accepted one.
+ */
+function JourneyCard({
+  property,
+  quoteSummary,
+  onCreateQuote,
+  onGoToProject,
+  onViewQuotes,
+  isInactiveCustomer,
+  quoteLocked,
+}: {
+  property: CustomerPropertyResponse;
+  quoteSummary: ReturnType<typeof usePropertyQuoteSummary>;
+  onCreateQuote: () => void;
+  onGoToProject: () => void;
+  onViewQuotes: () => void;
+  isInactiveCustomer: boolean;
+  quoteLocked: boolean;
+}): JSX.Element {
+  const headline = quoteSummary.headline;
+  const hasProject = Boolean(property.project?.id ?? property.projectId);
+  const isLost = property.status === PropertyStatus.LOST;
+
+  const milestones: Milestone[] = [
+    {
+      label: 'Site captured',
+      detail: formatDate(property.createdAt),
+      done: true,
+      tone: 'success',
+    },
+    {
+      label: 'Site visit',
+      detail: property.siteVisitDone
+        ? property.siteVisitCompletedAt
+          ? formatDate(property.siteVisitCompletedAt)
+          : 'Completed'
+        : 'Not done',
+      done: property.siteVisitDone,
+      tone: property.siteVisitDone ? 'success' : 'neutral',
+    },
+    {
+      label: 'Technical survey',
+      detail: property.surveyDone
+        ? property.siteSurveyCompletedAt
+          ? formatDate(property.siteSurveyCompletedAt)
+          : 'Completed'
+        : 'Not done',
+      done: property.surveyDone,
+      tone: property.surveyDone ? 'success' : 'neutral',
+    },
+    {
+      label: 'Quote',
+      detail: headline
+        ? `${headline.quoteNumber} · ${toTitleLabel(headline.status)}`
+        : 'None raised',
+      done: Boolean(headline),
+      tone: headline ? (QUOTE_STATUS_TONE[headline.status] ?? 'neutral') : 'neutral',
+    },
+    {
+      label: 'Project',
+      detail: hasProject ? (property.project?.name ?? 'Linked') : 'Not converted',
+      done: hasProject,
+      tone: hasProject ? 'success' : 'neutral',
+    },
+  ];
+
+  /** The single next thing to do, rather than five chips of state. */
+  const nextAction = ((): { label: string; onClick: () => void; disabled?: boolean } | null => {
+    if (isLost || hasProject) return null;
+    if (!headline) {
+      return {
+        label: 'Create the first quote',
+        onClick: onCreateQuote,
+        disabled: isInactiveCustomer || quoteLocked,
+      };
+    }
+    if (headline.status === QuoteStatus.ACCEPTED) {
+      return { label: 'Convert to project', onClick: onGoToProject };
+    }
+    return { label: 'Review quotes', onClick: onViewQuotes };
+  })();
+
+  return (
+    <DetailCard>
+      <SectionHeading>Journey</SectionHeading>
+
+      <SiteStageBar property={property} />
+
+      <Box
+        sx={{
+          mt: 2.25,
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(auto-fit, minmax(150px, 1fr))' },
+          gap: 1.5,
+        }}
+      >
+        {milestones.map((milestone) => (
+          <Stack key={milestone.label} direction="row" gap={1} sx={{ minWidth: 0 }}>
+            <IconCircle tone={milestone.tone} size={28}>
+              {milestone.done ? <CheckCircleOutlinedIcon /> : <RadioButtonUncheckedIcon />}
+            </IconCircle>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)', lineHeight: 1.4 }}
+              >
+                {milestone.label}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: '0.75rem',
+                  fontWeight: milestone.done ? 600 : 400,
+                  color: milestone.done ? 'var(--ds-text-primary)' : 'var(--ds-text-tertiary)',
+                  lineHeight: 1.4,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+                title={milestone.detail}
+              >
+                {milestone.detail}
+              </Typography>
+            </Box>
+          </Stack>
+        ))}
+      </Box>
+
+      {nextAction && (
+        <Button
+          size="small"
+          variant="outlined"
+          endIcon={<ArrowForwardIcon />}
+          onClick={nextAction.onClick}
+          disabled={nextAction.disabled}
+          sx={{ mt: 2.25 }}
+        >
+          {nextAction.label}
+        </Button>
+      )}
+    </DetailCard>
+  );
+}
+
+// ============================================================================
+// Money
+// ============================================================================
+
+function MoneyCard({
+  projectId,
+  enabled,
+  onViewFinance,
+}: {
+  projectId: string | null;
+  enabled: boolean;
+  onViewFinance: () => void;
+}): JSX.Element {
+  const { snapshot, isLoading, hasProject } = usePropertyFinanceSnapshot(projectId, { enabled });
+
+  const tone: DetailTone =
+    snapshot.maxDaysOverdue > 90
+      ? 'danger'
+      : snapshot.overdueAmount > 0
+        ? 'warning'
+        : snapshot.totalOutstanding > 0
+          ? 'neutral'
+          : 'success';
+
+  return (
+    <DetailCard>
+      <SectionHeading
+        action={
+          hasProject ? (
+            <Button
+              size="small"
+              endIcon={<ArrowForwardIcon />}
+              onClick={onViewFinance}
+              sx={VIEW_ALL_SX}
+            >
+              Finance
+            </Button>
+          ) : undefined
+        }
+      >
+        Money
+      </SectionHeading>
+
+      {!hasProject ? (
+        <EmptyPane
+          title="No receivables yet"
+          description="Payment terms are created when this site is converted to a project."
+        />
+      ) : isLoading ? (
+        <Stack gap={1}>
+          <Skeleton height={32} />
+          <Skeleton height={24} />
+        </Stack>
+      ) : (
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          gap={{ xs: 2, sm: 3 }}
+          justifyContent="space-between"
+        >
+          <Box>
+            <Typography
+              sx={{
+                fontFamily: 'var(--font-mono)',
+                fontVariantNumeric: 'tabular-nums',
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+                color: TONE_INK[tone].ink,
+              }}
+            >
+              {formatCurrency(snapshot.totalOutstanding)}
+            </Typography>
+            <Typography sx={{ fontSize: '0.75rem', color: 'var(--ds-text-secondary)', mt: 0.25 }}>
+              outstanding across {snapshot.openTermCount} open term
+              {snapshot.openTermCount === 1 ? '' : 's'}
+            </Typography>
+            {snapshot.overdueAmount > 0 && (
+              <Typography
+                sx={{ fontSize: '0.75rem', fontWeight: 600, color: TONE_INK[tone].ink, mt: 0.5 }}
+              >
+                {formatCurrency(snapshot.overdueAmount)} past due · {snapshot.maxDaysOverdue}d
+              </Typography>
+            )}
+          </Box>
+
+          <Stack gap={1.5} sx={{ flexShrink: 0 }}>
+            <Field
+              label="Received"
+              value={<Mono emphasis>{formatCurrency(snapshot.receivedAmount)}</Mono>}
+            />
+            <Field
+              label="Last receipt"
+              value={
+                <Mono>{snapshot.lastReceiptDate ? formatDate(snapshot.lastReceiptDate) : '—'}</Mono>
+              }
+            />
+          </Stack>
+        </Stack>
+      )}
+    </DetailCard>
+  );
+}
+
+// ============================================================================
+// Site readiness
+// ============================================================================
+
+function ReadinessStep({
+  index,
+  title,
+  done,
+  disabled,
+  facts,
+  action,
+}: {
+  index: number;
+  title: string;
+  done: boolean;
+  disabled?: boolean;
+  facts: { label: string; value: string }[];
+  action?: ReactNode;
+}): JSX.Element {
+  const tone: DetailTone = done ? 'success' : disabled ? 'neutral' : 'info';
+
+  return (
+    <Stack direction="row" gap={1.25} sx={{ minWidth: 0 }}>
+      <IconCircle tone={tone} size={32}>
+        {done ? (
+          <CheckCircleOutlinedIcon />
+        ) : index === 1 ? (
+          <TravelExploreOutlinedIcon />
+        ) : (
+          <FactCheckOutlinedIcon />
+        )}
+      </IconCircle>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
+        <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap" useFlexGap>
+          <Typography
+            sx={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--ds-text-primary)' }}
+          >
+            {index}. {title}
+          </Typography>
+          <TonePill label={done ? 'Done' : 'Pending'} tone={tone} dot />
+        </Stack>
+        {facts.length > 0 && (
+          <Box
+            sx={{
+              mt: 1,
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+              columnGap: 2,
+              rowGap: 1,
+            }}
+          >
+            {facts.map((fact) => (
+              <Field key={fact.label} label={fact.label} value={fact.value} />
+            ))}
+          </Box>
+        )}
+        {action && <Box sx={{ mt: 1.25 }}>{action}</Box>}
+      </Box>
+    </Stack>
+  );
+}
+
+function ReadinessCard({ property }: { property: CustomerPropertyResponse }): JSX.Element {
   const completeVisit = useCompletePropertyVisit();
   const completeSurvey = useCompletePropertySurvey();
   const cancelActivity = useCancelPropertySiteActivity();
-  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
-  const getStatusColor = (status: SiteStatus): 'success' | 'warning' | 'error' | 'default' => {
-    switch (status) {
-      case SiteStatus.COMPLETED:
-        return 'success';
-      case SiteStatus.IN_PROGRESS:
-        return 'warning';
-      case SiteStatus.CANCELLED:
-        return 'error';
-      case SiteStatus.PENDING:
-        return 'default';
-    }
-  };
-
-  const handleCompleteVisit = (): void => {
-    completeVisit.mutate(property.id);
-  };
+  const isPending = completeVisit.isPending || completeSurvey.isPending || cancelActivity.isPending;
+  const isCancelled = property.siteStatus === SiteStatus.CANCELLED;
+  const siteStatusTone: DetailTone = isCancelled
+    ? 'danger'
+    : property.siteStatus === SiteStatus.COMPLETED
+      ? 'success'
+      : property.siteStatus === SiteStatus.IN_PROGRESS
+        ? 'warning'
+        : 'neutral';
 
   const handleCompleteSurvey = (): void => {
-    if (!property.surveyData?.roofType || !property.surveyData?.roofCondition) {
+    if (!property.surveyData?.roofType || !property.surveyData.roofCondition) {
       showToast.error(
-        'Please fill out Roof Type and Roof Condition in "Edit Data" before completing the survey.',
+        'Add roof type and roof condition under "Edit site data" before completing the survey.',
       );
       return;
     }
     completeSurvey.mutate(property.id);
   };
 
-  const handleCancelActivity = (): void => {
-    cancelActivity.mutate(property.id);
-  };
+  const visitFacts = [
+    ...(property.siteVisitCompletedAt
+      ? [{ label: 'Completed', value: formatDate(property.siteVisitCompletedAt) }]
+      : []),
+    { label: 'Assignee', value: property.siteVisitAssigneeName || 'Unassigned' },
+    ...(property.availableRoofAreaSqft != null
+      ? [{ label: 'Roof area', value: `${property.availableRoofAreaSqft} sqft` }]
+      : []),
+    ...(property.siteNotes ? [{ label: 'Notes', value: property.siteNotes }] : []),
+  ];
 
-  const isPending = completeVisit.isPending || completeSurvey.isPending || cancelActivity.isPending;
+  const survey = property.surveyData;
+  const shading = property.shadingAnalysis;
+  const surveyFacts = [
+    ...(property.siteSurveyCompletedAt
+      ? [{ label: 'Completed', value: formatDate(property.siteSurveyCompletedAt) }]
+      : []),
+    { label: 'Surveyor', value: property.siteSurveyAssigneeName || 'Unassigned' },
+    ...(survey?.roofType ? [{ label: 'Roof type', value: survey.roofType }] : []),
+    ...(survey?.roofCondition
+      ? [{ label: 'Roof condition', value: toTitleLabel(survey.roofCondition) }]
+      : []),
+    ...(survey?.roofOrientation
+      ? [{ label: 'Orientation', value: toTitleLabel(survey.roofOrientation) }]
+      : []),
+    ...(survey?.isMaterialUnloadingAreaSafe !== undefined
+      ? [
+          {
+            label: 'Unloading area safe',
+            value: survey.isMaterialUnloadingAreaSafe ? 'Yes' : 'No',
+          },
+        ]
+      : []),
+    ...(shading?.hasShading !== undefined
+      ? [
+          {
+            label: 'Shading',
+            value: shading.hasShading ? `Yes (${shading.shadingPercentage ?? 0}%)` : 'None',
+          },
+        ]
+      : []),
+    ...(survey?.notes ? [{ label: 'Notes', value: survey.notes }] : []),
+  ];
 
   return (
-    <Card variant="outlined">
-      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="subtitle2" fontWeight={600}>
-            Site Progress
+    <DetailCard>
+      <SectionHeading
+        action={
+          !isCancelled ? (
+            <Button size="small" onClick={() => setEditOpen(true)} sx={VIEW_ALL_SX}>
+              Edit site data
+            </Button>
+          ) : undefined
+        }
+      >
+        Site readiness
+      </SectionHeading>
+
+      <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>
+        <TonePill
+          label={toTitleLabel(property.siteStatus || SiteStatus.PENDING)}
+          tone={siteStatusTone}
+          dot
+        />
+        {isCancelled && (
+          <Typography sx={{ fontSize: '0.75rem', color: 'var(--ds-text-tertiary)' }}>
+            Site activity was cancelled — no visit or survey is expected.
           </Typography>
-          <Stack direction="row" spacing={1} alignItems="center">
-            {property.siteStatus !== SiteStatus.CANCELLED && (
+        )}
+      </Stack>
+
+      <Stack gap={2.5}>
+        <ReadinessStep
+          index={1}
+          title="Site visit"
+          done={property.siteVisitDone}
+          disabled={isCancelled}
+          facts={visitFacts}
+          action={
+            !property.siteVisitDone && !isCancelled ? (
               <Button
                 size="small"
-                variant="text"
-                onClick={() => setEditModalOpen(true)}
-                sx={{ minWidth: 0, fontSize: '0.75rem', py: 0.25, px: 0.75 }}
+                variant="outlined"
+                onClick={() => completeVisit.mutate(property.id)}
+                disabled={isPending}
               >
-                Edit Data
+                Mark visit complete
               </Button>
-            )}
-            <Chip
-              size="small"
-              label={toTitleLabel(property.siteStatus || 'pending')}
-              color={getStatusColor(property.siteStatus)}
-            />
-          </Stack>
-        </Stack>
+            ) : undefined
+          }
+        />
 
-        <Stack spacing={2}>
-          {/* Site Visit Section */}
-          <Box>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}
-            >
-              1. SITE VISIT
-            </Typography>
-            <Stack
-              spacing={0.5}
-              pl={1}
-              borderLeft="2px solid"
-              borderColor={property.siteVisitDone ? 'success.main' : 'divider'}
-            >
-              <FieldRow
-                label="Visit Status"
-                value={property.siteVisitDone ? 'Completed' : 'Pending'}
-              />
-              {property.siteVisitCompletedAt && (
-                <FieldRow label="Completed At" value={formatDate(property.siteVisitCompletedAt)} />
-              )}
-              {property.siteVisitAssigneeName && (
-                <FieldRow label="Assignee" value={property.siteVisitAssigneeName} />
-              )}
-              {property.availableRoofAreaSqft != null && (
-                <FieldRow label="Roof Area" value={`${property.availableRoofAreaSqft} sqft`} />
-              )}
-              {property.siteNotes && <FieldRow label="Visit Notes" value={property.siteNotes} />}
-              {!property.siteVisitDone && property.siteStatus !== SiteStatus.CANCELLED && (
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={handleCompleteVisit}
-                  disabled={isPending}
-                  sx={{ mt: 1, alignSelf: 'flex-start' }}
-                >
-                  Mark Visit Complete
-                </Button>
-              )}
-            </Stack>
-          </Box>
-
-          {/* Site Survey Section */}
-          <Box>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}
-            >
-              2. TECHNICAL SURVEY
-            </Typography>
-            <Stack
-              spacing={0.5}
-              pl={1}
-              borderLeft="2px solid"
-              borderColor={property.surveyDone ? 'success.main' : 'divider'}
-            >
-              <FieldRow
-                label="Survey Status"
-                value={property.surveyDone ? 'Completed' : 'Pending'}
-              />
-              {property.siteSurveyCompletedAt && (
-                <FieldRow label="Completed At" value={formatDate(property.siteSurveyCompletedAt)} />
-              )}
-              {property.siteSurveyAssigneeName && (
-                <FieldRow label="Surveyor" value={property.siteSurveyAssigneeName} />
-              )}
-              {property.surveyData?.roofType && (
-                <FieldRow label="Roof Type" value={property.surveyData.roofType} />
-              )}
-              {property.surveyData?.roofCondition && (
-                <FieldRow
-                  label="Roof Condition"
-                  value={toTitleLabel(property.surveyData.roofCondition)}
-                />
-              )}
-              {property.surveyData?.roofOrientation && (
-                <FieldRow
-                  label="Roof Orientation"
-                  value={toTitleLabel(property.surveyData.roofOrientation)}
-                />
-              )}
-              {property.surveyData?.isMaterialUnloadingAreaSafe !== undefined && (
-                <FieldRow
-                  label="Unloading Safe"
-                  value={property.surveyData.isMaterialUnloadingAreaSafe ? 'Yes' : 'No'}
-                />
-              )}
-              {property.shadingAnalysis?.hasShading !== undefined && (
-                <FieldRow
-                  label="Has Shading"
-                  value={
-                    property.shadingAnalysis.hasShading
-                      ? `Yes (${property.shadingAnalysis.shadingPercentage ?? 0}%)`
-                      : 'No'
-                  }
-                />
-              )}
-              {property.surveyData?.notes && (
-                <FieldRow label="Survey Notes" value={property.surveyData.notes} />
-              )}
-              {property.siteVisitDone &&
-                !property.surveyDone &&
-                property.siteStatus !== SiteStatus.CANCELLED && (
+        <ReadinessStep
+          index={2}
+          title="Technical survey"
+          done={property.surveyDone}
+          disabled={isCancelled || !property.siteVisitDone}
+          facts={surveyFacts}
+          action={
+            !property.surveyDone && !isCancelled ? (
+              <Tooltip
+                title={property.siteVisitDone ? '' : 'Complete the site visit first'}
+                placement="top"
+              >
+                <span>
                   <Button
                     size="small"
                     variant="outlined"
                     onClick={handleCompleteSurvey}
-                    disabled={isPending}
-                    sx={{ mt: 1, alignSelf: 'flex-start' }}
+                    disabled={isPending || !property.siteVisitDone}
                   >
-                    Mark Survey Complete
+                    Mark survey complete
                   </Button>
-                )}
-            </Stack>
-          </Box>
-
-          {/* Cancel Site Activity Action */}
-          {property.siteStatus !== SiteStatus.COMPLETED &&
-            property.siteStatus !== SiteStatus.CANCELLED && (
-              <Button
-                size="small"
-                variant="text"
-                color="error"
-                onClick={handleCancelActivity}
-                disabled={isPending}
-                sx={{ alignSelf: 'flex-start' }}
-              >
-                Cancel Site Activity
-              </Button>
-            )}
-        </Stack>
-
-        <EditSiteDataModal
-          open={editModalOpen}
-          onClose={() => setEditModalOpen(false)}
-          property={property}
+                </span>
+              </Tooltip>
+            ) : undefined
+          }
         />
-      </CardContent>
-    </Card>
+      </Stack>
+
+      {property.siteStatus !== SiteStatus.COMPLETED && !isCancelled && (
+        <Button
+          size="small"
+          color="error"
+          onClick={() => cancelActivity.mutate(property.id)}
+          disabled={isPending}
+          sx={{ mt: 2, ...VIEW_ALL_SX }}
+        >
+          Cancel site activity
+        </Button>
+      )}
+
+      <EditSiteDataModal open={editOpen} onClose={() => setEditOpen(false)} property={property} />
+    </DetailCard>
   );
 }
 
-export function OverviewTab({
-  property,
-  customer,
-  financeSnapshot,
-  financeLoading,
+// ============================================================================
+// Follow-ups
+// ============================================================================
+
+function FollowupsCard({
+  propertyId,
+  enabled,
   onLogFollowup,
-}: OverviewTabProps): JSX.Element {
-  const updateProperty = useUpdateProperty();
-
-  const outstandingDisplay = financeLoading
-    ? '…'
-    : financeSnapshot.hasProject
-      ? formatCurrency(financeSnapshot.totalOutstanding)
-      : '—';
-  const openTermsDisplay = financeLoading
-    ? '…'
-    : financeSnapshot.hasProject
-      ? String(financeSnapshot.openTermCount)
-      : '—';
-
-  const handleTempChange = (temperature: LeadTemperature): void => {
-    if (property.leadTemperature === temperature || updateProperty.isPending) return;
-    updateProperty.mutate({ id: property.id, data: { leadTemperature: temperature } });
-  };
-
-  const mapLink =
-    property.gpsCoordinates?.latitude != null && property.gpsCoordinates?.longitude != null
-      ? `https://maps.google.com/?q=${property.gpsCoordinates.latitude},${property.gpsCoordinates.longitude}`
-      : null;
+  onViewAll,
+}: {
+  propertyId: string;
+  enabled: boolean;
+  onLogFollowup: () => void;
+  onViewAll: () => void;
+}): JSX.Element {
+  const { data, isLoading } = usePropertyFollowups(propertyId, {
+    enabled,
+    status: FollowupStatus.PENDING,
+    limit: 5,
+  });
+  const followups = data?.data ?? [];
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Stack spacing={2}>
-            <Card variant="outlined">
-              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.5}>
-                  <Typography variant="subtitle2" fontWeight={600}>
-                    Property Overview
+    <DetailCard>
+      <SectionHeading
+        count={followups.length || undefined}
+        action={
+          <Button
+            size="small"
+            startIcon={<EventNoteOutlinedIcon sx={{ fontSize: 15 }} />}
+            onClick={onLogFollowup}
+            sx={VIEW_ALL_SX}
+          >
+            Schedule
+          </Button>
+        }
+      >
+        Upcoming follow-ups
+      </SectionHeading>
+
+      {isLoading ? (
+        <Stack gap={1}>
+          <Skeleton height={34} />
+          <Skeleton height={34} />
+        </Stack>
+      ) : followups.length === 0 ? (
+        <EmptyPane
+          icon={<EventNoteOutlinedIcon />}
+          title="Nothing scheduled"
+          description="Book the next conversation so this site doesn't go quiet."
+        />
+      ) : (
+        <Stack gap={1.5}>
+          {followups.map((followup) => {
+            const isOverdue = new Date(followup.scheduledAt).getTime() < Date.now();
+            return (
+              <Stack key={followup.id} direction="row" gap={1.25} sx={{ minWidth: 0 }}>
+                <IconCircle tone={isOverdue ? 'danger' : 'info'} size={28}>
+                  <EventNoteOutlinedIcon />
+                </IconCircle>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography
+                    sx={{
+                      fontSize: '0.8125rem',
+                      fontWeight: 500,
+                      color: 'var(--ds-text-primary)',
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {followup.subject}
                   </Typography>
-                  <Button
-                    size="small"
-                    variant="text"
-                    startIcon={<EventNoteOutlinedIcon />}
-                    onClick={onLogFollowup}
-                  >
-                    Log Follow-up
-                  </Button>
-                </Stack>
-                <Grid container spacing={1.5}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <FieldRow label="Property Name" value={property.propertyName} />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <FieldRow label="Property Code" value={property.propertyCode} />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <FieldRow label="Type" value={toTitleLabel(property.propertyType)} />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <FieldRow label="Status" value={toTitleLabel(property.status)} />
-                  </Grid>
-                  <Grid size={{ xs: 12 }}>
-                    <FieldRow label="Address" value={property.address} />
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <FieldRow label="City" value={property.city} />
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <FieldRow label="State" value={property.state} />
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <FieldRow label="PIN" value={property.pincode} />
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <FieldRow label="Current Load" value={property.currentLoad} />
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <FieldRow label="DISCOM" value={property.discom?.label} />
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <FieldRow label="Consumer #" value={property.consumerNumber} />
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <FieldRow
-                      label="Connection"
-                      value={toTitleLabel(property.connectionType ?? '')}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 6, sm: 3 }}>
-                    <FieldRow
-                      label="Sanctioned Load"
-                      value={
-                        property.sanctionedLoad != null ? `${property.sanctionedLoad} kW` : '—'
-                      }
-                    />
-                  </Grid>
-                </Grid>
-
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="caption" color="text.secondary">
-                  Lead Temperature
-                </Typography>
-                <Stack direction="row" spacing={1} mt={0.75}>
-                  {(Object.keys(LEAD_TEMPERATURE_CONFIG) as LeadTemperature[]).map((temp) => (
-                    <Button
-                      key={temp}
-                      size="small"
-                      variant={property.leadTemperature === temp ? 'contained' : 'outlined'}
-                      onClick={() => handleTempChange(temp)}
+                  <Stack direction="row" alignItems="center" gap={0.75} flexWrap="wrap" useFlexGap>
+                    <Mono
+                      sx={{
+                        fontSize: '0.6875rem',
+                        color: isOverdue ? TONE_INK.danger.ink : 'var(--ds-text-tertiary)',
+                        fontWeight: isOverdue ? 600 : 400,
+                      }}
                     >
-                      {LEAD_TEMPERATURE_CONFIG[temp].label}
-                    </Button>
-                  ))}
-                </Stack>
-
-                {mapLink && (
-                  <MuiLink
-                    href={mapLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{ mt: 2, display: 'inline-block' }}
-                  >
-                    Open GPS Location
-                  </MuiLink>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card variant="outlined">
-              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Typography variant="subtitle2" fontWeight={600} mb={1.5}>
-                  Pipeline
-                </Typography>
-                <PropertyPipelineStrip property={property} />
-              </CardContent>
-            </Card>
-          </Stack>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Stack spacing={2}>
-            <Card variant="outlined">
-              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Typography variant="subtitle2" fontWeight={600} mb={1.5}>
-                  Customer
-                </Typography>
-                <FieldRow
-                  label="Name"
-                  value={
-                    customer?.firstName
-                      ? `${customer.firstName} ${customer.lastName ?? ''}`.trim()
-                      : property.customerName
-                  }
-                />
-                <Box sx={{ mt: 1 }}>
-                  <FieldRow label="Phone" value={customer?.phone ?? property.customerPhone} />
-                </Box>
-                <Box sx={{ mt: 1 }}>
-                  <FieldRow label="Email" value={customer?.email ?? property.customerEmail} />
-                </Box>
-                <Button
-                  size="small"
-                  sx={{ mt: 1.5 }}
-                  startIcon={<EditOutlinedIcon />}
-                  href={buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: property.customerId })}
-                >
-                  Open Customer
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card variant="outlined">
-              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Typography variant="subtitle2" fontWeight={600} mb={1.5}>
-                  Financial Snapshot
-                </Typography>
-                <Stack spacing={1}>
-                  <FieldRow label="Outstanding" value={outstandingDisplay} />
-                  <FieldRow label="Open Terms" value={openTermsDisplay} />
-                  <FieldRow
-                    label="Last Receipt"
-                    value={
-                      financeLoading
-                        ? '…'
-                        : financeSnapshot.lastReceiptDate
-                          ? formatDate(financeSnapshot.lastReceiptDate)
-                          : '—'
-                    }
-                  />
-                  {!financeSnapshot.hasProject && !financeLoading && (
-                    <Typography variant="caption" color="text.secondary">
-                      Receivables appear after this property is converted to a project.
+                      {formatDate(followup.scheduledAt)}
+                    </Mono>
+                    <Typography sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)' }}>
+                      {toTitleLabel(followup.type)}
+                      {followup.assignedToUser
+                        ? ` · ${[followup.assignedToUser.firstName, followup.assignedToUser.lastName].filter(Boolean).join(' ')}`
+                        : ''}
                     </Typography>
-                  )}
-                </Stack>
-              </CardContent>
-            </Card>
+                  </Stack>
+                </Box>
+              </Stack>
+            );
+          })}
+          <Button size="small" onClick={onViewAll} sx={{ alignSelf: 'flex-start', ...VIEW_ALL_SX }}>
+            View all follow-ups
+          </Button>
+        </Stack>
+      )}
+    </DetailCard>
+  );
+}
 
-            <SiteProgressCard property={property} />
-          </Stack>
-        </Grid>
-      </Grid>
+// ============================================================================
+// Tab
+// ============================================================================
+
+export function OverviewTab({
+  property,
+  enabled,
+  onTabChange,
+  onLogFollowup,
+  onCreateQuote,
+  onGoToProject,
+  isInactiveCustomer,
+  quoteLocked,
+}: OverviewTabProps): JSX.Element {
+  const quoteSummary = usePropertyQuoteSummary(property.id, { enabled });
+  const projectId = property.project?.id ?? property.projectId ?? null;
+
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        /*
+         * Splits at `md`, not `lg`: at 1200 a 1130px laptop still got the
+         * stacked layout, which pushed the journey and the money below a tall
+         * reference card.
+         */
+        gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 320px) minmax(0, 1fr)' },
+        gap: 2,
+        alignItems: 'start',
+      }}
+    >
+      {/* Reference material drops to the bottom when the layout stacks. */}
+      <Stack gap={2} sx={{ minWidth: 0, order: { xs: 2, md: 1 } }}>
+        <SiteProfileCard property={property} />
+        <ConnectionCard property={property} />
+      </Stack>
+
+      <Stack gap={2} sx={{ minWidth: 0, order: { xs: 1, md: 2 } }}>
+        <JourneyCard
+          property={property}
+          quoteSummary={quoteSummary}
+          onCreateQuote={onCreateQuote}
+          onGoToProject={onGoToProject}
+          onViewQuotes={() => onTabChange('quotes')}
+          isInactiveCustomer={isInactiveCustomer}
+          quoteLocked={quoteLocked}
+        />
+        <MoneyCard
+          projectId={projectId}
+          enabled={enabled}
+          onViewFinance={() => onTabChange('finance')}
+        />
+        <ReadinessCard property={property} />
+        <FollowupsCard
+          propertyId={property.id}
+          enabled={enabled}
+          onLogFollowup={onLogFollowup}
+          onViewAll={() => onTabChange('followups')}
+        />
+      </Stack>
     </Box>
   );
 }

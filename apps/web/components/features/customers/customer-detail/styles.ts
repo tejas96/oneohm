@@ -1,48 +1,12 @@
-import { type SxProps, type Theme, alpha } from '@mui/material/styles';
-
-/**
- * `stickyHeaderPaperSx` and `pipelineStepChipSx` are also consumed by the
- * **property** detail page (`features/properties/property-detail/`), which is
- * not part of the customer redesign. They keep their original bordered look on
- * purpose — changing them here would silently restyle a page nobody asked to
- * change. The customer page no longer imports either.
- */
-export const stickyHeaderPaperSx: SxProps<Theme> = (theme) => ({
-  position: 'sticky',
-  top: 'var(--header-height, 48px)',
-  zIndex: 10,
-  mb: 2,
-  p: 2,
-  border: 1,
-  borderColor: 'divider',
-  borderRadius: 1,
-  bgcolor: alpha(theme.palette.background.paper, 0.95),
-  backdropFilter: 'blur(8px)',
-});
-
-export const pipelineStepChipSx = {
-  done: {
-    bgcolor: 'success.main',
-    color: 'common.white',
-    borderColor: 'success.main',
-    '& .MuiChip-label': { color: 'inherit', fontWeight: 500 },
-  },
-  current: {
-    bgcolor: 'warning.main',
-    color: 'common.white',
-    borderColor: 'warning.main',
-    '& .MuiChip-label': { color: 'inherit', fontWeight: 500 },
-  },
-  pending: {
-    bgcolor: 'grey.100',
-    color: 'text.secondary',
-    borderColor: 'divider',
-    '& .MuiChip-label': { color: 'inherit' },
-  },
-} as const;
+import type { SxProps, Theme } from '@mui/material/styles';
 
 // ============================================================================
-// Customer detail — design-system surfaces
+// Detail pages — design-system surfaces
+//
+// Shared by the customer detail page and the property (site) detail page, so
+// the two navigate, list and read identically. The property page imports these
+// modules directly rather than through the feature barrel — the barrel would
+// close a cycle back into `features/properties`.
 // ============================================================================
 
 /**

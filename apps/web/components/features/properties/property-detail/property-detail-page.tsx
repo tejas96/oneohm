@@ -1,34 +1,19 @@
 'use client';
 
-import AddTaskOutlinedIcon from '@mui/icons-material/AddTaskOutlined';
-import CallOutlinedIcon from '@mui/icons-material/CallOutlined';
-import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
-import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined';
+import PostAddOutlinedIcon from '@mui/icons-material/PostAddOutlined';
 import {
   Box,
   Breadcrumbs,
-  Button,
-  Divider,
-  IconButton,
   Link as MuiLink,
-  ListItemIcon,
-  Menu,
-  MenuItem,
-  Paper,
   SpeedDial,
   SpeedDialAction,
   SpeedDialIcon,
-  Stack,
-  Tab,
-  Tabs,
-  Tooltip,
   Typography,
 } from '@mui/material';
-import { CustomerStatus, FollowupStatus } from '@tejas96/shared/types';
+import { CustomerStatus, FollowupStatus, QuoteStatus } from '@tejas96/shared/types';
 import dynamic from 'next/dynamic';
 import NextLink from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -44,34 +29,34 @@ import {
   usePropertyFinanceSnapshot,
   usePropertyFollowups,
   usePropertyLoan,
+  usePropertyQuoteSummary,
 } from '../hooks';
+import { PropertyDetailHeader, type PropertyHeaderSignal } from './header';
 import { MarkAsLostDialog } from './mark-as-lost-dialog';
+import { PropertyTabRail } from './tab-rail';
+import { PageSkeleton, TabSkeleton } from './tab-skeleton';
 import { useDeleteProperty } from '../hooks/use-properties';
 import { getPropertyDisplayName } from '../utils';
-import { PageSkeleton, TabSkeleton } from './tab-skeleton';
 import {
   formatDeleteBlockTooltip,
   getPropertyDeleteBlockReasons,
   ORG_ADMIN_ROLES,
 } from '../utils/delete-eligibility';
 
-import {
-  CustomerAttentionPanel,
-  CustomerDetailKpiStrip,
-} from '@/components/features/customers/customer-detail';
-import { stickyHeaderPaperSx } from '@/components/features/customers/customer-detail/styles';
 import { useCustomer } from '@/components/features/customers/hooks';
 import { FollowupDrawer } from '@/components/features/followups';
 import { usePropertyLockStatus } from '@/components/features/quotes/hooks/use-quotes';
 import { EmptyState } from '@/components/shared';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
-import { showToast, WhatsAppIcon } from '@/components/ui';
+import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
+import type { MetricTileProps } from '@/components/shared/inventory/metric-tile';
+import { showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import {
   formatCurrency,
   formatDate,
-  formatPhoneForWhatsApp,
+  formatSystemSize,
   recordRecentView,
   toTitleLabel,
 } from '@/lib/utils';
@@ -80,7 +65,6 @@ import { useAuth } from '@/providers/auth-provider';
 const OverviewTab = dynamic(() => import('./tabs/overview-tab').then((m) => m.OverviewTab), {
   loading: () => <TabSkeleton />,
 });
-
 const QuotesTab = dynamic(() => import('./tabs/quotes-tab').then((m) => m.QuotesTab), {
   loading: () => <TabSkeleton />,
 });
@@ -129,11 +113,13 @@ function isValidTab(value: string | null): value is PropertyDetailTab {
   return PROPERTY_DETAIL_TABS.some((tab) => tab.value === value);
 }
 
-function getCustomerBackRoute(customerId?: string): string {
-  return customerId
-    ? buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: customerId })
-    : ROUTES.CUSTOMERS.LIST;
-}
+/** Quote states that still carry a live expiry clock. */
+const LIVE_QUOTE_STATUSES: readonly QuoteStatus[] = [
+  QuoteStatus.DRAFT,
+  QuoteStatus.SENT,
+  QuoteStatus.VIEWED,
+];
+const DAY_MS = 1000 * 60 * 60 * 24;
 
 export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX.Element {
   const router = useRouter();
@@ -149,7 +135,6 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   const [followupDrawerOpen, setFollowupDrawerOpen] = useState(false);
   const [speedDialOpen, setSpeedDialOpen] = useState(false);
   const [markLostOpen, setMarkLostOpen] = useState(false);
-  const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
 
   const isPropertyIdValid = isValidUuid(propertyId);
   const {
@@ -162,7 +147,11 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     mutation: deletePropertyMutation,
     getId: (item: { id: string }) => item.id,
     onSuccess: () => {
-      void router.push(getCustomerBackRoute(property?.customerId));
+      void router.push(
+        property?.customerId
+          ? buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: property.customerId })
+          : ROUTES.CUSTOMERS.LIST,
+      );
     },
   });
 
@@ -182,6 +171,38 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     hasProject: hasLinkedProject,
   } = usePropertyFinanceSnapshot(linkedProjectId, { enabled: propertyReady });
 
+  /*
+   * The commercial facts. `GET /customer-properties/:id` carries none of the
+   * `latestQuote*` enrichment the list endpoint adds, so the tiles that read
+   * them printed "—" for a site with an accepted ₹1.88L quote. They come from
+   * the quotes endpoint now — the same one the Quotes tab renders, so the two
+   * can never disagree and it costs no extra request.
+   */
+  const quoteSummary = usePropertyQuoteSummary(propertyId, { enabled: propertyReady });
+  const headlineQuote = quoteSummary.headline;
+
+  /**
+   * The property record with those fields put back on it.
+   *
+   * Shared components — `SiteStageBar` above all — read `latestQuoteId` and
+   * `latestQuoteStatus` to decide how far a site has travelled. Handed the raw
+   * detail payload they saw neither, so a site with an accepted quote and a
+   * live project sat on "Lead captured". Enriching once here means every tab
+   * below gets the same, complete record.
+   */
+  const enrichedProperty = useMemo(() => {
+    if (!property || !headlineQuote) return property;
+    return {
+      ...property,
+      latestQuoteId: headlineQuote.id,
+      latestQuoteNumber: headlineQuote.quoteNumber,
+      latestQuoteStatus: headlineQuote.status,
+      latestQuoteDate: headlineQuote.quoteDate,
+      latestQuoteFinalPrice: headlineQuote.finalPrice,
+      latestQuoteSystemSizeKw: headlineQuote.actualSystemSizeKw ?? headlineQuote.systemSizeKw,
+    };
+  }, [property, headlineQuote]);
+
   useEffect(() => {
     if (rawTab && !isValidTab(rawTab)) {
       const params = new URLSearchParams(searchParams.toString());
@@ -192,11 +213,10 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
 
   useEffect(() => {
     if (property && user?.id) {
-      const label = getPropertyDisplayName(property);
       recordRecentView(user.id, {
         type: 'property',
         id: property.id,
-        label,
+        label: getPropertyDisplayName(property),
         href: buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id }),
       });
     }
@@ -211,12 +231,25 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     [pathname, router, searchParams],
   );
 
+  const goToTab = useCallback(
+    (tab: PropertyDetailTab) => {
+      handleTabChange({} as React.SyntheticEvent, tab);
+    },
+    [handleTabChange],
+  );
+
   const prefetchTab = useCallback((tab: PropertyDetailTab) => {
     void TAB_MODULE_PRELOADERS[tab]?.();
   }, []);
 
-  const handleCreateQuote = (): void => {
-    if (customer?.status === CustomerStatus.INACTIVE) {
+  const isInactiveCustomer = customer?.status === CustomerStatus.INACTIVE;
+
+  const handleEdit = useCallback((): void => {
+    router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: propertyId }));
+  }, [router, propertyId]);
+
+  const handleCreateQuote = useCallback((): void => {
+    if (isInactiveCustomer) {
       showToast.error('Cannot create quote: customer is inactive.');
       return;
     }
@@ -226,57 +259,203 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     }
     if (!property) return;
     router.push(`${ROUTES.QUOTES.NEW}?propertyId=${property.id}&customerId=${property.customerId}`);
-  };
+  }, [isInactiveCustomer, lockStatus?.locked, property, router]);
 
-  const handleGoToProject = (): void => {
+  const handleGoToProject = useCallback((): void => {
     if (!property) return;
-    const targetProjectId = property.project?.id ?? property.projectId;
-    if (targetProjectId) {
-      router.push(buildRoute(ROUTES.PROJECTS.DETAIL, { id: targetProjectId }));
+    if (linkedProjectId) {
+      router.push(buildRoute(ROUTES.PROJECTS.DETAIL, { id: linkedProjectId }));
       return;
     }
     router.push(
       `${ROUTES.PROJECTS.NEW}?propertyId=${property.id}&customerId=${property.customerId}`,
     );
-  };
+  }, [property, linkedProjectId, router]);
 
-  const isInactiveCustomer = customer?.status === CustomerStatus.INACTIVE;
-  const pendingFollowups = followupsData?.data ?? [];
-  const overdueFollowups = pendingFollowups.filter(
-    (f) => new Date(f.scheduledAt).getTime() < Date.now(),
+  const pendingFollowups = useMemo(() => followupsData?.data ?? [], [followupsData?.data]);
+  const overdueFollowupCount = useMemo(
+    () => pendingFollowups.filter((f) => new Date(f.scheduledAt).getTime() < Date.now()).length,
+    [pendingFollowups],
   );
-  const nextFollowup = [...pendingFollowups].sort(
-    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
-  )[0];
-  const attentionItems = useMemo(() => {
-    const items: { id: string; label: string; tab?: string }[] = [];
-    if (overdueFollowups.length > 0) {
+  const nextFollowup = useMemo(
+    () =>
+      [...pendingFollowups].sort(
+        (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+      )[0],
+    [pendingFollowups],
+  );
+
+  const signals = useMemo((): PropertyHeaderSignal[] => {
+    const items: PropertyHeaderSignal[] = [];
+
+    if (overdueFollowupCount > 0) {
       items.push({
         id: 'overdue-followups',
-        label: `${overdueFollowups.length} overdue follow-up${overdueFollowups.length > 1 ? 's' : ''}`,
-        tab: 'followups',
+        label: `${overdueFollowupCount} overdue follow-up${overdueFollowupCount > 1 ? 's' : ''}`,
+        tone: 'danger',
+        onClick: () => goToTab('followups'),
       });
-    }
-    if (hasLinkedProject && financeSnapshot.totalOutstanding > 0) {
+    } else if (!nextFollowup && property?.needsFollowup) {
+      /*
+       * An open lead with nothing pending is the state the follow-up feature
+       * exists to prevent. Driven by the server-computed `needsFollowup` flag
+       * (shared predicate) rather than re-deriving "closed" from status here —
+       * a re-derived condition drifts from the chip the rest of the app shows.
+       */
       items.push({
-        id: 'outstanding',
-        label: `${formatCurrency(financeSnapshot.totalOutstanding)} outstanding`,
-        tab: 'finance',
+        id: 'no-followup',
+        label: 'No follow-up scheduled',
+        tone: 'warning',
+        onClick: () => setFollowupDrawerOpen(true),
       });
     }
+
+    /*
+     * Only *late* money belongs in the attention row. A balance that is owed
+     * but not yet due needs no action today; the full balance is one row down
+     * in the Outstanding tile regardless.
+     */
+    if (financeSnapshot.overdueAmount > 0) {
+      items.push({
+        id: 'overdue-money',
+        label: `${formatCurrency(financeSnapshot.overdueAmount)} overdue · ${financeSnapshot.maxDaysOverdue}d`,
+        tone: financeSnapshot.maxDaysOverdue > 90 ? 'danger' : 'warning',
+        onClick: () => goToTab('finance'),
+      });
+    }
+
+    /*
+     * A quote that lapses stops being a price. `validUntil` was on the payload
+     * all along and had never been surfaced anywhere on this page.
+     */
+    if (headlineQuote?.validUntil && LIVE_QUOTE_STATUSES.includes(headlineQuote.status)) {
+      const daysLeft = Math.ceil(
+        (new Date(headlineQuote.validUntil).getTime() - Date.now()) / DAY_MS,
+      );
+      if (daysLeft < 0) {
+        items.push({
+          id: 'quote-expired',
+          label: `Quote expired ${formatDate(headlineQuote.validUntil)}`,
+          tone: 'danger',
+          onClick: () => goToTab('quotes'),
+        });
+      } else if (daysLeft <= 7) {
+        items.push({
+          id: 'quote-expiring',
+          label: daysLeft === 0 ? 'Quote expires today' : `Quote expires in ${daysLeft}d`,
+          tone: 'warning',
+          onClick: () => goToTab('quotes'),
+        });
+      }
+    }
+
     return items;
-  }, [financeSnapshot.totalOutstanding, hasLinkedProject, overdueFollowups.length]);
+  }, [
+    overdueFollowupCount,
+    nextFollowup,
+    property?.needsFollowup,
+    financeSnapshot.overdueAmount,
+    financeSnapshot.maxDaysOverdue,
+    headlineQuote,
+    goToTab,
+  ]);
+
+  const kpiTiles = useMemo((): Array<MetricTileProps & { id: string }> => {
+    const sizeKw = headlineQuote?.actualSystemSizeKw ?? headlineQuote?.systemSizeKw;
+    const hasSubsidy = Boolean(headlineQuote?.subsidyAmount && headlineQuote.subsidyAmount > 0);
+
+    return [
+      {
+        id: 'system',
+        label: 'System size',
+        value: sizeKw ? `${formatSystemSize(sizeKw)} kW` : '—',
+        isLoading: quoteSummary.isLoading,
+        secondary: headlineQuote
+          ? [
+              headlineQuote.systemType ? toTitleLabel(headlineQuote.systemType) : null,
+              headlineQuote.totalWattageWp ? `${headlineQuote.totalWattageWp} Wp` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || undefined
+          : 'No quote yet',
+        onClick: () => goToTab('quotes'),
+      },
+      {
+        id: 'quote-value',
+        label: 'Quote value',
+        value: headlineQuote?.finalPrice ? formatCurrency(headlineQuote.finalPrice) : '—',
+        isLoading: quoteSummary.isLoading,
+        intent: headlineQuote?.status === QuoteStatus.ACCEPTED ? 'success' : 'neutral',
+        secondary: !headlineQuote
+          ? 'Nothing quoted yet'
+          : hasSubsidy && headlineQuote.effectivePrice != null
+            ? `${formatCurrency(headlineQuote.effectivePrice)} after subsidy`
+            : `${headlineQuote.quoteNumber} · ${toTitleLabel(headlineQuote.status)}`,
+        onClick: () => goToTab('quotes'),
+      },
+      {
+        id: 'outstanding',
+        label: 'Outstanding',
+        value: hasLinkedProject ? formatCurrency(financeSnapshot.totalOutstanding) : '—',
+        isLoading: financeLoading,
+        intent: !hasLinkedProject
+          ? 'neutral'
+          : financeSnapshot.maxDaysOverdue > 90
+            ? 'danger'
+            : financeSnapshot.overdueAmount > 0
+              ? 'warning'
+              : financeSnapshot.totalOutstanding > 0
+                ? 'neutral'
+                : 'success',
+        secondary: !hasLinkedProject
+          ? 'Starts after project conversion'
+          : financeSnapshot.totalOutstanding === 0
+            ? 'Fully collected'
+            : financeSnapshot.overdueAmount > 0
+              ? `${formatCurrency(financeSnapshot.overdueAmount)} past due`
+              : `${financeSnapshot.openTermCount} open term${
+                  financeSnapshot.openTermCount === 1 ? '' : 's'
+                } · on schedule`,
+        onClick: () => goToTab('finance'),
+      },
+      {
+        id: 'next-followup',
+        label: 'Next follow-up',
+        value: nextFollowup ? formatDate(nextFollowup.scheduledAt) : '—',
+        intent: overdueFollowupCount > 0 ? 'danger' : 'neutral',
+        secondary:
+          overdueFollowupCount > 0
+            ? `${overdueFollowupCount} overdue`
+            : (nextFollowup?.subject ?? 'Nothing scheduled'),
+        onClick: () => goToTab('followups'),
+      },
+    ];
+  }, [
+    headlineQuote,
+    quoteSummary.isLoading,
+    hasLinkedProject,
+    financeSnapshot,
+    financeLoading,
+    nextFollowup,
+    overdueFollowupCount,
+    goToTab,
+  ]);
+
+  const tabCounts = useMemo(
+    () => ({
+      quotes: quoteSummary.count,
+      followups: pendingFollowups.length,
+    }),
+    [quoteSummary.count, pendingFollowups.length],
+  );
 
   if (!isPropertyIdValid) {
     return (
       <EmptyState
         iconColor="error"
-        title="Property not found"
-        description="The property ID is invalid."
-        action={{
-          label: 'Back to Customers',
-          onClick: () => router.push(ROUTES.CUSTOMERS.LIST),
-        }}
+        title="Site not found"
+        description="The site ID is invalid."
+        action={{ label: 'Back to customers', onClick: () => router.push(ROUTES.CUSTOMERS.LIST) }}
       />
     );
   }
@@ -289,293 +468,157 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     return (
       <EmptyState
         iconColor="error"
-        title="Property not found"
-        description="The property you're looking for doesn't exist or has been deleted."
-        action={{
-          label: 'Back to Customers',
-          onClick: () => router.push(ROUTES.CUSTOMERS.LIST),
-        }}
+        title="Site not found"
+        description="The site you're looking for doesn't exist or has been deleted."
+        action={{ label: 'Back to customers', onClick: () => router.push(ROUTES.CUSTOMERS.LIST) }}
       />
     );
   }
 
+  /* Defined whenever `property` is — the memo returns it untouched when there is no quote. */
+  const site = enrichedProperty ?? property;
   const customerName =
     customer?.firstName || customer?.lastName
-      ? [customer?.firstName, customer?.lastName].filter(Boolean).join(' ')
-      : property.customerName || 'Customer';
+      ? [customer.firstName, customer.lastName].filter(Boolean).join(' ')
+      : (property.customerName ?? 'Customer');
+  const customerPhone = customer?.phone ?? property.customerPhone;
   const propertyName = getPropertyDisplayName(property);
-  const propertyDeleteReasons = getPropertyDeleteBlockReasons(property, propertyLoan);
-  const propertyDeleteDisabled = propertyDeleteReasons.length > 0;
-  const propertyDeleteTooltip = formatDeleteBlockTooltip(propertyDeleteReasons);
-  const phoneForWhatsApp = customer?.phone ? formatPhoneForWhatsApp(customer.phone) : '';
-  const kpiItems = [
-    { label: 'Temperature', value: toTitleLabel(property.leadTemperature) },
-    {
-      label: 'Quote Value',
-      value: property.latestQuoteFinalPrice ? formatCurrency(property.latestQuoteFinalPrice) : '—',
-    },
-    {
-      label: 'System Size',
-      value: property.latestQuoteSystemSizeKw ? `${property.latestQuoteSystemSizeKw} kW` : '—',
-    },
-    {
-      label: 'Outstanding',
-      value: financeLoading
-        ? '…'
-        : hasLinkedProject
-          ? formatCurrency(financeSnapshot.totalOutstanding)
-          : '—',
-      tone:
-        hasLinkedProject && financeSnapshot.totalOutstanding > 0
-          ? ('warning' as const)
-          : ('default' as const),
-    },
-    {
-      /**
-       * An open lead with nothing pending is the state this whole feature
-       * exists to prevent, so it reads as a problem rather than an empty dash.
-       * Converted and lost sites are finished — no chase is owed there.
-       *
-       * Driven by the server-computed `needsFollowup` flag (shared predicate
-       * in followup-predicates.ts) rather than re-deriving "closed" from
-       * status/latestQuoteStatus here — a re-derived condition can drift from
-       * the chip/dot definition (e.g. a re-quote after acceptance), flipping
-       * this tile red and clickable for a site the rest of the feature
-       * already excludes.
-       */
-      label: 'Next Follow-up',
-      value: nextFollowup
-        ? formatDate(nextFollowup.scheduledAt)
-        : property.needsFollowup
-          ? 'None scheduled'
-          : '—',
-      tone: !nextFollowup && property.needsFollowup ? ('error' as const) : ('default' as const),
-      onClick:
-        !nextFollowup && property.needsFollowup ? () => setFollowupDrawerOpen(true) : undefined,
-    },
-    {
-      label: 'Project',
-      value: property.project?.name || (property.projectId ? 'Linked' : 'Not linked'),
-    },
-  ];
+  /*
+   * Delete eligibility is gated on `latestQuoteId`, which this page never had
+   * — so a site holding quotes offered a Delete that the API would refuse.
+   * The enriched record carries it.
+   */
+  const propertyDeleteReasons = getPropertyDeleteBlockReasons(site, propertyLoan);
+  const isTabEnabled = (tab: PropertyDetailTab): boolean => activeTab === tab;
 
   return (
     <Box sx={{ pb: 10 }}>
-      <Breadcrumbs aria-label="Breadcrumb" sx={{ mb: 2, fontSize: '0.75rem' }}>
+      {/*
+       * The customer sits between the list and the site. The old trail jumped
+       * straight from "Customers" to the site name, which hid whose site this
+       * is and cost a step to get back to the person.
+       */}
+      <Breadcrumbs
+        aria-label="Breadcrumb"
+        separator="/"
+        sx={{
+          mb: 1.5,
+          fontSize: '0.75rem',
+          '& .MuiBreadcrumbs-separator': { color: 'var(--ds-text-tertiary)', mx: 0.75 },
+        }}
+      >
         <MuiLink
           component={NextLink}
-          href={getCustomerBackRoute(property.customerId)}
+          href={ROUTES.CUSTOMERS.LIST}
           underline="hover"
-          color="inherit"
+          sx={{ color: 'var(--ds-text-secondary)', fontSize: '0.75rem' }}
         >
           Customers
         </MuiLink>
-        <Typography color="text.primary" variant="caption">
+        <MuiLink
+          component={NextLink}
+          href={buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: property.customerId })}
+          underline="hover"
+          sx={{ color: 'var(--ds-text-secondary)', fontSize: '0.75rem' }}
+        >
+          {customerName}
+        </MuiLink>
+        <Typography sx={{ color: 'var(--ds-text-primary)', fontSize: '0.75rem', fontWeight: 500 }}>
           {propertyName}
         </Typography>
       </Breadcrumbs>
 
-      <Paper elevation={0} sx={stickyHeaderPaperSx}>
-        <Stack
-          direction={{ xs: 'column', lg: 'row' }}
-          spacing={2}
-          alignItems={{ lg: 'center' }}
-          justifyContent="space-between"
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-              <Typography variant="subtitle1" fontWeight={600}>
-                {propertyName}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {property.propertyCode}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {toTitleLabel(property.status)}
-              </Typography>
-            </Stack>
-            <Typography variant="caption" color="text.secondary" display="block">
-              {[property.address, property.city, property.state, property.pincode]
-                .filter(Boolean)
-                .join(', ')}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" display="block">
-              {customerName}
-            </Typography>
-          </Box>
-
-          <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
-            {customer?.phone && (
-              <Tooltip title="Call customer">
-                <IconButton component="a" href={`tel:${customer.phone}`} size="small">
-                  <CallOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {phoneForWhatsApp && (
-              <Tooltip title="WhatsApp">
-                <IconButton
-                  component="a"
-                  href={`https://wa.me/${phoneForWhatsApp}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="small"
-                >
-                  <WhatsAppIcon className="size-4" />
-                </IconButton>
-              </Tooltip>
-            )}
-            {customer?.email && (
-              <Tooltip title="Email customer">
-                <IconButton component="a" href={`mailto:${customer.email}`} size="small">
-                  <EmailOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
-
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{ mx: 0.5, display: { xs: 'none', sm: 'block' } }}
-            />
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<EditOutlinedIcon />}
-              onClick={() => router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: property.id }))}
-            >
-              Edit
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<AddTaskOutlinedIcon />}
-              onClick={handleCreateQuote}
-              disabled={isInactiveCustomer || lockStatus?.locked}
-            >
-              Create Quote
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<FolderOpenOutlinedIcon />}
-              onClick={handleGoToProject}
-            >
-              {property.project?.id || property.projectId ? 'Go to Project' : 'Convert to Project'}
-            </Button>
-            <Button
-              size="small"
-              variant="contained"
-              startIcon={<EventNoteOutlinedIcon />}
-              onClick={() => setFollowupDrawerOpen(true)}
-            >
-              Log Follow-up
-            </Button>
-            <IconButton size="small" onClick={(event) => setMoreAnchor(event.currentTarget)}>
-              <MoreVertOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Stack>
-        </Stack>
-      </Paper>
-
-      <CustomerDetailKpiStrip items={kpiItems} />
-      <CustomerAttentionPanel
-        items={attentionItems}
-        onViewAll={
-          attentionItems.length > 0
-            ? () =>
-                handleTabChange({} as React.SyntheticEvent, attentionItems[0]?.tab ?? 'overview')
-            : undefined
-        }
+      <PropertyDetailHeader
+        property={site}
+        customerId={property.customerId}
+        customerName={customerName}
+        customerPhone={customerPhone}
+        isInactiveCustomer={isInactiveCustomer}
+        quoteLocked={Boolean(lockStatus?.locked)}
+        lockedQuoteNumber={lockStatus?.acceptedQuoteNumber}
+        hasProject={Boolean(linkedProjectId)}
+        onEdit={handleEdit}
+        onCreateQuote={handleCreateQuote}
+        onGoToProject={handleGoToProject}
+        onLogFollowup={() => setFollowupDrawerOpen(true)}
+        onMarkLost={() => setMarkLostOpen(true)}
+        showDelete={isOrgAdmin}
+        deleteDisabled={propertyDeleteReasons.length > 0}
+        deleteTooltip={formatDeleteBlockTooltip(propertyDeleteReasons)}
+        onDelete={() => deleteConfirmation.requestDelete(property)}
+        signals={signals}
       />
 
-      <Paper variant="outlined" sx={{ borderRadius: 1, overflow: 'hidden' }}>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          aria-label="Property sections"
-          sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            minHeight: 42,
-            bgcolor: 'background.paper',
-            '& .MuiTab-root': {
-              minHeight: 42,
-              fontSize: '0.8125rem',
-              fontWeight: 500,
-              textTransform: 'none',
-              color: 'text.secondary',
-            },
-            '& .Mui-selected': { color: 'primary.main', fontWeight: 600 },
-          }}
-        >
-          {PROPERTY_DETAIL_TABS.map((tab) => (
-            <Tab
-              key={tab.value}
-              value={tab.value}
-              label={tab.label}
-              id={`tab-${tab.value}`}
-              onMouseEnter={() => prefetchTab(tab.value)}
+      <KpiStripe className="mb-1" columns={4} tiles={kpiTiles} />
+
+      <PropertyTabRail
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onPrefetch={prefetchTab}
+        counts={tabCounts}
+      />
+
+      <Box role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
+        <Suspense fallback={<TabSkeleton />}>
+          {activeTab === 'overview' && (
+            <OverviewTab
+              property={site}
+              enabled={isTabEnabled('overview')}
+              onTabChange={goToTab}
+              onLogFollowup={() => setFollowupDrawerOpen(true)}
+              onCreateQuote={handleCreateQuote}
+              onGoToProject={handleGoToProject}
+              isInactiveCustomer={isInactiveCustomer}
+              quoteLocked={Boolean(lockStatus?.locked)}
             />
-          ))}
-        </Tabs>
-
-        <Box role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
-          <Suspense fallback={<TabSkeleton />}>
-            {activeTab === 'overview' && (
-              <OverviewTab
-                property={property}
-                customer={customer ?? null}
-                financeSnapshot={financeSnapshot}
-                financeLoading={financeLoading}
-                onLogFollowup={() => setFollowupDrawerOpen(true)}
-              />
-            )}
-
-            {activeTab === 'quotes' && (
-              <QuotesTab
-                propertyId={property.id}
-                enabled={activeTab === 'quotes'}
-                isInactiveCustomer={isInactiveCustomer}
-                onCreateQuote={handleCreateQuote}
-              />
-            )}
-            {activeTab === 'documents' && <DocumentsTab propertyId={property.id} />}
-            {activeTab === 'finance' && (
-              <FinanceTab
-                propertyId={property.id}
-                projectId={linkedProjectId}
-                enabled={activeTab === 'finance'}
-              />
-            )}
-            {activeTab === 'project' && (
-              <ProjectTab property={property} enabled={activeTab === 'project'} />
-            )}
-            {activeTab === 'followups' && (
-              <FollowupsTab
-                propertyId={property.id}
-                enabled={activeTab === 'followups'}
-                onLogFollowup={() => setFollowupDrawerOpen(true)}
-                onMarkLost={() => setMarkLostOpen(true)}
-              />
-            )}
-            {activeTab === 'service' && (
-              <ServiceTicketsTab
-                scope="property"
-                id={propertyId}
-                customerId={property.customerId}
-                projectId={linkedProjectId ?? undefined}
-                enabled={activeTab === 'service'}
-              />
-            )}
-            {activeTab === 'activity' && (
-              <ActivityTab property={property} enabled={activeTab === 'activity'} />
-            )}
-          </Suspense>
-        </Box>
-      </Paper>
+          )}
+          {activeTab === 'quotes' && (
+            <QuotesTab
+              propertyId={property.id}
+              enabled={isTabEnabled('quotes')}
+              isInactiveCustomer={isInactiveCustomer}
+              onCreateQuote={handleCreateQuote}
+            />
+          )}
+          {activeTab === 'documents' && <DocumentsTab propertyId={property.id} />}
+          {activeTab === 'finance' && (
+            <FinanceTab
+              propertyId={property.id}
+              projectId={linkedProjectId}
+              enabled={isTabEnabled('finance')}
+              onGoToProject={handleGoToProject}
+            />
+          )}
+          {activeTab === 'project' && (
+            <ProjectTab
+              property={site}
+              enabled={isTabEnabled('project')}
+              onGoToProject={handleGoToProject}
+              isInactiveCustomer={isInactiveCustomer}
+            />
+          )}
+          {activeTab === 'followups' && (
+            <FollowupsTab
+              propertyId={property.id}
+              enabled={isTabEnabled('followups')}
+              onLogFollowup={() => setFollowupDrawerOpen(true)}
+              onMarkLost={() => setMarkLostOpen(true)}
+            />
+          )}
+          {activeTab === 'service' && (
+            <ServiceTicketsTab
+              scope="property"
+              id={propertyId}
+              customerId={property.customerId}
+              projectId={linkedProjectId ?? undefined}
+              enabled={isTabEnabled('service')}
+            />
+          )}
+          {activeTab === 'activity' && (
+            <ActivityTab property={site} enabled={isTabEnabled('activity')} />
+          )}
+        </Suspense>
+      </Box>
 
       <FollowupDrawer
         open={followupDrawerOpen}
@@ -591,41 +634,9 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         propertyName={propertyName}
       />
 
-      <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
-        <MenuItem
-          onClick={() => {
-            setMoreAnchor(null);
-            setMarkLostOpen(true);
-          }}
-        >
-          Mark as Lost
-        </MenuItem>
-        {isOrgAdmin && <Divider />}
-        {isOrgAdmin && (
-          <Tooltip title={propertyDeleteTooltip ?? ''}>
-            <span>
-              <MenuItem
-                disabled={propertyDeleteDisabled}
-                onClick={() => {
-                  if (propertyDeleteDisabled) return;
-                  setMoreAnchor(null);
-                  deleteConfirmation.requestDelete(property);
-                }}
-                sx={{ color: 'error.main' }}
-              >
-                <ListItemIcon>
-                  <DeleteOutlinedIcon fontSize="small" sx={{ color: 'error.main' }} />
-                </ListItemIcon>
-                Delete Property
-              </MenuItem>
-            </span>
-          </Tooltip>
-        )}
-      </Menu>
-
       <DeleteConfirmationDialog
         open={deleteConfirmation.isOpen}
-        title="Delete Property"
+        title="Delete site"
         itemName={propertyName}
         isPending={deleteConfirmation.isPending}
         onCancel={deleteConfirmation.cancel}
@@ -634,7 +645,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
 
       <Box sx={{ display: { xs: 'block', md: 'none' } }}>
         <SpeedDial
-          ariaLabel="Property actions"
+          ariaLabel="Site actions"
           sx={{ position: 'fixed', bottom: 16, right: 16 }}
           icon={<SpeedDialIcon />}
           open={speedDialOpen}
@@ -646,12 +657,12 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
             slotProps={{ tooltip: { title: 'Edit' } }}
             onClick={() => {
               setSpeedDialOpen(false);
-              router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: property.id }));
+              handleEdit();
             }}
           />
           <SpeedDialAction
-            icon={<AddTaskOutlinedIcon />}
-            slotProps={{ tooltip: { title: 'Create Quote' } }}
+            icon={<PostAddOutlinedIcon />}
+            slotProps={{ tooltip: { title: 'New quote' } }}
             onClick={() => {
               setSpeedDialOpen(false);
               handleCreateQuote();
@@ -659,7 +670,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
           />
           <SpeedDialAction
             icon={<FolderOpenOutlinedIcon />}
-            slotProps={{ tooltip: { title: 'Project' } }}
+            slotProps={{ tooltip: { title: linkedProjectId ? 'Open project' : 'Convert' } }}
             onClick={() => {
               setSpeedDialOpen(false);
               handleGoToProject();
@@ -667,7 +678,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
           />
           <SpeedDialAction
             icon={<EventNoteOutlinedIcon />}
-            slotProps={{ tooltip: { title: 'Log Follow-up' } }}
+            slotProps={{ tooltip: { title: 'Log follow-up' } }}
             onClick={() => {
               setSpeedDialOpen(false);
               setFollowupDrawerOpen(true);
