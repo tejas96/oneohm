@@ -1,14 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsPositive,
   IsString,
   IsUUID,
   MaxLength,
+  NotEquals,
   ValidateNested,
 } from 'class-validator';
 
@@ -135,8 +137,11 @@ export class RecordExpenseDto {
   valueDate?: string;
 
   @ApiProperty({ example: 'materials' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
+  @IsNotEmpty()
   @MaxLength(30)
+  @NotEquals('other', { message: 'Please specify a category' })
   category!: string;
 
   @ApiPropertyOptional({ description: 'Who was paid' })

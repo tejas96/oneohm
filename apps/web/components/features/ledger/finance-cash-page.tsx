@@ -17,6 +17,8 @@ import {
 } from '@mui/material';
 import { type JSX, useState } from 'react';
 
+import { formatExpenseCategory } from './format-expense-category';
+
 import { MUITypography } from '@/components/ui';
 import {
   useCashFlow,
@@ -349,7 +351,7 @@ function EntriesTable({
             <TableCell>Date</TableCell>
             <TableCell>Entry</TableCell>
             <TableCell>Project</TableCell>
-            <TableCell>Customer / payee</TableCell>
+            <TableCell>Category / payee</TableCell>
             <TableCell align="right">Amount</TableCell>
           </TableRow>
         </TableHead>
@@ -368,7 +370,17 @@ function EntriesTable({
                 {e.entryNo}
               </TableCell>
               <TableCell>{e.projectNumber ?? '—'}</TableCell>
-              <TableCell>{e.customerName ?? e.counterparty ?? '—'}</TableCell>
+              <TableCell>
+                {e.reversesId ? (
+                  <Box component="span" sx={{ color: 'text.secondary' }}>
+                    Reversal — {e.reversalReason ?? 'no reason given'}
+                  </Box>
+                ) : e.direction === 'out' && e.category ? (
+                  [formatExpenseCategory(e.category), e.counterparty].filter(Boolean).join(' · ')
+                ) : (
+                  (e.customerName ?? e.counterparty ?? '—')
+                )}
+              </TableCell>
               <TableCell
                 align="right"
                 sx={{
