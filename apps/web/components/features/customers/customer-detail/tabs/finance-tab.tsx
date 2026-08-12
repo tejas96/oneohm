@@ -144,10 +144,8 @@ function SectionEmpty({ description }: { description: string }): JSX.Element {
 export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Element {
   const router = useRouter();
 
-  const outstandingQ = useOrgOutstanding(
-    { customerId, sort: 'daysOverdue', sortOrder: 'DESC', page: 1, limit: TERM_PAGE_LIMIT },
-    { enabled },
-  );
+  // Ordered by days overdue, descending — the endpoint's fixed ordering.
+  const outstandingQ = useOrgOutstanding({ customerId, page: 1, limit: TERM_PAGE_LIMIT }, { enabled });
   const ledgerEntriesQ = useLedgerEntries(
     { customerId, direction: 'in', page: 1, limit: RECEIPT_PAGE_LIMIT },
     { enabled },

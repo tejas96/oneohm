@@ -291,3 +291,63 @@ export const CUSTOMERS_AR_SQL = `
   ORDER BY agg.total_paise DESC
   LIMIT $1
 `;
+
+/**
+ * Open payment terms, derived from the ledger.
+ *
+ * Shapes rows as OutstandingTermDto so the customer Finance tab renders
+ * unchanged. `status` is the view's DERIVED status — the milestone row itself
+ * only ever stores `active | waived`, and `cancelled` is never emitted, which
+ * `consumer-contract.spec.ts` also depends on.
+ *
+ * Amounts are RUPEES to match the DTO contract. `createdAt` comes from the
+ * milestone row: v_milestone_balance does not expose it.
+ */
+export const OUTSTANDING_SQL = `
+  SELECT
+    v.milestone_id    AS "id",
+    v.project_id      AS "projectId",
+    pr.project_number AS "projectNumber",
+    pr.name           AS "projectName",
+    cp.id             AS "customerId",
+    NULLIF(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)), '') AS "customerName",
+    v.stage,
+    v.name,
+    to_char(v.due_date, 'YYYY-MM-DD')   AS "dueDate",
+    (v.expected_paise  / 100.0)::float8 AS "expectedAmount",
+    (v.allocated_paise / 100.0)::float8 AS "paidAmount",
+    (v.balance_paise   / 100.0)::float8 AS "outstandingAmount",
+    v.derived_status                    AS "status",
+    v.days_overdue                      AS "daysOverdue",
+    CASE
+      WHEN v.days_overdue <= 0              THEN 'current'
+      WHEN v.days_overdue BETWEEN 1  AND 30 THEN '0-30'
+      WHEN v.days_overdue BETWEEN 31 AND 60 THEN '31-60'
+      WHEN v.days_overdue BETWEEN 61 AND 90 THEN '61-90'
+      ELSE '90+'
+    END                                 AS "agingBucket",
+    pm.created_at                       AS "createdAt"
+  FROM v_milestone_balance v
+  JOIN payment_milestones pm    ON pm.id = v.milestone_id
+  JOIN projects pr              ON pr.id = v.project_id AND pr.deleted_at IS NULL
+  LEFT JOIN customer_properties prop ON prop.id = pr.property_id
+  LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+  WHERE v.status = 'active'
+    AND v.balance_paise > 0
+    AND ($3::uuid IS NULL OR cp.id = $3)
+    AND ($4::uuid IS NULL OR v.project_id = $4)
+  ORDER BY v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number
+  LIMIT $1 OFFSET $2
+`;
+
+export const OUTSTANDING_COUNT_SQL = `
+  SELECT COUNT(*)::int AS count
+  FROM v_milestone_balance v
+  JOIN projects pr              ON pr.id = v.project_id AND pr.deleted_at IS NULL
+  LEFT JOIN customer_properties prop ON prop.id = pr.property_id
+  LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+  WHERE v.status = 'active'
+    AND v.balance_paise > 0
+    AND ($1::uuid IS NULL OR cp.id = $1)
+    AND ($2::uuid IS NULL OR v.project_id = $2)
+`;

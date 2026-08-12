@@ -63,11 +63,10 @@ export function usePropertyFinanceSnapshot(
   const hasProject = Boolean(projectId);
   const queryEnabled = baseEnabled && hasProject;
 
+  // Ordered by days overdue, descending — the endpoint's fixed ordering.
   const outstandingQ = useOrgOutstanding(
     {
       projectId: projectId ?? undefined,
-      sort: 'daysOverdue',
-      sortOrder: 'DESC',
       page: 1,
       limit: PROPERTY_FINANCE_PAGE_LIMIT,
     },

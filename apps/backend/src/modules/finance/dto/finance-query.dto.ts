@@ -92,15 +92,17 @@ export class ReceiptsQueryDto extends PaginationQueryBase {
   search?: string;
 }
 
+/**
+ * Only the filters the ledger query actually implements are declared here.
+ *
+ * The legacy version also advertised `bucket`, `search` and five `sort` keys.
+ * Nothing sent `bucket` or `search`, and the sole caller asked for
+ * `daysOverdue DESC`, which is the fixed ordering the query now uses. Leaving
+ * them declared would accept arguments and quietly ignore them; the validation
+ * pipe runs with `forbidNonWhitelisted`, so removing them here means an
+ * unsupported filter fails loudly instead.
+ */
 export class OutstandingQueryDto extends PaginationQueryBase {
-  @ApiPropertyOptional({
-    description: 'Aging bucket filter',
-    enum: ['current', '0-30', '31-60', '61-90', '90+'],
-  })
-  @IsOptional()
-  @IsString()
-  bucket?: 'current' | '0-30' | '31-60' | '61-90' | '90+';
-
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
@@ -110,27 +112,6 @@ export class OutstandingQueryDto extends PaginationQueryBase {
   @IsOptional()
   @IsUUID()
   projectId?: string;
-
-  @ApiPropertyOptional({
-    description: 'Search across project name/number, customer name, term name',
-  })
-  @IsOptional()
-  @IsString()
-  search?: string;
-
-  @ApiPropertyOptional({
-    description: 'Sort key',
-    enum: ['daysOverdue', 'dueDate', 'amount', 'customer', 'project'],
-    default: 'daysOverdue',
-  })
-  @IsOptional()
-  @IsString()
-  sort?: 'daysOverdue' | 'dueDate' | 'amount' | 'customer' | 'project';
-
-  @ApiPropertyOptional({ enum: ['ASC', 'DESC'], default: 'DESC' })
-  @IsOptional()
-  @IsString()
-  sortOrder?: 'ASC' | 'DESC';
 }
 
 export class CustomersArQueryDto {

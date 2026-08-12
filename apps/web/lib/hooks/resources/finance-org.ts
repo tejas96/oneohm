@@ -44,13 +44,16 @@ export interface OutstandingTerm {
   createdAt: string;
 }
 
+/**
+ * Rows come back ordered by days overdue, descending — the only ordering the
+ * endpoint implements. `bucket`, `search`, `sort` and `sortOrder` were removed
+ * along with the legacy query that claimed to support them; the API validates
+ * with forbidNonWhitelisted, so sending one now fails rather than being
+ * silently dropped.
+ */
 export interface OutstandingFilters {
-  bucket?: AgingBucket;
   customerId?: string;
   projectId?: string;
-  search?: string;
-  sort?: 'daysOverdue' | 'dueDate' | 'amount' | 'customer' | 'project';
-  sortOrder?: 'ASC' | 'DESC';
   page?: number;
   limit?: number;
 }

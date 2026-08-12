@@ -15,7 +15,6 @@ import {
   LedgerRangeQueryDto,
   ReceivablesQueryDto,
 } from '../dto/ledger-query.dto';
-import { FinanceAggregationService } from '../services/finance-aggregation.service';
 import { FinanceReportingService } from '../services/finance-reporting.service';
 
 /**
@@ -48,10 +47,7 @@ function resolveRange(from?: string, to?: string): { from: string; to: string } 
 @Controller('finance')
 @UseGuards(JwtAuthGuard)
 export class FinanceController {
-  constructor(
-    private readonly aggregationService: FinanceAggregationService,
-    private readonly reportingService: FinanceReportingService,
-  ) {}
+  constructor(private readonly reportingService: FinanceReportingService) {}
 
   // ============================================
   // 1. DASHBOARD
@@ -139,7 +135,7 @@ export class FinanceController {
   async getOutstanding(
     @Query() query: OutstandingQueryDto,
   ): Promise<PaginatedResponse<OutstandingTermDto>> {
-    return this.aggregationService.getOutstanding(query);
+    return this.reportingService.getOutstanding(query);
   }
 
   // ============================================

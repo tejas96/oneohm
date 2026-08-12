@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
-import { CustomerAgingDto } from '../dto';
+import { type PaginatedResponse } from '@tejas96/shared/types';
+
+import { CustomerAgingDto, OutstandingTermDto } from '../dto';
 
 import {
   CASH_FLOW_SQL,
@@ -10,6 +12,8 @@ import {
   KPIS_SQL,
   LEDGER_COUNT_SQL,
   LEDGER_PAGE_SQL,
+  OUTSTANDING_COUNT_SQL,
+  OUTSTANDING_SQL,
   RECEIVABLES_COUNT_SQL,
   RECEIVABLES_SQL,
   SPEND_BY_CATEGORY_SQL,
@@ -127,6 +131,40 @@ export class FinanceReportingService {
    */
   async getCustomersAr(limit = 1000): Promise<CustomerAgingDto[]> {
     return this.dataSource.query<CustomerAgingDto[]>(CUSTOMERS_AR_SQL, [limit]);
+  }
+
+  /**
+   * Open payment terms — one row per unpaid milestone.
+   *
+   * Ordering is fixed at `days_overdue DESC`, which is what the only caller
+   * asks for; see OutstandingQueryDto for why the other sort keys are gone.
+   */
+  async getOutstanding(opts: {
+    customerId?: string | null;
+    projectId?: string | null;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<OutstandingTermDto>> {
+    const page = Math.max(1, opts.page ?? 1);
+    const limit = Math.min(200, Math.max(1, opts.limit ?? 20));
+    const customerId = opts.customerId ?? null;
+    const projectId = opts.projectId ?? null;
+
+    const [rows, countRows] = await Promise.all([
+      this.dataSource.query<OutstandingTermDto[]>(OUTSTANDING_SQL, [
+        limit,
+        (page - 1) * limit,
+        customerId,
+        projectId,
+      ]),
+      this.dataSource.query<{ count: number }[]>(OUTSTANDING_COUNT_SQL, [customerId, projectId]),
+    ]);
+
+    const total = Number(countRows[0]?.count ?? 0);
+    return {
+      data: rows,
+      meta: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    };
   }
 
   /**
