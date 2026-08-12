@@ -19,6 +19,7 @@ import {
 import { type JSX, useState } from 'react';
 
 import { ChangeOrderDialog, ReverseEntryDialog, WaiveMilestoneDialog } from './correction-dialogs';
+import { formatExpenseCategory } from './format-expense-category';
 import { useReceiptPdf } from './hooks/use-receipt-pdf';
 import { MilestoneWaterfall } from './milestone-waterfall';
 import { RecordMoneyDialog } from './record-money-dialog';
@@ -411,7 +412,9 @@ function ProjectEntries({
                     </Box>
                   ) : (
                     <span>
-                      {e.category ?? e.paymentMethod ?? e.entryType}
+                      {e.category
+                        ? formatExpenseCategory(e.category)
+                        : (e.paymentMethod ?? e.entryType)}
                       {e.counterparty ? ` · ${e.counterparty}` : ''}
                       {e.reference ? ` · ${e.reference}` : ''}
                     </span>

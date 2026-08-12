@@ -1,7 +1,8 @@
 'use client';
 
 import { Alert, Button, CircularProgress } from '@mui/material';
-import { PaymentMethod } from '@tejas96/shared/types';
+import { EXPENSE_CATEGORY_LABELS } from '@tejas96/shared';
+import { ExpenseCategory, PaymentMethod } from '@tejas96/shared/types';
 import { type JSX, useState } from 'react';
 
 import {
@@ -43,15 +44,21 @@ interface RecordMoneyDialogProps {
   onReceiptRecorded?: (entry: LedgerEntry) => void | Promise<void>;
 }
 
-const EXPENSE_CATEGORIES = [
-  'materials',
-  'labor',
-  'travel',
-  'equipment',
-  'subcontractor',
-  'permits',
-  'misc',
+/** Form-only sentinel — never sent to the API; resolved to trimmed custom text on submit. */
+const CATEGORY_OTHER = 'other';
+
+const EXPENSE_CATEGORY_OPTIONS = [
+  ...Object.values(ExpenseCategory).map((c) => ({
+    value: c,
+    label: EXPENSE_CATEGORY_LABELS[c],
+  })),
+  { value: CATEGORY_OTHER, label: 'Other' },
 ];
+
+function resolveExpenseCategory(category: string, categoryOther: string): string {
+  if (category === CATEGORY_OTHER) return categoryOther.trim();
+  return category;
+}
 
 /** Today as an IST date, matching how the backend stamps a value date. */
 function todayIst(): string {
@@ -92,7 +99,9 @@ export function RecordMoneyDialog({
   const [valueDate, setValueDate] = useState(todayIst());
   const [method, setMethod] = useState<string>(PaymentMethod.UPI);
   const [reference, setReference] = useState('');
-  const [category, setCategory] = useState('materials');
+  const [category, setCategory] = useState<string>(ExpenseCategory.MATERIALS);
+  const [categoryOther, setCategoryOther] = useState('');
+  const [categoryOtherTouched, setCategoryOtherTouched] = useState(false);
   const [payee, setPayee] = useState('');
   const [notes, setNotes] = useState('');
   const [proof, setProof] = useState<ProofDocumentInput | null>(null);
@@ -102,12 +111,26 @@ export function RecordMoneyDialog({
   const isReceipt = mode === 'receipt';
   const pending = recordReceipt.isPending || recordExpense.isPending;
   const amountPaise = amount ? rupeesToPaise(Number(amount)) : 0;
-  const valid = amountPaise > 0 && valueDate <= todayIst();
+  const categoryValid =
+    isReceipt ||
+    (category !== CATEGORY_OTHER
+      ? true
+      : categoryOther.trim().length > 0 && categoryOther.trim().length <= 30);
+  const showCategoryOtherError =
+    !isReceipt &&
+    category === CATEGORY_OTHER &&
+    (categoryOtherTouched || amountPaise > 0) &&
+    !categoryOther.trim();
+  const valid = amountPaise > 0 && valueDate <= todayIst() && categoryValid;
 
   const reset = (): void => {
     setAmount('');
     setValueDate(todayIst());
+    setMethod(PaymentMethod.UPI);
     setReference('');
+    setCategory(ExpenseCategory.MATERIALS);
+    setCategoryOther('');
+    setCategoryOtherTouched(false);
     setPayee('');
     setNotes('');
     setProof(null);
@@ -138,7 +161,7 @@ export function RecordMoneyDialog({
     await recordExpense.mutateAsync({
       amountPaise,
       valueDate,
-      category,
+      category: resolveExpenseCategory(category, categoryOther),
       payee: payee || undefined,
       paymentMethod: method,
       notes: notes || undefined,
@@ -148,8 +171,13 @@ export function RecordMoneyDialog({
     onClose();
   };
 
+  const handleClose = (): void => {
+    reset();
+    onClose();
+  };
+
   return (
-    <MUIDialog open={open} onOpenChange={(next) => !next && onClose()} size="lg">
+    <MUIDialog open={open} onOpenChange={(next) => !next && handleClose()} size="lg">
       <MUIDialogHeader>
         <MUIDialogTitle>{isReceipt ? 'Record payment received' : 'Record expense'}</MUIDialogTitle>
         <MUIDialogDescription>
@@ -200,9 +228,30 @@ export function RecordMoneyDialog({
               <MUISelect
                 fieldLabel="Category"
                 value={category}
-                onChange={(e) => setCategory(String(e.target.value))}
-                options={EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c }))}
+                disabled={pending || uploading}
+                onChange={(e) => {
+                  const next = String(e.target.value);
+                  setCategory(next);
+                  if (next !== CATEGORY_OTHER) {
+                    setCategoryOther('');
+                    setCategoryOtherTouched(false);
+                  }
+                }}
+                options={EXPENSE_CATEGORY_OPTIONS}
               />
+              {category === CATEGORY_OTHER && (
+                <MUIInput
+                  fieldLabel="Specify category"
+                  required
+                  value={categoryOther}
+                  onChange={(e) => setCategoryOther(e.target.value)}
+                  onBlur={() => setCategoryOtherTouched(true)}
+                  placeholder="e.g. Insurance, Training"
+                  inputProps={{ maxLength: 30 }}
+                  error={showCategoryOtherError ? 'Please specify the category' : undefined}
+                  disabled={pending || uploading}
+                />
+              )}
               <MUIInput
                 fieldLabel="Paid to"
                 value={payee}
@@ -256,7 +305,7 @@ export function RecordMoneyDialog({
       </MUIDialogBody>
 
       <MUIDialogFooter>
-        <Button onClick={onClose} disabled={pending}>
+        <Button onClick={handleClose} disabled={pending}>
           Cancel
         </Button>
         <Button
