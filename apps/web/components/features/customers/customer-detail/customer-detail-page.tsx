@@ -52,7 +52,13 @@ import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useOrgCustomersAr } from '@/lib/hooks/resources';
 import { useLedgerEntries, lastReceiptValueDate } from '@/lib/hooks/resources/ledger';
-import { formatCurrency, formatDate, formatNumber, formatSystemSize, recordRecentView } from '@/lib/utils';
+import {
+  formatCurrency,
+  formatDate,
+  formatNumber,
+  formatSystemSize,
+  recordRecentView,
+} from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 const OverviewTab = dynamic(() => import('./tabs/overview-tab').then((m) => m.OverviewTab), {

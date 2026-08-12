@@ -39,11 +39,15 @@ import {
 import { detailTableSx, tableCardSx } from '../styles';
 import { getBalanceTone, getOverdueAmount } from '../utils';
 
-import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { ReceiptDates } from '@/components/features/ledger/receipt-dates';
+import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
 import { useOrgCustomersAr, useOrgOutstanding } from '@/lib/hooks/resources';
-import { useLedgerEntries, lastReceiptValueDate, type LedgerEntry } from '@/lib/hooks/resources/ledger';
+import {
+  useLedgerEntries,
+  lastReceiptValueDate,
+  type LedgerEntry,
+} from '@/lib/hooks/resources/ledger';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
@@ -145,7 +149,10 @@ export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Elemen
   const router = useRouter();
 
   // Ordered by days overdue, descending — the endpoint's fixed ordering.
-  const outstandingQ = useOrgOutstanding({ customerId, page: 1, limit: TERM_PAGE_LIMIT }, { enabled });
+  const outstandingQ = useOrgOutstanding(
+    { customerId, page: 1, limit: TERM_PAGE_LIMIT },
+    { enabled },
+  );
   const ledgerEntriesQ = useLedgerEntries(
     { customerId, direction: 'in', page: 1, limit: RECEIPT_PAGE_LIMIT },
     { enabled },

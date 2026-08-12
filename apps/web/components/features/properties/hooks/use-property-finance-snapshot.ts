@@ -2,12 +2,12 @@
 
 import { useMemo } from 'react';
 
+import { useOrgOutstanding, type OutstandingTerm } from '@/lib/hooks/resources';
 import {
   useProjectEntries,
   useProjectLedger,
   type LedgerEntry,
 } from '@/lib/hooks/resources/ledger';
-import { useOrgOutstanding, type OutstandingTerm } from '@/lib/hooks/resources';
 
 /** Open-term query cap; callers surface a note when the cap bites. */
 export const PROPERTY_FINANCE_PAGE_LIMIT = 100;
@@ -78,10 +78,7 @@ export function usePropertyFinanceSnapshot(
 
   const openTerms = outstandingQ.data?.data ?? EMPTY_TERMS;
   const allEntries = entriesQ.data ?? EMPTY_ENTRIES;
-  const receipts = useMemo(
-    () => allEntries.filter(isReceiptEntry),
-    [allEntries],
-  );
+  const receipts = useMemo(() => allEntries.filter(isReceiptEntry), [allEntries]);
 
   const snapshot = useMemo((): PropertyFinanceSnapshot => {
     if (!hasProject) return EMPTY_SNAPSHOT;
@@ -122,8 +119,7 @@ export function usePropertyFinanceSnapshot(
   }, [hasProject, openTerms, ledgerQ.data, receipts]);
 
   const isLoading =
-    hasProject &&
-    (outstandingQ.isLoading || ledgerQ.isLoading || entriesQ.isLoading);
+    hasProject && (outstandingQ.isLoading || ledgerQ.isLoading || entriesQ.isLoading);
   const isTruncated = openTerms.length >= PROPERTY_FINANCE_PAGE_LIMIT;
 
   return { snapshot, openTerms, receipts, isTruncated, isLoading, hasProject };

@@ -135,7 +135,9 @@ export class RealignDriftedMilestoneSchedules1854200000000 implements MigrationI
     // ledger_allocations is append-only at runtime. A migration correcting a
     // historical mistake is the one legitimate exception, and the trigger is
     // re-enabled below before this transaction can commit.
-    await queryRunner.query(`ALTER TABLE ledger_allocations DISABLE TRIGGER trg_ledger_allocations_append_only`);
+    await queryRunner.query(
+      `ALTER TABLE ledger_allocations DISABLE TRIGGER trg_ledger_allocations_append_only`,
+    );
 
     await queryRunner.query(`
       DELETE FROM ledger_allocations a
@@ -195,7 +197,9 @@ export class RealignDriftedMilestoneSchedules1854200000000 implements MigrationI
     // ordering trap is documented in sql/ledger/05-allocate-waterfall.sql.ts.
     await queryRunner.query(`SET CONSTRAINTS trg_ledger_allocations_not_over_allocated IMMEDIATE`);
 
-    await queryRunner.query(`ALTER TABLE ledger_allocations ENABLE TRIGGER trg_ledger_allocations_append_only`);
+    await queryRunner.query(
+      `ALTER TABLE ledger_allocations ENABLE TRIGGER trg_ledger_allocations_append_only`,
+    );
 
     // ---- 3. Assert -------------------------------------------------------
     await queryRunner.query(`

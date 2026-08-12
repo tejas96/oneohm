@@ -3,12 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { type PaginatedResponse } from '@tejas96/shared/types';
 
 import { JwtAuthGuard } from '../../auth/guards';
-import {
-  CustomerAgingDto,
-  CustomersArQueryDto,
-  OutstandingQueryDto,
-  OutstandingTermDto,
-} from '../dto';
+import { CustomerAgingDto, OutstandingQueryDto, OutstandingTermDto } from '../dto';
 import {
   CashFlowQueryDto,
   LedgerEntriesQueryDto,

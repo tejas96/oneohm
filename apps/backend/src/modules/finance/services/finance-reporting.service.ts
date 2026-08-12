@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { type PaginatedResponse } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
-import { type PaginatedResponse } from '@tejas96/shared/types';
-
 import { CustomerAgingDto, OutstandingTermDto } from '../dto';
-
 import {
   CASH_FLOW_SQL,
   CUSTOMERS_AR_SQL,

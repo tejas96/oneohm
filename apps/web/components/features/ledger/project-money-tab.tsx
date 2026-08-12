@@ -22,8 +22,8 @@ import { ChangeOrderDialog, ReverseEntryDialog, WaiveMilestoneDialog } from './c
 import { formatExpenseCategory } from './format-expense-category';
 import { useReceiptPdf } from './hooks/use-receipt-pdf';
 import { MilestoneWaterfall } from './milestone-waterfall';
-import { RecordMoneyDialog } from './record-money-dialog';
 import { ReceiptDates } from './receipt-dates';
+import { RecordMoneyDialog } from './record-money-dialog';
 
 import type { ProjectDetail } from '@/components/features/projects/hooks/types';
 import { MUITypography } from '@/components/ui';

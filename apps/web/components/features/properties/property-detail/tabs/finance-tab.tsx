@@ -26,8 +26,6 @@ import {
   usePropertyLoan,
 } from '../../hooks';
 
-import { ReceiptDates } from '@/components/features/ledger/receipt-dates';
-
 import {
   DetailCard,
   EmptyPane,
@@ -40,6 +38,7 @@ import {
   type DetailTone,
 } from '@/components/features/customers/customer-detail/primitives';
 import { detailTableSx, tableCardSx } from '@/components/features/customers/customer-detail/styles';
+import { ReceiptDates } from '@/components/features/ledger/receipt-dates';
 import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
@@ -443,9 +442,7 @@ export function FinanceTab({
                             </TableCell>
 
                             <TableCell sx={{ color: 'var(--ds-text-secondary)' }}>
-                              {entry.paymentMethod
-                                ? methodLabel(entry.paymentMethod)
-                                : '—'}
+                              {entry.paymentMethod ? methodLabel(entry.paymentMethod) : '—'}
                             </TableCell>
 
                             <TableCell>

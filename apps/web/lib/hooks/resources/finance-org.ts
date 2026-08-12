@@ -130,9 +130,9 @@ export function useOrgOutstanding(
  * than kept as a no-op: no caller ever passed it, and the ledger view computes
  * days overdue against the current date.
  */
-export function useOrgCustomersAr(
-  options?: { enabled?: boolean },
-): UseQueryResult<CustomerAging[], AxiosError> {
+export function useOrgCustomersAr(options?: {
+  enabled?: boolean;
+}): UseQueryResult<CustomerAging[], AxiosError> {
   return useQuery({
     queryKey: orgFinanceKeys.customersAr(),
     queryFn: async ({ signal }): Promise<CustomerAging[]> => {
