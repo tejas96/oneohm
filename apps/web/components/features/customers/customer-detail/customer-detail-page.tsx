@@ -159,7 +159,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     limit: 10,
     enabled: customerReady,
   });
-  const { data: arRows, isLoading: arLoading } = useOrgCustomersAr(undefined, {
+  const { data: arRows, isLoading: arLoading } = useOrgCustomersAr({
     enabled: customerReady,
   });
 

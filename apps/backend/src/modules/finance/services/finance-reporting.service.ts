@@ -2,8 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
+import { CustomerAgingDto } from '../dto';
+
 import {
   CASH_FLOW_SQL,
+  CUSTOMERS_AR_SQL,
   KPIS_SQL,
   LEDGER_COUNT_SQL,
   LEDGER_PAGE_SQL,
@@ -112,6 +115,18 @@ export class FinanceReportingService {
       customerName: (r.customerName as string) ?? 'Unknown',
       outstanding: rs(r.outstandingPaise),
     }));
+  }
+
+  /**
+   * Per-customer AR ageing.
+   *
+   * The query already returns rupees under the DTO's own property names, so
+   * rows pass straight through. `limit` is generous by default: this feeds the
+   * customer Finance tab, which looks a single customer up in the result, so
+   * truncating the list silently hides that customer's balance.
+   */
+  async getCustomersAr(limit = 1000): Promise<CustomerAgingDto[]> {
+    return this.dataSource.query<CustomerAgingDto[]>(CUSTOMERS_AR_SQL, [limit]);
   }
 
   /**

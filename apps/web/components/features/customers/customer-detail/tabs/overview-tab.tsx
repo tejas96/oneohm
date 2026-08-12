@@ -190,7 +190,7 @@ function MoneyCard({
   enabled: boolean;
   onViewFinance: () => void;
 }): JSX.Element {
-  const { data: arRows, isLoading } = useOrgCustomersAr(undefined, { enabled });
+  const { data: arRows, isLoading } = useOrgCustomersAr({ enabled });
   const ledgerQ = useLedgerEntries(
     { customerId, direction: 'in', page: 1, limit: 100 },
     { enabled },

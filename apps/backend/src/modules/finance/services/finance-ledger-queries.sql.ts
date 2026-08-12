@@ -220,3 +220,74 @@ export const RECEIVABLES_COUNT_SQL = `
   JOIN projects pr ON pr.id = v.project_id AND pr.deleted_at IS NULL
   WHERE v.status = 'active' AND v.balance_paise > 0
 `;
+
+/**
+ * Customer AR ageing, derived from the ledger.
+ *
+ * Replaces the `project_payment_terms` version, which could not see any
+ * project created after the ledger cutover — conversion writes
+ * `payment_milestones` now, so a customer owing money rendered as
+ * "OUTSTANDING ₹0 · All settled" on their own Finance tab.
+ *
+ * Buckets follow AGING_BUCKETS in ../constants. `days_overdue` is 0 when
+ * `due_date` is null, so undated milestones land in `current`, matching the
+ * legacy definition. Expect the bucket spread to shift noticeably: the ledger
+ * carries real due dates (derived from completed workflow stages) where the
+ * legacy table had two in total.
+ *
+ * Amounts are returned in RUPEES because CustomerAgingDto is a rupee contract
+ * and three components read it unchanged.
+ */
+export const CUSTOMERS_AR_SQL = `
+  WITH open_ms AS (
+    SELECT
+      cp.id AS customer_id,
+      v.balance_paise,
+      v.days_overdue
+    FROM v_milestone_balance v
+    JOIN projects pr              ON pr.id = v.project_id AND pr.deleted_at IS NULL
+    JOIN customer_properties prop ON prop.id = pr.property_id
+    JOIN customer_profiles cp     ON cp.id = prop.customer_id AND cp.deleted_at IS NULL
+    WHERE v.status = 'active'
+      AND v.balance_paise > 0
+  ),
+  agg AS (
+    SELECT
+      customer_id,
+      SUM(balance_paise)::BIGINT AS total_paise,
+      COUNT(*)::int              AS open_term_count,
+      COALESCE(SUM(balance_paise) FILTER (WHERE days_overdue <= 0), 0)::BIGINT              AS current_paise,
+      COALESCE(SUM(balance_paise) FILTER (WHERE days_overdue BETWEEN 1  AND 30), 0)::BIGINT AS b0_30_paise,
+      COALESCE(SUM(balance_paise) FILTER (WHERE days_overdue BETWEEN 31 AND 60), 0)::BIGINT AS b31_60_paise,
+      COALESCE(SUM(balance_paise) FILTER (WHERE days_overdue BETWEEN 61 AND 90), 0)::BIGINT AS b61_90_paise,
+      COALESCE(SUM(balance_paise) FILTER (WHERE days_overdue > 90), 0)::BIGINT              AS b90_plus_paise
+    FROM open_ms
+    GROUP BY customer_id
+  ),
+  last_receipt AS (
+    SELECT e.customer_id, MAX(e.value_date) AS last_date
+    FROM ledger_entries e
+    WHERE e.direction = 'in'
+      AND e.reverses_id IS NULL
+      AND e.customer_id IS NOT NULL
+    GROUP BY e.customer_id
+  )
+  SELECT
+    cp.id                                                         AS "customerId",
+    NULLIF(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)), '') AS "customerName",
+    cp.phone                                                      AS "customerPhone",
+    cp.email                                                      AS "customerEmail",
+    (agg.total_paise    / 100.0)::float8                          AS "totalOutstanding",
+    (agg.current_paise  / 100.0)::float8                          AS "current",
+    (agg.b0_30_paise    / 100.0)::float8                          AS "bucket0to30",
+    (agg.b31_60_paise   / 100.0)::float8                          AS "bucket31to60",
+    (agg.b61_90_paise   / 100.0)::float8                          AS "bucket61to90",
+    (agg.b90_plus_paise / 100.0)::float8                          AS "bucket90plus",
+    lr.last_date                                                  AS "lastReceiptDate",
+    agg.open_term_count                                           AS "openTermCount"
+  FROM agg
+  JOIN customer_profiles cp ON cp.id = agg.customer_id
+  LEFT JOIN last_receipt lr ON lr.customer_id = agg.customer_id
+  ORDER BY agg.total_paise DESC
+  LIMIT $1
+`;

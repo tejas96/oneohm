@@ -149,10 +149,14 @@ export class FinanceController {
   @ApiOperation({
     summary: 'Per-customer AR aging buckets',
     description:
-      'Returns one row per customer with totalOutstanding broken into 5 aging ' +
-      'buckets (current, 0-30, 31-60, 61-90, 90+). Optional asOfDate (default today).',
+      'One row per customer with totalOutstanding broken into 5 aging buckets ' +
+      '(current, 0-30, 31-60, 61-90, 90+), derived from the ledger. ' +
+      'Ageing is always as of today: the legacy asOfDate parameter was dropped ' +
+      'because no caller used it and the milestone view computes days overdue ' +
+      'against the current date, so honouring it would have required a ' +
+      'different query rather than a silently ignored argument.',
   })
-  async getCustomersAr(@Query() query: CustomersArQueryDto): Promise<CustomerAgingDto[]> {
-    return this.aggregationService.getCustomersAr(query);
+  async getCustomersAr(): Promise<CustomerAgingDto[]> {
+    return this.reportingService.getCustomersAr();
   }
 }

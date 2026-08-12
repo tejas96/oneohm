@@ -166,7 +166,7 @@ export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Elemen
    * below is presented as the breakdown it actually is. The query key matches
    * the page's, so this costs no extra request.
    */
-  const arQ = useOrgCustomersAr(undefined, { enabled });
+  const arQ = useOrgCustomersAr({ enabled });
 
   const openTerms = useMemo(() => outstandingQ.data?.data ?? [], [outstandingQ.data?.data]);
   const ledgerReceipts = useMemo(

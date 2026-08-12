@@ -80,8 +80,7 @@ export const orgFinanceKeys = {
   root: () => ['finance-org'] as const,
   outstanding: (filters: OutstandingFilters) =>
     [...orgFinanceKeys.root(), 'outstanding', filters] as const,
-  customersAr: (asOfDate?: string) =>
-    [...orgFinanceKeys.root(), 'customers-ar', asOfDate ?? null] as const,
+  customersAr: () => [...orgFinanceKeys.root(), 'customers-ar'] as const,
 };
 
 // ============================================================================
@@ -123,18 +122,18 @@ export function useOrgOutstanding(
   });
 }
 
+/**
+ * Ageing is always as of today. The old `asOfDate` argument was removed rather
+ * than kept as a no-op: no caller ever passed it, and the ledger view computes
+ * days overdue against the current date.
+ */
 export function useOrgCustomersAr(
-  asOfDate?: string,
   options?: { enabled?: boolean },
 ): UseQueryResult<CustomerAging[], AxiosError> {
-  const params = asOfDate ? { asOfDate } : undefined;
   return useQuery({
-    queryKey: orgFinanceKeys.customersAr(asOfDate),
+    queryKey: orgFinanceKeys.customersAr(),
     queryFn: async ({ signal }): Promise<CustomerAging[]> => {
-      const { data } = await apiClient.get<CustomerAging[]>('/finance/customers/ar', {
-        params,
-        signal,
-      });
+      const { data } = await apiClient.get<CustomerAging[]>('/finance/customers/ar', { signal });
       return data;
     },
     enabled: options?.enabled !== false,
