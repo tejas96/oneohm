@@ -1224,6 +1224,18 @@ export class DropLegacyPaymentTables1855000000000 implements MigrationInterface 
 }
 ```
 
+- [ ] **Step 3b: Decide what happens to `scripts/ledger-dry-run.ts`**
+
+Found during Task 7: `apps/backend/src/scripts/ledger-dry-run.ts` reads `payments` and
+`project_payment_terms` **by design** — it is the cutover validation harness that compares the two
+models. It is not part of the running app, so it did not block Phases 2-3, but it stops working the
+moment these tables go.
+
+Pick one and do it in this task, not later:
+- **Delete it** — its job finishes when the tables do. Recommended; the comparison it performs is
+  meaningless once one side no longer exists.
+- **Keep it** — only sensible if it is pointed at a restored copy of the dump.
+
 - [ ] **Step 4: Verify no dependency blocks the drop**
 
 ```bash
