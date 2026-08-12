@@ -4,7 +4,7 @@ import type { JSX } from 'react';
 
 import { MUITypography } from './mui-typography';
 
-import { formatSystemSize } from '@/lib/utils';
+import { formatSystemSize, hasSystemSizeVariance } from '@/lib/utils';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -34,14 +34,6 @@ export interface SystemSizeDisplayProps {
   className?: string;
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-const DIFF_THRESHOLD = 0.01;
-
-function hasDiff(actual: number | undefined, requested: number | undefined): boolean {
-  return actual != null && requested != null && Math.abs(actual - requested) > DIFF_THRESHOLD;
-}
-
 // ── Component ──────────────────────────────────────────────────────────────
 
 /**
@@ -65,9 +57,11 @@ export function SystemSizeDisplay({
   className,
 }: SystemSizeDisplayProps): JSX.Element {
   const primary = actualKw ?? requestedKw;
-  const showSecondary = hasDiff(actualKw, requestedKw);
+  const showSecondary = hasSystemSizeVariance(actualKw, requestedKw);
   const primaryStr = primary != null ? `${formatSystemSize(primary)} kW` : '—';
-  const secondaryStr = requestedKw != null ? `sel. ${formatSystemSize(requestedKw)} kW` : '';
+  /* "selected", not "sel." — the abbreviation saved four characters and cost
+     the reader the meaning. Matches the wording used in the detail tables. */
+  const secondaryStr = requestedKw != null ? `selected ${formatSystemSize(requestedKw)} kW` : '';
 
   // ── Large hero size (always stacked) ──────────────────────────────────
   if (size === 'lg') {

@@ -8,6 +8,7 @@
 
 import { LeadTemperature, PropertyStatus, PropertyType, QuoteStatus } from '@tejas96/shared/types';
 
+import type { CrmTone } from '@/components/shared/crm-table';
 import { toTitleLabel } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -63,7 +64,7 @@ export const PROPERTY_DETAIL_TABS = [
   { value: 'finance', label: 'Finance' },
   { value: 'project', label: 'Project' },
   { value: 'followups', label: 'Follow-ups' },
-  { value: 'service', label: 'Service Tickets' },
+  { value: 'service', label: 'Service' },
   { value: 'activity', label: 'Activity' },
 ] as const;
 
@@ -113,6 +114,19 @@ export const LEAD_TEMPERATURE_CONFIG: Record<
     text: 'text-info',
     dot: 'bg-info',
   },
+};
+
+/**
+ * Lead temperature → design-system tone.
+ *
+ * Matches `LEAD_TEMPERATURE_CONFIG` and `TEMP_DOT_MUI_COLOR` above so a hot
+ * lead is the same colour whichever surface shows it. Hot borrows the danger
+ * ink because it is the loudest tone available, not because a hot lead is bad.
+ */
+export const LEAD_TEMPERATURE_TONE: Record<LeadTemperature, CrmTone> = {
+  [LeadTemperature.HOT]: 'danger',
+  [LeadTemperature.WARM]: 'warning',
+  [LeadTemperature.COLD]: 'info',
 };
 
 // ---------------------------------------------------------------------------

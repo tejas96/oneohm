@@ -56,6 +56,12 @@ const STATUS_TONE = {
   [FollowupStatus.CANCELLED]: 'neutral',
 } satisfies Record<FollowupStatus, DetailTone>;
 
+const TRUNCATE_SX = {
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const;
+
 function getScopeLabel(
   property?: { id: string; propertyName?: string; city?: string } | null,
 ): string {
@@ -181,27 +187,37 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
 
                     return (
                       <TableRow key={followup.id}>
-                        <TableCell>
+                        {/*
+                         * Subject and notes are free text with no length limit
+                         * — real records run to hundreds of characters. Without
+                         * a ceiling here one of those stretches the row wider
+                         * than the viewport and pushes every column after it
+                         * off the right edge.
+                         */}
+                        <TableCell sx={{ maxWidth: 340 }}>
                           <Stack direction="row" gap={1.25} sx={{ minWidth: 0 }}>
                             <IconCircle tone={isOverdue ? 'danger' : tone}>
                               <EventNoteOutlinedIcon />
                             </IconCircle>
                             <Box sx={{ minWidth: 0 }}>
                               <Typography
+                                title={followup.subject}
                                 sx={{
                                   fontSize: '0.8125rem',
                                   fontWeight: 600,
                                   color: 'var(--ds-text-primary)',
                                   lineHeight: 1.35,
+                                  ...TRUNCATE_SX,
                                 }}
                               >
-                                {followup.subject}
+                                {followup.subject.trim() || 'Untitled follow-up'}
                               </Typography>
                               <Typography
                                 sx={{
                                   fontSize: '0.6875rem',
                                   color: 'var(--ds-text-tertiary)',
                                   lineHeight: 1.4,
+                                  ...TRUNCATE_SX,
                                 }}
                               >
                                 {toTitleLabel(followup.type)}
