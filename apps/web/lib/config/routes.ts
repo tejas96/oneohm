@@ -137,6 +137,7 @@ export const ROUTES = {
   FINANCE: {
     HOME: '/finance',
     RECEIVABLES: '/finance/receivables',
+    APPROVALS: '/finance/approvals',
   },
 
   // Service
@@ -443,6 +444,7 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   // Finance routes (org-wide module)
   [ROUTES.FINANCE.HOME]: 'finance',
   [ROUTES.FINANCE.RECEIVABLES]: 'finance',
+  [ROUTES.FINANCE.APPROVALS]: 'finance',
 
   // Service routes
   [ROUTES.SERVICE.HOME]: 'service',

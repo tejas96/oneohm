@@ -391,6 +391,12 @@ export const navigationConfig: NavigationConfig = {
               label: 'Receivables',
               href: ROUTES.FINANCE.RECEIVABLES,
             },
+            {
+              id: 'finance-approvals',
+              icon: CheckCircle,
+              label: 'Payment Approvals',
+              href: ROUTES.FINANCE.APPROVALS,
+            },
           ],
         },
       ],

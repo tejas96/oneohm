@@ -35,6 +35,7 @@ import {
   type MilestoneBalance,
   type ProjectLedgerSummary,
 } from '@/lib/hooks/resources/ledger';
+import { usePaymentApprovals } from '@/lib/hooks/resources/payment-approvals';
 import { formatPaise } from '@/lib/utils/paise';
 
 interface ProjectMoneyTabProps {
@@ -65,6 +66,9 @@ export function ProjectMoneyTab({
   const [reversing, setReversing] = useState<LedgerEntry | null>(null);
   const [waiving, setWaiving] = useState<MilestoneBalance | null>(null);
   const receiptPdf = useReceiptPdf();
+  // Deliberately rendered apart from the figures below: these have not reached
+  // the ledger, so they are in neither Received nor Outstanding.
+  const pendingApprovals = usePaymentApprovals({ projectId, status: 'pending' });
 
   /**
    * Re-file (or re-download) the receipt for an entry recorded earlier.
@@ -108,6 +112,24 @@ export function ProjectMoneyTab({
           Add change order
         </Button>
       </div>
+
+      {(pendingApprovals.data?.data.length ?? 0) > 0 && (
+        <Alert severity="warning" icon={false}>
+          <Box sx={{ fontWeight: 600, mb: 0.5 }}>
+            Awaiting approval ({pendingApprovals.data?.data.length})
+          </Box>
+          <Box sx={{ fontSize: '0.8125rem', mb: 1 }}>
+            Not counted in Received or Outstanding below. A second person must approve these
+            before they affect the customer&apos;s balance.
+          </Box>
+          {pendingApprovals.data?.data.map((p) => (
+            <Box key={p.id} sx={{ fontSize: '0.8125rem' }}>
+              {p.requestNo} · {p.valueDate} · {formatPaise(Math.abs(p.amountPaise))}
+              {p.reference ? ` · ${p.reference}` : ''}
+            </Box>
+          ))}
+        </Alert>
+      )}
 
       <SummaryStrip summary={s} />
 
@@ -166,22 +188,6 @@ export function ProjectMoneyTab({
           projectId={projectId}
           milestones={s.milestones}
           onClose={() => setDialog(null)}
-          // Fired after the payment has committed. The dialog has already
-          // closed and the money is already recorded — this only decides
-          // whether a receipt ends up in the customer's documents.
-          onReceiptRecorded={
-            project
-              ? async (entry) => {
-                  // Refetch first: the allocation split and the post-payment
-                  // balance are both server-decided, and the summary in hand is
-                  // the pre-payment one.
-                  const fresh = await summary.refetch();
-                  if (fresh.data) {
-                    await receiptPdf.generateAndFile(entry, fresh.data, project);
-                  }
-                }
-              : undefined
-          }
         />
       )}
 

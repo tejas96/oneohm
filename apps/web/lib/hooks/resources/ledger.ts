@@ -5,6 +5,7 @@ import type { AxiosError } from 'axios';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
+import type { PaymentApproval } from '@/lib/hooks/resources/payment-approvals';
 import { getErrorMessage } from '@/lib/utils/error';
 
 // ============================================================================
@@ -394,32 +395,40 @@ export function useLedgerMutations(projectId: string) {
     void queryClient.invalidateQueries({ queryKey: ledgerKeys.root() });
   };
 
+  // These endpoints no longer write to the ledger — they queue the money for
+  // approval and return the pending request, which has a requestNo and no
+  // entryNo. Reporting "recorded" here would tell the user their customer's
+  // balance had moved when it has not.
   const recordReceipt = useMutation({
     mutationFn: async (input: RecordReceiptInput) => {
-      const { data } = await apiClient.post<LedgerEntry>(
+      const { data } = await apiClient.post<PaymentApproval>(
         `/projects/${projectId}/ledger/receipts`,
         input,
       );
       return data;
     },
-    onSuccess: (entry) => {
+    onSuccess: (request) => {
       invalidate();
-      showToast.success(`Receipt ${entry.entryNo} recorded`);
+      void queryClient.invalidateQueries({ queryKey: ['payment-approvals'] });
+      showToast.success(
+        `${request.requestNo} submitted for approval — the balance updates once approved`,
+      );
     },
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
 
   const recordExpense = useMutation({
     mutationFn: async (input: RecordExpenseInput) => {
-      const { data } = await apiClient.post<LedgerEntry>(
+      const { data } = await apiClient.post<PaymentApproval>(
         `/projects/${projectId}/ledger/expenses`,
         input,
       );
       return data;
     },
-    onSuccess: (entry) => {
+    onSuccess: (request) => {
       invalidate();
-      showToast.success(`Expense ${entry.entryNo} recorded`);
+      void queryClient.invalidateQueries({ queryKey: ['payment-approvals'] });
+      showToast.success(`${request.requestNo} submitted for approval`);
     },
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
@@ -427,14 +436,18 @@ export function useLedgerMutations(projectId: string) {
   /** Corrections are new rows — the original stays visible forever. */
   const reverseEntry = useMutation({
     mutationFn: async ({ entryId, reason }: { entryId: string; reason: string }) => {
-      const { data } = await apiClient.post<LedgerEntry>(`/ledger/entries/${entryId}/reverse`, {
-        reason,
-      });
+      const { data } = await apiClient.post<PaymentApproval>(
+        `/ledger/entries/${entryId}/reverse`,
+        { reason },
+      );
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (request) => {
       invalidate();
-      showToast.success('Entry reversed — both the original and the correction remain on record');
+      void queryClient.invalidateQueries({ queryKey: ['payment-approvals'] });
+      showToast.success(
+        `${request.requestNo} submitted — the reversal takes effect once approved`,
+      );
     },
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
