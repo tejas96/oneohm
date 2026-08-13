@@ -9,11 +9,12 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  IsArray,
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
-import { ProofDocumentDto } from '../../ledger/dto';
+import { AllocationInputDto, ProofDocumentDto } from '../../ledger/dto';
 import type { PendingKind } from '../entities';
 
 /**
@@ -80,6 +81,21 @@ export class SubmitApprovalDto {
   @IsOptional()
   notes?: string;
 
+  /**
+   * Receipts only. Omit to let the waterfall fill milestones in order.
+   *
+   * Validated against live balances at APPROVAL, not here — the schedule can be
+   * repriced while a payment sits in the queue, so a split that was valid at
+   * submission may not be valid when it is approved.
+   */
+  @ApiPropertyOptional({ type: [AllocationInputDto] })
+  @ValidateIf((o: SubmitApprovalDto) => o.kind === 'receipt')
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AllocationInputDto)
+  @IsOptional()
+  allocations?: AllocationInputDto[];
+
   @ApiPropertyOptional({ description: 'Customer this receipt came from' })
   @IsUUID()
   @IsOptional()
@@ -96,10 +112,11 @@ export class SubmitApprovalDto {
   @IsOptional()
   proofDocument?: ProofDocumentDto;
 
-  @ApiPropertyOptional({ description: 'An already-filed document to reuse instead of proofDocument' })
-  @IsUUID()
-  @IsOptional()
-  proofDocumentId?: string;
+  // There is deliberately no `proofDocumentId`. Accepting an arbitrary document
+  // id would let a caller name any document in the system — including one on
+  // another customer's property — and approval re-points that document at the
+  // new ledger entry, silently detaching it from where it belonged. Proof is
+  // always supplied as `proofDocument` above, which creates a fresh row.
 
   @ApiPropertyOptional({ description: 'Required for reversal — the ledger entry being reversed.' })
   @ValidateIf((o: SubmitApprovalDto) => o.kind === 'reversal')

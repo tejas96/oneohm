@@ -198,6 +198,45 @@ describe('PaymentApprovalService', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
+    it('accepts a full ISO datetime for today rather than calling it future-dated', async () => {
+      // @IsDateString accepts datetimes; comparing the raw string against a bare
+      // YYYY-MM-DD made a payment received TODAY look like tomorrow.
+      const nowIso = `${TODAY}T09:00:00.000Z`;
+
+      await service.submit(
+        { kind: 'receipt', projectId: PROJECT, amountPaise: 1_000, valueDate: nowIso },
+        SUBMITTER,
+      );
+
+      expect(captured.inserted[0]).toMatchObject({ valueDate: TODAY });
+    });
+
+    it('carries a manual allocation through instead of dropping it', async () => {
+      const allocations = [{ milestoneId: 'm1', amountPaise: 30_000 }];
+
+      await service.submit(
+        { kind: 'receipt', projectId: PROJECT, amountPaise: 30_000, allocations },
+        SUBMITTER,
+      );
+
+      expect(captured.inserted[0]).toMatchObject({ allocations });
+    });
+
+    it('never stores allocations on an expense', async () => {
+      await service.submit(
+        {
+          kind: 'expense',
+          projectId: PROJECT,
+          amountPaise: 5_000,
+          category: 'materials',
+          allocations: [{ milestoneId: 'm1', amountPaise: 5_000 }],
+        },
+        SUBMITTER,
+      );
+
+      expect(captured.inserted[0]).toMatchObject({ allocations: null });
+    });
+
     it('defaults value date to today when none is supplied', async () => {
       await service.submit({ kind: 'receipt', projectId: PROJECT, amountPaise: 1_000 }, SUBMITTER);
       expect(captured.inserted[0]).toMatchObject({ valueDate: TODAY });
@@ -269,6 +308,46 @@ describe('PaymentApprovalService', () => {
       );
     });
 
+    it('forwards a stored allocation to the ledger write', async () => {
+      const allocations = [{ milestoneId: 'm1', amountPaise: 50_000 }];
+      rows['p-1'] = pending({ allocations });
+
+      await service.approve('p-1', APPROVER);
+
+      expect(ledgerWrite.recordReceipt).toHaveBeenCalledWith(
+        expect.objectContaining({ allocations }),
+        APPROVER,
+        expect.anything(),
+      );
+    });
+
+    it('passes undefined, not null, when there is no manual allocation', async () => {
+      rows['p-1'] = pending({ allocations: null });
+
+      await service.approve('p-1', APPROVER);
+
+      const [input] = ledgerWrite.recordReceipt.mock.calls[0] as [Record<string, unknown>];
+      expect(input.allocations).toBeUndefined();
+    });
+
+    it('uses MISC for an expense with no category, not an invalid literal', async () => {
+      rows['p-1'] = pending({
+        kind: 'expense',
+        entryType: 'expense',
+        direction: 'out',
+        amountPaise: -20_000,
+        category: null,
+      });
+
+      await service.approve('p-1', APPROVER);
+
+      expect(ledgerWrite.recordExpense).toHaveBeenCalledWith(
+        expect.objectContaining({ category: 'misc' }),
+        APPROVER,
+        expect.anything(),
+      );
+    });
+
     it('refuses a reversal whose target has already been reversed', async () => {
       rows['p-1'] = pending({ kind: 'reversal', reversesEntryId: 'entry-1' });
       ledgerRows.push({ id: 'entry-1', projectId: PROJECT });
@@ -325,6 +404,40 @@ describe('PaymentApprovalService', () => {
       expect(result.failed).toHaveLength(2);
       expect(result.failed[0]?.reason).toMatch(/another user must approve/i);
       expect(result.failed[1]?.reason).toMatch(/already/i);
+    });
+
+    it('does not leak a raw database error into the reason', async () => {
+      rows['boom'] = pending({ id: 'boom' });
+      ledgerWrite.recordReceipt.mockRejectedValueOnce(
+        Object.assign(new Error('duplicate key value violates unique constraint "secret_idx"'), {
+          code: '23505',
+        }),
+      );
+
+      const result = await service.bulkApprove(['boom'], APPROVER);
+
+      expect(result.failed[0]?.reason).not.toMatch(/unique constraint/i);
+      expect(result.failed[0]?.reason).toMatch(/server log/i);
+    });
+  });
+
+  describe('previewImpact with a manual allocation', () => {
+    it('previews the split that will actually be applied', async () => {
+      rows['p-1'] = pending({
+        amountPaise: 60_000,
+        allocations: [{ milestoneId: 'm2', amountPaise: 60_000 }],
+      });
+      ledgerRepo.getMilestoneBalances.mockResolvedValue([
+        { milestoneId: 'm1', name: 'Advance', status: 'active', balancePaise: 50_000 },
+        { milestoneId: 'm2', name: 'On delivery', status: 'active', balancePaise: 90_000 },
+      ] as any);
+
+      const result = await service.previewImpact('p-1');
+
+      // The waterfall would have filled Advance first; the manual split does not.
+      expect(result.lines).toEqual([
+        expect.objectContaining({ milestoneName: 'On delivery', appliedPaise: 60_000 }),
+      ]);
     });
   });
 

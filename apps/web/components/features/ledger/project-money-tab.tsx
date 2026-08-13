@@ -38,6 +38,13 @@ import {
 import { usePaymentApprovals } from '@/lib/hooks/resources/payment-approvals';
 import { formatPaise } from '@/lib/utils/paise';
 
+/**
+ * How many pending rows the project tab lists inline. The count beside the
+ * heading always comes from `total`, so a project with more than this shows the
+ * true number and a pointer to the full queue rather than silently truncating.
+ */
+const PENDING_PREVIEW_LIMIT = 10;
+
 interface ProjectMoneyTabProps {
   projectId: string;
   /** Supplies the receipt header (customer, site, project). Already fetched by the parent. */
@@ -68,7 +75,11 @@ export function ProjectMoneyTab({
   const receiptPdf = useReceiptPdf();
   // Deliberately rendered apart from the figures below: these have not reached
   // the ledger, so they are in neither Received nor Outstanding.
-  const pendingApprovals = usePaymentApprovals({ projectId, status: 'pending' });
+  const pendingApprovals = usePaymentApprovals({
+    projectId,
+    status: 'pending',
+    limit: PENDING_PREVIEW_LIMIT,
+  });
 
   /**
    * Re-file (or re-download) the receipt for an entry recorded earlier.
@@ -113,10 +124,10 @@ export function ProjectMoneyTab({
         </Button>
       </div>
 
-      {(pendingApprovals.data?.data.length ?? 0) > 0 && (
+      {(pendingApprovals.data?.total ?? 0) > 0 && (
         <Alert severity="warning" icon={false}>
           <Box sx={{ fontWeight: 600, mb: 0.5 }}>
-            Awaiting approval ({pendingApprovals.data?.data.length})
+            Awaiting approval ({pendingApprovals.data?.total ?? 0})
           </Box>
           <Box sx={{ fontSize: '0.8125rem', mb: 1 }}>
             Not counted in Received or Outstanding below. A second person must approve these
@@ -128,6 +139,12 @@ export function ProjectMoneyTab({
               {p.reference ? ` · ${p.reference}` : ''}
             </Box>
           ))}
+          {(pendingApprovals.data?.total ?? 0) > PENDING_PREVIEW_LIMIT && (
+            <Box sx={{ fontSize: '0.8125rem', mt: 0.5, fontStyle: 'italic' }}>
+              and {(pendingApprovals.data?.total ?? 0) - PENDING_PREVIEW_LIMIT} more — see Finance ›
+              Payment Approvals
+            </Box>
+          )}
         </Alert>
       )}
 

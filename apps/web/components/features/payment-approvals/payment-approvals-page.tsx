@@ -6,19 +6,34 @@ import { type JSX, useMemo, useState } from 'react';
 import { ApprovalReviewDrawer } from './approval-review-drawer';
 import { approvalColumns, type ApprovalRow } from './columns';
 
-import { AdvancedTable } from '@/components/shared/advanced-table';
+import { AdvancedTable, type TableFilterModel } from '@/components/shared/advanced-table';
 import { FilterTabs, type FilterTab } from '@/components/shared/filters';
 import { MUITypography } from '@/components/ui';
 import {
   useApprovalMutations,
   useApprovalSummary,
   usePaymentApprovals,
+  type ApprovalKind,
   type ApprovalStatus,
 } from '@/lib/hooks/resources/payment-approvals';
 import { useAuth } from '@/providers/auth-provider';
 
 
 const PAGE_SIZE = 25;
+
+const KINDS: readonly ApprovalKind[] = ['receipt', 'expense', 'reversal'];
+
+/**
+ * Read one filter as a string.
+ *
+ * `TableFilterModel` values are `unknown`, and the table hands back '' when a
+ * filter is cleared — which must become `undefined` so the query key drops the
+ * parameter instead of sending an empty one.
+ */
+function readFilter(filters: TableFilterModel, field: string): string | undefined {
+  const value = filters[field];
+  return typeof value === 'string' && value !== '' ? value : undefined;
+}
 
 /**
  * The approval queue.
@@ -34,8 +49,23 @@ export function PaymentApprovalsPage(): JSX.Element {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<ApprovalRow | null>(null);
 
+  // AdvancedTable does NO client-side search, filtering or sorting in server
+  // pagination mode (Table.tsx returns `rows` untouched), so every control has
+  // to be driven from here or it silently does nothing.
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<TableFilterModel>({});
+
   const summary = useApprovalSummary();
-  const query = usePaymentApprovals({ status, page: page + 1, limit: PAGE_SIZE });
+  const query = usePaymentApprovals({
+    status,
+    page: page + 1,
+    limit: PAGE_SIZE,
+    search: search || undefined,
+    kind: KINDS.find((k) => k === readFilter(filters, 'kind')),
+    // A single date filter means that exact day, so it bounds both ends.
+    dateFrom: readFilter(filters, 'valueDate'),
+    dateTo: readFilter(filters, 'valueDate'),
+  });
   const { bulkApprove } = useApprovalMutations();
 
   const columns = useMemo(() => approvalColumns(setSelected), []);
@@ -80,6 +110,14 @@ export function PaymentApprovalsPage(): JSX.Element {
           onPageChange={setPage}
           enableSearch
           searchPlaceholder="Search request number, reference or payer"
+          onSearchChange={(next) => {
+            setSearch(next);
+            setPage(0);
+          }}
+          onFilterChange={(next) => {
+            setFilters(next);
+            setPage(0);
+          }}
           emptyMessage={
             status === 'pending' ? 'Nothing waiting for approval.' : 'Nothing to show.'
           }

@@ -140,7 +140,9 @@ export class LedgerController {
       'Since the approval queue landed this no longer writes to the ledger. It queues the ' +
       'receipt for verification and returns the pending request; the customer’s outstanding ' +
       'moves only when an approver — someone other than the submitter — approves it. ' +
-      'Allocation across milestones is computed at approval, not here.',
+      '`allocations` is carried through and applied at approval; omit it and the waterfall ' +
+      'fills milestones in order. Either way the split is validated against live balances at ' +
+      'approval, since the schedule can be repriced while a payment waits in the queue.',
   })
   @ApiParam({ name: 'projectId', type: String })
   async recordReceipt(
@@ -161,6 +163,7 @@ export class LedgerController {
         reference: dto.reference,
         notes: dto.notes,
         customerId: dto.customerId,
+        allocations: dto.allocations,
         proofDocument: dto.proofDocument,
       },
       currentUser.id,

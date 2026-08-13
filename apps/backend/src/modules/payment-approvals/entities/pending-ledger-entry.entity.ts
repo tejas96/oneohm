@@ -80,6 +80,16 @@ export class PendingLedgerEntryEntity {
   @Column({ type: 'text', nullable: true })
   notes?: string | null;
 
+  /**
+   * Caller-supplied milestone targeting for a receipt. Null means let the FIFO
+   * waterfall decide at approval.
+   *
+   * Opaque here — it is read back whole and handed to `LedgerWriteService`,
+   * which validates it against live balances when the payment is approved.
+   */
+  @Column({ type: 'jsonb', nullable: true })
+  allocations?: Array<{ milestoneId: string; amountPaise: number }> | null;
+
   // ============================================
   // REVERSAL REQUESTS ONLY
   // ============================================

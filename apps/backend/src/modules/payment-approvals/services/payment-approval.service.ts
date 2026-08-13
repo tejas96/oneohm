@@ -2,7 +2,9 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -10,6 +12,7 @@ import {
   DocumentCategory,
   DocumentEntityType,
   DocumentTag,
+  ExpenseCategory,
   FinanceSequenceScope,
 } from '@tejas96/shared/types';
 import { DataSource, EntityManager, Repository } from 'typeorm';
@@ -17,7 +20,7 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { allocateWaterfall } from '../../ledger/domain/allocation';
-import { todayIst } from '../../ledger/domain/dates';
+import { isFutureIst, toIsoDate, todayIst } from '../../ledger/domain/dates';
 import { LedgerEntryEntity } from '../../ledger/entities';
 import { LedgerRepository } from '../../ledger/repositories/ledger.repository';
 import { LedgerWriteService } from '../../ledger/services/ledger-write.service';
@@ -57,6 +60,8 @@ function isUniqueViolation(error: unknown, constraint: string): boolean {
  */
 @Injectable()
 export class PaymentApprovalService {
+  private readonly logger = new Logger(PaymentApprovalService.name);
+
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -70,9 +75,13 @@ export class PaymentApprovalService {
   // ============================================
 
   async submit(dto: SubmitApprovalDto, userId: string): Promise<PendingLedgerEntryEntity> {
-    const valueDate = dto.valueDate ?? todayIst();
-    if (valueDate > todayIst()) {
-      throw new BadRequestException('A payment cannot be dated in the future');
+    // Normalised first: @IsDateString accepts a full ISO datetime, and comparing
+    // '2026-08-13T09:00:00Z' against '2026-08-13' lexicographically makes a
+    // payment received TODAY look like a future date. This mirrors
+    // LedgerWriteService.resolveValueDate, which this path replaced.
+    const valueDate = dto.valueDate ? toIsoDate(dto.valueDate) : todayIst();
+    if (isFutureIst(valueDate)) {
+      throw new BadRequestException(`Value date ${valueDate} is in the future`);
     }
 
     return this.dataSource.transaction(async (manager) => {
@@ -93,7 +102,7 @@ export class PaymentApprovalService {
         reference: dto.reference ?? null,
         paymentMethod: dto.paymentMethod ?? null,
         counterparty: dto.counterparty ?? null,
-        proofDocumentId: dto.proofDocumentId ?? null,
+        proofDocumentId: null as string | null,
       };
 
       let row: Partial<PendingLedgerEntryEntity>;
@@ -131,6 +140,8 @@ export class PaymentApprovalService {
           // Signed on the way in, matching the ledger: money out is negative.
           amountPaise: isReceipt ? (dto.amountPaise as number) : -(dto.amountPaise as number),
           category: dto.category ?? null,
+          // Receipts only — a DB constraint enforces the same rule.
+          allocations: isReceipt && dto.allocations?.length ? dto.allocations : null,
         };
       }
 
@@ -265,6 +276,10 @@ export class PaymentApprovalService {
             reference: pending.reference ?? undefined,
             notes: pending.notes ?? undefined,
             customerId: pending.customerId ?? undefined,
+            // Undefined, not null: LedgerWriteService treats "omitted" as
+            // auto-allocate and validates a supplied split against live
+            // balances, throwing a 400 the approver can act on.
+            allocations: pending.allocations ?? undefined,
           },
           approverId,
           manager,
@@ -277,7 +292,11 @@ export class PaymentApprovalService {
             // this table already stores the value signed.
             amountPaise: Math.abs(pending.amountPaise),
             valueDate: pending.valueDate,
-            category: pending.category ?? 'other',
+            // MISC, not 'other' — ExpenseCategory has no OTHER member, and
+            // ledger_entries.category has no CHECK constraint, so an invalid
+            // value would persist silently and show up as an unlabelled bucket
+            // in spend-by-category.
+            category: pending.category ?? ExpenseCategory.MISC,
             payee: pending.counterparty ?? undefined,
             paymentMethod: pending.paymentMethod ?? undefined,
             notes: pending.notes ?? undefined,
@@ -322,11 +341,33 @@ export class PaymentApprovalService {
         await this.approve(id, approverId);
         approved.push(id);
       } catch (error) {
-        failed.push({ id, reason: error instanceof Error ? error.message : 'Unknown error' });
+        failed.push({ id, reason: this.describeFailure(id, error) });
       }
     }
 
     return { approved, failed };
+  }
+
+  /**
+   * A reason safe to show the user.
+   *
+   * Only our own HttpExceptions carry text meant for a human — "another user
+   * must approve it", "already approved". Anything else is a driver or database
+   * error whose message would leak schema detail straight into a toast, so it is
+   * logged and replaced.
+   */
+  private describeFailure(id: string, error: unknown): string {
+    if (error instanceof HttpException) {
+      const response = error.getResponse();
+      if (typeof response === 'string') return response;
+      const message = (response as { message?: string | string[] }).message;
+      if (Array.isArray(message)) return message.join(', ');
+      if (message) return message;
+      return error.message;
+    }
+
+    this.logger.error(`Bulk approve failed for ${id}`, error instanceof Error ? error.stack : error);
+    return 'Could not be approved — see the server log';
   }
 
   // ============================================
@@ -468,6 +509,27 @@ export class PaymentApprovalService {
 
     const balances = await this.ledgerRepository.getMilestoneBalances(row.projectId);
     const active = balances.filter((b) => b.status === 'active');
+    const byId = new Map(active.map((b) => [b.milestoneId, b]));
+
+    // A manual split is what will actually be applied, so preview that rather
+    // than the waterfall the payment is not going to use.
+    if (row.allocations?.length) {
+      const applied = row.allocations.reduce((sum, a) => sum + a.amountPaise, 0);
+      return {
+        lines: row.allocations.map((a) => {
+          const balance = byId.get(a.milestoneId);
+          const before = balance?.balancePaise ?? 0;
+          return {
+            milestoneId: a.milestoneId,
+            milestoneName: balance?.name ?? 'Milestone',
+            appliedPaise: a.amountPaise,
+            balanceAfterPaise: before - a.amountPaise,
+            settlesFully: before === a.amountPaise,
+          };
+        }),
+        unallocatedPaise: Math.max(0, row.amountPaise - applied),
+      };
+    }
 
     // allocateWaterfall throws on a non-positive amount; a receipt is always
     // positive, but nothing downstream should depend on that assumption.
@@ -479,8 +541,6 @@ export class PaymentApprovalService {
       active.map((b) => ({ milestoneId: b.milestoneId, capacityPaise: b.balancePaise })),
       row.amountPaise,
     );
-
-    const byId = new Map(active.map((b) => [b.milestoneId, b]));
 
     return {
       lines: result.allocations.map((a) => {

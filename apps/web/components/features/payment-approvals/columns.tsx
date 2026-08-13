@@ -35,6 +35,11 @@ function ageLabel(submittedAt: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
+/**
+ * Every column is `sortable: false` on purpose: the queue is ordered oldest
+ * pending first by the API, which exposes no sort key, and a header that
+ * silently does nothing is worse than one that is plainly not clickable.
+ */
 export function approvalColumns(
   onReview: (row: ApprovalRow) => void,
 ): ColumnConfig<ApprovalRow>[] {
@@ -42,6 +47,7 @@ export function approvalColumns(
     {
       field: 'requestNo',
       headerName: 'Request #',
+      sortable: false,
       searchable: true,
       width: 170,
     },
@@ -49,6 +55,7 @@ export function approvalColumns(
       field: 'valueDate',
       headerName: 'Payment date',
       type: 'date',
+      sortable: false,
       filterable: true,
       filterType: 'date',
       width: 130,
@@ -56,6 +63,7 @@ export function approvalColumns(
     {
       field: 'kind',
       headerName: 'Type',
+      sortable: false,
       filterable: true,
       filterType: 'select',
       filterOptions: [
@@ -70,6 +78,7 @@ export function approvalColumns(
       field: 'amountPaise',
       headerName: 'Amount',
       type: 'number',
+      sortable: false,
       width: 140,
       // Always shown as a magnitude; the Type column already says which way the
       // money moves, and a bare minus sign next to "Expense" reads as an error.
@@ -78,18 +87,21 @@ export function approvalColumns(
     {
       field: 'reference',
       headerName: 'Reference',
+      sortable: false,
       searchable: true,
       renderCell: ({ row }) => row.reference ?? row.counterparty ?? '—',
     },
     {
       field: 'submittedAt',
       headerName: 'Waiting',
+      sortable: false,
       width: 110,
       renderCell: ({ row }) => (row.status === 'pending' ? ageLabel(row.submittedAt) : '—'),
     },
     {
       field: 'status',
       headerName: 'Status',
+      sortable: false,
       width: 120,
       renderCell: ({ row }) => (
         <MUIStatusChip
