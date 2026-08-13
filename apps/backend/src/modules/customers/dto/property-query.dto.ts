@@ -23,7 +23,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-import { IsUserRefOrMe } from '../validators/user-ref.validator';
+import { IsUserRefOrMe } from '../../../common/decorators';
 
 /**
  * Query DTO for property list endpoint

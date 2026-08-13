@@ -25,6 +25,8 @@ import {
   ValidateIf,
 } from 'class-validator';
 
+import { IsUserRefOrMe } from '../../../common/decorators';
+
 /**
  * Query DTO for customer list endpoint
  * Supports pagination, search, filtering, and sorting
@@ -118,7 +120,7 @@ export class CustomerQueryDto {
     example: 'me',
   })
   @IsOptional()
-  @IsString()
+  @IsUserRefOrMe()
   createdBy?: string;
 
   @ApiPropertyOptional({
@@ -126,8 +128,10 @@ export class CustomerQueryDto {
     example: 'me',
   })
   @IsOptional()
-  @IsString()
+  // Trim runs BEFORE validation, so a padded but otherwise valid id still
+  // passes rather than being rejected for its whitespace.
   @Transform(({ value }: { value: string }) => value?.trim())
+  @IsUserRefOrMe()
   assigneeId?: string;
 
   @ApiPropertyOptional({

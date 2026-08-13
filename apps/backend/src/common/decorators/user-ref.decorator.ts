@@ -27,13 +27,27 @@ const UUID =
 
 export const CURRENT_USER_TOKEN = 'me';
 
+/**
+ * The predicate, usable without class-validator.
+ *
+ * Some list endpoints take their filters as bare `@Query('name')` params rather
+ * than a DTO — `GET /projects` is one — so a decorator cannot reach them. They
+ * call this directly, which keeps one definition of what a user reference is
+ * instead of a second regex drifting somewhere else.
+ *
+ * Absent is valid: "don't filter" is a legitimate request, and the caller
+ * decides whether the value was required.
+ */
+export function isUserRefOrMe(value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  if (typeof value !== 'string') return false;
+  return value === CURRENT_USER_TOKEN || UUID.test(value);
+}
+
 @ValidatorConstraint({ name: 'isUserRefOrMe', async: false })
 export class UserRefOrMeConstraint implements ValidatorConstraintInterface {
   validate(value: unknown): boolean {
-    // Absent is fine; `@IsOptional()` owns that decision.
-    if (value === undefined || value === null) return true;
-    if (typeof value !== 'string') return false;
-    return value === CURRENT_USER_TOKEN || UUID.test(value);
+    return isUserRefOrMe(value);
   }
 
   defaultMessage(args: ValidationArguments): string {
