@@ -8,6 +8,7 @@ import { BulkApproveDto, QueryApprovalsDto, RejectApprovalDto, SubmitApprovalDto
 import { PendingLedgerEntryEntity } from '../entities';
 import {
   ApprovalRow,
+  ApprovalSummary,
   BulkApproveResult,
   ImpactLine,
   PaymentApprovalService,
@@ -56,8 +57,8 @@ export class PaymentApprovalController {
 
   // Declared before ':id' so the literal path is not captured by the param route.
   @Get('summary')
-  @ApiOperation({ summary: 'Pending count, for the navigation badge' })
-  async summary(): Promise<{ pendingCount: number }> {
+  @ApiOperation({ summary: 'Queue headlines: pending count and value, oldest wait, approved today' })
+  async summary(): Promise<ApprovalSummary> {
     return this.service.summary();
   }
 

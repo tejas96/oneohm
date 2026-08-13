@@ -45,6 +45,21 @@ export class QueryApprovalsDto {
   @IsString()
   search?: string;
 
+  /**
+   * Whitelisted, not free text: the value is interpolated into ORDER BY, so an
+   * open string would be an injection point. Limited to the four an approver
+   * actually reorders by — biggest first, oldest first, or grouped by customer.
+   */
+  @ApiPropertyOptional({ enum: ['valueDate', 'amountPaise', 'submittedAt', 'customerName'] })
+  @IsOptional()
+  @IsIn(['valueDate', 'amountPaise', 'submittedAt', 'customerName'])
+  sortBy?: 'valueDate' | 'amountPaise' | 'submittedAt' | 'customerName';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
+
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()
   @Type(() => Number)

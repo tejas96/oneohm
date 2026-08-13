@@ -104,9 +104,9 @@ export class PendingLedgerEntryEntity {
   // VERIFICATION
   // ============================================
 
-  /** The customer's own evidence — what the approver checks against. */
-  @Column({ name: 'proof_document_id', type: 'uuid', nullable: true })
-  proofDocumentId?: string | null;
+  // Proof lives in `documents` keyed by (entity_type='payment_approval',
+  // entity_id=this row) so a payment can carry several images. Approval
+  // re-points them all at the ledger entry.
 
   @Column({ name: 'submitted_by', type: 'uuid' })
   submittedBy!: string;

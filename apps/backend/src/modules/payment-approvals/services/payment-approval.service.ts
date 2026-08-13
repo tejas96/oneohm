@@ -61,10 +61,24 @@ export interface ApprovalRow extends Omit<PendingLedgerEntryEntity, 'createdAt' 
   customerPhone: string | null;
   submittedByName: string | null;
   reviewedByName: string | null;
-  /** Resolved from the linked document so the approver can open the evidence. */
-  proofUrl: string | null;
-  proofFileName: string | null;
-  proofMimeType: string | null;
+  /** Every image attached to this payment, oldest first. */
+  proofs: ProofRef[];
+}
+
+export interface ProofRef {
+  id: string;
+  url: string;
+  fileName: string | null;
+  mimeType: string | null;
+}
+
+export interface ApprovalSummary {
+  pendingCount: number;
+  /** Total size of what is waiting, in paise. */
+  pendingValuePaise: number;
+  approvedToday: number;
+  /** How long the longest-waiting request has been queued. Null when none. */
+  oldestPendingHours: number | null;
 }
 
 export interface ImpactLine {
@@ -180,18 +194,6 @@ export class PaymentApprovalService {
         };
       }
 
-      // Filed now, against the project, so the approver can actually look at it.
-      // Re-pointed at the ledger entry on approval.
-      if (dto.proofDocument) {
-        row.proofDocumentId = await this.fileProof(
-          manager,
-          row.projectId as string,
-          row.direction as 'in' | 'out',
-          dto.proofDocument,
-          userId,
-        );
-      }
-
       let inserted;
       try {
         inserted = await repo.insert(row);
@@ -207,19 +209,35 @@ export class PaymentApprovalService {
       }
 
       const id = inserted.identifiers[0]?.id as string;
+
+      // Filed after the insert because each document points at this row's id.
+      // Done now rather than at approval so the approver can actually look at
+      // the evidence — without it there is nothing to verify against.
+      for (const proof of dto.proofDocuments ?? []) {
+        await this.fileProof(
+          manager,
+          id,
+          row.projectId as string,
+          row.direction as 'in' | 'out',
+          proof,
+          userId,
+        );
+      }
+
       return repo.findOneOrFail({ where: { id } });
     });
   }
 
   /**
-   * Store the customer's evidence as a project document and return its id.
+   * Store one piece of the customer's evidence against the pending row.
    *
-   * `documents.entity_id` is NOT NULL and there is no ledger entry yet, so this
-   * hangs off the project — which it genuinely belongs to — until approval moves
-   * it onto the entry, where the rest of the codebase expects proof to live.
+   * `documents` is already polymorphic, so a payment can carry as many images as
+   * it needs without a join table. Approval re-points every one of them to the
+   * ledger entry, where the rest of the codebase expects proof to live.
    */
   private async fileProof(
     manager: EntityManager,
+    pendingId: string,
     projectId: string,
     direction: 'in' | 'out',
     proof: { fileKey: string; fileName: string; mimeType: string; fileSize?: number },
@@ -237,8 +255,8 @@ export class PaymentApprovalService {
 
     const inserted = await manager.getRepository(DocumentEntity).insert({
       propertyId,
-      entityType: DocumentEntityType.PROJECT,
-      entityId: projectId,
+      entityType: DocumentEntityType.PAYMENT_APPROVAL,
+      entityId: pendingId,
       category: proof.mimeType.startsWith('image/')
         ? DocumentCategory.IMAGE
         : DocumentCategory.DOCUMENT,
@@ -341,17 +359,12 @@ export class PaymentApprovalService {
         );
       }
 
-      // Move the proof onto the entry now that one exists, so it sits where the
-      // rest of the codebase looks for a ledger entry's proof.
-      if (pending.proofDocumentId) {
-        await manager
-          .getRepository(DocumentEntity)
-          .update(pending.proofDocumentId, {
-            entityType: DocumentEntityType.LEDGER_ENTRY,
-            entityId: entry.id,
-            updatedBy: approverId,
-          });
-      }
+      // Move every attached proof onto the entry now that one exists, so it
+      // sits where the rest of the codebase looks for a ledger entry's proof.
+      await manager.getRepository(DocumentEntity).update(
+        { entityType: DocumentEntityType.PAYMENT_APPROVAL, entityId: pending.id },
+        { entityType: DocumentEntityType.LEDGER_ENTRY, entityId: entry.id, updatedBy: approverId },
+      );
 
       await repo.update(pending.id, {
         status: 'approved',
@@ -468,6 +481,8 @@ export class PaymentApprovalService {
     const [data, [countRow]] = await Promise.all([
       this.dataSource.query<ApprovalRow[]>(APPROVALS_PAGE_SQL, [
         ...filters,
+        query.sortBy ?? null,
+        query.sortOrder ?? 'asc',
         limit,
         (page - 1) * limit,
       ]),
@@ -477,11 +492,43 @@ export class PaymentApprovalService {
     return { data: data.map(normaliseRow), total: Number(countRow?.count ?? 0), page, limit };
   }
 
-  async summary(): Promise<{ pendingCount: number }> {
-    const pendingCount = await this.dataSource
-      .getRepository(PendingLedgerEntryEntity)
-      .count({ where: { status: 'pending' } });
-    return { pendingCount };
+  /**
+   * Headline numbers for the queue.
+   *
+   * Money awaiting verification is the figure that matters most — a count of 3
+   * says nothing about whether ₹500 or ₹5,00,000 is sitting unconfirmed.
+   * `ABS` because expenses are stored negative and this is a size, not a
+   * cash-flow direction.
+   */
+  async summary(): Promise<ApprovalSummary> {
+    const [row] = await this.dataSource.query<
+      Array<{
+        pendingCount: string;
+        pendingValuePaise: string | null;
+        oldestPendingAt: Date | null;
+        approvedToday: string;
+      }>
+    >(`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'pending')                       AS "pendingCount",
+        SUM(ABS(amount_paise)) FILTER (WHERE status = 'pending')         AS "pendingValuePaise",
+        MIN(submitted_at) FILTER (WHERE status = 'pending')              AS "oldestPendingAt",
+        COUNT(*) FILTER (
+          WHERE status = 'approved' AND reviewed_at >= date_trunc('day', now())
+        )                                                                AS "approvedToday"
+      FROM pending_ledger_entries
+    `);
+
+    const oldest = row?.oldestPendingAt ? new Date(row.oldestPendingAt) : null;
+
+    return {
+      pendingCount: Number(row?.pendingCount ?? 0),
+      pendingValuePaise: Number(row?.pendingValuePaise ?? 0),
+      approvedToday: Number(row?.approvedToday ?? 0),
+      oldestPendingHours: oldest
+        ? Math.floor((Date.now() - oldest.getTime()) / 3_600_000)
+        : null,
+    };
   }
 
   async getOne(id: string): Promise<ApprovalRow & { possibleDuplicates: PendingLedgerEntryEntity[] }> {

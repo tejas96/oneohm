@@ -371,6 +371,17 @@ const root = {
     /** "Created by" — hidden by default, same width as owner. */
     'col-creator': 'minmax(122px,1fr)',
     'col-actions': '40px',
+    // Payment approval queue (design min-width 1180px)
+    'col-approval-request': '152px',
+    'col-approval-date': '96px',
+    'col-approval-type': '88px',
+    'col-approval-project': 'minmax(148px,1.2fr)',
+    'col-approval-customer': 'minmax(148px,1.3fr)',
+    'col-approval-amount': '112px',
+    'col-approval-reference': 'minmax(108px,1fr)',
+    'col-approval-submitter': 'minmax(120px,1fr)',
+    'col-approval-waiting': '80px',
+    'col-approval-status': '104px',
     // DISCOM admin grid (design min-width 1360px)
     'col-discom-hierarchy': 'minmax(250px,1.7fr)',
     'col-discom-circle': 'minmax(160px,1.1fr)',

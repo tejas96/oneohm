@@ -36,10 +36,7 @@ const SELECT_COLUMNS = `
     p.allocations,
     p.reverses_entry_id                                                           AS "reversesEntryId",
     p.reversal_reason                                                             AS "reversalReason",
-    p.proof_document_id                                                           AS "proofDocumentId",
-    doc.file_url                                                                  AS "proofUrl",
-    doc.file_name                                                                 AS "proofFileName",
-    doc.mime_type                                                                 AS "proofMimeType",
+    COALESCE(proofs.items, '[]'::json)                                            AS "proofs",
     p.submitted_by                                                                AS "submittedBy",
     NULLIF(TRIM(CONCAT_WS(' ', su.first_name, su.last_name)), '')                 AS "submittedByName",
     p.submitted_at                                                                AS "submittedAt",
@@ -55,7 +52,17 @@ const JOINS = `
   JOIN projects pr                    ON pr.id = p.project_id
   LEFT JOIN customer_properties prop  ON prop.id = pr.property_id
   LEFT JOIN customer_profiles cp      ON cp.id = prop.customer_id
-  LEFT JOIN documents doc             ON doc.id = p.proof_document_id
+  LEFT JOIN LATERAL (
+    -- Several images per payment is ordinary: a cheque photo plus the bank
+    -- slip, or one screenshot per instalment of a split transfer.
+    SELECT json_agg(
+             json_build_object(
+               'id', d.id, 'url', d.file_url, 'fileName', d.file_name, 'mimeType', d.mime_type
+             ) ORDER BY d.created_at
+           ) AS items
+      FROM documents d
+     WHERE d.entity_type = 'payment_approval' AND d.entity_id = p.id
+  ) proofs ON TRUE
   LEFT JOIN users su                  ON su.id = p.submitted_by
   LEFT JOIN users ru                  ON ru.id = p.reviewed_by
 `;
@@ -84,8 +91,20 @@ export const APPROVALS_PAGE_SQL = `
       OR pr.name        ILIKE '%' || $7 || '%'
       OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $7 || '%'
     )
-  ORDER BY p.submitted_at ASC
-  LIMIT $8 OFFSET $9
+  ORDER BY
+    -- $8/$9 are validated against a whitelist on the DTO before reaching here;
+    -- they are compared, never interpolated, so ORDER BY stays injection-safe.
+    CASE WHEN $8 = 'valueDate'    AND $9 = 'asc'  THEN p.value_date   END ASC,
+    CASE WHEN $8 = 'valueDate'    AND $9 = 'desc' THEN p.value_date   END DESC,
+    CASE WHEN $8 = 'amountPaise'  AND $9 = 'asc'  THEN ABS(p.amount_paise) END ASC,
+    CASE WHEN $8 = 'amountPaise'  AND $9 = 'desc' THEN ABS(p.amount_paise) END DESC,
+    CASE WHEN $8 = 'submittedAt'  AND $9 = 'asc'  THEN p.submitted_at  END ASC,
+    CASE WHEN $8 = 'submittedAt'  AND $9 = 'desc' THEN p.submitted_at  END DESC,
+    CASE WHEN $8 = 'customerName' AND $9 = 'asc'  THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
+    CASE WHEN $8 = 'customerName' AND $9 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
+    -- Default and final tie-break: the queue drains in the order it filled.
+    p.submitted_at ASC
+  LIMIT $10 OFFSET $11
 `;
 
 export const APPROVALS_COUNT_SQL = `

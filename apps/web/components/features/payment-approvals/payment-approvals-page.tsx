@@ -1,14 +1,14 @@
 'use client';
 
-import { Card } from '@mui/material';
+import { Box } from '@mui/material';
 import { type JSX, useMemo, useState } from 'react';
 
+import { ApprovalKpiCards } from './approval-kpi-cards';
 import { ApprovalReviewDrawer } from './approval-review-drawer';
-import { approvalColumns, type ApprovalRow } from './columns';
+import { APPROVAL_COLUMNS, type ApprovalRow } from './columns';
 
-import { AdvancedTable, type TableFilterModel } from '@/components/shared/advanced-table';
-import { FilterTabs, type FilterTab } from '@/components/shared/filters';
-import { MUITypography } from '@/components/ui';
+import type { FilterState, TableSortModel } from '@/components/shared/advanced-table';
+import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
 import {
   useApprovalMutations,
   useApprovalSummary,
@@ -16,21 +16,21 @@ import {
   type ApprovalKind,
   type ApprovalStatus,
 } from '@/lib/hooks/resources/payment-approvals';
+import { color, crm } from '@/lib/theme/tokens';
 import { useAuth } from '@/providers/auth-provider';
-
 
 const PAGE_SIZE = 25;
 
-const KINDS: readonly ApprovalKind[] = ['receipt', 'expense', 'reversal'];
+/** Sort fields the API whitelists. Anything else is dropped rather than guessed. */
+type SortField = 'valueDate' | 'amountPaise' | 'submittedAt' | 'customerName';
+const SORTABLE: readonly SortField[] = ['valueDate', 'amountPaise', 'submittedAt', 'customerName'];
 
 /**
- * Read one filter as a string.
- *
- * `TableFilterModel` values are `unknown`, and the table hands back '' when a
- * filter is cleared — which must become `undefined` so the query key drops the
- * parameter instead of sending an empty one.
+ * Read one filter as a string. `FilterState` values are `unknown`, and the table
+ * hands back '' when a filter is cleared — which has to become `undefined` so
+ * the query key drops the parameter rather than sending an empty one.
  */
-function readFilter(filters: TableFilterModel, field: string): string | undefined {
+function readFilter(filters: FilterState, field: string): string | undefined {
   const value = filters[field];
   return typeof value === 'string' && value !== '' ? value : undefined;
 }
@@ -43,109 +43,173 @@ function readFilter(filters: TableFilterModel, field: string): string | undefine
  */
 export function PaymentApprovalsPage(): JSX.Element {
   const { user } = useAuth();
+
   const [status, setStatus] = useState<ApprovalStatus>('pending');
-  // AdvancedTable's `page` is zero-indexed (it renders `page + 1`); the API is
+  // CrmTable's `page` is zero-indexed (it renders `page + 1`); the API is
   // one-indexed. Kept zero-based here and converted at the call.
   const [page, setPage] = useState(0);
+  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<FilterState>({});
+  const [sortModel, setSortModel] = useState<TableSortModel | null>(null);
   const [selected, setSelected] = useState<ApprovalRow | null>(null);
 
-  // AdvancedTable does NO client-side search, filtering or sorting in server
-  // pagination mode (Table.tsx returns `rows` untouched), so every control has
-  // to be driven from here or it silently does nothing.
-  const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState<TableFilterModel>({});
-
   const summary = useApprovalSummary();
+  const kindFilter = readFilter(filters, 'kind');
+  const dateFilter = readFilter(filters, 'valueDate');
+
   const query = usePaymentApprovals({
     status,
     page: page + 1,
     limit: PAGE_SIZE,
     search: search || undefined,
-    kind: KINDS.find((k) => k === readFilter(filters, 'kind')),
+    kind: toKind(kindFilter),
     // A single date filter means that exact day, so it bounds both ends.
-    dateFrom: readFilter(filters, 'valueDate'),
-    dateTo: readFilter(filters, 'valueDate'),
+    dateFrom: dateFilter,
+    dateTo: dateFilter,
+    sortBy: SORTABLE.find((f) => f === sortModel?.field),
+    sortOrder: sortModel?.direction,
   });
   const { bulkApprove } = useApprovalMutations();
 
-  const columns = useMemo(() => approvalColumns(), []);
   const rows = (query.data?.data ?? []) as ApprovalRow[];
 
-  const tabs: FilterTab<ApprovalStatus>[] = [
-    { id: 'pending', label: 'Pending', count: summary.data?.pendingCount },
-    { id: 'approved', label: 'Approved' },
-    { id: 'rejected', label: 'Rejected' },
-    { id: 'cancelled', label: 'Withdrawn' },
-  ];
+  /** Status chips carry a live count only where one is meaningful. */
+  const quickFilters = useMemo<CrmQuickFilter[]>(
+    () => [
+      {
+        key: 'pending',
+        label: 'Pending',
+        count: summary.data?.pendingCount,
+        tone: 'warning',
+        dot: true,
+      },
+      { key: 'approved', label: 'Approved', tone: 'success', dot: true },
+      { key: 'rejected', label: 'Rejected', tone: 'danger', dot: true },
+      { key: 'cancelled', label: 'Withdrawn', tone: 'neutral', dot: false },
+    ],
+    [summary.data?.pendingCount],
+  );
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <div>
-        <MUITypography variant="drawerTitle">Payment Approvals</MUITypography>
-        <MUITypography variant="body">
-          Payments wait here until a second person verifies them. Nothing below affects a
-          customer&apos;s balance until it is approved.
-        </MUITypography>
-      </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, lg: 3 } }}>
+      <Box>
+        <Box
+          component="span"
+          sx={{
+            fontSize: 'var(--text-overline-size)',
+            fontWeight: 700,
+            letterSpacing: 'var(--text-overline-track)',
+            textTransform: 'uppercase',
+            color: color['text-tertiary'],
+          }}
+        >
+          Finance
+        </Box>
+        <Box
+          component="h1"
+          sx={{
+            m: 0,
+            mt: '5px',
+            mb: '3px',
+            fontSize: crm['text-page-title'],
+            fontWeight: 700,
+            letterSpacing: crm['text-page-title-track'],
+          }}
+        >
+          Payment approvals
+        </Box>
+        <Box
+          component="p"
+          sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
+        >
+          Money waits here until someone other than the person who recorded it confirms it — nothing
+          below affects a customer&apos;s balance until then.
+        </Box>
+      </Box>
 
-      <FilterTabs
-        tabs={tabs}
-        value={status}
-        onChange={(next) => {
-          setStatus(next);
+      <ApprovalKpiCards />
+
+      <CrmTable<ApprovalRow>
+        columns={APPROVAL_COLUMNS}
+        rows={rows}
+        getRowId={(row) => row.id}
+        loading={query.isLoading}
+        refetching={query.isFetching && !query.isLoading}
+        itemLabel="payments"
+        // Narrower than the CRM default of 1280px: this grid has fewer columns
+        // than the customer list, and Status must stay on screen rather than
+        // sitting past a horizontal scroll.
+        gridMinWidth="940px"
+        searchPlaceholder="Search request number, customer, project or reference"
+        onSearchChange={(next) => {
+          setSearch(next);
           setPage(0);
         }}
+        quickFilters={quickFilters}
+        activeQuickFilter={status}
+        onQuickFilterChange={(key) => {
+          setStatus((key || 'pending') as ApprovalStatus);
+          setPage(0);
+        }}
+        filterColumns={[
+          {
+            field: 'kind',
+            headerName: 'Type',
+            filterable: true,
+            filterType: 'select',
+            filterOptions: [
+              { label: 'Receipt', value: 'receipt' },
+              { label: 'Expense', value: 'expense' },
+              { label: 'Reversal', value: 'reversal' },
+            ],
+          },
+          { field: 'valueDate', headerName: 'Payment date', filterable: true, filterType: 'date' },
+        ]}
+        filterModel={filters}
+        onFilterChange={(next) => {
+          setFilters(next);
+          setPage(0);
+        }}
+        sortModel={sortModel}
+        onSortChange={(next) => {
+          setSortModel(next);
+          setPage(0);
+        }}
+        page={page}
+        pageSize={PAGE_SIZE}
+        totalRowCount={query.data?.total ?? 0}
+        onPageChange={setPage}
+        onRowClick={setSelected}
+        enableRowSelection={status === 'pending'}
+        selectionLabel={(count) => `${count} payment${count === 1 ? '' : 's'} selected`}
+        bulkActions={
+          status === 'pending'
+            ? [
+                {
+                  label: 'Approve selected',
+                  onClick: (selectedRows: ApprovalRow[]) => {
+                    // Own submissions are filtered here so the button is honest;
+                    // the server refuses them regardless.
+                    const ids = selectedRows
+                      .filter((r) => r.submittedBy !== user?.id)
+                      .map((r) => r.id);
+                    if (ids.length > 0) bulkApprove.mutate(ids);
+                  },
+                },
+              ]
+            : []
+        }
+        emptyMessage={
+          status === 'pending' ? 'Nothing waiting for approval.' : 'Nothing to show here.'
+        }
       />
 
-      <Card>
-        <AdvancedTable<ApprovalRow>
-          rows={rows}
-          columns={columns}
-          loading={query.isLoading}
-          refetching={query.isFetching && !query.isLoading}
-          paginationMode="server"
-          totalRowCount={query.data?.total ?? 0}
-          page={page}
-          pageSize={PAGE_SIZE}
-          onPageChange={setPage}
-          // The row itself opens the review, so the action never depends on a
-          // Review button that a narrow window can push out of sight.
-          onRowClick={setSelected}
-          enableSearch
-          searchPlaceholder="Search request number, reference or payer"
-          onSearchChange={(next) => {
-            setSearch(next);
-            setPage(0);
-          }}
-          onFilterChange={(next) => {
-            setFilters(next);
-            setPage(0);
-          }}
-          emptyMessage={
-            status === 'pending' ? 'Nothing waiting for approval.' : 'Nothing to show.'
-          }
-          bulkActions={
-            status === 'pending'
-              ? [
-                  {
-                    label: 'Approve selected',
-                    color: 'success',
-                    onClick: (selectedRows: ApprovalRow[]) => {
-                      // Your own submissions are filtered out here so the button
-                      // is honest; the server refuses them regardless.
-                      const ids = selectedRows
-                        .filter((r) => r.submittedBy !== user?.id)
-                        .map((r) => r.id);
-                      if (ids.length > 0) bulkApprove.mutate(ids);
-                    },
-                  },
-                ]
-              : []
-          }
-        />
-      </Card>
-
       <ApprovalReviewDrawer approvalId={selected?.id ?? null} onClose={() => setSelected(null)} />
-    </div>
+    </Box>
   );
+}
+
+/** Narrows the free-form filter value to a kind the API accepts. */
+function toKind(value: string | undefined): ApprovalKind | undefined {
+  return value === 'receipt' || value === 'expense' || value === 'reversal' ? value : undefined;
 }

@@ -123,37 +123,70 @@ export function ApprovalReviewDrawer({
               </Alert>
             )}
 
-            {data.proofUrl ? (
+            {(data.proofs?.length ?? 0) > 0 ? (
               <Box>
-                <MUITypography variant="sectionTitle">Proof of payment</MUITypography>
-                {data.proofMimeType?.startsWith('image/') ? (
-                  <MUILink href={data.proofUrl} target="_blank" rel="noopener noreferrer">
-                    <Box
-                      component="img"
-                      src={data.proofUrl}
-                      alt={data.proofFileName ?? 'Proof of payment'}
-                      sx={{
-                        display: 'block',
-                        mt: 1,
-                        maxWidth: '100%',
-                        maxHeight: 260,
-                        borderRadius: 1,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                      }}
-                    />
-                  </MUILink>
-                ) : (
-                  <MUILink
-                    href={data.proofUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    variant="body2"
-                    sx={{ display: 'block', mt: 0.5 }}
-                  >
-                    Open {data.proofFileName ?? 'attachment'}
-                  </MUILink>
-                )}
+                <MUITypography variant="sectionTitle">
+                  Proof of payment ({data.proofs?.length})
+                </MUITypography>
+                {/* A grid, because several images per payment is ordinary — a
+                    cheque photo plus the bank slip, or one screenshot per
+                    instalment of a split transfer. */}
+                <Box
+                  sx={{
+                    mt: 1,
+                    display: 'grid',
+                    gap: 1,
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                  }}
+                >
+                  {data.proofs?.map((proof) =>
+                    proof.mimeType?.startsWith('image/') ? (
+                      <MUILink
+                        key={proof.id}
+                        href={proof.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={proof.fileName ?? 'Proof of payment'}
+                      >
+                        <Box
+                          component="img"
+                          src={proof.url}
+                          alt={proof.fileName ?? 'Proof of payment'}
+                          sx={{
+                            display: 'block',
+                            width: '100%',
+                            height: 110,
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                          }}
+                        />
+                      </MUILink>
+                    ) : (
+                      <MUILink
+                        key={proof.id}
+                        href={proof.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="body2"
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: 110,
+                          px: 1,
+                          textAlign: 'center',
+                          borderRadius: 1,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                        }}
+                      >
+                        {proof.fileName ?? 'Open attachment'}
+                      </MUILink>
+                    ),
+                  )}
+                </Box>
               </Box>
             ) : (
               <Alert severity="info">

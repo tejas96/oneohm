@@ -1,22 +1,28 @@
 'use client';
 
+import { Box } from '@mui/material';
 import NextLink from 'next/link';
+import type { JSX } from 'react';
 
-import type { ColumnConfig } from '@/components/shared/advanced-table';
-import { MUIStatusChip, type StatusChipColor } from '@/components/ui';
+import { CrmStatusPill, type CrmColumn, type CrmTone } from '@/components/shared/crm-table';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import type { PaymentApproval } from '@/lib/hooks/resources/payment-approvals';
+import { color, crm } from '@/lib/theme/tokens';
 import { formatPaise } from '@/lib/utils/paise';
 
-// AdvancedTable requires TRow extends Record<string, unknown>. PaymentApproval
-// has explicit typed fields, so it is widened here for table usage only.
 export type ApprovalRow = PaymentApproval & Record<string, unknown>;
 
-const STATUS_COLOR: Record<PaymentApproval['status'], StatusChipColor> = {
+const STATUS_TONE: Record<PaymentApproval['status'], CrmTone> = {
   pending: 'warning',
   approved: 'success',
-  rejected: 'error',
-  cancelled: 'default',
+  rejected: 'danger',
+  cancelled: 'neutral',
+};
+
+const KIND_TONE: Record<PaymentApproval['kind'], CrmTone> = {
+  receipt: 'success',
+  expense: 'info',
+  reversal: 'warning',
 };
 
 const KIND_LABEL: Record<PaymentApproval['kind'], string> = {
@@ -26,8 +32,8 @@ const KIND_LABEL: Record<PaymentApproval['kind'], string> = {
 };
 
 /**
- * How long a request has been waiting. Shown only while pending — once decided,
- * the age of the queue entry tells the reader nothing.
+ * How long a request has been waiting. Only meaningful while pending — once
+ * decided, the age of a queue entry tells the reader nothing.
  */
 function ageLabel(submittedAt: string): string {
   const hours = Math.floor((Date.now() - new Date(submittedAt).getTime()) / 3_600_000);
@@ -36,119 +42,126 @@ function ageLabel(submittedAt: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-/**
- * Every column is `sortable: false` on purpose: the queue is ordered oldest
- * pending first by the API, which exposes no sort key, and a header that
- * silently does nothing is worse than one that is plainly not clickable.
- *
- * There is no Review column — the whole row opens the review panel. A trailing
- * button was the widest column and the first thing a narrow window pushed out
- * of sight, which made the primary action unreachable.
- */
-export function approvalColumns(): ColumnConfig<ApprovalRow>[] {
-  return [
-    {
-      field: 'requestNo',
-      headerName: 'Request #',
-      sortable: false,
-      searchable: true,
-      width: 130,
-    },
-    {
-      field: 'valueDate',
-      headerName: 'Paid on',
-      type: 'date',
-      sortable: false,
-      filterable: true,
-      filterType: 'date',
-      width: 105,
-    },
-    {
-      field: 'kind',
-      headerName: 'Type',
-      sortable: false,
-      filterable: true,
-      filterType: 'select',
-      filterOptions: [
-        { label: 'Receipt', value: 'receipt' },
-        { label: 'Expense', value: 'expense' },
-        { label: 'Reversal', value: 'reversal' },
-      ],
-      width: 95,
-      renderCell: ({ row }) => KIND_LABEL[row.kind],
-    },
-    {
-      // Without these two an approver cannot tell whose money a row is, which
-      // makes the queue impossible to check against a bank statement.
-      field: 'projectNumber',
-      headerName: 'Project',
-      sortable: false,
-      searchable: true,
-      width: 140,
-      renderCell: ({ row }) => (
-        <NextLink
-          href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: row.projectId })}
-          onClick={(e) => e.stopPropagation()}
-          style={{ color: 'var(--ds-accent, #1976d2)', textDecoration: 'none' }}
-        >
-          {row.projectNumber ?? 'View project'}
-        </NextLink>
-      ),
-    },
-    {
-      field: 'customerName',
-      headerName: 'Customer',
-      sortable: false,
-      searchable: true,
-      width: 135,
-      renderCell: ({ row }) => row.customerName ?? '—',
-    },
-    {
-      field: 'amountPaise',
-      headerName: 'Amount',
-      type: 'number',
-      sortable: false,
-      width: 110,
-      // Always shown as a magnitude; the Type column already says which way the
-      // money moves, and a bare minus sign next to "Expense" reads as an error.
-      renderCell: ({ row }) => formatPaise(Math.abs(row.amountPaise)),
-    },
-    {
-      field: 'reference',
-      headerName: 'Reference',
-      sortable: false,
-      searchable: true,
-      flex: 1,
-      renderCell: ({ row }) => row.reference ?? row.counterparty ?? '—',
-    },
-    {
-      field: 'submittedByName',
-      headerName: 'Submitted by',
-      sortable: false,
-      width: 125,
-      defaultHidden: true,
-      renderCell: ({ row }) => row.submittedByName ?? '—',
-    },
-    {
-      field: 'submittedAt',
-      headerName: 'Waiting',
-      sortable: false,
-      width: 90,
-      renderCell: ({ row }) => (row.status === 'pending' ? ageLabel(row.submittedAt) : '—'),
-    },
-    {
-      field: 'status',
-      headerName: 'Status',
-      sortable: false,
-      width: 105,
-      renderCell: ({ row }) => (
-        <MUIStatusChip
-          label={row.status}
-          color={STATUS_COLOR[row.status]}
-          colorSeed={row.status}
-          size="small"
-        />
-      ),
-    },
-  ];
+/** A muted dash, so an empty cell reads as "nothing" rather than as broken. */
+function Empty(): JSX.Element {
+  return <Box sx={{ color: color['text-tertiary'] }}>—</Box>;
 }
+
+/**
+ * `sortable` is set only on the four fields the API whitelists, so a header can
+ * never ask for an ordering the server will silently ignore.
+ */
+export const APPROVAL_COLUMNS: CrmColumn<ApprovalRow>[] = [
+  {
+    field: 'requestNo',
+    header: 'Request #',
+    track: crm['col-approval-request'],
+    renderCell: (row) => (
+      <Box sx={{ fontWeight: 600, fontSize: crm['text-row-title'] }}>{row.requestNo}</Box>
+    ),
+  },
+  {
+    field: 'valueDate',
+    header: 'Paid on',
+    track: crm['col-approval-date'],
+    sortable: true,
+    renderCell: (row) => row.valueDate,
+  },
+  {
+    field: 'kind',
+    header: 'Type',
+    track: crm['col-approval-type'],
+    renderCell: (row) => (
+      <CrmStatusPill label={KIND_LABEL[row.kind]} tone={KIND_TONE[row.kind]} dot={false} size="sm" />
+    ),
+  },
+  {
+    field: 'projectNumber',
+    header: 'Project',
+    track: crm['col-approval-project'],
+    // Carries its own link, so a click here must not also open the review panel.
+    stopPropagation: true,
+    renderCell: (row) => (
+      <NextLink
+        href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: row.projectId })}
+        style={{ color: color.accent, textDecoration: 'none', fontWeight: 500 }}
+      >
+        {row.projectNumber ?? 'View project'}
+      </NextLink>
+    ),
+  },
+  {
+    field: 'customerName',
+    header: 'Customer',
+    track: crm['col-approval-customer'],
+    sortable: true,
+    renderCell: (row) =>
+      row.customerName ? (
+        <Box sx={{ minWidth: 0 }}>
+          <Box
+            sx={{
+              fontWeight: 500,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {row.customerName}
+          </Box>
+          {row.customerPhone ? (
+            <Box sx={{ fontSize: crm['text-row-xs'], color: color['text-tertiary'] }}>
+              {row.customerPhone}
+            </Box>
+          ) : null}
+        </Box>
+      ) : (
+        <Empty />
+      ),
+  },
+  {
+    field: 'amountPaise',
+    header: 'Amount',
+    track: crm['col-approval-amount'],
+    sortable: true,
+    align: 'right',
+    // The next column butts straight up against a right-aligned number.
+    cellSx: { pr: 1.5 },
+    // Magnitude only: the Type column already says which way the money moves,
+    // and a minus sign beside "Expense" reads as an error.
+    renderCell: (row) => (
+      <Box sx={{ fontWeight: 600 }}>{formatPaise(Math.abs(row.amountPaise))}</Box>
+    ),
+  },
+  {
+    field: 'reference',
+    header: 'Reference',
+    track: crm['col-approval-reference'],
+    // Hidden by default: a UTR is a verification detail the review panel shows
+    // in full, and at a glance the approver needs who/what/how much. Still
+    // searchable, and revealable from the column menu.
+    defaultHidden: true,
+    renderCell: (row) => row.reference ?? row.counterparty ?? <Empty />,
+  },
+  {
+    field: 'submittedByName',
+    header: 'Submitted by',
+    track: crm['col-approval-submitter'],
+    defaultHidden: true,
+    renderCell: (row) => row.submittedByName ?? <Empty />,
+  },
+  {
+    field: 'submittedAt',
+    header: 'Waiting',
+    track: crm['col-approval-waiting'],
+    sortable: true,
+    renderCell: (row) => (row.status === 'pending' ? ageLabel(row.submittedAt) : <Empty />),
+  },
+  {
+    field: 'status',
+    header: 'Status',
+    track: crm['col-approval-status'],
+    renderCell: (row) => (
+      <CrmStatusPill label={row.status} tone={STATUS_TONE[row.status]} size="sm" />
+    ),
+  },
+];

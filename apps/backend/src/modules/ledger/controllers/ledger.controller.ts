@@ -32,6 +32,7 @@ import {
   MilestoneBalanceResponseDto,
   ProjectLedgerSummaryDto,
   RecordExpenseDto,
+  ProofDocumentDto,
   RecordReceiptDto,
   ReverseEntryDto,
   WaiveMilestoneDto,
@@ -40,6 +41,18 @@ import { LedgerRepository } from '../repositories/ledger.repository';
 import { LedgerWriteService } from '../services/ledger-write.service';
 import { MilestoneService } from '../services/milestone.service';
 import { ReceiptDocumentService } from '../services/receipt-document.service';
+
+/**
+ * Accept both the single `proofDocument` and the newer `proofDocuments` array
+ * so older callers keep working while the UI uploads several images.
+ */
+function mergeProofs(dto: {
+  proofDocument?: ProofDocumentDto;
+  proofDocuments?: ProofDocumentDto[];
+}): ProofDocumentDto[] | undefined {
+  const all = [...(dto.proofDocuments ?? []), ...(dto.proofDocument ? [dto.proofDocument] : [])];
+  return all.length > 0 ? all : undefined;
+}
 
 /**
  * The ledger surface.
@@ -164,7 +177,7 @@ export class LedgerController {
         notes: dto.notes,
         customerId: dto.customerId,
         allocations: dto.allocations,
-        proofDocument: dto.proofDocument,
+        proofDocuments: mergeProofs(dto),
       },
       currentUser.id,
     );
@@ -193,7 +206,7 @@ export class LedgerController {
         counterparty: dto.payee,
         paymentMethod: dto.paymentMethod,
         notes: dto.notes,
-        proofDocument: dto.proofDocument,
+        proofDocuments: mergeProofs(dto),
       },
       currentUser.id,
     );

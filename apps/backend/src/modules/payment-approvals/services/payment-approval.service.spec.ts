@@ -8,6 +8,7 @@ import {
 import { Test } from '@nestjs/testing';
 import { getDataSourceToken } from '@nestjs/typeorm';
 
+import { DocumentEntity } from '../../documents/entities/document.entity';
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { LedgerEntryEntity } from '../../ledger/entities';
 import { LedgerRepository } from '../../ledger/repositories/ledger.repository';
@@ -18,7 +19,14 @@ import { PaymentApprovalService } from './payment-approval.service';
 const PROJECT = 'project-1';
 const SUBMITTER = 'user-submitter';
 const APPROVER = 'user-approver';
-const TODAY = new Date().toISOString().slice(0, 10);
+// The service stamps IST business dates; a UTC slice disagrees with it between
+// 00:00 and 05:30 IST, which would make this suite fail only in the early hours.
+const TODAY = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Kolkata',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date());
 
 /** Rows the fake repository will serve, keyed by id. */
 type Rows = Record<string, Partial<PendingLedgerEntryEntity>>;
@@ -26,6 +34,7 @@ type Rows = Record<string, Partial<PendingLedgerEntryEntity>>;
 interface Captured {
   inserted: any[];
   updated: Array<{ id: string; values: any }>;
+  documentUpdates: Array<{ criteria: any; values: any }>;
 }
 
 function pending(over: Partial<PendingLedgerEntryEntity> = {}): Partial<PendingLedgerEntryEntity> {
@@ -65,6 +74,16 @@ function makeManager(rows: Rows, captured: Captured, ledgerRows: any[] = []): an
           find: jest.fn(async () => []),
         };
       }
+      if (entity === DocumentEntity) {
+        // approve() re-points every attached proof onto the new ledger entry.
+        return {
+          insert: jest.fn(async () => ({ identifiers: [{ id: 'doc-1' }] })),
+          update: jest.fn(async (criteria: any, values: any) => {
+            captured.documentUpdates.push({ criteria, values });
+            return { affected: 1 };
+          }),
+        };
+      }
       if (entity === LedgerEntryEntity) {
         return {
           findOne: jest.fn(async ({ where }: any) => {
@@ -92,7 +111,7 @@ describe('PaymentApprovalService', () => {
 
   beforeEach(async () => {
     rows = {};
-    captured = { inserted: [], updated: [] };
+    captured = { inserted: [], updated: [], documentUpdates: [] };
     ledgerRows = [];
 
     ledgerWrite = {

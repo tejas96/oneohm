@@ -41,11 +41,8 @@ export interface PaymentApproval {
   notes?: string | null;
   reversesEntryId?: string | null;
   reversalReason?: string | null;
-  proofDocumentId?: string | null;
-  /** Resolved from the linked document so the evidence can actually be opened. */
-  proofUrl?: string | null;
-  proofFileName?: string | null;
-  proofMimeType?: string | null;
+  /** Every image attached to this payment, oldest first. */
+  proofs?: ProofRef[];
   submittedBy: string;
   submittedByName?: string | null;
   submittedAt: string;
@@ -58,6 +55,13 @@ export interface PaymentApproval {
   possibleDuplicates?: PaymentApproval[];
 }
 
+export interface ProofRef {
+  id: string;
+  url: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+}
+
 export interface ApprovalFilters {
   status?: ApprovalStatus;
   kind?: ApprovalKind;
@@ -68,6 +72,8 @@ export interface ApprovalFilters {
   search?: string;
   page?: number;
   limit?: number;
+  sortBy?: 'valueDate' | 'amountPaise' | 'submittedAt' | 'customerName';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface ApprovalPage {
@@ -88,6 +94,15 @@ export interface ImpactLine {
 export interface ApprovalImpact {
   lines: ImpactLine[];
   unallocatedPaise: number;
+}
+
+export interface ApprovalSummary {
+  pendingCount: number;
+  /** Total size of what is waiting, in paise. */
+  pendingValuePaise: number;
+  approvedToday: number;
+  /** Hours the longest-waiting request has been queued. Null when none. */
+  oldestPendingHours: number | null;
 }
 
 export interface BulkApproveResult {
@@ -166,11 +181,11 @@ export function useApprovalImpact(id: string | null): UseQueryResult<ApprovalImp
   });
 }
 
-export function useApprovalSummary(): UseQueryResult<{ pendingCount: number }, AxiosError> {
+export function useApprovalSummary(): UseQueryResult<ApprovalSummary, AxiosError> {
   return useQuery({
     queryKey: approvalKeys.summary(),
-    queryFn: async ({ signal }): Promise<{ pendingCount: number }> => {
-      const { data } = await apiClient.get<{ pendingCount: number }>('/payment-approvals/summary', {
+    queryFn: async ({ signal }): Promise<ApprovalSummary> => {
+      const { data } = await apiClient.get<ApprovalSummary>('/payment-approvals/summary', {
         signal,
       });
       return data;

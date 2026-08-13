@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsDateString,
   IsIn,
   IsInt,
@@ -106,17 +107,22 @@ export class SubmitApprovalDto {
    * at submission rather than at approval — an approver who cannot see the proof
    * has nothing to verify against, which would defeat the point of the queue.
    */
-  @ApiPropertyOptional({ type: ProofDocumentDto, description: 'Cheque image, UPI screenshot, vendor bill' })
-  @ValidateNested()
+  @ApiPropertyOptional({
+    type: [ProofDocumentDto],
+    description: 'Cheque images, UPI screenshots, bank slips. Several are normal for one payment.',
+  })
+  @IsArray()
+  @ArrayMaxSize(10)
+  @ValidateNested({ each: true })
   @Type(() => ProofDocumentDto)
   @IsOptional()
-  proofDocument?: ProofDocumentDto;
+  proofDocuments?: ProofDocumentDto[];
 
   // There is deliberately no `proofDocumentId`. Accepting an arbitrary document
   // id would let a caller name any document in the system — including one on
   // another customer's property — and approval re-points that document at the
   // new ledger entry, silently detaching it from where it belonged. Proof is
-  // always supplied as `proofDocument` above, which creates a fresh row.
+  // always supplied as `proofDocuments` above, which creates fresh rows.
 
   @ApiPropertyOptional({ description: 'Required for reversal — the ledger entry being reversed.' })
   @ValidateIf((o: SubmitApprovalDto) => o.kind === 'reversal')

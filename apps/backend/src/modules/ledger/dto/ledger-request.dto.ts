@@ -123,6 +123,18 @@ export class RecordReceiptDto {
   @Type(() => ProofDocumentDto)
   @IsOptional()
   proofDocument?: ProofDocumentDto;
+
+  /**
+   * Several images for one payment is ordinary — a cheque photo plus the bank
+   * slip. `proofDocument` above is the older single-file form; both are
+   * accepted and merged.
+   */
+  @ApiPropertyOptional({ type: [ProofDocumentDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProofDocumentDto)
+  @IsOptional()
+  proofDocuments?: ProofDocumentDto[];
 }
 
 export class RecordExpenseDto {
@@ -166,6 +178,13 @@ export class RecordExpenseDto {
   @Type(() => ProofDocumentDto)
   @IsOptional()
   proofDocument?: ProofDocumentDto;
+
+  @ApiPropertyOptional({ type: [ProofDocumentDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProofDocumentDto)
+  @IsOptional()
+  proofDocuments?: ProofDocumentDto[];
 }
 
 export class ReverseEntryDto {
