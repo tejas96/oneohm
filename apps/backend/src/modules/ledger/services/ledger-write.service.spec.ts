@@ -56,6 +56,8 @@ describe('LedgerWriteService', () => {
   let service: LedgerWriteService;
   let repo: { [K in keyof LedgerRepository]?: any };
   let captured: Captured;
+  /** Hoisted so tests can assert whether a new transaction was opened. */
+  let dataSource: { transaction: any };
 
   const milestone = (id: string, balancePaise: number, status: 'active' | 'waived' = 'active') => ({
     milestoneId: id,
@@ -88,7 +90,7 @@ describe('LedgerWriteService', () => {
       listEntriesByProject: jest.fn(),
     };
 
-    const dataSource = {
+    dataSource = {
       transaction: jest.fn(async (cb: any) => cb(makeManager(captured, {}))),
     };
 
@@ -461,6 +463,63 @@ describe('LedgerWriteService', () => {
     it('404s on an unknown entry', async () => {
       repo.findEntryById.mockResolvedValue(null);
       await expect(service.reverse('missing', 'x', USER)).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  /**
+   * Payment approval has to insert the ledger row and stamp the pending row in
+   * ONE transaction. If these methods always opened their own, a crash between
+   * the two would leave money in the ledger that nothing records as approved.
+   */
+  describe('joining an outer transaction', () => {
+    it('recordReceipt uses the supplied manager and opens no transaction', async () => {
+      repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 50_000)]);
+      const outer = makeManager(captured, {});
+
+      await service.recordReceipt({ projectId: PROJECT, amountPaise: 50_000 }, USER, outer);
+
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(captured.entries).toHaveLength(1);
+    });
+
+    it('recordExpense uses the supplied manager and opens no transaction', async () => {
+      const outer = makeManager(captured, {});
+
+      await service.recordExpense(
+        { projectId: PROJECT, amountPaise: 20_000, category: 'materials' },
+        USER,
+        outer,
+      );
+
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(captured.entries).toHaveLength(1);
+    });
+
+    it('reverse uses the supplied manager and opens no transaction', async () => {
+      repo.findEntryById.mockResolvedValue({
+        id: 'entry-1',
+        projectId: PROJECT,
+        customerId: null,
+        entryType: 'receipt',
+        direction: 'in',
+        amountPaise: 50_000,
+        valueDate: '2026-08-01',
+        reversesId: null,
+      } as any);
+      const outer = makeManager(captured, {});
+
+      await service.reverse('entry-1', 'wrong reference', USER, outer);
+
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(captured.entries).toHaveLength(1);
+    });
+
+    it('still opens its own transaction when no manager is supplied', async () => {
+      repo.getMilestoneBalances.mockResolvedValue([milestone('m1', 50_000)]);
+
+      await service.recordReceipt({ projectId: PROJECT, amountPaise: 50_000 }, USER);
+
+      expect(dataSource.transaction).toHaveBeenCalledTimes(1);
     });
   });
 });
