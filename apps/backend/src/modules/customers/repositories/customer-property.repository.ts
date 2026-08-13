@@ -363,6 +363,24 @@ export class CustomerPropertyRepository {
       qb.andWhere('property.created_by = :createdBy', { createdBy: query.createdBy });
     }
 
+    // Entity-property form (`property.siteVisitAssignee`), not the raw column
+    // name. This file mixes both — `property.siteStatus` sits two clauses above
+    // `property.created_by` — so the form was verified by generating the SQL
+    // rather than copied from a neighbour. TypeORM resolves this to
+    // `property.site_visit_assignee`; see the ManyToOne on the same column,
+    // which is why the raw form is ambiguous here and the property form is not.
+    if (query.siteVisitAssignee) {
+      qb.andWhere('property.siteVisitAssignee = :siteVisitAssignee', {
+        siteVisitAssignee: query.siteVisitAssignee,
+      });
+    }
+
+    if (query.siteSurveyAssignee) {
+      qb.andWhere('property.siteSurveyAssignee = :siteSurveyAssignee', {
+        siteSurveyAssignee: query.siteSurveyAssignee,
+      });
+    }
+
     if (query.fromDate) {
       qb.andWhere('property.created_at >= :fromDate', { fromDate: query.fromDate });
     }

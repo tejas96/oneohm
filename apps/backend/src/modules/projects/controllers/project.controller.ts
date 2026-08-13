@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -15,7 +16,13 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { type PaginatedResponse, ProjectPriority, ProjectStatus } from '@tejas96/shared/types';
 import { plainToInstance } from 'class-transformer';
 
-import { ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '../../../common/decorators';
+import {
+  ApiDelete,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  isUserRefOrMe,
+} from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -223,6 +230,16 @@ export class ProjectController {
     // Validate healthStatus to only accept known values
     const healthStatus =
       healthStatusRaw === 'delayed' || healthStatusRaw === 'at_risk' ? healthStatusRaw : undefined;
+
+    // This endpoint takes its filters as bare @Query params rather than a DTO,
+    // so the global ValidationPipe never sees them and a class-validator
+    // decorator cannot reach them. Guarded by hand with the same predicate the
+    // DTOs use: without it a nested param such as ?createdBy[a]=1 arrives as an
+    // object, survives the 'me' check, and reaches a uuid comparison — which
+    // Postgres rejects as 22P02 and the client sees as a 500.
+    if (!isUserRefOrMe(createdBy)) {
+      throw new BadRequestException('createdBy must be a UUID or "me"');
+    }
 
     // Substitute 'me' with actual user ID for createdBy filter
     let effectiveCreatedBy = createdBy;

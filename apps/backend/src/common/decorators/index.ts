@@ -11,3 +11,6 @@ export * from './api-update.decorator';
 
 // Security Decorators
 export * from './security-rate-limit.decorator';
+
+// Validation Decorators
+export * from './user-ref.decorator';

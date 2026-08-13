@@ -23,6 +23,8 @@ import {
   ValidateIf,
 } from 'class-validator';
 
+import { IsUserRefOrMe } from '../../../common/decorators';
+
 /**
  * Query DTO for property list endpoint
  * Supports pagination, search, filtering, and sorting
@@ -144,8 +146,24 @@ export class PropertyQueryDto {
     example: 'me',
   })
   @IsOptional()
-  @IsString()
+  @IsUserRefOrMe()
   createdBy?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by site visit assignee - use "me" for current user or provide userId',
+    example: 'me',
+  })
+  @IsOptional()
+  @IsUserRefOrMe()
+  siteVisitAssignee?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by site survey assignee - use "me" for current user or provide userId',
+    example: 'me',
+  })
+  @IsOptional()
+  @IsUserRefOrMe()
+  siteSurveyAssignee?: string;
 
   @ApiPropertyOptional({
     description: 'Filter from date (ISO 8601 format)',
