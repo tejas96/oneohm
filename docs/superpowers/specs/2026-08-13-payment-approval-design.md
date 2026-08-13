@@ -96,7 +96,7 @@ precisely why it must be a separate table.
 | Column | Type | Notes |
 |---|---|---|
 | `id` | uuid PK | |
-| `request_no` | varchar(30) unique | Human reference, e.g. `PA-2026-0001`. Minted from a Postgres sequence at INSERT, the same mechanism as `entry_no`. |
+| `request_no` | varchar(30) unique | Human reference, e.g. `PA-2026-27-000001`. Minted by the existing `SequenceService.getNextNumber()` inside the insert transaction, the same mechanism as `entry_no`, using a new `FinanceSequenceScope.PAYMENT_APPROVAL` with prefix `PA`. |
 | `kind` | varchar(20) | `receipt` \| `expense` \| `reversal` |
 | `status` | varchar(20) | `pending` \| `approved` \| `rejected` \| `cancelled` |
 | `project_id` | uuid | |
