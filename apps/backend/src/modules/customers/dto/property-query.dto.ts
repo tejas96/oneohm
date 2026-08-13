@@ -150,8 +150,7 @@ export class PropertyQueryDto {
   createdBy?: string;
 
   @ApiPropertyOptional({
-    description:
-      'Filter by site visit assignee - use "me" for current user or provide userId',
+    description: 'Filter by site visit assignee - use "me" for current user or provide userId',
     example: 'me',
   })
   @IsOptional()
@@ -159,8 +158,7 @@ export class PropertyQueryDto {
   siteVisitAssignee?: string;
 
   @ApiPropertyOptional({
-    description:
-      'Filter by site survey assignee - use "me" for current user or provide userId',
+    description: 'Filter by site survey assignee - use "me" for current user or provide userId',
     example: 'me',
   })
   @IsOptional()
