@@ -79,6 +79,25 @@ export class LedgerEntryResponseDto {
   @ApiProperty()
   @Expose()
   createdBy!: string;
+
+  /**
+   * Who recorded the payment, and who approved it into the ledger.
+   *
+   * Both are needed: `createdBy` above is the APPROVER, because approval is what
+   * inserts the row — showing it alone would credit the wrong person with
+   * recording the money. Null on entries that predate the approval queue.
+   */
+  @ApiPropertyOptional({ description: 'Who submitted this for approval' })
+  @Expose()
+  recordedByName?: string | null;
+
+  @ApiPropertyOptional({ description: 'Who approved it into the ledger' })
+  @Expose()
+  approvedByName?: string | null;
+
+  @ApiPropertyOptional()
+  @Expose()
+  approvedAt?: Date | null;
 }
 
 /**

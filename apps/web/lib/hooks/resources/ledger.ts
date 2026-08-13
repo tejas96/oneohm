@@ -25,6 +25,15 @@ export type LedgerDirection = 'in' | 'out';
 export type MilestoneDerivedStatus = 'pending' | 'partial' | 'paid' | 'waived';
 
 export interface LedgerEntry {
+  /**
+   * Who submitted the payment and who approved it in. Both, because the
+   * ledger's own `createdBy` is the approver — approval performs the insert —
+   * so one name alone would credit the wrong person. Null on entries recorded
+   * before the approval queue existed.
+   */
+  recordedByName?: string | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
   id: string;
   entryNo: string;
   entryType: 'receipt' | 'expense' | 'refund' | 'write_off';

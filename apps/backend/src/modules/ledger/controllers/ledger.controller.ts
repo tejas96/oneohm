@@ -121,8 +121,24 @@ export class LedgerController {
   async listEntries(
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<LedgerEntryResponseDto[]> {
-    const entries = await this.ledgerRepository.listEntriesByProject(projectId);
-    return toDtoArray(LedgerEntryResponseDto, entries);
+    const [entries, attribution] = await Promise.all([
+      this.ledgerRepository.listEntriesByProject(projectId),
+      this.ledgerRepository.getEntryAttributionByProject(projectId),
+    ]);
+
+    // Merged here rather than joined into the entity read, so the append-only
+    // entity query stays a plain entity query.
+    const byEntry = new Map(attribution.map((a) => [a.entryId, a]));
+
+    return toDtoArray(
+      LedgerEntryResponseDto,
+      entries.map((entry) => ({
+        ...entry,
+        recordedByName: byEntry.get(entry.id)?.recordedByName ?? null,
+        approvedByName: byEntry.get(entry.id)?.approvedByName ?? null,
+        approvedAt: byEntry.get(entry.id)?.approvedAt ?? null,
+      })),
+    );
   }
 
   /**

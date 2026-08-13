@@ -449,6 +449,19 @@ function ProjectEntries({
                       {e.reference ? ` · ${e.reference}` : ''}
                     </span>
                   )}
+
+                  {/* Who recorded it and who let it through. Both names, because
+                      `createdBy` on a ledger entry is the APPROVER — approval is
+                      what inserts the row — so showing one name would credit the
+                      wrong person with taking the money. Entries predating the
+                      approval queue carry neither, which is truthful. */}
+                  {(e.recordedByName ?? e.approvedByName) && (
+                    <MUITypography variant="finePrint" component="div">
+                      {e.recordedByName ? `Recorded by ${e.recordedByName}` : null}
+                      {e.recordedByName && e.approvedByName ? ' · ' : null}
+                      {e.approvedByName ? `Approved by ${e.approvedByName}` : null}
+                    </MUITypography>
+                  )}
                 </TableCell>
                 <TableCell
                   align="right"
