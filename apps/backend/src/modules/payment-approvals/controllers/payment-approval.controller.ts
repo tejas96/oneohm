@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import { BulkApproveDto, QueryApprovalsDto, RejectApprovalDto, SubmitApprovalDto } from '../dto';
 import { PendingLedgerEntryEntity } from '../entities';
@@ -11,7 +12,18 @@ import {
   PaymentApprovalService,
 } from '../services';
 
+/**
+ * The approval queue.
+ *
+ * `JwtAuthGuard` is applied per-controller in this codebase — only
+ * `ThrottlerGuard` is global — so omitting it here leaves the whole queue,
+ * including every customer's payment amounts and references, readable without
+ * a token. No RBAC beyond authentication: four-eyes is enforced by comparing
+ * the approver against the submitter, not by permission codes.
+ */
 @ApiTags('Payment Approvals')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('payment-approvals')
 export class PaymentApprovalController {
   constructor(private readonly service: PaymentApprovalService) {}

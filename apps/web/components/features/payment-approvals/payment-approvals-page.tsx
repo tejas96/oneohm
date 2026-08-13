@@ -29,11 +29,13 @@ const PAGE_SIZE = 25;
 export function PaymentApprovalsPage(): JSX.Element {
   const { user } = useAuth();
   const [status, setStatus] = useState<ApprovalStatus>('pending');
-  const [page, setPage] = useState(1);
+  // AdvancedTable's `page` is zero-indexed (it renders `page + 1`); the API is
+  // one-indexed. Kept zero-based here and converted at the call.
+  const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<ApprovalRow | null>(null);
 
   const summary = useApprovalSummary();
-  const query = usePaymentApprovals({ status, page, limit: PAGE_SIZE });
+  const query = usePaymentApprovals({ status, page: page + 1, limit: PAGE_SIZE });
   const { bulkApprove } = useApprovalMutations();
 
   const columns = useMemo(() => approvalColumns(setSelected), []);
@@ -61,7 +63,7 @@ export function PaymentApprovalsPage(): JSX.Element {
         value={status}
         onChange={(next) => {
           setStatus(next);
-          setPage(1);
+          setPage(0);
         }}
       />
 

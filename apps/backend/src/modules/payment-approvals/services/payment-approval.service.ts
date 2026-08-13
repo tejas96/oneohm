@@ -40,6 +40,14 @@ export interface ImpactLine {
 /** How far back duplicate detection looks. A warning, never a block. */
 const DUPLICATE_WINDOW_HOURS = 24;
 
+/** Postgres unique_violation. */
+const PG_UNIQUE_VIOLATION = '23505';
+
+function isUniqueViolation(error: unknown, constraint: string): boolean {
+  const e = error as { code?: string; constraint?: string } | null;
+  return e?.code === PG_UNIQUE_VIOLATION && e.constraint === constraint;
+}
+
 /**
  * Verification in front of every ledger write.
  *
@@ -138,7 +146,20 @@ export class PaymentApprovalService {
         );
       }
 
-      const inserted = await repo.insert(row);
+      let inserted;
+      try {
+        inserted = await repo.insert(row);
+      } catch (error) {
+        // `uq_ple_one_pending_reversal` allows at most one PENDING reversal per
+        // ledger entry. Without translating it the caller gets a raw 500 and an
+        // "Internal server error" toast, when the real answer is simply that
+        // somebody already queued this reversal.
+        if (isUniqueViolation(error, 'uq_ple_one_pending_reversal')) {
+          throw new ConflictException('A reversal of this entry is already awaiting approval');
+        }
+        throw error;
+      }
+
       const id = inserted.identifiers[0]?.id as string;
       return repo.findOneOrFail({ where: { id } });
     });
