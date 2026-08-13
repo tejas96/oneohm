@@ -9,6 +9,7 @@ import { useMyTasksSummary } from '@/components/features/tasks';
 import { Badge } from '@/components/ui/badge';
 import { isAllProjectsNavActive, isProjectStatusSubItemActive, ROUTES } from '@/lib/config';
 import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
+import { useApprovalSummary } from '@/lib/hooks/resources/payment-approvals';
 import type { NavItem, NavBadgeVariant, StatusDotColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +59,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
   const isMyTasksPage = pathname === ROUTES.PROJECTS.MY_TASKS;
   const { data: tasksSummary } = useMyTasksSummary({ enabled: !isMyTasksPage });
   const { data: followupSummary } = useFollowupSummary(true);
+  const { data: approvalSummary } = useApprovalSummary();
 
   const dynamicBadges = useMemo<
     Record<string, { value: number | string; variant?: NavBadgeVariant }>
@@ -78,8 +80,16 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         variant: (followupSummary?.overdue ?? 0) > 0 ? 'error' : undefined,
       };
     }
+    // Money waiting on somebody. Warning rather than error: a queue with items
+    // in it is the normal state, not a failure.
+    if ((approvalSummary?.pendingCount ?? 0) > 0) {
+      badges['finance-approvals'] = {
+        value: approvalSummary?.pendingCount ?? 0,
+        variant: 'warning',
+      };
+    }
     return badges;
-  }, [tasksSummary, followupSummary]);
+  }, [tasksSummary, followupSummary, approvalSummary]);
 
   // Build current full URL for comparison (pathname + search params)
   const searchString = searchParams.toString();

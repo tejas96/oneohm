@@ -88,6 +88,7 @@ describe('PaymentApprovalService', () => {
   let ledgerWrite: { [K in keyof LedgerWriteService]?: any };
   let repoFind: any;
   let ledgerRepo: { getMilestoneBalances: any };
+  let queryResults: any[];
 
   beforeEach(async () => {
     rows = {};
@@ -103,7 +104,10 @@ describe('PaymentApprovalService', () => {
     repoFind = jest.fn(async () => []);
     ledgerRepo = { getMilestoneBalances: jest.fn(async () => [] as any) };
 
+    queryResults = [];
     const dataSource = {
+      // list()/getOne() use raw SQL; each call shifts the next queued result.
+      query: jest.fn(async () => queryResults.shift() ?? []),
       transaction: jest.fn(async (cb: any) => cb(makeManager(rows, captured, ledgerRows))),
       getRepository: jest.fn(() => ({
         findOne: jest.fn(async ({ where }: any) => rows[where.id] ?? null),
@@ -418,6 +422,28 @@ describe('PaymentApprovalService', () => {
 
       expect(result.failed[0]?.reason).not.toMatch(/unique constraint/i);
       expect(result.failed[0]?.reason).toMatch(/server log/i);
+    });
+  });
+
+  describe('raw-SQL reads', () => {
+    it('does not shift the payment date back a day', async () => {
+      // node-postgres hydrates a `date` column as a JS Date at LOCAL midnight.
+      // Serialising that to JSON in IST lands at 18:30 the PREVIOUS day, which
+      // is exactly what pgDateToIso exists to prevent.
+      const localMidnight = new Date(2026, 7, 8); // 8 Aug 2026, local
+      queryResults = [[{ id: 'p-1', valueDate: localMidnight, amountPaise: '4500' }], [{ count: 1 }]];
+
+      const result = await service.list({});
+
+      expect(result.data[0]?.valueDate).toBe('2026-08-08');
+    });
+
+    it('returns amountPaise as a number, not the bigint string the driver gives', async () => {
+      queryResults = [[{ id: 'p-1', valueDate: '2026-08-08', amountPaise: '4500' }], [{ count: 1 }]];
+
+      const result = await service.list({});
+
+      expect(result.data[0]?.amountPaise).toBe(4500);
     });
   });
 

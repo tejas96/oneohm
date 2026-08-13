@@ -68,7 +68,7 @@ export function PaymentApprovalsPage(): JSX.Element {
   });
   const { bulkApprove } = useApprovalMutations();
 
-  const columns = useMemo(() => approvalColumns(setSelected), []);
+  const columns = useMemo(() => approvalColumns(), []);
   const rows = (query.data?.data ?? []) as ApprovalRow[];
 
   const tabs: FilterTab<ApprovalStatus>[] = [
@@ -108,6 +108,9 @@ export function PaymentApprovalsPage(): JSX.Element {
           page={page}
           pageSize={PAGE_SIZE}
           onPageChange={setPage}
+          // The row itself opens the review, so the action never depends on a
+          // Review button that a narrow window can push out of sight.
+          onRowClick={setSelected}
           enableSearch
           searchPlaceholder="Search request number, reference or payer"
           onSearchChange={(next) => {

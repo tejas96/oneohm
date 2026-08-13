@@ -8,13 +8,16 @@ import {
   Divider,
   Drawer,
   IconButton,
+  Link as MUILink,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import NextLink from 'next/link';
 import { type JSX, useEffect, useState } from 'react';
 
 import { MUIStatusChip, MUITypography } from '@/components/ui';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import {
   useApprovalImpact,
   useApprovalMutations,
@@ -48,7 +51,7 @@ export function ApprovalReviewDrawer({
   const { user } = useAuth();
   const { data, isLoading } = usePaymentApproval(approvalId);
   const impact = useApprovalImpact(approvalId);
-  const { approve, reject } = useApprovalMutations();
+  const { approve, reject, cancel } = useApprovalMutations();
   const [reason, setReason] = useState('');
 
   // A reason typed for one request must not survive into the next.
@@ -56,7 +59,7 @@ export function ApprovalReviewDrawer({
 
   const isOwn = Boolean(data && user && data.submittedBy === user.id);
   const isPending = data?.status === 'pending';
-  const busy = approve.isPending || reject.isPending;
+  const busy = approve.isPending || reject.isPending || cancel.isPending;
 
   return (
     <Drawer anchor="right" open={Boolean(approvalId)} onClose={onClose}>
@@ -88,6 +91,27 @@ export function ApprovalReviewDrawer({
               </Typography>
             </Box>
 
+            {/* Whose money this is. An amount and a UTR cannot be checked
+                against a statement without it. */}
+            <Box sx={{ bgcolor: 'action.hover', borderRadius: 1, p: 1.5 }}>
+              <Typography variant="body2">
+                <strong>{data.customerName ?? 'Customer not linked'}</strong>
+                {data.customerPhone ? ` · ${data.customerPhone}` : ''}
+              </Typography>
+              <MUILink
+                component={NextLink}
+                href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: data.projectId })}
+                variant="body2"
+              >
+                {data.projectNumber ?? 'Open project'}
+                {data.projectName ? ` — ${data.projectName}` : ''}
+              </MUILink>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Submitted by {data.submittedByName ?? 'unknown'} on{' '}
+                {new Date(data.submittedAt).toLocaleDateString()}
+              </Typography>
+            </Box>
+
             {data.notes ? <Typography variant="body2">{data.notes}</Typography> : null}
 
             {data.possibleDuplicates && data.possibleDuplicates.length > 0 && (
@@ -99,8 +123,38 @@ export function ApprovalReviewDrawer({
               </Alert>
             )}
 
-            {data.proofDocumentId ? (
-              <Alert severity="success">Proof of payment attached.</Alert>
+            {data.proofUrl ? (
+              <Box>
+                <MUITypography variant="sectionTitle">Proof of payment</MUITypography>
+                {data.proofMimeType?.startsWith('image/') ? (
+                  <MUILink href={data.proofUrl} target="_blank" rel="noopener noreferrer">
+                    <Box
+                      component="img"
+                      src={data.proofUrl}
+                      alt={data.proofFileName ?? 'Proof of payment'}
+                      sx={{
+                        display: 'block',
+                        mt: 1,
+                        maxWidth: '100%',
+                        maxHeight: 260,
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    />
+                  </MUILink>
+                ) : (
+                  <MUILink
+                    href={data.proofUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    variant="body2"
+                    sx={{ display: 'block', mt: 0.5 }}
+                  >
+                    Open {data.proofFileName ?? 'attachment'}
+                  </MUILink>
+                )}
+              </Box>
             ) : (
               <Alert severity="info">
                 No proof of payment was attached. Confirm by another means before approving.
@@ -135,9 +189,20 @@ export function ApprovalReviewDrawer({
             <Divider />
 
             {isOwn && isPending && (
-              <Alert severity="info">
-                You submitted this payment — another user must approve it.
-              </Alert>
+              <Stack spacing={1.5}>
+                <Alert severity="info">
+                  You submitted this payment — another user must approve it.
+                </Alert>
+                {/* Withdrawing your own typo should not require asking a
+                    colleague to formally reject you. */}
+                <Button
+                  variant="outlined"
+                  disabled={busy}
+                  onClick={() => cancel.mutate(data.id, { onSuccess: onClose })}
+                >
+                  Withdraw this submission
+                </Button>
+              </Stack>
             )}
 
             {isPending && !isOwn && (

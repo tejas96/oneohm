@@ -20,16 +20,51 @@ import { DataSource, EntityManager, Repository } from 'typeorm';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { allocateWaterfall } from '../../ledger/domain/allocation';
-import { isFutureIst, toIsoDate, todayIst } from '../../ledger/domain/dates';
+import { isFutureIst, pgDateToIso, toIsoDate, todayIst } from '../../ledger/domain/dates';
 import { LedgerEntryEntity } from '../../ledger/entities';
 import { LedgerRepository } from '../../ledger/repositories/ledger.repository';
 import { LedgerWriteService } from '../../ledger/services/ledger-write.service';
 import { QueryApprovalsDto, SubmitApprovalDto } from '../dto';
+import {
+  APPROVALS_COUNT_SQL,
+  APPROVALS_PAGE_SQL,
+  APPROVAL_BY_ID_SQL,
+} from './payment-approval-queries.sql';
 import { PendingLedgerEntryEntity } from '../entities';
 
 export interface BulkApproveResult {
   approved: string[];
   failed: Array<{ id: string; reason: string }>;
+}
+
+/**
+ * Fix the two things raw SQL hands back differently from the entity layer.
+ *
+ * `value_date` arrives as a JS Date built at LOCAL midnight, so serialising it
+ * to JSON shifts it to 18:30 the previous day in IST — the exact defect
+ * `pgDateToIso` was written for. `amount_paise` is a bigint, which the driver
+ * returns as a string.
+ */
+function normaliseRow(row: ApprovalRow): ApprovalRow {
+  return {
+    ...row,
+    valueDate: pgDateToIso(row.valueDate as unknown as string | Date),
+    amountPaise: Number(row.amountPaise),
+  };
+}
+
+/** A queue row with the names an approver needs, not just foreign keys. */
+export interface ApprovalRow extends Omit<PendingLedgerEntryEntity, 'createdAt' | 'updatedAt'> {
+  projectNumber: string | null;
+  projectName: string | null;
+  customerName: string | null;
+  customerPhone: string | null;
+  submittedByName: string | null;
+  reviewedByName: string | null;
+  /** Resolved from the linked document so the approver can open the evidence. */
+  proofUrl: string | null;
+  proofFileName: string | null;
+  proofMimeType: string | null;
 }
 
 export interface ImpactLine {
@@ -404,8 +439,15 @@ export class PaymentApprovalService {
   // READS
   // ============================================
 
+  /**
+   * The queue, enriched with project, customer, submitter and proof.
+   *
+   * Raw entity rows carry only UUIDs, which is unusable for an approver who did
+   * not record the payment — an amount and a UTR cannot be checked against a
+   * bank statement without knowing whose money it is.
+   */
   async list(query: QueryApprovalsDto): Promise<{
-    data: PendingLedgerEntryEntity[];
+    data: ApprovalRow[];
     total: number;
     page: number;
     limit: number;
@@ -413,30 +455,26 @@ export class PaymentApprovalService {
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.min(200, Math.max(1, query.limit ?? 25));
 
-    const qb = this.dataSource.getRepository(PendingLedgerEntryEntity).createQueryBuilder('p');
+    const filters = [
+      query.status ?? null,
+      query.kind ?? null,
+      query.projectId ?? null,
+      query.customerId ?? null,
+      query.dateFrom ?? null,
+      query.dateTo ?? null,
+      query.search ?? null,
+    ];
 
-    if (query.status) qb.andWhere('p.status = :status', { status: query.status });
-    if (query.kind) qb.andWhere('p.kind = :kind', { kind: query.kind });
-    if (query.projectId) qb.andWhere('p.projectId = :projectId', { projectId: query.projectId });
-    if (query.customerId) {
-      qb.andWhere('p.customerId = :customerId', { customerId: query.customerId });
-    }
-    if (query.dateFrom) qb.andWhere('p.valueDate >= :dateFrom', { dateFrom: query.dateFrom });
-    if (query.dateTo) qb.andWhere('p.valueDate <= :dateTo', { dateTo: query.dateTo });
-    if (query.search) {
-      qb.andWhere('(p.requestNo ILIKE :q OR p.reference ILIKE :q OR p.counterparty ILIKE :q)', {
-        q: `%${query.search}%`,
-      });
-    }
+    const [data, [countRow]] = await Promise.all([
+      this.dataSource.query<ApprovalRow[]>(APPROVALS_PAGE_SQL, [
+        ...filters,
+        limit,
+        (page - 1) * limit,
+      ]),
+      this.dataSource.query<Array<{ count: number }>>(APPROVALS_COUNT_SQL, filters),
+    ]);
 
-    // Oldest first — the queue should drain in the order it filled.
-    const [data, total] = await qb
-      .orderBy('p.submittedAt', 'ASC')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return { data, total, page, limit };
+    return { data: data.map(normaliseRow), total: Number(countRow?.count ?? 0), page, limit };
   }
 
   async summary(): Promise<{ pendingCount: number }> {
@@ -446,21 +484,17 @@ export class PaymentApprovalService {
     return { pendingCount };
   }
 
-  async getOne(
-    id: string,
-  ): Promise<PendingLedgerEntryEntity & { possibleDuplicates: PendingLedgerEntryEntity[] }> {
-    const row = await this.dataSource
-      .getRepository(PendingLedgerEntryEntity)
-      .findOne({ where: { id } });
+  async getOne(id: string): Promise<ApprovalRow & { possibleDuplicates: PendingLedgerEntryEntity[] }> {
+    const [row] = await this.dataSource.query<ApprovalRow[]>(APPROVAL_BY_ID_SQL, [id]);
     if (!row) {
       throw new NotFoundException('Approval request not found');
     }
 
     const possibleDuplicates = (
-      await this.findDuplicates(row.projectId, row.amountPaise, row.valueDate)
+      await this.findDuplicates(row.projectId, Number(row.amountPaise), row.valueDate)
     ).filter((d) => d.id !== row.id);
 
-    return { ...row, possibleDuplicates };
+    return { ...normaliseRow(row), possibleDuplicates };
   }
 
   /**

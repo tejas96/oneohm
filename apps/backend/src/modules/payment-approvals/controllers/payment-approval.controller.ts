@@ -7,6 +7,7 @@ import type { CurrentUserType } from '../../auth/types';
 import { BulkApproveDto, QueryApprovalsDto, RejectApprovalDto, SubmitApprovalDto } from '../dto';
 import { PendingLedgerEntryEntity } from '../entities';
 import {
+  ApprovalRow,
   BulkApproveResult,
   ImpactLine,
   PaymentApprovalService,
@@ -45,7 +46,7 @@ export class PaymentApprovalController {
   @Get()
   @ApiOperation({ summary: 'The approval queue, oldest pending first' })
   async list(@Query() query: QueryApprovalsDto): Promise<{
-    data: PendingLedgerEntryEntity[];
+    data: ApprovalRow[];
     total: number;
     page: number;
     limit: number;
@@ -79,7 +80,7 @@ export class PaymentApprovalController {
   @ApiOperation({ summary: 'One request, including any possible duplicates' })
   async getOne(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<PendingLedgerEntryEntity & { possibleDuplicates: PendingLedgerEntryEntity[] }> {
+  ): Promise<ApprovalRow & { possibleDuplicates: PendingLedgerEntryEntity[] }> {
     return this.service.getOne(id);
   }
 

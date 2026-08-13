@@ -1,9 +1,10 @@
 'use client';
 
-import { Button } from '@mui/material';
+import NextLink from 'next/link';
 
 import type { ColumnConfig } from '@/components/shared/advanced-table';
 import { MUIStatusChip, type StatusChipColor } from '@/components/ui';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import type { PaymentApproval } from '@/lib/hooks/resources/payment-approvals';
 import { formatPaise } from '@/lib/utils/paise';
 
@@ -39,26 +40,28 @@ function ageLabel(submittedAt: string): string {
  * Every column is `sortable: false` on purpose: the queue is ordered oldest
  * pending first by the API, which exposes no sort key, and a header that
  * silently does nothing is worse than one that is plainly not clickable.
+ *
+ * There is no Review column — the whole row opens the review panel. A trailing
+ * button was the widest column and the first thing a narrow window pushed out
+ * of sight, which made the primary action unreachable.
  */
-export function approvalColumns(
-  onReview: (row: ApprovalRow) => void,
-): ColumnConfig<ApprovalRow>[] {
+export function approvalColumns(): ColumnConfig<ApprovalRow>[] {
   return [
     {
       field: 'requestNo',
       headerName: 'Request #',
       sortable: false,
       searchable: true,
-      width: 170,
+      width: 130,
     },
     {
       field: 'valueDate',
-      headerName: 'Payment date',
+      headerName: 'Paid on',
       type: 'date',
       sortable: false,
       filterable: true,
       filterType: 'date',
-      width: 130,
+      width: 105,
     },
     {
       field: 'kind',
@@ -71,15 +74,41 @@ export function approvalColumns(
         { label: 'Expense', value: 'expense' },
         { label: 'Reversal', value: 'reversal' },
       ],
-      width: 110,
+      width: 95,
       renderCell: ({ row }) => KIND_LABEL[row.kind],
+    },
+    {
+      // Without these two an approver cannot tell whose money a row is, which
+      // makes the queue impossible to check against a bank statement.
+      field: 'projectNumber',
+      headerName: 'Project',
+      sortable: false,
+      searchable: true,
+      width: 140,
+      renderCell: ({ row }) => (
+        <NextLink
+          href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: row.projectId })}
+          onClick={(e) => e.stopPropagation()}
+          style={{ color: 'var(--ds-accent, #1976d2)', textDecoration: 'none' }}
+        >
+          {row.projectNumber ?? 'View project'}
+        </NextLink>
+      ),
+    },
+    {
+      field: 'customerName',
+      headerName: 'Customer',
+      sortable: false,
+      searchable: true,
+      width: 135,
+      renderCell: ({ row }) => row.customerName ?? '—',
     },
     {
       field: 'amountPaise',
       headerName: 'Amount',
       type: 'number',
       sortable: false,
-      width: 140,
+      width: 110,
       // Always shown as a magnitude; the Type column already says which way the
       // money moves, and a bare minus sign next to "Expense" reads as an error.
       renderCell: ({ row }) => formatPaise(Math.abs(row.amountPaise)),
@@ -89,20 +118,29 @@ export function approvalColumns(
       headerName: 'Reference',
       sortable: false,
       searchable: true,
+      flex: 1,
       renderCell: ({ row }) => row.reference ?? row.counterparty ?? '—',
+    },
+    {
+      field: 'submittedByName',
+      headerName: 'Submitted by',
+      sortable: false,
+      width: 125,
+      defaultHidden: true,
+      renderCell: ({ row }) => row.submittedByName ?? '—',
     },
     {
       field: 'submittedAt',
       headerName: 'Waiting',
       sortable: false,
-      width: 110,
+      width: 90,
       renderCell: ({ row }) => (row.status === 'pending' ? ageLabel(row.submittedAt) : '—'),
     },
     {
       field: 'status',
       headerName: 'Status',
       sortable: false,
-      width: 120,
+      width: 105,
       renderCell: ({ row }) => (
         <MUIStatusChip
           label={row.status}
@@ -110,17 +148,6 @@ export function approvalColumns(
           colorSeed={row.status}
           size="small"
         />
-      ),
-    },
-    {
-      field: 'actions',
-      headerName: '',
-      sortable: false,
-      width: 100,
-      actions: (row) => (
-        <Button size="small" onClick={() => onReview(row)}>
-          Review
-        </Button>
       ),
     },
   ];

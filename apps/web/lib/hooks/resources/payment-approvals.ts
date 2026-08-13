@@ -23,7 +23,12 @@ export interface PaymentApproval {
   kind: ApprovalKind;
   status: ApprovalStatus;
   projectId: string;
+  /** Joined server-side — the queue is worked by someone who did not record it. */
+  projectNumber?: string | null;
+  projectName?: string | null;
   customerId?: string | null;
+  customerName?: string | null;
+  customerPhone?: string | null;
   entryType: string;
   direction: 'in' | 'out';
   /** Signed integer paise, same convention as the ledger. */
@@ -37,9 +42,15 @@ export interface PaymentApproval {
   reversesEntryId?: string | null;
   reversalReason?: string | null;
   proofDocumentId?: string | null;
+  /** Resolved from the linked document so the evidence can actually be opened. */
+  proofUrl?: string | null;
+  proofFileName?: string | null;
+  proofMimeType?: string | null;
   submittedBy: string;
+  submittedByName?: string | null;
   submittedAt: string;
   reviewedBy?: string | null;
+  reviewedByName?: string | null;
   reviewedAt?: string | null;
   rejectionReason?: string | null;
   ledgerEntryId?: string | null;
