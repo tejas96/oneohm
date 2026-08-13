@@ -148,6 +148,24 @@ export class PropertyQueryDto {
   createdBy?: string;
 
   @ApiPropertyOptional({
+    description:
+      'Filter by site visit assignee - use "me" for current user or provide userId',
+    example: 'me',
+  })
+  @IsOptional()
+  @IsString()
+  siteVisitAssignee?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter by site survey assignee - use "me" for current user or provide userId',
+    example: 'me',
+  })
+  @IsOptional()
+  @IsString()
+  siteSurveyAssignee?: string;
+
+  @ApiPropertyOptional({
     description: 'Filter from date (ISO 8601 format)',
     example: '2025-01-01',
   })
