@@ -6,9 +6,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { FinanceSequenceScope } from '@tejas96/shared/types';
-import { DataSource, Repository } from 'typeorm';
+import {
+  DocumentCategory,
+  DocumentEntityType,
+  DocumentTag,
+  FinanceSequenceScope,
+} from '@tejas96/shared/types';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 
+import { DocumentEntity } from '../../documents/entities/document.entity';
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { allocateWaterfall } from '../../ledger/domain/allocation';
 import { todayIst } from '../../ledger/domain/dates';
@@ -120,10 +126,65 @@ export class PaymentApprovalService {
         };
       }
 
+      // Filed now, against the project, so the approver can actually look at it.
+      // Re-pointed at the ledger entry on approval.
+      if (dto.proofDocument) {
+        row.proofDocumentId = await this.fileProof(
+          manager,
+          row.projectId as string,
+          row.direction as 'in' | 'out',
+          dto.proofDocument,
+          userId,
+        );
+      }
+
       const inserted = await repo.insert(row);
       const id = inserted.identifiers[0]?.id as string;
       return repo.findOneOrFail({ where: { id } });
     });
+  }
+
+  /**
+   * Store the customer's evidence as a project document and return its id.
+   *
+   * `documents.entity_id` is NOT NULL and there is no ledger entry yet, so this
+   * hangs off the project — which it genuinely belongs to — until approval moves
+   * it onto the entry, where the rest of the codebase expects proof to live.
+   */
+  private async fileProof(
+    manager: EntityManager,
+    projectId: string,
+    direction: 'in' | 'out',
+    proof: { fileKey: string; fileName: string; mimeType: string; fileSize?: number },
+    createdBy: string,
+  ): Promise<string> {
+    // `documents.property_id` is NOT NULL and a project knows its property.
+    const rows: Array<{ property_id?: string }> = await manager.query(
+      `SELECT property_id FROM projects WHERE id = $1`,
+      [projectId],
+    );
+    const propertyId = rows[0]?.property_id;
+    if (!propertyId) {
+      throw new BadRequestException('Cannot attach proof: the project has no property');
+    }
+
+    const inserted = await manager.getRepository(DocumentEntity).insert({
+      propertyId,
+      entityType: DocumentEntityType.PROJECT,
+      entityId: projectId,
+      category: proof.mimeType.startsWith('image/')
+        ? DocumentCategory.IMAGE
+        : DocumentCategory.DOCUMENT,
+      tag: direction === 'in' ? DocumentTag.RECEIPT_PROOF : DocumentTag.EXPENSE_RECEIPT,
+      fileName: proof.fileName,
+      fileUrl: proof.fileKey,
+      fileSizeBytes: proof.fileSize,
+      mimeType: proof.mimeType,
+      createdBy,
+      updatedBy: createdBy,
+    });
+
+    return inserted.identifiers[0]?.id as string;
   }
 
   // ============================================
@@ -203,6 +264,18 @@ export class PaymentApprovalService {
           approverId,
           manager,
         );
+      }
+
+      // Move the proof onto the entry now that one exists, so it sits where the
+      // rest of the codebase looks for a ledger entry's proof.
+      if (pending.proofDocumentId) {
+        await manager
+          .getRepository(DocumentEntity)
+          .update(pending.proofDocumentId, {
+            entityType: DocumentEntityType.LEDGER_ENTRY,
+            entityId: entry.id,
+            updatedBy: approverId,
+          });
       }
 
       await repo.update(pending.id, {

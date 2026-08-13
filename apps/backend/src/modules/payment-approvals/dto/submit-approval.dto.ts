@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsIn,
@@ -9,8 +10,10 @@ import {
   IsUUID,
   MaxLength,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 
+import { ProofDocumentDto } from '../../ledger/dto';
 import type { PendingKind } from '../entities';
 
 /**
@@ -82,7 +85,18 @@ export class SubmitApprovalDto {
   @IsOptional()
   customerId?: string;
 
-  @ApiPropertyOptional({ description: "The customer's own proof of payment, already uploaded" })
+  /**
+   * The customer's own evidence, already uploaded via the presigned URL. Filed
+   * at submission rather than at approval — an approver who cannot see the proof
+   * has nothing to verify against, which would defeat the point of the queue.
+   */
+  @ApiPropertyOptional({ type: ProofDocumentDto, description: 'Cheque image, UPI screenshot, vendor bill' })
+  @ValidateNested()
+  @Type(() => ProofDocumentDto)
+  @IsOptional()
+  proofDocument?: ProofDocumentDto;
+
+  @ApiPropertyOptional({ description: 'An already-filed document to reuse instead of proofDocument' })
   @IsUUID()
   @IsOptional()
   proofDocumentId?: string;

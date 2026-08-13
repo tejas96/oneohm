@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { PaymentApprovalController } from './controllers';
 import { PendingLedgerEntryEntity } from './entities';
 import { PaymentApprovalService } from './services';
 import { FinanceCommonModule } from '../finance-common/finance-common.module';
@@ -15,10 +16,10 @@ import { LedgerModule } from '../ledger/ledger.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([PendingLedgerEntryEntity]),
-    LedgerModule,
+    forwardRef(() => LedgerModule),
     FinanceCommonModule,
   ],
-  controllers: [],
+  controllers: [PaymentApprovalController],
   providers: [PaymentApprovalService],
   exports: [PaymentApprovalService],
 })
