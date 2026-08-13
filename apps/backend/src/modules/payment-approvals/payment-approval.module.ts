@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { PendingLedgerEntryEntity } from './entities';
+import { PaymentApprovalService } from './services';
 import { FinanceCommonModule } from '../finance-common/finance-common.module';
 import { LedgerModule } from '../ledger/ledger.module';
-import { PendingLedgerEntryEntity } from './entities';
 
 /**
  * Verification in front of every ledger write.
@@ -18,7 +19,7 @@ import { PendingLedgerEntryEntity } from './entities';
     FinanceCommonModule,
   ],
   controllers: [],
-  providers: [],
-  exports: [],
+  providers: [PaymentApprovalService],
+  exports: [PaymentApprovalService],
 })
 export class PaymentApprovalModule {}
