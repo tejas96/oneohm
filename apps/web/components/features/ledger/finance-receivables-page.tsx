@@ -1,30 +1,79 @@
 'use client';
 
-import {
-  Button,
-  Card,
-  Paper,
-  Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-} from '@mui/material';
-import { type JSX, useState } from 'react';
+import { Box } from '@mui/material';
+import { type JSX, useMemo, useState } from 'react';
 
-import { MUIStatusChip, MUITypography } from '@/components/ui';
-import { useReceivables, type Receivable } from '@/lib/hooks/resources/ledger';
+import { RECEIVABLE_COLUMNS, type ReceivableRow } from './receivables-columns';
+
+import type { TableSortModel } from '@/components/shared/advanced-table';
+import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
+import { useReceivables, type ReceivableFilters } from '@/lib/hooks/resources/ledger';
+import { color, crm, radius, shadow } from '@/lib/theme/tokens';
 import { formatPaise } from '@/lib/utils/paise';
 
-/** Ageing buckets. Colour is never the only signal — the label carries it too. */
-function bucket(days: number): { label: string; color: string } {
-  if (days <= 0) return { label: 'Current', color: 'text.secondary' };
-  if (days <= 30) return { label: '1–30 days', color: 'warning.main' };
-  if (days <= 60) return { label: '31–60 days', color: 'warning.main' };
-  if (days <= 90) return { label: '61–90 days', color: 'error.main' };
-  return { label: '90+ days', color: 'error.main' };
+const PAGE_SIZE = 25;
+
+type SortField = NonNullable<ReceivableFilters['sortBy']>;
+const SORTABLE: readonly SortField[] = [
+  'daysOverdue',
+  'outstandingAmount',
+  'dueDate',
+  'customerName',
+];
+
+function StatCard({
+  label,
+  value,
+  note,
+  danger,
+}: {
+  label: string;
+  value: string;
+  note: string;
+  danger?: boolean;
+}): JSX.Element {
+  return (
+    <Box
+      sx={{
+        height: crm['kpi-height'],
+        px: 2,
+        py: 1.75,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        backgroundColor: color.surface,
+        borderRadius: radius['card-functional'],
+        boxShadow: shadow.e2,
+      }}
+    >
+      <Box
+        component="span"
+        sx={{
+          fontSize: 'var(--text-overline-size)',
+          fontWeight: 700,
+          letterSpacing: 'var(--text-overline-track)',
+          textTransform: 'uppercase',
+          color: color['text-tertiary'],
+        }}
+      >
+        {label}
+      </Box>
+      <Box
+        component="span"
+        sx={{
+          fontSize: 'var(--text-h3-size)',
+          lineHeight: 'var(--text-h3-line)',
+          letterSpacing: 'var(--text-h3-track)',
+          fontWeight: 700,
+          fontVariantNumeric: 'tabular-nums',
+          color: danger ? color.danger : undefined,
+        }}
+      >
+        {value}
+      </Box>
+      <Box sx={{ fontSize: crm['text-row-sm'], color: color['text-tertiary'] }}>{note}</Box>
+    </Box>
+  );
 }
 
 /**
@@ -38,128 +87,134 @@ function bucket(days: number): { label: string; color: string } {
  * off residual stops being chased. In the old system the dashboard dropped it
  * while the project page kept reporting it, forever.
  *
- * Every figure comes from the API. There is deliberately no client-side total —
- * the old AR table summed only the rows currently visible and labelled the
- * result "Total", which is how a month-end reconciliation went wrong.
+ * Every figure comes from the API, including the totals and the bucket counts.
+ * There is deliberately no client-side sum — the old AR table added up only the
+ * rows currently visible and labelled the result "Total", which is how a
+ * month-end reconciliation went wrong.
  */
 export function FinanceReceivablesPage(): JSX.Element {
-  const [page, setPage] = useState(1);
-  const limit = 50;
-  const query = useReceivables(page, limit);
+  const [bucket, setBucket] = useState<ReceivableFilters['bucket']>(undefined);
+  // CrmTable's `page` is zero-indexed; the API is one-indexed.
+  const [page, setPage] = useState(0);
+  const [search, setSearch] = useState('');
+  const [sortModel, setSortModel] = useState<TableSortModel | null>(null);
 
-  const rows = query.data?.data ?? [];
-  const total = query.data?.total ?? 0;
+  const query = useReceivables({
+    bucket,
+    search: search || undefined,
+    sortBy: SORTABLE.find((f) => f === sortModel?.field),
+    sortOrder: sortModel?.direction,
+    page: page + 1,
+    limit: PAGE_SIZE,
+  });
 
-  return (
-    <div className="flex flex-col gap-6">
-      <header>
-        <MUITypography variant="drawerTitle" component="h1">
-          Receivables
-        </MUITypography>
-        <MUITypography variant="body" sx={{ mt: 0.25 }}>
-          Every open milestone, worst overdue first. Waived amounts are excluded.
-        </MUITypography>
-      </header>
+  const rows = (query.data?.data ?? []) as ReceivableRow[];
+  const buckets = query.data?.buckets;
 
-      {query.isLoading ? (
-        <Skeleton variant="rounded" height={320} />
-      ) : rows.length === 0 ? (
-        <Card variant="outlined" sx={{ p: 6, textAlign: 'center', borderStyle: 'dashed' }}>
-          <MUITypography variant="bodyPrimary" fontWeight={500}>
-            Nothing outstanding.
-          </MUITypography>
-          <MUITypography variant="body" sx={{ mt: 0.5 }}>
-            Every active milestone has been paid in full.
-          </MUITypography>
-        </Card>
-      ) : (
-        <>
-          <TableContainer component={Paper} variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Customer</TableCell>
-                  <TableCell>Project</TableCell>
-                  <TableCell>Milestone</TableCell>
-                  <TableCell align="right">Expected</TableCell>
-                  <TableCell align="right">Received</TableCell>
-                  <TableCell align="right">Short by</TableCell>
-                  <TableCell>Ageing</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((r) => (
-                  <Row key={r.milestoneId} row={r} />
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {total > limit && (
-            <div className="flex items-center justify-between gap-3">
-              <MUITypography variant="body">
-                {(page - 1) * limit + 1}–{Math.min(page * limit, total)} of {total}
-              </MUITypography>
-              <div className="flex gap-2">
-                <Button size="small" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-                  Previous
-                </Button>
-                <Button
-                  size="small"
-                  disabled={page * limit >= total}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+  const quickFilters = useMemo<CrmQuickFilter[]>(
+    () => [
+      { key: '', label: 'All open', count: buckets?.all, tone: 'neutral', dot: false },
+      { key: 'current', label: 'Current', count: buckets?.current, tone: 'success', dot: true },
+      { key: '1-30', label: '1–30 days', count: buckets?.d1to30, tone: 'warning', dot: true },
+      { key: '31-60', label: '31–60 days', count: buckets?.d31to60, tone: 'warning', dot: true },
+      { key: '61-90', label: '61–90 days', count: buckets?.d61to90, tone: 'danger', dot: true },
+      { key: '90plus', label: '90+ days', count: buckets?.d90plus, tone: 'danger', dot: true },
+    ],
+    [buckets],
   );
-}
-
-function Row({ row }: { row: Receivable }): JSX.Element {
-  const age = bucket(row.daysOverdue);
-  const toPaise = (v: number): number => Math.round((v ?? 0) * 100);
-
-  const numeric = { whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' } as const;
 
   return (
-    <TableRow hover>
-      <TableCell>{row.customerName ?? '—'}</TableCell>
-      <TableCell>
-        <span className="block">{row.projectNumber}</span>
-        <MUITypography variant="finePrint" component="span" sx={{ display: 'block' }}>
-          {row.projectName}
-        </MUITypography>
-      </TableCell>
-      <TableCell>
-        <span className="flex flex-wrap items-center gap-1.5">
-          <MUITypography variant="finePrint" component="span">
-            #{row.displayOrder}
-          </MUITypography>
-          <span>{row.milestoneName}</span>
-          {/* The bank's share, not the customer's — never chase them for it. */}
-          {row.payerType === 'lender' && (
-            <MUIStatusChip label="Bank pays" color="info" size="small" autoColor={false} />
-          )}
-        </span>
-      </TableCell>
-      <TableCell align="right" sx={{ ...numeric, color: 'text.secondary' }}>
-        {formatPaise(toPaise(row.expectedAmount))}
-      </TableCell>
-      <TableCell align="right" sx={numeric}>
-        {formatPaise(toPaise(row.paidAmount))}
-      </TableCell>
-      <TableCell align="right" sx={{ ...numeric, fontWeight: 500, color: 'error.main' }}>
-        {formatPaise(toPaise(row.outstandingAmount))}
-      </TableCell>
-      <TableCell sx={{ whiteSpace: 'nowrap', fontSize: 12, color: age.color }}>
-        {age.label}
-        {row.daysOverdue > 0 && ` · ${row.daysOverdue}d`}
-      </TableCell>
-    </TableRow>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, lg: 3 } }}>
+      <Box>
+        <Box
+          component="span"
+          sx={{
+            fontSize: 'var(--text-overline-size)',
+            fontWeight: 700,
+            letterSpacing: 'var(--text-overline-track)',
+            textTransform: 'uppercase',
+            color: color['text-tertiary'],
+          }}
+        >
+          Finance
+        </Box>
+        <Box
+          component="h1"
+          sx={{
+            m: 0,
+            mt: '5px',
+            mb: '3px',
+            fontSize: crm['text-page-title'],
+            fontWeight: 700,
+            letterSpacing: crm['text-page-title-track'],
+          }}
+        >
+          Receivables
+        </Box>
+        <Box
+          component="p"
+          sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
+        >
+          Every open milestone, worst overdue first. Waived amounts are excluded, so a written-off
+          residual stops being chased.
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 1.5,
+          gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+        }}
+      >
+        <StatCard
+          label="Open milestones"
+          value={String(buckets?.all ?? 0)}
+          note="with money still due"
+        />
+        <StatCard
+          label="Total outstanding"
+          value={formatPaise(buckets?.totalOutstandingPaise ?? 0)}
+          note="across every open milestone"
+        />
+        <StatCard
+          label="Overdue"
+          value={formatPaise(buckets?.overduePaise ?? 0)}
+          note="past its due date"
+          danger={(buckets?.overduePaise ?? 0) > 0}
+        />
+      </Box>
+
+      <CrmTable<ReceivableRow>
+        columns={RECEIVABLE_COLUMNS}
+        rows={rows}
+        getRowId={(row) => row.milestoneId}
+        loading={query.isLoading}
+        refetching={query.isFetching && !query.isLoading}
+        itemLabel="milestones"
+        gridMinWidth="920px"
+        searchPlaceholder="Search customer, project or milestone"
+        onSearchChange={(next) => {
+          setSearch(next);
+          setPage(0);
+        }}
+        quickFilters={quickFilters}
+        activeQuickFilter={bucket ?? ''}
+        onQuickFilterChange={(key) => {
+          setBucket((key || undefined) as ReceivableFilters['bucket']);
+          setPage(0);
+        }}
+        sortModel={sortModel}
+        onSortChange={(next) => {
+          setSortModel(next);
+          setPage(0);
+        }}
+        page={page}
+        pageSize={PAGE_SIZE}
+        totalRowCount={query.data?.total ?? 0}
+        onPageChange={setPage}
+        emptyMessage="Nothing outstanding."
+      />
+    </Box>
   );
 }

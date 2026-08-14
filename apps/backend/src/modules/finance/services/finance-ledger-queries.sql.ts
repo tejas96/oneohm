@@ -196,6 +196,47 @@ export const LEDGER_COUNT_SQL = `
 `;
 
 /** Every open milestone across the org — the receivables screen. */
+/**
+ * Open milestones — who owes money, worst overdue first.
+ *
+ * Filters use the `$n IS NULL OR` idiom so one prepared statement serves every
+ * combination. The ageing bucket is computed from `days_overdue` here rather
+ * than in the client, so the chip counts, the rows and the total always agree.
+ */
+const RECEIVABLES_FILTERS = `
+  WHERE v.status = 'active'
+    AND v.balance_paise > 0
+    AND (
+      $1::text IS NULL
+      OR ($1 = 'current' AND v.days_overdue <= 0)
+      OR ($1 = '1-30'    AND v.days_overdue BETWEEN 1 AND 30)
+      OR ($1 = '31-60'   AND v.days_overdue BETWEEN 31 AND 60)
+      OR ($1 = '61-90'   AND v.days_overdue BETWEEN 61 AND 90)
+      OR ($1 = '90plus'  AND v.days_overdue > 90)
+    )
+    AND (
+      $2::text IS NULL
+      OR pr.project_number ILIKE '%' || $2 || '%'
+      OR pr.name           ILIKE '%' || $2 || '%'
+      OR v.name            ILIKE '%' || $2 || '%'
+      OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $2 || '%'
+    )
+`;
+
+/**
+ * Joined in both the page and the count query.
+ *
+ * The count previously omitted the customer tables; adding a customer-name
+ * search without adding them here too would have made "showing 1-25 of N"
+ * disagree with the rows actually returned.
+ */
+const RECEIVABLES_JOINS = `
+  FROM v_milestone_balance v
+  JOIN projects pr                   ON pr.id = v.project_id AND pr.deleted_at IS NULL
+  LEFT JOIN customer_properties prop ON prop.id = pr.property_id
+  LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+`;
+
 export const RECEIVABLES_SQL = `
   SELECT
     v.milestone_id     AS "milestoneId",
@@ -203,6 +244,7 @@ export const RECEIVABLES_SQL = `
     pr.project_number  AS "projectNumber",
     pr.name            AS "projectName",
     NULLIF(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)), '') AS "customerName",
+    cp.phone           AS "customerPhone",
     v.display_order    AS "displayOrder",
     v.name             AS "milestoneName",
     v.payer_type       AS "payerType",
@@ -212,18 +254,40 @@ export const RECEIVABLES_SQL = `
     to_char(v.due_date, 'YYYY-MM-DD') AS "dueDate",
     v.days_overdue     AS "daysOverdue",
     v.derived_status   AS "derivedStatus"
-  FROM v_milestone_balance v
-  JOIN projects pr              ON pr.id = v.project_id AND pr.deleted_at IS NULL
-  LEFT JOIN customer_properties prop ON prop.id = pr.property_id
-  LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
-  WHERE v.status = 'active'
-    AND v.balance_paise > 0
-  ORDER BY v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number
-  LIMIT $1 OFFSET $2
+  ${RECEIVABLES_JOINS}
+  ${RECEIVABLES_FILTERS}
+  ORDER BY
+    -- $3/$4 are whitelisted on the DTO and compared, never interpolated.
+    CASE WHEN $3 = 'daysOverdue'       AND $4 = 'asc'  THEN v.days_overdue   END ASC,
+    CASE WHEN $3 = 'daysOverdue'       AND $4 = 'desc' THEN v.days_overdue   END DESC,
+    CASE WHEN $3 = 'outstandingAmount' AND $4 = 'asc'  THEN v.balance_paise  END ASC,
+    CASE WHEN $3 = 'outstandingAmount' AND $4 = 'desc' THEN v.balance_paise  END DESC,
+    CASE WHEN $3 = 'dueDate'           AND $4 = 'asc'  THEN v.due_date       END ASC,
+    CASE WHEN $3 = 'dueDate'           AND $4 = 'desc' THEN v.due_date       END DESC,
+    CASE WHEN $3 = 'customerName'      AND $4 = 'asc'  THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
+    CASE WHEN $3 = 'customerName'      AND $4 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
+    -- Default: worst overdue first, which is the order to work the list in.
+    v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number
+  LIMIT $5 OFFSET $6
 `;
 
 export const RECEIVABLES_COUNT_SQL = `
   SELECT COUNT(*)::int AS count
+  ${RECEIVABLES_JOINS}
+  ${RECEIVABLES_FILTERS}
+`;
+
+/** Row counts per ageing bucket, for the quick-filter chips. */
+export const RECEIVABLES_BUCKETS_SQL = `
+  SELECT
+    COUNT(*) FILTER (WHERE v.days_overdue <= 0)                AS "current",
+    COUNT(*) FILTER (WHERE v.days_overdue BETWEEN 1 AND 30)    AS "d1to30",
+    COUNT(*) FILTER (WHERE v.days_overdue BETWEEN 31 AND 60)   AS "d31to60",
+    COUNT(*) FILTER (WHERE v.days_overdue BETWEEN 61 AND 90)   AS "d61to90",
+    COUNT(*) FILTER (WHERE v.days_overdue > 90)                AS "d90plus",
+    COUNT(*)                                                   AS "all",
+    COALESCE(SUM(v.balance_paise), 0)                          AS "totalOutstandingPaise",
+    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.days_overdue > 0), 0) AS "overduePaise"
   FROM v_milestone_balance v
   JOIN projects pr ON pr.id = v.project_id AND pr.deleted_at IS NULL
   WHERE v.status = 'active' AND v.balance_paise > 0

@@ -12,6 +12,7 @@ import {
   LEDGER_PAGE_SQL,
   OUTSTANDING_COUNT_SQL,
   OUTSTANDING_SQL,
+  RECEIVABLES_BUCKETS_SQL,
   RECEIVABLES_COUNT_SQL,
   RECEIVABLES_SQL,
   SPEND_BY_CATEGORY_SQL,
@@ -216,14 +217,37 @@ export class FinanceReportingService {
    * the view, so a written-off residual stops being chased.
    */
   async getReceivables(
-    opts: { page?: number; limit?: number } = {},
-  ): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
+    opts: {
+      page?: number;
+      limit?: number;
+      bucket?: string | null;
+      search?: string | null;
+      sortBy?: string | null;
+      sortOrder?: 'asc' | 'desc' | null;
+    } = {},
+  ): Promise<{
+    data: Record<string, unknown>[];
+    total: number;
+    page: number;
+    limit: number;
+    buckets: Record<string, number>;
+  }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
+    const filters = [opts.bucket ?? null, opts.search ?? null];
 
-    const [rows, [countRow]] = await Promise.all([
-      this.dataSource.query(RECEIVABLES_SQL, [limit, (page - 1) * limit]),
-      this.dataSource.query(RECEIVABLES_COUNT_SQL, []),
+    const [rows, [countRow], [bucketRow]] = await Promise.all([
+      this.dataSource.query(RECEIVABLES_SQL, [
+        ...filters,
+        opts.sortBy ?? null,
+        opts.sortOrder ?? 'desc',
+        limit,
+        (page - 1) * limit,
+      ]),
+      this.dataSource.query(RECEIVABLES_COUNT_SQL, filters),
+      // Bucket counts ignore the current bucket filter on purpose: the chips
+      // must keep showing what is in every bucket, not just the selected one.
+      this.dataSource.query(RECEIVABLES_BUCKETS_SQL, []),
     ]);
 
     return {
@@ -234,6 +258,9 @@ export class FinanceReportingService {
         outstandingAmount: rs(r.balancePaise),
         daysOverdue: Number(r.daysOverdue ?? 0),
       })),
+      buckets: Object.fromEntries(
+        Object.entries(bucketRow ?? {}).map(([k, v]) => [k, Number(v ?? 0)]),
+      ),
       total: Number(countRow?.count ?? 0),
       page,
       limit,

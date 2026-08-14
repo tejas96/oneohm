@@ -382,6 +382,15 @@ const root = {
     'col-approval-submitter': 'minmax(120px,1fr)',
     'col-approval-waiting': '80px',
     'col-approval-status': '104px',
+    // Receivables grid (design min-width 1020px)
+    'col-recv-customer': 'minmax(160px,1.4fr)',
+    'col-recv-project': 'minmax(150px,1.2fr)',
+    'col-recv-milestone': 'minmax(150px,1.2fr)',
+    'col-recv-due': '104px',
+    'col-recv-expected': '112px',
+    'col-recv-paid': '112px',
+    'col-recv-outstanding': '124px',
+    'col-recv-ageing': '116px',
     // DISCOM admin grid (design min-width 1360px)
     'col-discom-hierarchy': 'minmax(250px,1.7fr)',
     'col-discom-circle': 'minmax(160px,1.1fr)',

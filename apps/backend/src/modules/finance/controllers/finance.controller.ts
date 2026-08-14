@@ -113,6 +113,10 @@ export class FinanceController {
     return this.reportingService.getReceivables({
       page: query.page ?? 1,
       limit: query.limit ?? 25,
+      bucket: query.bucket,
+      search: query.search,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
     });
   }
 

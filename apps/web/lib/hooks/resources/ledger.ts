@@ -158,6 +158,7 @@ export interface Receivable {
   projectNumber: string;
   projectName: string;
   customerName: string | null;
+  customerPhone?: string | null;
   displayOrder: number;
   milestoneName: string;
   payerType: 'customer' | 'lender';
@@ -274,15 +275,44 @@ export function useLedgerEntries(
   });
 }
 
+export interface ReceivableFilters {
+  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus';
+  search?: string;
+  sortBy?: 'daysOverdue' | 'outstandingAmount' | 'dueDate' | 'customerName';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface ReceivablesPage extends Paginated<Receivable> {
+  /**
+   * Row counts per ageing bucket plus the money totals, computed server-side
+   * over the WHOLE list — deliberately not from the visible page, which is how
+   * the old AR table produced a "Total" that only summed one screen.
+   */
+  buckets: {
+    current: number;
+    d1to30: number;
+    d31to60: number;
+    d61to90: number;
+    d90plus: number;
+    all: number;
+    totalOutstandingPaise: number;
+    overduePaise: number;
+  };
+}
+
 export function useReceivables(
-  page = 1,
-  limit = 25,
-): UseQueryResult<Paginated<Receivable>, AxiosError> {
+  filters: ReceivableFilters = {},
+): UseQueryResult<ReceivablesPage, AxiosError> {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
+  );
   return useQuery({
-    queryKey: ledgerKeys.receivables(page, limit),
+    queryKey: [...ledgerKeys.root(), 'receivables', params],
     queryFn: async ({ signal }) => {
-      const { data } = await apiClient.get<Paginated<Receivable>>('/finance/receivables', {
-        params: { page, limit },
+      const { data } = await apiClient.get<ReceivablesPage>('/finance/receivables', {
+        params,
         signal,
       });
       return data;
