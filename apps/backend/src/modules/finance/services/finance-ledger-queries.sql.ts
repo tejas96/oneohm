@@ -305,7 +305,14 @@ export const RECEIVABLES_COUNT_SQL = `
   ${RECEIVABLES_FILTERS}
 `;
 
-/** Row counts per ageing bucket, for the quick-filter chips. */
+/**
+ * Bucket counts and money totals for the chips and the KPI cards.
+ *
+ * Honours `search` but NOT `bucket`: search narrows the whole page, so the
+ * headline totals must follow it or they claim a filtered list is worth the
+ * org-wide figure. The bucket is deliberately ignored, because selecting one
+ * chip must not zero the counts on the others.
+ */
 export const RECEIVABLES_BUCKETS_SQL = `
   SELECT
     COUNT(*) FILTER (WHERE v.days_overdue <= 0)                AS "current",
@@ -316,9 +323,16 @@ export const RECEIVABLES_BUCKETS_SQL = `
     COUNT(*)                                                   AS "all",
     COALESCE(SUM(v.balance_paise), 0)                          AS "totalOutstandingPaise",
     COALESCE(SUM(v.balance_paise) FILTER (WHERE v.days_overdue > 0), 0) AS "overduePaise"
-  FROM v_milestone_balance v
-  JOIN projects pr ON pr.id = v.project_id AND pr.deleted_at IS NULL
-  WHERE v.status = 'active' AND v.balance_paise > 0
+  ${RECEIVABLES_JOINS}
+  WHERE v.status = 'active'
+    AND v.balance_paise > 0
+    AND (
+      $1::text IS NULL
+      OR pr.project_number ILIKE '%' || $1 || '%'
+      OR pr.name           ILIKE '%' || $1 || '%'
+      OR v.name            ILIKE '%' || $1 || '%'
+      OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $1 || '%'
+    )
 `;
 
 /**

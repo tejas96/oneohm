@@ -257,9 +257,10 @@ export class FinanceReportingService {
         (page - 1) * limit,
       ]),
       this.dataSource.query(RECEIVABLES_COUNT_SQL, filters),
-      // Bucket counts ignore the current bucket filter on purpose: the chips
-      // must keep showing what is in every bucket, not just the selected one.
-      this.dataSource.query(RECEIVABLES_BUCKETS_SQL, []),
+      // Follows `search` but not `bucket`: search narrows the whole page, so
+      // the headline totals must follow it, while selecting one chip must not
+      // zero the counts on the others.
+      this.dataSource.query(RECEIVABLES_BUCKETS_SQL, [opts.search ?? null]),
     ]);
 
     return {
