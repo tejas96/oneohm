@@ -353,6 +353,24 @@ function RowActionsMenu({
     'Delete customer',
   );
   const deleteTooltip = formatDeleteBlockTooltip(deleteReasons);
+  const editCustomer = useGatedAction(
+    'customers.edit',
+    () => {
+      handleClose();
+      void router.push(buildRoute(ROUTES.CUSTOMERS.EDIT, { id: customer.id }));
+    },
+    'Edit customer',
+  );
+  // Same route as the "new customer" wizard, so its own gate cannot tell this
+  // apart — see the note on the other "Add site" buttons.
+  const addProperty = useGatedAction(
+    'properties.create',
+    () => {
+      handleClose();
+      void router.push(buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId: customer.id }));
+    },
+    'Add property',
+  );
 
   return (
     <>
@@ -390,10 +408,9 @@ function RowActionsMenu({
         </MenuItem>
 
         <MenuItem
-          onClick={() => {
-            handleClose();
-            void router.push(buildRoute(ROUTES.CUSTOMERS.EDIT, { id: customer.id }));
-          }}
+          onClick={editCustomer.onGatedClick}
+          aria-disabled={!editCustomer.allowed}
+          sx={{ opacity: editCustomer.allowed ? 1 : 0.5 }}
         >
           <ListItemIcon>
             <EditIcon fontSize="small" />
@@ -402,12 +419,9 @@ function RowActionsMenu({
         </MenuItem>
 
         <MenuItem
-          onClick={() => {
-            handleClose();
-            void router.push(
-              buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId: customer.id }),
-            );
-          }}
+          onClick={addProperty.onGatedClick}
+          aria-disabled={!addProperty.allowed}
+          sx={{ opacity: addProperty.allowed ? 1 : 0.5 }}
         >
           <ListItemIcon>
             <PersonAddIcon fontSize="small" />
@@ -629,6 +643,11 @@ function PortfolioCell({
   const portfolio = row.sitePortfolio;
   const siteCount = portfolio?.siteCount ?? (row.propertyCount as number | undefined) ?? 0;
 
+  // Declared above the early return: this component returns different trees for
+  // zero sites and some sites, and a hook below the branch would run on only
+  // one of them ("Rendered more hooks than during the previous render").
+  const addSite = useGatedAction('properties.create', () => onAddSite(row.id), 'Add site');
+
   if (siteCount === 0) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '3px', pr: 2 }}>
@@ -638,7 +657,8 @@ function PortfolioCell({
         <Box
           component="button"
           type="button"
-          onClick={() => onAddSite(row.id)}
+          onClick={addSite.onGatedClick}
+          aria-disabled={!addSite.allowed}
           sx={{
             alignSelf: 'flex-start',
             border: 'none',
@@ -649,6 +669,7 @@ function PortfolioCell({
             fontSize: crm['text-row-sm'],
             fontWeight: 500,
             color: color['accent-ink'],
+            opacity: addSite.allowed ? 1 : 0.5,
             '&:hover': { textDecoration: 'underline' },
           }}
         >

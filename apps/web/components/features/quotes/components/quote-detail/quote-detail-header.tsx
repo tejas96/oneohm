@@ -34,6 +34,7 @@ import {
 import { showToast } from '@/components/ui/sonner';
 import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useGatedAction } from '@/lib/rbac';
 import { formatDate } from '@/lib/utils/format';
 
 interface QuoteDetailHeaderProps {
@@ -116,6 +117,25 @@ export const QuoteDetailHeader = React.memo(
     }, [deleteQuote, quote.id, router]);
 
     const canDelete = quote.status !== QuoteStatus.ACCEPTED;
+
+    // "Create New Quote" navigates to the builder, so it is a create, not an
+    // edit. Sending on WhatsApp puts the quote in front of the customer, which
+    // is the same act as any other send.
+    const createQuote = useGatedAction('quotes.create', handleEdit, 'Create quote');
+    const convertToProject = useGatedAction(
+      'projects.create',
+      () => {
+        const params = new URLSearchParams({ quoteId: quote.id, customerId: quote.customerId });
+        if (quote.propertyId) params.set('propertyId', quote.propertyId);
+        router.push(`${ROUTES.PROJECTS.NEW}?${params.toString()}`);
+      },
+      'Convert to project',
+    );
+    const sendWhatsapp = useGatedAction(
+      'quotes.send',
+      () => handleSendWhatsapp?.(),
+      'Send quote on WhatsApp',
+    );
 
     return (
       <div className="space-y-3">
@@ -238,15 +258,11 @@ export const QuoteDetailHeader = React.memo(
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             {quote.status === QuoteStatus.ACCEPTED && (
               <button
-                onClick={() => {
-                  const params = new URLSearchParams({
-                    quoteId: quote.id,
-                    customerId: quote.customerId,
-                  });
-                  if (quote.propertyId) params.set('propertyId', quote.propertyId);
-                  router.push(`${ROUTES.PROJECTS.NEW}?${params.toString()}`);
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-primary-dark shadow-sm transition-all"
+                onClick={convertToProject.onGatedClick}
+                aria-disabled={!convertToProject.allowed}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-primary text-white hover:bg-primary-dark shadow-sm transition-all${
+                  convertToProject.allowed ? '' : ' opacity-50'
+                }`}
               >
                 <Briefcase className="h-3.5 w-3.5" /> Convert to Project
               </button>
@@ -262,8 +278,13 @@ export const QuoteDetailHeader = React.memo(
 
             {handleSendWhatsapp && showWhatsappButton && (
               <button
+                // Business blockers still use `disabled` — a quote with no
+                // customer phone genuinely cannot be sent by anyone. Only the
+                // permission block uses `aria-disabled`, so the click survives
+                // and the dialog can explain it.
                 disabled={!canSendWhatsapp || whatsappLoading}
-                onClick={handleSendWhatsapp}
+                aria-disabled={!sendWhatsapp.allowed}
+                onClick={sendWhatsapp.onGatedClick}
                 title={
                   whatsappBlockedReason
                     ? whatsappBlockedReason
@@ -294,7 +315,11 @@ export const QuoteDetailHeader = React.memo(
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-              <MenuItem onClick={handleEdit}>
+              <MenuItem
+                onClick={createQuote.onGatedClick}
+                aria-disabled={!createQuote.allowed}
+                sx={{ opacity: createQuote.allowed ? 1 : 0.5 }}
+              >
                 <ListItemIcon>
                   <AddIcon fontSize="small" />
                 </ListItemIcon>

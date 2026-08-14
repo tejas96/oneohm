@@ -84,6 +84,13 @@ export function ProjectMoneyTab({
     () => setDialog('expense'),
     'Record expense',
   );
+  // A change order re-prices the project, so it moves money just as the other
+  // two do.
+  const addChangeOrder = useGatedAction(
+    'finance.payments.record',
+    () => setDialog('changeOrder'),
+    'Add change order',
+  );
   const [reversing, setReversing] = useState<LedgerEntry | null>(null);
   const [waiving, setWaiving] = useState<MilestoneBalance | null>(null);
   const receiptPdf = useReceiptPdf();
@@ -145,7 +152,13 @@ export function ProjectMoneyTab({
         >
           Record expense
         </Button>
-        <Button variant="outlined" size="small" onClick={() => setDialog('changeOrder')}>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={addChangeOrder.onGatedClick}
+          aria-disabled={!addChangeOrder.allowed}
+          sx={addChangeOrder.allowed ? undefined : { opacity: 0.5 }}
+        >
           Add change order
         </Button>
       </div>
@@ -211,7 +224,10 @@ export function ProjectMoneyTab({
         </MUITypography>
         <MilestoneWaterfall
           milestones={s.milestones}
-          onRecordPayment={() => setDialog('receipt')}
+          // The gate, not the raw setter: the waterfall opens the same receipt
+          // dialog as the "Record payment" button above, so passing
+          // `setDialog` here would walk straight past the gate declared for it.
+          onRecordPayment={recordPayment.onGatedClick}
           onWaive={setWaiving}
         />
       </section>

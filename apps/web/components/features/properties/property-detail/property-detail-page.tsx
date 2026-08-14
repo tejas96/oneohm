@@ -53,7 +53,7 @@ import type { MetricTileProps } from '@/components/shared/inventory/metric-tile'
 import { showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
-import { AccessDeniedContent, ALWAYS_OPEN, useCan } from '@/lib/rbac';
+import { AccessDeniedContent, ALWAYS_OPEN, useCan, useGatedAction } from '@/lib/rbac';
 import {
   formatCurrency,
   formatDate,
@@ -262,6 +262,19 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     router.push(`${ROUTES.QUOTES.NEW}?propertyId=${property.id}&customerId=${property.customerId}`);
   }, [isInactiveCustomer, lockStatus?.locked, property, router]);
 
+  // Mirrors the header's gates exactly, including the view/create split: an
+  // existing project only needs viewing, a missing one has to be created.
+  const speedDialGoToProject = useGatedAction(
+    linkedProjectId ? 'projects.view' : 'projects.create',
+    () => handleGoToProject(),
+    linkedProjectId ? 'Open project' : 'Convert to project',
+  );
+  const speedDialLogFollowup = useGatedAction(
+    'followups.manage',
+    () => setFollowupDrawerOpen(true),
+    'Log follow-up',
+  );
+
   const handleGoToProject = useCallback((): void => {
     if (!property) return;
     if (linkedProjectId) {
@@ -307,7 +320,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         id: 'no-followup',
         label: 'No follow-up scheduled',
         tone: 'warning',
-        onClick: () => setFollowupDrawerOpen(true),
+        onClick: () => speedDialLogFollowup.onGatedClick(),
       });
     }
 
@@ -691,9 +704,11 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
           <SpeedDialAction
             icon={<FolderOpenOutlinedIcon />}
             slotProps={{ tooltip: { title: linkedProjectId ? 'Open project' : 'Convert' } }}
+            // Through the gates, matching the desktop header. Without this the
+            // mobile speed dial was an ungated copy of guarded buttons.
             onClick={() => {
               setSpeedDialOpen(false);
-              handleGoToProject();
+              speedDialGoToProject.onGatedClick();
             }}
           />
           <SpeedDialAction
@@ -701,7 +716,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
             slotProps={{ tooltip: { title: 'Log follow-up' } }}
             onClick={() => {
               setSpeedDialOpen(false);
-              setFollowupDrawerOpen(true);
+              speedDialLogFollowup.onGatedClick();
             }}
           />
         </SpeedDial>

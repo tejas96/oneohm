@@ -124,6 +124,10 @@ export const ProjectDetailTabs = React.memo(
               label={tab.label}
               icon={icon}
               iconPosition="start"
+              // `aria-disabled`, not `disabled`: a disabled MUI Tab swallows the
+              // click, and the click is what opens the access dialog. This only
+              // announces the state; the guard is the onChange handler above.
+              aria-disabled={!can(tab.permission)}
               sx={{
                 opacity: can(tab.permission) ? 1 : 0.4,
                 minHeight: 34,

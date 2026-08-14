@@ -362,6 +362,15 @@ export function QuoteListPage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Shared by both empty states below. `/quotes/new` is route-gated too, but a
+  // button that navigates to a deny page is a worse answer than one that says
+  // which permission is missing without leaving the list.
+  const createQuote = useGatedAction(
+    'quotes.create',
+    () => void router.push(ROUTES.QUOTES.NEW),
+    'Create quote',
+  );
+
   // Bridge bare `?status=draft` sidebar links into the table's initial filter state.
   // Sidebar nav uses unprefixed params; useTableUrlState only reads prefixed keys
   // (quotes_filters). We pass initialFilters so the very first render is already
@@ -429,9 +438,9 @@ export function QuoteListPage(): JSX.Element {
             size="small"
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => {
-              void router.push(ROUTES.QUOTES.NEW);
-            }}
+            onClick={createQuote.onGatedClick}
+            aria-disabled={!createQuote.allowed}
+            sx={{ opacity: createQuote.allowed ? 1 : 0.5 }}
           >
             Create Quote
           </Button>
@@ -469,9 +478,9 @@ export function QuoteListPage(): JSX.Element {
             variant="contained"
             size="small"
             startIcon={<AddIcon />}
-            onClick={() => {
-              void router.push(ROUTES.QUOTES.NEW);
-            }}
+            onClick={createQuote.onGatedClick}
+            aria-disabled={!createQuote.allowed}
+            sx={{ opacity: createQuote.allowed ? 1 : 0.5 }}
           >
             Create Quote
           </Button>

@@ -54,7 +54,7 @@ import {
 } from '@/components/features/customers/customer-detail/primitives';
 import { SiteStageBar } from '@/components/features/customers/customer-detail/site-stage';
 import { showToast } from '@/components/ui';
-import { useGatedAction } from '@/lib/rbac';
+import { useAccessDialog, useCan, useGatedAction } from '@/lib/rbac';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
 
 export interface OverviewTabProps {
@@ -87,6 +87,11 @@ const IN_PLAY_STATUSES: readonly PropertyStatus[] = [
 
 function LeadTemperatureControl({ property }: { property: CustomerPropertyResponse }): JSX.Element {
   const updateProperty = useUpdateProperty();
+  // These chips look like a filter but each one PATCHes the property, so they
+  // are an edit and need the edit permission.
+  const { can } = useCan();
+  const { requestAccess } = useAccessDialog();
+  const canEdit = can('properties.edit');
 
   return (
     <Stack direction="row" gap={0.75} flexWrap="wrap" useFlexGap>
@@ -100,7 +105,12 @@ function LeadTemperatureControl({ property }: { property: CustomerPropertyRespon
             component="button"
             type="button"
             disabled={updateProperty.isPending}
+            aria-disabled={!canEdit}
             onClick={() => {
+              if (!canEdit) {
+                requestAccess('properties.edit', 'Change lead temperature');
+                return;
+              }
               if (active || updateProperty.isPending) return;
               updateProperty.mutate({ id: property.id, data: { leadTemperature: temperature } });
             }}

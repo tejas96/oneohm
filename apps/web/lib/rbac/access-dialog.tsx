@@ -6,13 +6,22 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { PERMISSION_BY_CODE, SUPERADMIN_ONLY, type Gate } from './catalog';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 interface AccessDeniedContentProps {
   /** The gate that was refused. */
   gate: Gate;
   /** What the user was trying to reach, e.g. "Inventory". Falls back to the permission's own name. */
   subject?: string;
+  /**
+   * Render the heading as Radix's `DialogTitle` instead of a plain `h2`.
+   *
+   * Set only by the dialog below. Radix needs the title to come from its own
+   * component to wire up `aria-labelledby`; without it the dialog is announced
+   * with no name and Radix logs an error on every open. The deny *page* is not
+   * a dialog, so it keeps the plain heading.
+   */
+  asDialogTitle?: boolean;
 }
 
 /**
@@ -26,9 +35,11 @@ interface AccessDeniedContentProps {
 export function AccessDeniedContent({
   gate,
   subject,
+  asDialogTitle = false,
 }: AccessDeniedContentProps): React.JSX.Element {
   const meta = gate === SUPERADMIN_ONLY ? undefined : PERMISSION_BY_CODE.get(gate);
   const heading = subject ?? meta?.name ?? 'Access needed';
+  const Heading = asDialogTitle ? DialogTitle : 'h2';
 
   return (
     <div className="mx-auto max-w-md text-center">
@@ -36,7 +47,7 @@ export function AccessDeniedContent({
         <Lock className="size-icon-xl text-warning" />
       </div>
 
-      <h2 className="mb-1 text-xl font-semibold text-foreground">{heading}</h2>
+      <Heading className="mb-1 text-xl font-semibold text-foreground">{heading}</Heading>
       <p className="mb-4 text-sm text-foreground-secondary">You do not have access to this.</p>
 
       {gate === SUPERADMIN_ONLY ? (
@@ -58,8 +69,13 @@ export function AccessDeniedContent({
         </div>
       )}
 
+      {/* The admin panel is gated by ROLE, so there is nothing to grant — telling
+          someone to ask for a permission that does not exist sends them round a
+          loop. Permission blocks keep the actionable wording. */}
       <p className="text-sm text-foreground-secondary">
-        Only a superadmin can grant this. Ask them to add it to one of your roles.
+        {gate === SUPERADMIN_ONLY
+          ? 'Only a superadmin can open this. Ask one to make the change for you.'
+          : 'Only a superadmin can grant this. Ask them to add it to one of your roles.'}
       </p>
     </div>
   );
@@ -96,7 +112,9 @@ export function AccessDialogProvider({ children }: { children: ReactNode }): Rea
       <Dialog open={request !== null} onOpenChange={(open) => !open && setRequest(null)}>
         <DialogContent size="sm">
           <div className="p-6">
-            {request ? <AccessDeniedContent gate={request.gate} subject={request.subject} /> : null}
+            {request ? (
+              <AccessDeniedContent gate={request.gate} subject={request.subject} asDialogTitle />
+            ) : null}
             <div className="mt-6 flex justify-center">
               <Button onClick={() => setRequest(null)}>Got it</Button>
             </div>

@@ -32,6 +32,7 @@ import {
   MUITypography,
 } from '@/components/ui';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { useGatedAction } from '@/lib/rbac';
 
 type ConfirmAction = 'close' | 'refresh';
 
@@ -70,6 +71,12 @@ export function ReportEditorDrawer({
     isDownloading,
     isSaving,
   } = useReportEditor(projectId, reportId, open);
+
+  const saveReport = useGatedAction(
+    'projects.edit',
+    () => void saveToProject(),
+    'Save report to project',
+  );
 
   const schema = reportId ? getReportSchema(reportId) : null;
 
@@ -283,8 +290,10 @@ export function ReportEditorDrawer({
           )}
 
           <ReportEditorFooter
+            // Downloading is a read and stays open to anyone who can see the
+            // project. Saving writes the report onto the project record.
             onDownload={() => void downloadPdf()}
-            onSave={() => void saveToProject()}
+            onSave={saveReport.onGatedClick}
             isDownloading={isDownloading}
             isSaving={isSaving}
             disabled={actionsDisabled}

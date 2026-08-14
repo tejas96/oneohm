@@ -52,7 +52,7 @@ import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useOrgCustomersAr } from '@/lib/hooks/resources';
 import { useLedgerEntries, lastReceiptValueDate } from '@/lib/hooks/resources/ledger';
-import { AccessDeniedContent, ALWAYS_OPEN, useCan } from '@/lib/rbac';
+import { AccessDeniedContent, ALWAYS_OPEN, useCan, useGatedAction } from '@/lib/rbac';
 import {
   formatCurrency,
   formatDate,
@@ -240,6 +240,17 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     }
     router.push(buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId }));
   };
+
+  const speedDialCreateQuote = useGatedAction(
+    'quotes.create',
+    () => handleCreateQuote(),
+    'New quote',
+  );
+  const speedDialLogFollowup = useGatedAction(
+    'followups.manage',
+    () => setFollowupDrawerOpen(true),
+    'Log follow-up',
+  );
 
   const handleCreateQuote = (): void => {
     if (customer?.status === CustomerStatus.INACTIVE) {
@@ -678,9 +689,12 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           <SpeedDialAction
             icon={<PostAddOutlinedIcon />}
             slotProps={{ tooltip: { title: 'New quote' } }}
+            // Through the gates, like the desktop header buttons already are.
+            // The speed dial is the mobile route to the same three actions, so
+            // leaving it raw made the permission depend on screen width.
             onClick={() => {
               setSpeedDialOpen(false);
-              handleCreateQuote();
+              speedDialCreateQuote.onGatedClick();
             }}
           />
           <SpeedDialAction
@@ -688,7 +702,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
             slotProps={{ tooltip: { title: 'Log follow-up' } }}
             onClick={() => {
               setSpeedDialOpen(false);
-              setFollowupDrawerOpen(true);
+              speedDialLogFollowup.onGatedClick();
             }}
           />
         </SpeedDial>

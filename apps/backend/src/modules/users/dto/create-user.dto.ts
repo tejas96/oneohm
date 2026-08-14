@@ -115,9 +115,10 @@ export class CreateUserDto {
     example: UserProfileType.EMPLOYEE,
     description:
       'Type of profile to create.\n' +
-      '- employee: Creates employee profile + assigns employee_basic role\n' +
+      '- employee: Creates employee profile with NO role — a superadmin assigns one\n' +
       '- reseller: Creates reseller profile + assigns reseller role\n' +
-      '- customer: Creates customer profile + assigns customer role',
+      '- customer: Creates customer profile + assigns customer role\n' +
+      'Pass `roles` to choose a role at creation time; that always takes precedence.',
   })
   @IsOptional()
   @IsEnum(UserProfileType)
@@ -150,11 +151,10 @@ export class CreateUserDto {
 
   @ApiPropertyOptional({
     type: [String],
-    example: ['employee_basic'],
+    example: ['sales_executive'],
     description:
-      'DEPRECATED: Roles are auto-assigned based on profileType. ' +
-      'Only use for special cases requiring manual role assignment.',
-    deprecated: true,
+      'Role codes to assign at creation. Employees get no role otherwise, so ' +
+      'this is how a superadmin picks one up front instead of granting it after.',
   })
   @IsOptional()
   @IsArray()

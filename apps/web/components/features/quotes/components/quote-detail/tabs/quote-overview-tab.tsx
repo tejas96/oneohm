@@ -229,14 +229,15 @@ export function QuoteOverviewTab({
         {/* Right Side: Pricing cards and Sidebar Actions */}
         <div className="space-y-6">
           {/* Pricing Details */}
-          <Can permission={'quotes.profitability'}>
-            <QuotePricingCard
-              breakdown={breakdown}
-              effectivePrice={quote.effectivePrice}
-              profitPercent={profitPercent}
-              profitAmount={profitAmount}
-            />
-          </Can>
+          {/* Not wrapped in <Can>: everyone who can see the quote needs the
+              amount the customer pays. The card gates its own cost and margin
+              rows instead — see QuotePricingCard. */}
+          <QuotePricingCard
+            breakdown={breakdown}
+            effectivePrice={quote.effectivePrice}
+            profitPercent={profitPercent}
+            profitAmount={profitAmount}
+          />
 
           {/* Installation Costs */}
           {installationData &&
