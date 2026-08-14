@@ -153,7 +153,6 @@ export class PaymentApprovalService {
         reference: dto.reference ?? null,
         paymentMethod: dto.paymentMethod ?? null,
         counterparty: dto.counterparty ?? null,
-        proofDocumentId: null as string | null,
       };
 
       let row: Partial<PendingLedgerEntryEntity>;

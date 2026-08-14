@@ -204,8 +204,17 @@ export class StorageService {
    * Deterministic public URL for a file key already uploaded via presigned
    * PUT — the shape callers get back from `getUploadUrl` but frequently only
    * persist the `fileKey` half of. Does not verify the object exists.
+   *
+   * Validated like every other method here that takes a caller-supplied key:
+   * this is commonly called with a `fileKey` a client sent back on a proof
+   * upload (`ProofDocumentDto.fileKey`), which is free-form input at the API
+   * boundary, not cryptographically tied to the presigned session that issued
+   * it.
    */
   getPublicUrl(fileKey: string): string {
+    if (!this.isValidFileKey(fileKey)) {
+      throw new BadRequestException('Invalid file key format');
+    }
     return this.s3Storage.getPublicUrl(fileKey);
   }
 
