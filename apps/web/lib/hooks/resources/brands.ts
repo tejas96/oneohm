@@ -41,12 +41,9 @@ defineResource<Brand>(
     staleTime: STALE_TIMES.slow,
     defaultSort: { field: 'name', order: 'ASC' },
   },
-  {
-    view: 'brands:read',
-    create: 'brands:create',
-    update: 'brands:update',
-    delete: 'brands:delete',
-  },
+  // No permission codes. Admin screens are gated as a whole by
+  // SUPERADMIN_ONLY in route-map.ts, so a per-resource code would
+  // gate nothing extra.
 );
 
 export function useBrandList(

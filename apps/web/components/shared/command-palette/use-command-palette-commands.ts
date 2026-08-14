@@ -103,6 +103,11 @@ export function useCommandPaletteCommands() {
         for (const item of section.items) {
           if (!isImplementedRoute(item.href)) continue;
 
+          // Blocked destinations are omitted here rather than greyed. The rail
+          // and panel show them so the user can discover what exists; a search
+          // box offering results that refuse to open is just noise.
+          if (!item.allowed) continue;
+
           if (seenHrefs.has(item.href)) continue;
           seenHrefs.add(item.href);
 

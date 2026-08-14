@@ -47,8 +47,9 @@ export function InventoryAllocationsPage(): React.JSX.Element {
   const activeViewId = searchParams.get('view');
 
   const { hasPermission } = useAuth();
-  const canWrite = hasPermission('allocation:write') || hasPermission('inventory:write');
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const canWrite =
+    hasPermission('inventory.allocations.manage') || hasPermission('inventory.allocations.manage');
+  const canExport = hasPermission('inventory.view') || hasPermission('inventory.view');
 
   const list = useStockAllocations();
   const {

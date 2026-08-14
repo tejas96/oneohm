@@ -139,7 +139,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     },
     ref,
   ) => {
-    const inputId = id || React.useId();
+    // `useId` is called unconditionally: writing `id || React.useId()` skips
+    // the hook whenever an `id` prop is passed, so the same component renders
+    // a different number of hooks depending on its props.
+    const generatedInputId = React.useId();
+    const inputId = id || generatedInputId;
     const hasRightAddon = rightIcon || suffix || clearable || loading;
     const showClear = clearable && value && !disabled && !loading;
     // Coerce error to boolean for styling, and derive error message

@@ -1,48 +1,38 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { usePathname } from 'next/navigation';
 
-import { AccessDeniedContent, PERMISSION_BY_CODE, SUPERADMIN_ONLY, type Gate } from '@/lib/rbac';
+import { AccessDeniedContent, ALWAYS_OPEN } from '@/lib/rbac';
+import { gateForPath } from '@/lib/rbac/route-map';
 
 /**
  * Where `middleware.ts` rewrites a blocked URL.
  *
- * A rewrite, not a redirect, so the address bar still shows what the user
- * typed — they can see which page they were refused, and the URL stays
- * shareable when they ask a superadmin for access.
+ * The gate is derived from the pathname, **not** from a query parameter.
+ * A rewrite keeps the browser URL as the page the user asked for, and
+ * `useSearchParams()` reads that browser URL — so any `?perm=` the middleware
+ * put on the rewrite target is invisible here. Reading the path is both
+ * simpler and always correct: it is the same lookup the middleware just did.
  */
-function DeniedContent(): React.JSX.Element {
-  const searchParams = useSearchParams();
-  const perm = searchParams.get('perm');
-
-  // The query string is user-editable, so treat it as untrusted: only render
-  // a gate we actually recognise, and fall back to something honest otherwise.
-  const gate: Gate | null =
-    perm && PERMISSION_BY_CODE.has(perm) ? (perm as Gate) : perm === null ? SUPERADMIN_ONLY : null;
-
-  if (gate === null) {
-    return (
-      <div className="mx-auto max-w-md text-center">
-        <h2 className="mb-1 text-xl font-semibold text-foreground">Access needed</h2>
-        <p className="text-sm text-foreground-secondary">
-          You do not have access to this page. Ask a superadmin to grant it.
-        </p>
-      </div>
-    );
-  }
-
-  return <AccessDeniedContent gate={gate} />;
-}
-
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for pages
 export default function DeniedPage(): React.JSX.Element {
+  const pathname = usePathname();
+  const gate = gateForPath(pathname);
+
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
-      {/* useSearchParams needs a Suspense boundary or the production build fails. */}
-      <Suspense fallback={null}>
-        <DeniedContent />
-      </Suspense>
+      {gate === ALWAYS_OPEN ? (
+        // Reached /denied directly rather than by rewrite, so there is no
+        // specific permission to name. Say so plainly instead of guessing.
+        <div className="mx-auto max-w-md text-center">
+          <h2 className="mb-1 text-xl font-semibold text-foreground">Access needed</h2>
+          <p className="text-sm text-foreground-secondary">
+            You do not have access to that page. Ask a superadmin to grant it.
+          </p>
+        </div>
+      ) : (
+        <AccessDeniedContent gate={gate} />
+      )}
     </div>
   );
 }

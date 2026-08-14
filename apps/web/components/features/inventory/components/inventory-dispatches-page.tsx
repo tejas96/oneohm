@@ -53,8 +53,9 @@ export function InventoryDispatchesPage(): React.JSX.Element {
   const activeViewId = searchParams.get('view');
 
   const { hasPermission } = useAuth();
-  const canWrite = hasPermission('dispatch:write') || hasPermission('inventory:write');
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const canWrite =
+    hasPermission('inventory.dispatches.manage') || hasPermission('inventory.dispatches.manage');
+  const canExport = hasPermission('inventory.view') || hasPermission('inventory.view');
 
   const list = useMaterialDispatches();
   const {

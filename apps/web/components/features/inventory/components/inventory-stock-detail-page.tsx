@@ -41,9 +41,11 @@ export function InventoryStockDetailPage(): React.JSX.Element {
   const { data: stock, isLoading, isError } = useInventoryStockDetail(id);
   const { hasPermission } = useAuth();
 
-  const canAdjust = hasPermission('stock:adjust') || hasPermission('inventory:write');
-  const canTransfer = hasPermission('stock:transfer') || hasPermission('inventory:write');
-  const canEditSettings = hasPermission('inventory:write');
+  const canAdjust =
+    hasPermission('inventory.stock.manage') || hasPermission('inventory.stock.manage');
+  const canTransfer =
+    hasPermission('inventory.stock.manage') || hasPermission('inventory.stock.manage');
+  const canEditSettings = hasPermission('inventory.stock.manage');
 
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);

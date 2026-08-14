@@ -55,12 +55,9 @@ defineResource<AdminRole>(
     defaultSort: { field: 'createdAt', order: 'DESC' },
     paramMapping: { limit: 'pageSize' },
   },
-  {
-    view: 'roles:read',
-    create: 'roles:create',
-    update: 'roles:update',
-    delete: 'roles:delete',
-  },
+  // No permission codes. Admin screens are gated as a whole by
+  // SUPERADMIN_ONLY in route-map.ts, so a per-resource code would
+  // gate nothing extra.
 );
 
 // ── Hooks ──────────────────────────────────────────────────────

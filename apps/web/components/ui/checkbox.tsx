@@ -69,7 +69,11 @@ const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(
     },
     ref,
   ) => {
-    const checkboxId = id || React.useId();
+    // `useId` is called unconditionally: writing `id || React.useId()` skips
+    // the hook whenever an `id` prop is passed, so the same component renders
+    // a different number of hooks depending on its props.
+    const generatedCheckboxId = React.useId();
+    const checkboxId = id || generatedCheckboxId;
 
     const checkboxElement = (
       /**

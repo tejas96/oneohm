@@ -11,6 +11,7 @@ import {
   TaskStatus,
 } from '@tejas96/shared/types';
 
+import type { Gate } from '@/lib/rbac/catalog';
 import { toTitleLabel } from '@/lib/utils';
 
 export const DEFAULT_MILESTONES: ReadonlyArray<{ name: string; order: number }> = [
@@ -382,17 +383,21 @@ export const MS_PER_DAY = 86_400_000;
 // ---------------------------------------------------------------------------
 
 export const PROJECT_DETAIL_TABS = [
-  { value: 'overview', label: 'Overview' },
-  { value: 'summary', label: 'Summary' },
-  { value: 'tasks', label: 'Tasks' },
-  { value: 'documents', label: 'Documents' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'bom', label: 'BOM & Inventory' },
-  { value: 'allocations', label: 'Allocations' },
-  { value: 'reports', label: 'Reports' },
-  { value: 'surveys', label: 'Surveys' },
-  { value: 'service', label: 'Service Tickets' },
-] as const;
+  { value: 'overview', label: 'Overview', permission: 'projects.view' },
+  { value: 'summary', label: 'Summary', permission: 'projects.view' },
+  { value: 'tasks', label: 'Tasks', permission: 'projects.view' },
+  { value: 'documents', label: 'Documents', permission: 'projects.view' },
+  { value: 'finance', label: 'Finance', permission: 'finance.view' },
+  { value: 'bom', label: 'BOM & Inventory', permission: 'inventory.view' },
+  { value: 'allocations', label: 'Allocations', permission: 'inventory.view' },
+  { value: 'reports', label: 'Reports', permission: 'projects.view' },
+  { value: 'surveys', label: 'Surveys', permission: 'projects.view' },
+  { value: 'service', label: 'Service Tickets', permission: 'service.view' },
+] as const satisfies readonly {
+  value: string;
+  label: string;
+  permission: Gate;
+}[];
 
 export type ProjectDetailTab = (typeof PROJECT_DETAIL_TABS)[number]['value'];
 

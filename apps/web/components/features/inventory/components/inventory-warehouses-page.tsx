@@ -55,9 +55,9 @@ export function InventoryWarehousesPage(): React.JSX.Element {
   const activeViewId = searchParams.get('view');
 
   const { hasPermission } = useAuth();
-  const canCreate = hasPermission('inventory:write');
+  const canCreate = hasPermission('inventory.warehouses.manage');
   const canEdit = canCreate;
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const canExport = hasPermission('inventory.view') || hasPermission('inventory.view');
 
   const list = useWarehouses();
   const {

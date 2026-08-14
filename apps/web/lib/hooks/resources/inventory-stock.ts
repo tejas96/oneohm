@@ -84,7 +84,7 @@ defineResource<InventoryStock>(
     defaultSort: { field: 'product.name', order: 'ASC' },
   },
   {
-    view: 'inventory:read',
+    view: 'inventory.view',
   },
 );
 

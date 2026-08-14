@@ -85,10 +85,10 @@ defineResource<PurchaseOrder>(
     defaultSort: { field: 'createdAt', order: 'DESC' },
   },
   {
-    view: 'inventory:read',
-    create: 'purchase-order:write',
-    update: 'purchase-order:write',
-    delete: 'purchase-order:write',
+    view: 'inventory.purchase_orders.view',
+    create: 'inventory.purchase_orders.manage',
+    update: 'inventory.purchase_orders.manage',
+    delete: 'inventory.purchase_orders.manage',
   },
 );
 

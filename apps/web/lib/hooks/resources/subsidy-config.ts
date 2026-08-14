@@ -47,12 +47,9 @@ defineResource<SubsidyConfigItem>(
     staleTime: STALE_TIMES.slow,
     defaultSort: { field: 'schemeName', order: 'ASC' },
   },
-  {
-    view: 'subsidy-config:read',
-    create: 'subsidy-config:create',
-    update: 'subsidy-config:update',
-    delete: 'subsidy-config:delete',
-  },
+  // No permission codes. Admin screens are gated as a whole by
+  // SUPERADMIN_ONLY in route-map.ts, so a per-resource code would
+  // gate nothing extra.
 );
 
 export function useSubsidyConfigList() {

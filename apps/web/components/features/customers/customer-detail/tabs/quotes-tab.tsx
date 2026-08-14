@@ -38,6 +38,7 @@ import {
 import { detailTableSx, tableCardSx } from '../styles';
 
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useGatedAction } from '@/lib/rbac';
 import { formatCurrency, formatDate, formatSystemSize, toTitleLabel } from '@/lib/utils';
 
 export interface QuotesTabProps {
@@ -91,6 +92,7 @@ export function QuotesTab({
   isInactive,
   onCreateQuote,
 }: QuotesTabProps): JSX.Element {
+  const createQuoteAction = useGatedAction('quotes.create', onCreateQuote, 'Create quote');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -129,7 +131,8 @@ export function QuotesTab({
                 variant="contained"
                 size="small"
                 startIcon={<PostAddOutlinedIcon />}
-                onClick={onCreateQuote}
+                onClick={createQuoteAction.onGatedClick}
+                aria-disabled={!createQuoteAction.allowed}
               >
                 Create quote
               </Button>
@@ -152,7 +155,8 @@ export function QuotesTab({
                 size="small"
                 variant="contained"
                 startIcon={<PostAddOutlinedIcon />}
-                onClick={onCreateQuote}
+                onClick={createQuoteAction.onGatedClick}
+                aria-disabled={!createQuoteAction.allowed}
                 disabled={isInactive}
               >
                 Create quote

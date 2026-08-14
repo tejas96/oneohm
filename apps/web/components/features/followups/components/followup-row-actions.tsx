@@ -2,11 +2,14 @@
 
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { Button, IconButton, Menu, MenuItem, Stack } from '@mui/material';
+import { Button, IconButton, Menu, Stack } from '@mui/material';
 import { FollowupStatus } from '@tejas96/shared/types';
 import { useState, type JSX } from 'react';
 
 import { type FollowupResponse } from '../hooks/use-followups';
+
+import { GatedMenuItem } from '@/components/shared/guards';
+import { useGatedAction } from '@/lib/rbac';
 
 export interface FollowupRowActionsProps {
   followup: FollowupResponse;
@@ -36,6 +39,11 @@ export function FollowupRowActions({
   onCancel,
 }: FollowupRowActionsProps): JSX.Element {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const complete = useGatedAction(
+    'followups.manage',
+    () => onComplete(followup),
+    'Complete follow-up',
+  );
   const isPending = followup.status === FollowupStatus.PENDING;
   const close = (): void => setAnchor(null);
 
@@ -44,7 +52,8 @@ export function FollowupRowActions({
       <Button
         size="small"
         startIcon={<CheckCircleOutlineIcon />}
-        onClick={() => onComplete(followup)}
+        onClick={complete.onGatedClick}
+        aria-disabled={!complete.allowed}
         // Kept mounted rather than unmounted so every row is the same height.
         sx={{ visibility: isPending ? 'visible' : 'hidden' }}
         aria-hidden={!isPending}
@@ -62,32 +71,38 @@ export function FollowupRowActions({
       </IconButton>
 
       <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={close}>
-        <MenuItem
+        <GatedMenuItem
+          permission="followups.manage"
+          subject="Reschedule follow-up"
           disabled={!isPending}
-          onClick={() => {
+          onAction={() => {
             onReschedule(followup);
             close();
           }}
         >
           Reschedule
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
+        </GatedMenuItem>
+        <GatedMenuItem
+          permission="followups.manage"
+          subject="Reassign follow-up"
+          onAction={() => {
             onReassign(followup);
             close();
           }}
         >
           Reassign
-        </MenuItem>
-        <MenuItem
+        </GatedMenuItem>
+        <GatedMenuItem
+          permission="followups.manage"
+          subject="Cancel follow-up"
           disabled={!isPending}
-          onClick={() => {
+          onAction={() => {
             onCancel(followup);
             close();
           }}
         >
           Cancel
-        </MenuItem>
+        </GatedMenuItem>
       </Menu>
     </Stack>
   );

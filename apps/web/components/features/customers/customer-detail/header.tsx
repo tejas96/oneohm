@@ -33,6 +33,7 @@ import { getCustomerDisplayName } from './utils';
 import type { Customer } from '../hooks';
 
 import { WhatsAppIcon } from '@/components/ui';
+import { useGatedAction } from '@/lib/rbac';
 import { formatDate, formatPhoneForWhatsApp, getInitials, toTitleLabel } from '@/lib/utils';
 
 export interface HeaderSignal {
@@ -136,6 +137,14 @@ export function CustomerDetailHeader({
   onDelete,
   signals = [],
 }: CustomerDetailHeaderProps): JSX.Element {
+  // Entry points to write flows. Gated here rather than inside each form:
+  // stopping the door is enough, and it is where the user can be told why.
+  const editCustomer = useGatedAction('customers.edit', onEdit, 'Edit customer');
+  const addSite = useGatedAction('properties.create', onAddProperty, 'Add site');
+  const createQuote = useGatedAction('quotes.create', onCreateQuote, 'New quote');
+  const logFollowup = useGatedAction('followups.manage', onLogFollowup, 'Log follow-up');
+  const deleteCustomer = useGatedAction('customers.delete', () => onDelete?.(), 'Delete customer');
+
   const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
   const fullName = getCustomerDisplayName(customer);
   const phoneForWhatsApp = customer.phone ? formatPhoneForWhatsApp(customer.phone) : '';
@@ -274,7 +283,8 @@ export function CustomerDetailHeader({
             size="small"
             variant="outlined"
             startIcon={<EditOutlinedIcon />}
-            onClick={onEdit}
+            onClick={editCustomer.onGatedClick}
+            aria-disabled={!editCustomer.allowed}
             sx={{ display: { xs: 'none', md: 'inline-flex' } }}
           >
             Edit
@@ -285,7 +295,8 @@ export function CustomerDetailHeader({
                 size="small"
                 variant="outlined"
                 startIcon={<AddBusinessOutlinedIcon />}
-                onClick={onAddProperty}
+                onClick={addSite.onGatedClick}
+                aria-disabled={!addSite.allowed}
                 disabled={isInactive}
               >
                 Add site
@@ -298,7 +309,8 @@ export function CustomerDetailHeader({
                 size="small"
                 variant="outlined"
                 startIcon={<PostAddOutlinedIcon />}
-                onClick={onCreateQuote}
+                onClick={createQuote.onGatedClick}
+                aria-disabled={!createQuote.allowed}
                 disabled={isInactive}
               >
                 New quote
@@ -309,7 +321,8 @@ export function CustomerDetailHeader({
             size="small"
             variant="contained"
             startIcon={<EventNoteOutlinedIcon />}
-            onClick={onLogFollowup}
+            onClick={logFollowup.onGatedClick}
+            aria-disabled={!logFollowup.allowed}
           >
             Log follow-up
           </Button>
@@ -334,9 +347,13 @@ export function CustomerDetailHeader({
                 onClick={() => {
                   if (deleteDisabled) return;
                   setMoreAnchor(null);
-                  onDelete?.();
+                  deleteCustomer.onGatedClick();
                 }}
-                sx={{ color: 'var(--ds-danger)' }}
+                aria-disabled={!deleteCustomer.allowed}
+                sx={{
+                  color: 'var(--ds-danger)',
+                  ...(deleteCustomer.allowed ? {} : { opacity: 0.5 }),
+                }}
               >
                 <ListItemIcon>
                   <DeleteOutlinedIcon fontSize="small" sx={{ color: 'var(--ds-danger)' }} />

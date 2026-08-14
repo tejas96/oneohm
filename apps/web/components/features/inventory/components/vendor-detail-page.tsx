@@ -24,6 +24,7 @@ import { apiClient } from '@/lib/api/client';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { usePurchaseOrders, type PurchaseOrder } from '@/lib/hooks/resources/purchase-orders';
 import { useVendor } from '@/lib/hooks/resources/vendors';
+import { useCan } from '@/lib/rbac';
 import { formatCurrency } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -147,10 +148,11 @@ const ASSIGN_COLUMNS: ColumnConfig<AssignRow>[] = [
 ];
 
 export function VendorDetailPage(): React.JSX.Element {
+  const { can } = useCan();
   const params = useParams();
   const router = useRouter();
   const { hasPermission } = useAuth();
-  const canEdit = hasPermission('inventory:write');
+  const canEdit = hasPermission('inventory.vendors.manage');
   const [tab, setTab] = useState('pos');
   const [editOpen, setEditOpen] = useState(false);
   const [assignPage, setAssignPage] = useState(1);
@@ -257,10 +259,20 @@ export function VendorDetailPage(): React.JSX.Element {
       <Tabs value={tab} onValueChange={setTab}>
         <div className="rounded-lg border border-border bg-background">
           <TabsList variant="underline" className="px-4 pt-2" aria-label="Vendor detail tabs">
-            <TabsTrigger value="pos" variant="underline">
+            <TabsTrigger
+              value="pos"
+              variant="underline"
+              className={can('inventory.purchase_orders.view') ? undefined : 'opacity-40'}
+              aria-disabled={can('inventory.purchase_orders.view') ? undefined : true}
+            >
               Purchase orders
             </TabsTrigger>
-            <TabsTrigger value="projects" variant="underline">
+            <TabsTrigger
+              value="projects"
+              variant="underline"
+              className={can('projects.view') ? undefined : 'opacity-40'}
+              aria-disabled={can('projects.view') ? undefined : true}
+            >
               Projects
             </TabsTrigger>
           </TabsList>

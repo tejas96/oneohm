@@ -436,7 +436,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
  * await login({ email: 'test@example.com', password: 'password123' });
  *
  * // Check permissions
- * if (hasPermission('users:read')) { ... }
+ * if (hasPermission('customers.view')) { ... }
  *
  * // Logout
  * logout();

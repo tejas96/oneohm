@@ -43,12 +43,9 @@ defineResource<InstallationPricingItem>(
     staleTime: STALE_TIMES.slow,
     defaultSort: { field: 'minSystemSizeKw', order: 'ASC' },
   },
-  {
-    view: 'installation-pricing:read',
-    create: 'installation-pricing:create',
-    update: 'installation-pricing:update',
-    delete: 'installation-pricing:delete',
-  },
+  // No permission codes. Admin screens are gated as a whole by
+  // SUPERADMIN_ONLY in route-map.ts, so a per-resource code would
+  // gate nothing extra.
 );
 
 export function useInstallationPricing() {

@@ -16,22 +16,27 @@ import {
 import type { CrmTone } from '@/components/shared/crm-table';
 import type { BadgeProps } from '@/components/ui/badge';
 import type { StatusChipColor } from '@/components/ui/mui-status-chip';
+import type { Gate } from '@/lib/rbac/catalog';
 
 // ============================================================================
 // Detail Page: Tab Configuration
 // ============================================================================
 
 export const CUSTOMER_DETAIL_TABS = [
-  { value: 'overview', label: 'Overview' },
-  { value: 'properties', label: 'Properties' },
-  { value: 'quotes', label: 'Quotes' },
-  { value: 'projects', label: 'Projects' },
-  { value: 'documents', label: 'Documents' },
-  { value: 'followups', label: 'Follow-ups' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'service', label: 'Service' },
-  { value: 'activity', label: 'Activity' },
-] as const;
+  { value: 'overview', label: 'Overview', permission: 'customers.view' },
+  { value: 'properties', label: 'Properties', permission: 'properties.view' },
+  { value: 'quotes', label: 'Quotes', permission: 'quotes.view' },
+  { value: 'projects', label: 'Projects', permission: 'projects.view' },
+  { value: 'documents', label: 'Documents', permission: 'customers.view' },
+  { value: 'followups', label: 'Follow-ups', permission: 'followups.view' },
+  { value: 'finance', label: 'Finance', permission: 'finance.view' },
+  { value: 'service', label: 'Service', permission: 'service.view' },
+  { value: 'activity', label: 'Activity', permission: 'customers.view' },
+] as const satisfies readonly {
+  value: string;
+  label: string;
+  permission: Gate;
+}[];
 
 export type CustomerDetailTab = (typeof CUSTOMER_DETAIL_TABS)[number]['value'];
 

@@ -28,7 +28,15 @@ export const ROUTE_GATES: ReadonlyArray<{ pattern: RegExp; gate: Gate }> = [
   // CRM
   { pattern: /^\/customers(\/|$)/, gate: 'customers.view' },
   { pattern: /^\/crm(\/|$)/, gate: 'customers.view' },
-  { pattern: /^\/onboarding(\/|$)/, gate: 'properties.create' },
+  // The onboarding wizard creates a customer and their first site. Gated on
+  // `customers.create` to match the "Add customer" button that leads here —
+  // gating it on properties.create would let someone through the button and
+  // then refuse them the page.
+  //
+  // Known edge: the same route also deep-links with ?customerId= to add a site
+  // to an existing customer, which is arguably properties.create. Route gates
+  // match on path only, so this takes the dominant case.
+  { pattern: /^\/onboarding(\/|$)/, gate: 'customers.create' },
   { pattern: /^\/properties(\/|$)/, gate: 'properties.view' },
   { pattern: /^\/followups(\/|$)/, gate: 'followups.view' },
   { pattern: /^\/pipeline(\/|$)/, gate: 'pipeline.view' },

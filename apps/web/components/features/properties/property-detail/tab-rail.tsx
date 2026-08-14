@@ -14,6 +14,7 @@ import type { JSX, ReactElement, SyntheticEvent } from 'react';
 import { PROPERTY_DETAIL_TABS, type PropertyDetailTab } from '../constants';
 
 import { stickyTabRailSx } from '@/components/features/customers/customer-detail/styles';
+import { useAccessDialog, useCan } from '@/lib/rbac';
 
 const TAB_ICONS: Record<PropertyDetailTab, ReactElement> = {
   overview: <DashboardOutlinedIcon />,
@@ -53,11 +54,26 @@ export function PropertyTabRail({
   onPrefetch,
   counts,
 }: PropertyTabRailProps): JSX.Element {
+  const { can } = useCan();
+  const { requestAccess } = useAccessDialog();
+
+  // Intercepted here rather than with `<Tab disabled>`: MUI swallows clicks on
+  // a disabled tab, so the access dialog would never open. Guarding the
+  // container also covers keyboard navigation between tabs.
+  const handleChange = (event: SyntheticEvent, value: string): void => {
+    const tab = PROPERTY_DETAIL_TABS.find((t) => t.value === value);
+    if (tab && !can(tab.permission)) {
+      requestAccess(tab.permission, tab.label);
+      return;
+    }
+    onTabChange(event, value);
+  };
+
   return (
     <Box sx={stickyTabRailSx}>
       <Tabs
         value={activeTab}
-        onChange={onTabChange}
+        onChange={handleChange}
         variant="scrollable"
         scrollButtons="auto"
         allowScrollButtonsMobile
@@ -119,6 +135,7 @@ export function PropertyTabRail({
                 </Box>
               }
               sx={{
+                opacity: can(tab.permission) ? 1 : 0.4,
                 minHeight: 34,
                 height: 34,
                 minWidth: 'auto',

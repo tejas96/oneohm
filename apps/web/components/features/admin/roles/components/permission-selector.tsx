@@ -33,7 +33,11 @@ export function PermissionSelector({
 
     const groups: Record<string, Permission[]> = {};
     for (const p of filtered) {
-      const feature = p.code.split(':')[0] || 'other';
+      // Group by the module column. This used to split the code on ':',
+      // which the new dot-style codes do not contain — every permission
+      // would have landed in a group of one and the picker would look
+      // shattered.
+      const feature = p.module || 'other';
       if (!groups[feature]) groups[feature] = [];
       groups[feature].push(p);
     }
@@ -58,7 +62,11 @@ export function PermissionSelector({
   const groupedSelected = useMemo(() => {
     const groups: Record<string, Permission[]> = {};
     for (const p of selectedPermissions) {
-      const feature = p.code.split(':')[0] || 'other';
+      // Group by the module column. This used to split the code on ':',
+      // which the new dot-style codes do not contain — every permission
+      // would have landed in a group of one and the picker would look
+      // shattered.
+      const feature = p.module || 'other';
       if (!groups[feature]) groups[feature] = [];
       groups[feature].push(p);
     }

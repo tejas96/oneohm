@@ -50,6 +50,7 @@ import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useAllActiveWorkflowSteps } from '@/lib/hooks/resources';
+import { useGatedAction } from '@/lib/rbac';
 import { color, crm } from '@/lib/theme/tokens';
 import {
   formatCurrency,
@@ -732,6 +733,7 @@ const FILTER_COLUMNS: ColumnConfig<ProjectRow>[] = [
 // ============================================================================
 
 export function ProjectListPage(): JSX.Element {
+  const newProject = useGatedAction('projects.create', () => undefined, 'New project');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -979,8 +981,10 @@ export function ProjectListPage(): JSX.Element {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          component={NextLink}
-          href={ROUTES.PROJECTS.NEW}
+          component={newProject.allowed ? NextLink : 'button'}
+          href={newProject.allowed ? ROUTES.PROJECTS.NEW : undefined}
+          onClick={newProject.allowed ? undefined : newProject.onGatedClick}
+          aria-disabled={!newProject.allowed}
           sx={{ position: 'relative', flexShrink: 0 }}
         >
           New project

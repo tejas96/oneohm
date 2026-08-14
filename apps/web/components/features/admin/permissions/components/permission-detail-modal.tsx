@@ -41,32 +41,18 @@ export function PermissionDetailModal({
             <Badge variant="outline" size="xs" className="font-mono w-fit">
               {permission.code}
             </Badge>
-            <span className="text-foreground-tertiary">Action</span>
+            <span className="text-foreground-tertiary">Module</span>
             <Badge variant="secondary" size="xs" className="w-fit capitalize">
-              {permission.action}
+              {permission.module}
             </Badge>
-            <span className="text-foreground-tertiary">Scope</span>
-            <Badge variant="secondary" size="xs" className="w-fit">
-              {permission.scope}
-            </Badge>
-            <span className="text-foreground-tertiary">Level</span>
-            <span>{permission.permissionLevel}</span>
-            <span className="text-foreground-tertiary">Active</span>
-            <span>{permission.isActive ? 'Yes' : 'No'}</span>
-            <span className="text-foreground-tertiary">System</span>
-            <span>{permission.isSystemPermission ? 'Yes' : 'No'}</span>
-            {permission.menuLabel && (
-              <>
-                <span className="text-foreground-tertiary">Menu Label</span>
-                <span>{permission.menuLabel}</span>
-              </>
-            )}
             {permission.description && (
               <>
-                <span className="text-foreground-tertiary">Description</span>
+                <span className="text-foreground-tertiary">What it unlocks</span>
                 <span>{permission.description}</span>
               </>
             )}
+            <span className="text-foreground-tertiary">Active</span>
+            <span>{permission.isActive ? 'Yes' : 'No'}</span>
             <span className="text-foreground-tertiary">Roles Using</span>
             <span>{permission.rolesCount ?? 0}</span>
           </div>

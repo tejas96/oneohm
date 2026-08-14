@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { In, IsNull } from 'typeorm';
 
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { RolePermissionRepository } from '../repositories/role-permission.repository';
@@ -33,6 +34,19 @@ export class IamService {
       return [];
     }
 
+    // Roles are soft-deleted, and `user_roles` rows are not cascaded when that
+    // happens. Without this filter a link left pointing at a deleted role would
+    // keep granting its permissions — a deleted role must grant nothing.
+    const roleIds = userRoles.map((ur) => ur.roleId).filter((id): id is string => Boolean(id));
+    const liveRoleIds = new Set(
+      (
+        await this.roleRepository.repository.find({
+          where: { id: In(roleIds), deletedAt: IsNull() },
+          select: { id: true },
+        })
+      ).map((role) => role.id),
+    );
+
     const permissionCodes = new Set<string>();
 
     for (const userRole of userRoles) {
@@ -40,6 +54,11 @@ export class IamService {
 
       if (!roleId) {
         this.logger.warn(`Skipping user role without role_id for user ${userId}`);
+        continue;
+      }
+
+      if (!liveRoleIds.has(roleId)) {
+        this.logger.debug(`Skipping deleted role ${roleId} for user ${userId}`);
         continue;
       }
 

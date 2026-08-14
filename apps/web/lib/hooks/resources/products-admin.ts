@@ -53,12 +53,9 @@ defineResource<ProductAdminItem>(
     defaultSort: { field: 'createdAt', order: 'DESC' },
     defaultFilters: { status: ProductStatus.ACTIVE } as Partial<ProductAdminFilters>,
   },
-  {
-    view: 'products:read',
-    create: 'products:create',
-    update: 'products:update',
-    delete: 'products:delete',
-  },
+  // No permission codes. Admin screens are gated as a whole by
+  // SUPERADMIN_ONLY in route-map.ts, so a per-resource code would
+  // gate nothing extra.
 );
 
 export function useProductsAdmin() {

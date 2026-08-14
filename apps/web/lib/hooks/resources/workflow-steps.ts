@@ -34,12 +34,9 @@ defineResource<WorkflowStep>(
     syncToUrl: true,
     defaultSort: { field: 'sequenceOrder', order: 'ASC' },
   },
-  {
-    view: 'workflow-steps:read',
-    create: 'workflow-steps:create',
-    update: 'workflow-steps:update',
-    delete: 'workflow-steps:delete',
-  },
+  // No permission codes. Admin screens are gated as a whole by
+  // SUPERADMIN_ONLY in route-map.ts, so a per-resource code would
+  // gate nothing extra.
 );
 
 // ── Hooks ──────────────────────────────────────────────────────

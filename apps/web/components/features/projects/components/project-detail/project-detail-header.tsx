@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { ROUTES } from '@/lib/config/routes';
+import { useGatedAction } from '@/lib/rbac';
 import { formatDate } from '@/lib/utils/format';
 
 interface ProjectDetailHeaderProps {
@@ -29,6 +30,8 @@ interface ProjectDetailHeaderProps {
 
 export const ProjectDetailHeader = React.memo(
   ({ project, onEdit }: ProjectDetailHeaderProps): React.JSX.Element => {
+    const editProject = useGatedAction('projects.edit', () => onEdit?.(), 'Edit project');
+
     const priorityLabel = PROJECT_PRIORITY_LABELS[project.priority] ?? project.priority;
     const priorityVariant = PROJECT_PRIORITY_BADGE_VARIANT[project.priority] ?? 'secondary';
     return (
@@ -85,7 +88,8 @@ export const ProjectDetailHeader = React.memo(
                 variant="outlined"
                 size="small"
                 startIcon={<EditIcon fontSize="small" />}
-                onClick={onEdit}
+                onClick={editProject.onGatedClick}
+                aria-disabled={!editProject.allowed}
               >
                 Edit Project
               </Button>

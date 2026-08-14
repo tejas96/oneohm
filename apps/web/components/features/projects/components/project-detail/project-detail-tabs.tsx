@@ -15,6 +15,8 @@ import React, { useCallback } from 'react';
 
 import { PROJECT_DETAIL_TABS, type ProjectDetailTab } from '../../constants';
 
+import { useAccessDialog, useCan } from '@/lib/rbac';
+
 interface ProjectDetailTabsProps {
   activeTab: ProjectDetailTab;
   onTabChange: (tab: ProjectDetailTab) => void;
@@ -36,11 +38,22 @@ const TAB_ICONS: Record<ProjectDetailTab, React.ReactElement> = {
 
 export const ProjectDetailTabs = React.memo(
   ({ activeTab, onTabChange, reportsPendingCount }: ProjectDetailTabsProps): React.JSX.Element => {
+    const { can } = useCan();
+    const { requestAccess } = useAccessDialog();
+
+    // Guarded on the container, not with `<Tab disabled>`: MUI swallows clicks
+    // on a disabled tab, so the access dialog would never open. This also
+    // covers arrow-key navigation between tabs.
     const handleChange = useCallback(
       (_event: React.SyntheticEvent, newValue: string) => {
+        const tab = PROJECT_DETAIL_TABS.find((t) => t.value === newValue);
+        if (tab && !can(tab.permission)) {
+          requestAccess(tab.permission, tab.label);
+          return;
+        }
         onTabChange(newValue as ProjectDetailTab);
       },
-      [onTabChange],
+      [onTabChange, can, requestAccess],
     );
 
     return (
@@ -112,6 +125,7 @@ export const ProjectDetailTabs = React.memo(
               icon={icon}
               iconPosition="start"
               sx={{
+                opacity: can(tab.permission) ? 1 : 0.4,
                 minHeight: 34,
                 height: 34,
                 borderRadius: '9999px',

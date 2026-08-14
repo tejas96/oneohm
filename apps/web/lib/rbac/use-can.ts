@@ -21,10 +21,18 @@ export interface UseCanResult {
  * panel or hand out roles. Every other gate treats admin as full access.
  */
 export function useCan(): UseCanResult {
+  // Subscribe to `user`, not just the store's helper methods.
+  //
+  // Those helpers read `get().user` at call time, so they always return the
+  // right answer — but their *identity* never changes. Depending only on them
+  // gives `can` a permanently stable identity, and any `useMemo([can])`
+  // downstream then caches gating from the first render and never updates.
+  // That showed up as the rail and the panel disagreeing after a permission
+  // refresh, and would ship as "permissions only apply after a hard refresh".
+  const user = useAuthStore((s) => s.user);
   const hasPermission = useAuthStore((s) => s.hasPermission);
-  const hasRole = useAuthStore((s) => s.hasRole);
 
-  const isSuperAdmin = hasRole(SUPER_ADMIN_ROLE);
+  const isSuperAdmin = (user?.roles ?? []).includes(SUPER_ADMIN_ROLE);
 
   const can = useCallback(
     (gate: Gate): boolean => {
@@ -32,7 +40,8 @@ export function useCan(): UseCanResult {
       if (gate === SUPERADMIN_ONLY) return isSuperAdmin;
       return hasPermission(gate);
     },
-    [hasPermission, isSuperAdmin],
+    // `user` is the dependency that actually moves.
+    [user, hasPermission, isSuperAdmin],
   );
 
   return { can, isSuperAdmin };

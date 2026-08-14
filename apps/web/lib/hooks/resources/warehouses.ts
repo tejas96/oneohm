@@ -51,10 +51,10 @@ defineResource<Warehouse>(
     defaultSort: { field: 'name', order: 'ASC' },
   },
   {
-    view: 'inventory:read',
-    create: 'inventory:write',
-    update: 'inventory:write',
-    delete: 'inventory:write',
+    view: 'inventory.view',
+    create: 'inventory.warehouses.manage',
+    update: 'inventory.warehouses.manage',
+    delete: 'inventory.warehouses.manage',
   },
 );
 

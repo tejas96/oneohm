@@ -32,6 +32,7 @@ import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES, buildRoute } from '@/lib/config/routes';
 import { useTableUrlState } from '@/lib/hooks';
+import { useGatedAction } from '@/lib/rbac';
 import { color, crm } from '@/lib/theme/tokens';
 import { formatDate } from '@/lib/utils';
 
@@ -207,6 +208,7 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
 ];
 
 export function ServiceTicketsPage(): JSX.Element {
+  const newTicket = useGatedAction('service.manage', () => setFormOpen(true), 'New ticket');
   const urlState = useTableUrlState({ prefix: 'tkt', defaultPageSize: 20 });
   const [formOpen, setFormOpen] = useState(false);
 
@@ -341,7 +343,8 @@ export function ServiceTicketsPage(): JSX.Element {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setFormOpen(true)}
+          onClick={newTicket.onGatedClick}
+          aria-disabled={!newTicket.allowed}
           sx={{ flexShrink: 0 }}
         >
           New Ticket

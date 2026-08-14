@@ -39,6 +39,7 @@ import {
 import { detailTableSx, tableCardSx } from '@/components/features/customers/customer-detail/styles';
 import { usePropertyLockStatus } from '@/components/features/quotes/hooks/use-quotes';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useGatedAction } from '@/lib/rbac';
 import {
   formatCurrency,
   formatDate,
@@ -97,6 +98,7 @@ export function QuotesTab({
   isInactiveCustomer,
   onCreateQuote,
 }: QuotesTabProps): JSX.Element {
+  const createQuoteAction = useGatedAction('quotes.create', onCreateQuote, 'Create quote');
   /*
    * Sourced from `/quotes?propertyId=` rather than the versions endpoint the
    * old DataGrid used. The versions payload carries only id / number / status
@@ -122,7 +124,8 @@ export function QuotesTab({
           size="small"
           variant="contained"
           startIcon={<PostAddOutlinedIcon />}
-          onClick={onCreateQuote}
+          onClick={createQuoteAction.onGatedClick}
+          aria-disabled={!createQuoteAction.allowed}
           disabled={createBlocked}
         >
           Create quote

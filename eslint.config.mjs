@@ -200,7 +200,10 @@ export default [
       // ------------------------------
       // ⚛️ React Hooks
       // ------------------------------
-      'react-hooks/rules-of-hooks': 'off',
+      // An error, not a warning: breaking this does not degrade quality, it
+      // crashes the render with "Rendered more hooks than during the previous
+      // render". Nothing else catches it — typecheck and build both pass.
+      'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'off',
 
       // ------------------------------

@@ -62,10 +62,10 @@ defineResource<Vendor>(
     defaultSort: { field: 'name', order: 'ASC' },
   },
   {
-    view: 'inventory:read',
-    create: 'inventory:write',
-    update: 'inventory:write',
-    delete: 'inventory:write',
+    view: 'inventory.view',
+    create: 'inventory.vendors.manage',
+    update: 'inventory.vendors.manage',
+    delete: 'inventory.vendors.manage',
   },
 );
 

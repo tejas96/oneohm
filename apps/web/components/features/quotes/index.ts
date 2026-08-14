@@ -66,7 +66,6 @@ export {
   QUOTE_STATUS_BADGE_VARIANTS,
   QUOTE_STATUS_TRANSITIONS,
   SYSTEM_TYPE_LABELS,
-  QUOTE_DETAIL_TABS,
   ITEM_CATEGORY_LABELS,
   PROJECT_TYPE_LABELS,
   DEFAULT_PAGE_SIZE,
@@ -76,7 +75,6 @@ export {
   QUICK_SIZE_OPTIONS,
   DISCOUNT_PRESETS,
 } from './constants';
-export type { QuoteDetailTab } from './constants';
 
 // Schemas
 export { quoteBuilderSchema, createQuoteSchema } from './schemas/quote.schema';

@@ -43,7 +43,8 @@ export function DispatchDetailPage(): React.JSX.Element {
   const { data, isLoading, isError, refetch } = useMaterialDispatch(id);
   const { action } = useMaterialDispatchMutations();
   const { hasPermission } = useAuth();
-  const canWrite = hasPermission('dispatch:write') || hasPermission('inventory:write');
+  const canWrite =
+    hasPermission('inventory.dispatches.manage') || hasPermission('inventory.dispatches.manage');
   const [busy, setBusy] = useState(false);
 
   const items = useMemo(() => data?.items ?? [], [data?.items]);

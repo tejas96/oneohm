@@ -29,6 +29,7 @@ import {
 
 import { ROUTES, getPanelKeyForPath } from './routes';
 
+import { ALWAYS_OPEN, SUPERADMIN_ONLY } from '@/lib/rbac/catalog';
 import type { NavigationConfig, PanelConfig } from '@/lib/types';
 
 /**
@@ -46,6 +47,7 @@ export const navigationConfig: NavigationConfig = {
   railTop: [
     {
       id: 'home',
+      permission: ALWAYS_OPEN,
       icon: Home,
       label: 'Dashboard',
       href: ROUTES.DASHBOARD.HOME,
@@ -53,6 +55,7 @@ export const navigationConfig: NavigationConfig = {
     },
     {
       id: 'crm',
+      permission: 'customers.view',
       icon: Users,
       label: 'Sales & CRM',
       href: ROUTES.CUSTOMERS.LIST,
@@ -61,6 +64,7 @@ export const navigationConfig: NavigationConfig = {
     },
     {
       id: 'quotes',
+      permission: 'quotes.view',
       icon: FileText,
       label: 'Quotations',
       href: ROUTES.QUOTES.DASHBOARD,
@@ -68,6 +72,7 @@ export const navigationConfig: NavigationConfig = {
     },
     {
       id: 'projects',
+      permission: 'projects.view',
       icon: Folder,
       label: 'Projects',
       href: ROUTES.PROJECTS.DASHBOARD,
@@ -75,23 +80,15 @@ export const navigationConfig: NavigationConfig = {
     },
     {
       id: 'inventory',
+      permission: 'inventory.view',
       icon: Box,
       label: 'Inventory',
       href: ROUTES.INVENTORY.STOCK,
       panelKey: 'inventory',
-      roles: [
-        'admin',
-        'super_admin',
-        'platform_admin',
-        'inventory_manager',
-        'store',
-        'project_manager',
-        'accounts_manager',
-      ],
-      permissions: ['inventory:read'],
     },
     {
       id: 'finance',
+      permission: 'finance.view',
       icon: Wallet,
       label: 'Finance',
       href: ROUTES.FINANCE.HOME,
@@ -99,6 +96,7 @@ export const navigationConfig: NavigationConfig = {
     },
     {
       id: 'service',
+      permission: 'service.view',
       icon: Wrench,
       label: 'Service',
       href: ROUTES.SERVICE.HOME,
@@ -112,6 +110,7 @@ export const navigationConfig: NavigationConfig = {
   railBottom: [
     {
       id: 'help',
+      permission: ALWAYS_OPEN,
       icon: HelpCircle,
       label: 'Help',
       href: ROUTES.HELP.HOME,
@@ -119,11 +118,11 @@ export const navigationConfig: NavigationConfig = {
     },
     {
       id: 'admin',
+      permission: SUPERADMIN_ONLY,
       icon: Users,
       label: 'Admin',
       href: ROUTES.ADMIN.HOME,
       panelKey: 'admin',
-      roles: ['admin', 'super_admin', 'platform_admin'],
     },
   ],
 
@@ -136,18 +135,45 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Quick Access',
+          permission: ALWAYS_OPEN,
           items: [
-            { id: 'dashboard', icon: Home, label: 'Dashboard', href: ROUTES.DASHBOARD.HOME },
-            { id: 'tasks', icon: CheckSquare, label: 'My Tasks', href: ROUTES.DASHBOARD.TASKS },
-            { id: 'calendar', icon: Calendar, label: 'Calendar', href: ROUTES.DASHBOARD.CALENDAR },
+            {
+              id: 'dashboard',
+              icon: Home,
+              label: 'Dashboard',
+              href: ROUTES.DASHBOARD.HOME,
+              permission: ALWAYS_OPEN,
+            },
+            {
+              id: 'tasks',
+              icon: CheckSquare,
+              label: 'My Tasks',
+              href: ROUTES.DASHBOARD.TASKS,
+              permission: ALWAYS_OPEN,
+            },
+            {
+              id: 'calendar',
+              icon: Calendar,
+              label: 'Calendar',
+              href: ROUTES.DASHBOARD.CALENDAR,
+              permission: ALWAYS_OPEN,
+            },
           ],
         },
         {
           title: 'Views',
+          permission: ALWAYS_OPEN,
           items: [
-            { id: 'overview', icon: LayoutGrid, label: 'Overview', href: ROUTES.DASHBOARD.HOME },
+            {
+              id: 'overview',
+              icon: LayoutGrid,
+              label: 'Overview',
+              href: ROUTES.DASHBOARD.HOME,
+              permission: ALWAYS_OPEN,
+            },
             {
               id: 'activity',
+              permission: ALWAYS_OPEN,
               icon: TrendingUp,
               label: 'Activity Feed',
               href: ROUTES.DASHBOARD.ACTIVITY,
@@ -162,9 +188,11 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Customers',
+          permission: ALWAYS_OPEN,
           items: [
             {
               id: 'customers',
+              permission: 'customers.view',
               icon: Users,
               label: 'All Customers',
               href: ROUTES.CUSTOMERS.LIST,
@@ -174,9 +202,11 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Pipeline',
+          permission: ALWAYS_OPEN,
           items: [
             {
               id: 'followups',
+              permission: 'followups.view',
               icon: Calendar,
               label: 'Follow-ups',
               href: ROUTES.FOLLOWUPS.LIST,
@@ -185,6 +215,7 @@ export const navigationConfig: NavigationConfig = {
             },
             {
               id: 'pipeline',
+              permission: 'pipeline.view',
               icon: TrendingUp,
               label: 'Sales Funnel',
               href: ROUTES.PIPELINE.HOME,
@@ -199,9 +230,11 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Overview',
+          permission: ALWAYS_OPEN,
           items: [
             {
               id: 'quotes-dashboard',
+              permission: 'quotes.view',
               icon: LayoutGrid,
               label: 'Dashboard',
               href: ROUTES.QUOTES.DASHBOARD,
@@ -209,24 +242,28 @@ export const navigationConfig: NavigationConfig = {
             },
             {
               id: 'all-quotes',
+              permission: 'quotes.view',
               icon: FileText,
               label: 'All Quotes',
               href: ROUTES.QUOTES.LIST,
               children: [
                 {
                   id: 'drafts',
+                  permission: 'quotes.view',
                   icon: Edit,
                   label: 'Drafts',
                   href: `${ROUTES.QUOTES.LIST}?status=draft`,
                 },
                 {
                   id: 'sent',
+                  permission: 'quotes.view',
                   icon: Send,
                   label: 'Sent',
                   href: `${ROUTES.QUOTES.LIST}?status=sent`,
                 },
                 {
                   id: 'accepted',
+                  permission: 'quotes.view',
                   icon: CheckCircle,
                   label: 'Accepted',
                   href: `${ROUTES.QUOTES.LIST}?status=accepted`,
@@ -237,9 +274,11 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Tools',
+          permission: ALWAYS_OPEN,
           items: [
             {
               id: 'quote-builder',
+              permission: 'quotes.create',
               icon: Plus,
               label: 'Quote Builder',
               href: ROUTES.QUOTES.NEW,
@@ -255,9 +294,11 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Overview',
+          permission: ALWAYS_OPEN,
           items: [
             {
               id: 'projects-dashboard',
+              permission: 'projects.view',
               icon: Home,
               label: 'Dashboard',
               href: ROUTES.PROJECTS.DASHBOARD,
@@ -265,6 +306,7 @@ export const navigationConfig: NavigationConfig = {
             },
             {
               id: 'all-projects',
+              permission: 'projects.view',
               icon: List,
               label: 'Projects',
               href: ROUTES.PROJECTS.LIST,
@@ -280,9 +322,11 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'My Work',
+          permission: ALWAYS_OPEN,
           items: [
             {
               id: 'projects-my-tasks',
+              permission: ALWAYS_OPEN,
               icon: CheckSquare,
               label: 'My Tasks',
               href: ROUTES.PROJECTS.MY_TASKS,
@@ -298,9 +342,11 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Stock',
+          permission: ALWAYS_OPEN,
           items: [
             {
               id: 'inventory-dashboard',
+              permission: 'inventory.view',
               icon: LayoutGrid,
               label: 'Dashboard',
               href: ROUTES.INVENTORY.LIST,
@@ -308,18 +354,21 @@ export const navigationConfig: NavigationConfig = {
             },
             {
               id: 'all-inventory',
+              permission: 'inventory.view',
               icon: Package,
               label: 'All Stock',
               href: ROUTES.INVENTORY.STOCK,
             },
             {
               id: 'low-stock',
+              permission: 'inventory.view',
               icon: Package,
               label: 'Low Stock Alerts',
               href: ROUTES.INVENTORY.ALERTS,
             },
             {
               id: 'warehouses',
+              permission: 'inventory.view',
               icon: Box,
               label: 'Warehouses',
               href: ROUTES.INVENTORY.WAREHOUSES,
@@ -328,15 +377,18 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Procurement',
+          permission: ALWAYS_OPEN,
           items: [
             {
               id: 'purchase-orders',
+              permission: 'inventory.purchase_orders.view',
               icon: FileText,
               label: 'Purchase Orders',
               href: ROUTES.INVENTORY.PURCHASE_ORDERS,
             },
             {
               id: 'vendors',
+              permission: 'inventory.view',
               icon: Users,
               label: 'Vendors',
               href: ROUTES.INVENTORY.VENDORS,
@@ -345,21 +397,25 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Operations',
+          permission: ALWAYS_OPEN,
           items: [
             {
               id: 'allocations',
+              permission: 'inventory.view',
               icon: Layers,
               label: 'Allocations',
               href: ROUTES.INVENTORY.ALLOCATIONS,
             },
             {
               id: 'dispatches',
+              permission: 'inventory.view',
               icon: Send,
               label: 'Dispatches',
               href: ROUTES.INVENTORY.DISPATCHES,
             },
             {
               id: 'transactions',
+              permission: 'inventory.transactions.view',
               icon: List,
               label: 'Transactions',
               href: ROUTES.INVENTORY.TRANSACTIONS,
@@ -378,21 +434,25 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'MONEY',
+          permission: ALWAYS_OPEN,
           items: [
             {
               id: 'finance-cash',
+              permission: 'finance.view',
               icon: LayoutGrid,
               label: 'Cash',
               href: ROUTES.FINANCE.HOME,
             },
             {
               id: 'finance-receivables',
+              permission: 'finance.receivables.view',
               icon: FileBarChart,
               label: 'Receivables',
               href: ROUTES.FINANCE.RECEIVABLES,
             },
             {
               id: 'finance-approvals',
+              permission: 'finance.approvals.view',
               icon: CheckCircle,
               label: 'Payment Approvals',
               href: ROUTES.FINANCE.APPROVALS,
@@ -407,8 +467,15 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Tickets',
+          permission: ALWAYS_OPEN,
           items: [
-            { id: 'all-service', icon: Wrench, label: 'All Tickets', href: ROUTES.SERVICE.HOME },
+            {
+              id: 'all-service',
+              icon: Wrench,
+              label: 'All Tickets',
+              href: ROUTES.SERVICE.HOME,
+              permission: 'service.view',
+            },
           ],
         },
       ],
@@ -419,10 +486,18 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Resources',
+          permission: ALWAYS_OPEN,
           items: [
-            { id: 'documentation', icon: FileText, label: 'Documentation', href: ROUTES.HELP.DOCS },
+            {
+              id: 'documentation',
+              icon: FileText,
+              label: 'Documentation',
+              href: ROUTES.HELP.DOCS,
+              permission: ALWAYS_OPEN,
+            },
             {
               id: 'support',
+              permission: ALWAYS_OPEN,
               icon: HelpCircle,
               label: 'Contact Support',
               href: ROUTES.HELP.SUPPORT,
@@ -437,22 +512,25 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Identity & Access',
-          roles: ['admin', 'super_admin', 'platform_admin'],
+          permission: SUPERADMIN_ONLY,
           items: [
             {
               id: 'admin-users',
+              permission: SUPERADMIN_ONLY,
               icon: Users,
               label: 'Users',
               href: ROUTES.ADMIN.USERS,
             },
             {
               id: 'admin-roles',
+              permission: SUPERADMIN_ONLY,
               icon: Shield,
               label: 'Roles',
               href: ROUTES.ADMIN.ROLES,
             },
             {
               id: 'admin-permissions',
+              permission: SUPERADMIN_ONLY,
               icon: Key,
               label: 'Permissions',
               href: ROUTES.ADMIN.PERMISSIONS,
@@ -461,10 +539,11 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Utility network',
-          roles: ['super_admin'],
+          permission: SUPERADMIN_ONLY,
           items: [
             {
               id: 'admin-discom',
+              permission: SUPERADMIN_ONLY,
               icon: Zap,
               label: 'DISCOMs',
               href: ROUTES.ADMIN.DISCOM,
@@ -473,22 +552,25 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Catalog & Products',
-          roles: ['admin', 'super_admin', 'platform_admin'],
+          permission: SUPERADMIN_ONLY,
           items: [
             {
               id: 'admin-product-types',
+              permission: SUPERADMIN_ONLY,
               icon: Layers,
               label: 'Product Types',
               href: ROUTES.ADMIN.PRODUCT_TYPES,
             },
             {
               id: 'admin-brands',
+              permission: SUPERADMIN_ONLY,
               icon: Tag,
               label: 'Brands',
               href: ROUTES.ADMIN.BRANDS,
             },
             {
               id: 'admin-products',
+              permission: SUPERADMIN_ONLY,
               icon: Package,
               label: 'Products',
               href: ROUTES.ADMIN.PRODUCTS,
@@ -497,22 +579,25 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Pricing & Config',
-          roles: ['admin', 'super_admin', 'platform_admin'],
+          permission: SUPERADMIN_ONLY,
           items: [
             {
               id: 'admin-installation-pricing',
+              permission: SUPERADMIN_ONLY,
               icon: Wrench,
               label: 'Installation Pricing',
               href: ROUTES.ADMIN.INSTALLATION_PRICING,
             },
             {
               id: 'admin-quote-config',
+              permission: SUPERADMIN_ONLY,
               icon: FileText,
               label: 'Quote Config',
               href: ROUTES.ADMIN.QUOTE_CONFIG,
             },
             {
               id: 'admin-subsidy-config',
+              permission: SUPERADMIN_ONLY,
               icon: BadgePercent,
               label: 'Subsidy Rules',
               href: ROUTES.ADMIN.SUBSIDY_CONFIG,
@@ -521,10 +606,11 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Settings',
-          roles: ['admin', 'super_admin', 'platform_admin'],
+          permission: SUPERADMIN_ONLY,
           items: [
             {
               id: 'admin-lookups',
+              permission: SUPERADMIN_ONLY,
               icon: List,
               label: 'Lookups',
               href: ROUTES.ADMIN.LOOKUPS,
@@ -533,10 +619,11 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'Project',
-          roles: ['admin', 'super_admin', 'platform_admin'],
+          permission: SUPERADMIN_ONLY,
           items: [
             {
               id: 'admin-workflow-steps',
+              permission: SUPERADMIN_ONLY,
               icon: Settings,
               label: 'Workflow Steps',
               href: ROUTES.ADMIN.WORKFLOW_STEPS,

@@ -6,7 +6,6 @@ import { AlertCircle, Loader2, Search, X } from 'lucide-react';
 import { type JSX, useState, useCallback, useMemo } from 'react';
 
 import { PermissionDetailModal } from './permission-detail-modal';
-import { PERMISSION_ACTION_OPTIONS, PERMISSION_SCOPE_OPTIONS } from '../../constants';
 
 import { DataTable, EmptyState, TablePagination } from '@/components/shared';
 import {
@@ -20,8 +19,12 @@ import {
   SelectValue,
   Typography,
 } from '@/components/ui';
-import { usePermissions, type PermissionFilters } from '@/lib/hooks/resources';
+import { usePermissions } from '@/lib/hooks/resources';
 import type { AdminPermission } from '@/lib/hooks/resources/permissions';
+import { PERMISSIONS } from '@/lib/rbac';
+
+/** Module names, taken from the catalog so this list cannot drift from it. */
+const MODULES: string[] = [...new Set(PERMISSIONS.map((p) => p.module))];
 
 export function AdminPermissionsListPage(): JSX.Element {
   const {
@@ -76,31 +79,21 @@ export function AdminPermissionsListPage(): JSX.Element {
         ),
       },
       {
-        accessorKey: 'action',
-        header: 'Action',
+        accessorKey: 'module',
+        header: 'Module',
         enableSorting: false,
         cell: ({ row }) => (
           <Badge variant="secondary" size="xs" className="capitalize">
-            {row.original.action}
+            {row.original.module}
           </Badge>
         ),
       },
       {
-        accessorKey: 'scope',
-        header: 'Scope',
+        accessorKey: 'description',
+        header: 'What it unlocks',
         enableSorting: false,
         cell: ({ row }) => (
-          <Badge variant="secondary" size="xs">
-            {row.original.scope}
-          </Badge>
-        ),
-      },
-      {
-        accessorKey: 'permissionLevel',
-        header: 'Level',
-        enableSorting: false,
-        cell: ({ row }) => (
-          <span className="text-sm text-foreground-secondary">{row.original.permissionLevel}</span>
+          <span className="text-sm text-foreground-secondary">{row.original.description}</span>
         ),
       },
       {
@@ -201,41 +194,19 @@ export function AdminPermissionsListPage(): JSX.Element {
         </div>
         <div className="h-5 w-px bg-border-light" />
         <Select
-          value={(filters.action as string) || 'all_actions'}
-          onValueChange={(value) => {
-            setFilter(
-              'action',
-              (value === 'all_actions' ? undefined : value) as PermissionFilters['action'],
-            );
-          }}
+          value={(filters.module as string) || 'all_modules'}
+          onValueChange={(value) =>
+            setFilter('module', value === 'all_modules' ? undefined : value)
+          }
         >
-          <SelectTrigger className="w-[140px] h-8 text-sm">
-            <SelectValue placeholder="All Actions" />
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All modules" />
           </SelectTrigger>
           <SelectContent>
-            {PERMISSION_ACTION_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={(filters.scope as string) || 'all_scopes'}
-          onValueChange={(value) => {
-            setFilter(
-              'scope',
-              (value === 'all_scopes' ? undefined : value) as PermissionFilters['scope'],
-            );
-          }}
-        >
-          <SelectTrigger className="w-[140px] h-8 text-sm">
-            <SelectValue placeholder="All Scopes" />
-          </SelectTrigger>
-          <SelectContent>
-            {PERMISSION_SCOPE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
+            <SelectItem value="all_modules">All modules</SelectItem>
+            {MODULES.map((m) => (
+              <SelectItem key={m} value={m} className="capitalize">
+                {m}
               </SelectItem>
             ))}
           </SelectContent>

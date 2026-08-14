@@ -300,7 +300,7 @@ export const QuoteDetailHeader = React.memo(
                 </ListItemIcon>
                 <ListItemText>Create New Quote</ListItemText>
               </MenuItem>
-              <Can permission="quotes:delete">
+              <Can permission="quotes.delete">
                 {canDelete && (
                   <MenuItem onClick={handleDeleteClick} sx={{ color: 'error.main' }}>
                     <ListItemIcon>

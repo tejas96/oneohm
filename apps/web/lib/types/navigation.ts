@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 
 import { ROUTES } from '@/lib/config/routes';
+import type { Gate } from '@/lib/rbac/catalog';
 
 /**
  * Navigation Types for OneOhm EPC Web
@@ -13,19 +14,14 @@ import { ROUTES } from '@/lib/config/routes';
  * - Sub-Items (Level 4): Nested items under panel items (expandable)
  */
 
-/** User roles for access control */
-export type UserRole =
-  | 'admin'
-  | 'super_admin'
-  | 'platform_admin'
-  | 'manager'
-  | 'sales'
-  | 'field_worker'
-  | 'viewer'
-  | 'inventory_manager'
-  | 'store'
-  | 'project_manager'
-  | 'accounts_manager';
+/**
+ * There is no `UserRole` union any more.
+ *
+ * Roles are created at runtime by the superadmin, so a fixed list of role
+ * names in the type system was always going to be wrong — and it was: it
+ * carried `manager`, `sales` and `viewer`, none of which existed in the
+ * database. Navigation gates on a permission `Gate` instead.
+ */
 
 /** Badge variants for navigation items */
 export type NavBadgeVariant = 'default' | 'primary' | 'warning' | 'error' | 'success' | 'info';
@@ -69,10 +65,15 @@ export interface NavItem {
   shortcut?: string;
   /** Explicit ordering (lower = first) */
   order?: number;
-  /** Roles that can see this item (empty = all roles) */
-  roles?: UserRole[];
-  /** Permissions required to see this item (any of these) */
-  permissions?: string[];
+  /**
+   * What the user needs to use this item. **Required, deliberately.**
+   *
+   * Making it optional would let a new nav item ship ungated and nobody would
+   * notice. Because it is required, adding one without a gate fails
+   * `npm run typecheck` — the compiler is the checklist. Use `ALWAYS_OPEN`
+   * when an item genuinely should be open to everyone.
+   */
+  permission: Gate;
   /** Nested sub-items (Level 4 navigation) */
   children?: NavItem[];
   /** Use exact path matching instead of prefix */
@@ -91,10 +92,8 @@ export interface NavSection {
   collapsible?: boolean;
   /** Default collapsed state (if collapsible) */
   defaultCollapsed?: boolean;
-  /** Roles that can see this section */
-  roles?: UserRole[];
-  /** Permissions required to see this section (any of these) */
-  permissions?: string[];
+  /** What the user needs to see this section. Required — see NavItem. */
+  permission: Gate;
 }
 
 /** Rail navigation item (top-level icons) */
@@ -148,78 +147,24 @@ export const exactPathMatcher: PathMatcher = (pathname, href) => {
   return cleanPathname === cleanHref;
 };
 
-/** User access context for filtering navigation */
-export interface UserAccessContext {
-  roles: string[];
-  permissions: string[];
+/**
+ * A nav item annotated with whether the current user may use it.
+ *
+ * Blocked items are kept and marked, not dropped. Hiding them would mean a
+ * user cannot discover what exists and therefore cannot know what to ask a
+ * superadmin for — the whole reason the access dialog exists.
+ */
+export type Gated<T> = T & { allowed: boolean };
+
+/** The `role` variants are gone. There is one question now: does this gate open? */
+export function hasAccess(item: { permission: Gate }, can: (gate: Gate) => boolean): boolean {
+  return can(item.permission);
 }
 
-/**
- * Filter navigation items by user roles and permissions
- * Returns items the user has access to
- */
-export function filterByAccess<T extends { roles?: UserRole[]; permissions?: string[] }>(
+/** Annotate items with `allowed` rather than filtering them out. */
+export function annotateAccess<T extends { permission: Gate }>(
   items: T[],
-  userAccess: UserAccessContext,
-): T[] {
-  return items.filter((item) => hasAccess(item, userAccess));
-}
-
-/**
- * Check if user has access to a nav item based on roles and permissions
- * - If no roles/permissions specified = accessible to all
- * - If roles specified = user must have at least one role
- * - If permissions specified = user must have at least one permission
- * - If both specified = user must satisfy BOTH conditions
- */
-const NAV_ADMIN_BYPASS_ROLES: readonly string[] = ['platform_admin', 'super_admin', 'admin'];
-
-export function hasAccess(
-  item: { roles?: UserRole[]; permissions?: string[] },
-  userAccess: UserAccessContext,
-): boolean {
-  const hasRoleRequirement = item.roles && item.roles.length > 0;
-  const hasPermissionRequirement = item.permissions && item.permissions.length > 0;
-
-  // No requirements = accessible to all
-  if (!hasRoleRequirement && !hasPermissionRequirement) {
-    return true;
-  }
-
-  // Admin bypass: platform_admin / super_admin / admin always see every nav item.
-  // Mirrors backend ADMIN_BYPASS_ROLES + auth-store permission bypass.
-  if (userAccess.roles.some((r) => NAV_ADMIN_BYPASS_ROLES.includes(r))) {
-    return true;
-  }
-
-  // Check role requirement
-  let roleMatch = true;
-  if (hasRoleRequirement) {
-    roleMatch = item.roles!.some((role) => userAccess.roles.includes(role));
-  }
-
-  // Check permission requirement
-  let permissionMatch = true;
-  if (hasPermissionRequirement) {
-    permissionMatch = item.permissions!.some((perm) => userAccess.permissions.includes(perm));
-  }
-
-  // Must satisfy both if both are specified
-  return roleMatch && permissionMatch;
-}
-
-/**
- * @deprecated Use filterByAccess instead
- * Filter navigation items by user role only
- */
-export function filterByRole<T extends { roles?: UserRole[] }>(
-  items: T[],
-  userRole: UserRole,
-): T[] {
-  return items.filter((item) => {
-    if (!item.roles || item.roles.length === 0) {
-      return true;
-    }
-    return item.roles.includes(userRole);
-  });
+  can: (gate: Gate) => boolean,
+): Gated<T>[] {
+  return items.map((item) => ({ ...item, allowed: can(item.permission) }));
 }

@@ -15,6 +15,7 @@ import {
   type CrmTone,
 } from '@/components/shared/crm-table';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useGatedAction } from '@/lib/rbac';
 import { crm } from '@/lib/theme/tokens';
 import { formatDate } from '@/lib/utils';
 
@@ -83,6 +84,38 @@ export interface FollowupListProps {
  * tab, /followups and — later — the dashboard widget, rather than each growing
  * its own table.
  */
+/**
+ * The Complete action, as its own component.
+ *
+ * It lives here rather than inline in `renderCell` because gating needs hooks,
+ * and a cell renderer is a plain callback — calling hooks there would break the
+ * rules of hooks the moment a row re-renders.
+ */
+function GatedCompleteButton({
+  followup,
+  onComplete,
+}: {
+  followup: FollowupResponse;
+  onComplete: (followup: FollowupResponse) => void;
+}): React.JSX.Element {
+  const { allowed, onGatedClick } = useGatedAction(
+    'followups.manage',
+    () => onComplete(followup),
+    'Complete follow-up',
+  );
+
+  return (
+    <Button
+      size="small"
+      onClick={onGatedClick}
+      aria-disabled={!allowed}
+      sx={allowed ? undefined : { opacity: 0.5 }}
+    >
+      Complete
+    </Button>
+  );
+}
+
 export function FollowupList({
   rows,
   loading,
@@ -191,9 +224,7 @@ export function FollowupList({
         renderCell: (row) => (
           <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
             {row.status === FollowupStatus.PENDING && (
-              <Button size="small" onClick={() => onComplete(row)}>
-                Complete
-              </Button>
+              <GatedCompleteButton followup={row} onComplete={onComplete} />
             )}
             <IconButton
               size="small"

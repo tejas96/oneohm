@@ -79,6 +79,7 @@ import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
+import { useGatedAction } from '@/lib/rbac';
 import { color, crm, radius } from '@/lib/theme/tokens';
 import { formatCurrency, getErrorMessage, toTitleLabel } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -346,6 +347,11 @@ function RowActionsMenu({
   const handleClose = (): void => setAnchorEl(null);
   const deleteReasons = getCustomerDeleteBlockReasons(customer);
   const deleteDisabled = deleteReasons.length > 0;
+  const deleteCustomer = useGatedAction(
+    'customers.delete',
+    () => onRequestDelete?.(customer),
+    'Delete customer',
+  );
   const deleteTooltip = formatDeleteBlockTooltip(deleteReasons);
 
   return (
@@ -419,9 +425,10 @@ function RowActionsMenu({
                 onClick={() => {
                   if (deleteDisabled) return;
                   handleClose();
-                  onRequestDelete?.(customer);
+                  deleteCustomer.onGatedClick();
                 }}
-                sx={{ color: 'error.main' }}
+                aria-disabled={!deleteCustomer.allowed}
+                sx={{ color: 'error.main', ...(deleteCustomer.allowed ? {} : { opacity: 0.5 }) }}
               >
                 <ListItemIcon>
                   <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
@@ -932,6 +939,19 @@ export function CustomerListPage(): JSX.Element {
 
   const [importOpen, setImportOpen] = useState(false);
 
+  const addCustomer = useGatedAction(
+    'customers.create',
+    () => {
+      void router.push(ROUTES.ONBOARDING.NEW);
+    },
+    'Add customer',
+  );
+  const importCustomers = useGatedAction(
+    'customers.create',
+    () => setImportOpen(true),
+    'Import customers',
+  );
+
   const rawLeadTemperature = searchParams.get('leadTemperature');
   const initialFilters = useMemo(() => {
     if (!rawLeadTemperature || rawLeadTemperature === 'all') return undefined;
@@ -1340,9 +1360,8 @@ export function CustomerListPage(): JSX.Element {
             variant="contained"
             startIcon={<AddIcon />}
             sx={{ mt: 0.5 }}
-            onClick={() => {
-              void router.push(ROUTES.ONBOARDING.NEW);
-            }}
+            onClick={addCustomer.onGatedClick}
+            aria-disabled={!addCustomer.allowed}
           >
             Add customer
           </Button>
@@ -1434,15 +1453,19 @@ export function CustomerListPage(): JSX.Element {
         </Box>
 
         <Stack direction="row" spacing={1.25} alignItems="center" sx={{ pt: { lg: 2.25 } }}>
-          <Button variant="outlined" size="small" onClick={() => setImportOpen(true)}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={importCustomers.onGatedClick}
+            aria-disabled={!importCustomers.allowed}
+          >
             Import
           </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => {
-              void router.push(ROUTES.ONBOARDING.NEW);
-            }}
+            onClick={addCustomer.onGatedClick}
+            aria-disabled={!addCustomer.allowed}
           >
             Add customer
           </Button>

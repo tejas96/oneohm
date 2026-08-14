@@ -36,6 +36,7 @@ import {
   type ProjectLedgerSummary,
 } from '@/lib/hooks/resources/ledger';
 import { usePaymentApprovals } from '@/lib/hooks/resources/payment-approvals';
+import { useGatedAction } from '@/lib/rbac';
 import { formatPaise } from '@/lib/utils/paise';
 
 /**
@@ -70,6 +71,19 @@ export function ProjectMoneyTab({
   const summary = useProjectLedger(projectId, { enabled: isActive });
   const entries = useProjectEntries(projectId, { enabled: isActive });
   const [dialog, setDialog] = useState<'receipt' | 'expense' | 'changeOrder' | null>(null);
+
+  // Money-moving controls. `useGatedAction` keeps them clickable so a blocked
+  // user gets told which permission they need, rather than a dead button.
+  const recordPayment = useGatedAction(
+    'finance.payments.record',
+    () => setDialog('receipt'),
+    'Record payment',
+  );
+  const recordExpense = useGatedAction(
+    'finance.payments.record',
+    () => setDialog('expense'),
+    'Record expense',
+  );
   const [reversing, setReversing] = useState<LedgerEntry | null>(null);
   const [waiving, setWaiving] = useState<MilestoneBalance | null>(null);
   const receiptPdf = useReceiptPdf();
@@ -113,10 +127,22 @@ export function ProjectMoneyTab({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button variant="contained" size="small" onClick={() => setDialog('receipt')}>
+        <Button
+          variant="contained"
+          size="small"
+          onClick={recordPayment.onGatedClick}
+          aria-disabled={!recordPayment.allowed}
+          sx={recordPayment.allowed ? undefined : { opacity: 0.5 }}
+        >
           Record payment
         </Button>
-        <Button variant="outlined" size="small" onClick={() => setDialog('expense')}>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={recordExpense.onGatedClick}
+          aria-disabled={!recordExpense.allowed}
+          sx={recordExpense.allowed ? undefined : { opacity: 0.5 }}
+        >
           Record expense
         </Button>
         <Button variant="outlined" size="small" onClick={() => setDialog('changeOrder')}>

@@ -22,19 +22,12 @@ export type {
   PanelConfig,
   NavigationConfig,
   PathMatcher,
-  UserRole,
-  UserAccessContext,
+  Gated,
   NavBadgeVariant,
   StatusDotColor,
 } from './navigation';
 
-export {
-  defaultPathMatcher,
-  exactPathMatcher,
-  filterByRole,
-  filterByAccess,
-  hasAccess,
-} from './navigation';
+export { defaultPathMatcher, exactPathMatcher, annotateAccess, hasAccess } from './navigation';
 
 // Navigation counts types
 export type {

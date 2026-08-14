@@ -259,10 +259,7 @@ export function QuotePreviewPanel({
                   </div>
                   <p className="text-xs text-foreground-secondary">
                     {panel.quantity} panels &times;{' '}
-                    <Can
-                      permission={'quotes.profitability'}
-                      fallback={<span>—</span>}
-                    >
+                    <Can permission={'quotes.profitability'} fallback={<span>—</span>}>
                       <span>{formatCurrencyDecimal(panel.pricePerWatt)}/W</span>
                     </Can>
                   </p>
@@ -306,10 +303,7 @@ export function QuotePreviewPanel({
                   </div>
                   <p className="text-xs text-foreground-secondary">
                     {panel.quantity} panels &times;{' '}
-                    <Can
-                      permission={'quotes.profitability'}
-                      fallback={<span>—</span>}
-                    >
+                    <Can permission={'quotes.profitability'} fallback={<span>—</span>}>
                       <span>{formatCurrencyDecimal(panel.pricePerWatt)}/W</span>
                     </Can>
                   </p>
@@ -518,10 +512,7 @@ export function QuotePreviewPanel({
                   <p className="text-sm font-medium">{inv.name}</p>
                   <p className="text-xs text-foreground-secondary">
                     {inv.brand} &middot; {inv.capacityKw}kW &middot; {inv.quantity} nos &times;{' '}
-                    <Can
-                      permission={'quotes.profitability'}
-                      fallback={<span>—</span>}
-                    >
+                    <Can permission={'quotes.profitability'} fallback={<span>—</span>}>
                       <span>{formatCurrencyDecimal(inv.unitPrice)}</span>
                     </Can>
                   </p>

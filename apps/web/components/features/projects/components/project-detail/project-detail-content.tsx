@@ -28,6 +28,7 @@ import { Alert } from '@/components/shared/alerts/alert';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { AccessDeniedContent, ALWAYS_OPEN, useCan } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils/error';
 import { recordRecentView } from '@/lib/utils/recent-views';
 import { useAuth } from '@/providers/auth-provider';
@@ -103,6 +104,9 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
   const { data: projectTeam = [], refetch: refetchTeam } = useProjectTeam(projectId);
   const { data: reportsData } = useProjectReports(projectId);
   const { user } = useAuth();
+  // Must sit above the early returns below — a hook that only runs on some
+  // renders changes the hook count between renders and React throws.
+  const { can } = useCan();
 
   const [editModalOpen, setEditModalOpen] = useState(false);
 
@@ -154,6 +158,9 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
     );
   }
 
+  const activeTabGate =
+    PROJECT_DETAIL_TABS.find((t) => t.value === activeTab)?.permission ?? ALWAYS_OPEN;
+
   const showStatusBanner =
     project.status !== ProjectStatus.ACTIVE && project.status !== ProjectStatus.COMPLETED;
 
@@ -177,66 +184,76 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
         reportsPendingCount={reportsData?.pendingCount}
       />
 
-      <Box className="mt-4">
-        <Box sx={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
-          <ProjectOverviewTab project={project} isActive={activeTab === 'overview'} />
+      {/* Guarded around the whole panel region, not per tab.
+          These tabs toggle with `display: none`, so every one of them stays
+          mounted and fires its data hooks regardless of which is showing.
+          Gating them individually would still let a blocked tab fetch. */}
+      {!can(activeTabGate) ? (
+        <Box className="mt-4 py-12">
+          <AccessDeniedContent gate={activeTabGate} />
         </Box>
+      ) : (
+        <Box className="mt-4">
+          <Box sx={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+            <ProjectOverviewTab project={project} isActive={activeTab === 'overview'} />
+          </Box>
 
-        <Box sx={{ display: activeTab === 'summary' ? 'block' : 'none' }}>
-          <ProjectSummaryTab
-            project={project}
-            projectId={projectId}
-            isActive={activeTab === 'summary'}
-          />
-        </Box>
+          <Box sx={{ display: activeTab === 'summary' ? 'block' : 'none' }}>
+            <ProjectSummaryTab
+              project={project}
+              projectId={projectId}
+              isActive={activeTab === 'summary'}
+            />
+          </Box>
 
-        <Box sx={{ display: activeTab === 'tasks' ? 'block' : 'none' }}>
-          <ProjectTasksTab
-            projectId={projectId}
-            project={project}
-            isActive={activeTab === 'tasks'}
-          />
-        </Box>
+          <Box sx={{ display: activeTab === 'tasks' ? 'block' : 'none' }}>
+            <ProjectTasksTab
+              projectId={projectId}
+              project={project}
+              isActive={activeTab === 'tasks'}
+            />
+          </Box>
 
-        <Box sx={{ display: activeTab === 'documents' ? 'block' : 'none' }}>
-          <ProjectDocumentsTab projectId={projectId} propertyId={project.propertyId} />
-        </Box>
+          <Box sx={{ display: activeTab === 'documents' ? 'block' : 'none' }}>
+            <ProjectDocumentsTab projectId={projectId} propertyId={project.propertyId} />
+          </Box>
 
-        <Box sx={{ display: activeTab === 'finance' ? 'block' : 'none' }}>
-          {/* `project` supplies the receipt's customer, site and project header
+          <Box sx={{ display: activeTab === 'finance' ? 'block' : 'none' }}>
+            {/* `project` supplies the receipt's customer, site and project header
               with no extra request — the Money tab has no such data of its own. */}
-          <ProjectMoneyTab
-            projectId={projectId}
-            project={project}
-            isActive={activeTab === 'finance'}
-          />
-        </Box>
+            <ProjectMoneyTab
+              projectId={projectId}
+              project={project}
+              isActive={activeTab === 'finance'}
+            />
+          </Box>
 
-        <Box sx={{ display: activeTab === 'bom' ? 'block' : 'none' }}>
-          <ProjectBomTab projectId={projectId} defaultWarehouseId={project.defaultWarehouseId} />
-        </Box>
+          <Box sx={{ display: activeTab === 'bom' ? 'block' : 'none' }}>
+            <ProjectBomTab projectId={projectId} defaultWarehouseId={project.defaultWarehouseId} />
+          </Box>
 
-        <Box sx={{ display: activeTab === 'allocations' ? 'block' : 'none' }}>
-          <ProjectAllocationsTab projectId={projectId} isActive={activeTab === 'allocations'} />
-        </Box>
+          <Box sx={{ display: activeTab === 'allocations' ? 'block' : 'none' }}>
+            <ProjectAllocationsTab projectId={projectId} isActive={activeTab === 'allocations'} />
+          </Box>
 
-        <Box sx={{ display: activeTab === 'reports' ? 'block' : 'none' }}>
-          <ProjectReportsTab projectId={projectId} />
-        </Box>
+          <Box sx={{ display: activeTab === 'reports' ? 'block' : 'none' }}>
+            <ProjectReportsTab projectId={projectId} />
+          </Box>
 
-        <Box sx={{ display: activeTab === 'surveys' ? 'block' : 'none' }}>
-          <ProjectSurveysTab propertyId={project.propertyId} />
-        </Box>
+          <Box sx={{ display: activeTab === 'surveys' ? 'block' : 'none' }}>
+            <ProjectSurveysTab propertyId={project.propertyId} />
+          </Box>
 
-        <Box sx={{ display: activeTab === 'service' ? 'block' : 'none' }}>
-          <EntityServiceTicketsTab
-            scope="project"
-            id={projectId}
-            customerId={project.property?.customerId}
-            enabled={activeTab === 'service'}
-          />
+          <Box sx={{ display: activeTab === 'service' ? 'block' : 'none' }}>
+            <EntityServiceTicketsTab
+              scope="project"
+              id={projectId}
+              customerId={project.property?.customerId}
+              enabled={activeTab === 'service'}
+            />
+          </Box>
         </Box>
-      </Box>
+      )}
 
       <EditProjectModal
         open={editModalOpen}

@@ -10,6 +10,7 @@ import { RolePermissionsPanel } from './role-permissions-panel';
 import { Badge, Button, Typography } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import { useRole } from '@/lib/hooks/resources';
+import { SUPER_ADMIN_ROLE } from '@/lib/stores/auth-store';
 import { getErrorMessage } from '@/lib/utils';
 
 interface AdminRoleDetailPageProps {
@@ -95,13 +96,35 @@ export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps): JSX.E
               <p className="text-sm text-foreground-tertiary mt-2">{role.description}</p>
             )}
           </div>
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            <Edit className="mr-2 size-4" /> Edit
-          </Button>
+          {!role.isSystemRole && (
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+              <Edit className="mr-2 size-4" /> Edit
+            </Button>
+          )}
         </div>
       </div>
 
-      <RolePermissionsPanel roleId={roleId} currentPermissions={stablePermissions} />
+      {role.isSystemRole ? (
+        // No checkbox grid for the bypass roles. They hold no grants, so the
+        // grid would be 42 empty boxes and read as a broken screen rather than
+        // as "this role already has everything".
+        <div className="rounded-lg border border-border bg-background-secondary p-6">
+          <Typography variant="h4" className="mb-1">
+            Full access
+          </Typography>
+          <p className="text-sm text-foreground-secondary">
+            {role.code === SUPER_ADMIN_ROLE
+              ? 'Superadmins pass every permission check, including the admin panel. There is nothing to configure.'
+              : 'Admins pass every permission check except the admin panel. There is nothing to configure.'}
+          </p>
+          <p className="mt-3 text-sm text-foreground-tertiary">
+            This is deliberate: a built-in role that held a fixed list of permissions would silently
+            miss any permission added later.
+          </p>
+        </div>
+      ) : (
+        <RolePermissionsPanel roleId={roleId} currentPermissions={stablePermissions} />
+      )}
 
       {editOpen && (
         <EditRoleModal

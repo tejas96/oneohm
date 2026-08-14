@@ -124,15 +124,15 @@ export function middleware(request: NextRequest): NextResponse | undefined {
     const hasFullAccess = roles.some((role) => FULL_ACCESS_ROLES.includes(role));
 
     const allowed =
-      gate === SUPERADMIN_ONLY
-        ? isSuperAdmin
-        : hasFullAccess || permissions.includes(gate);
+      gate === SUPERADMIN_ONLY ? isSuperAdmin : hasFullAccess || permissions.includes(gate);
 
     if (!allowed) {
-      const deniedUrl = new URL('/denied', request.url);
-      if (gate !== SUPERADMIN_ONLY) deniedUrl.searchParams.set('perm', gate);
-      deniedUrl.searchParams.set('from', pathname);
-      return NextResponse.rewrite(deniedUrl);
+      // A rewrite, not a redirect: the address bar keeps the URL the user
+      // asked for, so the deny page can work out which gate it was from the
+      // path. No query params — a rewrite target's search string is not
+      // readable from `useSearchParams()` on the client, so passing the code
+      // that way looks like it works and silently does not.
+      return NextResponse.rewrite(new URL('/denied', request.url));
     }
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
@@ -8,9 +8,11 @@ import { useFollowupSummary } from '@/components/features/followups';
 import { useMyTasksSummary } from '@/components/features/tasks';
 import { Badge } from '@/components/ui/badge';
 import { isAllProjectsNavActive, isProjectStatusSubItemActive, ROUTES } from '@/lib/config';
-import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
+import { getFilteredPanelByPath, useRoutes } from '@/lib/hooks';
 import { useApprovalSummary } from '@/lib/hooks/resources/payment-approvals';
-import type { NavItem, NavBadgeVariant, StatusDotColor } from '@/lib/types';
+import { useFilteredNavigation, type GatedNavItem } from '@/lib/hooks/use-filtered-navigation';
+import { useAccessDialog } from '@/lib/rbac';
+import type { NavBadgeVariant, StatusDotColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 interface PanelProps {
@@ -55,6 +57,7 @@ const BADGE_VARIANT_MAP: Record<
 export function Panel({ isOpen, onClose, className }: PanelProps) {
   const { pathname, searchParams } = useRoutes();
   const { navigation } = useFilteredNavigation();
+  const { requestAccess } = useAccessDialog();
   const panelData = getFilteredPanelByPath(navigation, pathname);
   const isMyTasksPage = pathname === ROUTES.PROJECTS.MY_TASKS;
   const { data: tasksSummary } = useMyTasksSummary({ enabled: !isMyTasksPage });
@@ -103,7 +106,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
   const { config } = panelData;
 
   // Render a single nav item (supports both regular items and sub-items)
-  const renderNavItem = (item: NavItem, isSubItem = false) => {
+  const renderNavItem = (item: GatedNavItem, isSubItem = false) => {
     // Determine active state using proper matching logic:
     // 1. Items with query params → exact full URL match only
     // 2. Items with exactMatch: true → exact pathname match only
@@ -156,6 +159,46 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
       ? BADGE_VARIANT_MAP[resolvedBadgeVariant]
       : 'secondary';
 
+    const inner = (
+      <>
+        {/* Status dot (for lead temperature) - 8px for better visibility */}
+        {item.statusDot && (
+          <span
+            className={cn('size-2 rounded-full mr-2 shrink-0', STATUS_DOT_COLORS[item.statusDot])}
+          />
+        )}
+
+        {/* Icon (for regular items without status dot) */}
+        {!item.statusDot && Icon && <Icon className="size-icon-sm mr-2.5 shrink-0" />}
+
+        <span className="flex-1 truncate">{item.label}</span>
+
+        {/* Badge with variant (static or dynamic). Hidden when blocked — a
+            count of records you cannot open leaks the very thing being gated. */}
+        {displayBadge !== undefined && item.allowed && (
+          <Badge variant={badgeVariant} size="xs" className="ml-2">
+            {displayBadge}
+          </Badge>
+        )}
+      </>
+    );
+
+    // Blocked items stay visible but do not navigate; clicking explains why.
+    if (!item.allowed) {
+      return (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => requestAccess(item.permission, item.label)}
+          className={cn('panel-item w-full text-left opacity-40', isSubItem && 'sub-item')}
+          aria-disabled="true"
+        >
+          {inner}
+          <Lock className="size-icon-2xs ml-2 shrink-0" />
+        </button>
+      );
+    }
+
     return (
       <Link
         key={item.id}
@@ -171,24 +214,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         target={item.external ? '_blank' : undefined}
         rel={item.external ? 'noopener noreferrer' : undefined}
       >
-        {/* Status dot (for lead temperature) - 8px for better visibility */}
-        {item.statusDot && (
-          <span
-            className={cn('size-2 rounded-full mr-2 shrink-0', STATUS_DOT_COLORS[item.statusDot])}
-          />
-        )}
-
-        {/* Icon (for regular items without status dot) */}
-        {!item.statusDot && Icon && <Icon className="size-icon-sm mr-2.5 shrink-0" />}
-
-        <span className="flex-1 truncate">{item.label}</span>
-
-        {/* Badge with variant (static or dynamic) */}
-        {displayBadge !== undefined && (
-          <Badge variant={badgeVariant} size="xs" className="ml-2">
-            {displayBadge}
-          </Badge>
-        )}
+        {inner}
       </Link>
     );
   };
