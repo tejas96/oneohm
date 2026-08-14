@@ -1,46 +1,28 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 
 import { PermissionEntity } from '../entities/permission.entity';
 
 export interface PermissionListFilters {
   search?: string;
-  action?: string;
-  scope?: string;
+  module?: string;
 }
 
+/**
+ * Read-only.
+ *
+ * The catalog is fixed in `apps/web/lib/rbac/catalog.ts` and written to this
+ * table by migration, so there is nothing here to create, update or delete.
+ * The write methods were removed along with the controller endpoints that
+ * called them — see 1855000000000-ResetRbacCatalog.
+ */
 @Injectable()
 export class PermissionRepository {
   constructor(
     @InjectRepository(PermissionEntity)
     public readonly repository: Repository<PermissionEntity>,
   ) {}
-
-  async findByCode(code: string): Promise<PermissionEntity | null> {
-    return this.repository.findOne({
-      where: { code, isActive: true },
-    });
-  }
-
-  async findByCodes(codes: string[]): Promise<PermissionEntity[]> {
-    return this.repository.find({
-      where: { code: In(codes), isActive: true },
-    });
-  }
-
-  async findByScope(
-    scope: 'all' | 'own' | 'department' | 'assigned' | 'custom',
-  ): Promise<PermissionEntity[]> {
-    return this.repository.find({
-      where: { scope, isActive: true },
-    });
-  }
-
-  async create(data: Partial<PermissionEntity>): Promise<PermissionEntity> {
-    const permission = this.repository.create(data);
-    return this.repository.save(permission);
-  }
 
   async findOne(
     criteria: Parameters<Repository<PermissionEntity>['findOne']>[0],
@@ -62,37 +44,13 @@ export class PermissionRepository {
       });
     }
 
-    if (filters?.action) {
-      qb.andWhere('permission.action = :action', { action: filters.action });
+    if (filters?.module) {
+      qb.andWhere('permission.module = :module', { module: filters.module });
     }
 
-    if (filters?.scope) {
-      qb.andWhere('permission.scope = :scope', { scope: filters.scope });
-    }
-
-    qb.orderBy('permission.action', 'ASC').addOrderBy('permission.name', 'ASC');
+    qb.orderBy('permission.module', 'ASC').addOrderBy('permission.name', 'ASC');
     qb.skip(skip).take(take);
 
     return qb.getManyAndCount();
-  }
-
-  async findAll(): Promise<PermissionEntity[]> {
-    return this.repository.find({
-      where: { isActive: true },
-      order: { action: 'ASC', name: 'ASC' },
-    });
-  }
-
-  async update(id: string, data: Partial<PermissionEntity>): Promise<void> {
-    const permission = await this.repository.findOne({ where: { id } });
-    if (!permission) {
-      throw new NotFoundException(`Permission with ID ${id} not found`);
-    }
-    Object.assign(permission, data);
-    await this.repository.save(permission);
-  }
-
-  async delete(id: string): Promise<void> {
-    await this.repository.delete(id);
   }
 }

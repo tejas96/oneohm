@@ -14,22 +14,19 @@ import { plainToInstance } from 'class-transformer';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { NotificationResponseDto } from '../dto/notification-response.dto';
 import { NotificationService } from '../services/notification.service';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
 @Controller('notifications')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   /**
    * Get unread count — MUST be before :id
    */
-  @RequirePermission('notifications:read')
   @Get('unread-count')
   @ApiOperation({ summary: 'Get unread notification count for current user' })
   async getUnreadCount(@CurrentUser() currentUser: CurrentUserType): Promise<{ count: number }> {
@@ -40,7 +37,6 @@ export class NotificationController {
   /**
    * Mark all notifications as read
    */
-  @RequirePermission('notifications:read')
   @Post('mark-all-read')
   @ApiOperation({ summary: 'Mark all notifications as read for current user' })
   async markAllRead(@CurrentUser() currentUser: CurrentUserType): Promise<{ message: string }> {
@@ -51,7 +47,6 @@ export class NotificationController {
   /**
    * Get all notifications for current user
    */
-  @RequirePermission('notifications:read')
   @Get()
   @ApiOperation({ summary: 'Get notifications for current user' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -86,7 +81,6 @@ export class NotificationController {
   /**
    * Mark notification as read
    */
-  @RequirePermission('notifications:read')
   @Patch(':id/read')
   @ApiOperation({ summary: 'Mark a notification as read' })
   async markRead(

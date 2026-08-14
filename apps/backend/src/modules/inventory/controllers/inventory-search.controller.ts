@@ -2,8 +2,6 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../../auth/guards';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { InventorySearchQueryDto } from '../dto';
 import {
   InventorySearchService,
@@ -18,11 +16,10 @@ import {
 @ApiTags('Inventory - Search')
 @ApiBearerAuth()
 @Controller('inventory')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class InventorySearchController {
   constructor(private readonly inventorySearchService: InventorySearchService) {}
 
-  @RequirePermission('inventory:search')
   @Get('search')
   @ApiOperation({
     summary: 'Federated inventory search',

@@ -25,8 +25,6 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { CreateProjectVendorDto, ProjectVendorResponseDto, UpdateProjectVendorDto } from '../dto';
 import { ProjectVendorService } from '../services';
 
@@ -38,7 +36,7 @@ import { ProjectVendorService } from '../services';
 @ApiTags('Inventory - Project Vendors')
 @ApiBearerAuth()
 @Controller('project-vendors')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class ProjectVendorController {
   constructor(private readonly projectVendorService: ProjectVendorService) {}
 
@@ -47,7 +45,6 @@ export class ProjectVendorController {
   /**
    * Get all vendors for a project
    */
-  @RequirePermission('inventory:read')
   @Get('project/:projectId')
   @ApiOperation({ summary: 'Get vendors by project' })
   async findByProject(
@@ -62,7 +59,6 @@ export class ProjectVendorController {
   /**
    * Get total contract value for a project
    */
-  @RequirePermission('inventory:read')
   @Get('project/:projectId/contract-value')
   @ApiOperation({ summary: 'Get total contract value for a project' })
   async getTotalContractValue(
@@ -75,7 +71,6 @@ export class ProjectVendorController {
   /**
    * Get active vendors for a project
    */
-  @RequirePermission('inventory:read')
   @Get('project/:projectId/active')
   @ApiOperation({ summary: 'Get active vendors for a project' })
   async getActiveVendors(
@@ -90,7 +85,6 @@ export class ProjectVendorController {
   /**
    * Get all projects for a vendor
    */
-  @RequirePermission('inventory:read')
   @Get('vendor/:vendorId')
   @ApiReadAll({ summary: 'Get projects by vendor', responseType: ProjectVendorResponseDto })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -127,7 +121,6 @@ export class ProjectVendorController {
   /**
    * Assign vendor to project
    */
-  @RequirePermission('inventory:write')
   @Post()
   @ApiCreate({
     summary: 'Assign vendor to project',
@@ -151,7 +144,6 @@ export class ProjectVendorController {
   /**
    * Get project-vendor by ID
    */
-  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({ summary: 'Get project-vendor by ID', responseType: ProjectVendorResponseDto })
   async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<ProjectVendorResponseDto> {
@@ -164,7 +156,6 @@ export class ProjectVendorController {
   /**
    * Update project-vendor relationship
    */
-  @RequirePermission('inventory:write')
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update project-vendor',
@@ -183,7 +174,6 @@ export class ProjectVendorController {
   /**
    * Remove vendor from project
    */
-  @RequirePermission('inventory:write')
   @Delete(':id')
   @ApiDelete({ summary: 'Remove vendor from project' })
   async remove(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
@@ -194,7 +184,6 @@ export class ProjectVendorController {
   /**
    * Change vendor status
    */
-  @RequirePermission('inventory:write')
   @Patch(':id/status')
   @ApiOperation({ summary: 'Change vendor status in project' })
   async changeStatus(

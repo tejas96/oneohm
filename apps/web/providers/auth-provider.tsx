@@ -13,7 +13,7 @@ import {
 } from 'react';
 
 import apiClient, { clearTokens, getRefreshToken, setTokens } from '@/lib/api/client';
-import { useAuthStore } from '@/lib/stores/auth-store';
+import { FULL_ACCESS_ROLES, useAuthStore } from '@/lib/stores/auth-store';
 import type {
   AuthUser,
   ForgotPasswordByPhoneData,
@@ -325,11 +325,47 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     queryClient.clear();
   }, [queryClient, storeLogout]);
 
-  const refreshUser = useCallback((): Promise<User | null> => {
-    // Since login response has full user data, refreshUser can just return cached user
-    // For actual refresh from server, user needs to re-login
-    return Promise.resolve(user);
-  }, [user]);
+  /**
+   * Pull roles and permissions fresh from the server.
+   *
+   * Permissions are baked into the JWT at login, so without this a change a
+   * superadmin makes would not reach the user until their token expired.
+   * Called once on mount, so a change lands on their next page load.
+   *
+   * Merges rather than replaces: `/auth/me` returns the core user record but
+   * not `profiles`, and overwriting the stored user wholesale would drop them.
+   *
+   * On failure it returns the cached user and leaves the store alone. A
+   * network blip must never look like "you lost all your permissions".
+   */
+  const refreshUser = useCallback(async (): Promise<User | null> => {
+    const current = userRef.current;
+    if (!current) return null;
+
+    try {
+      const { data } = await apiClient.get<{ roles?: string[]; permissions?: string[] }>(
+        '/auth/me',
+      );
+
+      const next: User = {
+        ...current,
+        roles: data.roles ?? current.roles,
+        permissions: data.permissions ?? current.permissions,
+      };
+
+      setUser(next);
+      return next;
+    } catch {
+      return current;
+    }
+  }, [setUser]);
+
+  // Refresh access on mount, once auth has settled. `refreshUser` reads the
+  // user through a ref, so it is stable and this cannot loop.
+  useEffect(() => {
+    if (!isInitialized) return;
+    void refreshUser();
+  }, [isInitialized, refreshUser]);
 
   // Permission helpers - use Zustand store's methods
   const storeHasPermission = useAuthStore((state) => state.hasPermission);
@@ -415,11 +451,14 @@ export function useAuth(): AuthContextType {
 }
 
 /**
- * Hook to check if current user is admin
+ * Hook to check if the current user holds a full-access role.
+ *
+ * Reads the shared `FULL_ACCESS_ROLES` rather than repeating the names, so
+ * this cannot drift from the bypass the permission helpers actually use.
  */
 export function useIsAdmin(): boolean {
   const { hasAnyRole } = useAuth();
-  return hasAnyRole(['admin', 'super_admin', 'platform_admin']);
+  return hasAnyRole([...FULL_ACCESS_ROLES]);
 }
 
 /**

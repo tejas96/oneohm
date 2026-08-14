@@ -25,8 +25,6 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
   BulkCancelDto,
   BulkIdsDto,
@@ -48,7 +46,7 @@ import { InventoryBulkService, PurchaseOrderService, PurchaseOrderStatsService }
 @ApiTags('Inventory - Purchase Orders')
 @ApiBearerAuth()
 @Controller('purchase-orders')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class PurchaseOrderController {
   constructor(
     private readonly purchaseOrderService: PurchaseOrderService,
@@ -61,7 +59,6 @@ export class PurchaseOrderController {
   /**
    * Bulk approve POs (best-effort: returns per-id succeeded/failed at HTTP 200)
    */
-  @RequirePermission('purchase-order:approve')
   @Post('bulk/approve')
   @ApiOperation({
     summary: 'Bulk approve purchase orders (best-effort)',
@@ -78,7 +75,6 @@ export class PurchaseOrderController {
   /**
    * Bulk cancel POs (best-effort)
    */
-  @RequirePermission('purchase-order:write')
   @Post('bulk/cancel')
   @ApiOperation({
     summary: 'Bulk cancel purchase orders (best-effort)',
@@ -95,7 +91,6 @@ export class PurchaseOrderController {
   /**
    * Get purchase order statistics
    */
-  @RequirePermission('inventory:read')
   @Get('stats/summary')
   @ApiOperation({
     summary: 'Get purchase order statistics',
@@ -110,7 +105,6 @@ export class PurchaseOrderController {
     return this.purchaseOrderService.getStatistics();
   }
 
-  @RequirePermission('inventory:read')
   @Get('stats/spend-trend')
   @ApiOperation({ summary: 'PO spend trend bucketed by po_date (CANCELLED excluded)' })
   @ApiQuery({ name: 'fromDate', required: false, type: String })
@@ -125,7 +119,6 @@ export class PurchaseOrderController {
     return this.purchaseOrderStatsService.spendTrend(fromDate, toDate, bucket);
   }
 
-  @RequirePermission('inventory:read')
   @Get('stats/top-vendors')
   @ApiOperation({ summary: 'Top vendors by PO spend in window' })
   @ApiQuery({ name: 'fromDate', required: false, type: String })
@@ -140,7 +133,6 @@ export class PurchaseOrderController {
     return this.purchaseOrderStatsService.topVendors(fromDate, toDate, limit);
   }
 
-  @RequirePermission('inventory:read')
   @Get('stats/spend-by-warehouse')
   @ApiOperation({ summary: 'PO spend grouped by warehouse in window' })
   @ApiQuery({ name: 'fromDate', required: false, type: String })
@@ -155,7 +147,6 @@ export class PurchaseOrderController {
     return this.purchaseOrderStatsService.spendByWarehouse(fromDate, toDate, limit);
   }
 
-  @RequirePermission('inventory:read')
   @Get('stats/outstanding-by-vendor')
   @ApiOperation({ summary: 'Outstanding balance per vendor (now-snapshot)' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -169,7 +160,6 @@ export class PurchaseOrderController {
   /**
    * Get overdue purchase orders
    */
-  @RequirePermission('inventory:read')
   @Get('overdue/list')
   @ApiOperation({
     summary: 'Get overdue purchase orders',
@@ -190,7 +180,6 @@ export class PurchaseOrderController {
   /**
    * Create a new purchase order
    */
-  @RequirePermission('purchase-order:write')
   @Post()
   @ApiCreate({
     summary: 'Create a new purchase order',
@@ -211,7 +200,6 @@ export class PurchaseOrderController {
   /**
    * Get all purchase orders with filters
    */
-  @RequirePermission('inventory:read')
   @Get()
   @ApiReadAll({
     summary: 'Get all purchase orders',
@@ -273,7 +261,6 @@ export class PurchaseOrderController {
   /**
    * Get purchase order by ID
    */
-  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({
     summary: 'Get purchase order by ID',
@@ -294,7 +281,6 @@ export class PurchaseOrderController {
   /**
    * Update purchase order
    */
-  @RequirePermission('purchase-order:write')
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update purchase order',
@@ -316,7 +302,6 @@ export class PurchaseOrderController {
   /**
    * Delete purchase order
    */
-  @RequirePermission('purchase-order:write')
   @Delete(':id')
   @ApiDelete({
     summary: 'Delete purchase order',
@@ -334,7 +319,6 @@ export class PurchaseOrderController {
   /**
    * Submit purchase order for approval
    */
-  @RequirePermission('purchase-order:submit')
   @Post(':id/submit')
   @ApiOperation({ summary: 'Submit purchase order for approval' })
   async submitForApproval(
@@ -351,7 +335,6 @@ export class PurchaseOrderController {
   /**
    * Approve purchase order
    */
-  @RequirePermission('purchase-order:approve')
   @Post(':id/approve')
   @ApiOperation({ summary: 'Approve purchase order' })
   async approve(
@@ -368,7 +351,6 @@ export class PurchaseOrderController {
   /**
    * Send purchase order to vendor
    */
-  @RequirePermission('purchase-order:send')
   @Post(':id/send')
   @ApiOperation({ summary: 'Send purchase order to vendor' })
   async send(
@@ -385,7 +367,6 @@ export class PurchaseOrderController {
   /**
    * Receive purchase order items
    */
-  @RequirePermission('purchase-order:receive')
   @Post(':id/receive')
   @ApiOperation({ summary: 'Receive purchase order (full or partial)' })
   async receive(
@@ -405,7 +386,6 @@ export class PurchaseOrderController {
    * payment_status (pending | partial | paid). Disallowed for draft and
    * cancelled POs.
    */
-  @RequirePermission('purchase-order:write')
   @Post(':id/record-payment')
   @ApiOperation({ summary: 'Record a payment against a purchase order' })
   async recordPayment(
@@ -427,7 +407,6 @@ export class PurchaseOrderController {
   /**
    * Cancel purchase order
    */
-  @RequirePermission('purchase-order:write')
   @Post(':id/cancel')
   @ApiOperation({ summary: 'Cancel purchase order' })
   async cancel(

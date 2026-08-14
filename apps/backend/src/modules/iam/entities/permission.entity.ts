@@ -10,10 +10,22 @@ import {
 
 import { RolePermissionEntity } from './role-permission.entity';
 
+/**
+ * A permission code.
+ *
+ * The catalog is fixed in the web app (`apps/web/lib/rbac/catalog.ts`) and
+ * mirrored here by migration 1855000000000-ResetRbacCatalog so the superadmin
+ * role builder has something to list. Nothing creates rows at runtime — the
+ * write endpoints were removed, because a code with no UI wired to it gates
+ * nothing.
+ *
+ * The old model carried action/scope/conditions/permission_level and friends
+ * for an ABAC-style engine that was never built. Those columns are gone.
+ */
+// No index on `module`. The catalog is 42 rows and is read whole by the role
+// builder; an index would cost writes it never earns back on a table this size.
 @Entity('permissions')
 @Index(['code'], { unique: true })
-@Index(['action'])
-@Index(['scope'])
 export class PermissionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -27,49 +39,16 @@ export class PermissionEntity {
   @Column({ type: 'varchar', length: 100, unique: true })
   code!: string;
 
+  /** User-facing. Shown in the access dialog to whoever was just refused. */
   @Column({ type: 'text', nullable: true })
   description?: string;
 
+  /** Groups the checkbox list in the role builder. */
   @Column({ type: 'varchar', length: 50 })
-  action!: string;
-
-  @Column({
-    type: 'varchar',
-    length: 50,
-    default: 'all',
-  })
-  scope!: 'all' | 'own' | 'department' | 'assigned' | 'custom';
-
-  @Column({ name: 'conditions', type: 'jsonb', nullable: true })
-  conditionsData?: Record<string, unknown> | null;
-
-  @Column({
-    name: 'permission_level',
-    type: 'varchar',
-    length: 50,
-    default: 'standard',
-  })
-  permissionLevel!: 'basic' | 'standard' | 'advanced' | 'admin';
-
-  @Column({ name: 'show_in_menu', type: 'boolean', default: true })
-  showInMenu!: boolean;
-
-  @Column({ name: 'menu_label', type: 'varchar', length: 255, nullable: true })
-  menuLabel?: string;
-
-  @Column({
-    name: 'depends_on_permission_ids',
-    type: 'uuid',
-    array: true,
-    nullable: true,
-  })
-  dependsOnPermissionIds?: string[];
+  module!: string;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
-
-  @Column({ name: 'is_system_permission', type: 'boolean', default: true })
-  isSystemPermission!: boolean;
 
   @CreateDateColumn({
     name: 'created_at',

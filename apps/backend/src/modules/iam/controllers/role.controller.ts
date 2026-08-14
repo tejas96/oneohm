@@ -21,25 +21,25 @@ import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
-import { RequirePermission } from '../decorators/require-permission.decorator';
 import { RoleResponseDto, RoleWithPermissionsDto, PaginatedRolesDto } from '../dto/response';
 import { AssignPermissionsDto } from '../dto/roles/assign-permissions.dto';
 import { CreateRoleDto } from '../dto/roles/create-role.dto';
 import { UpdateRoleDto } from '../dto/roles/update-role.dto';
-import { PermissionGuard } from '../guards/permission.guard';
+import { SuperAdminGuard } from '../guards/super-admin.guard';
 import { RolePermissionRepository } from '../repositories/role-permission.repository';
 import { RoleRepository } from '../repositories/role.repository';
 
 /**
- * Role Controller - Admin UI for Role Management
- * Full CRUD operations for dynamic roles
+ * Role Controller — the backend for the superadmin role builder.
  *
- * Security: All endpoints require IAM admin permissions
+ * Reads are open to any logged-in user; the 6 write endpoints require
+ * `super_admin` via SuperAdminGuard. That guard is the only role check left in
+ * the backend — see its own doc comment for why this one survived.
  */
 @ApiTags('IAM - Roles')
 @ApiBearerAuth()
 @Controller('iam/roles')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class RoleController {
   constructor(
     private readonly roleRepository: RoleRepository,
@@ -51,7 +51,7 @@ export class RoleController {
    * Create a new role
    */
   @Post()
-  @RequirePermission('iam:roles:create')
+  @UseGuards(SuperAdminGuard)
   @ApiOperation({
     summary: 'Create a new role',
     description: 'Creates a new role',
@@ -78,7 +78,6 @@ export class RoleController {
    * Get all roles for current organization (paginated)
    */
   @Get()
-  @RequirePermission('iam:roles:read')
   @ApiOperation({
     summary: 'List all roles',
     description: 'Get paginated list of roles ',
@@ -119,7 +118,6 @@ export class RoleController {
    * Get role by ID with permissions
    */
   @Get(':id')
-  @RequirePermission('iam:roles:read')
   @ApiOperation({
     summary: 'Get role details',
     description: 'Get role by ID with assigned permissions',
@@ -146,13 +144,19 @@ export class RoleController {
    * Update role
    */
   @Patch(':id')
-  @RequirePermission('iam:roles:update')
+  @UseGuards(SuperAdminGuard)
   @ApiOperation({ summary: 'Update role', description: 'Update role details (not permissions)' })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateRoleDto: UpdateRoleDto,
     @CurrentUser() user: CurrentUserType,
   ): Promise<RoleResponseDto> {
+    const existing = await this.roleRepository.findWithPermissions(id);
+    if (!existing) {
+      throw new NotFoundException('Role not found');
+    }
+    this.assertNotSystemRole(existing);
+
     const role = await this.roleRepository.update(id, {
       ...updateRoleDto,
       updatedBy: user.id,
@@ -165,7 +169,7 @@ export class RoleController {
    * Delete role (soft delete)
    */
   @Delete(':id')
-  @RequirePermission('iam:roles:delete')
+  @UseGuards(SuperAdminGuard)
   @ApiOperation({
     summary: 'Delete role',
     description: 'Soft delete a role (system roles cannot be deleted)',
@@ -195,7 +199,7 @@ export class RoleController {
    * Assign permissions to role (replaces existing)
    */
   @Post(':id/permissions/sync')
-  @RequirePermission('iam:roles:assign-permissions')
+  @UseGuards(SuperAdminGuard)
   @ApiOperation({
     summary: 'Sync role permissions',
     description: 'Replace all role permissions with new set',
@@ -209,6 +213,7 @@ export class RoleController {
     if (!role) {
       throw new NotFoundException('Role not found');
     }
+    this.assertNotSystemRole(role);
 
     await this.rolePermissionRepository.syncPermissions(
       roleId,
@@ -226,7 +231,7 @@ export class RoleController {
    * Add permissions to role (keeps existing)
    */
   @Post(':id/permissions/add')
-  @RequirePermission('iam:roles:assign-permissions')
+  @UseGuards(SuperAdminGuard)
   @ApiOperation({
     summary: 'Add role permissions',
     description: 'Add new permissions to role (keeps existing)',
@@ -240,6 +245,7 @@ export class RoleController {
     if (!role) {
       throw new NotFoundException('Role not found');
     }
+    this.assertNotSystemRole(role);
 
     await this.rolePermissionRepository.assignPermissions(
       roleId,
@@ -257,7 +263,7 @@ export class RoleController {
    * Remove permissions from role
    */
   @Delete(':id/permissions')
-  @RequirePermission('iam:roles:assign-permissions')
+  @UseGuards(SuperAdminGuard)
   @ApiOperation({
     summary: 'Remove role permissions',
     description: 'Remove specific permissions from role',
@@ -270,6 +276,7 @@ export class RoleController {
     if (!role) {
       throw new NotFoundException('Role not found');
     }
+    this.assertNotSystemRole(role);
 
     if (assignPermissionsDto.permissionIds.length > 0) {
       await this.rolePermissionRepository.removePermissions(
@@ -282,5 +289,20 @@ export class RoleController {
       message: 'Permissions removed successfully',
       removed: assignPermissionsDto.permissionIds.length,
     };
+  }
+
+  /**
+   * `admin` and `super_admin` pass every check by bypass, not by holding
+   * permissions. Renaming one — its `code` above all — would silently break
+   * that bypass across the whole web app, and granting one permissions
+   * implies a control that does not exist. The UI hides these actions; this
+   * refuses them for anyone reaching the API directly.
+   */
+  private assertNotSystemRole(role: { code: string; isSystemRole: boolean }): void {
+    if (role.isSystemRole) {
+      throw new BadRequestException(
+        `The "${role.code}" role is built in and cannot be changed. It always has full access.`,
+      );
+    }
   }
 }

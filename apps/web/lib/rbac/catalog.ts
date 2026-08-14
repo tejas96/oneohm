@@ -314,6 +314,3 @@ export type Gate = PermissionCode | typeof ALWAYS_OPEN | typeof SUPERADMIN_ONLY;
 export const PERMISSION_BY_CODE = new Map<string, PermissionMeta>(
   PERMISSIONS.map((p) => [p.code, p]),
 );
-
-/** Module keys in the order the role builder should group them. */
-export const PERMISSION_MODULES = [...new Set(PERMISSIONS.map((p) => p.module))] as const;

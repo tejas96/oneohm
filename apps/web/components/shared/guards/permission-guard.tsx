@@ -1,11 +1,10 @@
 'use client';
 
-import { AlertTriangle } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { AuthGuard } from './auth-guard';
 
-import { useAuth } from '@/providers/auth-provider';
+import { AccessDeniedContent, useCan, type Gate } from '@/lib/rbac';
 
 interface PermissionGuardProps {
   children: ReactNode;
@@ -13,86 +12,58 @@ interface PermissionGuardProps {
   redirectTo?: string;
   /** Optional loading component */
   fallback?: ReactNode;
-  /** Required permission to access this route */
-  permission?: string;
-  /** Required role to access this route */
-  role?: string;
-  /** Component to show if user doesn't have permission */
+  /** Gate required to view this page */
+  permission: Gate;
+  /** Component to show when the gate is closed */
   forbidden?: ReactNode;
 }
 
 /**
- * Permission Guard Component
- * Wraps AuthGuard and also checks for specific permissions or roles.
+ * Page-level gate.
+ *
+ * Wraps AuthGuard and additionally checks one gate. The `role` prop this used
+ * to accept is gone — roles are created at runtime by the superadmin now, so
+ * hardcoding a role name in a component would break the moment someone
+ * renamed it. Gate on a permission code instead; `SUPERADMIN_ONLY` covers the
+ * one case that genuinely is role-shaped.
  */
 export function PermissionGuard({
   children,
   permission,
-  role,
   forbidden,
   ...authGuardProps
 }: PermissionGuardProps): React.JSX.Element | null {
   return (
     <AuthGuard {...authGuardProps}>
-      <PermissionCheck permission={permission} role={role} forbidden={forbidden}>
+      <PermissionCheck permission={permission} forbidden={forbidden}>
         {children}
       </PermissionCheck>
     </AuthGuard>
   );
 }
 
-/**
- * Internal component for permission/role checking
- */
 function PermissionCheck({
   children,
   permission,
-  role,
   forbidden,
 }: {
   children: ReactNode;
-  permission?: string;
-  role?: string;
+  permission: Gate;
   forbidden?: ReactNode;
 }): React.JSX.Element | null {
-  const { hasPermission, hasRole } = useAuth();
+  const { can } = useCan();
 
-  // Check permission
-  if (permission && !hasPermission(permission)) {
+  if (!can(permission)) {
     return (
       <>
-        {forbidden || <ForbiddenScreen message="You don't have permission to access this page." />}
-      </>
-    );
-  }
-
-  // Check role
-  if (role && !hasRole(role)) {
-    return (
-      <>
-        {forbidden || (
-          <ForbiddenScreen message={`You need the "${role}" role to access this page.`} />
+        {forbidden ?? (
+          <div className="min-h-screen flex items-center justify-center bg-background-secondary px-4">
+            <AccessDeniedContent gate={permission} />
+          </div>
         )}
       </>
     );
   }
 
   return <>{children}</>;
-}
-
-/**
- * Default forbidden screen
- */
-function ForbiddenScreen({ message }: { message: string }): React.JSX.Element {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background-secondary">
-      <div className="text-center max-w-md px-4">
-        <div className="size-container-xl mx-auto mb-4 rounded-full bg-error/10 flex items-center justify-center">
-          <AlertTriangle className="size-icon-xl text-error" />
-        </div>
-        <h2 className="text-xl font-semibold text-foreground mb-2">Access Denied</h2>
-        <p className="text-foreground-secondary text-sm">{message}</p>
-      </div>
-    </div>
-  );
 }

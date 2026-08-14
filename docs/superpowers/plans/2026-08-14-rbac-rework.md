@@ -453,7 +453,16 @@ Expected: **no output.** Any hit is a missed reference — fix it.
 - [ ] **Step 5: Confirm the two business-rule users are untouched**
 
 Run: `rg -n "hasAdminBypassRole" apps/backend/src`
-Expected: exactly two call sites remain — `modules/projects/guards/project-team.guard.ts` and `modules/inventory/services/low-stock-alert.service.ts`. These are business rules, not RBAC. If you deleted either, restore it.
+Expected: **6 files** still use it. All are business rules — "is this person an admin, so show them the whole project" — not permission enforcement. If you deleted any, restore it.
+
+```
+modules/projects/controllers/project.controller.ts   (2 call sites)
+modules/projects/guards/project-team.guard.ts
+modules/projects/services/project-team.service.ts
+modules/projects/services/project-task.service.ts
+modules/projects/services/project-chat.service.ts
+modules/inventory/services/low-stock-alert.service.ts  (uses ADMIN_BYPASS_ROLES directly)
+```
 
 - [ ] **Step 6: Verify**
 
@@ -1466,7 +1475,7 @@ Expected: clean.
 
 Manual, as superadmin:
 1. `/admin/permissions` lists 42 codes grouped into 9 modules, with no create/edit/delete.
-2. `/admin/roles` shows Superadmin and Admin locked, and the 16 shells editable with 0 permissions.
+2. `/admin/roles` shows Superadmin and Admin locked, and the 15 shells editable with 0 permissions.
 3. Create a role, tick permissions from at least three module groups, save, reopen — the ticks persisted.
 
 - [ ] **Step 5: Commit**
@@ -1587,6 +1596,6 @@ Carry these into the PR description:
 
 - **This is a UI lock, not a security lock.** Every endpoint except the 9 IAM write endpoints is reachable by any logged-in user through the API. Backend RBAC is a separate upcoming task.
 - **The migration is one-way.** The previous 110 permissions and their grants are gone permanently.
-- **All 16 non-system roles have zero permissions** after deployment. Existing staff keep their role assignments (1015 links survive) but can do nothing until a superadmin fills those roles in. Two of the 16 were created by hand through the UI and appear in no seed: `field_worker` (19 users) and `pricing_viewer` (2 users).
+- **All 15 non-system roles have zero permissions** after deployment. Existing staff keep their role assignments (1015 links survive) but can do nothing until a superadmin fills those roles in. Two of the 15 were created by hand through the UI and appear in no seed: `field_worker` (19 users) and `pricing_viewer` (2 users).
 - **`tejas.patil@beyondnyx.com` becomes a superadmin**, folded in from `platform_admin`, alongside `sanjay.oneohm@gmail.com`.
 - **There are no `admin.*` permission codes.** A future role that needs part of `/admin` requires a code change.

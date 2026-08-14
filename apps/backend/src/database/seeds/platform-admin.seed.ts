@@ -4,108 +4,64 @@ import * as bcrypt from 'bcrypt';
 
 import { AppModule } from '../../app.module';
 import { ConfigService } from '../../config/config.service';
-import { PermissionRepository } from '../../modules/iam/repositories/permission.repository';
-import { RolePermissionRepository } from '../../modules/iam/repositories/role-permission.repository';
 import { RoleRepository } from '../../modules/iam/repositories/role.repository';
 import { UserRoleRepository } from '../../modules/users/repositories/user-role.repository';
 import { UserRepository } from '../../modules/users/repositories/user.repository';
 
 /**
- * Seed Platform Admin Role and Assign to User
+ * Seed the superadmin user.
  *
- * Creates:
- * 1. Platform Admin role (organization_id = NULL)
- * 2. Platform User: platform@oneohm.com
- * 3. Assigns platform_admin role to the user
+ * Creates the superadmin login and links it to the `super_admin` role.
+ *
+ * It deliberately does NOT grant permissions. Superadmin and admin pass every
+ * check by bypass, not by holding rows in `role_permissions` — so granting
+ * them the catalog would be both redundant and a trap: the next permission
+ * added would silently miss them. This script used to assign every permission
+ * in the table to a `platform_admin` role; that role no longer exists and the
+ * grant would now hand out the whole new catalog on every re-run.
+ *
+ * The `super_admin` role itself is owned by migration
+ * 1855000000000-ResetRbacCatalog. This script only links a user to it.
  *
  * Usage:
- *   npm run seed:platform-admin
+ *   npm run seed:platform-admin        (from apps/backend)
  */
-async function seedPlatformAdmin() {
+async function seedSuperAdmin() {
   // eslint-disable-next-line no-console -- seed script progress output
-  console.log('🚀 Starting Platform Admin Seed...\n');
+  console.log('🚀 Starting Superadmin Seed...\n');
 
   const app = await NestFactory.createApplicationContext(AppModule);
 
   try {
     const configService = app.get(ConfigService);
     const roleRepository = app.get(RoleRepository);
-    const permissionRepository = app.get(PermissionRepository);
-    const rolePermissionRepository = app.get(RolePermissionRepository);
     const userRepository = app.get(UserRepository);
     const userRoleRepository = app.get(UserRoleRepository);
 
     // ============================================
-    // 1. Create Platform Admin Role (org_id = NULL)
+    // 1. Find the super_admin role (owned by migration)
     // ============================================
     // eslint-disable-next-line no-console -- seed script progress output
-    console.log('📝 Creating platform_admin role...');
+    console.log('📝 Looking up the super_admin role...');
 
-    // Use findPlatformRoleByCode for platform-level roles (org_id IS NULL)
-    const existingRole = await roleRepository.findPlatformRoleByCode('platform_admin');
+    const superAdminRole = await roleRepository.findPlatformRoleByCode('super_admin');
 
-    let platformAdminRole;
-    if (existingRole) {
-      // eslint-disable-next-line no-console -- seed script progress output
-      console.log('✅ platform_admin role already exists');
-      platformAdminRole = existingRole;
-    } else {
-      platformAdminRole = await roleRepository.create({
-        name: 'Platform Administrator',
-        code: 'platform_admin',
-        description: 'Full system access - SaaS provider only',
-        isSystemRole: true,
-        level: 0,
-      });
-      // eslint-disable-next-line no-console -- seed script progress output
-      console.log('✅ platform_admin role created');
-    }
-
-    // ============================================
-    // 2. Assign ALL permissions to platform_admin
-    // ============================================
-    // eslint-disable-next-line no-console -- seed script progress output
-    console.log('\n📝 Assigning permissions to platform_admin...');
-
-    const allPermissions = await permissionRepository.findAll();
-    // eslint-disable-next-line no-console -- seed script progress output
-    console.log(`Found ${allPermissions.length} permissions`);
-
-    // Batch-fetch existing permissions for this role (avoids N+1)
-    const existingRolePermissions = await rolePermissionRepository.findByRoleId(
-      platformAdminRole.id,
-    );
-    const existingPermissionIds = new Set(existingRolePermissions.map((rp) => rp.permissionId));
-    const permissionIdsToAssign = allPermissions
-      .filter((p) => !existingPermissionIds.has(p.id))
-      .map((p) => p.id);
-
-    // Assign new permissions in batch (createdBy is nullable, use null for system actions)
-    if (permissionIdsToAssign.length > 0) {
-      // Use direct repository to avoid createdBy requirement
-      const rolePermissions = permissionIdsToAssign.map((permissionId) =>
-        rolePermissionRepository.repository.create({
-          roleId: platformAdminRole.id,
-          permissionId,
-          createdBy: undefined, // System action, no specific user
-        }),
+    if (!superAdminRole) {
+      throw new Error(
+        'The super_admin role does not exist. Run migrations first:\n' +
+          '  cd apps/backend && npm run migration:run\n' +
+          'This seed links a user to that role; it does not create it.',
       );
-      await rolePermissionRepository.repository.save(rolePermissions);
-      // eslint-disable-next-line no-console -- seed script progress output
-      console.log(`✅ Assigned ${permissionIdsToAssign.length} new permissions to platform_admin`);
-    } else {
-      // eslint-disable-next-line no-console -- seed script progress output
-      console.log('✅ All permissions already assigned to platform_admin');
     }
 
     // eslint-disable-next-line no-console -- seed script progress output
-    console.log(`📊 Total permissions: ${allPermissions.length}`);
+    console.log('✅ Found super_admin role');
 
     // ============================================
-    // 3. Create Platform Admin User
+    // 2. Create the superadmin user
     // ============================================
     // eslint-disable-next-line no-console -- seed script progress output
-    console.log('\n📝 Creating platform admin user...');
+    console.log('\n📝 Creating superadmin user...');
 
     const {
       platformAdminEmail: email,
@@ -119,12 +75,12 @@ async function seedPlatformAdmin() {
       );
     }
 
-    let platformUser = await userRepository.findByEmail(email);
+    let superAdminUser = await userRepository.findByEmail(email);
 
-    if (!platformUser) {
+    if (!superAdminUser) {
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      platformUser = await userRepository.create({
+      superAdminUser = await userRepository.create({
         email,
         phone,
         passwordHash: hashedPassword,
@@ -137,42 +93,41 @@ async function seedPlatformAdmin() {
       });
 
       // eslint-disable-next-line no-console -- seed script progress output
-      console.log('✅ Platform admin user created');
+      console.log('✅ Superadmin user created');
       // eslint-disable-next-line no-console -- seed script progress output
       console.log(`   Email: ${email}`);
       // eslint-disable-next-line no-console -- seed script progress output
-      console.log(`   Password: ${password}`);
-      // eslint-disable-next-line no-console -- seed script progress output
-      console.log('   ⚠️  IMPORTANT: Change password in production!');
+      console.log('   ⚠️  Change this password in production.');
     } else {
       // eslint-disable-next-line no-console -- seed script progress output
-      console.log('✅ Platform admin user already exists');
+      console.log('✅ Superadmin user already exists');
     }
 
     // ============================================
-    // 4. Assign platform_admin role to user
+    // 3. Link the user to the role
     // ============================================
     // eslint-disable-next-line no-console -- seed script progress output
-    console.log('\n📝 Assigning platform_admin role to user...');
+    console.log('\n📝 Assigning super_admin role to the user...');
 
     const existingUserRole = await userRoleRepository.findByUserAndRole(
-      platformUser.id,
-      platformAdminRole.id,
+      superAdminUser.id,
+      superAdminRole.id,
     );
 
     if (!existingUserRole) {
-      // Use direct repository to set both legacy 'role' and new 'roleId'
+      // Direct repository access so both the legacy `role` string and the
+      // `roleId` FK are written. `role` is still NOT NULL in some environments.
       const userRole = userRoleRepository.repository.create({
-        userId: platformUser.id,
-        role: platformAdminRole.code, // Legacy role string (NOT NULL in DB)
-        roleId: platformAdminRole.id, // New IAM role UUID
+        userId: superAdminUser.id,
+        role: superAdminRole.code,
+        roleId: superAdminRole.id,
       });
       await userRoleRepository.repository.save(userRole);
       // eslint-disable-next-line no-console -- seed script progress output
-      console.log('✅ platform_admin role assigned to user');
+      console.log('✅ super_admin role assigned');
     } else {
       // eslint-disable-next-line no-console -- seed script progress output
-      console.log('✅ User already has platform_admin role');
+      console.log('✅ User already has the super_admin role');
     }
 
     // ============================================
@@ -181,41 +136,24 @@ async function seedPlatformAdmin() {
     // eslint-disable-next-line no-console -- seed script progress output
     console.log(`\n${'='.repeat(50)}`);
     // eslint-disable-next-line no-console -- seed script progress output
-    console.log('🎉 Platform Admin Setup Complete!');
+    console.log('🎉 Superadmin setup complete');
     // eslint-disable-next-line no-console -- seed script progress output
     console.log('='.repeat(50));
     // eslint-disable-next-line no-console -- seed script progress output
-    console.log('\n📋 Summary:');
+    console.log(`\n   Role:  ${superAdminRole.name} (${superAdminRole.code})`);
     // eslint-disable-next-line no-console -- seed script progress output
-    console.log(`   Role: ${platformAdminRole.name} (${platformAdminRole.code})`);
+    console.log(`   User:  ${superAdminUser.email}`);
     // eslint-disable-next-line no-console -- seed script progress output
-    console.log(`   User: ${platformUser.email}`);
-    // eslint-disable-next-line no-console -- seed script progress output
-    console.log(`   Permissions: ${allPermissions.length}`);
-    // eslint-disable-next-line no-console -- seed script progress output
-    console.log('\n🔐 Login Credentials:');
-    // eslint-disable-next-line no-console -- seed script progress output
-    console.log(`   Email: ${email}`);
-    // eslint-disable-next-line no-console -- seed script progress output
-    console.log(`   Password: ${password}`);
-    // eslint-disable-next-line no-console -- seed script progress output
-    console.log('\n⚠️  Security Warning:');
-    // eslint-disable-next-line no-console -- seed script progress output
-    console.log('   Change the default password immediately in production!');
-    // eslint-disable-next-line no-console -- seed script progress output
-    console.log('   Store credentials securely.');
-    // eslint-disable-next-line no-console -- seed script progress output
-    console.log('\n');
+    console.log('   Grants: 0 — superadmin passes every check by bypass.\n');
   } catch (error) {
-    console.error('❌ Error seeding platform admin:', error);
+    console.error('❌ Error seeding superadmin:', error);
     throw error;
   } finally {
     await app.close();
   }
 }
 
-// Run the seed
-seedPlatformAdmin()
+seedSuperAdmin()
   .then(() => {
     // eslint-disable-next-line no-console -- seed script progress output
     console.log('✅ Seed completed successfully');

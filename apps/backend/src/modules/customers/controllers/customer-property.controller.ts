@@ -28,8 +28,6 @@ import { toDto, toDtoArray, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
-import { RequireRole } from '../../iam/decorators/require-role.decorator';
-import { RoleGuard } from '../../iam/guards/role.guard';
 import {
   CreateCustomerPropertyDto,
   CustomerPropertyResponseDto,
@@ -347,8 +345,7 @@ export class CustomerPropertyController {
    * Delete property
    */
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @RequireRole('admin', 'super_admin')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete property',

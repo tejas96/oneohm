@@ -7,7 +7,6 @@ import React from 'react';
 
 import { Can } from '@/components/shared/guards';
 import { ROUTES } from '@/lib/config/routes';
-import { PERMISSIONS } from '@/lib/constants/permissions';
 import { formatCurrency } from '@/lib/utils/format';
 
 interface QuoteSidebarProps {
@@ -70,7 +69,7 @@ export function QuoteSidebar({
 
       {/* Profitability */}
       {profitPercent != null && profitAmount != null && (profitPercent > 0 || profitAmount > 0) && (
-        <Can permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}>
+        <Can permission={'quotes.profitability'}>
           <Paper
             variant="outlined"
             className="p-5 rounded-xl border border-border bg-white shadow-sm"

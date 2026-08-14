@@ -15,10 +15,9 @@ import { QuoteSystemConfigCard } from './overview/quote-system-config-card';
 import type { QuoteDetail } from '../../../hooks/types';
 
 import { Can } from '@/components/shared/guards';
-import { PERMISSIONS } from '@/lib/constants/permissions';
 import { type Bom } from '@/lib/hooks/resources';
+import { useCan } from '@/lib/rbac';
 import { formatDate } from '@/lib/utils/format';
-import { useAuth } from '@/providers/auth-provider';
 
 interface QuoteOverviewTabProps {
   quote: QuoteDetail;
@@ -44,10 +43,11 @@ export function QuoteOverviewTab({
   const breakdown = quote.quoteSnapshot?.pricing ?? quote.pricingBreakdown;
   const calcInputs = quote.quoteSnapshot?.inputs ?? quote.calculatorInputs;
 
-  const { hasPermission, hasAnyRole } = useAuth();
-  const canViewEquipmentPricing =
-    hasPermission(PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN) ||
-    hasAnyRole(['admin', 'superadmin', 'super_admin', 'platform_admin']);
+  // `hasPermission` already short-circuits for full-access roles, so the role
+  // check this used to carry was redundant — and it listed 'superadmin', a
+  // spelling that has never been a real role code.
+  const { can } = useCan();
+  const canViewEquipmentPricing = can('quotes.profitability');
 
   const activeSnapshot = quote.quoteSnapshot;
   const isOldData = useMemo(() => {
@@ -229,7 +229,7 @@ export function QuoteOverviewTab({
         {/* Right Side: Pricing cards and Sidebar Actions */}
         <div className="space-y-6">
           {/* Pricing Details */}
-          <Can permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}>
+          <Can permission={'quotes.profitability'}>
             <QuotePricingCard
               breakdown={breakdown}
               effectivePrice={quote.effectivePrice}
@@ -242,7 +242,7 @@ export function QuoteOverviewTab({
           {installationData &&
             ((installationData.totalBeforeTax ?? 0) > 0 ||
               (installationData.totalWithGst ?? 0) > 0) && (
-              <Can permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}>
+              <Can permission={'quotes.profitability'}>
                 <QuoteInstallationCard installationData={installationData} />
               </Can>
             )}

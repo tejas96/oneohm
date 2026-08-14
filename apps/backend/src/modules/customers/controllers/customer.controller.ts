@@ -24,8 +24,6 @@ import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
-import { RequireRole } from '../../iam/decorators/require-role.decorator';
-import { RoleGuard } from '../../iam/guards/role.guard';
 import {
   AvailabilityResponseDto,
   CheckAvailabilityQueryDto,
@@ -44,22 +42,19 @@ import { CustomerService } from '../services/customer.service';
  * Customer Controller
  * Handles HTTP requests for customer management
  *
- *
- * TODO: Re-enable permission checks when IAM is fully configured
- * - Currently only JwtAuthGuard is active
- * - Add PermissionGuard and @RequirePermission decorators back
+ * Authentication only. Permission enforcement lives in the web app — see
+ * `apps/web/lib/rbac/`. Backend enforcement is a separate, later task.
  */
 @ApiTags('Customers')
 @ApiBearerAuth()
 @Controller('customers')
-@UseGuards(JwtAuthGuard) // TODO: Add PermissionGuard back when IAM is ready
+@UseGuards(JwtAuthGuard)
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   /**
    * Create a new customer
    */
-  // @RequirePermission('customers:create') // TODO: Re-enable
   @ApiCreate({
     summary: 'Create a new customer',
     description: 'Creates a new customer/lead in the system.',
@@ -83,7 +78,6 @@ export class CustomerController {
    * Get all customers with filtering, sorting, and pagination
    * Unified endpoint supporting search, filters, and sorting via query parameters
    */
-  // @RequirePermission('customers:read') // TODO: Re-enable
   @ApiReadAll({
     summary: 'Get all customers',
     description:
@@ -153,7 +147,6 @@ export class CustomerController {
    * Used to prevent duplicate customer creation in the lead wizard
    * NOTE: This MUST be defined BEFORE :id routes to avoid route conflicts
    */
-  // @RequirePermission('customers:read') // TODO: Re-enable
   @Get('check-availability')
   @ApiOperation({
     summary: 'Check phone/email availability',
@@ -198,7 +191,6 @@ export class CustomerController {
    * Get customer statistics by status
    * NOTE: This MUST be defined BEFORE :id routes to avoid route conflicts
    */
-  // @RequirePermission('customers:read') // TODO: Re-enable
   @Get('statistics/status')
   @ApiOperation({
     summary: 'Get customer status statistics',
@@ -227,7 +219,6 @@ export class CustomerController {
    * Get the CRM overview roll-up for the customer list's KPI cards.
    * NOTE: This MUST be defined BEFORE :id routes to avoid route conflicts.
    */
-  // @RequirePermission('customers:read') // TODO: Re-enable
   @Get('statistics/overview')
   @ApiOperation({
     summary: 'Get CRM overview statistics',
@@ -251,7 +242,6 @@ export class CustomerController {
   /**
    * Get customer by ID
    */
-  // @RequirePermission('customers:read') // TODO: Re-enable
   @ApiReadOne({
     summary: 'Get customer by ID',
     description: 'Retrieve a specific customer by their ID.',
@@ -268,7 +258,6 @@ export class CustomerController {
   /**
    * Update customer (partial update)
    */
-  // @RequirePermission('customers:update') // TODO: Re-enable
   @ApiUpdate({
     summary: 'Update customer',
     description: 'Update customer information.',
@@ -293,7 +282,6 @@ export class CustomerController {
   /**
    * Update customer status (generic)
    */
-  // @RequirePermission('customers:update-status') // TODO: Re-enable
   @ApiAction({
     path: 'status',
     summary: 'Update customer status',
@@ -313,7 +301,6 @@ export class CustomerController {
    * Assign or unassign a customer to a user
    * Send assigneeId as a valid UUID to assign, or null to unassign.
    */
-  // @RequirePermission('customers:update') // TODO: Re-enable
   @Patch(':id/assignee')
   @ApiOperation({
     summary: 'Assign or unassign a customer',
@@ -348,8 +335,7 @@ export class CustomerController {
   /**
    * Delete customer
    */
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @RequireRole('admin', 'super_admin')
+  @UseGuards(JwtAuthGuard)
   @ApiDelete({
     summary: 'Delete customer',
     description:

@@ -22,15 +22,22 @@ import { cn, getInitials } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 /**
- * Get primary role display name
+ * Label for the user's role(s).
+ *
+ * Deliberately not a hardcoded lookup table: a superadmin can invent role
+ * names at runtime, so any fixed list would show "User" for roles this build
+ * has never heard of. Titlecase the code instead, and count when there are
+ * several rather than picking a winner.
  */
 function getRoleDisplay(roles: string[]): string {
-  if (roles.includes('super_admin') || roles.includes('platform_admin')) return 'Super Admin';
-  if (roles.includes('admin')) return 'Admin';
-  if (roles.includes('manager')) return 'Manager';
-  if (roles.includes('sales')) return 'Sales';
-  if (roles.includes('field_worker')) return 'Field Worker';
-  return 'User';
+  const named = roles.filter((r) => r !== 'customer');
+  if (named.length === 0) return 'User';
+  if (named.length > 1) return `${named.length} roles`;
+
+  return named[0]!
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 interface UserMenuProps {

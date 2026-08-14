@@ -17,7 +17,6 @@ import type { CalculateQuoteResponse, QuoteConfigResponse } from '../types';
 
 import { Can } from '@/components/shared/guards';
 import { Badge, Button, Card, CardContent, Skeleton, Spinner } from '@/components/ui';
-import { PERMISSIONS } from '@/lib/constants/permissions';
 import { formatCurrency, formatCurrencyDecimal, formatLabel } from '@/lib/utils';
 
 function formatPreviewPanelWarrantyLabel(calculation: CalculateQuoteResponse): string {
@@ -261,7 +260,7 @@ export function QuotePreviewPanel({
                   <p className="text-xs text-foreground-secondary">
                     {panel.quantity} panels &times;{' '}
                     <Can
-                      permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                      permission={'quotes.profitability'}
                       fallback={<span>—</span>}
                     >
                       <span>{formatCurrencyDecimal(panel.pricePerWatt)}/W</span>
@@ -270,13 +269,13 @@ export function QuotePreviewPanel({
                 </div>
                 <div className="text-right">
                   <Can
-                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    permission={'quotes.profitability'}
                     fallback={<p className="text-sm font-medium text-foreground-secondary">—</p>}
                   >
                     <p className="text-sm font-medium">{formatCurrency(panel.lineTotal)}</p>
                   </Can>
                   <Can
-                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    permission={'quotes.profitability'}
                     fallback={<p className="text-2xs text-foreground-tertiary">— GST</p>}
                   >
                     <p className="text-2xs text-foreground-tertiary">
@@ -308,7 +307,7 @@ export function QuotePreviewPanel({
                   <p className="text-xs text-foreground-secondary">
                     {panel.quantity} panels &times;{' '}
                     <Can
-                      permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                      permission={'quotes.profitability'}
                       fallback={<span>—</span>}
                     >
                       <span>{formatCurrencyDecimal(panel.pricePerWatt)}/W</span>
@@ -317,13 +316,13 @@ export function QuotePreviewPanel({
                 </div>
                 <div className="text-right">
                   <Can
-                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    permission={'quotes.profitability'}
                     fallback={<p className="text-sm font-medium text-foreground-secondary">—</p>}
                   >
                     <p className="text-sm font-medium">{formatCurrency(panel.lineTotal)}</p>
                   </Can>
                   <Can
-                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    permission={'quotes.profitability'}
                     fallback={<p className="text-2xs text-foreground-tertiary">— GST</p>}
                   >
                     <p className="text-2xs text-foreground-tertiary">
@@ -520,7 +519,7 @@ export function QuotePreviewPanel({
                   <p className="text-xs text-foreground-secondary">
                     {inv.brand} &middot; {inv.capacityKw}kW &middot; {inv.quantity} nos &times;{' '}
                     <Can
-                      permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                      permission={'quotes.profitability'}
                       fallback={<span>—</span>}
                     >
                       <span>{formatCurrencyDecimal(inv.unitPrice)}</span>
@@ -529,13 +528,13 @@ export function QuotePreviewPanel({
                 </div>
                 <div className="text-right">
                   <Can
-                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    permission={'quotes.profitability'}
                     fallback={<p className="text-sm font-medium text-foreground-secondary">—</p>}
                   >
                     <p className="text-sm font-medium">{formatCurrency(inv.lineTotal)}</p>
                   </Can>
                   <Can
-                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    permission={'quotes.profitability'}
                     fallback={<p className="text-2xs text-foreground-tertiary">— GST</p>}
                   >
                     <p className="text-2xs text-foreground-tertiary">
@@ -563,7 +562,7 @@ export function QuotePreviewPanel({
               </div>
               <div className="text-right">
                 <Can
-                  permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                  permission={'quotes.profitability'}
                   fallback={<p className="text-sm font-medium text-foreground-secondary">—</p>}
                 >
                   <p className="text-sm font-medium">
@@ -571,7 +570,7 @@ export function QuotePreviewPanel({
                   </p>
                 </Can>
                 <Can
-                  permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                  permission={'quotes.profitability'}
                   fallback={<p className="text-2xs text-foreground-tertiary">— GST</p>}
                 >
                   <p className="text-2xs text-foreground-tertiary">
@@ -606,7 +605,7 @@ export function QuotePreviewPanel({
                       <div key={key} className="flex justify-between text-xs">
                         <span className="text-foreground-secondary">{label}</span>
                         <Can
-                          permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                          permission={'quotes.profitability'}
                           fallback={<span className="text-foreground-secondary">—</span>}
                         >
                           <span>{formatCurrency(value)}</span>
@@ -618,7 +617,7 @@ export function QuotePreviewPanel({
               <div className="flex justify-between pt-1.5 text-xs font-medium">
                 <span>Installation (Before Tax)</span>
                 <Can
-                  permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                  permission={'quotes.profitability'}
                   fallback={<span className="font-medium text-foreground-secondary">—</span>}
                 >
                   <span>{formatCurrency(calculation.installation.totalBeforeTax)}</span>
@@ -630,7 +629,7 @@ export function QuotePreviewPanel({
                     ? `GST (${calculation.installation.gstRate}%)`
                     : 'GST'}
                 </span>
-                <Can permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN} fallback={<span>—</span>}>
+                <Can permission={'quotes.profitability'} fallback={<span>—</span>}>
                   <span>+{formatCurrency(calculation.installation.gstAmount)}</span>
                 </Can>
               </div>
@@ -717,7 +716,7 @@ export function QuotePreviewPanel({
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground-secondary">Base Price</span>
               <Can
-                permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                permission={'quotes.profitability'}
                 fallback={<span className="text-foreground-secondary">—</span>}
               >
                 <span>
@@ -729,12 +728,12 @@ export function QuotePreviewPanel({
               <div className="flex items-center justify-between text-sm">
                 <span className="text-foreground-secondary">
                   Margin
-                  <Can permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}>
+                  <Can permission={'quotes.profitability'}>
                     <span> ({calculation.profitabilityPercent}%)</span>
                   </Can>
                 </span>
                 <Can
-                  permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                  permission={'quotes.profitability'}
                   fallback={<span className="text-foreground-secondary">—</span>}
                 >
                   <span>{formatCurrency(calculation.profitabilityAmount)}</span>
@@ -744,7 +743,7 @@ export function QuotePreviewPanel({
             <div className="flex items-center justify-between pt-1.5 text-sm font-medium">
               <span>Subtotal</span>
               <Can
-                permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                permission={'quotes.profitability'}
                 fallback={<span className="font-medium text-foreground-secondary">—</span>}
               >
                 <span>{formatCurrency(calculation.pricing.basePrice)}</span>
@@ -754,7 +753,7 @@ export function QuotePreviewPanel({
               <div className="flex items-center justify-between text-sm text-success">
                 <span>Discount</span>
                 <Can
-                  permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                  permission={'quotes.profitability'}
                   fallback={<span className="text-foreground-secondary">—</span>}
                 >
                   <span>-{formatCurrency(discountAmount)}</span>
@@ -764,7 +763,7 @@ export function QuotePreviewPanel({
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground-secondary">GST on Equipment</span>
               <Can
-                permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                permission={'quotes.profitability'}
                 fallback={<span className="text-foreground-secondary">—</span>}
               >
                 <span>{formatCurrency(discounted.gst5)}</span>
@@ -773,7 +772,7 @@ export function QuotePreviewPanel({
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground-secondary">GST on Services</span>
               <Can
-                permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                permission={'quotes.profitability'}
                 fallback={<span className="text-foreground-secondary">—</span>}
               >
                 <span>{formatCurrency(discounted.gst18)}</span>
@@ -782,7 +781,7 @@ export function QuotePreviewPanel({
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground-secondary">Total GST</span>
               <Can
-                permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                permission={'quotes.profitability'}
                 fallback={<span className="text-foreground-secondary">—</span>}
               >
                 <span>{formatCurrency(displayTotalGst)}</span>
@@ -791,7 +790,7 @@ export function QuotePreviewPanel({
             <div className="flex items-center justify-between pt-1.5 text-sm font-medium">
               <span>Gross Total</span>
               <Can
-                permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                permission={'quotes.profitability'}
                 fallback={<span className="font-medium text-foreground-secondary">—</span>}
               >
                 <span>{formatCurrency(displayGrossTotal)}</span>
@@ -801,7 +800,7 @@ export function QuotePreviewPanel({
               <div className="flex items-center justify-between text-sm text-success">
                 <span>Eligible Government Subsidy</span>
                 <Can
-                  permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                  permission={'quotes.profitability'}
                   fallback={<span className="text-foreground-secondary">—</span>}
                 >
                   <span>{formatCurrency(calculation.subsidy.amount)}</span>

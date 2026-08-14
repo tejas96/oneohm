@@ -1,6 +1,13 @@
 import { LoanStatus, ChangeRequestStatus } from '@tejas96/shared/types';
 
-export const ORG_ADMIN_ROLES = ['admin', 'super_admin'] as const;
+import { FULL_ACCESS_ROLES } from '@/lib/stores/auth-store';
+
+/**
+ * Re-exported from the auth store so the delete rules cannot drift from the
+ * permission bypass. Four separate copies of this list existed before the RBAC
+ * rework; one of them had a role name that never existed.
+ */
+export const ORG_ADMIN_ROLES = FULL_ACCESS_ROLES;
 
 const ACTIVE_LOAN_STATUSES: LoanStatus[] = [LoanStatus.INITIATED, LoanStatus.APPLIED];
 

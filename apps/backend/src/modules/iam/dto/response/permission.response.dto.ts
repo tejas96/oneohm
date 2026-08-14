@@ -10,42 +10,24 @@ export class PermissionResponseDto {
   @ApiProperty({ example: 'Read Customers' })
   name: string;
 
-  @ApiProperty({ example: 'customers:read' })
+  @ApiProperty({ example: 'customers.view' })
   code: string;
 
-  @ApiProperty({ example: 'Allows viewing customer records', required: false })
+  @ApiProperty({
+    example: 'See the customer list and customer details',
+    required: false,
+    description: 'User-facing. Shown in the access dialog to whoever was refused.',
+  })
   description?: string;
 
-  @ApiProperty({ example: 'read' })
-  action: string;
-
-  @ApiProperty({ example: 'all', enum: ['all', 'own', 'department', 'assigned', 'custom'] })
-  scope: string;
-
-  @ApiProperty({ example: 'standard', enum: ['basic', 'standard', 'advanced', 'admin'] })
-  permissionLevel: string;
-
-  @ApiProperty({ example: true })
-  showInMenu: boolean;
-
-  @ApiProperty({ example: 'View Customers', required: false })
-  menuLabel?: string;
-
   @ApiProperty({
-    example: { department: 'sales', region: 'north' },
-    required: false,
-    description: 'Conditional access rules (ABAC support)',
+    example: 'customers',
+    description: 'Groups the checkbox list in the role builder',
   })
-  conditions?: Record<string, unknown>;
-
-  @ApiProperty({ example: ['uuid1', 'uuid2'], required: false, type: [String] })
-  dependsOnPermissionIds?: string[];
+  module: string;
 
   @ApiProperty({ example: true })
   isActive: boolean;
-
-  @ApiProperty({ example: true })
-  isSystemPermission: boolean;
 
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   createdAt: Date;

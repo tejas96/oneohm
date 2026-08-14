@@ -25,8 +25,6 @@ import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
-import { RequireRole } from '../../iam/decorators/require-role.decorator';
-import { RoleGuard } from '../../iam/guards/role.guard';
 import { CreateDiscomDto, DiscomResponseDto, UpdateDiscomDto } from '../dto';
 import { DiscomService } from '../services/discom.service';
 
@@ -38,8 +36,6 @@ export class DiscomController {
   constructor(private readonly discomService: DiscomService) {}
 
   @Post()
-  @UseGuards(RoleGuard)
-  @RequireRole('admin', 'super_admin')
   @ApiCreate({
     summary: 'Create a new discom',
     description: 'Register a new DISCOM hierarchy entry',
@@ -147,8 +143,6 @@ export class DiscomController {
   }
 
   @Patch(':id')
-  @UseGuards(RoleGuard)
-  @RequireRole('admin', 'super_admin')
   @ApiUpdate({
     summary: 'Update discom',
     description: 'Update an existing discom',
@@ -164,8 +158,6 @@ export class DiscomController {
   }
 
   @Delete(':id')
-  @UseGuards(RoleGuard)
-  @RequireRole('admin', 'super_admin')
   @ApiDelete({
     summary: 'Delete discom',
     description: 'Soft delete a discom',

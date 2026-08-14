@@ -18,7 +18,6 @@ import {
 } from '../core';
 
 import { apiClient } from '@/lib/api/client';
-import { PERMISSIONS } from '@/lib/constants/permissions';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -82,12 +81,8 @@ defineResource<Lookup>(
     staleTime: STALE_TIMES.slow,
     defaultSort: { field: 'label', order: 'ASC' },
   },
-  {
-    view: PERMISSIONS.LOOKUPS.VIEW,
-    create: PERMISSIONS.LOOKUPS.CREATE,
-    update: PERMISSIONS.LOOKUPS.UPDATE,
-    delete: PERMISSIONS.LOOKUPS.DELETE,
-  },
+  // No permission codes: lookups live under /admin, which is gated as a
+  // whole to super_admin. A lookups.* code would gate nothing extra.
 );
 
 // ── Admin List Hook ────────────────────────────────────────────

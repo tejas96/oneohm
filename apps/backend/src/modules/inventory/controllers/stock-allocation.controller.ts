@@ -18,8 +18,6 @@ import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate } from '../../../common/de
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
   BulkCancelDto,
   BulkOperationResultDto,
@@ -40,7 +38,7 @@ import { InventoryBulkService, InventoryStatsService, StockAllocationService } f
 @ApiTags('Inventory - Stock Allocations')
 @ApiBearerAuth()
 @Controller('stock-allocations')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class StockAllocationController {
   constructor(
     private readonly stockAllocationService: StockAllocationService,
@@ -53,7 +51,6 @@ export class StockAllocationController {
   /**
    * Bulk cancel allocations (best-effort, releases reserved stock per id)
    */
-  @RequirePermission('allocation:write')
   @Post('bulk/cancel')
   @ApiOperation({
     summary: 'Bulk cancel allocations (best-effort)',
@@ -70,14 +67,12 @@ export class StockAllocationController {
   /**
    * Get stock allocation statistics
    */
-  @RequirePermission('inventory:read')
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get stock allocation statistics' })
   async getStatistics(@CurrentUser() _currentUser: CurrentUserType) {
     return this.stockAllocationService.getStatistics();
   }
 
-  @RequirePermission('inventory:read')
   @Get('stats/funnel')
   @ApiOperation({
     summary: 'Allocation funnel: lifecycle counts in window + cancelled side-bucket',
@@ -95,7 +90,6 @@ export class StockAllocationController {
   /**
    * Get pending allocations
    */
-  @RequirePermission('inventory:read')
   @Get('pending/list')
   @ApiOperation({ summary: 'Get pending (not yet fulfilled) allocations' })
   async getPending(
@@ -110,7 +104,6 @@ export class StockAllocationController {
   /**
    * Get allocations by project
    */
-  @RequirePermission('inventory:read')
   @Get('project/:projectId')
   @ApiOperation({ summary: 'Get allocations for a specific project' })
   async findByProject(
@@ -127,7 +120,6 @@ export class StockAllocationController {
   /**
    * Create a new stock allocation
    */
-  @RequirePermission('allocation:write')
   @Post()
   @ApiCreate({
     summary: 'Create a stock allocation',
@@ -147,7 +139,6 @@ export class StockAllocationController {
   /**
    * Get all stock allocations with filters
    */
-  @RequirePermission('inventory:read')
   @Get()
   @ApiReadAll({
     summary: 'Get all stock allocations',
@@ -201,7 +192,6 @@ export class StockAllocationController {
   /**
    * Get stock allocation by ID
    */
-  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({
     summary: 'Get stock allocation by ID',
@@ -220,7 +210,6 @@ export class StockAllocationController {
   /**
    * Edit allocation metadata (notes/expectedDispatchDate only)
    */
-  @RequirePermission('allocation:write')
   @Patch(':id')
   @ApiUpdate({
     summary: 'Edit allocation details',
@@ -241,7 +230,6 @@ export class StockAllocationController {
   /**
    * Fulfill stock allocation
    */
-  @RequirePermission('allocation:write')
   @Post(':id/fulfill')
   @ApiOperation({ summary: 'Fulfill allocated stock (full or partial)' })
   async fulfill(
@@ -258,7 +246,6 @@ export class StockAllocationController {
   /**
    * Cancel stock allocation
    */
-  @RequirePermission('allocation:write')
   @Post(':id/cancel')
   @ApiOperation({ summary: 'Cancel a stock allocation (releases reserved stock)' })
   async cancel(
@@ -275,7 +262,6 @@ export class StockAllocationController {
   /**
    * Return stock from allocation back to available
    */
-  @RequirePermission('allocation:write')
   @Post(':id/return')
   @ApiOperation({ summary: 'Return dispatched material back to stock' })
   async returnToStock(

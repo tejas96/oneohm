@@ -18,8 +18,6 @@ import { ApiReadAll } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
   InventoryStockResponseDto,
   StockAdjustmentDto,
@@ -37,7 +35,7 @@ import { InventoryStatsService, InventoryStockService } from '../services';
 @ApiTags('Inventory - Stock Management')
 @ApiBearerAuth()
 @Controller('inventory-stock')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class InventoryStockController {
   constructor(
     private readonly inventoryStockService: InventoryStockService,
@@ -47,7 +45,6 @@ export class InventoryStockController {
   /**
    * Get all stock across organization
    */
-  @RequirePermission('inventory:read')
   @Get()
   @ApiReadAll({
     summary: 'Get all stock',
@@ -100,7 +97,6 @@ export class InventoryStockController {
   /**
    * Get stock by warehouse and product
    */
-  @RequirePermission('inventory:read')
   @Get('warehouse/:warehouseId/product/:productId')
   @ApiOperation({
     summary: 'Get stock by warehouse and product',
@@ -122,7 +118,6 @@ export class InventoryStockController {
   /**
    * Get all stock for a warehouse
    */
-  @RequirePermission('inventory:read')
   @Get('warehouse/:warehouseId')
   @ApiReadAll({
     summary: 'Get stock by warehouse',
@@ -188,7 +183,6 @@ export class InventoryStockController {
   /**
    * Get all stock for a product across warehouses
    */
-  @RequirePermission('inventory:read')
   @Get('product/:productId')
   @ApiOperation({
     summary: 'Get stock by product',
@@ -208,7 +202,6 @@ export class InventoryStockController {
   /**
    * Get low stock alerts
    */
-  @RequirePermission('inventory:read')
   @Get('alerts/low-stock')
   @ApiOperation({
     summary: 'Get low stock alerts',
@@ -227,7 +220,6 @@ export class InventoryStockController {
   /**
    * Update stock
    */
-  @RequirePermission('inventory:write')
   @Post('update')
   @ApiOperation({
     summary: 'Update stock',
@@ -252,7 +244,6 @@ export class InventoryStockController {
   /**
    * Transfer stock between warehouses
    */
-  @RequirePermission('stock:transfer')
   @Post('transfer')
   @ApiOperation({
     summary: 'Transfer stock between warehouses',
@@ -277,7 +268,6 @@ export class InventoryStockController {
   /**
    * Adjust stock (manual correction)
    */
-  @RequirePermission('stock:adjust')
   @Post('adjust')
   @ApiOperation({
     summary: 'Adjust stock',
@@ -303,7 +293,6 @@ export class InventoryStockController {
   /**
    * Get total stock value
    */
-  @RequirePermission('inventory:read')
   @Get('stats/total-value')
   @ApiOperation({
     summary: 'Get total stock value',
@@ -320,7 +309,6 @@ export class InventoryStockController {
   /**
    * Get stock summary by warehouse
    */
-  @RequirePermission('inventory:read')
   @Get('stats/by-warehouse')
   @ApiOperation({
     summary: 'Get stock summary by warehouse',
@@ -337,7 +325,6 @@ export class InventoryStockController {
     return this.inventoryStockService.getStockSummaryByWarehouse();
   }
 
-  @RequirePermission('inventory:read')
   @Get('stats/top-low-stock')
   @ApiOperation({ summary: 'Top items that have crossed their minimum stock level (deficit DESC)' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -351,7 +338,6 @@ export class InventoryStockController {
   /**
    * Get stock by ID
    */
-  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiOperation({
     summary: 'Get stock by ID',
@@ -367,7 +353,6 @@ export class InventoryStockController {
   /**
    * Update stock settings (thresholds)
    */
-  @RequirePermission('inventory:write')
   @Patch(':id')
   @ApiOperation({
     summary: 'Update stock settings',
