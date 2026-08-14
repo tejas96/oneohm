@@ -192,6 +192,15 @@ export class DocumentService {
                JOIN projects p ON pe.project_id = p.id
                WHERE pe.id = $1`;
         break;
+      case DocumentEntityType.PAYMENT_APPROVAL:
+        // Payment proofs are filed against the pending row while it waits for
+        // a reviewer, and re-keyed to the ledger entry once approved. Both
+        // sides need to resolve to the same property, or the proof would go
+        // missing from the property's documents the moment it is approved.
+        sql = `SELECT p.property_id AS pid FROM pending_ledger_entries ple
+               JOIN projects p ON p.id = ple.project_id
+               WHERE ple.id = $1`;
+        break;
       default:
         return null;
     }

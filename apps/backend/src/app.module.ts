@@ -27,11 +27,11 @@ import { FinanceCommonModule } from './modules/finance-common/finance-common.mod
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
-import { PaymentApprovalModule } from './modules/payment-approvals/payment-approval.module';
 import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import { MasterDataModule } from './modules/master-data/master-data.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PaymentApprovalModule } from './modules/payment-approvals/payment-approval.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
