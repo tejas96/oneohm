@@ -8,6 +8,7 @@ import { CrmStatusPill, type CrmColumn, type CrmTone } from '@/components/shared
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import type { Receivable } from '@/lib/hooks/resources/ledger';
 import { color, crm } from '@/lib/theme/tokens';
+import { formatBusinessDate } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 export type ReceivableRow = Receivable & Record<string, unknown>;
@@ -93,7 +94,7 @@ export const RECEIVABLE_COLUMNS: CrmColumn<ReceivableRow>[] = [
     header: 'Due',
     track: crm['col-recv-due'],
     sortable: true,
-    renderCell: (row) => row.dueDate ?? <Empty />,
+    renderCell: (row) => (row.dueDate ? formatBusinessDate(row.dueDate) : <Empty />),
   },
   {
     field: 'expectedAmount',

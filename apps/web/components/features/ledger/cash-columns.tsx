@@ -9,6 +9,7 @@ import { CrmStatusPill, type CrmColumn } from '@/components/shared/crm-table';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import type { LedgerEntry } from '@/lib/hooks/resources/ledger';
 import { color, crm } from '@/lib/theme/tokens';
+import { formatBusinessDate } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 export type CashRow = LedgerEntry & Record<string, unknown>;
@@ -21,7 +22,7 @@ export const CASH_COLUMNS: CrmColumn<CashRow>[] = [
     sortable: true,
     renderCell: (row) => (
       <Box>
-        <Box>{row.valueDate}</Box>
+        <Box>{formatBusinessDate(row.valueDate)}</Box>
         {/* Flagged because a historical row's real value date is unrecoverable,
             and treating a guess as fact is how ageing quietly goes wrong. */}
         {row.valueDateIsInferred ? (

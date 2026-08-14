@@ -228,12 +228,13 @@ export const ledgerKeys = {
 export function useFinanceKpis(
   from?: string,
   to?: string,
+  search?: string,
 ): UseQueryResult<FinanceKpis, AxiosError> {
   return useQuery({
-    queryKey: ledgerKeys.kpis(from, to),
+    queryKey: [...ledgerKeys.kpis(from, to), search ?? ''],
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<FinanceKpis>('/finance/kpis', {
-        params: { from, to },
+        params: search ? { from, to, search } : { from, to },
         signal,
       });
       return data;

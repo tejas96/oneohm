@@ -11,7 +11,7 @@ export {
   formatSystemSize,
 } from '@tejas96/shared/utils';
 
-import { formatSystemSize } from '@tejas96/shared/utils';
+import { formatDate, formatSystemSize } from '@tejas96/shared/utils';
 
 export function formatLabel(key: string): string {
   return key
@@ -117,4 +117,21 @@ export function formatSystemSizeDisplay(actual?: number, requested?: number): st
     return `${primaryStr} (selected ${formatSystemSize(requested)} kW)`;
   }
   return primaryStr;
+}
+
+/**
+ * Render a business date (`YYYY-MM-DD`, no time component) as that calendar
+ * date, whatever the viewer's timezone.
+ *
+ * `new Date('2026-08-12')` parses as UTC midnight and `toLocaleDateString`
+ * then renders it locally, so anywhere west of UTC it shows 11 Aug. Value
+ * dates and due dates are business dates and must not shift. Real timestamps
+ * are instants and belong in `formatDate` unchanged.
+ */
+export function formatBusinessDate(value: string | null | undefined): string {
+  if (!value) return '';
+  const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!parts) return formatDate(value);
+  const [, y, m, d] = parts;
+  return formatDate(new Date(Number(y), Number(m) - 1, Number(d)));
 }

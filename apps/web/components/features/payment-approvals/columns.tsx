@@ -8,6 +8,7 @@ import { CrmStatusPill, type CrmColumn, type CrmTone } from '@/components/shared
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import type { PaymentApproval } from '@/lib/hooks/resources/payment-approvals';
 import { color, crm } from '@/lib/theme/tokens';
+import { formatBusinessDate } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 export type ApprovalRow = PaymentApproval & Record<string, unknown>;
@@ -65,7 +66,7 @@ export const APPROVAL_COLUMNS: CrmColumn<ApprovalRow>[] = [
     header: 'Paid on',
     track: crm['col-approval-date'],
     sortable: true,
-    renderCell: (row) => row.valueDate,
+    renderCell: (row) => formatBusinessDate(row.valueDate),
   },
   {
     field: 'kind',

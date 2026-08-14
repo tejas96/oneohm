@@ -31,13 +31,28 @@
 export const KPIS_SQL = `
   WITH flows AS (
     SELECT
-      COALESCE(SUM(amount_paise) FILTER (WHERE direction = 'in'), 0)::BIGINT  AS revenue_paise,
-      COALESCE(SUM(-amount_paise) FILTER (WHERE direction = 'out'), 0)::BIGINT AS spend_paise,
-      COUNT(*) FILTER (WHERE direction = 'in'  AND reverses_id IS NULL)::int  AS receipt_count,
-      COUNT(*) FILTER (WHERE direction = 'out' AND reverses_id IS NULL)::int  AS expense_count
-    FROM ledger_entries
-    WHERE value_date >= $1::date
-      AND value_date <= $2::date
+      COALESCE(SUM(e.amount_paise) FILTER (WHERE e.direction = 'in'), 0)::BIGINT  AS revenue_paise,
+      COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out'), 0)::BIGINT AS spend_paise,
+      COUNT(*) FILTER (WHERE e.direction = 'in'  AND e.reverses_id IS NULL)::int  AS receipt_count,
+      COUNT(*) FILTER (WHERE e.direction = 'out' AND e.reverses_id IS NULL)::int  AS expense_count
+    FROM ledger_entries e
+    JOIN projects pr                   ON pr.id = e.project_id
+    LEFT JOIN customer_properties prop ON prop.id = pr.property_id
+    LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+    WHERE e.value_date >= $1::date
+      AND e.value_date <= $2::date
+      -- Follows the ledger search below, so the period figures describe the
+      -- rows on screen. The snapshot block deliberately does not: outstanding
+      -- is an as-of-today total and is labelled as such in the UI.
+      AND (
+        $3::text IS NULL
+        OR e.entry_no     ILIKE '%' || $3 || '%'
+        OR e.reference    ILIKE '%' || $3 || '%'
+        OR e.counterparty ILIKE '%' || $3 || '%'
+        OR pr.project_number ILIKE '%' || $3 || '%'
+        OR pr.name        ILIKE '%' || $3 || '%'
+        OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $3 || '%'
+      )
   ),
   snapshot AS (
     SELECT

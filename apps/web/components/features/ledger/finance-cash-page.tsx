@@ -95,7 +95,10 @@ export function FinanceCashPage(): JSX.Element {
   const [sortModel, setSortModel] = useState<TableSortModel | null>(null);
   const range = resolvePreset(preset);
 
-  const kpis = useFinanceKpis(range.from, range.to);
+  // Search narrows the period figures so the cards describe the rows on
+  // screen. The direction chip deliberately does not: the cards show money in
+  // and money out side by side, so it is a table view, not a scope change.
+  const kpis = useFinanceKpis(range.from, range.to, search || undefined);
   const cashFlow = useCashFlow(range.from, range.to, preset === 'today' ? 'day' : 'month');
   const entries = useLedgerEntries({
     ...range,

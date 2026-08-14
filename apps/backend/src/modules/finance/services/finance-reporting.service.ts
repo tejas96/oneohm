@@ -65,8 +65,8 @@ export class FinanceReportingService {
    * not belong to a month, and conflating the two is how a dashboard ends up
    * claiming a customer "owes ₹X in March".
    */
-  async getKpis(from: string, to: string): Promise<FinanceKpis> {
-    const [row] = await this.dataSource.query(KPIS_SQL, [from, to]);
+  async getKpis(from: string, to: string, search?: string | null): Promise<FinanceKpis> {
+    const [row] = await this.dataSource.query(KPIS_SQL, [from, to, search ?? null]);
     return {
       revenueInRange: rs(row?.revenuePaise),
       spendInRange: rs(row?.spendPaise),

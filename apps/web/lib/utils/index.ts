@@ -37,6 +37,7 @@ export {
   formatCurrency,
   formatCurrencyCompact,
   formatCurrencyDecimal,
+  formatBusinessDate,
   formatDate,
   formatDueDatePendingLabel,
   formatLabel,

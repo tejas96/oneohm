@@ -28,6 +28,18 @@ export class LedgerRangeQueryDto {
   to?: string;
 }
 
+export class KpisQueryDto extends LedgerRangeQueryDto {
+  @ApiPropertyOptional({
+    description:
+      'Narrows the period flow figures to matching entries, so the cards describe ' +
+      'the rows on screen. The as-of-today snapshot is unaffected.',
+  })
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  search?: string;
+}
+
 export class CashFlowQueryDto extends LedgerRangeQueryDto {
   @ApiPropertyOptional({
     enum: ['day', 'week', 'month', 'year'],
