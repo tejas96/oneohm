@@ -12,7 +12,7 @@ import {
   type ReviewStepIndices,
 } from '@/components/features/properties/components/property-fields';
 import { type DraftDocument } from '@/components/shared/document-manager';
-import { MUISelect } from '@/components/ui';
+import { MUIUserAssigneeSelector } from '@/components/ui';
 import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { color, radius } from '@/lib/theme/tokens';
 
@@ -39,11 +39,6 @@ export function StepReviewAssign({
 }: StepReviewAssignProps): React.JSX.Element {
   const { control } = useFormContext();
   const { data: employees = [], isLoading: employeesLoading } = useEmployees();
-
-  const employeeOptions = employees.map((emp) => ({
-    value: emp.userId,
-    label: emp.user ? `${emp.user.firstName} ${emp.user.lastName ?? ''}`.trim() : emp.userId,
-  }));
 
   return (
     <div className="space-y-5">
@@ -108,14 +103,16 @@ export function StepReviewAssign({
             name="nextFollowupAssignee"
             control={control}
             render={({ field, fieldState }) => (
-              <MUISelect
+              <MUIUserAssigneeSelector
                 fieldLabel="Owner"
                 required
                 placeholder="Pick who owns this lead"
-                disabled={employeesLoading}
-                value={field.value ?? ''}
-                onChange={(e) => field.onChange(e.target.value)}
-                options={employeeOptions}
+                // The form schema stores '' for "nobody", not null — sending
+                // null would fail the uuid-or-empty-string union on submit.
+                value={field.value || null}
+                onChange={(userId) => field.onChange(userId ?? '')}
+                employees={employees}
+                optionsLoading={employeesLoading}
                 error={fieldState.error?.message}
               />
             )}
@@ -155,13 +152,16 @@ export function StepReviewAssign({
             name="siteVisitAssignee"
             control={control}
             render={({ field }) => (
-              <MUISelect
+              <MUIUserAssigneeSelector
                 fieldLabel="Site Visit Assignee"
                 placeholder="Unassigned"
-                disabled={employeesLoading}
-                value={field.value ?? ''}
-                onChange={(e) => field.onChange(e.target.value)}
-                options={employeeOptions}
+                value={field.value || null}
+                onChange={(userId) => field.onChange(userId ?? '')}
+                employees={employees}
+                optionsLoading={employeesLoading}
+                // Optional field — without this there is no way back to
+                // "Unassigned" once someone has been picked.
+                allowUnassign
               />
             )}
           />
@@ -169,13 +169,14 @@ export function StepReviewAssign({
             name="siteSurveyAssignee"
             control={control}
             render={({ field }) => (
-              <MUISelect
+              <MUIUserAssigneeSelector
                 fieldLabel="Technical Surveyor"
                 placeholder="Unassigned"
-                disabled={employeesLoading}
-                value={field.value ?? ''}
-                onChange={(e) => field.onChange(e.target.value)}
-                options={employeeOptions}
+                value={field.value || null}
+                onChange={(userId) => field.onChange(userId ?? '')}
+                employees={employees}
+                optionsLoading={employeesLoading}
+                allowUnassign
               />
             )}
           />
