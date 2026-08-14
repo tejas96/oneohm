@@ -278,7 +278,7 @@ export interface NavItem {
 |---|---|---|
 | Routes | 66 pages | `middleware.ts` + dashboard layout, driven by `route-map.ts` |
 | Rail + panel nav | 47 items | required `permission` field in `navigation.ts` |
-| Tabs | 34 triggers | required `permission` field on tab definitions |
+| Tabs | 38 tabs, 7 files, **two mechanisms** | required `permission` field on tab definitions (see §7.5.1) |
 | Buttons | ~130 of 401 | `<Can>` wrapper, or `useCan()` for `disabled` |
 
 Buttons that **change data** are gated: create, edit, delete, send, approve, assign, record payment. Not Cancel, Close, Filter, Sort, Next page — gating those is noise.
@@ -333,10 +333,11 @@ const refreshUser = useCallback((): Promise<User | null> => {
 
 So today, changing a role reaches nobody already logged in.
 
-Fix, two parts:
+Fix, three parts — and the first is easy to miss:
 
-1. Make `refreshUser` actually call the profile endpoint and write the result to the store.
-2. Call it once on app mount.
+1. **`GET /auth/me` does not return permissions.** It calls `userService.findById()` (roles only), and `UserResponseDto` exposes `roles` but has no `permissions` field. Add the field and populate it from `iamService.getUserPermissions()`. Wiring `refreshUser` to the endpoint as-is would overwrite every non-admin user's permissions with `undefined` on page load — and the bug would be invisible when testing as admin or superadmin, because they bypass.
+2. Make `refreshUser` actually call `/auth/me` and write the result to the store.
+3. Call it once on app mount.
 
 A permission change then lands on the user's **next page load** rather than their next token refresh (`JWT_EXPIRES_IN`, env-driven).
 
