@@ -58,9 +58,7 @@ function assigneeOptions(
 ): AssigneeOption[] {
   const options = employees.map((emp) => ({
     id: emp.userId,
-    displayName: emp.user
-      ? `${emp.user.firstName} ${emp.user.lastName ?? ''}`.trim()
-      : emp.userId,
+    displayName: emp.user ? `${emp.user.firstName} ${emp.user.lastName ?? ''}`.trim() : emp.userId,
     secondaryText: [emp.designation, emp.department].filter(Boolean).join(' · ') || undefined,
   }));
 
@@ -162,24 +160,46 @@ export function EditSiteDataModal({
   const handleSave = (): void => {
     if (!validate()) return;
 
+    const shadingAnalysis = {
+      hasShading,
+      shadingPercentage: hasShading && shadingPercentage !== '' ? Number(shadingPercentage) : null,
+      notes: hasShading ? shadingNotes || null : null,
+    } as ShadingAnalysis;
+
+    const surveyData = {
+      roofType: roofType || null,
+      roofCondition: (roofCondition || null) as RoofCondition | null,
+      roofOrientation: (roofOrientation || null) as RoofOrientation | null,
+      notes: surveyNotes || null,
+      isMaterialUnloadingAreaSafe,
+    } as SurveyData;
+
+    /*
+      Both blobs used to be sent on every save. Someone opening this modal to
+      set an assignee and pressing Save would stamp an all-null survey over a
+      column that was NULL, and the detail page would start reporting
+      "Unloading area safe: No" and "Shading: None" — answers nobody gave.
+
+      So a blank blob is only written once one already exists and is being
+      edited; on a site that has never been surveyed it stays NULL. Note that
+      an unticked checkbox is indistinguishable from an unanswered one, which
+      is exactly why a blank blob must not be taken for an answer.
+    */
+    const surveyIsBlank =
+      !roofType &&
+      !roofCondition &&
+      !roofOrientation &&
+      !surveyNotes &&
+      !isMaterialUnloadingAreaSafe;
+    const shadingIsBlank = !hasShading && shadingPercentage === '' && !shadingNotes;
+
     const payload = {
       siteVisitAssignee: siteVisitAssignee || null,
       siteSurveyAssignee: siteSurveyAssignee || null,
       availableRoofAreaSqft: availableRoofAreaSqft !== '' ? Number(availableRoofAreaSqft) : null,
       siteNotes: siteNotes || null,
-      shadingAnalysis: {
-        hasShading,
-        shadingPercentage:
-          hasShading && shadingPercentage !== '' ? Number(shadingPercentage) : null,
-        notes: hasShading ? shadingNotes || null : null,
-      } as ShadingAnalysis,
-      surveyData: {
-        roofType: roofType || null,
-        roofCondition: (roofCondition || null) as RoofCondition | null,
-        roofOrientation: (roofOrientation || null) as RoofOrientation | null,
-        notes: surveyNotes || null,
-        isMaterialUnloadingAreaSafe,
-      } as SurveyData,
+      shadingAnalysis: shadingIsBlank && !property.shadingAnalysis ? null : shadingAnalysis,
+      surveyData: surveyIsBlank && !property.surveyData ? null : surveyData,
     };
 
     updateProperty.mutate(
