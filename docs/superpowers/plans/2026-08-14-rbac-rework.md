@@ -306,7 +306,13 @@ Leaving stale columns on the entity makes TypeORM select columns the database no
 
 - [ ] **Step 3: Run the migration**
 
-Run: `npm run migration:run` (check `package.json` for the exact script name if this fails)
+Migration scripts live in `apps/backend/package.json`, not the root, so run from there:
+
+```bash
+cd apps/backend && npm run migration:run
+```
+
+The same applies to `npm run seed:platform-admin` in Task 3.
 Expected: migration applies with no error.
 
 - [ ] **Step 4: Verify the data by hand**
@@ -1460,7 +1466,7 @@ Expected: clean.
 
 Manual, as superadmin:
 1. `/admin/permissions` lists 42 codes grouped into 9 modules, with no create/edit/delete.
-2. `/admin/roles` shows Superadmin and Admin locked, and the 13 shells editable with 0 permissions.
+2. `/admin/roles` shows Superadmin and Admin locked, and the 16 shells editable with 0 permissions.
 3. Create a role, tick permissions from at least three module groups, save, reopen — the ticks persisted.
 
 - [ ] **Step 5: Commit**
@@ -1581,5 +1587,6 @@ Carry these into the PR description:
 
 - **This is a UI lock, not a security lock.** Every endpoint except the 9 IAM write endpoints is reachable by any logged-in user through the API. Backend RBAC is a separate upcoming task.
 - **The migration is one-way.** The previous 110 permissions and their grants are gone permanently.
-- **All 13 non-system roles have zero permissions** after deployment. Existing staff keep their role assignments but can do nothing until a superadmin fills those roles in. Plan the first hour after deploy accordingly.
+- **All 16 non-system roles have zero permissions** after deployment. Existing staff keep their role assignments (1015 links survive) but can do nothing until a superadmin fills those roles in. Two of the 16 were created by hand through the UI and appear in no seed: `field_worker` (19 users) and `pricing_viewer` (2 users).
+- **`tejas.patil@beyondnyx.com` becomes a superadmin**, folded in from `platform_admin`, alongside `sanjay.oneohm@gmail.com`.
 - **There are no `admin.*` permission codes.** A future role that needs part of `/admin` requires a code change.
