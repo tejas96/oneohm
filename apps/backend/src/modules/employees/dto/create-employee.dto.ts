@@ -31,16 +31,6 @@ export class CreateEmployeeDto {
   })
   userId!: string;
 
-  @ApiProperty({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Organization ID',
-  })
-  @IsString()
-  @IsNotEmpty()
-  @Matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, {
-    message: 'userId must be a valid UUID',
-  })
-
   // ==================== Employment Info ====================
   @ApiPropertyOptional({
     example: 'EMP-2024-001',
