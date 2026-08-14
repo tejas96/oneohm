@@ -370,16 +370,14 @@ export class PaymentApprovalService {
 
       // Move every attached proof onto the entry now that one exists, so it
       // sits where the rest of the codebase looks for a ledger entry's proof.
-      await manager
-        .getRepository(DocumentEntity)
-        .update(
-          { entityType: DocumentEntityType.PAYMENT_APPROVAL, entityId: pending.id },
-          {
-            entityType: DocumentEntityType.LEDGER_ENTRY,
-            entityId: entry.id,
-            updatedBy: approverId,
-          },
-        );
+      await manager.getRepository(DocumentEntity).update(
+        { entityType: DocumentEntityType.PAYMENT_APPROVAL, entityId: pending.id },
+        {
+          entityType: DocumentEntityType.LEDGER_ENTRY,
+          entityId: entry.id,
+          updatedBy: approverId,
+        },
+      );
 
       await repo.update(pending.id, {
         status: 'approved',
