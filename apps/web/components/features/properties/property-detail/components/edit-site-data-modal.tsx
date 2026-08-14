@@ -34,6 +34,7 @@ import { type CustomerPropertyResponse, useUpdateProperty } from '../../hooks';
 import { useEmployees } from '@/components/features/employees';
 import type { Employee } from '@/components/features/employees/hooks/use-employees';
 import { MUIUserAssigneeSelector, type AssigneeOption } from '@/components/ui';
+import { useGatedAction } from '@/lib/rbac';
 
 interface EditSiteDataModalProps {
   open: boolean;
@@ -78,6 +79,7 @@ export function EditSiteDataModal({
   onClose,
   property,
 }: EditSiteDataModalProps): React.JSX.Element {
+  const save = useGatedAction('properties.edit', () => handleSave(), 'Edit site data');
   const updateProperty = useUpdateProperty();
   const { data: employees = [], isLoading: employeesLoading } = useEmployees({
     enabled: open,
@@ -499,7 +501,8 @@ export function EditSiteDataModal({
           Cancel
         </Button>
         <Button
-          onClick={handleSave}
+          onClick={save.onGatedClick}
+          aria-disabled={!save.allowed}
           color="primary"
           variant="contained"
           disabled={updateProperty.isPending}

@@ -28,6 +28,7 @@ import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import { createResourceKeys } from '@/lib/hooks/core';
 import { type Vendor, useVendorMutations } from '@/lib/hooks/resources/vendors';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 
 function trimToOptional(value: string): string | undefined {
@@ -242,6 +243,7 @@ export function VendorFormDialog({
   onOpenChange,
   vendor,
 }: VendorFormDialogProps): React.JSX.Element {
+  const save = useGatedAction('inventory.vendors.manage', () => undefined, 'Save vendor');
   const { create, update } = useVendorMutations();
   const queryClient = useQueryClient();
   const vendorKeys = useMemo(() => createResourceKeys('vendors'), []);
@@ -643,7 +645,18 @@ export function VendorFormDialog({
           <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>
             Cancel
           </Button>
-          <Button type="submit" variant="default" disabled={isPending}>
+          <Button
+            type="submit"
+            variant="default"
+            onClick={(e) => {
+              if (!save.allowed) {
+                e.preventDefault();
+                save.onGatedClick();
+              }
+            }}
+            aria-disabled={!save.allowed}
+            disabled={isPending}
+          >
             {vendor ? 'Save changes' : 'Create vendor'}
           </Button>
         </MUIDialogFooter>

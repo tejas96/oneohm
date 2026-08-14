@@ -19,6 +19,7 @@ import {
   MUISelect,
 } from '@/components/ui';
 import { useWarehouseMutations, type Warehouse } from '@/lib/hooks/resources';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 
 function trimToOptional(value: string): string | undefined {
@@ -127,6 +128,7 @@ export function WarehouseFormDialog({
   onOpenChange,
   warehouse,
 }: WarehouseFormDialogProps): React.JSX.Element {
+  const save = useGatedAction('inventory.warehouses.manage', () => undefined, 'Save warehouse');
   const { create, update, action } = useWarehouseMutations();
 
   const form = useForm<WarehouseFormValues>({
@@ -301,7 +303,18 @@ export function WarehouseFormDialog({
           <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>
             Cancel
           </Button>
-          <Button type="submit" variant="default" disabled={isPending}>
+          <Button
+            type="submit"
+            variant="default"
+            onClick={(e) => {
+              if (!save.allowed) {
+                e.preventDefault();
+                save.onGatedClick();
+              }
+            }}
+            aria-disabled={!save.allowed}
+            disabled={isPending}
+          >
             {warehouse ? 'Save changes' : 'Create warehouse'}
           </Button>
         </MUIDialogFooter>

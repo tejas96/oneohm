@@ -21,6 +21,7 @@ import {
 } from '@/components/ui';
 import { useResourceList, type BaseFilters } from '@/lib/hooks/core';
 import { useStockAllocationMutations } from '@/lib/hooks/resources/stock-allocations';
+import { useGatedAction } from '@/lib/rbac';
 
 interface ProjectPick {
   id: string;
@@ -55,6 +56,7 @@ export function AllocationCreateDialog({
   onOpenChange,
   defaultProjectId,
 }: AllocationCreateDialogProps): React.JSX.Element {
+  const save = useGatedAction('inventory.allocations.manage', () => undefined, 'Allocate stock');
   const { create } = useStockAllocationMutations();
   const { items: projects, isLoading: projectsLoading } = useResourceList<ProjectPick, BaseFilters>(
     {
@@ -121,7 +123,14 @@ export function AllocationCreateDialog({
         <form
           id="allocation-create-form"
           className="flex flex-col gap-4"
-          onSubmit={(e) => void onSubmit(e)}
+          onSubmit={(e) => {
+            if (!save.allowed) {
+              e.preventDefault();
+              save.onGatedClick();
+              return;
+            }
+            void onSubmit(e);
+          }}
         >
           <Controller
             control={form.control}

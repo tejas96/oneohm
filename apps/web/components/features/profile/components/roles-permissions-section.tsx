@@ -14,6 +14,8 @@ import {
 import { type JSX, useMemo } from 'react';
 
 import { MUIStatusChip, MUITypography } from '@/components/ui';
+import { PERMISSION_BY_CODE } from '@/lib/rbac/catalog';
+import { FULL_ACCESS_ROLES } from '@/lib/stores/auth-store';
 import { useAuth } from '@/providers/auth-provider';
 
 // ── Dynamic helpers — no static lookup tables ──────────────────
@@ -27,38 +29,27 @@ function toReadableLabel(str: string): string {
 }
 
 /**
- * Extracts the resource prefix from a permission string.
- * "employees:read" → "employees", "quotes:create" → "quotes", "admin" → "admin"
+ * The module a permission belongs to — the accordion it groups under.
+ *
+ * Read from the catalog rather than parsed out of the code. Codes are
+ * dot-style now (`quotes.profitability`), and some carry a sub-resource
+ * (`inventory.purchase_orders.manage`), so no split on the separator gives the
+ * right answer for every code. The fallback covers a code the server sends
+ * that this build does not know about.
  */
 function getResourcePrefix(permission: string): string {
-  const idx = permission.indexOf(':');
-  return idx !== -1 ? permission.slice(0, idx) : permission;
+  return PERMISSION_BY_CODE.get(permission)?.module ?? permission.split('.')[0] ?? permission;
 }
 
 /**
- * Extracts the action part from a permission string and makes it human-readable.
- * "employees:read" → "View", "quotes:create" → "Create"
+ * The line shown under an accordion — the catalog's own user-facing name.
+ *
+ * There is no verb map any more. The catalog already words each permission for
+ * the person reading it, and the access dialog shows the same wording, so the
+ * two screens agree.
  */
 function getActionLabel(permission: string): string {
-  const idx = permission.indexOf(':');
-  if (idx === -1) return toReadableLabel(permission);
-  const action = permission.slice(idx + 1);
-  // Map common actions to cleaner verbs dynamically
-  const actionMap: Record<string, string> = {
-    read: 'View',
-    create: 'Create',
-    update: 'Edit',
-    delete: 'Delete',
-    archive: 'Archive',
-    export: 'Export',
-    import: 'Import',
-    manage: 'Manage',
-    approve: 'Approve',
-    reject: 'Reject',
-    assign: 'Assign',
-    restore: 'Restore',
-  };
-  return actionMap[action] ?? toReadableLabel(action);
+  return PERMISSION_BY_CODE.get(permission)?.name ?? toReadableLabel(permission);
 }
 
 interface PermissionGroup {
@@ -94,6 +85,7 @@ export function RolesPermissionsSection(): JSX.Element {
 
   const roles = user?.roles ?? [];
   const permissions = user?.permissions ?? [];
+  const hasFullAccess = roles.some((role) => FULL_ACCESS_ROLES.includes(role));
 
   const permissionGroups = useMemo(() => groupPermissions(permissions), [permissions]);
 
@@ -188,7 +180,18 @@ export function RolesPermissionsSection(): JSX.Element {
             </>
           )}
 
-          {permissions.length === 0 && roles.length > 0 && (
+          {/* Admin and superadmin hold no rows in `role_permissions` — they pass
+              every check by bypass. Without this branch their own profile would
+              read "no permissions assigned", which is the opposite of the
+              truth. */}
+          {permissions.length === 0 && hasFullAccess && (
+            <MUITypography variant="finePrint" className="text-foreground-tertiary">
+              Full access. This role passes every permission check, so it holds no individual
+              permissions.
+            </MUITypography>
+          )}
+
+          {permissions.length === 0 && roles.length > 0 && !hasFullAccess && (
             <MUITypography variant="finePrint" className="text-foreground-tertiary italic">
               No specific permissions assigned.
             </MUITypography>

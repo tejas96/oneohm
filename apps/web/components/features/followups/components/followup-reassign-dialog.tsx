@@ -17,6 +17,7 @@ import {
   showToast,
 } from '@/components/ui';
 import { MUIUserAssigneeSelector } from '@/components/ui/mui-user-assignee-selector';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 
 interface FollowupReassignDialogProps {
@@ -35,6 +36,7 @@ export function FollowupReassignDialog({
   followups,
   onClose,
 }: FollowupReassignDialogProps): JSX.Element {
+  const save = useGatedAction('followups.manage', () => handleSubmit(), 'Reassign follow-up');
   const open = followups.length > 0;
   const [assignee, setAssignee] = useState<string | null>(null);
   const { data: employees = [] } = useEmployees({ enabled: open });
@@ -92,7 +94,8 @@ export function FollowupReassignDialog({
         </Button>
         <Button
           variant="contained"
-          onClick={handleSubmit}
+          onClick={save.onGatedClick}
+          aria-disabled={!save.allowed}
           disabled={!assignee || reassign.isPending}
         >
           {reassign.isPending ? 'Moving…' : 'Reassign'}

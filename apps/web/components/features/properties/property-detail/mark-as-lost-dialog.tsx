@@ -14,6 +14,7 @@ import {
   MUIDialogTitle,
   showToast,
 } from '@/components/ui';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 
 interface MarkAsLostDialogProps {
@@ -37,6 +38,7 @@ export function MarkAsLostDialog({
   propertyId,
   propertyName,
 }: MarkAsLostDialogProps): JSX.Element {
+  const save = useGatedAction('properties.edit', () => handleSubmit(), 'Mark as lost');
   const [reason, setReason] = useState('');
   const markLost = useMarkPropertyLost();
 
@@ -115,7 +117,8 @@ export function MarkAsLostDialog({
         <Button
           variant="contained"
           color="error"
-          onClick={handleSubmit}
+          onClick={save.onGatedClick}
+          aria-disabled={!save.allowed}
           disabled={!reason.trim() || markLost.isPending}
         >
           {markLost.isPending ? 'Marking…' : 'Mark lost'}

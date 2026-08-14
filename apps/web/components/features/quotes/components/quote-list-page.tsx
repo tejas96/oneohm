@@ -39,6 +39,7 @@ import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useTableUrlState, type TableUrlFilterRecord } from '@/lib/hooks';
 import { useQuoteListResource, type QuoteListFilters } from '@/lib/hooks/resources';
+import { useGatedAction } from '@/lib/rbac';
 import { formatCurrency, getErrorMessage } from '@/lib/utils';
 
 // AdvancedTable requires TRow extends Record<string, unknown>.
@@ -134,9 +135,14 @@ function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
   const deleteQuoteMutation = useDeleteQuote();
 
   const handleClose = (): void => setAnchorEl(null);
+  const removeQuote = useGatedAction('quotes.delete', () => undefined, 'Delete quote');
 
   const handleDelete = (): void => {
     handleClose();
+    if (!removeQuote.allowed) {
+      removeQuote.onGatedClick();
+      return;
+    }
     deleteQuoteMutation.mutate(quote.id, {
       onSuccess: () => showToast.success('Quote deleted'),
       onError: (err) => showToast.error(getErrorMessage(err)),

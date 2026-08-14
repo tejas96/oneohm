@@ -86,6 +86,7 @@ import {
   SheetTrigger,
 } from '@/components/ui';
 import { ROUTES, buildRoute } from '@/lib/config/routes';
+import { useGatedAction } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/utils/error';
 import { formatCurrency, formatCurrencyDecimal } from '@/lib/utils/format';
@@ -539,8 +540,15 @@ export function QuoteBuilder(): JSX.Element {
     },
     [],
   );
+  const saveQuote = useGatedAction('quotes.create', () => undefined, 'Save quote');
 
   const handleSave = useCallback(() => {
+    // The builder is reached at /quotes/new (quotes.create) but also serves
+    // edits, so the gate is on the save itself rather than the route.
+    if (!saveQuote.allowed) {
+      saveQuote.onGatedClick();
+      return;
+    }
     if (!calculation) return;
     if (isInactiveCustomer) {
       showToast.error('Cannot perform this action: customer is inactive');

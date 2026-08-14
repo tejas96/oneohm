@@ -25,6 +25,7 @@ import { useEmployees } from '@/components/features/employees';
 import { showToast } from '@/components/ui';
 import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { MUIUserAssigneeSelector } from '@/components/ui/mui-user-assignee-selector';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage, toTitleLabel } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -82,6 +83,7 @@ export function FollowupDrawer({
   properties,
   initialPropertyId,
 }: FollowupDrawerProps): JSX.Element {
+  const save = useGatedAction('followups.manage', () => handleSubmit(), 'Save follow-up');
   const { user } = useAuth();
   const { data: employees = [], isLoading: employeesLoading } = useEmployees({ enabled: open });
   const createMutation = useCreateFollowup();
@@ -290,7 +292,8 @@ export function FollowupDrawer({
 
         <Button
           variant="contained"
-          onClick={handleSubmit}
+          onClick={save.onGatedClick}
+          aria-disabled={!save.allowed}
           disabled={!canSubmit || createMutation.isPending}
         >
           Schedule

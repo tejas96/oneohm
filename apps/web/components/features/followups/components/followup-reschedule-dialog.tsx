@@ -16,6 +16,7 @@ import {
   showToast,
 } from '@/components/ui';
 import { MUIDatePicker } from '@/components/ui/mui-date-picker';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 
 interface FollowupRescheduleDialogProps {
@@ -35,6 +36,7 @@ export function FollowupRescheduleDialog({
   followup,
   onClose,
 }: FollowupRescheduleDialogProps): JSX.Element {
+  const save = useGatedAction('followups.manage', () => handleSubmit(), 'Reschedule follow-up');
   const [date, setDate] = useState<Date | null>(null);
   const reschedule = useRescheduleFollowup();
 
@@ -79,7 +81,12 @@ export function FollowupRescheduleDialog({
         <Button variant="outlined" onClick={onClose} disabled={reschedule.isPending}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleSubmit} disabled={!date || reschedule.isPending}>
+        <Button
+          variant="contained"
+          onClick={save.onGatedClick}
+          aria-disabled={!save.allowed}
+          disabled={!date || reschedule.isPending}
+        >
           {reschedule.isPending ? 'Moving…' : 'Move'}
         </Button>
       </MUIDialogFooter>

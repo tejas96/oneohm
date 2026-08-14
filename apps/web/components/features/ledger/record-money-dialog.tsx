@@ -22,6 +22,7 @@ import {
   type MilestoneBalance,
   type ProofDocumentInput,
 } from '@/lib/hooks/resources/ledger';
+import { useGatedAction } from '@/lib/rbac';
 import { formatPaise, rupeesToPaise } from '@/lib/utils/paise';
 
 type Mode = 'receipt' | 'expense';
@@ -84,6 +85,7 @@ export function RecordMoneyDialog({
   mode,
   milestones = [],
 }: RecordMoneyDialogProps): JSX.Element {
+  const save = useGatedAction('finance.payments.record', () => undefined, 'Record money');
   const { recordReceipt, recordExpense } = useLedgerMutations(projectId);
   const [amount, setAmount] = useState('');
   const [valueDate, setValueDate] = useState(todayIst());
@@ -322,7 +324,8 @@ export function RecordMoneyDialog({
         </Button>
         <Button
           variant="contained"
-          onClick={() => void submit()}
+          onClick={() => (save.allowed ? void submit() : save.onGatedClick())}
+          aria-disabled={!save.allowed}
           disabled={!valid || pending || uploading}
           startIcon={pending ? <CircularProgress size={16} /> : undefined}
         >

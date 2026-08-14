@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/mui-dialog';
 import { MUIInput } from '@/components/ui/mui-input';
 import { MUISelect } from '@/components/ui/mui-select';
+import { useGatedAction } from '@/lib/rbac';
 
 export interface ServiceTicketStatusDialogProps {
   open: boolean;
@@ -28,6 +29,7 @@ export function ServiceTicketStatusDialog({
   onClose,
   ticket,
 }: ServiceTicketStatusDialogProps): JSX.Element {
+  const save = useGatedAction('service.manage', () => undefined, 'Change ticket status');
   const { updateStatus } = useServiceTicketMutations();
 
   const [status, setStatus] = useState<ServiceTicketStatus | ''>('');
@@ -131,7 +133,8 @@ export function ServiceTicketStatusDialog({
         </Button>
         <Button
           variant="contained"
-          onClick={() => void handleSubmit()}
+          onClick={() => (save.allowed ? void handleSubmit() : save.onGatedClick())}
+          aria-disabled={!save.allowed}
           disabled={updateStatus.isPending}
         >
           Update status

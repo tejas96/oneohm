@@ -38,6 +38,7 @@ import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state
 import { showToast } from '@/components/ui/sonner';
 import { useDebounce, useUrlFilters } from '@/lib/hooks';
 import { useLookupOptions } from '@/lib/hooks/resources';
+import { useGatedAction } from '@/lib/rbac';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -387,9 +388,14 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     setSearchInput('');
     setAddressInput('');
   }, [setFilter]);
+  const manageTasks = useGatedAction('projects.tasks.manage', () => undefined, 'Update task');
 
   const handleMarkDone = useCallback(
     (taskId: string) => {
+      if (!manageTasks.allowed) {
+        manageTasks.onGatedClick();
+        return;
+      }
       updateStatus.mutate({ taskId, status: TaskStatus.DONE });
     },
     [updateStatus],
@@ -397,6 +403,10 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   const handleStartTask = useCallback(
     (taskId: string) => {
+      if (!manageTasks.allowed) {
+        manageTasks.onGatedClick();
+        return;
+      }
       updateStatus.mutate({ taskId, status: TaskStatus.IN_PROGRESS });
     },
     [updateStatus],
@@ -413,6 +423,10 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   const handleInlineStatusChange = useCallback(
     (taskId: string, newStatus: string, _currentStatus: string, _currentCompletionPct: number) => {
+      if (!manageTasks.allowed) {
+        manageTasks.onGatedClick();
+        return;
+      }
       updateTask.mutate({ taskId, status: newStatus as TaskStatus });
     },
     [updateTask],
