@@ -22,6 +22,7 @@ import {
 import { MUIInput } from '@/components/ui/mui-input';
 import { MUISelect } from '@/components/ui/mui-select';
 import { useDebounce } from '@/lib/hooks/use-debounce';
+import { useGatedAction } from '@/lib/rbac';
 
 /** Index signature required by MUIInput's autocomplete `SearchOption`. */
 interface Option {
@@ -54,6 +55,7 @@ export function ServiceTicketFormDialog({
   lockedCustomerId,
   lockedProjectId,
 }: ServiceTicketFormDialogProps): JSX.Element {
+  const save = useGatedAction('service.manage', () => undefined, 'Save ticket');
   const isEdit = Boolean(ticket);
   const { create, update } = useServiceTicketMutations();
 
@@ -330,7 +332,12 @@ export function ServiceTicketFormDialog({
         <Button variant="outlined" onClick={onClose} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={() => void handleSubmit()} disabled={isSubmitting}>
+        <Button
+          variant="contained"
+          onClick={() => (save.allowed ? void handleSubmit() : save.onGatedClick())}
+          aria-disabled={!save.allowed}
+          disabled={isSubmitting}
+        >
           {isEdit ? 'Save changes' : 'Create ticket'}
         </Button>
       </MUIDialogFooter>

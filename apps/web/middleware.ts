@@ -1,6 +1,38 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { AUTH_ROUTES, PUBLIC_ROUTES, ROUTES } from '@/lib/config/routes';
+// Imported by exact path, never via the `@/lib/rbac` barrel: that barrel also
+// exports access-dialog.tsx, and pulling React components into the edge
+// runtime bundle breaks the middleware build.
+import { ALWAYS_OPEN, SUPERADMIN_ONLY } from '@/lib/rbac/catalog';
+import { gateForPath } from '@/lib/rbac/route-map';
+
+/** Roles with unrestricted access. Mirrors FULL_ACCESS_ROLES in the auth store,
+ *  which middleware cannot import — the store is a client module. */
+const FULL_ACCESS_ROLES = ['super_admin', 'admin'];
+
+interface TokenClaims {
+  roles?: string[];
+  permissions?: string[];
+}
+
+/**
+ * Read the JWT payload without verifying the signature.
+ *
+ * Verification is skipped on purpose. It would require the signing secret in
+ * the web app, and it would buy nothing: the API itself has no permission
+ * enforcement right now, so a forged token gains a prettier UI and no extra
+ * data. This is a routing decision, not a security boundary.
+ */
+function decodeJwtPayload(token: string): TokenClaims | null {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as TokenClaims;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Check if the path matches any of the given routes (prefix match)
@@ -73,6 +105,35 @@ export function middleware(request: NextRequest): NextResponse | undefined {
       loginUrl.searchParams.set('redirect', pathname + request.nextUrl.search);
     }
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Permission check. Runs before a single byte of the page is sent, so a
+  // blocked page never renders and its data hooks never fire — typing a URL
+  // directly produces no API request at all.
+  //
+  // Skipped when there is no access token: the client still has a refresh
+  // token at this point and will retry, and we have no claims to judge on.
+  const gate = gateForPath(pathname);
+
+  if (gate !== ALWAYS_OPEN && accessToken) {
+    const claims = decodeJwtPayload(accessToken);
+    const roles = claims?.roles ?? [];
+    const permissions = claims?.permissions ?? [];
+
+    const isSuperAdmin = roles.includes('super_admin');
+    const hasFullAccess = roles.some((role) => FULL_ACCESS_ROLES.includes(role));
+
+    const allowed =
+      gate === SUPERADMIN_ONLY ? isSuperAdmin : hasFullAccess || permissions.includes(gate);
+
+    if (!allowed) {
+      // A rewrite, not a redirect: the address bar keeps the URL the user
+      // asked for, so the deny page can work out which gate it was from the
+      // path. No query params — a rewrite target's search string is not
+      // readable from `useSearchParams()` on the client, so passing the code
+      // that way looks like it works and silently does not.
+      return NextResponse.rewrite(new URL('/denied', request.url));
+    }
   }
 
   return NextResponse.next();

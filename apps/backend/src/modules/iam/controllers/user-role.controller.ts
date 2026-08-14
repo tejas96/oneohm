@@ -18,13 +18,12 @@ import { type CurrentUserType } from '../../auth/types';
 import { UserRoleEntity } from '../../users/entities/user-role.entity';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { ProfileService } from '../../users/services/profile.service';
-import { RequirePermission } from '../decorators/require-permission.decorator';
 import { AssignUserRoleDto, BulkAssignUserRoleDto } from '../dto/user-roles/assign-user-role.dto';
 import {
   UserRoleResponseDto,
   BulkAssignResponseDto,
 } from '../dto/user-roles/user-role-response.dto';
-import { PermissionGuard } from '../guards/permission.guard';
+import { SuperAdminGuard } from '../guards/super-admin.guard';
 import { RoleRepository } from '../repositories/role.repository';
 
 /**
@@ -36,7 +35,7 @@ import { RoleRepository } from '../repositories/role.repository';
 @ApiTags('IAM - User Roles')
 @ApiBearerAuth()
 @Controller('iam/user-roles')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class UserRoleController {
   constructor(
     private readonly userRoleRepository: UserRoleRepository,
@@ -48,7 +47,7 @@ export class UserRoleController {
    * Assign a role to a user
    */
   @Post()
-  @RequirePermission('iam:user-roles:assign')
+  @UseGuards(SuperAdminGuard)
   @ApiOperation({
     summary: 'Assign role to user',
     description:
@@ -103,7 +102,7 @@ export class UserRoleController {
    * Bulk assign a role to multiple users
    */
   @Post('bulk')
-  @RequirePermission('iam:user-roles:assign')
+  @UseGuards(SuperAdminGuard)
   @ApiOperation({
     summary: 'Bulk assign role to users',
     description:
@@ -167,7 +166,6 @@ export class UserRoleController {
    * Get all roles for a user
    */
   @Get('user/:userId')
-  @RequirePermission('iam:user-roles:read')
   @ApiOperation({
     summary: 'Get user roles',
     description: 'Get all roles assigned to a user',
@@ -184,7 +182,6 @@ export class UserRoleController {
    * Get all users with a specific role
    */
   @Get('role/:roleId')
-  @RequirePermission('iam:user-roles:read')
   @ApiOperation({
     summary: 'Get users by role',
     description: 'Get all users who have a specific role assigned',
@@ -205,7 +202,7 @@ export class UserRoleController {
    * Remove a role assignment
    */
   @Delete(':id')
-  @RequirePermission('iam:user-roles:remove')
+  @UseGuards(SuperAdminGuard)
   @ApiOperation({
     summary: 'Remove role from user',
     description: 'Remove a specific role assignment from a user',

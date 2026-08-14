@@ -44,6 +44,7 @@ import {
   type EmployeeListItem,
   type TeamWorkloadItem,
 } from '@/lib/hooks/resources';
+import { useCan } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils/error';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -160,6 +161,8 @@ export function EditProjectModal({
   // ── Staged removals (in-memory until Save) ────────────────
   // keyed by userId
   const [stagedRemovals, setStagedRemovals] = useState<Map<string, StagedRemoval>>(new Map());
+  const { can } = useCan();
+  const canManageTeam = can('projects.team.manage');
 
   // Whether any original member has been staged for removal
   const hasStagedRemovals = stagedRemovals.size > 0;
@@ -432,6 +435,16 @@ export function EditProjectModal({
                 <MUITypography variant="sectionTitle">Team Management</MUITypography>
               </div>
 
+              {/* Whole section gated, not each add/remove control: the two
+                  lists are a single editing surface, and half of it being
+                  live would be more confusing than none of it. */}
+              {!canManageTeam ? (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  You can see this project&rsquo;s team but not change it. Ask a superadmin for the
+                  <strong> projects.team.manage </strong> permission.
+                </Alert>
+              ) : null}
+
               {hasStagedRemovals && (
                 <Alert severity="info" sx={{ mb: 2 }}>
                   {stagedRemovals.size} member{stagedRemovals.size !== 1 ? 's' : ''} staged for
@@ -466,8 +479,12 @@ export function EditProjectModal({
                         workloadMap={workloadMap}
                         onRemove={handleAttemptRemove}
                         onTogglePm={handleTogglePm}
-                        disableRemove={() => isBusy}
-                        disableRemoveTooltip="Cannot remove members while saving"
+                        disableRemove={() => isBusy || !canManageTeam}
+                        disableRemoveTooltip={
+                          canManageTeam
+                            ? 'Cannot remove members while saving'
+                            : 'You do not have permission to change the team'
+                        }
                       />
                     </div>
                   </div>

@@ -64,10 +64,10 @@ defineResource<StockAllocation>(
     defaultSort: { field: 'createdAt', order: 'DESC' },
   },
   {
-    view: 'inventory:read',
-    create: 'allocation:write',
-    update: 'allocation:write',
-    delete: 'allocation:write',
+    view: 'inventory.view',
+    create: 'inventory.allocations.manage',
+    update: 'inventory.allocations.manage',
+    delete: 'inventory.allocations.manage',
   },
 );
 

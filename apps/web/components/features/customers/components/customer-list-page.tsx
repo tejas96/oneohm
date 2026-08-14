@@ -79,6 +79,7 @@ import { WhatsAppIcon } from '@/components/ui/whatsapp-icon';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
+import { useGatedAction } from '@/lib/rbac';
 import { color, crm, radius } from '@/lib/theme/tokens';
 import { formatCurrency, getErrorMessage, toTitleLabel } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -346,7 +347,30 @@ function RowActionsMenu({
   const handleClose = (): void => setAnchorEl(null);
   const deleteReasons = getCustomerDeleteBlockReasons(customer);
   const deleteDisabled = deleteReasons.length > 0;
+  const deleteCustomer = useGatedAction(
+    'customers.delete',
+    () => onRequestDelete?.(customer),
+    'Delete customer',
+  );
   const deleteTooltip = formatDeleteBlockTooltip(deleteReasons);
+  const editCustomer = useGatedAction(
+    'customers.edit',
+    () => {
+      handleClose();
+      void router.push(buildRoute(ROUTES.CUSTOMERS.EDIT, { id: customer.id }));
+    },
+    'Edit customer',
+  );
+  // Same route as the "new customer" wizard, so its own gate cannot tell this
+  // apart — see the note on the other "Add site" buttons.
+  const addProperty = useGatedAction(
+    'properties.create',
+    () => {
+      handleClose();
+      void router.push(buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId: customer.id }));
+    },
+    'Add property',
+  );
 
   return (
     <>
@@ -384,10 +408,9 @@ function RowActionsMenu({
         </MenuItem>
 
         <MenuItem
-          onClick={() => {
-            handleClose();
-            void router.push(buildRoute(ROUTES.CUSTOMERS.EDIT, { id: customer.id }));
-          }}
+          onClick={editCustomer.onGatedClick}
+          aria-disabled={!editCustomer.allowed}
+          sx={{ opacity: editCustomer.allowed ? 1 : 0.5 }}
         >
           <ListItemIcon>
             <EditIcon fontSize="small" />
@@ -396,12 +419,9 @@ function RowActionsMenu({
         </MenuItem>
 
         <MenuItem
-          onClick={() => {
-            handleClose();
-            void router.push(
-              buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId: customer.id }),
-            );
-          }}
+          onClick={addProperty.onGatedClick}
+          aria-disabled={!addProperty.allowed}
+          sx={{ opacity: addProperty.allowed ? 1 : 0.5 }}
         >
           <ListItemIcon>
             <PersonAddIcon fontSize="small" />
@@ -419,9 +439,10 @@ function RowActionsMenu({
                 onClick={() => {
                   if (deleteDisabled) return;
                   handleClose();
-                  onRequestDelete?.(customer);
+                  deleteCustomer.onGatedClick();
                 }}
-                sx={{ color: 'error.main' }}
+                aria-disabled={!deleteCustomer.allowed}
+                sx={{ color: 'error.main', ...(deleteCustomer.allowed ? {} : { opacity: 0.5 }) }}
               >
                 <ListItemIcon>
                   <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
@@ -622,6 +643,11 @@ function PortfolioCell({
   const portfolio = row.sitePortfolio;
   const siteCount = portfolio?.siteCount ?? (row.propertyCount as number | undefined) ?? 0;
 
+  // Declared above the early return: this component returns different trees for
+  // zero sites and some sites, and a hook below the branch would run on only
+  // one of them ("Rendered more hooks than during the previous render").
+  const addSite = useGatedAction('properties.create', () => onAddSite(row.id), 'Add site');
+
   if (siteCount === 0) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '3px', pr: 2 }}>
@@ -631,7 +657,8 @@ function PortfolioCell({
         <Box
           component="button"
           type="button"
-          onClick={() => onAddSite(row.id)}
+          onClick={addSite.onGatedClick}
+          aria-disabled={!addSite.allowed}
           sx={{
             alignSelf: 'flex-start',
             border: 'none',
@@ -642,6 +669,7 @@ function PortfolioCell({
             fontSize: crm['text-row-sm'],
             fontWeight: 500,
             color: color['accent-ink'],
+            opacity: addSite.allowed ? 1 : 0.5,
             '&:hover': { textDecoration: 'underline' },
           }}
         >
@@ -931,6 +959,19 @@ export function CustomerListPage(): JSX.Element {
   });
 
   const [importOpen, setImportOpen] = useState(false);
+
+  const addCustomer = useGatedAction(
+    'customers.create',
+    () => {
+      void router.push(ROUTES.ONBOARDING.NEW);
+    },
+    'Add customer',
+  );
+  const importCustomers = useGatedAction(
+    'customers.create',
+    () => setImportOpen(true),
+    'Import customers',
+  );
 
   const rawLeadTemperature = searchParams.get('leadTemperature');
   const initialFilters = useMemo(() => {
@@ -1340,9 +1381,8 @@ export function CustomerListPage(): JSX.Element {
             variant="contained"
             startIcon={<AddIcon />}
             sx={{ mt: 0.5 }}
-            onClick={() => {
-              void router.push(ROUTES.ONBOARDING.NEW);
-            }}
+            onClick={addCustomer.onGatedClick}
+            aria-disabled={!addCustomer.allowed}
           >
             Add customer
           </Button>
@@ -1434,15 +1474,19 @@ export function CustomerListPage(): JSX.Element {
         </Box>
 
         <Stack direction="row" spacing={1.25} alignItems="center" sx={{ pt: { lg: 2.25 } }}>
-          <Button variant="outlined" size="small" onClick={() => setImportOpen(true)}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={importCustomers.onGatedClick}
+            aria-disabled={!importCustomers.allowed}
+          >
             Import
           </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => {
-              void router.push(ROUTES.ONBOARDING.NEW);
-            }}
+            onClick={addCustomer.onGatedClick}
+            aria-disabled={!addCustomer.allowed}
           >
             Add customer
           </Button>

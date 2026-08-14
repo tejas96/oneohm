@@ -46,6 +46,7 @@ import {
   type AdminUser,
   type UserRoleAssignment,
 } from '@/lib/hooks/resources';
+import { FULL_ACCESS_ROLES } from '@/lib/stores/auth-store';
 import { getErrorMessage, formatDate, formatTimeAgo } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -126,10 +127,9 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
         id: 'actions',
         header: '',
         cell: ({ row }) => {
-          const isAdminRole =
-            row.original.roleCode === 'admin' ||
-            row.original.roleCode === 'platform_admin' ||
-            row.original.roleCode === 'super_admin';
+          // Stops someone stripping their own last full-access role and
+          // locking themselves out of the admin panel.
+          const isAdminRole = FULL_ACCESS_ROLES.includes(row.original.roleCode);
           const canRemove = !(isSelf && isAdminRole);
           return (
             <Button

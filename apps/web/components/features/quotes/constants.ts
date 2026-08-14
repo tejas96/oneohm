@@ -171,13 +171,6 @@ export const PRICING_AFFECTING_FIELDS = [
 // Quote Detail Tabs
 // ============================================================================
 
-export const QUOTE_DETAIL_TABS = [
-  { value: 'overview', label: 'Overview' },
-  { value: 'payments', label: 'Payments' },
-] as const;
-
-export type QuoteDetailTab = (typeof QUOTE_DETAIL_TABS)[number]['value'];
-
 // ============================================================================
 // Item Category Labels
 // ============================================================================

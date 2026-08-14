@@ -13,6 +13,7 @@ import { plainToInstance } from 'class-transformer';
 import { Request as ExpressRequest } from 'express';
 
 import { ApiCreate, ApiGet, SecurityRateLimit } from '../../../common/decorators';
+import { IamService } from '../../iam/services/iam.service';
 import { SecurityRateLimitGuard } from '../../security-events/guards';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { ProfileService } from '../../users/services/profile.service';
@@ -47,6 +48,7 @@ export class AuthController {
     private readonly userService: UserService,
     private readonly otpService: OtpService,
     private readonly profileService: ProfileService,
+    private readonly iamService: IamService,
   ) {}
 
   /**
@@ -130,11 +132,17 @@ export class AuthController {
   })
   async getCurrentUser(@CurrentUser() user: CurrentUserType): Promise<UserResponseDto> {
     const fullUser = await this.userService.findById(user.id);
-    const userDto = plainToInstance(UserResponseDto, fullUser, {
-      excludeExtraneousValues: true,
-    });
 
-    return userDto;
+    // Loaded fresh from the database rather than read off the JWT, so a
+    // permission change reaches the user on their next page load instead of
+    // waiting for their token to expire. `findById` only joins roles.
+    const permissions = await this.iamService.getUserPermissions(user.id);
+
+    return plainToInstance(
+      UserResponseDto,
+      { ...fullUser, permissions },
+      { excludeExtraneousValues: true },
+    );
   }
 
   /**

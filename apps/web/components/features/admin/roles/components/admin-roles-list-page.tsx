@@ -116,7 +116,16 @@ export function AdminRolesListPage(): JSX.Element {
         accessorKey: 'permissionsCount',
         header: 'Permissions',
         enableSorting: false,
-        cell: ({ row }) => <span className="text-sm">{row.original.permissionsCount ?? 0}</span>,
+        // admin and super_admin hold no grants — they bypass every check. A
+        // bare "0" here reads as broken, so say what is actually true.
+        cell: ({ row }) =>
+          row.original.isSystemRole ? (
+            <Badge variant="info" size="xs">
+              Full access
+            </Badge>
+          ) : (
+            <span className="text-sm">{row.original.permissionsCount ?? 0}</span>
+          ),
       },
       {
         accessorKey: 'usersCount',
@@ -130,6 +139,10 @@ export function AdminRolesListPage(): JSX.Element {
         cell: ({ row }) => {
           const role = row.original;
           const canDelete = !role.isSystemRole && (role.usersCount ?? 0) === 0;
+          // Renaming a system role — its `code` above all — would silently
+          // break the bypass across the whole app, since everything matches on
+          // that string. The API refuses it too; this is the friendly half.
+          const canEdit = !role.isSystemRole;
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -143,8 +156,9 @@ export function AdminRolesListPage(): JSX.Element {
                 >
                   <Eye className="mr-2 size-icon-sm" /> View Details
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setEditRole(role)}>
-                  <Edit className="mr-2 size-icon-sm" /> Edit Role
+                <DropdownMenuItem disabled={!canEdit} onClick={() => canEdit && setEditRole(role)}>
+                  <Edit className="mr-2 size-icon-sm" />
+                  {canEdit ? 'Edit Role' : 'Built-in role — cannot be changed'}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

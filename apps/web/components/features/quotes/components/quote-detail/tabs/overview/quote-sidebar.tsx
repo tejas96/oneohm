@@ -7,7 +7,8 @@ import React from 'react';
 
 import { Can } from '@/components/shared/guards';
 import { ROUTES } from '@/lib/config/routes';
-import { PERMISSIONS } from '@/lib/constants/permissions';
+import { useGatedAction } from '@/lib/rbac';
+import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/format';
 
 interface QuoteSidebarProps {
@@ -44,6 +45,14 @@ export function QuoteSidebar({
     router.push(`${ROUTES.PROJECTS.NEW}?${params.toString()}`);
   };
 
+  // Accepting a quote and creating the project from it are separate rights:
+  // this button creates a project, so it needs the project permission.
+  const convertToProject = useGatedAction(
+    'projects.create',
+    handleConvertToProject,
+    'Convert to project',
+  );
+
   return (
     <div className="space-y-6">
       {/* Quick Actions */}
@@ -53,8 +62,12 @@ export function QuoteSidebar({
       >
         {status === (QuoteStatus.ACCEPTED as string) ? (
           <button
-            onClick={handleConvertToProject}
-            className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark shadow-sm text-xs transition-all"
+            onClick={convertToProject.onGatedClick}
+            aria-disabled={!convertToProject.allowed}
+            className={cn(
+              'w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark shadow-sm text-xs transition-all',
+              !convertToProject.allowed && 'opacity-50',
+            )}
           >
             ⚡ Convert to Project
           </button>
@@ -70,7 +83,7 @@ export function QuoteSidebar({
 
       {/* Profitability */}
       {profitPercent != null && profitAmount != null && (profitPercent > 0 || profitAmount > 0) && (
-        <Can permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}>
+        <Can permission={'quotes.profitability'}>
           <Paper
             variant="outlined"
             className="p-5 rounded-xl border border-border bg-white shadow-sm"

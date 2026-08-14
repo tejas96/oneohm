@@ -10,7 +10,6 @@ import { UserMenu } from './user-menu';
 import { SearchTrigger } from '@/components/shared/search';
 import { useNotificationUnreadCount } from '@/lib/hooks/resources/notifications';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/providers/auth-provider';
 
 interface GlobalHeaderProps {
   className?: string;
@@ -23,8 +22,8 @@ interface GlobalHeaderProps {
  */
 export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
   const router = useRouter();
-  const { hasPermission } = useAuth();
-  const canViewNotifications = hasPermission('notifications:read');
+  // Your own notifications. Nothing to gate: they were sent to you.
+  const canViewNotifications = true;
   const { data: unreadData } = useNotificationUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
 

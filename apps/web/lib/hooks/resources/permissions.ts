@@ -16,14 +16,11 @@ export interface AdminPermission {
   id: string;
   name: string;
   code: string;
+  /** User-facing sentence, shown in the access dialog. */
   description?: string;
-  action: string;
-  scope: string;
-  permissionLevel: string;
-  showInMenu: boolean;
-  menuLabel?: string;
+  /** Groups the checkbox list in the role builder. */
+  module: string;
   isActive: boolean;
-  isSystemPermission: boolean;
   rolesCount?: number;
   createdAt: string;
   updatedAt: string;
@@ -33,13 +30,14 @@ export interface Permission {
   id: string;
   name: string;
   code: string;
-  action: string;
-  scope: string;
+  /** User-facing sentence, shown in the access dialog. */
+  description?: string;
+  /** Groups the checkbox list in the role builder. */
+  module: string;
 }
 
 export interface PermissionFilters extends BaseFilters {
-  action?: string;
-  scope?: string;
+  module?: string;
 }
 
 // ── Resource Registration ──────────────────────────────────────
@@ -52,9 +50,9 @@ defineResource<AdminPermission>(
     syncToUrl: true,
     paramMapping: { limit: 'pageSize' },
   },
-  {
-    view: 'permissions:read',
-  },
+  // No permission codes. Admin screens are gated as a whole by
+  // SUPERADMIN_ONLY in route-map.ts, so a per-resource code would
+  // gate nothing extra.
 );
 
 // ── Hooks ──────────────────────────────────────────────────────

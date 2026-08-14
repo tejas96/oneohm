@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import React, { Suspense, useState, type ReactNode } from 'react';
 
 import {
@@ -13,6 +14,8 @@ import {
 } from '@/components/layout';
 import { CommandPalette } from '@/components/shared/command-palette';
 import { AuthGuard } from '@/components/shared/guards';
+import { AccessDeniedContent, AccessDialogProvider, useCan } from '@/lib/rbac';
+import { gateForPath } from '@/lib/rbac/route-map';
 
 interface DashboardLayoutContentProps {
   children: ReactNode;
@@ -44,10 +47,38 @@ function DashboardLayoutContent({ children }: DashboardLayoutContentProps) {
 
       {/* Main Content - Responsive margins */}
       <MainContent isPanelOpen={isPanelOpen}>
-        <PageTransitionGuard>{children}</PageTransitionGuard>
+        <PageTransitionGuard>
+          <RouteGate>{children}</RouteGate>
+        </PageTransitionGuard>
       </MainContent>
     </>
   );
+}
+
+/**
+ * Client-side half of route gating.
+ *
+ * `middleware.ts` already blocks blocked URLs server-side. This covers soft
+ * navigation and the moment after a token refresh changes what someone holds.
+ *
+ * It renders the deny screen **instead of** `children`, which is the point:
+ * the page component never mounts, so none of its data hooks fire and no API
+ * request goes out for data the user should not see.
+ */
+function RouteGate({ children }: { children: ReactNode }): React.JSX.Element {
+  const pathname = usePathname();
+  const { can } = useCan();
+  const gate = gateForPath(pathname);
+
+  if (!can(gate)) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <AccessDeniedContent gate={gate} />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }
 
 interface DashboardLayoutProps {
@@ -63,11 +94,13 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.Element {
   return (
     <AuthGuard>
-      <LayoutProvider>
-        <div className="min-h-screen bg-background-secondary">
-          <DashboardLayoutContent>{children}</DashboardLayoutContent>
-        </div>
-      </LayoutProvider>
+      <AccessDialogProvider>
+        <LayoutProvider>
+          <div className="min-h-screen bg-background-secondary">
+            <DashboardLayoutContent>{children}</DashboardLayoutContent>
+          </div>
+        </LayoutProvider>
+      </AccessDialogProvider>
     </AuthGuard>
   );
 }

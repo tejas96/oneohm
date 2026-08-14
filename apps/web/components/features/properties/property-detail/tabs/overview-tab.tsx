@@ -54,6 +54,7 @@ import {
 } from '@/components/features/customers/customer-detail/primitives';
 import { SiteStageBar } from '@/components/features/customers/customer-detail/site-stage';
 import { showToast } from '@/components/ui';
+import { useAccessDialog, useCan, useGatedAction } from '@/lib/rbac';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
 
 export interface OverviewTabProps {
@@ -86,6 +87,11 @@ const IN_PLAY_STATUSES: readonly PropertyStatus[] = [
 
 function LeadTemperatureControl({ property }: { property: CustomerPropertyResponse }): JSX.Element {
   const updateProperty = useUpdateProperty();
+  // These chips look like a filter but each one PATCHes the property, so they
+  // are an edit and need the edit permission.
+  const { can } = useCan();
+  const { requestAccess } = useAccessDialog();
+  const canEdit = can('properties.edit');
 
   return (
     <Stack direction="row" gap={0.75} flexWrap="wrap" useFlexGap>
@@ -99,7 +105,12 @@ function LeadTemperatureControl({ property }: { property: CustomerPropertyRespon
             component="button"
             type="button"
             disabled={updateProperty.isPending}
+            aria-disabled={!canEdit}
             onClick={() => {
+              if (!canEdit) {
+                requestAccess('properties.edit', 'Change lead temperature');
+                return;
+              }
               if (active || updateProperty.isPending) return;
               updateProperty.mutate({ id: property.id, data: { leadTemperature: temperature } });
             }}
@@ -577,6 +588,23 @@ function ReadinessCard({ property }: { property: CustomerPropertyResponse }): JS
 
   const isPending = completeVisit.isPending || completeSurvey.isPending || cancelActivity.isPending;
   const isCancelled = property.siteStatus === SiteStatus.CANCELLED;
+  // Site readiness actions all change the property record.
+  const editSite = useGatedAction('properties.edit', () => setEditOpen(true), 'Edit site data');
+  const markVisit = useGatedAction(
+    'properties.edit',
+    () => completeVisit.mutate(property.id),
+    'Mark visit complete',
+  );
+  const markSurvey = useGatedAction(
+    'properties.edit',
+    () => handleCompleteSurvey(),
+    'Mark survey complete',
+  );
+  const cancelSite = useGatedAction(
+    'properties.edit',
+    () => cancelActivity.mutate(property.id),
+    'Cancel site activity',
+  );
   const siteStatusTone: DetailTone = isCancelled
     ? 'danger'
     : property.siteStatus === SiteStatus.COMPLETED
@@ -644,7 +672,12 @@ function ReadinessCard({ property }: { property: CustomerPropertyResponse }): JS
       <SectionHeading
         action={
           !isCancelled ? (
-            <Button size="small" onClick={() => setEditOpen(true)} sx={VIEW_ALL_SX}>
+            <Button
+              size="small"
+              onClick={editSite.onGatedClick}
+              aria-disabled={!editSite.allowed}
+              sx={VIEW_ALL_SX}
+            >
               Edit site data
             </Button>
           ) : undefined
@@ -678,7 +711,8 @@ function ReadinessCard({ property }: { property: CustomerPropertyResponse }): JS
               <Button
                 size="small"
                 variant="outlined"
-                onClick={() => completeVisit.mutate(property.id)}
+                onClick={markVisit.onGatedClick}
+                aria-disabled={!markVisit.allowed}
                 disabled={isPending}
               >
                 Mark visit complete
@@ -703,7 +737,8 @@ function ReadinessCard({ property }: { property: CustomerPropertyResponse }): JS
                   <Button
                     size="small"
                     variant="outlined"
-                    onClick={handleCompleteSurvey}
+                    onClick={markSurvey.onGatedClick}
+                    aria-disabled={!markSurvey.allowed}
                     disabled={isPending || !property.siteVisitDone}
                   >
                     Mark survey complete
@@ -719,7 +754,8 @@ function ReadinessCard({ property }: { property: CustomerPropertyResponse }): JS
         <Button
           size="small"
           color="error"
-          onClick={() => cancelActivity.mutate(property.id)}
+          onClick={cancelSite.onGatedClick}
+          aria-disabled={!cancelSite.allowed}
           disabled={isPending}
           sx={{ mt: 2, ...VIEW_ALL_SX }}
         >

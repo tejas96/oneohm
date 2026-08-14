@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { showToast } from '@/components/ui/sonner';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type Bom, type BomItem, useEntityBom, useQuoteConfig } from '@/lib/hooks/resources';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils/error';
 import { recordRecentView } from '@/lib/utils/recent-views';
 import { useAuth } from '@/providers/auth-provider';
@@ -179,6 +180,7 @@ function LoadingSkeleton() {
 }
 
 export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.JSX.Element {
+  const shareQuote = useGatedAction('quotes.send', () => undefined, 'Share quote');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -317,6 +319,10 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
 
     setWhatsappLoading(true);
     try {
+      if (!shareQuote.allowed) {
+        shareQuote.onGatedClick();
+        return;
+      }
       const result = await shareWhatsappMutation.mutateAsync({
         quoteId: quote.id,
         pdfData,

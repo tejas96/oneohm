@@ -41,9 +41,9 @@ export function InventoryVendorsPage(): React.JSX.Element {
   const activeViewId = searchParams.get('view');
 
   const { hasPermission } = useAuth();
-  const canCreate = hasPermission('inventory:write');
+  const canCreate = hasPermission('inventory.vendors.manage');
   const canEdit = canCreate;
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const canExport = hasPermission('inventory.view') || hasPermission('inventory.view');
 
   const list = useVendors();
   const {

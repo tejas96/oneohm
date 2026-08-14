@@ -38,6 +38,7 @@ import { CRM_TONE_FILL, CrmStatusPill, type CrmTone } from '@/components/shared/
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
+import { useGatedAction } from '@/lib/rbac';
 import { color, crm, gradient, radius, shadow } from '@/lib/theme/tokens';
 import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -549,6 +550,12 @@ export function CustomerPropertiesExpandedRow({
     void router.push(buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId }));
   }, [router, customerId]);
 
+  // The route this navigates to is gated on `customers.create` — it is shared
+  // with the "new customer" wizard and cannot tell the two intents apart from
+  // the path alone. Adding a site to an existing customer is a property write,
+  // so the button is the only place that distinction can be enforced.
+  const addSite = useGatedAction('properties.create', handleAddSite, 'Add site');
+
   const summary = useMemo(() => {
     const quotedTotal = properties.reduce(
       (sum, p) => sum + (p.latestQuoteFinalPrice != null ? Number(p.latestQuoteFinalPrice) : 0),
@@ -656,7 +663,13 @@ export function CustomerPropertiesExpandedRow({
               Add the first rooftop or plant address to start a survey.
             </Box>
           </Box>
-          <Button size="small" variant="contained" onClick={handleAddSite}>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={addSite.onGatedClick}
+            aria-disabled={!addSite.allowed}
+            sx={{ opacity: addSite.allowed ? 1 : 0.5 }}
+          >
             Add site
           </Button>
         </Box>
@@ -697,7 +710,9 @@ export function CustomerPropertiesExpandedRow({
             size="small"
             variant="outlined"
             startIcon={<AddIcon sx={{ fontSize: 15 }} />}
-            onClick={handleAddSite}
+            onClick={addSite.onGatedClick}
+            aria-disabled={!addSite.allowed}
+            sx={{ opacity: addSite.allowed ? 1 : 0.5 }}
           >
             Add site
           </Button>

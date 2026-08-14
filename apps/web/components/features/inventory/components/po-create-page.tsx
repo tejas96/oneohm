@@ -29,6 +29,7 @@ import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES } from '@/lib/config/routes';
 import { usePurchaseOrderMutations } from '@/lib/hooks/resources/purchase-orders';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 
 const CARD_SX = {
@@ -60,6 +61,11 @@ function SectionCard({ title, action, children }: SectionCardProps): React.JSX.E
 }
 
 export function PoCreatePage(): React.JSX.Element {
+  const save = useGatedAction(
+    'inventory.purchase_orders.manage',
+    () => undefined,
+    'Create purchase order',
+  );
   const router = useRouter();
   const searchParams = useSearchParams();
   const { create } = usePurchaseOrderMutations();
@@ -175,7 +181,17 @@ export function PoCreatePage(): React.JSX.Element {
         <MUITypography variant="drawerTitle">New purchase order</MUITypography>
       </div>
 
-      <form className="flex flex-col gap-4" onSubmit={(e) => void onSubmit(e)}>
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          if (!save.allowed) {
+            e.preventDefault();
+            save.onGatedClick();
+            return;
+          }
+          void onSubmit(e);
+        }}
+      >
         {create.error ? (
           <Alert variant="error" title="Could not create PO">
             {getErrorMessage(create.error)}

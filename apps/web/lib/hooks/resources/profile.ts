@@ -72,10 +72,7 @@ defineResource<EmployeeProfile>(
     endpoint: '/employees',
     syncToUrl: false,
   },
-  {
-    view: 'employees:read',
-    update: 'employees:update',
-  },
+  // No permission codes — this is the user's own data.
 );
 
 // ── Hooks ──────────────────────────────────────────────────────

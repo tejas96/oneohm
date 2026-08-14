@@ -19,8 +19,6 @@ import { plainToInstance } from 'class-transformer';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { CreateSavedViewDto, SavedViewResponseDto, UpdateSavedViewDto } from '../dto';
 import { SavedViewService } from '../services/saved-view.service';
 import { isSavedViewResource } from '../types/saved-view-resource';
@@ -28,11 +26,10 @@ import { isSavedViewResource } from '../types/saved-view-resource';
 @ApiTags('Saved Views')
 @ApiBearerAuth()
 @Controller('saved-views')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class SavedViewController {
   constructor(private readonly service: SavedViewService) {}
 
-  @RequirePermission('saved-view:read')
   @Get()
   @ApiOperation({ summary: 'List saved views for the current user on a given resource' })
   @ApiResponse({ status: 200, type: [SavedViewResponseDto] })
@@ -50,7 +47,6 @@ export class SavedViewController {
     return plainToInstance(SavedViewResponseDto, views, { excludeExtraneousValues: true });
   }
 
-  @RequirePermission('saved-view:read')
   @Get(':id')
   @ApiOperation({ summary: 'Get a single saved view by id (current user only)' })
   @ApiResponse({ status: 200, type: SavedViewResponseDto })
@@ -63,7 +59,6 @@ export class SavedViewController {
     return plainToInstance(SavedViewResponseDto, view, { excludeExtraneousValues: true });
   }
 
-  @RequirePermission('saved-view:write')
   @Post()
   @ApiOperation({ summary: 'Create a saved view for the current user' })
   @ApiResponse({ status: 201, type: SavedViewResponseDto })
@@ -77,7 +72,6 @@ export class SavedViewController {
     return plainToInstance(SavedViewResponseDto, view, { excludeExtraneousValues: true });
   }
 
-  @RequirePermission('saved-view:write')
   @Patch(':id')
   @ApiOperation({ summary: 'Update a saved view (rename and/or replace filters)' })
   @ApiResponse({ status: 200, type: SavedViewResponseDto })
@@ -92,7 +86,6 @@ export class SavedViewController {
     return plainToInstance(SavedViewResponseDto, view, { excludeExtraneousValues: true });
   }
 
-  @RequirePermission('saved-view:write')
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a saved view' })

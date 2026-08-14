@@ -25,8 +25,6 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { CreateVendorDto, UpdateVendorDto, VendorResponseDto } from '../dto';
 import { VendorService } from '../services';
 
@@ -37,14 +35,13 @@ import { VendorService } from '../services';
 @ApiTags('Inventory - Vendors')
 @ApiBearerAuth()
 @Controller('vendors')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class VendorController {
   constructor(private readonly vendorService: VendorService) {}
 
   /**
    * Get vendor statistics — MUST be before :id
    */
-  @RequirePermission('inventory:read')
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get vendor statistics' })
   async getStatistics(
@@ -56,7 +53,6 @@ export class VendorController {
   /**
    * Create a new vendor
    */
-  @RequirePermission('inventory:write')
   @Post()
   @ApiCreate({
     summary: 'Create a new vendor',
@@ -77,7 +73,6 @@ export class VendorController {
   /**
    * Get all vendors with filters
    */
-  @RequirePermission('inventory:read')
   @Get()
   @ApiReadAll({
     summary: 'Get all vendors',
@@ -149,7 +144,6 @@ export class VendorController {
   /**
    * Get vendor by ID
    */
-  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({
     summary: 'Get vendor by ID',
@@ -170,7 +164,6 @@ export class VendorController {
   /**
    * Update vendor
    */
-  @RequirePermission('inventory:write')
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update vendor',
@@ -192,7 +185,6 @@ export class VendorController {
   /**
    * Delete vendor
    */
-  @RequirePermission('inventory:write')
   @Delete(':id')
   @ApiDelete({
     summary: 'Delete vendor',
@@ -210,7 +202,6 @@ export class VendorController {
   /**
    * Change vendor status
    */
-  @RequirePermission('inventory:write')
   @Patch(':id/status')
   @ApiOperation({
     summary: 'Change vendor status',
@@ -231,7 +222,6 @@ export class VendorController {
   /**
    * Update vendor rating
    */
-  @RequirePermission('inventory:write')
   @Patch(':id/rating')
   @ApiOperation({
     summary: 'Update vendor rating',

@@ -31,12 +31,9 @@ defineResource<EmployeeListItem>(
     defaultPageSize: 100,
     syncToUrl: false,
   },
-  {
-    view: 'employees:read',
-    create: 'employees:create',
-    update: 'employees:update',
-    delete: 'employees:delete',
-  },
+  // No permission codes. Admin screens are gated as a whole by
+  // SUPERADMIN_ONLY in route-map.ts, so a per-resource code would
+  // gate nothing extra.
 );
 
 // ── Hooks ──────────────────────────────────────────────────────

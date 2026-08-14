@@ -139,7 +139,7 @@ export function useInventoryPaletteSearch(
   opts: UseInventoryPaletteSearchOptions,
 ): UseInventoryPaletteSearchResult {
   const { hasPermission } = useAuth();
-  const canSearch = hasPermission('inventory:search');
+  const canSearch = hasPermission('inventory.view');
 
   const { query, effectiveQuery, isBelowMinLength } = useInventorySearch({
     query: opts.query,

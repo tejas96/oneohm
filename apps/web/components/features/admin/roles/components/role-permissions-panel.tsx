@@ -8,6 +8,18 @@ import { Button, Checkbox, Typography } from '@/components/ui';
 import { useRoleMutations, useAllPermissions, type Permission } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
 
+/**
+ * The verb half of a permission code.
+ *
+ * Codes are `<module>.<action>` — sometimes with a nested action, e.g.
+ * `inventory.purchase_orders.approve`. There is no separate `action` column
+ * any more, so the matrix derives its columns from the code itself.
+ */
+function actionOf(perm: { code: string; module: string }): string {
+  const prefix = `${perm.module}.`;
+  return perm.code.startsWith(prefix) ? perm.code.slice(prefix.length) : perm.code;
+}
+
 interface PermissionGroup {
   feature: string;
   permissions: Permission[];
@@ -16,8 +28,7 @@ interface PermissionGroup {
 function groupPermissions(permissions: Permission[]): PermissionGroup[] {
   const groups: Record<string, Permission[]> = {};
   for (const perm of permissions) {
-    const [feature] = perm.code.split(':');
-    const key = feature || 'other';
+    const key = perm.module || 'other';
     if (!groups[key]) groups[key] = [];
     groups[key].push(perm);
   }
@@ -112,7 +123,7 @@ export function RolePermissionsPanel({
     );
   }
 
-  const actions: string[] = [...new Set(allPermissions.map((p) => p.action))].sort();
+  const actions: string[] = [...new Set(allPermissions.map(actionOf))].sort();
 
   return (
     <div>
@@ -153,7 +164,7 @@ export function RolePermissionsPanel({
                   {group.feature}
                 </td>
                 {actions.map((action) => {
-                  const perm = group.permissions.find((p) => p.action === action);
+                  const perm = group.permissions.find((p) => actionOf(p) === action);
                   return (
                     <td key={action} className="text-center px-3 py-2.5">
                       {perm ? (

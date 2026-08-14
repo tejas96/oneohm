@@ -51,11 +51,14 @@ export function InventoryPurchaseOrdersPage(): React.JSX.Element {
   const activeViewId = searchParams.get('view');
 
   const { hasPermission } = useAuth();
-  const canCreate = hasPermission('purchase-order:write');
+  const canCreate = hasPermission('inventory.purchase_orders.manage');
   const canWrite = canCreate;
   const canApprove =
-    hasPermission('purchase-order:approve') || hasPermission('purchase-order:write');
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+    hasPermission('inventory.purchase_orders.approve') ||
+    hasPermission('inventory.purchase_orders.manage');
+  const canExport =
+    hasPermission('inventory.purchase_orders.view') ||
+    hasPermission('inventory.purchase_orders.view');
 
   const list = usePurchaseOrders();
   const {

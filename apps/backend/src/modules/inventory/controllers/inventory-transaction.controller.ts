@@ -7,8 +7,6 @@ import { ApiReadAll, ApiReadOne } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { InventoryTransactionResponseDto } from '../dto';
 import type { TrendResponse } from '../dto/common';
 import { InventoryStatsService, InventoryTransactionService } from '../services';
@@ -21,7 +19,7 @@ import { InventoryStatsService, InventoryTransactionService } from '../services'
 @ApiTags('Inventory - Transactions')
 @ApiBearerAuth()
 @Controller('inventory-transactions')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class InventoryTransactionController {
   constructor(
     private readonly inventoryTransactionService: InventoryTransactionService,
@@ -33,7 +31,6 @@ export class InventoryTransactionController {
   /**
    * Get summary by transaction type
    */
-  @RequirePermission('inventory:read')
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get transaction summary by type' })
   @ApiQuery({ name: 'fromDate', required: false, type: String })
@@ -46,7 +43,6 @@ export class InventoryTransactionController {
     return this.inventoryTransactionService.getSummaryByType(fromDate, toDate);
   }
 
-  @RequirePermission('inventory:read')
   @Get('stats/by-type-trend')
   @ApiOperation({ summary: 'Transactions count bucketed by date with per-type series' })
   @ApiQuery({ name: 'fromDate', required: false, type: String })
@@ -64,7 +60,6 @@ export class InventoryTransactionController {
   /**
    * Get recent transactions
    */
-  @RequirePermission('inventory:read')
   @Get('recent')
   @ApiOperation({ summary: 'Get most recent transactions (up to 10)' })
   async getRecent(
@@ -79,7 +74,6 @@ export class InventoryTransactionController {
   /**
    * Get transactions for a specific product
    */
-  @RequirePermission('inventory:read')
   @Get('product/:productId/history')
   @ApiOperation({ summary: 'Get movement history for a product' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -113,7 +107,6 @@ export class InventoryTransactionController {
   /**
    * Get all transactions with filters
    */
-  @RequirePermission('inventory:read')
   @Get()
   @ApiReadAll({
     summary: 'Get all inventory transactions',
@@ -175,7 +168,6 @@ export class InventoryTransactionController {
   /**
    * Get transaction by ID
    */
-  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({ summary: 'Get transaction by ID', responseType: InventoryTransactionResponseDto })
   async findOne(

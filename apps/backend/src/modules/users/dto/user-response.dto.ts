@@ -41,6 +41,17 @@ export class UserResponseDto {
   @ApiProperty({ type: [String] })
   roles!: string[];
 
+  /**
+   * Flattened permission codes, unioned across every role the user holds.
+   *
+   * The web app gates on this, so it must be present on /auth/me — not only
+   * in the JWT. Empty for `super_admin` and `admin`: they bypass rather than
+   * hold grants, and the web app checks their role first.
+   */
+  @Expose()
+  @ApiProperty({ type: [String] })
+  permissions!: string[];
+
   @Expose()
   @ApiPropertyOptional()
   emailVerifiedAt?: Date;

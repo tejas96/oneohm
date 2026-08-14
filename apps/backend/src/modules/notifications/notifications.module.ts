@@ -7,7 +7,6 @@ import { ConsumerNotificationListener } from './listeners/consumer-notification.
 import { NotificationRepository } from './repositories/notification.repository';
 import { FcmService } from './services/fcm.service';
 import { NotificationService } from './services/notification.service';
-import { PermissionGuard } from '../iam/guards/permission.guard';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -17,7 +16,6 @@ import { UsersModule } from '../users/users.module';
     NotificationService,
     NotificationRepository,
     FcmService,
-    PermissionGuard,
     ConsumerNotificationListener,
   ],
   exports: [NotificationService],

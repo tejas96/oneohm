@@ -2,42 +2,37 @@
 
 import type { ReactNode } from 'react';
 
-import { useAuth } from '@/providers/auth-provider';
+import { useCan, type Gate } from '@/lib/rbac';
 
 interface CanProps {
-  /** Single permission code or array of codes */
-  permission: string | string[];
-  /** When true, require ALL permissions (default: any-of) */
+  /** A gate, or several. */
+  permission: Gate | Gate[];
+  /** When true, require ALL gates (default: any-of) */
   all?: boolean;
-  /** Content to render when permission is granted */
+  /** Content to render when the gate opens */
   children: ReactNode;
-  /** Content to render when permission is denied (default: null / hidden) */
+  /** Content to render when it does not (default: null / hidden) */
   fallback?: ReactNode;
-  /** When true, render children with a blur overlay instead of hiding */
+  /** Render children blurred instead of hiding them */
   blur?: boolean;
 }
 
 /**
- * Declarative inline permission gate.
+ * Declarative inline gate for a piece of UI.
  *
- * Hides (or blurs/replaces) children based on the current user's permissions.
- * Wraps `useAuth().hasPermission` so the rest of the RBAC infrastructure
- * (JWT -> Zustand -> AuthProvider) is reused without any new plumbing.
+ * Use this for **content** — pricing blocks, margin figures, anything whose
+ * value is the information itself. Content hides silently: there is nothing to
+ * click, so a dialog explaining what is missing would be noise, and a visible
+ * placeholder just advertises the number being withheld.
+ *
+ * For **actions** — buttons, menu items — prefer `useCan()` plus
+ * `useAccessDialog()`, so the control stays visible but disabled and clicking
+ * it explains what permission is needed. A user who cannot see a button cannot
+ * know to ask for it.
  *
  * @example
- * // Hide entirely when no permission
- * <Can permission="quotes:view_price_breakdown">
+ * <Can permission="quotes.profitability">
  *   <PricingSummary />
- * </Can>
- *
- * // Show blurred placeholder
- * <Can permission="quotes:view_price_breakdown" blur>
- *   <PricingSection />
- * </Can>
- *
- * // Show fallback when denied
- * <Can permission="customers:assign" fallback={<span>Not authorized</span>}>
- *   <AssigneeSelector />
  * </Can>
  */
 export function Can({
@@ -47,16 +42,10 @@ export function Can({
   fallback = null,
   blur = false,
 }: CanProps): React.JSX.Element | null {
-  const { hasPermission, hasAnyPermission, hasAllPermissions } = useAuth();
+  const { can } = useCan();
 
-  const codes = Array.isArray(permission) ? permission : [permission];
-
-  const granted =
-    codes.length === 1
-      ? hasPermission(codes[0]!)
-      : all
-        ? hasAllPermissions(codes)
-        : hasAnyPermission(codes);
+  const gates = Array.isArray(permission) ? permission : [permission];
+  const granted = all ? gates.every((g) => can(g)) : gates.some((g) => can(g));
 
   if (granted) {
     return <>{children}</>;

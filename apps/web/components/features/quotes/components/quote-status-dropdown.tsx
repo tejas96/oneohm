@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/mui-dialog';
 import { showToast } from '@/components/ui/sonner';
 import { Textarea } from '@/components/ui/textarea';
+import { useAccessDialog, useCan } from '@/lib/rbac';
 
 type BadgeVariant = 'muted' | 'info' | 'success' | 'warning' | 'error' | 'pending';
 
@@ -57,6 +58,8 @@ export const QuoteStatusDropdown = React.memo(
     const [acceptModalOpen, setAcceptModalOpen] = useState(false);
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [sendModalOpen, setSendModalOpen] = useState(false);
+    const { can } = useCan();
+    const { requestAccess } = useAccessDialog();
     const [customerSignature, setCustomerSignature] = useState('');
     const [rejectionReason, setRejectionReason] = useState('');
     const [isSharingWhatsapp, setIsSharingWhatsapp] = useState(false);
@@ -86,6 +89,22 @@ export const QuoteStatusDropdown = React.memo(
     const handleTransition = (event: React.MouseEvent, target: QuoteStatus): void => {
       event.stopPropagation();
       setAnchorEl(null);
+
+      // Gated on the dispatcher rather than on each menu item: every status
+      // change funnels through here, so one check cannot be bypassed by a
+      // route we forgot to wrap.
+      const gate =
+        target === QuoteStatus.SENT
+          ? ('quotes.send' as const)
+          : target === QuoteStatus.ACCEPTED || target === QuoteStatus.REJECTED
+            ? ('quotes.approve' as const)
+            : null;
+
+      if (gate && !can(gate)) {
+        requestAccess(gate, target === QuoteStatus.SENT ? 'Send quote' : 'Accept or reject quote');
+        return;
+      }
+
       switch (target) {
         case QuoteStatus.SENT:
           setSendModalOpen(true);

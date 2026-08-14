@@ -50,6 +50,7 @@ import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
 import { useAllActiveWorkflowSteps } from '@/lib/hooks/resources';
+import { useGatedAction } from '@/lib/rbac';
 import { color, crm } from '@/lib/theme/tokens';
 import {
   formatCurrency,
@@ -735,6 +736,16 @@ export function ProjectListPage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // The action really navigates rather than being a no-op. The header button
+  // renders as a NextLink when allowed and so never invokes it, but the
+  // empty-state button below calls `onGatedClick` unconditionally — with a
+  // no-op action that button would look enabled and do nothing.
+  const newProject = useGatedAction(
+    'projects.create',
+    () => void router.push(ROUTES.PROJECTS.NEW),
+    'New project',
+  );
+
   const statusParam = searchParams.get('status');
   const healthStatusParam = searchParams.get('healthStatus');
 
@@ -920,10 +931,12 @@ export function ProjectListPage(): JSX.Element {
           <Button
             size="small"
             variant="contained"
-            sx={{ mt: 1.5 }}
-            onClick={() => {
-              void router.push(ROUTES.PROJECTS.NEW);
-            }}
+            // The same gate the header button uses. This empty-state copy used
+            // to push the route directly, so the page had one guarded entry and
+            // one unguarded one for the identical action.
+            sx={{ mt: 1.5, opacity: newProject.allowed ? 1 : 0.5 }}
+            onClick={newProject.onGatedClick}
+            aria-disabled={!newProject.allowed}
           >
             New project
           </Button>
@@ -979,8 +992,10 @@ export function ProjectListPage(): JSX.Element {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          component={NextLink}
-          href={ROUTES.PROJECTS.NEW}
+          component={newProject.allowed ? NextLink : 'button'}
+          href={newProject.allowed ? ROUTES.PROJECTS.NEW : undefined}
+          onClick={newProject.allowed ? undefined : newProject.onGatedClick}
+          aria-disabled={!newProject.allowed}
           sx={{ position: 'relative', flexShrink: 0 }}
         >
           New project

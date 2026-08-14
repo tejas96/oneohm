@@ -79,12 +79,9 @@ defineResource<AdminUser>(
     defaultSort: { field: 'createdAt', order: 'DESC' },
     defaultFilters: { status: 'all' } as Partial<AdminUserFilters>,
   },
-  {
-    view: 'users:read',
-    create: 'users:create',
-    update: 'users:update',
-    delete: 'users:delete',
-  },
+  // No permission codes. Admin screens are gated as a whole by
+  // SUPERADMIN_ONLY in route-map.ts, so a per-resource code would
+  // gate nothing extra.
 );
 
 // ── Hooks ──────────────────────────────────────────────────────

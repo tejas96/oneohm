@@ -58,7 +58,7 @@ defineResource<InventoryTransaction>(
     defaultSort: { field: 'transactionDate', order: 'DESC' },
   },
   {
-    view: 'inventory:read',
+    view: 'inventory.transactions.view',
   },
 );
 

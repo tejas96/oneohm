@@ -30,7 +30,6 @@ import {
   type SavedView,
   type SavedViewResource,
 } from '@/lib/hooks/resources';
-import { useAuth } from '@/providers/auth-provider';
 
 /**
  * SavedViewsBar — segmented chips strip for saved filter views.
@@ -84,9 +83,11 @@ export function SavedViewsBar({
   currentFilters,
   onSelect,
 }: SavedViewsBarProps): React.JSX.Element | null {
-  const { hasPermission } = useAuth();
-  const canRead = hasPermission('saved-view:read');
-  const canWrite = hasPermission('saved-view:write');
+  // Saved views are a per-user table layout, not module data — there is no
+  // catalog code for them and there should not be. Anyone who can open a table
+  // can save how they like to look at it.
+  const canRead = true;
+  const canWrite = true;
 
   const viewsQuery = useSavedViews(resource);
   const mutations = useSavedViewMutations();

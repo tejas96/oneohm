@@ -20,6 +20,7 @@ import {
 } from '@/lib/hooks/resources/material-dispatches';
 import { useStockAllocations, type StockAllocation } from '@/lib/hooks/resources/stock-allocations';
 import { useWarehouses } from '@/lib/hooks/resources/warehouses';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 
 interface ProjectPick {
@@ -66,6 +67,7 @@ const dispatchCreateSchema = z
 type DispatchCreateFormValues = z.infer<typeof dispatchCreateSchema>;
 
 export function DispatchCreatePage(): React.JSX.Element {
+  const save = useGatedAction('inventory.dispatches.manage', () => undefined, 'Create dispatch');
   const router = useRouter();
   const { create } = useMaterialDispatchMutations();
 
@@ -199,7 +201,17 @@ export function DispatchCreatePage(): React.JSX.Element {
         </MUITypography>
       ) : null}
 
-      <form className="flex max-w-3xl flex-col gap-6" onSubmit={(e) => void onSubmit(e)}>
+      <form
+        className="flex max-w-3xl flex-col gap-6"
+        onSubmit={(e) => {
+          if (!save.allowed) {
+            e.preventDefault();
+            save.onGatedClick();
+            return;
+          }
+          void onSubmit(e);
+        }}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <Controller
             control={form.control}

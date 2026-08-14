@@ -50,7 +50,8 @@ export class EmployeeController {
     summary: 'Create a new employee profile',
     description:
       'Creates an employee profile for a user in an organization. ' +
-      'The user must already exist. Auto-assigns employee_basic role via ProfileService.',
+      'The user must already exist. Staff are created with no role — a superadmin ' +
+      'assigns one from the admin panel. Resellers still get the reseller role.',
     responseType: EmployeeResponseDto,
   })
   async create(

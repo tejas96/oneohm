@@ -24,7 +24,7 @@ defineResource<Bom>(
     defaultSort: { field: 'createdAt', order: 'DESC' },
   },
   {
-    view: 'quotes:read',
+    view: 'quotes.view',
   },
 );
 

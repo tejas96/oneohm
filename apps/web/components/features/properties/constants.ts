@@ -9,6 +9,7 @@
 import { LeadTemperature, PropertyStatus, PropertyType, QuoteStatus } from '@tejas96/shared/types';
 
 import type { CrmTone } from '@/components/shared/crm-table';
+import type { Gate } from '@/lib/rbac/catalog';
 import { toTitleLabel } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -58,15 +59,19 @@ export const PROPERTY_ALERTS = {
 // ---------------------------------------------------------------------------
 
 export const PROPERTY_DETAIL_TABS = [
-  { value: 'overview', label: 'Overview' },
-  { value: 'quotes', label: 'Quotes' },
-  { value: 'documents', label: 'Documents' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'project', label: 'Project' },
-  { value: 'followups', label: 'Follow-ups' },
-  { value: 'service', label: 'Service' },
-  { value: 'activity', label: 'Activity' },
-] as const;
+  { value: 'overview', label: 'Overview', permission: 'properties.view' },
+  { value: 'quotes', label: 'Quotes', permission: 'quotes.view' },
+  { value: 'documents', label: 'Documents', permission: 'properties.view' },
+  { value: 'finance', label: 'Finance', permission: 'finance.view' },
+  { value: 'project', label: 'Project', permission: 'projects.view' },
+  { value: 'followups', label: 'Follow-ups', permission: 'followups.view' },
+  { value: 'service', label: 'Service', permission: 'service.view' },
+  { value: 'activity', label: 'Activity', permission: 'properties.view' },
+] as const satisfies readonly {
+  value: string;
+  label: string;
+  permission: Gate;
+}[];
 
 export type PropertyDetailTab = (typeof PROPERTY_DETAIL_TABS)[number]['value'];
 export const PROPERTY_DETAIL_DEFAULT_TAB: PropertyDetailTab = 'overview';

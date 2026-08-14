@@ -80,12 +80,7 @@ defineResource<SavedView>(
     defaultPageSize: 100,
     syncToUrl: false,
   },
-  {
-    view: 'saved-view:read',
-    create: 'saved-view:write',
-    update: 'saved-view:write',
-    delete: 'saved-view:write',
-  },
+  // No permission codes — this is the user's own data.
 );
 
 export const savedViewKeys = createResourceKeys('saved-views');

@@ -4,169 +4,96 @@ import { useMemo } from 'react';
 
 import { navigationConfig } from '@/lib/config/navigation';
 import { getPanelKeyForPath } from '@/lib/config/routes';
-import {
-  type NavItem,
-  type NavSection,
-  type NavigationConfig,
-  type PanelConfig,
-  type RailNavItem,
-  type UserAccessContext,
-  type UserRole,
-  hasAccess,
-} from '@/lib/types';
-import { useAuth } from '@/providers/auth-provider';
+import { useCan, type Gate } from '@/lib/rbac';
+import type { Gated, NavItem, NavSection, PanelConfig, RailNavItem } from '@/lib/types';
 
 /**
- * Filter navigation items recursively
+ * Navigation annotated with what the current user may actually use.
+ *
+ * This used to *remove* inaccessible items. It now marks them instead, and the
+ * rail and panel render them greyed. Hiding a feature means a user cannot
+ * discover it exists, so they never know what to ask a superadmin for — the
+ * greyed item plus the access dialog is what makes the permission legible.
+ *
+ * Sections are kept even when every item inside is blocked, for the same
+ * reason: the shape of the app should be the same for everyone.
  */
-function filterNavItems(items: NavItem[], userAccess: UserAccessContext): NavItem[] {
-  return items
-    .filter((item) => hasAccess(item, userAccess))
-    .map((item) => ({
-      ...item,
-      children: item.children ? filterNavItems(item.children, userAccess) : undefined,
-    }));
+export type GatedNavItem = Gated<Omit<NavItem, 'children'>> & { children?: GatedNavItem[] };
+export type GatedRailItem = Gated<RailNavItem>;
+export interface GatedSection extends Omit<NavSection, 'items'> {
+  allowed: boolean;
+  items: GatedNavItem[];
+}
+export interface GatedPanel extends Omit<PanelConfig, 'sections'> {
+  sections: GatedSection[];
+}
+export interface GatedNavigation {
+  railTop: GatedRailItem[];
+  railBottom: GatedRailItem[];
+  panels: Record<string, GatedPanel>;
 }
 
-/**
- * Filter navigation sections
- */
-function filterNavSections(sections: NavSection[], userAccess: UserAccessContext): NavSection[] {
-  return sections
-    .filter((section) => hasAccess(section, userAccess))
-    .map((section) => ({
-      ...section,
-      items: filterNavItems(section.items, userAccess),
-    }))
-    .filter((section) => section.items.length > 0); // Remove empty sections
-}
-
-/**
- * Filter panel configs
- */
-function filterPanelConfigs(
-  panels: Record<string, PanelConfig>,
-  userAccess: UserAccessContext,
-): Record<string, PanelConfig> {
-  const filtered: Record<string, PanelConfig> = {};
-
-  for (const [key, config] of Object.entries(panels)) {
-    const filteredSections = filterNavSections(config.sections, userAccess);
-    if (filteredSections.length > 0) {
-      filtered[key] = {
-        ...config,
-        sections: filteredSections,
-      };
-    }
-  }
-
-  return filtered;
-}
-
-/**
- * Filter rail items
- */
-function filterRailItems(items: RailNavItem[], userAccess: UserAccessContext): RailNavItem[] {
-  return items.filter((item) => hasAccess(item, userAccess));
+function gateItems(items: NavItem[], can: (gate: Gate) => boolean): GatedNavItem[] {
+  return items.map((item) => ({
+    ...item,
+    allowed: can(item.permission),
+    children: item.children ? gateItems(item.children, can) : undefined,
+  }));
 }
 
 export interface UseFilteredNavigationReturn {
-  /** Filtered navigation config based on user permissions */
-  navigation: NavigationConfig;
-  /** User access context (roles + permissions) */
-  userAccess: UserAccessContext;
-  /** Check if user can access a specific route */
-  canAccess: (item: { roles?: UserRole[]; permissions?: string[] }) => boolean;
+  navigation: GatedNavigation;
+  /** Check any gate directly, for UI that is not a nav item. */
+  canAccess: (gate: Gate) => boolean;
 }
 
-/**
- * useFilteredNavigation Hook
- * Returns navigation configuration filtered by user's roles and permissions.
- * Use this in Rail, Panel, and any navigation components.
- *
- * @example
- * ```tsx
- * const { navigation, canAccess } = useFilteredNavigation();
- *
- * // Use filtered rail items
- * navigation.railTop.map(item => ...)
- *
- * // Check custom access
- * if (canAccess({ permissions: ['users:manage'] })) { ... }
- * ```
- */
 export function useFilteredNavigation(): UseFilteredNavigationReturn {
-  const { user } = useAuth();
+  const { can } = useCan();
 
-  // Build user access context
-  const userAccess: UserAccessContext = useMemo(
-    () => ({
-      roles: user?.roles ?? [],
-      permissions: user?.permissions ?? [],
-    }),
-    [user?.roles, user?.permissions],
-  );
+  const navigation = useMemo<GatedNavigation>(() => {
+    const panels: Record<string, GatedPanel> = {};
 
-  // Filter navigation based on user access
-  const navigation: NavigationConfig = useMemo(() => {
-    // If no user, return empty navigation
-    if (!user) {
-      return {
-        railTop: [],
-        railBottom: [],
-        panels: {},
+    for (const [key, config] of Object.entries(navigationConfig.panels)) {
+      panels[key] = {
+        ...config,
+        sections: config.sections.map((section) => ({
+          ...section,
+          allowed: can(section.permission),
+          items: gateItems(section.items, can),
+        })),
       };
     }
 
     return {
-      railTop: filterRailItems(navigationConfig.railTop, userAccess),
-      railBottom: filterRailItems(navigationConfig.railBottom, userAccess),
-      panels: filterPanelConfigs(navigationConfig.panels, userAccess),
+      railTop: navigationConfig.railTop.map((i) => ({ ...i, allowed: can(i.permission) })),
+      railBottom: navigationConfig.railBottom.map((i) => ({ ...i, allowed: can(i.permission) })),
+      panels,
     };
-  }, [user, userAccess]);
+  }, [can]);
 
-  // Helper to check access for custom items
-  const canAccess = useMemo(
-    () => (item: { roles?: UserRole[]; permissions?: string[] }) => hasAccess(item, userAccess),
-    [userAccess],
-  );
-
-  return {
-    navigation,
-    userAccess,
-    canAccess,
-  };
+  return { navigation, canAccess: can };
 }
 
 /**
- * Get filtered panel config by route path
- * Use within components that already have useFilteredNavigation
+ * Panel for the current path.
  *
- * Uses ROUTE_TO_PANEL_MAP for accurate route-to-panel mapping.
- * This ensures routes like /properties
- * correctly show the CRM panel (not dashboard).
+ * No longer falls back to the dashboard panel when the matched panel is
+ * "restricted" — nothing is restricted away any more, every panel is present
+ * and its items carry `allowed`. A silent fallback would have hidden the very
+ * thing the user was trying to reach.
  */
 export function getFilteredPanelByPath(
-  navigation: NavigationConfig,
+  navigation: GatedNavigation,
   pathname: string,
-): { key: string; config: PanelConfig } | null {
-  // Use centralized route-to-panel mapping for accurate panel selection
+): { key: string; config: GatedPanel } | null {
   const panelKey = getPanelKeyForPath(pathname);
 
-  // Return the matched panel if user has access
   if (navigation.panels[panelKey]) {
-    return {
-      key: panelKey,
-      config: navigation.panels[panelKey]!,
-    };
+    return { key: panelKey, config: navigation.panels[panelKey] };
   }
 
-  // Fallback to dashboard if the matched panel isn't available (permission restricted)
   if (navigation.panels.dashboard) {
-    return {
-      key: 'dashboard',
-      config: navigation.panels.dashboard,
-    };
+    return { key: 'dashboard', config: navigation.panels.dashboard };
   }
 
   return null;

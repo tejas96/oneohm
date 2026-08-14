@@ -53,6 +53,7 @@ import type { MetricTileProps } from '@/components/shared/inventory/metric-tile'
 import { showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
+import { AccessDeniedContent, ALWAYS_OPEN, useCan, useGatedAction } from '@/lib/rbac';
 import {
   formatCurrency,
   formatDate,
@@ -261,6 +262,19 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     router.push(`${ROUTES.QUOTES.NEW}?propertyId=${property.id}&customerId=${property.customerId}`);
   }, [isInactiveCustomer, lockStatus?.locked, property, router]);
 
+  // Mirrors the header's gates exactly, including the view/create split: an
+  // existing project only needs viewing, a missing one has to be created.
+  const speedDialGoToProject = useGatedAction(
+    linkedProjectId ? 'projects.view' : 'projects.create',
+    () => handleGoToProject(),
+    linkedProjectId ? 'Open project' : 'Convert to project',
+  );
+  const speedDialLogFollowup = useGatedAction(
+    'followups.manage',
+    () => setFollowupDrawerOpen(true),
+    'Log follow-up',
+  );
+
   const handleGoToProject = useCallback((): void => {
     if (!property) return;
     if (linkedProjectId) {
@@ -306,7 +320,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         id: 'no-followup',
         label: 'No follow-up scheduled',
         tone: 'warning',
-        onClick: () => setFollowupDrawerOpen(true),
+        onClick: () => speedDialLogFollowup.onGatedClick(),
       });
     }
 
@@ -449,6 +463,10 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     [quoteSummary.count, pendingFollowups.length],
   );
 
+  // Above the early returns below. A hook that runs only on some renders
+  // changes the hook count between renders and React throws.
+  const { can } = useCan();
+
   if (!isPropertyIdValid) {
     return (
       <EmptyState
@@ -489,6 +507,9 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
    * The enriched record carries it.
    */
   const propertyDeleteReasons = getPropertyDeleteBlockReasons(site, propertyLoan);
+  const activeTabGate =
+    PROPERTY_DETAIL_TABS.find((t) => t.value === activeTab)?.permission ?? ALWAYS_OPEN;
+
   const isTabEnabled = (tab: PropertyDetailTab): boolean => activeTab === tab;
 
   return (
@@ -558,67 +579,79 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         counts={tabCounts}
       />
 
-      <Box role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
-        <Suspense fallback={<TabSkeleton />}>
-          {activeTab === 'overview' && (
-            <OverviewTab
-              property={site}
-              enabled={isTabEnabled('overview')}
-              onTabChange={goToTab}
-              onLogFollowup={() => setFollowupDrawerOpen(true)}
-              onCreateQuote={handleCreateQuote}
-              onGoToProject={handleGoToProject}
-              isInactiveCustomer={isInactiveCustomer}
-              quoteLocked={Boolean(lockStatus?.locked)}
-            />
-          )}
-          {activeTab === 'quotes' && (
-            <QuotesTab
-              propertyId={property.id}
-              enabled={isTabEnabled('quotes')}
-              isInactiveCustomer={isInactiveCustomer}
-              onCreateQuote={handleCreateQuote}
-            />
-          )}
-          {activeTab === 'documents' && <DocumentsTab propertyId={property.id} />}
-          {activeTab === 'finance' && (
-            <FinanceTab
-              propertyId={property.id}
-              projectId={linkedProjectId}
-              enabled={isTabEnabled('finance')}
-              onGoToProject={handleGoToProject}
-            />
-          )}
-          {activeTab === 'project' && (
-            <ProjectTab
-              property={site}
-              enabled={isTabEnabled('project')}
-              onGoToProject={handleGoToProject}
-              isInactiveCustomer={isInactiveCustomer}
-            />
-          )}
-          {activeTab === 'followups' && (
-            <FollowupsTab
-              propertyId={property.id}
-              enabled={isTabEnabled('followups')}
-              onLogFollowup={() => setFollowupDrawerOpen(true)}
-              onMarkLost={() => setMarkLostOpen(true)}
-            />
-          )}
-          {activeTab === 'service' && (
-            <ServiceTicketsTab
-              scope="property"
-              id={propertyId}
-              customerId={property.customerId}
-              projectId={linkedProjectId ?? undefined}
-              enabled={isTabEnabled('service')}
-            />
-          )}
-          {activeTab === 'activity' && (
-            <ActivityTab property={site} enabled={isTabEnabled('activity')} />
-          )}
-        </Suspense>
-      </Box>
+      {/* Guarded here, not per tab: the active tab can come from URL
+
+          state, so blocking only the trigger would let a hand-typed
+
+          ?tab= slip straight through into the content. */}
+
+      {!can(activeTabGate) ? (
+        <Box role="tabpanel" className="py-12">
+          <AccessDeniedContent gate={activeTabGate} />
+        </Box>
+      ) : (
+        <Box role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
+          <Suspense fallback={<TabSkeleton />}>
+            {activeTab === 'overview' && (
+              <OverviewTab
+                property={site}
+                enabled={isTabEnabled('overview')}
+                onTabChange={goToTab}
+                onLogFollowup={() => setFollowupDrawerOpen(true)}
+                onCreateQuote={handleCreateQuote}
+                onGoToProject={handleGoToProject}
+                isInactiveCustomer={isInactiveCustomer}
+                quoteLocked={Boolean(lockStatus?.locked)}
+              />
+            )}
+            {activeTab === 'quotes' && (
+              <QuotesTab
+                propertyId={property.id}
+                enabled={isTabEnabled('quotes')}
+                isInactiveCustomer={isInactiveCustomer}
+                onCreateQuote={handleCreateQuote}
+              />
+            )}
+            {activeTab === 'documents' && <DocumentsTab propertyId={property.id} />}
+            {activeTab === 'finance' && (
+              <FinanceTab
+                propertyId={property.id}
+                projectId={linkedProjectId}
+                enabled={isTabEnabled('finance')}
+                onGoToProject={handleGoToProject}
+              />
+            )}
+            {activeTab === 'project' && (
+              <ProjectTab
+                property={site}
+                enabled={isTabEnabled('project')}
+                onGoToProject={handleGoToProject}
+                isInactiveCustomer={isInactiveCustomer}
+              />
+            )}
+            {activeTab === 'followups' && (
+              <FollowupsTab
+                propertyId={property.id}
+                enabled={isTabEnabled('followups')}
+                onLogFollowup={() => setFollowupDrawerOpen(true)}
+                onMarkLost={() => setMarkLostOpen(true)}
+              />
+            )}
+            {activeTab === 'service' && (
+              <ServiceTicketsTab
+                scope="property"
+                id={propertyId}
+                customerId={property.customerId}
+                projectId={linkedProjectId ?? undefined}
+                enabled={isTabEnabled('service')}
+              />
+            )}
+            {activeTab === 'activity' && (
+              <ActivityTab property={site} enabled={isTabEnabled('activity')} />
+            )}
+          </Suspense>
+        </Box>
+      )}
 
       <FollowupDrawer
         open={followupDrawerOpen}
@@ -671,9 +704,11 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
           <SpeedDialAction
             icon={<FolderOpenOutlinedIcon />}
             slotProps={{ tooltip: { title: linkedProjectId ? 'Open project' : 'Convert' } }}
+            // Through the gates, matching the desktop header. Without this the
+            // mobile speed dial was an ungated copy of guarded buttons.
             onClick={() => {
               setSpeedDialOpen(false);
-              handleGoToProject();
+              speedDialGoToProject.onGatedClick();
             }}
           />
           <SpeedDialAction
@@ -681,7 +716,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
             slotProps={{ tooltip: { title: 'Log follow-up' } }}
             onClick={() => {
               setSpeedDialOpen(false);
-              setFollowupDrawerOpen(true);
+              speedDialLogFollowup.onGatedClick();
             }}
           />
         </SpeedDial>

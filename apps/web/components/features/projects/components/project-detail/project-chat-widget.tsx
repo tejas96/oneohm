@@ -12,6 +12,10 @@ interface ProjectChatWidgetProps {
 }
 
 export function ProjectChatWidget({ projectId }: ProjectChatWidgetProps): React.JSX.Element {
+  // Deliberately ungated. Posting a message is collaboration on a project you
+  // can already open — the route gate (projects.view) is the real boundary, and
+  // there is no catalog code for commenting. Inventing one would gate nothing
+  // the route does not already gate.
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');

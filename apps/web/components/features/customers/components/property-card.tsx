@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useGatedAction } from '@/lib/rbac';
 import { cn, pickDeterministic, toTitleLabel } from '@/lib/utils';
 
 // ============================================================================
@@ -151,6 +152,16 @@ export function PropertyCard({
     );
   };
 
+  // Both of these leave the properties module: one starts a quote, the other
+  // starts a project. They are gated on what they create, not on what the card
+  // shows.
+  const createQuote = useGatedAction('quotes.create', handleCreateQuote, 'Create quote');
+  const convertToProject = useGatedAction(
+    'projects.create',
+    handleConvertToProject,
+    'Convert to project',
+  );
+
   return (
     <div
       className={cn(
@@ -177,7 +188,11 @@ export function PropertyCard({
               <Eye className="mr-2 size-4" />
               View Details
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleCreateQuote}>
+            <DropdownMenuItem
+              onClick={createQuote.onGatedClick}
+              aria-disabled={!createQuote.allowed}
+              className={cn(!createQuote.allowed && 'opacity-50')}
+            >
               <FileText className="mr-2 size-4" />
               Create Quote
             </DropdownMenuItem>
@@ -199,8 +214,12 @@ export function PropertyCard({
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={handleConvertToProject}
-                  className="text-primary font-medium"
+                  onClick={convertToProject.onGatedClick}
+                  aria-disabled={!convertToProject.allowed}
+                  className={cn(
+                    'text-primary font-medium',
+                    !convertToProject.allowed && 'opacity-50',
+                  )}
                 >
                   <Folder className="mr-2 size-4" />
                   Convert to Project

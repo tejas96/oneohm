@@ -59,9 +59,11 @@ export function InventoryStockPage(): React.JSX.Element {
   const activeViewId = searchParams.get('view');
 
   const { hasPermission } = useAuth();
-  const canAdjust = hasPermission('stock:adjust') || hasPermission('inventory:write');
-  const canTransfer = hasPermission('stock:transfer') || hasPermission('inventory:write');
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const canAdjust =
+    hasPermission('inventory.stock.manage') || hasPermission('inventory.stock.manage');
+  const canTransfer =
+    hasPermission('inventory.stock.manage') || hasPermission('inventory.stock.manage');
+  const canExport = hasPermission('inventory.view') || hasPermission('inventory.view');
 
   const defaultFilters = useMemo<Partial<InventoryStockFilters>>(
     () => (isLowStockUrlFilter ? { lowStock: true } : {}),

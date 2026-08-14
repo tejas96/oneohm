@@ -144,20 +144,20 @@ export function OverviewTimelineRail({
     todayLabel = `TODAY (Day ${elapsedDays}/${totalDays} • ${formattedToday})`;
   }
 
-  // Generate scale ticks at 0%, 25%, 50%, 75%, 100%
-  const scaleTicks = React.useMemo(() => {
-    const ticks = [0, 25, 50, 75, 100];
-    return ticks.map((pct) => {
-      const dayNum = Math.round((pct / 100) * totalDays);
-      const tickDate = new Date(startNormalized.getTime() + (pct / 100) * totalDays * oneDayMs);
-      const dateStr = `${tickDate.getDate()} ${monthNames[tickDate.getMonth()]}`;
-      return {
-        percent: pct,
-        dayNum,
-        dateStr,
-      };
-    });
-  }, [startNormalized, totalDays, oneDayMs]);
+  // Scale ticks at 0%, 25%, 50%, 75%, 100%.
+  //
+  // Deliberately not `useMemo`: this sits below an early return, so the hook
+  // only ran on some renders — which is what "Rendered more hooks than during
+  // the previous render" is. Hoisting it would mean computing dates before
+  // they are known to exist, and memoising five elements of arithmetic was
+  // never worth a hook. It is rendered directly, so its identity is not load
+  // bearing either.
+  const scaleTicks = [0, 25, 50, 75, 100].map((pct) => {
+    const dayNum = Math.round((pct / 100) * totalDays);
+    const tickDate = new Date(startNormalized.getTime() + (pct / 100) * totalDays * oneDayMs);
+    const dateStr = `${tickDate.getDate()} ${monthNames[tickDate.getMonth()]}`;
+    return { percent: pct, dayNum, dateStr };
+  });
 
   // Only milestones that have tasks, sorted by order
   const sorted = milestonesRaw

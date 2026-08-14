@@ -17,9 +17,9 @@ export class CreateProfileDto {
     enum: UserProfileType,
     example: 'employee',
     description:
-      'Type of profile to create. Auto-assigns corresponding role:\n' +
+      'Type of profile to create. Role assigned with it:\n' +
       '- customer → customer role\n' +
-      '- employee → employee_basic role\n' +
+      '- employee → none; a superadmin assigns one\n' +
       '- reseller → reseller role',
     enumName: 'UserProfileType',
   })

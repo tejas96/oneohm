@@ -22,6 +22,7 @@ import {
   MUIDialogHeader,
   MUIDialogTitle,
 } from '@/components/ui/mui-dialog';
+import { useGatedAction } from '@/lib/rbac';
 
 type BadgeVariant =
   | 'muted'
@@ -89,6 +90,8 @@ export const ProjectStatusDropdown = React.memo(
         },
       });
     };
+
+    const changeStatus = useGatedAction('projects.edit', handleConfirm, 'Change project status');
 
     if (disabled || isTerminal) {
       return (
@@ -185,7 +188,11 @@ export const ProjectStatusDropdown = React.memo(
             >
               Cancel
             </Button>
-            <Button onClick={handleConfirm} disabled={updateStatusMutation.isPending}>
+            <Button
+              onClick={changeStatus.onGatedClick}
+              aria-disabled={!changeStatus.allowed}
+              disabled={updateStatusMutation.isPending}
+            >
               {updateStatusMutation.isPending ? 'Updating...' : 'Confirm Status Change'}
             </Button>
           </MUIDialogFooter>

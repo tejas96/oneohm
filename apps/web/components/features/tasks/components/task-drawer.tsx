@@ -19,6 +19,8 @@ import { Button } from '@/components/ui/button';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { Sheet, SheetContent, SheetFooter, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useGatedAction } from '@/lib/rbac';
+import { cn } from '@/lib/utils';
 
 interface TaskDrawerProps {
   taskId: string | null;
@@ -35,6 +37,11 @@ export function TaskDrawer({
 }: TaskDrawerProps): React.JSX.Element {
   const { data: task, isLoading, isError, error } = useTaskDetail(open ? taskId : null);
   const updateTask = useUpdateTask();
+  const markComplete = useGatedAction(
+    'projects.tasks.manage',
+    () => handleComplete(),
+    'Mark task complete',
+  );
   const addComment = useAddComment();
   const { taskStatuses, isLoading: statusesLoading } = useProjectTaskStatuses(task?.projectId);
 
@@ -347,8 +354,12 @@ export function TaskDrawer({
                 <Button
                   size="lg"
                   loading={updateTask.isPending}
-                  onClick={handleComplete}
-                  className="w-full shrink-0 sm:w-auto sm:min-w-[152px]"
+                  onClick={markComplete.onGatedClick}
+                  aria-disabled={!markComplete.allowed}
+                  className={cn(
+                    'w-full shrink-0 sm:w-auto sm:min-w-[152px]',
+                    !markComplete.allowed && 'opacity-50',
+                  )}
                 >
                   {!updateTask.isPending && <CheckIcon />}
                   Mark complete

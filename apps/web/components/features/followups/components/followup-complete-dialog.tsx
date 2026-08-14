@@ -36,6 +36,7 @@ import {
 } from '@/components/ui';
 import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { MUIUserAssigneeSelector } from '@/components/ui/mui-user-assignee-selector';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -62,6 +63,12 @@ export function FollowupCompleteDialog({
   onClose,
   onMarkLost,
 }: FollowupCompleteDialogProps): JSX.Element {
+  const markLost = useGatedAction('followups.manage', () => onMarkLost?.(), 'Mark lost');
+  const complete = useGatedAction(
+    'followups.manage',
+    () => submit('accepted'),
+    'Complete follow-up',
+  );
   const { user } = useAuth();
   const { data: employees = [], isLoading: employeesLoading } = useEmployees({ enabled: open });
   const completeMutation = useCompleteFollowup();
@@ -206,7 +213,11 @@ export function FollowupCompleteDialog({
             <Alert
               severity="info"
               action={
-                <Button size="small" onClick={onMarkLost}>
+                <Button
+                  size="small"
+                  onClick={markLost.onGatedClick}
+                  aria-disabled={!markLost.allowed}
+                >
                   Mark lost
                 </Button>
               }
@@ -284,14 +295,20 @@ export function FollowupCompleteDialog({
         </Button>
         <Box sx={{ flex: 1 }} />
         {onMarkLost && (
-          <Button color="error" onClick={onMarkLost} disabled={completeMutation.isPending}>
+          <Button
+            color="error"
+            onClick={markLost.onGatedClick}
+            aria-disabled={!markLost.allowed}
+            disabled={completeMutation.isPending}
+          >
             Mark lost
           </Button>
         )}
         {followup?.propertyId && (
           <Button
             color="success"
-            onClick={() => submit('accepted')}
+            onClick={complete.onGatedClick}
+            aria-disabled={!complete.allowed}
             disabled={completeMutation.isPending}
           >
             Quote accepted

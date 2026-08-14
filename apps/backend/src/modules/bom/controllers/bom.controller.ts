@@ -13,8 +13,6 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { BomResponseDto } from '../dto/bom-response.dto';
 import { BomService } from '../services/bom.service';
 
@@ -23,11 +21,10 @@ const ALLOWED_ENTITY_TYPES = ['quote_version', 'project'] as const;
 @ApiTags('BOM')
 @ApiBearerAuth()
 @Controller('bom')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class BomController {
   constructor(private readonly bomService: BomService) {}
 
-  @RequirePermission('bom:read')
   @Get()
   async findByEntity(
     @Query('entityType') entityType: string,
@@ -51,7 +48,6 @@ export class BomController {
    * derived from `expense_product_links`. Powers the "Procurement"
    * section of the project's BOM tab (plan §3.4 / §6).
    */
-  @RequirePermission('bom:read')
   @Get('project/:projectId/procurement-status')
   @ApiOperation({
     summary: 'Per-product procurement status for a project (BOM target vs spent qty)',
@@ -69,7 +65,6 @@ export class BomController {
    * Partial allocation is normal; items without sufficient stock are returned
    * in the `pendingStock` array.  Idempotent: already-satisfied lines are skipped.
    */
-  @RequirePermission('bom:finalize')
   @Post(':id/allocate-pending')
   @ApiOperation({
     summary: 'Reserve stock for pending BOM lines',

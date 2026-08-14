@@ -22,6 +22,7 @@ import {
 } from '@tejas96/shared/types';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
+import { hasAdminBypassRole } from '../../iam/constants';
 import { LookupRepository } from '../../lookups/repositories/lookup.repository';
 import {
   CONSUMER_EVENTS,
@@ -1512,12 +1513,7 @@ export class ProjectTaskService {
   }
 
   private isAdminRole(roles: string[]): boolean {
-    const safeRoles = roles ?? [];
-    return (
-      safeRoles.includes('admin') ||
-      safeRoles.includes('super_admin') ||
-      safeRoles.includes('platform_admin')
-    );
+    return hasAdminBypassRole(roles ?? []);
   }
 
   private async detectCircularDependencies(

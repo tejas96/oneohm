@@ -107,10 +107,10 @@ defineResource(
   'projects',
   { endpoint: '/projects', defaultPageSize: 20, syncToUrl: true },
   {
-    view: 'projects:read',
-    create: 'projects:create',
-    update: 'projects:update',
-    delete: 'projects:delete',
+    view: 'projects.view',
+    create: 'projects.create',
+    update: 'projects.edit',
+    delete: 'projects.delete',
   },
 );
 

@@ -40,12 +40,10 @@ const ORG_ROLES = [
     description: 'Regulatory compliance management',
     level: 3,
   },
-  {
-    code: 'employee_basic',
-    name: 'Employee Basic',
-    description: 'Basic employee access',
-    level: 4,
-  },
+  // `employee_basic` used to live here. It was removed by migration
+  // 1855100000000: it existed only to be auto-assigned on employee creation,
+  // and employees now start with no role at all. Re-adding it here would let
+  // a seeded environment drift back to the behaviour that was removed.
   {
     code: 'liaisoning',
     name: 'Liaisoning Officer',
@@ -188,7 +186,7 @@ const EMPLOYEES: Array<{
     designation: 'Loan Officer',
     department: 'Finance',
     employeeId: 'EMP-010',
-    roles: ['loan', 'employee_basic'],
+    roles: ['loan'],
   },
 ];
 

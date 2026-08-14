@@ -94,6 +94,11 @@ export function AdminLookupFormModal({
   const mutations = useLookupMutations();
   const { typeCodes, isLoading: isLoadingTypeCodes } = useLookupTypeCodes();
 
+  // Hoisted out of the <Controller> render prop below. A render prop is a
+  // callback, not a component, so React cannot track hooks called inside it.
+  // There is a single colour field, so one ref at this level is enough.
+  const swatchRef = useRef<HTMLInputElement>(null);
+
   const form = useForm<LookupFormInput, unknown, LookupFormValues>({
     resolver: zodResolver(lookupSchema),
     mode: 'onChange',
@@ -323,7 +328,6 @@ export function AdminLookupFormModal({
               name="color"
               control={form.control}
               render={({ field }) => {
-                const swatchRef = useRef<HTMLInputElement>(null);
                 // Normalize: empty string → undefined, fallback swatch to #000000
                 const hexValue = field.value ?? '';
                 const swatchColor = /^#[0-9a-fA-F]{6}$/.test(hexValue) ? hexValue : '#000000';

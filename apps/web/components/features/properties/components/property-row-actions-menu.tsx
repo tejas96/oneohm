@@ -15,6 +15,7 @@ import {
   getPropertyDeleteBlockReasons,
 } from '../utils/delete-eligibility';
 
+import { GatedMenuItem } from '@/components/shared/guards';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 export interface PropertyRowActionsTarget {
@@ -81,8 +82,10 @@ export function PropertyRowActionsMenu({
           View Details
         </MenuItem>
 
-        <MenuItem
-          onClick={() => {
+        <GatedMenuItem
+          permission="properties.edit"
+          subject="Edit property"
+          onAction={() => {
             handleClose();
             void router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: property.id }));
           }}
@@ -91,7 +94,7 @@ export function PropertyRowActionsMenu({
             <EditIcon fontSize="small" />
           </ListItemIcon>
           Edit Property
-        </MenuItem>
+        </GatedMenuItem>
 
         {property.latestQuoteId && (
           <MenuItem
@@ -107,8 +110,10 @@ export function PropertyRowActionsMenu({
           </MenuItem>
         )}
 
-        <MenuItem
-          onClick={() => {
+        <GatedMenuItem
+          permission="quotes.create"
+          subject="Create quote"
+          onAction={() => {
             handleClose();
             void router.push(
               `${ROUTES.QUOTES.NEW}?propertyId=${property.id}&customerId=${property.customerId}`,
@@ -119,10 +124,12 @@ export function PropertyRowActionsMenu({
             <NoteAddIcon fontSize="small" />
           </ListItemIcon>
           Create Quote
-        </MenuItem>
+        </GatedMenuItem>
 
-        <MenuItem
-          onClick={() => {
+        <GatedMenuItem
+          permission="properties.edit"
+          subject="Mark as lost"
+          onAction={() => {
             handleClose();
             onMarkAsLost(property);
           }}
@@ -132,15 +139,17 @@ export function PropertyRowActionsMenu({
             <WarningAmberIcon fontSize="small" sx={{ color: 'error.main' }} />
           </ListItemIcon>
           Mark as Lost
-        </MenuItem>
+        </GatedMenuItem>
 
         {showDelete && <Divider />}
         {showDelete && (
           <Tooltip title={deleteTooltip ?? ''}>
             <span>
-              <MenuItem
+              <GatedMenuItem
+                permission="properties.delete"
+                subject="Delete property"
                 disabled={deleteDisabled}
-                onClick={() => {
+                onAction={() => {
                   if (deleteDisabled) return;
                   handleClose();
                   onRequestDelete?.(property);
@@ -151,7 +160,7 @@ export function PropertyRowActionsMenu({
                   <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
                 </ListItemIcon>
                 Delete Property
-              </MenuItem>
+              </GatedMenuItem>
             </span>
           </Tooltip>
         )}

@@ -16,6 +16,7 @@ import { ErrorState } from '@/components/shared/feedback';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useWarehouse } from '@/lib/hooks/resources';
+import { AccessDeniedContent, useCan } from '@/lib/rbac';
 import { useAuth } from '@/providers/auth-provider';
 
 /**
@@ -31,10 +32,11 @@ import { useAuth } from '@/providers/auth-provider';
  *      tabs already render `AdvancedTable`s with the right shape.
  */
 export function WarehouseDetailPage(): React.JSX.Element {
+  const { can } = useCan();
   const params = useParams();
   const [editOpen, setEditOpen] = useState(false);
   const { hasPermission } = useAuth();
-  const canEdit = hasPermission('inventory:write');
+  const canEdit = hasPermission('inventory.warehouses.manage');
 
   const id = useMemo(() => {
     const raw = params?.id;
@@ -106,7 +108,14 @@ export function WarehouseDetailPage(): React.JSX.Element {
               <TabsTrigger value="stock" variant="underline">
                 Stock
               </TabsTrigger>
-              <TabsTrigger value="transactions" variant="underline">
+              {/* Stock and Allocations need nothing extra — the page itself is
+                  already behind inventory.view. Transactions is its own gate. */}
+              <TabsTrigger
+                value="transactions"
+                variant="underline"
+                className={can('inventory.transactions.view') ? undefined : 'opacity-40'}
+                aria-disabled={can('inventory.transactions.view') ? undefined : true}
+              >
                 Transactions
               </TabsTrigger>
               <TabsTrigger value="allocations" variant="underline">
@@ -117,7 +126,13 @@ export function WarehouseDetailPage(): React.JSX.Element {
               <WarehouseStockTab warehouseId={id} />
             </TabsContent>
             <TabsContent value="transactions">
-              <WarehouseTransactionsTab warehouseId={id} />
+              {can('inventory.transactions.view') ? (
+                <WarehouseTransactionsTab warehouseId={id} />
+              ) : (
+                <div className="p-8">
+                  <AccessDeniedContent gate="inventory.transactions.view" />
+                </div>
+              )}
             </TabsContent>
             <TabsContent value="allocations">
               <WarehouseAllocationsTab warehouseId={id} />

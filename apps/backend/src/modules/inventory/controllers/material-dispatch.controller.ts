@@ -25,8 +25,6 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
   BulkCancelDto,
   BulkOperationResultDto,
@@ -45,7 +43,7 @@ import { InventoryBulkService, InventoryStatsService, MaterialDispatchService } 
 @ApiTags('Inventory - Material Dispatches')
 @ApiBearerAuth()
 @Controller('material-dispatches')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class MaterialDispatchController {
   constructor(
     private readonly materialDispatchService: MaterialDispatchService,
@@ -58,7 +56,6 @@ export class MaterialDispatchController {
   /**
    * Bulk cancel dispatches (best-effort, restores reserved stock per id)
    */
-  @RequirePermission('dispatch:write')
   @Post('bulk/cancel')
   @ApiOperation({
     summary: 'Bulk cancel dispatches (best-effort)',
@@ -75,14 +72,12 @@ export class MaterialDispatchController {
   /**
    * Get dispatch statistics
    */
-  @RequirePermission('inventory:read')
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get dispatch statistics' })
   async getStatistics(@CurrentUser() _currentUser: CurrentUserType) {
     return this.materialDispatchService.getStatistics();
   }
 
-  @RequirePermission('inventory:read')
   @Get('stats/funnel')
   @ApiOperation({ summary: 'Dispatch funnel: lifecycle counts in window + cancelled side-bucket' })
   @ApiQuery({ name: 'fromDate', required: false, type: String })
@@ -98,7 +93,6 @@ export class MaterialDispatchController {
   /**
    * Get in-transit dispatches
    */
-  @RequirePermission('inventory:read')
   @Get('in-transit/list')
   @ApiOperation({ summary: 'Get in-transit dispatches' })
   async getInTransit(
@@ -113,7 +107,6 @@ export class MaterialDispatchController {
   /**
    * Get pending dispatches
    */
-  @RequirePermission('inventory:read')
   @Get('pending/list')
   @ApiOperation({ summary: 'Get pending (draft/prepared) dispatches' })
   async getPending(
@@ -128,7 +121,6 @@ export class MaterialDispatchController {
   /**
    * Get dispatches by project
    */
-  @RequirePermission('inventory:read')
   @Get('project/:projectId')
   @ApiOperation({ summary: 'Get dispatches for a specific project' })
   async findByProject(
@@ -145,7 +137,6 @@ export class MaterialDispatchController {
   /**
    * Create a new material dispatch
    */
-  @RequirePermission('dispatch:write')
   @Post()
   @ApiCreate({
     summary: 'Create a material dispatch',
@@ -164,7 +155,6 @@ export class MaterialDispatchController {
   /**
    * Get all material dispatches with filters
    */
-  @RequirePermission('inventory:read')
   @Get()
   @ApiReadAll({
     summary: 'Get all material dispatches',
@@ -214,7 +204,6 @@ export class MaterialDispatchController {
   /**
    * Get material dispatch by ID
    */
-  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({ summary: 'Get material dispatch by ID', responseType: MaterialDispatchResponseDto })
   async findOne(
@@ -230,7 +219,6 @@ export class MaterialDispatchController {
   /**
    * Update material dispatch
    */
-  @RequirePermission('dispatch:write')
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update material dispatch',
@@ -250,7 +238,6 @@ export class MaterialDispatchController {
   /**
    * Update dispatch status
    */
-  @RequirePermission('dispatch:write')
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update dispatch status' })
   async updateStatus(
@@ -267,7 +254,6 @@ export class MaterialDispatchController {
   /**
    * Mark dispatch as dispatched (IN_TRANSIT)
    */
-  @RequirePermission('dispatch:write')
   @Post(':id/mark-dispatched')
   @ApiOperation({ summary: 'Mark dispatch as IN_TRANSIT — deducts reserved stock' })
   async markDispatched(
@@ -283,7 +269,6 @@ export class MaterialDispatchController {
   /**
    * Mark dispatch as DELIVERED. Allowed from IN_TRANSIT or PARTIALLY_DELIVERED.
    */
-  @RequirePermission('dispatch:write')
   @Post(':id/mark-delivered')
   @ApiOperation({ summary: 'Mark dispatch as DELIVERED' })
   async markDelivered(
@@ -305,7 +290,6 @@ export class MaterialDispatchController {
   /**
    * Cancel material dispatch
    */
-  @RequirePermission('dispatch:write')
   @Post(':id/cancel')
   @ApiOperation({ summary: 'Cancel material dispatch' })
   async cancel(
@@ -322,7 +306,6 @@ export class MaterialDispatchController {
   /**
    * Delete material dispatch
    */
-  @RequirePermission('dispatch:write')
   @Delete(':id')
   @ApiDelete({ summary: 'Delete a material dispatch (draft only)' })
   async delete(

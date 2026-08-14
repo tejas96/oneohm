@@ -92,9 +92,17 @@ export class EmployeeService {
 
     this.logger.log(`Created employee profile ${profile.id} for user ${dto.userId}`);
 
-    // Auto-assign default role
-    const roleCode = profileKind === EmployeeProfileKind.RESELLER ? 'reseller' : 'employee_basic';
-    await this.profileService.assignDefaultRole(dto.userId, roleCode, createdBy);
+    // Staff get no role here. A superadmin assigns one from the admin panel,
+    // so nobody silently arrives holding access nobody chose for them.
+    // Resellers keep theirs: `reseller` marks the portal they belong to rather
+    // than granting anything.
+    if (profileKind === EmployeeProfileKind.RESELLER) {
+      await this.profileService.assignDefaultRole(dto.userId, 'reseller', createdBy);
+    } else {
+      this.logger.log(
+        `No role assigned to user ${dto.userId} — awaiting a superadmin to grant one.`,
+      );
+    }
 
     return this.toResponseDto(profile);
   }

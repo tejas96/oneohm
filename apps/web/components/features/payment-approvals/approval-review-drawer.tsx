@@ -25,6 +25,7 @@ import {
   useApprovalMutations,
   usePaymentApproval,
 } from '@/lib/hooks/resources/payment-approvals';
+import { useAccessDialog, useCan } from '@/lib/rbac';
 import { formatPaise } from '@/lib/utils/paise';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -56,6 +57,12 @@ export function ApprovalReviewDrawer({
   const { approve, reject, cancel } = useApprovalMutations();
   const autoFileReceipt = useAutoFileApprovedReceipts();
   const [reason, setReason] = useState('');
+
+  // Approving moves money. Kept clickable when blocked so the dialog can say
+  // which permission is missing.
+  const { can } = useCan();
+  const { requestAccess } = useAccessDialog();
+  const canProcess = can('finance.approvals.process');
 
   // A reason typed for one request must not survive into the next.
   useEffect(() => setReason(''), [approvalId]);
@@ -247,18 +254,22 @@ export function ApprovalReviewDrawer({
                   variant="contained"
                   color="success"
                   disabled={busy}
+                  aria-disabled={!canProcess}
+                  sx={canProcess ? undefined : { opacity: 0.5 }}
                   onClick={() =>
-                    approve.mutate(data.id, {
-                      onSuccess: (row) => {
-                        onClose();
-                        // Not awaited: the balance is already updated, and
-                        // rendering + uploading the PDF takes a couple of
-                        // seconds the approver has no reason to wait through.
-                        // Failure is reported on its own toast and never
-                        // reopens or blocks this drawer.
-                        void autoFileReceipt.fileOne(row);
-                      },
-                    })
+                    canProcess
+                      ? approve.mutate(data.id, {
+                          onSuccess: (row) => {
+                            onClose();
+                            // Not awaited: the balance is already updated, and
+                            // rendering + uploading the PDF takes a couple of
+                            // seconds the approver has no reason to wait through.
+                            // Failure is reported on its own toast and never
+                            // reopens or blocks this drawer.
+                            void autoFileReceipt.fileOne(row);
+                          },
+                        })
+                      : requestAccess('finance.approvals.process', 'Approve payment')
                   }
                 >
                   Approve — this updates the balance
@@ -277,7 +288,13 @@ export function ApprovalReviewDrawer({
                   variant="outlined"
                   color="error"
                   disabled={busy || reason.trim().length < 3}
-                  onClick={() => reject.mutate({ id: data.id, reason }, { onSuccess: onClose })}
+                  aria-disabled={!canProcess}
+                  sx={canProcess ? undefined : { opacity: 0.5 }}
+                  onClick={() =>
+                    canProcess
+                      ? reject.mutate({ id: data.id, reason }, { onSuccess: onClose })
+                      : requestAccess('finance.approvals.process', 'Reject payment')
+                  }
                 >
                   Reject
                 </Button>

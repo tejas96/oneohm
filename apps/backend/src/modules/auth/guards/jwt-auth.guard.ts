@@ -13,8 +13,7 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
  * Uses JwtStrategy for token validation
  *
  * Usage:
- *   @UseGuards(JwtAuthGuard, PermissionGuard)
- *   @RequirePermission('customers:read')
+ *   @UseGuards(JwtAuthGuard)
  *   async getCustomers() { }
  */
 @Injectable()

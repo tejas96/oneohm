@@ -49,7 +49,7 @@ import { useAuth } from '@/providers/auth-provider';
  * plan's A1 decision (snapshot table vs derive-from-transactions).
  */
 
-const RESERVED_PERMISSION = 'inventory:read';
+const RESERVED_PERMISSION = 'inventory.view';
 
 export function InventoryDashboard(): React.JSX.Element {
   const { hasPermission } = useAuth();

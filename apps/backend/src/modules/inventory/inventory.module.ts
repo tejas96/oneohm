@@ -62,7 +62,6 @@ import {
   VendorService,
   WarehouseService,
 } from './services';
-import { PermissionGuard } from '../iam/guards/permission.guard';
 import { ProductEntity } from '../master-data/entities/product.entity';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -149,7 +148,6 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     PurchaseOrderStatsService,
     InventoryStatsService,
     // Guards
-    PermissionGuard,
   ],
   exports: [
     // Export repositories for cross-module usage

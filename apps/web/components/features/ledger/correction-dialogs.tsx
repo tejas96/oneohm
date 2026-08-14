@@ -17,6 +17,7 @@ import {
   type LedgerEntry,
   type MilestoneBalance,
 } from '@/lib/hooks/resources/ledger';
+import { useGatedAction } from '@/lib/rbac';
 import { formatDate } from '@/lib/utils';
 import { formatPaise, rupeesToPaise } from '@/lib/utils/paise';
 
@@ -39,6 +40,7 @@ export function ReverseEntryDialog({
   projectId: string;
   entry: LedgerEntry;
 }): JSX.Element {
+  const save = useGatedAction('finance.payments.record', () => undefined, 'Reverse entry');
   const { reverseEntry } = useLedgerMutations(projectId);
   const [reason, setReason] = useState('');
 
@@ -94,7 +96,8 @@ export function ReverseEntryDialog({
         <Button
           variant="contained"
           color="warning"
-          onClick={() => void submit()}
+          onClick={() => (save.allowed ? void submit() : save.onGatedClick())}
+          aria-disabled={!save.allowed}
           disabled={!reason.trim() || reverseEntry.isPending}
           startIcon={reverseEntry.isPending ? <CircularProgress size={16} /> : undefined}
         >
@@ -127,6 +130,7 @@ export function ChangeOrderDialog({
   projectId: string;
   currentContractPaise: number;
 }): JSX.Element {
+  const save = useGatedAction('finance.payments.record', () => undefined, 'Add change order');
   const { addChangeOrder } = useLedgerMutations(projectId);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -222,7 +226,8 @@ export function ChangeOrderDialog({
         </Button>
         <Button
           variant="contained"
-          onClick={() => void submit()}
+          onClick={() => (save.allowed ? void submit() : save.onGatedClick())}
+          aria-disabled={!save.allowed}
           disabled={!valid || addChangeOrder.isPending}
           startIcon={addChangeOrder.isPending ? <CircularProgress size={16} /> : undefined}
         >
@@ -252,6 +257,7 @@ export function WaiveMilestoneDialog({
   projectId: string;
   milestone: MilestoneBalance;
 }): JSX.Element {
+  const save = useGatedAction('finance.payments.record', () => undefined, 'Waive milestone');
   const { waiveMilestone } = useLedgerMutations(projectId);
   const [reason, setReason] = useState('');
 
@@ -306,7 +312,8 @@ export function WaiveMilestoneDialog({
         <Button
           variant="contained"
           color="warning"
-          onClick={() => void submit()}
+          onClick={() => (save.allowed ? void submit() : save.onGatedClick())}
+          aria-disabled={!save.allowed}
           disabled={!reason.trim() || waiveMilestone.isPending}
           startIcon={waiveMilestone.isPending ? <CircularProgress size={16} /> : undefined}
         >

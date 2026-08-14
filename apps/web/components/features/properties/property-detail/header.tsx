@@ -43,6 +43,7 @@ import {
 } from '@/components/features/customers/customer-detail/primitives';
 import { WhatsAppIcon } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useGatedAction } from '@/lib/rbac';
 import { formatDate, formatPhoneForWhatsApp, toTitleLabel } from '@/lib/utils';
 
 export interface PropertyHeaderSignal {
@@ -171,6 +172,16 @@ export function PropertyDetailHeader({
   onDelete,
   signals = [],
 }: PropertyDetailHeaderProps): JSX.Element {
+  const editProperty = useGatedAction('properties.edit', onEdit, 'Edit property');
+  const createQuote = useGatedAction('quotes.create', onCreateQuote, 'New quote');
+  // Opening an existing project only needs to view it; creating one does not.
+  const goToProject = useGatedAction(
+    hasProject ? 'projects.view' : 'projects.create',
+    onGoToProject,
+    hasProject ? 'Open project' : 'Convert to project',
+  );
+  const logFollowup = useGatedAction('followups.manage', onLogFollowup, 'Log follow-up');
+
   const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
 
   const siteName = getPropertyDisplayName(property);
@@ -358,7 +369,8 @@ export function PropertyDetailHeader({
             size="small"
             variant="outlined"
             startIcon={<EditOutlinedIcon />}
-            onClick={onEdit}
+            onClick={editProperty.onGatedClick}
+            aria-disabled={!editProperty.allowed}
             sx={{ display: { xs: 'none', md: 'inline-flex' } }}
           >
             Edit
@@ -369,7 +381,8 @@ export function PropertyDetailHeader({
                 size="small"
                 variant="outlined"
                 startIcon={<PostAddOutlinedIcon />}
-                onClick={onCreateQuote}
+                onClick={createQuote.onGatedClick}
+                aria-disabled={!createQuote.allowed}
                 disabled={isInactiveCustomer || quoteLocked}
               >
                 New quote
@@ -380,7 +393,8 @@ export function PropertyDetailHeader({
             size="small"
             variant="outlined"
             startIcon={<FolderOpenOutlinedIcon />}
-            onClick={onGoToProject}
+            onClick={goToProject.onGatedClick}
+            aria-disabled={!goToProject.allowed}
             sx={{ display: { xs: 'none', md: 'inline-flex' } }}
           >
             {hasProject ? 'Open project' : 'Convert to project'}
@@ -389,7 +403,8 @@ export function PropertyDetailHeader({
             size="small"
             variant="contained"
             startIcon={<EventNoteOutlinedIcon />}
-            onClick={onLogFollowup}
+            onClick={logFollowup.onGatedClick}
+            aria-disabled={!logFollowup.allowed}
           >
             Log follow-up
           </Button>

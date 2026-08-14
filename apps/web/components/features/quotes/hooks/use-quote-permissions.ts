@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 
-import { PERMISSIONS } from '@/lib/constants/permissions';
 import { useAuth } from '@/providers/auth-provider';
 
 export interface QuotePermissions {
@@ -17,10 +16,10 @@ export function useQuotePermissions(): QuotePermissions {
 
   return useMemo(
     () => ({
-      canView: hasPermission(PERMISSIONS.QUOTES.VIEW),
-      canCreate: hasPermission(PERMISSIONS.QUOTES.CREATE),
-      canUpdate: hasPermission(PERMISSIONS.QUOTES.UPDATE),
-      canViewPriceBreakdown: hasPermission(PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN),
+      canView: hasPermission('quotes.view'),
+      canCreate: hasPermission('quotes.create'),
+      canUpdate: hasPermission('quotes.edit'),
+      canViewPriceBreakdown: hasPermission('quotes.profitability'),
     }),
     [hasPermission],
   );

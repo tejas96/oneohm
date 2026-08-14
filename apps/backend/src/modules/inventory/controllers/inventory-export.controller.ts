@@ -2,8 +2,6 @@ import { Controller, Get, Query, StreamableFile, UseGuards } from '@nestjs/commo
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../../auth/guards';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
   InventoryStockRepository,
   InventoryTransactionRepository,
@@ -44,7 +42,7 @@ function csvFilename(resource: string): string {
 @ApiTags('Inventory - Export')
 @ApiBearerAuth()
 @Controller('inventory/export')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class InventoryExportController {
   constructor(
     private readonly purchaseOrderRepository: PurchaseOrderRepository,
@@ -56,7 +54,6 @@ export class InventoryExportController {
     private readonly warehouseRepository: WarehouseRepository,
   ) {}
 
-  @RequirePermission('inventory:export')
   @Get('purchase-orders.csv')
   @ApiOperation({ summary: 'Stream CSV export of purchase orders (max 50k rows)' })
   async exportPurchaseOrders(@Query() query: Record<string, string>): Promise<StreamableFile> {
@@ -75,7 +72,6 @@ export class InventoryExportController {
     );
   }
 
-  @RequirePermission('inventory:export')
   @Get('material-dispatches.csv')
   @ApiOperation({ summary: 'Stream CSV export of material dispatches (max 50k rows)' })
   async exportDispatches(@Query() query: Record<string, string>): Promise<StreamableFile> {
@@ -94,7 +90,6 @@ export class InventoryExportController {
     );
   }
 
-  @RequirePermission('inventory:export')
   @Get('stock-allocations.csv')
   @ApiOperation({ summary: 'Stream CSV export of stock allocations (max 50k rows)' })
   async exportAllocations(@Query() query: Record<string, string>): Promise<StreamableFile> {
@@ -113,7 +108,6 @@ export class InventoryExportController {
     );
   }
 
-  @RequirePermission('inventory:export')
   @Get('inventory-stock.csv')
   @ApiOperation({ summary: 'Stream CSV export of stock levels (max 50k rows)' })
   async exportStock(@Query() query: Record<string, string>): Promise<StreamableFile> {
@@ -132,7 +126,6 @@ export class InventoryExportController {
     );
   }
 
-  @RequirePermission('inventory:export')
   @Get('inventory-transactions.csv')
   @ApiOperation({ summary: 'Stream CSV export of inventory transactions (max 50k rows)' })
   async exportTransactions(@Query() query: Record<string, string>): Promise<StreamableFile> {
@@ -151,7 +144,6 @@ export class InventoryExportController {
     );
   }
 
-  @RequirePermission('inventory:export')
   @Get('vendors.csv')
   @ApiOperation({ summary: 'Stream CSV export of vendors (max 50k rows)' })
   async exportVendors(@Query() query: Record<string, string>): Promise<StreamableFile> {
@@ -170,7 +162,6 @@ export class InventoryExportController {
     );
   }
 
-  @RequirePermission('inventory:export')
   @Get('warehouses.csv')
   @ApiOperation({ summary: 'Stream CSV export of warehouses (max 50k rows)' })
   async exportWarehouses(@Query() query: Record<string, string>): Promise<StreamableFile> {

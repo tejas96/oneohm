@@ -15,8 +15,6 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
   BulkUpdateBomItemSerialsDto,
   UpdateBomItemSerialDto,
@@ -28,11 +26,10 @@ const SERIAL_EDITOR_ROLES = new Set(['admin', 'manager', 'field_worker']);
 @ApiTags('BOM Items')
 @ApiBearerAuth()
 @Controller('bom-items')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class BomItemsController {
   constructor(private readonly bomService: BomService) {}
 
-  @RequirePermission('bom:finalize')
   @Patch(':id/serial')
   @ApiOperation({ summary: 'Update serial number for a BOM unit item' })
   async updateSerial(
@@ -45,7 +42,6 @@ export class BomItemsController {
     return { data: item };
   }
 
-  @RequirePermission('bom:finalize')
   @Patch('bulk-serials')
   @ApiOperation({ summary: 'Bulk update serial numbers for BOM unit items' })
   async bulkUpdateSerials(
@@ -57,7 +53,6 @@ export class BomItemsController {
     return { data: items };
   }
 
-  @RequirePermission('bom:read')
   @Get('check-serial')
   @ApiOperation({ summary: 'Find serial conflicts in current organization BOMs' })
   async checkSerial(@Query('serialNumber') serialNumber: string) {

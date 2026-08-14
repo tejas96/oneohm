@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu } from 'lucide-react';
+import { Lock, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -11,8 +11,10 @@ import {
   isNavItemActive,
   isProjectStatusSubItemActive,
 } from '@/lib/config';
-import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
-import type { NavItem, StatusDotColor } from '@/lib/types';
+import { getFilteredPanelByPath, useRoutes } from '@/lib/hooks';
+import { useFilteredNavigation, type GatedNavItem } from '@/lib/hooks/use-filtered-navigation';
+import { useAccessDialog } from '@/lib/rbac';
+import type { StatusDotColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 // Status dot color mapping
@@ -40,6 +42,7 @@ export function MobileNav() {
 
   const { pathname, searchParams } = useRoutes();
   const { navigation } = useFilteredNavigation();
+  const { requestAccess } = useAccessDialog();
   const panelData = getFilteredPanelByPath(navigation, pathname);
 
   // Ensure consistent hydration - only render Sheet after mount
@@ -65,7 +68,7 @@ export function MobileNav() {
   const searchString = searchParams.toString();
   const currentFullUrl = searchString ? `${pathname}?${searchString}` : pathname;
 
-  const renderNavItem = (item: NavItem, isSubItem = false) => {
+  const renderNavItem = (item: GatedNavItem, isSubItem = false) => {
     const hasQueryParams = item.href.includes('?');
     let isActive = false;
 
@@ -95,6 +98,29 @@ export function MobileNav() {
 
     const Icon = item.icon;
     const displayBadge = item.badge;
+
+    if (!item.allowed) {
+      return (
+        <button
+          key={item.id}
+          type="button"
+          aria-disabled="true"
+          onClick={() => {
+            closeNav();
+            requestAccess(item.permission, item.label);
+          }}
+          className={cn(
+            'flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm text-left',
+            'text-foreground-secondary opacity-40',
+            isSubItem && 'pl-9 text-xs py-1.5',
+          )}
+        >
+          {!item.statusDot && Icon && <Icon className="size-icon shrink-0" />}
+          <span className="flex-1 truncate">{item.label}</span>
+          <Lock className="size-icon-2xs shrink-0" />
+        </button>
+      );
+    }
 
     return (
       <Link
@@ -158,6 +184,28 @@ export function MobileNav() {
             {navigation.railTop.map((item) => {
               const isActive = isNavItemActive(pathname, item.href);
               const Icon = item.icon;
+
+              if (!item.allowed) {
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-disabled="true"
+                    onClick={() => {
+                      closeNav();
+                      requestAccess(item.permission, item.label);
+                    }}
+                    className={cn(
+                      'flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left',
+                      'text-foreground-secondary opacity-40',
+                    )}
+                  >
+                    {Icon && <Icon className="size-icon-md" strokeWidth={2} />}
+                    <span className="flex-1">{item.label}</span>
+                    <Lock className="size-icon-2xs shrink-0" />
+                  </button>
+                );
+              }
 
               return (
                 <Link

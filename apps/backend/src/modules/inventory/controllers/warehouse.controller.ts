@@ -26,8 +26,6 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { CreateWarehouseDto, UpdateWarehouseDto, WarehouseResponseDto } from '../dto';
 import { WarehouseService } from '../services';
 
@@ -38,14 +36,13 @@ import { WarehouseService } from '../services';
 @ApiTags('Inventory - Warehouses')
 @ApiBearerAuth()
 @Controller('warehouses')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class WarehouseController {
   constructor(private readonly warehouseService: WarehouseService) {}
 
   /**
    * Get warehouse statistics — MUST be before :id
    */
-  @RequirePermission('inventory:read')
   @Get('stats/summary')
   @ApiOperation({ summary: 'Get warehouse statistics' })
   async getStatistics(
@@ -57,7 +54,6 @@ export class WarehouseController {
   /**
    * Create a new warehouse
    */
-  @RequirePermission('inventory:write')
   @Post()
   @ApiCreate({
     summary: 'Create a new warehouse',
@@ -78,7 +74,6 @@ export class WarehouseController {
   /**
    * Get all warehouses with filters
    */
-  @RequirePermission('inventory:read')
   @Get()
   @ApiReadAll({
     summary: 'Get all warehouses',
@@ -158,7 +153,6 @@ export class WarehouseController {
   /**
    * Get warehouse by ID
    */
-  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiReadOne({
     summary: 'Get warehouse by ID',
@@ -179,7 +173,6 @@ export class WarehouseController {
   /**
    * Update warehouse
    */
-  @RequirePermission('inventory:write')
   @Patch(':id')
   @ApiUpdate({
     summary: 'Update warehouse',
@@ -201,7 +194,6 @@ export class WarehouseController {
   /**
    * Delete warehouse
    */
-  @RequirePermission('inventory:write')
   @Delete(':id')
   @ApiDelete({
     summary: 'Delete warehouse',
@@ -219,7 +211,6 @@ export class WarehouseController {
   /**
    * Change warehouse status
    */
-  @RequirePermission('inventory:write')
   @Patch(':id/status')
   @ApiOperation({
     summary: 'Change warehouse status',

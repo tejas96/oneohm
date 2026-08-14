@@ -42,6 +42,7 @@ import {
 import { MarkAsLostDialog } from '@/components/features/properties';
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { showToast } from '@/components/ui';
+import { useGatedAction } from '@/lib/rbac';
 import { formatDate, getErrorMessage, toTitleLabel } from '@/lib/utils';
 
 export interface FollowupsTabProps {
@@ -80,6 +81,7 @@ function ownerName(followup: FollowupResponse): string {
 }
 
 export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabProps): JSX.Element {
+  const scheduleAction = useGatedAction('followups.manage', onSchedule, 'Schedule follow-up');
   const { data, isLoading } = useCustomerFollowups(customerId, { enabled });
   const followups = useMemo(() => data?.data ?? [], [data?.data]);
 
@@ -129,7 +131,8 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
       size="small"
       variant="contained"
       startIcon={<EventNoteOutlinedIcon />}
-      onClick={onSchedule}
+      onClick={scheduleAction.onGatedClick}
+      aria-disabled={!scheduleAction.allowed}
     >
       Schedule
     </Button>

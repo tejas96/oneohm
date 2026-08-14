@@ -106,8 +106,16 @@ export class ProfileService {
   }
 
   /**
-   * Create a new profile for a user in an organization
-   * Automatically assigns role based on profile type (or custom role if provided)
+   * Create a new profile for a user in an organization.
+   *
+   * Assigns a role only when one is asked for. Employees are created with NO
+   * role: a superadmin decides what they should be able to do, and until then
+   * they can sign in and see nothing but their own profile and tasks.
+   *
+   * Customers are the exception and still get the `customer` role
+   * automatically. It is not a convenience there — `assertNotCustomerOnly` in
+   * the auth service uses it to keep customers out of the web portal, so a
+   * customer with no roles would be let in.
    */
   async createProfile(
     dto: CreateProfileDto,
@@ -127,7 +135,8 @@ export class ProfileService {
     }
 
     let profile: CustomerProfileEntity | EmployeeProfileEntity;
-    let defaultRoleCode: string;
+    // Undefined means "assign nothing" — see the note on this method.
+    let defaultRoleCode: string | undefined;
     let employeeProfileData = profileData;
 
     if (profileType === UserProfileType.RESELLER || profileType === UserProfileType.EMPLOYEE) {
@@ -175,7 +184,9 @@ export class ProfileService {
             profileKind: EmployeeProfileKind.STAFF,
             createdBy,
           });
-          defaultRoleCode = 'employee_basic';
+          // No default. Employees start with no role by design; a superadmin
+          // grants what they need from the admin panel.
+          defaultRoleCode = undefined;
           this.logger.log(`Created employee profile for user ${userId}`);
           break;
 
@@ -202,9 +213,15 @@ export class ProfileService {
       throw error;
     }
 
-    // ✅ AUTO-ASSIGN ROLE (use custom roleCode if provided, otherwise use default)
+    // An explicitly requested role always wins — that IS the superadmin
+    // deciding. Otherwise fall back to the profile type's default, which for
+    // employees is deliberately nothing.
     const finalRoleCode = roleCode || defaultRoleCode;
-    await this.assignDefaultRole(userId, finalRoleCode, createdBy);
+    if (finalRoleCode) {
+      await this.assignDefaultRole(userId, finalRoleCode, createdBy);
+    } else {
+      this.logger.log(`No role assigned to user ${userId} — awaiting a superadmin to grant one.`);
+    }
 
     // ✅ UPDATE USER: Mark profile as completed
     await this.userRepository.markProfileCompleted(userId);
@@ -353,7 +370,7 @@ export class ProfileService {
    * Assign default role to user based on profile type
    * Called automatically after profile creation
    * @param userId - User ID
-   * @param roleCode - Role code to assign (e.g., 'customer', 'reseller', 'employee_basic')
+   * @param roleCode - Role code to assign (e.g., 'customer', 'reseller', 'sales_executive')
    * @param createdBy - User ID of creator (for audit)
    */
   async assignDefaultRole(userId: string, roleCode: string, createdBy?: string): Promise<void> {

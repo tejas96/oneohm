@@ -187,6 +187,9 @@ export function QuoteConfigPage(): JSX.Element {
         </Alert>
         <Tabs defaultValue="general">
           <TabsList variant="underline" className="w-full justify-start">
+            {/* No per-tab gates here on purpose: this whole page lives under
+                /admin, which route-map.ts gates as SUPERADMIN_ONLY. Anyone who
+                can see these tabs can already see everything on them. */}
             <TabsTrigger value="general" variant="underline">
               General Settings
             </TabsTrigger>

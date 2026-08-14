@@ -71,6 +71,7 @@ import {
 import { type DraftDocument } from '@/components/shared/document-manager';
 import { showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 
 interface OnboardingWizardProps {
@@ -544,8 +545,16 @@ export function OnboardingWizard({
     }
     setActiveStep((s) => s - 1);
   };
+  const onboard = useGatedAction('customers.create', () => undefined, 'Onboard customer');
 
   const handleNext = async (): Promise<void> => {
+    // The route already gates this wizard on customers.create, so this is
+    // defence in depth for the two entry handlers rather than a gate on each
+    // of the nine writes inside — those are all downstream of getting here.
+    if (!onboard.allowed) {
+      onboard.onGatedClick();
+      return;
+    }
     // Customer edit is a single logical save, not a run to a final step.
     if (isEditCustomer && isLastStep) {
       await submitCustomerEdit();
@@ -578,6 +587,13 @@ export function OnboardingWizard({
   };
 
   const handleSaveCustomerOnly = async (): Promise<void> => {
+    // The route already gates this wizard on customers.create, so this is
+    // defence in depth for the two entry handlers rather than a gate on each
+    // of the nine writes inside — those are all downstream of getting here.
+    if (!onboard.allowed) {
+      onboard.onGatedClick();
+      return;
+    }
     const valid = await form.trigger(activeConfig.fields as never);
     if (!valid) {
       setShowErrors(true);

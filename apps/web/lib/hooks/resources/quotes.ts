@@ -49,9 +49,9 @@ defineResource<QuoteListItem>(
     staleTime: RESOURCE_QUERY_DEFAULTS.staleTime,
   },
   {
-    view: 'quotes:read',
-    create: 'quotes:create',
-    delete: 'quotes:delete',
+    view: 'quotes.view',
+    create: 'quotes.create',
+    delete: 'quotes.delete',
   },
 );
 

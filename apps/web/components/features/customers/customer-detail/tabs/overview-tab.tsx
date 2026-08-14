@@ -41,6 +41,7 @@ import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { MUIUserAssigneeSelector } from '@/components/ui';
 import { useOrgCustomersAr } from '@/lib/hooks/resources';
 import { useLedgerEntries, lastReceiptValueDate } from '@/lib/hooks/resources/ledger';
+import { useGatedAction } from '@/lib/rbac';
 import { formatCurrency, formatDate, formatSystemSize, toTitleLabel } from '@/lib/utils';
 
 export interface OverviewTabProps {
@@ -64,6 +65,11 @@ const VIEW_ALL_SX = { fontSize: '0.75rem', minWidth: 0, px: 1 } as const;
 function AssigneeField({ customer }: { customer: Customer }): JSX.Element {
   const [pickerActive, setPickerActive] = useState(false);
   const assignMutation = useAssignCustomer();
+  const reassign = useGatedAction(
+    'customers.assign',
+    () => setPickerActive(true),
+    'Assign customer',
+  );
   const { data: employees = [], isLoading } = useEmployees({ enabled: pickerActive });
 
   const options = employees.map((employee) => ({
@@ -89,7 +95,8 @@ function AssigneeField({ customer }: { customer: Customer }): JSX.Element {
           size="small"
           variant="text"
           startIcon={<EditOutlinedIcon sx={{ fontSize: 15 }} />}
-          onClick={() => setPickerActive(true)}
+          onClick={reassign.onGatedClick}
+          aria-disabled={!reassign.allowed}
           sx={{ minWidth: 0, px: 0.5, fontSize: '0.75rem' }}
         >
           Change
@@ -455,6 +462,7 @@ function SitesCard({
   onAddProperty: () => void;
   isInactive: boolean;
 }): JSX.Element {
+  const addPropertyAction = useGatedAction('properties.create', onAddProperty, 'Add site');
   /** Sites in play first — a converted site needs no attention on an overview. */
   const ordered = useMemo(() => {
     return [...properties].sort((a, b) => {
@@ -492,7 +500,8 @@ function SitesCard({
               size="small"
               variant="contained"
               startIcon={<AddBusinessOutlinedIcon />}
-              onClick={onAddProperty}
+              onClick={addPropertyAction.onGatedClick}
+              aria-disabled={!addPropertyAction.allowed}
               disabled={isInactive}
             >
               Add site

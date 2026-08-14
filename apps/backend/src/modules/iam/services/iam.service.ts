@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { In, IsNull } from 'typeorm';
 
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
-import { PermissionRepository } from '../repositories/permission.repository';
 import { RolePermissionRepository } from '../repositories/role-permission.repository';
 import { RoleRepository } from '../repositories/role.repository';
 
@@ -9,62 +9,17 @@ import { RoleRepository } from '../repositories/role.repository';
 export class IamService {
   private readonly logger = new Logger(IamService.name);
 
+  // PermissionRepository is no longer injected — nothing here reads the
+  // catalog directly since `hasPermission` was removed.
   constructor(
     private readonly roleRepository: RoleRepository,
-    private readonly permissionRepository: PermissionRepository,
     private readonly rolePermissionRepository: RolePermissionRepository,
     private readonly userRoleRepository: UserRoleRepository,
   ) {}
 
-  /**
-   * Check if user has a specific permission
-   */
-  async hasPermission(
-    userId: string,
-    permissionCode: string,
-    scope?: string,
-    resourceId?: string,
-    resourceOwnerId?: string,
-  ): Promise<boolean> {
-    const userRoles = await this.userRoleRepository.findByUserId(userId);
-    if (!userRoles || userRoles.length === 0) {
-      return false;
-    }
-
-    const permission = await this.permissionRepository.findByCode(permissionCode);
-    if (!permission?.isActive) {
-      return false;
-    }
-
-    for (const userRole of userRoles) {
-      const roleId = userRole.roleId;
-
-      if (!roleId) {
-        continue;
-      }
-
-      const hasRolePermission = await this.rolePermissionRepository.hasPermission(
-        roleId,
-        permission.id,
-      );
-
-      if (!hasRolePermission) {
-        continue;
-      }
-
-      if (scope && permission.scope !== 'all') {
-        if (scope === 'own' && resourceOwnerId) {
-          if (userId !== resourceOwnerId) {
-            continue;
-          }
-        }
-      }
-
-      return true;
-    }
-
-    return false;
-  }
+  // `hasPermission` used to live here for PermissionGuard. Both are gone:
+  // enforcement is frontend-only now, so the backend's only job is to report
+  // what a user holds. `getUserPermissions` below fills the JWT and /auth/me.
 
   /**
    * Get all permissions for a user (union across all their roles)
@@ -79,6 +34,19 @@ export class IamService {
       return [];
     }
 
+    // Roles are soft-deleted, and `user_roles` rows are not cascaded when that
+    // happens. Without this filter a link left pointing at a deleted role would
+    // keep granting its permissions — a deleted role must grant nothing.
+    const roleIds = userRoles.map((ur) => ur.roleId).filter((id): id is string => Boolean(id));
+    const liveRoleIds = new Set(
+      (
+        await this.roleRepository.repository.find({
+          where: { id: In(roleIds), deletedAt: IsNull() },
+          select: { id: true },
+        })
+      ).map((role) => role.id),
+    );
+
     const permissionCodes = new Set<string>();
 
     for (const userRole of userRoles) {
@@ -86,6 +54,11 @@ export class IamService {
 
       if (!roleId) {
         this.logger.warn(`Skipping user role without role_id for user ${userId}`);
+        continue;
+      }
+
+      if (!liveRoleIds.has(roleId)) {
+        this.logger.debug(`Skipping deleted role ${roleId} for user ${userId}`);
         continue;
       }
 
@@ -146,29 +119,7 @@ export class IamService {
     await this.rolePermissionRepository.syncPermissions(roleId, permissionIds, createdBy);
   }
 
-  /**
-   * Check if user has ANY of the provided permissions
-   */
-  async hasAnyPermission(userId: string, permissionCodes: string[]): Promise<boolean> {
-    for (const code of permissionCodes) {
-      const hasPermission = await this.hasPermission(userId, code);
-      if (hasPermission) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Check if user has ALL of the provided permissions
-   */
-  async hasAllPermissions(userId: string, permissionCodes: string[]): Promise<boolean> {
-    for (const code of permissionCodes) {
-      const hasPermission = await this.hasPermission(userId, code);
-      if (!hasPermission) {
-        return false;
-      }
-    }
-    return true;
-  }
+  // `hasAnyPermission` and `hasAllPermissions` went with `hasPermission` —
+  // they existed only to serve PermissionGuard. The web app answers these
+  // questions now, from the permission list it already holds.
 }

@@ -52,7 +52,8 @@ export function InventoryAlertsPage(): React.JSX.Element {
   const router = useRouter();
   const fmt = useFmt();
   const { hasPermission } = useAuth();
-  const canCreatePo = hasPermission('purchase-order:write') || hasPermission('inventory:write');
+  const canCreatePo =
+    hasPermission('inventory.purchase_orders.manage') || hasPermission('inventory.stock.manage');
 
   const { items, pagination, search, setSearch, sorting, isLoading, isFetching, isError } =
     useInventoryStockList({

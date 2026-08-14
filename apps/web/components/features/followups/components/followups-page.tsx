@@ -31,10 +31,40 @@ import { FollowupRescheduleDialog } from './followup-reschedule-dialog';
 import { FilterTabs } from '@/components/shared/filters';
 import { showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 const SCOPES: FollowupScope[] = ['overdue', 'today', 'upcoming', 'gaps'];
+
+/**
+ * Schedule action for a coverage gap. Its own component so gating hooks can run
+ * — the surrounding list maps over gaps inline.
+ */
+function GatedScheduleButton({
+  gap,
+  onSchedule,
+}: {
+  gap: FollowupGap;
+  onSchedule: (gap: FollowupGap) => void;
+}): React.JSX.Element {
+  const { allowed, onGatedClick } = useGatedAction(
+    'followups.manage',
+    () => onSchedule(gap),
+    'Schedule follow-up',
+  );
+  return (
+    <Button
+      size="small"
+      variant="outlined"
+      onClick={onGatedClick}
+      aria-disabled={!allowed}
+      sx={allowed ? undefined : { opacity: 0.5 }}
+    >
+      Schedule
+    </Button>
+  );
+}
 
 export function FollowupsPage(): JSX.Element {
   const { user } = useAuth();
@@ -204,9 +234,7 @@ export function FollowupsPage(): JSX.Element {
                       {gap.kind === 'property' ? 'Site' : 'Customer lead'}
                     </Typography>
                   </Box>
-                  <Button size="small" variant="outlined" onClick={() => setSchedulingGap(gap)}>
-                    Schedule
-                  </Button>
+                  <GatedScheduleButton gap={gap} onSchedule={setSchedulingGap} />
                 </Stack>
               ))}
             </Stack>

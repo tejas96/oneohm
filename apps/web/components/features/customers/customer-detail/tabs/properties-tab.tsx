@@ -35,6 +35,7 @@ import { SiteStageBar } from '../site-stage';
 import { detailTableSx, tableCardSx } from '../styles';
 
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
+import { useGatedAction } from '@/lib/rbac';
 import { formatCurrency, formatSystemSize, toTitleLabel } from '@/lib/utils';
 
 export interface PropertiesTabProps {
@@ -55,6 +56,7 @@ export function PropertiesTab({
   onAddProperty,
   onOpenProperty,
 }: PropertiesTabProps): JSX.Element {
+  const addPropertyAction = useGatedAction('properties.create', onAddProperty, 'Add site');
   if (isLoading) {
     return (
       <Box sx={tableCardSx}>
@@ -78,7 +80,8 @@ export function PropertiesTab({
                   variant="contained"
                   size="small"
                   startIcon={<AddBusinessOutlinedIcon />}
-                  onClick={onAddProperty}
+                  onClick={addPropertyAction.onGatedClick}
+                  aria-disabled={!addPropertyAction.allowed}
                   disabled={isInactive}
                 >
                   Add site
@@ -103,7 +106,8 @@ export function PropertiesTab({
                 size="small"
                 variant="outlined"
                 startIcon={<AddBusinessOutlinedIcon />}
-                onClick={onAddProperty}
+                onClick={addPropertyAction.onGatedClick}
+                aria-disabled={!addPropertyAction.allowed}
                 disabled={isInactive}
               >
                 Add site

@@ -52,6 +52,7 @@ import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useOrgCustomersAr } from '@/lib/hooks/resources';
 import { useLedgerEntries, lastReceiptValueDate } from '@/lib/hooks/resources/ledger';
+import { AccessDeniedContent, ALWAYS_OPEN, useCan, useGatedAction } from '@/lib/rbac';
 import {
   formatCurrency,
   formatDate,
@@ -239,6 +240,17 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     }
     router.push(buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId }));
   };
+
+  const speedDialCreateQuote = useGatedAction(
+    'quotes.create',
+    () => handleCreateQuote(),
+    'New quote',
+  );
+  const speedDialLogFollowup = useGatedAction(
+    'followups.manage',
+    () => setFollowupDrawerOpen(true),
+    'Log follow-up',
+  );
 
   const handleCreateQuote = (): void => {
     if (customer?.status === CustomerStatus.INACTIVE) {
@@ -445,6 +457,10 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     [properties.length, pendingFollowups.length, activeTicketCount],
   );
 
+  // Above the early returns below. A hook that runs only on some renders
+  // changes the hook count between renders and React throws.
+  const { can } = useCan();
+
   if (!isCustomerIdValid) {
     return (
       <EmptyState
@@ -485,6 +501,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   });
   const customerDeleteDisabled = customerDeleteReasons.length > 0;
   const customerDeleteTooltip = formatDeleteBlockTooltip(customerDeleteReasons);
+  const activeTabGate =
+    CUSTOMER_DETAIL_TABS.find((t) => t.value === activeTab)?.permission ?? ALWAYS_OPEN;
+
   const isTabEnabled = (tab: CustomerDetailTab): boolean => activeTab === tab;
 
   return (
@@ -535,75 +554,91 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         counts={tabCounts}
       />
 
-      <Box role="tabpanel" aria-labelledby={`tab-${activeTab}`} aria-busy={isLoadingProperties}>
-        <Suspense fallback={<TabSkeleton />}>
-          {activeTab === 'overview' && (
-            <OverviewTab
-              customer={customer}
-              properties={properties}
-              customerId={customerId}
-              activeTab={activeTab}
-              onTabChange={goToTab}
-              onOpenProperty={handleOpenProperty}
-              onLogFollowup={() => setFollowupDrawerOpen(true)}
-              onAddProperty={handleAddProperty}
-              isInactive={isInactive}
-            />
-          )}
-          {activeTab === 'properties' && (
-            <PropertiesTab
-              customerId={customerId}
-              properties={properties}
-              isLoading={isLoadingProperties}
-              isInactive={isInactive}
-              onAddProperty={handleAddProperty}
-              onOpenProperty={handleOpenProperty}
-            />
-          )}
-          {activeTab === 'quotes' && (
-            <QuotesTab
-              customerId={customerId}
-              enabled={isTabEnabled('quotes')}
-              isInactive={isInactive}
-              onCreateQuote={handleCreateQuote}
-            />
-          )}
-          {activeTab === 'projects' && (
-            <ProjectsTab customerId={customerId} enabled={isTabEnabled('projects')} />
-          )}
-          {activeTab === 'documents' && (
-            <DocumentsTab
-              properties={properties}
-              propertyFilter={propertyFilter}
-              onPropertyFilterChange={setPropertyFilterParam}
-            />
-          )}
-          {activeTab === 'followups' && (
-            <FollowupsTab
-              customerId={customerId}
-              enabled={isTabEnabled('followups')}
-              onSchedule={() => setFollowupDrawerOpen(true)}
-            />
-          )}
-          {activeTab === 'finance' && (
-            <FinanceTab
-              customerId={customerId}
-              customerName={customerName}
-              enabled={isTabEnabled('finance')}
-            />
-          )}
-          {activeTab === 'service' && (
-            <ServiceTicketsTab scope="customer" id={customerId} enabled={isTabEnabled('service')} />
-          )}
-          {activeTab === 'activity' && (
-            <ActivityTab
-              customerId={customerId}
-              properties={properties}
-              enabled={isTabEnabled('activity')}
-            />
-          )}
-        </Suspense>
-      </Box>
+      {/* Guarded here, not per tab: the active tab can come from URL
+
+          state, so blocking only the trigger would let a hand-typed
+
+          ?tab= slip straight through into the content. */}
+
+      {!can(activeTabGate) ? (
+        <Box role="tabpanel" className="py-12">
+          <AccessDeniedContent gate={activeTabGate} />
+        </Box>
+      ) : (
+        <Box role="tabpanel" aria-labelledby={`tab-${activeTab}`} aria-busy={isLoadingProperties}>
+          <Suspense fallback={<TabSkeleton />}>
+            {activeTab === 'overview' && (
+              <OverviewTab
+                customer={customer}
+                properties={properties}
+                customerId={customerId}
+                activeTab={activeTab}
+                onTabChange={goToTab}
+                onOpenProperty={handleOpenProperty}
+                onLogFollowup={() => setFollowupDrawerOpen(true)}
+                onAddProperty={handleAddProperty}
+                isInactive={isInactive}
+              />
+            )}
+            {activeTab === 'properties' && (
+              <PropertiesTab
+                customerId={customerId}
+                properties={properties}
+                isLoading={isLoadingProperties}
+                isInactive={isInactive}
+                onAddProperty={handleAddProperty}
+                onOpenProperty={handleOpenProperty}
+              />
+            )}
+            {activeTab === 'quotes' && (
+              <QuotesTab
+                customerId={customerId}
+                enabled={isTabEnabled('quotes')}
+                isInactive={isInactive}
+                onCreateQuote={handleCreateQuote}
+              />
+            )}
+            {activeTab === 'projects' && (
+              <ProjectsTab customerId={customerId} enabled={isTabEnabled('projects')} />
+            )}
+            {activeTab === 'documents' && (
+              <DocumentsTab
+                properties={properties}
+                propertyFilter={propertyFilter}
+                onPropertyFilterChange={setPropertyFilterParam}
+              />
+            )}
+            {activeTab === 'followups' && (
+              <FollowupsTab
+                customerId={customerId}
+                enabled={isTabEnabled('followups')}
+                onSchedule={() => setFollowupDrawerOpen(true)}
+              />
+            )}
+            {activeTab === 'finance' && (
+              <FinanceTab
+                customerId={customerId}
+                customerName={customerName}
+                enabled={isTabEnabled('finance')}
+              />
+            )}
+            {activeTab === 'service' && (
+              <ServiceTicketsTab
+                scope="customer"
+                id={customerId}
+                enabled={isTabEnabled('service')}
+              />
+            )}
+            {activeTab === 'activity' && (
+              <ActivityTab
+                customerId={customerId}
+                properties={properties}
+                enabled={isTabEnabled('activity')}
+              />
+            )}
+          </Suspense>
+        </Box>
+      )}
 
       <PropertySelectModal
         open={propertySelectOpen}
@@ -654,9 +689,12 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           <SpeedDialAction
             icon={<PostAddOutlinedIcon />}
             slotProps={{ tooltip: { title: 'New quote' } }}
+            // Through the gates, like the desktop header buttons already are.
+            // The speed dial is the mobile route to the same three actions, so
+            // leaving it raw made the permission depend on screen width.
             onClick={() => {
               setSpeedDialOpen(false);
-              handleCreateQuote();
+              speedDialCreateQuote.onGatedClick();
             }}
           />
           <SpeedDialAction
@@ -664,7 +702,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
             slotProps={{ tooltip: { title: 'Log follow-up' } }}
             onClick={() => {
               setSpeedDialOpen(false);
-              setFollowupDrawerOpen(true);
+              speedDialLogFollowup.onGatedClick();
             }}
           />
         </SpeedDial>

@@ -73,10 +73,10 @@ defineResource<MaterialDispatch>(
     defaultSort: { field: 'createdAt', order: 'DESC' },
   },
   {
-    view: 'inventory:read',
-    create: 'dispatch:write',
-    update: 'dispatch:write',
-    delete: 'dispatch:write',
+    view: 'inventory.view',
+    create: 'inventory.dispatches.manage',
+    update: 'inventory.dispatches.manage',
+    delete: 'inventory.dispatches.manage',
   },
 );
 

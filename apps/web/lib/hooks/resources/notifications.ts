@@ -13,7 +13,6 @@ import {
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/utils/error';
-import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Types
@@ -50,9 +49,7 @@ defineResource<Notification>(
     syncToUrl: false,
     defaultSort: { field: 'createdAt', order: 'DESC' },
   },
-  {
-    view: 'notifications:read',
-  },
+  // No permission codes — notifications are addressed to the individual user.
 );
 
 // ============================================================================
@@ -78,8 +75,7 @@ export function useNotifications(
 }
 
 export function useNotificationUnreadCount() {
-  const { hasPermission } = useAuth();
-  const canReadNotifications = hasPermission('notifications:read');
+  const canReadNotifications = true;
 
   return useQuery<{ count: number }>({
     queryKey: ['notifications', 'unread-count'],

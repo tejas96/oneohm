@@ -15,8 +15,6 @@ import { plainToInstance } from 'class-transformer';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { CreateReturnRequestDto } from '../dto/return-requests/create-return-request.dto';
 import { ReturnRequestResponseDto } from '../dto/return-requests/return-request-response.dto';
 import type { ReturnRequestStatus } from '../entities/return-request.entity';
@@ -25,14 +23,13 @@ import { ReturnRequestService } from '../services/return-request.service';
 @ApiTags('Return Requests')
 @ApiBearerAuth()
 @Controller('inventory/return-requests')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard)
 export class ReturnRequestController {
   constructor(private readonly returnRequestService: ReturnRequestService) {}
 
   /**
    * Manually create a return request (also created automatically by BOM reconcile on over-dispatch).
    */
-  @RequirePermission('inventory:write')
   @Post()
   @ApiOperation({ summary: 'Create a return request' })
   async create(
@@ -43,7 +40,6 @@ export class ReturnRequestController {
     return plainToInstance(ReturnRequestResponseDto, result, { excludeExtraneousValues: true });
   }
 
-  @RequirePermission('inventory:read')
   @Get()
   @ApiOperation({ summary: 'List return requests with optional filters' })
   async list(
@@ -59,7 +55,6 @@ export class ReturnRequestController {
     return plainToInstance(ReturnRequestResponseDto, results, { excludeExtraneousValues: true });
   }
 
-  @RequirePermission('inventory:read')
   @Get(':id')
   @ApiOperation({ summary: 'Get a single return request' })
   async findById(@Param('id', ParseUUIDPipe) id: string): Promise<ReturnRequestResponseDto> {
@@ -70,7 +65,6 @@ export class ReturnRequestController {
   /**
    * Complete — PM has physically received the units; releases them back to available stock.
    */
-  @RequirePermission('inventory:write')
   @Patch(':id/complete')
   @ApiOperation({ summary: 'Complete a return request (PM confirms physical receipt)' })
   async complete(
@@ -84,7 +78,6 @@ export class ReturnRequestController {
   /**
    * Cancel — PM accepts the over-dispatch as scope creep; no inventory change.
    */
-  @RequirePermission('inventory:write')
   @Patch(':id/cancel')
   @ApiOperation({ summary: 'Cancel a return request (accept over-dispatch as scope creep)' })
   async cancel(

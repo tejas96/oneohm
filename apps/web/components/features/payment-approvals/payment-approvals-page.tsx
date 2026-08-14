@@ -17,6 +17,7 @@ import {
   type ApprovalKind,
   type ApprovalStatus,
 } from '@/lib/hooks/resources/payment-approvals';
+import { useGatedAction } from '@/lib/rbac';
 import { color, crm } from '@/lib/theme/tokens';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -43,6 +44,11 @@ function readFilter(filters: FilterState, field: string): string | undefined {
  * has touched the ledger yet — approving is what does that.
  */
 export function PaymentApprovalsPage(): JSX.Element {
+  const processApprovals = useGatedAction(
+    'finance.approvals.process',
+    () => undefined,
+    'Approve payments',
+  );
   const { user } = useAuth();
 
   const [status, setStatus] = useState<ApprovalStatus>('pending');
@@ -195,6 +201,10 @@ export function PaymentApprovalsPage(): JSX.Element {
                     const ids = selectedRows
                       .filter((r) => r.submittedBy !== user?.id)
                       .map((r) => r.id);
+                    if (!processApprovals.allowed) {
+                      processApprovals.onGatedClick();
+                      return;
+                    }
                     if (ids.length > 0) {
                       bulkApprove.mutate(ids, {
                         // Not awaited — see the single-approve drawer for why.

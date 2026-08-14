@@ -36,7 +36,8 @@ const ROLE_LABELS: Record<string, string> = {
 
 export function getDisplayRoles(roles?: string[]): string[] {
   if (!roles) return [];
-  return roles
-    .filter((r) => r !== 'employee_basic')
-    .map((r) => ROLE_LABELS[r] || r.replace(/_/g, ' '));
+  // The `employee_basic` filter that used to live here is gone with the role
+  // itself (migration 1855100000000). It existed because that role was on
+  // nearly everyone and said nothing; there is no longer anything to hide.
+  return roles.map((r) => ROLE_LABELS[r] || r.replace(/_/g, ' '));
 }

@@ -32,7 +32,8 @@ import { ErrorState } from '@/components/shared/feedback/empty-state';
 import { Button } from '@/components/ui/button';
 import { useLookupOptions } from '@/lib/hooks/resources';
 import { useUrlFilters } from '@/lib/hooks/use-url-filters';
-import { getErrorMessage } from '@/lib/utils';
+import { useGatedAction } from '@/lib/rbac';
+import { cn, getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Statuses where the backend auto-sets completionPercentage = 100.
@@ -130,6 +131,15 @@ export const ProjectTasksTab = React.memo(
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [createPreselectedStatus, setCreatePreselectedStatus] = useState<string | null>(null);
 
+    // One gate for both ways into the create dialog — the header button and the
+    // "+" on each kanban column. Gating only the header would leave the board
+    // view wide open, which is exactly what it did before.
+    const createTask = useGatedAction(
+      'projects.tasks.manage',
+      () => setCreateDialogOpen(true),
+      'Add task',
+    );
+
     const handleOpenTask = useCallback((taskId: string) => {
       setOpenTaskId(taskId);
       setDrawerOpen(true);
@@ -223,7 +233,12 @@ export const ProjectTasksTab = React.memo(
           {/* Header */}
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-foreground">Project Tasks</h3>
-            <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
+            <Button
+              size="sm"
+              onClick={createTask.onGatedClick}
+              aria-disabled={!createTask.allowed}
+              className={cn(!createTask.allowed && 'opacity-50')}
+            >
               + Add Task
             </Button>
           </div>
@@ -278,7 +293,9 @@ export const ProjectTasksTab = React.memo(
               onOpenTask={handleOpenTask}
               onOpenCreate={(preselectedStatus?: string) => {
                 setCreatePreselectedStatus(preselectedStatus ?? null);
-                setCreateDialogOpen(true);
+                // Through the gate, not straight to the setter — the board's
+                // per-column "+" is the same create action as the header button.
+                createTask.onGatedClick();
               }}
             />
           )}

@@ -192,7 +192,8 @@ export function InventoryTransactionsPage(): React.JSX.Element {
   const searchParams = useSearchParams();
   const activeViewId = searchParams.get('view');
   const { hasPermission } = useAuth();
-  const canExport = hasPermission('inventory:export') || hasPermission('inventory:read');
+  const canExport =
+    hasPermission('inventory.transactions.view') || hasPermission('inventory.transactions.view');
 
   const list = useInventoryTransactions();
   const {

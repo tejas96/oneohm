@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { ACTIVITY_TYPE_LABELS } from '../constants';
 
+import { useGatedAction } from '@/lib/rbac';
 import { formatRelativeDate } from '@/lib/utils';
 
 interface TaskDrawerMainContentProps {
@@ -176,6 +177,14 @@ export function TaskDrawerMainContent({
     setIsEditingDescription(false);
   }, [draftDescription, onDescriptionChange]);
 
+  const saveDescription = useGatedAction(
+    'projects.tasks.manage',
+
+    () => handleSaveDescription(),
+
+    'Save description',
+  );
+
   const handleCancelDescription = useCallback(() => {
     setDraftDescription(description ?? '');
     setIsEditingDescription(false);
@@ -315,7 +324,8 @@ export function TaskDrawerMainContent({
               <Button
                 variant="contained"
                 size="small"
-                onClick={handleSaveDescription}
+                onClick={saveDescription.onGatedClick}
+                aria-disabled={!saveDescription.allowed}
                 startIcon={<CheckIcon />}
                 sx={{ textTransform: 'none', borderRadius: 'var(--radius-pill)', px: 2 }}
               >
