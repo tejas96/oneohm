@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../auth/decorators';
@@ -57,7 +66,9 @@ export class PaymentApprovalController {
 
   // Declared before ':id' so the literal path is not captured by the param route.
   @Get('summary')
-  @ApiOperation({ summary: 'Queue headlines: pending count and value, oldest wait, approved today' })
+  @ApiOperation({
+    summary: 'Queue headlines: pending count and value, oldest wait, approved today',
+  })
   async summary(): Promise<ApprovalSummary> {
     return this.service.summary();
   }

@@ -130,8 +130,8 @@ export function ProjectMoneyTab({
             Awaiting approval ({pendingApprovals.data?.total ?? 0})
           </Box>
           <Box sx={{ fontSize: '0.8125rem', mb: 1 }}>
-            Not counted in Received or Outstanding below. A second person must approve these
-            before they affect the customer&apos;s balance.
+            Not counted in Received or Outstanding below. A second person must approve these before
+            they affect the customer&apos;s balance.
           </Box>
           {pendingApprovals.data?.data.map((p) => (
             <Box key={p.id} sx={{ fontSize: '0.8125rem' }}>

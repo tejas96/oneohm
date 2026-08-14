@@ -53,7 +53,10 @@ export class SubmitApprovalDto {
   @IsOptional()
   valueDate?: string;
 
-  @ApiPropertyOptional({ example: 'upi', description: 'upi | neft | rtgs | imps | cheque | cash | dd' })
+  @ApiPropertyOptional({
+    example: 'upi',
+    description: 'upi | neft | rtgs | imps | cheque | cash | dd',
+  })
   @IsString()
   @IsOptional()
   @MaxLength(50)
@@ -129,7 +132,9 @@ export class SubmitApprovalDto {
   @IsUUID()
   reversesEntryId?: string;
 
-  @ApiPropertyOptional({ description: 'Required for reversal. An unexplained reversal is not an audit trail.' })
+  @ApiPropertyOptional({
+    description: 'Required for reversal. An unexplained reversal is not an audit trail.',
+  })
   @ValidateIf((o: SubmitApprovalDto) => o.kind === 'reversal')
   @IsString()
   @MaxLength(500)

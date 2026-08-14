@@ -122,7 +122,9 @@ export function ApprovalKpiCards(): JSX.Element {
         label="Longest wait"
         value={oldestLabel}
         // Over two days queued is worth chasing, so it reads red.
-        note={oldest === null ? 'queue is clear' : oldest >= 48 ? 'chase this' : 'within a day or two'}
+        note={
+          oldest === null ? 'queue is clear' : oldest >= 48 ? 'chase this' : 'within a day or two'
+        }
         noteDir={oldest !== null && oldest >= 48 ? 'bad' : 'idle'}
         icon={oldest !== null && oldest >= 48 ? <ScheduleIcon sx={{ fontSize: 13 }} /> : undefined}
         loading={isLoading}

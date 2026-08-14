@@ -73,7 +73,12 @@ export const APPROVAL_COLUMNS: CrmColumn<ApprovalRow>[] = [
     header: 'Type',
     track: crm['col-approval-type'],
     renderCell: (row) => (
-      <CrmStatusPill label={KIND_LABEL[row.kind]} tone={KIND_TONE[row.kind]} dot={false} size="sm" />
+      <CrmStatusPill
+        label={KIND_LABEL[row.kind]}
+        tone={KIND_TONE[row.kind]}
+        dot={false}
+        size="sm"
+      />
     ),
   },
   {

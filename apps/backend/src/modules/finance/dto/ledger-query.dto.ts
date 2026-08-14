@@ -73,7 +73,9 @@ export class LedgerEntriesQueryDto extends LedgerRangeQueryDto {
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))
   customerId?: string;
 
-  @ApiPropertyOptional({ description: 'Matches entry number, reference, counterparty, project or customer.' })
+  @ApiPropertyOptional({
+    description: 'Matches entry number, reference, counterparty, project or customer.',
+  })
   @IsString()
   @IsOptional()
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))

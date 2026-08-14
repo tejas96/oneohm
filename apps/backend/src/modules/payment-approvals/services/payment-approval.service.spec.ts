@@ -329,7 +329,11 @@ describe('PaymentApprovalService', () => {
       await service.approve('p-1', APPROVER);
 
       expect(ledgerWrite.recordReceipt).toHaveBeenCalledWith(
-        expect.objectContaining({ projectId: PROJECT, amountPaise: 50_000, valueDate: '2026-08-01' }),
+        expect.objectContaining({
+          projectId: PROJECT,
+          amountPaise: 50_000,
+          valueDate: '2026-08-01',
+        }),
         APPROVER,
         expect.anything(),
       );
@@ -492,7 +496,10 @@ describe('PaymentApprovalService', () => {
       // Serialising that to JSON in IST lands at 18:30 the PREVIOUS day, which
       // is exactly what pgDateToIso exists to prevent.
       const localMidnight = new Date(2026, 7, 8); // 8 Aug 2026, local
-      queryResults = [[{ id: 'p-1', valueDate: localMidnight, amountPaise: '4500' }], [{ count: 1 }]];
+      queryResults = [
+        [{ id: 'p-1', valueDate: localMidnight, amountPaise: '4500' }],
+        [{ count: 1 }],
+      ];
 
       const result = await service.list({});
 
@@ -500,7 +507,10 @@ describe('PaymentApprovalService', () => {
     });
 
     it('returns amountPaise as a number, not the bigint string the driver gives', async () => {
-      queryResults = [[{ id: 'p-1', valueDate: '2026-08-08', amountPaise: '4500' }], [{ count: 1 }]];
+      queryResults = [
+        [{ id: 'p-1', valueDate: '2026-08-08', amountPaise: '4500' }],
+        [{ count: 1 }],
+      ];
 
       const result = await service.list({});
 
@@ -546,7 +556,11 @@ describe('PaymentApprovalService', () => {
       const result = await service.previewImpact('p-1');
 
       expect(result.lines).toEqual([
-        expect.objectContaining({ milestoneName: 'Advance', appliedPaise: 50_000, settlesFully: true }),
+        expect.objectContaining({
+          milestoneName: 'Advance',
+          appliedPaise: 50_000,
+          settlesFully: true,
+        }),
         expect.objectContaining({
           milestoneName: 'On delivery',
           appliedPaise: 10_000,

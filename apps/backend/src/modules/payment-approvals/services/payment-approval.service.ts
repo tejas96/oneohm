@@ -308,7 +308,9 @@ export class PaymentApprovalService {
       if (pending.kind === 'reversal') {
         const ledgerRepo = manager.getRepository(LedgerEntryEntity);
 
-        const target = await ledgerRepo.findOne({ where: { id: pending.reversesEntryId as string } });
+        const target = await ledgerRepo.findOne({
+          where: { id: pending.reversesEntryId as string },
+        });
         if (!target) {
           throw new NotFoundException('The entry to reverse no longer exists');
         }
@@ -368,10 +370,16 @@ export class PaymentApprovalService {
 
       // Move every attached proof onto the entry now that one exists, so it
       // sits where the rest of the codebase looks for a ledger entry's proof.
-      await manager.getRepository(DocumentEntity).update(
-        { entityType: DocumentEntityType.PAYMENT_APPROVAL, entityId: pending.id },
-        { entityType: DocumentEntityType.LEDGER_ENTRY, entityId: entry.id, updatedBy: approverId },
-      );
+      await manager
+        .getRepository(DocumentEntity)
+        .update(
+          { entityType: DocumentEntityType.PAYMENT_APPROVAL, entityId: pending.id },
+          {
+            entityType: DocumentEntityType.LEDGER_ENTRY,
+            entityId: entry.id,
+            updatedBy: approverId,
+          },
+        );
 
       await repo.update(pending.id, {
         status: 'approved',
@@ -421,7 +429,10 @@ export class PaymentApprovalService {
       return error.message;
     }
 
-    this.logger.error(`Bulk approve failed for ${id}`, error instanceof Error ? error.stack : error);
+    this.logger.error(
+      `Bulk approve failed for ${id}`,
+      error instanceof Error ? error.stack : error,
+    );
     return 'Could not be approved — see the server log';
   }
 
@@ -432,9 +443,7 @@ export class PaymentApprovalService {
   async reject(id: string, reason: string, approverId: string): Promise<PendingLedgerEntryEntity> {
     return this.transitionPending(id, (row, repo) => {
       if (row.submittedBy === approverId) {
-        throw new ForbiddenException(
-          'You submitted this payment — another user must review it',
-        );
+        throw new ForbiddenException('You submitted this payment — another user must review it');
       }
       return repo.update(row.id, {
         status: 'rejected',
@@ -532,13 +541,13 @@ export class PaymentApprovalService {
       pendingCount: Number(row?.pendingCount ?? 0),
       pendingValuePaise: Number(row?.pendingValuePaise ?? 0),
       approvedToday: Number(row?.approvedToday ?? 0),
-      oldestPendingHours: oldest
-        ? Math.floor((Date.now() - oldest.getTime()) / 3_600_000)
-        : null,
+      oldestPendingHours: oldest ? Math.floor((Date.now() - oldest.getTime()) / 3_600_000) : null,
     };
   }
 
-  async getOne(id: string): Promise<ApprovalRow & { possibleDuplicates: PendingLedgerEntryEntity[] }> {
+  async getOne(
+    id: string,
+  ): Promise<ApprovalRow & { possibleDuplicates: PendingLedgerEntryEntity[] }> {
     const [row] = await this.dataSource.query<ApprovalRow[]>(APPROVAL_BY_ID_SQL, [id]);
     if (!row) {
       throw new NotFoundException('Approval request not found');
@@ -682,9 +691,7 @@ export class PaymentApprovalService {
       throw new ConflictException(`This request is already ${row.status}`);
     }
     if (row.submittedBy === approverId) {
-      throw new ForbiddenException(
-        'You submitted this payment — another user must approve it',
-      );
+      throw new ForbiddenException('You submitted this payment — another user must approve it');
     }
   }
 }

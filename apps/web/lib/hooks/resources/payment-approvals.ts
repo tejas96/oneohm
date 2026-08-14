@@ -151,9 +151,7 @@ export function usePaymentApprovals(
   });
 }
 
-export function usePaymentApproval(
-  id: string | null,
-): UseQueryResult<PaymentApproval, AxiosError> {
+export function usePaymentApproval(id: string | null): UseQueryResult<PaymentApproval, AxiosError> {
   return useQuery({
     queryKey: approvalKeys.one(id ?? ''),
     queryFn: async ({ signal }): Promise<PaymentApproval> => {

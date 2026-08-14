@@ -479,18 +479,15 @@ export function useLedgerMutations(projectId: string) {
   /** Corrections are new rows — the original stays visible forever. */
   const reverseEntry = useMutation({
     mutationFn: async ({ entryId, reason }: { entryId: string; reason: string }) => {
-      const { data } = await apiClient.post<PaymentApproval>(
-        `/ledger/entries/${entryId}/reverse`,
-        { reason },
-      );
+      const { data } = await apiClient.post<PaymentApproval>(`/ledger/entries/${entryId}/reverse`, {
+        reason,
+      });
       return data;
     },
     onSuccess: (request) => {
       invalidate();
       void queryClient.invalidateQueries({ queryKey: ['payment-approvals'] });
-      showToast.success(
-        `${request.requestNo} submitted — the reversal takes effect once approved`,
-      );
+      showToast.success(`${request.requestNo} submitted — the reversal takes effect once approved`);
     },
     onError: (error) => showToast.error(getErrorMessage(error)),
   });

@@ -366,7 +366,14 @@ export class LedgerRepository {
   async getEntryAttributionByProject(
     projectId: string,
     manager?: EntityManager,
-  ): Promise<Array<{ entryId: string; recordedByName: string | null; approvedByName: string | null; approvedAt: Date | null }>> {
+  ): Promise<
+    Array<{
+      entryId: string;
+      recordedByName: string | null;
+      approvedByName: string | null;
+      approvedAt: Date | null;
+    }>
+  > {
     return this.exec(manager).query(
       `SELECT e.id                                                          AS "entryId",
               NULLIF(TRIM(CONCAT_WS(' ', su.first_name, su.last_name)), '') AS "recordedByName",
