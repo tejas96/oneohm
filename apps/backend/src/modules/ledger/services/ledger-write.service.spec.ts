@@ -9,6 +9,7 @@ import { Test } from '@nestjs/testing';
 import { getDataSourceToken } from '@nestjs/typeorm';
 
 import { SequenceService } from '../../finance-common/services/sequence.service';
+import { StorageService } from '../../storage/services/storage.service';
 import { LedgerAllocationEntity, LedgerEntryEntity } from '../entities';
 import { LedgerWriteService } from './ledger-write.service';
 import { LedgerRepository } from '../repositories/ledger.repository';
@@ -102,6 +103,10 @@ describe('LedgerWriteService', () => {
         {
           provide: SequenceService,
           useValue: { getNextNumber: jest.fn(async () => 'RCP-TEST-1') },
+        },
+        {
+          provide: StorageService,
+          useValue: { getPublicUrl: jest.fn((key: string) => `https://storage.test/${key}`) },
         },
       ],
     }).compile();

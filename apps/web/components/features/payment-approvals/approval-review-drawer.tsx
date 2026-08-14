@@ -16,6 +16,8 @@ import {
 import NextLink from 'next/link';
 import { type JSX, useEffect, useState } from 'react';
 
+import { useAutoFileApprovedReceipts } from './hooks/use-auto-file-receipts';
+
 import { MUIStatusChip, MUITypography } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import {
@@ -52,6 +54,7 @@ export function ApprovalReviewDrawer({
   const { data, isLoading } = usePaymentApproval(approvalId);
   const impact = useApprovalImpact(approvalId);
   const { approve, reject, cancel } = useApprovalMutations();
+  const autoFileReceipt = useAutoFileApprovedReceipts();
   const [reason, setReason] = useState('');
 
   // A reason typed for one request must not survive into the next.
@@ -244,7 +247,19 @@ export function ApprovalReviewDrawer({
                   variant="contained"
                   color="success"
                   disabled={busy}
-                  onClick={() => approve.mutate(data.id, { onSuccess: onClose })}
+                  onClick={() =>
+                    approve.mutate(data.id, {
+                      onSuccess: (row) => {
+                        onClose();
+                        // Not awaited: the balance is already updated, and
+                        // rendering + uploading the PDF takes a couple of
+                        // seconds the approver has no reason to wait through.
+                        // Failure is reported on its own toast and never
+                        // reopens or blocks this drawer.
+                        void autoFileReceipt.fileOne(row);
+                      },
+                    })
+                  }
                 >
                   Approve — this updates the balance
                 </Button>

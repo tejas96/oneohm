@@ -24,6 +24,7 @@ import { isFutureIst, pgDateToIso, toIsoDate, todayIst } from '../../ledger/doma
 import { LedgerEntryEntity } from '../../ledger/entities';
 import { LedgerRepository } from '../../ledger/repositories/ledger.repository';
 import { LedgerWriteService } from '../../ledger/services/ledger-write.service';
+import { StorageService } from '../../storage/services/storage.service';
 import { QueryApprovalsDto, SubmitApprovalDto } from '../dto';
 import {
   APPROVALS_COUNT_SQL,
@@ -117,6 +118,7 @@ export class PaymentApprovalService {
     private readonly ledgerWrite: LedgerWriteService,
     private readonly ledgerRepository: LedgerRepository,
     private readonly sequenceService: SequenceService,
+    private readonly storageService: StorageService,
   ) {}
 
   // ============================================
@@ -262,9 +264,15 @@ export class PaymentApprovalService {
         : DocumentCategory.DOCUMENT,
       tag: direction === 'in' ? DocumentTag.RECEIPT_PROOF : DocumentTag.EXPENSE_RECEIPT,
       fileName: proof.fileName,
-      fileUrl: proof.fileKey,
+      // The PUBLIC URL, not the raw storage key `proof.fileKey` is. Every
+      // reader of `fileUrl` — this drawer's <img>, the document download
+      // endpoint, the property Documents tab — treats it as something a
+      // browser can load directly. A bare key silently breaks every one of
+      // them; nothing here would 500, it would just never resolve.
+      fileUrl: this.storageService.getPublicUrl(proof.fileKey),
       fileSizeBytes: proof.fileSize,
       mimeType: proof.mimeType,
+      metadata: { storageKey: proof.fileKey },
       createdBy,
       updatedBy: createdBy,
     });

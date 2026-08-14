@@ -83,6 +83,16 @@ export class S3StorageService implements StorageProvider, OnModuleInit {
     this.logger.log(`S3 Storage initialized with bucket: ${this.bucket}`);
   }
 
+  /**
+   * Deterministically derive the public URL for a key already uploaded via a
+   * presigned PUT (the client only ever gets `fileKey` back from that flow).
+   * No network call — same `{publicUrlBase}/{fileKey}` the presign step
+   * already promised, and the object is `public-read` from upload.
+   */
+  getPublicUrl(fileKey: string): string {
+    return `${this.publicUrlBase}/${fileKey}`;
+  }
+
   private ensureClientReady(): void {
     if (!this.s3Client || !this.bucket) {
       throw new BadRequestException(

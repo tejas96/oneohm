@@ -13,6 +13,7 @@ import { SequenceService } from '../../finance-common/services/sequence.service'
 import { LedgerEntryEntity } from '../../ledger/entities';
 import { LedgerRepository } from '../../ledger/repositories/ledger.repository';
 import { LedgerWriteService } from '../../ledger/services/ledger-write.service';
+import { StorageService } from '../../storage/services/storage.service';
 import { PendingLedgerEntryEntity } from '../entities';
 import { PaymentApprovalService } from './payment-approval.service';
 
@@ -35,6 +36,7 @@ interface Captured {
   inserted: any[];
   updated: Array<{ id: string; values: any }>;
   documentUpdates: Array<{ criteria: any; values: any }>;
+  documentInserts: any[];
 }
 
 function pending(over: Partial<PendingLedgerEntryEntity> = {}): Partial<PendingLedgerEntryEntity> {
@@ -56,6 +58,9 @@ function pending(over: Partial<PendingLedgerEntryEntity> = {}): Partial<PendingL
 
 function makeManager(rows: Rows, captured: Captured, ledgerRows: any[] = []): any {
   return {
+    // fileProof() resolves documents.property_id through the project — every
+    // test project resolves to the same fake property.
+    query: jest.fn(async () => [{ property_id: 'property-1' }]),
     getRepository: (entity: unknown) => {
       if (entity === PendingLedgerEntryEntity) {
         return {
@@ -77,7 +82,10 @@ function makeManager(rows: Rows, captured: Captured, ledgerRows: any[] = []): an
       if (entity === DocumentEntity) {
         // approve() re-points every attached proof onto the new ledger entry.
         return {
-          insert: jest.fn(async () => ({ identifiers: [{ id: 'doc-1' }] })),
+          insert: jest.fn(async (values: any) => {
+            captured.documentInserts.push(values);
+            return { identifiers: [{ id: 'doc-1' }] };
+          }),
           update: jest.fn(async (criteria: any, values: any) => {
             captured.documentUpdates.push({ criteria, values });
             return { affected: 1 };
@@ -111,7 +119,7 @@ describe('PaymentApprovalService', () => {
 
   beforeEach(async () => {
     rows = {};
-    captured = { inserted: [], updated: [], documentUpdates: [] };
+    captured = { inserted: [], updated: [], documentUpdates: [], documentInserts: [] };
     ledgerRows = [];
 
     ledgerWrite = {
@@ -145,6 +153,10 @@ describe('PaymentApprovalService', () => {
           provide: SequenceService,
           useValue: { getNextNumber: jest.fn(async () => 'PA-2026-27-000001') },
         },
+        {
+          provide: StorageService,
+          useValue: { getPublicUrl: jest.fn((key: string) => `https://storage.test/${key}`) },
+        },
       ],
     }).compile();
 
@@ -166,6 +178,36 @@ describe('PaymentApprovalService', () => {
         requestNo: 'PA-2026-27-000001',
         submittedBy: SUBMITTER,
       });
+    });
+
+    it('files a proof under the storage PUBLIC URL, never the bare upload key', async () => {
+      // The client only ever has the presigned-PUT key, not a servable URL —
+      // `ProofDocumentDto.fileKey` says so explicitly. Storing it verbatim in
+      // `fileUrl` is exactly the bug this guards: every reader of that column
+      // (the approval drawer's <img>, GET /documents/:id/download) treats it
+      // as something a browser can fetch directly.
+      await service.submit(
+        {
+          kind: 'receipt',
+          projectId: PROJECT,
+          amountPaise: 50_000,
+          valueDate: '2026-08-01',
+          proofDocuments: [
+            {
+              fileKey: 'document/123_abc_receipt.png',
+              fileName: 'receipt.png',
+              mimeType: 'image/png',
+            },
+          ],
+        },
+        SUBMITTER,
+      );
+
+      expect(captured.documentInserts).toHaveLength(1);
+      expect(captured.documentInserts[0].fileUrl).toBe(
+        'https://storage.test/document/123_abc_receipt.png',
+      );
+      expect(captured.documentInserts[0].fileUrl).not.toBe('document/123_abc_receipt.png');
     });
 
     it('stores an expense negative, matching the ledger sign convention', async () => {

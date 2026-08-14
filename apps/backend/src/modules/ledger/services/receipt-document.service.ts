@@ -108,7 +108,8 @@ export class ReceiptDocumentService {
         fileName: upload.fileName,
         // The PUBLIC URL, not the raw storage key. `GET /documents/:id/download`
         // returns `fileUrl` verbatim, so a key-valued row is not downloadable —
-        // which is the existing flaw in the proof rows written by attachProof.
+        // proof rows written by fileProof/attachProof had exactly this bug
+        // until it was fixed to match this.
         fileUrl: upload.publicUrl,
         fileSizeBytes: file.buffer.length,
         mimeType: 'application/pdf',

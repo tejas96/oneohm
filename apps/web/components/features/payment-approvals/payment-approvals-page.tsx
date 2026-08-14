@@ -6,6 +6,7 @@ import { type JSX, useMemo, useState } from 'react';
 import { ApprovalKpiCards } from './approval-kpi-cards';
 import { ApprovalReviewDrawer } from './approval-review-drawer';
 import { APPROVAL_COLUMNS, type ApprovalRow } from './columns';
+import { useAutoFileApprovedReceipts } from './hooks/use-auto-file-receipts';
 
 import type { FilterState, TableSortModel } from '@/components/shared/advanced-table';
 import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
@@ -70,6 +71,7 @@ export function PaymentApprovalsPage(): JSX.Element {
     sortOrder: sortModel?.direction,
   });
   const { bulkApprove } = useApprovalMutations();
+  const autoFileReceipts = useAutoFileApprovedReceipts();
 
   const rows = (query.data?.data ?? []) as ApprovalRow[];
 
@@ -193,7 +195,12 @@ export function PaymentApprovalsPage(): JSX.Element {
                     const ids = selectedRows
                       .filter((r) => r.submittedBy !== user?.id)
                       .map((r) => r.id);
-                    if (ids.length > 0) bulkApprove.mutate(ids);
+                    if (ids.length > 0) {
+                      bulkApprove.mutate(ids, {
+                        // Not awaited — see the single-approve drawer for why.
+                        onSuccess: (result) => void autoFileReceipts.fileManyByIds(result.approved),
+                      });
+                    }
                   },
                 },
               ]

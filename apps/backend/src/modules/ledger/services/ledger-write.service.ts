@@ -17,6 +17,7 @@ import { DataSource, EntityManager } from 'typeorm';
 import { assertMoneyWritesAllowed } from '../../../common/utils';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { SequenceService } from '../../finance-common/services/sequence.service';
+import { StorageService } from '../../storage/services/storage.service';
 import {
   type Allocation,
   allocateWaterfall,
@@ -109,6 +110,7 @@ export class LedgerWriteService {
     private readonly dataSource: DataSource,
     private readonly ledgerRepository: LedgerRepository,
     private readonly sequenceService: SequenceService,
+    private readonly storageService: StorageService,
   ) {}
 
   /**
@@ -266,9 +268,15 @@ export class LedgerWriteService {
         : DocumentCategory.DOCUMENT,
       tag: entry.direction === 'in' ? DocumentTag.RECEIPT_PROOF : DocumentTag.EXPENSE_RECEIPT,
       fileName: proof.fileName,
-      fileUrl: proof.fileKey,
+      // The PUBLIC URL, not the raw storage key. See the identical fix and
+      // comment in PaymentApprovalService.fileProof, which is the code path
+      // actually in use — this one currently has no live caller, but the
+      // input type still accepts a proof, so it must not carry the same bug
+      // if something starts calling it again.
+      fileUrl: this.storageService.getPublicUrl(proof.fileKey),
       fileSizeBytes: proof.fileSize,
       mimeType: proof.mimeType,
+      metadata: { storageKey: proof.fileKey },
       createdBy,
       updatedBy: createdBy,
     });

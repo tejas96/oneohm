@@ -201,6 +201,15 @@ export class StorageService {
   }
 
   /**
+   * Deterministic public URL for a file key already uploaded via presigned
+   * PUT — the shape callers get back from `getUploadUrl` but frequently only
+   * persist the `fileKey` half of. Does not verify the object exists.
+   */
+  getPublicUrl(fileKey: string): string {
+    return this.s3Storage.getPublicUrl(fileKey);
+  }
+
+  /**
    * Extract S3 file key from a public URL.
    * Returns null (with a warning log) if the URL is unparseable or the key is invalid.
    */
