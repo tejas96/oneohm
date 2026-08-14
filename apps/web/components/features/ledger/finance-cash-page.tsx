@@ -1,33 +1,20 @@
 'use client';
 
-import {
-  Box,
-  Card,
-  Paper,
-  Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-} from '@mui/material';
-import { type JSX, useState } from 'react';
+import { Box, Card, Skeleton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import { type JSX, useMemo, useState } from 'react';
 
-import { formatExpenseCategory } from './format-expense-category';
-import { ReceiptDates } from './receipt-dates';
+import { CASH_COLUMNS, type CashRow } from './cash-columns';
 
+import type { TableSortModel } from '@/components/shared/advanced-table';
+import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
 import { MUITypography } from '@/components/ui';
 import {
   useCashFlow,
   useFinanceKpis,
   useLedgerEntries,
   type LedgerDirection,
-  type LedgerEntry,
 } from '@/lib/hooks/resources/ledger';
+import { color, crm } from '@/lib/theme/tokens';
 import { formatPaise } from '@/lib/utils/paise';
 
 /** IST today, matching how the backend stamps value dates. */
@@ -39,6 +26,11 @@ function todayIst(): string {
     day: '2-digit',
   }).format(new Date());
 }
+
+const PAGE_SIZE = 25;
+
+/** Sort keys the API whitelists; anything else is dropped rather than guessed. */
+const CASH_SORTABLE = ['valueDate', 'amountPaise', 'customerName'] as const;
 
 type PresetKey = 'today' | 'month' | 'quarter' | 'fy' | 'year';
 
@@ -97,33 +89,94 @@ const PRESETS: Array<{ key: PresetKey; label: string }> = [
 export function FinanceCashPage(): JSX.Element {
   const [preset, setPreset] = useState<PresetKey>('month');
   const [direction, setDirection] = useState<LedgerDirection | undefined>();
+  // CrmTable's `page` is zero-indexed; the API is one-indexed.
+  const [page, setPage] = useState(0);
+  const [search, setSearch] = useState('');
+  const [sortModel, setSortModel] = useState<TableSortModel | null>(null);
   const range = resolvePreset(preset);
 
   const kpis = useFinanceKpis(range.from, range.to);
   const cashFlow = useCashFlow(range.from, range.to, preset === 'today' ? 'day' : 'month');
-  const entries = useLedgerEntries({ ...range, direction, limit: 50 });
+  const entries = useLedgerEntries({
+    ...range,
+    direction,
+    search: search || undefined,
+    sortBy: CASH_SORTABLE.find((f) => f === sortModel?.field),
+    sortOrder: sortModel?.direction,
+    page: page + 1,
+    limit: PAGE_SIZE,
+  });
+
+  const rows = (entries.data?.data ?? []) as CashRow[];
+
+  /** Direction as chips, matching how every other list filters. */
+  const quickFilters = useMemo<CrmQuickFilter[]>(
+    () => [
+      { key: '', label: 'All', tone: 'neutral', dot: false },
+      { key: 'in', label: 'Money in', tone: 'success', dot: true },
+      { key: 'out', label: 'Money out', tone: 'info', dot: true },
+    ],
+    [],
+  );
 
   return (
-    <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <MUITypography variant="drawerTitle" component="h1">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: { xs: 2, lg: 3 } }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', lg: 'row' },
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Box
+            component="span"
+            sx={{
+              fontSize: 'var(--text-overline-size)',
+              fontWeight: 700,
+              letterSpacing: 'var(--text-overline-track)',
+              textTransform: 'uppercase',
+              color: color['text-tertiary'],
+            }}
+          >
             Finance
-          </MUITypography>
+          </Box>
+          <Box
+            component="h1"
+            sx={{
+              m: 0,
+              mt: '5px',
+              mb: '3px',
+              fontSize: crm['text-page-title'],
+              fontWeight: 700,
+              letterSpacing: crm['text-page-title-track'],
+            }}
+          >
+            Cash
+          </Box>
           {/* The active period is always visible — misreading it is the error
               this layout is designed against. */}
-          <MUITypography variant="body" sx={{ mt: 0.25 }}>
+          <Box
+            component="p"
+            sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
+          >
             {range.from} to {range.to}
-          </MUITypography>
-        </div>
-        {/* ToggleButtonGroup carries the selected state, keyboard semantics and
-            palette that the hand-rolled buttons faked with Tailwind classes. */}
+          </Box>
+        </Box>
+
         <ToggleButtonGroup
           exclusive
           size="small"
           value={preset}
-          onChange={(_, next: PresetKey | null) => next && setPreset(next)}
+          onChange={(_, next: PresetKey | null) => {
+            if (next) {
+              setPreset(next);
+              setPage(0);
+            }
+          }}
           aria-label="Reporting period"
+          sx={{ alignSelf: { lg: 'flex-start' }, mt: { lg: 2.25 } }}
         >
           {PRESETS.map((p) => (
             <ToggleButton key={p.key} value={p.key}>
@@ -131,38 +184,43 @@ export function FinanceCashPage(): JSX.Element {
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
-      </header>
+      </Box>
 
       {kpis.isLoading ? <Skeleton variant="rounded" height={104} /> : <KpiStrip data={kpis.data} />}
 
       <CashFlowChart points={cashFlow.data ?? []} isLoading={cashFlow.isLoading} />
 
-      <section>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <MUITypography variant="sectionTitle">Ledger</MUITypography>
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            // 'all' stands in for undefined: ToggleButtonGroup cannot use
-            // undefined as a value without treating the group as deselected.
-            value={direction ?? 'all'}
-            onChange={(_, next: string | null) =>
-              next && setDirection(next === 'all' ? undefined : (next as 'in' | 'out'))
-            }
-            aria-label="Filter ledger direction"
-          >
-            <ToggleButton value="all">All</ToggleButton>
-            <ToggleButton value="in">Money in</ToggleButton>
-            <ToggleButton value="out">Money out</ToggleButton>
-          </ToggleButtonGroup>
-        </div>
-        <EntriesTable
-          entries={entries.data?.data ?? []}
-          total={entries.data?.total ?? 0}
-          isLoading={entries.isLoading}
-        />
-      </section>
-    </div>
+      <CrmTable<CashRow>
+        columns={CASH_COLUMNS}
+        rows={rows}
+        getRowId={(row) => row.id}
+        loading={entries.isLoading}
+        refetching={entries.isFetching && !entries.isLoading}
+        itemLabel="entries"
+        gridMinWidth="900px"
+        searchPlaceholder="Search entry number, customer, project or reference"
+        onSearchChange={(next) => {
+          setSearch(next);
+          setPage(0);
+        }}
+        quickFilters={quickFilters}
+        activeQuickFilter={direction ?? ''}
+        onQuickFilterChange={(key) => {
+          setDirection((key || undefined) as LedgerDirection | undefined);
+          setPage(0);
+        }}
+        sortModel={sortModel}
+        onSortChange={(next) => {
+          setSortModel(next);
+          setPage(0);
+        }}
+        page={page}
+        pageSize={PAGE_SIZE}
+        totalRowCount={entries.data?.total ?? 0}
+        onPageChange={setPage}
+        emptyMessage="Nothing recorded in this period."
+      />
+    </Box>
   );
 }
 
@@ -315,94 +373,5 @@ function CashFlowChart({
         ))}
       </div>
     </Card>
-  );
-}
-
-/** The org-wide query joins project and customer columns onto each entry. */
-type OrgLedgerEntry = LedgerEntry & {
-  projectNumber?: string | null;
-  projectName?: string | null;
-  customerName?: string | null;
-};
-
-function EntriesTable({
-  entries,
-  total,
-  isLoading,
-}: {
-  entries: OrgLedgerEntry[];
-  total: number;
-  isLoading: boolean;
-}): JSX.Element {
-  if (isLoading) return <Skeleton variant="rounded" height={200} />;
-
-  if (entries.length === 0) {
-    return (
-      <Card variant="outlined" sx={{ p: 4, textAlign: 'center', borderStyle: 'dashed' }}>
-        <MUITypography variant="placeholder">Nothing recorded in this period.</MUITypography>
-      </Card>
-    );
-  }
-
-  return (
-    <TableContainer component={Paper} variant="outlined">
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Date</TableCell>
-            <TableCell>Entry</TableCell>
-            <TableCell>Project</TableCell>
-            <TableCell>Category / payee</TableCell>
-            <TableCell align="right">Amount</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {entries.map((e) => (
-            <TableRow key={e.id} hover>
-              <TableCell>
-                <ReceiptDates
-                  valueDate={e.valueDate}
-                  createdAt={e.createdAt}
-                  valueDateIsInferred={e.valueDateIsInferred}
-                />
-              </TableCell>
-              <TableCell sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace', fontSize: 12 }}>
-                {e.entryNo}
-              </TableCell>
-              <TableCell>{e.projectNumber ?? '—'}</TableCell>
-              <TableCell>
-                {e.reversesId ? (
-                  <Box component="span" sx={{ color: 'text.secondary' }}>
-                    Reversal — {e.reversalReason ?? 'no reason given'}
-                  </Box>
-                ) : e.direction === 'out' && e.category ? (
-                  [formatExpenseCategory(e.category), e.counterparty].filter(Boolean).join(' · ')
-                ) : (
-                  (e.customerName ?? e.counterparty ?? '—')
-                )}
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{
-                  whiteSpace: 'nowrap',
-                  fontVariantNumeric: 'tabular-nums',
-                  color: e.amountPaise < 0 ? 'error.main' : 'success.main',
-                }}
-              >
-                {formatPaise(e.amountPaise)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      {total > entries.length && (
-        <MUITypography
-          variant="finePrint"
-          sx={{ px: 1.5, py: 1, borderTop: 1, borderColor: 'divider' }}
-        >
-          Showing {entries.length} of {total}
-        </MUITypography>
-      )}
-    </TableContainer>
   );
 }

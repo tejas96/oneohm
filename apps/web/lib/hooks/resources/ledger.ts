@@ -192,6 +192,9 @@ export interface LedgerFilters {
   to?: string;
   projectId?: string;
   customerId?: string;
+  search?: string;
+  sortBy?: 'valueDate' | 'amountPaise' | 'customerName';
+  sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
 }

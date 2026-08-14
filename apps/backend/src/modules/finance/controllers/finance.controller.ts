@@ -95,6 +95,9 @@ export class FinanceController {
       to: query.to ?? null,
       projectId: query.projectId ?? null,
       customerId: query.customerId ?? null,
+      search: query.search ?? null,
+      sortBy: query.sortBy ?? null,
+      sortOrder: query.sortOrder ?? null,
       page: query.page ?? 1,
       limit: query.limit ?? 25,
     });

@@ -178,21 +178,33 @@ export class FinanceReportingService {
     to?: string | null;
     projectId?: string | null;
     customerId?: string | null;
+    search?: string | null;
+    sortBy?: string | null;
+    sortOrder?: 'asc' | 'desc' | null;
     page?: number;
     limit?: number;
   }): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
+    // Shared by the page and the count query, so "showing 1-25 of N" can never
+    // disagree with the rows actually returned.
     const params = [
       opts.direction ?? null,
       opts.from ?? null,
       opts.to ?? null,
       opts.projectId ?? null,
       opts.customerId ?? null,
+      opts.search ?? null,
     ];
 
     const [rows, [countRow]] = await Promise.all([
-      this.dataSource.query(LEDGER_PAGE_SQL, [...params, limit, (page - 1) * limit]),
+      this.dataSource.query(LEDGER_PAGE_SQL, [
+        ...params,
+        opts.sortBy ?? null,
+        opts.sortOrder ?? 'desc',
+        limit,
+        (page - 1) * limit,
+      ]),
       this.dataSource.query(LEDGER_COUNT_SQL, params),
     ]);
 

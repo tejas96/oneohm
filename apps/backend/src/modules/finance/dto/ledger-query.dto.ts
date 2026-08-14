@@ -61,6 +61,23 @@ export class LedgerEntriesQueryDto extends LedgerRangeQueryDto {
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))
   customerId?: string;
 
+  @ApiPropertyOptional({ description: 'Matches entry number, reference, counterparty, project or customer.' })
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  search?: string;
+
+  /** Whitelisted: the value reaches ORDER BY, so free text would be injectable. */
+  @ApiPropertyOptional({ enum: ['valueDate', 'amountPaise', 'customerName'] })
+  @IsIn(['valueDate', 'amountPaise', 'customerName'])
+  @IsOptional()
+  sortBy?: 'valueDate' | 'amountPaise' | 'customerName';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsIn(['asc', 'desc'])
+  @IsOptional()
+  sortOrder?: 'asc' | 'desc';
+
   @ApiPropertyOptional({ default: 1 })
   @Type(() => Number)
   @IsInt()

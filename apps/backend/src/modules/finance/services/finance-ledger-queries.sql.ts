@@ -179,8 +179,26 @@ export const LEDGER_PAGE_SQL = `
     AND ($3::date IS NULL OR e.value_date <= $3)
     AND ($4::uuid IS NULL OR e.project_id = $4)
     AND ($5::uuid IS NULL OR prop.customer_id = $5)
-  ORDER BY e.value_date DESC, e.created_at DESC
-  LIMIT $6 OFFSET $7
+    AND (
+      $6::text IS NULL
+      OR e.entry_no     ILIKE '%' || $6 || '%'
+      OR e.reference    ILIKE '%' || $6 || '%'
+      OR e.counterparty ILIKE '%' || $6 || '%'
+      OR pr.project_number ILIKE '%' || $6 || '%'
+      OR pr.name        ILIKE '%' || $6 || '%'
+      OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $6 || '%'
+    )
+  ORDER BY
+    -- $7/$8 are whitelisted on the DTO and compared, never interpolated.
+    CASE WHEN $7 = 'valueDate'   AND $8 = 'asc'  THEN e.value_date        END ASC,
+    CASE WHEN $7 = 'valueDate'   AND $8 = 'desc' THEN e.value_date        END DESC,
+    CASE WHEN $7 = 'amountPaise' AND $8 = 'asc'  THEN ABS(e.amount_paise) END ASC,
+    CASE WHEN $7 = 'amountPaise' AND $8 = 'desc' THEN ABS(e.amount_paise) END DESC,
+    CASE WHEN $7 = 'customerName' AND $8 = 'asc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
+    CASE WHEN $7 = 'customerName' AND $8 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
+    -- Default: newest money first.
+    e.value_date DESC, e.created_at DESC
+  LIMIT $9 OFFSET $10
 `;
 
 export const LEDGER_COUNT_SQL = `
@@ -188,11 +206,21 @@ export const LEDGER_COUNT_SQL = `
   FROM ledger_entries e
   JOIN projects pr              ON pr.id = e.project_id
   LEFT JOIN customer_properties prop ON prop.id = pr.property_id
+  LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
   WHERE ($1::text IS NULL OR e.direction = $1)
     AND ($2::date IS NULL OR e.value_date >= $2)
     AND ($3::date IS NULL OR e.value_date <= $3)
     AND ($4::uuid IS NULL OR e.project_id = $4)
     AND ($5::uuid IS NULL OR prop.customer_id = $5)
+    AND (
+      $6::text IS NULL
+      OR e.entry_no     ILIKE '%' || $6 || '%'
+      OR e.reference    ILIKE '%' || $6 || '%'
+      OR e.counterparty ILIKE '%' || $6 || '%'
+      OR pr.project_number ILIKE '%' || $6 || '%'
+      OR pr.name        ILIKE '%' || $6 || '%'
+      OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $6 || '%'
+    )
 `;
 
 /** Every open milestone across the org — the receivables screen. */
