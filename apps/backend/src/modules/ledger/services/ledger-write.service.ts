@@ -17,6 +17,7 @@ import { DataSource, EntityManager } from 'typeorm';
 import { assertMoneyWritesAllowed } from '../../../common/utils';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { SequenceService } from '../../finance-common/services/sequence.service';
+import { StorageService } from '../../storage/services/storage.service';
 import {
   type Allocation,
   allocateWaterfall,
@@ -109,6 +110,7 @@ export class LedgerWriteService {
     private readonly dataSource: DataSource,
     private readonly ledgerRepository: LedgerRepository,
     private readonly sequenceService: SequenceService,
+    private readonly storageService: StorageService,
   ) {}
 
   /**
@@ -122,13 +124,17 @@ export class LedgerWriteService {
    * and surfaces as customer credit on `v_project_balance` — never forced onto
    * the last milestone and never silently dropped.
    */
-  async recordReceipt(input: RecordReceiptInput, createdBy: string): Promise<LedgerEntryEntity> {
+  async recordReceipt(
+    input: RecordReceiptInput,
+    createdBy: string,
+    externalManager?: EntityManager,
+  ): Promise<LedgerEntryEntity> {
     this.assertWritesAllowed();
     const valueDate = this.resolveValueDate(input.valueDate);
     this.assertAmount(input.amountPaise);
     await this.assertProjectInOrg(input.projectId);
 
-    return this.dataSource.transaction(async (manager) => {
+    return this.runInTransaction(externalManager, async (manager) => {
       const balances = await this.ledgerRepository.getMilestoneBalances(
         input.projectId,
         manager,
@@ -193,13 +199,17 @@ export class LedgerWriteService {
    * Record money out. Expenses carry no allocations — they are not receivable
    * against a milestone, and they never change what the customer owes.
    */
-  async recordExpense(input: RecordExpenseInput, createdBy: string): Promise<LedgerEntryEntity> {
+  async recordExpense(
+    input: RecordExpenseInput,
+    createdBy: string,
+    externalManager?: EntityManager,
+  ): Promise<LedgerEntryEntity> {
     this.assertWritesAllowed();
     const valueDate = this.resolveValueDate(input.valueDate);
     this.assertAmount(input.amountPaise);
     await this.assertProjectInOrg(input.projectId);
 
-    return this.dataSource.transaction(async (manager) =>
+    return this.runInTransaction(externalManager, async (manager) =>
       this.insertEntry(manager, {
         projectId: input.projectId,
         customerId: null,
@@ -258,9 +268,15 @@ export class LedgerWriteService {
         : DocumentCategory.DOCUMENT,
       tag: entry.direction === 'in' ? DocumentTag.RECEIPT_PROOF : DocumentTag.EXPENSE_RECEIPT,
       fileName: proof.fileName,
-      fileUrl: proof.fileKey,
+      // The PUBLIC URL, not the raw storage key. See the identical fix and
+      // comment in PaymentApprovalService.fileProof, which is the code path
+      // actually in use — this one currently has no live caller, but the
+      // input type still accepts a proof, so it must not carry the same bug
+      // if something starts calling it again.
+      fileUrl: this.storageService.getPublicUrl(proof.fileKey),
       fileSizeBytes: proof.fileSize,
       mimeType: proof.mimeType,
+      metadata: { storageKey: proof.fileKey },
       createdBy,
       updatedBy: createdBy,
     });
@@ -277,13 +293,18 @@ export class LedgerWriteService {
    * Kept as its own operation (and its own endpoint) so that when RBAC lands it
    * can be gated with a single decorator, without touching the recording path.
    */
-  async reverse(entryId: string, reason: string, createdBy: string): Promise<LedgerEntryEntity> {
+  async reverse(
+    entryId: string,
+    reason: string,
+    createdBy: string,
+    externalManager?: EntityManager,
+  ): Promise<LedgerEntryEntity> {
     this.assertWritesAllowed();
     if (!reason?.trim()) {
       throw new BadRequestException('A reversal reason is required');
     }
 
-    return this.dataSource.transaction(async (manager) => {
+    return this.runInTransaction(externalManager, async (manager) => {
       const original = await this.ledgerRepository.findEntryById(entryId, manager);
       if (!original) {
         throw new NotFoundException(`Ledger entry ${entryId} not found`);
@@ -392,6 +413,22 @@ export class LedgerWriteService {
    * Ownership check — see `LedgerRepository.projectExists` for why the FK
    * alone is not a guard.
    */
+  /**
+   * Run `fn` inside the caller's transaction when one is supplied, otherwise
+   * open our own.
+   *
+   * Payment approval needs the ledger insert and the pending-row stamp to commit
+   * together. Without this the two would be separate transactions, and a crash
+   * between them would leave money in the ledger that nothing records as
+   * approved. Mirrors `SequenceService.getNextNumber(scope, manager?)`.
+   */
+  private runInTransaction<T>(
+    externalManager: EntityManager | undefined,
+    fn: (manager: EntityManager) => Promise<T>,
+  ): Promise<T> {
+    return externalManager ? fn(externalManager) : this.dataSource.transaction(fn);
+  }
+
   private async assertProjectInOrg(projectId: string): Promise<void> {
     if (!(await this.ledgerRepository.projectExists(projectId))) {
       throw new NotFoundException(`Project ${projectId} not found`);

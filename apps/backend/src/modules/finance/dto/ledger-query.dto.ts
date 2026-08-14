@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsDateString, IsIn, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 /**
  * Query DTOs for the ledger reporting endpoints.
@@ -26,6 +26,18 @@ export class LedgerRangeQueryDto {
   @IsDateString()
   @IsOptional()
   to?: string;
+}
+
+export class KpisQueryDto extends LedgerRangeQueryDto {
+  @ApiPropertyOptional({
+    description:
+      'Narrows the period flow figures to matching entries, so the cards describe ' +
+      'the rows on screen. The as-of-today snapshot is unaffected.',
+  })
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  search?: string;
 }
 
 export class CashFlowQueryDto extends LedgerRangeQueryDto {
@@ -61,6 +73,25 @@ export class LedgerEntriesQueryDto extends LedgerRangeQueryDto {
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))
   customerId?: string;
 
+  @ApiPropertyOptional({
+    description: 'Matches entry number, reference, counterparty, project or customer.',
+  })
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  search?: string;
+
+  /** Whitelisted: the value reaches ORDER BY, so free text would be injectable. */
+  @ApiPropertyOptional({ enum: ['valueDate', 'amountPaise', 'customerName'] })
+  @IsIn(['valueDate', 'amountPaise', 'customerName'])
+  @IsOptional()
+  sortBy?: 'valueDate' | 'amountPaise' | 'customerName';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsIn(['asc', 'desc'])
+  @IsOptional()
+  sortOrder?: 'asc' | 'desc';
+
   @ApiPropertyOptional({ default: 1 })
   @Type(() => Number)
   @IsInt()
@@ -78,6 +109,32 @@ export class LedgerEntriesQueryDto extends LedgerRangeQueryDto {
 }
 
 export class ReceivablesQueryDto {
+  @ApiPropertyOptional({
+    enum: ['current', '1-30', '31-60', '61-90', '90plus'],
+    description: 'Ageing bucket. Computed server-side so the chip counts and the rows agree.',
+  })
+  @IsIn(['current', '1-30', '31-60', '61-90', '90plus'])
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus';
+
+  @ApiPropertyOptional({ description: 'Matches customer, project number or name, or milestone.' })
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  search?: string;
+
+  /** Whitelisted: the value reaches ORDER BY, so free text would be injectable. */
+  @ApiPropertyOptional({ enum: ['daysOverdue', 'outstandingAmount', 'dueDate', 'customerName'] })
+  @IsIn(['daysOverdue', 'outstandingAmount', 'dueDate', 'customerName'])
+  @IsOptional()
+  sortBy?: 'daysOverdue' | 'outstandingAmount' | 'dueDate' | 'customerName';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsIn(['asc', 'desc'])
+  @IsOptional()
+  sortOrder?: 'asc' | 'desc';
+
   @ApiPropertyOptional({ default: 1 })
   @Type(() => Number)
   @IsInt()

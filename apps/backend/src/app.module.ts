@@ -31,6 +31,7 @@ import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
 import { LookupsModule } from './modules/lookups/lookups.module';
 import { MasterDataModule } from './modules/master-data/master-data.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PaymentApprovalModule } from './modules/payment-approvals/payment-approval.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
@@ -91,6 +92,7 @@ import { UsersModule } from './modules/users/users.module';
     // see docs/plans/2026-08-12-finance-legacy-removal-design.md. Note that
     // scripts/ledger-dry-run.ts reads them by design and goes with them.
     LedgerModule,
+    PaymentApprovalModule,
     FinanceModule,
     CommentsModule,
     DocumentsModule,

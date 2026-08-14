@@ -48,6 +48,12 @@ export enum DocumentEntityType {
   PROJECT_EXPENSE = 'project_expense',
   /** Proof attached to a ledger entry — a cheque image, UPI screenshot, vendor bill. */
   LEDGER_ENTRY = 'ledger_entry',
+  /**
+   * Proof attached to money still awaiting approval. Re-pointed to
+   * LEDGER_ENTRY once approved, so an approved payment's evidence always lives
+   * in the one place the rest of the app looks for it.
+   */
+  PAYMENT_APPROVAL = 'payment_approval',
 }
 
 /**

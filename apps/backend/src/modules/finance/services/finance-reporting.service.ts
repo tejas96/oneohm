@@ -12,6 +12,7 @@ import {
   LEDGER_PAGE_SQL,
   OUTSTANDING_COUNT_SQL,
   OUTSTANDING_SQL,
+  RECEIVABLES_BUCKETS_SQL,
   RECEIVABLES_COUNT_SQL,
   RECEIVABLES_SQL,
   SPEND_BY_CATEGORY_SQL,
@@ -64,8 +65,8 @@ export class FinanceReportingService {
    * not belong to a month, and conflating the two is how a dashboard ends up
    * claiming a customer "owes ₹X in March".
    */
-  async getKpis(from: string, to: string): Promise<FinanceKpis> {
-    const [row] = await this.dataSource.query(KPIS_SQL, [from, to]);
+  async getKpis(from: string, to: string, search?: string | null): Promise<FinanceKpis> {
+    const [row] = await this.dataSource.query(KPIS_SQL, [from, to, search ?? null]);
     return {
       revenueInRange: rs(row?.revenuePaise),
       spendInRange: rs(row?.spendPaise),
@@ -177,21 +178,33 @@ export class FinanceReportingService {
     to?: string | null;
     projectId?: string | null;
     customerId?: string | null;
+    search?: string | null;
+    sortBy?: string | null;
+    sortOrder?: 'asc' | 'desc' | null;
     page?: number;
     limit?: number;
   }): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
+    // Shared by the page and the count query, so "showing 1-25 of N" can never
+    // disagree with the rows actually returned.
     const params = [
       opts.direction ?? null,
       opts.from ?? null,
       opts.to ?? null,
       opts.projectId ?? null,
       opts.customerId ?? null,
+      opts.search ?? null,
     ];
 
     const [rows, [countRow]] = await Promise.all([
-      this.dataSource.query(LEDGER_PAGE_SQL, [...params, limit, (page - 1) * limit]),
+      this.dataSource.query(LEDGER_PAGE_SQL, [
+        ...params,
+        opts.sortBy ?? null,
+        opts.sortOrder ?? 'desc',
+        limit,
+        (page - 1) * limit,
+      ]),
       this.dataSource.query(LEDGER_COUNT_SQL, params),
     ]);
 
@@ -216,14 +229,38 @@ export class FinanceReportingService {
    * the view, so a written-off residual stops being chased.
    */
   async getReceivables(
-    opts: { page?: number; limit?: number } = {},
-  ): Promise<{ data: Record<string, unknown>[]; total: number; page: number; limit: number }> {
+    opts: {
+      page?: number;
+      limit?: number;
+      bucket?: string | null;
+      search?: string | null;
+      sortBy?: string | null;
+      sortOrder?: 'asc' | 'desc' | null;
+    } = {},
+  ): Promise<{
+    data: Record<string, unknown>[];
+    total: number;
+    page: number;
+    limit: number;
+    buckets: Record<string, number>;
+  }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
+    const filters = [opts.bucket ?? null, opts.search ?? null];
 
-    const [rows, [countRow]] = await Promise.all([
-      this.dataSource.query(RECEIVABLES_SQL, [limit, (page - 1) * limit]),
-      this.dataSource.query(RECEIVABLES_COUNT_SQL, []),
+    const [rows, [countRow], [bucketRow]] = await Promise.all([
+      this.dataSource.query(RECEIVABLES_SQL, [
+        ...filters,
+        opts.sortBy ?? null,
+        opts.sortOrder ?? 'desc',
+        limit,
+        (page - 1) * limit,
+      ]),
+      this.dataSource.query(RECEIVABLES_COUNT_SQL, filters),
+      // Follows `search` but not `bucket`: search narrows the whole page, so
+      // the headline totals must follow it, while selecting one chip must not
+      // zero the counts on the others.
+      this.dataSource.query(RECEIVABLES_BUCKETS_SQL, [opts.search ?? null]),
     ]);
 
     return {
@@ -234,6 +271,9 @@ export class FinanceReportingService {
         outstandingAmount: rs(r.balancePaise),
         daysOverdue: Number(r.daysOverdue ?? 0),
       })),
+      buckets: Object.fromEntries(
+        Object.entries(bucketRow ?? {}).map(([k, v]) => [k, Number(v ?? 0)]),
+      ),
       total: Number(countRow?.count ?? 0),
       page,
       limit,

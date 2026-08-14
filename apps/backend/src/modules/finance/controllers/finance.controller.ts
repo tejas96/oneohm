@@ -6,8 +6,8 @@ import { JwtAuthGuard } from '../../auth/guards';
 import { CustomerAgingDto, OutstandingQueryDto, OutstandingTermDto } from '../dto';
 import {
   CashFlowQueryDto,
+  KpisQueryDto,
   LedgerEntriesQueryDto,
-  LedgerRangeQueryDto,
   ReceivablesQueryDto,
 } from '../dto/ledger-query.dto';
 import { FinanceReportingService } from '../services/finance-reporting.service';
@@ -66,10 +66,10 @@ export class FinanceController {
       'today: money owed does not belong to a month.',
   })
   async getKpis(
-    @Query() query: LedgerRangeQueryDto,
+    @Query() query: KpisQueryDto,
   ): Promise<Awaited<ReturnType<FinanceReportingService['getKpis']>>> {
     const { from, to } = resolveRange(query.from, query.to);
-    return this.reportingService.getKpis(from, to);
+    return this.reportingService.getKpis(from, to, query.search);
   }
 
   @Get('cash-flow')
@@ -95,6 +95,9 @@ export class FinanceController {
       to: query.to ?? null,
       projectId: query.projectId ?? null,
       customerId: query.customerId ?? null,
+      search: query.search ?? null,
+      sortBy: query.sortBy ?? null,
+      sortOrder: query.sortOrder ?? null,
       page: query.page ?? 1,
       limit: query.limit ?? 25,
     });
@@ -113,6 +116,10 @@ export class FinanceController {
     return this.reportingService.getReceivables({
       page: query.page ?? 1,
       limit: query.limit ?? 25,
+      bucket: query.bucket,
+      search: query.search,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
     });
   }
 

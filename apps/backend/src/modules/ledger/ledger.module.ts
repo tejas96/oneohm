@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuditModule } from '../audit/audit.module';
@@ -7,6 +7,7 @@ import { FinanceCommonModule } from '../finance-common/finance-common.module';
 import { StorageModule } from '../storage/storage.module';
 import { LedgerController } from './controllers/ledger.controller';
 import { LedgerAllocationEntity, LedgerEntryEntity, PaymentMilestoneEntity } from './entities';
+import { PaymentApprovalModule } from '../payment-approvals/payment-approval.module';
 import { LedgerRepository } from './repositories/ledger.repository';
 import { CreditSweepService } from './services/credit-sweep.service';
 import { LedgerWriteService } from './services/ledger-write.service';
@@ -46,6 +47,10 @@ import { ReceiptDocumentService } from './services/receipt-document.service';
     // these two put them in storage and register the document row.
     StorageModule,
     DocumentsModule,
+    // Recording money now queues it for approval instead of writing straight to
+    // the ledger. Circular by nature: PaymentApprovalModule needs
+    // LedgerWriteService to perform the write once an approver says yes.
+    forwardRef(() => PaymentApprovalModule),
   ],
   controllers: [LedgerController],
   providers: [

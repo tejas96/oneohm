@@ -32,11 +32,45 @@ import React, { useState, useEffect } from 'react';
 import { type CustomerPropertyResponse, useUpdateProperty } from '../../hooks';
 
 import { useEmployees } from '@/components/features/employees';
+import type { Employee } from '@/components/features/employees/hooks/use-employees';
+import { MUIUserAssigneeSelector, type AssigneeOption } from '@/components/ui';
 
 interface EditSiteDataModalProps {
   open: boolean;
   onClose: () => void;
   property: CustomerPropertyResponse;
+}
+
+/**
+ * Options for one assignee field, always including whoever is currently
+ * assigned.
+ *
+ * The employee list can legitimately not contain the current assignee — they
+ * may have left, or been filtered out. Without the fallback entry the picker
+ * finds no match for the stored id and renders the "Unassigned" placeholder,
+ * so a site that *is* assigned reads as unassigned and the first save silently
+ * clears it.
+ */
+function assigneeOptions(
+  employees: Employee[],
+  currentId: string,
+  currentName: string | null | undefined,
+): AssigneeOption[] {
+  const options = employees.map((emp) => ({
+    id: emp.userId,
+    displayName: emp.user ? `${emp.user.firstName} ${emp.user.lastName ?? ''}`.trim() : emp.userId,
+    secondaryText: [emp.designation, emp.department].filter(Boolean).join(' · ') || undefined,
+  }));
+
+  if (currentId && !options.some((o) => o.id === currentId)) {
+    options.unshift({
+      id: currentId,
+      displayName: currentName || currentId,
+      secondaryText: 'No longer in the employee list',
+    });
+  }
+
+  return options;
 }
 
 export function EditSiteDataModal({
@@ -126,24 +160,46 @@ export function EditSiteDataModal({
   const handleSave = (): void => {
     if (!validate()) return;
 
+    const shadingAnalysis = {
+      hasShading,
+      shadingPercentage: hasShading && shadingPercentage !== '' ? Number(shadingPercentage) : null,
+      notes: hasShading ? shadingNotes || null : null,
+    } as ShadingAnalysis;
+
+    const surveyData = {
+      roofType: roofType || null,
+      roofCondition: (roofCondition || null) as RoofCondition | null,
+      roofOrientation: (roofOrientation || null) as RoofOrientation | null,
+      notes: surveyNotes || null,
+      isMaterialUnloadingAreaSafe,
+    } as SurveyData;
+
+    /*
+      Both blobs used to be sent on every save. Someone opening this modal to
+      set an assignee and pressing Save would stamp an all-null survey over a
+      column that was NULL, and the detail page would start reporting
+      "Unloading area safe: No" and "Shading: None" — answers nobody gave.
+
+      So a blank blob is only written once one already exists and is being
+      edited; on a site that has never been surveyed it stays NULL. Note that
+      an unticked checkbox is indistinguishable from an unanswered one, which
+      is exactly why a blank blob must not be taken for an answer.
+    */
+    const surveyIsBlank =
+      !roofType &&
+      !roofCondition &&
+      !roofOrientation &&
+      !surveyNotes &&
+      !isMaterialUnloadingAreaSafe;
+    const shadingIsBlank = !hasShading && shadingPercentage === '' && !shadingNotes;
+
     const payload = {
       siteVisitAssignee: siteVisitAssignee || null,
       siteSurveyAssignee: siteSurveyAssignee || null,
       availableRoofAreaSqft: availableRoofAreaSqft !== '' ? Number(availableRoofAreaSqft) : null,
       siteNotes: siteNotes || null,
-      shadingAnalysis: {
-        hasShading,
-        shadingPercentage:
-          hasShading && shadingPercentage !== '' ? Number(shadingPercentage) : null,
-        notes: hasShading ? shadingNotes || null : null,
-      } as ShadingAnalysis,
-      surveyData: {
-        roofType: roofType || null,
-        roofCondition: (roofCondition || null) as RoofCondition | null,
-        roofOrientation: (roofOrientation || null) as RoofOrientation | null,
-        notes: surveyNotes || null,
-        isMaterialUnloadingAreaSafe,
-      } as SurveyData,
+      shadingAnalysis: shadingIsBlank && !property.shadingAnalysis ? null : shadingAnalysis,
+      surveyData: surveyIsBlank && !property.surveyData ? null : surveyData,
     };
 
     updateProperty.mutate(
@@ -158,10 +214,6 @@ export function EditSiteDataModal({
       },
     );
   };
-
-  // Prevent out-of-range value console warnings for assignees
-  const siteVisitAssigneeExists = employees.some((emp) => emp.userId === siteVisitAssignee);
-  const siteSurveyAssigneeExists = employees.some((emp) => emp.userId === siteSurveyAssignee);
 
   return (
     <Dialog
@@ -217,58 +269,36 @@ export function EditSiteDataModal({
           </Box>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormControl fullWidth size="small" disabled={employeesLoading}>
-                <InputLabel id="site-visit-assignee-label">Site Visit Assignee</InputLabel>
-                <Select
-                  labelId="site-visit-assignee-label"
-                  value={siteVisitAssignee}
-                  label="Site Visit Assignee"
-                  onChange={(e) => setSiteVisitAssignee(e.target.value)}
-                >
-                  <MenuItem value="">
-                    <em>Unassigned</em>
-                  </MenuItem>
-                  {siteVisitAssignee && !siteVisitAssigneeExists && (
-                    <MenuItem value={siteVisitAssignee}>
-                      {property.siteVisitAssigneeName || siteVisitAssignee}
-                    </MenuItem>
-                  )}
-                  {employees.map((emp) => (
-                    <MenuItem key={emp.userId} value={emp.userId}>
-                      {emp.user
-                        ? `${emp.user.firstName} ${emp.user.lastName ?? ''}`.trim()
-                        : emp.userId}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <MUIUserAssigneeSelector
+                fieldLabel="Site Visit Assignee"
+                placeholder="Unassigned"
+                value={siteVisitAssignee || null}
+                // The payload sends `|| null`, but state stays a string so the
+                // controlled inputs around it keep behaving the same.
+                onChange={(userId) => setSiteVisitAssignee(userId ?? '')}
+                options={assigneeOptions(
+                  employees,
+                  siteVisitAssignee,
+                  property.siteVisitAssigneeName,
+                )}
+                optionsLoading={employeesLoading}
+                allowUnassign
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <FormControl fullWidth size="small" disabled={employeesLoading}>
-                <InputLabel id="site-survey-assignee-label">Technical Surveyor</InputLabel>
-                <Select
-                  labelId="site-survey-assignee-label"
-                  value={siteSurveyAssignee}
-                  label="Technical Surveyor"
-                  onChange={(e) => setSiteSurveyAssignee(e.target.value)}
-                >
-                  <MenuItem value="">
-                    <em>Unassigned</em>
-                  </MenuItem>
-                  {siteSurveyAssignee && !siteSurveyAssigneeExists && (
-                    <MenuItem value={siteSurveyAssignee}>
-                      {property.siteSurveyAssigneeName || siteSurveyAssignee}
-                    </MenuItem>
-                  )}
-                  {employees.map((emp) => (
-                    <MenuItem key={emp.userId} value={emp.userId}>
-                      {emp.user
-                        ? `${emp.user.firstName} ${emp.user.lastName ?? ''}`.trim()
-                        : emp.userId}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <MUIUserAssigneeSelector
+                fieldLabel="Technical Surveyor"
+                placeholder="Unassigned"
+                value={siteSurveyAssignee || null}
+                onChange={(userId) => setSiteSurveyAssignee(userId ?? '')}
+                options={assigneeOptions(
+                  employees,
+                  siteSurveyAssignee,
+                  property.siteSurveyAssigneeName,
+                )}
+                optionsLoading={employeesLoading}
+                allowUnassign
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField

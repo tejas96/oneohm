@@ -4,7 +4,7 @@ import { Box, Tooltip } from '@mui/material';
 import type { JSX } from 'react';
 
 import { MUITypography } from '@/components/ui';
-import { formatDate } from '@/lib/utils';
+import { formatBusinessDate, formatDate } from '@/lib/utils';
 
 export interface ReceiptDatesProps {
   valueDate: string;
@@ -23,12 +23,16 @@ export function ReceiptDates({
   valueDateIsInferred = false,
   variant = 'table',
 }: ReceiptDatesProps): JSX.Element {
+  // Both through formatDate: the value date was rendered as raw ISO while the
+  // recorded date was humanised, so one cell read "2026-08-12 / Recorded
+  // 14 Aug 2026" — two formats for two dates that invite comparison.
+  const receivedLabel = formatBusinessDate(valueDate);
   const recordedLabel = `Recorded ${formatDate(createdAt)}`;
 
   if (variant === 'inline') {
     return (
       <span>
-        {valueDate}
+        {receivedLabel}
         {valueDateIsInferred && (
           <Tooltip title="Date inferred from the record's creation time">
             <span> ~</span>
@@ -42,7 +46,7 @@ export function ReceiptDates({
   return (
     <Box sx={{ whiteSpace: 'nowrap', color: 'text.secondary' }}>
       <Box component="span">
-        {valueDate}
+        {receivedLabel}
         {valueDateIsInferred && (
           <Tooltip title="Date inferred from the record's creation time">
             <span> ~</span>

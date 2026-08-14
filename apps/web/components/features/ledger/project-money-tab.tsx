@@ -35,7 +35,15 @@ import {
   type MilestoneBalance,
   type ProjectLedgerSummary,
 } from '@/lib/hooks/resources/ledger';
+import { usePaymentApprovals } from '@/lib/hooks/resources/payment-approvals';
 import { formatPaise } from '@/lib/utils/paise';
+
+/**
+ * How many pending rows the project tab lists inline. The count beside the
+ * heading always comes from `total`, so a project with more than this shows the
+ * true number and a pointer to the full queue rather than silently truncating.
+ */
+const PENDING_PREVIEW_LIMIT = 10;
 
 interface ProjectMoneyTabProps {
   projectId: string;
@@ -65,6 +73,13 @@ export function ProjectMoneyTab({
   const [reversing, setReversing] = useState<LedgerEntry | null>(null);
   const [waiving, setWaiving] = useState<MilestoneBalance | null>(null);
   const receiptPdf = useReceiptPdf();
+  // Deliberately rendered apart from the figures below: these have not reached
+  // the ledger, so they are in neither Received nor Outstanding.
+  const pendingApprovals = usePaymentApprovals({
+    projectId,
+    status: 'pending',
+    limit: PENDING_PREVIEW_LIMIT,
+  });
 
   /**
    * Re-file (or re-download) the receipt for an entry recorded earlier.
@@ -108,6 +123,30 @@ export function ProjectMoneyTab({
           Add change order
         </Button>
       </div>
+
+      {(pendingApprovals.data?.total ?? 0) > 0 && (
+        <Alert severity="warning" icon={false}>
+          <Box sx={{ fontWeight: 600, mb: 0.5 }}>
+            Awaiting approval ({pendingApprovals.data?.total ?? 0})
+          </Box>
+          <Box sx={{ fontSize: '0.8125rem', mb: 1 }}>
+            Not counted in Received or Outstanding below. A second person must approve these before
+            they affect the customer&apos;s balance.
+          </Box>
+          {pendingApprovals.data?.data.map((p) => (
+            <Box key={p.id} sx={{ fontSize: '0.8125rem' }}>
+              {p.requestNo} · {p.valueDate} · {formatPaise(Math.abs(p.amountPaise))}
+              {p.reference ? ` · ${p.reference}` : ''}
+            </Box>
+          ))}
+          {(pendingApprovals.data?.total ?? 0) > PENDING_PREVIEW_LIMIT && (
+            <Box sx={{ fontSize: '0.8125rem', mt: 0.5, fontStyle: 'italic' }}>
+              and {(pendingApprovals.data?.total ?? 0) - PENDING_PREVIEW_LIMIT} more — see Finance ›
+              Payment Approvals
+            </Box>
+          )}
+        </Alert>
+      )}
 
       <SummaryStrip summary={s} />
 
@@ -166,22 +205,6 @@ export function ProjectMoneyTab({
           projectId={projectId}
           milestones={s.milestones}
           onClose={() => setDialog(null)}
-          // Fired after the payment has committed. The dialog has already
-          // closed and the money is already recorded — this only decides
-          // whether a receipt ends up in the customer's documents.
-          onReceiptRecorded={
-            project
-              ? async (entry) => {
-                  // Refetch first: the allocation split and the post-payment
-                  // balance are both server-decided, and the summary in hand is
-                  // the pre-payment one.
-                  const fresh = await summary.refetch();
-                  if (fresh.data) {
-                    await receiptPdf.generateAndFile(entry, fresh.data, project);
-                  }
-                }
-              : undefined
-          }
         />
       )}
 
@@ -425,6 +448,19 @@ function ProjectEntries({
                       {e.counterparty ? ` · ${e.counterparty}` : ''}
                       {e.reference ? ` · ${e.reference}` : ''}
                     </span>
+                  )}
+
+                  {/* Who recorded it and who let it through. Both names, because
+                      `createdBy` on a ledger entry is the APPROVER — approval is
+                      what inserts the row — so showing one name would credit the
+                      wrong person with taking the money. Entries predating the
+                      approval queue carry neither, which is truthful. */}
+                  {(e.recordedByName ?? e.approvedByName) && (
+                    <MUITypography variant="finePrint" component="div">
+                      {e.recordedByName ? `Recorded by ${e.recordedByName}` : null}
+                      {e.recordedByName && e.approvedByName ? ' · ' : null}
+                      {e.approvedByName ? `Approved by ${e.approvedByName}` : null}
+                    </MUITypography>
                   )}
                 </TableCell>
                 <TableCell

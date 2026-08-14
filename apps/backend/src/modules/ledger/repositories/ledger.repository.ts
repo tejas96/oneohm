@@ -351,6 +351,43 @@ export class LedgerRepository {
       });
   }
 
+  /**
+   * Who recorded each entry and who approved it.
+   *
+   * Kept separate from `listEntriesByProject` so the entity read stays a plain
+   * entity read. `ledger_entries.created_by` is the APPROVER — approval is what
+   * performs the insert — so showing that column alone would credit the wrong
+   * person. The submitter only exists on the pending row, joined by
+   * `ledger_entry_id`.
+   *
+   * Entries predating the approval queue have no pending row and come back with
+   * both names null, which is truthful: nobody approved them.
+   */
+  async getEntryAttributionByProject(
+    projectId: string,
+    manager?: EntityManager,
+  ): Promise<
+    Array<{
+      entryId: string;
+      recordedByName: string | null;
+      approvedByName: string | null;
+      approvedAt: Date | null;
+    }>
+  > {
+    return this.exec(manager).query(
+      `SELECT e.id                                                          AS "entryId",
+              NULLIF(TRIM(CONCAT_WS(' ', su.first_name, su.last_name)), '') AS "recordedByName",
+              NULLIF(TRIM(CONCAT_WS(' ', ru.first_name, ru.last_name)), '') AS "approvedByName",
+              p.reviewed_at                                                 AS "approvedAt"
+         FROM ledger_entries e
+         JOIN pending_ledger_entries p ON p.ledger_entry_id = e.id
+         LEFT JOIN users su ON su.id = p.submitted_by
+         LEFT JOIN users ru ON ru.id = p.reviewed_by
+        WHERE e.project_id = $1`,
+      [projectId],
+    );
+  }
+
   /** Unused today but kept symmetric with `allocations` injection. */
   get allocationRepository(): Repository<LedgerAllocationEntity> {
     return this.allocations;

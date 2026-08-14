@@ -60,6 +60,12 @@ describe('SequenceService.getNextNumber', () => {
     expect(result).toMatch(/^EXP-\d{4}-\d{2}-000007$/);
   });
 
+  it('uses the PA prefix for the payment approval scope', async () => {
+    const result = await service.getNextNumber(FinanceSequenceScope.PAYMENT_APPROVAL);
+
+    expect(result).toMatch(/^PA-\d{4}-\d{2}-000007$/);
+  });
+
   it('participates in an outer transaction when one is passed', async () => {
     const outer: Recorded[] = [];
     const manager = {

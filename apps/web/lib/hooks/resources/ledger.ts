@@ -5,6 +5,7 @@ import type { AxiosError } from 'axios';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
+import type { PaymentApproval } from '@/lib/hooks/resources/payment-approvals';
 import { getErrorMessage } from '@/lib/utils/error';
 
 // ============================================================================
@@ -24,6 +25,15 @@ export type LedgerDirection = 'in' | 'out';
 export type MilestoneDerivedStatus = 'pending' | 'partial' | 'paid' | 'waived';
 
 export interface LedgerEntry {
+  /**
+   * Who submitted the payment and who approved it in. Both, because the
+   * ledger's own `createdBy` is the approver — approval performs the insert —
+   * so one name alone would credit the wrong person. Null on entries recorded
+   * before the approval queue existed.
+   */
+  recordedByName?: string | null;
+  approvedByName?: string | null;
+  approvedAt?: string | null;
   id: string;
   entryNo: string;
   entryType: 'receipt' | 'expense' | 'refund' | 'write_off';
@@ -148,6 +158,7 @@ export interface Receivable {
   projectNumber: string;
   projectName: string;
   customerName: string | null;
+  customerPhone?: string | null;
   displayOrder: number;
   milestoneName: string;
   payerType: 'customer' | 'lender';
@@ -181,6 +192,9 @@ export interface LedgerFilters {
   to?: string;
   projectId?: string;
   customerId?: string;
+  search?: string;
+  sortBy?: 'valueDate' | 'amountPaise' | 'customerName';
+  sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
 }
@@ -214,12 +228,13 @@ export const ledgerKeys = {
 export function useFinanceKpis(
   from?: string,
   to?: string,
+  search?: string,
 ): UseQueryResult<FinanceKpis, AxiosError> {
   return useQuery({
-    queryKey: ledgerKeys.kpis(from, to),
+    queryKey: [...ledgerKeys.kpis(from, to), search ?? ''],
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<FinanceKpis>('/finance/kpis', {
-        params: { from, to },
+        params: search ? { from, to, search } : { from, to },
         signal,
       });
       return data;
@@ -264,15 +279,44 @@ export function useLedgerEntries(
   });
 }
 
+export interface ReceivableFilters {
+  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus';
+  search?: string;
+  sortBy?: 'daysOverdue' | 'outstandingAmount' | 'dueDate' | 'customerName';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface ReceivablesPage extends Paginated<Receivable> {
+  /**
+   * Row counts per ageing bucket plus the money totals, computed server-side
+   * over the WHOLE list — deliberately not from the visible page, which is how
+   * the old AR table produced a "Total" that only summed one screen.
+   */
+  buckets: {
+    current: number;
+    d1to30: number;
+    d31to60: number;
+    d61to90: number;
+    d90plus: number;
+    all: number;
+    totalOutstandingPaise: number;
+    overduePaise: number;
+  };
+}
+
 export function useReceivables(
-  page = 1,
-  limit = 25,
-): UseQueryResult<Paginated<Receivable>, AxiosError> {
+  filters: ReceivableFilters = {},
+): UseQueryResult<ReceivablesPage, AxiosError> {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
+  );
   return useQuery({
-    queryKey: ledgerKeys.receivables(page, limit),
+    queryKey: [...ledgerKeys.root(), 'receivables', params],
     queryFn: async ({ signal }) => {
-      const { data } = await apiClient.get<Paginated<Receivable>>('/finance/receivables', {
-        params: { page, limit },
+      const { data } = await apiClient.get<ReceivablesPage>('/finance/receivables', {
+        params,
         signal,
       });
       return data;
@@ -394,32 +438,40 @@ export function useLedgerMutations(projectId: string) {
     void queryClient.invalidateQueries({ queryKey: ledgerKeys.root() });
   };
 
+  // These endpoints no longer write to the ledger — they queue the money for
+  // approval and return the pending request, which has a requestNo and no
+  // entryNo. Reporting "recorded" here would tell the user their customer's
+  // balance had moved when it has not.
   const recordReceipt = useMutation({
     mutationFn: async (input: RecordReceiptInput) => {
-      const { data } = await apiClient.post<LedgerEntry>(
+      const { data } = await apiClient.post<PaymentApproval>(
         `/projects/${projectId}/ledger/receipts`,
         input,
       );
       return data;
     },
-    onSuccess: (entry) => {
+    onSuccess: (request) => {
       invalidate();
-      showToast.success(`Receipt ${entry.entryNo} recorded`);
+      void queryClient.invalidateQueries({ queryKey: ['payment-approvals'] });
+      showToast.success(
+        `${request.requestNo} submitted for approval — the balance updates once approved`,
+      );
     },
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
 
   const recordExpense = useMutation({
     mutationFn: async (input: RecordExpenseInput) => {
-      const { data } = await apiClient.post<LedgerEntry>(
+      const { data } = await apiClient.post<PaymentApproval>(
         `/projects/${projectId}/ledger/expenses`,
         input,
       );
       return data;
     },
-    onSuccess: (entry) => {
+    onSuccess: (request) => {
       invalidate();
-      showToast.success(`Expense ${entry.entryNo} recorded`);
+      void queryClient.invalidateQueries({ queryKey: ['payment-approvals'] });
+      showToast.success(`${request.requestNo} submitted for approval`);
     },
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
@@ -427,14 +479,15 @@ export function useLedgerMutations(projectId: string) {
   /** Corrections are new rows — the original stays visible forever. */
   const reverseEntry = useMutation({
     mutationFn: async ({ entryId, reason }: { entryId: string; reason: string }) => {
-      const { data } = await apiClient.post<LedgerEntry>(`/ledger/entries/${entryId}/reverse`, {
+      const { data } = await apiClient.post<PaymentApproval>(`/ledger/entries/${entryId}/reverse`, {
         reason,
       });
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (request) => {
       invalidate();
-      showToast.success('Entry reversed — both the original and the correction remain on record');
+      void queryClient.invalidateQueries({ queryKey: ['payment-approvals'] });
+      showToast.success(`${request.requestNo} submitted — the reversal takes effect once approved`);
     },
     onError: (error) => showToast.error(getErrorMessage(error)),
   });

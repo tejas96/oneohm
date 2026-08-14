@@ -1,9 +1,9 @@
 'use client';
 
-import { Alert, Button, CircularProgress } from '@mui/material';
+import { Alert, Box, Button, CircularProgress } from '@mui/material';
 import { EXPENSE_CATEGORY_LABELS } from '@tejas96/shared';
 import { ExpenseCategory, PaymentMethod } from '@tejas96/shared/types';
-import { type JSX, useState } from 'react';
+import { type JSX, useRef, useState } from 'react';
 
 import {
   MUIDialog,
@@ -19,7 +19,6 @@ import {
 import {
   uploadProofFile,
   useLedgerMutations,
-  type LedgerEntry,
   type MilestoneBalance,
   type ProofDocumentInput,
 } from '@/lib/hooks/resources/ledger';
@@ -34,14 +33,6 @@ interface RecordMoneyDialogProps {
   mode: Mode;
   /** Shown so the operator can see where an un-targeted receipt will land. */
   milestones?: MilestoneBalance[];
-  /**
-   * Called after a receipt has been saved, with the entry that was created.
-   *
-   * Fired after the dialog closes and deliberately not awaited: the payment is
-   * already committed, so nothing this does may block the operator or make a
-   * successful payment look like a failure.
-   */
-  onReceiptRecorded?: (entry: LedgerEntry) => void | Promise<void>;
 }
 
 /** Form-only sentinel — never sent to the API; resolved to trimmed custom text on submit. */
@@ -92,7 +83,6 @@ export function RecordMoneyDialog({
   projectId,
   mode,
   milestones = [],
-  onReceiptRecorded,
 }: RecordMoneyDialogProps): JSX.Element {
   const { recordReceipt, recordExpense } = useLedgerMutations(projectId);
   const [amount, setAmount] = useState('');
@@ -145,38 +135,42 @@ export function RecordMoneyDialog({
     setProofName('');
   };
 
+  // A ref, not state: two clicks in the same tick both read the pre-render
+  // value of a state flag, so state cannot stop a double submission.
+  const inFlight = useRef(false);
+
   const submit = async (): Promise<void> => {
-    if (!valid) return;
-    if (isReceipt) {
-      const entry = await recordReceipt.mutateAsync({
+    if (!valid || inFlight.current) return;
+    inFlight.current = true;
+    try {
+      if (isReceipt) {
+        await recordReceipt.mutateAsync({
+          amountPaise,
+          valueDate,
+          paymentMethod: method,
+          reference: reference || undefined,
+          notes: notes || undefined,
+          proofDocument: proof ?? undefined,
+        });
+        reset();
+        onClose();
+        return;
+      }
+
+      await recordExpense.mutateAsync({
         amountPaise,
         valueDate,
+        category: resolveExpenseCategory(category, categoryOther),
+        payee: payee || undefined,
         paymentMethod: method,
-        reference: reference || undefined,
         notes: notes || undefined,
         proofDocument: proof ?? undefined,
       });
       reset();
       onClose();
-      // Not awaited, and after onClose: rendering the PDF takes a second or two
-      // and the operator has no reason to wait for it. Errors are handled inside
-      // the callback — a failure here leaves the money recorded and the receipt
-      // regenerable from the entries table.
-      void onReceiptRecorded?.(entry);
-      return;
+    } finally {
+      inFlight.current = false;
     }
-
-    await recordExpense.mutateAsync({
-      amountPaise,
-      valueDate,
-      category: resolveExpenseCategory(category, categoryOther),
-      payee: payee || undefined,
-      paymentMethod: method,
-      notes: notes || undefined,
-      proofDocument: proof ?? undefined,
-    });
-    reset();
-    onClose();
   };
 
   const handleClose = (): void => {
@@ -187,7 +181,7 @@ export function RecordMoneyDialog({
   return (
     <MUIDialog open={open} onOpenChange={(next) => !next && handleClose()} size="lg">
       <MUIDialogHeader>
-        <MUIDialogTitle>{isReceipt ? 'Record payment received' : 'Record expense'}</MUIDialogTitle>
+        <MUIDialogTitle>{isReceipt ? 'Submit payment received' : 'Submit expense'}</MUIDialogTitle>
         <MUIDialogDescription>
           {isReceipt
             ? 'Enter the date the money actually arrived — not today, if it came in earlier.'
@@ -320,6 +314,9 @@ export function RecordMoneyDialog({
       </MUIDialogBody>
 
       <MUIDialogFooter>
+        <Box sx={{ flex: 1, fontSize: '0.75rem', color: 'text.secondary', pr: 2 }}>
+          Sent for verification. The customer&apos;s balance changes only after approval.
+        </Box>
         <Button onClick={handleClose} disabled={pending}>
           Cancel
         </Button>
@@ -329,7 +326,7 @@ export function RecordMoneyDialog({
           disabled={!valid || pending || uploading}
           startIcon={pending ? <CircularProgress size={16} /> : undefined}
         >
-          {isReceipt ? 'Record payment' : 'Record expense'}
+          Submit for approval
         </Button>
       </MUIDialogFooter>
     </MUIDialog>

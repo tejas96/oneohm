@@ -74,6 +74,8 @@ export class SequenceService {
         return 'RCP';
       case FinanceSequenceScope.EXPENSE:
         return 'EXP';
+      case FinanceSequenceScope.PAYMENT_APPROVAL:
+        return 'PA';
       default: {
         const exhaustive: never = scope;
         this.logger.error(`Unhandled finance sequence scope: ${String(exhaustive)}`);

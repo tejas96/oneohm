@@ -110,6 +110,7 @@ export const DOCUMENT_ENTITY_TYPE_LABELS: Record<DocumentEntityType, string> = {
   [DocumentEntityType.QUOTE]: 'Quote Documents',
   [DocumentEntityType.PROJECT]: 'Project Documents',
   [DocumentEntityType.PAYMENT]: 'Payment Documents',
+  [DocumentEntityType.PAYMENT_APPROVAL]: 'Payment Approval Documents',
   [DocumentEntityType.PROJECT_EXPENSE]: 'Expense Documents',
   // Holds both the customer's own proof of payment and the receipt the system
   // generates, so "Payment Proof" no longer covers it.

@@ -67,4 +67,5 @@ export enum ReimbursementStatus {
 export enum FinanceSequenceScope {
   RECEIPT = 'receipt',
   EXPENSE = 'expense',
+  PAYMENT_APPROVAL = 'payment_approval',
 }

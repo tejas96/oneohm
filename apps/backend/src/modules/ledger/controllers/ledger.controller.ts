@@ -6,6 +6,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   NotFoundException,
   Param,
   ParseUUIDPipe,
@@ -14,6 +15,7 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  forwardRef,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
@@ -22,12 +24,15 @@ import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { PendingLedgerEntryEntity } from '../../payment-approvals/entities';
+import { PaymentApprovalService } from '../../payment-approvals/services';
 import {
   ChangeOrderDto,
   LedgerEntryResponseDto,
   MilestoneBalanceResponseDto,
   ProjectLedgerSummaryDto,
   RecordExpenseDto,
+  ProofDocumentDto,
   RecordReceiptDto,
   ReverseEntryDto,
   WaiveMilestoneDto,
@@ -36,6 +41,18 @@ import { LedgerRepository } from '../repositories/ledger.repository';
 import { LedgerWriteService } from '../services/ledger-write.service';
 import { MilestoneService } from '../services/milestone.service';
 import { ReceiptDocumentService } from '../services/receipt-document.service';
+
+/**
+ * Accept both the single `proofDocument` and the newer `proofDocuments` array
+ * so older callers keep working while the UI uploads several images.
+ */
+function mergeProofs(dto: {
+  proofDocument?: ProofDocumentDto;
+  proofDocuments?: ProofDocumentDto[];
+}): ProofDocumentDto[] | undefined {
+  const all = [...(dto.proofDocuments ?? []), ...(dto.proofDocument ? [dto.proofDocument] : [])];
+  return all.length > 0 ? all : undefined;
+}
 
 /**
  * The ledger surface.
@@ -55,6 +72,11 @@ import { ReceiptDocumentService } from '../services/receipt-document.service';
 @UseGuards(JwtAuthGuard)
 export class LedgerController {
   constructor(
+    // forwardRef because PaymentApprovalModule imports LedgerModule for
+    // LedgerWriteService, and this controller now needs the approval service
+    // back — a genuine cycle between the two modules.
+    @Inject(forwardRef(() => PaymentApprovalService))
+    private readonly approvals: PaymentApprovalService,
     private readonly writeService: LedgerWriteService,
     private readonly receiptDocumentService: ReceiptDocumentService,
     private readonly milestoneService: MilestoneService,
@@ -99,8 +121,24 @@ export class LedgerController {
   async listEntries(
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<LedgerEntryResponseDto[]> {
-    const entries = await this.ledgerRepository.listEntriesByProject(projectId);
-    return toDtoArray(LedgerEntryResponseDto, entries);
+    const [entries, attribution] = await Promise.all([
+      this.ledgerRepository.listEntriesByProject(projectId),
+      this.ledgerRepository.getEntryAttributionByProject(projectId),
+    ]);
+
+    // Merged here rather than joined into the entity read, so the append-only
+    // entity query stays a plain entity query.
+    const byEntry = new Map(attribution.map((a) => [a.entryId, a]));
+
+    return toDtoArray(
+      LedgerEntryResponseDto,
+      entries.map((entry) => ({
+        ...entry,
+        recordedByName: byEntry.get(entry.id)?.recordedByName ?? null,
+        approvedByName: byEntry.get(entry.id)?.approvedByName ?? null,
+        approvedAt: byEntry.get(entry.id)?.approvedAt ?? null,
+      })),
+    );
   }
 
   /**
@@ -126,19 +164,39 @@ export class LedgerController {
 
   @Post('projects/:projectId/ledger/receipts')
   @ApiOperation({
-    summary: 'Record money received',
+    summary: 'Submit money received for approval',
     description:
-      'Omit `allocations` and the receipt fills milestones in order, spilling into the next — ' +
-      'anything left over becomes project credit rather than being forced onto the last milestone.',
+      'Since the approval queue landed this no longer writes to the ledger. It queues the ' +
+      'receipt for verification and returns the pending request; the customer’s outstanding ' +
+      'moves only when an approver — someone other than the submitter — approves it. ' +
+      '`allocations` is carried through and applied at approval; omit it and the waterfall ' +
+      'fills milestones in order. Either way the split is validated against live balances at ' +
+      'approval, since the schedule can be repriced while a payment waits in the queue.',
   })
   @ApiParam({ name: 'projectId', type: String })
   async recordReceipt(
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: RecordReceiptDto,
-  ): Promise<LedgerEntryResponseDto> {
-    const entry = await this.writeService.recordReceipt({ projectId, ...dto }, currentUser.id);
-    return toDto(LedgerEntryResponseDto, entry);
+  ): Promise<PendingLedgerEntryEntity> {
+    // Deliberately a behaviour change rather than a second endpoint: a route
+    // that still wrote straight to the ledger would be an unguarded hole
+    // through the control this queue exists to provide.
+    return this.approvals.submit(
+      {
+        kind: 'receipt',
+        projectId,
+        amountPaise: dto.amountPaise,
+        valueDate: dto.valueDate,
+        paymentMethod: dto.paymentMethod,
+        reference: dto.reference,
+        notes: dto.notes,
+        customerId: dto.customerId,
+        allocations: dto.allocations,
+        proofDocuments: mergeProofs(dto),
+      },
+      currentUser.id,
+    );
   }
 
   @Post('projects/:projectId/ledger/expenses')
@@ -153,9 +211,21 @@ export class LedgerController {
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: RecordExpenseDto,
-  ): Promise<LedgerEntryResponseDto> {
-    const entry = await this.writeService.recordExpense({ projectId, ...dto }, currentUser.id);
-    return toDto(LedgerEntryResponseDto, entry);
+  ): Promise<PendingLedgerEntryEntity> {
+    return this.approvals.submit(
+      {
+        kind: 'expense',
+        projectId,
+        amountPaise: dto.amountPaise,
+        valueDate: dto.valueDate,
+        category: dto.category,
+        counterparty: dto.payee,
+        paymentMethod: dto.paymentMethod,
+        notes: dto.notes,
+        proofDocuments: mergeProofs(dto),
+      },
+      currentUser.id,
+    );
   }
 
   @Post('ledger/entries/:entryId/receipt-document')
@@ -199,9 +269,13 @@ export class LedgerController {
     @Param('entryId', ParseUUIDPipe) entryId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: ReverseEntryDto,
-  ): Promise<LedgerEntryResponseDto> {
-    const entry = await this.writeService.reverse(entryId, dto.reason, currentUser.id);
-    return toDto(LedgerEntryResponseDto, entry);
+  ): Promise<PendingLedgerEntryEntity> {
+    // Reversals queue too. Without this, anyone could undo an approved receipt
+    // single-handedly and walk straight around the control.
+    return this.approvals.submit(
+      { kind: 'reversal', reversesEntryId: entryId, reversalReason: dto.reason },
+      currentUser.id,
+    );
   }
 
   // ============================================
