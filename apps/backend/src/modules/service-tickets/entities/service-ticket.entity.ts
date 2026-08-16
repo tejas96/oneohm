@@ -70,6 +70,10 @@ export class ServiceTicketEntity extends BaseEntity {
   @Column({ name: 'assigned_at', type: 'timestamptz', nullable: true })
   assignedAt: Date | null;
 
+  /** Calendar day, not a timestamp — a `date` column round-trips as 'YYYY-MM-DD'. */
+  @Column({ name: 'due_date', type: 'date', nullable: true })
+  dueDate: string | null;
+
   // ============================================
   // PHOTOS
   // ============================================

@@ -28,6 +28,7 @@ export interface ServiceTicket {
   propertyId: string;
   assignedToEmployeeId: string | null;
   assigneeName: string | null;
+  dueDate: string | null;
   createdAt: string;
 }
 
@@ -43,6 +44,8 @@ export interface ServiceTicketHistoryEntry {
 export interface ServiceTicketDetail extends ServiceTicket {
   description: string;
   propertyLabel: string;
+  propertyAddress: string | null;
+  propertyCoordinates: { latitude: number; longitude: number } | null;
   projectName: string;
   photos: ServiceTicketPhoto[] | null;
   resolutionNote: string | null;
@@ -59,6 +62,8 @@ export interface ServiceTicketStats {
   resolved: number;
   closed: number;
   urgent: number;
+  unassigned: number;
+  overdue: number;
 }
 
 export interface ServiceTicketListParams {
@@ -68,6 +73,8 @@ export interface ServiceTicketListParams {
   projectId?: string;
   propertyId?: string;
   assigneeId?: string;
+  unassigned?: boolean;
+  overdue?: boolean;
   search?: string;
   fromDate?: string;
   toDate?: string;
@@ -89,6 +96,7 @@ export interface CreateServiceTicketInput {
   customerId: string;
   projectId: string;
   assignedToEmployeeId?: string;
+  dueDate?: string | null;
   photos?: ServiceTicketPhoto[];
 }
 

@@ -7,11 +7,13 @@ import NextLink from 'next/link';
 import { type JSX, useCallback, useMemo, useState } from 'react';
 
 import {
+  isTicketOverdue,
   SERVICE_TICKET_PRIORITY_LABELS,
   SERVICE_TICKET_PRIORITY_TONE,
   SERVICE_TICKET_SORT_FIELD_MAP,
   SERVICE_TICKET_STATUS_LABELS,
   SERVICE_TICKET_STATUS_TONE,
+  TICKET_FILTER_KEYS,
 } from '../constants';
 import { ServiceTicketFormDialog } from './service-ticket-form-dialog';
 import { ServiceTicketStatTiles, type TicketTileKey } from './service-ticket-stat-tiles';
@@ -22,6 +24,8 @@ import {
   type ServiceTicketListParams,
 } from '../hooks/use-service-tickets';
 
+import { useEmployees } from '@/components/features/employees';
+import { type ColumnConfig, type FilterState } from '@/components/shared/advanced-table';
 import {
   CrmStatusPill,
   CrmTable,
@@ -30,18 +34,31 @@ import {
 } from '@/components/shared/crm-table';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUITypography } from '@/components/ui/mui-typography';
+import {
+  MUIUserAssigneeSelector,
+  type AssigneeOption,
+} from '@/components/ui/mui-user-assignee-selector';
 import { ROUTES, buildRoute } from '@/lib/config/routes';
 import { useTableUrlState } from '@/lib/hooks';
 import { useGatedAction } from '@/lib/rbac';
 import { color, crm } from '@/lib/theme/tokens';
-import { formatDate } from '@/lib/utils';
+import {
+  formatBusinessDate,
+  formatDate,
+  formatDueDatePendingLabel,
+  getDueDateMuiColor,
+} from '@/lib/utils';
 
 type TicketRow = ServiceTicket & Record<string, unknown>;
 
 const EMPTY_ROWS: TicketRow[] = [];
 
-const STATUS_FILTER_KEY = 'status';
-const PRIORITY_FILTER_KEY = 'priority';
+const STATUS_FILTER_KEY = TICKET_FILTER_KEYS.status;
+const PRIORITY_FILTER_KEY = TICKET_FILTER_KEYS.priority;
+const ASSIGNEE_FILTER_KEY = TICKET_FILTER_KEYS.assigneeId;
+const OVERDUE_FILTER_KEY = TICKET_FILTER_KEYS.overdue;
+
+const UNASSIGNED_FILTER_VALUE = 'unassigned';
 
 const STATUS_ORDER: ServiceTicketStatus[] = [
   ServiceTicketStatus.OPEN,
@@ -195,6 +212,33 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
       ),
   },
   {
+    field: 'dueDate',
+    header: 'Due',
+    track: crm['col-ticket-due'],
+    sortable: true,
+    cellSx: CELL_GUTTER,
+    renderCell: (row) =>
+      row.dueDate ? (
+        <Stack spacing={0.25}>
+          <MUITypography
+            variant="bodyPrimary"
+            noWrap
+            sx={{ color: getDueDateMuiColor(row.dueDate) }}
+            title={isTicketOverdue(row) ? 'Overdue' : undefined}
+          >
+            {formatBusinessDate(row.dueDate)}
+          </MUITypography>
+          {isTicketOverdue(row) && (
+            <MUITypography variant="finePrint" sx={{ color: 'error.main' }}>
+              {formatDueDatePendingLabel(row.dueDate)}
+            </MUITypography>
+          )}
+        </Stack>
+      ) : (
+        <MUITypography variant="placeholder">—</MUITypography>
+      ),
+  },
+  {
     field: 'createdAt',
     header: 'Raised',
     track: crm['col-ticket-created'],
@@ -214,7 +258,10 @@ export function ServiceTicketsPage(): JSX.Element {
 
   const statusFilter = (urlState.state.filters[STATUS_FILTER_KEY] as string | undefined) ?? '';
   const priorityFilter = (urlState.state.filters[PRIORITY_FILTER_KEY] as string | undefined) ?? '';
+  const assigneeFilter = (urlState.state.filters[ASSIGNEE_FILTER_KEY] as string | undefined) ?? '';
+  const overdueFilter = (urlState.state.filters[OVERDUE_FILTER_KEY] as string | undefined) ?? '';
 
+  const { data: employees } = useEmployees();
   const { data: stats, isLoading: statsLoading } = useServiceTicketStats();
 
   const params = useMemo<ServiceTicketListParams>(
@@ -224,6 +271,10 @@ export function ServiceTicketsPage(): JSX.Element {
       search: urlState.state.search || undefined,
       status: statusFilter ? (statusFilter as ServiceTicketStatus) : undefined,
       priority: priorityFilter ? (priorityFilter as ServiceTicketPriority) : undefined,
+      assigneeId:
+        assigneeFilter && assigneeFilter !== UNASSIGNED_FILTER_VALUE ? assigneeFilter : undefined,
+      unassigned: assigneeFilter === UNASSIGNED_FILTER_VALUE ? true : undefined,
+      overdue: overdueFilter === 'true' ? true : undefined,
       sortBy: SERVICE_TICKET_SORT_FIELD_MAP[urlState.state.sortModel?.field ?? ''] ?? 'createdAt',
       sortOrder: urlState.state.sortModel?.direction === 'asc' ? 'ASC' : 'DESC',
     }),
@@ -234,6 +285,8 @@ export function ServiceTicketsPage(): JSX.Element {
       urlState.state.sortModel,
       statusFilter,
       priorityFilter,
+      assigneeFilter,
+      overdueFilter,
     ],
   );
 
@@ -265,6 +318,7 @@ export function ServiceTicketsPage(): JSX.Element {
 
       if (key === 'urgent') {
         urlState.setFilters({
+          ...urlState.state.filters,
           [STATUS_FILTER_KEY]: '',
           [PRIORITY_FILTER_KEY]: isAlreadyActive ? '' : ServiceTicketPriority.URGENT,
         });
@@ -272,6 +326,7 @@ export function ServiceTicketsPage(): JSX.Element {
       }
 
       urlState.setFilters({
+        ...urlState.state.filters,
         [STATUS_FILTER_KEY]: isAlreadyActive ? '' : key,
         [PRIORITY_FILTER_KEY]: '',
       });
@@ -281,9 +336,139 @@ export function ServiceTicketsPage(): JSX.Element {
 
   const handleQuickFilterChange = useCallback(
     (key: string): void => {
-      urlState.setFilters({ [STATUS_FILTER_KEY]: key, [PRIORITY_FILTER_KEY]: '' });
+      urlState.setFilters({
+        ...urlState.state.filters,
+        [STATUS_FILTER_KEY]: key,
+        [PRIORITY_FILTER_KEY]: '',
+      });
     },
     [urlState],
+  );
+
+  const activeSecondaryQuickFilter = useMemo(() => {
+    if (assigneeFilter === UNASSIGNED_FILTER_VALUE) return 'unassigned';
+    if (overdueFilter === 'true') return 'overdue';
+    return '';
+  }, [assigneeFilter, overdueFilter]);
+
+  const handleSecondaryQuickFilterChange = useCallback(
+    (key: string): void => {
+      const next: FilterState = { ...urlState.state.filters };
+
+      if (key === 'unassigned') {
+        const isActive = assigneeFilter === UNASSIGNED_FILTER_VALUE;
+        next[ASSIGNEE_FILTER_KEY] = isActive ? '' : UNASSIGNED_FILTER_VALUE;
+        if (!isActive) next[OVERDUE_FILTER_KEY] = '';
+      } else if (key === 'overdue') {
+        const isActive = overdueFilter === 'true';
+        next[OVERDUE_FILTER_KEY] = isActive ? '' : 'true';
+        if (!isActive) next[ASSIGNEE_FILTER_KEY] = '';
+      } else {
+        next[ASSIGNEE_FILTER_KEY] = '';
+        next[OVERDUE_FILTER_KEY] = '';
+      }
+
+      urlState.setFilters(next);
+    },
+    [assigneeFilter, overdueFilter, urlState],
+  );
+
+  const assigneeSelectorOptions = useMemo<AssigneeOption[]>(() => {
+    const employeeOptions = (employees ?? [])
+      .map((employee) => ({
+        id: employee.id,
+        displayName:
+          [employee.user?.firstName, employee.user?.lastName].filter(Boolean).join(' ').trim() ||
+          employee.user?.email ||
+          'Unnamed employee',
+        secondaryText: [employee.designation, employee.department].filter(Boolean).join(' · '),
+      }))
+      .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+    return [{ id: UNASSIGNED_FILTER_VALUE, displayName: 'Unassigned' }, ...employeeOptions];
+  }, [employees]);
+
+  const assigneeFilterOptions = useMemo(
+    () =>
+      assigneeSelectorOptions.map((option) => ({
+        label: option.secondaryText
+          ? `${option.displayName} — ${option.secondaryText}`
+          : option.displayName,
+        value: option.id,
+      })),
+    [assigneeSelectorOptions],
+  );
+
+  const filterColumns = useMemo<ColumnConfig<TicketRow>[]>(() => {
+    const statusOptions = STATUS_ORDER.map((status) => ({
+      label: SERVICE_TICKET_STATUS_LABELS[status],
+      value: status,
+    }));
+    const priorityOptions = Object.values(ServiceTicketPriority).map((priority) => ({
+      label: SERVICE_TICKET_PRIORITY_LABELS[priority],
+      value: priority,
+    }));
+
+    return [
+      {
+        field: STATUS_FILTER_KEY,
+        headerName: 'Status',
+        filterable: false,
+        filterType: 'select',
+        filterOptions: statusOptions,
+      },
+      {
+        field: PRIORITY_FILTER_KEY,
+        headerName: 'Priority',
+        filterable: false,
+        filterType: 'select',
+        filterOptions: priorityOptions,
+      },
+      {
+        field: OVERDUE_FILTER_KEY,
+        headerName: 'Overdue',
+        filterable: false,
+        filterType: 'select',
+        filterOptions: [{ label: 'Overdue', value: 'true' }],
+      },
+      {
+        field: ASSIGNEE_FILTER_KEY,
+        headerName: 'Assigned To',
+        filterable: true,
+        filterOptions: assigneeFilterOptions,
+        renderFilter: ({ value, onChange }) => (
+          <MUIUserAssigneeSelector
+            value={typeof value === 'string' && value.length > 0 ? value : null}
+            onChange={(id) => onChange(id ?? '')}
+            options={assigneeSelectorOptions}
+            allowUnassign
+            placeholder="All assignees"
+            searchPlaceholder="Search assignee…"
+            popoverZIndex={1600}
+          />
+        ),
+      },
+    ];
+  }, [assigneeFilterOptions, assigneeSelectorOptions]);
+
+  const secondaryQuickFilters = useMemo<CrmQuickFilter[]>(
+    () => [
+      {
+        key: 'unassigned',
+        label: 'Unassigned',
+        count: stats?.unassigned,
+        tone: 'warning',
+        dot: true,
+      },
+      {
+        key: 'overdue',
+        label: 'Overdue',
+        count: stats?.overdue,
+        tone: 'danger',
+        dot: true,
+      },
+    ],
+    [stats],
   );
 
   const quickFilters = useMemo<CrmQuickFilter[]>(() => {
@@ -370,6 +555,12 @@ export function ServiceTicketsPage(): JSX.Element {
         quickFilters={quickFilters}
         activeQuickFilter={statusFilter}
         onQuickFilterChange={handleQuickFilterChange}
+        secondaryQuickFilters={secondaryQuickFilters}
+        activeSecondaryQuickFilter={activeSecondaryQuickFilter}
+        onSecondaryQuickFilterChange={handleSecondaryQuickFilterChange}
+        filterColumns={filterColumns}
+        filterModel={urlState.state.filters}
+        onFilterChange={urlState.setFilters}
         sortModel={urlState.state.sortModel}
         onSortChange={urlState.setSortModel}
         page={urlState.state.page}
@@ -380,6 +571,7 @@ export function ServiceTicketsPage(): JSX.Element {
         itemLabel="tickets"
         emptyMessage="No service tickets yet."
         gridMinWidth={crm['grid-min-width-ticket']}
+        pageSizeOptions={[10, 20, 25, 50, 100]}
       />
 
       <ServiceTicketFormDialog open={formOpen} onClose={() => setFormOpen(false)} />

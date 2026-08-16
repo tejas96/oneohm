@@ -16,6 +16,7 @@ const SORT_FIELD_MAP: Record<string, string> = {
   title: 'ticket.title',
   status: 'ticket.status',
   priority: 'ticket.priority',
+  dueDate: 'ticket.dueDate',
 };
 
 @Injectable()
@@ -108,6 +109,19 @@ export class ServiceTicketRepository {
     if (query.assigneeId) {
       qb.andWhere('ticket.assignedToEmployeeId = :assigneeId', { assigneeId: query.assigneeId });
     }
+    if (query.unassigned) {
+      qb.andWhere('ticket.assignedToEmployeeId IS NULL').andWhere(
+        'ticket.status IN (:...unassignedStatuses)',
+        { unassignedStatuses: [...ACTIVE_TICKET_STATUSES] },
+      );
+    }
+    if (query.overdue) {
+      qb.andWhere('ticket.dueDate IS NOT NULL')
+        .andWhere('ticket.dueDate < CURRENT_DATE')
+        .andWhere('ticket.status IN (:...overdueStatuses)', {
+          overdueStatuses: [...ACTIVE_TICKET_STATUSES],
+        });
+    }
     if (query.createdBy) {
       qb.andWhere('ticket.createdBy = :createdBy', { createdBy: query.createdBy });
     }
@@ -127,9 +141,13 @@ export class ServiceTicketRepository {
     }
 
     const sortField = SORT_FIELD_MAP[query.sortBy] ?? 'ticket.createdAt';
-    qb.orderBy(sortField, query.sortOrder === 'ASC' ? 'ASC' : 'DESC')
-      .skip((query.page - 1) * query.limit)
-      .take(query.limit);
+    const sortOrder = query.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    if (sortField === 'ticket.dueDate') {
+      qb.orderBy(sortField, sortOrder, 'NULLS LAST');
+    } else {
+      qb.orderBy(sortField, sortOrder);
+    }
+    qb.skip((query.page - 1) * query.limit).take(query.limit);
 
     const [items, total] = await qb.getManyAndCount();
     return { items, total };
@@ -151,6 +169,8 @@ export class ServiceTicketRepository {
     resolved: number;
     closed: number;
     urgent: number;
+    unassigned: number;
+    overdue: number;
   }> {
     const rows = await this.repository
       .createQueryBuilder('ticket')
@@ -169,12 +189,29 @@ export class ServiceTicketRepository {
       .andWhere('ticket.status IN (:...statuses)', { statuses: [...ACTIVE_TICKET_STATUSES] })
       .getCount();
 
+    const unassigned = await this.repository
+      .createQueryBuilder('ticket')
+      .where('ticket.deletedAt IS NULL')
+      .andWhere('ticket.assignedToEmployeeId IS NULL')
+      .andWhere('ticket.status IN (:...statuses)', { statuses: [...ACTIVE_TICKET_STATUSES] })
+      .getCount();
+
+    const overdue = await this.repository
+      .createQueryBuilder('ticket')
+      .where('ticket.deletedAt IS NULL')
+      .andWhere('ticket.dueDate IS NOT NULL')
+      .andWhere('ticket.dueDate < CURRENT_DATE')
+      .andWhere('ticket.status IN (:...statuses)', { statuses: [...ACTIVE_TICKET_STATUSES] })
+      .getCount();
+
     return {
       open: byStatus.get('open') ?? 0,
       inProgress: byStatus.get('in_progress') ?? 0,
       resolved: byStatus.get('resolved') ?? 0,
       closed: byStatus.get('closed') ?? 0,
       urgent,
+      unassigned,
+      overdue,
     };
   }
 }

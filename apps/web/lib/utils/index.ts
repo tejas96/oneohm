@@ -38,6 +38,8 @@ export {
   formatCurrencyCompact,
   formatCurrencyDecimal,
   formatBusinessDate,
+  formatLocalDate,
+  parseLocalDate,
   formatDate,
   formatDueDatePendingLabel,
   formatLabel,

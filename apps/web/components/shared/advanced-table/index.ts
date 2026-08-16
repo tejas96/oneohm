@@ -1,7 +1,12 @@
 export { AdvancedTable } from './Table';
 export { AdvancedTableExample } from './AdvancedTableExample';
 export { AdvancedTableHeader } from './TableHeader';
-export { TableFilters, TableFiltersToggle } from './TableFilters';
+export {
+  FilterAutocomplete,
+  TableFilters,
+  TableFiltersToggle,
+  type FilterAutocompleteOption,
+} from './TableFilters';
 export { AdvancedTablePagination } from './TablePagination';
 
 export type {

@@ -3,6 +3,7 @@
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FilterListOffIcon from '@mui/icons-material/FilterListOff';
 import {
+  Autocomplete,
   Badge,
   Box,
   Button,
@@ -35,6 +36,62 @@ interface TableFiltersProps<TRow> {
   anchorEl: HTMLButtonElement | null;
   onClose: () => void;
   onFilterChange: (filters: FilterState) => void;
+}
+
+/** Above MUI Popover (1300) so autocomplete menus are not clipped inside filter panels. */
+const FILTER_AUTOCOMPLETE_Z_INDEX = 1600;
+
+export interface FilterAutocompleteOption {
+  label: string;
+  value: string;
+}
+
+export interface FilterAutocompleteProps {
+  options: FilterAutocompleteOption[];
+  value: unknown;
+  onChange: (value: unknown) => void;
+  placeholder: string;
+}
+
+/**
+ * Autocomplete for filter popovers. Uses a portal + elevated z-index so the
+ * listbox is not clipped by the popover paper's overflow scroll container.
+ */
+export function FilterAutocomplete({
+  options,
+  value,
+  onChange,
+  placeholder,
+}: FilterAutocompleteProps): JSX.Element {
+  const selectedOption = options.find((option) => String(option.value) === String(value)) ?? null;
+
+  return (
+    <Autocomplete
+      size="small"
+      fullWidth
+      options={options}
+      value={selectedOption}
+      getOptionLabel={(option) => (typeof option === 'string' ? option : option.label || '')}
+      getOptionKey={(option) => (typeof option === 'string' ? option : String(option.value))}
+      isOptionEqualToValue={(option, val) => option.value === val?.value}
+      onChange={(_, val) => {
+        onChange(val?.value ?? '');
+      }}
+      slotProps={{
+        popper: {
+          sx: { zIndex: FILTER_AUTOCOMPLETE_Z_INDEX },
+        },
+        paper: {
+          sx: {
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            boxShadow: 3,
+          },
+        },
+      }}
+      renderInput={(params) => <TextField {...params} placeholder={placeholder} />}
+    />
+  );
 }
 
 // ============================================================================
@@ -294,9 +351,13 @@ function ActiveFilterChips<TRow>({
     const col = columns.find((c) => c.field === field);
     if (!col) return toSortableString(value);
 
+    const optionLabel = col.filterOptions?.find(
+      (o) => String(o.value) === toSortableString(value),
+    )?.label;
+
     if (col.filterType === 'select') {
-      const opt = col.filterOptions?.find((o) => String(o.value) === toSortableString(value));
-      return `${col.headerName}: ${opt?.label ?? toSortableString(value)}`;
+      if (optionLabel && optionLabel === col.headerName) return optionLabel;
+      return `${col.headerName}: ${optionLabel ?? toSortableString(value)}`;
     }
     if (col.filterType === 'range') {
       const r = value as { min?: number; max?: number };
@@ -308,6 +369,9 @@ function ActiveFilterChips<TRow>({
     if (col.filterType === 'date') {
       const parsedDate = parseDateLike(value);
       return `${col.headerName}: ${parsedDate ? parsedDate.toLocaleDateString() : toSortableString(value)}`;
+    }
+    if (optionLabel) {
+      return `${col.headerName}: ${optionLabel}`;
     }
     return `${col.headerName}: ${toSortableString(value)}`;
   };

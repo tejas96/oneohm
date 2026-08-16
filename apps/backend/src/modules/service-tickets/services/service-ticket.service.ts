@@ -56,6 +56,7 @@ export class ServiceTicketService {
         status: ServiceTicketStatus.OPEN,
         assignedToEmployeeId: dto.assignedToEmployeeId ?? null,
         assignedAt: dto.assignedToEmployeeId ? new Date() : null,
+        dueDate: dto.dueDate ?? null,
         photos: dto.photos ?? null,
         createdBy: userId,
         updatedBy: userId,
@@ -162,6 +163,7 @@ export class ServiceTicketService {
         ? { assignedToEmployeeId: dto.assignedToEmployeeId }
         : {}),
       ...(assigneeChanged && dto.assignedToEmployeeId ? { assignedAt: new Date() } : {}),
+      ...(dto.dueDate !== undefined ? { dueDate: dto.dueDate } : {}),
       updatedBy: userId,
     });
 

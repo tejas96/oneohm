@@ -6,7 +6,6 @@ import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
-  Autocomplete,
   Box,
   Button,
   IconButton,
@@ -16,7 +15,6 @@ import {
   Menu,
   MenuItem,
   Stack,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -36,7 +34,11 @@ import { type ProjectFilters, type ProjectListItem, useEmployees, useProjects } 
 import { TeamAvatarGroup } from './team-avatar-group';
 
 import { ActiveTicketsChip } from '@/components/features/service-tickets';
-import type { ColumnConfig, FilterState } from '@/components/shared/advanced-table';
+import {
+  FilterAutocomplete,
+  type ColumnConfig,
+  type FilterState,
+} from '@/components/shared/advanced-table';
 import {
   CrmTable,
   type CrmColumn,
@@ -857,40 +859,45 @@ export function ProjectListPage(): JSX.Element {
   }, [urlState]);
 
   const filterColumns = useMemo<ColumnConfig<ProjectRow>[]>(() => {
-    const renderAutocomplete =
-      (options: { label: string; value: string }[], placeholder: string) =>
-      ({ value, onChange }: { value: unknown; onChange: (v: unknown) => void }) => {
-        const selected = options.find((o) => String(o.value) === String(value)) ?? null;
-        return (
-          <Autocomplete
-            size="small"
-            fullWidth
-            options={options}
-            value={selected}
-            disablePortal
-            getOptionLabel={(option) => (typeof option === 'string' ? option : option.label || '')}
-            isOptionEqualToValue={(option, val) => option.value === val?.value}
-            onChange={(_, val) => onChange(val?.value ?? '')}
-            renderInput={(params) => <TextField {...params} placeholder={placeholder} />}
-          />
-        );
-      };
-
     return FILTER_COLUMNS.map((col) => {
       if (col.field === 'team') {
-        return { ...col, renderFilter: renderAutocomplete(employeeOptions, 'Search member…') };
+        return {
+          ...col,
+          renderFilter: ({ value, onChange }) => (
+            <FilterAutocomplete
+              options={employeeOptions}
+              value={value}
+              onChange={onChange}
+              placeholder="Search member…"
+            />
+          ),
+        };
       }
       if (col.field === 'createdBy') {
         return {
           ...col,
           filterOptions: creatorOptions,
-          renderFilter: renderAutocomplete(creatorOptions, 'Search creator…'),
+          renderFilter: ({ value, onChange }) => (
+            <FilterAutocomplete
+              options={creatorOptions}
+              value={value}
+              onChange={onChange}
+              placeholder="Search creator…"
+            />
+          ),
         };
       }
       if (col.field === 'pendingWorkflowStepId') {
         return {
           ...col,
-          renderFilter: renderAutocomplete(workflowStepOptions, 'Search workflow step…'),
+          renderFilter: ({ value, onChange }) => (
+            <FilterAutocomplete
+              options={workflowStepOptions}
+              value={value}
+              onChange={onChange}
+              placeholder="Search workflow step…"
+            />
+          ),
         };
       }
       return col;

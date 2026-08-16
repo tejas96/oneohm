@@ -420,11 +420,12 @@ const root = {
     'col-ticket-priority': '104px',
     'col-ticket-status': '116px',
     'col-ticket-assignee': 'minmax(130px,1fr)',
+    'col-ticket-due': '104px',
     'col-ticket-created': '104px',
-    // Sum of the ticket columns' minimum tracks (224+220+160+224+104+116+130+104
-    // = 1282) plus headroom, so the grid scrolls rather than squeezing the
+    // Sum of the ticket columns' minimum tracks (224+220+160+224+104+116+130+104+104
+    // = 1386) plus headroom, so the grid scrolls rather than squeezing the
     // flexible columns below their minmax floors.
-    'grid-min-width-ticket': '1320px',
+    'grid-min-width-ticket': '1440px',
 
     // ── Project grid: column tracks ────────────────────────────────────
     /**

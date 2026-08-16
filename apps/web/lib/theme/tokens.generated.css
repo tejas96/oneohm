@@ -217,8 +217,9 @@
   --crm-col-ticket-priority: 104px;
   --crm-col-ticket-status: 116px;
   --crm-col-ticket-assignee: minmax(130px,1fr);
+  --crm-col-ticket-due: 104px;
   --crm-col-ticket-created: 104px;
-  --crm-grid-min-width-ticket: 1320px;
+  --crm-grid-min-width-ticket: 1440px;
   --crm-col-project-name: 210px;
   --crm-col-project-customer: minmax(220px,2fr);
   --crm-col-project-size: 165px;
