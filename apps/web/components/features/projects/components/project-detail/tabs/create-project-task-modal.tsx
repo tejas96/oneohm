@@ -35,7 +35,7 @@ import {
 } from '@/components/ui';
 import { PriorityDropdown } from '@/components/ui/priority-dropdown';
 import { useModalForm } from '@/lib/hooks/core';
-import { getErrorMessage } from '@/lib/utils';
+import { getErrorMessage, formatLocalDate, parseLocalDate } from '@/lib/utils';
 
 interface CreateProjectTaskModalProps {
   open: boolean;
@@ -44,18 +44,6 @@ interface CreateProjectTaskModalProps {
   taskStatuses: TaskStatusConfig[];
   /** If provided, the modal pre-selects this status when opening (e.g. from a board column footer). */
   preselectedStatus?: string | null;
-}
-
-function formatLocalDate(date: Date | null): string {
-  if (!date) return '';
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function parseLocalDate(isoDate: string | undefined): Date | undefined {
-  if (!isoDate) return undefined;
-  const [year, month, day] = isoDate.split('-').map(Number);
-  if (!year || !month || !day) return undefined;
-  return new Date(year, month - 1, day);
 }
 
 function getMemberDisplayName(member: ProjectTeamMember): string {

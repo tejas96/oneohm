@@ -340,6 +340,10 @@ export interface MUIUserAssigneeSelectorProps {
    * Required when used inside Radix UI Sheet/Dialog to prevent focus-trap click-through.
    */
   disablePortal?: boolean;
+  /**
+   * Elevates the options popover above nested panels (e.g. table filter popovers ~1300).
+   */
+  popoverZIndex?: number;
   /** Where the options popover opens relative to the trigger */
   popoverPlacement?: 'above' | 'below';
 
@@ -382,6 +386,7 @@ export function MUIUserAssigneeSelector({
   allowUnassign = false,
   readOnly = false,
   disablePortal = false,
+  popoverZIndex,
   popoverPlacement = 'below',
   fieldLabel,
   label,
@@ -564,6 +569,7 @@ export function MUIUserAssigneeSelector({
           horizontal: 'left',
         }}
         slotProps={{
+          root: popoverZIndex !== undefined ? { sx: { zIndex: popoverZIndex } } : undefined,
           paper: {
             elevation: 4,
             sx: {

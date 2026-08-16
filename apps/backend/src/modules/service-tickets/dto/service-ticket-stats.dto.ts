@@ -23,4 +23,16 @@ export class ServiceTicketStatsDto {
     description: 'Active (open or in progress) tickets at urgent priority',
   })
   urgent: number;
+
+  @ApiProperty({
+    example: 7,
+    description: 'Active tickets with no assignee',
+  })
+  unassigned: number;
+
+  @ApiProperty({
+    example: 2,
+    description: 'Active tickets past their due date',
+  })
+  overdue: number;
 }

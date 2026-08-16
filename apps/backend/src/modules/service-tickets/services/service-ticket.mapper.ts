@@ -35,6 +35,29 @@ function propertyLabel(property?: {
   return [property.address, property.city].filter(Boolean).join(', ') || '—';
 }
 
+function propertyAddress(property?: {
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+}): string | null {
+  if (!property) return null;
+  const joined = [property.address, property.city, property.state, property.pincode]
+    .filter(Boolean)
+    .join(', ');
+  return joined || null;
+}
+
+function coercePropertyCoordinates(
+  gps?: { latitude?: number | string; longitude?: number | string } | null,
+): { latitude: number; longitude: number } | null {
+  if (!gps) return null;
+  const latitude = Number(gps.latitude);
+  const longitude = Number(gps.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return { latitude, longitude };
+}
+
 export function toListItemDto(ticket: ServiceTicketEntity): ServiceTicketListItemDto {
   return {
     id: ticket.id,
@@ -51,6 +74,7 @@ export function toListItemDto(ticket: ServiceTicketEntity): ServiceTicketListIte
     assigneeName:
       userDisplayName(ticket.assignedToEmployee?.user) ??
       (ticket.assignedToEmployee ? 'Unnamed employee' : null),
+    dueDate: ticket.dueDate ?? null,
     createdAt: ticket.createdAt.toISOString(),
   };
 }
@@ -69,10 +93,14 @@ function toHistoryDto(
 }
 
 export function toResponseDto(ticket: ServiceTicketEntity): ServiceTicketResponseDto {
+  const property = ticket.project?.property;
+
   return {
     ...toListItemDto(ticket),
     description: ticket.description,
-    propertyLabel: propertyLabel(ticket.project?.property),
+    propertyLabel: propertyLabel(property),
+    propertyAddress: propertyAddress(property),
+    propertyCoordinates: coercePropertyCoordinates(property?.gpsCoordinates),
     projectName: ticket.project?.name ?? '',
     photos: ticket.photos,
     resolutionNote: ticket.resolutionNote,

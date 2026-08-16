@@ -11,7 +11,7 @@ import { useServiceTicketMutations, type ServiceTicketDetail } from '../hooks/us
 import { useCustomers } from '@/components/features/customers/hooks';
 import { useEmployees } from '@/components/features/employees';
 import { useProjects } from '@/components/features/projects/hooks';
-import { MUIUserAssigneeSelector, type AssigneeOption } from '@/components/ui';
+import { MUIUserAssigneeSelector, type AssigneeOption, MUIDatePicker } from '@/components/ui';
 import {
   MUIDialog,
   MUIDialogBody,
@@ -23,6 +23,7 @@ import { MUIInput } from '@/components/ui/mui-input';
 import { MUISelect } from '@/components/ui/mui-select';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { useGatedAction } from '@/lib/rbac';
+import { formatLocalDate } from '@/lib/utils';
 
 /** Index signature required by MUIInput's autocomplete `SearchOption`. */
 interface Option {
@@ -65,6 +66,7 @@ export function ServiceTicketFormDialog({
   const [customerId, setCustomerId] = useState<string>('');
   const [projectId, setProjectId] = useState<string>('');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
+  const [dueDate, setDueDate] = useState('');
   const [photos, setPhotos] = useState<ServiceTicketPhoto[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -81,6 +83,7 @@ export function ServiceTicketFormDialog({
     setCustomerId(ticket?.customerId ?? lockedCustomerId ?? '');
     setProjectId(ticket?.projectId ?? lockedProjectId ?? '');
     setAssigneeId(ticket?.assignedToEmployeeId ?? null);
+    setDueDate(ticket?.dueDate ?? '');
     setPhotos(ticket?.photos ?? []);
     setCustomerSearch('');
     setErrors({});
@@ -195,6 +198,7 @@ export function ServiceTicketFormDialog({
           description: description.trim(),
           priority,
           assignedToEmployeeId: assigneeId ?? undefined,
+          dueDate: dueDate || null,
           photos,
         });
       } else {
@@ -205,6 +209,7 @@ export function ServiceTicketFormDialog({
           customerId,
           projectId,
           assignedToEmployeeId: assigneeId ?? undefined,
+          dueDate: dueDate || null,
           photos,
         });
       }
@@ -303,6 +308,14 @@ export function ServiceTicketFormDialog({
             value={priority}
             onChange={(event) => setPriority(event.target.value as ServiceTicketPriority)}
             options={PRIORITY_OPTIONS}
+            fullWidth
+          />
+
+          <MUIDatePicker
+            fieldLabel="Due date"
+            value={dueDate || null}
+            onChange={(date) => setDueDate(date ? formatLocalDate(date) : '')}
+            clearable
             fullWidth
           />
 

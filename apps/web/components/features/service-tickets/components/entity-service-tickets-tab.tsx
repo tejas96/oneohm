@@ -21,6 +21,7 @@ import NextLink from 'next/link';
 import { type JSX, useMemo, useState } from 'react';
 
 import {
+  isTicketOverdue,
   SERVICE_TICKET_PRIORITY_LABELS,
   SERVICE_TICKET_PRIORITY_TONE,
   SERVICE_TICKET_STATUS_LABELS,
@@ -41,7 +42,12 @@ import {
 import { detailTableSx, tableCardSx } from '@/components/features/customers/customer-detail/styles';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { ROUTES, buildRoute } from '@/lib/config/routes';
-import { formatDate } from '@/lib/utils';
+import {
+  formatBusinessDate,
+  formatDate,
+  formatDueDatePendingLabel,
+  getDueDateMuiColor,
+} from '@/lib/utils';
 
 export type ServiceTicketScope = 'customer' | 'property' | 'project';
 
@@ -180,6 +186,7 @@ export function EntityServiceTicketsTab({
                   <TableCell sx={{ minWidth: 120 }}>Priority</TableCell>
                   {scope !== 'project' && <TableCell sx={{ minWidth: 160 }}>Project</TableCell>}
                   <TableCell sx={{ minWidth: 160 }}>Assignee</TableCell>
+                  <TableCell sx={{ minWidth: 100 }}>Due</TableCell>
                   <TableCell sx={{ minWidth: 120 }}>Raised</TableCell>
                   <TableCell align="right" sx={{ width: 56 }} />
                 </TableRow>
@@ -279,6 +286,32 @@ export function EntityServiceTicketsTab({
                             tone={LIVE_STATUSES.includes(ticket.status) ? 'warning' : 'neutral'}
                             dot={LIVE_STATUSES.includes(ticket.status)}
                           />
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        {ticket.dueDate ? (
+                          <Stack spacing={0.25}>
+                            <Mono
+                              sx={{
+                                fontSize: '0.75rem',
+                                color: isTicketOverdue(ticket)
+                                  ? 'error.main'
+                                  : getDueDateMuiColor(ticket.dueDate),
+                              }}
+                            >
+                              {formatBusinessDate(ticket.dueDate)}
+                            </Mono>
+                            {isTicketOverdue(ticket) && (
+                              <Mono sx={{ fontSize: '0.6875rem', color: 'error.main' }}>
+                                {formatDueDatePendingLabel(ticket.dueDate)}
+                              </Mono>
+                            )}
+                          </Stack>
+                        ) : (
+                          <Mono sx={{ fontSize: '0.75rem', color: 'var(--ds-text-tertiary)' }}>
+                            —
+                          </Mono>
                         )}
                       </TableCell>
 

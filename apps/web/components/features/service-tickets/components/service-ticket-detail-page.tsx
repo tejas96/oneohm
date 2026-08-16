@@ -8,12 +8,14 @@ import NextLink from 'next/link';
 import { type JSX, useState } from 'react';
 
 import {
+  isTicketOverdue,
   SERVICE_TICKET_PRIORITY_LABELS,
   SERVICE_TICKET_PRIORITY_TONE,
   SERVICE_TICKET_STATUS_LABELS,
   SERVICE_TICKET_STATUS_TONE,
 } from '../constants';
 import { ServiceTicketFormDialog } from './service-ticket-form-dialog';
+import { ServiceTicketLocationCard } from './service-ticket-location-card';
 import { ServiceTicketStatusDialog } from './service-ticket-status-dialog';
 import { ServiceTicketTimeline } from './service-ticket-timeline';
 import { useServiceTicket } from '../hooks/use-service-tickets';
@@ -22,7 +24,7 @@ import { CrmStatusPill } from '@/components/shared/crm-table';
 import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES, buildRoute } from '@/lib/config/routes';
 import { color, crm, radius } from '@/lib/theme/tokens';
-import { formatDate } from '@/lib/utils';
+import { formatBusinessDate, formatDate } from '@/lib/utils';
 
 export interface ServiceTicketDetailPageProps {
   ticketId: string;
@@ -238,6 +240,20 @@ export function ServiceTicketDetailPage({ ticketId }: ServiceTicketDetailPagePro
                     <MUITypography variant="placeholder">Unassigned</MUITypography>
                   )}
                 </Field>
+                <Field label="DUE DATE">
+                  {ticket.dueDate ? (
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                      <MUITypography variant="bodyPrimary">
+                        {formatBusinessDate(ticket.dueDate)}
+                      </MUITypography>
+                      {isTicketOverdue(ticket) && (
+                        <CrmStatusPill label="Overdue" tone="danger" dot />
+                      )}
+                    </Stack>
+                  ) : (
+                    <MUITypography variant="placeholder">—</MUITypography>
+                  )}
+                </Field>
                 <Field label="RAISED BY">
                   <MUITypography variant="bodyPrimary">{ticket.createdByName ?? '—'}</MUITypography>
                 </Field>
@@ -265,15 +281,21 @@ export function ServiceTicketDetailPage({ ticketId }: ServiceTicketDetailPagePro
           </Card>
         </Stack>
 
-        {/* ── Timeline ─────────────────────────────────────────── */}
-        <Card variant="outlined" sx={{ width: { xs: '100%', lg: 340 }, flexShrink: 0 }}>
-          <CardContent>
-            <MUITypography variant="sectionTitle">Status history</MUITypography>
-            <Box sx={{ mt: 1.5 }}>
-              <ServiceTicketTimeline entries={ticket.statusHistory} />
-            </Box>
-          </CardContent>
-        </Card>
+        {/* ── Timeline + location ─────────────────────────────────── */}
+        <Stack spacing={2} sx={{ width: { xs: '100%', lg: 340 }, flexShrink: 0 }}>
+          <ServiceTicketLocationCard
+            propertyAddress={ticket.propertyAddress}
+            propertyCoordinates={ticket.propertyCoordinates}
+          />
+          <Card variant="outlined">
+            <CardContent>
+              <MUITypography variant="sectionTitle">Status history</MUITypography>
+              <Box sx={{ mt: 1.5 }}>
+                <ServiceTicketTimeline entries={ticket.statusHistory} />
+              </Box>
+            </CardContent>
+          </Card>
+        </Stack>
       </Stack>
 
       <ServiceTicketStatusDialog

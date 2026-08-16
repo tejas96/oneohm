@@ -135,3 +135,17 @@ export function formatBusinessDate(value: string | null | undefined): string {
   const [, y, m, d] = parts;
   return formatDate(new Date(Number(y), Number(m) - 1, Number(d)));
 }
+
+/** Serialize a local calendar day as YYYY-MM-DD (never use toISOString for business dates). */
+export function formatLocalDate(date: Date | null): string {
+  if (!date) return '';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/** Parse a YYYY-MM-DD string into a local Date at midnight. */
+export function parseLocalDate(isoDate: string | undefined): Date | undefined {
+  if (!isoDate) return undefined;
+  const [year, month, day] = isoDate.split('-').map(Number);
+  if (!year || !month || !day) return undefined;
+  return new Date(year, month - 1, day);
+}

@@ -42,6 +42,9 @@ export class ServiceTicketListItemDto {
   @ApiPropertyOptional({ nullable: true })
   assigneeName: string | null;
 
+  @ApiPropertyOptional({ example: '2026-08-20', nullable: true })
+  dueDate: string | null;
+
   @ApiProperty()
   createdAt: string;
 }
@@ -75,6 +78,15 @@ export class ServiceTicketResponseDto extends ServiceTicketListItemDto {
 
   @ApiProperty()
   projectName: string;
+
+  @ApiPropertyOptional({ example: '12 MG Road, Pune, Maharashtra, 411001', nullable: true })
+  propertyAddress: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: { latitude: 18.5204, longitude: 73.8567 },
+  })
+  propertyCoordinates: { latitude: number; longitude: number } | null;
 
   @ApiPropertyOptional({ type: 'array', items: { type: 'object' }, nullable: true })
   photos: ServiceTicketPhoto[] | null;

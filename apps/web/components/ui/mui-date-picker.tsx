@@ -23,6 +23,7 @@ export interface MUIDatePickerProps extends Omit<DatePickerProps, 'value' | 'onC
   helperText?: string;
   placeholder?: string;
   fullWidth?: boolean;
+  clearable?: boolean;
   containerSx?: SxProps<Theme>;
 }
 
@@ -50,6 +51,7 @@ function MUIDatePickerInner(
     helperText,
     placeholder,
     fullWidth = true,
+    clearable = false,
     containerSx,
     slotProps,
     closeOnSelect = true,
@@ -92,6 +94,10 @@ function MUIDatePickerInner(
         closeOnSelect={closeOnSelect}
         slotProps={{
           ...slotProps,
+          field: {
+            clearable,
+            ...(slotProps?.field ?? {}),
+          },
           textField: {
             size: 'small',
             fullWidth,

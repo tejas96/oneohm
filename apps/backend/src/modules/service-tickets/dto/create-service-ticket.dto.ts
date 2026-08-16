@@ -4,10 +4,11 @@ import {
   ServiceTicketPriority,
   type ServiceTicketPhoto,
 } from '@tejas96/shared/types';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
+  IsDateString,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -76,6 +77,20 @@ export class CreateServiceTicketDto {
   @IsOptional()
   @IsUUID()
   assignedToEmployeeId?: string;
+
+  @ApiPropertyOptional({
+    example: '2026-08-20',
+    description: 'Calendar due date (YYYY-MM-DD). Send null to clear on update.',
+    nullable: true,
+  })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === null) return null;
+    if (typeof value === 'string') return value.slice(0, 10);
+    return value;
+  })
+  @IsDateString()
+  dueDate?: string | null;
 
   @ApiPropertyOptional({ type: [ServiceTicketPhotoDto], maxItems: MAX_SERVICE_TICKET_PHOTOS })
   @IsOptional()

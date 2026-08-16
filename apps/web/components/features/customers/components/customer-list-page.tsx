@@ -8,7 +8,6 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
-  Autocomplete,
   Box,
   Button,
   Divider,
@@ -18,7 +17,6 @@ import {
   Menu,
   MenuItem,
   Stack,
-  TextField,
   Tooltip,
 } from '@mui/material';
 import {
@@ -64,7 +62,7 @@ import {
   ORG_ADMIN_ROLES,
 } from '@/components/features/properties/utils/delete-eligibility';
 import { ActiveTicketsChip } from '@/components/features/service-tickets';
-import type { ColumnConfig } from '@/components/shared/advanced-table';
+import { FilterAutocomplete, type ColumnConfig } from '@/components/shared/advanced-table';
 import {
   CRM_TONE_FILL,
   CrmStatusPill,
@@ -1140,59 +1138,53 @@ export function CustomerListPage(): JSX.Element {
     }));
   }, [groups]);
 
-  /**
-   * Autocomplete-backed filter controls for the three fields whose option sets
-   * are long enough that a plain `<Select>` becomes unusable.
-   */
-  const renderAutocompleteFilter = useCallback(
-    (options: { label: string; value: string }[], placeholder: string) =>
-      ({ value, onChange }: { value: unknown; onChange: (v: unknown) => void }): JSX.Element => {
-        const selectedOption = options.find((o) => String(o.value) === String(value)) || null;
-        return (
-          <Autocomplete
-            size="small"
-            fullWidth
-            options={options}
-            value={selectedOption}
-            disablePortal
-            getOptionLabel={(option) => (typeof option === 'string' ? option : option.label || '')}
-            isOptionEqualToValue={(option, val) => option.value === val?.value}
-            onChange={(_, val) => {
-              onChange(val?.value ?? '');
-            }}
-            renderInput={(params) => <TextField {...params} placeholder={placeholder} />}
-          />
-        );
-      },
-    [],
-  );
-
   const filterColumns = useMemo<ColumnConfig<Customer>[]>(() => {
     return FILTER_COLUMNS.map((col) => {
       if (col.field === 'groupSearch') {
         return {
           ...col,
           filterOptions: groupOptions,
-          renderFilter: renderAutocompleteFilter(groupOptions, 'Search group...'),
+          renderFilter: ({ value, onChange }) => (
+            <FilterAutocomplete
+              options={groupOptions}
+              value={value}
+              onChange={onChange}
+              placeholder="Search group..."
+            />
+          ),
         };
       }
       if (col.field === 'createdBy') {
         return {
           ...col,
           filterOptions: creatorOptions,
-          renderFilter: renderAutocompleteFilter(creatorOptions, 'Search creator...'),
+          renderFilter: ({ value, onChange }) => (
+            <FilterAutocomplete
+              options={creatorOptions}
+              value={value}
+              onChange={onChange}
+              placeholder="Search creator..."
+            />
+          ),
         };
       }
       if (col.field === 'assigneeId') {
         return {
           ...col,
           filterOptions: assigneeOptions,
-          renderFilter: renderAutocompleteFilter(assigneeOptions, 'Search assignee...'),
+          renderFilter: ({ value, onChange }) => (
+            <FilterAutocomplete
+              options={assigneeOptions}
+              value={value}
+              onChange={onChange}
+              placeholder="Search assignee..."
+            />
+          ),
         };
       }
       return col;
     });
-  }, [creatorOptions, assigneeOptions, groupOptions, renderAutocompleteFilter]);
+  }, [creatorOptions, assigneeOptions, groupOptions]);
 
   const handleAddSite = useCallback(
     (customerId: string) => {
