@@ -26,7 +26,7 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { hasAdminBypassRole } from '../../iam/constants';
+import { hasAdminBypassRole, resolveProjectListMemberId } from '../../iam/constants';
 import {
   ConvertFromQuoteDto,
   ProjectResponseDto,
@@ -251,8 +251,20 @@ export class ProjectController {
     const hasActiveTickets =
       hasActiveTicketsRaw === 'true' ? true : hasActiveTicketsRaw === 'false' ? false : undefined;
 
-    const isAdmin = hasAdminBypassRole(currentUser.roles || []);
-    const effectiveMemberId = isAdmin ? memberId : currentUser.id;
+    // Non-admins were always pinned to "projects I am on the team of". That is
+    // right for a personal work queue, but wrong for two real callers:
+    //   - service staff looking up a customer's installation to raise a ticket
+    //     (`customerId` + service.manage; they may not hold projects.view)
+    //   - anyone granted projects.view, who should see the org's projects
+    //     (list page, command palette). Admins still pass an optional memberId.
+    // A bare customerId is not an authorization token — without one of those
+    // grants the list stays team-scoped even if the query names a customer.
+    const effectiveMemberId = resolveProjectListMemberId(
+      currentUser.roles || [],
+      currentUser.permissions || [],
+      currentUser.id,
+      { customerId, memberId },
+    );
 
     const result = await this.projectService.findAll(pageNum, limitNum, {
       status,

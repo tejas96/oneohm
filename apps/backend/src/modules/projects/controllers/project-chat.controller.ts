@@ -25,6 +25,7 @@ export class ProjectChatController {
       projectId,
       currentUser.id,
       currentUser.roles || [],
+      currentUser.permissions || [],
     );
 
     return plainToInstance(ProjectChatMessageResponseDto, messages, {
@@ -44,6 +45,7 @@ export class ProjectChatController {
       currentUser.id,
       currentUser.roles || [],
       dto.messageText,
+      currentUser.permissions || [],
     );
 
     return plainToInstance(ProjectChatMessageResponseDto, message, {
