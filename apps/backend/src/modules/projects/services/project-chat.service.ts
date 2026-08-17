@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
-import { hasAdminBypassRole } from '../../iam/constants';
+import { canViewAllProjects, hasAdminBypassRole } from '../../iam/constants';
 import {
   CONSUMER_EVENTS,
   ChatMessageEvent,
@@ -24,12 +24,15 @@ export class ProjectChatService {
 
   /**
    * Validate that the user has permission to access the chat of a project.
-   * Allowed: Customers owning the project, project team members, and admins.
+   * Reads: customer, team, admin, or `projects.view`.
+   * Writes: customer, team, or admin — `projects.view` is not a post grant.
    */
   private async validateChatAccess(
     projectId: string,
     userId: string,
     roles: string[],
+    permissions: string[] = [],
+    access: 'read' | 'write' = 'read',
   ): Promise<void> {
     const project = await this.projectRepository.repository.findOne({
       where: { id: projectId },
@@ -42,9 +45,10 @@ export class ProjectChatService {
 
     const isCustomer = project.property?.customer?.userId === userId;
     const isTeamMember = await this.teamRepository.isTeamMember(userId, projectId);
-    const isAdmin = hasAdminBypassRole(roles);
+    const orgWide =
+      access === 'read' ? canViewAllProjects(roles, permissions) : hasAdminBypassRole(roles);
 
-    if (!isCustomer && !isTeamMember && !isAdmin) {
+    if (!isCustomer && !isTeamMember && !orgWide) {
       throw new ForbiddenException('You are not authorized to access this project chat');
     }
   }
@@ -56,8 +60,9 @@ export class ProjectChatService {
     projectId: string,
     userId: string,
     roles: string[],
+    permissions: string[] = [],
   ): Promise<ProjectChatMessageEntity[]> {
-    await this.validateChatAccess(projectId, userId, roles);
+    await this.validateChatAccess(projectId, userId, roles, permissions, 'read');
     return this.chatRepository.findByProject(projectId);
   }
 
@@ -69,8 +74,9 @@ export class ProjectChatService {
     userId: string,
     roles: string[],
     messageText: string,
+    permissions: string[] = [],
   ): Promise<ProjectChatMessageEntity> {
-    await this.validateChatAccess(projectId, userId, roles);
+    await this.validateChatAccess(projectId, userId, roles, permissions, 'write');
     const message = await this.chatRepository.create({
       projectId,
       senderId: userId,
