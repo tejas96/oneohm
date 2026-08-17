@@ -1,6 +1,5 @@
-import { ForbiddenException } from '@nestjs/common';
 import { describe, expect, it, jest } from '@jest/globals';
-import type { ExecutionContext } from '@nestjs/common';
+import { ForbiddenException, type ExecutionContext } from '@nestjs/common';
 
 import { ProjectTeamGuard } from './project-team.guard';
 
