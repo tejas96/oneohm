@@ -39,6 +39,13 @@ interface PaymentTermsModalProps {
     order: number;
   }>;
   grossTotal: number;
+  /**
+   * True when `defaultMilestones` is the financed schedule rather than the
+   * self-financed one. Worth saying out loud: the advance is visibly smaller,
+   * and a salesperson who is not told why will assume it is wrong and set it
+   * back — which is precisely the mistake this schedule exists to prevent.
+   */
+  isLoanSchedule?: boolean;
   onConfirm: (milestones: PaymentMilestone[]) => void;
 }
 
@@ -74,6 +81,7 @@ export function PaymentTermsModal({
   onClose,
   defaultMilestones,
   grossTotal,
+  isLoanSchedule = false,
   onConfirm,
 }: PaymentTermsModalProps) {
   const [rows, setRows] = useState<MilestoneRow[]>([]);
@@ -148,7 +156,9 @@ export function PaymentTermsModal({
         <DialogHeader>
           <DialogTitle>Payment Terms</DialogTitle>
           <DialogDescription>
-            Set payment milestones for this quote. Total must equal 100%.
+            {isLoanSchedule
+              ? 'This site is loan-financed, so it starts on the lender schedule — a smaller advance, with the balance released on installation. Total must equal 100%.'
+              : 'Set payment milestones for this quote. Total must equal 100%.'}
           </DialogDescription>
         </DialogHeader>
 

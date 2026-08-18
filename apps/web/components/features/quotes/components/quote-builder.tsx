@@ -118,9 +118,6 @@ export function QuoteBuilder(): JSX.Element {
   const preselectedCustomerId = searchParams.get('customerId') ?? undefined;
   const preselectedPropertyId = searchParams.get('propertyId') ?? undefined;
 
-  // ── Config hook ──
-  const config = useQuoteConfig();
-
   // ── Customer search state ──
   const [customerSearch, setCustomerSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -206,6 +203,14 @@ export function QuoteBuilder(): JSX.Element {
 
   const customerId = form.watch('customerId');
   const propertyId = form.watch('propertyId');
+
+  /*
+    Declared here rather than at the top of the component because it now depends
+    on the chosen property: a financed site starts from a different payment
+    schedule, and the server can only resolve that if it is told which site.
+    Nothing above this line reads `config`.
+  */
+  const config = useQuoteConfig(propertyId);
   const discountAmount = form.watch('discountAmount');
   const distanceKm = form.watch('distanceKm');
   const floorNumber = form.watch('floorNumber');
@@ -1712,6 +1717,7 @@ export function QuoteBuilder(): JSX.Element {
             order: m.order ?? i + 1,
           }),
         )}
+        isLoanSchedule={config.quoteConfig?.isLoanSchedule ?? false}
         grossTotal={
           calculation && config.quoteConfig?.gstConfig
             ? applyPreGstDiscount(

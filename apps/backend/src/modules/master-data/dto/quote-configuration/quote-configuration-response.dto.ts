@@ -40,6 +40,42 @@ export class QuoteConfigurationResponseDto {
   @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   paymentMilestones!: PaymentMilestoneConfig[];
 
+  /**
+   * The schedule for a loan-financed property — a smaller advance, with the
+   * lender releasing the bulk on installation (10/70/20 against 10/85/5).
+   *
+   * It has existed on the entity from the start and was never serialised, so
+   * no client could obtain it. `QuoteService.create` does pick it correctly,
+   * but only when the request omits `paymentMilestones` entirely — and the
+   * payment-terms dialog always sends them. The net effect was that every
+   * loan-financed quote silently saved the self-financed advance.
+   *
+   * Prefer `paymentMilestones` with a `propertyId` on the request: the server
+   * resolves the right one and reports which in `isLoanSchedule`. This array is
+   * exposed so the choice is inspectable rather than hidden.
+   */
+  @ApiProperty({
+    example: [
+      { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },
+      { stage: 'installation_complete', name: 'Installation Complete', percentage: 70, order: 2 },
+      { stage: 'commissioning', name: 'Commissioning', percentage: 20, order: 3 },
+    ],
+  })
+  @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
+  paymentMilestonesLoan!: PaymentMilestoneConfig[];
+
+  /**
+   * Whether `paymentMilestones` above is the loan schedule.
+   *
+   * Only ever true when the request supplied a `propertyId` and that property
+   * is financed. Without a `propertyId` the server cannot know, so this is
+   * false and `paymentMilestones` is the self-financed default.
+   */
+  @ApiProperty({ example: false })
+  @Expose()
+  isLoanSchedule!: boolean;
+
   @ApiProperty({
     example: [
       { minSystemSizeKw: 0, maxSystemSizeKw: 5, marginPercent: 10 },

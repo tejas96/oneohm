@@ -37,7 +37,8 @@ const PHASE_SUBTITLES: Record<string, string> = {
 
 const quoteConfigKeys = {
   all: () => ['quote-config'] as const,
-  config: () => [...quoteConfigKeys.all(), 'config'] as const,
+  config: (propertyId?: string) =>
+    [...quoteConfigKeys.all(), 'config', propertyId ?? null] as const,
   subsidyRules: () => [...quoteConfigKeys.all(), 'subsidy-rules'] as const,
 };
 
@@ -53,7 +54,15 @@ export interface PhaseTypeOption {
   subtitle?: string;
 }
 
-export function useQuoteConfig() {
+/**
+ * @param propertyId Resolves the payment schedule against this property. A
+ *   financed property returns the loan milestones (a smaller advance) rather
+ *   than the self-financed default. Omitting it keeps the previous behaviour
+ *   and always yields the self-financed schedule — which is what every quote
+ *   used to save, financed or not, because the loan array was never
+ *   serialised and this call never said which property it was for.
+ */
+export function useQuoteConfig(propertyId?: string) {
   const productOptions = useProductOptions();
 
   const { items: productTypes } = useProductTypeList({
@@ -77,9 +86,11 @@ export function useQuoteConfig() {
   }, [productTypes]);
 
   const configQuery = useQuery<QuoteConfigResponse>({
-    queryKey: quoteConfigKeys.config(),
+    queryKey: quoteConfigKeys.config(propertyId),
     queryFn: async (): Promise<QuoteConfigResponse> => {
-      const response = await apiClient.get<QuoteConfigResponse>('/quote-calculator/config', {});
+      const response = await apiClient.get<QuoteConfigResponse>('/quote-calculator/config', {
+        params: propertyId ? { propertyId } : undefined,
+      });
       return response.data as QuoteConfigResponse;
     },
     staleTime: FIVE_MINUTES,

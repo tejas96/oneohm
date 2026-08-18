@@ -43,6 +43,7 @@ import {
   CreateQuoteDto,
   CreateQuoteFromCalculationDto,
   InstallationPricingQueryDto,
+  QuoteConfigQueryDto,
 } from '../dto';
 import { QuoteRepository } from '../repositories';
 import { QuoteCalculatorService } from '../services/quote-calculator.service';
@@ -301,11 +302,33 @@ export class QuoteCalculatorController {
     status: HttpStatus.OK,
     description: 'Quote configuration',
   })
-  async getConfig(): Promise<QuoteConfigurationResponseDto> {
+  async getConfig(@Query() query: QuoteConfigQueryDto): Promise<QuoteConfigurationResponseDto> {
     const config = await this.quoteConfigRepo.getOrCreateDefault();
-    return plainToInstance(QuoteConfigurationResponseDto, config, {
+    const dto = plainToInstance(QuoteConfigurationResponseDto, config, {
       excludeExtraneousValues: true,
     });
+
+    /*
+      Resolve the schedule here rather than leaving it to the client.
+
+      The loan branch already existed in `QuoteService.create`, but it only ran
+      when the request carried no `paymentMilestones` — and the payment-terms
+      dialog always sends them, so it never ran in practice and every financed
+      quote saved the self-financed advance. Resolving at config time seeds that
+      dialog with the right rows, which is the only point at which the
+      correction can still reach the document the customer signs.
+
+      Sales can still negotiate any schedule from there; this only changes what
+      they start from.
+    */
+    const { milestones, isLoan } = await this.quoteService.resolveMilestoneTemplate(
+      query.propertyId,
+      config,
+    );
+    dto.paymentMilestones = milestones;
+    dto.isLoanSchedule = isLoan;
+
+    return dto;
   }
 
   /**
