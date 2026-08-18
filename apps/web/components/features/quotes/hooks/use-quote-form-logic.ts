@@ -21,9 +21,19 @@ export interface UseQuoteFormLogicReturn {
   handleTechnologyVariantSelect: (technology: string, wattage: number) => void;
   handlePropertySelect: (propertyType?: string) => void;
   handleFieldChange: (fieldName: string, value: unknown) => void;
+  handleDcrPreferenceChange: (value: DcrPreference) => void;
   shouldDisableSinglePhase: boolean;
   shouldShowDcrPreference: boolean;
-  isDcrDisabled: boolean;
+  /**
+   * Whether NON_DCR_ONLY may be chosen at all.
+   *
+   * Non-DCR panels are not subsidy eligible, and the calculator does not warn
+   * about the combination — `calculateSubsidyFromConfigs` returns `noSubsidy`
+   * the moment it sees NON_DCR_ONLY. So a rep could tick PM Surya Ghar, click
+   * "Non-DCR Only", and read out a price with a silent zero where the subsidy
+   * should be, with the scheme still showing as ticked beside it.
+   */
+  isNonDcrBlockedBySubsidy: boolean;
 }
 
 /**
@@ -80,6 +90,25 @@ export function useQuoteFormLogic({
   );
 
   // Brand change -> reset technology + wattage
+  /**
+   * The panel origin, refused rather than corrected when it contradicts a scheme.
+   *
+   * The button for it is disabled, so this only fires on a programmatic call or
+   * a stale click — but it is the guard that makes the rule true rather than
+   * merely drawn, and it is silent because there is nothing for the rep to fix:
+   * the value they asked for cannot coexist with a selection they already made.
+   */
+  const handleDcrPreferenceChange = useCallback(
+    (value: DcrPreference) => {
+      if (value === DcrPreference.NON_DCR_ONLY && (watch('selectedSubsidyIds') ?? []).length > 0) {
+        return;
+      }
+      setValue('dcrPreference', value, { shouldValidate: true });
+      clearCalculationIfNeeded('dcrPreference');
+    },
+    [setValue, watch, clearCalculationIfNeeded],
+  );
+
   const handleBrandChange = useCallback(
     (value: string) => {
       setValue('preferredPanelBrand', value);
@@ -152,8 +181,9 @@ export function useQuoteFormLogic({
     handleTechnologyVariantSelect,
     handlePropertySelect,
     handleFieldChange,
+    handleDcrPreferenceChange,
     shouldDisableSinglePhase: systemSizeKw > 7,
     shouldShowDcrPreference: selectedSubsidyIds.length > 0,
-    isDcrDisabled: selectedSubsidyIds.length === 0,
+    isNonDcrBlockedBySubsidy: selectedSubsidyIds.length > 0,
   };
 }
