@@ -221,7 +221,12 @@ export interface QuoteConfigResponse {
   defaultValidityDays: number;
   maxVersions: number;
   gstConfig: GstConfig;
+  /** Already resolved for the requested property — the loan schedule when it is financed. */
   paymentMilestones: PaymentMilestone[];
+  /** The financed schedule, always. Exposed so the resolution above is inspectable. */
+  paymentMilestonesLoan?: PaymentMilestone[];
+  /** Whether `paymentMilestones` is the loan schedule. Only true when a propertyId was sent. */
+  isLoanSchedule?: boolean;
   profitMarginTiers: ProfitMarginTier[];
 }
 

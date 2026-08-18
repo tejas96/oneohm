@@ -134,7 +134,7 @@ export class QuoteService {
       createDto.paymentMilestones ||
       this.generatePaymentMilestones(
         pricingBreakdown.totalPrice,
-        await this.resolveMilestoneTemplate(createDto.propertyId, quoteConfig),
+        (await this.resolveMilestoneTemplate(createDto.propertyId, quoteConfig)).milestones,
       );
 
     const result = await this.dataSource.transaction(async (manager) => {
@@ -192,7 +192,7 @@ export class QuoteService {
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault();
     return this.generatePaymentMilestones(
       grossTotal,
-      await this.resolveMilestoneTemplate(propertyId, quoteConfig),
+      (await this.resolveMilestoneTemplate(propertyId, quoteConfig)).milestones,
     );
   }
 
@@ -219,9 +219,57 @@ export class QuoteService {
   ): Promise<ShareQuoteWhatsappResponseDto> {
     const quote = await this.quoteRepository.findById(id);
 
-    if (quote.status === QuoteStatus.ACCEPTED || quote.status === QuoteStatus.REJECTED) {
+    if (
+      quote.status === QuoteStatus.ACCEPTED ||
+      quote.status === QuoteStatus.REJECTED ||
+      quote.status === QuoteStatus.EXPIRED
+    ) {
       throw new BadRequestException(
-        `Cannot send quote with status ${quote.status}. Accepted and rejected quotes cannot be shared.`,
+        `Cannot send quote with status ${quote.status}. Accepted, rejected and expired quotes cannot be shared.`,
+      );
+    }
+
+    /*
+      A property with a signed quote is closed, and that has to include sharing.
+
+      `updateStatus` has enforced this from the start; sharing never did. So a
+      stale draft on a sold property could still be sent to the customer — and
+      the send would then flip it DRAFT → SENT through the raw repository
+      update at the end of this method, past both the property lock and
+      `validateStatusTransition`. The customer ends up holding a live-looking
+      quote for a roof that is already committed to a different price.
+    */
+    if (quote.propertyId) {
+      const accepted = await this.quoteRepository.findAcceptedByPropertyId(
+        quote.propertyId,
+        quote.id,
+      );
+      if (accepted) {
+        throw new BadRequestException(
+          `Another quote for this property has already been accepted (${accepted.quoteNumber}). This quote cannot be shared.`,
+        );
+      }
+    }
+
+    /*
+      Past its validity date.
+
+      Keyed on the DATE, not on the status, because nothing in this system ever
+      writes `expired`: `markExpiredQuotes` exists and no scheduler calls it. A
+      quote eight months dead still reads `sent`, so a status check alone stops
+      nothing. Without this, that quote goes to the customer looking current
+      and they can hold us to the price on it.
+
+      Both sides are normalised to a YYYY-MM-DD string first — `validUntil` is a
+      postgres `date`, which TypeORM hands back as a string despite the entity
+      declaring `Date`. Comparing the raw values would compare a string to a
+      Date. The whole of the final day stays valid.
+    */
+    const today = new Date().toISOString().split('T')[0] as string;
+    const validUntil = new Date(quote.validUntil).toISOString().split('T')[0] as string;
+    if (validUntil < today) {
+      throw new BadRequestException(
+        `Quote ${quote.quoteNumber} expired on ${new Date(quote.validUntil).toLocaleDateString('en-IN')}. Raise a new quote for this property before sending.`,
       );
     }
 
@@ -689,14 +737,16 @@ export class QuoteService {
    * the payment-terms dialog, and an explicit `createDto.paymentMilestones`
    * wins over this entirely.
    */
-  private async resolveMilestoneTemplate(
+  async resolveMilestoneTemplate(
     propertyId: string | undefined,
     quoteConfig: {
       paymentMilestones: PaymentMilestoneConfig[];
       paymentMilestonesLoan?: PaymentMilestoneConfig[];
     },
-  ): Promise<PaymentMilestoneConfig[]> {
-    if (!propertyId) return quoteConfig.paymentMilestones;
+  ): Promise<{ milestones: PaymentMilestoneConfig[]; isLoan: boolean }> {
+    if (!propertyId) {
+      return { milestones: quoteConfig.paymentMilestones, isLoan: false };
+    }
 
     const rows: Array<{ wants_loan: boolean }> = await this.dataSource.query(
       `SELECT wants_loan FROM customer_properties
@@ -705,9 +755,11 @@ export class QuoteService {
     );
 
     const wantsLoan = rows[0]?.wants_loan === true;
-    return wantsLoan && quoteConfig.paymentMilestonesLoan?.length
-      ? quoteConfig.paymentMilestonesLoan
-      : quoteConfig.paymentMilestones;
+    const isLoan = wantsLoan && (quoteConfig.paymentMilestonesLoan?.length ?? 0) > 0;
+
+    return isLoan
+      ? { milestones: quoteConfig.paymentMilestonesLoan as PaymentMilestoneConfig[], isLoan: true }
+      : { milestones: quoteConfig.paymentMilestones, isLoan: false };
   }
 
   private generatePaymentMilestones(
