@@ -102,7 +102,8 @@ export class CustomerController {
     }
 
     // Use unified findAll with query DTO
-    const result = await this.customerService.findAll(query);
+    // `mine` resolves against the token, never against anything the caller sent.
+    const result = await this.customerService.findAll(query, currentUser.id);
     return toPaginatedResponse(
       CustomerResponseDto,
       result.data,

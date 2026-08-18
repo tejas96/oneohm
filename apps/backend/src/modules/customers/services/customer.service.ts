@@ -152,20 +152,29 @@ export class CustomerService {
    * @overload Legacy signature for backward compatibility
    * @overload New signature with CustomerQueryDto for full filtering
    */
-  async findAll(query: CustomerQueryDto): Promise<{ data: CustomerProfileEntity[]; total: number }>;
+  async findAll(
+    query: CustomerQueryDto,
+    currentUserId?: string,
+  ): Promise<{ data: CustomerProfileEntity[]; total: number }>;
   async findAll(
     page: number,
     limit: number,
   ): Promise<{ data: CustomerProfileEntity[]; total: number }>;
   async findAll(
     pageOrQuery: number | CustomerQueryDto = 1,
-    limit = 20,
+    limitOrUserId?: number | string,
   ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
     // New query-based approach
     if (typeof pageOrQuery === 'object') {
-      const [data, total] = await this.customerRepository.findWithFilters(pageOrQuery);
+      const currentUserId = typeof limitOrUserId === 'string' ? limitOrUserId : undefined;
+      const [data, total] = await this.customerRepository.findWithFilters(
+        pageOrQuery,
+        currentUserId,
+      );
       return this.enrichListPage(data, total);
     }
+
+    const limit = typeof limitOrUserId === 'number' ? limitOrUserId : 20;
 
     // Legacy approach - convert to query DTO
     const legacyQuery = new CustomerQueryDto();

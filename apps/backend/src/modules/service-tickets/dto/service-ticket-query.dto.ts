@@ -1,17 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ServiceTicketPriority, ServiceTicketStatus } from '@tejas96/shared/types';
 import { Transform, Type } from 'class-transformer';
-import {
-  IsArray,
-  IsBoolean,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+
+import { IsOptionalBoolean } from '../../../common/decorators';
 
 /** Accepts both `?status=open&status=in_progress` and `?status=open,in_progress`. */
 function toArray(value: unknown): string[] | undefined {
@@ -62,27 +54,13 @@ export class ServiceTicketQueryDto {
   assigneeId?: string;
 
   @ApiPropertyOptional({ description: 'Only tickets with no assignee' })
-  @IsOptional()
-  @Type(() => String)
-  @Transform(({ value }: { value: unknown }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
-  @IsBoolean()
+  @IsOptionalBoolean()
   unassigned?: boolean;
 
   @ApiPropertyOptional({
     description: 'Only active tickets past their due date',
   })
-  @IsOptional()
-  @Type(() => String)
-  @Transform(({ value }: { value: unknown }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
-  @IsBoolean()
+  @IsOptionalBoolean()
   overdue?: boolean;
 
   @ApiPropertyOptional({ format: 'uuid' })
