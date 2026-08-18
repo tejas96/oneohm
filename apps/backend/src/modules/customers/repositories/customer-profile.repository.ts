@@ -625,7 +625,15 @@ export class CustomerProfileRepository {
    * @param query - Query parameters (filters, sorting, pagination)
    * @returns Tuple of [customers, total count]
    */
-  async findWithFilters(query: CustomerQueryDto): Promise<[CustomerProfileEntity[], number]> {
+  /**
+   * @param currentUserId - required only for `query.mine`. Passed as an argument
+   * rather than read off the query so it cannot be spoofed: a caller who could
+   * put a user id in the query string could read somebody else's caseload.
+   */
+  async findWithFilters(
+    query: CustomerQueryDto,
+    currentUserId?: string,
+  ): Promise<[CustomerProfileEntity[], number]> {
     const qb = this.repository
       .createQueryBuilder('customer')
       .leftJoinAndSelect('customer.user', 'user')
@@ -698,6 +706,25 @@ export class CustomerProfileRepository {
         `(LOWER(COALESCE(customer.group_code, '')) LIKE :groupSearchTerm OR LOWER(COALESCE(customer.group_name, '')) LIKE :groupSearchTerm)`,
         { groupSearchTerm },
       );
+    }
+
+    /*
+      The caller's own caseload — created by them OR assigned to them.
+
+      This is a UNION and is the reason the parameter exists at all: `createdBy`
+      and `assigneeId` below are separate andWhere clauses, so sending both asks
+      for the INTERSECTION — leads a rep both created and was assigned — which is
+      a much smaller set and never what a caseload means.
+
+      It composes with everything else. `mine` narrows to the rep; search, the
+      building filters, the status filters and the sort all still apply on top,
+      which is why this is a parameter on the existing query rather than a route
+      of its own.
+    */
+    if (query.mine && currentUserId) {
+      qb.andWhere('(customer.createdBy = :mineUserId OR customer.assigneeId = :mineUserId)', {
+        mineUserId: currentUserId,
+      });
     }
 
     if (query.createdBy) {

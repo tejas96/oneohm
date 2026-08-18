@@ -12,7 +12,6 @@ import {
 } from '@tejas96/shared/types';
 import { Transform, Type } from 'class-transformer';
 import {
-  IsBoolean,
   IsDateString,
   IsEnum,
   IsInt,
@@ -25,7 +24,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-import { IsUserRefOrMe } from '../../../common/decorators';
+import { IsOptionalBoolean, IsUserRefOrMe } from '../../../common/decorators';
 
 /**
  * Query DTO for customer list endpoint
@@ -135,24 +134,20 @@ export class CustomerQueryDto {
   assigneeId?: string;
 
   @ApiPropertyOptional({
+    description:
+      "Only the caller's own caseload: customers they created OR are assigned to. " +
+      'This is a UNION and cannot be expressed with createdBy and assigneeId, which AND together. ' +
+      'The user id is taken from the token, never from the query.',
+    example: true,
+  })
+  @IsOptionalBoolean()
+  mine?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Filter by whether customer has properties (true) or none (false)',
     example: true,
   })
-  @IsOptional()
-  /**
-   * `@Type(() => String)` is load-bearing — see `hasActiveTickets` below.
-   * Without it the global ValidationPipe's `enableImplicitConversion` coerces
-   * the query string with `Boolean('false')`, which is `true`, so
-   * `?hasProperty=false` silently behaved as `?hasProperty=true` and returned
-   * customers that DO have properties.
-   */
-  @Type(() => String)
-  @Transform(({ value }: { value: unknown }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
-  @IsBoolean()
+  @IsOptionalBoolean()
   hasProperty?: boolean;
 
   @ApiPropertyOptional({
@@ -160,22 +155,7 @@ export class CustomerQueryDto {
       'Filter by whether the customer has open or in-progress service tickets (true) or none (false)',
     example: true,
   })
-  @IsOptional()
-  /**
-   * `@Type(() => String)` is load-bearing. The global ValidationPipe runs with
-   * `enableImplicitConversion: true`, which coerces a query string to the
-   * property's reflected type *before* `@Transform` sees it — and
-   * `Boolean('false')` is `true`, so "false" would silently mean "true".
-   * Forcing the intermediate type to String keeps the raw value intact for the
-   * transform below.
-   */
-  @Type(() => String)
-  @Transform(({ value }: { value: unknown }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return undefined;
-  })
-  @IsBoolean()
+  @IsOptionalBoolean()
   hasActiveTickets?: boolean;
 
   @ApiPropertyOptional({
@@ -303,9 +283,7 @@ export class CustomerQueryDto {
     description:
       'Only customers with at least one open site that has no pending follow-up, or a property-less lead with none.',
   })
-  @IsOptional()
-  @Transform(({ value }) => value === true || value === 'true')
-  @IsBoolean()
+  @IsOptionalBoolean()
   needsFollowup?: boolean;
 
   // ==================== Sorting ====================
