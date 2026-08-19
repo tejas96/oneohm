@@ -457,6 +457,16 @@ ${getQuoteStyles()}
       </div>
     </header>
 
+    <table class="paged">
+      <thead class="continuation">
+        <tr><td>
+          <div class="continuation-bar">
+            <span class="continuation-name">${escapeHtml(co.companyName)}</span>
+            <span>Solar Quotation${quoteNumber ? ` &middot; ${escapeHtml(quoteNumber)}` : ''}</span>
+          </div>
+        </td></tr>
+      </thead>
+      <tbody><tr><td>
     <main class="doc-body">
 
       <!-- Parties -->
@@ -758,6 +768,8 @@ ${getQuoteStyles()}
         </div>
       </div>
     </main>
+      </td></tr></tbody>
+    </table>
   </div>
 </body>
 </html>`;
@@ -861,9 +873,47 @@ body {
   align-items: flex-start;
   padding: 28px 40px;
   border-bottom: 3px solid var(--primary);
-  /* Repeat header on every print page */
-  position: running(header);
 }
+
+/*
+  THE CONTINUATION HEADER, and the only construct that actually repeats.
+
+  "position: running(header)" sat on .doc-header for the life of this file
+  claiming to "repeat header on every print page". It is CSS Paged Media Level
+  3 and it is inert in Chromium, WebKit and jsPDF alike — it has never once
+  drawn anything. "@media print" is no better: a block inside one renders ONCE,
+  in normal flow, at the position it occupies.
+
+  A table header group is the one thing print engines genuinely repeat across a
+  page break, so the body is wrapped in a table and this rides in its thead.
+
+  HIDDEN BY DEFAULT, SHOWN ONLY IN PRINT — and that split is doing real work.
+  The phone converts through the OS print pipeline, which honours print media
+  and repeats the group. The web converts through html2canvas, which rasterises
+  the SCREEN presentation and applies no print media at all: it never sees this,
+  so it cannot draw a duplicate under the real header on page one, and web keeps
+  stamping its own continuation bar with jsPDF afterwards.
+*/
+.paged { width: 100%; border-collapse: collapse; }
+.paged > tbody > tr > td, .paged > thead > tr > td { padding: 0; }
+
+.continuation { display: none; }
+
+@media print {
+  .continuation { display: table-header-group; }
+}
+
+.continuation-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 40px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 9px;
+}
+
+.continuation-name { font-weight: 700; }
 
 .brand { display: flex; align-items: center; gap: 12px; }
 

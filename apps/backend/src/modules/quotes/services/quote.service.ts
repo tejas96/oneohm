@@ -532,6 +532,9 @@ export class QuoteService {
       discountAmount: pricingBreakdown.discountAmount ?? 0,
     };
 
+    const sourceMilestones = updateDto.paymentMilestones || latestVersion.paymentMilestones;
+    const contractTotal = Number(finalPrice);
+
     const versionId = await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
       const versionRepo = manager.getRepository(QuoteVersionEntity);
@@ -559,12 +562,13 @@ export class QuoteService {
           finalPrice,
           effectivePrice,
           quoteSnapshot: newSnapshot,
-          paymentMilestones:
-            updateDto.paymentMilestones ||
-            (updateDto.quoteSnapshot?.pricing && latestVersion.paymentMilestones
-              ? this.recalculateMilestoneAmounts(latestVersion.paymentMilestones, finalPrice)
-              : latestVersion.paymentMilestones) ||
-            this.generatePaymentMilestones(finalPrice, quoteConfig.paymentMilestones),
+          // Always rewrite rupee amounts from percentages × current finalPrice.
+          // Sending the previous version's paymentMilestones on a calculator
+          // revision used to copy stale instalments onto a new contract
+          // (QT-ONEOHM_EPC-2026-0177).
+          paymentMilestones: sourceMilestones?.length
+            ? this.recalculateMilestoneAmounts(sourceMilestones, contractTotal)
+            : this.generatePaymentMilestones(contractTotal, quoteConfig.paymentMilestones),
           projectCompletionWeeks:
             updateDto.projectCompletionWeeks ||
             latestVersion.projectCompletionWeeks ||

@@ -460,6 +460,23 @@ export class ProjectService {
       `${customerName} - ${actualKwFormatted ? `${actualKwFormatted}kW ` : ''}Solar Installation`.trim();
     const paymentMilestones: PaymentMilestone[] = contractVersion.paymentMilestones || [];
 
+    // #region agent log
+    {
+      const pricing = contractVersion.quoteSnapshot?.pricing as
+        | { subsidyAmount?: number; totalGst?: number; totalPrice?: number; gst5OnEquipment?: number; gst18OnServices?: number }
+        | undefined;
+      const milestoneSumRupees = paymentMilestones.reduce((s, m) => s + Number(m.amount ?? 0), 0);
+      const finalPrice = Number(contractVersion.finalPrice ?? 0);
+      const effectivePrice = Number(contractVersion.effectivePrice ?? 0);
+      const subsidyAmount = Number(pricing?.subsidyAmount ?? 0);
+      const totalGst = Number(pricing?.totalGst ?? 0);
+      const snapshotTotalPrice = Number(pricing?.totalPrice ?? 0);
+      const debugPayload = {quoteNumber:quote.quoteNumber,versionId:contractVersion.id,versionNumber:contractVersion.versionNumber,finalPrice,effectivePrice,subsidyAmount,totalGst,snapshotTotalPrice,gst5:Number(pricing?.gst5OnEquipment??0),gst18:Number(pricing?.gst18OnServices??0),milestoneCount:paymentMilestones.length,milestoneSumRupees,percentSum:paymentMilestones.reduce((s,m)=>s+Number(m.percentage??0),0),milestones:paymentMilestones.map((m)=>({name:m.name,percentage:m.percentage,amount:m.amount,amountType:typeof m.amount})),diffFinalMinusSchedule:Math.round((finalPrice-milestoneSumRupees)*100)/100,diffEqualsSubsidy:Math.abs(finalPrice-milestoneSumRupees-subsidyAmount)<0.02,diffEqualsGst:Math.abs(finalPrice-milestoneSumRupees-totalGst)<0.02,scheduleEqualsEffective:Math.abs(milestoneSumRupees-effectivePrice)<0.02,contractPaise:rupeesToPaise(finalPrice)};
+      this.logger.warn(`[debug-5bace0] convertFromQuote financials ${JSON.stringify(debugPayload)}`);
+      fetch('http://127.0.0.1:7349/ingest/4b53374e-fe26-4694-885e-4994385050c5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5bace0'},body:JSON.stringify({sessionId:'5bace0',runId:'pre-fix',hypothesisId:'A',location:'project.service.ts:convertFromQuote',message:'Quote financials vs stored milestone schedule',data:debugPayload,timestamp:Date.now()})}).catch(()=>{});
+    }
+    // #endregion
+
     // Build milestone list: prefer explicit input, else derive names from payment milestone names
     const milestones: Array<{ name: string; order: number }> = convertDto?.milestones?.length
       ? convertDto.milestones.map((m) => ({ name: m.name, order: m.order }))
@@ -649,7 +666,16 @@ export class ProjectService {
       const signed = byVersionDesc.find(
         (v) => !v.createdAt || new Date(v.createdAt).getTime() <= acceptedAt,
       );
-      if (signed) return signed;
+      if (signed) {
+        // #region agent log
+        {
+          const versionPick = {quoteNumber:quote.quoteNumber,acceptedAt:quote.acceptedAt,pickedId:signed.id,pickedVersionNumber:signed.versionNumber,pickedFinalPrice:Number(signed.finalPrice??0),pickedEffectivePrice:Number(signed.effectivePrice??0),versionCount:byVersionDesc.length,versions:byVersionDesc.map((v)=>({id:v.id,n:v.versionNumber,finalPrice:Number(v.finalPrice??0),effectivePrice:Number(v.effectivePrice??0),createdAt:v.createdAt,milestoneCount:(v.paymentMilestones??[]).length,milestoneSumRupees:(v.paymentMilestones??[]).reduce((s,m)=>s+Number(m.amount??0),0)}))};
+          this.logger.warn(`[debug-5bace0] pickContractQuoteVersion signed ${JSON.stringify(versionPick)}`);
+          fetch('http://127.0.0.1:7349/ingest/4b53374e-fe26-4694-885e-4994385050c5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5bace0'},body:JSON.stringify({sessionId:'5bace0',runId:'pre-fix',hypothesisId:'B',location:'project.service.ts:pickContractQuoteVersion',message:'Picked signed version at or before acceptedAt',data:versionPick,timestamp:Date.now()})}).catch(()=>{});
+        }
+        // #endregion
+        return signed;
+      }
     }
 
     const earliest = byVersionDesc[byVersionDesc.length - 1]!;
@@ -657,6 +683,9 @@ export class ProjectService {
       `Quote ${quote.quoteNumber}: no version resolvable from acceptedAt; ` +
         `pinning earliest version ${earliest.versionNumber} (${earliest.id}) as the contract.`,
     );
+    // #region agent log
+    fetch('http://127.0.0.1:7349/ingest/4b53374e-fe26-4694-885e-4994385050c5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5bace0'},body:JSON.stringify({sessionId:'5bace0',runId:'pre-fix',hypothesisId:'B',location:'project.service.ts:pickContractQuoteVersion',message:'Fell back to earliest version',data:{quoteNumber:quote.quoteNumber,acceptedAt:quote.acceptedAt,pickedId:earliest.id,pickedVersionNumber:earliest.versionNumber,pickedFinalPrice:Number(earliest.finalPrice??0),versionCount:byVersionDesc.length},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     return earliest;
   }
 

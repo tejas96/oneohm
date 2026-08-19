@@ -1,4 +1,5 @@
-import { reconcileToContract } from './schedule';
+import { reconcileToContract, resolveSnapshotAmounts } from './schedule';
+import { splitByPercentage } from './paise';
 
 describe('reconcileToContract', () => {
   it('returns amounts unchanged when they already sum to the contract', () => {
@@ -45,5 +46,30 @@ describe('reconcileToContract', () => {
 
   it('rejects non-integer paise', () => {
     expect(() => reconcileToContract([100.5, 100], 201)).toThrow(/integer paise/);
+  });
+});
+
+describe('resolveSnapshotAmounts', () => {
+  it('recomputes from percentages when a revised quote kept the old rupee amounts', () => {
+    // QT-ONEOHM_EPC-2026-0177 v2: 10/85/5 of ₹2,02,531.14 stored against a
+    // ₹2,55,063.40 contract after the system grew from 3 kW to 4 kW.
+    const stale = [2_025_311, 17_215_147, 1_012_656];
+    const contractPaise = 25_506_340;
+    const result = resolveSnapshotAmounts(stale, contractPaise, [10, 85, 5]);
+    expect(result.usedPercentages).toBe(true);
+    expect(result.amounts).toEqual(splitByPercentage(contractPaise, [10, 85, 5]));
+    expect(result.amounts.reduce((a, b) => a + b, 0)).toBe(contractPaise);
+  });
+
+  it('still absorbs rounding-sized drift without using percentages', () => {
+    const result = resolveSnapshotAmounts([100, 100, 100], 302, [10, 85, 5]);
+    expect(result.usedPercentages).toBe(false);
+    expect(result.amounts).toEqual([100, 100, 102]);
+  });
+
+  it('throws when the schedule disagrees and percentages are not usable', () => {
+    expect(() => resolveSnapshotAmounts([100, 100, 100], 274299, [10, 85])).toThrow(
+      /differs from the contract/,
+    );
   });
 });
