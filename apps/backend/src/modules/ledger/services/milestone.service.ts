@@ -464,7 +464,11 @@ export class MilestoneService {
       this.logger.log(
         `Deriving milestone amounts for project ${projectId} from percentages over ₹${contractPaise / 100}`,
       );
-      return splitByPercentage(contractPaise, percentages as number[]);
+      try {
+        return splitByPercentage(contractPaise, percentages as number[]);
+      } catch (err) {
+        throw new BadRequestException((err as Error).message);
+      }
     }
 
     // Previously these were dropped with a logger.warn, producing a schedule

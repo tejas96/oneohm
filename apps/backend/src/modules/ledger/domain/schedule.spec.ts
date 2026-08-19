@@ -1,5 +1,5 @@
-import { reconcileToContract, resolveSnapshotAmounts } from './schedule';
 import { splitByPercentage } from './paise';
+import { reconcileToContract, resolveSnapshotAmounts } from './schedule';
 
 describe('reconcileToContract', () => {
   it('returns amounts unchanged when they already sum to the contract', () => {

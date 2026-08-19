@@ -7,6 +7,7 @@ import {
 } from '@tejas96/shared/types';
 
 import { QuoteService } from './quote.service';
+import { todayIst } from '../../ledger/domain/dates';
 
 /**
  * Guards on sharing a quote, and the payment schedule a quote starts from.
@@ -31,10 +32,11 @@ import { QuoteService } from './quote.service';
  * repository reads, so a full DI graph would add setup without adding coverage.
  */
 
-const DAY_MS = 86_400_000;
-
 function isoDate(offsetDays: number): string {
-  return new Date(Date.now() + offsetDays * DAY_MS).toISOString().split('T')[0] as string;
+  const [year, month, day] = todayIst().split('-').map(Number);
+  return new Date(Date.UTC(year as number, (month as number) - 1, (day as number) + offsetDays))
+    .toISOString()
+    .slice(0, 10);
 }
 
 type Overrides = {
