@@ -1,5 +1,5 @@
 import { generateQuoteHtml } from './quote-pdf.template';
-import type { QuotePdfData } from '../types';
+import type { QuotePdfData } from './quote-pdf.types';
 
 describe('generateQuoteHtml', () => {
   const baseData: QuotePdfData = {

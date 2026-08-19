@@ -5,8 +5,9 @@
  * Uses dynamic import for SSR safety.
  */
 
+import { generateQuoteHtml } from '@tejas96/shared/reports';
+
 import type { QuotePdfData } from '../types';
-import { generateQuoteHtml } from './quote-pdf.template';
 
 const PAGE_W_MM = 210;
 const PAGE_H_MM = 297;

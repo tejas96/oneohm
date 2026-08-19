@@ -1,3 +1,4 @@
+import type { QuotePdfPaymentMilestone } from '@tejas96/shared/reports';
 import type {
   ProjectType,
   DcrPreference,
@@ -12,7 +13,6 @@ import type {
   CalculatedPanelConfig,
   CalculatedInstallationCost,
   GstConfig,
-  BomItem,
 } from '@tejas96/shared/types';
 
 // Re-export shared types that consumers already reference by local names
@@ -208,14 +208,16 @@ export interface SaveQuoteResponse {
 // Config Response Types
 // ============================================================================
 
-export interface PaymentMilestone {
-  stage: string;
-  name: string;
-  description?: string;
-  percentage: number;
-  color?: string;
-  amount?: number;
-}
+/**
+ * The config endpoint's milestone, which is ALSO the one the PDF prints.
+ *
+ * An alias rather than a second declaration: it moved into the shared package
+ * with the template, and re-declaring the identical shape here is how the two
+ * drift the next time a field is added to one of them. The shared package's own
+ * `PaymentMilestone` remains a different, smaller type — see the note at the
+ * foot of this file.
+ */
+export type PaymentMilestone = QuotePdfPaymentMilestone;
 
 export interface QuoteConfigResponse {
   defaultValidityDays: number;
@@ -242,82 +244,28 @@ export interface SubsidyConfigResponse {
 }
 
 // ============================================================================
-// PDF Data Types (frontend-only)
+// PDF Data Types
 // ============================================================================
 
-export interface PdfCompanyInfo {
-  companyName: string;
-  address: string;
-  phone: string;
-  email?: string;
-  bankName?: string;
-  bankAccountNumber?: string;
-  bankIfsc?: string;
-  bankBranch?: string;
-  workmanshipWarrantyYears?: number;
-  cancellationFeePercent?: number;
-  latePaymentInterestPercent?: number;
-  legalEntityName?: string;
-  bankAccountName?: string;
-  tagline?: string;
-  websiteUrl?: string;
-  whatsappDigits?: string;
-  copyrightEntity?: string;
-}
+/*
+  NOT DEFINED HERE ANY MORE. The quote PDF template moved into
+  `@tejas96/shared/reports` so web and mobile print the same document, and a
+  template in a shared package cannot import types out of one of its consumers —
+  so these moved with it.
 
-export interface QuoteCustomerInfo {
-  name: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
-  consumerNumber?: string;
-  consumerName?: string;
-}
-
-export interface QuotePropertyInfo {
-  propertyName?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
-  propertyType?: string;
-}
-
-export interface QuotePdfOrgConfig {
-  companyName?: string;
-  companyAddress?: string;
-  companyPhone?: string;
-  companyEmail?: string;
-  legalEntityName?: string;
-  tagline?: string;
-  bankName?: string;
-  bankAccount?: string;
-  bankIfsc?: string;
-  bankBranch?: string;
-  bankAccountName?: string;
-  workmanshipWarrantyYears?: number;
-  warrantyWorkmanshipYears?: number;
-  cancellationFee?: number;
-  cancellationFeePercent?: number;
-  latePaymentRate?: number;
-  latePaymentRatePercent?: number;
-}
-
-export interface QuotePdfData {
-  calculation: CalculateQuoteResponse;
-  customer: QuoteCustomerInfo;
-  property: QuotePropertyInfo;
-  quoteNumber?: string;
-  validityDays: number;
-  paymentMilestones?: PaymentMilestone[];
-  showPriceBreakdown?: boolean;
-  discountAmount?: number;
-  gstConfig: QuoteConfigResponse['gstConfig'];
-  companyInfo?: Partial<PdfCompanyInfo>;
-  orgConfig?: Partial<QuotePdfOrgConfig>;
-  bomItems?: BomItem[];
-  customerNotes?: string;
-}
+  They are re-exported under their old web names because roughly a dozen files
+  in this feature import them from here, and renaming those would have made a
+  mechanical move look like a rewrite. `QuotePdfPaymentMilestone` is the one
+  that changed name at the source, deliberately: two types called
+  `PaymentMilestone` in one package is exactly how the shared one gets
+  substituted by accident, and the shared one has no `amount` — the schedule
+  would print as a column of zeroes.
+*/
+export type { QuotePdfPaymentMilestone };
+export type {
+  PdfCompanyInfo,
+  QuoteCustomerInfo,
+  QuotePdfData,
+  QuotePdfOrgConfig,
+  QuotePropertyInfo,
+} from '@tejas96/shared/reports';
