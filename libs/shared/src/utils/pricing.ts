@@ -141,7 +141,10 @@ export function deriveMarginAfterDiscount(input: {
 } {
   const safeBase = Number.isFinite(input.basePrice) ? input.basePrice : 0;
   const safeMargin = Number.isFinite(input.profitabilityAmount) ? input.profitabilityAmount : 0;
-  const safeDiscount = Math.max(0, Number.isFinite(input.discountAmount) ? input.discountAmount : 0);
+  const safeDiscount = Math.max(
+    0,
+    Number.isFinite(input.discountAmount) ? input.discountAmount : 0,
+  );
 
   const cost = Math.max(0, safeBase - safeMargin);
   const discountedBase = Math.max(0, safeBase - safeDiscount);
