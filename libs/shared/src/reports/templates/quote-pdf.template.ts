@@ -887,6 +887,14 @@ body {
   A table header group is the one thing print engines genuinely repeat across a
   page break, so the body is wrapped in a table and this rides in its thead.
 
+  IT REPEATS ON PAGE ONE TOO, AND THAT IS ACCEPTED. A table header group has no
+  "skip the first page" — no CSS expresses it — so page one carries this bar
+  under the branded header as well. Verified on a 5-page quote printed through
+  Chrome's engine: pages 2-5 are correct and page one shows both. The
+  alternative was moving the whole branded block in here so it becomes the only
+  header, which then repeats its full height on every page of a long quote.
+  Decided against: the duplication is cosmetic, the bulk would not be.
+
   HIDDEN BY DEFAULT, SHOWN ONLY IN PRINT — and that split is doing real work.
   The phone converts through the OS print pipeline, which honours print media
   and repeats the group. The web converts through html2canvas, which rasterises

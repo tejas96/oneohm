@@ -149,9 +149,6 @@ export class MilestoneService {
       return [];
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7349/ingest/4b53374e-fe26-4694-885e-4994385050c5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5bace0'},body:JSON.stringify({sessionId:'5bace0',runId:'pre-fix',hypothesisId:'E',location:'milestone.service.ts:snapshotFromQuoteVersion',message:'Snapshot inputs before resolveAmounts',data:{projectId,sourceVersionId,contractPaise,milestoneCount:milestones.length,rawAmounts:milestones.map((m)=>({name:m.name,amount:m.amount,amountType:typeof m.amount,percentage:m.percentage}))},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     const amounts = this.resolveAmounts(milestones, contractPaise, projectId);
     const lenderFunded = await this.isLoanFinanced(projectId, manager);
 
@@ -440,15 +437,6 @@ export class MilestoneService {
       // The quote's amounts are already rounded to two decimals, so they can
       // miss the contract by a few paise. Without this the project can never
       // be exactly settled — see reconcileToContract.
-      // #region agent log
-      {
-        const sum = explicit.reduce((a, b) => a + b, 0);
-        const diff = (contractPaise ?? 0) - sum;
-        const resolvePayload = {projectId,explicit,contractPaise,sum,diff,absDiff:Math.abs(diff),tolerance:explicit.length,willThrow:!!(contractPaise&&contractPaise>0&&Math.abs(diff)>explicit.length)};
-        this.logger.warn(`[debug-5bace0] resolveAmounts ${JSON.stringify(resolvePayload)}`);
-        fetch('http://127.0.0.1:7349/ingest/4b53374e-fe26-4694-885e-4994385050c5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5bace0'},body:JSON.stringify({sessionId:'5bace0',runId:'pre-fix',hypothesisId:'A',location:'milestone.service.ts:resolveAmounts',message:'Explicit milestone paise vs contract before reconcile',data:resolvePayload,timestamp:Date.now()})}).catch(()=>{});
-      }
-      // #endregion
       if (!contractPaise || contractPaise <= 0) {
         return explicit;
       }
@@ -458,9 +446,6 @@ export class MilestoneService {
           contractPaise,
           milestones.map((m) => Number(m.percentage)),
         );
-        // #region agent log
-        fetch('http://127.0.0.1:7349/ingest/4b53374e-fe26-4694-885e-4994385050c5',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'5bace0'},body:JSON.stringify({sessionId:'5bace0',runId:'post-fix',hypothesisId:'B',location:'milestone.service.ts:resolveAmounts',message:'Resolved snapshot amounts',data:{projectId,usedPercentages:resolved.usedPercentages,resolved:resolved.amounts,resolvedSum:resolved.amounts.reduce((a,b)=>a+b,0),contractPaise},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
         if (resolved.usedPercentages) {
           this.logger.warn(
             `Milestone rupee amounts for project ${projectId} summed to ${explicit.reduce((a, b) => a + b, 0)} against contract ${contractPaise}; deriving from stored percentages instead.`,
