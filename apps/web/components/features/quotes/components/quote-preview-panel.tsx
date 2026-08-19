@@ -12,7 +12,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-import { applyPreGstDiscount } from '../pricing-utils';
+import { applyPreGstDiscount, deriveMarginAfterDiscount } from '../pricing-utils';
 import type { CalculateQuoteResponse, QuoteConfigResponse } from '../types';
 
 import { Can } from '@/components/shared/guards';
@@ -201,6 +201,24 @@ export function QuotePreviewPanel({
   // quote whose finalPrice is 162715.66 showed "You Pay ₹1,62,717" here while
   // the proposal the customer receives said ₹1,62,716. The rows adding up
   // matters less than the total being the amount actually contracted.
+  /*
+    MARGIN AFTER THE DISCOUNT, not before it.
+
+    These rows used `profitabilityAmount` and `basePrice` straight off the
+    calculation, which describe the UNDISCOUNTED build — so a rep who had already
+    conceded ₹5,000 still saw the full margin, and that number exists to answer
+    "can I go lower?". They conceded again against money already spent. The rows
+    also disagreed with "Gross Total" a few lines down by exactly the discount.
+
+    Shared with the phone deliberately: both screens were computing the same
+    wrong thing independently.
+  */
+  const afterDiscount = deriveMarginAfterDiscount({
+    basePrice: calculation.pricing.basePrice,
+    profitabilityAmount: calculation.profitabilityAmount,
+    discountAmount,
+  });
+
   const displayTotalGst = discounted.gst5 + discounted.gst18;
   const displayGrossTotal = discounted.discountedBase + displayTotalGst;
 
@@ -710,9 +728,7 @@ export function QuotePreviewPanel({
                 permission={'quotes.profitability'}
                 fallback={<span className="text-foreground-secondary">—</span>}
               >
-                <span>
-                  {formatCurrency(calculation.pricing.basePrice - calculation.profitabilityAmount)}
-                </span>
+                <span>{formatCurrency(afterDiscount.cost)}</span>
               </Can>
             </div>
             {calculation.profitabilityPercent > 0 && (
@@ -720,14 +736,14 @@ export function QuotePreviewPanel({
                 <span className="text-foreground-secondary">
                   Margin
                   <Can permission={'quotes.profitability'}>
-                    <span> ({calculation.profitabilityPercent}%)</span>
+                    <span> ({afterDiscount.marginPercent}%)</span>
                   </Can>
                 </span>
                 <Can
                   permission={'quotes.profitability'}
                   fallback={<span className="text-foreground-secondary">—</span>}
                 >
-                  <span>{formatCurrency(calculation.profitabilityAmount)}</span>
+                  <span>{formatCurrency(afterDiscount.margin)}</span>
                 </Can>
               </div>
             )}
@@ -737,7 +753,7 @@ export function QuotePreviewPanel({
                 permission={'quotes.profitability'}
                 fallback={<span className="font-medium text-foreground-secondary">—</span>}
               >
-                <span>{formatCurrency(calculation.pricing.basePrice)}</span>
+                <span>{formatCurrency(afterDiscount.discountedBase)}</span>
               </Can>
             </div>
             {discountAmount > 0 && (
