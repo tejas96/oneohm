@@ -30,6 +30,8 @@ import { LeadClosureService } from '../../customers/services/lead-closure.servic
 import type { DocumentEntity } from '../../documents/entities/document.entity';
 import { DocumentService } from '../../documents/services';
 import { IntegrationService } from '../../integrations/services';
+import { pgDateToIso, todayIst } from '../../ledger/domain/dates';
+import { paiseToRupees, rupeesToPaise, splitByPercentage } from '../../ledger/domain/paise';
 import {
   QuoteConfigurationRepository,
   SubsidyConfigurationRepository,
@@ -52,8 +54,6 @@ import { QuoteVersionEntity } from '../entities/quote-version.entity';
 import { QuoteEntity } from '../entities/quote.entity';
 import { QuoteRepository } from '../repositories';
 import type { UploadedPdfFile } from '../types/uploaded-pdf-file.interface';
-
-const CENTS_ROUNDING_FACTOR = 100;
 
 /**
  * Quote Service
@@ -130,12 +130,11 @@ export class QuoteService {
 
     const effectivePrice = createDto.effectivePrice ?? Math.max(0, finalPrice - subsidyAmount);
 
-    const paymentMilestones =
-      createDto.paymentMilestones ||
-      this.generatePaymentMilestones(
-        pricingBreakdown.totalPrice,
-        (await this.resolveMilestoneTemplate(createDto.propertyId, quoteConfig)).milestones,
-      );
+    const template = await this.resolveMilestoneTemplate(createDto.propertyId, quoteConfig);
+    const sourceMilestones = createDto.paymentMilestones?.length
+      ? createDto.paymentMilestones
+      : template.milestones;
+    const paymentMilestones = this.applyExactMilestoneAmounts(sourceMilestones, Number(finalPrice));
 
     const result = await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
@@ -260,16 +259,17 @@ export class QuoteService {
       nothing. Without this, that quote goes to the customer looking current
       and they can hold us to the price on it.
 
-      Both sides are normalised to a YYYY-MM-DD string first — `validUntil` is a
-      postgres `date`, which TypeORM hands back as a string despite the entity
-      declaring `Date`. Comparing the raw values would compare a string to a
-      Date. The whole of the final day stays valid.
+      Both sides are IST business dates (`YYYY-MM-DD`). `validUntil` is a
+      postgres `date`: TypeORM may hand it back as a string or as a local-midnight
+      Date. `.toISOString()` on that Date is UTC and, in IST, lands on the
+      previous calendar day — the same defect `pgDateToIso` / `todayIst` exist
+      to stop on the ledger. The whole of the final IST day stays valid.
     */
-    const today = new Date().toISOString().split('T')[0] as string;
-    const validUntil = new Date(quote.validUntil).toISOString().split('T')[0] as string;
+    const today = todayIst();
+    const validUntil = pgDateToIso(quote.validUntil as string | Date);
     if (validUntil < today) {
       throw new BadRequestException(
-        `Quote ${quote.quoteNumber} expired on ${new Date(quote.validUntil).toLocaleDateString('en-IN')}. Raise a new quote for this property before sending.`,
+        `Quote ${quote.quoteNumber} expired on ${new Date(`${validUntil}T12:00:00+05:30`).toLocaleDateString('en-IN')}. Raise a new quote for this property before sending.`,
       );
     }
 
@@ -532,6 +532,15 @@ export class QuoteService {
       discountAmount: pricingBreakdown.discountAmount ?? 0,
     };
 
+    const sourceMilestones = updateDto.paymentMilestones || latestVersion.paymentMilestones;
+    const contractTotal = Number(finalPrice);
+    const paymentMilestones = sourceMilestones?.length
+      ? this.applyExactMilestoneAmounts(sourceMilestones, contractTotal)
+      : this.generatePaymentMilestones(
+          contractTotal,
+          (await this.resolveMilestoneTemplate(quote.propertyId, quoteConfig)).milestones,
+        );
+
     const versionId = await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
       const versionRepo = manager.getRepository(QuoteVersionEntity);
@@ -559,12 +568,7 @@ export class QuoteService {
           finalPrice,
           effectivePrice,
           quoteSnapshot: newSnapshot,
-          paymentMilestones:
-            updateDto.paymentMilestones ||
-            (updateDto.quoteSnapshot?.pricing && latestVersion.paymentMilestones
-              ? this.recalculateMilestoneAmounts(latestVersion.paymentMilestones, finalPrice)
-              : latestVersion.paymentMilestones) ||
-            this.generatePaymentMilestones(finalPrice, quoteConfig.paymentMilestones),
+          paymentMilestones,
           projectCompletionWeeks:
             updateDto.projectCompletionWeeks ||
             latestVersion.projectCompletionWeeks ||
@@ -719,10 +723,6 @@ export class QuoteService {
   }
 
   /**
-   * Generate payment milestones from org-level config.
-   * @param grossTotal - Total price before discount and subsidy
-   */
-  /**
    * Which payment-terms template applies to this site.
    *
    * A loan-financed customer funds a smaller advance and the lender releases the
@@ -766,30 +766,50 @@ export class QuoteService {
     grossTotal: number,
     milestoneConfigs: PaymentMilestoneConfig[],
   ): PaymentMilestone[] {
-    return milestoneConfigs.map((config) => ({
-      stage: config.stage,
-      name: config.name,
-      percentage: config.percentage,
-      amount:
-        Math.round(grossTotal * (config.percentage / 100) * CENTS_ROUNDING_FACTOR) /
-        CENTS_ROUNDING_FACTOR,
-      order: config.order,
-    }));
+    return this.applyExactMilestoneAmounts(
+      milestoneConfigs.map((config) => ({
+        stage: config.stage,
+        name: config.name,
+        percentage: config.percentage,
+        order: config.order,
+      })),
+      grossTotal,
+    );
   }
 
   /**
-   * Recalculate milestone amounts from existing percentages with a new total.
-   * Used when pricing changes on revision but milestones are not explicitly re-sent.
+   * Write rupee amounts from percentages so they sum exactly to the contract.
+   *
+   * Always runs on create and on revision. Client-supplied amounts are display
+   * hints at best — the payment-terms dialog only edits percentages — and
+   * trusting them is how QT-ONEOHM_EPC-2026-0177 stored the previous version's
+   * instalments against a new finalPrice.
    */
-  private recalculateMilestoneAmounts(
-    existingMilestones: PaymentMilestone[],
-    newTotal: number,
+  private applyExactMilestoneAmounts(
+    rows: Array<
+      Pick<PaymentMilestone, 'stage' | 'name' | 'percentage' | 'order'> & Partial<PaymentMilestone>
+    >,
+    grossTotalRupees: number,
   ): PaymentMilestone[] {
-    return existingMilestones.map((m) => ({
-      ...m,
-      amount:
-        Math.round(newTotal * (m.percentage / 100) * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR,
-    }));
+    if (rows.length === 0) {
+      throw new BadRequestException('At least one payment milestone is required');
+    }
+    try {
+      const parts = splitByPercentage(
+        rupeesToPaise(Number(grossTotalRupees)),
+        rows.map((row) => row.percentage),
+      );
+      return rows.map((row, index) => ({
+        ...row,
+        stage: row.stage,
+        name: row.name,
+        percentage: row.percentage,
+        order: row.order,
+        amount: paiseToRupees(parts[index] as number),
+      }));
+    } catch (err) {
+      throw new BadRequestException((err as Error).message);
+    }
   }
 
   private assertDiscountWithinMargin(snapshot: QuoteSnapshot): void {

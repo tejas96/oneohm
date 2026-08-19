@@ -1,1 +1,1 @@
-export { applyPreGstDiscount } from '@tejas96/shared/utils';
+export { applyPreGstDiscount, deriveMarginAfterDiscount } from '@tejas96/shared/utils';

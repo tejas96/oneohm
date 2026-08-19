@@ -35,6 +35,22 @@ interface ProductListFilters extends BaseFilters {
 
 // ── Fetch-All Hooks (no pagination, no URL sync) ───────────────
 
+/*
+  `hasActivePrice` BELONGS ON ALL THREE OF THESE, not on structures alone.
+
+  It was asked for on structures and nowhere else, so the inverter list carried
+  three DEYE units — 1 kW, 2 kW and 3 kW on-grid — with no active price behind
+  them: 61 offered where 58 could be quoted. Choosing one produced a refusal
+  from the calculator with no visible cause, because everything the rep could
+  see about the product looked normal.
+
+  These two hooks feed `useProductOptions` and nothing else, and that feeds the
+  quote builder alone — so this narrows the picker without touching any admin or
+  inventory screen, which reach for products through their own hooks.
+
+  Panels are unaffected in the current catalogue (22 either way) and are filtered
+  anyway: the bug is the missing rule, not the rows it happens to drop today.
+*/
 export function useAllPanelProducts() {
   return useResourceList<ProductOptionInput, ProductListFilters>({
     resource: 'products-panels',
@@ -42,7 +58,11 @@ export function useAllPanelProducts() {
     defaultPageSize: 500,
     syncToUrl: false,
     staleTime: STALE_TIMES.slow,
-    defaultFilters: { type: 'solar_panel', status: 'active' } as Partial<ProductListFilters>,
+    defaultFilters: {
+      type: 'solar_panel',
+      status: 'active',
+      hasActivePrice: true,
+    } as Partial<ProductListFilters>,
   });
 }
 
@@ -53,7 +73,11 @@ export function useAllInverterProducts() {
     defaultPageSize: 500,
     syncToUrl: false,
     staleTime: STALE_TIMES.slow,
-    defaultFilters: { type: 'inverter', status: 'active' } as Partial<ProductListFilters>,
+    defaultFilters: {
+      type: 'inverter',
+      status: 'active',
+      hasActivePrice: true,
+    } as Partial<ProductListFilters>,
   });
 }
 

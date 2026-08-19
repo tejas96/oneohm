@@ -10,7 +10,7 @@ import { DataSource, EntityManager } from 'typeorm';
 
 import { AuditLogService } from '../../audit/services/audit-log.service';
 import { rupeesToPaise, splitByPercentage } from '../domain/paise';
-import { reconcileToContract } from '../domain/schedule';
+import { resolveSnapshotAmounts } from '../domain/schedule';
 import { PaymentMilestoneEntity } from '../entities';
 import { CreditSweepService } from './credit-sweep.service';
 import { LedgerRepository } from '../repositories/ledger.repository';
@@ -122,8 +122,9 @@ export class MilestoneService {
    *    contract, with a server log as the only trace.
    *  - The schedule always sums EXACTLY to the contract. Percentage-derived
    *    amounts get their remainder from `splitByPercentage`; quote-supplied
-   *    amounts are reconciled by `reconcileToContract`, which absorbs a
-   *    rounding-sized difference and throws on anything larger.
+   *    amounts are reconciled by `resolveSnapshotAmounts`, which absorbs a
+   *    rounding-sized difference, recomputes from percentages when a revision
+   *    left stale rupee amounts, and throws on anything larger.
    */
   async snapshotFromQuoteVersion(params: SnapshotParams): Promise<PaymentMilestoneEntity[]> {
     const { projectId, sourceVersionId, milestones, contractPaise, createdBy, manager } = params;
@@ -436,9 +437,24 @@ export class MilestoneService {
       // The quote's amounts are already rounded to two decimals, so they can
       // miss the contract by a few paise. Without this the project can never
       // be exactly settled — see reconcileToContract.
-      return contractPaise && contractPaise > 0
-        ? reconcileToContract(explicit, contractPaise)
-        : explicit;
+      if (!contractPaise || contractPaise <= 0) {
+        return explicit;
+      }
+      try {
+        const resolved = resolveSnapshotAmounts(
+          explicit,
+          contractPaise,
+          milestones.map((m) => Number(m.percentage)),
+        );
+        if (resolved.usedPercentages) {
+          this.logger.warn(
+            `Milestone rupee amounts for project ${projectId} summed to ${explicit.reduce((a, b) => a + b, 0)} against contract ${contractPaise}; deriving from stored percentages instead.`,
+          );
+        }
+        return resolved.amounts;
+      } catch (err) {
+        throw new BadRequestException((err as Error).message);
+      }
     }
 
     const percentages = milestones.map((m) => m.percentage);
@@ -448,7 +464,11 @@ export class MilestoneService {
       this.logger.log(
         `Deriving milestone amounts for project ${projectId} from percentages over ₹${contractPaise / 100}`,
       );
-      return splitByPercentage(contractPaise, percentages as number[]);
+      try {
+        return splitByPercentage(contractPaise, percentages as number[]);
+      } catch (err) {
+        throw new BadRequestException((err as Error).message);
+      }
     }
 
     // Previously these were dropped with a logger.warn, producing a schedule

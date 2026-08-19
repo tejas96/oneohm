@@ -1165,13 +1165,21 @@ export function QuoteBuilder(): JSX.Element {
                   <div className="flex flex-col gap-2">
                     {DCR_PREFERENCE_OPTIONS.map((opt) => {
                       const isSelected = form.watch('dcrPreference') === opt.value;
-                      const isDisabled = formLogic.isDcrDisabled;
+                      /*
+                        Only the non-DCR option locks, and only while a scheme is
+                        ticked. Disabling the whole group would grey out the row
+                        that says what the panels ARE, which is the one line here
+                        worth reading.
+                      */
+                      const isDisabled =
+                        opt.value === DcrPreference.NON_DCR_ONLY &&
+                        formLogic.isNonDcrBlockedBySubsidy;
                       return (
                         <button
                           key={opt.value}
                           type="button"
                           disabled={isDisabled}
-                          onClick={() => formLogic.handleFieldChange('dcrPreference', opt.value)}
+                          onClick={() => formLogic.handleDcrPreferenceChange(opt.value)}
                           className={cn(
                             'flex items-start gap-3 rounded-lg border p-3 text-left transition-all duration-fast',
                             isSelected
@@ -1209,6 +1217,13 @@ export function QuoteBuilder(): JSX.Element {
                       );
                     })}
                   </div>
+                  {formLogic.isNonDcrBlockedBySubsidy && (
+                    <p className="text-xs text-foreground-tertiary">
+                      Non-DCR is unavailable while a subsidy scheme is selected — those panels are
+                      not subsidy eligible, so the claim would come back as &#8377;0. Clear every
+                      scheme to quote non-DCR panels.
+                    </p>
+                  )}
                 </div>
               )}
             </div>

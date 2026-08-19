@@ -1,3 +1,5 @@
+import { splitByPercentage } from './paise';
+
 /**
  * Reconcile a milestone schedule to the contract total.
  *
@@ -55,4 +57,38 @@ export function reconcileToContract(amounts: number[], contractPaise: number): n
   }
   reconciled[lastIndex] = adjusted;
   return reconciled;
+}
+
+/**
+ * Snapshot amounts for a signed quote.
+ *
+ * Quote revisions historically copied the previous version's rupee amounts
+ * while updating `finalPrice` (QT-ONEOHM_EPC-2026-0177: 3 kW → 4 kW raised the
+ * contract by ₹52,532.26 but left the 10/85/5 instalments on the old total).
+ * When that happens the percentages are still the agreed split, so derive
+ * from them rather than aborting conversion with a 500.
+ *
+ * Rounding-sized drift still goes through `reconcileToContract`. A disagreement
+ * with no usable percentages still throws — that is a real data error.
+ */
+export function resolveSnapshotAmounts(
+  amounts: number[],
+  contractPaise: number,
+  percentages: number[],
+): { amounts: number[]; usedPercentages: boolean } {
+  const sum = amounts.reduce((a, b) => a + b, 0);
+  if (Math.abs(contractPaise - sum) <= amounts.length) {
+    return { amounts: reconcileToContract(amounts, contractPaise), usedPercentages: false };
+  }
+
+  const percentagesUsable =
+    percentages.length === amounts.length &&
+    percentages.every((p) => Number.isFinite(p) && p > 0) &&
+    Math.abs(percentages.reduce((a, b) => a + b, 0) - 100) <= 0.01;
+
+  if (percentagesUsable) {
+    return { amounts: splitByPercentage(contractPaise, percentages), usedPercentages: true };
+  }
+
+  return { amounts: reconcileToContract(amounts, contractPaise), usedPercentages: false };
 }
