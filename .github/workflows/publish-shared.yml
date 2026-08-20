@@ -44,68 +44,64 @@ jobs:
       - name: Build shared package
         run: npx nx build shared
 
-      - name: Check if version already published
-        id: version-check
-        working-directory: libs/shared
-        run: |
-          PACKAGE_NAME=$(node -p "require('./package.json').name")
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
-          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-
-          # Capture output directly (no pipe) so npm's exit code is not swallowed.
-          # The old `npm view ... | grep -q` pattern set already_published=false
-          # whenever npm failed silently — causing a 409 Conflict on re-publish.
-          PUBLISHED_VERSION=$(npm view "${PACKAGE_NAME}@${CURRENT_VERSION}" version \
-            --registry https://npm.pkg.github.com 2>/dev/null || echo "")
-
-          if [ "$PUBLISHED_VERSION" = "$CURRENT_VERSION" ]; then
-            echo "already_published=true" >> $GITHUB_OUTPUT
-            echo "Version ${CURRENT_VERSION} is already published"
-          else
-            echo "already_published=false" >> $GITHUB_OUTPUT
-            echo "Version ${CURRENT_VERSION} is not yet published"
-          fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-
-      - name: Auto-bump patch version when already published
-        id: version-bump
-        if: steps.version-check.outputs.already_published == 'true'
-        working-directory: libs/shared
-        run: |
-          CURRENT_VERSION="${{ steps.version-check.outputs.current_version }}"
-          NEW_VERSION=$(node -p "
-            const [maj, min, pat] = '${CURRENT_VERSION}'.split('.').map(Number);
-            \`\${maj}.\${min}.\${pat + 1}\`
-          ")
-          echo "Auto-bumping ${CURRENT_VERSION} -> ${NEW_VERSION}"
-          npm version "$NEW_VERSION" --no-git-tag-version
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Commit auto-bumped version back to main
-        if: steps.version-check.outputs.already_published == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add libs/shared/package.json
-          git commit -m "chore(shared): auto-bump version to ${{ steps.version-bump.outputs.new_version }} [skip ci]"
-          git push
-
+      # The registry is the only authority on what is already published.
+      # The old flow asked `npm view` first and treated ANY failure as
+      # "not published" — a 404 for a private package reads exactly like a
+      # missing version — so every run published over an existing version
+      # and died on 409. Publish first, and let a real 409 drive the bump.
       - name: Publish to GitHub Packages
+        id: publish
         working-directory: libs/shared
-        run: npm publish
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+
+          set +e
+          OUTPUT=$(npm publish 2>&1)
+          STATUS=$?
+          set -e
+          printf '%s\n' "$OUTPUT"
+
+          if [ $STATUS -eq 0 ]; then
+            echo "published_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+            echo "bumped=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Anything other than "this version is taken" is a real failure.
+          if ! printf '%s' "$OUTPUT" | grep -q 'E409'; then
+            echo "::error::npm publish failed for version ${CURRENT_VERSION}"
+            exit $STATUS
+          fi
+
+          NEW_VERSION=$(node -p "const v = require('./package.json').version.split('.').map(Number); [v[0], v[1], v[2] + 1].join('.')")
+          echo "Version ${CURRENT_VERSION} is already published — bumping to ${NEW_VERSION}"
+          npm version "$NEW_VERSION" --no-git-tag-version
+          npm publish
+
+          echo "published_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "bumped=true" >> "$GITHUB_OUTPUT"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
           GITHUB_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 
+      - name: Commit auto-bumped version back to main
+        if: steps.publish.outputs.bumped == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add libs/shared/package.json
+          git commit -m "chore(shared): auto-bump version to ${{ steps.publish.outputs.published_version }} [skip ci]"
+          git push
+
       - name: Generate Summary
         if: always()
         run: |
-          VERSION=$(node -p "require('./libs/shared/package.json').version")
-          if [ "${{ steps.version-check.outputs.already_published }}" == "true" ]; then
-            echo "## Shared Package" >> $GITHUB_STEP_SUMMARY
+          VERSION="${{ steps.publish.outputs.published_version }}"
+          echo "## Shared Package" >> $GITHUB_STEP_SUMMARY
+          if [ -z "$VERSION" ]; then
+            echo "❌ Failed to publish @tejas96/shared" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.publish.outputs.bumped }}" == "true" ]; then
             echo "✅ Auto-bumped and published @tejas96/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
           else
-            echo "## Shared Package" >> $GITHUB_STEP_SUMMARY
             echo "✅ Published @tejas96/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
           fi
