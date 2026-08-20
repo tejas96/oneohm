@@ -155,7 +155,7 @@ export class FollowupRepository {
       is stored and compared.
     */
     return this.scopedByDay(
-      'followup.scheduledAt >= date_trunc(\'day\', now()) ' +
+      "followup.scheduledAt >= date_trunc('day', now()) " +
         "AND followup.scheduledAt < date_trunc('day', now()) + interval '1 day'",
       assignedToUserId,
       page,

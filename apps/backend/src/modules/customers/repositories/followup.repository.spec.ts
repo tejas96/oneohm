@@ -130,7 +130,7 @@ describe('FollowupRepository', () => {
     const clauses = (): string =>
       qb.andWhereCalls.map((call: unknown[]) => String(call[0])).join(' ');
 
-    it('scopes today by the database\'s day, not the process\'s', async () => {
+    it("scopes today by the database's day, not the process's", async () => {
       await repo.findTodayFollowups('user-1');
 
       expect(clauses()).toContain("date_trunc('day', now())");
