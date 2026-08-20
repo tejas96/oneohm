@@ -5,13 +5,13 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import { TASK_STATUS_OPTIONS } from '@tejas96/shared/constants';
 import {
   TaskPriority,
   TaskStatus,
   TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
   type MyTaskListItem,
-  type MyTasksProjectMeta,
 } from '@tejas96/shared/types';
 import Link from 'next/link';
 import type { JSX } from 'react';
@@ -44,13 +44,9 @@ const PRIORITY_OPTIONS: MUISelectOption[] = (
 
 const DEFAULT_STATUS_COLOR: Record<string, string> = {
   [TaskStatus.BACKLOG]: '#94a3b8',
-  [TaskStatus.TODO]: '#60a5fa',
   [TaskStatus.IN_PROGRESS]: '#f59e0b',
-  [TaskStatus.IN_REVIEW]: '#a78bfa',
-  [TaskStatus.TESTING]: '#ec4899',
   [TaskStatus.BLOCKED]: '#ef4444',
   [TaskStatus.DONE]: '#22c55e',
-  [TaskStatus.CANCELLED]: '#6b7280',
 };
 
 /**
@@ -81,7 +77,6 @@ function getSpineColor(isOverdue: boolean, priority: TaskPriority): string | nul
 
 export interface TaskRowProps {
   task: MyTaskListItem;
-  projectMeta?: MyTasksProjectMeta;
   onOpenDrawer: (task: MyTaskListItem) => void;
   onStatusChange?: (
     taskId: string,
@@ -97,7 +92,6 @@ export interface TaskRowProps {
 
 export function TaskRow({
   task,
-  projectMeta,
   onOpenDrawer,
   onStatusChange,
   onPriorityChange,
@@ -112,12 +106,11 @@ export function TaskRow({
   const priorityColor = TASK_PRIORITY_HEX_COLOR[task.priority] ?? '#94a3b8';
   const priorityLabel = TASK_PRIORITY_LABELS[task.priority] ?? task.priority;
 
-  const projectStatuses = projectMeta?.taskStatuses ?? [];
-  const statusOptions: MUISelectOption[] = projectStatuses.map((s) => ({
-    value: s.code,
+  const statusOptions: MUISelectOption[] = TASK_STATUS_OPTIONS.map((s) => ({
+    value: s.value,
     label: <ColorDotLabel color={s.color} label={s.label} />,
   }));
-  const currentStatusCfg = projectStatuses.find((s) => s.code === task.status);
+  const currentStatusCfg = TASK_STATUS_OPTIONS.find((s) => s.value === task.status);
   const statusColor = currentStatusCfg?.color ?? DEFAULT_STATUS_COLOR[task.status] ?? '#94a3b8';
   const statusLabel = currentStatusCfg?.label ?? TASK_STATUS_LABELS[task.status] ?? task.status;
 
@@ -429,7 +422,7 @@ export function TaskRow({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {onStatusChange && statusOptions.length > 0 ? (
+        {onStatusChange ? (
           <QuickSelect
             pill
             value={task.status}

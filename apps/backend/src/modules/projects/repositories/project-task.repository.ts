@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  type TaskActivityEntry,
-  TaskStatus,
-  ProjectStatus,
-  LookupTypeCode,
-} from '@tejas96/shared/types';
+import { taskStatusBlocksDependents } from '@tejas96/shared/constants';
+import { type TaskActivityEntry, TaskStatus, ProjectStatus } from '@tejas96/shared/types';
 import { escapeIlikePattern } from '@tejas96/shared/utils';
 import {
   DataSource,
@@ -297,16 +293,9 @@ export class ProjectTaskRepository {
       .groupBy('task.status')
       .getRawMany<{ status: TaskStatus; count: string }>();
 
-    const statusCounts: Record<TaskStatus, number> = {
-      [TaskStatus.BACKLOG]: 0,
-      [TaskStatus.TODO]: 0,
-      [TaskStatus.IN_PROGRESS]: 0,
-      [TaskStatus.IN_REVIEW]: 0,
-      [TaskStatus.TESTING]: 0,
-      [TaskStatus.BLOCKED]: 0,
-      [TaskStatus.DONE]: 0,
-      [TaskStatus.CANCELLED]: 0,
-    };
+    const statusCounts = Object.fromEntries(
+      Object.values(TaskStatus).map((status) => [status, 0]),
+    ) as Record<TaskStatus, number>;
 
     for (const result of results) {
       statusCounts[result.status] = parseInt(result.count, 10);
@@ -331,7 +320,7 @@ export class ProjectTaskRepository {
       .where('task.project_id = :projectId', { projectId })
       .andWhere('task.deleted_at IS NULL')
       .andWhere('task.status NOT IN (:...completedStatuses)', {
-        completedStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
+        completedStatuses: [TaskStatus.DONE],
       })
       .andWhere('task.end_date < CURRENT_DATE')
       .orderBy('task.endDate', 'ASC')
@@ -507,17 +496,13 @@ export class ProjectTaskRepository {
 
     const base: Record<string, unknown> = {
       deletedAt: IsNull(),
-      status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
+      status: Not(In([TaskStatus.DONE])),
       project: {
         status: Not(ProjectStatus.CANCELLED),
       },
     };
 
-    if (
-      filters.status &&
-      filters.status !== TaskStatus.DONE &&
-      filters.status !== TaskStatus.CANCELLED
-    ) {
+    if (filters.status && filters.status !== TaskStatus.DONE) {
       base.status = filters.status;
     }
     if (filters.priority) {
@@ -546,30 +531,16 @@ export class ProjectTaskRepository {
   }> {
     if (!dependsOnTaskIds?.length) return { resolved: true, blockers: [] };
 
-    const [tasks, statusRows] = await Promise.all([
-      this.repository.find({
-        where: { id: In(dependsOnTaskIds) },
-        relations: ['workflowStep'],
-        withDeleted: true,
-      }),
-      this.repository.manager.query(
-        `SELECT code, metadata FROM lookups WHERE type_code = $1 AND deleted_at IS NULL`,
-        [LookupTypeCode.DEFAULT_TASK_STATUS],
-      ),
-    ]);
-
-    const statusMap = new Map<string, any>(
-      statusRows.map((r: { code: string; metadata: any }) => [
-        r.code,
-        typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata,
-      ]),
-    );
+    const tasks = await this.repository.find({
+      where: { id: In(dependsOnTaskIds) },
+      relations: ['workflowStep'],
+      withDeleted: true,
+    });
 
     const blockers: Array<{ name: string; status: string }> = [];
     for (const dep of tasks) {
       if (dep.deletedAt) continue;
-      const blocks = statusMap.get(dep.status)?.blocksDependents !== false;
-      if (!blocks) continue;
+      if (!taskStatusBlocksDependents(dep.status)) continue;
 
       const name = dep.nameOverride ?? dep.workflowStep?.name ?? dep.code;
       blockers.push({ name, status: dep.status });
@@ -600,15 +571,11 @@ export class ProjectTaskRepository {
       .andWhere('project.status != :cancelledStatus', { cancelledStatus: ProjectStatus.CANCELLED });
 
     // Status filter
-    if (
-      filters.status &&
-      filters.status !== TaskStatus.DONE &&
-      filters.status !== TaskStatus.CANCELLED
-    ) {
+    if (filters.status && filters.status !== TaskStatus.DONE) {
       qb.andWhere('task.status = :status', { status: filters.status });
     } else {
       qb.andWhere('task.status NOT IN (:...excludedStatuses)', {
-        excludedStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
+        excludedStatuses: [TaskStatus.DONE],
       });
     }
 
@@ -804,7 +771,7 @@ export class ProjectTaskRepository {
       .distinct(true)
       .where('task.deleted_at IS NULL')
       .andWhere('task.status NOT IN (:...excludedStatuses)', {
-        excludedStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
+        excludedStatuses: [TaskStatus.DONE],
       })
       .andWhere('task.assigned_to_user_id = :userId', { userId });
 
@@ -823,7 +790,7 @@ export class ProjectTaskRepository {
 
     const baseWhere = {
       deletedAt: IsNull(),
-      status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
+      status: Not(In([TaskStatus.DONE])),
       project: {
         status: Not(ProjectStatus.CANCELLED),
       },
@@ -856,7 +823,7 @@ export class ProjectTaskRepository {
       .where('task.project_id = :projectId', { projectId })
       .andWhere('task.deleted_at IS NULL')
       .andWhere('task.status NOT IN (:...completedStatuses)', {
-        completedStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
+        completedStatuses: [TaskStatus.DONE],
       })
       .andWhere('task.end_date IS NOT NULL')
       .andWhere('task.end_date <= :futureDate', { futureDate })
@@ -874,10 +841,10 @@ export class ProjectTaskRepository {
     const result = await repo
       .createQueryBuilder('t')
       .select(`COUNT(*) FILTER (WHERE t.status = :done)`, 'done')
-      .addSelect(`COUNT(*) FILTER (WHERE t.status != :cancelled)`, 'total')
+      .addSelect(`COUNT(*)`, 'total')
       .where('t.project_id = :projectId', { projectId })
       .andWhere('t.deleted_at IS NULL')
-      .setParameters({ done: TaskStatus.DONE, cancelled: TaskStatus.CANCELLED })
+      .setParameters({ done: TaskStatus.DONE })
       .getRawOne();
     return {
       done: parseInt(result?.done ?? '0', 10),

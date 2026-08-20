@@ -1,9 +1,10 @@
 'use client';
 
+import { TASK_STATUS_OPTIONS } from '@tejas96/shared/constants';
 import { useMemo } from 'react';
 
 import { KANBAN_BOARD_LIMIT, UNASSIGNED_TASK_FILTER, type TaskListFilters } from '../constants';
-import { useProjectTaskList, useProjectTaskStatuses, type ProjectTaskItem } from '../hooks';
+import { useProjectTaskList, type ProjectTaskItem } from '../hooks';
 
 export interface KanbanColumnData {
   code: string;
@@ -32,18 +33,16 @@ const OTHER_COLUMN: Omit<KanbanColumnData, 'tasks'> = {
 
 /**
  * Fetches all tasks for a project in board mode (high limit, no pagination),
- * groups them into columns by project-configured task statuses.
+ * groups them into columns by shared task status catalog.
  *
- * Column order follows taskStatuses[].orderIndex.
- * Tasks whose status is not in configured statuses fold into a trailing "Other" column.
+ * Column order follows TASK_STATUS_OPTIONS[].orderIndex.
+ * Tasks whose status is not in the catalog fold into a trailing "Other" column.
  */
 export function useProjectTaskBoard(
   projectId: string,
   filters: TaskListFilters,
   isActive: boolean,
 ): UseProjectTaskBoardResult {
-  const { taskStatuses } = useProjectTaskStatuses(projectId);
-
   const {
     data,
     isLoading,
@@ -71,15 +70,19 @@ export function useProjectTaskBoard(
   const tasks = data?.data ?? [];
 
   const columns = useMemo<KanbanColumnData[]>(() => {
-    if (taskStatuses.length === 0) return [];
-
-    const sorted = [...taskStatuses].sort((a, b) => a.orderIndex - b.orderIndex);
-    const configuredCodes = new Set<string>(sorted.map((s) => s.code));
+    const sorted = [...TASK_STATUS_OPTIONS].sort((a, b) => a.orderIndex - b.orderIndex);
+    const configuredCodes = new Set<string>(sorted.map((s) => s.value));
 
     const columnMap = new Map<string, KanbanColumnData>(
       sorted.map((s) => [
-        s.code,
-        { code: s.code, label: s.label, color: s.color, orderIndex: s.orderIndex, tasks: [] },
+        s.value,
+        {
+          code: s.value,
+          label: s.label,
+          color: s.color,
+          orderIndex: s.orderIndex,
+          tasks: [],
+        },
       ]),
     );
 
@@ -105,13 +108,12 @@ export function useProjectTaskBoard(
       tasks: sortTasks(column.tasks),
     }));
 
-    // Only add "Other" column if there are unmapped tasks
     if (otherTasks.length > 0) {
       result.push({ ...OTHER_COLUMN, tasks: sortTasks(otherTasks) });
     }
 
     return result;
-  }, [taskStatuses, tasks]);
+  }, [tasks]);
 
   return {
     columns,

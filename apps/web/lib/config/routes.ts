@@ -172,7 +172,6 @@ export const ROUTES = {
     WORKFLOWS: '/admin/workflows',
     INTEGRATIONS: '/admin/integrations',
     AUDIT: '/admin/audit',
-    LOOKUPS: '/admin/lookups',
     DISCOM: '/admin/discom',
   },
 

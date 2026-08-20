@@ -111,7 +111,7 @@ export class CreateProjectTaskDto {
   @ApiPropertyOptional({
     enum: Object.values(TaskStatus),
     enumName: 'TaskStatus',
-    example: TaskStatus.TODO,
+    example: TaskStatus.BACKLOG,
     default: TaskStatus.BACKLOG,
   })
   @IsEnum(TaskStatus)

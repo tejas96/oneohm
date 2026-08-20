@@ -6,7 +6,6 @@ import type {
   ProjectMetadata,
   ProjectPriority,
   ProjectStatus,
-  TaskStatusConfig,
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
@@ -89,7 +88,6 @@ export interface ProjectListItem {
   estimatedCost?: number | null;
   actualCost?: number | null;
   metadata?: ProjectMetadata;
-  taskStatuses?: TaskStatusConfig[];
   property: {
     id: string;
     address?: string;

@@ -1,6 +1,5 @@
 export * from './approval.enum';
 export * from './change-request.enum';
-export * from './lookup.enum';
 export * from './audit.enum';
 export * from './comment.enum';
 export * from './commission.enum';

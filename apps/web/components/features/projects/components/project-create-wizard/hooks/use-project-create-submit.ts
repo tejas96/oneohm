@@ -89,7 +89,6 @@ export function useProjectCreateSubmit(
         name: m.name,
         order: m.order,
       })),
-      taskStatuses: values.taskStatuses,
     };
 
     const project = await execute({ quoteId: values.quoteId, payload });

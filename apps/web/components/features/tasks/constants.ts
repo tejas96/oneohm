@@ -10,4 +10,4 @@ export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
   commented: 'commented',
 };
 
-export const STARTABLE_STATUSES = new Set<TaskStatus>([TaskStatus.TODO, TaskStatus.BACKLOG]);
+export const STARTABLE_STATUSES = new Set<TaskStatus>([TaskStatus.BACKLOG]);

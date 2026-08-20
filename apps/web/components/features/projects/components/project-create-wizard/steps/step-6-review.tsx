@@ -5,7 +5,6 @@ import ChecklistIcon from '@mui/icons-material/Checklist';
 import DescriptionIcon from '@mui/icons-material/Description';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import GroupsIcon from '@mui/icons-material/Groups';
-import TuneIcon from '@mui/icons-material/Tune';
 import type { UseFormReturn } from 'react-hook-form';
 
 import { PROJECT_PRIORITY_LABELS } from '../../../constants';
@@ -41,7 +40,6 @@ export function Step6Review({ form }: Step6ReviewProps): React.JSX.Element {
   const endDate = watch('endDate');
   const teamMembers = watch('teamMembers');
   const projectManagerId = watch('projectManagerId');
-  const taskStatuses = watch('taskStatuses');
   const milestones = watch('milestones');
   const excludedStepIds = watch('excludedStepIds');
 
@@ -130,24 +128,6 @@ export function Step6Review({ form }: Step6ReviewProps): React.JSX.Element {
             projectManagerId={projectManagerId ?? ''}
             employees={employees}
           />
-        </ReviewSection>
-
-        {/* Statuses */}
-        <ReviewSection id="statuses" title="Task Statuses" icon={<TuneIcon fontSize="small" />}>
-          <div className="flex flex-wrap gap-2">
-            {taskStatuses.map((s) => (
-              <div
-                key={s.code}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg shadow-e1"
-              >
-                <span
-                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: s.color }}
-                />
-                <MUITypography variant="finePrint">{s.label}</MUITypography>
-              </div>
-            ))}
-          </div>
         </ReviewSection>
 
         {/* Tasks */}

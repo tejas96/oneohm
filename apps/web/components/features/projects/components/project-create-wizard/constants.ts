@@ -19,11 +19,6 @@ export const WIZARD_STEPS = [
     fields: ['teamMembers'] satisfies (keyof ProjectCreateFormData)[],
   },
   {
-    id: 'statuses',
-    label: 'Statuses',
-    fields: ['taskStatuses'] satisfies (keyof ProjectCreateFormData)[],
-  },
-  {
     id: 'tasks',
     label: 'Tasks',
     fields: [

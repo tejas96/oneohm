@@ -11,7 +11,6 @@ import { useProjectCreateSubmit } from './hooks/use-project-create-submit';
 import { Step1SourceSelection } from './steps/step-1-source-selection';
 import { Step2ProjectDetails } from './steps/step-2-project-details';
 import { Step3TeamSelection } from './steps/step-3-team-selection';
-import { Step4StatusConfig } from './steps/step-4-status-config';
 import { Step5TasksMilestones } from './steps/step-5-tasks-milestones';
 import { Step6Review } from './steps/step-6-review';
 
@@ -43,10 +42,8 @@ function StepContent({
     case 2:
       return <Step3TeamSelection form={form} />;
     case 3:
-      return <Step4StatusConfig form={form} />;
-    case 4:
       return <Step5TasksMilestones form={form} />;
-    case 5:
+    case 4:
       return <Step6Review form={form} />;
     default:
       return null;

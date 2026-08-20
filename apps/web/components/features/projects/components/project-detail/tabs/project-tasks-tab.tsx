@@ -1,7 +1,12 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { LookupTypeCode, TaskStatus, type TaskPriority } from '@tejas96/shared/types';
+import {
+  isFinalTaskStatus,
+  TASK_PRIORITY_OPTIONS,
+  TASK_STATUS_OPTIONS,
+} from '@tejas96/shared/constants';
+import { TaskStatus, type TaskPriority } from '@tejas96/shared/types';
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { CreateProjectTaskModal } from './create-project-task-modal';
@@ -20,7 +25,6 @@ import {
   type TeamMemberSummary,
   useProjectMilestones,
   useProjectTaskList,
-  useProjectTaskStatuses,
   useProjectTeam,
 } from '../../../hooks';
 import type { ProjectDetail } from '../../../hooks/types';
@@ -30,16 +34,10 @@ import { useUpdateTask } from '@/components/features/tasks/hooks';
 import { TablePagination } from '@/components/shared/data-table/pagination';
 import { ErrorState } from '@/components/shared/feedback/empty-state';
 import { Button } from '@/components/ui/button';
-import { useLookupOptions } from '@/lib/hooks/resources';
 import { useUrlFilters } from '@/lib/hooks/use-url-filters';
 import { useGatedAction } from '@/lib/rbac';
 import { cn, getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
-
-/** Statuses where the backend auto-sets completionPercentage = 100.
- *  Any task that ever reached these statuses will have completionPercentage = 100
- *  in the DB until we explicitly reset it. */
-const FINAL_STATUSES = new Set<string>([TaskStatus.DONE, TaskStatus.CANCELLED]);
 
 interface ProjectTasksTabProps {
   projectId: string;
@@ -66,9 +64,6 @@ export const ProjectTasksTab = React.memo(
       },
       [setFilter],
     );
-
-    const { taskStatuses, isLoading: statusesLoading } = useProjectTaskStatuses(projectId);
-    const { items: priorityOptions } = useLookupOptions(LookupTypeCode.PRIORITY, isActive);
 
     const {
       data: taskListData,
@@ -156,7 +151,7 @@ export const ProjectTasksTab = React.memo(
         // "done" or "cancelled" retains completionPercentage = 100 in the DB indefinitely.
         // Fix: whenever moving to a non-final status and the task is at 100%, explicitly send 0.
         const completionPercentage =
-          !FINAL_STATUSES.has(newStatus) && currentCompletionPct === 100 ? 0 : undefined;
+          !isFinalTaskStatus(newStatus) && currentCompletionPct === 100 ? 0 : undefined;
 
         const queryKey = PROJECT_TASKS_QUERY_KEY();
         type CacheSnapshot = { key: readonly unknown[]; data: unknown };
@@ -248,8 +243,8 @@ export const ProjectTasksTab = React.memo(
             filters={filters}
             setFilter={setFilter}
             clearFilters={clearFilters}
-            taskStatuses={taskStatuses}
-            priorityOptions={priorityOptions}
+            taskStatuses={TASK_STATUS_OPTIONS}
+            priorityOptions={TASK_PRIORITY_OPTIONS}
             avatarMembers={avatarMembers}
             milestones={milestones}
             totalTasks={meta?.total}
@@ -263,8 +258,8 @@ export const ProjectTasksTab = React.memo(
               {/* Table */}
               <TaskListTable
                 tasks={tasks}
-                taskStatuses={taskStatuses}
-                isLoading={isLoading || statusesLoading}
+                taskStatuses={TASK_STATUS_OPTIONS}
+                isLoading={isLoading}
                 onOpenTask={handleOpenTask}
                 onStatusChange={handleStatusChange}
                 onPriorityChange={handlePriorityChange}
@@ -312,7 +307,6 @@ export const ProjectTasksTab = React.memo(
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
           projectId={projectId}
-          taskStatuses={taskStatuses}
           preselectedStatus={createPreselectedStatus}
         />
       </>

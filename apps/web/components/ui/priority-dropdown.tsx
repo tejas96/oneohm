@@ -1,12 +1,9 @@
 'use client';
 
-import { LookupTypeCode } from '@tejas96/shared/types';
+import { TASK_PRIORITY_OPTIONS } from '@tejas96/shared/constants';
 import { useMemo } from 'react';
 
 import { MUISelect, type MUISelectOption, type MUISelectProps } from './mui-select';
-
-import { useLookupOptions } from '@/lib/hooks/resources';
-import { getErrorMessage } from '@/lib/utils';
 
 export interface PriorityDropdownProps extends Omit<MUISelectProps, 'options' | 'ref'> {
   includeAllOption?: boolean;
@@ -19,28 +16,13 @@ export function PriorityDropdown({
   disabled,
   ...props
 }: PriorityDropdownProps): React.JSX.Element {
-  const { items, isLoading, isError, error } = useLookupOptions(LookupTypeCode.PRIORITY);
-
   const options = useMemo((): MUISelectOption[] => {
-    if (isLoading) {
-      return [{ value: '', label: 'Loading priorities…', disabled: true }];
-    }
-
-    const mapped: MUISelectOption[] = items.map((item) => ({
+    const mapped: MUISelectOption[] = TASK_PRIORITY_OPTIONS.map((item) => ({
       value: item.value,
       label: item.label,
     }));
     return includeAllOption ? [{ value: '', label: allLabel }, ...mapped] : mapped;
-  }, [allLabel, includeAllOption, isLoading, items]);
+  }, [allLabel, includeAllOption]);
 
-  const helperText = isError ? getErrorMessage(error) : props.helperText;
-
-  return (
-    <MUISelect
-      {...props}
-      disabled={disabled || isLoading || isError}
-      options={options}
-      helperText={helperText}
-    />
-  );
+  return <MUISelect {...props} disabled={disabled} options={options} />;
 }

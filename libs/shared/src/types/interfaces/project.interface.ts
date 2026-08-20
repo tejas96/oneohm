@@ -3,20 +3,7 @@ import type {
   ProjectStatus,
   RoofCondition,
   RoofOrientation,
-  TaskStatus,
 } from '../enums/project.enum';
-
-/**
- * Task Status Config
- * Defines a single configured status for a project's task board.
- * Stored as a JSONB array in projects.task_statuses.
- */
-export interface TaskStatusConfig {
-  code: TaskStatus;
-  label: string;
-  color: string;
-  orderIndex: number;
-}
 
 /**
  * GPS Coordinates
@@ -202,7 +189,6 @@ export interface Project {
   progressPercentage: number;
   startDate?: string;
   endDate?: string;
-  taskStatuses?: TaskStatusConfig[];
   metadata?: ProjectMetadata;
   createdAt: string;
   updatedAt: string;

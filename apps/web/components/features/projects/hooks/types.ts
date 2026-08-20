@@ -7,7 +7,6 @@ import type {
   ProjectPriority,
   ProjectStatus,
   TaskStatus,
-  TaskStatusConfig,
 } from '@tejas96/shared/types';
 
 import type { DiscomResponse } from '@/components/features/properties/hooks/use-discoms';
@@ -86,7 +85,6 @@ export interface ProjectDetail {
   structureType?: string;
   phaseType?: string;
   metadata?: ProjectMetadata;
-  taskStatuses?: TaskStatusConfig[];
   defaultWarehouseId?: string;
   materials: ProjectMaterial[];
   createdAt: string;

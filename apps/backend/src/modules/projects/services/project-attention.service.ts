@@ -27,6 +27,27 @@ const ATTENTION_SERVICE_CONSTANTS = {
   MAX_ITEMS: 10,
   PAYMENT_SAMPLE_SIZE: 2,
   MATERIAL_SAMPLE_SIZE: 2,
+  /**
+   * Below one rupee is not a debt, it is rounding residue.
+   *
+   * A payment schedule splits a contract by PERCENTAGE, so the last milestone
+   * regularly lands a few paise away from the total. One real project carried a
+   * balance of 24 paise and raised a `WARNING · PAYMENT` reading "₹0 short" —
+   * because the amount is formatted with no decimal places, which is right for
+   * every figure a person would act on and turns this one into a nought.
+   *
+   * Four milestones on record are under a rupee. Nobody is chasing them, and a
+   * warning nobody can act on teaches people to stop reading the section it
+   * sits in.
+   *
+   * ONE RUPEE IS THE LINE BECAUSE IT IS THE SMALLEST AMOUNT THIS UI CAN STATE.
+   * Anything below it cannot be shown truthfully at all, so the choice is
+   * between saying nothing and saying something false. Higher floors — "ignore
+   * under ₹100" — are a business judgement about what is worth chasing, and
+   * this is not the place to make one: eleven milestones sit between ₹1 and
+   * ₹100 and they are all reported honestly.
+   */
+  MIN_OUTSTANDING_PAISE: 100,
 } as const;
 
 const SEVERITY_ORDER: Record<AttentionSeverity, number> = {
@@ -76,11 +97,7 @@ export class ProjectAttentionService {
         : undefined;
       const dueDate = task.endDate ? new Date(task.endDate) : undefined;
       const isBlocked = task.status === TaskStatus.BLOCKED;
-      const isOverdue =
-        !!dueDate &&
-        dueDate < now &&
-        task.status !== TaskStatus.DONE &&
-        task.status !== TaskStatus.CANCELLED;
+      const isOverdue = !!dueDate && dueDate < now && task.status !== TaskStatus.DONE;
 
       if (!isBlocked && !isOverdue) continue;
 
@@ -123,7 +140,7 @@ export class ProjectAttentionService {
 
     // ── Milestone alerts (derived from task due dates grouped by milestone_name) ─
     const milestoneEndDateMap = new Map<string, Date>();
-    const terminalStatuses = new Set([TaskStatus.DONE, TaskStatus.CANCELLED]);
+    const terminalStatuses = new Set([TaskStatus.DONE]);
 
     for (const task of tasks) {
       if (!task.milestoneName) continue;
@@ -230,6 +247,8 @@ export class ProjectAttentionService {
    * Waived milestones are excluded by the view's `status` filter, so a waived
    * residual no longer nags forever — the contradiction where the finance
    * dashboard dropped a waived amount while the project card kept reporting it.
+   *
+   * Sub-rupee balances are excluded too. See `MIN_OUTSTANDING_PAISE`.
    */
   private async findOutstandingMilestones(projectId: string): Promise<OutstandingMilestone[]> {
     return this.dataSource.query(
@@ -242,9 +261,9 @@ export class ProjectAttentionService {
        FROM v_milestone_balance
        WHERE project_id = $1
          AND status = 'active'
-         AND balance_paise > 0
+         AND balance_paise >= $2
        ORDER BY days_overdue DESC, display_order ASC`,
-      [projectId],
+      [projectId, ATTENTION_SERVICE_CONSTANTS.MIN_OUTSTANDING_PAISE],
     );
   }
 

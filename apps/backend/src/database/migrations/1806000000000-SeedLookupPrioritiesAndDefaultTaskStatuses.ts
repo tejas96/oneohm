@@ -1,8 +1,7 @@
-import { LookupTypeCode, LookupScopeType } from '@tejas96/shared/types';
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 type LookupSeed = {
-  typeCode: LookupTypeCode;
+  typeCode: 'priority' | 'default_task_status';
   code: string;
   label: string;
   orderIndex: number;
@@ -11,57 +10,57 @@ type LookupSeed = {
 
 const LOOKUP_SEEDS: LookupSeed[] = [
   {
-    typeCode: LookupTypeCode.PRIORITY,
+    typeCode: 'priority',
     code: 'urgent',
     label: 'Urgent',
     orderIndex: 1,
     color: '#EF4444',
   },
   {
-    typeCode: LookupTypeCode.PRIORITY,
+    typeCode: 'priority',
     code: 'high',
     label: 'High',
     orderIndex: 2,
     color: '#F59E0B',
   },
   {
-    typeCode: LookupTypeCode.PRIORITY,
+    typeCode: 'priority',
     code: 'medium',
     label: 'Medium',
     orderIndex: 3,
     color: '#3B82F6',
   },
   {
-    typeCode: LookupTypeCode.PRIORITY,
+    typeCode: 'priority',
     code: 'normal',
     label: 'Normal',
     orderIndex: 4,
     color: '#6B7280',
   },
-  { typeCode: LookupTypeCode.PRIORITY, code: 'low', label: 'Low', orderIndex: 5, color: '#6B7280' },
+  { typeCode: 'priority', code: 'low', label: 'Low', orderIndex: 5, color: '#6B7280' },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'backlog',
     label: 'Backlog',
     orderIndex: 1,
     color: '#6B7280',
   },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'in_progress',
     label: 'In Progress',
     orderIndex: 2,
     color: '#3B82F6',
   },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'blocked',
     label: 'Blocked',
     orderIndex: 3,
     color: '#EF4444',
   },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'done',
     label: 'Done',
     orderIndex: 4,
@@ -90,7 +89,7 @@ export class SeedLookupPrioritiesAndDefaultTaskStatuses1806000000000 implements 
             AND scope_id IS NULL
             AND deleted_at IS NULL
         `,
-        [seed.typeCode, seed.code, seed.label, seed.orderIndex, seed.color, LookupScopeType.GLOBAL],
+        [seed.typeCode, seed.code, seed.label, seed.orderIndex, seed.color, 'global'],
       );
 
       await queryRunner.query(
@@ -131,7 +130,7 @@ export class SeedLookupPrioritiesAndDefaultTaskStatuses1806000000000 implements 
               AND deleted_at IS NULL
           )
         `,
-        [seed.typeCode, seed.code, seed.label, seed.orderIndex, seed.color, LookupScopeType.GLOBAL],
+        [seed.typeCode, seed.code, seed.label, seed.orderIndex, seed.color, 'global'],
       );
     }
   }
@@ -148,7 +147,7 @@ export class SeedLookupPrioritiesAndDefaultTaskStatuses1806000000000 implements 
             AND scope_id IS NULL
             AND deleted_at IS NULL
         `,
-        [seed.typeCode, seed.code, LookupScopeType.GLOBAL],
+        [seed.typeCode, seed.code, 'global'],
       );
     }
   }

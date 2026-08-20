@@ -1,5 +1,6 @@
 'use client';
 
+import { TASK_PRIORITY_OPTIONS } from '@tejas96/shared/constants';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useMemo } from 'react';
@@ -16,21 +17,9 @@ import {
 
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { LookupOption } from '@/lib/hooks/resources';
 import { buildTasksTabUrl } from '@/lib/utils';
 
-/**
- * Chart color palette derived from the app's tailwind chart tokens.
- * Ordered: urgent-feeling colors first (red → orange → amber → green → blue).
- * When priority lookup colors are available they take full precedence.
- */
-const CHART_PALETTE = [
-  '#dc2626', // error  — Urgent / Critical
-  '#f97316', // chart-5 orange — High
-  '#eab308', // chart-3 amber — Medium
-  '#76c044', // chart-1 primary green — Normal / Low
-  '#0d74b8', // chart-2 secondary blue — Lowest
-];
+const CHART_PALETTE = ['#dc2626', '#f97316', '#eab308', '#76c044', '#0d74b8'];
 
 interface PriorityRow {
   key: string;
@@ -65,14 +54,12 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
 interface PriorityBreakdownChartProps {
   tasksByPriority: Record<string, number> | undefined;
-  priorityLookupMap: Record<string, LookupOption>;
   isLoading: boolean;
   projectPath: string;
 }
 
 export function PriorityBreakdownChart({
   tasksByPriority,
-  priorityLookupMap,
   isLoading,
   projectPath,
 }: PriorityBreakdownChartProps) {
@@ -81,24 +68,19 @@ export function PriorityBreakdownChart({
   const chartData = useMemo<PriorityRow[]>(() => {
     if (!tasksByPriority) return [];
 
-    const allPriorities = Object.values(priorityLookupMap).sort(
-      (a, b) => a.orderIndex - b.orderIndex,
-    );
-
-    const keys =
-      allPriorities.length > 0 ? allPriorities.map((p) => p.value) : Object.keys(tasksByPriority);
+    const keys = TASK_PRIORITY_OPTIONS.map((p) => p.value);
 
     return keys.map((key, idx) => {
-      const lookup = priorityLookupMap[key];
+      const option = TASK_PRIORITY_OPTIONS.find((p) => p.value === key);
       const fallbackColor = CHART_PALETTE[idx % CHART_PALETTE.length] ?? '#94a3b8';
       return {
         key,
-        name: lookup?.label ?? key,
+        name: option?.label ?? key,
         count: tasksByPriority[key] ?? 0,
-        color: lookup?.color ?? fallbackColor,
+        color: option?.color ?? fallbackColor,
       } satisfies PriorityRow;
     });
-  }, [tasksByPriority, priorityLookupMap]);
+  }, [tasksByPriority]);
 
   const handleBarClick = useCallback(
     (data: unknown) => {
@@ -141,7 +123,6 @@ export function PriorityBreakdownChart({
 
   const total = chartData.reduce((s, d) => s + d.count, 0);
   const maxCount = Math.max(...chartData.map((d) => d.count), 1);
-  // Give 25% headroom above the tallest bar so LabelList values don't clip
   const yDomain: [number, number] = [0, Math.ceil(maxCount * 1.25)];
 
   return (
@@ -156,7 +137,6 @@ export function PriorityBreakdownChart({
         </Link>
       </div>
 
-      {/* Vertical bar chart — bars are clickable */}
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -199,7 +179,6 @@ export function PriorityBreakdownChart({
         </ResponsiveContainer>
       </div>
 
-      {/* Dot legend with percentages — each item is a link */}
       <div className="flex flex-wrap gap-x-2 gap-y-1 mt-2 pt-2 shrink-0">
         {chartData.map((row) => {
           const pct = total > 0 ? Math.round((row.count / total) * 100) : 0;

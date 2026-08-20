@@ -204,28 +204,10 @@ export const TASK_GROUP_VARIANT_MAP: Record<
     leftBorder: 'border-l-error',
     badge: 'error',
   },
-  [TaskStatus.IN_REVIEW]: {
-    dot: 'bg-warning',
-    border: 'border-border-light',
-    leftBorder: 'border-l-warning',
-    badge: 'warning',
-  },
   [TaskStatus.IN_PROGRESS]: {
     dot: 'bg-info',
     border: 'border-border-light',
     leftBorder: 'border-l-info',
-    badge: 'info',
-  },
-  [TaskStatus.TODO]: {
-    dot: 'bg-foreground-tertiary',
-    border: 'border-border-light',
-    leftBorder: 'border-l-border',
-    badge: 'secondary',
-  },
-  [TaskStatus.TESTING]: {
-    dot: 'bg-primary',
-    border: 'border-border-light',
-    leftBorder: 'border-l-primary',
     badge: 'info',
   },
   [TaskStatus.BACKLOG]: {
@@ -285,10 +267,8 @@ export const SMART_EXPAND_DEFAULTS: Record<string, Record<string, boolean>> = {
   status: {
     [TaskStatus.BLOCKED]: true,
     [TaskStatus.IN_PROGRESS]: true,
-    [TaskStatus.IN_REVIEW]: false,
-    [TaskStatus.TODO]: false,
-    [TaskStatus.TESTING]: false,
     [TaskStatus.BACKLOG]: false,
+    [TaskStatus.DONE]: false,
   },
   project: {},
 };
@@ -296,8 +276,7 @@ export const SMART_EXPAND_DEFAULTS: Record<string, Record<string, boolean>> = {
 export const STALE_THRESHOLDS: Record<string, number> = {
   [TaskStatus.IN_PROGRESS]: 3,
   [TaskStatus.BLOCKED]: 2,
-  [TaskStatus.IN_REVIEW]: 5,
-  [TaskStatus.TODO]: 7,
+  [TaskStatus.BACKLOG]: 7,
 };
 
 export interface QuickFilterChip {

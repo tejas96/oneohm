@@ -3,6 +3,7 @@
 import CheckIcon from '@mui/icons-material/Check';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box } from '@mui/material';
+import { TASK_STATUS_OPTIONS } from '@tejas96/shared/constants';
 import { TaskStatus, type TaskChecklist, type TaskPriority } from '@tejas96/shared/types';
 import { useCallback } from 'react';
 
@@ -11,7 +12,6 @@ import { TaskDrawerDependencies } from './task-drawer-dependencies';
 import { TaskDrawerHeader } from './task-drawer-header';
 import { TaskDrawerMainContent, SectionHeading } from './task-drawer-main-content';
 import { TaskDrawerMetadata } from './task-drawer-metadata';
-import { useProjectTaskStatuses } from '../../projects/hooks/use-project-task-statuses';
 import { useTaskDetail } from '../hooks/use-task-detail';
 import { useAddComment, useUpdateTask } from '../hooks/use-task-mutations';
 
@@ -43,7 +43,6 @@ export function TaskDrawer({
     'Mark task complete',
   );
   const addComment = useAddComment();
-  const { taskStatuses, isLoading: statusesLoading } = useProjectTaskStatuses(task?.projectId);
 
   const handleStatusChange = useCallback(
     (status: TaskStatus) => {
@@ -120,8 +119,7 @@ export function TaskDrawer({
       // Derive completionPercentage from checklist completion ratio, but only when
       // the task is in an active (non-final) status. Final statuses (done/cancelled)
       // are auto-set to 100% by the backend and should not be overridden by checklist math.
-      const isFinalStatus =
-        task?.status === TaskStatus.DONE || task?.status === TaskStatus.CANCELLED;
+      const isFinalStatus = task?.status === TaskStatus.DONE;
       const completionPercentage =
         !isFinalStatus && checklist.items.length > 0
           ? Math.round(
@@ -292,8 +290,7 @@ export function TaskDrawer({
                     endDate={task.endDate}
                     createdAt={task.createdAt}
                     updatedAt={task.updatedAt}
-                    taskStatuses={taskStatuses}
-                    statusesLoading={statusesLoading}
+                    taskStatuses={TASK_STATUS_OPTIONS}
                     hasDependencyBlockers={task.hasDependencyBlockers}
                     onStatusChange={handleStatusChange}
                     onPriorityChange={handlePriorityChange}

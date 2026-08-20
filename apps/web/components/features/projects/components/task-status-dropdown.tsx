@@ -1,6 +1,7 @@
 'use client';
 
-import { TaskStatus, type TaskStatusConfig } from '@tejas96/shared/types';
+import { TASK_STATUS_OPTIONS, type TaskStatusOption } from '@tejas96/shared/constants';
+import { TaskStatus } from '@tejas96/shared/types';
 import { Lock, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
@@ -10,8 +11,7 @@ import { cn } from '@/lib/utils';
 
 interface TaskStatusDropdownProps {
   currentStatus: TaskStatus;
-  /** Project-specific status configurations. When empty the dropdown is disabled. */
-  taskStatuses?: TaskStatusConfig[];
+  taskStatuses?: TaskStatusOption[];
   /** When true the dropdown is locked — unresolved dependencies block status changes. */
   hasDependencyBlockers?: boolean;
   onStatusChange: (status: TaskStatus) => void;
@@ -19,12 +19,12 @@ interface TaskStatusDropdownProps {
 
 export function TaskStatusDropdown({
   currentStatus,
-  taskStatuses = [],
+  taskStatuses = TASK_STATUS_OPTIONS,
   hasDependencyBlockers = false,
   onStatusChange,
 }: TaskStatusDropdownProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
-  const isDisabled = taskStatuses.length === 0 || hasDependencyBlockers;
+  const isDisabled = hasDependencyBlockers;
 
   const handleSelect = (code: string): void => {
     setOpen(false);
@@ -66,12 +66,12 @@ export function TaskStatusDropdown({
             }}
           >
             {taskStatuses
-              .filter((s) => s.code !== currentStatus)
+              .filter((s) => s.value !== currentStatus)
               .map((s) => (
                 <button
-                  key={s.code}
+                  key={s.value}
                   type="button"
-                  onClick={() => handleSelect(s.code)}
+                  onClick={() => handleSelect(s.value)}
                   className={cn(
                     'flex w-full items-center gap-2 rounded px-3 py-1.5 text-xs transition-colors',
                     'text-foreground-secondary hover:bg-muted',

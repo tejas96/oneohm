@@ -1,11 +1,6 @@
 'use client';
 
-import type {
-  MyTaskFilters,
-  MyTaskListItem,
-  MyTasksGroup,
-  MyTasksProjectMeta,
-} from '@tejas96/shared/types';
+import type { MyTaskFilters, MyTaskListItem, MyTasksGroup } from '@tejas96/shared/types';
 import { useEffect } from 'react';
 
 import { useMyTasksGroupTasks } from '../hooks';
@@ -26,7 +21,6 @@ interface MyTasksGroupSectionProps {
   ) => void;
   onPriorityChange?: (taskId: string, newPriority: string) => void;
   focusedTaskId?: string;
-  projectMeta: Record<string, MyTasksProjectMeta>;
   onTasksLoaded?: (groupKey: string, tasks: MyTaskListItem[]) => void;
   fetchEnabled?: boolean;
   lazyFetchAllowed?: boolean;
@@ -42,7 +36,6 @@ export function MyTasksGroupSection({
   onStatusChange,
   onPriorityChange,
   focusedTaskId,
-  projectMeta,
   onTasksLoaded,
   fetchEnabled = true,
   lazyFetchAllowed = true,
@@ -90,7 +83,6 @@ export function MyTasksGroupSection({
       onStatusChange={onStatusChange}
       onPriorityChange={onPriorityChange}
       focusedTaskId={focusedTaskId}
-      projectMeta={projectMeta}
       isLoadingTasks={isLoadingTasks}
       isTasksError={shouldFetch && isError}
       onRetryTasks={() => void refetch()}

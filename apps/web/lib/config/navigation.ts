@@ -605,19 +605,6 @@ export const navigationConfig: NavigationConfig = {
           ],
         },
         {
-          title: 'Settings',
-          permission: SUPERADMIN_ONLY,
-          items: [
-            {
-              id: 'admin-lookups',
-              permission: SUPERADMIN_ONLY,
-              icon: List,
-              label: 'Lookups',
-              href: ROUTES.ADMIN.LOOKUPS,
-            },
-          ],
-        },
-        {
           title: 'Project',
           permission: SUPERADMIN_ONLY,
           items: [

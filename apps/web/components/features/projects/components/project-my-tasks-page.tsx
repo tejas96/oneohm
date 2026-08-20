@@ -11,13 +11,12 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import { useQueryClient } from '@tanstack/react-query';
-import { MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD } from '@tejas96/shared/constants';
 import {
-  type MyTaskListItem,
-  LookupTypeCode,
-  TaskPriority,
-  TaskStatus,
-} from '@tejas96/shared/types';
+  MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD,
+  TASK_PRIORITY_OPTIONS,
+  TASK_STATUS_OPTIONS,
+} from '@tejas96/shared/constants';
+import { type MyTaskListItem, TaskPriority, TaskStatus } from '@tejas96/shared/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
@@ -37,7 +36,6 @@ import { myTasksSummaryKeys } from '@/components/features/tasks/hooks/use-my-tas
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { showToast } from '@/components/ui/sonner';
 import { useDebounce, useUrlFilters } from '@/lib/hooks';
-import { useLookupOptions } from '@/lib/hooks/resources';
 import { useGatedAction } from '@/lib/rbac';
 
 // ---------------------------------------------------------------------------
@@ -238,20 +236,9 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   });
   const updateStatus = useUpdateTaskStatus();
   const updateTask = useUpdateTask();
-  const {
-    items: taskStatusItems,
-    isLoading: statusLoading,
-    isError: statusError,
-  } = useLookupOptions(LookupTypeCode.DEFAULT_TASK_STATUS);
-  const {
-    items: taskPriorityItems,
-    isLoading: priorityLoading,
-    isError: priorityError,
-  } = useLookupOptions(LookupTypeCode.PRIORITY);
 
   const summary = data?.summary;
   const groups = data?.groups ?? [];
-  const projectMeta = data?.projectMeta ?? {};
   const projectsForFilter = data?.allProjects ?? [];
 
   const isLazyProjectGroups =
@@ -329,24 +316,18 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   );
 
   const statusFilterOptions = useMemo((): Array<{ value: string; label: string }> => {
-    if (statusLoading || statusError || taskStatusItems.length === 0) {
-      return [{ value: '', label: statusError ? 'Failed to load statuses' : 'All Status' }];
-    }
     return [
       { value: '', label: 'All Status' },
-      ...taskStatusItems.map((item) => ({ value: item.value, label: item.label })),
+      ...TASK_STATUS_OPTIONS.map((item) => ({ value: item.value, label: item.label })),
     ];
-  }, [statusError, statusLoading, taskStatusItems]);
+  }, []);
 
   const priorityFilterOptions = useMemo((): Array<{ value: string; label: string }> => {
-    if (priorityLoading || priorityError || taskPriorityItems.length === 0) {
-      return [{ value: '', label: priorityError ? 'Failed to load priorities' : 'All Priority' }];
-    }
     return [
       { value: '', label: 'All Priority' },
-      ...taskPriorityItems.map((item) => ({ value: item.value, label: item.label })),
+      ...TASK_PRIORITY_OPTIONS.map((item) => ({ value: item.value, label: item.label })),
     ];
-  }, [priorityError, priorityLoading, taskPriorityItems]);
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -700,7 +681,6 @@ export function ProjectMyTasksPage(): React.JSX.Element {
                   onStatusChange={handleInlineStatusChange}
                   onPriorityChange={handleInlinePriorityChange}
                   focusedTaskId={focusedTaskId}
-                  projectMeta={projectMeta}
                   onTasksLoaded={handleTasksLoaded}
                   fetchEnabled={textFiltersReady}
                   lazyFetchAllowed={canLazyFetch(group.key)}

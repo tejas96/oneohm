@@ -77,13 +77,9 @@ export enum MaterialStatus {
  */
 export enum TaskStatus {
   BACKLOG = 'backlog',
-  TODO = 'todo',
   IN_PROGRESS = 'in_progress',
-  IN_REVIEW = 'in_review',
-  TESTING = 'testing',
   BLOCKED = 'blocked',
   DONE = 'done',
-  CANCELLED = 'cancelled',
 }
 
 /**

@@ -1,5 +1,6 @@
 'use client';
 
+import type { TaskPriorityOption, TaskStatusOption } from '@tejas96/shared/constants';
 import { Flag, Milestone, Search, SlidersHorizontal, X } from 'lucide-react';
 import React, { useCallback, useMemo } from 'react';
 
@@ -17,7 +18,6 @@ import { SearchInput } from '@/components/shared/search';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import type { LookupOption } from '@/lib/hooks/resources';
 import { cn } from '@/lib/utils';
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -26,8 +26,8 @@ interface TaskListToolbarProps {
   filters: TaskListFilters;
   setFilter: (key: keyof TaskListFilters, value: string) => void;
   clearFilters: () => void;
-  taskStatuses: { code: string; label: string; color: string }[];
-  priorityOptions: LookupOption[];
+  taskStatuses: TaskStatusOption[];
+  priorityOptions: TaskPriorityOption[];
   avatarMembers: TeamMemberSummary[];
   milestones: Pick<MilestoneAggregateItem, 'name' | 'order'>[];
   totalTasks?: number;
@@ -153,11 +153,13 @@ export function TaskListToolbar({
   const milestoneFilterCount = filters.t_milestone ? 1 : 0;
 
   const activeStatusLabel = useMemo(
-    () => taskStatuses.find((s) => s.code === filters.t_status)?.label ?? filters.t_status,
+    () => taskStatuses.find((s) => String(s.value) === filters.t_status)?.label ?? filters.t_status,
     [taskStatuses, filters.t_status],
   );
   const activePriorityLabel = useMemo(
-    () => priorityOptions.find((p) => p.value === filters.t_priority)?.label ?? filters.t_priority,
+    () =>
+      priorityOptions.find((p) => String(p.value) === filters.t_priority)?.label ??
+      filters.t_priority,
     [priorityOptions, filters.t_priority],
   );
   const activeMilestoneLabel = useMemo(
@@ -223,9 +225,9 @@ export function TaskListToolbar({
               </FilterOption>
               {taskStatuses.map((s) => (
                 <FilterOption
-                  key={s.code}
-                  selected={filters.t_status === s.code}
-                  onClick={() => handleSetFilter('t_status', s.code)}
+                  key={s.value}
+                  selected={filters.t_status === String(s.value)}
+                  onClick={() => handleSetFilter('t_status', String(s.value))}
                 >
                   <span
                     className="inline-block h-2 w-2 rounded-full mr-1.5 shrink-0"
@@ -272,8 +274,8 @@ export function TaskListToolbar({
               {priorityOptions.map((p) => (
                 <FilterOption
                   key={p.value}
-                  selected={filters.t_priority === p.value}
-                  onClick={() => handleSetFilter('t_priority', p.value)}
+                  selected={filters.t_priority === String(p.value)}
+                  onClick={() => handleSetFilter('t_priority', String(p.value))}
                 >
                   {p.color && (
                     <span

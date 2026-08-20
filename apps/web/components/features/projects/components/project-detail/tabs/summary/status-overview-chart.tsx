@@ -1,6 +1,7 @@
 'use client';
 
-import type { TaskStatus, TaskStatusConfig } from '@tejas96/shared/types';
+import { TASK_STATUS_CATALOG } from '@tejas96/shared/constants';
+import type { TaskStatus } from '@tejas96/shared/types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useMemo } from 'react';
@@ -8,15 +9,12 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { LookupByTypeCode } from '@/lib/hooks/resources';
 import { buildTasksTabUrl } from '@/lib/utils';
 
 const FALLBACK_COLOR = '#94a3b8';
 
 interface StatusOverviewChartProps {
   tasksByStatus: Record<string, number> | undefined;
-  taskStatuses: TaskStatusConfig[] | null | undefined;
-  statusLookupMap: Record<string, LookupByTypeCode>;
   isLoading: boolean;
   projectPath: string;
 }
@@ -47,8 +45,6 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Toolti
 
 export function StatusOverviewChart({
   tasksByStatus,
-  taskStatuses,
-  statusLookupMap,
   isLoading,
   projectPath,
 }: StatusOverviewChartProps) {
@@ -59,12 +55,12 @@ export function StatusOverviewChart({
     return Object.entries(tasksByStatus)
       .filter(([, count]) => count > 0)
       .map(([status, count]) => {
-        const projectStatus = taskStatuses?.find((s) => s.code === (status as TaskStatus));
-        const color = projectStatus?.color ?? statusLookupMap[status]?.color ?? FALLBACK_COLOR;
-        const label = projectStatus?.label ?? statusLookupMap[status]?.label ?? status;
+        const entry = TASK_STATUS_CATALOG[status as TaskStatus];
+        const color = entry?.color ?? FALLBACK_COLOR;
+        const label = entry?.label ?? status;
         return { name: label, value: count, color, code: status };
       });
-  }, [tasksByStatus, taskStatuses, statusLookupMap]);
+  }, [tasksByStatus]);
 
   const total = useMemo(() => chartData.reduce((sum, d) => sum + d.value, 0), [chartData]);
 
@@ -114,7 +110,6 @@ export function StatusOverviewChart({
       <p className="text-sm font-semibold text-foreground mb-4 shrink-0">Status Overview</p>
 
       <div className="flex items-center gap-4 flex-1 min-h-0">
-        {/* Donut chart — slices are clickable */}
         <div className="relative shrink-0" style={{ width: 150, height: 150 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -141,7 +136,6 @@ export function StatusOverviewChart({
               <Tooltip content={<CustomTooltip />} />
             </PieChart>
           </ResponsiveContainer>
-          {/* Center label — total tasks, clicking navigates to all tasks */}
           <Link
             href={buildTasksTabUrl(projectPath)}
             className="absolute inset-0 flex flex-col items-center justify-center rounded-full hover:bg-black/5 transition-colors"
@@ -152,7 +146,6 @@ export function StatusOverviewChart({
           </Link>
         </div>
 
-        {/* Legend — each row is a link filtered by status */}
         <ul className="flex-1 space-y-1.5 overflow-y-auto max-h-[190px] pr-1 scrollbar-thin">
           {chartData.map((entry) => {
             const pct = total > 0 ? Math.round((entry.value / total) * 100) : 0;

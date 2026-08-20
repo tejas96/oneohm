@@ -8,22 +8,27 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { COMPANY, MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD } from '@tejas96/shared/constants';
+import {
+  COMPANY,
+  MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD,
+  TASK_PRIORITY_CATALOG,
+  TASK_STATUS_CATALOG,
+  TASK_STATUS_OPTIONS,
+  getCompleteTaskStatus,
+  taskStatusBlocksDependents,
+} from '@tejas96/shared/constants';
 import {
   type ChecklistProgress,
-  LookupTypeCode,
   type PaginatedResponse,
   ProjectStatus,
   type StatisticsResponse,
   type TaskActivityEntry,
   type TaskActivityType,
   TaskStatus,
-  type TaskStatusConfig,
 } from '@tejas96/shared/types';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
 import { hasAdminBypassRole } from '../../iam/constants';
-import { LookupRepository } from '../../lookups/repositories/lookup.repository';
 import {
   CONSUMER_EVENTS,
   ProjectCompletedEvent,
@@ -69,7 +74,6 @@ type EnrichedMyTask = Record<string, unknown> & {
   projectNumber: string;
   projectName: string;
   milestoneName?: string | null;
-  projectTaskStatuses?: TaskStatusConfig[];
   activityLog?: TaskActivityEntry[];
 };
 
@@ -82,7 +86,6 @@ export class ProjectTaskService {
     private readonly teamRepository: ProjectTeamRepository,
     private readonly workflowEngine: WorkflowEngineService,
     private readonly projectRepository: ProjectRepository,
-    private readonly lookupRepository: LookupRepository,
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
     private readonly changeRequestTaskService: ChangeRequestTaskService,
@@ -203,14 +206,13 @@ export class ProjectTaskService {
       const depStatusMap = new Map<string, TaskStatus>(
         allProjectTasks.map((t) => [t.id, t.status]),
       );
-      const statusMap = await this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS);
 
       for (const task of data) {
         (task as any).hasDependencyBlockers = (task.dependsOnTaskIds ?? []).some(
           (depId: string) => {
             const s = depStatusMap.get(depId);
             if (!s) return false;
-            return statusMap.get(s)?.metadata.blocksDependents !== false;
+            return taskStatusBlocksDependents(s);
           },
         );
       }
@@ -235,12 +237,11 @@ export class ProjectTaskService {
 
     const allProjectTasks = await this.taskRepository.findByProjectRaw(projectId);
     const depStatusMap = new Map<string, TaskStatus>(allProjectTasks.map((t) => [t.id, t.status]));
-    const statusMap = await this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS);
 
     (task as any).hasDependencyBlockers = (task.dependsOnTaskIds ?? []).some((depId: string) => {
       const s = depStatusMap.get(depId);
       if (!s) return false;
-      return statusMap.get(s)?.metadata.blocksDependents !== false;
+      return taskStatusBlocksDependents(s);
     });
 
     return task;
@@ -370,7 +371,7 @@ export class ProjectTaskService {
 
     await this.validateAndApplyStatusChange(existingTask, newStatus, projectId);
 
-    const statusMap = await this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS);
+    const statusMap = this.getStatusCatalogMap();
     const meta = statusMap.get(newStatus)?.metadata ?? {};
 
     const updateData: Record<string, unknown> = {
@@ -509,12 +510,9 @@ export class ProjectTaskService {
     // If setting to 100%, auto-transition to whichever status has autoCompletePct === 100
     if (completionPercentage === 100) {
       const task = await this.findById(id, projectId);
-      const statusMap = await this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS);
-      const finalStatus = [...statusMap.entries()].find(
-        ([, e]) => e.metadata.autoCompletePct === 100,
-      )?.[0];
-      if (finalStatus && (task.status as string) !== finalStatus) {
-        await this.updateStatus(id, projectId, finalStatus as TaskStatus, currentUserId);
+      const finalStatus = getCompleteTaskStatus();
+      if (task.status !== finalStatus) {
+        await this.updateStatus(id, projectId, finalStatus, currentUserId);
         return this.findById(id, projectId);
       }
     }
@@ -601,8 +599,8 @@ export class ProjectTaskService {
     expectedVersion: number,
     currentUserId: string,
   ): Promise<ProjectTaskEntity> {
-    // Load outside the transaction — lookup data is immutable during the request lifecycle
-    const statusMap = await this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS);
+    // Load catalog outside the transaction — immutable during the request lifecycle
+    const statusMap = this.getStatusCatalogMap();
 
     const result = await this.dataSource.transaction('SERIALIZABLE', async (manager) => {
       const existingTask = await manager.findOne(ProjectTaskEntity, {
@@ -653,6 +651,9 @@ export class ProjectTaskService {
         if (!existingTask.endDate) setClause.endDate = new Date();
         if (statusMeta.autoCompletePct !== undefined)
           setClause.completionPercentage = statusMeta.autoCompletePct;
+        setClause.completedAt = new Date();
+      } else if (existingTask.completedAt) {
+        setClause.completedAt = null;
       }
 
       const updateResult = await manager
@@ -716,26 +717,21 @@ export class ProjectTaskService {
       labels: string[];
     };
   }> {
-    const [allTasks, teamMembers, project, statusMap] = await Promise.all([
+    const [allTasks, teamMembers, project] = await Promise.all([
       this.taskRepository.findAllForBoard(projectId),
       this.teamRepository.findByProject(projectId),
       this.projectRepository.findOneById(projectId),
-      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
     ]);
 
     if (!project) {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
 
-    if (!project.taskStatuses?.length) {
-      throw new NotFoundException(
-        `Project ${projectId} has no task statuses configured. Please configure statuses via the project settings.`,
-      );
-    }
-
-    const configuredStatuses: TaskStatusConfig[] = project.taskStatuses
-      .slice()
-      .sort((a, b) => a.orderIndex - b.orderIndex);
+    const configuredStatuses = TASK_STATUS_OPTIONS.map((opt) => ({
+      code: opt.value,
+      label: opt.label,
+      color: opt.color,
+    }));
 
     const depNameMap = new Map<string, string>();
     const depCodeMap = new Map<string, string>();
@@ -774,7 +770,7 @@ export class ProjectTaskService {
           const s = depStatusMap.get(depId);
           if (!s) return false;
           // A dependency blocks progress if its status is NOT explicitly marked as non-blocking (blocksDependents !== false)
-          return statusMap.get(s)?.metadata.blocksDependents !== false;
+          return taskStatusBlocksDependents(s);
         }),
         dependencyNames: (t.dependsOnTaskIds ?? [])
           .map((depId: string) => depNameMap.get(depId))
@@ -872,12 +868,12 @@ export class ProjectTaskService {
   async getMyTasksSummary(
     userId: string,
   ): Promise<{ total: number; overdue: number; dueToday: number; completedThisWeek: number }> {
-    const [allTasks, completedThisWeek, statusMap, priorityMap] = await Promise.all([
+    const [allTasks, completedThisWeek] = await Promise.all([
       this.taskRepository.findAllByUserId(userId, {}),
       this.taskRepository.countCompletedThisWeek(userId),
-      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
-      this.getLookupMap(LookupTypeCode.PRIORITY),
     ]);
+    const statusMap = this.getStatusCatalogMap();
+    const priorityMap = this.getPriorityCatalogMap();
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -918,15 +914,14 @@ export class ProjectTaskService {
       dueToday: number;
       completedThisWeek: number;
     };
-    projectMeta: Record<string, { taskStatuses: TaskStatusConfig[] }>;
     allProjects: Array<{ id: string; name: string; projectNumber: string }>;
   }> {
-    const [allTasks, completedThisWeek, statusMap, priorityMap] = await Promise.all([
+    const [allTasks, completedThisWeek] = await Promise.all([
       this.taskRepository.findAllByUserId(userId, {}),
       this.taskRepository.countCompletedThisWeek(userId),
-      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
-      this.getLookupMap(LookupTypeCode.PRIORITY),
     ]);
+    const statusMap = this.getStatusCatalogMap();
+    const priorityMap = this.getPriorityCatalogMap();
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -974,9 +969,7 @@ export class ProjectTaskService {
       }
     }
 
-    const projectMeta = this.extractMyTaskProjectMeta(enrichedTasks);
-
-    return { groups, summary, projectMeta, allProjects };
+    return { groups, summary, allProjects };
   }
 
   async getMyTasksGroupTasks(
@@ -994,11 +987,9 @@ export class ProjectTaskService {
   ): Promise<{ tasks: Record<string, unknown>[] }> {
     const narrowedFilters = this.buildGroupKeyFilters(groupBy, groupKey, filters);
 
-    const [tasks, statusMap, priorityMap] = await Promise.all([
-      this.taskRepository.findAllByUserId(userId, narrowedFilters),
-      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
-      this.getLookupMap(LookupTypeCode.PRIORITY),
-    ]);
+    const tasks = await this.taskRepository.findAllByUserId(userId, narrowedFilters);
+    const statusMap = this.getStatusCatalogMap();
+    const priorityMap = this.getPriorityCatalogMap();
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1162,18 +1153,6 @@ export class ProjectTaskService {
     return entry?.newValue?.trim() ?? undefined;
   }
 
-  private extractMyTaskProjectMeta(
-    tasks: EnrichedMyTask[],
-  ): Record<string, { taskStatuses: TaskStatusConfig[] }> {
-    const meta: Record<string, { taskStatuses: TaskStatusConfig[] }> = {};
-    for (const task of tasks) {
-      const pid = task.projectId as string;
-      if (!pid || meta[pid]) continue;
-      meta[pid] = { taskStatuses: task.projectTaskStatuses ?? [] };
-    }
-    return meta;
-  }
-
   async updateTaskStatusCrossProject(
     taskId: string,
     status: TaskStatus,
@@ -1238,10 +1217,8 @@ export class ProjectTaskService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [statusMap, priorityMap] = await Promise.all([
-      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
-      this.getLookupMap(LookupTypeCode.PRIORITY),
-    ]);
+    const statusMap = this.getStatusCatalogMap();
+    const priorityMap = this.getPriorityCatalogMap();
 
     return this.enrichMyTask(
       task,
@@ -1272,11 +1249,9 @@ export class ProjectTaskService {
       throw new NotFoundException('Task not found or you do not have access');
     }
 
-    // Load lookup maps once — used for status side-effects and enrichment below
-    const [statusMap, priorityMap] = await Promise.all([
-      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
-      this.getLookupMap(LookupTypeCode.PRIORITY),
-    ]);
+    // Load catalog maps once — used for status side-effects and enrichment below
+    const statusMap = this.getStatusCatalogMap();
+    const priorityMap = this.getPriorityCatalogMap();
 
     // Handle status change through FSM validation
     if (dto.status && dto.status !== task.status) {
@@ -1580,16 +1555,8 @@ export class ProjectTaskService {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
 
-    if (!project.taskStatuses?.length) {
-      throw new BadRequestException(`Project ${projectId} has no task statuses configured.`);
-    }
-
-    const allowedCodes = project.taskStatuses.map((s) => s.code);
-
-    if (!allowedCodes.includes(newStatus)) {
-      throw new BadRequestException(
-        `Status '${newStatus}' is not a configured status for this project`,
-      );
+    if (!Object.values(TaskStatus).includes(newStatus)) {
+      throw new BadRequestException(`Status '${newStatus}' is not a valid task status`);
     }
 
     await this.workflowEngine.validateTransition(task, newStatus, project);
@@ -1810,10 +1777,9 @@ export class ProjectTaskService {
       hasDependencyBlockers: (task.dependsOnTaskIds ?? []).some((depId: string) => {
         const s = depStatusMap.get(depId);
         if (!s) return false;
-        // Unknown statuses (not in lookup) are treated as blocking — safe default
-        return statusMap.get(s)?.metadata.blocksDependents !== false;
+        // Unknown statuses (not in catalog) are treated as blocking — safe default
+        return taskStatusBlocksDependents(s);
       }),
-      projectTaskStatuses: task.project?.taskStatuses ?? [],
     };
   }
 
@@ -1841,10 +1807,10 @@ export class ProjectTaskService {
       }
     }
 
-    // Priority weight: entirely from DB metadata, default 0 if not configured
+    // Priority weight from shared catalog, default 0 if absent
     score += (priorityMap.get(task.priority)?.metadata.urgencyWeight as number | undefined) ?? 0;
 
-    // Status urgency penalty: entirely from DB metadata (e.g. blocked lowers score)
+    // Status urgency penalty from shared catalog (e.g. blocked lowers score)
     score -= (statusMap.get(task.status)?.metadata.urgencyPenalty as number | undefined) ?? 0;
 
     const daysSinceCreated = Math.floor(
@@ -1877,22 +1843,21 @@ export class ProjectTaskService {
 
   private groupByStatus(
     tasks: EnrichedMyTask[],
-    statusLookups: Array<{ code: string; label: string; metadata: Record<string, unknown> }>,
+    statusCatalog: Array<{ code: string; label: string; metadata: Record<string, unknown> }>,
   ): TaskGroup[] {
-    // Order, label, variant all come from DB — no hardcoded list
-    const groups = statusLookups.map((lookup) => {
-      const filtered = tasks.filter((t) => (t.status as string) === lookup.code);
+    const groups = statusCatalog.map((entry) => {
+      const filtered = tasks.filter((t) => (t.status as string) === entry.code);
       return {
-        key: lookup.code,
-        label: lookup.label,
+        key: entry.code,
+        label: entry.label,
         count: filtered.length,
-        variant: (lookup.metadata.variant as string) ?? 'secondary',
+        variant: (entry.metadata.variant as string) ?? 'secondary',
         tasks: filtered,
       };
     });
 
-    // Surface tasks whose status isn't in the lookup under a generic group
-    const knownCodes = new Set(statusLookups.map((l) => l.code));
+    // Surface tasks whose status isn't in the catalog under a generic group
+    const knownCodes = new Set(statusCatalog.map((e) => e.code));
     const unknown = tasks.filter((t) => !knownCodes.has(t.status as string));
     if (unknown.length > 0) {
       groups.push({
@@ -1991,7 +1956,6 @@ export class ProjectTaskService {
     tasks: EnrichedMyTask[],
     priorityMap: Map<string, { label: string; metadata: Record<string, unknown> }>,
   ): TaskGroup[] {
-    // Order comes from Map insertion order which matches DB orderIndex (set by getLookupMap)
     const groups: TaskGroup[] = [];
 
     for (const [code, entry] of priorityMap.entries()) {
@@ -2005,7 +1969,7 @@ export class ProjectTaskService {
       });
     }
 
-    // Surface tasks whose priority isn't in the lookup
+    // Surface tasks whose priority isn't in the catalog
     const knownCodes = new Set(priorityMap.keys());
     const unknown = tasks.filter((t) => !knownCodes.has(t.priority as string));
     if (unknown.length > 0) {
@@ -2021,16 +1985,44 @@ export class ProjectTaskService {
     return groups.filter((g) => g.count > 0);
   }
 
-  /**
-   * Returns a Map<code, { label, metadata }> for the given lookup typeCode.
-   * Carries both label and metadata so callers never need a second DB fetch for labels.
-   * Map insertion order matches DB orderIndex ASC (guaranteed by findByTypeCodeRaw).
-   */
-  private async getLookupMap(
-    typeCode: LookupTypeCode,
-  ): Promise<Map<string, { label: string; metadata: Record<string, unknown> }>> {
-    const rows = await this.lookupRepository.findByTypeCodeRaw(typeCode);
-    return new Map(rows.map((r) => [r.code, { label: r.label, metadata: r.metadata ?? {} }]));
+  private getStatusCatalogMap(): Map<string, { label: string; metadata: Record<string, unknown> }> {
+    return new Map(
+      Object.values(TASK_STATUS_CATALOG).map((e) => [
+        e.code,
+        {
+          label: e.label,
+          metadata: {
+            variant: e.variant,
+            isFinal: e.isFinal,
+            autoCompletePct: e.autoCompletePct,
+            autoSetStartDate: e.autoSetStartDate,
+            autoSetEndDate: e.autoSetEndDate,
+            blocksDependents: e.blocksDependents,
+            urgencyPenalty: e.urgencyPenalty,
+          },
+        },
+      ]),
+    );
+  }
+
+  private getPriorityCatalogMap(): Map<
+    string,
+    { label: string; metadata: Record<string, unknown> }
+  > {
+    return new Map(
+      [...Object.values(TASK_PRIORITY_CATALOG)]
+        .sort((a, b) => a.orderIndex - b.orderIndex)
+        .map((e) => [
+          e.code,
+          {
+            label: e.label,
+            metadata: {
+              variant: e.variant,
+              urgencyWeight: e.urgencyWeight,
+            },
+          },
+        ]),
+    );
   }
 
   /**

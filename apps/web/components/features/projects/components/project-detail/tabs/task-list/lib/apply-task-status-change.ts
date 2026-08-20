@@ -1,14 +1,9 @@
 'use client';
 
 import type { QueryClient } from '@tanstack/react-query';
-import { TaskStatus } from '@tejas96/shared/types';
+import { isFinalTaskStatus } from '@tejas96/shared/constants';
 
 import { PROJECT_TASKS_QUERY_KEY } from '../../../../../constants';
-
-/** Statuses where the backend auto-sets completionPercentage = 100.
- *  Any task that was ever in these statuses retains completionPercentage = 100
- *  in the DB until we explicitly reset it. */
-const FINAL_STATUSES = new Set<string>([TaskStatus.DONE, TaskStatus.CANCELLED]);
 
 interface CacheSnapshot {
   key: readonly unknown[];
@@ -22,7 +17,7 @@ export function resolveTaskStatusPayload(
   currentCompletionPct: number,
 ): { completionPercentage?: number } {
   const completionPercentage =
-    !FINAL_STATUSES.has(newStatus) && currentCompletionPct === 100 ? 0 : undefined;
+    !isFinalTaskStatus(newStatus) && currentCompletionPct === 100 ? 0 : undefined;
   return { completionPercentage };
 }
 
