@@ -206,7 +206,6 @@ export class ProjectTaskService {
       const depStatusMap = new Map<string, TaskStatus>(
         allProjectTasks.map((t) => [t.id, t.status]),
       );
-      const statusMap = this.getStatusCatalogMap();
 
       for (const task of data) {
         (task as any).hasDependencyBlockers = (task.dependsOnTaskIds ?? []).some(
@@ -238,7 +237,6 @@ export class ProjectTaskService {
 
     const allProjectTasks = await this.taskRepository.findByProjectRaw(projectId);
     const depStatusMap = new Map<string, TaskStatus>(allProjectTasks.map((t) => [t.id, t.status]));
-    const statusMap = this.getStatusCatalogMap();
 
     (task as any).hasDependencyBlockers = (task.dependsOnTaskIds ?? []).some((depId: string) => {
       const s = depStatusMap.get(depId);
@@ -513,7 +511,7 @@ export class ProjectTaskService {
     if (completionPercentage === 100) {
       const task = await this.findById(id, projectId);
       const finalStatus = getCompleteTaskStatus();
-      if ((task.status as string) !== finalStatus) {
+      if (task.status !== finalStatus) {
         await this.updateStatus(id, projectId, finalStatus, currentUserId);
         return this.findById(id, projectId);
       }
@@ -724,7 +722,6 @@ export class ProjectTaskService {
       this.teamRepository.findByProject(projectId),
       this.projectRepository.findOneById(projectId),
     ]);
-    const statusMap = this.getStatusCatalogMap();
 
     if (!project) {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
@@ -871,12 +868,12 @@ export class ProjectTaskService {
   async getMyTasksSummary(
     userId: string,
   ): Promise<{ total: number; overdue: number; dueToday: number; completedThisWeek: number }> {
-    const [allTasks, completedThisWeek, statusMap, priorityMap] = await Promise.all([
+    const [allTasks, completedThisWeek] = await Promise.all([
       this.taskRepository.findAllByUserId(userId, {}),
       this.taskRepository.countCompletedThisWeek(userId),
-      this.getStatusCatalogMap(),
-      this.getPriorityCatalogMap(),
     ]);
+    const statusMap = this.getStatusCatalogMap();
+    const priorityMap = this.getPriorityCatalogMap();
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -919,12 +916,12 @@ export class ProjectTaskService {
     };
     allProjects: Array<{ id: string; name: string; projectNumber: string }>;
   }> {
-    const [allTasks, completedThisWeek, statusMap, priorityMap] = await Promise.all([
+    const [allTasks, completedThisWeek] = await Promise.all([
       this.taskRepository.findAllByUserId(userId, {}),
       this.taskRepository.countCompletedThisWeek(userId),
-      this.getStatusCatalogMap(),
-      this.getPriorityCatalogMap(),
     ]);
+    const statusMap = this.getStatusCatalogMap();
+    const priorityMap = this.getPriorityCatalogMap();
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -990,11 +987,9 @@ export class ProjectTaskService {
   ): Promise<{ tasks: Record<string, unknown>[] }> {
     const narrowedFilters = this.buildGroupKeyFilters(groupBy, groupKey, filters);
 
-    const [tasks, statusMap, priorityMap] = await Promise.all([
-      this.taskRepository.findAllByUserId(userId, narrowedFilters),
-      this.getStatusCatalogMap(),
-      this.getPriorityCatalogMap(),
-    ]);
+    const tasks = await this.taskRepository.findAllByUserId(userId, narrowedFilters);
+    const statusMap = this.getStatusCatalogMap();
+    const priorityMap = this.getPriorityCatalogMap();
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -1222,10 +1217,8 @@ export class ProjectTaskService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [statusMap, priorityMap] = await Promise.all([
-      this.getStatusCatalogMap(),
-      this.getPriorityCatalogMap(),
-    ]);
+    const statusMap = this.getStatusCatalogMap();
+    const priorityMap = this.getPriorityCatalogMap();
 
     return this.enrichMyTask(
       task,
@@ -1257,10 +1250,8 @@ export class ProjectTaskService {
     }
 
     // Load catalog maps once — used for status side-effects and enrichment below
-    const [statusMap, priorityMap] = await Promise.all([
-      this.getStatusCatalogMap(),
-      this.getPriorityCatalogMap(),
-    ]);
+    const statusMap = this.getStatusCatalogMap();
+    const priorityMap = this.getPriorityCatalogMap();
 
     // Handle status change through FSM validation
     if (dto.status && dto.status !== task.status) {
