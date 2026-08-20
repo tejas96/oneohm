@@ -8,7 +8,7 @@ import {
 } from '@tejas96/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
-import { toNum } from '../../../../common/utils';
+import { systemSizeKwOf, toNum } from '../../../../common/utils';
 import { CustomerPropertyResponseDto } from '../../../customers/dto/customer-property-response.dto';
 import { MaterialResponseDto } from '../materials/material-response.dto';
 
@@ -78,7 +78,13 @@ export class ProjectResponseDto {
 
   @ApiProperty({ example: 5.5, description: 'Derived from latest quote version' })
   @Expose()
-  @Transform(({ obj }) => toNum(latestQuoteVersion(obj)?.systemSizeKw))
+  /*
+    The modules actually selected, not the figure quoted. See `systemSizeKwOf`.
+    This DTO reported the quoted number while the project's own auto-generated
+    NAME was already built from the wattage, so a project called "… - 3.42kW"
+    reported 3.00 through its own API.
+  */
+  @Transform(({ obj }) => systemSizeKwOf(latestQuoteVersion(obj) ?? {}))
   systemSizeKw!: number;
 
   @ApiPropertyOptional({

@@ -9,6 +9,7 @@ import {
 import { type EntityManager, IsNull, Repository } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { systemSizeKwSql } from '../../../common/utils/transform.util';
 import { ProjectEntity } from '../entities/project.entity';
 
 /**
@@ -42,7 +43,9 @@ export class ProjectRepository {
     createdAt: 'project.createdAt',
     startDate: 'project.startDate',
     endDate: 'project.endDate',
-    systemSizeKw: 'cv.systemSizeKw',
+    // Sorted by the same number the column displays, or the order disagrees
+    // with the values in it.
+    systemSizeKw: systemSizeKwSql('cv'),
     estimatedCost: 'cv.finalPrice',
     progressPercentage: 'project.progressPercentage',
     status: 'project.status',

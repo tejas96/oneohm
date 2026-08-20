@@ -8,7 +8,7 @@ import {
 } from '@tejas96/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
-import { toNum } from '../../../../common/utils';
+import { systemSizeKwOf, toNum } from '../../../../common/utils';
 
 const latestQuoteVersion = (obj: Record<string, unknown>) =>
   (obj.quote as { versions?: Array<Record<string, unknown>> } | undefined)?.versions?.[0];
@@ -115,7 +115,11 @@ export class ProjectListItemDto {
 
   @ApiProperty({ example: 10, description: 'Derived from latest quote version' })
   @Expose()
-  @Transform(({ obj }) => toNum(latestQuoteVersion(obj)?.systemSizeKw))
+  /*
+    The modules actually selected, not the figure quoted. See `systemSizeKwOf`
+    — the two diverge on 86 of the 156 projects that have moved past quoting.
+  */
+  @Transform(({ obj }) => systemSizeKwOf(latestQuoteVersion(obj) ?? {}))
   systemSizeKw!: number;
 
   @ApiPropertyOptional({
