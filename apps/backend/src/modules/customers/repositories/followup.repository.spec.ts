@@ -22,16 +22,33 @@ describe('FollowupRepository', () => {
   let count: any;
   let query: any;
 
+  let qb: any;
+  let createQueryBuilder: any;
+
   beforeEach(async () => {
     count = anyFn().mockResolvedValue(0);
     query = anyFn().mockResolvedValue([]);
+
+    /* Chainable stub: every builder method returns the builder. */
+    qb = {
+      andWhereCalls: [] as unknown[][],
+    };
+    for (const method of ['leftJoinAndSelect', 'where', 'orderBy', 'skip', 'take']) {
+      qb[method] = anyFn().mockReturnValue(qb);
+    }
+    qb.andWhere = jest.fn((...args: unknown[]) => {
+      qb.andWhereCalls.push(args);
+      return qb;
+    });
+    qb.getManyAndCount = anyFn().mockResolvedValue([[], 0]);
+    createQueryBuilder = anyFn().mockReturnValue(qb);
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         FollowupRepository,
         {
           provide: getRepositoryToken(FollowupEntity),
-          useValue: { count, manager: { query } },
+          useValue: { count, manager: { query }, createQueryBuilder },
         },
       ],
     }).compile();
@@ -95,6 +112,59 @@ describe('FollowupRepository', () => {
       const sql = String(query.mock.calls[0][0]);
       expect(sql).toContain('attributedUserId');
       expect(sql).toContain('created_by');
+    });
+  });
+
+  /**
+   * These two shipped a bug that nothing here would have caught: they built
+   * their day boundary from `new Date()`, which resolves in the API process's
+   * timezone, while `summaryCounts` above has always used `date_trunc('day',
+   * now())`, which resolves in the database's. With the API in IST and
+   * Postgres in UTC the same question got two answers, and My Day rendered a
+   * count of 2 directly above a list of 1.
+   *
+   * So these assert the boundary is expressed in SQL and never computed here.
+   * A future edit that reaches for a JS Date fails on the first assertion.
+   */
+  describe('day boundaries', () => {
+    const clauses = (): string =>
+      qb.andWhereCalls.map((call: unknown[]) => String(call[0])).join(' ');
+
+    it('scopes today by the database\'s day, not the process\'s', async () => {
+      await repo.findTodayFollowups('user-1');
+
+      expect(clauses()).toContain("date_trunc('day', now())");
+      expect(clauses()).toContain("interval '1 day'");
+    });
+
+    it('treats overdue as before TODAY, not before now', async () => {
+      await repo.findOverdueFollowups('user-1');
+
+      /*
+        This compared against `now()`, so a call booked for 09:00 became
+        overdue at 09:01. A conversation scheduled for 23:00 has not been
+        missed at 14:00.
+      */
+      expect(clauses()).toContain("followup.scheduledAt < date_trunc('day', now())");
+      expect(clauses()).not.toContain('scheduledAt < now()');
+      expect(clauses()).not.toContain("interval '1 day'");
+    });
+
+    it('returns only pending followups, scoped to the user asked for', async () => {
+      await repo.findTodayFollowups('user-1');
+
+      const bound = Object.assign({}, ...qb.andWhereCalls.map((call: unknown[]) => call[1] ?? {}));
+      expect(bound).toMatchObject({
+        status: FollowupStatus.PENDING,
+        assignedToUserId: 'user-1',
+      });
+    });
+
+    it('does not scope by user when none is given, so admin views still work', async () => {
+      await repo.findOverdueFollowups(undefined);
+
+      const bound = Object.assign({}, ...qb.andWhereCalls.map((call: unknown[]) => call[1] ?? {}));
+      expect(bound.assignedToUserId).toBeUndefined();
     });
   });
 
