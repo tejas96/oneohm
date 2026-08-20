@@ -141,27 +141,58 @@ export class FollowupRepository {
     page = 1,
     limit = 20,
   ): Promise<[FollowupEntity[], number]> {
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    /*
+      THE DAY BOUNDARY IS COMPUTED BY THE DATABASE, not by this process.
 
-    const where: Record<string, unknown> = {
-      scheduledAt: Between(startOfDay, endOfDay),
-      status: FollowupStatus.PENDING,
-      deletedAt: IsNull(),
-    };
+      This used to build the boundary from `new Date()`, which resolves in the
+      Node process's timezone, while `getSummary` below has always used
+      `date_trunc('day', now())`, which resolves in the database's. With the
+      API in IST and Postgres in UTC the two disagreed by five and a half
+      hours, so `/followups/summary` and `/followups/today` returned different
+      answers for the same question — a count of 2 above a list of 1 on My Day.
+
+      One basis, and it is the database's, because that is where `scheduled_at`
+      is stored and compared.
+    */
+    return this.scopedByDay(
+      'followup.scheduledAt >= date_trunc(\'day\', now()) ' +
+        "AND followup.scheduledAt < date_trunc('day', now()) + interval '1 day'",
+      assignedToUserId,
+      page,
+      limit,
+    );
+  }
+
+  /**
+   * Shared by today and overdue so the two can never drift apart again.
+   *
+   * `where` is a fragment over `followup.scheduledAt`, evaluated in the
+   * database.
+   */
+  private scopedByDay(
+    scheduledAtClause: string,
+    assignedToUserId: string | undefined,
+    page: number,
+    limit: number,
+  ): Promise<[FollowupEntity[], number]> {
+    const qb = this.repository
+      .createQueryBuilder('followup')
+      .leftJoinAndSelect('followup.customer', 'customer')
+      .leftJoinAndSelect('followup.property', 'property')
+      .leftJoinAndSelect('followup.assignedToUser', 'assignedToUser')
+      .where('followup.deletedAt IS NULL')
+      .andWhere('followup.status = :status', { status: FollowupStatus.PENDING })
+      .andWhere(scheduledAtClause);
 
     if (assignedToUserId) {
-      where.assignedToUserId = assignedToUserId;
+      qb.andWhere('followup.assignedToUserId = :assignedToUserId', { assignedToUserId });
     }
 
-    return this.repository.findAndCount({
-      where,
-      relations: ['customer', 'property', 'assignedToUser'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { scheduledAt: 'ASC' },
-    });
+    return qb
+      .orderBy('followup.scheduledAt', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
   }
 
   /**
@@ -172,25 +203,20 @@ export class FollowupRepository {
     page = 1,
     limit = 20,
   ): Promise<[FollowupEntity[], number]> {
-    const now = new Date();
+    /*
+      OVERDUE MEANS BEFORE TODAY, NOT BEFORE NOW.
 
-    const where: Record<string, unknown> = {
-      scheduledAt: LessThan(now),
-      status: FollowupStatus.PENDING,
-      deletedAt: IsNull(),
-    };
-
-    if (assignedToUserId) {
-      where.assignedToUserId = assignedToUserId;
-    }
-
-    return this.repository.findAndCount({
-      where,
-      relations: ['customer', 'property', 'assignedToUser'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { scheduledAt: 'ASC' },
-    });
+      This compared against `now()`, so a call booked for 09:00 became overdue
+      at 09:01 — while `getSummary` counted it as today's until midnight. A
+      conversation scheduled for 23:00 today has not been missed at 14:00, and
+      the screen that shows both must not say otherwise.
+    */
+    return this.scopedByDay(
+      "followup.scheduledAt < date_trunc('day', now())",
+      assignedToUserId,
+      page,
+      limit,
+    );
   }
 
   /**
