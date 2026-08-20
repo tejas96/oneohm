@@ -276,13 +276,10 @@ export class ProjectRepository {
           subQuery
             .select('pt.project_id', 'project_id')
             .addSelect(
-              "COUNT(pt.id) FILTER (WHERE pt.status NOT IN ('done', 'cancelled') AND pt.end_date < CURRENT_DATE)",
+              "COUNT(pt.id) FILTER (WHERE pt.status != 'done' AND pt.end_date < CURRENT_DATE)",
               'overdue_count',
             )
-            .addSelect(
-              "MIN(pt.end_date) FILTER (WHERE pt.status NOT IN ('done', 'cancelled'))",
-              'next_due_date',
-            )
+            .addSelect("MIN(pt.end_date) FILTER (WHERE pt.status != 'done')", 'next_due_date')
             .addSelect(
               `MIN(CASE pt.priority 
                 WHEN 'urgent' THEN 1 
@@ -453,7 +450,7 @@ export class ProjectRepository {
 
   /**
    * Get task counts (completedTasks, totalTasks) for a list of project IDs.
-   * Excludes deleted tasks. Excludes cancelled tasks from total count.
+   * Excludes soft-deleted tasks. totalTasks is all tasks; completedTasks is done only.
    */
   async getTaskCounts(
     projectIds: string[],
@@ -464,7 +461,7 @@ export class ProjectRepository {
       .createQueryBuilder()
       .select('task.project_id', 'projectId')
       .addSelect("COUNT(*) FILTER (WHERE task.status = 'done')", 'completedTasks')
-      .addSelect("COUNT(*) FILTER (WHERE task.status != 'cancelled')", 'totalTasks')
+      .addSelect('COUNT(*)', 'totalTasks')
       .from('project_tasks', 'task')
       .where('task.project_id IN (:...projectIds)', { projectIds })
       .andWhere('task.deleted_at IS NULL')

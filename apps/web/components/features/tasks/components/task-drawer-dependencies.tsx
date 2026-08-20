@@ -11,12 +11,8 @@ import { cn } from '@/lib/utils';
 
 const STATUS_INDICATOR: Record<string, { color: string; label: string }> = {
   [TaskStatus.DONE]: { color: 'text-success', label: 'Done' },
-  [TaskStatus.CANCELLED]: { color: 'text-foreground-muted', label: 'Cancelled' },
   [TaskStatus.IN_PROGRESS]: { color: 'text-info', label: 'In progress' },
-  [TaskStatus.TODO]: { color: 'text-foreground-secondary', label: 'To do' },
   [TaskStatus.BLOCKED]: { color: 'text-error', label: 'Blocked' },
-  [TaskStatus.IN_REVIEW]: { color: 'text-warning', label: 'In review' },
-  [TaskStatus.TESTING]: { color: 'text-info', label: 'Testing' },
   [TaskStatus.BACKLOG]: { color: 'text-foreground-muted', label: 'Backlog' },
 };
 

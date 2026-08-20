@@ -44,13 +44,9 @@ const PRIORITY_OPTIONS: MUISelectOption[] = (
 
 const DEFAULT_STATUS_COLOR: Record<string, string> = {
   [TaskStatus.BACKLOG]: '#94a3b8',
-  [TaskStatus.TODO]: '#60a5fa',
   [TaskStatus.IN_PROGRESS]: '#f59e0b',
-  [TaskStatus.IN_REVIEW]: '#a78bfa',
-  [TaskStatus.TESTING]: '#ec4899',
   [TaskStatus.BLOCKED]: '#ef4444',
   [TaskStatus.DONE]: '#22c55e',
-  [TaskStatus.CANCELLED]: '#6b7280',
 };
 
 /**

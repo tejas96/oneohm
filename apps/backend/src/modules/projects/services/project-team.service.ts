@@ -171,7 +171,7 @@ export class ProjectTeamService {
         'inProgressTaskCount',
       )
       .addSelect(
-        `COALESCE(SUM(CASE WHEN t.status NOT IN ('${TaskStatus.DONE}', '${TaskStatus.CANCELLED}') AND t.id IS NOT NULL THEN 1 ELSE 0 END), 0)`,
+        `COALESCE(SUM(CASE WHEN t.status != '${TaskStatus.DONE}' AND t.id IS NOT NULL THEN 1 ELSE 0 END), 0)`,
         'notCompletedTaskCount',
       )
       .innerJoin('users', 'u', 'u.id = tm.userId')

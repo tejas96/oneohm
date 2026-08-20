@@ -146,7 +146,7 @@ export class ProjectService {
         .where('task.projectId IN (:...projectIds)', { projectIds })
         .andWhere('task.assignedToUserId = :sortingUserId', { sortingUserId })
         .andWhere('task.status NOT IN (:...terminalStatuses)', {
-          terminalStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
+          terminalStatuses: [TaskStatus.DONE],
         })
         .andWhere('task.deletedAt IS NULL')
         .orderBy('task.endDate', 'ASC')
@@ -175,7 +175,7 @@ export class ProjectService {
         .where('task.projectId IN (:...projectIds)', { projectIds })
         .andWhere('task.assignedToUserId = :sortingUserId', { sortingUserId })
         .andWhere('task.status NOT IN (:...terminalStatuses)', {
-          terminalStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
+          terminalStatuses: [TaskStatus.DONE],
         })
         .andWhere('task.endDate < :todayStr', { todayStr })
         .andWhere('task.deletedAt IS NULL')
@@ -687,7 +687,7 @@ export class ProjectService {
    */
   async computeCurrentPhaseFromTasks(projectId: string): Promise<string | null> {
     const allTasks = await this.taskRepository.findAllForBoard(projectId);
-    const terminalStatuses = new Set([TaskStatus.DONE, TaskStatus.CANCELLED]);
+    const terminalStatuses = new Set([TaskStatus.DONE]);
 
     const activeTasks = allTasks.filter((t) => !terminalStatuses.has(t.status) && t.milestoneName);
 

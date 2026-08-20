@@ -653,6 +653,9 @@ export class ProjectTaskService {
         if (!existingTask.endDate) setClause.endDate = new Date();
         if (statusMeta.autoCompletePct !== undefined)
           setClause.completionPercentage = statusMeta.autoCompletePct;
+        setClause.completedAt = new Date();
+      } else if (existingTask.completedAt) {
+        setClause.completedAt = null;
       }
 
       const updateResult = await manager

@@ -119,8 +119,7 @@ export function TaskDrawer({
       // Derive completionPercentage from checklist completion ratio, but only when
       // the task is in an active (non-final) status. Final statuses (done/cancelled)
       // are auto-set to 100% by the backend and should not be overridden by checklist math.
-      const isFinalStatus =
-        task?.status === TaskStatus.DONE || task?.status === TaskStatus.CANCELLED;
+      const isFinalStatus = task?.status === TaskStatus.DONE;
       const completionPercentage =
         !isFinalStatus && checklist.items.length > 0
           ? Math.round(

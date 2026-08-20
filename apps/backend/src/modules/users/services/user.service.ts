@@ -353,7 +353,7 @@ export class UserService {
       .innerJoin('projects', 'p', 'p.id = pt.project_id AND p.deleted_at IS NULL')
       .where('pt.assigned_to_user_id = :userId', { userId: id })
       .andWhere('pt.deleted_at IS NULL')
-      .andWhere("pt.status NOT IN ('done', 'cancelled')")
+      .andWhere("pt.status != 'done'")
       .getRawOne<{ count: string }>();
 
     const pendingTasks = parseInt(activeTaskCount?.count ?? '0', 10);
@@ -436,7 +436,7 @@ export class UserService {
         .innerJoin('projects', 'p', 'p.id = pt.project_id AND p.deleted_at IS NULL')
         .where('pt.assigned_to_user_id = :userId', { userId: id })
         .andWhere('pt.deleted_at IS NULL')
-        .andWhere("pt.status NOT IN ('done', 'cancelled')")
+        .andWhere("pt.status != 'done'")
         .getRawOne<{ count: string }>();
 
       const pendingTasks = parseInt(activeTaskCount?.count ?? '0', 10);

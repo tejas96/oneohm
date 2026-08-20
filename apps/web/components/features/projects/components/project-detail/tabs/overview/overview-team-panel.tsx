@@ -26,7 +26,7 @@ function countNonCompletedTasks(tasksByStatus: Record<string, number> | undefine
   if (!tasksByStatus) return 0;
   return Object.entries(tasksByStatus).reduce((sum, [rawCode, count]) => {
     const code = rawCode as TaskStatus;
-    if (code === TaskStatus.DONE || code === TaskStatus.CANCELLED) return sum;
+    if (code === TaskStatus.DONE) return sum;
     return sum + count;
   }, 0);
 }

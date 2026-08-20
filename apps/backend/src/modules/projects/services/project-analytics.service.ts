@@ -39,7 +39,7 @@ export class ProjectAnalyticsService {
 
     const now = new Date();
     const upcomingCutoff = new Date(now.getTime() + UPCOMING_DEADLINE_DAYS * 24 * 60 * 60 * 1000);
-    const terminalStatuses = new Set([TaskStatus.DONE, TaskStatus.CANCELLED]);
+    const terminalStatuses = new Set([TaskStatus.DONE]);
 
     // ── Aggregations by status and priority ─────────────────────────────────
     const tasksByStatus: Record<string, number> = {};
@@ -197,9 +197,7 @@ export class ProjectAnalyticsService {
     assignedEntries.sort((a, b) => b.totalTasks - a.totalTasks);
     teamWorkload.push(...assignedEntries);
 
-    // ── Milestone progress ───────────────────────────────────────────────────
     // Aggregate directly from task fields (milestone_name, milestone_order).
-    // Cancelled tasks are excluded from both numerator and denominator.
     const milestoneAggMap = new Map<
       string,
       {
@@ -214,7 +212,6 @@ export class ProjectAnalyticsService {
 
     for (const task of allTasks) {
       if (!task.milestoneName) continue;
-      if (task.status === TaskStatus.CANCELLED) continue;
 
       const key = task.milestoneName;
       if (!milestoneAggMap.has(key)) {
@@ -230,8 +227,7 @@ export class ProjectAnalyticsService {
       const entry = milestoneAggMap.get(key)!;
       entry.totalTasks++;
       if (task.status === TaskStatus.DONE) entry.completedTasks++;
-      if (task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.IN_REVIEW)
-        entry.inProgressTasks++;
+      if (task.status === TaskStatus.IN_PROGRESS) entry.inProgressTasks++;
       if (task.status === TaskStatus.BLOCKED) entry.blockedTasks++;
     }
 
@@ -260,7 +256,6 @@ export class ProjectAnalyticsService {
   /**
    * Standalone milestone aggregation endpoint.
    * Returns one row per distinct milestone_name, derived live from project_tasks.
-   * Cancelled tasks are excluded from all counts.
    */
   async ensureProjectAccess(projectId: string): Promise<void> {
     const project = await this.projectRepository.findById(projectId);
@@ -300,7 +295,6 @@ export class ProjectAnalyticsService {
 
     for (const task of allTasks) {
       if (!task.milestoneName) continue;
-      if (task.status === TaskStatus.CANCELLED) continue;
 
       const key = task.milestoneName;
       if (!aggMap.has(key)) {
@@ -317,8 +311,7 @@ export class ProjectAnalyticsService {
       const entry = aggMap.get(key)!;
       entry.totalTasks++;
       if (task.status === TaskStatus.DONE) entry.completedTasks++;
-      if (task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.IN_REVIEW)
-        entry.inProgressTasks++;
+      if (task.status === TaskStatus.IN_PROGRESS) entry.inProgressTasks++;
       if (task.status === TaskStatus.BLOCKED) entry.blockedTasks++;
     }
 

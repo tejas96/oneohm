@@ -40,6 +40,14 @@ export interface TaskPriorityOption {
   variant: string;
 }
 
+/** The only task statuses supported across the product. */
+export const SUPPORTED_TASK_STATUSES: readonly TaskStatus[] = [
+  TaskStatus.BACKLOG,
+  TaskStatus.IN_PROGRESS,
+  TaskStatus.BLOCKED,
+  TaskStatus.DONE,
+] as const;
+
 /** Canonical task status catalog for all projects. */
 export const TASK_STATUS_CATALOG: Record<TaskStatus, TaskStatusCatalogEntry> = {
   [TaskStatus.BACKLOG]: {
@@ -49,43 +57,20 @@ export const TASK_STATUS_CATALOG: Record<TaskStatus, TaskStatusCatalogEntry> = {
     orderIndex: 1,
     variant: 'secondary',
   },
-  [TaskStatus.TODO]: {
-    code: TaskStatus.TODO,
-    label: 'To Do',
-    color: '#6B7280',
-    orderIndex: 2,
-    variant: 'secondary',
-  },
   [TaskStatus.IN_PROGRESS]: {
     code: TaskStatus.IN_PROGRESS,
     label: 'In Progress',
     color: '#3B82F6',
-    orderIndex: 3,
+    orderIndex: 2,
     variant: 'info',
     autoSetStartDate: true,
-    blocksDependents: true,
-  },
-  [TaskStatus.IN_REVIEW]: {
-    code: TaskStatus.IN_REVIEW,
-    label: 'In Review',
-    color: '#F59E0B',
-    orderIndex: 4,
-    variant: 'warning',
-    blocksDependents: true,
-  },
-  [TaskStatus.TESTING]: {
-    code: TaskStatus.TESTING,
-    label: 'Testing',
-    color: '#3B82F6',
-    orderIndex: 5,
-    variant: 'info',
     blocksDependents: true,
   },
   [TaskStatus.BLOCKED]: {
     code: TaskStatus.BLOCKED,
     label: 'Blocked',
     color: '#EF4444',
-    orderIndex: 6,
+    orderIndex: 3,
     variant: 'error',
     urgencyPenalty: 20,
     blocksDependents: true,
@@ -94,20 +79,10 @@ export const TASK_STATUS_CATALOG: Record<TaskStatus, TaskStatusCatalogEntry> = {
     code: TaskStatus.DONE,
     label: 'Done',
     color: '#22C55E',
-    orderIndex: 7,
+    orderIndex: 4,
     variant: 'success',
     isFinal: true,
     autoCompletePct: 100,
-    autoSetEndDate: true,
-    blocksDependents: false,
-  },
-  [TaskStatus.CANCELLED]: {
-    code: TaskStatus.CANCELLED,
-    label: 'Cancelled',
-    color: '#EF4444',
-    orderIndex: 8,
-    variant: 'error',
-    isFinal: true,
     autoSetEndDate: true,
     blocksDependents: false,
   },
@@ -177,12 +152,18 @@ export const TASK_PRIORITY_OPTIONS: TaskPriorityOption[] = Object.values(TASK_PR
     variant: e.variant,
   }));
 
+export function isSupportedTaskStatus(status: string): status is TaskStatus {
+  return SUPPORTED_TASK_STATUSES.includes(status as TaskStatus);
+}
+
+/** Maps legacy/unknown statuses to backlog — used only as a defensive read helper. */
+export function normalizeTaskStatus(status: string): TaskStatus {
+  return isSupportedTaskStatus(status) ? status : TaskStatus.BACKLOG;
+}
+
 export function getTaskStatusCatalogEntry(status: TaskStatus | string): TaskStatusCatalogEntry {
-  const entry = TASK_STATUS_CATALOG[status as TaskStatus];
-  if (!entry) {
-    throw new Error(`Unknown task status: ${status}`);
-  }
-  return entry;
+  const normalized = normalizeTaskStatus(status);
+  return TASK_STATUS_CATALOG[normalized];
 }
 
 export function getTaskPriorityCatalogEntry(
@@ -196,17 +177,16 @@ export function getTaskPriorityCatalogEntry(
 }
 
 export function isFinalTaskStatus(status: TaskStatus | string): boolean {
-  const entry = TASK_STATUS_CATALOG[status as TaskStatus];
-  return entry?.isFinal === true;
+  const entry = getTaskStatusCatalogEntry(status);
+  return entry.isFinal === true;
 }
 
 /**
  * A task *in* this status blocks dependent tasks.
- * Semantics: blocksDependents !== false (backlog/todo block; done/cancelled do not).
+ * Semantics: blocksDependents !== false (backlog blocks; done does not).
  */
 export function taskStatusBlocksDependents(status: TaskStatus | string): boolean {
-  const entry = TASK_STATUS_CATALOG[status as TaskStatus];
-  if (!entry) return true;
+  const entry = getTaskStatusCatalogEntry(status);
   return entry.blocksDependents !== false;
 }
 
@@ -216,8 +196,7 @@ export function taskStatusBlocksDependents(status: TaskStatus | string): boolean
  * (isFinal && autoCompletePct === 100).
  */
 export function taskStatusRequiresResolvedDependencies(status: TaskStatus | string): boolean {
-  const entry = TASK_STATUS_CATALOG[status as TaskStatus];
-  if (!entry) return false;
+  const entry = getTaskStatusCatalogEntry(status);
   return (
     (entry.blocksDependents === true && status !== TaskStatus.BLOCKED) ||
     (entry.isFinal === true && entry.autoCompletePct === 100)
@@ -225,8 +204,7 @@ export function taskStatusRequiresResolvedDependencies(status: TaskStatus | stri
 }
 
 export function getCompleteTaskStatus(): TaskStatus {
-  const found = Object.values(TASK_STATUS_CATALOG).find((e) => e.autoCompletePct === 100);
-  return found?.code ?? TaskStatus.DONE;
+  return TaskStatus.DONE;
 }
 
 /** Label maps derived from catalog (backward-compatible exports). */
