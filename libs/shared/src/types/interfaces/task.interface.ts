@@ -1,9 +1,4 @@
-import type {
-  FileAttachment,
-  TaskActivityEntry,
-  TaskChecklist,
-  TaskStatusConfig,
-} from './project.interface';
+import type { FileAttachment, TaskActivityEntry, TaskChecklist } from './project.interface';
 import { type TaskPriority, TaskStatus } from '../enums/project.enum';
 
 // ============================================================================
@@ -94,7 +89,6 @@ export interface MyTask extends ProjectTask {
   dependencyNames?: string[];
   dependencyCodes?: string[];
   hasDependencyBlockers?: boolean;
-  projectTaskStatuses?: TaskStatusConfig[];
 }
 
 /** Slim task shape for My Tasks list rows (no activityLog, checklist, attachments). */
@@ -122,10 +116,6 @@ export interface MyTasksProject {
   projectNumber: string;
 }
 
-export interface MyTasksProjectMeta {
-  taskStatuses: TaskStatusConfig[];
-}
-
 export interface MyTasksSummary {
   total: number;
   overdue: number;
@@ -144,8 +134,6 @@ export interface MyTasksGroup {
 export interface GroupedMyTasksResponse {
   groups: MyTasksGroup[];
   summary: MyTasksSummary;
-  /** Status dropdown configs keyed by projectId (deduped from visible tasks). */
-  projectMeta: Record<string, MyTasksProjectMeta>;
   /** Actionable projects for filter dropdown (unfiltered when list filters are active). */
   allProjects: MyTasksProject[];
 }
@@ -169,24 +157,7 @@ export interface MyTaskFilters {
 }
 
 // ============================================================================
-// Task Label Maps (shared between frontend & backend)
+// Task Label Maps (re-exported from task catalog)
 // ============================================================================
 
-export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
-  backlog: 'Backlog',
-  todo: 'To Do',
-  in_progress: 'In Progress',
-  in_review: 'In Review',
-  testing: 'Testing',
-  blocked: 'Blocked',
-  done: 'Done',
-  cancelled: 'Cancelled',
-};
-
-export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {
-  low: 'Low',
-  medium: 'Medium',
-  normal: 'Normal',
-  high: 'High',
-  urgent: 'Urgent',
-};
+export { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '../../constants/task-catalog';

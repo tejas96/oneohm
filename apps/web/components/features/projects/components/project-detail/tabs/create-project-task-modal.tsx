@@ -9,7 +9,8 @@ import {
   type SelectChangeEvent,
   Typography,
 } from '@mui/material';
-import { TaskPriority, TaskStatus, type TaskStatusConfig } from '@tejas96/shared/types';
+import { TASK_STATUS_OPTIONS, type TaskStatusOption } from '@tejas96/shared/constants';
+import { TaskPriority, TaskStatus } from '@tejas96/shared/types';
 import { type JSX, useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
@@ -41,7 +42,7 @@ interface CreateProjectTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
-  taskStatuses: TaskStatusConfig[];
+  taskStatuses?: TaskStatusOption[];
   /** If provided, the modal pre-selects this status when opening (e.g. from a board column footer). */
   preselectedStatus?: string | null;
 }
@@ -58,7 +59,7 @@ export function CreateProjectTaskModal({
   open,
   onOpenChange,
   projectId,
-  taskStatuses,
+  taskStatuses = TASK_STATUS_OPTIONS,
   preselectedStatus,
 }: CreateProjectTaskModalProps): JSX.Element {
   const createTaskMutation = useCreateProjectTask(projectId);
@@ -70,7 +71,7 @@ export function CreateProjectTaskModal({
     () =>
       [...taskStatuses]
         .sort((a, b) => a.orderIndex - b.orderIndex)
-        .map((status) => ({ value: status.code, label: status.label })),
+        .map((status) => ({ value: status.value, label: status.label })),
     [taskStatuses],
   );
   const defaultStatus = statusOptions[0]?.value ?? TaskStatus.BACKLOG;

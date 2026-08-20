@@ -1,9 +1,4 @@
-import {
-  ProjectPriority,
-  ProjectStatus,
-  type ProjectMetadata,
-  type TaskStatusConfig,
-} from '@tejas96/shared/types';
+import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@tejas96/shared/types';
 import {
   Column,
   DeleteDateColumn,
@@ -106,9 +101,6 @@ export class ProjectEntity extends BaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   metadata?: ProjectMetadata;
-
-  @Column({ name: 'task_statuses', type: 'jsonb', nullable: true })
-  taskStatuses?: TaskStatusConfig[];
 
   // ==================== Ownership / Audit ====================
 

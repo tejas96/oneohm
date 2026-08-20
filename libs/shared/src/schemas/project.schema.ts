@@ -1,13 +1,6 @@
 import { z } from 'zod';
 
-import { ProjectPriority, TaskStatus } from '../types/enums';
-
-const taskStatusConfigSchema = z.object({
-  code: z.nativeEnum(TaskStatus),
-  label: z.string().min(1, 'Label is required'),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Color must be a valid hex color (e.g. #6B7280)'),
-  orderIndex: z.number().int().min(1),
-});
+import { ProjectPriority } from '../types/enums';
 
 const isoDateOrEmpty = z
   .string()
@@ -62,7 +55,6 @@ export const projectCreateSchema = z
         },
         { message: 'Milestone names must be unique within a project' },
       ),
-    taskStatuses: z.array(taskStatusConfigSchema).min(1, 'At least one task status is required'),
   })
   .refine((d) => !d.startDate || !d.endDate || new Date(d.endDate) >= new Date(d.startDate), {
     message: 'End date must be on or after start date',

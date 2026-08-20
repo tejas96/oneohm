@@ -1,10 +1,7 @@
 'use client';
 
-import {
-  type TaskPriority,
-  type TaskStatusConfig,
-  TASK_PRIORITY_LABELS,
-} from '@tejas96/shared/types';
+import { type TaskStatusOption } from '@tejas96/shared/constants';
+import { type TaskPriority, TASK_PRIORITY_LABELS } from '@tejas96/shared/types';
 import { ChevronDown, ChevronRight, Lock, Minus } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
@@ -21,7 +18,7 @@ import { cn, formatDate, getDueDateColor, getInitials } from '@/lib/utils';
 
 interface TaskListTableProps {
   tasks: ProjectTaskItem[];
-  taskStatuses: TaskStatusConfig[];
+  taskStatuses: TaskStatusOption[];
   isLoading: boolean;
   onOpenTask: (taskId: string) => void;
   onStatusChange?: (
@@ -400,18 +397,14 @@ export function TaskListTable({
   const statusOptions = useMemo<MUISelectOption[]>(
     () =>
       taskStatuses.map((s) => ({
-        value: s.code,
+        value: s.value,
         label: <ColorDotLabel color={s.color} label={s.label} />,
       })),
     [taskStatuses],
   );
 
   const groups = useMemo<TaskGroup[]>(() => {
-    if (taskStatuses.length === 0) {
-      return tasks.length > 0 ? [{ code: 'other', label: 'Other', color: '#94a3b8', tasks }] : [];
-    }
-
-    const statusMap = new Map<string, TaskStatusConfig>(taskStatuses.map((s) => [s.code, s]));
+    const statusMap = new Map<string, TaskStatusOption>(taskStatuses.map((s) => [s.value, s]));
     const groupMap = new Map<string, ProjectTaskItem[]>();
 
     for (const task of tasks) {
@@ -429,10 +422,10 @@ export function TaskListTable({
 
     const result: TaskGroup[] = [];
     for (const s of taskStatuses) {
-      const groupTasks = groupMap.get(s.code);
+      const groupTasks = groupMap.get(s.value);
       if (groupTasks && groupTasks.length > 0) {
         result.push({
-          code: s.code,
+          code: s.value,
           label: s.label,
           color: s.color,
           tasks: sortSpecialFirst(groupTasks),

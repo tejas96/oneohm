@@ -5,7 +5,7 @@ import Box from '@mui/material/Box';
 import Collapse from '@mui/material/Collapse';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
-import type { MyTaskListItem, MyTasksProjectMeta } from '@tejas96/shared/types';
+import type { MyTaskListItem } from '@tejas96/shared/types';
 import { useEffect, useState } from 'react';
 
 import { TASK_GROUP_VARIANT_MAP } from '../constants';
@@ -69,7 +69,6 @@ interface CollapsibleTaskGroupProps {
   ) => void;
   onPriorityChange?: (taskId: string, newPriority: string) => void;
   focusedTaskId?: string;
-  projectMeta?: Record<string, MyTasksProjectMeta>;
   isLoadingTasks?: boolean;
   isTasksError?: boolean;
   onRetryTasks?: () => void;
@@ -88,7 +87,6 @@ export function CollapsibleTaskGroup({
   onStatusChange,
   onPriorityChange,
   focusedTaskId,
-  projectMeta = {},
   isLoadingTasks = false,
   isTasksError = false,
   onRetryTasks,
@@ -260,7 +258,6 @@ export function CollapsibleTaskGroup({
             <TaskRow
               key={task.id}
               task={task}
-              projectMeta={projectMeta[task.projectId]}
               onOpenDrawer={onOpenDrawer}
               onStatusChange={onStatusChange}
               onPriorityChange={onPriorityChange}

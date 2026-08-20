@@ -1,7 +1,8 @@
 'use client';
 
-import { MenuItem, Box, Link as MuiLink, Skeleton, Typography } from '@mui/material';
-import { type TaskPriority, type TaskStatus, type TaskStatusConfig } from '@tejas96/shared/types';
+import { MenuItem, Box, Link as MuiLink, Typography } from '@mui/material';
+import { type TaskStatusOption } from '@tejas96/shared/constants';
+import { type TaskPriority, type TaskStatus } from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { useMemo, useCallback } from 'react';
 
@@ -28,8 +29,7 @@ interface TaskDrawerMetadataProps {
   endDate?: string | null;
   createdAt: string;
   updatedAt: string;
-  taskStatuses: TaskStatusConfig[];
-  statusesLoading?: boolean;
+  taskStatuses: TaskStatusOption[];
   hasDependencyBlockers?: boolean;
   onStatusChange: (status: TaskStatus) => void;
   onPriorityChange: (priority: TaskPriority) => void;
@@ -98,20 +98,18 @@ export function TaskDrawerMetadata({
   createdAt,
   updatedAt,
   taskStatuses,
-  statusesLoading = false,
   hasDependencyBlockers = false,
   onStatusChange,
   onPriorityChange,
   onAssigneeChange,
   onDueDateChange,
 }: TaskDrawerMetadataProps): React.JSX.Element {
-  // No fallback — statuses come from the project's configured lookup data
+  // Status options from shared task catalog
   const allStatuses = taskStatuses;
   const projectHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: projectId });
 
-  // Label for the current status — falls back to TASK_STATUS_LABELS for out-of-config statuses
   const currentStatusLabel = useMemo(() => {
-    const found = allStatuses.find((s) => s.code === status);
+    const found = allStatuses.find((s) => s.value === status);
     return found?.label ?? TASK_STATUS_LABELS[status];
   }, [allStatuses, status]);
 
@@ -146,29 +144,25 @@ export function TaskDrawerMetadata({
       {/* Status */}
       <Box>
         <FieldLabel>Status</FieldLabel>
-        {statusesLoading ? (
-          <Skeleton variant="rounded" height={34} sx={{ borderRadius: 'var(--radius-rf-md)' }} />
-        ) : (
-          <MUISelect
-            value={status}
-            onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
-            formControlProps={{ fullWidth: true, size: 'small', sx: { margin: 0 } }}
-            MenuProps={{ disablePortal: true }}
-            disabled={hasDependencyBlockers}
-          >
-            <MenuItem value={status} disabled>
-              {currentStatusLabel} (current)
-            </MenuItem>
-            {allStatuses
-              .filter((s) => s.code !== status)
-              .map((s) => (
-                <MenuItem key={s.code} value={s.code}>
-                  {s.label}
-                </MenuItem>
-              ))}
-          </MUISelect>
-        )}
-        {hasDependencyBlockers && !statusesLoading && (
+        <MUISelect
+          value={status}
+          onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
+          formControlProps={{ fullWidth: true, size: 'small', sx: { margin: 0 } }}
+          MenuProps={{ disablePortal: true }}
+          disabled={hasDependencyBlockers}
+        >
+          <MenuItem value={status} disabled>
+            {currentStatusLabel} (current)
+          </MenuItem>
+          {allStatuses
+            .filter((s) => s.value !== status)
+            .map((s) => (
+              <MenuItem key={s.value} value={s.value}>
+                {s.label}
+              </MenuItem>
+            ))}
+        </MUISelect>
+        {hasDependencyBlockers && (
           <FieldHint tone="warning">Complete every dependency before changing status.</FieldHint>
         )}
       </Box>

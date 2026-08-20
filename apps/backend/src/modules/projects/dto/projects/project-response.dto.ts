@@ -4,7 +4,6 @@ import {
   ProjectStatus,
   type ProjectMetadata,
   type QuoteSnapshot,
-  type TaskStatusConfig,
 } from '@tejas96/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
@@ -223,10 +222,6 @@ export class ProjectResponseDto {
   @Expose()
   @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   metadata?: ProjectMetadata;
-
-  @ApiPropertyOptional({ description: 'Configured task statuses for this project' })
-  @Expose()
-  taskStatuses?: TaskStatusConfig[];
 
   // ==================== Related Entities ====================
 

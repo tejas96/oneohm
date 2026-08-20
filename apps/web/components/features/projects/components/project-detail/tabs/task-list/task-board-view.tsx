@@ -201,7 +201,7 @@ export function TaskBoardView({
   if (columns.length === 0) {
     return (
       <Alert severity="info" sx={{ mt: 2 }}>
-        Configure task statuses for this project to use the board.
+        No tasks to show on the board.
       </Alert>
     );
   }

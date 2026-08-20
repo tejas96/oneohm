@@ -1,6 +1,7 @@
 'use client';
 
-import type { TaskStatusConfig } from '@tejas96/shared/types';
+import { TASK_STATUS_CATALOG } from '@tejas96/shared/constants';
+import type { TaskStatus } from '@tejas96/shared/types';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 
@@ -17,10 +18,9 @@ const FALLBACK_BAR_COLOR = '#94a3b8';
 interface WorkloadBarProps {
   tasksByStatus: Record<string, number>;
   totalTasks: number;
-  taskStatuses: TaskStatusConfig[] | null | undefined;
 }
 
-function WorkloadBar({ tasksByStatus, totalTasks, taskStatuses }: WorkloadBarProps) {
+function WorkloadBar({ tasksByStatus, totalTasks }: WorkloadBarProps) {
   if (totalTasks === 0) {
     return <div className="h-1.5 w-full rounded-full bg-border-light/60" />;
   }
@@ -28,7 +28,7 @@ function WorkloadBar({ tasksByStatus, totalTasks, taskStatuses }: WorkloadBarPro
   const segments = Object.entries(tasksByStatus)
     .filter(([, count]) => count > 0)
     .map(([status, count]) => {
-      const config = taskStatuses?.find((s) => s.code === (status as TaskStatusConfig['code']));
+      const config = TASK_STATUS_CATALOG[status as TaskStatus];
       return {
         status,
         count,
@@ -53,14 +53,12 @@ function WorkloadBar({ tasksByStatus, totalTasks, taskStatuses }: WorkloadBarPro
 
 interface TeamWorkloadPanelProps {
   teamWorkload: TeamWorkloadEntry[] | undefined;
-  taskStatuses: TaskStatusConfig[] | null | undefined;
   isLoading: boolean;
   projectPath: string;
 }
 
 export function TeamWorkloadPanel({
   teamWorkload,
-  taskStatuses,
   isLoading,
   projectPath,
 }: TeamWorkloadPanelProps) {
@@ -69,16 +67,15 @@ export function TeamWorkloadPanel({
     [teamWorkload],
   );
 
-  // Build status legend from the first member that has data (to know which statuses exist)
   const statusLegend = useMemo(() => {
-    if (!teamWorkload || !taskStatuses) return [];
+    if (!teamWorkload) return [];
     const seen = new Set<string>();
     const entries: { code: string; label: string; color: string }[] = [];
     teamWorkload.forEach((member) => {
       Object.keys(member.tasksByStatus).forEach((code) => {
         if (!seen.has(code)) {
           seen.add(code);
-          const cfg = taskStatuses.find((s) => s.code === (code as TaskStatusConfig['code']));
+          const cfg = TASK_STATUS_CATALOG[code as TaskStatus];
           entries.push({
             code,
             label: cfg?.label ?? code,
@@ -88,7 +85,7 @@ export function TeamWorkloadPanel({
       });
     });
     return entries;
-  }, [teamWorkload, taskStatuses]);
+  }, [teamWorkload]);
 
   return (
     <Card className="p-5 h-[340px] flex flex-col overflow-hidden">
@@ -133,7 +130,6 @@ export function TeamWorkloadPanel({
           {teamWorkload.map((member) => {
             const relativeWidth =
               maxTasks > 0 ? Math.round((member.totalTasks / maxTasks) * 100) : 0;
-            // Preserve unassigned intent in deep-link filters.
             const href = buildTasksTabUrl(
               projectPath,
               member.userId ? { assignee: member.userId } : { assignee: UNASSIGNED_TASK_FILTER },
@@ -159,7 +155,6 @@ export function TeamWorkloadPanel({
                         {member.totalTasks} task{member.totalTasks !== 1 ? 's' : ''}
                       </span>
                     </div>
-                    {/* Outer track scoped to this member's relative share */}
                     <div className="relative h-1.5 w-full rounded-full bg-border-light/60 overflow-hidden">
                       <div
                         className="absolute inset-y-0 left-0 rounded-full overflow-hidden"
@@ -168,7 +163,6 @@ export function TeamWorkloadPanel({
                         <WorkloadBar
                           tasksByStatus={member.tasksByStatus}
                           totalTasks={member.totalTasks}
-                          taskStatuses={taskStatuses}
                         />
                       </div>
                     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ProjectPriority, TaskStatusConfig } from '@tejas96/shared/types';
+import type { ProjectPriority } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { projectKeys } from './use-projects';
@@ -26,7 +26,6 @@ export interface ConvertFromQuotePayload {
     milestoneOrder: number | null;
   }>;
   milestones?: Array<{ name: string; order: number }>;
-  taskStatuses?: TaskStatusConfig[];
 }
 
 interface ProjectResponse {

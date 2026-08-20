@@ -1,9 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectPriority, type TaskStatusConfig } from '@tejas96/shared/types';
+import { ProjectPriority } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
-  IsArray,
   IsDateString,
   IsEnum,
   IsInt,
@@ -14,10 +12,7 @@ import {
   IsUUID,
   MaxLength,
   Min,
-  ValidateNested,
 } from 'class-validator';
-
-import { TaskStatusConfigDto } from './convert-from-quote.dto';
 
 /**
  * DTO for updating an existing project
@@ -112,15 +107,4 @@ export class UpdateProjectDto {
   @IsObject()
   @IsOptional()
   metadata?: Record<string, unknown>;
-
-  @ApiPropertyOptional({
-    description: 'Task status configuration for this project',
-    type: [TaskStatusConfigDto],
-  })
-  @IsOptional()
-  @IsArray()
-  @ArrayMinSize(1, { message: 'At least one task status is required' })
-  @ValidateNested({ each: true })
-  @Type(() => TaskStatusConfigDto)
-  taskStatuses?: TaskStatusConfig[];
 }

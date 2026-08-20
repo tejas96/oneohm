@@ -1,12 +1,14 @@
 'use client';
 
+import { TASK_PRIORITY_OPTIONS, TASK_STATUS_CATALOG } from '@tejas96/shared/constants';
+import type { TaskPriority, TaskStatus } from '@tejas96/shared/types';
 import { ArrowRight, Edit2, Flag, MessageSquare, Plus, TrendingUp, User } from 'lucide-react';
 import React from 'react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { ActivityFeedItem, LookupByTypeCode, LookupOption } from '@/lib/hooks/resources';
+import type { ActivityFeedItem } from '@/lib/hooks/resources';
 import { getInitials } from '@/lib/utils';
 
 function formatDistanceToNow(isoDate: string): string {
@@ -25,8 +27,8 @@ type ActivityIcon = React.ElementType;
 
 interface ActivityTypeMeta {
   Icon: ActivityIcon;
-  color: string; // tailwind text class
-  bg: string; // tailwind bg class
+  color: string;
+  bg: string;
 }
 
 const ACTIVITY_META: Record<string, ActivityTypeMeta> = {
@@ -73,14 +75,17 @@ const DEFAULT_META: ActivityTypeMeta = {
   bg: 'bg-border-light',
 };
 
-function formatActivityMessage(
-  entry: ActivityFeedItem,
-  statusMap: Record<string, LookupByTypeCode>,
-  priorityMap: Record<string, LookupOption>,
-): React.ReactNode {
-  const getStatusLabel = (code?: string) => (code ? (statusMap[code]?.label ?? code) : '?');
-  const getPriorityLabel = (code?: string) => (code ? (priorityMap[code]?.label ?? code) : '?');
+function getStatusLabel(code?: string): string {
+  if (!code) return '?';
+  return TASK_STATUS_CATALOG[code as TaskStatus]?.label ?? code;
+}
 
+function getPriorityLabel(code?: string): string {
+  if (!code) return '?';
+  return TASK_PRIORITY_OPTIONS.find((p) => p.value === (code as TaskPriority))?.label ?? code;
+}
+
+function formatActivityMessage(entry: ActivityFeedItem): React.ReactNode {
   const task = <span className="font-medium text-foreground">{entry.taskCode}</span>;
 
   switch (entry.activityType) {
@@ -135,17 +140,10 @@ function formatActivityMessage(
 
 interface RecentActivityPanelProps {
   activity: ActivityFeedItem[] | undefined;
-  statusLookupMap: Record<string, LookupByTypeCode>;
-  priorityLookupMap: Record<string, LookupOption>;
   isLoading: boolean;
 }
 
-export function RecentActivityPanel({
-  activity,
-  statusLookupMap,
-  priorityLookupMap,
-  isLoading,
-}: RecentActivityPanelProps) {
+export function RecentActivityPanel({ activity, isLoading }: RecentActivityPanelProps) {
   return (
     <Card className="p-5 flex flex-col">
       <p className="text-sm font-semibold text-foreground mb-4">Recent Activity</p>
@@ -171,18 +169,16 @@ export function RecentActivityPanel({
         <ul className="space-y-0 max-h-96 overflow-y-auto -mr-1 pr-1">
           {activity.map((entry, idx) => {
             const displayName = entry.userName ?? 'Unknown User';
-            const message = formatActivityMessage(entry, statusLookupMap, priorityLookupMap);
+            const message = formatActivityMessage(entry);
             const meta = ACTIVITY_META[entry.activityType] ?? DEFAULT_META;
             const isLast = idx === activity.length - 1;
 
             return (
               <li key={`${entry.taskId}-${entry.createdAt}`} className="flex gap-3 relative">
-                {/* Timeline line: icon is size-7 (28px), center at 14px = left-3.5, starts below icon (top-7 = 28px) */}
                 {!isLast && (
                   <div className="absolute left-3.5 top-7 bottom-0 w-px bg-border-light" />
                 )}
 
-                {/* Activity type icon chip */}
                 <div
                   className={`size-7 rounded-full flex items-center justify-center shrink-0 z-1 ${meta.bg}`}
                 >

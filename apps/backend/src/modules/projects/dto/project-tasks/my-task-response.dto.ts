@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { type TaskStatusConfig } from '@tejas96/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 import { ProjectTaskResponseDto } from './project-task-response.dto';
@@ -35,13 +34,6 @@ export class MyTaskResponseDto extends ProjectTaskResponseDto {
   })
   @Expose()
   override milestoneName?: string;
-
-  @ApiPropertyOptional({
-    description: "Task statuses configured for this task's project",
-    type: 'array',
-  })
-  @Expose()
-  projectTaskStatuses?: TaskStatusConfig[];
 
   @ApiPropertyOptional({
     example: 145,

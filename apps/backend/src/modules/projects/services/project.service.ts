@@ -11,13 +11,11 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { COMPANY } from '@tejas96/shared/constants';
 import {
   type PaymentMilestone,
-  LookupTypeCode,
   ProjectPriority,
   ProjectStatus,
   PropertyStatus,
   QuoteStatus,
   TaskStatus,
-  type TaskStatusConfig,
 } from '@tejas96/shared/types';
 import { DataSource, type EntityManager } from 'typeorm';
 
@@ -28,7 +26,6 @@ import { CustomerPropertyRepository } from '../../customers/repositories/custome
 import { LeadClosureService } from '../../customers/services/lead-closure.service';
 import { rupeesToPaise } from '../../ledger/domain/paise';
 import { MilestoneService } from '../../ledger/services/milestone.service';
-import { LookupRepository } from '../../lookups/repositories/lookup.repository';
 import {
   CONSUMER_EVENTS,
   ProjectCompletedEvent,
@@ -80,7 +77,6 @@ export class ProjectService {
     private readonly teamRepository: ProjectTeamRepository,
     private readonly bomService: BomService,
     private readonly changeRequestTaskService: ChangeRequestTaskService,
-    private readonly lookupRepository: LookupRepository,
     @Inject(forwardRef(() => MilestoneService))
     private readonly milestoneService: MilestoneService,
     private readonly dataSource: DataSource,
@@ -268,7 +264,6 @@ export class ProjectService {
       'priority',
       'progressPercentage',
       'defaultWarehouseId',
-      'taskStatuses',
     ];
 
     const updateData: Record<string, unknown> = {};
@@ -468,10 +463,6 @@ export class ProjectService {
           order: pm.order || i + 1,
         }));
 
-    const taskStatuses = convertDto?.taskStatuses?.length
-      ? convertDto.taskStatuses
-      : await this.resolveDefaultTaskStatuses();
-
     const project = await this.orchestrateProjectCreation({
       projectData: {
         propertyId: quote.propertyId,
@@ -489,7 +480,6 @@ export class ProjectService {
         progressPercentage: 0,
         startDate: convertDto?.startDate ? new Date(convertDto.startDate) : undefined,
         endDate: convertDto?.endDate ? new Date(convertDto.endDate) : undefined,
-        taskStatuses: taskStatuses?.length ? taskStatuses : undefined,
       },
       propertyId: quote.propertyId,
       orgCode: COMPANY.code,
@@ -1242,19 +1232,5 @@ export class ProjectService {
         `Failed to copy BOM from quote version ${quoteVersionId} to project ${projectId}: ${(error as Error).message}`,
       );
     }
-  }
-
-  private async resolveDefaultTaskStatuses(): Promise<TaskStatusConfig[] | undefined> {
-    const lookups = await this.lookupRepository.findByTypeCodeRaw(
-      LookupTypeCode.DEFAULT_TASK_STATUS,
-    );
-    if (!lookups.length) return undefined;
-
-    return lookups.map((row) => ({
-      code: row.code as TaskStatus,
-      label: row.label,
-      color: row.color ?? '#6B7280',
-      orderIndex: row.orderIndex,
-    }));
   }
 }

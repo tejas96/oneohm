@@ -1,4 +1,3 @@
-import { LookupScopeType, LookupTypeCode } from '@tejas96/shared/types';
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
@@ -19,7 +18,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   - urgencyWeight  : added to urgency score for sorting "My Tasks"
  */
 type MetadataSeed = {
-  typeCode: LookupTypeCode;
+  typeCode: 'priority' | 'default_task_status';
   code: string;
   metadata: Record<string, unknown>;
 };
@@ -27,17 +26,17 @@ type MetadataSeed = {
 const METADATA_SEEDS: MetadataSeed[] = [
   // ─── Task statuses ────────────────────────────────────────────────────────
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'backlog',
     metadata: { variant: 'secondary' },
   },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'todo',
     metadata: { variant: 'secondary' },
   },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'in_progress',
     metadata: {
       variant: 'info',
@@ -46,22 +45,22 @@ const METADATA_SEEDS: MetadataSeed[] = [
     },
   },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'in_review',
     metadata: { variant: 'warning', blocksDependents: true },
   },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'testing',
     metadata: { variant: 'info', blocksDependents: true },
   },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'blocked',
     metadata: { variant: 'error', urgencyPenalty: 20, blocksDependents: true },
   },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'done',
     metadata: {
       variant: 'success',
@@ -72,7 +71,7 @@ const METADATA_SEEDS: MetadataSeed[] = [
     },
   },
   {
-    typeCode: LookupTypeCode.DEFAULT_TASK_STATUS,
+    typeCode: 'default_task_status',
     code: 'cancelled',
     metadata: {
       variant: 'error',
@@ -84,27 +83,27 @@ const METADATA_SEEDS: MetadataSeed[] = [
 
   // ─── Priorities ───────────────────────────────────────────────────────────
   {
-    typeCode: LookupTypeCode.PRIORITY,
+    typeCode: 'priority',
     code: 'urgent',
     metadata: { variant: 'error', urgencyWeight: 40 },
   },
   {
-    typeCode: LookupTypeCode.PRIORITY,
+    typeCode: 'priority',
     code: 'high',
     metadata: { variant: 'warning', urgencyWeight: 30 },
   },
   {
-    typeCode: LookupTypeCode.PRIORITY,
+    typeCode: 'priority',
     code: 'normal',
     metadata: { variant: 'info', urgencyWeight: 20 },
   },
   {
-    typeCode: LookupTypeCode.PRIORITY,
+    typeCode: 'priority',
     code: 'medium',
     metadata: { variant: 'info', urgencyWeight: 15 },
   },
   {
-    typeCode: LookupTypeCode.PRIORITY,
+    typeCode: 'priority',
     code: 'low',
     metadata: { variant: 'secondary', urgencyWeight: 5 },
   },
@@ -128,7 +127,7 @@ export class AddSemanticMetadataToLookups1810000000000 implements MigrationInter
           AND scope_id IS NULL
           AND deleted_at IS NULL
         `,
-        [seed.typeCode, seed.code, JSON.stringify(seed.metadata), LookupScopeType.GLOBAL],
+        [seed.typeCode, seed.code, JSON.stringify(seed.metadata), 'global'],
       );
     }
   }
@@ -148,7 +147,7 @@ export class AddSemanticMetadataToLookups1810000000000 implements MigrationInter
           AND scope_id IS NULL
           AND deleted_at IS NULL
         `,
-        [seed.typeCode, seed.code, LookupScopeType.GLOBAL],
+        [seed.typeCode, seed.code, 'global'],
       );
     }
   }

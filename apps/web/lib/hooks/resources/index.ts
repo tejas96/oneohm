@@ -136,21 +136,6 @@ export {
   useDeleteDocument,
 } from './documents';
 
-// Lookups
-export {
-  useLookups,
-  useLookup,
-  useLookupMutations,
-  useLookupPermissions,
-  useLookupsByTypeCode,
-  useLookupOptions,
-  useLookupTypeCodes,
-  type Lookup,
-  type LookupByTypeCode,
-  type LookupOption,
-  type LookupFilters,
-} from './lookups';
-
 // Customers (FDAL — search + detail only; full module stays in feature folder)
 export { useCustomerSearch, useCustomerDetail, customerKeys, type Customer } from './customers';
 

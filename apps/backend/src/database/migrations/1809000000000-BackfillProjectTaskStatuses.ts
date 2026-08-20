@@ -1,4 +1,3 @@
-import { LookupScopeType } from '@tejas96/shared/types';
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
@@ -32,7 +31,7 @@ export class BackfillProjectTaskStatuses1809000000000 implements MigrationInterf
           AND deleted_at IS NULL
         ORDER BY order_index ASC
       `,
-      [LookupScopeType.GLOBAL],
+      ['global'],
     );
 
     if (lookupRows.length === 0) {

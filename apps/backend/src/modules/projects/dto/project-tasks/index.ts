@@ -6,5 +6,4 @@ export * from './my-task-response.dto';
 export * from './my-task-list-item.dto';
 export * from './grouped-my-tasks-response.dto';
 export * from './my-tasks-group-tasks-response.dto';
-export * from './my-tasks-project-meta.dto';
 export * from './move-task.dto';

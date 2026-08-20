@@ -73,14 +73,6 @@ export class GroupedMyTasksResponseDto {
   summary!: MyTasksSummaryDto;
 
   @ApiProperty({
-    description: 'Status dropdown configs keyed by projectId',
-    type: 'object',
-    additionalProperties: { type: 'object' },
-  })
-  @Expose()
-  projectMeta!: Record<string, { taskStatuses: unknown[] }>;
-
-  @ApiProperty({
     type: [MyTasksProjectDto],
     description:
       'Projects with at least one actionable task (unfiltered when list filters are active)',

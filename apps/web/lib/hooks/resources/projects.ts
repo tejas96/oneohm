@@ -115,7 +115,7 @@ defineResource(
 );
 
 // ── Summary Hook ───────────────────────────────────────────────
-// Follows the useLookupsByTypeCode pattern: direct useQuery + FDAL primitives.
+// Follows the direct useQuery + FDAL primitives pattern.
 // useResourceStats is not used — it lacks an `enabled` option to gate
 // the query when the tab is inactive.
 

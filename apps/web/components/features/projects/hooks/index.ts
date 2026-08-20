@@ -67,11 +67,6 @@ export type {
 } from './use-edit-project';
 
 export {
-  useProjectTaskStatuses,
-  type UseProjectTaskStatusesResult,
-} from './use-project-task-statuses';
-
-export {
   useProjectTaskBoard,
   type KanbanColumnData,
   type UseProjectTaskBoardResult,
