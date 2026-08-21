@@ -32,7 +32,7 @@ Every task's requirements implicitly include this section.
 8. **`CurrentUserType` is exactly `{ id: string; roles: string[]; permissions: string[] }`.** There is no `employeeId` and no `organizationId`. Service tickets are assigned to an `employee_profiles.id`, so scoping them needs a join through `employee_profiles.user_id`.
 9. **Scope comes from the token only.** The endpoint accepts no identity parameter. Never read a user id from the query string.
 10. **Scope before aggregation.** Every provider defines its scoped set once in a CTE, then counts and lists from that same CTE. Never count globally and filter afterwards.
-11. **No hard-coded hex in components.** Use the design-system Tailwind tokens (`bg-surface`, `text-foreground-secondary`, `text-danger`, …). The one exception already in the codebase is chart colours, which we do not use here.
+11. **No hard-coded hex in components.** Use the design-system Tailwind tokens (`bg-surface`, `text-foreground-secondary`, `text-error`, …). The one exception already in the codebase is chart colours, which we do not use here.
 12. **Never put `disabled` on a permission-gated control.** `use-gated-action.ts:21-27` explains why: a disabled button swallows the click, so the access dialog never opens. Use `aria-disabled` plus visual muting.
 13. **Do not widen the existing `AttentionKind` union** in `libs/shared/src/types/interfaces/project.interface.ts`. `oneohm-mobile` keeps its own copy with an exhaustive label map and would render blanks for a new kind.
 14. **Database access.** The local Postgres is a production clone running as the container
@@ -68,7 +68,20 @@ Every task's requirements implicitly include this section.
     JS template literal, so a backtick in a `-- comment` terminates the literal early and
     breaks `tsc` and `eslint` with a confusing error far from the real cause. Use single
     quotes inside SQL comments.
-20. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
+20. **Design-system class names that do NOT exist as Tailwind utilities.** Verified by compiling
+    the real engine, not by grep. Use the right-hand value:
+    | Wanted | Actual class | Why |
+    |---|---|---|
+    | `text-danger` | `text-error` | no top-level `danger` colour; `error` is the same `--ds-danger` |
+    | `text-accent-ink` | `text-primary-dark` | `accent-ink` was never bridged; identical `#4D7C0F` |
+    | `text-link` | `text-secondary` | `link` was never bridged; identical `#0D74B8` |
+    | `rounded-r-sm` | `rounded-xl` | **collision** — see below |
+    The `rounded-r-*` case is a real design-system defect, not a naming slip: the Expressive radius
+    token `--radius-r-sm` generates `.rounded-r-sm`, which Tailwind already owns as the
+    *right-corners* utility. Both rules compile and the card renders lopsided. The whole `r-*`
+    family (`r-xs`, `r-md`, `r-lg`, `r-xl`, `r-2xl`) collides the same way with Tailwind's
+    directional utilities. `rounded-xl` is the same 12px and is what `card.tsx` already uses.
+21. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
 
 ---
 
@@ -2127,7 +2140,7 @@ import { ALWAYS_OPEN, useGatedAction, type Gate } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 
 const SEVERITY_TEXT: Record<DashboardItem['severity'], string> = {
-  critical: 'text-danger',
+  critical: 'text-error',
   warning: 'text-warning',
   info: 'text-foreground-secondary',
 };
@@ -2189,7 +2202,7 @@ export function DashboardRow({ item, onCompleteFollowup }: DashboardRowProps): R
       {target.mode === 'navigate' && allowed ? (
         <Link
           href={target.href}
-          className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-xs font-medium text-foreground-secondary transition-colors group-hover:bg-accent-subtle group-hover:text-accent-ink"
+          className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-xs font-medium text-foreground-secondary transition-colors group-hover:bg-accent-subtle group-hover:text-primary-dark"
         >
           {target.label}
           <ArrowRight className="size-3" />
@@ -2202,7 +2215,7 @@ export function DashboardRow({ item, onCompleteFollowup }: DashboardRowProps): R
           className={cn(
             'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-xs font-medium transition-colors',
             allowed
-              ? 'text-foreground-secondary group-hover:bg-accent-subtle group-hover:text-accent-ink'
+              ? 'text-foreground-secondary group-hover:bg-accent-subtle group-hover:text-primary-dark'
               : 'cursor-not-allowed bg-background-tertiary text-foreground-secondary',
           )}
         >
@@ -2233,7 +2246,7 @@ import { cn } from '@/lib/utils';
 type Tone = 'critical' | 'warning' | 'info' | 'neutral';
 
 const LABEL_TONE: Record<Tone, string> = {
-  critical: 'text-danger',
+  critical: 'text-error',
   warning: 'text-warning',
   info: 'text-info',
   neutral: 'text-foreground-secondary',
@@ -2268,7 +2281,7 @@ export function SectionCard({
     section.status === 'ok' ? section.buckets.flatMap((bucket) => bucket.items) : [];
 
   return (
-    <section className="rounded-r-sm bg-surface p-5 shadow-e2">
+    <section className="rounded-xl bg-surface p-5 shadow-e2">
       <header className="flex items-baseline gap-2.5 pb-2">
         <h2
           className={cn(
@@ -2294,7 +2307,7 @@ export function SectionCard({
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex h-7 items-center gap-1.5 rounded-pill bg-accent-subtle px-3 text-xs font-medium text-accent-ink"
+              className="inline-flex h-7 items-center gap-1.5 rounded-pill bg-accent-subtle px-3 text-xs font-medium text-primary-dark"
             >
               <RotateCw className="size-3" />
               Retry
@@ -2310,14 +2323,14 @@ export function SectionCard({
           {overflow ? (
             <div className="pt-2">
               {overflow.href ? (
-                <Link href={overflow.href} className="text-xs font-medium text-link">
+                <Link href={overflow.href} className="text-xs font-medium text-secondary">
                   {overflow.label}
                 </Link>
               ) : (
                 <button
                   type="button"
                   onClick={overflow.onClick}
-                  className="text-xs font-medium text-link"
+                  className="text-xs font-medium text-secondary"
                 >
                   {overflow.label}
                 </button>
@@ -2336,7 +2349,7 @@ export function SectionCard({
  */
 export function SectionSkeleton({ rows }: { rows: number }): React.JSX.Element {
   return (
-    <section className="rounded-r-sm bg-surface p-5 shadow-e2">
+    <section className="rounded-xl bg-surface p-5 shadow-e2">
       <Skeleton className="h-3 w-32" />
       <div className="mt-4 flex flex-col gap-0.5">
         {Array.from({ length: rows }, (_, index) => (
@@ -2418,7 +2431,7 @@ export function ProjectRow({ item }: { item: DashboardItem }): React.JSX.Element
           className={cn(
             'text-xs',
             item.severity === 'critical'
-              ? 'text-danger'
+              ? 'text-error'
               : item.severity === 'warning'
                 ? 'text-warning'
                 : 'text-foreground-secondary',
@@ -2432,7 +2445,7 @@ export function ProjectRow({ item }: { item: DashboardItem }): React.JSX.Element
         {target.mode === 'navigate' ? (
           <Link
             href={target.href}
-            className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-xs font-medium text-foreground-secondary transition-colors group-hover:bg-accent-subtle group-hover:text-accent-ink"
+            className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-xs font-medium text-foreground-secondary transition-colors group-hover:bg-accent-subtle group-hover:text-primary-dark"
           >
             Open
             <ArrowRight className="size-3" />
@@ -2472,7 +2485,7 @@ export function ProjectRow({ item }: { item: DashboardItem }): React.JSX.Element
 Some of the classes above are only valid if the token bridge defines them. Check:
 
 ```bash
-cd apps/web && grep -nE "'r-sm'|rounded-pill|accent-subtle|accent-ink|background-tertiary|text-section|text-2xs|shadow-e2|foreground-tertiary|text-link|text-danger|text-warning|text-info" tailwind.config.ts lib/theme/tokens.ts | head -30
+cd apps/web && grep -nE "'r-sm'|rounded-pill|accent-subtle|accent-ink|background-tertiary|text-section|text-2xs|shadow-e2|foreground-tertiary|text-secondary|text-error|text-warning|text-info" tailwind.config.ts lib/theme/tokens.ts | head -30
 ```
 
 For any class that does **not** resolve, substitute the nearest one that does and note the
@@ -2652,10 +2665,10 @@ export function MyWorkPage(): React.JSX.Element {
 
   if (isError || !data) {
     return (
-      <div className="rounded-r-sm bg-surface p-6 shadow-e2">
+      <div className="rounded-xl bg-surface p-6 shadow-e2">
         <Typography variant="body">
           Your dashboard could not be loaded.{' '}
-          <button type="button" onClick={() => void refetch()} className="text-link underline">
+          <button type="button" onClick={() => void refetch()} className="text-secondary underline">
             Try again
           </button>
         </Typography>
@@ -2680,7 +2693,7 @@ export function MyWorkPage(): React.JSX.Element {
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_304px]">
       <div className="flex flex-col gap-4">
         {/* 1. Greeting */}
-        <section className="relative overflow-hidden rounded-r-sm bg-surface p-6 shadow-e2">
+        <section className="relative overflow-hidden rounded-xl bg-surface p-6 shadow-e2">
           <div className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full bg-primary/10 blur-3xl" />
           <div className="relative flex items-end gap-3">
             <Typography variant="h2">
@@ -2700,7 +2713,7 @@ export function MyWorkPage(): React.JSX.Element {
             ) : null}
           </div>
           <p className="relative mt-2 text-sm text-foreground-secondary">
-            <span className="font-medium text-danger">{summary.overdue} overdue</span>
+            <span className="font-medium text-error">{summary.overdue} overdue</span>
             {` · ${summary.dueToday} due today · ${summary.dueThisWeek} more this week`}
           </p>
         </section>
@@ -2786,12 +2799,12 @@ export function MyWorkPage(): React.JSX.Element {
 
       <div className="flex flex-col gap-4">
         {/* 7. At a glance — three DISJOINT numbers, summed from the sections */}
-        <section className="rounded-r-sm bg-surface p-5 shadow-e2">
+        <section className="rounded-xl bg-surface p-5 shadow-e2">
           <h2 className="pb-2 text-section font-semibold uppercase tracking-wide text-foreground-secondary">
             At a glance
           </h2>
           {[
-            { label: 'Overdue', value: summary.overdue, Icon: AlertCircle, tint: 'bg-danger/10 text-danger' },
+            { label: 'Overdue', value: summary.overdue, Icon: AlertCircle, tint: 'bg-danger/10 text-error' },
             { label: 'Due today', value: summary.dueToday, Icon: CalendarCheck, tint: 'bg-warning/10 text-warning' },
             { label: 'Due this week', value: summary.dueThisWeek, Icon: CalendarDays, tint: 'bg-info/10 text-info' },
           ].map(({ label, value, Icon, tint }) => (
