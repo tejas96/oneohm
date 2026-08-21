@@ -64,7 +64,11 @@ Every task's requirements implicitly include this section.
     `NULL::date` — Postgres refuses to match `date` against `text` across union arms.
     This is the same IST/UTC class of bug that once made two follow-up surfaces disagree by
     five and a half hours. **Verify date fields from the live HTTP JSON, never from psql.**
-19. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
+19. **No backticks inside SQL comments.** Every provider's SQL lives in a backtick-delimited
+    JS template literal, so a backtick in a `-- comment` terminates the literal early and
+    breaks `tsc` and `eslint` with a confusing error far from the real cause. Use single
+    quotes inside SQL comments.
+20. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
 
 ---
 
