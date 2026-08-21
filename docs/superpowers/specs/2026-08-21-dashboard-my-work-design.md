@@ -489,9 +489,35 @@ Recorded because spec §34 requires stating what could not be verified.
 
 Deferred to a follow-up spec:
 
-- Admin/manager **employee selector** — needs a new permission code; none of the 42 covers
-  "view another employee's work"
-- **Business Matrix** mode — would build on the existing `analytics/domains/sales-pipeline`
+### Admin / manager employee selector
+
+Confirmed 2026-08-21, re-verified against the catalog and the route map:
+
+- **No permission code covers "view another employee's work."** The catalog holds exactly
+  42 codes and none of them is close.
+- **There are deliberately no `admin.*` codes at all** — `route-map.ts:16` states it. The
+  admin panel is gated by ROLE (`SUPERADMIN_ONLY`), not by permission.
+- So the selector needs a **new code**: a catalog entry plus a migration mirroring it into
+  the `permissions` table, against a catalog that was deliberately reset to 42.
+- It also needs a backend query param, the permission check on it, and an employee list to
+  populate the picker.
+
+The retrofit is cheap by construction. Decision 2 put identity in the token specifically so
+that the selector could later add one param and one check without reshaping the endpoint.
+Nothing built for "My Work" gets rewritten.
+
+### Business Matrix
+
+Not blocked, only large. It would build on `analytics/domains/sales-pipeline`, which
+already provides the funnel, stage conversion and the salesperson leaderboard.
+`pipeline.view` already exists and is a plausible gate.
+
+The binding constraint is honesty, not effort: only metrics backed by live data may appear.
+Seven finance endpoints still read pre-cutover tables (see §8), so most finance-shaped
+charts would be reporting frozen figures.
+
+### Also deferred
+
 - **Responsive layout** — next pass in this same spec cycle
 - App-wide backend RBAC enforcement
 - A scheduler for quote expiry
