@@ -315,29 +315,52 @@ deliberate exception to spec §25.
 
 ### Page order
 
+Two content columns, roughly 7:3. The navigation shell (48px header, 48px rail,
+200px panel) is untouched; the dashboard owns the remaining ~1192px.
+
+**Main column**
+
 | # | Block | Weight |
 |---|---|---|
-| 1 | Greeting strip — name, date, one sentence of state | quiet |
-| 2 | Three numbers — Overdue · Due today · Due this week | medium |
-| 3 | **Needs Attention** — critical items only | loudest |
-| 4 | **Workflow stuck** — Lead → Property → Survey → Quote → Project | loud |
-| 5 | Follow-ups │ Service Requests — two equal columns | medium |
+| 1 | Greeting card — name, date, one sentence of state | quiet |
+| 2 | **Needs Attention** — critical items only | loudest |
+| 3 | **Workflow stuck** — Lead → Property → Survey → Quote → Project | loud |
+| 4 | Follow-ups — bucketed | medium |
+| 5 | Service Requests — bucketed | medium |
 | 6 | Project health — one compact row per project | medium |
-| 7 | Finance attention | quiet |
 
-Visual weight decreases down the page. Urgent work dominates.
+**Right column**
+
+| # | Block | Weight |
+|---|---|---|
+| 7 | At a glance — Overdue · Due today · Due this week | medium |
+| 8 | Money to chase | quiet |
+
+Visual weight decreases down the main column. Urgent work dominates.
+
+Follow-ups and Service Requests were a side-by-side pair in an earlier draft. They
+stack in the main column now: the two-column page already spends its horizontal
+budget on the right rail, and a bucketed list needs the width to hold its row grid.
 
 ### Row anatomy
 
 ```
-▌  Survey pending · ABC Property
-   Site visit done 4 days ago. Survey not started.        [ Complete Survey → ]
+(AV)   Survey pending · ABC Property         Site visit done 4 days ago.
+       Bhosale Farmhouse                     Survey not started.        [ Complete → ]
 ```
 
-- A 3px coloured left edge is the only colour on the row.
-- Line 1: what it is, and which record.
-- Line 2: why it is shown, plus the relevant date.
-- One action. Never three.
+- **No coloured edge bar, no row tint, no per-row status pill.** An earlier draft
+  put a 3px coloured edge on every row. It was replaced after the owner supplied a
+  reference design: urgency reads better carried by a small amount of coloured
+  **text** — the section label and the reason line — against otherwise neutral
+  rows. Colour on every row is colour nowhere.
+- Leading element: an initials avatar for anything about a person; a small tinted
+  rounded-square icon for a record (quote, ticket, project, payment).
+- Line 1: what it is, and which record. Line 2: the place, person or reference.
+- Reason: a plain sentence saying why this is on screen, in its own column, taking
+  the urgency colour only when urgent.
+- Right meta: dates, counts and money in **tabular numerals**, right-aligned.
+- One action. Never three. Quiet by default, gaining emphasis on row hover.
 
 ### Colour
 
@@ -351,7 +374,9 @@ Design-system tokens only — no hard-coded hex in components.
 | Healthy / complete | `success` #15803D | `success-bg` #EAFBEF |
 | Accent / primary action | `accent` #76C044 | — |
 
-Cards stay white on `background-secondary`. No red backgrounds.
+Cards stay white on `background-secondary`, with no borders and no dividers between
+rows. No red backgrounds, no tinted rows. The page should read as near-monochrome
+with a few deliberate points of colour.
 
 **Deviation from spec §25:** the design system has four semantic families, not five —
 there is no separate orange and yellow. "Due soon" and "attention" share `warning`.

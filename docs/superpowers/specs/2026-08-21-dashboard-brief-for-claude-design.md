@@ -1,264 +1,318 @@
 # Prompt for Claude Design — OneOhm "My Work" dashboard
 
-> Copy everything below the horizontal rule into Claude Design.
-> Colour, type and theme are **not** specified here — the OneOhm design system is
-> already set up in that project, and it decides those.
+> Copy everything below the horizontal rule into Claude Design, **and attach the
+> reference screenshot**. The reference sets the visual language; this prompt sets
+> the content, the rules and the behaviour.
 > Engineering source of truth: `2026-08-21-dashboard-my-work-design.md`.
 
 ---
 
-## What you are designing
+## The one-line brief
 
-A single-page operational dashboard for **OneOhm**, an internal web app used by a
-solar EPC company in India. The people using it are employees — sales reps, site
-engineers, project coordinators. Not customers. Not executives.
+Design the daily home screen for **OneOhm**, an internal web app used by a solar EPC
+company in India. It answers one question for the employee who opens it:
+**what needs me right now, and where do I click?**
 
-The page answers one question: **what needs me right now, and where do I click?**
+Aim for the calm, editorial, unmistakably-crafted end of the spectrum. This screen
+gets opened twenty times a day by someone who is busy. It should feel like a
+well-set page, not a control panel.
 
-It is a working screen someone opens every morning and returns to between jobs. It
-is not a report and not an analytics view. Every row carries an action.
+---
 
-## Use the OneOhm design system
+## Start from the attached reference
 
-Take colour, type, spacing, radii, elevation, icons and components from the design
-system already in this project. Do not introduce a new palette, a new typeface, or
-a different density.
+The attached screenshot is the target for **layout, rhythm, density and restraint**.
+Follow it closely. Specifically, these are the qualities to carry over:
 
-Two things from that system are load-bearing here, so please honour them even if
-they feel unusual:
+- **Two content columns.** A wide main column of work, and a narrower right column
+  of supporting cards. Roughly a 7:3 split.
+- **Airy white cards on a near-white canvas.** Large radius, very soft shadow,
+  **no borders anywhere** and **no dividers between rows**. Separation comes from
+  white space alone.
+- **No coloured bars, tags or tinted row backgrounds.** In the reference, urgency
+  is carried entirely by a small amount of **red text** and a **tiny uppercase
+  section label**. That restraint is the whole reason it looks good. Do not add
+  status pills to every row, do not tint rows, do not put a coloured edge on rows.
+- **Tiny uppercase section labels** with wide letter-spacing and a count after a
+  middle dot: `OVERDUE · 2`. The label takes the urgency colour; everything under
+  it stays neutral.
+- **Generous row height** with real vertical breathing room. Roughly 52–56px rows.
+- **A strong column grid inside each row.** Every row in a card aligns on the same
+  vertical rails, so the eye reads straight down each column.
+- **Initials avatars** in soft tinted circles for anything about a person.
+- **Tabular / monospaced numerals** for money, capacities and times, right-aligned
+  so digits stack. This is a large part of why the reference reads as considered.
+- **Quiet circular ghost icon buttons** at the end of a row for the action.
+- **A greeting card** with an oversized greeting, a one-line state summary
+  underneath, and a soft decorative gradient wash in the far corner.
 
-- **Cards carry no borders and rows carry no dividers.** The system's rule is that
-  hierarchy comes from luminance and softness, never from lines. Separation comes
-  from spacing, weight, elevation and the coloured row edge described below.
-- **Buttons and chips are fully rounded.** That is fixed in the system.
+What **not** to carry over from the reference: it is a lead-management screen for a
+different product. Ignore its "voice agent" card, its "Add lead" button, and its
+specific content. Only the visual language transfers.
 
-One known defect to avoid: the brand green is too light to carry white text — that
-pair fails accessibility. Use the system's subtle-green fill with its darker green
-text for buttons instead.
+---
 
-### Urgency is expressed with four roles, not five
+## Use the OneOhm brand
 
-Use the system's semantic roles by name:
+Take type, spacing and components from the OneOhm design system already set up in
+this project. The brand palette, for reference:
 
-| Role | Meaning on this page |
+| Role | Value |
 |---|---|
-| **critical** | Overdue, lapsed, blocked |
-| **warning** | Due soon, unassigned, needs attention |
-| **info** | Active, upcoming, in progress |
-| **success** | Complete, healthy |
+| Canvas | `#FAFAF9` |
+| Card | `#FFFFFF` |
+| Text primary / secondary / faint | `#1C1917` / `#57534E` / `#A8A29E` |
+| Brand green | `#76C044` — the wordmark and the accent, used sparingly |
+| Action text / subtle fill | `#4D7C0F` / `#EEF6E2` |
+| Critical | `#DC2626` |
+| Warning | `#A16207` |
+| Info | `#0369A1` |
+| Success | `#15803D` |
 
-There is no separate "orange" and "yellow" tier. Due-soon and needs-attention share
-the warning role. Do not add a fifth.
+Rules on colour:
 
-### Icons
+- **Four urgency roles, not five** — critical, warning, info, success. There is no
+  separate orange and yellow tier; due-soon and needs-attention share warning.
+- **Colour appears as text, not as fill.** A section label, a reason line, a number.
+  Never a coloured row background, never a full-width red banner.
+- **Never white text on `#76C044`.** That pair is 2.24:1 and fails accessibility.
+  Use `#EEF6E2` fill with `#4D7C0F` text.
+- The page should read as near-monochrome with a few deliberate points of colour.
 
-Draw them as inline SVG in the system's icon style. **No emoji, no unicode
-dingbats** — never ✓, ◐, ⚠, ★ as an icon.
-
----
-
-## The app shell
-
-The dashboard renders inside fixed chrome. Draw it so the page reads as native. If
-the design system has app-shell components, use those; these are the real
-dimensions:
-
-- **Top header, 48px tall.** Left: the OneOhm wordmark. Middle: a 448×32 search
-  field. Right: a notification bell, then a 28px round avatar with initials.
-- **Left icon rail, 48px wide.** 32px icon buttons. The active one is filled.
-- **Nav panel, 200px wide.** Grouped list, 32px rows, the active row filled.
-  Groups: **Workspace** (My Work, My Tasks, Follow-ups) · **Sales** (Customers,
-  Properties, Quotes, Pipeline) · **Delivery** (Projects, Inventory, Service,
-  Finance).
-- **Content area:** the rest. Blocks stacked with a consistent gap.
-
-Desktop artboard width **1440px**.
-
-The page has **no tabs, no filter bar, no date-range picker and no employee
-picker**. It is one scroll.
+Icons: inline SVG, stroke-based, one consistent style. **No emoji, no unicode
+dingbats** — never ✓ ◐ ⚠ ★ as an icon.
 
 ---
 
-## Page structure — seven blocks, in this order
+## Scope: the content area only
 
-Visual weight must fall as you go down. Block 3 dominates the screen. Block 7 is
-quiet.
+The app already has its navigation — a 48px icon rail and a 200px sub-menu panel,
+plus a 48px top header. **Do not design, redraw or replace any of them.** Do not add
+a sidebar of your own, a tab bar, a filter bar, a date-range picker, or an employee
+picker.
 
-### 1. Greeting
-Left: "Good morning, Tejas", then one plain sentence of state — "Four things are
-overdue. Seven need you today."
-Right, baseline-aligned: the date, in the faintest text role.
+Design **only the dashboard content area**, as one uninterrupted scroll. Draw it
+1192px wide, which is what is left on a 1440px screen.
 
-### 2. Three numbers
-Three equal cards. Each: a rounded tinted icon tile, then a small uppercase label
-above a large number.
+---
 
-**Overdue** (critical) · **Due today** (warning) · **Due this week** (info).
+## The content — this is the part that must be exactly right
 
-> These three must be **disjoint sets**. An earlier draft used "Needs attention ·
-> Overdue · Due soon" and two of the three carried no information: "Needs
-> attention" merely restated the badge on the block immediately below it, and
-> because every overdue item is critical, "Overdue" then covered nearly the same
-> records again. Do not reintroduce that.
+**Eight blocks appear on this page, and no others.** Every one is backed by a real
+database field. **Do not invent an extra metric, chart, KPI or section** — there would be no
+data behind it.
 
-### 3. Needs attention — the loudest block
-Heading + a count badge in the critical role. One card, **6 rows**, then a
-"View all 8" link.
+### Main column
 
-This block holds **only critical items**, pulled in from every other section.
+#### 1. Greeting card
 
-1. Quote lapsed · Sharma Residence — "Q-1042 passed its valid-until date 3 days ago and is still marked sent." → **Open quote**
-2. Quote accepted, no project · Verma Enterprises — "Accepted 6 days ago. The project has not been created yet." → **Convert to project**
-3. Follow-up overdue · Nikhil Patil — "'Discuss loan option' was due 5 days ago." → **Complete**
-4. Service request overdue · SR-1024 — "ABC Construction. Due 2 days ago, still in progress." → **Open request**
-5. Project overdue · Kitchen Renovation — "Deadline was 12 August. 9 of 23 tasks still open." → **Open project**
-6. Payment overdue · Deshmukh Villa — "Installation milestone is ₹1,24,000 short · 11 days overdue." → **Open payments**
+Oversized "Good morning, Tejas", with today's date as quiet static text beside or
+beneath it — **Friday, 21 August**. Not a chip, not a control; it is what anchors
+every relative date further down the page.
 
-### 4. Workflow stuck
-Heading + warning badge "9" + a faint aside "2 critical shown above". One card,
-**5 rows**, then "View all 9".
+Under that, one plain sentence of state where only the urgent fragment takes colour:
+
+> **7 overdue** · 5 due today · 9 more this week
+
+Soft decorative gradient wash in the far corner, in brand green, very low opacity.
+
+#### 2. `NEEDS ATTENTION · 8` — the loudest block on the page
+
+Critical-coloured label. **6 rows**, then a quiet "View all 8" link.
+
+This block holds **only critical items**, gathered from every other section.
+
+| Record | Why it is here | Action |
+|---|---|---|
+| Sharma Residence · Q-1042 | Quote lapsed 3 days ago, still marked sent | Open quote |
+| Verma Enterprises | Quote accepted 6 days ago, project never created | Convert to project |
+| Nikhil Patil | Follow-up "Discuss loan option" 5 days late | Complete |
+| SR-1024 · ABC Construction | Service request 2 days overdue, still in progress | Open request |
+| Kitchen Renovation | Project deadline was 12 Aug, 9 of 23 tasks open | Open project |
+| Deshmukh Villa | Installation milestone ₹1,24,000 short, 11 days overdue | Open payments |
+
+Note the mix: people, quotes, tickets, projects and money all sit in one list. The
+row pattern has to hold all of them gracefully.
+
+#### 3. `WORKFLOW STUCK · 9` — warning label, aside "2 critical shown above"
+
+**5 rows**, then "View all 9". This is the sales pipeline snagging.
 
 Each row carries a small neutral stage chip in a **fixed-width column before the
-text**, so the stages line up down the block.
+name**, so the stages line up down the block.
 
-1. `PROPERTY` — Property required · Kulkarni Traders — "Onboarded 9 days ago. No property has been added." → **Add property**
-2. `SITE VISIT` — Site visit unassigned · Jadhav Rooftop — "Nobody is assigned to visit this property yet." → **Open property**
-3. `SURVEY` — Survey pending · Bhosale Farmhouse — "Site visit completed 4 days ago. Survey has not started." → **Complete survey**
-4. `QUOTE` — Quote required · Pawar Residence — "Survey done 2 days ago. No quote has been created." → **Create quote**
-5. `QUOTE` — Quote in draft · Shinde Industries — "Q-1067 started 5 days ago and has not been sent." → **Continue quote** *(info role, not warning)*
+| Stage | Record | Why it is here | Action |
+|---|---|---|---|
+| PROPERTY | Kulkarni Traders | Onboarded 9 days ago, no property added | Add property |
+| SITE VISIT | Jadhav Rooftop | Nobody assigned to visit yet | Open property |
+| SURVEY | Bhosale Farmhouse | Site visit done 4 days ago, survey not started | Complete survey |
+| QUOTE | Pawar Residence | Survey done 2 days ago, no quote created | Create quote |
+| QUOTE | Shinde Industries | Q-1067 drafted 5 days ago, never sent | Continue quote |
 
-**The full set this block draws from — design so all nine fit the pattern:**
+The last row is `info`, not warning. **Design so all nine kinds fit this pattern:**
 property required · site visit unassigned · site visit pending · survey pending ·
 quote required · quote in draft · quote expiring · quote lapsed · quote accepted
 but no project.
 
-### 5. Follow-ups │ Service requests
-Two equal columns. Each is its own heading + badge + card.
+#### 4. `FOLLOW-UPS · 8` — aside "2 overdue shown above"
 
-Rows inside a card are grouped under small uppercase bucket headings coloured by
-urgency role.
+Rows grouped under small uppercase bucket sub-labels. Initials avatars. Time on the
+left in tabular numerals, in the info colour, exactly as the reference does it.
 
-> **A section never renders an "Overdue" bucket.** Every overdue item is critical,
-> and every critical item has already moved to block 3. An Overdue bucket here
-> would be empty by construction. Sections start at their first non-critical
-> bucket; the lifted work is reported in the heading aside instead.
+- `TODAY · 3` — 11:00 Rahul Gaikwad, Confirm roof access · 15:00 Meera Joshi,
+  Collect electricity bill · 17:00 Sunita Kale, Send revised pricing
+- `NEXT 7 DAYS · 3` — Mon 24 Aug Anil Deshpande, Site walkthrough ·
+  Wed 26 Aug Prakash Mane, Share subsidy paperwork
 
-**Follow-ups** — badge 8, aside "2 overdue shown above".
-- `TODAY · 3` (warning) — Rahul Gaikwad · Confirm roof access (11:30) · Meera Joshi · Collect electricity bill (15:00) · Sunita Kale · Send revised pricing (17:00)
-- `NEXT 7 DAYS · 3` (info) — Anil Deshpande · Site walkthrough (Mon 24 Aug) · Prakash Mane · Share subsidy paperwork (Wed 26 Aug)
-- Every row ends in a small **Complete** button. This one acts on the page — see
-  the dialog below.
-- Footer link "Open follow-ups".
+The bucket counts are the true totals. Draw **5 rows** in all, then a quiet
+"Open follow-ups →" link for the remainder — the same treatment as the links on
+the blocks above.
 
-**Service requests** — badge 9, aside "2 overdue shown above".
-- `DUE TODAY · 2` (warning) — SR-1031 · Panel cleaning visit (Sawant Bungalow · medium) · SR-1033 · Net-meter reading (Kadam Enterprises · low)
-- `NOBODY ASSIGNED · 3` (warning) — SR-1040 · App login not working (Nair Residence · no due date) · SR-1042 · Generation lower than quoted (Bhagat Residence · no due date)
-- `DUE IN 7 DAYS · 2` (info) — SR-1044 · Annual maintenance visit (Chavan Residence · due 25 Aug · low)
-- Rows end in a small **Open** button. Footer link "Open service".
+Every row ends in a **Complete** action. This one does not navigate — it opens a
+dialog, specified below.
 
-### 6. Project health
-Heading + neutral badge "6" + aside "overdue projects also appear above". One
-card, **4 project rows**, footer "Open projects".
+> **There is deliberately no OVERDUE bucket here.** Every overdue follow-up is
+> critical, and every critical item has already moved to block 2. An overdue bucket
+> would be empty by construction. The heading aside reports the lifted work instead.
+> Same for service requests and money below.
 
-**This is a health summary, not a task list. Never list individual tasks.**
+#### 5. `SERVICE REQUESTS · 9` — aside "2 overdue shown above"
 
-Each row is two lines inside the coloured edge:
-- Line 1: project name · deadline (coloured by urgency) · "14 / 23 tasks done".
-  An **Open** button sits at the row's top right.
-- Line 2: a row of milestone chips. Each chip is a small status icon plus
-  "Name 8/8", tinted by role — complete, in progress, at risk, or not started
-  (neutral).
+- `DUE TODAY · 2` — SR-1031 Panel cleaning visit, Sawant Bungalow, medium ·
+  SR-1033 Net-meter reading, Kadam Enterprises, low
+- `NOBODY ASSIGNED · 3` — SR-1040 App login not working, Nair Residence ·
+  SR-1042 Generation lower than quoted, Bhagat Residence
+- `DUE IN 7 DAYS · 2` — SR-1044 Annual maintenance visit, Chavan Residence, 25 Aug
 
-1. Kitchen Renovation — critical edge — "Deadline was 12 Aug" · 14/23 — Design 8/8 complete · Production 6/9 in progress · Installation 0/6 at risk, 2 overdue
-2. Deshmukh Villa — 8kW rooftop — warning edge — "Due 26 Aug" · 19/24 — Design 6/6 complete · Production 9/9 complete · Commissioning 4/9 at risk, 1 blocked
-3. Rane Residence — 5kW rooftop — success edge — "Due 14 Sep" · 11/21 — Design 7/7 complete · Production 4/8 in progress · Installation 0/6 not started
-4. Kadam Enterprises — 40kW shed — success edge — "Due 30 Sep" · 5/31 — Design 5/9 in progress · Production 0/12 not started · Installation 0/10 not started
+Same here: the bucket counts are the true totals. **5 rows** in all, then a quiet
+"Open service →" link.
 
-### 7. Money to chase — the quietest block
-Heading + neutral badge "4" + aside "1 overdue shown above". One card, 3 rows,
-footer "Open finance".
+Priority (low / medium / high / urgent) is real data and may be shown, but quietly —
+this is not a place for four coloured pills per row.
 
-Each row: name · milestone, a reason line, a right-aligned bold amount, then a
-small **Open** button.
+#### 6. `PROJECT HEALTH · 6` — aside "overdue projects also appear above"
 
-1. Rane Residence · Production milestone — "Due in 2 days" — ₹2,10,000
-2. Kadam Enterprises · Advance milestone — "Due in 3 days" — ₹4,80,000
-3. Sawant Bungalow · Final milestone — "Due in 3 days" — ₹46,500
+**4 rows**, then "Open projects". This is a health summary. **Never list individual
+tasks anywhere on this page.**
+
+Each row: project name, its deadline coloured by urgency, "14 / 23 tasks done" in
+tabular numerals, and an Open action. Under that, a row of **milestone chips** —
+each a small status icon plus "Design 8/8", carrying complete / in progress / at
+risk / not started.
+
+1. Kitchen Renovation — deadline was 12 Aug — 14/23 — Design 8/8 complete ·
+   Production 6/9 in progress · Installation 0/6 at risk, 2 overdue
+2. Deshmukh Villa, 8kW rooftop — due 26 Aug — 19/24 — Design 6/6 complete ·
+   Production 9/9 complete · Commissioning 4/9 at risk, 1 blocked
+3. Rane Residence, 5kW rooftop — due 14 Sep — 11/21 — Design 7/7 complete ·
+   Production 4/8 in progress · Installation 0/6 not started
+4. Kadam Enterprises, 40kW shed — due 30 Sep — 5/31 — Design 5/9 in progress ·
+   Production 0/12 not started · Installation 0/10 not started
+
+An employee must be able to see which milestone is in trouble without opening
+anything.
+
+### Right column
+
+#### 7. `AT A GLANCE`
+
+Three rows, each a small tinted round icon, a label, and a right-aligned tabular
+count — the reference's "Upcoming this week" card is exactly the pattern.
+
+- **Overdue** — 7
+- **Due today** — 5
+- **Due this week** — 9
+
+> These three must stay **disjoint sets**. An earlier draft used "Needs attention ·
+> Overdue · Due soon" and two of the three carried no information: "Needs attention"
+> restated the badge on the block below it, and since every overdue item is
+> critical, "Overdue" then covered nearly the same records. Do not reintroduce that.
+
+#### 8. `MONEY TO CHASE · 4` — aside "1 overdue shown above"
+
+Three rows, amounts right-aligned in tabular numerals, then "Open finance".
+
+- Rane Residence · Production milestone — due in 2 days — ₹2,10,000
+- Kadam Enterprises · Advance milestone — due in 3 days — ₹4,80,000
+- Sawant Bungalow · Final milestone — due in 3 days — ₹46,500
+
+Small block, quiet treatment. It answers "is there money work?", nothing more.
 
 ---
 
-## Row anatomy — the single most important detail
+## The row — the single most important detail on the page
 
-Every actionable row follows one pattern:
+Every row answers six questions at a glance:
+
+1. What is it? 2. Why am I seeing it? 3. How urgent? 4. What date?
+5. What can I do? 6. Where does that take me?
+
+Structure, on one shared column grid:
 
 ```
-▌  Title · Which record
-   Why you are seeing this, and the date.              [ Action → ]
+(AV)   Name of the record            Why it is here            meta   ( ⌾ )
+       Where / who                                          ₹ amount
 ```
 
-- `▌` is a **narrow, fully rounded, full-height coloured bar** at the row's left
-  edge, in the urgency role. It is the **only** colour on the row.
-- Line 1: what it is, and which record. Slightly heavier than body.
-- Line 2: **why** this is on screen, plus the relevant date. Write it as a plain
-  sentence a tired person reads in one go — never a status code or a raw field.
-- Right: **one** button, small, pill, with a small arrow. Never two or three
-  buttons on a row.
-- Rows sit close together with a small gap. No dividers.
+- **Leading element:** an initials avatar for anything about a person; a small
+  tinted rounded-square icon for a record like a quote, ticket, project or payment.
+- **Primary line:** what it is and which record. Slightly heavier than body.
+- **Secondary line:** the place, the person, or the reference number. Faint.
+- **Reason:** a plain sentence explaining why this is on screen, in its own column.
+  Takes the urgency colour when urgent, neutral otherwise. Write it the way a
+  colleague would say it — never a status code, never a raw field name.
+- **Right meta:** dates, counts, money, in tabular numerals, right-aligned.
+- **Action:** exactly **one**, at the end. Never two or three on a row.
+
+Because the actions here are varied ("Add property", "Convert to project"), a
+label is clearer than a bare icon — but keep it as quiet as the reference's circular
+buttons: ghost by default, gaining a soft fill on row hover.
 
 ### Row hover
-
-Rows are clickable. Give them a restrained hover — a faint fill and the button
-gaining emphasis. Nothing that moves the layout.
+The whole row is clickable. A faint fill, and the action gains emphasis. Nothing
+that shifts the layout.
 
 ### A blocked action
-
-Not every employee may do every action. When they may not, the app **still shows
-the button** — greyed and marked — and clicking it opens a small dialog naming the
-permission they need. Someone who cannot see a feature cannot know to ask for it.
-
-Design that blocked button state, and that dialog.
+Not every employee may perform every action. When they may not, the app **still
+shows the button** — muted and marked — and clicking it opens a small dialog naming
+the permission needed. Someone who cannot see a feature cannot know to ask for it.
+Design that muted state and that dialog.
 
 ---
 
 ## The follow-up completion dialog
 
-The **Complete** button on a follow-up row does not navigate away. It opens a
-dialog on top of the dashboard, because completing a follow-up is not one click —
-the system requires:
+The only thing on this page that writes data. Completing a follow-up is not one
+click; the system requires:
 
-- an **outcome**, chosen from a fixed list: not reachable · call back later ·
-  interested · site visit done · documents pending · negotiating · not interested ·
-  other *(choosing "other" requires a note)*
+- an **outcome**, from a fixed list: not reachable · call back later · interested ·
+  site visit done · documents pending · negotiating · not interested · other
+  *(choosing "other" requires a note)*
 - optional **notes**
-- and usually the **next follow-up** — a date and time, a subject, and who it is
-  assigned to
+- and usually the **next follow-up** — date and time, subject, and who it goes to
 
-Design this dialog. It is the one thing on this page that writes data.
+It opens over the dashboard. Design it to feel like the lightest possible way to
+close a loop, not a form.
 
 ---
 
-## The three states — their own artboard
+## The three states
 
-- **Loading** — skeleton bars matching real row heights, per block. No spinner.
-  The layout must not shift when the content arrives.
+- **Loading** — skeleton rows matching real heights, per card. No spinner. The
+  layout must not shift when content arrives.
 - **Empty** — one quiet muted sentence, e.g. "No follow-ups need attention." No
   icon, no illustration, nothing alarming. An empty section is good news.
-- **Broken** — only the failed block changes: one line plus a **Retry** button
-  inside it. Every other block draws normally. The page never fails as a whole.
+- **Broken** — only the failed card changes: one line and a **Retry**, inside it.
+  Every other card draws normally. The page never fails as a whole.
 
 ---
 
-## Mobile — 375px artboard
+## Mobile — 375px
 
-Not a squeezed desktop. Re-prioritise:
+Not a squeezed desktop. The two columns become one, re-ordered by urgency:
 
-1. The three numbers, compacted
-2. Needs attention
-3. Follow-ups
-4. Service requests
-5. Project health
-6. Workflow stuck
-7. Money to chase
+1. Greeting 2. At a glance 3. Needs attention 4. Follow-ups
+5. Service requests 6. Project health 7. Workflow stuck 8. Money to chase
 
 Every row keeps its action. Touch targets **44px minimum**. The action may drop
 below the text rather than sit beside it.
@@ -267,27 +321,27 @@ below the text rather than sit beside it.
 
 ## Deliverables
 
-Five artboards:
-
-- **A — Desktop, 1440 wide**, the full page inside the shell.
-- **B — Mobile, 375 wide**, the full page.
+- **A — Desktop**, 1192px content area, the full page, both columns.
+- **B — Mobile**, 375px, the full page.
 - **C — States**, loading, empty and broken side by side.
-- **D — Components**, the row pattern at all four urgency roles, plus the button,
-  the blocked button, the badges, the stage chip and the milestone chips.
+- **D — Components**, the row at all four urgency roles, the action button and its
+  blocked state, the section label, the stage chip, the milestone chips, the
+  initials avatar, and the At-a-glance row.
 - **E — Follow-up completion dialog.**
+- **F — Permission-blocked dialog.**
 
 ---
 
 ## Do not
 
-- **Do not add sections, metrics, KPIs or charts.** Every block above exists
-  because a real database field backs it. Anything new would be fiction.
-- Do not add tabs, filters, a date-range picker or an employee picker. Those are a
-  later release.
-- Do not list individual tasks anywhere. Counts and milestone health only.
-- Do not colour whole cards by urgency. Colour lives on the edge bar and in badges.
-- Do not use emoji or unicode symbols as icons.
+- Do not add sections, metrics, KPIs, charts, graphs or progress rings. Every block
+  above exists because a real database field backs it. Anything else is fiction.
+- Do not design navigation. The rail and sub-menu already exist.
+- Do not add tabs, filters, a date picker or an employee picker.
+- Do not list individual tasks. Counts and milestone health only.
+- Do not put a coloured bar, tint or badge on every row. Restraint is the design.
 - Do not put borders on cards or dividers between rows.
-- Do not make the type larger and friendlier. The density is deliberate — these
-  people scan this page many times a day.
+- Do not use emoji or unicode symbols as icons.
+- Do not make the type large and friendly. This is a dense professional tool read
+  many times a day.
 - Do not rename the blocks. The wording matches the engineering spec.
