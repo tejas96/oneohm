@@ -49,7 +49,9 @@ Every task's requirements implicitly include this section.
     and will need that.
 16. **The backend listens on port 8085**, not 3000 — `BACKEND_PORT=8085` in `apps/backend/.env`.
     Every curl in this plan uses `http://localhost:8085/api/v1/...`.
-17. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
+17. **`nx serve backend` does NOT hot-reload.** After editing a provider you must restart it,
+    or you will curl a stale stub and conclude your query returns nothing.
+18. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
 
 ---
 
