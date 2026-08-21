@@ -1362,6 +1362,10 @@ scoped AS (
         THEN (CURRENT_DATE - t.due_date)::text || ' days overdue, still ' || REPLACE(t.status, '_', ' ')
       WHEN t.due_date = CURRENT_DATE THEN 'Due today'
       WHEN t.assigned_to_employee_id IS NULL THEN 'Nobody is assigned to this yet'
+      -- An assigned ticket with no due date lands in due_soon, and concatenating
+      -- a NULL date would make the whole string NULL — which breaks the
+      -- non-optional `reason: string` contract on DashboardItem.
+      WHEN t.due_date IS NULL THEN 'No due date set'
       ELSE 'Due ' || to_char(t.due_date, 'DD Mon')
     END AS reason,
     CASE WHEN t.due_date IS NULL THEN '—' ELSE to_char(t.due_date, 'DD Mon') END AS meta,
