@@ -35,7 +35,15 @@ Every task's requirements implicitly include this section.
 11. **No hard-coded hex in components.** Use the design-system Tailwind tokens (`bg-surface`, `text-foreground-secondary`, `text-danger`, …). The one exception already in the codebase is chart colours, which we do not use here.
 12. **Never put `disabled` on a permission-gated control.** `use-gated-action.ts:21-27` explains why: a disabled button swallows the click, so the access dialog never opens. Use `aria-disabled` plus visual muting.
 13. **Do not widen the existing `AttentionKind` union** in `libs/shared/src/types/interfaces/project.interface.ts`. `oneohm-mobile` keeps its own copy with an exhaustive label map and would render blanks for a new kind.
-14. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
+14. **Database access.** The local Postgres is a production clone running as the container
+    `oneohm-postgres`. `psql` is NOT on the host PATH. The only working invocation is:
+    ```bash
+    docker exec -i oneohm-postgres psql -U root -d oneohm_epc -c "SELECT 1;"
+    ```
+    The database is `oneohm_epc` and the user is `root` — both differ from the defaults.
+    Real user ids for scope testing: `2af0dc8a-cf57-4a5c-a552-792b06488ef7`,
+    `652ec31f-1896-4d7d-894a-4372c6504ae5`, `e8106020-78bf-43a3-83ca-576f01ef36e6`.
+15. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
 
 ---
 
@@ -356,7 +364,7 @@ export function withCtes(...ctes: string[]): string {
 The local database is a production clone. Run this directly to confirm the CTEs parse and return plausible rows. Replace `<A_REAL_USER_UUID>` with an id from `SELECT id FROM users LIMIT 5;`.
 
 ```bash
-docker compose exec -T postgres psql -U postgres -d oneohm -c "
+docker exec -i oneohm-postgres psql -U root -d oneohm_epc -c "
 WITH my_customers AS (
   SELECT c.id FROM customer_profiles c
   WHERE c.deleted_at IS NULL AND (c.created_by = '<A_REAL_USER_UUID>' OR c.assignee_id = '<A_REAL_USER_UUID>')
@@ -1078,7 +1086,7 @@ Expected: every `shown` is `min(count, 5)`. If any `shown > count`, the window f
 - [ ] **Step 4: Prove a lapsed quote is found by date, not status**
 
 ```bash
-docker compose exec -T postgres psql -U postgres -d oneohm -c "
+docker exec -i oneohm-postgres psql -U root -d oneohm_epc -c "
 SELECT status, count(*) FROM quotes
 WHERE deleted_at IS NULL AND valid_until < CURRENT_DATE GROUP BY status;"
 ```
@@ -1361,7 +1369,7 @@ ORDER BY s.rank, s.due_date NULLS LAST
 - [ ] **Step 2: Prove the employee join actually matches**
 
 ```bash
-docker compose exec -T postgres psql -U postgres -d oneohm -c "
+docker exec -i oneohm-postgres psql -U root -d oneohm_epc -c "
 SELECT count(*) FILTER (WHERE assigned_to_employee_id IS NOT NULL) AS assigned,
        count(*) FILTER (WHERE assigned_to_employee_id IS NULL)     AS unassigned
 FROM service_tickets WHERE deleted_at IS NULL AND status IN ('open','in_progress');"
@@ -1370,7 +1378,7 @@ FROM service_tickets WHERE deleted_at IS NULL AND status IN ('open','in_progress
 Then confirm your own employee profile exists:
 
 ```bash
-docker compose exec -T postgres psql -U postgres -d oneohm -c \
+docker exec -i oneohm-postgres psql -U root -d oneohm_epc -c \
   "SELECT id, user_id FROM employee_profiles WHERE user_id = '<YOUR_USER_UUID>';"
 ```
 
