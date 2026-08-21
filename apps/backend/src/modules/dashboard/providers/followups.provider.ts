@@ -56,7 +56,7 @@ scoped AS (
     END AS reason,
     to_char(f.scheduled_at, 'HH24:MI') AS meta,
     NULL::text AS meta_secondary,
-    f.scheduled_at::date AS due_date,
+    to_char(f.scheduled_at, 'YYYY-MM-DD') AS due_date,
     'complete_followup'::text AS action,
     f.customer_id::text AS customer_id,
     f.property_id::text  AS property_id,

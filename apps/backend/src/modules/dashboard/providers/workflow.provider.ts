@@ -63,7 +63,7 @@ stalls AS (
     'Lead'::text AS subtitle,
     'Onboarded ' || GREATEST((CURRENT_DATE - c.created_at::date), 0)::text || ' days ago, no property added' AS reason,
     NULL::text AS meta,
-    NULL::date AS due_date,
+    NULL::text AS due_date,
     'add_property'::text AS action,
     c.id::text AS customer_id, NULL::text AS property_id,
     2 AS rank
@@ -144,7 +144,7 @@ stalls AS (
     CASE WHEN q.valid_until < CURRENT_DATE
          THEN 'Quote lapsed ' || (CURRENT_DATE - q.valid_until)::text || ' days ago, still marked sent'
          ELSE 'Quote expires in ' || (q.valid_until - CURRENT_DATE)::text || ' days' END,
-    q.quote_number, q.valid_until, 'open_quote',
+    q.quote_number, to_char(q.valid_until, 'YYYY-MM-DD'), 'open_quote',
     q.customer_id::text, q.property_id::text,
     CASE WHEN q.valid_until < CURRENT_DATE THEN 1 ELSE 2 END
   FROM my_quotes q
