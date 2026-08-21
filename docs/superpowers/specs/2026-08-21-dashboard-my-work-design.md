@@ -281,7 +281,22 @@ Because web and backend resolve `@tejas96/shared` from local source, **no packag
 
 ## 6. UX
 
-### 6.1 What the critical-lift does and does not touch
+### 6.1 A section never renders an "Overdue" bucket
+
+Drawing the desktop artboard exposed this: every overdue follow-up, ticket and
+milestone is `critical` by §4, and every critical item lifts. So a section's
+Overdue bucket is **always empty by construction** — rendering one is dead UI.
+
+Sections therefore start at their first non-critical bucket (Today, Due today,
+Due soon), and the section header carries the lifted work as a count:
+
+```
+FOLLOW-UPS  8   2 overdue shown above
+```
+
+The full count stays on the badge, so the section still describes its whole set.
+
+### 6.2 What the critical-lift does and does not touch
 
 The lift applies only to the **item-shaped** sections: workflow, follow-ups, service and
 finance. **Project health does not lift.** It is a per-project summary, not a list of
@@ -340,8 +355,8 @@ The design system wins.
 |---|---|---|
 | Needs Attention | 6 | `View all N →` |
 | Workflow | 5 | `View all N →` |
-| Follow-ups | 5 | `Open follow-ups →` |
-| Service | 5 | `Open service →` |
+| Follow-ups | 5 (non-critical only) | `Open follow-ups →` |
+| Service | 5 (non-critical only) | `Open service →` |
 | Projects | 4 | `Open projects →` |
 | Finance | 3 | `Open finance →` |
 
