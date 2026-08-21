@@ -280,6 +280,26 @@ Design that muted state and that dialog.
 
 ---
 
+## The "View all" drawer
+
+Four of the overflow links go to an existing screen: **Open follow-ups**, **Open
+service**, **Open projects**, **Open finance**.
+
+The other two — **View all** on Needs Attention and on Workflow Stuck — have nowhere to
+go, because both lists deliberately mix a quote, a property, a follow-up, a ticket, a
+project and a payment, and no screen in the app shows that mix.
+
+They open a **drawer** instead: a sheet sliding in over the dashboard, holding every row
+in that section. The dashboard stays put behind it.
+
+Design it with:
+
+- The section's name and its full count as the title.
+- A **search field** — this is the day someone has forty stuck items, not nine.
+- The **same row pattern** as the dashboard, unchanged. Each row keeps its own action
+  and its own destination; the mix needs no shared one.
+- A quiet close. Nothing else — no filters, no sort control, no tabs.
+
 ## The follow-up completion dialog
 
 The only thing on this page that writes data. Completing a follow-up is not one
@@ -329,6 +349,7 @@ below the text rather than sit beside it.
   initials avatar, and the At-a-glance row.
 - **E — Follow-up completion dialog.**
 - **F — Permission-blocked dialog.**
+- **G — The "View all" drawer**, over a dimmed dashboard.
 
 ---
 

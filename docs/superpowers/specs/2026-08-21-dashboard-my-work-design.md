@@ -393,6 +393,28 @@ The design system wins.
 | Projects | 4 | `Open projects →` |
 | Finance | 3 | `Open finance →` |
 
+### 6.3 Where "View all" goes
+
+Four of the six overflow links resolve to an existing single-entity route:
+`/followups`, `/service`, `/projects/list`, `/finance`.
+
+**Needs Attention and Workflow Stuck do not.** Both are deliberately mixed — a quote,
+a property, a follow-up, a ticket, a project and a payment in one list — and no route
+in the app can render that mix. Creating one would breach §21 (do not invent routes)
+and §24 (no dashboard sub-pages).
+
+The resolution: **the list is mixed, but every row is not.** Each row already carries
+its own entity, action and destination. The mixed list needs somewhere to live, not a
+shared destination.
+
+So those two links open the existing `DrillDownDrawer`
+(`components/shared/drawers/drill-down-drawer.tsx`) — a Sheet with a title, a count,
+built-in search and a `renderItem` hook that draws the same dashboard row. Rows inside
+it keep their individual deep links.
+
+A sheet is not navigation: the dashboard stays a single page, scroll position survives,
+and search covers the day someone has forty stuck items rather than nine.
+
 No task lists (spec §17). A project row shows counts and milestone health only:
 
 ```
