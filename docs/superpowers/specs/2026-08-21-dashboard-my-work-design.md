@@ -201,7 +201,7 @@ No identity parameter. The subject is resolved from `@CurrentUser()`.
 ```ts
 {
   generatedAt: string;
-  summary: { needsAttention: number; overdue: number; dueSoon: number };
+  summary: { overdue: number; dueToday: number; dueThisWeek: number };
   sections: {
     workflow:  SectionResult;
     followups: SectionResult;
@@ -229,6 +229,14 @@ SELECT * FROM mine ORDER BY severity, due_date LIMIT n;
 ```
 
 Scope is applied **before** aggregation. Never count globally and filter after.
+
+The three headline numbers are **Overdue**, **Due today** and **Due this week** —
+disjoint sets, each meaning one thing. The earlier trio (Needs Attention · Overdue ·
+Due Soon) was dropped when the artboard made its problem visible: "Needs attention"
+merely restated the badge on the block directly beneath it, and because every overdue
+item is critical, "Overdue" then covered almost the same records again. Two of three
+numbers carried no information. The Needs Attention count now lives only on that
+block's own badge.
 
 `summary` is the sum of section counts computed in code — not a separate query — so the
 three headline numbers cannot drift from the sections.
@@ -310,7 +318,7 @@ deliberate exception to spec §25.
 | # | Block | Weight |
 |---|---|---|
 | 1 | Greeting strip — name, date, one sentence of state | quiet |
-| 2 | Three numbers — Needs Attention · Overdue · Due Soon | medium |
+| 2 | Three numbers — Overdue · Due today · Due this week | medium |
 | 3 | **Needs Attention** — critical items only | loudest |
 | 4 | **Workflow stuck** — Lead → Property → Survey → Quote → Project | loud |
 | 5 | Follow-ups │ Service Requests — two equal columns | medium |
