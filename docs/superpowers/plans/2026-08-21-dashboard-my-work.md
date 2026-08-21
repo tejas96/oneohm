@@ -51,7 +51,18 @@ Every task's requirements implicitly include this section.
     Every curl in this plan uses `http://localhost:8085/api/v1/...`.
 17. **`nx serve backend` does NOT hot-reload.** After editing a provider you must restart it,
     or you will curl a stale stub and conclude your query returns nothing.
-18. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
+18. **NEVER return a Postgres `date`/`timestamp` column straight out of `dataSource.query()`.**
+    TypeORM does not override node-postgres's default type parsers, and the default `date`
+    parser builds `new Date(y, m, d)` in the **Node process's** timezone. The API runs in IST,
+    so a `date` column serializes to JSON one calendar day EARLY — `2026-08-22` becomes
+    `"2026-08-21T18:30:00.000Z"`. It reproduces 100% of the time and is invisible in psql,
+    whose text output never shows it. Emit dates as strings instead:
+    ```sql
+    to_char(some_date_column, 'YYYY-MM-DD') AS due_date
+    ```
+    This is the same IST/UTC class of bug that once made two follow-up surfaces disagree by
+    five and a half hours. **Verify date fields from the live HTTP JSON, never from psql.**
+19. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
 
 ---
 
@@ -1053,7 +1064,7 @@ stalls AS (
     CASE WHEN q.valid_until < CURRENT_DATE
          THEN 'Quote lapsed ' || (CURRENT_DATE - q.valid_until)::text || ' days ago, still marked sent'
          ELSE 'Quote expires in ' || (q.valid_until - CURRENT_DATE)::text || ' days' END,
-    q.quote_number, q.valid_until, 'open_quote',
+    q.quote_number, to_char(q.valid_until, 'YYYY-MM-DD'), 'open_quote',
     q.customer_id::text, q.property_id::text,
     CASE WHEN q.valid_until < CURRENT_DATE THEN 1 ELSE 2 END
   FROM my_quotes q
@@ -1214,7 +1225,7 @@ scoped AS (
     END AS reason,
     to_char(f.scheduled_at, 'HH24:MI') AS meta,
     NULL::text AS meta_secondary,
-    f.scheduled_at::date AS due_date,
+    to_char(f.scheduled_at, 'YYYY-MM-DD') AS due_date,
     'complete_followup'::text AS action,
     f.customer_id::text AS customer_id,
     f.property_id::text  AS property_id,
@@ -1353,7 +1364,7 @@ scoped AS (
     END AS reason,
     CASE WHEN t.due_date IS NULL THEN '—' ELSE to_char(t.due_date, 'DD Mon') END AS meta,
     INITCAP(t.priority) AS meta_secondary,
-    t.due_date AS due_date,
+    to_char(t.due_date, 'YYYY-MM-DD') AS due_date,
     'open_service'::text AS action,
     t.customer_id::text AS customer_id,
     NULL::text AS property_id,
@@ -1601,7 +1612,7 @@ scoped AS (
     END AS reason,
     COALESCE(tr.done_tasks, 0)::text || ' / ' || COALESCE(tr.total_tasks, 0)::text AS meta,
     COALESCE(mr.milestones, '[]'::json)::text AS meta_secondary,
-    p.end_date AS due_date,
+    to_char(p.end_date, 'YYYY-MM-DD') AS due_date,
     'open_project'::text AS action,
     NULL::text AS customer_id,
     p.property_id::text AS property_id,
@@ -1771,7 +1782,7 @@ scoped AS (
     '{amount}' AS meta,
     v.balance_paise,
     NULL::text AS meta_secondary,
-    v.due_date,
+    to_char(v.due_date, 'YYYY-MM-DD') AS due_date,
     'open_payments'::text AS action,
     NULL::text AS customer_id,
     NULL::text AS property_id,
