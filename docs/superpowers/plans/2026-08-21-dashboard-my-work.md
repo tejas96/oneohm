@@ -60,6 +60,8 @@ Every task's requirements implicitly include this section.
     ```sql
     to_char(some_date_column, 'YYYY-MM-DD') AS due_date
     ```
+    A NULL in the same column position of a `UNION ALL` must then be `NULL::text`, not
+    `NULL::date` — Postgres refuses to match `date` against `text` across union arms.
     This is the same IST/UTC class of bug that once made two follow-up surfaces disagree by
     five and a half hours. **Verify date fields from the live HTTP JSON, never from psql.**
 19. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
@@ -983,7 +985,7 @@ stalls AS (
     'Lead'::text AS subtitle,
     'Onboarded ' || GREATEST((CURRENT_DATE - c.created_at::date), 0)::text || ' days ago, no property added' AS reason,
     NULL::text AS meta,
-    NULL::date AS due_date,
+    NULL::text AS due_date,
     'add_property'::text AS action,
     c.id::text AS customer_id, NULL::text AS property_id,
     2 AS rank
