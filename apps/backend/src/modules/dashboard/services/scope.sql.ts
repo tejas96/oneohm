@@ -59,8 +59,11 @@ export const MY_PROJECTS_CTE = `
       AND (
         pr.created_by = $1
         OR EXISTS (
+          -- \`deleted_at IS NULL\` is load-bearing: removing someone from a
+          -- project team is how their access is taken away, and without this
+          -- they keep seeing the project for ever.
           SELECT 1 FROM project_team_members tm
-          WHERE tm.project_id = pr.id AND tm.user_id = $1
+          WHERE tm.project_id = pr.id AND tm.user_id = $1 AND tm.deleted_at IS NULL
         )
       )
   )
@@ -93,6 +96,9 @@ export const MY_EMPLOYEE_CTE = `
     SELECT e.id
     FROM employee_profiles e
     WHERE e.user_id = $1
+      -- The unique index on user_id is global, not partial on deleted_at, so a
+      -- deactivated profile still resolves here and drags its tickets in.
+      AND e.deleted_at IS NULL
   )
 `;
 
