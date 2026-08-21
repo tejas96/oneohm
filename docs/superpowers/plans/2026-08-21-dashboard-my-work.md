@@ -1106,7 +1106,8 @@ so a lapsed quote still reads as sent in the status column."
 - Modify: `apps/backend/src/modules/dashboard/providers/followups.provider.ts`
 
 **Interfaces:**
-- Consumes: `ProviderRow`, `toSection` (Task 4); `DashboardProvider`, `OkSection` (Task 3).
+- Consumes: `MY_FOLLOWUPS_CTE`, `withCtes` (Task 2); `ProviderRow`, `toSection` (Task 4);
+  `DashboardProvider`, `OkSection` (Task 3).
 - Produces: buckets keyed `overdue`, `today`, `upcoming`.
 
 **The day boundary is computed by the DATABASE, never by Node.** `followup.repository.ts:144-155`
@@ -1122,6 +1123,7 @@ surface, or the dashboard reintroduces that bug.
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
+import { MY_FOLLOWUPS_CTE, withCtes } from '../services/scope.sql';
 import type { DashboardProvider, OkSection } from './provider.types';
 import { type ProviderRow, toSection } from './section-shaping';
 
@@ -1147,7 +1149,8 @@ export class FollowupsProvider implements DashboardProvider {
 }
 
 const SQL = `
-WITH scoped AS (
+${withCtes(MY_FOLLOWUPS_CTE)},
+scoped AS (
   SELECT
     CASE
       WHEN f.scheduled_at <  date_trunc('day', now())                        THEN 'followup_overdue'
@@ -1185,8 +1188,8 @@ WITH scoped AS (
   JOIN customer_profiles c ON c.id = f.customer_id
   WHERE f.deleted_at IS NULL
     AND f.status = 'pending'
-    -- Mine: assigned to me, or raised by me.
-    AND (f.assigned_to_user_id = $1 OR f.created_by = $1)
+    -- Ownership lives in scope.sql, like every other section's.
+    AND f.id IN (SELECT id FROM my_followups)
     AND f.scheduled_at < date_trunc('day', now()) + interval '${UPCOMING_DAYS + 1} days'
 )
 SELECT
@@ -1433,8 +1436,23 @@ export class ProjectsProvider implements DashboardProvider {
   constructor(private readonly dataSource: DataSource) {}
 
   async load(userId: string): Promise<OkSection> {
-    const rows: ProviderRow[] = await this.dataSource.query(this.sql(), [userId]);
-    return toSection(rows, CAP, BUCKET_LABELS);
+    const rows: (ProviderRow & { balance_paise: string })[] = await this.dataSource.query(
+      this.sql(),
+      [userId],
+    );
+
+    // Substitute the formatted amount before shaping. The SQL emits a literal
+    // '{amount}' placeholder so the money string is built in exactly one place.
+    const formatted = rows.map((row) => {
+      const amount = formatInr(Number(row.balance_paise) / 100);
+      return {
+        ...row,
+        meta: (row.meta ?? '').replace('{amount}', amount),
+        reason: row.reason.replace('{amount}', amount),
+      };
+    });
+
+    return toSection(formatted, CAP, BUCKET_LABELS);
   }
 
   private sql(): string {
@@ -1471,7 +1489,7 @@ task_rollup AS (
  */
 milestone_rollup AS (
   SELECT
-    t.project_id,
+    m.project_id,
     json_agg(
       json_build_object(
         'name',    m.milestone_name,
@@ -1505,8 +1523,10 @@ milestone_rollup AS (
       AND t.project_id IN (SELECT id FROM my_projects)
     GROUP BY t.project_id, t.milestone_name
   ) m
-  JOIN project_tasks t ON t.project_id = m.project_id
-  GROUP BY t.project_id
+  -- Group by the SUBQUERY's project_id. Re-joining project_tasks here would
+  -- multiply each milestone by the project's task count, so json_agg would
+  -- repeat every milestone dozens of times.
+  GROUP BY m.project_id
 ),
 
 scoped AS (
@@ -1656,6 +1676,15 @@ const BUCKET_LABELS: Record<string, string> = {
   payment_due_soon: 'Due soon',
 };
 
+/** Same formatter, same options as project-attention.service.ts:287. */
+function formatInr(rupees: number): string {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(rupees);
+}
+
 @Injectable()
 export class FinanceProvider implements DashboardProvider {
   readonly key = 'finance' as const;
@@ -1663,8 +1692,23 @@ export class FinanceProvider implements DashboardProvider {
   constructor(private readonly dataSource: DataSource) {}
 
   async load(userId: string): Promise<OkSection> {
-    const rows: ProviderRow[] = await this.dataSource.query(this.sql(), [userId]);
-    return toSection(rows, CAP, BUCKET_LABELS);
+    const rows: (ProviderRow & { balance_paise: string })[] = await this.dataSource.query(
+      this.sql(),
+      [userId],
+    );
+
+    // Substitute the formatted amount before shaping. The SQL emits a literal
+    // '{amount}' placeholder so the money string is built in exactly one place.
+    const formatted = rows.map((row) => {
+      const amount = formatInr(Number(row.balance_paise) / 100);
+      return {
+        ...row,
+        meta: (row.meta ?? '').replace('{amount}', amount),
+        reason: row.reason.replace('{amount}', amount),
+      };
+    });
+
+    return toSection(formatted, CAP, BUCKET_LABELS);
   }
 
   private sql(): string {
@@ -1679,13 +1723,17 @@ scoped AS (
     v.milestone_id::text AS entity_id,
     p.name AS title,
     v.name || ' milestone' AS subtitle,
+    -- Money is formatted in TypeScript, below. '₹' is not a to_char token, and
+    -- Indian digit grouping is not one either — Intl.NumberFormat('en-IN') does
+    -- both, and it is what project-attention.service.ts:287 already uses, so the
+    -- dashboard and the project page render the same figure identically.
     CASE
       WHEN v.days_overdue > 0
-        THEN to_char(v.balance_paise / 100.0, 'FM₹99,99,99,990') || ' short, '
-             || v.days_overdue::text || ' days overdue'
+        THEN '{amount} short, ' || v.days_overdue::text || ' days overdue'
       ELSE 'Due in ' || GREATEST((v.due_date - CURRENT_DATE), 0)::text || ' days'
     END AS reason,
-    to_char(v.balance_paise / 100.0, 'FM₹99,99,99,990') AS meta,
+    '{amount}' AS meta,
+    v.balance_paise,
     NULL::text AS meta_secondary,
     v.due_date,
     'open_payments'::text AS action,
