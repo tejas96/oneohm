@@ -1493,23 +1493,8 @@ export class ProjectsProvider implements DashboardProvider {
   constructor(private readonly dataSource: DataSource) {}
 
   async load(userId: string): Promise<OkSection> {
-    const rows: (ProviderRow & { balance_paise: string })[] = await this.dataSource.query(
-      this.sql(),
-      [userId],
-    );
-
-    // Substitute the formatted amount before shaping. The SQL emits a literal
-    // '{amount}' placeholder so the money string is built in exactly one place.
-    const formatted = rows.map((row) => {
-      const amount = formatInr(Number(row.balance_paise) / 100);
-      return {
-        ...row,
-        meta: (row.meta ?? '').replace('{amount}', amount),
-        reason: row.reason.replace('{amount}', amount),
-      };
-    });
-
-    return toSection(formatted, CAP, BUCKET_LABELS);
+    const rows: ProviderRow[] = await this.dataSource.query(this.sql(), [userId]);
+    return toSection(rows, CAP, BUCKET_LABELS);
   }
 
   private sql(): string {
