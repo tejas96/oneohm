@@ -43,7 +43,13 @@ Every task's requirements implicitly include this section.
     The database is `oneohm_epc` and the user is `root` — both differ from the defaults.
     Real user ids for scope testing: `2af0dc8a-cf57-4a5c-a552-792b06488ef7`,
     `652ec31f-1896-4d7d-894a-4372c6504ae5`, `e8106020-78bf-43a3-83ca-576f01ef36e6`.
-15. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
+15. **`noUncheckedIndexedAccess: true`** is set in `tsconfig.base.json:21`. Indexing an array
+    yields `T | undefined`, so `arr[i].prop` does not compile. Use `arr[i]!.prop` where the
+    index is provably in range, or narrow it. Several code blocks in this plan index arrays
+    and will need that.
+16. **The backend listens on port 8085**, not 3000 — `BACKEND_PORT=8085` in `apps/backend/.env`.
+    Every curl in this plan uses `http://localhost:8085/api/v1/...`.
+17. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
 
 ---
 
@@ -717,7 +723,7 @@ npm run backend:dev
 Then, with a valid access token from a browser session:
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/dashboard/my-work | jq
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8085/api/v1/dashboard/my-work | jq
 ```
 
 Expected: HTTP 200 and a body with `generatedAt`, a `summary` of three zeros, and five sections each `{"status":"ok","total":0,"criticalCount":0,"buckets":[]}`.
@@ -725,7 +731,7 @@ Expected: HTTP 200 and a body with `generatedAt`, a `summary` of three zeros, an
 Then confirm the guard is really on:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' http://localhost:3000/api/v1/dashboard/my-work
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8085/api/v1/dashboard/my-work
 ```
 
 Expected: `401`. **If this prints 200, the guard is missing and every later task leaks data.** Fix before continuing.
@@ -1088,7 +1094,7 @@ ORDER BY s.rank, s.due_date NULLS LAST
 Restart the backend, then:
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/dashboard/my-work \
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8085/api/v1/dashboard/my-work \
   | jq '.sections.workflow'
 ```
 
@@ -1097,7 +1103,7 @@ Expected: `status: "ok"`, one or more buckets, and for each bucket `count >= ite
 - [ ] **Step 3: Prove the count matches the list**
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/dashboard/my-work \
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8085/api/v1/dashboard/my-work \
   | jq '.sections.workflow.buckets[] | {key, count, shown: (.items | length)}'
 ```
 
@@ -1234,8 +1240,8 @@ ORDER BY s.sort_at ASC
 This is the whole reason the boundary rule exists. Compare the two:
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/followups/summary?mine=true | jq
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/dashboard/my-work \
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8085/api/v1/followups/summary?mine=true | jq
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8085/api/v1/dashboard/my-work \
   | jq '.sections.followups.buckets[] | {key, count}'
 ```
 
@@ -1623,7 +1629,7 @@ ORDER BY s.rank, s.due_date NULLS LAST
 - [ ] **Step 2: Check the milestone JSON and the task maths**
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/dashboard/my-work \
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8085/api/v1/dashboard/my-work \
   | jq '.sections.projects.buckets[].items[] | {title, meta, milestones: (.metaSecondary | fromjson)}'
 ```
 
@@ -1634,7 +1640,7 @@ values across milestones do not exceed the project's `total` in `meta`.
 - [ ] **Step 3: Confirm no task list leaked**
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/dashboard/my-work \
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8085/api/v1/dashboard/my-work \
   | jq '.sections.projects' | grep -ci '"taskId"\|"tasks":\s*\[' || echo "no task list — correct"
 ```
 
@@ -1794,7 +1800,7 @@ ORDER BY s.rank, s.due_date NULLS LAST
 Pick a milestone the endpoint returns:
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/dashboard/my-work \
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8085/api/v1/dashboard/my-work \
   | jq -r '.sections.finance.buckets[].items[] | "\(.params.projectId) \(.title) \(.meta)"'
 ```
 
@@ -3179,9 +3185,9 @@ For **check 13**, this is the one to do slowly. Note two user ids, sign in as ea
 the JSON:
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN_A" http://localhost:3000/api/v1/dashboard/my-work \
+curl -s -H "Authorization: Bearer $TOKEN_A" http://localhost:8085/api/v1/dashboard/my-work \
   | jq -r '[.. | .id? // empty] | sort | unique' > /tmp/user-a-ids.json
-curl -s -H "Authorization: Bearer $TOKEN_B" http://localhost:3000/api/v1/dashboard/my-work \
+curl -s -H "Authorization: Bearer $TOKEN_B" http://localhost:8085/api/v1/dashboard/my-work \
   | jq -r '[.. | .id? // empty] | sort | unique' > /tmp/user-b-ids.json
 comm -12 /tmp/user-a-ids.json /tmp/user-b-ids.json
 ```
@@ -3192,7 +3198,7 @@ overlapping id must be explainable** by the scope rule. If you cannot explain on
 For **check 15**, mechanically:
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/v1/dashboard/my-work \
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8085/api/v1/dashboard/my-work \
   | jq '[.sections | to_entries[] | select(.value.status=="ok") |
          {section: .key, total: .value.total,
           bucketSum: ([.value.buckets[].count] | add // 0)}]'
