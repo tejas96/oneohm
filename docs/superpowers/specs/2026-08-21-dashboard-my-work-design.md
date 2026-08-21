@@ -482,6 +482,7 @@ Recorded because spec §34 requires stating what could not be verified.
 | 6 | Milestones are a string on tasks, not an entity | A milestone with no tasks does not exist; §16's assumption of a milestone table is wrong |
 | 7 | The app was only observed at the login screen | Header and rail are reproduced from source, not from sight |
 | 8 | Ticket assignee is an employee id, not a user id | Requires a join through `employee_profiles`; getting it wrong leaks other people's tickets (check 13) |
+| 9 | **Postgres runs in UTC; the business runs in IST.** `SHOW timezone` returns UTC and nothing overrides it on the connection in `database/datasource.ts`, so `CURRENT_DATE` and `date_trunc('day', now())` resolve to the *UTC* day. Measured 2026-08-22: `CURRENT_DATE` read `2026-08-21` while the IST date was already the 22nd. | For the 5.5 hours between IST midnight and 05:29, the database's "today" is still yesterday, so every date bucket in the app — not only this dashboard — is off by one. **Deliberately not fixed here:** `followup.repository.ts:144-155` settled that the database owns the day boundary and every existing follow-up surface already behaves this way, so making this one screen use IST would recreate the drift that decision exists to prevent. The fix is one line on the pg connection (`timezone: 'Asia/Kolkata'`), applied once app-wide and checked against every dated screen. Its own change, not this one. |
 
 ---
 
