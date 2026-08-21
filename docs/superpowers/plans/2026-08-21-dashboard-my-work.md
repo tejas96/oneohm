@@ -330,9 +330,26 @@ export const MY_PROJECTS_CTE = `
       AND (
         pr.created_by = $1
         OR EXISTS (
+          -- `deleted_at IS NULL` is load-bearing: removing someone from a
+          -- project team is how their access is taken away, and without this
+          -- they keep seeing the project for ever.
           SELECT 1 FROM project_team_members tm
-          WHERE tm.project_id = pr.id AND tm.user_id = $1
+          WHERE tm.project_id = pr.id AND tm.user_id = $1 AND tm.deleted_at IS NULL
         )
+      )
+  )
+`;
+
+/** Follow-ups I raised or am assigned, plus every follow-up of a customer of mine. */
+export const MY_FOLLOWUPS_CTE = `
+  my_followups AS (
+    SELECT f.id, f.customer_id, f.property_id
+    FROM followups f
+    WHERE f.deleted_at IS NULL
+      AND (
+        f.created_by = $1
+        OR f.assigned_to_user_id = $1
+        OR f.customer_id IN (SELECT id FROM my_customers)
       )
   )
 `;
@@ -350,6 +367,9 @@ export const MY_EMPLOYEE_CTE = `
     SELECT e.id
     FROM employee_profiles e
     WHERE e.user_id = $1
+      -- The unique index on user_id is global, not partial on deleted_at, so a
+      -- deactivated profile still resolves here and drags its tickets in.
+      AND e.deleted_at IS NULL
   )
 `;
 
@@ -1114,7 +1134,7 @@ so a lapsed quote still reads as sent in the status column."
 - Modify: `apps/backend/src/modules/dashboard/providers/followups.provider.ts`
 
 **Interfaces:**
-- Consumes: `MY_FOLLOWUPS_CTE`, `withCtes` (Task 2); `ProviderRow`, `toSection` (Task 4);
+- Consumes: `MY_CUSTOMERS_CTE`, `MY_FOLLOWUPS_CTE`, `withCtes` (Task 2); `ProviderRow`, `toSection` (Task 4);
   `DashboardProvider`, `OkSection` (Task 3).
 - Produces: buckets keyed `overdue`, `today`, `upcoming`.
 
@@ -1131,7 +1151,7 @@ surface, or the dashboard reintroduces that bug.
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
-import { MY_FOLLOWUPS_CTE, withCtes } from '../services/scope.sql';
+import { MY_CUSTOMERS_CTE, MY_FOLLOWUPS_CTE, withCtes } from '../services/scope.sql';
 import type { DashboardProvider, OkSection } from './provider.types';
 import { type ProviderRow, toSection } from './section-shaping';
 
@@ -1157,7 +1177,7 @@ export class FollowupsProvider implements DashboardProvider {
 }
 
 const SQL = `
-${withCtes(MY_FOLLOWUPS_CTE)},
+${withCtes(MY_CUSTOMERS_CTE, MY_FOLLOWUPS_CTE)},
 scoped AS (
   SELECT
     CASE
