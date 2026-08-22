@@ -54,7 +54,7 @@ scoped AS (
              || ' days ago'
       ELSE f.subject
     END AS reason,
-    to_char(f.scheduled_at, 'HH24:MI') AS meta,
+    to_char(f.scheduled_at, 'FMHH12:MI AM') AS meta,
     NULL::text AS meta_secondary,
     to_char(f.scheduled_at, 'YYYY-MM-DD') AS due_date,
     'complete_followup'::text AS action,

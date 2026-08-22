@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FollowupStatus } from '@tejas96/shared/types';
 import {
-  Between,
   type EntityManager,
   IsNull,
   LessThan,
   MoreThanOrEqual,
   Not,
+  And,
   Repository,
 } from 'typeorm';
 
@@ -90,7 +90,8 @@ export class FollowupRepository {
       where.priority = filters.priority;
     }
     if (filters.from && filters.to) {
-      where.scheduledAt = Between(filters.from, filters.to);
+      // Exclusive end on `to` matches `/followups/today` (`< startOfTomorrow`).
+      where.scheduledAt = And(MoreThanOrEqual(filters.from), LessThan(filters.to));
     } else if (filters.from) {
       where.scheduledAt = MoreThanOrEqual(filters.from);
     } else if (filters.to) {
