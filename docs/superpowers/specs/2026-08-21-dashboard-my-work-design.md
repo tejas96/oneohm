@@ -481,6 +481,31 @@ Every check pairs a state with what must render.
 
 Checks 13 and 15 are the two that matter most: 13 is the security check, 15 the honesty check.
 
+### 7.1 Kind coverage — all 21, checked individually 2026-08-22
+
+Walking one account only ever exercises the kinds in that person's queue, and the response caps
+items at five per bucket, so a busy bucket hides the rest. All five workflow kinds share the
+`stalled` bucket, which is why a single busy account shows four of them at most. Each kind was
+therefore checked against the live database and then confirmed rendering through the API for an
+account whose queue is small enough not to crowd it out.
+
+**18 of 21 render today.** The three that do not cannot, for reasons in the data rather than the
+code:
+
+| Kind | Why it does not appear | Evidence |
+|---|---|---|
+| `service_due_today` | **Only one service ticket in the entire database has a `due_date` at all**, and it is 21 days past it — so it is correctly `service_overdue`. `due_date` arrived in migration `1855200000000` and almost nothing has been given one. | 1 dated ticket org-wide |
+| `service_due_soon` | Same single ticket. Nothing is dated into the future. | 0 candidates |
+| `payment_due_soon` | **Misses by one day.** 204 milestones are not yet due; 198 of those are undated and the six that are dated fall exactly four days out. The rule's horizon is three. | The provider's own predicate returns 0 at `CURRENT_DATE + 3` and 6 at `+ 4` |
+
+`payment_due_soon` will fire tomorrow without any change. The two service kinds will fire the day
+someone sets a future due date on a ticket. Neither is a defect; both are worth knowing before
+anyone reports the rule as broken.
+
+The other 18 were each seen in a real response, including the five that share the `stalled`
+bucket: `property_missing`, `site_visit_pending`, `survey_pending`, `quote_missing` and
+`quote_draft`.
+
 **All fifteen have now been walked.** Checks 9 and 12 were the two the original build could not
 reach, and the spec-2 handoff recorded them as outstanding; both were walked on 2026-08-22 and both
 pass. Nothing in §4 is unverified.
