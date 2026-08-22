@@ -77,7 +77,7 @@ export function MyWorkPage(): React.JSX.Element {
     );
   }
 
-  const { critical, rest, liftedBySection } = liftCritical(data.sections);
+  const { critical, rest, liftedBySection, criticalBySection } = liftCritical(data.sections);
   const { summary } = data;
   const name = user?.firstName ?? '';
 
@@ -186,7 +186,9 @@ export function MyWorkPage(): React.JSX.Element {
         <SectionCard
           label="Project health"
           section={rest.projects}
-          aside="overdue projects also appear above"
+          aside={
+            criticalBySection.projects > 0 ? 'overdue projects also appear above' : undefined
+          }
           emptyMessage="Every project is on track."
           skeletonRows={4}
           onRetry={() => void refetch()}
@@ -205,7 +207,7 @@ export function MyWorkPage(): React.JSX.Element {
             At a glance
           </h2>
           {[
-            { label: 'Overdue', value: summary.overdue, Icon: AlertCircle, tint: 'bg-danger/10 text-error' },
+            { label: 'Overdue', value: summary.overdue, Icon: AlertCircle, tint: 'bg-error/10 text-error' },
             { label: 'Due today', value: summary.dueToday, Icon: CalendarCheck, tint: 'bg-warning/10 text-warning' },
             { label: 'Due this week', value: summary.dueThisWeek, Icon: CalendarDays, tint: 'bg-info/10 text-info' },
           ].map(({ label, value, Icon, tint }) => (
