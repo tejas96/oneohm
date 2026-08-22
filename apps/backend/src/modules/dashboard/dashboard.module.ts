@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { IamModule } from '../iam/iam.module';
 import { DashboardController } from './controllers/dashboard.controller';
 import { FinanceProvider } from './providers/finance.provider';
 import { FollowupsProvider } from './providers/followups.provider';
@@ -16,6 +17,11 @@ import { DashboardService } from './services/dashboard.service';
  * the ORM would be an N+1 across five domains on the first screen after login.
  */
 @Module({
+  // IamModule only for `getUserPermissions`, which the controller calls on the
+  // selector path. The JWT's permission list is a login-time snapshot, and the
+  // web app gates the dropdown on the FRESH list from /auth/me — so reading the
+  // token here would let the two disagree for the life of an access token.
+  imports: [IamModule],
   controllers: [DashboardController],
   providers: [
     DashboardService,

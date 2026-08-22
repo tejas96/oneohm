@@ -69,6 +69,12 @@ export function resolveProjectListMemberId(
  * than hold grants — so `permissions.includes(...)` alone is false for every
  * admin and would lock out exactly the people this feature is for.
  *
+ * `permissions` MUST be a fresh list from `IamService.getUserPermissions`, not
+ * `CurrentUserType.permissions`. The latter is baked into the JWT at login, and
+ * the web app gates the selector on the fresh list `/auth/me` returns — passing
+ * the token's copy here lets the two disagree for the whole life of an access
+ * token after a grant, so the dropdown appears and the parameter is ignored.
+ *
  * The code string is duplicated from `apps/web/lib/rbac/catalog.ts` on purpose:
  * the backend does not import from the web app, and the migration is already
  * the backend's copy of the catalog.
