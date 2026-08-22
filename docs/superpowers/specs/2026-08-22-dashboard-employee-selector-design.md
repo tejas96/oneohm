@@ -272,7 +272,7 @@ resolve from local source — **no package publish required**.
 | `dashboardKeys.myWork(subjectUserId?)` | `hooks/dashboard-keys.ts` | **load-bearing** — see §6.1 |
 | The selector | `components/my-work-page.tsx` | greeting card, right side |
 | Subject banner + reset | `components/my-work-page.tsx` | states whose work, offers the way back |
-| Actions hidden when viewing another | `components/dashboard-row.tsx` | decision 4 |
+| Dialog-mode action hidden when viewing another | `components/dashboard-row.tsx`, `components/view-all-drawer.tsx` | decision 4. `project-row.tsx` needs no change — its only action navigates |
 
 ### 6.1 The cache key is the one that bites
 
@@ -308,7 +308,10 @@ While a subject other than yourself is selected:
 - A **Back to my work** control clears the selection.
 - The greeting card drops the "Good morning, <you>" line — it is not your morning being
   described.
-- Every row action is hidden. Deep links remain, because they navigate rather than write.
+- The **dialog-mode** action is hidden — that is `complete_followup`, the only control on
+  the dashboard that writes. **Navigate-mode** actions stay: they are deep links, and they
+  are already permission-gated, so a viewer who lacks `quotes.view` gets the access dialog
+  exactly as they would on their own dashboard.
 
 ### 6.4 Route gating is untouched
 
@@ -329,7 +332,7 @@ not `web:dev` — dev cannot reach a route behind middleware.
 | 2 | Signed in as a role holding no grant | No dropdown anywhere on the page |
 | 3 | Grant the code to `project_manager`, **then re-login** | Dropdown appears for that user |
 | 4 | `curl` the endpoint as a non-holder with `?userId=<someone else>` | Your **own** data returns. No 403, no leak |
-| 5 | Select an employee | Every row action is gone; deep links still navigate |
+| 5 | Select an employee | The follow-up **Complete** control is gone from every row; Open/View deep links still navigate |
 | 6 | Select A, then B, then A again | Counts and `subject.name` change every time. Proves the cache key |
 | 7 | `?userId=` set to a non-UUID | `400`, not an empty dashboard |
 | 8 | Clear the selection | Own dashboard returns, actions come back |
