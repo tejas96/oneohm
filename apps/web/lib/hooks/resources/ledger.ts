@@ -139,6 +139,8 @@ export interface FinanceKpis {
   /** A SNAPSHOT as of today — deliberately not bounded by the selected period. */
   outstandingNow: number;
   overdueCountNow: number;
+  /** Of `outstandingNow`, how much is past due. Authoritative — see KPIS_SQL. */
+  overdueNow: number;
   receiptCountInRange: number;
   expenseCountInRange: number;
   unallocatedCredit: number;
@@ -229,9 +231,11 @@ export function useFinanceKpis(
   from?: string,
   to?: string,
   search?: string,
+  options?: { enabled?: boolean },
 ): UseQueryResult<FinanceKpis, AxiosError> {
   return useQuery({
     queryKey: [...ledgerKeys.kpis(from, to), search ?? ''],
+    enabled: options?.enabled !== false,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<FinanceKpis>('/finance/kpis', {
         params: search ? { from, to, search } : { from, to },
@@ -247,9 +251,11 @@ export function useCashFlow(
   from?: string,
   to?: string,
   grain: 'day' | 'week' | 'month' = 'month',
+  options?: { enabled?: boolean },
 ): UseQueryResult<CashFlowPoint[], AxiosError> {
   return useQuery({
     queryKey: ledgerKeys.cashFlow(from, to, grain),
+    enabled: options?.enabled !== false,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<CashFlowPoint[]>('/finance/cash-flow', {
         params: { from, to, grain },

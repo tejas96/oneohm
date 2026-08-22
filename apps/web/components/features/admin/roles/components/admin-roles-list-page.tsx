@@ -13,8 +13,9 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState, type JSX } from 'react';
+import { useCallback, useMemo, useState, type JSX, type MouseEvent } from 'react';
 
 import { CreateRoleModal } from './create-role-modal';
 import { DeleteRoleModal } from './delete-role-modal';
@@ -36,6 +37,61 @@ import {
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useRoles, type RoleFilters } from '@/lib/hooks/resources';
 import type { AdminRole } from '@/lib/hooks/resources/roles';
+
+interface RoleRowActionsMenuProps {
+  role: AdminRole;
+  onEdit: (role: AdminRole) => void;
+  onDelete: (role: AdminRole) => void;
+}
+
+function RoleRowActionsMenu({ role, onEdit, onDelete }: RoleRowActionsMenuProps): JSX.Element {
+  const router = useRouter();
+  const canDelete = !role.isSystemRole && (role.usersCount ?? 0) === 0;
+  // Renaming a system role — its `code` above all — would silently
+  // break the bypass across the whole app, since everything matches on
+  // that string. The API refuses it too; this is the friendly half.
+  const canEdit = !role.isSystemRole;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="size-8 p-0"
+          aria-label={`Actions for ${role.name}`}
+          onClick={(e: MouseEvent) => e.stopPropagation()}
+        >
+          <MoreHorizontal className="size-icon-sm" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e: MouseEvent) => e.stopPropagation()}>
+        <DropdownMenuItem
+          onClick={() => router.push(buildRoute(ROUTES.ADMIN.ROLE_DETAIL, { id: role.id }))}
+        >
+          <Eye className="mr-2 size-icon-sm" /> View Details
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!canEdit} onClick={() => canEdit && onEdit(role)}>
+          <Edit className="mr-2 size-icon-sm" />
+          {canEdit ? 'Edit Role' : 'Built-in role — cannot be changed'}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          disabled={!canDelete}
+          className="text-error"
+          onClick={() => canDelete && onDelete(role)}
+        >
+          <Trash2 className="mr-2 size-icon-sm" />
+          {role.isSystemRole
+            ? 'System roles cannot be deleted'
+            : (role.usersCount ?? 0) > 0
+              ? `Remove ${role.usersCount} users first`
+              : 'Delete Role'}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function AdminRolesListPage(): JSX.Element {
   const router = useRouter();
@@ -78,13 +134,28 @@ export function AdminRolesListPage(): JSX.Element {
     clearFilters();
   }, [clearFilters]);
 
+  const handleRowClick = useCallback(
+    (role: AdminRole) => {
+      void router.push(buildRoute(ROUTES.ADMIN.ROLE_DETAIL, { id: role.id }));
+    },
+    [router],
+  );
+
   const columns: ColumnDef<AdminRole>[] = useMemo(
     () => [
       {
         accessorKey: 'name',
         header: 'Name',
         enableSorting: false,
-        cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+        cell: ({ row }) => (
+          <Link
+            href={buildRoute(ROUTES.ADMIN.ROLE_DETAIL, { id: row.original.id })}
+            className="font-medium hover:text-primary transition-colors"
+            onClick={(e: MouseEvent) => e.stopPropagation()}
+          >
+            {row.original.name}
+          </Link>
+        ),
       },
       {
         accessorKey: 'code',
@@ -136,50 +207,12 @@ export function AdminRolesListPage(): JSX.Element {
       {
         id: 'actions',
         header: '',
-        cell: ({ row }) => {
-          const role = row.original;
-          const canDelete = !role.isSystemRole && (role.usersCount ?? 0) === 0;
-          // Renaming a system role — its `code` above all — would silently
-          // break the bypass across the whole app, since everything matches on
-          // that string. The API refuses it too; this is the friendly half.
-          const canEdit = !role.isSystemRole;
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="size-8 p-0">
-                  <MoreHorizontal className="size-icon-sm" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => router.push(buildRoute(ROUTES.ADMIN.ROLE_DETAIL, { id: role.id }))}
-                >
-                  <Eye className="mr-2 size-icon-sm" /> View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem disabled={!canEdit} onClick={() => canEdit && setEditRole(role)}>
-                  <Edit className="mr-2 size-icon-sm" />
-                  {canEdit ? 'Edit Role' : 'Built-in role — cannot be changed'}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  disabled={!canDelete}
-                  className="text-error"
-                  onClick={() => canDelete && setDeleteRole(role)}
-                >
-                  <Trash2 className="mr-2 size-icon-sm" />
-                  {role.isSystemRole
-                    ? 'System roles cannot be deleted'
-                    : (role.usersCount ?? 0) > 0
-                      ? `Remove ${role.usersCount} users first`
-                      : 'Delete Role'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          );
-        },
+        cell: ({ row }) => (
+          <RoleRowActionsMenu role={row.original} onEdit={setEditRole} onDelete={setDeleteRole} />
+        ),
       },
     ],
-    [router],
+    [],
   );
 
   if (isLoading) {
@@ -296,6 +329,7 @@ export function AdminRolesListPage(): JSX.Element {
               enableSearch={false}
               enablePagination={false}
               isLoading={isFetching}
+              onRowClick={handleRowClick}
             />
             {roles.length > 0 && (
               <TablePagination

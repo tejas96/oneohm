@@ -1,5 +1,6 @@
 export * from './common.interface';
 export * from './customer.interface';
+export * from './dashboard.interface';
 export * from './integration.interface';
 export * from './inventory.interface';
 export * from './payment-term.interface';

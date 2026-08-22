@@ -45,6 +45,9 @@ export class ServiceTicketListItemDto {
   @ApiPropertyOptional({ example: '2026-08-20', nullable: true })
   dueDate: string | null;
 
+  @ApiPropertyOptional({ nullable: true })
+  createdByName: string | null;
+
   @ApiProperty()
   createdAt: string;
 }
@@ -99,9 +102,6 @@ export class ServiceTicketResponseDto extends ServiceTicketListItemDto {
 
   @ApiPropertyOptional({ nullable: true })
   closedAt: string | null;
-
-  @ApiPropertyOptional({ nullable: true })
-  createdByName: string | null;
 
   @ApiProperty()
   updatedAt: string;

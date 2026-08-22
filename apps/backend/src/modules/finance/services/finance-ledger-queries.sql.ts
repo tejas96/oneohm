@@ -54,10 +54,19 @@ export const KPIS_SQL = `
         OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $3 || '%'
       )
   ),
+  -- The authoritative receivables snapshot.
+  --
+  -- Deliberately unjoined and unlimited, unlike CUSTOMERS_AR_SQL, which inner
+  -- joins projects/properties/customers and caps at 1000 rows. Those joins drop
+  -- money owed on a soft-deleted project or by a soft-deleted customer, and the
+  -- cap truncates past 1000 customers. Both are correct for a per-customer
+  -- breakdown and wrong for an org total, so the total and the overdue figure
+  -- are served from here and nothing recomputes them client-side.
   snapshot AS (
     SELECT
       COALESCE(SUM(balance_paise), 0)::BIGINT                        AS outstanding_paise,
-      COUNT(*) FILTER (WHERE days_overdue > 0)::int                  AS overdue_count
+      COUNT(*) FILTER (WHERE days_overdue > 0)::int                  AS overdue_count,
+      COALESCE(SUM(balance_paise) FILTER (WHERE days_overdue > 0), 0)::BIGINT AS overdue_paise
     FROM v_milestone_balance
     WHERE status = 'active'
       AND balance_paise > 0
@@ -98,6 +107,7 @@ export const KPIS_SQL = `
     flows.expense_count        AS "expenseCount",
     snapshot.outstanding_paise AS "outstandingPaise",
     snapshot.overdue_count     AS "overdueCount",
+    snapshot.overdue_paise     AS "overduePaise",
     credit.unallocated_paise   AS "unallocatedPaise",
     meters.meter_installations AS "meterInstallations"
   FROM flows, snapshot, credit, meters

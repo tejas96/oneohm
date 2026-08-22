@@ -37,18 +37,20 @@ import {
   FollowupRowActions,
   OUTCOME_LABELS,
   useCancelFollowup,
+  followupIsPastDue,
   type FollowupResponse,
 } from '@/components/features/followups';
 import { MarkAsLostDialog } from '@/components/features/properties';
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { showToast } from '@/components/ui';
 import { useGatedAction } from '@/lib/rbac';
-import { formatDate, getErrorMessage, toTitleLabel } from '@/lib/utils';
+import { formatFollowupWhen, getErrorMessage, toTitleLabel } from '@/lib/utils';
 
 export interface FollowupsTabProps {
   customerId: string;
   enabled: boolean;
   onSchedule: () => void;
+  onViewFollowup: (followupId: string) => void;
 }
 
 const STATUS_TONE = {
@@ -80,7 +82,12 @@ function ownerName(followup: FollowupResponse): string {
   );
 }
 
-export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabProps): JSX.Element {
+export function FollowupsTab({
+  customerId,
+  enabled,
+  onSchedule,
+  onViewFollowup,
+}: FollowupsTabProps): JSX.Element {
   const scheduleAction = useGatedAction('followups.manage', onSchedule, 'Schedule follow-up');
   const { data, isLoading } = useCustomerFollowups(customerId, { enabled });
   const followups = useMemo(() => data?.data ?? [], [data?.data]);
@@ -112,8 +119,7 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
   const overdueCount = useMemo(
     () =>
       followups.filter(
-        (f) =>
-          f.status === FollowupStatus.PENDING && new Date(f.scheduledAt).getTime() < Date.now(),
+        (f) => f.status === FollowupStatus.PENDING && followupIsPastDue(f.scheduledAt),
       ).length,
     [followups],
   );
@@ -186,10 +192,23 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                     const tone: DetailTone = STATUS_TONE[followup.status] ?? 'neutral';
                     const isOverdue =
                       followup.status === FollowupStatus.PENDING &&
-                      new Date(followup.scheduledAt).getTime() < Date.now();
+                      followupIsPastDue(followup.scheduledAt);
 
                     return (
-                      <TableRow key={followup.id}>
+                      <TableRow
+                        key={followup.id}
+                        hover
+                        role="button"
+                        tabIndex={0}
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => onViewFollowup(followup.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            onViewFollowup(followup.id);
+                          }
+                        }}
+                      >
                         {/*
                          * Subject and notes are free text with no length limit
                          * — real records run to hundreds of characters. Without
@@ -241,7 +260,7 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                               fontWeight: isOverdue ? 600 : 400,
                             }}
                           >
-                            {formatDate(followup.scheduledAt)}
+                            {formatFollowupWhen(followup.scheduledAt)}
                           </Mono>
                           {isOverdue && (
                             <Typography
@@ -273,9 +292,10 @@ export function FollowupsTab({ customerId, enabled, onSchedule }: FollowupsTabPr
                           </Stack>
                         </TableCell>
 
-                        <TableCell align="right">
+                        <TableCell align="right" onClick={(event) => event.stopPropagation()}>
                           <FollowupRowActions
                             followup={followup}
+                            onViewDetails={() => onViewFollowup(followup.id)}
                             onComplete={setCompleting}
                             onReschedule={setRescheduling}
                             onReassign={(f) => setReassigning([f])}

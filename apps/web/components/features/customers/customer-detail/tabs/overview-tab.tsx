@@ -37,12 +37,19 @@ import { SiteStageBar } from '../site-stage';
 import { getBalanceTone, getOverdueAmount, isTabActive } from '../utils';
 
 import { useEmployees } from '@/components/features/employees';
+import { followupDueTone } from '@/components/features/followups';
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { MUIUserAssigneeSelector } from '@/components/ui';
 import { useOrgCustomersAr } from '@/lib/hooks/resources';
 import { useLedgerEntries, lastReceiptValueDate } from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
-import { formatCurrency, formatDate, formatSystemSize, toTitleLabel } from '@/lib/utils';
+import {
+  formatCurrency,
+  formatDate,
+  formatFollowupWhen,
+  formatSystemSize,
+  toTitleLabel,
+} from '@/lib/utils';
 
 export interface OverviewTabProps {
   customer: Customer;
@@ -54,6 +61,7 @@ export interface OverviewTabProps {
   onLogFollowup: () => void;
   onAddProperty: () => void;
   isInactive: boolean;
+  onViewFollowup: (followupId: string) => void;
 }
 
 const VIEW_ALL_SX = { fontSize: '0.75rem', minWidth: 0, px: 1 } as const;
@@ -532,11 +540,13 @@ function FollowupsCard({
   enabled,
   onLogFollowup,
   onViewAll,
+  onViewFollowup,
 }: {
   customerId: string;
   enabled: boolean;
   onLogFollowup: () => void;
   onViewAll: () => void;
+  onViewFollowup: (followupId: string) => void;
 }): JSX.Element {
   const { data, isLoading } = useCustomerFollowups(customerId, {
     enabled,
@@ -577,13 +587,32 @@ function FollowupsCard({
       ) : (
         <Stack gap={1.5}>
           {followups.map((followup) => {
-            const isOverdue = new Date(followup.scheduledAt).getTime() < Date.now();
+            const dueTone = followupDueTone(followup.scheduledAt);
+            const isOverdue = dueTone === 'danger';
+            const isLateToday = dueTone === 'warning';
             const scope = followup.property
               ? getPropertyDisplayName(followup.property as CustomerPropertyResponse)
               : 'Customer-level';
             return (
-              <Stack key={followup.id} direction="row" gap={1.25} sx={{ minWidth: 0 }}>
-                <IconCircle tone={isOverdue ? 'danger' : 'info'} size={28}>
+              <Stack
+                key={followup.id}
+                direction="row"
+                gap={1.25}
+                sx={{ minWidth: 0, cursor: 'pointer' }}
+                role="button"
+                tabIndex={0}
+                onClick={() => onViewFollowup(followup.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onViewFollowup(followup.id);
+                  }
+                }}
+              >
+                <IconCircle
+                  tone={isOverdue ? 'danger' : isLateToday ? 'warning' : 'info'}
+                  size={28}
+                >
                   <EventNoteOutlinedIcon />
                 </IconCircle>
                 <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -601,11 +630,15 @@ function FollowupsCard({
                     <Mono
                       sx={{
                         fontSize: '0.6875rem',
-                        color: isOverdue ? TONE_INK.danger.ink : 'var(--ds-text-tertiary)',
-                        fontWeight: isOverdue ? 600 : 400,
+                        color: isOverdue
+                          ? TONE_INK.danger.ink
+                          : isLateToday
+                            ? TONE_INK.warning.ink
+                            : 'var(--ds-text-tertiary)',
+                        fontWeight: isOverdue || isLateToday ? 600 : 400,
                       }}
                     >
-                      {formatDate(followup.scheduledAt)}
+                      {formatFollowupWhen(followup.scheduledAt)}
                     </Mono>
                     <Typography sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)' }}>
                       {toTitleLabel(followup.type)} · {scope}
@@ -638,6 +671,7 @@ export function OverviewTab({
   onLogFollowup,
   onAddProperty,
   isInactive,
+  onViewFollowup,
 }: OverviewTabProps): JSX.Element {
   const isOverviewActive = isTabActive(activeTab, 'overview');
 
@@ -682,6 +716,7 @@ export function OverviewTab({
           enabled={isOverviewActive}
           onLogFollowup={onLogFollowup}
           onViewAll={() => onTabChange('followups')}
+          onViewFollowup={onViewFollowup}
         />
       </Stack>
     </Box>

@@ -2,7 +2,7 @@
 
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { Button, IconButton, Menu, Stack } from '@mui/material';
+import { Button, IconButton, Menu, MenuItem, Stack } from '@mui/material';
 import { FollowupStatus } from '@tejas96/shared/types';
 import { useState, type JSX } from 'react';
 
@@ -13,6 +13,7 @@ import { useGatedAction } from '@/lib/rbac';
 
 export interface FollowupRowActionsProps {
   followup: FollowupResponse;
+  onViewDetails: (followup: FollowupResponse) => void;
   onComplete: (followup: FollowupResponse) => void;
   onReschedule: (followup: FollowupResponse) => void;
   onReassign: (followup: FollowupResponse) => void;
@@ -33,6 +34,7 @@ export interface FollowupRowActionsProps {
  */
 export function FollowupRowActions({
   followup,
+  onViewDetails,
   onComplete,
   onReschedule,
   onReassign,
@@ -48,14 +50,23 @@ export function FollowupRowActions({
   const close = (): void => setAnchor(null);
 
   return (
-    <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
+    <Stack
+      direction="row"
+      spacing={0.5}
+      justifyContent="flex-end"
+      alignItems="center"
+      flexShrink={0}
+      onClick={(event) => event.stopPropagation()}
+    >
       <Button
         size="small"
         startIcon={<CheckCircleOutlineIcon />}
         onClick={complete.onGatedClick}
         aria-disabled={!complete.allowed}
-        // Kept mounted rather than unmounted so every row is the same height.
-        sx={{ visibility: isPending ? 'visible' : 'hidden' }}
+        sx={{
+          flexShrink: 0,
+          visibility: isPending ? 'visible' : 'hidden',
+        }}
         aria-hidden={!isPending}
         tabIndex={isPending ? undefined : -1}
       >
@@ -66,11 +77,20 @@ export function FollowupRowActions({
         size="small"
         aria-label="More actions"
         onClick={(event) => setAnchor(event.currentTarget)}
+        sx={{ flexShrink: 0 }}
       >
         <MoreVertIcon fontSize="small" />
       </IconButton>
 
       <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={close}>
+        <MenuItem
+          onClick={() => {
+            onViewDetails(followup);
+            close();
+          }}
+        >
+          View details
+        </MenuItem>
         <GatedMenuItem
           permission="followups.manage"
           subject="Reschedule follow-up"

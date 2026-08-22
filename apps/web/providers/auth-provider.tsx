@@ -44,6 +44,17 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isInitialized: boolean;
+  /**
+   * True once `/auth/me` has confirmed roles and permissions for this session.
+   *
+   * Until then the store is serving the list persisted in localStorage, which
+   * is whatever the user held when they last loaded a page. That is fine for
+   * deciding what to RENDER — it avoids a flash of missing UI, and a wrong
+   * guess is corrected a moment later. It is not fine for deciding what to
+   * FETCH: a permission revoked since the last visit would still let its
+   * request go out and land the data in the browser. Gate data on this.
+   */
+  permissionsConfirmed: boolean;
   error: string | null;
 
   // Actions
@@ -114,6 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
   // Local state for loading/error (not persisted)
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [permissionsConfirmed, setPermissionsConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Refs to avoid stale closures and prevent concurrent initAuth calls
@@ -364,7 +376,11 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
   // user through a ref, so it is stable and this cannot loop.
   useEffect(() => {
     if (!isInitialized) return;
-    void refreshUser();
+    // Resolved either way: on a network failure `refreshUser` returns the
+    // cached user rather than throwing, and holding every gated query open for
+    // ever because /auth/me blipped would be a worse failure than briefly
+    // trusting the cache.
+    void refreshUser().finally(() => setPermissionsConfirmed(true));
   }, [isInitialized, refreshUser]);
 
   // Permission helpers - use Zustand store's methods
@@ -380,6 +396,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       isAuthenticated: !!user,
       isLoading,
       isInitialized,
+      permissionsConfirmed,
       error,
       login,
       requestOtp,
@@ -401,6 +418,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       user,
       isLoading,
       isInitialized,
+      permissionsConfirmed,
       error,
       login,
       requestOtp,

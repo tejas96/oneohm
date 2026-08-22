@@ -29,6 +29,7 @@ export interface ServiceTicket {
   assignedToEmployeeId: string | null;
   assigneeName: string | null;
   dueDate: string | null;
+  createdByName: string | null;
   createdAt: string;
 }
 
@@ -51,7 +52,6 @@ export interface ServiceTicketDetail extends ServiceTicket {
   resolutionNote: string | null;
   resolvedAt: string | null;
   closedAt: string | null;
-  createdByName: string | null;
   updatedAt: string;
   statusHistory: ServiceTicketHistoryEntry[];
 }
@@ -75,6 +75,7 @@ export interface ServiceTicketListParams {
   assigneeId?: string;
   unassigned?: boolean;
   overdue?: boolean;
+  createdBy?: string;
   search?: string;
   fromDate?: string;
   toDate?: string;

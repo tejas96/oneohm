@@ -26,6 +26,7 @@ import {
   type TaskActivityType,
   TaskStatus,
 } from '@tejas96/shared/types';
+import { compareMilestoneSequence } from '@tejas96/shared/utils';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
 import { hasAdminBypassRole } from '../../iam/constants';
@@ -831,7 +832,7 @@ export class ProjectTaskService {
           userId: m.userId,
           name: [m.user?.firstName, m.user?.lastName].filter(Boolean).join(' ') || m.userId,
         })),
-        milestones: Array.from(milestonesSet.values()).sort((a, b) => a.order - b.order),
+        milestones: Array.from(milestonesSet.values()).sort(compareMilestoneSequence),
         labels: Array.from(labelsSet),
       },
     };

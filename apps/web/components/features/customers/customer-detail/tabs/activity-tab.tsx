@@ -30,13 +30,14 @@ import {
   useServiceTickets,
 } from '@/components/features/service-tickets';
 import { useLedgerEntries } from '@/lib/hooks/resources/ledger';
-import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
+import { formatCurrency, formatDate, formatFollowupWhen, toTitleLabel } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 export interface ActivityTabProps {
   customerId: string;
   properties: CustomerPropertyResponse[];
   enabled: boolean;
+  onViewFollowup: (followupId: string) => void;
 }
 
 type ActivityKind = 'followup' | 'quote' | 'receipt' | 'service';
@@ -48,6 +49,7 @@ interface ActivityEvent {
   subtitle: string;
   date: string;
   timestamp: number;
+  followupId?: string;
 }
 
 const KIND_LABELS = {
@@ -73,7 +75,12 @@ const KIND_ICON = {
 
 const KIND_ORDER: readonly ActivityKind[] = ['followup', 'quote', 'receipt', 'service'];
 
-export function ActivityTab({ customerId, properties, enabled }: ActivityTabProps): JSX.Element {
+export function ActivityTab({
+  customerId,
+  properties,
+  enabled,
+  onViewFollowup,
+}: ActivityTabProps): JSX.Element {
   const [kindFilter, setKindFilter] = useState<ActivityKind | null>(null);
 
   const { data: followupsData, isLoading: followupsLoading } = useCustomerFollowups(customerId, {
@@ -117,6 +124,7 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
         subtitle: `${toTitleLabel(followup.type)} · ${toTitleLabel(followup.status)} · ${propertyLabel}`,
         date: followup.scheduledAt,
         timestamp: new Date(followup.scheduledAt).getTime(),
+        followupId: followup.id,
       });
     }
 
@@ -161,7 +169,14 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
         id: `service-${ticket.id}`,
         kind: 'service',
         title: ticket.title,
-        subtitle: `${ticket.ticketNumber} · ${SERVICE_TICKET_STATUS_LABELS[ticket.status]} · ${ticket.projectNumber}`,
+        subtitle: [
+          ticket.ticketNumber,
+          SERVICE_TICKET_STATUS_LABELS[ticket.status],
+          ticket.projectNumber,
+          ticket.createdByName,
+        ]
+          .filter(Boolean)
+          .join(' · '),
         date: ticket.createdAt,
         timestamp: new Date(ticket.createdAt).getTime(),
       });
@@ -248,8 +263,36 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
         <Stack gap={0}>
           {visible.map((event, index) => {
             const isLast = index === visible.length - 1;
+            const isFollowup = event.kind === 'followup' && Boolean(event.followupId);
             return (
-              <Stack key={event.id} direction="row" gap={1.5} sx={{ position: 'relative' }}>
+              <Stack
+                key={event.id}
+                direction="row"
+                gap={1.5}
+                sx={{
+                  position: 'relative',
+                  ...(isFollowup
+                    ? { cursor: 'pointer', borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }
+                    : {}),
+                }}
+                role={isFollowup ? 'button' : undefined}
+                tabIndex={isFollowup ? 0 : undefined}
+                onClick={
+                  isFollowup && event.followupId
+                    ? () => onViewFollowup(event.followupId as string)
+                    : undefined
+                }
+                onKeyDown={
+                  isFollowup && event.followupId
+                    ? (keyboardEvent) => {
+                        if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+                          keyboardEvent.preventDefault();
+                          onViewFollowup(event.followupId as string);
+                        }
+                      }
+                    : undefined
+                }
+              >
                 <Box sx={{ position: 'relative', flexShrink: 0 }}>
                   <IconCircle tone={KIND_TONE[event.kind]}>{KIND_ICON[event.kind]}</IconCircle>
                   {/*
@@ -299,7 +342,9 @@ export function ActivityTab({ customerId, properties, enabled }: ActivityTabProp
                         flexShrink: 0,
                       }}
                     >
-                      {formatDate(event.date)}
+                      {event.kind === 'followup'
+                        ? formatFollowupWhen(event.date)
+                        : formatDate(event.date)}
                     </Mono>
                   </Stack>
                   <Typography

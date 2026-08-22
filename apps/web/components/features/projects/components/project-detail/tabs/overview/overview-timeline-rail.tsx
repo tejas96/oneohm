@@ -1,6 +1,7 @@
 'use client';
 
 import type { MilestoneDisplayStatus } from '@tejas96/shared/types';
+import { compareMilestoneSequence } from '@tejas96/shared/utils';
 import { Milestone } from 'lucide-react';
 import * as React from 'react';
 
@@ -159,9 +160,9 @@ export function OverviewTimelineRail({
     return { percent: pct, dayNum, dateStr };
   });
 
-  // Only milestones that have tasks, sorted by order
+  // Only milestones that have tasks, sorted by canonical lifecycle sequence
   const sorted = milestonesRaw
-    ? [...milestonesRaw].filter((m) => m.totalTasks > 0).sort((a, b) => a.order - b.order)
+    ? [...milestonesRaw].filter((m) => m.totalTasks > 0).sort(compareMilestoneSequence)
     : [];
 
   if (sorted.length === 0) {

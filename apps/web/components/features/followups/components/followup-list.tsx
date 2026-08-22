@@ -1,12 +1,15 @@
 'use client';
 
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { Box, Button, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
-import { FollowupStatus, type LeadTemperature } from '@tejas96/shared/types';
-import Link from 'next/link';
-import { useMemo, useState, type JSX } from 'react';
+import { Box, Link, Stack, Typography } from '@mui/material';
+import { followupIstDayDiff, type LeadTemperature } from '@tejas96/shared/types';
+import { useRouter } from 'next/navigation';
+import { useMemo, type JSX } from 'react';
 
+import { FOLLOWUP_GRID_TRACKS } from '../constants';
+import { FollowupRowActions } from './followup-row-actions';
 import { type FollowupResponse } from '../hooks/use-followups';
+import { crmToneFromDue, followupDueTone } from '../lib/due';
+import { followupRecordHref } from '../lib/followup-href';
 
 import {
   CrmStatusPill,
@@ -14,10 +17,11 @@ import {
   type CrmColumn,
   type CrmTone,
 } from '@/components/shared/crm-table';
-import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { useGatedAction } from '@/lib/rbac';
 import { crm } from '@/lib/theme/tokens';
-import { formatDate } from '@/lib/utils';
+import { formatFollowupClockTime, formatFollowupWhen } from '@/lib/utils';
+
+/** Keeps adjacent cells from painting into each other. */
+const CELL_GUTTER = { pr: 2, overflow: 'hidden', minWidth: 0 } as const;
 
 const TEMPERATURE_TONE: Record<string, CrmTone> = {
   hot: 'danger',
@@ -25,26 +29,15 @@ const TEMPERATURE_TONE: Record<string, CrmTone> = {
   cold: 'info',
 };
 
-/**
- * Days between a scheduled date and today, in local calendar days.
- *
- * Compared at midnight rather than by elapsed hours, so a followup due at 09:00
- * still reads "today" at 17:00 instead of flipping to "1d late".
- */
-function daysFromToday(scheduledAt: string): number {
-  const scheduled = new Date(scheduledAt);
-  const a = new Date(scheduled.getFullYear(), scheduled.getMonth(), scheduled.getDate());
-  const now = new Date();
-  const b = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.round((a.getTime() - b.getTime()) / 86_400_000);
-}
+function dueLabel(scheduledAt: string, now = new Date()): { text: string; tone: CrmTone } {
+  const days = followupIstDayDiff(new Date(scheduledAt), now);
+  const time = formatFollowupClockTime(scheduledAt);
+  const tone = crmToneFromDue(followupDueTone(scheduledAt, now));
 
-function dueLabel(scheduledAt: string): { text: string; tone: CrmTone } {
-  const days = daysFromToday(scheduledAt);
-  if (days < 0) return { text: `${Math.abs(days)}d late`, tone: 'danger' };
-  if (days === 0) return { text: 'Today', tone: 'warning' };
-  if (days === 1) return { text: 'Tomorrow', tone: 'info' };
-  return { text: formatDate(scheduledAt), tone: 'neutral' };
+  if (days < 0) return { text: `${Math.abs(days)}d late · ${time}`, tone };
+  if (days === 0) return { text: `Today, ${time}`, tone };
+  if (days === 1) return { text: `Tomorrow, ${time}`, tone };
+  return { text: formatFollowupWhen(scheduledAt, now), tone };
 }
 
 const leadName = (followup: FollowupResponse): string => {
@@ -70,6 +63,7 @@ export interface FollowupListProps {
   page?: number;
   pageSize?: number;
   onPageChange?: (page: number) => void;
+  onViewDetails: (followup: FollowupResponse) => void;
   onComplete: (followup: FollowupResponse) => void;
   onReschedule: (followup: FollowupResponse) => void;
   onReassign: (followups: FollowupResponse[]) => void;
@@ -84,38 +78,6 @@ export interface FollowupListProps {
  * tab, /followups and — later — the dashboard widget, rather than each growing
  * its own table.
  */
-/**
- * The Complete action, as its own component.
- *
- * It lives here rather than inline in `renderCell` because gating needs hooks,
- * and a cell renderer is a plain callback — calling hooks there would break the
- * rules of hooks the moment a row re-renders.
- */
-function GatedCompleteButton({
-  followup,
-  onComplete,
-}: {
-  followup: FollowupResponse;
-  onComplete: (followup: FollowupResponse) => void;
-}): React.JSX.Element {
-  const { allowed, onGatedClick } = useGatedAction(
-    'followups.manage',
-    () => onComplete(followup),
-    'Complete follow-up',
-  );
-
-  return (
-    <Button
-      size="small"
-      onClick={onGatedClick}
-      aria-disabled={!allowed}
-      sx={allowed ? undefined : { opacity: 0.5 }}
-    >
-      Complete
-    </Button>
-  );
-}
-
 export function FollowupList({
   rows,
   loading,
@@ -123,26 +85,22 @@ export function FollowupList({
   page,
   pageSize,
   onPageChange,
+  onViewDetails,
   onComplete,
   onReschedule,
   onReassign,
   onCancel,
   emptyMessage,
 }: FollowupListProps): JSX.Element {
-  const [menuFor, setMenuFor] = useState<FollowupResponse | null>(null);
-  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
-
-  const closeMenu = (): void => {
-    setMenuAnchor(null);
-    setMenuFor(null);
-  };
+  const router = useRouter();
 
   const columns = useMemo<CrmColumn<FollowupResponse>[]>(
     () => [
       {
         field: 'due',
         header: 'Due',
-        track: crm['col-onboarded'],
+        track: FOLLOWUP_GRID_TRACKS.due,
+        cellSx: CELL_GUTTER,
         renderCell: (row) => {
           const due = dueLabel(row.scheduledAt);
           return <CrmStatusPill label={due.text} tone={due.tone} size="sm" />;
@@ -151,32 +109,42 @@ export function FollowupList({
       {
         field: 'lead',
         header: 'Lead',
-        track: crm['col-customer'],
+        track: FOLLOWUP_GRID_TRACKS.lead,
         stopPropagation: true,
-        renderCell: (row) => (
-          <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-            <Link
-              href={
-                row.propertyId
-                  ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: row.propertyId })
-                  : buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.customerId })
-              }
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <Typography variant="body2" fontWeight={600} noWrap>
-                {leadName(row)}
-              </Typography>
-            </Link>
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {row.propertyId ? (row.property?.city ?? 'Site') : 'Customer lead'}
+        cellSx: CELL_GUTTER,
+        renderCell: (row) => {
+          const href = followupRecordHref(row);
+          const name = (
+            <Typography variant="body2" fontWeight={600} noWrap>
+              {leadName(row)}
             </Typography>
-          </Stack>
-        ),
+          );
+          return (
+            <Stack spacing={0.25} sx={{ minWidth: 0, width: '100%', overflow: 'hidden' }}>
+              {href ? (
+                <Link
+                  href={href}
+                  underline="none"
+                  color="inherit"
+                  sx={{ display: 'block', minWidth: 0, overflow: 'hidden' }}
+                >
+                  {name}
+                </Link>
+              ) : (
+                name
+              )}
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {row.propertyId ? (row.property?.city ?? 'Site') : 'Customer lead'}
+              </Typography>
+            </Stack>
+          );
+        },
       },
       {
         field: 'temperature',
         header: 'Temp',
-        track: crm['col-status'],
+        track: FOLLOWUP_GRID_TRACKS.temperature,
+        cellSx: CELL_GUTTER,
         renderCell: (row) => {
           const temp = row.property?.leadTemperature as LeadTemperature | undefined;
           if (!temp)
@@ -197,9 +165,10 @@ export function FollowupList({
       {
         field: 'subject',
         header: 'Subject',
-        track: crm['col-location'],
+        track: FOLLOWUP_GRID_TRACKS.subject,
+        cellSx: CELL_GUTTER,
         renderCell: (row) => (
-          <Typography variant="body2" noWrap>
+          <Typography variant="body2" noWrap sx={{ width: '100%' }}>
             {row.subject}
           </Typography>
         ),
@@ -207,9 +176,10 @@ export function FollowupList({
       {
         field: 'owner',
         header: 'Owner',
-        track: crm['col-owner'],
+        track: FOLLOWUP_GRID_TRACKS.owner,
+        cellSx: CELL_GUTTER,
         renderCell: (row) => (
-          <Typography variant="body2" noWrap>
+          <Typography variant="body2" noWrap sx={{ width: '100%' }}>
             {ownerName(row)}
           </Typography>
         ),
@@ -217,30 +187,24 @@ export function FollowupList({
       {
         field: 'actions',
         header: '',
-        track: crm['col-actions'],
+        track: FOLLOWUP_GRID_TRACKS.actions,
         align: 'right',
         hideable: false,
         stopPropagation: true,
+        cellSx: { pl: 2, minWidth: 0 },
         renderCell: (row) => (
-          <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
-            {row.status === FollowupStatus.PENDING && (
-              <GatedCompleteButton followup={row} onComplete={onComplete} />
-            )}
-            <IconButton
-              size="small"
-              aria-label="More actions"
-              onClick={(event) => {
-                setMenuAnchor(event.currentTarget);
-                setMenuFor(row);
-              }}
-            >
-              <MoreVertIcon fontSize="small" />
-            </IconButton>
-          </Stack>
+          <FollowupRowActions
+            followup={row}
+            onViewDetails={onViewDetails}
+            onComplete={onComplete}
+            onReschedule={onReschedule}
+            onReassign={(f) => onReassign([f])}
+            onCancel={onCancel}
+          />
         ),
       },
     ],
-    [onComplete],
+    [onViewDetails, onComplete, onReschedule, onReassign, onCancel],
   );
 
   return (
@@ -265,44 +229,13 @@ export function FollowupList({
         totalRowCount={totalRowCount}
         onPageChange={onPageChange}
         itemLabel="follow-ups"
-        /**
-         * Narrower than the shared 1280px default: this grid has six columns,
-         * not the customer list's ten. At the default the Complete button —
-         * the whole point of the row — sits off-screen behind a horizontal
-         * scrollbar.
-         */
-        gridMinWidth="880px"
+        gridMinWidth={crm['grid-min-width-followup']}
         emptyMessage={emptyMessage ?? 'Nothing here.'}
+        onRowClick={(row) => {
+          const href = followupRecordHref(row, { followupId: row.id });
+          if (href) void router.push(href);
+        }}
       />
-
-      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu}>
-        <MenuItem
-          disabled={menuFor?.status !== FollowupStatus.PENDING}
-          onClick={() => {
-            if (menuFor) onReschedule(menuFor);
-            closeMenu();
-          }}
-        >
-          Reschedule
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            if (menuFor) onReassign([menuFor]);
-            closeMenu();
-          }}
-        >
-          Reassign
-        </MenuItem>
-        <MenuItem
-          disabled={menuFor?.status !== FollowupStatus.PENDING}
-          onClick={() => {
-            if (menuFor) onCancel(menuFor);
-            closeMenu();
-          }}
-        >
-          Cancel
-        </MenuItem>
-      </Menu>
     </Box>
   );
 }

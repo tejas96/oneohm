@@ -75,6 +75,7 @@ export function toListItemDto(ticket: ServiceTicketEntity): ServiceTicketListIte
       userDisplayName(ticket.assignedToEmployee?.user) ??
       (ticket.assignedToEmployee ? 'Unnamed employee' : null),
     dueDate: ticket.dueDate ?? null,
+    createdByName: userDisplayName(ticket.createdByUser),
     createdAt: ticket.createdAt.toISOString(),
   };
 }
@@ -106,7 +107,6 @@ export function toResponseDto(ticket: ServiceTicketEntity): ServiceTicketRespons
     resolutionNote: ticket.resolutionNote,
     resolvedAt: ticket.resolvedAt?.toISOString() ?? null,
     closedAt: ticket.closedAt?.toISOString() ?? null,
-    createdByName: userDisplayName(ticket.createdByUser),
     updatedAt: ticket.updatedAt.toISOString(),
     statusHistory: (ticket.statusHistory ?? [])
       .slice()

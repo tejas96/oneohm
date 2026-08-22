@@ -31,6 +31,28 @@ function parseDatabaseUrl(url: string): Partial<{
 }
 
 /**
+ * The calendar day this business runs on.
+ *
+ * Postgres defaults to UTC, and `fly.toml` already sets `TZ = 'Asia/Kolkata'` on the Node
+ * process — so before this setting existed, the two halves of the app disagreed about what
+ * day it was for the five and a half hours between IST midnight and 05:29. The same overdue
+ * count came out one number from SQL and another from JavaScript, depending only on which
+ * side computed it.
+ *
+ * This is a BUSINESS rule, not a machine property, so it is pinned rather than read from the
+ * host clock: a developer in another timezone should see the same day boundaries production
+ * does, or they cannot reproduce a bug that only appears after IST midnight.
+ *
+ * What it moves: `CURRENT_DATE`, `now()::date`, `date_trunc('day', now())` and any
+ * `timestamptz::date` cast now resolve against IST. What it does NOT move: a timestamptz
+ * compared against another timestamptz is an absolute instant either way, so token expiry,
+ * audit trails, rate limits and every `value_date` money figure are untouched.
+ *
+ * Keep in step with `TZ` in `apps/backend/fly.toml`.
+ */
+const DATABASE_TIMEZONE = process.env.DATABASE_TIMEZONE || 'Asia/Kolkata';
+
+/**
  * TypeORM DataSource Factory
  * Creates and configures the database connection.
  *
@@ -103,6 +125,9 @@ export const createDataSourceOptions = (
       // and discards dead connections before they are handed to a query.
       keepAlive: true,
       keepAliveInitialDelayMillis: 10000,
+      // Sent as a Postgres startup parameter, so every connection in the pool —
+      // including ones opened later — carries it. See DATABASE_TIMEZONE above.
+      options: `-c timezone=${DATABASE_TIMEZONE}`,
     },
     cache: false,
     maxQueryExecutionTime: nodeEnv === 'development' ? 1000 : 5000,

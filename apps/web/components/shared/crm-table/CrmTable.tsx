@@ -733,6 +733,7 @@ export function CrmTable<TRow>({
                         onClick={col.stopPropagation ? (e) => e.stopPropagation() : undefined}
                         sx={{
                           minWidth: 0,
+                          overflow: 'hidden',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: col.align === 'right' ? 'flex-end' : 'flex-start',

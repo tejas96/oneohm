@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { MILESTONE_LIFECYCLE_SEQUENCE } from '@tejas96/shared/constants';
 import type { WorkflowStep } from '@tejas96/shared/types';
 import {
   CheckCircle2,
@@ -62,45 +63,7 @@ import {
 
 const NONE_SENTINEL = '__none__';
 
-// Suggest default milestone names for workflow steps (user can type any free-text name).
-// Grouped by phase to cover the full solar EPC lifecycle.
-const DEFAULT_MILESTONE_SUGGESTIONS = [
-  // Pre-construction
-  'Site Survey & Design',
-  'Feasibility Study',
-  'Structural Assessment',
-  'Shading Analysis',
-  // Approvals & compliance
-  'Permits & Approvals',
-  'DISCOM Application',
-  'Net Metering Application',
-  'Subsidy Application',
-  'Loan Processing',
-  // Procurement
-  'Material Procurement',
-  'Equipment Delivery',
-  // Construction
-  'Civil & Structural Work',
-  'Electrical Work',
-  'Installation',
-  'Earthing & Lightning Protection',
-  // Quality & commissioning
-  'Inspection & Testing',
-  'Commissioning & Testing',
-  'DISCOM Inspection',
-  'Net Meter Installation',
-  // Handover & post-sales
-  'Handover',
-  'Customer Training',
-  'Documentation',
-  'AMC / Warranty Registration',
-  // Payment-linked (for tracking tasks tied to payment terms)
-  'Payment 1',
-  'Payment 2',
-  'Payment 3',
-  'Payment 4',
-  'Payment 5',
-];
+const DEFAULT_MILESTONE_SUGGESTIONS = MILESTONE_LIFECYCLE_SEQUENCE;
 
 // ── Page Component ─────────────────────────────────────────────
 

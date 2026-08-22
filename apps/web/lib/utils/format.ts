@@ -3,6 +3,8 @@ export {
   formatCurrencyDecimal,
   formatCurrencyCompact,
   formatDate,
+  formatFollowupClockTime,
+  formatFollowupWhen,
   formatNumber,
   formatRelativeDate,
   formatTimeAgo,

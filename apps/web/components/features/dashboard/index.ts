@@ -1,2 +1,3 @@
 // Dashboard feature exports
-export { DashboardOverview } from './components/dashboard-overview';
+export { DashboardPage } from './components/dashboard-page';
+export { MyWorkPage } from './components/my-work-page';

@@ -386,10 +386,20 @@ export class CustomerPropertyRepository {
     }
 
     if (query.toDate) {
-      // Backend already has a time component check pattern from customer profile repo.
-      // For consistency we keep the T23:59:59.999Z append for date-only strings.
-      const toDateStr = query.toDate.includes('T') ? query.toDate : `${query.toDate}T23:59:59.999Z`;
-      qb.andWhere('property.created_at <= :toDate', { toDate: toDateStr });
+      /*
+        Same rule as `customer-profile.repository.ts`, and for the same reason: the
+        `fromDate` above is parsed in the session timezone, so pinning this end to
+        UTC with a `T23:59:59.999Z` suffix pushed it 05:29 IST past the day the
+        caller asked for, sweeping in records created the following morning. A full
+        instant still means that instant.
+      */
+      if (query.toDate.includes('T')) {
+        qb.andWhere('property.created_at <= :toDate', { toDate: query.toDate });
+      } else {
+        qb.andWhere("property.created_at < (CAST(:toDate AS date) + INTERVAL '1 day')", {
+          toDate: query.toDate,
+        });
+      }
     }
 
     if (query.quoteStatus !== undefined) {

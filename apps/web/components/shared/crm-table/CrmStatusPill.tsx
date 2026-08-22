@@ -86,6 +86,9 @@ export function CrmStatusPill({
         fontSize: metrics.fontSize,
         fontWeight: 500,
         whiteSpace: 'nowrap',
+        maxWidth: '100%',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
       }}
     >
       {dot ? (

@@ -88,6 +88,11 @@ export const ROUTES = {
     HOME: '/pipeline',
   },
 
+  // Department workload — pending/completed per workflow step
+  WORKLOAD: {
+    HOME: '/workload',
+  },
+
   // Follow-ups
   FOLLOWUPS: {
     LIST: '/followups',

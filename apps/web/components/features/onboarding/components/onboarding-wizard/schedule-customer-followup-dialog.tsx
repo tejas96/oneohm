@@ -1,10 +1,11 @@
 'use client';
 
 import { Box, Button, TextField } from '@mui/material';
-import { nextFollowupDate } from '@tejas96/shared/types';
+import { atDefaultHour, nextFollowupDate } from '@tejas96/shared/types';
 import { useEffect, useState, type JSX } from 'react';
 
 import { useEmployees } from '@/components/features/employees';
+import { FollowupWhenPicker } from '@/components/features/followups/components/followup-when-picker';
 import {
   MUIDialog,
   MUIDialogBody,
@@ -13,7 +14,6 @@ import {
   MUIDialogHeader,
   MUIDialogTitle,
 } from '@/components/ui';
-import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { MUIUserAssigneeSelector } from '@/components/ui/mui-user-assignee-selector';
 import { color, radius } from '@/lib/theme/tokens';
 import { useAuth } from '@/providers/auth-provider';
@@ -52,7 +52,7 @@ export function ScheduleCustomerFollowupDialog({
     if (!open) return;
     setSubject(DEFAULT_SUBJECT);
     setNotes('');
-    setScheduledAt(nextFollowupDate(new Date(), null));
+    setScheduledAt(atDefaultHour(nextFollowupDate(new Date(), null)));
   }, [open]);
 
   useEffect(() => {
@@ -110,12 +110,11 @@ export function ScheduleCustomerFollowupDialog({
             disabled={isSubmitting}
           />
 
-          <MUIDatePicker
-            fieldLabel="Next follow-up"
-            required
+          <FollowupWhenPicker
+            dateLabel="Next follow-up"
             value={scheduledAt}
             onChange={setScheduledAt}
-            fullWidth
+            required
             disabled={isSubmitting}
           />
 

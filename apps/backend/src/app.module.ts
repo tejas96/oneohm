@@ -19,6 +19,7 @@ import { ComplianceModule } from './modules/compliance/compliance.module';
 import { ConsumerModule } from './modules/consumer/consumer.module';
 import { CustomerFeedbackModule } from './modules/customer-feedback/customer-feedback.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DiscomsModule } from './modules/discoms/discoms.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EmployeesModule } from './modules/employees/employees.module';
@@ -104,6 +105,7 @@ import { UsersModule } from './modules/users/users.module';
     SavedViewsModule,
     ReportsModule,
     AnalyticsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

@@ -49,6 +49,7 @@ export const TICKET_FILTER_KEYS = {
   priority: 'priority',
   assigneeId: 'assigneeId',
   overdue: 'overdue',
+  createdBy: 'createdBy',
 } as const;
 
 const LIVE_STATUSES: readonly ServiceTicketStatus[] = [

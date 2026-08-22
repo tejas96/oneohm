@@ -23,14 +23,15 @@ import {
   type FollowupResponse,
 } from '../hooks';
 import { FollowupCompleteDialog } from './followup-complete-dialog';
+import { FollowupDetailHost } from './followup-detail-host';
 import { FollowupDrawer } from './followup-drawer';
 import { FollowupList } from './followup-list';
 import { FollowupReassignDialog } from './followup-reassign-dialog';
 import { FollowupRescheduleDialog } from './followup-reschedule-dialog';
+import { followupRecordHref } from '../lib/followup-href';
 
 import { FilterTabs } from '@/components/shared/filters';
 import { showToast } from '@/components/ui';
-import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -122,6 +123,7 @@ export function FollowupsPage(): JSX.Element {
   const rows = data?.data ?? [];
 
   // ── Row actions ──────────────────────────────────────────────────────────
+  const [viewingId, setViewingId] = useState<string | null>(null);
   const [completing, setCompleting] = useState<FollowupResponse | null>(null);
   const [rescheduling, setRescheduling] = useState<FollowupResponse | null>(null);
   const [reassigning, setReassigning] = useState<FollowupResponse[]>([]);
@@ -209,34 +211,36 @@ export function FollowupsPage(): JSX.Element {
             </Typography>
           ) : (
             <Stack divider={<Box sx={{ borderBottom: 1, borderColor: 'divider' }} />}>
-              {visibleGaps.map((gap) => (
-                <Stack
-                  key={`${gap.kind}-${gap.propertyId ?? gap.customerId}`}
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ py: 1 }}
-                >
-                  <Box sx={{ minWidth: 0 }}>
-                    <Link
-                      href={
-                        gap.propertyId
-                          ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: gap.propertyId })
-                          : buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: gap.customerId })
-                      }
-                      style={{ textDecoration: 'none', color: 'inherit' }}
-                    >
-                      <Typography variant="body2" fontWeight={600} noWrap>
-                        {gap.name}
+              {visibleGaps.map((gap) => {
+                const href = followupRecordHref(gap);
+                return (
+                  <Stack
+                    key={`${gap.kind}-${gap.propertyId ?? gap.customerId}`}
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{ py: 1 }}
+                  >
+                    <Box sx={{ minWidth: 0 }}>
+                      {href ? (
+                        <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>
+                            {gap.name}
+                          </Typography>
+                        </Link>
+                      ) : (
+                        <Typography variant="body2" fontWeight={600} noWrap>
+                          {gap.name}
+                        </Typography>
+                      )}
+                      <Typography variant="caption" color="text.secondary">
+                        {gap.kind === 'property' ? 'Site' : 'Customer lead'}
                       </Typography>
-                    </Link>
-                    <Typography variant="caption" color="text.secondary">
-                      {gap.kind === 'property' ? 'Site' : 'Customer lead'}
-                    </Typography>
-                  </Box>
-                  <GatedScheduleButton gap={gap} onSchedule={setSchedulingGap} />
-                </Stack>
-              ))}
+                    </Box>
+                    <GatedScheduleButton gap={gap} onSchedule={setSchedulingGap} />
+                  </Stack>
+                );
+              })}
             </Stack>
           )}
           {gaps.length > GAP_RENDER_LIMIT && (
@@ -251,6 +255,7 @@ export function FollowupsPage(): JSX.Element {
           rows={rows}
           loading={isLoading}
           totalRowCount={data?.meta?.total}
+          onViewDetails={(followup) => setViewingId(followup.id)}
           onComplete={setCompleting}
           onReschedule={setRescheduling}
           onReassign={setReassigning}
@@ -268,6 +273,13 @@ export function FollowupsPage(): JSX.Element {
           }
         />
       )}
+
+      <FollowupDetailHost
+        followupId={viewingId}
+        initialData={rows.find((row) => row.id === viewingId)}
+        onClose={() => setViewingId(null)}
+        siblingRows={rows}
+      />
 
       <FollowupCompleteDialog
         open={Boolean(completing)}

@@ -187,6 +187,7 @@ export function EntityServiceTicketsTab({
                   {scope !== 'project' && <TableCell sx={{ minWidth: 160 }}>Project</TableCell>}
                   <TableCell sx={{ minWidth: 160 }}>Assignee</TableCell>
                   <TableCell sx={{ minWidth: 100 }}>Due</TableCell>
+                  <TableCell sx={{ minWidth: 130 }}>Raised by</TableCell>
                   <TableCell sx={{ minWidth: 120 }}>Raised</TableCell>
                   <TableCell align="right" sx={{ width: 56 }} />
                 </TableRow>
@@ -307,6 +308,29 @@ export function EntityServiceTicketsTab({
                                 {formatDueDatePendingLabel(ticket.dueDate)}
                               </Mono>
                             )}
+                          </Stack>
+                        ) : (
+                          <Mono sx={{ fontSize: '0.75rem', color: 'var(--ds-text-tertiary)' }}>
+                            —
+                          </Mono>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
+                        {ticket.createdByName ? (
+                          <Stack direction="row" alignItems="center" gap={1} sx={{ minWidth: 0 }}>
+                            <MUIAvatar name={ticket.createdByName} size="sm" />
+                            <Typography
+                              sx={{
+                                fontSize: '0.8125rem',
+                                color: 'var(--ds-text-primary)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {ticket.createdByName}
+                            </Typography>
                           </Stack>
                         ) : (
                           <Mono sx={{ fontSize: '0.75rem', color: 'var(--ds-text-tertiary)' }}>

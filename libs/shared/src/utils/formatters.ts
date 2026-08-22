@@ -1,3 +1,6 @@
+import { COMPANY } from '../constants/company';
+import { followupIstDayDiff } from '../types/constants/followup-cadence';
+
 /**
  * Format a number as Indian Rupees (e.g., "₹4,50,000")
  */
@@ -71,6 +74,49 @@ export function formatDate(
         : { month: 'short', day: 'numeric', year: 'numeric' };
 
   return d.toLocaleDateString('en-IN', options);
+}
+
+/**
+ * 12-hour clock for a follow-up instant in the business timezone.
+ * e.g. "10:00 am"
+ */
+export function formatFollowupClockTime(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return '';
+
+  return d
+    .toLocaleTimeString('en-IN', {
+      timeZone: COMPANY.timezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+    .toLowerCase();
+}
+
+/**
+ * Follow-up schedule for display: calendar day + clock in IST.
+ * e.g. "Today, 10:00 am" · "Tomorrow, 3:30 pm" · "15 Feb 2026, 10:00 am"
+ */
+export function formatFollowupWhen(date: string | Date, now?: Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return '';
+
+  const reference = now ?? new Date();
+  const time = formatFollowupClockTime(d);
+  const dayDiff = followupIstDayDiff(d, reference);
+
+  if (dayDiff === 0) return `Today, ${time}`;
+  if (dayDiff === 1) return `Tomorrow, ${time}`;
+
+  const datePart = d.toLocaleDateString('en-IN', {
+    timeZone: COMPANY.timezone,
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  return `${datePart}, ${time}`;
 }
 
 /**

@@ -7,13 +7,13 @@ import { Controller, useFormContext } from 'react-hook-form';
 
 import { type CustomerResponse } from '@/components/features/customers';
 import { useEmployees } from '@/components/features/employees';
+import { FollowupWhenPicker } from '@/components/features/followups/components/followup-when-picker';
 import {
   ReviewSummary,
   type ReviewStepIndices,
 } from '@/components/features/properties/components/property-fields';
 import { type DraftDocument } from '@/components/shared/document-manager';
 import { MUIUserAssigneeSelector } from '@/components/ui';
-import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { color, radius } from '@/lib/theme/tokens';
 
 interface StepReviewAssignProps {
@@ -73,12 +73,12 @@ export function StepReviewAssign({
             maxWidth: 540,
           }}
         >
-          Required. The date is prefilled from the lead temperature you picked — change it freely.
+          Required. The date and time are prefilled from the lead temperature — change them freely.
         </Box>
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+            display: 'flex',
+            flexDirection: 'column',
             gap: 2,
             p: '13px 15px',
             borderRadius: radius['rf-lg'],
@@ -89,13 +89,12 @@ export function StepReviewAssign({
             name="nextFollowupDate"
             control={control}
             render={({ field, fieldState }) => (
-              <MUIDatePicker
-                fieldLabel="Next follow-up"
-                required
+              <FollowupWhenPicker
+                dateLabel="Next follow-up"
                 value={field.value ?? null}
                 onChange={field.onChange}
-                error={fieldState.error?.message}
-                fullWidth
+                required
+                dateError={fieldState.error?.message}
               />
             )}
           />

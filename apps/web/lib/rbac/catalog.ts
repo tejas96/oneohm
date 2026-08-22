@@ -2,7 +2,7 @@
  * The permission catalog — the source of truth for RBAC in this app.
  *
  * Enforcement is frontend-only for now. The `permissions` table holds a mirror
- * of these 42 codes so the superadmin role builder has something to list, but
+ * of these 45 codes so the superadmin role builder has something to list, but
  * this file is what the UI actually gates on. The mirror is written by
  * migration 1855000000000-ResetRbacCatalog; keep the two in step by hand.
  *
@@ -296,13 +296,35 @@ export const PERMISSIONS = [
     name: 'Manage Service',
     description: 'Create and update service tickets',
   },
+
+  // ==================== Dashboard ====================
+  {
+    code: 'dashboard.employees.view',
+    module: 'dashboard',
+    name: 'View Employee Dashboards',
+    description: "See another employee's My Work dashboard",
+  },
+  {
+    code: 'dashboard.business.view',
+    module: 'dashboard',
+    name: 'View Business Mode',
+    description: 'See the organisation-wide business overview on the dashboard',
+  },
+
+  // ==================== Workload ====================
+  {
+    code: 'workload.view',
+    module: 'workload',
+    name: 'View Department Workload',
+    description: 'See how much work each department has pending and completed',
+  },
 ] as const satisfies readonly PermissionMeta[];
 
 /**
- * A union of the 42 literal codes.
+ * A union of the 45 literal codes.
  *
  * `as const satisfies` above is load-bearing: `as const` narrows each `code`
- * to its literal so this union is 42 strings, while `satisfies` still checks
+ * to its literal so this union is 45 strings, while `satisfies` still checks
  * the shape. Annotating `PERMISSIONS: readonly PermissionMeta[]` instead would
  * widen `code` back to `string` and every typo would compile silently.
  */

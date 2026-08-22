@@ -9,6 +9,7 @@ import {
   FollowupType,
   type LeadTemperature,
   nextFollowupDate,
+  atDefaultHour,
   PropertyType,
   type StoredChangeRequest,
 } from '@tejas96/shared/types';
@@ -534,7 +535,10 @@ export function OnboardingWizard({
   const followupDateTouched = form.formState.dirtyFields.nextFollowupDate;
   React.useEffect(() => {
     if (isEditProperty || isEditCustomer || followupDateTouched) return;
-    form.setValue('nextFollowupDate', nextFollowupDate(new Date(), watchedTemperature ?? null));
+    form.setValue(
+      'nextFollowupDate',
+      atDefaultHour(nextFollowupDate(new Date(), watchedTemperature ?? null)),
+    );
   }, [watchedTemperature, followupDateTouched, isEditProperty, isEditCustomer, form]);
 
   const handleBack = (): void => {
