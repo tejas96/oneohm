@@ -111,8 +111,8 @@ export const MY_EMPLOYEE_CTE = `
  * spec section 3, which lists only creator, assignee and the customer walk. It
  * is retained deliberately: a ticket raised against a project I build is work
  * that lands on my desk whether or not anyone assigned it to me. Measured
- * against the live database: 14 tickets, across 14 distinct users, are
- * visible ONLY through this branch today — for each such (ticket, user) pair,
+ * against the live database: 14 distinct tickets and 14 distinct users, in 54
+ * ticket-user pairs, are visible ONLY through this branch today. For each pair,
  * the user is neither the ticket's assignee nor its creator, and cannot reach
  * it through their customer walk either. Narrowing to the spec's three
  * columns would silently delete them from those dashboards. If the table is

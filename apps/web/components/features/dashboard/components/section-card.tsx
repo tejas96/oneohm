@@ -149,7 +149,7 @@ export function SectionCard({
                   // so the first item's severity IS the bucket's.
                   <h3
                     className={cn(
-                      'px-3 pb-1 pt-3 text-section font-semibold uppercase tracking-wider first:pt-0',
+                      'px-3 pb-1 pt-3 text-section font-semibold uppercase tracking-wider tabular-nums first:pt-0',
                       LABEL_TONE[bucket.items[0]?.severity ?? 'neutral'],
                     )}
                   >
