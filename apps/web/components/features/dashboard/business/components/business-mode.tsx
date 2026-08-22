@@ -9,6 +9,7 @@ import { MoneyOwedCard } from './money-owed-card';
 import { SalesPipelineCard } from './sales-pipeline-card';
 import { SalespeopleCard } from './salespeople-card';
 import { ServiceLoadCard } from './service-load-card';
+import { WorkloadCard } from './workload-card';
 import { currentMonthRange, money, rupeesExact, type MoneyFormat } from '../lib/format';
 import { businessLinks, type BusinessRange } from '../lib/links';
 
@@ -16,6 +17,7 @@ import { useServiceTicketStats } from '@/components/features/service-tickets/hoo
 import { useOrgCustomersAr, useOrgOutstanding } from '@/lib/hooks/resources/finance-org';
 import { useCashFlow, useFinanceKpis } from '@/lib/hooks/resources/ledger';
 import { usePipelineDashboard } from '@/lib/hooks/resources/pipeline';
+import { useWorkload } from '@/lib/hooks/resources/workload';
 import { useCan } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -50,6 +52,7 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
   const showMoney = can('finance.view');
   const showSales = can('pipeline.view');
   const showService = can('service.view');
+  const showWorkload = can('workload.view');
 
   // Rendering may run on the permissions persisted from the last visit, which
   // avoids a flash of missing panels and self-corrects a moment later. FETCHING
@@ -75,6 +78,10 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
   const aging = useOrgCustomersAr({ enabled: mayFetch(showMoney) });
   const outstanding = useOrgOutstanding({ limit: OLDEST_DEBT_ROWS }, { enabled: mayFetch(showMoney) });
   const tickets = useServiceTicketStats(mayFetch(showService));
+  const workload = useWorkload(
+    { fromDate: range.from, toDate: range.to },
+    { enabled: mayFetch(showWorkload) },
+  );
 
   const k = kpis.data;
   const stats = pipeline.data?.stats;
@@ -246,6 +253,16 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
       />
     ) : null,
     salesCard,
+    showWorkload ? (
+      <WorkloadCard
+        key="workload"
+        departments={workload.data?.departments ?? []}
+        totalPending={workload.data?.totalPending ?? 0}
+        rangeLabel={range.label}
+        isError={workload.isError}
+        onRetry={() => void workload.refetch()}
+      />
+    ) : null,
     showMoney ? (
       <MoneyOwedCard
         key="owed"
@@ -295,7 +312,7 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
   // Someone may hold dashboard.business.view and nothing else. Rather than an
   // almost-empty screen, say what is missing — the numbers here belong to other
   // modules, and this mode has nothing of its own to fall back on.
-  const nothingToShow = !showMoney && !showSales && !showService;
+  const nothingToShow = !showMoney && !showSales && !showService && !showWorkload;
 
   // The band leads with a figure the panels beneath then repeat. That is fine
   // when it is summarising several of them, and pointless when service is the

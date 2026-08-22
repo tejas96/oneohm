@@ -1,7 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { JwtAuthGuard } from '../../../auth/guards';
 
 import {
   SalesPipelineQueryDto,
@@ -13,6 +12,7 @@ import {
   type SalesPipelineTrendResponseDto,
 } from './dto';
 import { SalesPipelineService } from './sales-pipeline.service';
+import { JwtAuthGuard } from '../../../auth/guards';
 
 @ApiTags('Analytics')
 @ApiBearerAuth()

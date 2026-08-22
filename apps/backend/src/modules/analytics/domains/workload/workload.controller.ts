@@ -3,7 +3,6 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { WorkloadQueryDto, type WorkloadResponseDto } from './dto/workload.dto';
 import { WorkloadService } from './workload.service';
-
 import { JwtAuthGuard } from '../../../auth/guards';
 
 @ApiTags('Analytics')

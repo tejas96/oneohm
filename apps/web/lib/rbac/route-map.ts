@@ -40,6 +40,7 @@ export const ROUTE_GATES: ReadonlyArray<{ pattern: RegExp; gate: Gate }> = [
   { pattern: /^\/properties(\/|$)/, gate: 'properties.view' },
   { pattern: /^\/followups(\/|$)/, gate: 'followups.view' },
   { pattern: /^\/pipeline(\/|$)/, gate: 'pipeline.view' },
+  { pattern: /^\/workload(\/|$)/, gate: 'workload.view' },
 
   // Quotes
   { pattern: /^\/quotes\/new(\/|$)/, gate: 'quotes.create' },
