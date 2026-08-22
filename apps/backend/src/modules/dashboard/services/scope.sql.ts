@@ -11,8 +11,10 @@
  * their own lead the moment a colleague created the property, and stuck
  * hand-offs are the entire reason this dashboard exists.
  *
- * `$1` is ALWAYS the subject user id, taken from the JWT. It is never a
- * parameter the caller can influence.
+ * `$1` is ALWAYS the subject user id. It is the token holder unless the caller
+ * both sent a `userId` AND passed `resolveDashboardSubjectId`
+ * (`iam/constants/admin-roles.ts`), which requires `dashboard.employees.view`
+ * or an admin role. It is never taken from the request raw.
  */
 
 /** Customers I created or am assigned. */

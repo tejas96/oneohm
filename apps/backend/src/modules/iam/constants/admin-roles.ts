@@ -54,3 +54,32 @@ export function resolveProjectListMemberId(
 
   return currentUserId;
 }
+
+/**
+ * Whose dashboard is being read.
+ *
+ * Admins qualify by role; everyone else needs `dashboard.employees.view`. A
+ * caller with neither gets their OWN id back and the `userId` they sent is
+ * ignored — the same silent pin-to-self `resolveProjectListMemberId` applies to
+ * the project list. There is deliberately no 403: the parameter is not an
+ * authorization token, so an unauthorised caller is answered, not refused.
+ *
+ * Reading roles as well as permissions is load-bearing, not defensive. `admin`
+ * and `super_admin` hold ZERO rows in `role_permissions` — they bypass rather
+ * than hold grants — so `permissions.includes(...)` alone is false for every
+ * admin and would lock out exactly the people this feature is for.
+ *
+ * The code string is duplicated from `apps/web/lib/rbac/catalog.ts` on purpose:
+ * the backend does not import from the web app, and the migration is already
+ * the backend's copy of the catalog.
+ */
+export function resolveDashboardSubjectId(
+  roles: string[],
+  permissions: string[],
+  currentUserId: string,
+  options: { userId?: string } = {},
+): string {
+  const canViewOthers =
+    hasAdminBypassRole(roles) || permissions.includes('dashboard.employees.view');
+  return canViewOthers && options.userId ? options.userId : currentUserId;
+}

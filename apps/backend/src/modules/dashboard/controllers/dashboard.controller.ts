@@ -1,9 +1,10 @@
-import { Controller, Get, HttpStatus, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, HttpStatus, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { resolveDashboardSubjectId } from '../../iam/constants/admin-roles';
 import { MyWorkResponseDto } from '../dto/dashboard-response.dto';
 import { DashboardService } from '../services/dashboard.service';
 
@@ -17,17 +18,35 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   /**
-   * The subject is the token holder. FULL STOP.
+   * The subject is the token holder, UNLESS the caller both sent a `userId` and
+   * holds `dashboard.employees.view` — or an admin role, which bypasses.
    *
-   * This endpoint deliberately takes no employee/user parameter. Backend RBAC
-   * does not exist in this app yet, so a parameter here would be an unguarded
-   * "show me anyone's work" switch. When the admin employee selector arrives it
-   * adds a parameter AND the permission check that governs it, together.
+   * `resolveDashboardSubjectId` makes that decision and it does not throw. A
+   * caller without the grant gets their own dashboard back and the parameter is
+   * ignored, exactly as `resolveProjectListMemberId` treats `memberId` on the
+   * project list. Backend RBAC still does not exist; this is subject
+   * resolution, not a guard, and `scope.sql.ts` never sees the raw parameter.
    */
   @Get('my-work')
-  @ApiOperation({ summary: "Everything needing the signed-in employee's attention" })
+  @ApiOperation({ summary: "Everything needing an employee's attention" })
+  @ApiQuery({
+    name: 'userId',
+    required: false,
+    description:
+      'Whose dashboard to read. A USER id, not an employee_profiles id. Ignored unless the caller holds dashboard.employees.view or an admin role.',
+  })
   @ApiResponse({ status: HttpStatus.OK, type: MyWorkResponseDto })
-  async getMyWork(@CurrentUser() currentUser: CurrentUserType): Promise<MyWorkResponseDto> {
-    return this.dashboardService.getMyWork(currentUser.id);
+  async getMyWork(
+    @CurrentUser() currentUser: CurrentUserType,
+    @Query('userId', new ParseUUIDPipe({ optional: true })) userId?: string,
+  ): Promise<MyWorkResponseDto> {
+    const subjectId = resolveDashboardSubjectId(
+      currentUser.roles || [],
+      currentUser.permissions || [],
+      currentUser.id,
+      { userId },
+    );
+
+    return this.dashboardService.getMyWork(subjectId);
   }
 }
