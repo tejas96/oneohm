@@ -8,7 +8,7 @@ import { LeadsWonCard } from './leads-won-card';
 import { MoneyOwedCard } from './money-owed-card';
 import { SalesPipelineCard } from './sales-pipeline-card';
 import { SalespeopleCard } from './salespeople-card';
-import { ServiceLoadCard, type ServiceStats } from './service-load-card';
+import { ServiceLoadCard } from './service-load-card';
 import { currentMonthRange, money, rupeesExact, type MoneyFormat } from '../lib/format';
 import { businessLinks, type BusinessRange } from '../lib/links';
 
@@ -50,10 +50,15 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
   const showSales = can('pipeline.view');
   const showService = can('service.view');
 
-  const kpis = useFinanceKpis(range.from, range.to);
-  // `meterInstallations` rides on the finance KPI call, so the hero still needs
-  // it even when every money figure is hidden.
-  const cashFlow = useCashFlow(range.from, range.to, 'day');
+  // Both finance calls are gated, not just the panels they feed.
+  //
+  // `meterInstallations` is an operations figure, but it is SERVED BY the
+  // finance KPI endpoint alongside revenue, spend and outstanding. Showing it
+  // to someone without finance.view meant pulling that whole payload into their
+  // browser to render one number from it. Installations is therefore treated as
+  // finance data, and the hero falls back to sales or service instead.
+  const kpis = useFinanceKpis(range.from, range.to, undefined, { enabled: showMoney });
+  const cashFlow = useCashFlow(range.from, range.to, 'day', { enabled: showMoney });
   const pipeline = usePipelineDashboard({
     window: { fromDate: range.from, toDate: range.to },
     enabled: showSales,
@@ -68,13 +73,15 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
   const wonStage = stages[stages.length - 1];
   const lostCount = pipeline.data?.funnel.lostCount ?? 0;
   const lostValue = pipeline.data?.funnel.lostValue ?? 0;
-  const ticketStats = tickets.data as ServiceStats | undefined;
+  // No cast: the hook already types this, and casting would hide the day a
+  // field is renamed upstream.
+  const ticketStats = tickets.data;
 
   const compact = format === 'short';
 
-  // Without finance access the band would be left holding a single figure, so
-  // it refills with numbers that are not finance-gated. Pipeline value comes
-  // from the sales endpoint, so it survives the gate.
+  // The hero is whichever permitted figure best answers "is this month OK".
+  // Money first, then sales, then service. When none is permitted there is no
+  // hero at all and the band is not rendered — see `nothingToShow`.
   const hero = showMoney
     ? {
         label: 'Net cash flow',
@@ -85,13 +92,26 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
         href: businessLinks.finance(),
         gate: 'finance.view' as const,
       }
-    : {
-        label: 'Installations completed',
-        value: String(k?.meterInstallations ?? 0),
-        sub: 'Meters commissioned in the period',
-        href: businessLinks.projects(),
-        gate: 'projects.view' as const,
-      };
+    : showSales
+      ? {
+          label: 'Pipeline value',
+          value: money(stats?.totalPipelineValue ?? 0, format),
+          sub: `Open work across ${stages[0]?.count ?? 0} ${stages[0]?.label.toLowerCase() ?? 'leads'}`,
+          href: businessLinks.pipeline(range),
+          gate: 'pipeline.view' as const,
+        }
+      : {
+          label: 'Active tickets',
+          value: String((ticketStats?.open ?? 0) + (ticketStats?.inProgress ?? 0)),
+          sub: ticketStats?.urgent
+            ? `${ticketStats.urgent} urgent and still active`
+            : 'No urgent tickets',
+          // Deliberately NOT flagged bad. Ten open tickets is a working week,
+          // not a failure; painting the headline red for it spends the one
+          // colour on this screen that should mean "something is wrong".
+          href: businessLinks.service(),
+          gate: 'service.view' as const,
+        };
 
   // Each tile is offered only if its own data is permitted. Without finance the
   // band would otherwise hold a single lonely figure, so it refills from sales
@@ -170,9 +190,11 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
   // twice on one band makes the reader hunt for the difference between them.
   const tiles: HeadlineTile[] = [
     ...(showMoney ? moneyTiles : []),
-    ...(showSales && !showMoney ? salesTiles : []),
+    // `slice(1)` when sales supplies the hero: pipeline value is already the
+    // big number, and printing it again beside itself helps nobody.
+    ...(showSales && !showMoney ? salesTiles.slice(1) : []),
     ...(showMoney ? [installationsTile] : []),
-    ...(showService ? [serviceTile] : []),
+    ...(showService && (showMoney || showSales) ? [serviceTile] : []),
   ].slice(0, 4);
 
   const serviceCard = showService ? (
@@ -264,9 +286,17 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
   // modules, and this mode has nothing of its own to fall back on.
   const nothingToShow = !showMoney && !showSales && !showService;
 
+  // The band leads with a figure the panels beneath then repeat. That is fine
+  // when it is summarising several of them, and pointless when service is the
+  // only permitted source — the Service load panel already says "10 active now"
+  // in the same words. In that case the panel is the whole screen.
+  const showBand = showMoney || showSales;
+
   return (
     <div>
-      <HeadlineBand hero={hero} tiles={tiles} rangeLabel={range.label} compact={compact} />
+      {showBand ? (
+        <HeadlineBand hero={hero} tiles={tiles} rangeLabel={range.label} compact={compact} />
+      ) : null}
 
       {nothingToShow ? (
         <section className="rounded-3xl bg-surface px-[22px] py-8 shadow-e2">

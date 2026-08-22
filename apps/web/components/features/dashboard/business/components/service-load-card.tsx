@@ -5,21 +5,14 @@ import * as React from 'react';
 import { BusinessCard } from './business-card';
 import { businessLinks } from '../lib/links';
 
+import type { ServiceTicketStats } from '@/components/features/service-tickets/hooks/use-service-tickets';
 import { CHART_COLORS } from '@/lib/charts/palette';
 import { color } from '@/lib/theme/tokens';
 
-export interface ServiceStats {
-  open: number;
-  inProgress: number;
-  resolved: number;
-  closed: number;
-  urgent: number;
-  unassigned: number;
-  overdue: number;
-}
+
 
 interface ServiceLoadCardProps {
-  stats: ServiceStats | undefined;
+  stats: ServiceTicketStats | undefined;
   isError: boolean;
   onRetry: () => void;
 }

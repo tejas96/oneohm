@@ -49,15 +49,33 @@ export function GatedLink({
     );
   }
 
+  // An anchor, not a button.
+  //
+  // Callers wrap block content — the headline tiles pass <div>s — and flow
+  // content inside a <button> is invalid HTML, which React flags on hydration
+  // and which breaks the button's implicit accessible name. An <a> accepts flow
+  // content, so `role="button"` plus explicit keyboard handling gives the right
+  // semantics without the invalid nesting.
+  //
+  // No `href`: there is nowhere to go. `tabIndex` restores focusability that an
+  // href-less anchor loses, and Enter/Space are wired by hand because an anchor
+  // does not activate on Space the way a button does.
   return (
-    <button
-      type="button"
-      onClick={onGatedClick}
+    <a
+      role="button"
+      tabIndex={0}
       aria-disabled="true"
-      className={cn(className, 'cursor-not-allowed text-left')}
+      onClick={onGatedClick}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onGatedClick();
+        }
+      }}
+      className={cn(className, 'cursor-not-allowed')}
     >
       <Lock className="mr-1 inline size-3 align-[-1px]" aria-hidden="true" />
       {children}
-    </button>
+    </a>
   );
 }
