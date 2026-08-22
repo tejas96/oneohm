@@ -142,7 +142,7 @@ stalls AS (
     q.customer_id::text, q.property_id::text, 3
   FROM my_quotes q
   JOIN quotes qq ON qq.id = q.id
-  LEFT JOIN customer_properties cp ON cp.id = q.property_id
+  LEFT JOIN customer_properties cp ON cp.id = q.property_id AND cp.deleted_at IS NULL
   WHERE q.status = 'draft'
 
   UNION ALL
@@ -162,7 +162,7 @@ stalls AS (
     q.customer_id::text, q.property_id::text,
     CASE WHEN q.valid_until < CURRENT_DATE THEN 1 ELSE 2 END
   FROM my_quotes q
-  LEFT JOIN customer_properties cp ON cp.id = q.property_id
+  LEFT JOIN customer_properties cp ON cp.id = q.property_id AND cp.deleted_at IS NULL
   WHERE q.status IN ('sent', 'viewed')
     AND q.valid_until <= CURRENT_DATE + ${QUOTE_EXPIRY_DAYS}
 
@@ -179,7 +179,7 @@ stalls AS (
     q.customer_id::text, q.property_id::text, 1
   FROM my_quotes q
   JOIN quotes qq ON qq.id = q.id
-  LEFT JOIN customer_properties cp ON cp.id = q.property_id
+  LEFT JOIN customer_properties cp ON cp.id = q.property_id AND cp.deleted_at IS NULL
   WHERE q.status = 'accepted'
     AND NOT EXISTS (
       SELECT 1 FROM projects pr WHERE pr.quote_id = q.id AND pr.deleted_at IS NULL
