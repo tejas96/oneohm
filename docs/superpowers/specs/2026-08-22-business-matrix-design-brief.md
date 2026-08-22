@@ -169,8 +169,12 @@ links; it does not replace it.
 - **Quotes never expire on their own.** The job that would mark them expired is never called, so
   a chart reading expired status shows zero for ever. Expiry is derived from `valid_until`.
 - **No "last worked on" signal on service tickets.** "Stalled ticket" cannot be computed.
-- **No period-over-period comparison is provided by any endpoint.** If you want "up 12% on last
-  month", it would mean a second call with a shifted range. Treat comparison as unavailable.
+- ~~**No period-over-period comparison is provided by any endpoint.**~~ **WRONG — corrected
+  2026-08-22 after the design was built.** `GET /analytics/sales-pipeline/stats` returns
+  `trendVsPreviousPeriod` for all four health metrics: `totalPipelineValue`, `avgDealSize`,
+  `winRate`, `avgSalesCycleDays`. Comparison IS available for those four and should be shown.
+  It is still unavailable for finance and service figures — no finance or ticket endpoint
+  returns a prior-period value.
 
 ---
 

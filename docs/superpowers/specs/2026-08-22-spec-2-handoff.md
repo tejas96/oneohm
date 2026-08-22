@@ -97,6 +97,11 @@ Verified 2026-08-22 against the codebase, not remembered.
   alongside `FinanceAggregationService`.
 - **Three non-finance code paths still read the dead tables** and are the real remaining cleanup,
   unrelated to this feature: `bom.service.ts:1486` and `document.service.ts:170,191`.
+- **The UX is done and reviewed.** Design lives in Claude Design project
+  `be6622ba-1ef2-4f60-9994-43ed48cda883`, files `Business Mode.dc.html` and `BusinessScreen.dc.html`.
+  **Read `2026-08-22-business-matrix-design-review.md` before building** — the funnel in the design
+  draws five stages and the API serves four, and the brief wrongly told the designer that
+  period-over-period comparison did not exist when `stats.trendVsPreviousPeriod` provides it.
 - **`/customers/ar` takes no date parameter** — ageing is always as of today. Every other
   reporting endpoint takes a range. A single global date control would silently misrepresent that
   panel.
