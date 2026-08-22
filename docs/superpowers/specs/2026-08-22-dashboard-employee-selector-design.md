@@ -243,7 +243,43 @@ when it is not. It is **replaced**, not deleted:
 > sent a `userId` and passed `resolveDashboardSubjectId` — it is never taken from the
 > request raw.
 
-### 5.4 The response names its subject
+### 5.4 Where the permission list comes from — and why not the token
+
+Found while walking the screen, after the first implementation shipped the
+obvious version.
+
+`CurrentUserType.permissions` is baked into the JWT **at login**. The web app
+does not use that list to gate the selector: `refreshUser` in
+`auth-provider.tsx` calls `/auth/me` on mount and overwrites `roles` and
+`permissions` from the database, precisely so "a change a superadmin makes"
+reaches the user on their next page load rather than at token expiry.
+
+So a resolver reading `currentUser.permissions` disagrees with the gate that
+decides whether the control is even visible. Measured with a single token
+minted before a grant: `/auth/me` returned 11 codes including the new one — the
+dropdown would render — while `GET /dashboard/my-work?userId=…` still returned
+the CALLER's own name and numbers, because the token carried 10. The user picks
+a colleague and the page reports their own work under that selection. Never a
+leak; the backend refuses correctly. Simply wrong on screen.
+
+This is the first permission code the backend reads at all. Every other code is
+gated frontend-only, where the fresh `/auth/me` list is the single source and
+nothing can disagree with it. The mismatch is therefore new with this feature,
+not pre-existing.
+
+**Resolution.** The controller calls `IamService.getUserPermissions(userId)` —
+the same function `/auth/me` uses — and passes that to the resolver.
+
+It runs **only when a `userId` parameter is present**. A dashboard load with no
+parameter returns before the lookup, so the common case, which is the first
+screen after login for every employee, costs no extra query. Roles still come
+from the token: role membership is not what changes here, and the admin bypass
+must keep working for `super_admin`, who holds no grants at all.
+
+`resolveDashboardSubjectId` carries a docblock forbidding callers from passing
+`CurrentUserType.permissions` back in.
+
+### 5.5 The response names its subject
 
 `MyWorkResponse` gains:
 
@@ -330,7 +366,7 @@ not `web:dev` — dev cannot reach a route behind middleware.
 |---|---|---|
 | 1 | Signed in as `super_admin` (0 grants) | Dropdown appears. Proves the role bypass, which a `permissions.includes` check alone would fail |
 | 2 | Signed in as a role holding no grant | No dropdown anywhere on the page |
-| 3 | Grant the code to `project_manager`, **then re-login** | Dropdown appears for that user |
+| 3 | Grant the code to `project_manager` | Dropdown appears on that user's next page load, and the selector WORKS — no re-login needed (see §5.4) |
 | 4 | `curl` the endpoint as a non-holder with `?userId=<someone else>` | Your **own** data returns. No 403, no leak |
 | 5 | Select an employee | The follow-up **Complete** control is gone from every row; Open/View deep links still navigate |
 | 6 | Select A, then B, then A again | Counts and `subject.name` change every time. Proves the cache key |
@@ -351,7 +387,7 @@ Database access for granting the code:
 
 | # | Limitation | Consequence |
 |---|---|---|
-| 1 | **Permissions are a login-time JWT snapshot.** | A newly granted code does nothing until the token refreshes; a revoked one keeps working until then. True app-wide today, not introduced here — but this feature makes it visible, because granting the code is the first step of using it. Check 3 depends on it. |
+| 1 | ~~**Permissions are a login-time JWT snapshot.**~~ **RESOLVED 2026-08-22 — see §5.4.** The original limitation stated that a newly granted code would do nothing until the token refreshed. That is true of the JWT, but not of this feature: the web app already reads fresh permissions from `/auth/me`, and the resolver now reads the same source. A grant takes effect on the next page load. | None. The gate and the check cannot drift. |
 | 2 | The grant is org-wide by necessity (decision 6). | Someone holding the code sees every employee, including admins. There is no column that would support narrowing it. |
 | 3 | The code string is duplicated in three places — `catalog.ts`, the migration, and `admin-roles.ts`. | The existing catalog already accepts a two-place manual duplication as its model. This adds a third. A typo in the resolver fails closed (nobody but admins passes), which is the safe direction. |
 | 4 | The selector reads `GET /employees`, which returns the full `EmployeeResponseDto`. | 40 rows of a heavy DTO to populate a dropdown. Acceptable at this size; if staff numbers grow past a few hundred this wants a light `id + name` endpoint. Not built now. |
