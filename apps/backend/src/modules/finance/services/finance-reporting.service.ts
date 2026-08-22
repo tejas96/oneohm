@@ -30,6 +30,8 @@ export interface FinanceKpis {
   netCashflowInRange: number;
   outstandingNow: number;
   overdueCountNow: number;
+  /** Of `outstandingNow`, how much is past its due date. Same population. */
+  overdueNow: number;
   receiptCountInRange: number;
   expenseCountInRange: number;
   unallocatedCredit: number;
@@ -73,6 +75,7 @@ export class FinanceReportingService {
       netCashflowInRange: rs(row?.netPaise),
       outstandingNow: rs(row?.outstandingPaise),
       overdueCountNow: Number(row?.overdueCount ?? 0),
+      overdueNow: rs(row?.overduePaise),
       receiptCountInRange: Number(row?.receiptCount ?? 0),
       expenseCountInRange: Number(row?.expenseCount ?? 0),
       unallocatedCredit: rs(row?.unallocatedPaise),

@@ -38,6 +38,18 @@ interface MoneyOwedCardProps {
    * instead — everything that is not "not yet due" is, by definition, overdue.
    */
   overdueCount: number;
+  /**
+   * The org-wide totals, from `/finance/kpis`.
+   *
+   * NOT summed from `aging`. That endpoint inner joins projects, properties and
+   * customers on `deleted_at IS NULL` and caps at 1000 rows, so its sum silently
+   * omits money owed on a soft-deleted project or by a soft-deleted customer,
+   * and truncates past 1000 customers. Measured 2026-08-22 the two agree
+   * exactly — 422 milestones, ₹1,87,48,816 — but only one of them cannot drift,
+   * and it is the one the "Outstanding now" tile above already shows.
+   */
+  totalOutstanding: number;
+  overdueAmount: number;
   unallocatedCredit: number;
   format: MoneyFormat;
   today: Date;
@@ -61,6 +73,8 @@ export function MoneyOwedCard({
   aging,
   oldest,
   overdueCount,
+  totalOutstanding,
+  overdueAmount,
   unallocatedCredit,
   format,
   today,
@@ -78,13 +92,12 @@ export function MoneyOwedCard({
       sums[3] += row.bucket61to90;
       sums[4] += row.bucket90plus;
     }
-    const total = sums.reduce((a, b) => a + b, 0);
-    // sums[0] is "not yet due"; everything after it has passed its date.
-    const overdue = total - sums[0];
-    return { sums, total, overdue };
+    // Only the shape of the ageing, not the totals — those come from the KPI.
+    const bucketSum = sums.reduce((a, b) => a + b, 0);
+    return { sums, bucketSum };
   }, [aging]);
 
-  const denominator = totals.total || 1;
+  const denominator = totals.bucketSum || 1;
   const customersPast90 = aging.filter((row) => row.bucket90plus > 0).length;
 
   return (
@@ -120,11 +133,11 @@ export function MoneyOwedCard({
     >
       <div className="flex items-baseline gap-3.5 pb-3.5">
         <div className="text-[32px] font-bold tracking-[-0.03em] tabular-nums">
-          {money(totals.total, format)}
+          {money(totalOutstanding, format)}
         </div>
         <div className="text-[13px] text-foreground-secondary">owed to us</div>
         <div className="ml-auto text-[13px] tabular-nums text-error">
-          {money(totals.overdue, format)} overdue · {overdueCount} milestone
+          {money(overdueAmount, format)} overdue · {overdueCount} milestone
           {overdueCount === 1 ? '' : 's'}
         </div>
       </div>

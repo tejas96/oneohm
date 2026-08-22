@@ -17,6 +17,7 @@ import { useOrgCustomersAr, useOrgOutstanding } from '@/lib/hooks/resources/fina
 import { useCashFlow, useFinanceKpis } from '@/lib/hooks/resources/ledger';
 import { usePipelineDashboard } from '@/lib/hooks/resources/pipeline';
 import { useCan } from '@/lib/rbac';
+import { useAuth } from '@/providers/auth-provider';
 import { cn } from '@/lib/utils';
 
 const OLDEST_DEBT_ROWS = 3;
@@ -50,6 +51,14 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
   const showSales = can('pipeline.view');
   const showService = can('service.view');
 
+  // Rendering may run on the permissions persisted from the last visit, which
+  // avoids a flash of missing panels and self-corrects a moment later. FETCHING
+  // may not: a permission revoked since that visit would still let its request
+  // go out, and the data would be in the browser before the correction lands.
+  // Every query below waits for /auth/me to confirm.
+  const { permissionsConfirmed } = useAuth();
+  const mayFetch = (permitted: boolean): boolean => permitted && permissionsConfirmed;
+
   // Both finance calls are gated, not just the panels they feed.
   //
   // `meterInstallations` is an operations figure, but it is SERVED BY the
@@ -57,15 +66,15 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
   // to someone without finance.view meant pulling that whole payload into their
   // browser to render one number from it. Installations is therefore treated as
   // finance data, and the hero falls back to sales or service instead.
-  const kpis = useFinanceKpis(range.from, range.to, undefined, { enabled: showMoney });
-  const cashFlow = useCashFlow(range.from, range.to, 'day', { enabled: showMoney });
+  const kpis = useFinanceKpis(range.from, range.to, undefined, { enabled: mayFetch(showMoney) });
+  const cashFlow = useCashFlow(range.from, range.to, 'day', { enabled: mayFetch(showMoney) });
   const pipeline = usePipelineDashboard({
     window: { fromDate: range.from, toDate: range.to },
-    enabled: showSales,
+    enabled: mayFetch(showSales),
   });
-  const aging = useOrgCustomersAr({ enabled: showMoney });
-  const outstanding = useOrgOutstanding({ limit: OLDEST_DEBT_ROWS }, { enabled: showMoney });
-  const tickets = useServiceTicketStats(showService);
+  const aging = useOrgCustomersAr({ enabled: mayFetch(showMoney) });
+  const outstanding = useOrgOutstanding({ limit: OLDEST_DEBT_ROWS }, { enabled: mayFetch(showMoney) });
+  const tickets = useServiceTicketStats(mayFetch(showService));
 
   const k = kpis.data;
   const stats = pipeline.data?.stats;
@@ -243,6 +252,8 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
         aging={aging.data ?? []}
         oldest={outstanding.data?.data ?? []}
         overdueCount={k?.overdueCountNow ?? 0}
+        totalOutstanding={k?.outstandingNow ?? 0}
+        overdueAmount={k?.overdueNow ?? 0}
         unallocatedCredit={k?.unallocatedCredit ?? 0}
         format={format}
         today={new Date()}

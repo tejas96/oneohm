@@ -139,6 +139,8 @@ export interface FinanceKpis {
   /** A SNAPSHOT as of today — deliberately not bounded by the selected period. */
   outstandingNow: number;
   overdueCountNow: number;
+  /** Of `outstandingNow`, how much is past due. Authoritative — see KPIS_SQL. */
+  overdueNow: number;
   receiptCountInRange: number;
   expenseCountInRange: number;
   unallocatedCredit: number;
