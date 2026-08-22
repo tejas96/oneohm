@@ -1,5 +1,7 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import { JwtAuthGuard } from '../../../auth/guards';
 
 import {
   SalesPipelineQueryDto,
@@ -13,7 +15,13 @@ import {
 import { SalesPipelineService } from './sales-pipeline.service';
 
 @ApiTags('Analytics')
+@ApiBearerAuth()
 @Controller('analytics/sales-pipeline')
+// There is NO global auth guard in this app — app.module.ts registers only
+// ThrottlerGuard. Without this line every route here is PUBLIC, and this one
+// serves the whole funnel, win rates and the salesperson leaderboard. It was
+// unguarded and returning 200 to an anonymous caller until 2026-08-22.
+@UseGuards(JwtAuthGuard)
 export class SalesPipelineController {
   constructor(private readonly salesPipelineService: SalesPipelineService) {}
 
