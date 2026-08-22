@@ -1,6 +1,6 @@
 import type { DashboardItem } from '@tejas96/shared/types';
 
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 export type ActionTarget =
   | { mode: 'navigate'; href: string; label: string }
@@ -19,10 +19,6 @@ const LABELS: Record<DashboardItem['action'], string> = {
   open_payments: 'Open payments',
 };
 
-function withId(template: string, id: string): string {
-  return template.replace('[id]', id);
-}
-
 /**
  * Where an item's single action goes.
  *
@@ -40,7 +36,7 @@ export function resolveAction(item: DashboardItem): ActionTarget {
       // customerId, which is exactly the missing-property case.
       return {
         mode: 'navigate',
-        href: `${ROUTES.ONBOARDING.NEW}?customerId=${encodeURIComponent(params.customerId ?? '')}`,
+        href: buildRoute(ROUTES.ONBOARDING.NEW, undefined, { customerId: params.customerId }),
         label,
       };
 
@@ -48,35 +44,58 @@ export function resolveAction(item: DashboardItem): ActionTarget {
     case 'complete_survey':
       return {
         mode: 'navigate',
-        href: withId(ROUTES.PROPERTIES.DETAIL, params.propertyId ?? params.id ?? ''),
+        href: buildRoute(ROUTES.PROPERTIES.DETAIL, { id: params.propertyId ?? params.id ?? '' }),
         label,
       };
 
-    case 'create_quote': {
-      const search = new URLSearchParams();
-      if (params.customerId) search.set('customerId', params.customerId);
-      if (params.propertyId) search.set('propertyId', params.propertyId);
-      return { mode: 'navigate', href: `${ROUTES.QUOTES.NEW}?${search.toString()}`, label };
-    }
+    case 'create_quote':
+      return {
+        mode: 'navigate',
+        href: buildRoute(ROUTES.QUOTES.NEW, undefined, {
+          customerId: params.customerId,
+          propertyId: params.propertyId,
+        }),
+        label,
+      };
 
     case 'open_quote':
-      return { mode: 'navigate', href: withId(ROUTES.QUOTES.DETAIL, params.id ?? ''), label };
+      return {
+        mode: 'navigate',
+        href: buildRoute(ROUTES.QUOTES.DETAIL, { id: params.id ?? '' }),
+        label,
+      };
 
     case 'convert_to_project':
       // There is no dedicated convert screen. The quote page owns the action, so
       // this opens the quote rather than inventing a route.
-      return { mode: 'navigate', href: withId(ROUTES.QUOTES.DETAIL, params.id ?? ''), label };
+      return {
+        mode: 'navigate',
+        href: buildRoute(ROUTES.QUOTES.DETAIL, { id: params.id ?? '' }),
+        label,
+      };
 
     case 'open_service':
-      return { mode: 'navigate', href: withId(ROUTES.SERVICE.DETAIL, params.id ?? ''), label };
+      return {
+        mode: 'navigate',
+        href: buildRoute(ROUTES.SERVICE.DETAIL, { id: params.id ?? '' }),
+        label,
+      };
 
     case 'open_project':
-      return { mode: 'navigate', href: withId(ROUTES.PROJECTS.DETAIL, params.id ?? ''), label };
+      return {
+        mode: 'navigate',
+        href: buildRoute(ROUTES.PROJECTS.DETAIL, { id: params.id ?? '' }),
+        label,
+      };
 
     case 'open_payments':
       return {
         mode: 'navigate',
-        href: `${withId(ROUTES.PROJECTS.DETAIL, params.projectId ?? params.id ?? '')}?tab=finance`,
+        href: buildRoute(
+          ROUTES.PROJECTS.DETAIL,
+          { id: params.projectId ?? params.id ?? '' },
+          { tab: 'finance' },
+        ),
         label,
       };
 
