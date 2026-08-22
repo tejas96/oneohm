@@ -102,6 +102,36 @@ export const MY_EMPLOYEE_CTE = `
   )
 `;
 
+/**
+ * Service tickets that are mine.
+ *
+ * Requires MY_CUSTOMERS_CTE, MY_PROJECTS_CTE and MY_EMPLOYEE_CTE ahead of it.
+ *
+ * The `project_id IN my_projects` branch goes BEYOND the ownership table in
+ * spec section 3, which lists only creator, assignee and the customer walk. It
+ * is retained deliberately: a ticket raised against a project I build is work
+ * that lands on my desk whether or not anyone assigned it to me, and 17 tickets
+ * across 7 users are visible today through this branch alone. Narrowing to the
+ * spec's three columns would silently delete them from those dashboards. If the
+ * table is ever tightened, that decision belongs here, in one place, not inside
+ * a provider.
+ */
+export const MY_SERVICE_TICKETS_CTE = `
+  my_service_tickets AS (
+    SELECT t.id
+    FROM service_tickets t
+    WHERE t.deleted_at IS NULL
+      AND (
+        -- Assigned to ME. The hop through employee_profiles is mandatory:
+        -- assigned_to_employee_id is an employee id, not a user id.
+        t.assigned_to_employee_id IN (SELECT id FROM my_employee)
+        OR t.created_by = $1
+        OR t.project_id  IN (SELECT id FROM my_projects)
+        OR t.customer_id IN (SELECT id FROM my_customers)
+      )
+  )
+`;
+
 /** Compose a WITH clause from the fragments a provider needs, in order. */
 export function withCtes(...ctes: string[]): string {
   return `WITH ${ctes.join(',\n')}`;

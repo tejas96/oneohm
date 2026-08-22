@@ -7,6 +7,7 @@ import {
   MY_CUSTOMERS_CTE,
   MY_EMPLOYEE_CTE,
   MY_PROJECTS_CTE,
+  MY_SERVICE_TICKETS_CTE,
   withCtes,
 } from '../services/scope.sql';
 
@@ -33,7 +34,7 @@ export class ServiceProvider implements DashboardProvider {
 
   private sql(): string {
     return `
-${withCtes(MY_CUSTOMERS_CTE, MY_PROJECTS_CTE, MY_EMPLOYEE_CTE)},
+${withCtes(MY_CUSTOMERS_CTE, MY_PROJECTS_CTE, MY_EMPLOYEE_CTE, MY_SERVICE_TICKETS_CTE)},
 
 scoped AS (
   SELECT
@@ -89,14 +90,9 @@ scoped AS (
     -- The single definition of an active ticket, mirrored from
     -- ACTIVE_TICKET_STATUSES in libs/shared. Do not inline a different list.
     AND t.status IN ('open', 'in_progress')
-    AND (
-      -- Assigned to ME. The join through employee_profiles is mandatory:
-      -- assigned_to_employee_id is an employee id, not a user id.
-      t.assigned_to_employee_id IN (SELECT id FROM my_employee)
-      OR t.created_by = $1
-      OR t.project_id  IN (SELECT id FROM my_projects)
-      OR t.customer_id IN (SELECT id FROM my_customers)
-    )
+    -- Ownership lives in scope.sql.ts, like every other provider's. This one
+    -- used to inline its own four-way predicate.
+    AND t.id IN (SELECT id FROM my_service_tickets)
     AND (
       t.due_date IS NULL
       OR t.due_date <= CURRENT_DATE + ${DUE_SOON_DAYS}
