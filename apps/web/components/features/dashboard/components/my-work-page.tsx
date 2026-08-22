@@ -7,6 +7,7 @@ import * as React from 'react';
 
 import { dashboardKeys, useFollowupForItem, useMyWork } from '../hooks';
 import { DashboardRow } from './dashboard-row';
+import { EmployeeSelector } from './employee-selector';
 import { ProjectRow } from './project-row';
 import { SectionCard, SectionSkeleton } from './section-card';
 import { ViewAllDrawer } from './view-all-drawer';
@@ -43,7 +44,8 @@ function overflowHref(entry: OverflowEntry | undefined): string | undefined {
 export function MyWorkPage(): React.JSX.Element {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data, isPending, isError, refetch } = useMyWork();
+  const [subjectUserId, setSubjectUserId] = React.useState<string | undefined>(undefined);
+  const { data, isPending, isError, refetch } = useMyWork(subjectUserId);
   const [followupItem, setFollowupItem] = React.useState<DashboardItem | null>(null);
   const [drawer, setDrawer] = React.useState<{
     title: string;
@@ -89,12 +91,18 @@ export function MyWorkPage(): React.JSX.Element {
   const { critical, criticalTotal, rest, criticalBySection } = liftCritical(data.sections);
   const { summary } = data;
   const name = user?.firstName ?? '';
+  const viewingOther = Boolean(subjectUserId);
 
   // No slice here any more: `SectionCard` spends the row budget across the
   // section's buckets, so this just draws whatever it is handed.
   const renderRows = (items: DashboardItem[]): React.ReactNode =>
     items.map((item) => (
-      <DashboardRow key={item.id} item={item} onCompleteFollowup={setFollowupItem} />
+      <DashboardRow
+        key={item.id}
+        item={item}
+        onCompleteFollowup={setFollowupItem}
+        readOnly={viewingOther}
+      />
     ));
 
   return (
@@ -103,27 +111,49 @@ export function MyWorkPage(): React.JSX.Element {
         {/* 1. Greeting */}
         <section className="relative overflow-hidden rounded-xl bg-surface p-6 shadow-e2">
           <div className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full bg-primary/10 blur-3xl" />
-          <div className="relative flex items-end gap-3">
-            <Typography variant="h2">
-              {mounted ? greeting(new Date().getHours()) : 'Welcome'}
-              {name ? `, ${name}` : ''}
-            </Typography>
-            {/* Today's date anchors every relative date further down the page —
-                "due 26 Aug", "Mon 24 Aug". Static text, never a control. */}
-            {mounted ? (
-              <span className="pb-1 text-xs text-foreground-tertiary">
-                {new Date().toLocaleDateString('en-IN', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
-              </span>
-            ) : null}
+          <div className="relative flex items-end justify-between gap-3">
+            <div className="flex items-end gap-3">
+              {/* Someone else's queue is not your morning, so the greeting gives
+                  way to their name rather than sitting above their work. */}
+              <Typography variant="h2">
+                {viewingOther
+                  ? data.subject.name
+                  : `${mounted ? greeting(new Date().getHours()) : 'Welcome'}${name ? `, ${name}` : ''}`}
+              </Typography>
+              {/* Today's date anchors every relative date further down the page —
+                  "due 26 Aug", "Mon 24 Aug". Static text, never a control. */}
+              {mounted ? (
+                <span className="pb-1 text-xs text-foreground-tertiary">
+                  {new Date().toLocaleDateString('en-IN', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })}
+                </span>
+              ) : null}
+            </div>
+            <EmployeeSelector
+              value={subjectUserId}
+              onChange={setSubjectUserId}
+              selfUserId={user?.id ?? ''}
+            />
           </div>
           <p className="relative mt-2 text-sm text-foreground-secondary">
             <span className="font-medium text-error">{summary.overdue} overdue</span>
             {` · ${summary.dueToday} due today · ${summary.dueThisWeek} more this week`}
           </p>
+          {viewingOther ? (
+            <p className="relative mt-2 text-sm text-foreground-secondary">
+              {`You are viewing ${data.subject.name}'s work. Read only. `}
+              <button
+                type="button"
+                onClick={() => setSubjectUserId(undefined)}
+                className="text-secondary underline"
+              >
+                Back to my work
+              </button>
+            </p>
+          ) : null}
         </section>
 
         {/* 2. Needs attention — critical only, gathered from every section.
@@ -276,6 +306,7 @@ export function MyWorkPage(): React.JSX.Element {
           items={drawer.items}
           total={drawer.total}
           onCompleteFollowup={setFollowupItem}
+          readOnly={viewingOther}
         />
       ) : null}
 

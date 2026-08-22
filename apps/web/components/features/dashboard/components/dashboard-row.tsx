@@ -22,6 +22,15 @@ export const SEVERITY_TEXT: Record<DashboardItem['severity'], string> = {
 interface DashboardRowProps {
   item: DashboardItem;
   onCompleteFollowup: (item: DashboardItem) => void;
+  /**
+   * True while ANOTHER employee's dashboard is on screen.
+   *
+   * Hides the follow-up complete control — the only action here that writes.
+   * Completing their follow-up would record YOU as the completer on a queue you
+   * are only inspecting. Deep links are untouched: they navigate rather than
+   * write, and they carry their own permission gate. Decision 4.
+   */
+  readOnly?: boolean;
 }
 
 /**
@@ -31,7 +40,11 @@ interface DashboardRowProps {
  * approved design carries urgency in the section label and the reason line only,
  * because colour on every row is colour nowhere.
  */
-export function DashboardRow({ item, onCompleteFollowup }: DashboardRowProps): React.JSX.Element {
+export function DashboardRow({
+  item,
+  onCompleteFollowup,
+  readOnly = false,
+}: DashboardRowProps): React.JSX.Element {
   const target = resolveAction(item);
   const gate = (item.gate ?? ALWAYS_OPEN) as Gate;
 
@@ -73,7 +86,7 @@ export function DashboardRow({ item, onCompleteFollowup }: DashboardRowProps): R
 
       {/* A blocked action stays VISIBLE and clickable — it opens the dialog that
           names the permission. `disabled` would swallow that click. */}
-      {target.mode === 'navigate' && allowed ? (
+      {readOnly && target.mode === 'dialog' ? null : target.mode === 'navigate' && allowed ? (
         <Link
           href={target.href}
           className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-xs font-medium text-foreground-secondary transition-colors group-hover:bg-accent-subtle group-hover:text-primary-dark"

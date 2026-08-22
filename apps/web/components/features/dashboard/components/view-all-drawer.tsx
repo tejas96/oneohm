@@ -16,6 +16,8 @@ interface ViewAllDrawerProps {
    *  backend caps rows per bucket, and the drawer does not lift that cap. */
   total: number;
   onCompleteFollowup: (item: DashboardItem) => void;
+  /** Forwarded to every row — see `DashboardRow`. */
+  readOnly?: boolean;
 }
 
 /**
@@ -37,6 +39,7 @@ export function ViewAllDrawer({
   items,
   total,
   onCompleteFollowup,
+  readOnly = false,
 }: ViewAllDrawerProps): React.JSX.Element {
   const byId = React.useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
 
@@ -64,7 +67,14 @@ export function ViewAllDrawer({
       renderItem={(drill) => {
         const item = byId.get(drill.id);
         if (!item) return null;
-        return <DashboardRow key={item.id} item={item} onCompleteFollowup={onCompleteFollowup} />;
+        return (
+          <DashboardRow
+            key={item.id}
+            item={item}
+            onCompleteFollowup={onCompleteFollowup}
+            readOnly={readOnly}
+          />
+        );
       }}
       emptyContent={<p className="p-6 text-sm text-foreground-tertiary">Nothing here.</p>}
     />
