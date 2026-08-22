@@ -81,7 +81,13 @@ Every task's requirements implicitly include this section.
     *right-corners* utility. Both rules compile and the card renders lopsided. The whole `r-*`
     family (`r-xs`, `r-md`, `r-lg`, `r-xl`, `r-2xl`) collides the same way with Tailwind's
     directional utilities. `rounded-xl` is the same 12px and is what `card.tsx` already uses.
-21. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
+21. **You cannot reach the dashboard route with `web:dev` alone.** `middleware.ts` redirects an
+    unauthenticated request to `/login` before Next.js ever compiles `(dashboard)/page.tsx`, so
+    "start the dev server and navigate" proves nothing for any gated route. Run
+    `npm run web:build` instead: it compiles and statically prerenders every route regardless of
+    auth, which executes the component and so catches hook-order violations and render-time
+    errors. Look for `○ /` in the route table.
+22. **Backend RBAC does not exist and this plan does not add it.** Permission gating is frontend-only, by design (`iam.service.ts:20-22`). The endpoint's safety comes from constraint 9, not from a guard.
 
 ---
 
