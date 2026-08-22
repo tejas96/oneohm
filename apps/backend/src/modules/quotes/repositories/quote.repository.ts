@@ -123,18 +123,24 @@ export class QuoteRepository {
     }
 
     if (query.fromDate) {
-      qb.andWhere('quote.quoteDate >= :fromDate', { fromDate: query.fromDate });
+      qb.andWhere('quote.quoteDate >= CAST(:fromDate AS date)', { fromDate: query.fromDate });
     }
 
     if (query.toDate) {
-      // Accept both bare YYYY-MM-DD dates and full ISO timestamps.
-      // When the caller sends a full ISO string (already includes time), use it
-      // as-is. When only a date is provided, extend it to end-of-day so the
-      // filter is inclusive of the entire selected day.
-      const toDateValue = query.toDate.includes('T')
-        ? query.toDate
-        : `${query.toDate}T23:59:59.999Z`;
-      qb.andWhere('quote.quoteDate <= :toDate', { toDate: toDateValue });
+      /*
+        `quote_date` is a bare DATE column, so compare it against dates.
+
+        This used to extend a date-only bound to `T23:59:59.999Z`. Postgres then
+        promoted the date column to a timestamptz at session midnight to compare
+        them — and since IST midnight is 18:30 the previous day in UTC, a quote
+        dated 1 September satisfied a filter ending 31 August. Verified against
+        the live database before changing it.
+
+        Casting instead keeps both ends on the calendar, where a date column
+        belongs, and handles a full ISO instant too: the cast resolves it to its
+        own calendar day in the session zone.
+      */
+      qb.andWhere('quote.quoteDate <= CAST(:toDate AS date)', { toDate: query.toDate });
     }
 
     // Fetch all matching quotes ordered by createdAt desc, then keep one row per property.

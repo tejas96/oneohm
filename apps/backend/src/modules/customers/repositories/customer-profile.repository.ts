@@ -787,14 +787,32 @@ export class CustomerProfileRepository {
     }
 
     if (query.toDate) {
-      // If toDate already includes a time component, trust it as an exact boundary.
-      // For date-only values, append end-of-day UTC to preserve previous behavior.
-      const normalizedToDate = query.toDate.includes('T')
-        ? query.toDate
-        : `${query.toDate}T23:59:59.999Z`;
-      qb.andWhere('customer.createdAt <= :toDate', {
-        toDate: normalizedToDate,
-      });
+      /*
+        BOTH ENDS OF THIS RANGE MUST RESOLVE IN THE SAME ZONE.
+
+        `fromDate` above is bound raw, so a bare `YYYY-MM-DD` is parsed by Postgres
+        in the session timezone — Asia/Kolkata, pinned on the connection. This end
+        used to append `T23:59:59.999Z`, nailing it to UTC while the other end
+        floated with the session. UTC midnight is 05:29 IST, so the upper bound
+        reached five and a half hours PAST the day the caller asked for, and swept
+        in records created in the small hours of the following morning.
+
+        Measured on live data: a 1-16 August range returned 11 customers, one of
+        whom was created 17 August at 00:53 IST. The half-open bound below returns
+        the correct 10. It resolves in the session zone like its partner, cannot
+        drop the final millisecond the way a `<=` against a fixed `.999` can, and
+        matches the pattern already used by `service-ticket.repository.ts`.
+
+        A caller that sends a full instant means that instant, not the end of its
+        day, so that form is still trusted exactly as given.
+      */
+      if (query.toDate.includes('T')) {
+        qb.andWhere('customer.createdAt <= :toDate', { toDate: query.toDate });
+      } else {
+        qb.andWhere("customer.createdAt < (CAST(:toDate AS date) + INTERVAL '1 day')", {
+          toDate: query.toDate,
+        });
+      }
     }
 
     if (query.needsFollowup) {
