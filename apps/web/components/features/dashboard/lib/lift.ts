@@ -7,6 +7,16 @@ const DOES_NOT_LIFT: ReadonlySet<SectionKey> = new Set<SectionKey>(['projects'])
 
 export interface LiftResult {
   critical: DashboardItem[];
+  /**
+   * How many critical items EXIST, from each section's `criticalCount`.
+   *
+   * Not `critical.length`. That is what survived the backend's per-bucket cap —
+   * the rows we can draw — while `criticalCount` counts the whole scoped set,
+   * the same set "At a glance · Overdue" sums from the bucket totals. The two
+   * describe one set (spec 6.1: every overdue item is critical), so they have to
+   * agree; before this they read 92 and 14 side by side on the same screen.
+   */
+  criticalTotal: number;
   rest: Record<SectionKey, DashboardSection>;
   /** How many items were REMOVED from each section. Zero for a copy-only section. */
   liftedBySection: Record<SectionKey, number>;
@@ -31,6 +41,7 @@ export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
   const rest = {} as Record<SectionKey, DashboardSection>;
   const liftedBySection = {} as Record<SectionKey, number>;
   const criticalBySection = {} as Record<SectionKey, number>;
+  let criticalTotal = 0;
 
   (Object.keys(sections) as SectionKey[]).forEach((key) => {
     const section = sections[key];
@@ -41,6 +52,10 @@ export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
       rest[key] = section;
       return;
     }
+
+    // Every section contributes, INCLUDING projects: a copy-only section still
+    // puts its critical items in the top block, so they belong in its count.
+    criticalTotal += section.criticalCount;
 
     // A copy-only section contributes its critical items to the top block but
     // KEEPS them. Skipping the scan entirely — as an earlier version did — meant
@@ -77,7 +92,7 @@ export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
     return aDue - bDue;
   });
 
-  return { critical, rest, liftedBySection, criticalBySection };
+  return { critical, criticalTotal, rest, liftedBySection, criticalBySection };
 }
 
 /** "2 overdue shown above" — or nothing, when none were lifted. */

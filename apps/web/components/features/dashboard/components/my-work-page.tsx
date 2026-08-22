@@ -86,7 +86,9 @@ export function MyWorkPage(): React.JSX.Element {
     );
   }
 
-  const { critical, rest, liftedBySection, criticalBySection } = liftCritical(data.sections);
+  const { critical, criticalTotal, rest, liftedBySection, criticalBySection } = liftCritical(
+    data.sections,
+  );
   const { summary } = data;
   const name = user?.firstName ?? '';
 
@@ -128,24 +130,28 @@ export function MyWorkPage(): React.JSX.Element {
           </p>
         </section>
 
-        {/* 2. Needs attention — critical only, gathered from every section */}
+        {/* 2. Needs attention — critical only, gathered from every section.
+            The badge counts `criticalTotal`, the number that EXISTS, while the
+            rows are the capped list that reached the browser. Counting the rows
+            instead put "Overdue 92" and "Needs attention · 14" on one screen
+            describing one set. */}
         <SectionCard
           label="Needs attention"
           tone="critical"
           section={{
             status: 'ok',
-            total: critical.length,
-            criticalCount: critical.length,
-            buckets: [{ key: 'critical', label: 'Critical', count: critical.length, items: critical }],
+            total: criticalTotal,
+            criticalCount: criticalTotal,
+            buckets: [{ key: 'critical', label: 'Critical', count: criticalTotal, items: critical }],
           }}
           emptyMessage="Nothing critical right now."
           skeletonRows={6}
           overflow={
-            critical.length > CAP.attention
+            criticalTotal > CAP.attention
               ? {
                   label: 'View all',
                   onClick: () =>
-                    setDrawer({ title: 'Needs attention', items: critical, total: critical.length }),
+                    setDrawer({ title: 'Needs attention', items: critical, total: criticalTotal }),
                 }
               : undefined
           }
