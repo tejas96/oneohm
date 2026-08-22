@@ -1,12 +1,13 @@
 'use client';
 
 import type { DashboardItem } from '@tejas96/shared/types';
-import { ArrowRight, Check, CircleDashed, Clock, TriangleAlert } from 'lucide-react';
+import { ArrowRight, Check, CircleDashed, Clock, Lock, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 
 import { resolveAction } from '../lib/action-routes';
 
+import { ALWAYS_OPEN, useGatedAction, type Gate } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 
 interface Milestone {
@@ -40,6 +41,17 @@ export function ProjectRow({ item }: { item: DashboardItem }): React.JSX.Element
   const target = resolveAction(item);
   const milestones = parseMilestones(item.metaSecondary);
 
+  // The same gate `DashboardRow` puts on this exact action — `open_project` /
+  // `projects.view`. A project row carried a bare Link, so someone without the
+  // permission was sent to a route that would bounce them, instead of being
+  // told which permission they are missing.
+  const gate = (item.gate ?? ALWAYS_OPEN) as Gate;
+  // `open_project` always navigates, so there is nothing for the hook to run
+  // when allowed — the Link below is rendered instead. The handler exists for
+  // the blocked case, where it opens the access dialog.
+  const noop = React.useCallback(() => undefined, []);
+  const { allowed, onGatedClick } = useGatedAction(gate, noop, target.label);
+
   return (
     <div className="group flex flex-col gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-background-tertiary">
       <div className="flex items-baseline gap-3">
@@ -61,7 +73,9 @@ export function ProjectRow({ item }: { item: DashboardItem }): React.JSX.Element
         <span className="text-xs tabular-nums text-foreground-secondary">
           {item.meta} tasks done
         </span>
-        {target.mode === 'navigate' ? (
+        {/* A blocked action stays VISIBLE and clickable — it opens the dialog
+            that names the permission. `disabled` would swallow that click. */}
+        {target.mode === 'navigate' && allowed ? (
           <Link
             href={target.href}
             className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-xs font-medium text-foreground-secondary transition-colors group-hover:bg-accent-subtle group-hover:text-primary-dark"
@@ -69,7 +83,23 @@ export function ProjectRow({ item }: { item: DashboardItem }): React.JSX.Element
             Open
             <ArrowRight className="size-3" />
           </Link>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            onClick={onGatedClick}
+            aria-disabled={!allowed}
+            className={cn(
+              'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-xs font-medium transition-colors',
+              allowed
+                ? 'text-foreground-secondary group-hover:bg-accent-subtle group-hover:text-primary-dark'
+                : 'cursor-not-allowed bg-background-tertiary text-foreground-secondary',
+            )}
+          >
+            {!allowed ? <Lock className="size-3" /> : null}
+            Open
+            {allowed ? <ArrowRight className="size-3" /> : null}
+          </button>
+        )}
       </div>
 
       {milestones.length > 0 ? (
