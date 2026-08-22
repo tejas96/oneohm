@@ -129,7 +129,6 @@ function DepartmentBlock({ dept }: { dept: WorkloadDepartment }): React.JSX.Elem
   );
 }
 
-
 /**
  * Where the money is stuck.
  *
@@ -307,7 +306,11 @@ export function WorkloadPage(): React.JSX.Element {
         <section className="rounded-3xl bg-surface px-[22px] py-8 shadow-e2">
           <p className="text-[13.5px] text-foreground-secondary">
             Workload didn&apos;t load.{' '}
-            <button type="button" onClick={() => void refetch()} className="text-secondary underline">
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              className="text-secondary underline"
+            >
               Try again
             </button>
           </p>

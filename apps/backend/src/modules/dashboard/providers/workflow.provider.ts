@@ -3,7 +3,12 @@ import { DataSource } from 'typeorm';
 
 import type { DashboardProvider, OkSection } from './provider.types';
 import { type ProviderRow, toSection } from './section-shaping';
-import { MY_CUSTOMERS_CTE, MY_PROPERTIES_CTE, MY_QUOTES_CTE, withCtes } from '../services/scope.sql';
+import {
+  MY_CUSTOMERS_CTE,
+  MY_PROPERTIES_CTE,
+  MY_QUOTES_CTE,
+  withCtes,
+} from '../services/scope.sql';
 
 /** Rows shown per bucket. The badge still reports the true total. */
 const CAP = 5;

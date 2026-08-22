@@ -316,26 +316,24 @@ export class ProjectAnalyticsService {
       if (task.status === TaskStatus.BLOCKED) entry.blockedTasks++;
     }
 
-    return [...aggMap.values()]
-      .sort(compareMilestoneSequence)
-      .map((entry) => {
-        const { totalTasks, completedTasks, inProgressTasks, blockedTasks } = entry;
-        // totalTasks is always >= 1 here (aggMap only populated by non-cancelled tasks)
-        let status: string = 'pending';
-        if (blockedTasks > 0) status = 'blocked';
-        else if (completedTasks === totalTasks) status = 'completed';
-        else if (inProgressTasks > 0 || completedTasks > 0) status = 'in_progress';
+    return [...aggMap.values()].sort(compareMilestoneSequence).map((entry) => {
+      const { totalTasks, completedTasks, inProgressTasks, blockedTasks } = entry;
+      // totalTasks is always >= 1 here (aggMap only populated by non-cancelled tasks)
+      let status: string = 'pending';
+      if (blockedTasks > 0) status = 'blocked';
+      else if (completedTasks === totalTasks) status = 'completed';
+      else if (inProgressTasks > 0 || completedTasks > 0) status = 'in_progress';
 
-        return {
-          name: entry.name,
-          order: milestoneSequenceIndex(entry.name, entry.order),
-          totalTasks,
-          completedTasks,
-          inProgressTasks,
-          blockedTasks,
-          percent: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 1000) / 10 : 0,
-          status,
-        };
-      });
+      return {
+        name: entry.name,
+        order: milestoneSequenceIndex(entry.name, entry.order),
+        totalTasks,
+        completedTasks,
+        inProgressTasks,
+        blockedTasks,
+        percent: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 1000) / 10 : 0,
+        status,
+      };
+    });
   }
 }

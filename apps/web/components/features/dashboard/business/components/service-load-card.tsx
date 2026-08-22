@@ -9,8 +9,6 @@ import type { ServiceTicketStats } from '@/components/features/service-tickets/h
 import { CHART_COLORS } from '@/lib/charts/palette';
 import { color } from '@/lib/theme/tokens';
 
-
-
 interface ServiceLoadCardProps {
   stats: ServiceTicketStats | undefined;
   isError: boolean;
@@ -52,7 +50,9 @@ export function ServiceLoadCard({
       link={{ gate: 'service.view', label: 'Open service', href: businessLinks.service() }}
     >
       {!anyTickets ? (
-        <p className="pb-2 pt-0.5 text-[13.5px] text-foreground-tertiary">No service tickets yet.</p>
+        <p className="pb-2 pt-0.5 text-[13.5px] text-foreground-tertiary">
+          No service tickets yet.
+        </p>
       ) : (
         <>
           <div className="flex items-baseline gap-2.5">
@@ -63,9 +63,7 @@ export function ServiceLoadCard({
             className="mt-0.5 text-[12.5px]"
             style={{ color: stats?.urgent ? color.danger : color['text-tertiary'] }}
           >
-            {stats?.urgent
-              ? `${stats.urgent} urgent and still active`
-              : 'No urgent tickets'}
+            {stats?.urgent ? `${stats.urgent} urgent and still active` : 'No urgent tickets'}
           </p>
           <div className="grid grid-cols-4 gap-x-3 pt-4">
             {rows.map((row) => (

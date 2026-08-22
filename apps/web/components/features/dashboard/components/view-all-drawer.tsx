@@ -53,8 +53,7 @@ export function ViewAllDrawer({
     [items],
   );
 
-  const subtitle =
-    items.length < total ? `Showing ${items.length} of ${total}` : `${total} items`;
+  const subtitle = items.length < total ? `Showing ${items.length} of ${total}` : `${total} items`;
 
   return (
     <DrillDownDrawer

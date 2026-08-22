@@ -162,9 +162,7 @@ export function OverviewTimelineRail({
 
   // Only milestones that have tasks, sorted by canonical lifecycle sequence
   const sorted = milestonesRaw
-    ? [...milestonesRaw]
-        .filter((m) => m.totalTasks > 0)
-        .sort(compareMilestoneSequence)
+    ? [...milestonesRaw].filter((m) => m.totalTasks > 0).sort(compareMilestoneSequence)
     : [];
 
   if (sorted.length === 0) {

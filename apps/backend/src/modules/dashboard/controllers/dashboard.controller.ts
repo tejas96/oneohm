@@ -61,12 +61,9 @@ export class DashboardController {
     // this check now read one source and cannot drift.
     const permissions = await this.iamService.getUserPermissions(currentUser.id);
 
-    const subjectId = resolveDashboardSubjectId(
-      currentUser.roles,
-      permissions,
-      currentUser.id,
-      { userId },
-    );
+    const subjectId = resolveDashboardSubjectId(currentUser.roles, permissions, currentUser.id, {
+      userId,
+    });
 
     return this.dashboardService.getMyWork(subjectId);
   }

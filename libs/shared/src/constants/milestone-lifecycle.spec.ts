@@ -79,11 +79,7 @@ describe('milestone lifecycle sequence', () => {
       { name: 'Planning', order: 2 },
     ].sort(compareMilestoneSequence);
 
-    expect(sorted.map((m) => m.name)).toEqual([
-      'Planning',
-      'Installation',
-      'Custom Client Hold',
-    ]);
+    expect(sorted.map((m) => m.name)).toEqual(['Planning', 'Installation', 'Custom Client Hold']);
     expect(milestoneSequenceIndex('Custom Client Hold', 1)).toBeGreaterThan(
       milestoneSequenceIndex('Installation', 1),
     );

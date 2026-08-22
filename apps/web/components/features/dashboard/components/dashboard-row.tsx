@@ -74,9 +74,7 @@ export function DashboardRow({
       </p>
 
       <div className="text-right tabular-nums">
-        {item.meta ? (
-          <div className="text-xs text-foreground-secondary">{item.meta}</div>
-        ) : null}
+        {item.meta ? <div className="text-xs text-foreground-secondary">{item.meta}</div> : null}
         {item.metaSecondary && item.kind.startsWith('service') ? (
           <div className="mt-0.5 text-2xs uppercase tracking-wide text-foreground-tertiary">
             {item.metaSecondary}

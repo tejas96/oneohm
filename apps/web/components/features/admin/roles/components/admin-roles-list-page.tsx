@@ -208,11 +208,7 @@ export function AdminRolesListPage(): JSX.Element {
         id: 'actions',
         header: '',
         cell: ({ row }) => (
-          <RoleRowActionsMenu
-            role={row.original}
-            onEdit={setEditRole}
-            onDelete={setDeleteRole}
-          />
+          <RoleRowActionsMenu role={row.original} onEdit={setEditRole} onDelete={setDeleteRole} />
         ),
       },
     ],

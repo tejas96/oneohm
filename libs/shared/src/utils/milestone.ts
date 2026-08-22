@@ -62,8 +62,7 @@ export function milestoneSequenceIndex(name: string, storedOrder?: number | null
 }
 
 export function compareMilestoneSequence(a: MilestoneSequenceRef, b: MilestoneSequenceRef): number {
-  const delta =
-    milestoneSequenceIndex(a.name, a.order) - milestoneSequenceIndex(b.name, b.order);
+  const delta = milestoneSequenceIndex(a.name, a.order) - milestoneSequenceIndex(b.name, b.order);
   if (delta !== 0) return delta;
   return a.name.localeCompare(b.name);
 }

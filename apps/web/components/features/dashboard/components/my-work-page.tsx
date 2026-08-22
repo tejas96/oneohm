@@ -51,10 +51,7 @@ interface MyWorkPageProps {
   onClearSubject: () => void;
 }
 
-export function MyWorkPage({
-  subjectUserId,
-  onClearSubject,
-}: MyWorkPageProps): React.JSX.Element {
+export function MyWorkPage({ subjectUserId, onClearSubject }: MyWorkPageProps): React.JSX.Element {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data, isPending, isError, refetch } = useMyWork(subjectUserId);
@@ -152,11 +149,7 @@ export function MyWorkPage({
           {viewingOther ? (
             <p className="relative mt-2 text-sm text-foreground-secondary">
               {`You are viewing ${data.subject.name}'s work. Read only. `}
-              <button
-                type="button"
-                onClick={onClearSubject}
-                className="text-secondary underline"
-              >
+              <button type="button" onClick={onClearSubject} className="text-secondary underline">
                 Back to my work
               </button>
             </p>
@@ -175,7 +168,9 @@ export function MyWorkPage({
             status: 'ok',
             total: criticalTotal,
             criticalCount: criticalTotal,
-            buckets: [{ key: 'critical', label: 'Critical', count: criticalTotal, items: critical }],
+            buckets: [
+              { key: 'critical', label: 'Critical', count: criticalTotal, items: critical },
+            ],
           }}
           emptyMessage="Nothing critical right now."
           rowCap={CAP.attention}
@@ -255,9 +250,7 @@ export function MyWorkPage({
         <SectionCard
           label="Project health"
           section={rest.projects}
-          aside={
-            criticalBySection.projects > 0 ? 'overdue projects also appear above' : undefined
-          }
+          aside={criticalBySection.projects > 0 ? 'overdue projects also appear above' : undefined}
           emptyMessage="Every project is on track."
           rowCap={CAP.projects}
           onRetry={() => void refetch()}
@@ -274,9 +267,24 @@ export function MyWorkPage({
             At a glance
           </h2>
           {[
-            { label: 'Overdue', value: summary.overdue, Icon: AlertCircle, tint: 'bg-error/10 text-error' },
-            { label: 'Due today', value: summary.dueToday, Icon: CalendarCheck, tint: 'bg-warning/10 text-warning' },
-            { label: 'Due this week', value: summary.dueThisWeek, Icon: CalendarDays, tint: 'bg-info/10 text-info' },
+            {
+              label: 'Overdue',
+              value: summary.overdue,
+              Icon: AlertCircle,
+              tint: 'bg-error/10 text-error',
+            },
+            {
+              label: 'Due today',
+              value: summary.dueToday,
+              Icon: CalendarCheck,
+              tint: 'bg-warning/10 text-warning',
+            },
+            {
+              label: 'Due this week',
+              value: summary.dueThisWeek,
+              Icon: CalendarDays,
+              tint: 'bg-info/10 text-info',
+            },
           ].map(({ label, value, Icon, tint }) => (
             <div key={label} className="flex min-h-12 items-center gap-3">
               <span className={`flex size-8 items-center justify-center rounded-full ${tint}`}>

@@ -98,9 +98,7 @@ export function SectionCard({
           {label}
           {section.status === 'ok' ? ` · ${total}` : ''}
         </h2>
-        {aside ? (
-          <span className="ml-auto text-2xs text-foreground-tertiary">{aside}</span>
-        ) : null}
+        {aside ? <span className="ml-auto text-2xs text-foreground-tertiary">{aside}</span> : null}
       </header>
 
       {/* BROKEN — this card only. Every other card on the page still draws. */}

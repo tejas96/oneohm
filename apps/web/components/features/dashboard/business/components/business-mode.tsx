@@ -76,7 +76,10 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
     enabled: mayFetch(showSales),
   });
   const aging = useOrgCustomersAr({ enabled: mayFetch(showMoney) });
-  const outstanding = useOrgOutstanding({ limit: OLDEST_DEBT_ROWS }, { enabled: mayFetch(showMoney) });
+  const outstanding = useOrgOutstanding(
+    { limit: OLDEST_DEBT_ROWS },
+    { enabled: mayFetch(showMoney) },
+  );
   const tickets = useServiceTicketStats(mayFetch(showService));
   const workload = useWorkload(
     { fromDate: range.from, toDate: range.to },
@@ -344,9 +347,7 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
           )}
         >
           <div className="flex flex-col gap-6">{leftPanels}</div>
-          {rightPanels.length > 0 ? (
-            <div className="flex flex-col gap-6">{rightPanels}</div>
-          ) : null}
+          {rightPanels.length > 0 ? <div className="flex flex-col gap-6">{rightPanels}</div> : null}
         </div>
       )}
     </div>
