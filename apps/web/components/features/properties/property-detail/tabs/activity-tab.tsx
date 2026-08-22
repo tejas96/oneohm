@@ -28,12 +28,13 @@ import {
   type DetailTone,
 } from '@/components/features/customers/customer-detail/primitives';
 import { useProject } from '@/components/features/projects/hooks/use-project-detail';
-import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
+import { formatCurrency, formatDate, formatFollowupWhen, toTitleLabel } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 export interface ActivityTabProps {
   property: CustomerPropertyResponse;
   enabled: boolean;
+  onViewFollowup: (followupId: string) => void;
 }
 
 type ActivityKind = 'site' | 'followup' | 'quote' | 'receipt' | 'loan' | 'project';
@@ -45,6 +46,7 @@ interface ActivityEvent {
   subtitle: string;
   date: string;
   timestamp: number;
+  followupId?: string;
 }
 
 const KIND_LABELS = {
@@ -83,7 +85,7 @@ const KIND_ORDER: readonly ActivityKind[] = [
   'project',
 ];
 
-export function ActivityTab({ property, enabled }: ActivityTabProps): JSX.Element {
+export function ActivityTab({ property, enabled, onViewFollowup }: ActivityTabProps): JSX.Element {
   const [kindFilter, setKindFilter] = useState<ActivityKind | null>(null);
 
   const { data: followups, isLoading: followupsLoading } = usePropertyFollowups(property.id, {
@@ -144,6 +146,7 @@ export function ActivityTab({ property, enabled }: ActivityTabProps): JSX.Elemen
         subtitle: `${toTitleLabel(followup.type)} · ${toTitleLabel(followup.status)}`,
         date: followup.scheduledAt,
         timestamp: new Date(followup.scheduledAt).getTime(),
+        followupId: followup.id,
       });
     }
 
@@ -274,8 +277,36 @@ export function ActivityTab({ property, enabled }: ActivityTabProps): JSX.Elemen
         <Stack gap={0}>
           {visible.map((event, index) => {
             const isLast = index === visible.length - 1;
+            const isFollowup = event.kind === 'followup' && Boolean(event.followupId);
             return (
-              <Stack key={event.id} direction="row" gap={1.5} sx={{ position: 'relative' }}>
+              <Stack
+                key={event.id}
+                direction="row"
+                gap={1.5}
+                sx={{
+                  position: 'relative',
+                  ...(isFollowup
+                    ? { cursor: 'pointer', borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }
+                    : {}),
+                }}
+                role={isFollowup ? 'button' : undefined}
+                tabIndex={isFollowup ? 0 : undefined}
+                onClick={
+                  isFollowup && event.followupId
+                    ? () => onViewFollowup(event.followupId as string)
+                    : undefined
+                }
+                onKeyDown={
+                  isFollowup && event.followupId
+                    ? (keyboardEvent) => {
+                        if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+                          keyboardEvent.preventDefault();
+                          onViewFollowup(event.followupId as string);
+                        }
+                      }
+                    : undefined
+                }
+              >
                 <Box sx={{ position: 'relative', flexShrink: 0 }}>
                   <IconCircle tone={KIND_TONE[event.kind]}>{KIND_ICON[event.kind]}</IconCircle>
                   {/*
@@ -325,7 +356,9 @@ export function ActivityTab({ property, enabled }: ActivityTabProps): JSX.Elemen
                         flexShrink: 0,
                       }}
                     >
-                      {formatDate(event.date)}
+                      {event.kind === 'followup'
+                        ? formatFollowupWhen(event.date)
+                        : formatDate(event.date)}
                     </Mono>
                   </Stack>
                   <Typography

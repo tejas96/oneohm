@@ -44,7 +44,12 @@ import {
 } from '../utils/delete-eligibility';
 
 import { useCustomer } from '@/components/features/customers/hooks';
-import { FollowupDrawer } from '@/components/features/followups';
+import {
+  FollowupDrawer,
+  FollowupDetailHost,
+  followupOverdueCount,
+  useFollowupDetailQuery,
+} from '@/components/features/followups';
 import { usePropertyLockStatus } from '@/components/features/quotes/hooks/use-quotes';
 import { EmptyState } from '@/components/shared';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
@@ -57,6 +62,7 @@ import { AccessDeniedContent, ALWAYS_OPEN, useCan, useGatedAction } from '@/lib/
 import {
   formatCurrency,
   formatDate,
+  formatFollowupWhen,
   formatSystemSize,
   recordRecentView,
   toTitleLabel,
@@ -137,6 +143,8 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   const [speedDialOpen, setSpeedDialOpen] = useState(false);
   const [markLostOpen, setMarkLostOpen] = useState(false);
 
+  const { followupId, openFollowup, closeFollowup } = useFollowupDetailQuery();
+
   const isPropertyIdValid = isValidUuid(propertyId);
   const {
     data: property,
@@ -163,6 +171,10 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     enabled: propertyReady,
     status: FollowupStatus.PENDING,
     limit: 20,
+  });
+  const { data: propertyFollowupsList } = usePropertyFollowups(property?.id ?? '', {
+    enabled: propertyReady,
+    limit: 100,
   });
   const linkedProjectId = property?.project?.id ?? property?.projectId ?? null;
   const { data: propertyLoan } = usePropertyLoan(property?.id ?? '', { enabled: propertyReady });
@@ -288,7 +300,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
 
   const pendingFollowups = useMemo(() => followupsData?.data ?? [], [followupsData?.data]);
   const overdueFollowupCount = useMemo(
-    () => pendingFollowups.filter((f) => new Date(f.scheduledAt).getTime() < Date.now()).length,
+    () => followupOverdueCount(pendingFollowups, FollowupStatus.PENDING),
     [pendingFollowups],
   );
   const nextFollowup = useMemo(
@@ -435,7 +447,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
       {
         id: 'next-followup',
         label: 'Next follow-up',
-        value: nextFollowup ? formatDate(nextFollowup.scheduledAt) : '—',
+        value: nextFollowup ? formatFollowupWhen(nextFollowup.scheduledAt) : '—',
         intent: overdueFollowupCount > 0 ? 'danger' : 'neutral',
         secondary:
           overdueFollowupCount > 0
@@ -602,6 +614,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 onGoToProject={handleGoToProject}
                 isInactiveCustomer={isInactiveCustomer}
                 quoteLocked={Boolean(lockStatus?.locked)}
+                onViewFollowup={openFollowup}
               />
             )}
             {activeTab === 'quotes' && (
@@ -635,6 +648,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 enabled={isTabEnabled('followups')}
                 onLogFollowup={() => setFollowupDrawerOpen(true)}
                 onMarkLost={() => setMarkLostOpen(true)}
+                onViewFollowup={openFollowup}
               />
             )}
             {activeTab === 'service' && (
@@ -647,7 +661,11 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
               />
             )}
             {activeTab === 'activity' && (
-              <ActivityTab property={site} enabled={isTabEnabled('activity')} />
+              <ActivityTab
+                property={site}
+                enabled={isTabEnabled('activity')}
+                onViewFollowup={openFollowup}
+              />
             )}
           </Suspense>
         </Box>
@@ -660,6 +678,16 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         propertyId={property.id}
         leadTemperature={property.leadTemperature}
       />
+
+      <FollowupDetailHost
+        followupId={followupId}
+        initialData={propertyFollowupsList?.data?.find((row) => row.id === followupId)}
+        onClose={closeFollowup}
+        siblingRows={propertyFollowupsList?.data ?? []}
+        scopePropertyId={property.id}
+        onMarkLost={() => setMarkLostOpen(true)}
+      />
+
       <MarkAsLostDialog
         open={markLostOpen}
         onClose={() => setMarkLostOpen(false)}

@@ -40,7 +40,7 @@ import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useGatedAction } from '@/lib/rbac';
 import { color, crm, gradient, radius, shadow } from '@/lib/theme/tokens';
-import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
+import { formatCurrency, formatFollowupWhen, toTitleLabel } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
@@ -261,7 +261,7 @@ function SiteRow({
               // dot drifts from the chip on sites with an accepted-but-unconverted quote.
               if (!property.needsFollowup && !property.nextFollowupAt) return null;
               return property.nextFollowupAt ? (
-                <Tooltip title={`Next follow-up ${formatDate(property.nextFollowupAt)}`}>
+                <Tooltip title={`Next follow-up ${formatFollowupWhen(property.nextFollowupAt)}`}>
                   <Box
                     component="span"
                     sx={{

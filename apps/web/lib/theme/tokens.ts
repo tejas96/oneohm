@@ -421,11 +421,28 @@ const root = {
     'col-ticket-status': '116px',
     'col-ticket-assignee': 'minmax(130px,1fr)',
     'col-ticket-due': '104px',
+    'col-ticket-raised-by': 'minmax(130px,1fr)',
     'col-ticket-created': '104px',
-    // Sum of the ticket columns' minimum tracks (224+220+160+224+104+116+130+104+104
-    // = 1386) plus headroom, so the grid scrolls rather than squeezing the
+    // Sum of the ticket columns' minimum tracks (224+220+160+224+104+116+130+104+130+104
+    // = 1516) plus headroom, so the grid scrolls rather than squeezing the
     // flexible columns below their minmax floors.
-    'grid-min-width-ticket': '1440px',
+    'grid-min-width-ticket': '1570px',
+
+    // Follow-up grid. Due is a nowrap status pill ("Today, 9:00 am",
+    // "Tomorrow, 12:00 pm", "15 Feb 2026, 10:00 am") — not a short onboarded
+    // date. Borrowing `col-onboarded` (102px) let the pill paint over Lead,
+    // while Lead/Subject — the columns that should take leftover width —
+    // never received tracks of their own. Actions holds Complete + kebab,
+    // not the customer list's icon-only 40px.
+    'col-followup-due': '168px',
+    'col-followup-lead': 'minmax(200px,1.6fr)',
+    'col-followup-temp': '88px',
+    'col-followup-subject': 'minmax(220px,1.8fr)',
+    'col-followup-owner': 'minmax(120px,0.9fr)',
+    // Complete (~110px) + kebab (~30px) + gap — 124px let the button paint over Owner.
+    'col-followup-actions': '160px',
+    // 38 (select) + 168 + 200 + 88 + 220 + 120 + 160 = 994, plus gutters.
+    'grid-min-width-followup': '1040px',
 
     // ── Project grid: column tracks ────────────────────────────────────
     /**

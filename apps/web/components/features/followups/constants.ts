@@ -1,5 +1,7 @@
 import { FollowupOutcome } from '@tejas96/shared/types';
 
+import { crm } from '@/lib/theme/tokens';
+
 /** Sentence-case labels. Keep in sync with FollowupOutcome. */
 export const OUTCOME_LABELS: Record<FollowupOutcome, string> = {
   [FollowupOutcome.NOT_REACHABLE]: 'Not reachable',
@@ -23,17 +25,46 @@ export const SCOPE_LABELS: Record<FollowupScope, string> = {
 };
 
 /**
- * Start of today and tomorrow in the viewer's timezone.
+ * One track per follow-up column. Kept here — not inline in the list —
+ * so the grid-token tests can pin the floors without importing a client
+ * component. `FollowupList` must read from this object, not from the
+ * customer-list tokens these used to alias.
+ */
+export const FOLLOWUP_GRID_TRACKS = {
+  due: crm['col-followup-due'],
+  lead: crm['col-followup-lead'],
+  temperature: crm['col-followup-temp'],
+  subject: crm['col-followup-subject'],
+  owner: crm['col-followup-owner'],
+  actions: crm['col-followup-actions'],
+} as const;
+
+/**
+ * Start of today and tomorrow in the business timezone (Asia/Kolkata).
  *
- * The scope buckets are defined by local calendar days, not by UTC — an
- * overdue list that flips at 5:30am local because the server thinks in UTC
- * would be worse than useless.
+ * Matches Postgres `date_trunc('day', now())` on a session pinned to IST so
+ * `/followups` list filters agree with `/summary` and nav badges.
  */
 export function dayBoundaries(now: Date = new Date()): {
   startOfToday: Date;
   startOfTomorrow: Date;
 } {
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const ymd = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+
+  const startOfToday = new Date(`${ymd}T00:00:00+05:30`);
+  const tomorrow = new Date(startOfToday.getTime() + 86_400_000);
+  const tomorrowYmd = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(tomorrow);
+  const startOfTomorrow = new Date(`${tomorrowYmd}T00:00:00+05:30`);
+
   return { startOfToday, startOfTomorrow };
 }

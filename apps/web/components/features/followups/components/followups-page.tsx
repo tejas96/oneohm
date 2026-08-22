@@ -23,6 +23,7 @@ import {
   type FollowupResponse,
 } from '../hooks';
 import { FollowupCompleteDialog } from './followup-complete-dialog';
+import { FollowupDetailHost } from './followup-detail-host';
 import { FollowupDrawer } from './followup-drawer';
 import { FollowupList } from './followup-list';
 import { FollowupReassignDialog } from './followup-reassign-dialog';
@@ -122,6 +123,7 @@ export function FollowupsPage(): JSX.Element {
   const rows = data?.data ?? [];
 
   // ── Row actions ──────────────────────────────────────────────────────────
+  const [viewingId, setViewingId] = useState<string | null>(null);
   const [completing, setCompleting] = useState<FollowupResponse | null>(null);
   const [rescheduling, setRescheduling] = useState<FollowupResponse | null>(null);
   const [reassigning, setReassigning] = useState<FollowupResponse[]>([]);
@@ -253,6 +255,7 @@ export function FollowupsPage(): JSX.Element {
           rows={rows}
           loading={isLoading}
           totalRowCount={data?.meta?.total}
+          onViewDetails={(followup) => setViewingId(followup.id)}
           onComplete={setCompleting}
           onReschedule={setRescheduling}
           onReassign={setReassigning}
@@ -270,6 +273,13 @@ export function FollowupsPage(): JSX.Element {
           }
         />
       )}
+
+      <FollowupDetailHost
+        followupId={viewingId}
+        initialData={rows.find((row) => row.id === viewingId)}
+        onClose={() => setViewingId(null)}
+        siblingRows={rows}
+      />
 
       <FollowupCompleteDialog
         open={Boolean(completing)}

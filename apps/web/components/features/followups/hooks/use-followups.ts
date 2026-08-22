@@ -89,6 +89,21 @@ export function useFollowups(
  * Records arrive by import and direct API call and never pass the UI gates, so
  * this is what makes whatever slipped visible instead of silently dark.
  */
+export function useFollowup(
+  id: string | null,
+  options?: { enabled?: boolean; initialData?: FollowupResponse },
+): UseQueryResult<FollowupResponse, AxiosError> {
+  return useQuery({
+    queryKey: followupKeys.detail(id ?? ''),
+    enabled: Boolean(id) && (options?.enabled ?? true),
+    initialData: options?.initialData,
+    queryFn: async () => {
+      const { data } = await apiClient.get<FollowupResponse>(`/followups/${id}`);
+      return data;
+    },
+  });
+}
+
 export function useFollowupGaps(options?: {
   enabled?: boolean;
 }): UseQueryResult<FollowupGap[], AxiosError> {

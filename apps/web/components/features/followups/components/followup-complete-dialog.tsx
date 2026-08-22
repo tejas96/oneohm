@@ -15,11 +15,13 @@ import {
 import {
   FollowupOutcome,
   FollowupType,
+  atDefaultHour,
   type LeadTemperature,
   nextFollowupDate,
 } from '@tejas96/shared/types';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 
+import { FollowupWhenPicker } from './followup-when-picker';
 import { OUTCOME_LABELS } from '../constants';
 import { useCompleteFollowup } from '../hooks';
 import { type FollowupResponse } from '../hooks/use-followups';
@@ -34,7 +36,6 @@ import {
   MUIDialogTitle,
   showToast,
 } from '@/components/ui';
-import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { MUIUserAssigneeSelector } from '@/components/ui/mui-user-assignee-selector';
 import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
@@ -88,7 +89,7 @@ export function FollowupCompleteDialog({
     setOutcome(FollowupOutcome.CALL_BACK_LATER);
     setNotes('');
     setScheduleNext(true);
-    setNextDate(nextFollowupDate(new Date(), temperature));
+    setNextDate(atDefaultHour(nextFollowupDate(new Date(), temperature)));
     setNextSubject('');
   }, [open, temperature]);
 
@@ -259,13 +260,7 @@ export function FollowupCompleteDialog({
               useFlexGap
               sx={{ '& > .MuiFormControl-root:has(> .MuiInputLabel-root)': { mt: 0 } }}
             >
-              <MUIDatePicker
-                fieldLabel="Date"
-                required
-                value={nextDate}
-                onChange={setNextDate}
-                fullWidth
-              />
+              <FollowupWhenPicker value={nextDate} onChange={setNextDate} required />
               <MUIUserAssigneeSelector
                 fieldLabel="Owner"
                 required

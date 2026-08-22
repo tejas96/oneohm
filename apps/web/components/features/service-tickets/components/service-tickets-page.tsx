@@ -25,7 +25,11 @@ import {
 } from '../hooks/use-service-tickets';
 
 import { useEmployees } from '@/components/features/employees';
-import { type ColumnConfig, type FilterState } from '@/components/shared/advanced-table';
+import {
+  FilterAutocomplete,
+  type ColumnConfig,
+  type FilterState,
+} from '@/components/shared/advanced-table';
 import {
   CrmStatusPill,
   CrmTable,
@@ -57,6 +61,7 @@ const STATUS_FILTER_KEY = TICKET_FILTER_KEYS.status;
 const PRIORITY_FILTER_KEY = TICKET_FILTER_KEYS.priority;
 const ASSIGNEE_FILTER_KEY = TICKET_FILTER_KEYS.assigneeId;
 const OVERDUE_FILTER_KEY = TICKET_FILTER_KEYS.overdue;
+const CREATED_BY_FILTER_KEY = TICKET_FILTER_KEYS.createdBy;
 
 const UNASSIGNED_FILTER_VALUE = 'unassigned';
 
@@ -239,6 +244,29 @@ const COLUMNS: CrmColumn<TicketRow>[] = [
       ),
   },
   {
+    field: 'createdByName',
+    header: 'Raised by',
+    track: crm['col-ticket-raised-by'],
+    cellSx: CELL_GUTTER,
+    renderCell: (row) =>
+      row.createdByName ? (
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          title={row.createdByName}
+          sx={{ minWidth: 0 }}
+        >
+          <MUIAvatar name={row.createdByName} size="sm" sx={{ flexShrink: 0 }} />
+          <MUITypography variant="bodyPrimary" noWrap>
+            {row.createdByName}
+          </MUITypography>
+        </Stack>
+      ) : (
+        <MUITypography variant="placeholder">—</MUITypography>
+      ),
+  },
+  {
     field: 'createdAt',
     header: 'Raised',
     track: crm['col-ticket-created'],
@@ -260,6 +288,8 @@ export function ServiceTicketsPage(): JSX.Element {
   const priorityFilter = (urlState.state.filters[PRIORITY_FILTER_KEY] as string | undefined) ?? '';
   const assigneeFilter = (urlState.state.filters[ASSIGNEE_FILTER_KEY] as string | undefined) ?? '';
   const overdueFilter = (urlState.state.filters[OVERDUE_FILTER_KEY] as string | undefined) ?? '';
+  const createdByFilter =
+    (urlState.state.filters[CREATED_BY_FILTER_KEY] as string | undefined) ?? '';
 
   const { data: employees } = useEmployees();
   const { data: stats, isLoading: statsLoading } = useServiceTicketStats();
@@ -275,6 +305,7 @@ export function ServiceTicketsPage(): JSX.Element {
         assigneeFilter && assigneeFilter !== UNASSIGNED_FILTER_VALUE ? assigneeFilter : undefined,
       unassigned: assigneeFilter === UNASSIGNED_FILTER_VALUE ? true : undefined,
       overdue: overdueFilter === 'true' ? true : undefined,
+      createdBy: createdByFilter || undefined,
       sortBy: SERVICE_TICKET_SORT_FIELD_MAP[urlState.state.sortModel?.field ?? ''] ?? 'createdAt',
       sortOrder: urlState.state.sortModel?.direction === 'asc' ? 'ASC' : 'DESC',
     }),
@@ -287,6 +318,7 @@ export function ServiceTicketsPage(): JSX.Element {
       priorityFilter,
       assigneeFilter,
       overdueFilter,
+      createdByFilter,
     ],
   );
 
@@ -399,6 +431,19 @@ export function ServiceTicketsPage(): JSX.Element {
     [assigneeSelectorOptions],
   );
 
+  const creatorOptions = useMemo(() => {
+    const list = (employees ?? [])
+      .map((employee) => {
+        const label =
+          [employee.user?.firstName, employee.user?.lastName].filter(Boolean).join(' ').trim() ||
+          employee.user?.email ||
+          'Unknown';
+        return { label, value: employee.userId };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
+    return list;
+  }, [employees]);
+
   const filterColumns = useMemo<ColumnConfig<TicketRow>[]>(() => {
     const statusOptions = STATUS_ORDER.map((status) => ({
       label: SERVICE_TICKET_STATUS_LABELS[status],
@@ -448,8 +493,22 @@ export function ServiceTicketsPage(): JSX.Element {
           />
         ),
       },
+      {
+        field: CREATED_BY_FILTER_KEY,
+        headerName: 'Raised by',
+        filterable: true,
+        filterOptions: creatorOptions,
+        renderFilter: ({ value, onChange }) => (
+          <FilterAutocomplete
+            options={creatorOptions}
+            value={value}
+            onChange={onChange}
+            placeholder="Search creator…"
+          />
+        ),
+      },
     ];
-  }, [assigneeFilterOptions, assigneeSelectorOptions]);
+  }, [assigneeFilterOptions, assigneeSelectorOptions, creatorOptions]);
 
   const secondaryQuickFilters = useMemo<CrmQuickFilter[]>(
     () => [

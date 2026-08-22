@@ -218,8 +218,16 @@
   --crm-col-ticket-status: 116px;
   --crm-col-ticket-assignee: minmax(130px,1fr);
   --crm-col-ticket-due: 104px;
+  --crm-col-ticket-raised-by: minmax(130px,1fr);
   --crm-col-ticket-created: 104px;
-  --crm-grid-min-width-ticket: 1440px;
+  --crm-grid-min-width-ticket: 1570px;
+  --crm-col-followup-due: 168px;
+  --crm-col-followup-lead: minmax(200px,1.6fr);
+  --crm-col-followup-temp: 88px;
+  --crm-col-followup-subject: minmax(220px,1.8fr);
+  --crm-col-followup-owner: minmax(120px,0.9fr);
+  --crm-col-followup-actions: 160px;
+  --crm-grid-min-width-followup: 1040px;
   --crm-col-project-name: 210px;
   --crm-col-project-customer: minmax(220px,2fr);
   --crm-col-project-size: 165px;

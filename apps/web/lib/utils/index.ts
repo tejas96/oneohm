@@ -42,6 +42,8 @@ export {
   parseLocalDate,
   formatDate,
   formatDueDatePendingLabel,
+  formatFollowupClockTime,
+  formatFollowupWhen,
   formatLabel,
   formatNumber,
   formatRelativeDate,

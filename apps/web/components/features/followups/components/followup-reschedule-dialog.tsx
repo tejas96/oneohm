@@ -3,6 +3,7 @@
 import { Button } from '@mui/material';
 import { useEffect, useState, type JSX } from 'react';
 
+import { FollowupWhenPicker } from '../components/followup-when-picker';
 import { useRescheduleFollowup } from '../hooks';
 import { type FollowupResponse } from '../hooks/use-followups';
 
@@ -15,7 +16,6 @@ import {
   MUIDialogTitle,
   showToast,
 } from '@/components/ui';
-import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils';
 
@@ -69,12 +69,12 @@ export function FollowupRescheduleDialog({
       <MUIDialogHeader hideCloseButton={reschedule.isPending}>
         <MUIDialogTitle>Reschedule follow-up</MUIDialogTitle>
         <MUIDialogDescription>
-          Moves the date without completing it — no outcome recorded.
+          Moves the date and time without completing it — no outcome recorded.
         </MUIDialogDescription>
       </MUIDialogHeader>
 
       <MUIDialogBody>
-        <MUIDatePicker fieldLabel="New date" required value={date} onChange={setDate} fullWidth />
+        <FollowupWhenPicker dateLabel="New date" value={date} onChange={setDate} required />
       </MUIDialogBody>
 
       <MUIDialogFooter>

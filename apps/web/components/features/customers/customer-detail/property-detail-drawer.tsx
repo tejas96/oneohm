@@ -13,7 +13,13 @@ import { SiteStageBar } from './site-stage';
 
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { formatCurrency, formatDate, formatSystemSize, toTitleLabel } from '@/lib/utils';
+import {
+  formatCurrency,
+  formatDate,
+  formatFollowupWhen,
+  formatSystemSize,
+  toTitleLabel,
+} from '@/lib/utils';
 
 export interface PropertyDetailDrawerProps {
   open: boolean;
@@ -196,7 +202,9 @@ export function PropertyDetailDrawer({
                   },
                   {
                     label: 'Next follow-up',
-                    value: property.nextFollowupAt ? formatDate(property.nextFollowupAt) : '—',
+                    value: property.nextFollowupAt
+                      ? formatFollowupWhen(property.nextFollowupAt)
+                      : '—',
                     mono: true,
                   },
                   { label: 'Site code', value: property.propertyCode || '—', mono: true },

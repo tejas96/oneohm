@@ -29,6 +29,7 @@ import {
   useCustomerFollowups,
   useCustomerProperties,
   useDeleteCustomer,
+  type CustomerPropertyResponse,
 } from '../hooks';
 import { CustomerDetailHeader, type HeaderSignal } from './header';
 import { PropertyDetailDrawer } from './property-detail-drawer';
@@ -37,7 +38,14 @@ import { PageSkeleton, TabSkeleton } from './tab-skeleton';
 import { getBalanceTone, getCustomerDisplayName, getOverdueAmount, isValidUuid } from './utils';
 import { PropertySelectModal } from '../components/property-select-modal';
 
-import { FollowupDrawer } from '@/components/features/followups';
+import {
+  FollowupDrawer,
+  FollowupDetailHost,
+  followupOverdueCount,
+  useFollowupDetailQuery,
+} from '@/components/features/followups';
+import { MarkAsLostDialog } from '@/components/features/properties';
+import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import {
   formatDeleteBlockTooltip,
   getCustomerDeleteBlockReasons,
@@ -56,6 +64,7 @@ import { AccessDeniedContent, ALWAYS_OPEN, useCan, useGatedAction } from '@/lib/
 import {
   formatCurrency,
   formatDate,
+  formatFollowupWhen,
   formatNumber,
   formatSystemSize,
   recordRecentView,
@@ -132,8 +141,11 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
   const [propertySelectOpen, setPropertySelectOpen] = useState(false);
   const [followupDrawerOpen, setFollowupDrawerOpen] = useState(false);
+  const [markingLost, setMarkingLost] = useState<{ id: string; name: string } | null>(null);
   const [propertyDrawerId, setPropertyDrawerId] = useState<string | null>(null);
   const [speedDialOpen, setSpeedDialOpen] = useState(false);
+
+  const { followupId, openFollowup, closeFollowup } = useFollowupDetailQuery();
 
   const isCustomerIdValid = isValidUuid(customerId);
 
@@ -165,6 +177,10 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     status: FollowupStatus.PENDING,
     limit: 10,
     enabled: customerReady,
+  });
+  const { data: customerFollowupsList } = useCustomerFollowups(customerId, {
+    enabled: customerReady,
+    limit: 100,
   });
   const { data: arRows, isLoading: arLoading } = useOrgCustomersAr({
     enabled: customerReady,
@@ -296,7 +312,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   }, [pendingFollowups]);
 
   const overdueFollowupCount = useMemo(
-    () => pendingFollowups.filter((f) => new Date(f.scheduledAt).getTime() < Date.now()).length,
+    () => followupOverdueCount(pendingFollowups, FollowupStatus.PENDING),
     [pendingFollowups],
   );
 
@@ -427,7 +443,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
       {
         id: 'next-followup',
         label: 'Next follow-up',
-        value: nextFollowup ? formatDate(nextFollowup.scheduledAt) : '—',
+        value: nextFollowup ? formatFollowupWhen(nextFollowup.scheduledAt) : '—',
         intent: overdueFollowupCount > 0 ? 'danger' : 'neutral',
         secondary:
           overdueFollowupCount > 0
@@ -578,6 +594,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 onLogFollowup={() => setFollowupDrawerOpen(true)}
                 onAddProperty={handleAddProperty}
                 isInactive={isInactive}
+                onViewFollowup={openFollowup}
               />
             )}
             {activeTab === 'properties' && (
@@ -613,6 +630,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 customerId={customerId}
                 enabled={isTabEnabled('followups')}
                 onSchedule={() => setFollowupDrawerOpen(true)}
+                onViewFollowup={openFollowup}
               />
             )}
             {activeTab === 'finance' && (
@@ -634,6 +652,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 customerId={customerId}
                 properties={properties}
                 enabled={isTabEnabled('activity')}
+                onViewFollowup={openFollowup}
               />
             )}
           </Suspense>
@@ -660,6 +679,30 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         customerId={customerId}
         properties={properties}
       />
+
+      <FollowupDetailHost
+        followupId={followupId}
+        initialData={customerFollowupsList?.data?.find((row) => row.id === followupId)}
+        onClose={closeFollowup}
+        siblingRows={customerFollowupsList?.data ?? []}
+        scopeCustomerId={customerId}
+        onMarkLost={(followup) => {
+          if (!followup.propertyId) return;
+          setMarkingLost({
+            id: followup.propertyId,
+            name: getPropertyDisplayName(followup.property as CustomerPropertyResponse),
+          });
+        }}
+      />
+
+      {markingLost ? (
+        <MarkAsLostDialog
+          open
+          onClose={() => setMarkingLost(null)}
+          propertyId={markingLost.id}
+          propertyName={markingLost.name}
+        />
+      ) : null}
 
       <Box sx={{ display: { xs: 'block', md: 'none' } }}>
         <SpeedDial

@@ -53,9 +53,10 @@ import {
   type DetailTone,
 } from '@/components/features/customers/customer-detail/primitives';
 import { SiteStageBar } from '@/components/features/customers/customer-detail/site-stage';
+import { followupDueTone } from '@/components/features/followups';
 import { showToast } from '@/components/ui';
 import { useAccessDialog, useCan, useGatedAction } from '@/lib/rbac';
-import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
+import { formatCurrency, formatDate, formatFollowupWhen, toTitleLabel } from '@/lib/utils';
 
 export interface OverviewTabProps {
   /**
@@ -71,6 +72,7 @@ export interface OverviewTabProps {
   onGoToProject: () => void;
   isInactiveCustomer: boolean;
   quoteLocked: boolean;
+  onViewFollowup: (followupId: string) => void;
 }
 
 const VIEW_ALL_SX = { fontSize: '0.75rem', minWidth: 0, px: 1 } as const;
@@ -777,11 +779,13 @@ function FollowupsCard({
   enabled,
   onLogFollowup,
   onViewAll,
+  onViewFollowup,
 }: {
   propertyId: string;
   enabled: boolean;
   onLogFollowup: () => void;
   onViewAll: () => void;
+  onViewFollowup: (followupId: string) => void;
 }): JSX.Element {
   const { data, isLoading } = usePropertyFollowups(propertyId, {
     enabled,
@@ -822,10 +826,29 @@ function FollowupsCard({
       ) : (
         <Stack gap={1.5}>
           {followups.map((followup) => {
-            const isOverdue = new Date(followup.scheduledAt).getTime() < Date.now();
+            const dueTone = followupDueTone(followup.scheduledAt);
+            const isOverdue = dueTone === 'danger';
+            const isLateToday = dueTone === 'warning';
             return (
-              <Stack key={followup.id} direction="row" gap={1.25} sx={{ minWidth: 0 }}>
-                <IconCircle tone={isOverdue ? 'danger' : 'info'} size={28}>
+              <Stack
+                key={followup.id}
+                direction="row"
+                gap={1.25}
+                sx={{ minWidth: 0, cursor: 'pointer' }}
+                role="button"
+                tabIndex={0}
+                onClick={() => onViewFollowup(followup.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onViewFollowup(followup.id);
+                  }
+                }}
+              >
+                <IconCircle
+                  tone={isOverdue ? 'danger' : isLateToday ? 'warning' : 'info'}
+                  size={28}
+                >
                   <EventNoteOutlinedIcon />
                 </IconCircle>
                 <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -843,11 +866,15 @@ function FollowupsCard({
                     <Mono
                       sx={{
                         fontSize: '0.6875rem',
-                        color: isOverdue ? TONE_INK.danger.ink : 'var(--ds-text-tertiary)',
-                        fontWeight: isOverdue ? 600 : 400,
+                        color: isOverdue
+                          ? TONE_INK.danger.ink
+                          : isLateToday
+                            ? TONE_INK.warning.ink
+                            : 'var(--ds-text-tertiary)',
+                        fontWeight: isOverdue || isLateToday ? 600 : 400,
                       }}
                     >
-                      {formatDate(followup.scheduledAt)}
+                      {formatFollowupWhen(followup.scheduledAt)}
                     </Mono>
                     <Typography sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)' }}>
                       {toTitleLabel(followup.type)}
@@ -882,6 +909,7 @@ export function OverviewTab({
   onGoToProject,
   isInactiveCustomer,
   quoteLocked,
+  onViewFollowup,
 }: OverviewTabProps): JSX.Element {
   const quoteSummary = usePropertyQuoteSummary(property.id, { enabled });
   const projectId = property.project?.id ?? property.projectId ?? null;
@@ -927,6 +955,7 @@ export function OverviewTab({
           enabled={enabled}
           onLogFollowup={onLogFollowup}
           onViewAll={() => onTabChange('followups')}
+          onViewFollowup={onViewFollowup}
         />
       </Stack>
     </Box>

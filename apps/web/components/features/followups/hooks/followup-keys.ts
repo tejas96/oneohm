@@ -14,4 +14,5 @@ export const followupKeys = {
   byCustomer: (customerId: string) => [...followupKeys.all, 'customer', customerId] as const,
   gaps: () => [...followupKeys.all, 'gaps'] as const,
   summary: (mine: boolean) => [...followupKeys.all, 'summary', mine] as const,
+  detail: (id: string) => [...followupKeys.all, 'detail', id] as const,
 };

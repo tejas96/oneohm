@@ -7,6 +7,7 @@ import * as React from 'react';
 
 import { resolveAction } from '../lib/action-routes';
 
+import { followupRecordHref } from '@/components/features/followups';
 import { ALWAYS_OPEN, useGatedAction, type Gate } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 
@@ -56,9 +57,29 @@ export function DashboardRow({
 
   const { allowed, onGatedClick } = useGatedAction(gate, performAction, target.label);
 
+  const followupLeadHref =
+    item.action === 'complete_followup' && item.params.id
+      ? followupRecordHref(
+          {
+            customerId: item.params.customerId,
+            propertyId: item.params.propertyId ?? null,
+          },
+          { followupId: item.params.id },
+        )
+      : null;
+
   const body = (
     <>
-      <span className="truncate text-sm font-medium text-foreground">{item.title}</span>
+      {followupLeadHref ? (
+        <Link
+          href={followupLeadHref}
+          className="truncate text-sm font-medium text-foreground hover:text-primary-dark"
+        >
+          {item.title}
+        </Link>
+      ) : (
+        <span className="truncate text-sm font-medium text-foreground">{item.title}</span>
+      )}
       {item.subtitle ? (
         <span className="mt-0.5 truncate text-xs text-foreground-tertiary">{item.subtitle}</span>
       ) : null}

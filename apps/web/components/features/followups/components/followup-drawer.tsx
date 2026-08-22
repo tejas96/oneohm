@@ -14,16 +14,17 @@ import {
 import {
   FollowupPriority,
   FollowupType,
+  atDefaultHour,
   type LeadTemperature,
   nextFollowupDate,
 } from '@tejas96/shared/types';
 import { useEffect, useState, type JSX } from 'react';
 
+import { FollowupWhenPicker } from './followup-when-picker';
 import { useCreateFollowup } from '../hooks';
 
 import { useEmployees } from '@/components/features/employees';
 import { showToast } from '@/components/ui';
-import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { MUIUserAssigneeSelector } from '@/components/ui/mui-user-assignee-selector';
 import { useGatedAction } from '@/lib/rbac';
 import { getErrorMessage, toTitleLabel } from '@/lib/utils';
@@ -134,7 +135,9 @@ export function FollowupDrawer({
   // not leave the date on the previous site's rhythm.
   useEffect(() => {
     if (!open) return;
-    setScheduledAt(nextFollowupDate(new Date(), (temperature as LeadTemperature | null) ?? null));
+    setScheduledAt(
+      atDefaultHour(nextFollowupDate(new Date(), (temperature as LeadTemperature | null) ?? null)),
+    );
   }, [open, temperature]);
 
   const canSubmit = Boolean(subject.trim() && scheduledAt && assignedToUserId);
@@ -262,12 +265,11 @@ export function FollowupDrawer({
           placeholder="e.g. Call about revised quote"
         />
 
-        <MUIDatePicker
-          fieldLabel="Scheduled for"
-          required
+        <FollowupWhenPicker
+          dateLabel="Scheduled for"
           value={scheduledAt}
           onChange={setScheduledAt}
-          fullWidth
+          required
         />
 
         <MUIUserAssigneeSelector
