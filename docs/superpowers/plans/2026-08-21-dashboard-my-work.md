@@ -2548,7 +2548,10 @@ const DOES_NOT_LIFT: ReadonlySet<SectionKey> = new Set<SectionKey>(['projects'])
 export interface LiftResult {
   critical: DashboardItem[];
   rest: Record<SectionKey, DashboardSection>;
+  /** How many items were REMOVED from each section. Zero for a copy-only section. */
   liftedBySection: Record<SectionKey, number>;
+  /** How many critical items each section contributed, whether moved or copied. */
+  criticalBySection: Record<SectionKey, number>;
 }
 
 /**
@@ -2567,32 +2570,41 @@ export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
   const critical: DashboardItem[] = [];
   const rest = {} as Record<SectionKey, DashboardSection>;
   const liftedBySection = {} as Record<SectionKey, number>;
+  const criticalBySection = {} as Record<SectionKey, number>;
 
   (Object.keys(sections) as SectionKey[]).forEach((key) => {
     const section = sections[key];
     liftedBySection[key] = 0;
+    criticalBySection[key] = 0;
 
-    if (section.status !== 'ok' || DOES_NOT_LIFT.has(key)) {
+    if (section.status !== 'ok') {
       rest[key] = section;
       return;
     }
 
-    let lifted = 0;
+    // A copy-only section contributes its critical items to the top block but
+    // KEEPS them. Skipping the scan entirely — as an earlier version did — meant
+    // an overdue project reached Needs Attention never, while the projects block
+    // claimed underneath that it 'also appears above'.
+    const copyOnly = DOES_NOT_LIFT.has(key);
+    let found = 0;
+
     const buckets = section.buckets
       .map((bucket) => {
         const keep = bucket.items.filter((item) => {
           if (item.severity !== 'critical') return true;
           critical.push(item);
-          lifted += 1;
-          return false;
+          found += 1;
+          return copyOnly;
         });
         return { ...bucket, items: keep };
       })
-      // A bucket whose every item lifted is empty BY CONSTRUCTION — every
-      // overdue item is critical — so rendering its header would be dead UI.
+      // A bucket emptied by the lift is empty BY CONSTRUCTION — every overdue
+      // item is critical — so rendering its header would be dead UI.
       .filter((bucket) => bucket.items.length > 0);
 
-    liftedBySection[key] = lifted;
+    criticalBySection[key] = found;
+    liftedBySection[key] = copyOnly ? 0 : found;
     rest[key] = { ...section, buckets };
   });
 
@@ -2605,7 +2617,7 @@ export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
     return aDue - bDue;
   });
 
-  return { critical, rest, liftedBySection };
+  return { critical, rest, liftedBySection, criticalBySection };
 }
 
 /** "2 overdue shown above" — or nothing, when none were lifted. */
@@ -2682,7 +2694,7 @@ export function MyWorkPage(): React.JSX.Element {
     );
   }
 
-  const { critical, rest, liftedBySection } = liftCritical(data.sections);
+  const { critical, rest, liftedBySection, criticalBySection } = liftCritical(data.sections);
   const { summary } = data;
   const name = user?.firstName ?? '';
 
@@ -2791,7 +2803,9 @@ export function MyWorkPage(): React.JSX.Element {
         <SectionCard
           label="Project health"
           section={rest.projects}
-          aside="overdue projects also appear above"
+          aside={
+            criticalBySection.projects > 0 ? 'overdue projects also appear above' : undefined
+          }
           emptyMessage="Every project is on track."
           skeletonRows={4}
           onRetry={() => void refetch()}
@@ -2810,7 +2824,7 @@ export function MyWorkPage(): React.JSX.Element {
             At a glance
           </h2>
           {[
-            { label: 'Overdue', value: summary.overdue, Icon: AlertCircle, tint: 'bg-danger/10 text-error' },
+            { label: 'Overdue', value: summary.overdue, Icon: AlertCircle, tint: 'bg-error/10 text-error' },
             { label: 'Due today', value: summary.dueToday, Icon: CalendarCheck, tint: 'bg-warning/10 text-warning' },
             { label: 'Due this week', value: summary.dueThisWeek, Icon: CalendarDays, tint: 'bg-info/10 text-info' },
           ].map(({ label, value, Icon, tint }) => (
