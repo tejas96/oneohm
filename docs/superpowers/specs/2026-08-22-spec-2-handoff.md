@@ -76,14 +76,30 @@ Verified 2026-08-22 against the codebase, not remembered.
   DTOs, helpers and constants. There is a matching web feature at
   `apps/web/components/features/pipeline/` including a funnel chart, trend chart, stage
   conversion panel and leaderboard.
-- **`pipeline.view` already exists** as a permission code and already gates `/pipeline`
-  (`route-map.ts:42`). It is the obvious gate rather than a new one.
-- **The binding constraint is honesty, not effort.** Seven finance endpoints still read
-  pre-cutover tables that stopped being written at cutover: `/dashboard`, `/receipts`,
-  `/expenses`, `/outstanding`, `/customers/ar`, `/vendors/spend`,
-  `/projects/profitability`. Any chart fed by those would report frozen figures. The
-  ledger-backed and correct ones are `/kpis`, `/cash-flow`, `/entries`, `/receivables`, plus
-  the `v_milestone_balance` view the dashboard uses.
+- **It is a MODE ON THE DASHBOARD, not a page.** Confirmed by the owner 2026-08-22. `/` gains a
+  switch between "My Work" and "Business". No new route, and the employee selector hides while
+  Business mode is active because that mode is org-wide.
+- ~~**`pipeline.view` is the obvious gate.**~~ **Rejected 2026-08-22.** `pipeline.view` means "see
+  the sales funnel"; Business mode also shows org-wide cash, so reusing it would hand money to
+  everyone holding sales access. It needs its own code — `dashboard.business.view` is the
+  proposal — with the finance panels additionally gated on the existing `finance.view`.
+- ~~**Seven finance endpoints read frozen pre-cutover tables.**~~ **OBSOLETE — re-verified against
+  the code 2026-08-22. Do not repeat this claim.** The read path was fixed after this note was
+  written. Every query in `finance-ledger-queries.sql.ts` reads `v_milestone_balance`,
+  `ledger_entries`, `v_project_balance` or `payment_milestones`; **zero** read `payments`,
+  `project_payment_terms` or `project_expenses`. `finance-aggregation.service.ts` — the service
+  that reached the dead tables — has been **deleted**. `/dashboard`, `/receipts`, `/expenses`,
+  `/vendors/spend` and `/projects/profitability` no longer exist. The six endpoints that remain —
+  `/kpis`, `/cash-flow`, `/entries`, `/receivables`, `/outstanding`, `/customers/ar` — are all
+  ledger-backed and honest.
+  **So the honesty constraint on this feature is lifted.** Finance charts can be built from live
+  data. Stale comment to distrust: `finance-reporting.service.ts:40` still claims it runs
+  alongside `FinanceAggregationService`.
+- **Three non-finance code paths still read the dead tables** and are the real remaining cleanup,
+  unrelated to this feature: `bom.service.ts:1486` and `document.service.ts:170,191`.
+- **`/customers/ar` takes no date parameter** — ageing is always as of today. Every other
+  reporting endpoint takes a range. A single global date control would silently misrepresent that
+  panel.
 - Charts have a house standard: `apps/web/lib/charts/palette.ts` re-exports an ordered,
   colourblind-safe ramp from the design tokens. Use it.
 
