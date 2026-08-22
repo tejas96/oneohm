@@ -4,9 +4,11 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Box, Button, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import { FollowupStatus, type LeadTemperature } from '@tejas96/shared/types';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState, type JSX } from 'react';
 
 import { type FollowupResponse } from '../hooks/use-followups';
+import { followupRecordHref } from '../lib/followup-href';
 
 import {
   CrmStatusPill,
@@ -14,7 +16,6 @@ import {
   type CrmColumn,
   type CrmTone,
 } from '@/components/shared/crm-table';
-import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useGatedAction } from '@/lib/rbac';
 import { crm } from '@/lib/theme/tokens';
 import { formatDate } from '@/lib/utils';
@@ -129,6 +130,7 @@ export function FollowupList({
   onCancel,
   emptyMessage,
 }: FollowupListProps): JSX.Element {
+  const router = useRouter();
   const [menuFor, setMenuFor] = useState<FollowupResponse | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
@@ -153,25 +155,28 @@ export function FollowupList({
         header: 'Lead',
         track: crm['col-customer'],
         stopPropagation: true,
-        renderCell: (row) => (
-          <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-            <Link
-              href={
-                row.propertyId
-                  ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: row.propertyId })
-                  : buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.customerId })
-              }
-              style={{ textDecoration: 'none', color: 'inherit' }}
-            >
-              <Typography variant="body2" fontWeight={600} noWrap>
-                {leadName(row)}
-              </Typography>
-            </Link>
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {row.propertyId ? (row.property?.city ?? 'Site') : 'Customer lead'}
+        renderCell: (row) => {
+          const href = followupRecordHref(row);
+          const name = (
+            <Typography variant="body2" fontWeight={600} noWrap>
+              {leadName(row)}
             </Typography>
-          </Stack>
-        ),
+          );
+          return (
+            <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+              {href ? (
+                <Link href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  {name}
+                </Link>
+              ) : (
+                name
+              )}
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {row.propertyId ? (row.property?.city ?? 'Site') : 'Customer lead'}
+              </Typography>
+            </Stack>
+          );
+        },
       },
       {
         field: 'temperature',
@@ -273,6 +278,10 @@ export function FollowupList({
          */
         gridMinWidth="880px"
         emptyMessage={emptyMessage ?? 'Nothing here.'}
+        onRowClick={(row) => {
+          const href = followupRecordHref(row);
+          if (href) void router.push(href);
+        }}
       />
 
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu}>

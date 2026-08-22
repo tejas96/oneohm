@@ -17,8 +17,8 @@ import { useOrgCustomersAr, useOrgOutstanding } from '@/lib/hooks/resources/fina
 import { useCashFlow, useFinanceKpis } from '@/lib/hooks/resources/ledger';
 import { usePipelineDashboard } from '@/lib/hooks/resources/pipeline';
 import { useCan } from '@/lib/rbac';
-import { useAuth } from '@/providers/auth-provider';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 
 const OLDEST_DEBT_ROWS = 3;
 
