@@ -449,9 +449,10 @@ The worst milestone is marked; clicking opens that milestone's task filter
 
 ### Responsive
 
-Deferred to the next pass, after the desktop canvas is approved. Priority order on
-small screens follows spec §31: Needs Attention, Due Soon, Follow-ups, Service, Projects,
-Workflow, Finance.
+**Not being built.** Confirmed by the owner 2026-08-22: this is a web-only product. The
+two-column grid collapses to one column below `xl`, so a narrow window stays usable, and
+that is the whole of the responsive story. The small-screen priority order this section
+used to specify is removed rather than left as a promise nobody intends to keep.
 
 ---
 
