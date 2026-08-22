@@ -110,11 +110,14 @@ export const MY_EMPLOYEE_CTE = `
  * The `project_id IN my_projects` branch goes BEYOND the ownership table in
  * spec section 3, which lists only creator, assignee and the customer walk. It
  * is retained deliberately: a ticket raised against a project I build is work
- * that lands on my desk whether or not anyone assigned it to me, and 17 tickets
- * across 7 users are visible today through this branch alone. Narrowing to the
- * spec's three columns would silently delete them from those dashboards. If the
- * table is ever tightened, that decision belongs here, in one place, not inside
- * a provider.
+ * that lands on my desk whether or not anyone assigned it to me. Measured
+ * against the live database: 14 tickets, across 14 distinct users, are
+ * visible ONLY through this branch today — for each such (ticket, user) pair,
+ * the user is neither the ticket's assignee nor its creator, and cannot reach
+ * it through their customer walk either. Narrowing to the spec's three
+ * columns would silently delete them from those dashboards. If the table is
+ * ever tightened, that decision belongs here, in one place, not inside a
+ * provider.
  */
 export const MY_SERVICE_TICKETS_CTE = `
   my_service_tickets AS (
