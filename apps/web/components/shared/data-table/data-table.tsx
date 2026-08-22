@@ -75,6 +75,8 @@ export interface DataTableProps<TData, TValue> {
   className?: string;
   /** Function to get row-level class names (for highlighting, etc.) */
   getRowClassName?: (row: TData) => string;
+  /** Navigate or open a detail view when the row is clicked. */
+  onRowClick?: (row: TData) => void;
 }
 
 // ============================================================================
@@ -151,6 +153,7 @@ export function DataTable<TData, TValue>({
   isLoading = false,
   className,
   getRowClassName,
+  onRowClick,
 }: DataTableProps<TData, TValue>): React.JSX.Element {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -310,7 +313,25 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className={getRowClassName?.(row.original)}
+                  className={cn(getRowClassName?.(row.original), onRowClick && 'cursor-pointer')}
+                  onClick={
+                    onRowClick
+                      ? (event) => {
+                          // Portal menus (dropdown, dialog) render outside the row.
+                          if (!event.currentTarget.contains(event.target as Node)) return;
+                          const target = event.target as HTMLElement | null;
+                          // Buttons, links, inputs, and menus own their click.
+                          if (
+                            target?.closest(
+                              'a, button, input, select, textarea, [role="menuitem"], [role="checkbox"]',
+                            )
+                          ) {
+                            return;
+                          }
+                          onRowClick(row.original);
+                        }
+                      : undefined
+                  }
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

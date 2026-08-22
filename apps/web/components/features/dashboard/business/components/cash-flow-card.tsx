@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import { BusinessCard } from './business-card';
 import { money, type MoneyFormat } from '../lib/format';
+import { businessLinks } from '../lib/links';
 
 import { CHART_COLORS } from '@/lib/charts/palette';
 import type { CashFlowPoint } from '@/lib/hooks/resources/ledger';
@@ -114,7 +115,7 @@ export function CashFlowCard({
       isError={isError}
       onRetry={onRetry}
       errorHeight={236}
-      link={{ label: 'Open finance', href: '/finance' }}
+      link={{ gate: 'finance.view', label: 'Open finance', href: businessLinks.finance() }}
     >
       <div className="flex items-baseline gap-3.5 pb-3">
         <div className="flex items-center gap-3.5">

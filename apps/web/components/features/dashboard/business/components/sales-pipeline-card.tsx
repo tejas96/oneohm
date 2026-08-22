@@ -5,6 +5,7 @@ import * as React from 'react';
 import { BusinessCard } from './business-card';
 import { TrendChip } from './trend-chip';
 import { money, type MoneyFormat } from '../lib/format';
+import { businessLinks, type BusinessRange } from '../lib/links';
 
 import { CHART_COLORS } from '@/lib/charts/palette';
 import type { PipelineFunnelStage, PipelineStatsResponse } from '@/lib/hooks/resources/pipeline';
@@ -17,7 +18,7 @@ interface SalesPipelineCardProps {
   stats: PipelineStatsResponse | undefined;
   wonCount: number;
   format: MoneyFormat;
-  rangeLabel: string;
+  range: BusinessRange;
   isError: boolean;
   onRetry: () => void;
 }
@@ -41,7 +42,7 @@ export function SalesPipelineCard({
   stats,
   wonCount,
   format,
-  rangeLabel,
+  range,
   isError,
   onRetry,
 }: SalesPipelineCardProps): React.JSX.Element {
@@ -85,11 +86,11 @@ export function SalesPipelineCard({
   return (
     <BusinessCard
       label="Sales pipeline"
-      aside={rangeLabel}
+      aside={range.label}
       isError={isError}
       onRetry={onRetry}
       errorHeight={320}
-      link={{ label: 'Open pipeline', href: '/pipeline' }}
+      link={{ gate: 'pipeline.view', label: 'Open pipeline', href: businessLinks.pipeline(range) }}
     >
       <div className="grid grid-cols-4 gap-x-5 pb-5">
         {health.map((item) => (

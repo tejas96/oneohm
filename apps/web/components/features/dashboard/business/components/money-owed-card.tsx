@@ -3,7 +3,9 @@
 import * as React from 'react';
 
 import { BusinessCard } from './business-card';
+import { GatedLink } from './gated-link';
 import { formatDay, money, type MoneyFormat } from '../lib/format';
+import { businessLinks } from '../lib/links';
 
 import { CHART_COLORS } from '@/lib/charts/palette';
 import type { CustomerAging, OutstandingTerm } from '@/lib/hooks/resources/finance-org';
@@ -107,7 +109,11 @@ export function MoneyOwedCard({
         </span>
       }
       note="Ageing is counted against today. The date range above does not apply to this panel."
-      link={{ label: 'Open receivables', href: '/finance/receivables' }}
+      link={{
+        label: 'Open receivables',
+        href: businessLinks.receivables(),
+        gate: 'finance.receivables.view',
+      }}
       linkAside={
         unallocatedCredit > 0 ? `${money(unallocatedCredit, format)} unallocated credit` : undefined
       }
@@ -165,9 +171,11 @@ export function MoneyOwedCard({
       ) : (
         <>
           {oldest.map((term) => (
-            <a
+            <GatedLink
               key={term.id}
-              href={`/projects/${term.projectId}`}
+              href={businessLinks.project(term.projectId)}
+              gate="projects.view"
+              subject={term.projectName}
               className="-mx-2.5 flex min-h-[44px] items-center gap-3.5 rounded-[10px] px-2.5 hover:bg-background-tertiary"
             >
               <span className="min-w-0 flex-1">
@@ -182,7 +190,7 @@ export function MoneyOwedCard({
               <span className="w-[110px] text-right font-mono text-[13px] tabular-nums">
                 {money(term.outstandingAmount, format)}
               </span>
-            </a>
+            </GatedLink>
           ))}
           {customersPast90 > 0 ? (
             <p className="pt-1.5 text-[11.5px] text-foreground-tertiary">

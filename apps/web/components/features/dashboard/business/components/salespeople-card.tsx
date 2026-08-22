@@ -3,7 +3,9 @@
 import * as React from 'react';
 
 import { BusinessCard } from './business-card';
+import { GatedLink } from './gated-link';
 import { money, type MoneyFormat } from '../lib/format';
+import { businessLinks, type BusinessRange } from '../lib/links';
 
 import { Avatar, AvatarFallback } from '@/components/ui';
 import type { PipelineLeaderboardEntry } from '@/lib/hooks/resources/pipeline';
@@ -20,6 +22,8 @@ function initials(name: string): string {
 interface SalespeopleCardProps {
   entries: PipelineLeaderboardEntry[];
   format: MoneyFormat;
+  /** Carried into every link so the pipeline opens on the same period. */
+  range: BusinessRange;
   isError: boolean;
   onRetry: () => void;
 }
@@ -35,6 +39,7 @@ interface SalespeopleCardProps {
 export function SalespeopleCard({
   entries,
   format,
+  range,
   isError,
   onRetry,
 }: SalespeopleCardProps): React.JSX.Element {
@@ -52,8 +57,9 @@ export function SalespeopleCard({
       onRetry={onRetry}
       errorHeight={260}
       link={{
+        gate: 'pipeline.view',
         label: ranked.length > VISIBLE ? `All ${ranked.length} salespeople` : 'Open pipeline',
-        href: '/pipeline',
+        href: businessLinks.pipeline(range),
       }}
     >
       {shown.length === 0 ? (
@@ -62,9 +68,14 @@ export function SalespeopleCard({
         </p>
       ) : (
         shown.map((person) => (
-          <a
+          <GatedLink
             key={person.salesPersonId ?? 'unassigned'}
-            href="/pipeline"
+            href={businessLinks.pipeline(
+              range,
+              person.isUnassigned ? undefined : person.salesPersonId,
+            )}
+            gate="pipeline.view"
+            subject={person.salesPersonName}
             className="-mx-2.5 flex min-h-[46px] items-center gap-3 rounded-xl px-2.5 hover:bg-background-tertiary"
           >
             <Avatar className="size-[30px]">
@@ -87,7 +98,7 @@ export function SalespeopleCard({
             <span className="w-10 text-right text-[12.5px] tabular-nums text-foreground-secondary">
               {person.winRate}%
             </span>
-          </a>
+          </GatedLink>
         ))
       )}
     </BusinessCard>

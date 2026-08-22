@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { BusinessCard } from './business-card';
+import { businessLinks, type BusinessRange } from '../lib/links';
 
 import { CHART_COLORS } from '@/lib/charts/palette';
 import type { PipelineTrendPoint } from '@/lib/hooks/resources/pipeline';
@@ -26,6 +27,7 @@ interface LeadsWonCardProps {
   points: PipelineTrendPoint[];
   /** 'week' or 'month' — the API offers no daily grain for this series. */
   granularity: string;
+  range: BusinessRange;
   isError: boolean;
   onRetry: () => void;
 }
@@ -66,6 +68,7 @@ function buildSeries(
 export function LeadsWonCard({
   points,
   granularity,
+  range,
   isError,
   onRetry,
 }: LeadsWonCardProps): React.JSX.Element {
@@ -96,7 +99,7 @@ export function LeadsWonCard({
       isError={isError}
       onRetry={onRetry}
       errorHeight={240}
-      link={{ label: 'Open pipeline', href: '/pipeline' }}
+      link={{ gate: 'pipeline.view', label: 'Open pipeline', href: businessLinks.pipeline(range) }}
     >
       {series.map((s) => (
         <div key={s.label}>

@@ -2,8 +2,10 @@
 
 import * as React from 'react';
 
+import { GatedLink } from './gated-link';
 import { money, rupeesExact, type MoneyFormat } from '../lib/format';
 
+import type { Gate } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 
 export interface HeadlineTile {
@@ -14,11 +16,21 @@ export interface HeadlineTile {
   /** True when `sub` should read as a problem, e.g. an overdue count. */
   subIsBad?: boolean;
   href: string;
+  /** The permission the DESTINATION needs — not the one that revealed the tile. */
+  gate: Gate;
 }
 
 interface HeadlineBandProps {
   /** The one number the page leads with. */
-  hero: { label: string; value: string; exact?: string; sub: string; isBad?: boolean; href: string };
+  hero: {
+    label: string;
+    value: string;
+    exact?: string;
+    sub: string;
+    isBad?: boolean;
+    href: string;
+    gate: Gate;
+  };
   tiles: HeadlineTile[];
   rangeLabel: string;
   compact: boolean;
@@ -76,8 +88,10 @@ export function HeadlineBand({
       </div>
 
       <div className="relative grid grid-cols-[318px_repeat(4,1fr)] items-start gap-x-6">
-        <a
+        <GatedLink
           href={hero.href}
+          gate={hero.gate}
+          subject={hero.label}
           className="-mx-2.5 -my-2 block rounded-2xl px-2.5 py-2 hover:bg-background-tertiary"
         >
           <TileLabel>{hero.label}</TileLabel>
@@ -96,12 +110,14 @@ export function HeadlineBand({
             </div>
           ) : null}
           <div className="mt-[3px] text-[12.5px] text-foreground-secondary">{hero.sub}</div>
-        </a>
+        </GatedLink>
 
         {tiles.map((tile) => (
-          <a
+          <GatedLink
             key={tile.label}
             href={tile.href}
+            gate={tile.gate}
+            subject={tile.label}
             className="-mx-2.5 -my-2 block rounded-2xl px-2.5 py-2 hover:bg-background-tertiary"
           >
             <TileLabel>{tile.label}</TileLabel>
@@ -123,7 +139,7 @@ export function HeadlineBand({
                 {tile.sub}
               </div>
             ) : null}
-          </a>
+          </GatedLink>
         ))}
       </div>
     </section>

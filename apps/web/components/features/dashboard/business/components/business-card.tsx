@@ -1,9 +1,11 @@
 'use client';
 
 import { RotateCw } from 'lucide-react';
-import Link from 'next/link';
 import * as React from 'react';
 
+import { GatedLink } from './gated-link';
+
+import { ALWAYS_OPEN, type Gate } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 
 interface BusinessCardProps {
@@ -19,8 +21,14 @@ interface BusinessCardProps {
   onRetry?: () => void;
   /** Height the retry state occupies, so a failed panel does not collapse the grid. */
   errorHeight?: number;
-  /** Bottom-left deep link, e.g. "Open finance". */
-  link?: { label: string; href: string };
+  /**
+   * Bottom-left deep link, e.g. "Open finance".
+   *
+   * `gate` is the DESTINATION ROUTE's permission, which is not always the one
+   * that revealed this panel — `/finance/receivables` needs
+   * `finance.receivables.view`, not the `finance.view` that shows the money.
+   */
+  link?: { label: string; href: string; gate?: Gate };
   /** Bottom-right quiet figure, e.g. unallocated credit. */
   linkAside?: React.ReactNode;
   children: React.ReactNode;
@@ -91,8 +99,10 @@ export function BusinessCard({
       {link || linkAside ? (
         <div className="flex items-baseline gap-3.5 pb-0.5 pt-3">
           {link ? (
-            <Link
+            <GatedLink
               href={link.href}
+              gate={link.gate ?? ALWAYS_OPEN}
+              subject={link.label}
               className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-primary-dark"
             >
               {link.label}
@@ -105,7 +115,7 @@ export function BusinessCard({
                   strokeLinejoin="round"
                 />
               </svg>
-            </Link>
+            </GatedLink>
           ) : null}
           {linkAside ? (
             <div className="ml-auto text-[11.5px] tabular-nums text-foreground-tertiary">

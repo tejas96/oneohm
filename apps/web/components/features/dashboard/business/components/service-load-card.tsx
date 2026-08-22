@@ -3,6 +3,7 @@
 import * as React from 'react';
 
 import { BusinessCard } from './business-card';
+import { businessLinks } from '../lib/links';
 
 import { CHART_COLORS } from '@/lib/charts/palette';
 import { color } from '@/lib/theme/tokens';
@@ -55,7 +56,7 @@ export function ServiceLoadCard({
       isError={isError}
       onRetry={onRetry}
       errorHeight={160}
-      link={{ label: 'Open service', href: '/service' }}
+      link={{ gate: 'service.view', label: 'Open service', href: businessLinks.service() }}
     >
       {!anyTickets ? (
         <p className="pb-2 pt-0.5 text-[13.5px] text-foreground-tertiary">No service tickets yet.</p>
