@@ -1,16 +1,19 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { DashboardItem } from '@tejas96/shared/types';
 import { AlertCircle, CalendarCheck, CalendarDays } from 'lucide-react';
 import * as React from 'react';
 
-import { useMyWork } from '../hooks';
+import { dashboardKeys, useFollowupForItem, useMyWork } from '../hooks';
 import { DashboardRow } from './dashboard-row';
 import { ProjectRow } from './project-row';
 import { SectionCard, SectionSkeleton } from './section-card';
+import { ViewAllDrawer } from './view-all-drawer';
 import { SECTION_OVERFLOW } from '../lib/action-routes';
 import { liftCritical, liftedAside } from '../lib/lift';
 
+import { FollowupCompleteDialog } from '@/components/features/followups';
 import { Typography } from '@/components/ui';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -24,14 +27,13 @@ function greeting(hour: number): string {
 
 // `SECTION_OVERFLOW` is keyed by `Record<string, ...>`, so under this repo's
 // `noUncheckedIndexedAccess` every read of it is `OverflowEntry | undefined`
-// even for the six keys that are always present. These two helpers absorb
-// that `| undefined` in one place instead of asserting it away at each call
-// site below.
+// even for the four keys that link to a real route. This helper absorbs that
+// `| undefined` in one place instead of asserting it away at each call site
+// below. The two `kind: 'drawer'` entries (workflow, needsAttention) never go
+// through here — their overflow is built from the section's own data instead,
+// since whether to show it at all depends on a count `SECTION_OVERFLOW` does
+// not carry.
 type OverflowEntry = (typeof SECTION_OVERFLOW)[string];
-
-function isDrawerOverflow(entry: OverflowEntry | undefined): boolean {
-  return entry?.kind === 'drawer';
-}
 
 function overflowHref(entry: OverflowEntry | undefined): string | undefined {
   if (entry?.kind !== 'route') return undefined;
@@ -40,8 +42,13 @@ function overflowHref(entry: OverflowEntry | undefined): string | undefined {
 
 export function MyWorkPage(): React.JSX.Element {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data, isPending, isError, refetch } = useMyWork();
   const [followupItem, setFollowupItem] = React.useState<DashboardItem | null>(null);
+  const [drawer, setDrawer] = React.useState<{ title: string; items: DashboardItem[] } | null>(
+    null,
+  );
+  const { followup, pendingSiblings } = useFollowupForItem(followupItem);
 
   // Rendered only after mount so the server and client agree on the greeting —
   // the same guard the old placeholder page used.
@@ -133,7 +140,10 @@ export function MyWorkPage(): React.JSX.Element {
           skeletonRows={6}
           overflow={
             critical.length > CAP.attention
-              ? { label: `View all ${critical.length}` }
+              ? {
+                  label: `View all ${critical.length}`,
+                  onClick: () => setDrawer({ title: 'Needs attention', items: critical }),
+                }
               : undefined
           }
         >
@@ -149,7 +159,21 @@ export function MyWorkPage(): React.JSX.Element {
           emptyMessage="No leads are stuck."
           skeletonRows={5}
           onRetry={() => void refetch()}
-          overflow={isDrawerOverflow(SECTION_OVERFLOW.workflow) ? { label: 'View all' } : undefined}
+          overflow={
+            rest.workflow.status === 'ok' && rest.workflow.total > CAP.workflow
+              ? {
+                  label: `View all ${rest.workflow.total}`,
+                  onClick: () =>
+                    setDrawer({
+                      title: 'Workflow stuck',
+                      items:
+                        rest.workflow.status === 'ok'
+                          ? rest.workflow.buckets.flatMap((b) => b.items)
+                          : [],
+                    }),
+                }
+              : undefined
+          }
         >
           {renderRows(CAP.workflow)}
         </SectionCard>
@@ -236,8 +260,30 @@ export function MyWorkPage(): React.JSX.Element {
         </SectionCard>
       </div>
 
-      {/* Wired in Task 13. */}
-      {followupItem ? null : null}
+      {drawer ? (
+        <ViewAllDrawer
+          open
+          onOpenChange={(next) => {
+            if (!next) setDrawer(null);
+          }}
+          title={drawer.title}
+          items={drawer.items}
+          onCompleteFollowup={setFollowupItem}
+        />
+      ) : null}
+
+      <FollowupCompleteDialog
+        open={Boolean(followup)}
+        followup={followup}
+        pendingSiblings={pendingSiblings}
+        onClose={() => {
+          setFollowupItem(null);
+          // The row that was just completed must leave the page immediately. A
+          // count that survives the action it just performed is how people stop
+          // trusting the screen.
+          void queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+        }}
+      />
     </div>
   );
 }
