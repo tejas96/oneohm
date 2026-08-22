@@ -1,7 +1,10 @@
 # Business Matrix — design review and build notes
 
 - **Date:** 2026-08-22
-- **Status:** UX complete, reviewed, corrected, re-verified, and permissions signed off — **2026-08-22**. Ready to spec.
+- **Status:** **SUPERSEDED 2026-08-22 — the feature is built.** See
+  `2026-08-22-business-mode-as-built.md` for what actually shipped. This document remains the
+  record of the design review and the five corrections it produced; it is no longer the
+  forward-looking plan its later sections read as.
 - **All five findings below were fixed in the design and confirmed against the file.** They are kept
   here as the record of what was wrong and why, not as outstanding work. §9 is done except item 1.
 - **Reviews:** Claude Design project `be6622ba-1ef2-4f60-9994-43ed48cda883` ("Solar EPC workload app"),
