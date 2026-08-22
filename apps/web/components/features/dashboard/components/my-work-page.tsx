@@ -86,9 +86,7 @@ export function MyWorkPage(): React.JSX.Element {
     );
   }
 
-  const { critical, criticalTotal, rest, liftedBySection, criticalBySection } = liftCritical(
-    data.sections,
-  );
+  const { critical, criticalTotal, rest, criticalBySection } = liftCritical(data.sections);
   const { summary } = data;
   const name = user?.firstName ?? '';
 
@@ -162,7 +160,7 @@ export function MyWorkPage(): React.JSX.Element {
           label="Workflow stuck"
           tone="warning"
           section={rest.workflow}
-          aside={liftedAside(liftedBySection.workflow)}
+          aside={liftedAside(criticalBySection.workflow)}
           emptyMessage="No leads are stuck."
           rowCap={CAP.workflow}
           onRetry={() => void refetch()}
@@ -191,7 +189,7 @@ export function MyWorkPage(): React.JSX.Element {
           label="Follow-ups"
           tone="info"
           section={rest.followups}
-          aside={liftedAside(liftedBySection.followups, 'overdue')}
+          aside={liftedAside(criticalBySection.followups, 'overdue')}
           emptyMessage="No follow-ups need attention."
           rowCap={CAP.followups}
           bucketed
@@ -206,7 +204,7 @@ export function MyWorkPage(): React.JSX.Element {
           label="Service requests"
           tone="info"
           section={rest.service}
-          aside={liftedAside(liftedBySection.service, 'overdue')}
+          aside={liftedAside(criticalBySection.service, 'overdue')}
           emptyMessage="No service requests need you."
           rowCap={CAP.service}
           bucketed
@@ -258,7 +256,7 @@ export function MyWorkPage(): React.JSX.Element {
           label="Money to chase"
           tone="warning"
           section={rest.finance}
-          aside={liftedAside(liftedBySection.finance, 'overdue')}
+          aside={liftedAside(criticalBySection.finance, 'overdue')}
           emptyMessage="No payments are due."
           rowCap={CAP.money}
           onRetry={() => void refetch()}

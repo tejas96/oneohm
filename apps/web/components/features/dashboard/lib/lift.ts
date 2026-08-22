@@ -18,9 +18,26 @@ export interface LiftResult {
    */
   criticalTotal: number;
   rest: Record<SectionKey, DashboardSection>;
-  /** How many items were REMOVED from each section. Zero for a copy-only section. */
-  liftedBySection: Record<SectionKey, number>;
-  /** How many critical items each section contributed, whether moved or copied. */
+  /**
+   * How many critical items each section CONTRIBUTED to Needs attention, taken
+   * from the backend's `section.criticalCount`.
+   *
+   * The true figure for the section's whole scoped set — deliberately NOT the
+   * number of rows the lift pulled out of the list on screen. Those two diverge
+   * the moment a section holds more criticals than the backend's per-bucket cap
+   * ships: finance reported "3 overdue shown above" under a badge reading 118,
+   * two inches apart, contradicting each other. The aside now quotes the same
+   * population the badge does.
+   *
+   * It is a change of magnitude, not of WHEN an aside appears: a section with
+   * any critical item always delivers at least one of them, because no bucket
+   * in any of the five providers mixes critical with non-critical severities,
+   * so the head of a critical bucket is always inside the cap.
+   *
+   * Projects is counted too, though it is copy-only. It contributes its
+   * criticals to the block above while also keeping them — which is exactly
+   * what its own aside claims underneath.
+   */
   criticalBySection: Record<SectionKey, number>;
 }
 
@@ -39,13 +56,11 @@ export interface LiftResult {
 export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
   const critical: DashboardItem[] = [];
   const rest = {} as Record<SectionKey, DashboardSection>;
-  const liftedBySection = {} as Record<SectionKey, number>;
   const criticalBySection = {} as Record<SectionKey, number>;
   let criticalTotal = 0;
 
   (Object.keys(sections) as SectionKey[]).forEach((key) => {
     const section = sections[key];
-    liftedBySection[key] = 0;
     criticalBySection[key] = 0;
 
     if (section.status !== 'ok') {
@@ -55,6 +70,8 @@ export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
 
     // Every section contributes, INCLUDING projects: a copy-only section still
     // puts its critical items in the top block, so they belong in its count.
+    // One source for both numbers — the block's badge is the sum of the asides.
+    criticalBySection[key] = section.criticalCount;
     criticalTotal += section.criticalCount;
 
     // A copy-only section contributes its critical items to the top block but
@@ -62,14 +79,12 @@ export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
     // an overdue project reached Needs Attention never, while the projects block
     // claimed underneath that it 'also appears above'.
     const copyOnly = DOES_NOT_LIFT.has(key);
-    let found = 0;
 
     const buckets = section.buckets
       .map((bucket) => {
         const keep = bucket.items.filter((item) => {
           if (item.severity !== 'critical') return true;
           critical.push(item);
-          found += 1;
           return copyOnly;
         });
         return { ...bucket, items: keep };
@@ -78,8 +93,6 @@ export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
       // item is critical — so rendering its header would be dead UI.
       .filter((bucket) => bucket.items.length > 0);
 
-    criticalBySection[key] = found;
-    liftedBySection[key] = copyOnly ? 0 : found;
     rest[key] = { ...section, buckets };
   });
 
@@ -92,10 +105,10 @@ export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
     return aDue - bDue;
   });
 
-  return { critical, criticalTotal, rest, liftedBySection, criticalBySection };
+  return { critical, criticalTotal, rest, criticalBySection };
 }
 
-/** "2 overdue shown above" — or nothing, when none were lifted. */
+/** "2 overdue shown above" — or nothing, when the section contributed none. */
 export function liftedAside(count: number, noun = 'critical'): string | undefined {
   if (count === 0) return undefined;
   return `${count} ${noun} shown above`;
