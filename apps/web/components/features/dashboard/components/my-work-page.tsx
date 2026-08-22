@@ -45,9 +45,11 @@ export function MyWorkPage(): React.JSX.Element {
   const queryClient = useQueryClient();
   const { data, isPending, isError, refetch } = useMyWork();
   const [followupItem, setFollowupItem] = React.useState<DashboardItem | null>(null);
-  const [drawer, setDrawer] = React.useState<{ title: string; items: DashboardItem[] } | null>(
-    null,
-  );
+  const [drawer, setDrawer] = React.useState<{
+    title: string;
+    items: DashboardItem[];
+    total: number;
+  } | null>(null);
   const { followup, pendingSiblings } = useFollowupForItem(followupItem);
 
   // Rendered only after mount so the server and client agree on the greeting —
@@ -141,8 +143,9 @@ export function MyWorkPage(): React.JSX.Element {
           overflow={
             critical.length > CAP.attention
               ? {
-                  label: `View all ${critical.length}`,
-                  onClick: () => setDrawer({ title: 'Needs attention', items: critical }),
+                  label: 'View all',
+                  onClick: () =>
+                    setDrawer({ title: 'Needs attention', items: critical, total: critical.length }),
                 }
               : undefined
           }
@@ -162,7 +165,7 @@ export function MyWorkPage(): React.JSX.Element {
           overflow={
             rest.workflow.status === 'ok' && rest.workflow.total > CAP.workflow
               ? {
-                  label: `View all ${rest.workflow.total}`,
+                  label: 'View all',
                   onClick: () =>
                     setDrawer({
                       title: 'Workflow stuck',
@@ -170,6 +173,7 @@ export function MyWorkPage(): React.JSX.Element {
                         rest.workflow.status === 'ok'
                           ? rest.workflow.buckets.flatMap((b) => b.items)
                           : [],
+                      total: rest.workflow.status === 'ok' ? rest.workflow.total : 0,
                     }),
                 }
               : undefined
@@ -268,6 +272,7 @@ export function MyWorkPage(): React.JSX.Element {
           }}
           title={drawer.title}
           items={drawer.items}
+          total={drawer.total}
           onCompleteFollowup={setFollowupItem}
         />
       ) : null}
