@@ -393,6 +393,22 @@ The design system wins.
 | Projects | 4 | `Open projects →` |
 | Finance | 3 | `Open finance →` |
 
+### 6.3a The drawer holds what the response holds, and says so
+
+Found 2026-08-22 while wiring the drawer. The backend caps items at five **per bucket**, so a
+drawer opened from a section with 331 stalled items receives ten of them. A link reading
+"View all 331" above a list of ten is precisely the count-vs-list dishonesty §7 check 15 exists
+to catch.
+
+**Resolution — the label stops promising, and the drawer states its own scope.** The overflow
+link reads plain "View all"; the drawer's subtitle reads "Showing 10 of 331". Nothing claims
+completeness it cannot deliver.
+
+The alternative — lifting the cap for the drawer, or giving it its own paginated endpoint — is
+a real feature and is deliberately not built here. A dashboard is a triage surface: the ten
+most urgent of 331 is the actionable set, and someone who needs all 331 belongs in the module's
+own list screen, not in a sheet over their home page.
+
 ### 6.3 Where "View all" goes
 
 Four of the six overflow links resolve to an existing single-entity route:
