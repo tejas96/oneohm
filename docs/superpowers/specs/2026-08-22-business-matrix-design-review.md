@@ -1,7 +1,7 @@
 # Business Matrix — design review and build notes
 
 - **Date:** 2026-08-22
-- **Status:** UX complete, reviewed, corrected, and **re-verified 2026-08-22**. Not yet specced or built.
+- **Status:** UX complete, reviewed, corrected, re-verified, and permissions signed off — **2026-08-22**. Ready to spec.
 - **All five findings below were fixed in the design and confirmed against the file.** They are kept
   here as the record of what was wrong and why, not as outstanding work. §9 is done except item 1.
 - **Reviews:** Claude Design project `be6622ba-1ef2-4f60-9994-43ed48cda883` ("Solar EPC workload app"),
@@ -171,10 +171,9 @@ These bit the My Work dashboard build. They will bite this one.
 
 ---
 
-## 8. Permission decisions, still unconfirmed by the owner
+## 8. Permission decisions — CONFIRMED by the owner 2026-08-22
 
-Proposed in the brief, reasoned but **not signed off**. Settle these first — they change who the
-feature is for.
+Both signed off. Do not re-open them.
 
 - **`dashboard.business.view`** — a new code gating the mode switch, following the same shape as
   `dashboard.employees.view` added on 2026-08-22 (catalog entry + migration + admin bypass).
@@ -190,7 +189,7 @@ feature is for.
 
 | # | Action | Status |
 |---|---|---|
-| 1 | Confirm the two permission decisions in §8 | **OPEN — owner sign-off needed** |
+| 1 | Confirm the two permission decisions in §8 | **Done** — both confirmed by the owner 2026-08-22 |
 | 2 | Funnel corrected to the four real stages | **Done.** New Leads / Qualified / Quote Sent / Won |
 | 3 | `trendVsPreviousPeriod` on the four sales health figures | **Done** |
 | 4 | "231 open deals" sub-label | **Done** — dropped |
@@ -210,7 +209,7 @@ Re-verified against `BusinessScreen.dc.html` on 2026-08-22. Detail of what lande
   deliberately shows one customer twice, which is the honest consequence of term-level rows. The
   note reads "9 milestones past 90 days, across 5 customers".
 
-**Only item 1 blocks the spec.**
+**Nothing blocks the spec. It can be written now.**
 
 ### One cosmetic leftover, not worth a round trip
 
