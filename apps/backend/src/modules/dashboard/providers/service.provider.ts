@@ -65,9 +65,11 @@ scoped AS (
         THEN (CURRENT_DATE - t.due_date)::text || ' days overdue, still ' || REPLACE(t.status, '_', ' ')
       WHEN t.due_date = CURRENT_DATE THEN 'Due today'
       WHEN t.assigned_to_employee_id IS NULL THEN 'Nobody is assigned to this yet'
-      -- An assigned ticket with no due date lands in due_soon, and concatenating
-      -- a NULL date would make the whole string NULL — which breaks the
-      -- non-optional 'reason: string' contract on DashboardItem.
+      -- Unreachable since the WHERE below started admitting an undated ticket
+      -- only when nobody is assigned to it — which the arm above already
+      -- catches. Kept as a guard, because the ELSE concatenates the date and a
+      -- NULL there would make the whole string NULL, breaking the non-optional
+      -- 'reason: string' contract on DashboardItem.
       WHEN t.due_date IS NULL THEN 'No due date set'
       ELSE 'Due ' || to_char(t.due_date, 'DD Mon')
     END AS reason,
@@ -93,9 +95,14 @@ scoped AS (
     -- Ownership lives in scope.sql.ts, like every other provider's. This one
     -- used to inline its own four-way predicate.
     AND t.id IN (SELECT id FROM my_service_tickets)
+    -- Spec 4.3, in so many words: "a ticket with no due date only qualifies via
+    -- the unassigned rule." Admitting every NULL due date unconditionally, as
+    -- this did, dropped assigned undated tickets into due_soon and counted them
+    -- under "Due this week" — a headline number for work that has no date at
+    -- all. An undated ticket now enters only when nobody is on it.
     AND (
-      t.due_date IS NULL
-      OR t.due_date <= CURRENT_DATE + ${DUE_SOON_DAYS}
+      t.due_date <= CURRENT_DATE + ${DUE_SOON_DAYS}
+      OR t.assigned_to_employee_id IS NULL
     )
 )
 SELECT
