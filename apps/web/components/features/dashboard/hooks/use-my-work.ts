@@ -18,11 +18,13 @@ import { apiClient } from '@/lib/api/client';
  * No `staleTime` override — the provider default of 60s is right here. A stale
  * "needs attention" list is worse than a slow one, and we do not cache further.
  */
-export function useMyWork(): UseQueryResult<MyWorkResponse, AxiosError> {
+export function useMyWork(subjectUserId?: string): UseQueryResult<MyWorkResponse, AxiosError> {
   return useQuery({
-    queryKey: dashboardKeys.myWork(),
+    queryKey: dashboardKeys.myWork(subjectUserId),
     queryFn: async () => {
-      const { data } = await apiClient.get<MyWorkResponse>('/dashboard/my-work');
+      const { data } = await apiClient.get<MyWorkResponse>('/dashboard/my-work', {
+        params: subjectUserId ? { userId: subjectUserId } : undefined,
+      });
       return data;
     },
   });

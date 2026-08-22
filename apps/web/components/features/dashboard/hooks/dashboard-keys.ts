@@ -5,5 +5,16 @@
  */
 export const dashboardKeys = {
   all: ['dashboard'] as const,
-  myWork: () => [...dashboardKeys.all, 'my-work'] as const,
+  /**
+   * The subject is part of the key, and that is load-bearing. Without it,
+   * React Query serves the previously selected employee's cached dashboard
+   * under the next employee's name — a leak that looks exactly like a working
+   * feature, because the page renders and the numbers are real. They are just
+   * the wrong person's.
+   *
+   * `undefined` collapses to 'me' rather than being left out, so the key shape
+   * is constant and the common case stays a single stable entry.
+   */
+  myWork: (subjectUserId?: string) =>
+    [...dashboardKeys.all, 'my-work', subjectUserId ?? 'me'] as const,
 };
