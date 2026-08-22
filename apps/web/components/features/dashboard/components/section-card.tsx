@@ -97,8 +97,19 @@ export function SectionCard({
           ) : null}
         </div>
       ) : items.length === 0 ? (
-        /* EMPTY — quiet. An empty section is good news, not an alarm. */
-        <p className="py-4 text-sm text-foreground-tertiary">{emptyMessage}</p>
+        total > 0 ? (
+          /* ALL LIFTED — the section is not empty, it is entirely critical, and
+             every one of its rows is already drawn in Needs attention. Saying
+             "no payments are due" under a badge reading 38 is a lie the badge
+             immediately contradicts. Quiet, like the empty state: this is a
+             statement of where the work went, not an alarm. */
+          <p className="py-4 text-sm text-foreground-tertiary">
+            Everything in this section is shown in Needs attention above.
+          </p>
+        ) : (
+          /* EMPTY — quiet. An empty section is good news, not an alarm. */
+          <p className="py-4 text-sm text-foreground-tertiary">{emptyMessage}</p>
+        )
       ) : (
         <>
           <div className="flex flex-col gap-0.5">{children(items)}</div>
