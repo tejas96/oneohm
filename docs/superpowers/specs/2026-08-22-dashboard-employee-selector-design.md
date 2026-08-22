@@ -255,7 +255,10 @@ Two reasons. The page must state whose work it is showing from data the server
 returned, not from the dropdown's local state — those can disagree during a refetch.
 And it is what makes check 6 in §7 provable by eye rather than by inference.
 
-`name` is resolved once, in `dashboard.service.ts`, from the employee profile. Added to
+`name` is resolved once, in `dashboard.service.ts`, from `users.first_name` and
+`users.last_name`. **Not** from the employee profile: `employee_profiles` carries no
+name columns at all — verified against the live schema 2026-08-22 — so that source
+does not exist. `first_name` is `NOT NULL`; `last_name` is nullable. Added to
 `libs/shared/src/types/interfaces/dashboard.interface.ts`, which web and backend both
 resolve from local source — **no package publish required**.
 
