@@ -92,14 +92,12 @@ export function MyWorkPage(): React.JSX.Element {
   const { summary } = data;
   const name = user?.firstName ?? '';
 
-  const renderRows =
-    (cap: number) =>
-    (items: DashboardItem[]): React.ReactNode =>
-      items
-        .slice(0, cap)
-        .map((item) => (
-          <DashboardRow key={item.id} item={item} onCompleteFollowup={setFollowupItem} />
-        ));
+  // No slice here any more: `SectionCard` spends the row budget across the
+  // section's buckets, so this just draws whatever it is handed.
+  const renderRows = (items: DashboardItem[]): React.ReactNode =>
+    items.map((item) => (
+      <DashboardRow key={item.id} item={item} onCompleteFollowup={setFollowupItem} />
+    ));
 
   return (
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_304px]">
@@ -145,7 +143,7 @@ export function MyWorkPage(): React.JSX.Element {
             buckets: [{ key: 'critical', label: 'Critical', count: criticalTotal, items: critical }],
           }}
           emptyMessage="Nothing critical right now."
-          skeletonRows={6}
+          rowCap={CAP.attention}
           overflow={
             criticalTotal > CAP.attention
               ? {
@@ -156,7 +154,7 @@ export function MyWorkPage(): React.JSX.Element {
               : undefined
           }
         >
-          {renderRows(CAP.attention)}
+          {renderRows}
         </SectionCard>
 
         {/* 3. Workflow stuck */}
@@ -166,7 +164,7 @@ export function MyWorkPage(): React.JSX.Element {
           section={rest.workflow}
           aside={liftedAside(liftedBySection.workflow)}
           emptyMessage="No leads are stuck."
-          skeletonRows={5}
+          rowCap={CAP.workflow}
           onRetry={() => void refetch()}
           overflow={
             rest.workflow.status === 'ok' && rest.workflow.total > CAP.workflow
@@ -185,7 +183,7 @@ export function MyWorkPage(): React.JSX.Element {
               : undefined
           }
         >
-          {renderRows(CAP.workflow)}
+          {renderRows}
         </SectionCard>
 
         {/* 4. Follow-ups */}
@@ -195,11 +193,12 @@ export function MyWorkPage(): React.JSX.Element {
           section={rest.followups}
           aside={liftedAside(liftedBySection.followups, 'overdue')}
           emptyMessage="No follow-ups need attention."
-          skeletonRows={5}
+          rowCap={CAP.followups}
+          bucketed
           onRetry={() => void refetch()}
           overflow={{ label: 'Open follow-ups', href: overflowHref(SECTION_OVERFLOW.followups) }}
         >
-          {renderRows(CAP.followups)}
+          {renderRows}
         </SectionCard>
 
         {/* 5. Service requests */}
@@ -209,11 +208,12 @@ export function MyWorkPage(): React.JSX.Element {
           section={rest.service}
           aside={liftedAside(liftedBySection.service, 'overdue')}
           emptyMessage="No service requests need you."
-          skeletonRows={5}
+          rowCap={CAP.service}
+          bucketed
           onRetry={() => void refetch()}
           overflow={{ label: 'Open service', href: overflowHref(SECTION_OVERFLOW.service) }}
         >
-          {renderRows(CAP.service)}
+          {renderRows}
         </SectionCard>
 
         {/* 6. Project health — does NOT lift; overdue projects appear here AND above */}
@@ -224,13 +224,11 @@ export function MyWorkPage(): React.JSX.Element {
             criticalBySection.projects > 0 ? 'overdue projects also appear above' : undefined
           }
           emptyMessage="Every project is on track."
-          skeletonRows={4}
+          rowCap={CAP.projects}
           onRetry={() => void refetch()}
           overflow={{ label: 'Open projects', href: overflowHref(SECTION_OVERFLOW.projects) }}
         >
-          {(items) =>
-            items.slice(0, CAP.projects).map((item) => <ProjectRow key={item.id} item={item} />)
-          }
+          {(items) => items.map((item) => <ProjectRow key={item.id} item={item} />)}
         </SectionCard>
       </div>
 
@@ -262,11 +260,11 @@ export function MyWorkPage(): React.JSX.Element {
           section={rest.finance}
           aside={liftedAside(liftedBySection.finance, 'overdue')}
           emptyMessage="No payments are due."
-          skeletonRows={3}
+          rowCap={CAP.money}
           onRetry={() => void refetch()}
           overflow={{ label: 'Open finance', href: overflowHref(SECTION_OVERFLOW.finance) }}
         >
-          {renderRows(CAP.money)}
+          {renderRows}
         </SectionCard>
       </div>
 

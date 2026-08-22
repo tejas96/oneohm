@@ -1,6 +1,6 @@
 'use client';
 
-import type { DashboardItem, DashboardSection } from '@tejas96/shared/types';
+import type { DashboardBucket, DashboardItem, DashboardSection } from '@tejas96/shared/types';
 import { RotateCw } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
@@ -28,18 +28,22 @@ interface SectionCardProps {
   aside?: string;
   overflow?: { label: string; href?: string; onClick?: () => void };
   emptyMessage: string;
-  skeletonRows: number;
+  /**
+   * The block's row budget from spec 6.3 "Density", spent ACROSS the whole
+   * card rather than per bucket — five rows means five rows on screen, however
+   * many buckets they came from.
+   */
+  rowCap: number;
+  /**
+   * Draw a sub-header above each bucket. Blocks 4 and 5 (follow-ups, service)
+   * only: they are the two the design brief groups under sub-labels. The rest
+   * are flat lists, where a sub-header would merely restate the section label.
+   */
+  bucketed?: boolean;
   onRetry?: () => void;
   children: (items: DashboardItem[]) => React.ReactNode;
 }
 
-// `skeletonRows` is part of the public contract (Task 12 passes the same
-// count it gives `SectionSkeleton`, so a caller doesn't have to know two
-// different numbers), but `SectionCard` itself only ever renders once the
-// section has resolved to 'ok' or 'error' — the loading state is the sibling
-// `SectionSkeleton` below. Left undestructured (not `skeletonRows,` in the
-// pattern) so it stays required on `SectionCardProps` without tripping
-// `noUnusedLocals` on a binding this component never reads.
 export function SectionCard({
   label,
   tone = 'neutral',
@@ -47,12 +51,32 @@ export function SectionCard({
   aside,
   overflow,
   emptyMessage,
+  rowCap,
+  bucketed = false,
   onRetry,
   children,
 }: SectionCardProps): React.JSX.Element {
   const total = section.status === 'ok' ? section.total : 0;
-  const items =
-    section.status === 'ok' ? section.buckets.flatMap((bucket) => bucket.items) : [];
+
+  // Spend the row budget bucket by bucket, in the order the provider ranked
+  // them — most urgent first. Slicing the FLATTENED list, as this did, drew the
+  // right number of rows but hid which bucket they came from: the service card
+  // rendered five identical "Nobody is assigned to this yet" rows and let four
+  // due-soon items fall off with nothing on screen saying so.
+  const visible: DashboardBucket[] = [];
+  if (section.status === 'ok') {
+    let budget = rowCap;
+    for (const bucket of section.buckets) {
+      if (budget <= 0) break;
+      const items = bucket.items.slice(0, budget);
+      // A bucket the budget could not reach is dropped rather than drawn as a
+      // header with nothing under it.
+      if (items.length === 0) continue;
+      budget -= items.length;
+      visible.push({ ...bucket, items });
+    }
+  }
+  const shown = visible.reduce((count, bucket) => count + bucket.items.length, 0);
 
   return (
     // `rounded-r-sm` collides with Tailwind's built-in `rounded-r-*` (right-corner)
@@ -96,7 +120,7 @@ export function SectionCard({
             </button>
           ) : null}
         </div>
-      ) : items.length === 0 ? (
+      ) : shown === 0 ? (
         total > 0 ? (
           /* ALL LIFTED — the section is not empty, it is entirely critical, and
              every one of its rows is already drawn in Needs attention. Saying
@@ -112,7 +136,30 @@ export function SectionCard({
         )
       ) : (
         <>
-          <div className="flex flex-col gap-0.5">{children(items)}</div>
+          <div className="flex flex-col gap-0.5">
+            {visible.map((bucket) => (
+              <React.Fragment key={bucket.key}>
+                {bucketed ? (
+                  // The bucket's OWN count, not the number of rows under it —
+                  // `count` is the true total, so "DUE IN 7 DAYS · 9" over two
+                  // rows is the honest reading. Same tiny letter-spaced
+                  // uppercase as the section label, one step quieter, coloured
+                  // by the urgency of what it holds. Buckets are
+                  // severity-homogeneous by construction in all five providers,
+                  // so the first item's severity IS the bucket's.
+                  <h3
+                    className={cn(
+                      'px-3 pb-1 pt-3 text-section font-semibold uppercase tracking-wider first:pt-0',
+                      LABEL_TONE[bucket.items[0]?.severity ?? 'neutral'],
+                    )}
+                  >
+                    {`${bucket.label} · ${bucket.count}`}
+                  </h3>
+                ) : null}
+                {children(bucket.items)}
+              </React.Fragment>
+            ))}
+          </div>
           {overflow ? (
             <div className="pt-2">
               {overflow.href ? (
