@@ -119,7 +119,10 @@ export function ProjectRow({ item }: { item: DashboardItem }): React.JSX.Element
             return (
               <span
                 key={milestone.name}
-                className={cn('inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-2xs font-medium', cls)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-2xs font-medium tabular-nums',
+                  cls,
+                )}
               >
                 <Icon className="size-3" />
                 {`${milestone.name} ${milestone.done}/${milestone.total}${trouble}`}

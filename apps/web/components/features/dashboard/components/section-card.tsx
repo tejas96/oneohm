@@ -91,7 +91,7 @@ export function SectionCard({
       <header className="flex items-baseline gap-2.5 pb-2">
         <h2
           className={cn(
-            'text-section font-semibold uppercase tracking-wide',
+            'text-section font-semibold uppercase tracking-wide tabular-nums',
             LABEL_TONE[tone],
           )}
         >
