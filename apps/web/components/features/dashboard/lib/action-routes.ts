@@ -76,7 +76,7 @@ export function resolveAction(item: DashboardItem): ActionTarget {
     case 'open_payments':
       return {
         mode: 'navigate',
-        href: `${withId(ROUTES.PROJECTS.DETAIL, params.projectId ?? params.id ?? '')}?tab=payments`,
+        href: `${withId(ROUTES.PROJECTS.DETAIL, params.projectId ?? params.id ?? '')}?tab=finance`,
         label,
       };
 
