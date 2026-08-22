@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 // `text-danger` does not resolve — this token bridge has no top-level `danger`
 // colour, only `error` (`--ds-danger` under a different name). `text-error`
 // is the exact same value.
-const SEVERITY_TEXT: Record<DashboardItem['severity'], string> = {
+export const SEVERITY_TEXT: Record<DashboardItem['severity'], string> = {
   critical: 'text-error',
   warning: 'text-warning',
   info: 'text-foreground-secondary',

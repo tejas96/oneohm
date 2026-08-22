@@ -5,6 +5,7 @@ import { ArrowRight, Check, CircleDashed, Clock, Lock, TriangleAlert } from 'luc
 import Link from 'next/link';
 import * as React from 'react';
 
+import { SEVERITY_TEXT } from './dashboard-row';
 import { resolveAction } from '../lib/action-routes';
 
 import { ALWAYS_OPEN, useGatedAction, type Gate } from '@/lib/rbac';
@@ -56,20 +57,7 @@ export function ProjectRow({ item }: { item: DashboardItem }): React.JSX.Element
     <div className="group flex flex-col gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-background-tertiary">
       <div className="flex items-baseline gap-3">
         <span className="flex-1 truncate text-sm font-medium text-foreground">{item.title}</span>
-        <span
-          className={cn(
-            'text-xs',
-            item.severity === 'critical'
-              ? // `text-danger` does not resolve — this token bridge has no top-level
-                // `danger` colour, only `error` (`--ds-danger` under a different name).
-                'text-error'
-              : item.severity === 'warning'
-                ? 'text-warning'
-                : 'text-foreground-secondary',
-          )}
-        >
-          {item.reason}
-        </span>
+        <span className={cn('text-xs', SEVERITY_TEXT[item.severity])}>{item.reason}</span>
         <span className="text-xs tabular-nums text-foreground-secondary">
           {item.meta} tasks done
         </span>
