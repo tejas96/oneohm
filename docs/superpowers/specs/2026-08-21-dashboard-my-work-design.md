@@ -535,6 +535,9 @@ charts would be reporting frozen figures.
 
 ### Also deferred
 
-- **Responsive layout** — next pass in this same spec cycle
+- **Mobile / responsive layout — NOT BEING BUILT.** Confirmed by the owner 2026-08-22: this is a
+  web-only product. The page collapses to a single column below `xl`, which keeps it usable on a
+  narrow window, but no small-screen design is planned and §6's mobile priority order is dead
+  text. Do not treat its absence as an outstanding task.
 - App-wide backend RBAC enforcement
 - A scheduler for quote expiry
