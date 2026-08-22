@@ -1,5 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { DashboardSection, DashboardSummary, MyWorkResponse } from '@tejas96/shared/types';
+import type {
+  DashboardSection,
+  DashboardSubject,
+  DashboardSummary,
+  MyWorkResponse,
+} from '@tejas96/shared/types';
 
 class DashboardSummaryDto implements DashboardSummary {
   @ApiProperty({ example: 7 })
@@ -29,9 +34,24 @@ class DashboardSectionsDto {
   finance!: DashboardSection;
 }
 
+class DashboardSubjectDto implements DashboardSubject {
+  @ApiProperty({ example: '9f1c2e7a-4b3d-4a11-9c8e-0d5f6a7b8c9d' })
+  userId!: string;
+
+  @ApiProperty({ example: 'Priya Sharma' })
+  name!: string;
+}
+
 export class MyWorkResponseDto implements MyWorkResponse {
   @ApiProperty({ example: '2026-08-21T09:00:00.000Z' })
   generatedAt!: string;
+
+  @ApiProperty({
+    type: DashboardSubjectDto,
+    description:
+      'Whose work this is. Echoes the RESOLVED subject, which is not always the requested one.',
+  })
+  subject!: DashboardSubjectDto;
 
   @ApiProperty({ type: DashboardSummaryDto })
   summary!: DashboardSummaryDto;

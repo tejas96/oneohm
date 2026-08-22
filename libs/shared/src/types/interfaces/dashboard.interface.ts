@@ -106,8 +106,22 @@ export interface DashboardSummary {
   dueThisWeek: number;
 }
 
+/**
+ * Whose work the response describes.
+ *
+ * Echoed back because the page must state the subject from data the SERVER
+ * resolved, not from the picker's local state — those disagree during a
+ * refetch, and the moment they do the page is lying about whose queue is on
+ * screen.
+ */
+export interface DashboardSubject {
+  userId: string;
+  name: string;
+}
+
 export interface MyWorkResponse {
   generatedAt: string;
+  subject: DashboardSubject;
   summary: DashboardSummary;
   sections: {
     workflow: DashboardSection;

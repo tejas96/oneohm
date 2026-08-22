@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { DashboardSection, DashboardSummary, MyWorkResponse } from '@tejas96/shared/types';
+import type {
+  DashboardSection,
+  DashboardSubject,
+  DashboardSummary,
+  MyWorkResponse,
+} from '@tejas96/shared/types';
+import { DataSource } from 'typeorm';
 
 import { FinanceProvider } from '../providers/finance.provider';
 import { FollowupsProvider } from '../providers/followups.provider';
@@ -22,6 +28,7 @@ export class DashboardService {
   private readonly providers: DashboardProvider[];
 
   constructor(
+    private readonly dataSource: DataSource,
     workflow: WorkflowProvider,
     followups: FollowupsProvider,
     service: ServiceProvider,
@@ -32,7 +39,13 @@ export class DashboardService {
   }
 
   async getMyWork(userId: string): Promise<MyWorkResponse> {
-    const settled = await Promise.allSettled(this.providers.map((p) => p.load(userId)));
+    // The name lookup runs WITH the providers, not before them. It is one
+    // indexed primary-key read; making the five aggregates wait behind it would
+    // add a round trip to the first screen after login for no benefit.
+    const [subject, settled] = await Promise.all([
+      this.loadSubject(userId),
+      Promise.allSettled(this.providers.map((p) => p.load(userId))),
+    ]);
 
     const sections = {} as MyWorkResponse['sections'];
     const ok: OkSection[] = [];
@@ -54,9 +67,35 @@ export class DashboardService {
 
     return {
       generatedAt: new Date().toISOString(),
+      subject,
       summary: this.summarise(ok),
       sections,
     };
+  }
+
+  /**
+   * Whose dashboard this is, echoed back so the page can name the subject from
+   * data the server resolved.
+   *
+   * The name lives on `users`. It is NOT on `employee_profiles` — that table
+   * carries no name columns at all, so the obvious-sounding source does not
+   * exist. `last_name` is nullable, hence the coalesce: without it a
+   * single-named employee renders as "Priya null".
+   *
+   * A missing row is not an error. The id came from `resolveDashboardSubjectId`,
+   * which either returned the token holder or a caller-supplied uuid that
+   * matches no live user; the second case should show an empty dashboard with
+   * an honest label, not a 500.
+   */
+  private async loadSubject(userId: string): Promise<DashboardSubject> {
+    const rows: Array<{ name: string }> = await this.dataSource.query(
+      `SELECT trim(u.first_name || ' ' || coalesce(u.last_name, '')) AS name
+       FROM users u
+       WHERE u.id = $1 AND u.deleted_at IS NULL`,
+      [userId],
+    );
+
+    return { userId, name: rows[0]?.name || 'Unknown employee' };
   }
 
   /**
