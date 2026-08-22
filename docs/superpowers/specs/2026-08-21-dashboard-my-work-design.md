@@ -471,15 +471,19 @@ Every check pairs a state with what must render.
 | 6 | Quote past `valid_until`, status still `sent` | Show `quote_lapsed` |
 | 7 | Accepted quote, no project | Show `quote_accepted_no_project` |
 | 8 | Follow-ups overdue / today / next week | Land in the correct bucket |
-| 9 | Complete a follow-up inline | Row disappears, count drops by one, no reload |
+| 9 | Complete a follow-up inline | Row disappears, count drops by one, no reload — **WALKED 2026-08-22, passes.** Was outstanding because the test account had neither the data nor the permission. Walked with a throwaway follow-up, since deleted: it landed in Today, the dialog required scheduling a next one (this is the only open follow-up for that lead), and on save the completed row vanished, "Due today" went 1 → 0, the new one appeared under Next 7 days, and `beforeunload` never fired |
 | 10 | Ticket overdue; ticket unassigned | Both appear, correctly separated |
 | 11 | Project past `end_date` | Row marked overdue; worst milestone marked |
-| 12 | Milestone with money owed | Finance block amount matches the project's Payments tab |
+| 12 | Milestone with money owed | Finance block amount matches the project's Payments tab — **WALKED 2026-08-22, passes.** Dashboard: "Advance milestone · ₹20,431 short, 100 days overdue". Project Finance tab for the same milestone: "Advance · Partial · 100d overdue · Expected ₹1,50,430.61 · Received ₹1,30,000.00 · Short by ₹20,430.61". The dashboard rounds to whole rupees for display; the figure underneath is the same |
 | 13 | **Sign in as a second user** | None of the first user's records appear anywhere, including counts |
 | 14 | Force one provider to throw | That block shows Retry; the other six render |
 | 15 | Every count on screen | Equals the list beneath it |
 
 Checks 13 and 15 are the two that matter most: 13 is the security check, 15 the honesty check.
+
+**All fifteen have now been walked.** Checks 9 and 12 were the two the original build could not
+reach, and the spec-2 handoff recorded them as outstanding; both were walked on 2026-08-22 and both
+pass. Nothing in §4 is unverified.
 
 Regression gates: `npm run typecheck`, `npm run lint`, `npm run test` — all must stay green.
 

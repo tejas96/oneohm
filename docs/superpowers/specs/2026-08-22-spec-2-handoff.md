@@ -138,13 +138,15 @@ plan; the short version:
 
 ---
 
-## Still unverified on the dashboard
+## ~~Still unverified on the dashboard~~ — CLOSED 2026-08-22
 
-Two screen checks were never walked, because the test account had neither the data nor the
-permission:
+Both checks have now been walked and both pass. See §7 of the dashboard design doc for the detail.
 
-- completing a follow-up from the dashboard
-- comparing a finance figure against a project's Payments tab
+- **Completing a follow-up from the dashboard** — walked with a throwaway follow-up assigned to a
+  real staff account and deleted afterwards. Row vanished, "Due today" went 1 → 0, no reload.
+  Worth knowing: completing the last open follow-up for a lead FORCES you to schedule the next one
+  or close the lead, so the action is never a dead end but it is also never one click.
+- **Finance figure against the project's Payments tab** — ₹20,431 on the dashboard against
+  ₹20,430.61 on the tab, same milestone, same "100 days overdue". The dashboard rounds for display.
 
-Neither is a suspected defect — the data behind both is verified. They need an account with
-follow-ups and `finance.view`.
+All fifteen verification checks are now walked. Nothing in the attention rules is unverified.
