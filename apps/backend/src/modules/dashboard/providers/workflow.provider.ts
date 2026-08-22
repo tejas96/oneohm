@@ -48,7 +48,18 @@ property_stage AS (
     p.survey_done,
     p.site_visit_completed_at,
     p.site_survey_completed_at,
-    EXISTS (SELECT 1 FROM my_quotes q WHERE q.property_id = p.id) AS has_quote
+    -- Read the GLOBAL quotes table, not my_quotes. "Does a quote exist?" is a
+    -- fact about the property, not about who can see it. A property reaches
+    -- my_properties through site_visit_assignee / site_survey_assignee even
+    -- when its customer is not mine, but a quote on it only reaches my_quotes
+    -- via created_by or the customer walk — so a colleague's quote goes unseen
+    -- and this rule tells the surveyor to create a second one. Same shape as
+    -- the property_missing rule below, which already queries global
+    -- customer_properties for exactly this reason.
+    EXISTS (
+      SELECT 1 FROM quotes q
+      WHERE q.property_id = p.id AND q.deleted_at IS NULL
+    ) AS has_quote
   FROM customer_properties p
   WHERE p.id IN (SELECT id FROM my_properties)
     AND p.deleted_at IS NULL
