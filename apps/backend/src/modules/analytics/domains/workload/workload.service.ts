@@ -3,11 +3,20 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 
 import {
+  type WorkloadBottleneckDto,
+  type WorkloadBottlenecksResponseDto,
   type WorkloadDepartmentDto,
   type WorkloadResponseDto,
   type WorkloadStepDto,
 } from './dto/workload.dto';
-import { WORKLOAD_BY_STEP_SQL } from './helpers/workload.sql';
+import {
+  WORKLOAD_BOTTLENECK_TOTAL_SQL,
+  WORKLOAD_BOTTLENECKS_SQL,
+  WORKLOAD_BY_STEP_SQL,
+} from './helpers/workload.sql';
+
+/** Enough rows to see the shape of the problem without becoming a second table. */
+const BOTTLENECK_LIMIT = 8;
 
 interface StepRow {
   department: string;
@@ -17,6 +26,8 @@ interface StepRow {
   pending: number;
   completed: number;
   completedAllTime: number;
+  avgDaysOpen: number | null;
+  oldestDaysOpen: number | null;
 }
 
 /** The month so far, matching what the dashboard's own range control shows. */
@@ -75,6 +86,8 @@ export class WorkloadService {
         completed: Number(row.completed),
         completedAllTime: Number(row.completedAllTime),
         standardDays: row.standardDays === null ? null : Number(row.standardDays),
+        avgDaysOpen: row.avgDaysOpen === null ? null : Number(row.avgDaysOpen),
+        oldestDaysOpen: row.oldestDaysOpen === null ? null : Number(row.oldestDaysOpen),
       };
 
       dept.steps.push(step);
@@ -93,6 +106,33 @@ export class WorkloadService {
       departments,
       totalPending: departments.reduce((sum, d) => sum + d.pending, 0),
       totalCompleted: departments.reduce((sum, d) => sum + d.completed, 0),
+    };
+  }
+
+  /**
+   * Which blocking step is sitting on the most unpaid money.
+   *
+   * `totalOwed` is the sum across ALL blocked projects, not just the rows
+   * returned, so a share-of-total on a truncated list still tells the truth.
+   */
+  async getBottlenecks(): Promise<WorkloadBottlenecksResponseDto> {
+    const rows: WorkloadBottleneckDto[] = await this.dataSource.query(WORKLOAD_BOTTLENECKS_SQL, [
+      BOTTLENECK_LIMIT,
+    ]);
+
+    const [totals]: Array<{ totalPaise: string | number }> = await this.dataSource.query(
+      WORKLOAD_BOTTLENECK_TOTAL_SQL,
+    );
+
+    return {
+      bottlenecks: rows.map((r) => ({
+        department: r.department,
+        stepId: r.stepId,
+        stepName: r.stepName,
+        projectsStuck: Number(r.projectsStuck),
+        amountOwed: Number(r.amountOwed),
+      })),
+      totalOwed: Number(totals?.totalPaise ?? 0) / 100,
     };
   }
 }

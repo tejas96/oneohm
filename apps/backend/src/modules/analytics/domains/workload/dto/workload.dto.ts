@@ -45,10 +45,39 @@ export class WorkloadStepDto {
 
   @ApiPropertyOptional({
     description:
-      'The step’s budgeted duration, from workflow_steps.effort_days. The "standard" half of ' +
-      'the client’s standard-vs-actual ask; nothing computes an actual against it yet.',
+      'The step’s budgeted duration, from workflow_steps.effort_days — the "standard" half.',
   })
   standardDays!: number | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Mean age of the work still open at this step, in days — the "actual" half. Null when ' +
+      'nothing is open. Measured from task creation, not from a start that is not recorded.',
+  })
+  avgDaysOpen!: number | null;
+
+  @ApiPropertyOptional({ description: 'Age of the oldest open task here, in days.' })
+  oldestDaysOpen!: number | null;
+}
+
+export class WorkloadBottleneckDto {
+  @ApiProperty() department!: string;
+  @ApiProperty() stepId!: string;
+  @ApiProperty() stepName!: string;
+
+  @ApiProperty({ description: 'Projects whose earliest incomplete step is this one.' })
+  projectsStuck!: number;
+
+  @ApiProperty({ description: 'Rupees still owed across those projects.' })
+  amountOwed!: number;
+}
+
+export class WorkloadBottlenecksResponseDto {
+  @ApiProperty({ type: [WorkloadBottleneckDto] })
+  bottlenecks!: WorkloadBottleneckDto[];
+
+  @ApiProperty({ description: 'Rupees owed across every blocked project, for share-of-total.' })
+  totalOwed!: number;
 }
 
 export class WorkloadDepartmentDto {

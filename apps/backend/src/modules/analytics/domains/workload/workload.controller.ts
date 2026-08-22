@@ -1,7 +1,11 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { WorkloadQueryDto, type WorkloadResponseDto } from './dto/workload.dto';
+import {
+  WorkloadQueryDto,
+  type WorkloadBottlenecksResponseDto,
+  type WorkloadResponseDto,
+} from './dto/workload.dto';
 import { WorkloadService } from './workload.service';
 import { JwtAuthGuard } from '../../../auth/guards';
 
@@ -24,5 +28,23 @@ export class WorkloadController {
   })
   async getWorkload(@Query() query: WorkloadQueryDto): Promise<WorkloadResponseDto> {
     return this.workloadService.getWorkload(query);
+  }
+
+  /**
+   * Which blocking step is sitting on the most unpaid money.
+   *
+   * A route of its own because it exposes receivables. The web gates the panel
+   * on `finance.view` and simply does not call this without it — the same
+   * separation the dashboard's money panels use.
+   */
+  @Get('bottlenecks')
+  @ApiOperation({
+    summary: 'Unpaid money grouped by the workflow step blocking each project',
+    description:
+      'A project is attributed to its earliest incomplete step. `totalOwed` covers every ' +
+      'blocked project, not just the rows returned, so a share-of-total stays honest.',
+  })
+  async getBottlenecks(): Promise<WorkloadBottlenecksResponseDto> {
+    return this.workloadService.getBottlenecks();
   }
 }

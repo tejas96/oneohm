@@ -3,10 +3,17 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import * as React from 'react';
 
+import { rupeesShort } from '@/components/features/dashboard/business/lib/format';
 import { Typography } from '@/components/ui';
 import { CHART_COLORS } from '@/lib/charts/palette';
-import { useWorkload, type WorkloadDepartment } from '@/lib/hooks/resources/workload';
+import {
+  useWorkload,
+  useWorkloadBottlenecks,
+  type WorkloadBottleneck,
+  type WorkloadDepartment,
+} from '@/lib/hooks/resources/workload';
 import { useCan } from '@/lib/rbac';
+import { color } from '@/lib/theme/tokens';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -24,7 +31,21 @@ function monthSoFar(now: Date): { from: string; to: string; label: string } {
   };
 }
 
-const GRID = 'grid grid-cols-[minmax(0,1fr)_90px_90px_96px] items-center gap-x-4';
+const GRID = 'grid grid-cols-[minmax(0,1fr)_84px_84px_84px_110px] items-center gap-x-4';
+
+/**
+ * Colour only once a step is meaningfully past its budget.
+ *
+ * Everything here runs over — tinting all of it red would make the column one
+ * flat colour and say nothing. Amber at 3x, red at 10x, plain below that.
+ */
+function overdueTone(actual: number, standard: number | null): string {
+  if (!standard) return color['text-primary'];
+  const ratio = actual / standard;
+  if (ratio >= 10) return color.danger;
+  if (ratio >= 3) return color.warning;
+  return color['text-primary'];
+}
 
 function DepartmentBlock({ dept }: { dept: WorkloadDepartment }): React.JSX.Element {
   const busiest = Math.max(...dept.steps.map((s) => s.pending), 1);
@@ -50,6 +71,7 @@ function DepartmentBlock({ dept }: { dept: WorkloadDepartment }): React.JSX.Elem
         <div className="text-right">Pending</div>
         <div className="text-right">Completed</div>
         <div className="text-right">Standard</div>
+        <div className="text-right">Open for</div>
       </div>
 
       {dept.steps.map((step) => (
@@ -79,8 +101,108 @@ function DepartmentBlock({ dept }: { dept: WorkloadDepartment }): React.JSX.Elem
           <div className="text-right text-[12.5px] tabular-nums text-foreground-tertiary">
             {step.standardDays === null ? '—' : `${step.standardDays}d`}
           </div>
+          <div className="text-right tabular-nums">
+            {step.avgDaysOpen === null ? (
+              <span className="text-[12.5px] text-foreground-tertiary">—</span>
+            ) : (
+              <>
+                <span
+                  className="text-[13px] font-medium"
+                  style={{ color: overdueTone(step.avgDaysOpen, step.standardDays) }}
+                >
+                  {step.avgDaysOpen}d
+                </span>
+                {/* The multiple is the point. "78 days" is a number; "78x the
+                    standard" is a decision. Only shown when there is a standard
+                    to divide by — a 0-day standard would produce infinity. */}
+                {step.standardDays ? (
+                  <span className="ml-1 text-[11px] text-foreground-tertiary">
+                    {Math.round(step.avgDaysOpen / step.standardDays)}×
+                  </span>
+                ) : null}
+              </>
+            )}
+          </div>
         </div>
       ))}
+    </section>
+  );
+}
+
+
+/**
+ * Where the money is stuck.
+ *
+ * The client asked for throughput. This answers the question underneath it:
+ * which bottleneck is sitting on the most unpaid work. A project is attributed
+ * to its earliest incomplete step, and that step carries everything the project
+ * still owes.
+ *
+ * Rendered only with `finance.view`. Workload access alone should not reveal
+ * what the organisation is owed.
+ */
+function BottlenecksPanel({
+  bottlenecks,
+  totalOwed,
+}: {
+  bottlenecks: WorkloadBottleneck[];
+  totalOwed: number;
+}): React.JSX.Element | null {
+  if (bottlenecks.length === 0) return null;
+  const denominator = totalOwed || 1;
+
+  return (
+    <section className="rounded-3xl bg-surface px-[22px] pb-4 pt-5 shadow-e2">
+      <div className="flex items-baseline gap-3 pb-1">
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground-secondary">
+          Money behind the bottleneck
+        </h2>
+        <span className="text-[12px] text-foreground-tertiary">
+          {rupeesShort(totalOwed)} owed across every blocked project
+        </span>
+      </div>
+      <p className="pb-4 text-[11.5px] text-foreground-tertiary">
+        Each project counts once, against the earliest step it has not finished.
+      </p>
+
+      {bottlenecks.map((b) => {
+        const share = (b.amountOwed / denominator) * 100;
+        return (
+          <div
+            key={b.stepId}
+            className="grid h-[46px] grid-cols-[minmax(0,1fr)_92px_minmax(0,150px)_120px] items-center gap-x-4"
+          >
+            <div className="min-w-0">
+              <div className="truncate text-[13px] font-medium tracking-[-0.01em]">
+                {b.stepName}
+              </div>
+              <div className="text-[11px] text-foreground-tertiary">
+                {b.department.replace(/ Department$/, '')}
+              </div>
+            </div>
+            <div className="text-right text-[12.5px] tabular-nums text-foreground-secondary">
+              {b.projectsStuck} project{b.projectsStuck === 1 ? '' : 's'}
+            </div>
+            <div className="flex h-[18px] items-center">
+              <div
+                className="h-[18px] rounded-pill"
+                style={{
+                  width: `${Math.max(2, share).toFixed(1)}%`,
+                  background: share >= 25 ? color.danger : CHART_COLORS[3],
+                }}
+              />
+            </div>
+            <div className="text-right">
+              <div className="text-[14px] font-medium tabular-nums">
+                {rupeesShort(b.amountOwed)}
+              </div>
+              <div className="text-[11px] tabular-nums text-foreground-tertiary">
+                {share.toFixed(0)}% of the total
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </section>
   );
 }
@@ -109,6 +231,9 @@ export function WorkloadPage(): React.JSX.Element {
   // org-wide workload into the browser of someone the gate is about to refuse.
   const { can } = useCan();
   const { permissionsConfirmed } = useAuth();
+  const mayFetch = permissionsConfirmed && can('workload.view');
+  // Receivables, so it needs the finance code on top of workload access.
+  const showMoney = mayFetch && can('finance.view');
 
   const { data, isPending, isError, refetch } = useWorkload(
     {
@@ -116,8 +241,10 @@ export function WorkloadPage(): React.JSX.Element {
       toDate: range.to,
       department: department === ALL ? undefined : department,
     },
-    { enabled: permissionsConfirmed && can('workload.view') },
+    { enabled: mayFetch },
   );
+
+  const bottlenecks = useWorkloadBottlenecks({ enabled: showMoney });
 
   const setDepartment = (next: string): void => {
     const params = new URLSearchParams(searchParams.toString());
@@ -168,6 +295,13 @@ export function WorkloadPage(): React.JSX.Element {
           </p>
         ) : null}
       </section>
+
+      {showMoney && bottlenecks.data ? (
+        <BottlenecksPanel
+          bottlenecks={bottlenecks.data.bottlenecks}
+          totalOwed={bottlenecks.data.totalOwed}
+        />
+      ) : null}
 
       {isError ? (
         <section className="rounded-3xl bg-surface px-[22px] py-8 shadow-e2">

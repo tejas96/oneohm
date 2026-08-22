@@ -20,6 +20,30 @@ export interface WorkloadStep {
    * task start times are recorded for 0.4% of completed work.
    */
   standardDays: number | null;
+  /**
+   * Mean age of the work still open here. The "actual" half of the client's
+   * standard-vs-actual ask, measured on work in flight rather than on completed
+   * work — task start times exist for 0.4% of completions, task age for all of
+   * it, and only work in flight can still be acted on.
+   */
+  avgDaysOpen: number | null;
+  oldestDaysOpen: number | null;
+}
+
+export interface WorkloadBottleneck {
+  department: string;
+  stepId: string;
+  stepName: string;
+  /** Projects whose earliest incomplete step is this one. */
+  projectsStuck: number;
+  /** Rupees still owed across those projects. */
+  amountOwed: number;
+}
+
+export interface WorkloadBottlenecksResponse {
+  bottlenecks: WorkloadBottleneck[];
+  /** Across every blocked project, not just the rows returned. */
+  totalOwed: number;
 }
 
 export interface WorkloadDepartment {
@@ -47,6 +71,7 @@ export interface WorkloadFilters {
 export const workloadKeys = {
   root: () => ['workload'] as const,
   list: (filters: WorkloadFilters) => [...workloadKeys.root(), filters] as const,
+  bottlenecks: () => [...workloadKeys.root(), 'bottlenecks'] as const,
 };
 
 export function useWorkload(
@@ -70,5 +95,28 @@ export function useWorkload(
     enabled: options?.enabled !== false,
     staleTime: 60_000,
     placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * Unpaid money grouped by the step blocking each project.
+ *
+ * Gate this on `finance.view` as well as `workload.view` — it is receivables,
+ * and workload access alone should not reveal what the organisation is owed.
+ */
+export function useWorkloadBottlenecks(options?: {
+  enabled?: boolean;
+}): UseQueryResult<WorkloadBottlenecksResponse, AxiosError> {
+  return useQuery({
+    queryKey: workloadKeys.bottlenecks(),
+    queryFn: async ({ signal }): Promise<WorkloadBottlenecksResponse> => {
+      const { data } = await apiClient.get<WorkloadBottlenecksResponse>(
+        '/analytics/workload/bottlenecks',
+        { signal },
+      );
+      return data;
+    },
+    enabled: options?.enabled !== false,
+    staleTime: 60_000,
   });
 }
