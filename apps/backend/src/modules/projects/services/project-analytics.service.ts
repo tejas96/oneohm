@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { TaskStatus } from '@tejas96/shared/types';
+import { compareMilestoneSequence, milestoneSequenceIndex } from '@tejas96/shared/utils';
 import { In } from 'typeorm';
 
 import { UserRepository } from '../../users/repositories/user.repository';
@@ -232,10 +233,10 @@ export class ProjectAnalyticsService {
     }
 
     const milestoneProgress: MilestoneProgressEntryDto[] = [...milestoneAggMap.values()]
-      .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+      .sort(compareMilestoneSequence)
       .map(({ name, order, totalTasks, completedTasks, inProgressTasks, blockedTasks }) => ({
         name,
-        order,
+        order: milestoneSequenceIndex(name, order),
         totalTasks,
         completedTasks,
         inProgressTasks,
@@ -316,7 +317,7 @@ export class ProjectAnalyticsService {
     }
 
     return [...aggMap.values()]
-      .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+      .sort(compareMilestoneSequence)
       .map((entry) => {
         const { totalTasks, completedTasks, inProgressTasks, blockedTasks } = entry;
         // totalTasks is always >= 1 here (aggMap only populated by non-cancelled tasks)
@@ -327,7 +328,7 @@ export class ProjectAnalyticsService {
 
         return {
           name: entry.name,
-          order: entry.order,
+          order: milestoneSequenceIndex(entry.name, entry.order),
           totalTasks,
           completedTasks,
           inProgressTasks,

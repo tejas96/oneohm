@@ -556,6 +556,7 @@ export function QuoteListPage(): JSX.Element {
         onPageSizeChange={urlState.setPageSize}
         onSortChange={urlState.setSortModel}
         onFilterChange={urlState.setFilters}
+        initialSearch={urlState.state.search}
         onSearchChange={urlState.setSearch}
         onRowClick={(row) => {
           void router.push(buildRoute(ROUTES.QUOTES.DETAIL, { id: row.id }));

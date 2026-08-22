@@ -7,7 +7,6 @@ import * as React from 'react';
 
 import { dashboardKeys, useFollowupForItem, useMyWork } from '../hooks';
 import { DashboardRow } from './dashboard-row';
-import { EmployeeSelector } from './employee-selector';
 import { ProjectRow } from './project-row';
 import { SectionCard, SectionSkeleton } from './section-card';
 import { ViewAllDrawer } from './view-all-drawer';
@@ -41,10 +40,23 @@ function overflowHref(entry: OverflowEntry | undefined): string | undefined {
   return entry.href;
 }
 
-export function MyWorkPage(): React.JSX.Element {
+interface MyWorkPageProps {
+  /**
+   * Whose queue to show. Owned by `DashboardPage`, because the control that
+   * sets it lives in the shared header alongside the mode switch — the two
+   * never appear together, so they cannot both own the header row.
+   */
+  subjectUserId?: string;
+  /** Returns the page to the signed-in user's own work. */
+  onClearSubject: () => void;
+}
+
+export function MyWorkPage({
+  subjectUserId,
+  onClearSubject,
+}: MyWorkPageProps): React.JSX.Element {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [subjectUserId, setSubjectUserId] = React.useState<string | undefined>(undefined);
   const { data, isPending, isError, refetch } = useMyWork(subjectUserId);
   const [followupItem, setFollowupItem] = React.useState<DashboardItem | null>(null);
   const [drawer, setDrawer] = React.useState<{
@@ -111,7 +123,7 @@ export function MyWorkPage(): React.JSX.Element {
         {/* 1. Greeting */}
         <section className="relative overflow-hidden rounded-xl bg-surface p-6 shadow-e2">
           <div className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full bg-primary/10 blur-3xl" />
-          <div className="relative flex items-end justify-between gap-3">
+          <div className="relative flex items-end gap-3">
             <div className="flex items-end gap-3">
               {/* Someone else's queue is not your morning, so the greeting gives
                   way to their name rather than sitting above their work. */}
@@ -132,11 +144,6 @@ export function MyWorkPage(): React.JSX.Element {
                 </span>
               ) : null}
             </div>
-            <EmployeeSelector
-              value={subjectUserId}
-              onChange={setSubjectUserId}
-              selfUserId={user?.id ?? ''}
-            />
           </div>
           <p className="relative mt-2 text-sm text-foreground-secondary">
             <span className="font-medium text-error">{summary.overdue} overdue</span>
@@ -147,7 +154,7 @@ export function MyWorkPage(): React.JSX.Element {
               {`You are viewing ${data.subject.name}'s work. Read only. `}
               <button
                 type="button"
-                onClick={() => setSubjectUserId(undefined)}
+                onClick={onClearSubject}
                 className="text-secondary underline"
               >
                 Back to my work

@@ -17,6 +17,7 @@ import {
   QuoteStatus,
   TaskStatus,
 } from '@tejas96/shared/types';
+import { canonicalMilestoneOrder, compareMilestoneSequence } from '@tejas96/shared/utils';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { ChangeRequestTaskService } from './change-request-task.service';
@@ -693,11 +694,12 @@ export class ProjectService {
 
     if (activeTasks.length === 0) return null;
 
-    activeTasks.sort((a, b) => {
-      const orderA = a.milestoneOrder ?? 9999;
-      const orderB = b.milestoneOrder ?? 9999;
-      return orderA - orderB;
-    });
+    activeTasks.sort((a, b) =>
+      compareMilestoneSequence(
+        { name: a.milestoneName ?? '', order: a.milestoneOrder },
+        { name: b.milestoneName ?? '', order: b.milestoneOrder },
+      ),
+    );
 
     return activeTasks[0]?.milestoneName ?? null;
   }
@@ -989,6 +991,13 @@ export class ProjectService {
         milestoneOrder =
           step.defaultMilestoneOrder ??
           (milestoneName ? (milestoneNameToOrder.get(milestoneName) ?? null) : null);
+      }
+
+      if (milestoneName) {
+        const canonical = canonicalMilestoneOrder(milestoneName);
+        if (canonical !== undefined) {
+          milestoneOrder = canonical;
+        }
       }
 
       const task = await this.taskRepository.create(

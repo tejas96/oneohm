@@ -1,4 +1,4 @@
-import { MyWorkPage } from '@/components/features/dashboard';
+import { DashboardPage as DashboardHome } from '@/components/features/dashboard';
 
 /**
  * Dashboard Home Page
@@ -6,5 +6,5 @@ import { MyWorkPage } from '@/components/features/dashboard';
  */
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for pages
 export default function DashboardPage(): React.JSX.Element {
-  return <MyWorkPage />;
+  return <DashboardHome />;
 }
