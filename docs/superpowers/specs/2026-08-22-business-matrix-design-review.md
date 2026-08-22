@@ -1,7 +1,9 @@
 # Business Matrix — design review and build notes
 
 - **Date:** 2026-08-22
-- **Status:** UX complete and reviewed. Not yet specced or built.
+- **Status:** UX complete, reviewed, corrected, and **re-verified 2026-08-22**. Not yet specced or built.
+- **All five findings below were fixed in the design and confirmed against the file.** They are kept
+  here as the record of what was wrong and why, not as outstanding work. §9 is done except item 1.
 - **Reviews:** Claude Design project `be6622ba-1ef2-4f60-9994-43ed48cda883` ("Solar EPC workload app"),
   files `Business Mode.dc.html` (the board) and `BusinessScreen.dc.html` (the screen, three variants:
   `full`, `no-finance`, `young`).
@@ -184,13 +186,35 @@ feature is for.
 
 ---
 
-## 9. Do this first, in order
+## 9. Status of the six actions
 
-1. Confirm the two permission decisions in §8 with the owner.
-2. Correct the funnel to the four real stages (§2); decide whether negotiation appears.
-3. Add `trendVsPreviousPeriod` to the four sales health figures (§3).
-4. Settle the "open deals" definition or drop the sub-label (§4.1).
-5. Re-source oldest debts from `/finance/outstanding` (§4.2).
-6. Change "invoices" to "milestones" (§4.3).
+| # | Action | Status |
+|---|---|---|
+| 1 | Confirm the two permission decisions in §8 | **OPEN — owner sign-off needed** |
+| 2 | Funnel corrected to the four real stages | **Done.** New Leads / Qualified / Quote Sent / Won |
+| 3 | `trendVsPreviousPeriod` on the four sales health figures | **Done** |
+| 4 | "231 open deals" sub-label | **Done** — dropped |
+| 5 | Oldest debts re-sourced to term level | **Done** |
+| 6 | "invoices" → "milestones" | **Done** |
 
-Then write the spec.
+Re-verified against `BusinessScreen.dc.html` on 2026-08-22. Detail of what landed:
+
+- **Funnel** is four rows with the exact API labels, and conversion percentages are internally
+  consistent (92/214 = 43%, 61/92 = 66%, 32/61 = 52%). The "won" row is derived as the last stage
+  rather than a hard index, so it survives a stage-list change.
+- **Negotiation** appears as a qualifier beneath Quote Sent — "18 in negotiation past 7 days" in
+  `--warning` — not as a fifth row.
+- **Trend polarity is correct**, which is the easy thing to get wrong: `trend(pct, upGood)` is
+  called with `upGood: false` for sales cycle, so a *shorter* cycle renders as a green down-arrow.
+- **Oldest debts** is term-level: customer, project, days overdue, amount. The sample data
+  deliberately shows one customer twice, which is the honest consequence of term-level rows. The
+  note reads "9 milestones past 90 days, across 5 customers".
+
+**Only item 1 blocks the spec.**
+
+### One cosmetic leftover, not worth a round trip
+
+Dropping the "open deals" sub-label left `sub: ""` on the *Pipeline value* tile in the no-finance
+headline band. The other three tiles in that band still have sub-lines, so that tile renders an
+empty 12.5px row and the band's baselines no longer align. Fix it in implementation — either give
+that tile a real sub-line or collapse the empty node.
