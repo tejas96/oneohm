@@ -136,7 +136,9 @@ stalls AS (
     'quote_draft', 'info', 'stalled',
     q.id::text, COALESCE(cp.property_name, 'Quote'), q.quote_number,
     'Drafted ' || GREATEST((CURRENT_DATE - qq.created_at::date), 0)::text || ' days ago, never sent',
-    q.quote_number, NULL, 'open_quote',
+    -- meta is NULL, not the quote number: it is already the subtitle two lines
+    -- up, and the row would print it twice.
+    NULL, NULL, 'open_quote',
     q.customer_id::text, q.property_id::text, 3
   FROM my_quotes q
   JOIN quotes qq ON qq.id = q.id
@@ -155,7 +157,8 @@ stalls AS (
     CASE WHEN q.valid_until < CURRENT_DATE
          THEN 'Quote lapsed ' || (CURRENT_DATE - q.valid_until)::text || ' days ago, still marked sent'
          ELSE 'Quote expires in ' || (q.valid_until - CURRENT_DATE)::text || ' days' END,
-    q.quote_number, to_char(q.valid_until, 'YYYY-MM-DD'), 'open_quote',
+    -- Same here: the quote number is already the subtitle.
+    NULL, to_char(q.valid_until, 'YYYY-MM-DD'), 'open_quote',
     q.customer_id::text, q.property_id::text,
     CASE WHEN q.valid_until < CURRENT_DATE THEN 1 ELSE 2 END
   FROM my_quotes q
@@ -170,6 +173,8 @@ stalls AS (
     q.id::text, COALESCE(cp.property_name, 'Quote'), 'Accepted quote',
     'Accepted ' || GREATEST((CURRENT_DATE - qq.updated_at::date), 0)::text
       || ' days ago, project never created',
+    -- Kept here, unlike the two arms above: this row's subtitle is the literal
+    -- 'Accepted quote', so meta is the only place the number appears.
     q.quote_number, NULL, 'convert_to_project',
     q.customer_id::text, q.property_id::text, 1
   FROM my_quotes q

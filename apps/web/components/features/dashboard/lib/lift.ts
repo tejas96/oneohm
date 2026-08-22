@@ -83,10 +83,10 @@ export function liftCritical(sections: MyWorkResponse['sections']): LiftResult {
     rest[key] = { ...section, buckets };
   });
 
-  const order = { critical: 0, warning: 1, info: 2 } as const;
+  // Oldest first. There is no severity tie-break because there is no tie to
+  // break: everything in this array got here by being critical, so a severity
+  // comparator would compare equal on every pair.
   critical.sort((a, b) => {
-    const bySeverity = order[a.severity] - order[b.severity];
-    if (bySeverity !== 0) return bySeverity;
     const aDue = a.dueDate ? Date.parse(a.dueDate) : Number.POSITIVE_INFINITY;
     const bDue = b.dueDate ? Date.parse(b.dueDate) : Number.POSITIVE_INFINITY;
     return aDue - bDue;

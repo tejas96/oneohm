@@ -6,7 +6,6 @@ import { type ProviderRow, toSection } from './section-shaping';
 import { MY_PROJECTS_CTE, withCtes } from '../services/scope.sql';
 
 const CAP = 4;
-const DUE_SOON_DAYS = 7;
 
 const BUCKET_LABELS: Record<string, string> = {
   overdue: 'Overdue',
@@ -41,11 +40,7 @@ task_rollup AS (
     COUNT(*) FILTER (WHERE t.status = 'blocked')          AS blocked_tasks,
     COUNT(*) FILTER (
       WHERE t.status <> 'done' AND t.end_date IS NOT NULL AND t.end_date < CURRENT_DATE
-    )                                                     AS overdue_tasks,
-    COUNT(*) FILTER (
-      WHERE t.status <> 'done' AND t.end_date IS NOT NULL
-        AND t.end_date BETWEEN CURRENT_DATE AND CURRENT_DATE + ${DUE_SOON_DAYS}
-    )                                                     AS due_soon_tasks
+    )                                                     AS overdue_tasks
   FROM project_tasks t
   WHERE t.deleted_at IS NULL
     AND t.project_id IN (SELECT id FROM my_projects)
