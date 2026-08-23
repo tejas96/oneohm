@@ -187,13 +187,13 @@ export function SectionCard({
  */
 export function SectionSkeleton({ rows }: { rows: number }): React.JSX.Element {
   return (
-    <section className="rounded-xl bg-surface p-5 shadow-e2">
+    <section className="@container rounded-xl bg-surface p-5 shadow-e2">
       <Skeleton className="h-3 w-32" />
       <div className="mt-4 flex flex-col gap-0.5">
         {Array.from({ length: rows }, (_, index) => (
           <div
             key={index}
-            className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] items-center gap-3 px-3 py-3"
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-3 py-3 @[28rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] @[28rem]:gap-3"
           >
             <div>
               <Skeleton className="h-3 w-36" />

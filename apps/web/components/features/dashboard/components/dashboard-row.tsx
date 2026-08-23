@@ -86,50 +86,76 @@ export function DashboardRow({
     </>
   );
 
+  const actionClass = cn(
+    'inline-flex h-7 shrink-0 items-center gap-1.5 justify-self-end rounded-pill px-3 text-xs font-medium [grid-area:action]',
+  );
+
   return (
-    <div className="group grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-background-tertiary">
-      <div className="flex min-w-0 flex-col">{body}</div>
+    // The four-column row is for the wide main column. Money to chase lives in
+    // a 304px rail, where `auto` amount + action leave ~10px each for title and
+    // reason — names wrap to "S.." / "W.." and "Due in 0 days" stacks vertically.
+    // The row is its own container so the same layout kicks in on a narrow
+    // viewport, not only in that rail.
+    <div className="@container">
+      <div
+        className={cn(
+          'group grid items-center gap-x-3 gap-y-1 rounded-lg px-3 py-3 transition-colors hover:bg-background-tertiary',
+          "grid-cols-[minmax(0,1fr)_auto] [grid-template-areas:'title_meta'_'reason_action']",
+          "@[28rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] @[28rem]:gap-3 @[28rem]:[grid-template-areas:'title_reason_meta_action']",
+        )}
+      >
+        <div className="flex min-w-0 flex-col [grid-area:title]">{body}</div>
 
-      <p className={cn('min-w-0 text-xs leading-snug', SEVERITY_TEXT[item.severity])}>
-        {item.reason}
-      </p>
-
-      <div className="text-right tabular-nums">
-        {item.meta ? <div className="text-xs text-foreground-secondary">{item.meta}</div> : null}
-        {item.metaSecondary && item.kind.startsWith('service') ? (
-          <div className="mt-0.5 text-2xs uppercase tracking-wide text-foreground-tertiary">
-            {item.metaSecondary}
-          </div>
-        ) : null}
-      </div>
-
-      {/* A blocked action stays VISIBLE and clickable — it opens the dialog that
-          names the permission. `disabled` would swallow that click. */}
-      {readOnly && target.mode === 'dialog' ? null : target.mode === 'navigate' && allowed ? (
-        <Link
-          href={target.href}
-          className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-xs font-medium text-foreground-secondary transition-colors group-hover:bg-accent-subtle group-hover:text-primary-dark"
-        >
-          {target.label}
-          <ArrowRight className="size-3" />
-        </Link>
-      ) : (
-        <button
-          type="button"
-          onClick={onGatedClick}
-          aria-disabled={!allowed}
+        <p
           className={cn(
-            'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-pill px-3 text-xs font-medium transition-colors',
-            allowed
-              ? 'text-foreground-secondary group-hover:bg-accent-subtle group-hover:text-primary-dark'
-              : 'cursor-not-allowed bg-background-tertiary text-foreground-secondary',
+            'min-w-0 truncate text-xs leading-snug [grid-area:reason]',
+            SEVERITY_TEXT[item.severity],
           )}
         >
-          {!allowed ? <Lock className="size-3" /> : null}
-          {target.label}
-          {allowed ? <ArrowRight className="size-3" /> : null}
-        </button>
-      )}
+          {item.reason}
+        </p>
+
+        <div className="text-right tabular-nums [grid-area:meta]">
+          {item.meta ? <div className="text-xs text-foreground-secondary">{item.meta}</div> : null}
+          {item.metaSecondary && item.kind.startsWith('service') ? (
+            <div className="mt-0.5 text-2xs uppercase tracking-wide text-foreground-tertiary">
+              {item.metaSecondary}
+            </div>
+          ) : null}
+        </div>
+
+        {/* A blocked action stays VISIBLE and clickable — it opens the dialog that
+            names the permission. `disabled` would swallow that click. */}
+        {readOnly && target.mode === 'dialog' ? null : target.mode === 'navigate' && allowed ? (
+          <Link
+            href={target.href}
+            className={cn(
+              actionClass,
+              'text-foreground-secondary transition-colors group-hover:bg-accent-subtle group-hover:text-primary-dark',
+            )}
+          >
+            {target.label}
+            <ArrowRight className="size-3" />
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={onGatedClick}
+            aria-disabled={!allowed}
+            className={cn(
+              actionClass,
+              'transition-colors',
+              allowed
+                ? 'text-foreground-secondary group-hover:bg-accent-subtle group-hover:text-primary-dark'
+                : 'cursor-not-allowed bg-background-tertiary text-foreground-secondary',
+            )}
+          >
+            {!allowed ? <Lock className="size-3" /> : null}
+            {target.label}
+            {allowed ? <ArrowRight className="size-3" /> : null}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

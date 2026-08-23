@@ -151,33 +151,6 @@ export const navigationConfig: NavigationConfig = {
               href: ROUTES.DASHBOARD.TASKS,
               permission: ALWAYS_OPEN,
             },
-            {
-              id: 'calendar',
-              icon: Calendar,
-              label: 'Calendar',
-              href: ROUTES.DASHBOARD.CALENDAR,
-              permission: ALWAYS_OPEN,
-            },
-          ],
-        },
-        {
-          title: 'Views',
-          permission: ALWAYS_OPEN,
-          items: [
-            {
-              id: 'overview',
-              icon: LayoutGrid,
-              label: 'Overview',
-              href: ROUTES.DASHBOARD.HOME,
-              permission: ALWAYS_OPEN,
-            },
-            {
-              id: 'activity',
-              permission: ALWAYS_OPEN,
-              icon: TrendingUp,
-              label: 'Activity Feed',
-              href: ROUTES.DASHBOARD.ACTIVITY,
-            },
           ],
         },
       ],

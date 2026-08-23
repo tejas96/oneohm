@@ -4,11 +4,17 @@ import { EmployeeProfileKind } from '@tejas96/shared/types';
 import * as React from 'react';
 
 import { useEmployees } from '@/components/features/employees/hooks/use-employees';
-import { MUISelect, type MUISelectOption } from '@/components/ui';
+import { MUIInput } from '@/components/ui';
 import { useCan } from '@/lib/rbac';
 
 /** The sentinel for "my own work". A real uuid can never collide with it. */
 const MINE = '__mine__';
+
+type EmployeeOption = {
+  value: string;
+  label: string;
+  [key: string]: unknown;
+};
 
 interface EmployeeSelectorProps {
   /** The selected subject, or `undefined` for your own work. */
@@ -43,12 +49,12 @@ export function EmployeeSelector({
     enabled: allowed,
   });
 
-  const options: MUISelectOption[] = React.useMemo(() => {
+  const options: EmployeeOption[] = React.useMemo(() => {
     // Annotated, and sorted as a SEPARATE statement. `useEmployees` returns a
     // value eslint sees as `any`, so chaining `.sort()` straight onto `.map()`
     // gives the comparator `any` parameters and `localeCompare` becomes an
     // unsafe call. Sorting the annotated variable types `a` and `b` properly.
-    const others: Array<{ value: string; label: string }> = (employees ?? [])
+    const others: EmployeeOption[] = (employees ?? [])
       .filter((employee) => employee.userId !== selfUserId)
       .map((employee) => ({
         value: employee.userId,
@@ -62,21 +68,40 @@ export function EmployeeSelector({
     return [{ value: MINE, label: 'My work' }, ...others];
   }, [employees, selfUserId]);
 
+  const selected = options.find((option) => option.value === (value ?? MINE)) ?? options[0] ?? null;
+
   // After the hooks, never before them — an early return above `useMemo` would
   // change the hook count between renders.
   if (!allowed) return null;
 
   return (
-    <MUISelect
+    <MUIInput
+      mode="autocomplete"
       options={options}
-      value={value ?? MINE}
-      onChange={(event) => {
-        const next = String(event.target.value);
+      value={selected}
+      onChange={(opt) => {
+        if (!opt || typeof opt !== 'object' || !('value' in opt)) return;
+        const next = String(opt.value);
         onChange(next === MINE ? undefined : next);
       }}
+      clearable={false}
+      openOnFocus
       size="small"
-      aria-label="Whose work to show"
       sx={{ minWidth: 220 }}
+      textFieldProps={{
+        size: 'small',
+        placeholder: 'Search people…',
+        inputProps: { 'aria-label': 'Whose work to show' },
+      }}
+      noOptionsText="No matches"
+      isOptionEqualToValue={(a, b) => {
+        const av = typeof a === 'object' && a !== null ? a.value : a;
+        const bv = typeof b === 'object' && b !== null ? b.value : b;
+        return av === bv;
+      }}
+      getOptionLabel={(option) =>
+        typeof option === 'string' ? option : (option.label ?? String(option.value ?? ''))
+      }
     />
   );
 }

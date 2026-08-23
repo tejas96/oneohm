@@ -44,10 +44,6 @@ export const ROUTES = {
   DASHBOARD: {
     HOME: '/',
     TASKS: '/projects/my-tasks',
-    // No page exists for these yet. Left pointing at the real dashboard rather
-    // than at a guaranteed 404; they need their pages built.
-    CALENDAR: '/',
-    ACTIVITY: '/',
   },
 
   // CRM
