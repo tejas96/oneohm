@@ -54,7 +54,6 @@ export interface CalculatorInputs {
   manualDcrPanelCount?: number;
   manualNonDcrPanelCount?: number;
   manualInverterCount?: number;
-  systemSizeKw?: number;
   projectType?: ProjectType;
   actualSystemSizeKw?: number;
   actualDcrSizeKw?: number;
@@ -171,6 +170,7 @@ export interface QuoteVersion {
   quoteId: string;
   versionNumber: number;
   systemType: string;
+  /** Calculated from totalWattageWp (watts / 1000); not persisted after migration */
   systemSizeKw: number;
   totalWattageWp: number;
   projectType: string;

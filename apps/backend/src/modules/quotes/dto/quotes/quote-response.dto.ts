@@ -11,7 +11,7 @@ import {
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { QuoteVersionResponseDto } from './quote-version-response.dto';
-import { toNum } from '../../../../common/utils';
+import { toNum, systemSizeKwOf } from '../../../../common/utils';
 import { EmployeeResponseDto } from '../../../employees/dto';
 
 const toTimestamp = (value: unknown): number => {
@@ -176,9 +176,9 @@ export class QuoteResponseDto {
   @Transform(({ obj }) => cv(obj)?.systemType)
   systemType!: SystemType;
 
-  @ApiProperty({ example: 5.5 })
+  @ApiProperty({ example: 5.5, description: 'Calculated system size in kW from totalWattageWp' })
   @Expose()
-  @Transform(({ obj }) => toNum(cv(obj)?.systemSizeKw))
+  @Transform(({ obj }) => systemSizeKwOf(cv(obj) ?? {}))
   systemSizeKw!: number;
 
   @ApiProperty({ example: 5500 })
@@ -186,12 +186,9 @@ export class QuoteResponseDto {
   @Transform(({ obj }) => toNum(cv(obj)?.totalWattageWp))
   totalWattageWp!: number;
 
-  @ApiPropertyOptional({ example: 5.5 })
+  @ApiPropertyOptional({ example: 5.5, description: 'Same as systemSizeKw (column-derived)' })
   @Expose()
-  @Transform(({ obj }) => {
-    const wattage = toNum(cv(obj)?.totalWattageWp);
-    return wattage != null && wattage > 0 ? wattage / 1000 : undefined;
-  })
+  @Transform(({ obj }) => systemSizeKwOf(cv(obj) ?? {}))
   actualSystemSizeKw?: number;
 
   @ApiProperty({
@@ -323,12 +320,14 @@ export class QuoteResponseDto {
     );
     return sorted.map((v: Record<string, unknown>) => {
       const snap = v.quoteSnapshot as Record<string, unknown> | undefined;
+      const kw = systemSizeKwOf(v);
       return {
         id: v.id,
         quoteId: v.quoteId,
         versionNumber: v.versionNumber,
         systemType: v.systemType,
-        systemSizeKw: v.systemSizeKw != null ? Number(v.systemSizeKw) : undefined,
+        systemSizeKw: kw,
+        actualSystemSizeKw: kw,
         totalWattageWp: v.totalWattageWp != null ? Number(v.totalWattageWp) : undefined,
         projectType: v.projectType,
         finalPrice: v.finalPrice != null ? Number(v.finalPrice) : undefined,

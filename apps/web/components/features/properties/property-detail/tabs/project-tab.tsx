@@ -25,13 +25,7 @@ import {
 import type { ProjectDetail } from '@/components/features/projects/hooks/types';
 import { useProject } from '@/components/features/projects/hooks/use-project-detail';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import {
-  formatCurrency,
-  formatDate,
-  formatSystemSize,
-  hasSystemSizeVariance,
-  toTitleLabel,
-} from '@/lib/utils';
+import { formatCurrency, formatDate, formatSystemSize, toTitleLabel } from '@/lib/utils';
 
 export interface ProjectTabProps {
   property: CustomerPropertyResponse;
@@ -64,23 +58,12 @@ function getPriorityTone(priority: ProjectPriority): DetailTone | null {
   return null;
 }
 
-/**
- * The installed capacity, with the selected one named beneath when they differ.
- * Picking `actual` silently — which this did — leaves no way to tell that the
- * subsidy was rated on a different number.
- */
 function SystemSize({ project }: { project: ProjectDetail }): JSX.Element {
-  const displayKw = project.actualSystemSizeKw ?? project.systemSizeKw;
-  const sizeDiffers = hasSystemSizeVariance(project.actualSystemSizeKw, project.systemSizeKw);
+  const displayKw = project.systemSizeKw;
 
   return (
     <Box sx={{ minWidth: 0 }}>
       <Mono>{displayKw != null ? `${formatSystemSize(displayKw)} kW` : '—'}</Mono>
-      {sizeDiffers && project.systemSizeKw != null && (
-        <Typography sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)' }}>
-          selected {formatSystemSize(project.systemSizeKw)} kW
-        </Typography>
-      )}
     </Box>
   );
 }

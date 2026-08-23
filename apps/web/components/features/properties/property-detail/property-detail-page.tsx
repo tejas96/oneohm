@@ -212,7 +212,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
       latestQuoteStatus: headlineQuote.status,
       latestQuoteDate: headlineQuote.quoteDate,
       latestQuoteFinalPrice: headlineQuote.finalPrice,
-      latestQuoteSystemSizeKw: headlineQuote.actualSystemSizeKw ?? headlineQuote.systemSizeKw,
+      latestQuoteSystemSizeKw: headlineQuote.systemSizeKw,
     };
   }, [property, headlineQuote]);
 
@@ -387,7 +387,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   ]);
 
   const kpiTiles = useMemo((): Array<MetricTileProps & { id: string }> => {
-    const sizeKw = headlineQuote?.actualSystemSizeKw ?? headlineQuote?.systemSizeKw;
+    const sizeKw = headlineQuote?.systemSizeKw;
     const hasSubsidy = Boolean(headlineQuote?.subsidyAmount && headlineQuote.subsidyAmount > 0);
 
     return [

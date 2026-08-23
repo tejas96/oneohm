@@ -60,10 +60,7 @@ export function QuoteOverviewTab({
   }, [activeSnapshot]);
 
   const calcObj = activeSnapshot?.calculation as unknown as Record<string, unknown> | undefined;
-  const rawActualKw = (calcObj?.actualSystemSizeKw as number | undefined) ?? totalWattageWp / 1000;
-  const actualKw = round2(rawActualKw);
-  const requestedKw = round2(calcInputs?.systemSizeKw ?? systemSizeKw);
-  const showRequestedKw = actualKw !== requestedKw;
+  const actualKw = round2(systemSizeKw);
 
   type InstallationRecord = Partial<
     Record<
@@ -182,9 +179,7 @@ export function QuoteOverviewTab({
 
           {/* System Configuration */}
           <QuoteSystemConfigCard
-            actualKw={actualKw}
-            requestedKw={requestedKw}
-            showRequestedKw={showRequestedKw}
+            kw={actualKw}
             totalWattageWp={totalWattageWp}
             systemType={systemType}
             projectType={projectType}

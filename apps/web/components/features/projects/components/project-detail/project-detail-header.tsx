@@ -69,12 +69,7 @@ export const ProjectDetailHeader = React.memo(
               {project.systemSizeKw != null && (
                 <>
                   {' · '}
-                  <SystemSizeDisplay
-                    actualKw={project.actualSystemSizeKw}
-                    requestedKw={project.systemSizeKw}
-                    size="sm"
-                    layout="inline"
-                  />
+                  <SystemSizeDisplay kw={project.systemSizeKw} size="sm" layout="inline" />
                 </>
               )}
               {project.projectType ? ` · ${project.projectType}` : ''}

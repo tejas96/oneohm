@@ -1,5 +1,6 @@
 import type { QuoteSnapshot } from '@tejas96/shared/types';
 
+import { systemSizeKwOf } from '../../../common/utils';
 import type { ProjectEntity } from '../../projects/entities/project.entity';
 
 export function getLatestQuoteVersion(project: ProjectEntity) {
@@ -17,10 +18,6 @@ export function getQuoteSnapshot(project: ProjectEntity): QuoteSnapshot | undefi
 }
 
 export function getSystemSizeKw(project: ProjectEntity): number | undefined {
-  const snapshot = getQuoteSnapshot(project);
-  const actual = snapshot?.calculation?.actualSystemSizeKw;
-  if (actual != null && actual > 0) return actual;
   const version = getLatestQuoteVersion(project);
-  const kw = version?.systemSizeKw;
-  return kw != null ? Number(kw) : undefined;
+  return systemSizeKwOf(version ?? {});
 }

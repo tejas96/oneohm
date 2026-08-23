@@ -9,7 +9,7 @@ import {
 } from '@tejas96/shared/types';
 import { Expose, Transform } from 'class-transformer';
 
-import { toNum } from '../../../../common/utils';
+import { systemSizeKwOf, toNum } from '../../../../common/utils';
 
 /**
  * Quote Version Response DTO
@@ -32,21 +32,18 @@ export class QuoteVersionResponseDto {
   @Expose()
   systemType!: SystemType;
 
-  @ApiProperty({ example: 5.5 })
+  @ApiProperty({ example: 5.5, description: 'Calculated system size in kW from totalWattageWp' })
   @Expose()
-  @Transform(({ value }) => toNum(value))
+  @Transform(({ obj }) => systemSizeKwOf(obj as { totalWattageWp?: number | string | null }))
   systemSizeKw!: number;
 
   @ApiProperty({ example: 5500 })
   @Expose()
   totalWattageWp!: number;
 
-  @ApiPropertyOptional({ example: 5.5 })
+  @ApiPropertyOptional({ example: 5.5, description: 'Same as systemSizeKw (column-derived)' })
   @Expose()
-  @Transform(({ obj }) => {
-    const wattage = toNum((obj as Record<string, unknown>).totalWattageWp);
-    return wattage != null && wattage > 0 ? wattage / 1000 : undefined;
-  })
+  @Transform(({ obj }) => systemSizeKwOf(obj as { totalWattageWp?: number | string | null }))
   actualSystemSizeKw?: number;
 
   @ApiProperty({ enum: Object.values(ProjectType), example: ProjectType.RESIDENTIAL })

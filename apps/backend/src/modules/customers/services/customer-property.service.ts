@@ -20,6 +20,7 @@ import {
 import { DataSource, IsNull, Not, type EntityManager } from 'typeorm';
 
 import { LeadClosureService } from './lead-closure.service';
+import { systemSizeKwOf } from '../../../common/utils';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { DiscomService } from '../../discoms/services/discom.service';
 import { DocumentEntity } from '../../documents/entities/document.entity';
@@ -276,10 +277,9 @@ export class CustomerPropertyService {
         latestQuoteStatus: quoteInfo?.status,
         latestQuoteDate: quoteInfo?.quoteDate,
         latestQuoteFinalPrice: quoteInfo?.finalPrice,
-        latestQuoteSystemSizeKw:
-          quoteInfo?.totalWattageWp != null && quoteInfo.totalWattageWp > 0
-            ? Number(quoteInfo.totalWattageWp) / 1000
-            : quoteInfo?.systemSizeKw,
+        latestQuoteSystemSizeKw: systemSizeKwOf({
+          totalWattageWp: quoteInfo?.totalWattageWp,
+        }),
         nextFollowupAt: followupStateMap.get(property.id)?.nextAt ?? undefined,
         needsFollowup: followupStateMap.get(property.id)?.needsFollowup ?? false,
       };
@@ -328,10 +328,9 @@ export class CustomerPropertyService {
         latestQuoteStatus: quoteInfo?.status,
         latestQuoteDate: quoteInfo?.quoteDate,
         latestQuoteFinalPrice: quoteInfo?.finalPrice,
-        latestQuoteSystemSizeKw:
-          quoteInfo?.totalWattageWp != null && quoteInfo.totalWattageWp > 0
-            ? Number(quoteInfo.totalWattageWp) / 1000
-            : quoteInfo?.systemSizeKw,
+        latestQuoteSystemSizeKw: systemSizeKwOf({
+          totalWattageWp: quoteInfo?.totalWattageWp,
+        }),
         nextFollowupAt: followupStateMap.get(property.id)?.nextAt ?? undefined,
         needsFollowup: followupStateMap.get(property.id)?.needsFollowup ?? false,
       };

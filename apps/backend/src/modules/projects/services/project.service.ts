@@ -21,6 +21,7 @@ import { canonicalMilestoneOrder, compareMilestoneSequence } from '@tejas96/shar
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { ChangeRequestTaskService } from './change-request-task.service';
+import { systemSizeKwOf } from '../../../common/utils';
 import { BomService } from '../../bom/services/bom.service';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
@@ -448,10 +449,8 @@ export class ProjectService {
       property?.consumerName ||
       `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
       'Customer';
-    const actualKw = contractVersion.totalWattageWp
-      ? Number(contractVersion.totalWattageWp) / 1000
-      : contractVersion.systemSizeKw;
-    const actualKwFormatted = actualKw != null ? parseFloat(Number(actualKw).toFixed(2)) : '';
+    const actualKw = systemSizeKwOf(contractVersion);
+    const actualKwFormatted = actualKw != null ? actualKw : '';
     const autoName =
       `${customerName} - ${actualKwFormatted ? `${actualKwFormatted}kW ` : ''}Solar Installation`.trim();
     const paymentMilestones: PaymentMilestone[] = contractVersion.paymentMilestones || [];

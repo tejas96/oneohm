@@ -34,7 +34,7 @@ import { detailTableSx, tableCardSx } from '../styles';
 
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { formatDate, formatSystemSize, hasSystemSizeVariance, toTitleLabel } from '@/lib/utils';
+import { formatDate, formatSystemSize, toTitleLabel } from '@/lib/utils';
 
 export interface ProjectsTabProps {
   customerId: string;
@@ -124,8 +124,7 @@ function ProjectRow({ project }: { project: CustomerProjectItem }): JSX.Element 
   const statusTone = getStatusTone(project.status);
   const priorityTone = getPriorityTone(project.priority);
   const href = buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id });
-  const displayKw = project.actualSystemSizeKw ?? project.systemSizeKw;
-  const sizeDiffers = hasSystemSizeVariance(project.actualSystemSizeKw, project.systemSizeKw);
+  const displayKw = project.systemSizeKw;
 
   return (
     <TableRow>
@@ -171,24 +170,8 @@ function ProjectRow({ project }: { project: CustomerProjectItem }): JSX.Element 
         {getPropertyDisplayName(project.property)}
       </TableCell>
 
-      {/*
-       * Actual leads, selected follows. They are different facts — 6 × 540 Wp
-       * is 3.24 kW against a 3 kW selection — and printing only the selected
-       * one put "3 kW" next to a project literally named "…- 3.24kW".
-       */}
       <TableCell>
         <Mono>{displayKw != null ? `${formatSystemSize(displayKw)} kW` : '—'}</Mono>
-        {sizeDiffers && project.systemSizeKw != null && (
-          <Typography
-            sx={{
-              fontSize: '0.6875rem',
-              color: 'var(--ds-text-tertiary)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            selected {formatSystemSize(project.systemSizeKw)} kW
-          </Typography>
-        )}
       </TableCell>
 
       {/*

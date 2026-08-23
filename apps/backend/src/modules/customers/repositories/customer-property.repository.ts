@@ -9,6 +9,7 @@ import {
 import { type EntityManager, IsNull, Repository } from 'typeorm';
 
 import { PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
+import { systemSizeKwSql } from '../../../common/utils/transform.util';
 import { PropertyQueryDto } from '../dto/property-query.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 
@@ -29,8 +30,7 @@ const SORT_FIELD_MAP: Record<PropertySortField, string> = {
   [PropertySortField.LEAD_TEMPERATURE]: 'property.leadTemperature',
   [PropertySortField.PROPERTY_TYPE]: 'property.propertyType',
   [PropertySortField.STATUS]: 'property.status',
-  [PropertySortField.SYSTEM_SIZE]:
-    'CASE WHEN cv.totalWattageWp > 0 THEN cv.totalWattageWp / 1000.0 ELSE cv.systemSizeKw END',
+  [PropertySortField.SYSTEM_SIZE]: systemSizeKwSql('cv'),
   [PropertySortField.QUOTE_COST]: 'cv.finalPrice',
 };
 
@@ -300,7 +300,7 @@ export class CustomerPropertyRepository {
           LIMIT 1
         )`,
       );
-      qb.addSelect(['cv.systemSizeKw', 'cv.finalPrice']);
+      qb.addSelect(['cv.totalWattageWp', 'cv.finalPrice']);
     }
 
     qb.where('property.deletedAt IS NULL');
@@ -406,21 +406,16 @@ export class CustomerPropertyRepository {
       qb.andWhere('latestQuote.status = :quoteStatus', { quoteStatus: query.quoteStatus });
     }
 
-    // Same wattage-preferred size the response DTO computes (see `findAll`'s
-    // enrichment step) — filtering on the raw `systemSizeKw` column would
-    // silently disagree with the value actually shown for the property.
     if (query.systemSizeMin !== undefined) {
-      qb.andWhere(
-        '(CASE WHEN cv.totalWattageWp > 0 THEN cv.totalWattageWp / 1000.0 ELSE cv.systemSizeKw END) >= :systemSizeMin',
-        { systemSizeMin: query.systemSizeMin },
-      );
+      qb.andWhere(`${systemSizeKwSql('cv')} >= :systemSizeMin`, {
+        systemSizeMin: query.systemSizeMin,
+      });
     }
 
     if (query.systemSizeMax !== undefined) {
-      qb.andWhere(
-        '(CASE WHEN cv.totalWattageWp > 0 THEN cv.totalWattageWp / 1000.0 ELSE cv.systemSizeKw END) <= :systemSizeMax',
-        { systemSizeMax: query.systemSizeMax },
-      );
+      qb.andWhere(`${systemSizeKwSql('cv')} <= :systemSizeMax`, {
+        systemSizeMax: query.systemSizeMax,
+      });
     }
 
     // ===== Sorting (using safe field mapping) =====

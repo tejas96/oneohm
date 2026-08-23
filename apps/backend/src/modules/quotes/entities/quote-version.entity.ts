@@ -32,9 +32,6 @@ export class QuoteVersionEntity extends BaseEntity {
   })
   systemType!: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'system_size_kw' })
-  systemSizeKw!: number;
-
   @Column({ type: 'integer', name: 'total_wattage_wp' })
   totalWattageWp!: number;
 

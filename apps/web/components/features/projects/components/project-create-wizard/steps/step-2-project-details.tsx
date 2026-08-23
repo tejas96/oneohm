@@ -83,8 +83,7 @@ export function Step2ProjectDetails({ form }: Step2ProjectDetailsProps): React.J
 
   const selectedProperty = properties.find((p) => p.id === propertyId) ?? null;
   const selectedQuote = (quotesResponse?.data ?? []).find((q) => q.id === quoteId) ?? null;
-  const actualSystemSizeKw = selectedQuote?.actualSystemSizeKw ?? null;
-  const requestedSystemSizeKw = selectedQuote?.systemSizeKw;
+  const systemSizeKw = selectedQuote?.systemSizeKw ?? null;
 
   // Auto-generate project name
   const autoName = useMemo(() => {
@@ -92,7 +91,7 @@ export function Step2ProjectDetails({ form }: Step2ProjectDetailsProps): React.J
       ? `${customer.firstName ?? ''} ${customer.lastName ?? ''}`.trim()
       : '';
     const propName = selectedProperty?.propertyName || selectedProperty?.consumerName || '';
-    const sizeValue = selectedQuote?.actualSystemSizeKw ?? selectedQuote?.systemSizeKw;
+    const sizeValue = selectedQuote?.systemSizeKw;
     const size = sizeValue && sizeValue > 0 ? `${formatSystemSize(sizeValue)}kW` : '';
     const parts = [custName, propName, size].filter(Boolean);
     return parts.join(' - ');
@@ -164,20 +163,11 @@ export function Step2ProjectDetails({ form }: Step2ProjectDetailsProps): React.J
               </div>
               <div>
                 <MUITypography variant="timestamp" className="text-foreground-secondary mb-1">
-                  Actual System Size
+                  System Size
                 </MUITypography>
                 <MUITypography variant="bodyPrimary">
-                  {actualSystemSizeKw != null
-                    ? `${formatSystemSize(actualSystemSizeKw)}kW`
-                    : requestedSystemSizeKw
-                      ? `${formatSystemSize(requestedSystemSizeKw)}kW`
-                      : '—'}
+                  {systemSizeKw != null ? `${formatSystemSize(systemSizeKw)}kW` : '—'}
                 </MUITypography>
-                {actualSystemSizeKw != null && requestedSystemSizeKw ? (
-                  <MUITypography variant="timestamp" className="text-foreground-secondary">
-                    (req/sel {formatSystemSize(requestedSystemSizeKw)}kW)
-                  </MUITypography>
-                ) : null}
               </div>
               <div>
                 <MUITypography variant="timestamp" className="text-foreground-secondary mb-1">

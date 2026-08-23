@@ -11,40 +11,37 @@ export const toNum = (v: unknown): number | undefined => (v != null ? Number(v) 
  */
 export const toNumNullable = (v: unknown): number | null => (v != null ? Number(v) : null);
 
+export const WATTS_PER_KW = 1000;
+
 /**
- * The system size of a quote version, in kW.
+ * Convert panel wattage (Wp) to system size in kW, rounded to 2 decimal places.
+ */
+export function wattsToKw(wattage: number | string | null | undefined): number | undefined {
+  const w = toNum(wattage);
+  if (w == null || w <= 0) return undefined;
+  return Number((w / WATTS_PER_KW).toFixed(2));
+}
+
+/**
+ * The system size of a quote version, in kW, derived only from `total_wattage_wp`.
  *
- * PREFERS THE MODULES ACTUALLY SELECTED (`total_wattage_wp / 1000`) OVER THE
- * QUOTED FIGURE (`system_size_kw`).
- *
- * They diverge constantly and by design: somebody quotes 3 kW, the panels that
- * fit the roof are six 570 Wp modules, and the installation is 3.42 kW. The
- * quoted number is what was asked for; the wattage is what is going on the
- * roof, and it is the one every screen should be showing.
- *
- * This rule already existed in three places before this helper — the customer
- * portfolio roll-up, the property sort and filter, and the auto-generated
- * project NAME — which is why a project could be called "… - 3.42kW" while its
- * own `systemSizeKw` field said 3.00. The projects DTOs were the outlier.
- *
- * `total_wattage_wp` is `NOT NULL` and populated on every one of the 1820 quote
- * versions on record, so the fallback is a guard rather than a routine path.
+ * This is what is going on the roof — panel count × panel Wp, summed. The
+ * selected/quoted kW column was removed; wattage is the single source of truth.
  */
 export const systemSizeKwOf = (version: {
   totalWattageWp?: number | string | null;
-  systemSizeKw?: number | string | null;
-}): number | undefined => {
-  const wattage = toNum(version?.totalWattageWp);
-  if (wattage != null && wattage > 0) {
-    return Number((wattage / 1000).toFixed(2));
-  }
-  return toNum(version?.systemSizeKw);
-};
+}): number | undefined => wattsToKw(version?.totalWattageWp);
 
 /**
- * The same rule, as SQL, for ORDER BY and WHERE clauses.
+ * The same rule, as SQL, for ORDER BY and WHERE clauses (TypeORM property names).
  *
  * `alias` is the quote-version alias in the query — `cv` almost everywhere.
  */
 export const systemSizeKwSql = (alias: string): string =>
-  `CASE WHEN ${alias}.totalWattageWp > 0 THEN ${alias}.totalWattageWp / 1000.0 ELSE ${alias}.systemSizeKw END`;
+  `CASE WHEN ${alias}.totalWattageWp > 0 THEN ROUND((${alias}.totalWattageWp / 1000.0)::numeric, 2) ELSE NULL END`;
+
+/**
+ * Raw SQL column names (`total_wattage_wp`) for repositories that use snake_case.
+ */
+export const systemSizeKwSqlRaw = (alias: string): string =>
+  `CASE WHEN ${alias}.total_wattage_wp > 0 THEN ROUND((${alias}.total_wattage_wp / 1000.0)::numeric, 2) ELSE NULL END`;
