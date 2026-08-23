@@ -123,11 +123,9 @@ export function OverviewHero({ project, projectId, isActive }: OverviewHeroProps
       : 'secondary';
 
   const systemSubtitleParts: string[] = [];
-  const primarySizeKw = project.actualSystemSizeKw ?? project.systemSizeKw;
+  const primarySizeKw = project.systemSizeKw;
   if (primarySizeKw != null && primarySizeKw > 0) {
-    systemSubtitleParts.push(
-      formatSystemSizeDisplay(project.actualSystemSizeKw, project.systemSizeKw),
-    );
+    systemSubtitleParts.push(formatSystemSizeDisplay(primarySizeKw));
   }
   if (projectTypeLabel) systemSubtitleParts.push(projectTypeLabel);
   const systemSubtitle = systemSubtitleParts.length > 0 ? systemSubtitleParts.join(' · ') : null;

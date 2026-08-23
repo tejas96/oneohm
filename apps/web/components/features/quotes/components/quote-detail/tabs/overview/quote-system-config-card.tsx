@@ -8,9 +8,7 @@ import { SYSTEM_TYPE_LABELS, PROJECT_TYPE_LABELS } from '../../../../constants';
 import { SystemSizeDisplay } from '@/components/ui/system-size-display';
 
 interface QuoteSystemConfigCardProps {
-  actualKw: number;
-  requestedKw?: number;
-  showRequestedKw: boolean;
+  kw: number;
   totalWattageWp: number;
   systemType: string;
   projectType: string;
@@ -25,9 +23,7 @@ interface QuoteSystemConfigCardProps {
 }
 
 export function QuoteSystemConfigCard({
-  actualKw,
-  requestedKw,
-  showRequestedKw,
+  kw,
   totalWattageWp,
   systemType,
   projectType,
@@ -56,14 +52,7 @@ export function QuoteSystemConfigCard({
       </h3>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {renderItem(
-          'System Size',
-          <SystemSizeDisplay
-            actualKw={actualKw}
-            requestedKw={showRequestedKw ? requestedKw : undefined}
-            layout="inline"
-          />,
-        )}
+        {renderItem('System Size', <SystemSizeDisplay kw={kw} layout="inline" />)}
         {renderItem('Total Wattage', `${totalWattageWp} Wp`)}
         {renderItem(
           'System Type',

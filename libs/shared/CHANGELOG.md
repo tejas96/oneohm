@@ -1,5 +1,12 @@
 # @tejas96/shared
 
+## 1.11.2
+
+### Patch Changes
+
+- Remove `systemSizeKw` from `CalculatorInputs` (saved quotes use `totalWattageWp` only).
+- Document `QuoteVersion.systemSizeKw` as derived from wattage.
+
 ## 1.6.3
 
 ### Patch Changes

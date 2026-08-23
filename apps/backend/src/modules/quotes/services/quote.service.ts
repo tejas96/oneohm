@@ -26,6 +26,7 @@ import {
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource } from 'typeorm';
 
+import { systemSizeKwOf } from '../../../common/utils';
 import { LeadClosureService } from '../../customers/services/lead-closure.service';
 import type { DocumentEntity } from '../../documents/entities/document.entity';
 import { DocumentService } from '../../documents/services';
@@ -125,7 +126,7 @@ export class QuoteService {
     const subsidyAmount =
       pricingBreakdown.subsidyAmount ??
       (isSubsidyApplicable
-        ? await this.calculateSubsidy(createDto.systemSizeKw, createDto.projectType)
+        ? await this.calculateSubsidy(createDto.totalWattageWp, createDto.projectType)
         : 0);
 
     const effectivePrice = createDto.effectivePrice ?? Math.max(0, finalPrice - subsidyAmount);
@@ -163,7 +164,6 @@ export class QuoteService {
           quoteId: quote.id,
           versionNumber: 1,
           systemType: createDto.systemType,
-          systemSizeKw: createDto.systemSizeKw,
           totalWattageWp: createDto.totalWattageWp,
           projectType: createDto.projectType,
           finalPrice,
@@ -484,7 +484,6 @@ export class QuoteService {
 
     // Resolve values: DTO overrides > latest version fallbacks
     const systemType = updateDto.systemType || latestVersion.systemType;
-    const systemSizeKw = updateDto.systemSizeKw || latestVersion.systemSizeKw;
     const totalWattageWp = updateDto.totalWattageWp || latestVersion.totalWattageWp;
     const projectType = (updateDto.projectType || latestVersion.projectType) as ProjectType;
 
@@ -506,7 +505,7 @@ export class QuoteService {
 
     const subsidy = isSubsidyApplicable
       ? (updateDto.quoteSnapshot?.pricing?.subsidyAmount ??
-        (await this.calculateSubsidy(systemSizeKw, projectType)))
+        (await this.calculateSubsidy(totalWattageWp, projectType)))
       : 0;
 
     if (!updateDto.quoteSnapshot?.pricing) {
@@ -562,7 +561,6 @@ export class QuoteService {
           quoteId: quote.id,
           versionNumber: newVersionNumber,
           systemType,
-          systemSizeKw,
           totalWattageWp,
           projectType,
           finalPrice,
@@ -827,7 +825,12 @@ export class QuoteService {
    * Calculate subsidy using tiered rates from DB.
    * Uses dcrSizeKw (for DCR-requiring subsidies) instead of total systemSizeKw.
    */
-  private async calculateSubsidy(systemSizeKw: number, projectType: ProjectType): Promise<number> {
+  private async calculateSubsidy(
+    totalWattageWp: number,
+    projectType: ProjectType,
+  ): Promise<number> {
+    const systemSizeKw = systemSizeKwOf({ totalWattageWp });
+    if (systemSizeKw == null) return 0;
     const configs = await this.subsidyConfigRepo.findAllActiveByProjectType(projectType);
 
     if (configs.length === 0) return 0;

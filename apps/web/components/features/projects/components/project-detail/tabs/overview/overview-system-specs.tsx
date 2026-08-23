@@ -140,11 +140,7 @@ export function OverviewSystemSpecs({
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 mb-3 flex items-start justify-between gap-3 shrink-0">
           <div>
             <p className="text-[11px] text-foreground-secondary">Installed Capacity</p>
-            <SystemSizeDisplay
-              actualKw={project.actualSystemSizeKw ?? project.systemSizeKw}
-              requestedKw={project.systemSizeKw}
-              size="lg"
-            />
+            <SystemSizeDisplay kw={project.systemSizeKw} size="lg" />
           </div>
           <div className="text-right">
             <p className="text-[10px] text-foreground-secondary uppercase font-semibold">Panels</p>

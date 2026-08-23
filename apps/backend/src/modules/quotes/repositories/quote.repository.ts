@@ -4,6 +4,7 @@ import { QuoteSortField, QuoteStatus, SortOrder } from '@tejas96/shared/types';
 import { Repository, type EntityManager } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
+import { systemSizeKwOf } from '../../../common/utils';
 import { QuoteQueryDto } from '../dto/quotes/quote-query.dto';
 import { QuoteEntity } from '../entities/quote.entity';
 
@@ -181,7 +182,7 @@ export class QuoteRepository {
         case QuoteSortField.VALID_UNTIL:
           return dir * (new Date(a.validUntil).getTime() - new Date(b.validUntil).getTime());
         case QuoteSortField.SYSTEM_SIZE:
-          return dir * ((av?.systemSizeKw ?? 0) - (bv?.systemSizeKw ?? 0));
+          return dir * ((systemSizeKwOf(av ?? {}) ?? 0) - (systemSizeKwOf(bv ?? {}) ?? 0));
         case QuoteSortField.EFFECTIVE_PRICE:
           return dir * ((av?.effectivePrice ?? 0) - (bv?.effectivePrice ?? 0));
         case QuoteSortField.FINAL_PRICE:
@@ -341,7 +342,7 @@ export class QuoteRepository {
 
     // PostgreSQL DISTINCT ON gives us the first row per property_id
     // Combined with ORDER BY createdAt DESC, we get the latest quote per property
-    // Join latest quote version by creation date to get finalPrice/systemSizeKw
+    // Join latest quote version by creation date to get finalPrice/totalWattageWp
     const quotes = await (manager ?? this.repository.manager)
       .getRepository(QuoteEntity)
       .createQueryBuilder('quote')
@@ -354,7 +355,6 @@ export class QuoteRepository {
         'quote.quoteDate',
         'cv.id',
         'cv.finalPrice',
-        'cv.systemSizeKw',
         'cv.totalWattageWp',
       ])
       .distinctOn(['quote.propertyId'])
@@ -376,7 +376,7 @@ export class QuoteRepository {
           status: quote.status,
           quoteDate: quote.quoteDate,
           finalPrice: cv?.finalPrice != null ? Number(cv.finalPrice) : undefined,
-          systemSizeKw: cv?.systemSizeKw != null ? Number(cv.systemSizeKw) : undefined,
+          systemSizeKw: systemSizeKwOf(cv ?? {}),
           totalWattageWp: cv?.totalWattageWp != null ? Number(cv.totalWattageWp) : undefined,
         });
       }

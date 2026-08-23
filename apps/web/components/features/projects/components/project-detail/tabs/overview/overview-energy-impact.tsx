@@ -27,7 +27,7 @@ export function OverviewEnergyImpact({
     return null;
   }
 
-  const actualSizeKw = project.actualSystemSizeKw ?? project.systemSizeKw;
+  const actualSizeKw = project.systemSizeKw;
 
   const impact = computeSolarImpact({
     systemSizeKw: actualSizeKw,

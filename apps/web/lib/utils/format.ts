@@ -88,37 +88,11 @@ export function formatDueDatePendingLabel(endDate: string): string {
 }
 
 /**
- * Panels are ordered in whole modules, so the array that gets installed rarely
- * lands exactly on the capacity that was selected — 6 × 540 Wp is 3.24 kW
- * against a 3 kW selection. Both numbers are real and they mean different
- * things: the selected figure is what the subsidy is rated on, the actual is
- * what sits on the roof.
- *
- * This is the one place that decides whether the gap is worth reporting.
- * A hair of float drift is not a variance.
- */
-const SYSTEM_SIZE_VARIANCE_THRESHOLD = 0.01;
-
-export function hasSystemSizeVariance(actual?: number, requested?: number): boolean {
-  return (
-    actual != null &&
-    requested != null &&
-    Math.abs(actual - requested) > SYSTEM_SIZE_VARIANCE_THRESHOLD
-  );
-}
-
-/**
  * Plain-string fallback for contexts that cannot render JSX (e.g. subtitle string building).
- * Shows actual as primary, naming the selected size only when it differs.
  */
-export function formatSystemSizeDisplay(actual?: number, requested?: number): string {
-  const primary = actual ?? requested;
-  if (primary == null) return '—';
-  const primaryStr = `${formatSystemSize(primary)} kW`;
-  if (requested != null && hasSystemSizeVariance(actual, requested)) {
-    return `${primaryStr} (selected ${formatSystemSize(requested)} kW)`;
-  }
-  return primaryStr;
+export function formatSystemSizeDisplay(kw?: number): string {
+  if (kw == null) return '—';
+  return `${formatSystemSize(kw)} kW`;
 }
 
 /**

@@ -54,7 +54,6 @@ export {
   getDueDateColor,
   getDueDateMuiColor,
   getInitials,
-  hasSystemSizeVariance,
   toTitleLabel,
 } from './format';
 

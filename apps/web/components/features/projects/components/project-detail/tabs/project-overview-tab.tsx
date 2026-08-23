@@ -23,7 +23,7 @@ export interface ProjectOverviewTabProps {
 
 export function ProjectOverviewTab({ project, isActive }: ProjectOverviewTabProps): JSX.Element {
   const projectPath = buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id });
-  const effectiveSizeKw = project.actualSystemSizeKw ?? project.systemSizeKw;
+  const effectiveSizeKw = project.systemSizeKw;
   const showEnergy = !!effectiveSizeKw && effectiveSizeKw > 0;
 
   return (

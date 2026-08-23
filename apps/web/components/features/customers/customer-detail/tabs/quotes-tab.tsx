@@ -203,7 +203,7 @@ export function QuotesTab({
                 : quotes.map((quote) => {
                     const href = buildRoute(ROUTES.QUOTES.DETAIL, { id: quote.id });
                     const tone: DetailTone = QUOTE_STATUS_TONE[quote.status] ?? 'neutral';
-                    const sizeKw = quote.actualSystemSizeKw ?? quote.systemSizeKw;
+                    const sizeKw = quote.systemSizeKw;
                     const validity = getValidity(quote.validUntil, quote.status);
                     const hasSubsidy = Boolean(quote.subsidyAmount && quote.subsidyAmount > 0);
 

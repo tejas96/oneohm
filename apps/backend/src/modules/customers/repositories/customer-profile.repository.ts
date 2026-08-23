@@ -16,6 +16,7 @@ import {
 import { IsNull, Repository, type EntityManager, type SelectQueryBuilder } from 'typeorm';
 
 import { CUSTOMER_NEEDS_FOLLOWUP } from './followup-predicates';
+import { systemSizeKwSqlRaw } from '../../../common/utils/transform.util';
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 
@@ -186,19 +187,12 @@ function applyMatchingPropertyFilter(
     conditions.push('latest_quote.status = :quoteStatus');
     params.quoteStatus = query.quoteStatus;
   }
-  // Same wattage-preferred size as getSitePortfolioSummaries — filtering on
-  // the raw `system_size_kw` column would silently disagree with the value
-  // the "Site portfolio" column and "System Size" range filter both display.
   if (query.propertySystemSizeMin !== undefined) {
-    conditions.push(
-      `(CASE WHEN cv.total_wattage_wp > 0 THEN cv.total_wattage_wp / 1000.0 ELSE cv.system_size_kw END) >= :propertySystemSizeMin`,
-    );
+    conditions.push(`${systemSizeKwSqlRaw('cv')} >= :propertySystemSizeMin`);
     params.propertySystemSizeMin = query.propertySystemSizeMin;
   }
   if (query.propertySystemSizeMax !== undefined) {
-    conditions.push(
-      `(CASE WHEN cv.total_wattage_wp > 0 THEN cv.total_wattage_wp / 1000.0 ELSE cv.system_size_kw END) <= :propertySystemSizeMax`,
-    );
+    conditions.push(`${systemSizeKwSqlRaw('cv')} <= :propertySystemSizeMax`);
     params.propertySystemSizeMax = query.propertySystemSizeMax;
   }
 
@@ -454,8 +448,8 @@ export class CustomerProfileRepository {
              COUNT(latest_quote.id)                      AS "quotedCount",
              COALESCE(SUM(
                CASE WHEN cv.total_wattage_wp > 0
-                    THEN cv.total_wattage_wp / 1000.0
-                    ELSE cv.system_size_kw
+                    THEN ROUND(cv.total_wattage_wp / 1000.0, 2)
+                    ELSE 0
                END
              ), 0)                                       AS "systemSizeKw",
              COALESCE(SUM(cv.final_price), 0)            AS "quotedAmount"

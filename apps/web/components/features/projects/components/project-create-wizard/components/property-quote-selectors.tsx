@@ -62,12 +62,8 @@ export function PropertyQuoteSelectors({
   });
 
   const quoteOptions = filteredQuotes.map((q) => {
-    const actualSystemSizeKw = q.actualSystemSizeKw ?? null;
-    const requestedSystemSize = q.systemSizeKw && q.systemSizeKw > 0 ? `${q.systemSizeKw}kW` : null;
     const displaySize =
-      actualSystemSizeKw != null
-        ? `${actualSystemSizeKw.toFixed(2)}kW`
-        : (requestedSystemSize ?? '0kW');
+      q.systemSizeKw != null && q.systemSizeKw > 0 ? `${q.systemSizeKw.toFixed(2)}kW` : '0kW';
     return {
       value: q.id,
       label: `${q.quoteNumber} · ${formatCurrency(q.finalPrice ?? q.basePrice ?? 0)} · ${displaySize}`,
@@ -139,9 +135,7 @@ export function PropertyQuoteSelectors({
         (() => {
           const q = filteredQuotes.find((x) => x.id === selectedQuoteId);
           if (!q) return null;
-          const actualSystemSizeKw = q.actualSystemSizeKw ?? null;
-          const requestedSystemSize =
-            q.systemSizeKw && q.systemSizeKw > 0 ? `${q.systemSizeKw}kW` : null;
+          const systemSizeKw = q.systemSizeKw;
           return (
             <div className="p-3 rounded-lg bg-background-secondary">
               <MUITypography variant="finePrint" className="text-foreground-secondary mb-1">
@@ -156,18 +150,13 @@ export function PropertyQuoteSelectors({
                 </div>
                 <div>
                   <MUITypography variant="timestamp" className="text-foreground-secondary">
-                    Actual System Size
+                    System Size
                   </MUITypography>
                   <MUITypography variant="bodyPrimary">
-                    {actualSystemSizeKw != null
-                      ? `${actualSystemSizeKw.toFixed(2)}kW`
-                      : (requestedSystemSize ?? '—')}
+                    {systemSizeKw != null && systemSizeKw > 0
+                      ? `${systemSizeKw.toFixed(2)}kW`
+                      : '—'}
                   </MUITypography>
-                  {actualSystemSizeKw != null && requestedSystemSize && (
-                    <MUITypography variant="timestamp" className="text-foreground-secondary">
-                      (req/sel {requestedSystemSize})
-                    </MUITypography>
-                  )}
                 </div>
                 <div>
                   <MUITypography variant="timestamp" className="text-foreground-secondary">

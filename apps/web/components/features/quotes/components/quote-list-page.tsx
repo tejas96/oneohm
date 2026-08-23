@@ -268,13 +268,7 @@ const COLUMNS: ColumnConfig<QuoteRow>[] = [
     headerName: 'System',
     sortable: true,
     flex: 1,
-    renderCell: ({ row }) => (
-      <SystemSizeDisplay
-        actualKw={row.actualSystemSizeKw}
-        requestedKw={row.systemSizeKw}
-        layout="stacked"
-      />
-    ),
+    renderCell: ({ row }) => <SystemSizeDisplay kw={row.systemSizeKw} layout="stacked" />,
   },
   {
     field: 'finalPrice',

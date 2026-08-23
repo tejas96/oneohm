@@ -363,13 +363,7 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
     sortable: true,
     renderCell: (row): JSX.Element => {
       const project = row as ProjectListItem;
-      return (
-        <SystemSizeDisplay
-          actualKw={project.actualSystemSizeKw}
-          requestedKw={project.systemSizeKw}
-          layout="stacked"
-        />
-      );
+      return <SystemSizeDisplay kw={project.systemSizeKw} layout="stacked" />;
     },
   },
   {

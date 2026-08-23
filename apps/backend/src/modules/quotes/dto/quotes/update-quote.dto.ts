@@ -56,17 +56,8 @@ export class UpdateQuoteDto {
   systemType?: SystemType;
 
   @ApiPropertyOptional({
-    example: 5.5,
-    description: 'System size in kW',
-  })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @IsOptional()
-  systemSizeKw?: number;
-
-  @ApiPropertyOptional({
     example: 5500,
-    description: 'Total wattage in Wp',
+    description: 'Total panel wattage in Wp',
   })
   @IsInt()
   @Min(0)

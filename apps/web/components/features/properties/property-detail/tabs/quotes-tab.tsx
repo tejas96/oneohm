@@ -40,13 +40,7 @@ import { detailTableSx, tableCardSx } from '@/components/features/customers/cust
 import { usePropertyLockStatus } from '@/components/features/quotes/hooks/use-quotes';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useGatedAction } from '@/lib/rbac';
-import {
-  formatCurrency,
-  formatDate,
-  formatSystemSize,
-  hasSystemSizeVariance,
-  toTitleLabel,
-} from '@/lib/utils';
+import { formatCurrency, formatDate, formatSystemSize, toTitleLabel } from '@/lib/utils';
 
 export interface QuotesTabProps {
   propertyId: string;
@@ -196,9 +190,7 @@ export function QuotesTab({
                 const tone: DetailTone = QUOTE_STATUS_TONE[quote.status] ?? 'neutral';
                 const validity = getValidity(quote.validUntil, quote.status);
                 const hasSubsidy = Boolean(quote.subsidyAmount && quote.subsidyAmount > 0);
-                const selectedKw = quote.systemSizeKw;
-                const displayKw = quote.actualSystemSizeKw ?? selectedKw;
-                const sizeDiffers = hasSystemSizeVariance(quote.actualSystemSizeKw, selectedKw);
+                const displayKw = quote.systemSizeKw;
 
                 return (
                   <TableRow key={quote.id}>
@@ -235,10 +227,7 @@ export function QuotesTab({
                     <TableCell>
                       <Mono>{displayKw ? `${formatSystemSize(displayKw)} kW` : '—'}</Mono>
                       <Typography sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-tertiary)' }}>
-                        {[
-                          quote.systemType ? toTitleLabel(quote.systemType) : null,
-                          sizeDiffers ? `selected ${formatSystemSize(selectedKw)} kW` : null,
-                        ]
+                        {[quote.systemType ? toTitleLabel(quote.systemType) : null]
                           .filter(Boolean)
                           .join(' · ') || '—'}
                       </Typography>

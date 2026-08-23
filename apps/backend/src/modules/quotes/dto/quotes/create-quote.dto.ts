@@ -85,17 +85,8 @@ export class CreateQuoteDto {
   systemType!: SystemType;
 
   @ApiProperty({
-    example: 5.5,
-    description: 'System size in kW',
-  })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @IsNotEmpty()
-  systemSizeKw!: number;
-
-  @ApiProperty({
     example: 5500,
-    description: 'Total wattage in Wp',
+    description: 'Total panel wattage in Wp (canonical system size source)',
   })
   @IsInt()
   @Min(0)
