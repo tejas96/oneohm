@@ -91,6 +91,16 @@ export class ServiceTicketResponseDto extends ServiceTicketListItemDto {
   })
   propertyCoordinates: { latitude: number; longitude: number } | null;
 
+  /**
+   * The customer's number, for the mobile detail screen's Call button.
+   *
+   * Deliberately NOT on `ServiceTicketListItemDto`. A row has no call button —
+   * ringing somebody is a decision made after reading the ticket, not while
+   * scanning a list.
+   */
+  @ApiPropertyOptional({ example: '9876543210', nullable: true })
+  customerPhone: string | null;
+
   @ApiPropertyOptional({ type: 'array', items: { type: 'object' }, nullable: true })
   photos: ServiceTicketPhoto[] | null;
 
