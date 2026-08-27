@@ -102,6 +102,7 @@ export function toResponseDto(ticket: ServiceTicketEntity): ServiceTicketRespons
     propertyLabel: propertyLabel(property),
     propertyAddress: propertyAddress(property),
     propertyCoordinates: coercePropertyCoordinates(property?.gpsCoordinates),
+    customerPhone: ticket.customer?.phone ?? null,
     projectName: ticket.project?.name ?? '',
     photos: ticket.photos,
     resolutionNote: ticket.resolutionNote,
