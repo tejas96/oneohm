@@ -196,6 +196,22 @@ export class ServiceTicketService {
     const now = new Date();
     const fromStatus = ticket.status;
 
+    /**
+     * Reopening clears the resolution.
+     *
+     * Without this a ticket moved resolved -> open keeps `resolutionNote` and
+     * `resolvedAt`, so it reads as unfinished and resolved at the same time —
+     * and the mobile detail screen renders a "Resolution" section on an open
+     * ticket, describing work that has just been declared not done.
+     *
+     * resolved -> CLOSED deliberately keeps both: that is the record of how the
+     * job was actually fixed, and closing is the end of the same story rather
+     * than a reversal of it.
+     */
+    const reopening =
+      fromStatus === ServiceTicketStatus.RESOLVED &&
+      (dto.status === ServiceTicketStatus.OPEN || dto.status === ServiceTicketStatus.IN_PROGRESS);
+
     await this.dataSource.transaction(async (manager) => {
       await manager.update(ServiceTicketEntity, id, {
         status: dto.status,
@@ -203,6 +219,7 @@ export class ServiceTicketService {
         ...(dto.status === ServiceTicketStatus.RESOLVED
           ? { resolvedAt: now, resolutionNote: note }
           : {}),
+        ...(reopening ? { resolvedAt: null, resolutionNote: null } : {}),
         ...(dto.status === ServiceTicketStatus.CLOSED ? { closedAt: now } : {}),
       });
 
