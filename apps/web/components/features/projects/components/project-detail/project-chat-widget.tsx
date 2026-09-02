@@ -1,67 +1,66 @@
 'use client';
 
-import { MessageSquare, X, Send, Loader2 } from 'lucide-react';
+import { Loader2, MessageSquare, Send, X } from 'lucide-react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
+import { IconCircle, TonePill } from './primitives';
 import { useProjectChatMessages, useSendProjectChatMessage } from '../../hooks';
+import type { ProjectChatMessage } from '../../hooks/use-project-chat';
 
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 interface ProjectChatWidgetProps {
   projectId: string;
 }
 
+function formatTime(dateStr: string): string {
+  try {
+    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
+function isDifferentDay(
+  current: ProjectChatMessage,
+  prev: ProjectChatMessage | undefined,
+): boolean {
+  if (!prev) return true;
+  const a = new Date(current.createdAt);
+  const b = new Date(prev.createdAt);
+  return (
+    a.getDate() !== b.getDate() ||
+    a.getMonth() !== b.getMonth() ||
+    a.getFullYear() !== b.getFullYear()
+  );
+}
+
+function dayHeading(dateStr: string): string {
+  try {
+    const msgDate = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    if (msgDate.toDateString() === today.toDateString()) return 'Today';
+    if (msgDate.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return msgDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * The project's conversation, floating over every tab.
+ *
+ * Deliberately ungated. Posting a message is collaboration on a project you
+ * can already open — the route gate (projects.view) is the real boundary, and
+ * there is no catalog code for commenting.
+ */
 export function ProjectChatWidget({ projectId }: ProjectChatWidgetProps): React.JSX.Element {
-  // Deliberately ungated. Posting a message is collaboration on a project you
-  // can already open — the route gate (projects.view) is the real boundary, and
-  // there is no catalog code for commenting. Inventing one would gate nothing
-  // the route does not already gate.
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
-
-  const formatTime = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return '';
-    }
-  };
-
-  const isDifferentDay = (currentMsg: any, prevMsg: any) => {
-    if (!prevMsg) return true;
-    const currentDate = new Date(currentMsg.createdAt);
-    const prevDate = new Date(prevMsg.createdAt);
-    return (
-      currentDate.getDate() !== prevDate.getDate() ||
-      currentDate.getMonth() !== prevDate.getMonth() ||
-      currentDate.getFullYear() !== prevDate.getFullYear()
-    );
-  };
-
-  const getDayHeading = (dateStr: string) => {
-    try {
-      const msgDate = new Date(dateStr);
-      const today = new Date();
-      const yesterday = new Date();
-      yesterday.setDate(today.getDate() - 1);
-
-      if (msgDate.toDateString() === today.toDateString()) {
-        return 'Today';
-      }
-      if (msgDate.toDateString() === yesterday.toDateString()) {
-        return 'Yesterday';
-      }
-      return msgDate.toLocaleDateString([], {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return '';
-    }
-  };
 
   const { data: messages = [], isLoading } = useProjectChatMessages(projectId);
   const sendMessageMutation = useSendProjectChatMessage(projectId);
@@ -98,7 +97,6 @@ export function ProjectChatWidget({ projectId }: ProjectChatWidgetProps): React.
   }, [messages, lastReadTime, isOpen, user?.id]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior });
@@ -111,7 +109,7 @@ export function ProjectChatWidget({ projectId }: ProjectChatWidgetProps): React.
     return () => clearTimeout(timer);
   }, [isOpen, messages.length, scrollToBottom]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = (e: React.FormEvent): void => {
     e.preventDefault();
     const trimmed = inputText.trim();
     if (!trimmed || sendMessageMutation.isPending) return;
@@ -129,44 +127,48 @@ export function ProjectChatWidget({ projectId }: ProjectChatWidgetProps): React.
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-      {/* Chat Window Panel */}
       {isOpen && (
-        <div className="mb-4 w-96 h-[500px] bg-background/95 backdrop-blur border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-all duration-300 transform scale-100 origin-bottom-right">
-          {/* Header */}
-          <div className="p-4 bg-white text-neutral-900 flex items-center justify-between border-b border-border">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-primary animate-pulse" />
+        <div
+          role="dialog"
+          aria-label="Project chat"
+          className="mb-4 flex h-[520px] w-[380px] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-3xl bg-surface shadow-e5"
+        >
+          <div className="flex items-center justify-between px-5 pb-3 pt-4">
+            <div className="flex items-center gap-3">
+              <IconCircle tone="accent" size={32}>
+                <MessageSquare className="size-4" strokeWidth={1.75} />
+              </IconCircle>
               <div>
-                <h3 className="font-semibold text-sm leading-none">Project Chat</h3>
-                <span className="text-[10px] text-muted-foreground">
-                  Customer & Team Discussion
-                </span>
+                <h3 className="text-[13.5px] font-semibold leading-tight text-foreground">
+                  Project chat
+                </h3>
+                <span className="text-[11px] text-foreground-tertiary">Customer and team</span>
               </div>
             </div>
             <button
+              type="button"
               onClick={() => setIsOpen(false)}
-              className="text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 p-1.5 rounded-lg transition"
+              aria-label="Close chat"
+              className="flex size-8 items-center justify-center rounded-full text-foreground-secondary transition-colors duration-fast hover:bg-background-tertiary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              <X className="w-4 h-4" />
+              <X className="size-4" />
             </button>
           </div>
 
-          {/* Messages Area */}
-          <div
-            ref={messagesContainerRef}
-            className="flex-1 p-4 overflow-y-auto space-y-4 bg-muted/20 custom-scrollbar"
-          >
+          <div className="flex-1 space-y-1 overflow-y-auto bg-background-secondary px-4 py-3 scrollbar-thin">
             {isLoading && messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                <span className="text-xs">Loading conversation...</span>
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-foreground-tertiary">
+                <Loader2 className="size-5 animate-spin text-primary-dark" />
+                <span className="text-xs">Loading the conversation…</span>
               </div>
             ) : messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground">
-                <MessageSquare className="w-12 h-12 mb-3 text-muted/65 stroke-[1.5]" />
-                <p className="text-sm font-semibold mb-1">No messages yet</p>
-                <p className="text-xs max-w-[200px]">
-                  Send the first message to start discussing this solar project.
+              <div className="flex h-full flex-col items-center justify-center p-6 text-center">
+                <IconCircle tone="neutral" size={40} className="mb-3">
+                  <MessageSquare className="size-[18px]" strokeWidth={1.75} />
+                </IconCircle>
+                <p className="text-[13.5px] font-semibold text-foreground">No messages yet</p>
+                <p className="mt-1 max-w-[220px] text-[12px] text-foreground-secondary">
+                  Send the first message to start the conversation on this project.
                 </p>
               </div>
             ) : (
@@ -188,47 +190,51 @@ export function ProjectChatWidget({ projectId }: ProjectChatWidgetProps): React.
                 return (
                   <React.Fragment key={msg.id}>
                     {showDateHeader && (
-                      <div className="relative flex items-center justify-center my-4">
-                        <div className="absolute inset-0 flex items-center">
-                          <div className="w-full border-t border-border/60"></div>
-                        </div>
-                        <span className="relative px-3 bg-neutral-50 text-[10px] font-bold text-muted-foreground uppercase tracking-wider rounded-full py-0.5 border border-border/50 text-[9px] shadow-sm">
-                          {getDayHeading(msg.createdAt)}
+                      <div className="flex justify-center py-3">
+                        <span className="rounded-pill bg-surface px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-foreground-tertiary shadow-e1">
+                          {dayHeading(msg.createdAt)}
                         </span>
                       </div>
                     )}
                     <div
-                      className={`flex flex-col max-w-[80%] transition-all duration-200 ${
-                        isOwn ? 'ml-auto items-end' : 'mr-auto items-start'
-                      } ${isConsecutive ? 'mt-1' : 'mt-4'}`}
+                      className={cn(
+                        'flex max-w-[82%] flex-col',
+                        isOwn ? 'ml-auto items-end' : 'mr-auto items-start',
+                        isConsecutive ? 'mt-1' : 'mt-3',
+                      )}
                     >
                       {!isOwn && !isConsecutive && (
-                        <div className="flex items-center gap-1.5 mb-1 px-1">
-                          <span className="text-[10px] font-bold text-neutral-800">
+                        <div className="mb-1 flex items-center gap-1.5 px-1">
+                          <span className="text-[11px] font-semibold text-foreground">
                             {senderName}
                           </span>
                           {msg.sender?.roleType === 'customer' && (
-                            <span className="text-[9px] bg-secondary/15 text-secondary font-bold px-1.5 py-0.5 rounded-md border border-secondary/10">
-                              Customer
-                            </span>
+                            <TonePill
+                              label="Customer"
+                              tone="info"
+                              className="h-4 px-1.5 text-[9.5px]"
+                            />
                           )}
                           {msg.sender?.roleType === 'team' && (
-                            <span className="text-[9px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded-md border border-primary/10">
-                              Team
-                            </span>
+                            <TonePill
+                              label="Team"
+                              tone="accent"
+                              className="h-4 px-1.5 text-[9.5px]"
+                            />
                           )}
                         </div>
                       )}
                       <div
-                        className={`p-3 rounded-2xl text-sm leading-normal shadow-sm transition-all hover:shadow-md ${
+                        className={cn(
+                          'px-3.5 py-2.5 text-[13px] leading-normal',
                           isOwn
-                            ? 'bg-primary text-primary-foreground rounded-tr-none border border-primary/10'
-                            : 'bg-white text-neutral-900 border border-border rounded-tl-none'
-                        }`}
+                            ? 'rounded-2xl rounded-br-md bg-primary-dark text-white'
+                            : 'rounded-2xl rounded-bl-md bg-surface text-foreground shadow-e1',
+                        )}
                       >
                         <p className="whitespace-pre-wrap break-words">{msg.messageText}</p>
                       </div>
-                      <span className="text-[9px] text-muted-foreground/75 mt-1 px-1 font-medium">
+                      <span className="mt-1 px-1 text-[10px] tabular-nums text-foreground-tertiary">
                         {formatTime(msg.createdAt)}
                       </span>
                     </div>
@@ -239,48 +245,50 @@ export function ProjectChatWidget({ projectId }: ProjectChatWidgetProps): React.
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Form */}
-          <form
-            onSubmit={handleSend}
-            className="p-3 border-t border-border bg-background flex items-center gap-2"
-          >
+          <form onSubmit={handleSend} className="flex items-center gap-2 bg-surface px-3 py-3">
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 min-w-0 bg-muted/40 hover:bg-muted/60 focus:bg-background border border-input rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition"
+              placeholder="Write a message"
+              aria-label="Message"
+              className="h-10 min-w-0 flex-1 rounded-pill bg-background-tertiary px-4 text-[13px] text-foreground placeholder:text-foreground-tertiary focus:outline-2 focus:outline-offset-2 focus:outline-primary"
             />
             <button
               type="submit"
+              aria-label="Send message"
               disabled={!inputText.trim() || sendMessageMutation.isPending}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 p-2.5 rounded-xl transition flex items-center justify-center"
+              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-dark text-white transition-[transform,opacity] duration-fast hover:brightness-110 active:scale-[0.97] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {sendMessageMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin" />
               ) : (
-                <Send className="w-4 h-4" />
+                <Send className="size-4" />
               )}
             </button>
           </form>
         </div>
       )}
 
-      {/* Toggle Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative flex items-center justify-center w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:bg-primary/90 transition transform hover:scale-105 active:scale-95 duration-200"
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-label={
+          isOpen
+            ? 'Close project chat'
+            : hasUnread
+              ? 'Open project chat, new messages'
+              : 'Open project chat'
+        }
+        aria-expanded={isOpen}
+        className="relative flex size-[52px] items-center justify-center rounded-full bg-primary-dark text-white shadow-e3 transition-[box-shadow,transform] duration-fast hover:shadow-e4 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
-        {isOpen ? (
-          <X className="w-6 h-6 text-white" />
-        ) : (
-          <MessageSquare className="w-6 h-6 text-white" />
-        )}
+        {isOpen ? <X className="size-5" /> : <MessageSquare className="size-5" />}
 
         {!isOpen && hasUnread && (
-          <span className="absolute top-0 right-0 flex h-4 w-4 transform translate-x-1/3 -translate-y-1/3 z-[60]">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border border-white shadow"></span>
+          <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center">
+            <span className="absolute inline-flex size-full rounded-full bg-error opacity-60 motion-safe:animate-ping" />
+            <span className="relative inline-flex size-3.5 rounded-full bg-error ring-2 ring-surface" />
           </span>
         )}
       </button>

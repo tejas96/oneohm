@@ -1,10 +1,11 @@
 'use client';
 
-import { Warehouse } from '@mui/icons-material';
+import { Warehouse } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
+import { TONE } from '../../primitives';
+
 import { MUIInput } from '@/components/ui/mui-input';
-import { MUITypography } from '@/components/ui/mui-typography';
 import { showToast } from '@/components/ui/sonner';
 import { useUpdateProjectWarehouse } from '@/lib/hooks/resources';
 import { useWarehouses } from '@/lib/hooks/resources/warehouses';
@@ -13,17 +14,23 @@ import { getErrorMessage } from '@/lib/utils/error';
 interface ProjectWarehouseSelectorProps {
   projectId: string;
   defaultWarehouseId?: string;
+  /** True once any stock is reserved — the backend refuses a change with 409. */
+  locked?: boolean;
 }
 
 /**
- * Inline warehouse selector for project inventory allocation.
- * Sets project.defaultWarehouseId — required before "Reserve Stock" works.
- * Once any active allocation exists, the backend returns 409 if you try to change it.
+ * Which warehouse this project draws stock from.
+ *
+ * Reserving stock needs this set, so it sits at the top of the materials card
+ * rather than in a panel of its own — it is a precondition of the button
+ * beside it, not a separate subject. Once anything is allocated the backend
+ * refuses to change it, and the control says so instead of failing on save.
  */
 export function ProjectWarehouseSelector({
   projectId,
   defaultWarehouseId,
-}: ProjectWarehouseSelectorProps) {
+  locked = false,
+}: ProjectWarehouseSelectorProps): React.JSX.Element {
   const { items: warehouses, isLoading: isLoadingWarehouses } = useWarehouses({
     syncToUrl: false,
     defaultPageSize: 200,
@@ -41,40 +48,52 @@ export function ProjectWarehouseSelector({
     label: `${w.name} (${w.code})`,
   }));
 
-  const handleChange = async (newWarehouseId: string) => {
+  const handleChange = async (newWarehouseId: string): Promise<void> => {
     setSelected(newWarehouseId);
     try {
       await updateWarehouse(projectId, newWarehouseId || null);
       showToast.success('Default warehouse updated');
     } catch (err) {
-      // Roll back optimistic change on error
+      // Roll back the optimistic change on error.
       setSelected(defaultWarehouseId ?? '');
       showToast.error(getErrorMessage(err));
     }
   };
 
   return (
-    <div className="rounded-lg shadow-e2 p-4 space-y-2">
-      <div className="flex items-center gap-2">
-        <Warehouse className="text-foreground-muted" fontSize="small" />
-        <MUITypography variant="body" className="font-semibold text-foreground">
-          Default Warehouse
-        </MUITypography>
+    <div
+      className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl px-3.5 py-3"
+      style={{ background: 'var(--ds-canvas-sunken)' }}
+    >
+      <span
+        aria-hidden
+        className="grid size-8 shrink-0 place-items-center rounded-full"
+        style={{ background: TONE.accent.tint, color: TONE.accent.ink }}
+      >
+        <Warehouse className="size-4" strokeWidth={1.75} />
+      </span>
+      <div className="min-w-0">
+        <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-foreground-secondary">
+          Stock comes from
+        </span>
+        <span className="block text-[11.5px] text-foreground-tertiary">
+          {locked
+            ? 'Locked — stock is already reserved against this project.'
+            : 'Set this before reserving stock.'}
+        </span>
       </div>
-      <MUITypography variant="placeholder" className="text-foreground-secondary">
-        Select the warehouse from which materials will be reserved for this project. Cannot be
-        changed once stock has been allocated.
-      </MUITypography>
-      <MUIInput
-        mode="select"
-        fieldLabel="Warehouse"
-        value={selected}
-        onChange={(event) => void handleChange(event.target.value as string)}
-        options={warehouseOptions}
-        placeholder={isLoadingWarehouses ? 'Loading warehouses…' : 'Select a warehouse'}
-        disabled={isLoadingWarehouses || isPending}
-        fullWidth
-      />
+      <div className="ml-auto w-full min-w-[220px] sm:w-auto">
+        <MUIInput
+          mode="select"
+          aria-label="Default warehouse"
+          value={selected}
+          onChange={(event) => void handleChange(event.target.value as string)}
+          options={warehouseOptions}
+          placeholder={isLoadingWarehouses ? 'Loading warehouses…' : 'Choose a warehouse'}
+          disabled={isLoadingWarehouses || isPending || locked}
+          fullWidth
+        />
+      </div>
     </div>
   );
 }

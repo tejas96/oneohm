@@ -1,21 +1,7 @@
 'use client';
 
-import {
-  Alert,
-  AlertTitle,
-  Box,
-  Button,
-  Card,
-  Paper,
-  Skeleton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip,
-} from '@mui/material';
+import { Tooltip } from '@mui/material';
+import { ArrowDownLeft, ArrowUpRight, IndianRupee, ReceiptText } from 'lucide-react';
 import { type JSX, useState } from 'react';
 
 import { ChangeOrderDialog, ReverseEntryDialog, WaiveMilestoneDialog } from './correction-dialogs';
@@ -25,8 +11,17 @@ import { MilestoneWaterfall } from './milestone-waterfall';
 import { ReceiptDates } from './receipt-dates';
 import { RecordMoneyDialog } from './record-money-dialog';
 
+import {
+  ColumnHeader,
+  DetailCard,
+  EmptyPane,
+  Mono,
+  ROW_BLEED,
+  TONE,
+  TonePill,
+} from '@/components/features/projects/components/project-detail/primitives';
 import type { ProjectDetail } from '@/components/features/projects/hooks/types';
-import { MUITypography } from '@/components/ui';
+import { Skeleton } from '@/components/ui/skeleton';
 import { showToast } from '@/components/ui/sonner';
 import {
   useProjectEntries,
@@ -37,6 +32,7 @@ import {
 } from '@/lib/hooks/resources/ledger';
 import { usePaymentApprovals } from '@/lib/hooks/resources/payment-approvals';
 import { useGatedAction } from '@/lib/rbac';
+import { cn } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 /**
@@ -46,6 +42,8 @@ import { formatPaise } from '@/lib/utils/paise';
  */
 const PENDING_PREVIEW_LIMIT = 10;
 
+const ENTRY_COLS = 'md:grid-cols-[104px_128px_minmax(0,1fr)_132px_128px]';
+
 interface ProjectMoneyTabProps {
   projectId: string;
   /** Supplies the receipt header (customer, site, project). Already fetched by the parent. */
@@ -53,15 +51,45 @@ interface ProjectMoneyTabProps {
   isActive?: boolean;
 }
 
+/** A pill action button in a card header. */
+function HeaderAction({
+  onClick,
+  allowed,
+  primary,
+  icon,
+  children,
+}: {
+  onClick: () => void;
+  allowed: boolean;
+  primary?: boolean;
+  icon?: JSX.Element;
+  children: React.ReactNode;
+}): JSX.Element {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-disabled={!allowed}
+      className={cn(
+        'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-pill px-3.5 text-[12.5px] font-medium transition-[filter,transform,background-color] duration-fast active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+        primary
+          ? 'bg-primary text-white hover:brightness-105'
+          : 'bg-background-tertiary text-foreground-secondary hover:text-foreground',
+        !allowed && 'opacity-50',
+      )}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
 /**
  * The project's money, on one screen.
  *
- * Replaces the previous Finance tab, which split payment terms, receipts and
- * expenses across three equal sub-tabs — burying the question anyone actually
- * opens the page to answer: *is this customer behind?* Milestones lead; the
- * ledger sits underneath.
- *
- * Two queries, not the nine the old tab fired.
+ * Milestones lead; the ledger sits underneath. Two queries, not the nine the
+ * old Finance tab fired across three equal sub-tabs — which buried the question
+ * anyone opens the page to answer: *is this customer behind?*
  */
 export function ProjectMoneyTab({
   projectId,
@@ -118,129 +146,108 @@ export function ProjectMoneyTab({
 
   if (summary.isLoading) {
     return (
-      <div className="flex flex-col gap-4">
-        <Skeleton variant="rounded" height={88} />
-        <Skeleton variant="rounded" height={220} />
+      <div className="grid grid-cols-12 gap-4">
+        <Skeleton className="col-span-12 h-32 rounded-3xl" />
+        <Skeleton className="col-span-12 h-64 rounded-3xl" />
       </div>
     );
   }
 
   if (summary.isError || !summary.data) {
-    return <Alert severity="error">Could not load this project&apos;s finances.</Alert>;
+    return (
+      <DetailCard
+        label="Money"
+        isError
+        onRetry={() => {
+          void summary.refetch();
+        }}
+        errorHeight={200}
+      >
+        <span />
+      </DetailCard>
+    );
   }
 
   const s = summary.data;
+  const pendingTotal = pendingApprovals.data?.total ?? 0;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button
-          variant="contained"
-          size="small"
-          onClick={recordPayment.onGatedClick}
-          aria-disabled={!recordPayment.allowed}
-          sx={recordPayment.allowed ? undefined : { opacity: 0.5 }}
+    <div className="grid grid-cols-12 gap-4">
+      <SummaryCard
+        summary={s}
+        onRecordPayment={recordPayment}
+        onRecordExpense={recordExpense}
+        onAddChangeOrder={addChangeOrder}
+      />
+
+      {pendingTotal > 0 ? (
+        <DetailCard
+          label="Awaiting approval"
+          aside={`${pendingTotal} ${pendingTotal === 1 ? 'request' : 'requests'}`}
+          className="col-span-12"
         >
-          Record payment
-        </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={recordExpense.onGatedClick}
-          aria-disabled={!recordExpense.allowed}
-          sx={recordExpense.allowed ? undefined : { opacity: 0.5 }}
-        >
-          Record expense
-        </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={addChangeOrder.onGatedClick}
-          aria-disabled={!addChangeOrder.allowed}
-          sx={addChangeOrder.allowed ? undefined : { opacity: 0.5 }}
-        >
-          Add change order
-        </Button>
-      </div>
+          <p
+            className="mb-3 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
+            style={{ background: TONE.warning.tint, color: TONE.warning.ink }}
+          >
+            Not counted in Received or Outstanding. A second person must approve these before they
+            move the customer&apos;s balance.
+          </p>
+          <ul className="flex flex-col gap-1">
+            {pendingApprovals.data?.data.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-wrap items-baseline gap-x-2 text-[12.5px] text-foreground-secondary"
+              >
+                <Mono className="text-foreground">{p.requestNo}</Mono>
+                <Mono>{p.valueDate}</Mono>
+                <Mono className="font-medium text-foreground">
+                  {formatPaise(Math.abs(p.amountPaise))}
+                </Mono>
+                {p.reference ? <span className="truncate">{p.reference}</span> : null}
+              </li>
+            ))}
+          </ul>
+          {pendingTotal > PENDING_PREVIEW_LIMIT ? (
+            <p className="pt-2 text-[11.5px] text-foreground-tertiary">
+              and {pendingTotal - PENDING_PREVIEW_LIMIT} more in Finance › Payment approvals
+            </p>
+          ) : null}
+        </DetailCard>
+      ) : null}
 
-      {(pendingApprovals.data?.total ?? 0) > 0 && (
-        <Alert severity="warning" icon={false}>
-          <Box sx={{ fontWeight: 600, mb: 0.5 }}>
-            Awaiting approval ({pendingApprovals.data?.total ?? 0})
-          </Box>
-          <Box sx={{ fontSize: '0.8125rem', mb: 1 }}>
-            Not counted in Received or Outstanding below. A second person must approve these before
-            they affect the customer&apos;s balance.
-          </Box>
-          {pendingApprovals.data?.data.map((p) => (
-            <Box key={p.id} sx={{ fontSize: '0.8125rem' }}>
-              {p.requestNo} · {p.valueDate} · {formatPaise(Math.abs(p.amountPaise))}
-              {p.reference ? ` · ${p.reference}` : ''}
-            </Box>
-          ))}
-          {(pendingApprovals.data?.total ?? 0) > PENDING_PREVIEW_LIMIT && (
-            <Box sx={{ fontSize: '0.8125rem', mt: 0.5, fontStyle: 'italic' }}>
-              and {(pendingApprovals.data?.total ?? 0) - PENDING_PREVIEW_LIMIT} more — see Finance ›
-              Payment Approvals
-            </Box>
-          )}
-        </Alert>
-      )}
-
-      <SummaryStrip summary={s} />
-
-      <CostOverrunBanner contractPaise={s.contractPaise} spentPaise={s.spentPaise} />
-
-      {/* Unallocated cash is money received that belongs to no milestone —
-          an overpayment, or an advance taken before the schedule existed. The
-          old model had nowhere to put it, so it was simply invisible. */}
-      {s.unallocatedPaise > 0 && (
-        // Alert carries the icon, palette and ARIA role — the hand-rolled div it
-        // replaces used an emoji as its icon and Tailwind colour utilities for
-        // severity, neither of which the design system permits.
-        <Alert severity={s.outstandingPaise > 0 ? 'warning' : 'info'} variant="outlined">
-          <AlertTitle>
-            {formatPaise(s.unallocatedPaise)} received but not applied to any milestone
-          </AlertTitle>
-          {/* Two genuinely different situations. Credit alongside an
-              outstanding balance is an anomaly worth naming — the previous
-              copy promised the credit would apply itself to the next
-              milestone, which it never did, so an overpaid customer sat on
-              the chase list. Change orders now sweep credit on creation, so
-              this branch should be unreachable; leaving it in makes the page
-              its own regression detector. */}
-          {/* Neither branch offers a refund: there is no refund entry type
-              wired up anywhere, so promising one sent operators looking for a
-              control that does not exist. */}
-          {s.outstandingPaise > 0
-            ? `${formatPaise(s.outstandingPaise)} still shows as outstanding below and this credit has not been applied to it. Record it against the milestone.`
-            : 'Everything owed on this project is covered. This sits as credit on the customer’s account and is applied automatically to the next change order raised here.'}
-        </Alert>
-      )}
-
-      <section>
-        <MUITypography variant="sectionTitle" sx={{ mb: 1.5 }}>
-          Payment schedule
-        </MUITypography>
+      <DetailCard
+        label="Payment schedule"
+        aside={`${s.milestoneCount} ${s.milestoneCount === 1 ? 'milestone' : 'milestones'}`}
+        className="col-span-12"
+      >
         <MilestoneWaterfall
           milestones={s.milestones}
           // The gate, not the raw setter: the waterfall opens the same receipt
-          // dialog as the "Record payment" button above, so passing
-          // `setDialog` here would walk straight past the gate declared for it.
+          // dialog as the header button, so passing `setDialog` here would walk
+          // straight past the gate declared for it.
           onRecordPayment={recordPayment.onGatedClick}
           onWaive={setWaiving}
         />
-      </section>
+      </DetailCard>
 
       <ProjectEntries
         entries={entries.data ?? []}
-        isLoading={entries.isLoading}
+        // Not `entries.isLoading`: react-query reports false for a DISABLED
+        // query, and this one is disabled until the tab is active — so the
+        // first frame drew "Nothing recorded yet" over a project that has
+        // receipts. No data and no error means still loading.
+        isLoading={entries.data === undefined && !entries.isError}
+        isError={entries.isError}
+        onRetry={() => {
+          void entries.refetch();
+        }}
         onReverse={setReversing}
         onRegenerateReceipt={project ? regenerateReceipt : undefined}
         receiptBusy={receiptPdf.isBusy}
       />
 
-      {(dialog === 'receipt' || dialog === 'expense') && (
+      {dialog === 'receipt' || dialog === 'expense' ? (
         <RecordMoneyDialog
           open
           mode={dialog}
@@ -248,167 +255,194 @@ export function ProjectMoneyTab({
           milestones={s.milestones}
           onClose={() => setDialog(null)}
         />
-      )}
+      ) : null}
 
-      {dialog === 'changeOrder' && (
+      {dialog === 'changeOrder' ? (
         <ChangeOrderDialog
           open
           projectId={projectId}
           currentContractPaise={s.contractPaise}
           onClose={() => setDialog(null)}
         />
-      )}
+      ) : null}
 
-      {reversing && (
+      {reversing ? (
         <ReverseEntryDialog
           open
           projectId={projectId}
           entry={reversing}
           onClose={() => setReversing(null)}
         />
-      )}
+      ) : null}
 
-      {waiving && (
+      {waiving ? (
         <WaiveMilestoneDialog
           open
           projectId={projectId}
           milestone={waiving}
           onClose={() => setWaiving(null)}
         />
-      )}
+      ) : null}
     </div>
   );
 }
 
 /**
- * Warn when project cost approaches or exceeds the quoted price.
+ * The four figures, the cost warning, and the credit note.
  *
  * Expenses never change what the customer owes — that stays the contract. But a
- * project whose costs have overrun the quote is losing money, and nothing in the
- * old module ever said so: quoted margin was assumed, never checked against
- * reality. This is the difference between planned and actual margin, stated
- * plainly on the page where someone will see it.
+ * project whose costs have overrun the quote is losing money, and nothing in
+ * the old module ever said so: quoted margin was assumed, never checked against
+ * reality.
  */
-function CostOverrunBanner({
-  contractPaise,
-  spentPaise,
+function SummaryCard({
+  summary: s,
+  onRecordPayment,
+  onRecordExpense,
+  onAddChangeOrder,
 }: {
-  contractPaise: number;
-  spentPaise: number;
-}): JSX.Element | null {
-  if (contractPaise <= 0 || spentPaise <= 0) return null;
-
-  const marginPaise = contractPaise - spentPaise;
-  const usedPct = Math.round((spentPaise / contractPaise) * 100);
-
-  // Below 80% of the contract there is nothing worth interrupting anyone about.
-  if (usedPct < 80) return null;
-
-  const overrun = marginPaise < 0;
-
-  return (
-    <Alert severity={overrun ? 'error' : 'warning'} variant="outlined">
-      <AlertTitle>
-        {/* "Contract", not "quote". The figure compared against is
-            contractPaise — quote plus change orders — which is the right
-            basis, since it is the revenue this project will actually collect.
-            Calling it the quoted price was simply wrong: on a project with
-            change orders it printed the contract under the word "Quoted",
-            which is a different and smaller number. */}
-        {overrun
-          ? `Costs have exceeded the contract value by ${formatPaise(Math.abs(marginPaise))}`
-          : `Costs are at ${usedPct}% of the contract value`}
-      </AlertTitle>
-      <MUITypography variant="body">
-        Contract {formatPaise(contractPaise)} · spent {formatPaise(spentPaise)} ·{' '}
-        <Box component="span" fontWeight={600} color={overrun ? 'error.main' : 'text.primary'}>
-          {overrun ? 'loss' : 'margin'} {formatPaise(Math.abs(marginPaise))}
-        </Box>
-      </MUITypography>
-      {overrun && (
-        <MUITypography variant="body" sx={{ mt: 1 }}>
-          This does not change what the customer owes. If the extra work was agreed with them, raise
-          a change order instead so the contract reflects it.
-        </MUITypography>
-      )}
-    </Alert>
-  );
-}
-
-function SummaryStrip({ summary }: { summary: ProjectLedgerSummary }): JSX.Element {
+  summary: ProjectLedgerSummary;
+  onRecordPayment: { allowed: boolean; onGatedClick: () => void };
+  onRecordExpense: { allowed: boolean; onGatedClick: () => void };
+  onAddChangeOrder: { allowed: boolean; onGatedClick: () => void };
+}): JSX.Element {
   // Only worth explaining once the contract has moved off the quote. On a
   // project with no change orders the two are identical and a "quote ₹X + ₹0"
-  // line would be pure noise — the tab is meant to be readable at a glance.
-  const hasChangeOrders = summary.changeOrderPaise !== 0;
+  // line would be pure noise.
+  const hasChangeOrders = s.changeOrderPaise !== 0;
+  const marginPaise = s.contractPaise > 0 ? s.contractPaise - s.spentPaise : null;
+  const usedPct = s.contractPaise > 0 ? Math.round((s.spentPaise / s.contractPaise) * 100) : 0;
+  const overrun = marginPaise != null && marginPaise < 0;
 
-  // MUI palette tokens, not Tailwind colour utilities — Tailwind is layout only.
-  const tiles: Array<{ label: string; value: number; tone: string; detail: string | null }> = [
+  const figures: Array<{ label: string; value: number; ink?: string; detail?: string | null }> = [
     {
       label: 'Contract',
-      value: summary.contractPaise,
-      tone: 'text.primary',
+      value: s.contractPaise,
       // Answers "where did this number come from?" on the screen where someone
-      // would ask it. Without it the project list said ₹2,58,568 and this tab
-      // said ₹2,98,568.04, with nothing anywhere reconciling them.
+      // would ask it. Without it the project list said one figure and this tab
+      // said another, with nothing anywhere reconciling them.
       detail: hasChangeOrders
-        ? `quote ${formatPaise(summary.quotedPaise)} ${summary.changeOrderPaise > 0 ? '+' : '−'} ${formatPaise(Math.abs(summary.changeOrderPaise))} change orders`
+        ? `quote ${formatPaise(s.quotedPaise)} ${s.changeOrderPaise > 0 ? '+' : '−'} ${formatPaise(Math.abs(s.changeOrderPaise))} in change orders`
         : null,
     },
-    {
-      label: 'Received',
-      value: summary.receivedPaise,
-      tone: 'success.main',
-      detail: null,
-    },
+    { label: 'Received', value: s.receivedPaise, ink: TONE.success.ink },
     {
       label: 'Outstanding',
-      value: summary.outstandingPaise,
-      tone: summary.outstandingPaise > 0 ? 'warning.main' : 'text.primary',
-      detail: null,
+      value: s.outstandingPaise,
+      ink: s.outstandingPaise > 0 ? TONE.warning.ink : undefined,
     },
-    { label: 'Spent', value: summary.spentPaise, tone: 'text.primary', detail: null },
+    { label: 'Spent', value: s.spentPaise },
   ];
 
   return (
-    <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {tiles.map((t) => (
-        <Card key={t.label} variant="outlined" component="div" sx={{ p: 2 }}>
-          <MUITypography variant="metaLabel" component="dt">
-            {t.label}
-          </MUITypography>
-          <MUITypography
-            component="dd"
-            variant="inherit"
-            color={t.tone}
-            sx={{
-              mt: 0.5,
-              fontSize: '1.125rem',
-              fontWeight: 600,
-              fontVariantNumeric: 'tabular-nums',
-            }}
+    <DetailCard
+      label="Money"
+      className="col-span-12"
+      action={
+        <div className="flex flex-wrap items-center gap-2">
+          <HeaderAction
+            primary
+            onClick={onRecordPayment.onGatedClick}
+            allowed={onRecordPayment.allowed}
+            icon={<ArrowDownLeft className="size-3.5" strokeWidth={2} aria-hidden />}
           >
-            {formatPaise(t.value)}
-          </MUITypography>
-          {t.detail && (
-            <MUITypography variant="finePrint" component="dd" sx={{ mt: 0.25 }}>
-              {t.detail}
-            </MUITypography>
-          )}
-        </Card>
-      ))}
-    </dl>
+            Record payment
+          </HeaderAction>
+          <HeaderAction
+            onClick={onRecordExpense.onGatedClick}
+            allowed={onRecordExpense.allowed}
+            icon={<ArrowUpRight className="size-3.5" strokeWidth={2} aria-hidden />}
+          >
+            Record expense
+          </HeaderAction>
+          <HeaderAction onClick={onAddChangeOrder.onGatedClick} allowed={onAddChangeOrder.allowed}>
+            Change order
+          </HeaderAction>
+        </div>
+      }
+    >
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
+        {figures.map((f) => (
+          <div key={f.label} className="min-w-0">
+            <dt className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-foreground-secondary">
+              {f.label}
+            </dt>
+            <dd
+              className="mt-1.5 truncate text-[20px] font-bold leading-none tracking-[-0.025em] tabular-nums"
+              style={{ color: f.ink ?? 'var(--ds-text-primary)' }}
+            >
+              {formatPaise(f.value)}
+            </dd>
+            {f.detail ? (
+              <dd className="mt-1.5 text-[11px] leading-snug text-foreground-tertiary">
+                {f.detail}
+              </dd>
+            ) : null}
+          </div>
+        ))}
+      </dl>
+
+      {s.contractPaise > 0 && s.spentPaise > 0 && usedPct >= 80 ? (
+        <p
+          className="mt-4 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
+          style={{
+            background: overrun ? TONE.danger.tint : TONE.warning.tint,
+            color: overrun ? TONE.danger.ink : TONE.warning.ink,
+          }}
+        >
+          <span className="font-semibold">
+            {overrun
+              ? `Costs have passed the contract by ${formatPaise(Math.abs(marginPaise ?? 0))}.`
+              : `Costs are at ${usedPct}% of the contract.`}
+          </span>{' '}
+          {overrun
+            ? 'This does not change what the customer owes. If the extra work was agreed, raise a change order so the contract reflects it.'
+            : `Margin left: ${formatPaise(Math.abs(marginPaise ?? 0))}.`}
+        </p>
+      ) : null}
+
+      {/* Unallocated cash is money received that belongs to no milestone — an
+          overpayment, or an advance taken before the schedule existed. The old
+          model had nowhere to put it, so it was simply invisible. */}
+      {s.unallocatedPaise > 0 ? (
+        <p
+          className="mt-3 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
+          style={{
+            background: s.outstandingPaise > 0 ? TONE.warning.tint : TONE.info.tint,
+            color: s.outstandingPaise > 0 ? TONE.warning.ink : TONE.info.ink,
+          }}
+        >
+          <span className="font-semibold">
+            {formatPaise(s.unallocatedPaise)} received but not applied to any milestone.
+          </span>{' '}
+          {/* Two genuinely different situations. Credit alongside an outstanding
+              balance is an anomaly worth naming — the previous copy promised the
+              credit would apply itself, which it never did, so an overpaid
+              customer sat on the chase list. Neither branch offers a refund:
+              there is no refund entry type wired up anywhere. */}
+          {s.outstandingPaise > 0
+            ? `${formatPaise(s.outstandingPaise)} still shows as outstanding and this credit has not been applied to it. Record it against a milestone.`
+            : 'Everything owed is covered. This sits as credit on the customer’s account and is applied automatically to the next change order raised here.'}
+        </p>
+      ) : null}
+    </DetailCard>
   );
 }
 
+/** Every ledger entry on the project, newest first. */
 function ProjectEntries({
   entries,
   isLoading,
+  isError,
+  onRetry,
   onReverse,
   onRegenerateReceipt,
   receiptBusy,
 }: {
   entries: LedgerEntry[];
   isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
   onReverse: (entry: LedgerEntry) => void;
   /** Omitted when the project header data needed to render a receipt is absent. */
   onRegenerateReceipt?: (entry: LedgerEntry) => Promise<void>;
@@ -421,69 +455,82 @@ function ProjectEntries({
   // testing it tells you whether an entry IS a reversal, never whether it HAS
   // been reversed. Using it as the guard left Reverse enabled on an
   // already-reversed receipt; the backend correctly returned 409 and the dialog
-  // sat there saying nothing. Both halves of a pair are always in this list, so
-  // the back-pointer is derivable here without another round trip.
+  // sat there saying nothing.
   const reversedIds = new Set(
     entries.map((e) => e.reversesId).filter((id): id is string => Boolean(id)),
   );
 
-  if (isLoading) return <Skeleton variant="rounded" height={140} />;
-
-  if (entries.length === 0) {
-    return (
-      <section>
-        <MUITypography variant="sectionTitle" sx={{ mb: 1.5 }}>
-          Money in &amp; out
-        </MUITypography>
-        <Card variant="outlined" sx={{ p: 3, textAlign: 'center', borderStyle: 'dashed' }}>
-          <MUITypography variant="placeholder">Nothing recorded yet.</MUITypography>
-        </Card>
-      </section>
-    );
-  }
-
   return (
-    <section>
-      <MUITypography variant="sectionTitle" sx={{ mb: 1.5 }}>
-        Money in &amp; out
-      </MUITypography>
-      <TableContainer component={Paper} variant="outlined">
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Date</TableCell>
-              <TableCell>Entry</TableCell>
-              <TableCell>Detail</TableCell>
-              <TableCell align="right">Amount</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {entries.map((e) => (
-              <TableRow
+    <DetailCard
+      label="Money in and out"
+      aside={
+        entries.length > 0
+          ? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}`
+          : undefined
+      }
+      isError={isError}
+      onRetry={onRetry}
+      className="col-span-12"
+    >
+      {isLoading ? (
+        <div className="flex flex-col gap-1.5">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-12 rounded-xl" />
+          ))}
+        </div>
+      ) : entries.length === 0 ? (
+        <EmptyPane
+          icon={<ReceiptText className="size-4" strokeWidth={2} />}
+          title="Nothing recorded yet"
+          description="Payments and expenses on this project show up here as they are approved."
+        />
+      ) : (
+        <>
+          <div
+            className={cn('hidden items-center gap-3 pb-1.5 md:grid', ROW_BLEED, ENTRY_COLS)}
+            aria-hidden
+          >
+            <ColumnHeader>Date</ColumnHeader>
+            <ColumnHeader>Entry</ColumnHeader>
+            <ColumnHeader>Detail</ColumnHeader>
+            <ColumnHeader className="text-right">Amount</ColumnHeader>
+            <ColumnHeader className="text-right">Actions</ColumnHeader>
+          </div>
+
+          {entries.map((e) => {
+            const isReversal = Boolean(e.reversesId);
+            const wasReversed = reversedIds.has(e.id);
+            return (
+              <div
                 key={e.id}
-                hover
-                sx={e.reversesId ? { backgroundColor: 'action.hover' } : undefined}
+                className={cn(
+                  'flex items-start gap-3 rounded-xl py-2.5 transition-colors duration-fast even:bg-surface-alt hover:bg-background-tertiary md:grid md:items-center md:gap-3',
+                  ROW_BLEED,
+                  ENTRY_COLS,
+                  isReversal && 'opacity-70',
+                )}
               >
-                <TableCell>
+                <div className="shrink-0 text-[11.5px]">
                   <ReceiptDates
                     valueDate={e.valueDate}
                     createdAt={e.createdAt}
                     valueDateIsInferred={e.valueDateIsInferred}
                   />
-                </TableCell>
-                <TableCell sx={{ whiteSpace: 'nowrap', fontFamily: 'monospace', fontSize: 12 }}>
+                </div>
+
+                <Mono className="shrink-0 truncate text-[11.5px] text-foreground-secondary">
                   {e.entryNo}
-                </TableCell>
-                <TableCell>
+                </Mono>
+
+                <div className="min-w-0">
                   {/* A reversal is a correction, not a payment. Labelling it
                       explicitly is the audit trail doing its job. */}
-                  {e.reversesId ? (
-                    <Box component="span" color="text.secondary">
+                  {isReversal ? (
+                    <span className="text-[12.5px] text-foreground-secondary">
                       Reversal — {e.reversalReason ?? 'no reason given'}
-                    </Box>
+                    </span>
                   ) : (
-                    <span>
+                    <span className="block truncate text-[12.5px] text-foreground">
                       {e.category
                         ? formatExpenseCategory(e.category)
                         : (e.paymentMethod ?? e.entryType)}
@@ -495,66 +542,64 @@ function ProjectEntries({
                   {/* Who recorded it and who let it through. Both names, because
                       `createdBy` on a ledger entry is the APPROVER — approval is
                       what inserts the row — so showing one name would credit the
-                      wrong person with taking the money. Entries predating the
-                      approval queue carry neither, which is truthful. */}
-                  {(e.recordedByName ?? e.approvedByName) && (
-                    <MUITypography variant="finePrint" component="div">
+                      wrong person with taking the money. */}
+                  {(e.recordedByName ?? e.approvedByName) ? (
+                    <span className="mt-0.5 block truncate text-[11px] text-foreground-tertiary">
                       {e.recordedByName ? `Recorded by ${e.recordedByName}` : null}
                       {e.recordedByName && e.approvedByName ? ' · ' : null}
                       {e.approvedByName ? `Approved by ${e.approvedByName}` : null}
-                    </MUITypography>
-                  )}
-                </TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    whiteSpace: 'nowrap',
-                    fontVariantNumeric: 'tabular-nums',
-                    color: e.amountPaise < 0 ? 'error.main' : 'success.main',
-                  }}
+                    </span>
+                  ) : null}
+                </div>
+
+                <Mono
+                  className="shrink-0 whitespace-nowrap text-right text-[12.5px] font-medium"
+                  style={{ color: e.amountPaise < 0 ? TONE.danger.ink : TONE.success.ink }}
                 >
                   {formatPaise(e.amountPaise)}
-                </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                </Mono>
+
+                <div className="flex shrink-0 items-center justify-end gap-1.5">
                   {/* Reversals cannot themselves be reversed — reverse the
                       original. Nor can an entry be reversed twice: the backend
                       enforces that with a unique index and returns 409, so
                       offering the button was an invitation to a dead end. */}
-                  {e.reversesId ? null : reversedIds.has(e.id) ? (
-                    <MUITypography variant="finePrint">Reversed</MUITypography>
+                  {isReversal ? null : wasReversed ? (
+                    <TonePill label="Reversed" tone="neutral" />
                   ) : (
-                    <span className="inline-flex gap-1.5">
-                      {/* Money in only, and never on a reversed entry — a
-                          receipt for cash that bounced is worse than none. */}
-                      {e.direction === 'in' && onRegenerateReceipt && (
+                    <>
+                      {/* Money in only, and never on a reversed entry — a receipt
+                          for cash that bounced is worse than none. */}
+                      {e.direction === 'in' && onRegenerateReceipt ? (
                         <Tooltip title="Generate the receipt again and file it in the customer's documents">
-                          {/* Disabled while a receipt is being filed. The hook
-                              refuses re-entry regardless; this stops the button
-                              looking clickable while it works, which is what
-                              produced duplicate copies in the customer's
-                              documents. */}
                           <span>
-                            <Button
-                              size="small"
+                            <button
+                              type="button"
                               disabled={receiptBusy}
                               onClick={() => void onRegenerateReceipt(e)}
+                              className="inline-flex h-7 items-center gap-1 rounded-pill bg-accent-subtle px-2.5 text-[11.5px] font-medium text-primary-dark transition-[filter] duration-fast hover:brightness-95 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                             >
+                              <IndianRupee className="size-3" strokeWidth={2} aria-hidden />
                               Receipt
-                            </Button>
+                            </button>
                           </span>
                         </Tooltip>
-                      )}
-                      <Button size="small" color="inherit" onClick={() => onReverse(e)}>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => onReverse(e)}
+                        className="inline-flex h-7 items-center rounded-pill px-2.5 text-[11.5px] font-medium text-foreground-secondary transition-colors duration-fast hover:bg-surface hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      >
                         Reverse
-                      </Button>
-                    </span>
+                      </button>
+                    </>
                   )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </section>
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+    </DetailCard>
   );
 }

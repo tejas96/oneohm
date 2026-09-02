@@ -2,17 +2,18 @@
 
 import { type TaskStatusOption } from '@tejas96/shared/constants';
 import { type TaskPriority, TASK_PRIORITY_LABELS } from '@tejas96/shared/types';
-import { ChevronDown, ChevronRight, Lock, Minus } from 'lucide-react';
+import { ChevronDown, ChevronRight, ListChecks, Lock, Minus } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { TASK_PRIORITY_DOT_COLOR, TASK_PRIORITY_HEX_COLOR } from '../../../../constants';
+import { TASK_PRIORITY_HEX_COLOR } from '../../../../constants';
 import type { ProjectTaskItem } from '../../../../hooks/types';
 import { ColorDotLabel, QuickSelect, type MUISelectOption } from '../../../quick-select';
+import { ColumnHeader, EmptyPane, Mono, ROW_BLEED, TonePill } from '../../primitives';
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { MUIAvatar } from '@/components/ui';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn, formatDate, getDueDateColor, getInitials } from '@/lib/utils';
+import { cn, formatDate, getDueDateColor } from '@/lib/utils';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -39,9 +40,7 @@ interface TaskGroup {
   tasks: ProjectTaskItem[];
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-// ── Module-level constants ────────────────────────────────────────────────────
+// ── Module-level constants ──────────────────────────────────────────────────
 
 // Built once at module load. Object.keys keeps insertion order for string keys
 // (guaranteed in V8 and consistent across all modern JS engines).
@@ -57,70 +56,72 @@ const PRIORITY_OPTIONS: MUISelectOption[] = (
   ),
 }));
 
-const HEADER_GRID_COLS_WITH_MILESTONES = 'grid-cols-[72px_1fr_112px_96px_56px_88px_78px_104px]';
-const HEADER_GRID_COLS_WITHOUT_MILESTONES = 'grid-cols-[72px_1fr_96px_56px_88px_78px_104px]';
-const ROW_GRID_COLS_WITH_MILESTONES = 'md:grid-cols-[72px_1fr_112px_96px_56px_88px_78px_104px]';
-const ROW_GRID_COLS_WITHOUT_MILESTONES = 'md:grid-cols-[72px_1fr_96px_56px_88px_78px_104px]';
+const COLS_WITH_PHASE = 'md:grid-cols-[62px_minmax(0,1fr)_118px_100px_44px_84px_84px_104px]';
+const COLS_WITHOUT_PHASE = 'md:grid-cols-[62px_minmax(0,1fr)_100px_44px_84px_84px_104px]';
+
+/**
+ * The readable half of a task code.
+ *
+ * Codes are `TSK-ONEOHM_EPC-2026-5995` — 24 characters, wider than any column
+ * this table can spare, so the full code truncated to "TSK-ONEOHM…" and told
+ * the reader nothing. Everything before the last segment is the same on every
+ * row of every project, so the number is the only part that identifies a task.
+ * The full code stays in the row's tooltip and in the drawer.
+ */
+function shortCode(code: string): string {
+  const tail = code.slice(code.lastIndexOf('-') + 1);
+  return tail && tail !== code ? `#${tail}` : code;
+}
 
 // ── Skeleton ────────────────────────────────────────────────────────────────
 
 function TableSkeleton(): React.JSX.Element {
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
-      {Array.from({ length: 3 }).map((_, groupIdx) => (
-        <div key={groupIdx}>
-          <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border-b border-border">
-            <Skeleton className="h-3 w-3 rounded" />
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-4 w-6 rounded-full" />
+    <div className="flex flex-col gap-4">
+      {Array.from({ length: 3 }).map((_, groupIndex) => (
+        <div key={groupIndex}>
+          <Skeleton className="mb-2 h-3 w-28 rounded-md" />
+          <div className="flex flex-col gap-1">
+            {Array.from({ length: 3 }).map((_, rowIndex) => (
+              <Skeleton key={rowIndex} className="h-11 rounded-xl" />
+            ))}
           </div>
-          {Array.from({ length: 3 }).map((_, rowIdx) => (
-            <div key={rowIdx} className="flex items-center gap-3 px-3 py-3 even:bg-surface-alt">
-              <Skeleton className="h-3 w-14 shrink-0" />
-              <Skeleton className="h-3 flex-1 max-w-xs" />
-              <Skeleton className="h-3 w-20 shrink-0" />
-              <Skeleton className="h-3 w-16 shrink-0" />
-              <Skeleton className="h-5 w-5 rounded-full shrink-0" />
-              <Skeleton className="h-3 w-20 shrink-0" />
-              <Skeleton className="h-2 w-16 rounded shrink-0" />
-              <Skeleton className="h-5 w-20 rounded-full shrink-0" />
-            </div>
-          ))}
         </div>
       ))}
     </div>
   );
 }
 
-// ── Column Header ────────────────────────────────────────────────────────────
+// ── Column header ───────────────────────────────────────────────────────────
 
-function TableHeader({ hasMilestones }: { hasMilestones: boolean }): React.JSX.Element {
+function TableHead({ hasPhase }: { hasPhase: boolean }): React.JSX.Element {
   return (
     <div
       className={cn(
-        'hidden md:grid items-center gap-3 px-3 py-2 bg-muted/30 border-b border-border text-2xs font-medium text-foreground-tertiary uppercase tracking-wide',
-        hasMilestones ? HEADER_GRID_COLS_WITH_MILESTONES : HEADER_GRID_COLS_WITHOUT_MILESTONES,
+        'hidden items-center gap-3 pb-1.5 pt-1 md:grid',
+        ROW_BLEED,
+        hasPhase ? COLS_WITH_PHASE : COLS_WITHOUT_PHASE,
       )}
     >
-      <span className="truncate">Key</span>
-      <span className="truncate">Summary</span>
-      {hasMilestones && <span className="truncate">Milestone</span>}
-      <span className="truncate">Priority</span>
-      <span className="truncate">Assignee</span>
-      <span className="truncate">Due date</span>
-      <span className="truncate">Progress</span>
-      <span className="truncate">Status</span>
+      <ColumnHeader>Key</ColumnHeader>
+      <ColumnHeader>Task</ColumnHeader>
+      {hasPhase ? <ColumnHeader>Phase</ColumnHeader> : null}
+      <ColumnHeader>Priority</ColumnHeader>
+      <ColumnHeader className="text-center">Who</ColumnHeader>
+      <ColumnHeader>Due</ColumnHeader>
+      <ColumnHeader>Progress</ColumnHeader>
+      <ColumnHeader>Status</ColumnHeader>
     </div>
   );
 }
 
-// ── Task Row ────────────────────────────────────────────────────────────────
+// ── Row ─────────────────────────────────────────────────────────────────────
 
 function TaskRow({
   task,
   statusColor,
   statusLabel,
-  hasMilestones,
+  hasPhase,
   onOpenTask,
   onStatusChange,
   onPriorityChange,
@@ -129,7 +130,7 @@ function TaskRow({
   task: ProjectTaskItem;
   statusColor: string;
   statusLabel: string;
-  hasMilestones: boolean;
+  hasPhase: boolean;
   onOpenTask: (id: string) => void;
   onStatusChange?: (
     taskId: string,
@@ -140,11 +141,8 @@ function TaskRow({
   onPriorityChange?: (taskId: string, priority: string) => void;
   statusOptions: MUISelectOption[];
 }): React.JSX.Element {
-  const milestoneName = task.milestoneName ?? null;
-  const priorityDot = TASK_PRIORITY_DOT_COLOR[task.priority] ?? 'bg-foreground-tertiary';
   const priorityColor = TASK_PRIORITY_HEX_COLOR[task.priority] ?? '#94a3b8';
   const priorityLabel = TASK_PRIORITY_LABELS[task.priority];
-  const initials = task.assigneeName ? getInitials(task.assigneeName) : null;
   const dueDateColor = task.endDate ? getDueDateColor(task.endDate) : '';
   const isOverdue = dueDateColor.includes('error');
 
@@ -153,52 +151,62 @@ function TaskRow({
       role="button"
       tabIndex={0}
       onClick={() => onOpenTask(task.id)}
-      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onOpenTask(task.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpenTask(task.id);
+        }
+      }}
       className={cn(
-        // Zebra rather than a rule, matching the app's tables: rows separate
-        // by alternating luminance. Hover deepens to `canvas-sunken` so it
-        // still reads over the striped row, which `muted/40` did not.
-        'group flex items-center gap-3 px-3 py-2.5 even:bg-surface-alt',
-        'cursor-pointer hover:bg-background-tertiary transition-colors duration-fast',
+        // Zebra rather than a rule: rows separate by alternating luminance, the
+        // DS's functional-density pattern. Hover deepens one step further so it
+        // still reads over the striped row.
+        'group flex cursor-pointer items-center gap-3 rounded-xl py-2 transition-colors duration-fast',
+        ROW_BLEED,
+        'even:bg-surface-alt hover:bg-background-tertiary',
+        'focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary',
         'md:grid md:gap-3',
-        hasMilestones ? ROW_GRID_COLS_WITH_MILESTONES : ROW_GRID_COLS_WITHOUT_MILESTONES,
+        hasPhase ? COLS_WITH_PHASE : COLS_WITHOUT_PHASE,
       )}
     >
-      {/* Key */}
-      <span className="text-2xs font-mono text-foreground-secondary shrink-0 truncate">
-        {task.code}
-      </span>
+      <Mono className="shrink-0 truncate text-[11px] text-foreground-tertiary" title={task.code}>
+        {shortCode(task.code)}
+      </Mono>
 
-      {/* Summary */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="text-xs font-medium text-foreground truncate flex-1 min-w-0 group-hover:text-primary transition-colors flex items-center gap-1.5">
-            {task.isSpecial && (
-              <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">
-                Change Request
-              </span>
-            )}
-            {task.name}
-            {task.hasDependencyBlockers && <Lock className="h-3 w-3 text-amber-500 shrink-0" />}
+          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+            {task.isSpecial ? (
+              <TonePill
+                label="Change"
+                tone="warning"
+                className="h-[17px] px-1.5 text-[9.5px] uppercase tracking-[0.06em]"
+              />
+            ) : null}
+            <span className="truncate text-[12.5px] font-medium text-foreground transition-colors group-hover:text-primary-dark">
+              {task.name}
+            </span>
+            {task.hasDependencyBlockers ? (
+              <Lock className="size-3 shrink-0 text-warning" aria-label="Waiting on a dependency" />
+            ) : null}
           </span>
         </TooltipTrigger>
         <TooltipContent side="top" variant="dark" className="max-w-[280px]">
           {task.code}: {task.name}
-          {task.hasDependencyBlockers ? ' (Blocked by incomplete dependencies)' : ''}
+          {task.hasDependencyBlockers ? ' — waiting on an unfinished dependency' : ''}
         </TooltipContent>
       </Tooltip>
 
-      {/* Milestone (conditional) */}
-      {hasMilestones && (
-        <span className="text-2xs text-foreground-secondary truncate hidden md:block">
-          {milestoneName ?? <span className="text-foreground-tertiary italic">—</span>}
+      {hasPhase ? (
+        <span className="hidden truncate text-[11.5px] text-foreground-secondary md:block">
+          {task.milestoneName ?? <span className="text-foreground-muted">—</span>}
         </span>
-      )}
+      ) : null}
 
-      {/* Priority — select when handler provided, static badge otherwise */}
-      <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div className="flex shrink-0 items-center" onClick={(e) => e.stopPropagation()}>
         {onPriorityChange ? (
           <QuickSelect
+            pill
             value={task.priority}
             color={priorityColor}
             label={priorityLabel}
@@ -206,26 +214,25 @@ function TaskRow({
             onChange={(v) => onPriorityChange(task.id, v)}
           />
         ) : (
-          <div className="flex items-center gap-1.5">
-            <span className={cn('size-2 rounded-full shrink-0', priorityDot)} />
-            <span className="text-2xs text-foreground-secondary capitalize hidden md:inline">
-              {task.priority}
+          <span className="flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="size-2 shrink-0 rounded-full"
+              style={{ background: priorityColor }}
+            />
+            <span className="hidden text-[11.5px] text-foreground-secondary md:inline">
+              {priorityLabel}
             </span>
-          </div>
+          </span>
         )}
       </div>
 
-      {/* Assignee */}
-      <div className="shrink-0 flex items-center justify-center">
-        {initials ? (
+      <div className="flex shrink-0 items-center justify-center">
+        {task.assigneeName ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <span>
-                <Avatar size="xs" className="size-6">
-                  <AvatarFallback size="xs" name={task.assigneeName} className="text-[9px]">
-                    {initials}
-                  </AvatarFallback>
-                </Avatar>
+                <MUIAvatar name={task.assigneeName} size={24} />
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" variant="dark">
@@ -235,8 +242,11 @@ function TaskRow({
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="flex items-center justify-center size-6 rounded-full border border-dashed border-border text-foreground-tertiary">
-                <Minus className="h-2.5 w-2.5" />
+              <span
+                className="flex size-6 items-center justify-center rounded-full text-foreground-tertiary"
+                style={{ background: 'var(--ds-canvas-sunken)' }}
+              >
+                <Minus className="size-2.5" />
               </span>
             </TooltipTrigger>
             <TooltipContent side="top" variant="dark">
@@ -246,36 +256,42 @@ function TaskRow({
         )}
       </div>
 
-      {/* Due date */}
-      <span
+      <Mono
         className={cn(
-          'text-2xs shrink-0 hidden md:block',
+          'hidden shrink-0 text-[11.5px] md:block',
           task.endDate
             ? dueDateColor || 'text-foreground-secondary'
-            : 'text-foreground-tertiary italic',
-          isOverdue && 'font-medium',
+            : 'font-sans text-foreground-muted',
+          isOverdue && 'font-semibold',
         )}
       >
         {task.endDate ? formatDate(task.endDate, 'short') : '—'}
-      </span>
+      </Mono>
 
-      {/* Progress */}
-      <div className="items-center gap-1.5 shrink-0 hidden md:flex">
-        <div className="w-12 h-1.5 rounded-full bg-border overflow-hidden">
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${task.completionPercentage}%` }}
+      <div className="hidden shrink-0 items-center gap-1.5 md:flex">
+        <span
+          aria-hidden
+          className="h-1.5 w-11 overflow-hidden rounded-pill"
+          style={{ background: 'var(--ds-canvas-sunken)' }}
+        >
+          <span
+            className="block h-full rounded-pill transition-[width] duration-slow ease-out"
+            style={{
+              width: `${Math.min(100, Math.max(0, task.completionPercentage))}%`,
+              background:
+                task.completionPercentage >= 100 ? 'var(--ds-success)' : 'var(--ds-accent-ink)',
+            }}
           />
-        </div>
-        <span className="text-2xs text-foreground-secondary w-6 text-right">
-          {task.completionPercentage}%
         </span>
+        <Mono className="w-7 text-right text-[10.5px] text-foreground-tertiary">
+          {task.completionPercentage}%
+        </Mono>
       </div>
 
-      {/* Status — select when handler provided, static badge otherwise */}
-      <div className="shrink-0 hidden md:flex items-center" onClick={(e) => e.stopPropagation()}>
+      <div className="hidden shrink-0 items-center md:flex" onClick={(e) => e.stopPropagation()}>
         {onStatusChange ? (
           <QuickSelect
+            pill
             value={task.status}
             color={statusColor}
             label={statusLabel}
@@ -285,16 +301,13 @@ function TaskRow({
           />
         ) : (
           <span
-            className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-2xs font-medium"
-            style={{
-              backgroundColor: `${statusColor}15`,
-              borderColor: `${statusColor}30`,
-              color: statusColor,
-            }}
+            className="inline-flex h-[23px] items-center gap-1.5 rounded-pill px-2.5 text-[11px] font-medium"
+            style={{ background: `${statusColor}14`, color: statusColor }}
           >
             <span
-              className="inline-block size-1.5 rounded-full shrink-0"
-              style={{ backgroundColor: statusColor }}
+              aria-hidden
+              className="size-1.5 shrink-0 rounded-full"
+              style={{ background: statusColor }}
             />
             {statusLabel}
           </span>
@@ -304,18 +317,18 @@ function TaskRow({
   );
 }
 
-// ── Group ────────────────────────────────────────────────────────────────────
+// ── Group ───────────────────────────────────────────────────────────────────
 
 function TaskGroupSection({
   group,
-  hasMilestones,
+  hasPhase,
   onOpenTask,
   onStatusChange,
   onPriorityChange,
   statusOptions,
 }: {
   group: TaskGroup;
-  hasMilestones: boolean;
+  hasPhase: boolean;
   onOpenTask: (id: string) => void;
   onStatusChange?: (
     taskId: string,
@@ -327,38 +340,38 @@ function TaskGroupSection({
   statusOptions: MUISelectOption[];
 }): React.JSX.Element {
   const [expanded, setExpanded] = useState(true);
-  const toggle = useCallback(() => setExpanded((p) => !p), []);
+  const toggle = useCallback(() => setExpanded((prev) => !prev), []);
 
   return (
     <div>
-      {/* Group header */}
+      {/* The overline device names the group. No grey bar, no rule under it —
+          spacing and weight carry the separation. */}
       <button
         type="button"
         onClick={toggle}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-muted/40 hover:bg-muted/70 border-b border-border transition-colors"
+        aria-expanded={expanded}
+        className={cn(
+          'flex w-full items-center gap-2 rounded-lg py-2 text-left transition-colors duration-fast hover:bg-background-tertiary focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary',
+          ROW_BLEED,
+        )}
       >
         {expanded ? (
-          <ChevronDown className="h-3.5 w-3.5 text-foreground-secondary shrink-0" />
+          <ChevronDown className="size-3.5 shrink-0 text-foreground-tertiary" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 text-foreground-secondary shrink-0" />
+          <ChevronRight className="size-3.5 shrink-0 text-foreground-tertiary" />
         )}
         <span
-          className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
-          style={{ backgroundColor: group.color }}
+          aria-hidden
+          className="size-2 shrink-0 rounded-full"
+          style={{ background: group.color }}
         />
-        <span className="text-xs font-semibold" style={{ color: group.color }}>
+        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-foreground-secondary">
           {group.label}
         </span>
-        <span
-          className="text-2xs font-medium px-1.5 py-0.5 rounded-full"
-          style={{ backgroundColor: `${group.color}20`, color: group.color }}
-        >
-          {group.tasks.length}
-        </span>
+        <Mono className="text-[11px] font-bold text-foreground-tertiary">{group.tasks.length}</Mono>
       </button>
 
-      {/* Task rows */}
-      {expanded && (
+      {expanded ? (
         <TooltipProvider delayDuration={300}>
           {group.tasks.map((task) => (
             <TaskRow
@@ -366,7 +379,7 @@ function TaskGroupSection({
               task={task}
               statusColor={group.color}
               statusLabel={group.label}
-              hasMilestones={hasMilestones}
+              hasPhase={hasPhase}
               onOpenTask={onOpenTask}
               onStatusChange={onStatusChange}
               onPriorityChange={onPriorityChange}
@@ -374,12 +387,12 @@ function TaskGroupSection({
             />
           ))}
         </TooltipProvider>
-      )}
+      ) : null}
     </div>
   );
 }
 
-// ── Main Component ──────────────────────────────────────────────────────────
+// ── Table ───────────────────────────────────────────────────────────────────
 
 export function TaskListTable({
   tasks,
@@ -391,8 +404,9 @@ export function TaskListTable({
   hasActiveFilters = false,
   onClearFilters,
 }: TaskListTableProps): React.JSX.Element {
-  // Tasks now carry milestoneName directly — check if any task has a milestone
-  const hasMilestones = tasks.some((t) => !!t.milestoneName);
+  // Tasks carry milestoneName directly — the Phase column only earns its width
+  // when at least one task on the page has one.
+  const hasPhase = tasks.some((t) => !!t.milestoneName);
 
   const statusOptions = useMemo<MUISelectOption[]>(
     () =>
@@ -410,14 +424,11 @@ export function TaskListTable({
     for (const task of tasks) {
       const key = statusMap.has(task.status) ? task.status : '__other__';
       const existing = groupMap.get(key);
-      if (existing) {
-        existing.push(task);
-      } else {
-        groupMap.set(key, [task]);
-      }
+      if (existing) existing.push(task);
+      else groupMap.set(key, [task]);
     }
 
-    const sortSpecialFirst = (list: ProjectTaskItem[]) =>
+    const sortSpecialFirst = (list: ProjectTaskItem[]): ProjectTaskItem[] =>
       [...list].sort((a, b) => Number(Boolean(b.isSpecial)) - Number(Boolean(a.isSpecial)));
 
     const result: TaskGroup[] = [];
@@ -438,7 +449,7 @@ export function TaskListTable({
       result.push({
         code: '__other__',
         label: 'Other',
-        color: '#94a3b8',
+        color: '#A8A29E',
         tasks: sortSpecialFirst(other),
       });
     }
@@ -450,31 +461,38 @@ export function TaskListTable({
 
   if (tasks.length === 0) {
     return (
-      <div className="border border-border rounded-lg flex flex-col items-center justify-center py-16 gap-3">
-        <span className="text-sm text-foreground-secondary">
-          {hasActiveFilters ? 'No tasks match the current filters.' : 'No tasks yet.'}
-        </span>
-        {hasActiveFilters && onClearFilters && (
-          <button
-            type="button"
-            onClick={onClearFilters}
-            className="text-xs text-primary hover:underline"
-          >
-            Clear filters
-          </button>
-        )}
-      </div>
+      <EmptyPane
+        size="page"
+        icon={<ListChecks className="size-4" strokeWidth={2} />}
+        title={hasActiveFilters ? 'Nothing matches those filters' : 'No tasks yet'}
+        description={
+          hasActiveFilters
+            ? 'Widen the filters to see more of this project.'
+            : 'Tasks arrive with the workflow when the project starts.'
+        }
+        action={
+          hasActiveFilters && onClearFilters ? (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              className="inline-flex h-8 items-center rounded-pill bg-accent-subtle px-3.5 text-[12.5px] font-medium text-primary-dark transition-[filter] duration-fast hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Clear filters
+            </button>
+          ) : undefined
+        }
+      />
     );
   }
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
-      <TableHeader hasMilestones={hasMilestones} />
+    <div>
+      <TableHead hasPhase={hasPhase} />
       {groups.map((group) => (
         <TaskGroupSection
           key={group.code}
           group={group}
-          hasMilestones={hasMilestones}
+          hasPhase={hasPhase}
           onOpenTask={onOpenTask}
           onStatusChange={onStatusChange}
           onPriorityChange={onPriorityChange}

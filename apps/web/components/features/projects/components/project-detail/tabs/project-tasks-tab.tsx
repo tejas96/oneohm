@@ -7,17 +7,16 @@ import {
   TASK_STATUS_OPTIONS,
 } from '@tejas96/shared/constants';
 import { TaskStatus, type TaskPriority } from '@tejas96/shared/types';
+import { Plus } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { CreateProjectTaskModal } from './create-project-task-modal';
-import { TaskListTable, TaskListToolbar, TaskBoardView } from './task-list';
 import {
-  TASK_LIST_FILTER_DEFAULTS,
-  TASKS_PAGE_SIZE,
-  PROJECT_TASKS_QUERY_KEY,
   PROJECT_MILESTONE_AGG_QUERY_KEY,
-  UNASSIGNED_TASK_FILTER,
+  PROJECT_TASKS_QUERY_KEY,
+  TASK_LIST_FILTER_DEFAULTS,
   TASK_VIEW_MODES,
+  TASKS_PAGE_SIZE,
+  UNASSIGNED_TASK_FILTER,
   type TaskListFilters,
   type TaskViewMode,
 } from '../../../constants';
@@ -28,15 +27,16 @@ import {
   useProjectTeam,
 } from '../../../hooks';
 import type { ProjectDetail } from '../../../hooks/types';
+import { DetailCard, ROW_BLEED } from '../primitives';
+import { CreateProjectTaskModal } from './create-project-task-modal';
+import { TaskBoardView, TaskFilterBar, TaskListTable, TaskViewToggle } from './task-list';
 
 import { TaskDrawer } from '@/components/features/tasks';
 import { useUpdateTask } from '@/components/features/tasks/hooks';
 import { TablePagination } from '@/components/shared/data-table/pagination';
-import { ErrorState } from '@/components/shared/feedback/empty-state';
-import { Button } from '@/components/ui/button';
 import { useUrlFilters } from '@/lib/hooks/use-url-filters';
 import { useGatedAction } from '@/lib/rbac';
-import { cn, getErrorMessage } from '@/lib/utils';
+import { cn, formatNumber } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 interface ProjectTasksTabProps {
@@ -45,6 +45,14 @@ interface ProjectTasksTabProps {
   isActive: boolean;
 }
 
+/**
+ * Every task on the project, as a grouped list or a board.
+ *
+ * One card holds the whole thing — header, filters and rows — so the tab reads
+ * as one surface rather than a toolbar floating above a bordered table. The
+ * card's own header carries the count and the two controls that act on the
+ * whole view; the filters sit under it.
+ */
 export const ProjectTasksTab = React.memo(
   ({ projectId, project: _project, isActive }: ProjectTasksTabProps): React.JSX.Element => {
     const { user } = useAuth();
@@ -53,15 +61,10 @@ export const ProjectTasksTab = React.memo(
     const { filters, setFilter, clearFilters } =
       useUrlFilters<TaskListFilters>(TASK_LIST_FILTER_DEFAULTS);
     const page = Math.max(1, parseInt(filters.t_page, 10) || 1);
-
-    // View mode from URL, defaulting to list
     const view = (filters.t_view || TASK_VIEW_MODES.LIST) as TaskViewMode;
 
-    // Handle view change and sync to URL
     const handleViewChange = useCallback(
-      (newView: TaskViewMode) => {
-        setFilter('t_view', newView);
-      },
+      (newView: TaskViewMode) => setFilter('t_view', newView),
       [setFilter],
     );
 
@@ -69,7 +72,6 @@ export const ProjectTasksTab = React.memo(
       data: taskListData,
       isLoading,
       isError,
-      error,
       refetch,
     } = useProjectTaskList(
       projectId,
@@ -120,14 +122,13 @@ export const ProjectTasksTab = React.memo(
       });
     }, [team, user?.id]);
 
-    // Drawer state
     const [openTaskId, setOpenTaskId] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [createPreselectedStatus, setCreatePreselectedStatus] = useState<string | null>(null);
 
     // One gate for both ways into the create dialog — the header button and the
-    // "+" on each kanban column. Gating only the header would leave the board
+    // "+" on each board column. Gating only the header would leave the board
     // view wide open, which is exactly what it did before.
     const createTask = useGatedAction(
       'projects.tasks.manage',
@@ -140,9 +141,7 @@ export const ProjectTasksTab = React.memo(
       setDrawerOpen(true);
     }, []);
 
-    const handleCloseDrawer = useCallback(() => {
-      setDrawerOpen(false);
-    }, []);
+    const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
 
     const handleStatusChange = useCallback(
       (taskId: string, newStatus: string, _currentStatus: string, currentCompletionPct: number) => {
@@ -209,37 +208,48 @@ export const ProjectTasksTab = React.memo(
       !!filters.t_assignee ||
       !!filters.t_milestone;
 
-    if (isError) {
-      return (
-        <ErrorState
-          title="Failed to load tasks"
-          description={getErrorMessage(error)}
-          onRetry={() => refetch()}
-        />
-      );
-    }
-
     const tasks = taskListData?.data ?? [];
     const meta = taskListData?.meta;
 
+    /*
+     * "Nothing has arrived yet" is not the same as "there is nothing".
+     *
+     * react-query reports `isLoading: false` for a DISABLED query, and this one
+     * is disabled until the tab becomes active. Reading it alone meant the
+     * first frame after clicking Tasks drew the "No tasks yet" empty state
+     * before the request had even left. No data and no error means loading.
+     */
+    const showSkeleton = isLoading || (taskListData === undefined && !isError);
+
     return (
       <>
-        <div className="space-y-4">
-          {/* Header */}
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-foreground">Project Tasks</h3>
-            <Button
-              size="sm"
-              onClick={createTask.onGatedClick}
-              aria-disabled={!createTask.allowed}
-              className={cn(!createTask.allowed && 'opacity-50')}
-            >
-              + Add Task
-            </Button>
-          </div>
-
-          {/* Toolbar */}
-          <TaskListToolbar
+        <DetailCard
+          label="Tasks"
+          aside={
+            meta ? `${formatNumber(meta.total)} ${meta.total === 1 ? 'task' : 'tasks'}` : undefined
+          }
+          isError={isError}
+          onRetry={() => refetch()}
+          errorHeight={220}
+          action={
+            <div className="flex items-center gap-2">
+              <TaskViewToggle view={view} onViewChange={handleViewChange} />
+              <button
+                type="button"
+                onClick={createTask.onGatedClick}
+                aria-disabled={!createTask.allowed}
+                className={cn(
+                  'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-pill bg-primary px-3.5 text-[12.5px] font-medium text-white transition-[filter,transform] duration-fast hover:brightness-105 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+                  !createTask.allowed && 'opacity-50',
+                )}
+              >
+                <Plus className="size-3.5" strokeWidth={2.5} aria-hidden />
+                Add task
+              </button>
+            </div>
+          }
+        >
+          <TaskFilterBar
             filters={filters}
             setFilter={setFilter}
             clearFilters={clearFilters}
@@ -247,19 +257,14 @@ export const ProjectTasksTab = React.memo(
             priorityOptions={TASK_PRIORITY_OPTIONS}
             avatarMembers={avatarMembers}
             milestones={milestones}
-            totalTasks={meta?.total}
-            view={view}
-            onViewChange={handleViewChange}
           />
 
-          {/* Conditional View Rendering */}
-          {view === TASK_VIEW_MODES.LIST ? (
+          {isError ? null : view === TASK_VIEW_MODES.LIST ? (
             <>
-              {/* Table */}
               <TaskListTable
                 tasks={tasks}
                 taskStatuses={TASK_STATUS_OPTIONS}
-                isLoading={isLoading}
+                isLoading={showSkeleton}
                 onOpenTask={handleOpenTask}
                 onStatusChange={handleStatusChange}
                 onPriorityChange={handlePriorityChange}
@@ -267,36 +272,40 @@ export const ProjectTasksTab = React.memo(
                 onClearFilters={clearFilters}
               />
 
-              {/* Pagination */}
-              {meta && meta.totalPages > 1 && (
-                <TablePagination
-                  currentPage={page}
-                  totalPages={meta.totalPages}
-                  totalItems={meta.total}
-                  itemLabel="tasks"
-                  pageSize={TASKS_PAGE_SIZE}
-                  variant="simple"
-                  onPageChange={(p) => setFilter('t_page', String(p))}
-                />
-              )}
+              {meta && meta.totalPages > 1 ? (
+                <div className="pt-3">
+                  <TablePagination
+                    currentPage={page}
+                    totalPages={meta.totalPages}
+                    totalItems={meta.total}
+                    itemLabel="tasks"
+                    pageSize={TASKS_PAGE_SIZE}
+                    variant="simple"
+                    onPageChange={(p) => setFilter('t_page', String(p))}
+                  />
+                </div>
+              ) : null}
             </>
           ) : (
-            /* Board View */
-            <TaskBoardView
-              projectId={projectId}
-              filters={filters}
-              onOpenTask={handleOpenTask}
-              onOpenCreate={(preselectedStatus?: string) => {
-                setCreatePreselectedStatus(preselectedStatus ?? null);
-                // Through the gate, not straight to the setter — the board's
-                // per-column "+" is the same create action as the header button.
-                createTask.onGatedClick();
-              }}
-            />
+            /* The board scrolls sideways, so it bleeds to the card's edge —
+               a column should be able to reach the rim rather than stopping
+               22px short of it. */
+            <div className={cn('overflow-hidden', ROW_BLEED)}>
+              <TaskBoardView
+                projectId={projectId}
+                filters={filters}
+                onOpenTask={handleOpenTask}
+                onOpenCreate={(preselectedStatus?: string) => {
+                  setCreatePreselectedStatus(preselectedStatus ?? null);
+                  // Through the gate, not straight to the setter — the board's
+                  // per-column "+" is the same create action as the header button.
+                  createTask.onGatedClick();
+                }}
+              />
+            </div>
           )}
-        </div>
+        </DetailCard>
 
-        {/* Task Drawer */}
         <TaskDrawer
           taskId={openTaskId}
           open={drawerOpen}

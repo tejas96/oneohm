@@ -2,93 +2,103 @@
 
 import type { JSX } from 'react';
 
-import { OverviewActivityFeed } from './overview/overview-activity-feed';
-import { OverviewAttentionPanel } from './overview/overview-attention-panel';
-import { OverviewEnergyImpact } from './overview/overview-energy-impact';
-import { OverviewFinancials } from './overview/overview-financials';
-import { OverviewHero } from './overview/overview-hero';
-import { OverviewInsightsStrip } from './overview/overview-insights-strip';
-import { OverviewSiteCard } from './overview/overview-site-card';
-import { OverviewSystemSpecs } from './overview/overview-system-specs';
-import { OverviewTeamPanel } from './overview/overview-team-panel';
-import { OverviewTimelineRail } from './overview/overview-timeline-rail';
 import type { ProjectDetail } from '../../../hooks/types';
+import type { ProjectDetailData } from '../types';
+import { ActivityCard } from './overview/activity-card';
+import { AttentionCard } from './overview/attention-card';
+import { JourneyCard } from './overview/journey-card';
+import { MoneyCard } from './overview/money-card';
+import { OpenWorkCard } from './overview/open-work-card';
+import { ReportsCard } from './overview/reports-card';
+import { SiteCard } from './overview/site-card';
+import { SystemCard } from './overview/system-card';
+import { TeamCard } from './overview/team-card';
 
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 export interface ProjectOverviewTabProps {
   project: ProjectDetail;
-  isActive: boolean;
+  data: ProjectDetailData;
+  onEditProject: () => void;
 }
 
-export function ProjectOverviewTab({ project, isActive }: ProjectOverviewTabProps): JSX.Element {
+/**
+ * Cards fade and rise 8px on mount, staggered — the design system's one
+ * signature motion, capped at six so the page never feels slow to settle.
+ * `fill-mode: both` keeps a delayed card invisible until its turn; without it
+ * each one would flash at full opacity and then fade in.
+ */
+const RISE = 'motion-safe:animate-fade-in motion-safe:[animation-fill-mode:both]';
+
+/**
+ * The Overview tab, in four bands: the plan, the problems, the work, the facts.
+ *
+ * The identity, the four headline figures and the phase rail live in the page
+ * header, so nothing here restates them. This is also where the old Summary
+ * tab went: four of its six panels were re-skins of panels already on this
+ * page fed by the same query, so only its task split survived, as Task mix.
+ */
+export function ProjectOverviewTab({
+  project,
+  data,
+  onEditProject,
+}: ProjectOverviewTabProps): JSX.Element {
   const projectPath = buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id });
-  const effectiveSizeKw = project.systemSizeKw;
-  const showEnergy = !!effectiveSizeKw && effectiveSizeKw > 0;
 
   return (
-    <div className="space-y-4">
-      <OverviewHero project={project} projectId={project.id} isActive={isActive} />
-
-      <OverviewInsightsStrip
+    <div className="grid grid-cols-12 gap-4">
+      {/* ── The plan ── */}
+      <JourneyCard
         project={project}
-        projectId={project.id}
+        milestones={data.milestones}
+        summary={data.summary}
         projectPath={projectPath}
-        isActive={isActive}
+        className={`col-span-12 ${RISE}`}
       />
 
-      <OverviewTimelineRail project={project} projectId={project.id} isActive={isActive} />
+      {/* ── The problems ── */}
+      <AttentionCard
+        attention={data.attention}
+        projectPath={projectPath}
+        className={`col-span-12 lg:col-span-7 ${RISE} animation-delay-100`}
+      />
+      <MoneyCard
+        ledger={data.ledger}
+        projectPath={projectPath}
+        className={`col-span-12 lg:col-span-5 ${RISE} animation-delay-200`}
+      />
 
-      {/* Row 1: Installation Site, Team, and System Specs */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-        {/* Column 1: Site */}
-        <div>
-          <OverviewSiteCard project={project} />
-        </div>
+      {/* ── The work ── */}
+      <OpenWorkCard
+        summary={data.summary}
+        projectPath={projectPath}
+        className={`col-span-12 md:col-span-6 xl:col-span-4 ${RISE} animation-delay-300`}
+      />
+      <TeamCard
+        team={data.team}
+        summary={data.summary}
+        projectPath={projectPath}
+        onEditProject={onEditProject}
+        className={`col-span-12 md:col-span-6 xl:col-span-4 ${RISE} animation-delay-400`}
+      />
+      <ActivityCard
+        summary={data.summary}
+        className={`col-span-12 xl:col-span-4 ${RISE} animation-delay-500`}
+      />
 
-        {/* Column 2: Team */}
-        <div>
-          <OverviewTeamPanel projectId={project.id} projectPath={projectPath} isActive={isActive} />
-        </div>
-
-        {/* Column 3: System Specifications */}
-        <div>
-          <OverviewSystemSpecs project={project} projectPath={projectPath} />
-        </div>
-      </div>
-
-      {/* Row 2: Needs Attention + Financials (equal width) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <OverviewAttentionPanel projectId={project.id} isActive={isActive} />
-        <OverviewFinancials
-          project={project}
-          projectId={project.id}
-          projectPath={projectPath}
-          isActive={isActive}
-        />
-      </div>
-
-      {/* Row 3: Energy Impact + Recent Activity (equal width) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {showEnergy ? (
-          <>
-            <OverviewEnergyImpact project={project} />
-            <OverviewActivityFeed
-              projectId={project.id}
-              projectPath={projectPath}
-              isActive={isActive}
-            />
-          </>
-        ) : (
-          <div className="lg:col-span-2">
-            <OverviewActivityFeed
-              projectId={project.id}
-              projectPath={projectPath}
-              isActive={isActive}
-            />
-          </div>
-        )}
-      </div>
+      {/* ── The facts ── */}
+      <SiteCard project={project} className="col-span-12 md:col-span-6 xl:col-span-4" />
+      <SystemCard
+        project={project}
+        projectPath={projectPath}
+        className="col-span-12 md:col-span-6 xl:col-span-4"
+      />
+      <ReportsCard
+        reports={data.reports}
+        projectId={project.id}
+        projectPath={projectPath}
+        className="col-span-12 xl:col-span-4"
+      />
     </div>
   );
 }
