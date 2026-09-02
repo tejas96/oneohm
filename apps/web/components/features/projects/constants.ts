@@ -361,9 +361,15 @@ export const MS_PER_DAY = 86_400_000;
 // Project Detail Tab Configuration
 // ---------------------------------------------------------------------------
 
+/**
+ * `summary` is gone. Four of its six panels were re-skins of Overview panels
+ * fed by the same `/analytics/summary` query — milestone progress, team
+ * workload, recent activity and the metric tiles all had a twin — and its two
+ * task charts now live on Overview as the Task mix card. A `?tab=summary`
+ * bookmark falls through to Overview, which is where its content went.
+ */
 export const PROJECT_DETAIL_TABS = [
   { value: 'overview', label: 'Overview', permission: 'projects.view' },
-  { value: 'summary', label: 'Summary', permission: 'projects.view' },
   { value: 'tasks', label: 'Tasks', permission: 'projects.view' },
   { value: 'documents', label: 'Documents', permission: 'projects.view' },
   { value: 'finance', label: 'Finance', permission: 'finance.view' },

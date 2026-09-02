@@ -1,9 +1,9 @@
 'use client';
 
-import AddIcon from '@mui/icons-material/Add';
-import InboxIcon from '@mui/icons-material/Inbox';
-import { Box, Button, Typography } from '@mui/material';
+import { Plus } from 'lucide-react';
 import React from 'react';
+
+import { cn } from '@/lib/utils';
 
 interface KanbanEmptyColumnProps {
   label: string;
@@ -11,53 +11,41 @@ interface KanbanEmptyColumnProps {
   onAddTask: () => void;
 }
 
+/**
+ * An empty column.
+ *
+ * The dashed outline is deliberate and is the one place the design system
+ * allows a line: a drop zone has to read as a place where something can land,
+ * and a shadow cannot say that about empty space.
+ */
 export function KanbanEmptyColumn({
   label,
   isOver,
   onAddTask,
 }: KanbanEmptyColumnProps): React.JSX.Element {
   return (
-    <Box
-      sx={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 1,
-        py: 4,
-        px: 2,
-        m: 1,
-        border: '2px dashed',
-        borderColor: isOver ? 'primary.main' : 'divider',
-        borderRadius: 1.5,
-        bgcolor: isOver ? 'rgba(0,82,204,0.06)' : 'transparent',
-        transition: 'border-color 0.15s ease, background-color 0.15s ease',
-        minHeight: 120,
-      }}
+    <div
+      className={cn(
+        'm-1 flex min-h-[120px] flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-3 py-6 text-center transition-colors duration-fast',
+        isOver ? 'border-primary bg-accent-subtle' : 'border-border-light',
+      )}
     >
       {isOver ? (
-        <Typography variant="body2" color="primary.main" fontWeight={600} textAlign="center">
-          Drop here to move to {label}
-        </Typography>
+        <p className="text-[12.5px] font-semibold text-primary-dark">Drop to move to {label}</p>
       ) : (
         <>
-          <InboxIcon sx={{ fontSize: 24, color: 'text.disabled' }} />
-          <Typography variant="caption" color="text.disabled" textAlign="center">
-            No tasks in {label}
-          </Typography>
-          <Button
-            size="small"
-            variant="text"
-            startIcon={<AddIcon />}
+          <p className="text-[12px] text-foreground-tertiary">Nothing in {label}</p>
+          <button
+            type="button"
             onClick={onAddTask}
-            sx={{ fontSize: 12, color: 'text.secondary' }}
+            className="inline-flex h-7 items-center gap-1 rounded-pill px-2.5 text-[12px] font-medium text-foreground-secondary transition-colors duration-fast hover:bg-surface hover:text-primary-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
+            <Plus className="size-3" strokeWidth={2.25} />
             Add task
-          </Button>
+          </button>
         </>
       )}
-    </Box>
+    </div>
   );
 }
 

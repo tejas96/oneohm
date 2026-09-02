@@ -191,8 +191,11 @@ export function ReportEditorDrawer({
               gap: 2,
               p: 2,
               pr: 2,
-              borderBottom: '1px solid',
-              borderColor: 'divider',
+              // The header separates by sitting brighter than the body below
+              // it, not by a rule — the design system has no structural lines.
+              bgcolor: 'var(--ds-surface)',
+              boxShadow: 'var(--shadow-e1)',
+              zIndex: 1,
               flexShrink: 0,
             }}
           >

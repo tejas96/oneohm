@@ -1,10 +1,6 @@
 'use client';
 
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import LinearProgress from '@mui/material/LinearProgress';
-import Skeleton from '@mui/material/Skeleton';
 import { useQueryClient } from '@tanstack/react-query';
 import { TaskStatus } from '@tejas96/shared/types';
 import React, { useCallback, useRef } from 'react';
@@ -18,8 +14,10 @@ import {
 } from './lib/apply-task-status-change';
 import { PROJECT_TASKS_QUERY_KEY, type TaskListFilters } from '../../../../constants';
 import { useProjectTaskBoard, useTaskBoardDnd, type KanbanColumnData } from '../../../../hooks';
+import { EmptyPane, ErrorPane } from '../../primitives';
 
 import { useUpdateTask } from '@/components/features/tasks/hooks';
+import { Skeleton } from '@/components/ui/skeleton';
 import { showToast } from '@/components/ui/sonner';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -35,61 +33,20 @@ interface TaskBoardViewProps {
 
 function BoardSkeleton(): React.JSX.Element {
   return (
-    <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 2 }}>
-      {[1, 2, 3].map((i) => (
-        <Box
-          key={i}
-          sx={{
-            width: 280,
-            minWidth: 280,
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'divider',
-            overflow: 'hidden',
-            flexShrink: 0,
-          }}
+    <div className="flex gap-4 overflow-hidden px-[22px] pb-2">
+      {[1, 2, 3].map((column) => (
+        <div
+          key={column}
+          className="flex w-[288px] min-w-[288px] shrink-0 flex-col gap-2 rounded-r-md p-3"
+          style={{ background: 'var(--ds-canvas-sunken)' }}
         >
-          {/* Column header skeleton */}
-          <Box
-            sx={{
-              p: 1.5,
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-            }}
-          >
-            <Skeleton variant="circular" width={10} height={10} />
-            <Skeleton variant="text" width={80} height={14} />
-            <Skeleton variant="rounded" width={22} height={18} sx={{ borderRadius: 4 }} />
-          </Box>
-          {/* Card skeletons */}
-          <Box sx={{ p: 1 }}>
-            {[1, 2, 3].map((j) => (
-              <Box
-                key={j}
-                sx={{
-                  p: 1.5,
-                  mb: 1,
-                  borderRadius: 1.5,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                }}
-              >
-                <Skeleton variant="text" width="55%" height={12} sx={{ mb: 0.5 }} />
-                <Skeleton variant="text" width="90%" height={14} />
-                <Skeleton variant="text" width="70%" height={14} sx={{ mb: 1 }} />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Skeleton variant="text" width={50} height={12} />
-                  <Skeleton variant="circular" width={20} height={20} />
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        </Box>
+          <Skeleton className="h-3 w-24 rounded-md" />
+          {[1, 2, 3].map((card) => (
+            <Skeleton key={card} className="h-[92px] rounded-r-sm" />
+          ))}
+        </div>
       ))}
-    </Box>
+    </div>
   );
 }
 
@@ -180,17 +137,9 @@ export function TaskBoardView({
 
   if (isError) {
     return (
-      <Alert
-        severity="error"
-        action={
-          <Button color="inherit" size="small" onClick={refetch}>
-            Retry
-          </Button>
-        }
-        sx={{ mt: 2 }}
-      >
-        Failed to load board data
-      </Alert>
+      <div className="px-[22px]">
+        <ErrorPane label="The board" onRetry={refetch} height={200} />
+      </div>
     );
   }
 
@@ -200,45 +149,47 @@ export function TaskBoardView({
 
   if (columns.length === 0) {
     return (
-      <Alert severity="info" sx={{ mt: 2 }}>
-        No tasks to show on the board.
-      </Alert>
+      <div className="px-[22px]">
+        <EmptyPane
+          size="page"
+          title="Nothing on the board"
+          description="No task matches the current filters. Widen them to see more of this project."
+        />
+      </div>
     );
   }
 
   return (
     <Box sx={{ position: 'relative' }}>
-      {/* Subtle refetch indicator */}
-      {isFetching && !isLoading && (
-        <LinearProgress
-          sx={{
-            position: 'absolute',
-            top: -4,
-            left: 0,
-            right: 0,
-            height: 2,
-            borderRadius: 1,
-          }}
-        />
-      )}
+      {/* A refetch in flight. A hairline at the top of the strip rather than a
+          spinner over the columns, so the board never goes blank mid-drag. */}
+      {isFetching && !isLoading ? (
+        <span
+          aria-hidden
+          className="absolute inset-x-[22px] top-0 h-[2px] overflow-hidden rounded-pill"
+          style={{ background: 'var(--ds-canvas-sunken)' }}
+        >
+          <span className="block h-full w-1/3 rounded-pill bg-primary motion-safe:animate-wave-drift" />
+        </span>
+      ) : null}
 
-      {/* Kanban columns */}
+      {/* Kanban columns. Padded to the card's own gutter so the first and last
+          column line up with the header above them while the strip itself
+          scrolls edge to edge. */}
       <Box
         sx={{
           display: 'flex',
           gap: 2,
           overflowX: 'auto',
+          px: '22px',
           pb: 2,
-          pt: 0.5,
-          // Custom scrollbar styling
+          pt: 1,
           '&::-webkit-scrollbar': { height: 6 },
           '&::-webkit-scrollbar-thumb': {
-            bgcolor: 'divider',
-            borderRadius: 3,
+            bgcolor: 'var(--ds-neutral-300)',
+            borderRadius: 999,
           },
-          '&::-webkit-scrollbar-track': {
-            bgcolor: 'transparent',
-          },
+          '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
         }}
       >
         {columns.map((column: KanbanColumnData) => (

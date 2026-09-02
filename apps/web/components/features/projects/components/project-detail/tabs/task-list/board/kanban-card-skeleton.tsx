@@ -7,12 +7,15 @@ function CardSkeleton(): React.JSX.Element {
   return (
     <Paper
       elevation={0}
+      // Matches the real card it stands in for: white on the column's sunken
+      // well, lifted by `e1` rather than outlined, so nothing shifts when the
+      // data lands.
       sx={{
         p: 1.5,
-        mb: 1,
-        borderRadius: 1.5,
-        border: '1px solid',
-        borderColor: 'divider',
+        borderRadius: 'var(--radius-r-sm)',
+        border: 'none',
+        bgcolor: 'var(--ds-surface)',
+        boxShadow: 'var(--shadow-e1)',
       }}
     >
       <Skeleton variant="text" width="60%" height={12} sx={{ mb: 0.5 }} />

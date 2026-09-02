@@ -1,21 +1,25 @@
 'use client';
 
-import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import { Button, IconButton } from '@mui/material';
+import { Boxes, Eye, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AllocationCreateDialog } from './allocation-create-dialog';
-import { ALLOCATION_STATUS_COLOR, ALLOCATION_STATUS_LABEL } from '../constants';
+import { ALLOCATION_STATUS_LABEL } from '../constants';
 
+import {
+  EmptyPane,
+  ErrorPane,
+  Mono,
+  Overline,
+  TonePill,
+  type Tone,
+} from '@/components/features/projects/components/project-detail/primitives';
 import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
 import type { TableSortModel } from '@/components/shared/advanced-table/types';
-import { EmptyState, ErrorState } from '@/components/shared/feedback';
-import { MUIStatusChip } from '@/components/ui/mui-status-chip';
-import { MUITypography } from '@/components/ui/mui-typography';
 import { ROUTES } from '@/lib/config/routes';
 import { useStockAllocations, type StockAllocation } from '@/lib/hooks/resources/stock-allocations';
+import { formatNumber } from '@/lib/utils';
 
 export interface ProjectAllocationsTabProps {
   projectId: string;
@@ -26,6 +30,28 @@ type Row = StockAllocation & Record<string, unknown>;
 
 const EMPTY_ROWS: Row[] = [];
 
+/**
+ * Allocation state, mapped onto the page's tone system rather than MUI's
+ * palette, so a reserved allocation reads the same green as a reserved BOM line
+ * one tab across.
+ */
+const STATUS_TONE: Record<string, Tone> = {
+  allocated: 'accent',
+  reserved: 'accent',
+  partially_dispatched: 'warning',
+  dispatched: 'success',
+  completed: 'success',
+  cancelled: 'neutral',
+  returned: 'neutral',
+};
+
+/**
+ * Stock reserved out of a warehouse for this project.
+ *
+ * The table itself is the shared `AdvancedTable`, which already carries the
+ * design system's card surface and elevation — wrapping it in another card
+ * would stack two shadows. So this owns only the heading above it.
+ */
 export function ProjectAllocationsTab({
   projectId,
   isActive,
@@ -54,9 +80,10 @@ export function ProjectAllocationsTab({
     ? { field: sorting.sortBy, direction: sorting.sortOrder === 'ASC' ? 'asc' : 'desc' }
     : null;
 
-  const allocationDetailPath = useCallback((allocationId: string) => {
-    return ROUTES.INVENTORY.ALLOCATION_DETAIL.replace('[id]', allocationId);
-  }, []);
+  const allocationDetailPath = useCallback(
+    (allocationId: string) => ROUTES.INVENTORY.ALLOCATION_DETAIL.replace('[id]', allocationId),
+    [],
+  );
 
   const columns: ColumnConfig<Row>[] = [
     {
@@ -64,9 +91,15 @@ export function ProjectAllocationsTab({
       headerName: 'Product',
       flex: 2,
       renderCell: ({ row }) => (
-        <div className="flex flex-col gap-0.5 py-1">
-          <span className="text-sm font-medium text-foreground">{row.product?.name ?? '—'}</span>
-          <span className="text-xs text-foreground-secondary">{row.product?.code ?? ''}</span>
+        <div className="flex min-w-0 flex-col gap-0.5 py-1">
+          <span className="truncate text-[12.5px] font-medium text-foreground">
+            {row.product?.name ?? '—'}
+          </span>
+          {row.product?.code ? (
+            <Mono className="truncate text-[11px] text-foreground-tertiary">
+              {row.product.code}
+            </Mono>
+          ) : null}
         </div>
       ),
     },
@@ -75,7 +108,9 @@ export function ProjectAllocationsTab({
       headerName: 'Warehouse',
       flex: 1,
       renderCell: ({ row }) => (
-        <span className="text-sm text-foreground-secondary">{row.warehouse?.name ?? '—'}</span>
+        <span className="truncate text-[12.5px] text-foreground-secondary">
+          {row.warehouse?.name ?? '—'}
+        </span>
       ),
     },
     {
@@ -83,18 +118,21 @@ export function ProjectAllocationsTab({
       headerName: 'Status',
       flex: 1,
       renderCell: ({ row }) => (
-        <MUIStatusChip
-          label={ALLOCATION_STATUS_LABEL[row.status as string] ?? row.status}
-          color={ALLOCATION_STATUS_COLOR[row.status as string] ?? 'default'}
+        <TonePill
+          label={ALLOCATION_STATUS_LABEL[row.status as string] ?? String(row.status)}
+          tone={STATUS_TONE[row.status as string] ?? 'neutral'}
+          dot
         />
       ),
     },
     {
       field: 'allocatedQuantity',
-      headerName: 'Allocated',
+      headerName: 'Reserved',
       flex: 0.8,
       renderCell: ({ row }) => (
-        <span className="text-sm font-medium text-foreground">{row.allocatedQuantity}</span>
+        <Mono className="text-[12.5px] font-medium text-foreground">
+          {formatNumber(row.allocatedQuantity)}
+        </Mono>
       ),
     },
     {
@@ -102,7 +140,9 @@ export function ProjectAllocationsTab({
       headerName: 'Dispatched',
       flex: 0.8,
       renderCell: ({ row }) => (
-        <span className="text-sm text-foreground-secondary">{row.dispatchedQuantity}</span>
+        <Mono className="text-[12.5px] text-foreground-secondary">
+          {formatNumber(row.dispatchedQuantity)}
+        </Mono>
       ),
     },
     {
@@ -110,7 +150,9 @@ export function ProjectAllocationsTab({
       headerName: 'Returned',
       flex: 0.8,
       renderCell: ({ row }) => (
-        <span className="text-sm text-foreground-secondary">{row.returnedQuantity}</span>
+        <Mono className="text-[12.5px] text-foreground-secondary">
+          {formatNumber(row.returnedQuantity)}
+        </Mono>
       ),
     },
     {
@@ -119,58 +161,75 @@ export function ProjectAllocationsTab({
       flex: 0.5,
       sortable: false,
       renderCell: ({ row }) => (
-        <IconButton
-          aria-label="View allocation"
-          size="small"
+        <button
+          type="button"
+          aria-label={`Open allocation for ${row.product?.name ?? 'this product'}`}
           onClick={(e) => {
             e.stopPropagation();
             void router.push(allocationDetailPath(row.id));
           }}
+          className="flex size-7 items-center justify-center rounded-full text-foreground-tertiary transition-colors duration-fast hover:bg-background-tertiary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
         >
-          <VisibilityIcon fontSize="small" />
-        </IconButton>
+          <Eye className="size-4" strokeWidth={1.75} />
+        </button>
       ),
     },
   ];
 
   const renderEmptyState = useCallback(
     () => (
-      <EmptyState
-        title="No allocations for this project"
-        description="Create an allocation to reserve stock for this project."
+      <EmptyPane
+        size="page"
+        icon={<Boxes className="size-4" strokeWidth={2} />}
+        title="Nothing reserved yet"
+        description="Reserve stock from the Materials tab, or create an allocation here to hold specific units for this project."
       />
     ),
     [],
   );
 
-  if (!isActive) {
-    return <></>;
-  }
+  if (!isActive) return <></>;
+
+  const header = (
+    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2 px-1 pb-3">
+      <Overline>Stock allocations</Overline>
+      {!isLoading ? (
+        <span className="text-[11.5px] text-foreground-tertiary">
+          <Mono>{formatNumber(pagination.total)}</Mono>{' '}
+          {pagination.total === 1 ? 'allocation' : 'allocations'}
+        </span>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => setCreateOpen(true)}
+        className="ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-pill bg-primary px-3.5 text-[12.5px] font-medium text-white transition-[filter,transform] duration-fast hover:brightness-105 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <Plus className="size-3.5" strokeWidth={2.5} aria-hidden />
+        New allocation
+      </button>
+    </div>
+  );
 
   if (isError) {
     return (
-      <div className="flex flex-col gap-4 py-4">
-        <ErrorState title="Failed to load allocations" description="Please try again." />
-        <Button variant="outlined" size="small" onClick={() => void refetch()}>
-          Retry
-        </Button>
-      </div>
+      <section>
+        {header}
+        <div className="rounded-3xl bg-surface px-[22px] py-4 shadow-e2">
+          <ErrorPane
+            label="Allocations"
+            onRetry={() => {
+              void refetch();
+            }}
+            height={180}
+          />
+        </div>
+      </section>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 py-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <MUITypography variant="sectionTitle">Stock allocations</MUITypography>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<AddOutlinedIcon />}
-          onClick={() => setCreateOpen(true)}
-        >
-          Create allocation
-        </Button>
-      </div>
+    <section>
+      {header}
 
       <AdvancedTable<Row>
         columns={columns}
@@ -204,6 +263,6 @@ export function ProjectAllocationsTab({
         onOpenChange={setCreateOpen}
         defaultProjectId={projectId}
       />
-    </div>
+    </section>
   );
 }

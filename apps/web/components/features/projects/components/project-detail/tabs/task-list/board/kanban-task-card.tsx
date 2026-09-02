@@ -175,39 +175,49 @@ export function KanbanTaskCard({
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         elevation={0}
+        /*
+         * A white card floating on the column's sunken well: `e1` at rest,
+         * `e2` and a −1px lift on hover, which is the DS elevation ladder.
+         *
+         * The old card carried a 1px outline plus a 3px coloured left rule.
+         * Both are gone. Urgency is now a 3px inset bar drawn with a box-shadow
+         * — the same signal, made of luminance rather than a border, so it
+         * cannot fight the card's radius.
+         */
         sx={{
+          position: 'relative',
           p: 1.5,
-          mb: 1,
-          borderRadius: 1.5,
-          border: '1px solid',
-          borderColor: isDraggingThis
-            ? 'primary.light'
-            : isSpecial
-              ? 'warning.light'
-              : isOverdue
-                ? 'error.light'
-                : 'divider',
-          borderLeft: isOverdue || isSpecial ? '3px solid' : isDueToday ? '3px solid' : '1px solid',
-          borderLeftColor: isOverdue
-            ? 'error.main'
-            : isSpecial
-              ? 'warning.main'
-              : isDueToday
-                ? 'warning.main'
-                : isDraggingThis
-                  ? 'primary.light'
-                  : 'divider',
-          bgcolor: isDraggingThis ? 'action.hover' : isSpecial ? 'warning.50' : 'background.paper',
-          opacity: isDraggingThis ? 0.5 : 1,
+          pl: isOverdue || isSpecial || isDueToday ? 2 : 1.5,
+          borderRadius: 'var(--radius-r-sm)',
+          border: 'none',
+          bgcolor: isSpecial ? 'var(--ds-warning-bg)' : 'var(--ds-surface)',
+          boxShadow: (() => {
+            const accent = isOverdue
+              ? 'var(--ds-danger)'
+              : isSpecial || isDueToday
+                ? 'var(--ds-warning-main)'
+                : null;
+            const bar = accent ? `inset 3px 0 0 0 ${accent}, ` : '';
+            return `${bar}var(--shadow-e1)`;
+          })(),
+          opacity: isDraggingThis ? 0.45 : 1,
           cursor: 'grab',
-          transition: 'box-shadow 0.15s ease, border-color 0.15s ease, opacity 0.15s ease',
+          transition:
+            'box-shadow 150ms var(--ease-standard), transform 120ms var(--ease-standard), opacity 150ms var(--ease-standard)',
           '&:hover': {
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            borderColor: isOverdue ? 'error.main' : 'primary.light',
+            transform: 'translateY(-1px)',
+            boxShadow: (() => {
+              const accent = isOverdue
+                ? 'var(--ds-danger)'
+                : isSpecial || isDueToday
+                  ? 'var(--ds-warning-main)'
+                  : null;
+              const bar = accent ? `inset 3px 0 0 0 ${accent}, ` : '';
+              return `${bar}var(--shadow-e2)`;
+            })(),
           },
           '&:focus-visible': {
-            outline: '2px solid',
-            outlineColor: 'primary.main',
+            outline: '2px solid var(--ds-accent)',
             outlineOffset: 2,
           },
           '&:active': {
@@ -318,16 +328,16 @@ export function KanbanTaskCard({
               sx={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                px: 0.75,
+                px: 1,
                 py: 0.25,
-                borderRadius: 1,
-                bgcolor: isOverdue ? 'error.50' : isDueToday ? 'warning.50' : 'action.hover',
-                border: '1px solid',
-                borderColor: isOverdue
-                  ? 'error.light'
+                // A flat semantic tint, not a tinted box inside an outline.
+                borderRadius: 'var(--radius-pill)',
+                border: 'none',
+                bgcolor: isOverdue
+                  ? 'var(--ds-danger-bg)'
                   : isDueToday
-                    ? 'warning.light'
-                    : 'transparent',
+                    ? 'var(--ds-warning-bg)'
+                    : 'var(--ds-canvas-sunken)',
               }}
             >
               <Typography
@@ -372,13 +382,12 @@ export function KanbanTaskCard({
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    color: 'warning.main',
-                    bgcolor: 'warning.50',
-                    border: '1px solid',
-                    borderColor: 'warning.light',
-                    borderRadius: 0.5,
-                    px: 0.5,
-                    py: 0.1,
+                    color: 'var(--ds-warning)',
+                    bgcolor: 'var(--ds-warning-bg)',
+                    border: 'none',
+                    borderRadius: 'var(--radius-pill)',
+                    px: 0.625,
+                    py: 0.25,
                   }}
                 >
                   <LockOutlinedIcon sx={{ fontSize: 9 }} />

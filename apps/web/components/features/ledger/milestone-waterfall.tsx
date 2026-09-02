@@ -1,11 +1,20 @@
 'use client';
 
-import { Avatar, Box, Button, ButtonBase, Card, LinearProgress, Tooltip } from '@mui/material';
+import { Tooltip } from '@mui/material';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { type JSX, useState } from 'react';
 
-import { MUIStatusChip, MUITypography, type StatusChipColor } from '@/components/ui';
+import {
+  EmptyPane,
+  Mono,
+  ROW_BLEED,
+  TONE,
+  TonePill,
+  Track,
+  type Tone,
+} from '@/components/features/projects/components/project-detail/primitives';
 import type { MilestoneBalance } from '@/lib/hooks/resources/ledger';
-import { formatDate } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 interface MilestoneWaterfallProps {
@@ -14,26 +23,19 @@ interface MilestoneWaterfallProps {
   onWaive?: (milestone: MilestoneBalance) => void;
 }
 
-/** Palette comes from MUI tokens, never hand-written colour classes. */
-const STATUS_CHIP: Record<string, { label: string; color: StatusChipColor }> = {
-  paid: { label: 'Paid', color: 'success' },
-  partial: { label: 'Partial', color: 'warning' },
-  pending: { label: 'Pending', color: 'default' },
-  waived: { label: 'Waived', color: 'default' },
+const STATUS: Record<string, { label: string; tone: Tone }> = {
+  paid: { label: 'Paid', tone: 'success' },
+  partial: { label: 'Part paid', tone: 'warning' },
+  pending: { label: 'Pending', tone: 'neutral' },
+  waived: { label: 'Waived', tone: 'neutral' },
 };
-
-/** Shared by every amount so the columns line up down the list. */
-const NUMERIC = { fontVariantNumeric: 'tabular-nums' } as const;
 
 /**
  * The milestone-first view: what each stage expects, what came in, what is short.
  *
- * This is the client's requirement rendered literally — "milestone 1 expects
- * ₹10,000, customer paid ₹2,000, flag that he is ₹8,000 short".
- *
- * Every figure comes from the API. Nothing is summed here: the old UI recomputed
- * money client-side in seven places, which is how the screen and the database
- * ended up disagreeing.
+ * Every figure comes from the API. Nothing is summed here — the old UI
+ * recomputed money client-side in seven places, which is how the screen and the
+ * database ended up disagreeing.
  */
 export function MilestoneWaterfall({
   milestones,
@@ -44,278 +46,220 @@ export function MilestoneWaterfall({
 
   if (milestones.length === 0) {
     return (
-      <Card variant="outlined" sx={{ p: 4, textAlign: 'center', borderStyle: 'dashed' }}>
-        <MUITypography variant="placeholder">
-          No payment schedule yet. Milestones are created when a quote is converted to a project.
-        </MUITypography>
-      </Card>
+      <EmptyPane
+        title="No payment schedule"
+        description="Milestones are created when a quote is converted into a project."
+      />
     );
   }
 
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="flex flex-col">
       {milestones.map((m) => {
-        const status = STATUS_CHIP[m.derivedStatus] ?? STATUS_CHIP.pending;
+        const status = STATUS[m.derivedStatus] ?? STATUS.pending;
         const pct =
           m.expectedPaise > 0
             ? Math.min(100, Math.round((m.allocatedPaise / m.expectedPaise) * 100))
             : 0;
         const isOpen = expanded === m.milestoneId;
         const isShort = m.balancePaise > 0 && m.derivedStatus !== 'waived';
+        const barTone: Tone =
+          m.derivedStatus === 'paid' ? 'success' : m.daysOverdue > 0 ? 'danger' : 'warning';
 
         return (
-          <Card key={m.milestoneId} variant="outlined" component="li">
-            {/* The toggle wraps the CONTENT only. Wrapping the actions too made
-                them interactive elements nested inside a <button> — invalid
-                HTML, and the reason the previous version faked its buttons with
-                role="button" spans. */}
-            <div className="flex items-start gap-4 p-4">
-              <ButtonBase
+          <li key={m.milestoneId}>
+            <div
+              className={cn(
+                'flex items-start gap-3 rounded-2xl py-3 transition-colors duration-fast hover:bg-background-tertiary',
+                ROW_BLEED,
+              )}
+            >
+              {/* The toggle wraps the CONTENT only. Wrapping the actions too put
+                  interactive elements inside a button — invalid HTML, and why
+                  the older version faked its buttons with role="button" spans. */}
+              <button
+                type="button"
                 onClick={() => setExpanded(isOpen ? null : m.milestoneId)}
                 aria-expanded={isOpen}
-                aria-label={`${m.name} — ${status?.label ?? 'Pending'}`}
-                sx={{ alignItems: 'flex-start', textAlign: 'left', borderRadius: 1, gap: 2 }}
-                className="min-w-0 flex-1"
+                className="flex min-w-0 flex-1 items-start gap-3 rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
-                <Avatar
-                  sx={{
-                    width: 28,
-                    height: 28,
-                    fontSize: 12,
-                    bgcolor: 'action.hover',
-                    color: 'text.primary',
-                    ...NUMERIC,
-                  }}
-                >
-                  {m.displayOrder}
-                </Avatar>
+                <span className="mt-0.5 flex shrink-0 items-center gap-1.5">
+                  {isOpen ? (
+                    <ChevronDown className="size-3.5 text-foreground-tertiary" />
+                  ) : (
+                    <ChevronRight className="size-3.5 text-foreground-tertiary" />
+                  )}
+                  <Mono
+                    className="grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold"
+                    style={{ background: 'var(--ds-canvas-sunken)' }}
+                  >
+                    {m.displayOrder}
+                  </Mono>
+                </span>
 
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
-                    <MUITypography variant="bodyPrimary" fontWeight={500} component="span">
+                    <span
+                      className={cn(
+                        'truncate text-[13px] font-semibold text-foreground',
+                        m.derivedStatus === 'waived' && 'line-through',
+                      )}
+                    >
                       {m.name}
-                    </MUITypography>
-                    <MUIStatusChip
+                    </span>
+                    <TonePill
                       label={status?.label ?? 'Pending'}
-                      color={status?.color ?? 'default'}
-                      size="small"
-                      autoColor={false}
-                      sx={
-                        m.derivedStatus === 'waived'
-                          ? { textDecoration: 'line-through' }
-                          : undefined
-                      }
+                      tone={status?.tone ?? 'neutral'}
+                      dot
                     />
                     {/* A lender-funded instalment is the bank's to pay. Saying so
                         stops anyone chasing the customer for it. */}
-                    {m.payerType === 'lender' && (
-                      <MUIStatusChip
-                        label="Bank pays"
-                        color="info"
-                        size="small"
-                        autoColor={false}
-                      />
-                    )}
-                    {m.daysOverdue > 0 && (
-                      <MUIStatusChip
-                        label={`${m.daysOverdue}d overdue`}
-                        color="error"
-                        size="small"
-                        autoColor={false}
-                      />
-                    )}
+                    {m.payerType === 'lender' ? <TonePill label="Bank pays" tone="info" /> : null}
+                    {m.daysOverdue > 0 ? (
+                      <TonePill label={`${m.daysOverdue} d overdue`} tone="danger" />
+                    ) : null}
                   </span>
 
                   <span className="mt-2 block">
-                    <LinearProgress
-                      variant="determinate"
-                      value={pct}
-                      sx={{ height: 6, borderRadius: 3 }}
-                      color={
-                        m.derivedStatus === 'paid'
-                          ? 'success'
-                          : m.daysOverdue > 0
-                            ? 'error'
-                            : 'warning'
-                      }
-                    />
+                    <Track pct={pct} tone={barTone} height={6} />
                   </span>
 
-                  <Box
-                    component="span"
-                    sx={{ fontSize: 14 }}
-                    className="mt-2 flex flex-wrap gap-x-4 gap-y-1"
-                  >
-                    <Box component="span" color="text.secondary">
+                  <span className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-foreground-secondary">
+                    <span>
                       Expected{' '}
-                      <Box component="span" sx={{ ...NUMERIC, color: 'text.primary' }}>
-                        {formatPaise(m.expectedPaise)}
-                      </Box>
-                    </Box>
-                    <Box component="span" color="text.secondary">
+                      <Mono className="text-foreground">{formatPaise(m.expectedPaise)}</Mono>
+                    </span>
+                    <span>
                       Received{' '}
-                      <Box component="span" sx={{ ...NUMERIC, color: 'text.primary' }}>
-                        {formatPaise(m.allocatedPaise)}
-                      </Box>
-                    </Box>
-                    {isShort && (
-                      <Box component="span" sx={{ fontWeight: 500, color: 'error.main' }}>
-                        Short by{' '}
-                        <Box component="span" sx={NUMERIC}>
-                          {formatPaise(m.balancePaise)}
-                        </Box>
-                      </Box>
-                    )}
-                    {m.overAllocatedPaise > 0 && (
-                      <Box component="span" sx={{ fontWeight: 500, color: 'info.main' }}>
-                        Overpaid by{' '}
-                        <Box component="span" sx={NUMERIC}>
-                          {formatPaise(m.overAllocatedPaise)}
-                        </Box>
-                      </Box>
-                    )}
-                    {m.dueDate && (
-                      <Box component="span" color="text.secondary">
-                        Due {m.dueDate}
-                      </Box>
-                    )}
-                  </Box>
+                      <Mono className="text-foreground">{formatPaise(m.allocatedPaise)}</Mono>
+                    </span>
+                    {isShort ? (
+                      <span className="font-medium" style={{ color: TONE.danger.ink }}>
+                        Short by <Mono>{formatPaise(m.balancePaise)}</Mono>
+                      </span>
+                    ) : null}
+                    {m.overAllocatedPaise > 0 ? (
+                      <span className="font-medium" style={{ color: TONE.info.ink }}>
+                        Overpaid by <Mono>{formatPaise(m.overAllocatedPaise)}</Mono>
+                      </span>
+                    ) : null}
+                    {m.dueDate ? (
+                      <span>
+                        Due <Mono>{formatDate(m.dueDate)}</Mono>
+                      </span>
+                    ) : null}
+                  </span>
                 </span>
-              </ButtonBase>
+              </button>
 
               <span className="flex shrink-0 gap-1.5">
-                {isShort && onRecordPayment && (
-                  <Button
-                    size="small"
-                    variant="outlined"
+                {isShort && onRecordPayment ? (
+                  <button
+                    type="button"
                     onClick={() => onRecordPayment(m.milestoneId)}
+                    className="inline-flex h-7 items-center rounded-pill bg-accent-subtle px-3 text-[12px] font-medium text-primary-dark transition-[filter] duration-fast hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
-                    Record payment
-                  </Button>
-                )}
+                    Record
+                  </button>
+                ) : null}
                 {/* Waiving writes off a residual nobody intends to collect. Only
                     offered where money is genuinely still owed — a paid or
                     already-waived milestone has nothing to write off. */}
-                {isShort && onWaive && (
-                  <Button size="small" variant="text" color="inherit" onClick={() => onWaive(m)}>
+                {isShort && onWaive ? (
+                  <button
+                    type="button"
+                    onClick={() => onWaive(m)}
+                    className="inline-flex h-7 items-center rounded-pill px-3 text-[12px] font-medium text-foreground-secondary transition-colors duration-fast hover:bg-background-tertiary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  >
                     Waive
-                  </Button>
-                )}
+                  </button>
+                ) : null}
               </span>
             </div>
 
-            {isOpen && (
-              <Box sx={{ borderTop: 1, borderColor: 'divider', px: 2, py: 1.5 }}>
+            {isOpen ? (
+              <div
+                className={cn('mb-2 rounded-2xl px-3.5 py-3', ROW_BLEED)}
+                style={{ background: 'var(--ds-canvas-sunken)' }}
+              >
                 {m.allocations.length === 0 ? (
-                  <MUITypography variant="placeholder">
+                  <p className="text-[12.5px] text-foreground-tertiary">
                     Nothing received against this yet.
-                  </MUITypography>
+                  </p>
                 ) : (
-                  <ul className="flex flex-col gap-1.5">
+                  <ul className="flex flex-col gap-2">
                     {m.allocations.map((a) => {
                       const isReversal = Boolean(a.reversesId);
                       const wasReversed = Boolean(a.reversedByEntryNo);
+                      // A reversed line is history, not live money — dim it
+                      // rather than hide it, so the audit trail stays whole.
+                      const dim = isReversal || wasReversed;
                       return (
-                        <Box
-                          component="li"
+                        <li
                           key={a.allocationId}
-                          sx={{
-                            fontSize: 14,
-                            // A reversed line is history, not live money — dim it
-                            // rather than hide it, so the audit trail stays whole.
-                            color: isReversal || wasReversed ? 'text.secondary' : 'text.primary',
-                          }}
-                          className="flex items-start justify-between gap-3"
+                          className={cn(
+                            'flex items-start justify-between gap-3 text-[12.5px]',
+                            dim ? 'text-foreground-tertiary' : 'text-foreground',
+                          )}
                         >
-                          <span className="flex flex-wrap items-center gap-2">
-                            <Box
-                              component="span"
-                              sx={{
-                                fontFamily: 'monospace',
-                                fontSize: 12,
-                                color: 'text.secondary',
-                              }}
-                            >
+                          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <Mono className="text-[11px] text-foreground-secondary">
                               {a.entryNo}
-                            </Box>
-                            <Box component="span" color="text.secondary">
-                              {a.valueDate}
-                              {a.entryCreatedAt && (
-                                <Box
-                                  component="span"
-                                  sx={{ display: 'block', fontSize: 11, color: 'text.disabled' }}
-                                >
-                                  Recorded {formatDate(a.entryCreatedAt)}
-                                </Box>
-                              )}
-                            </Box>
-                            {a.valueDateIsInferred && (
-                              /* Historical rows have no recoverable value date —
-                                 say so rather than implying the date is a fact. */
-                              <Tooltip title="Date inferred from the record's creation time">
-                                <Box
-                                  component="span"
-                                  sx={{ fontSize: 12, color: 'text.secondary' }}
-                                >
-                                  (approx)
-                                </Box>
-                              </Tooltip>
-                            )}
-                            {a.paymentMethod && (
-                              <Box
-                                component="span"
-                                sx={{
-                                  fontSize: 12,
-                                  textTransform: 'uppercase',
-                                  color: 'text.secondary',
-                                }}
-                              >
+                            </Mono>
+                            <span className="text-foreground-secondary">
+                              <Mono>{formatDate(a.valueDate)}</Mono>
+                              {a.valueDateIsInferred ? (
+                                /* Historical rows have no recoverable value date —
+                                   say so rather than implying the date is a fact. */
+                                <Tooltip title="Date inferred from when the record was created">
+                                  <span className="ml-1 text-[11px]">(approx)</span>
+                                </Tooltip>
+                              ) : null}
+                            </span>
+                            {a.paymentMethod ? (
+                              <span className="text-[11px] uppercase tracking-[0.06em] text-foreground-tertiary">
                                 {a.paymentMethod}
-                              </Box>
-                            )}
+                              </span>
+                            ) : null}
                             {/* Both halves of a reversal stay on screen. Hiding the
                                 correction while leaving the original showed money
                                 that never cleared as live cash. */}
-                            {isReversal && (
-                              <Tooltip title={a.reversalReason ?? ''}>
+                            {isReversal ? (
+                              <Tooltip title={a.reversalReason ?? 'No reason given'}>
                                 <span>
-                                  <MUIStatusChip
+                                  <TonePill
                                     label={`reverses ${a.reversesEntryNo}`}
-                                    color="warning"
-                                    size="small"
-                                    autoColor={false}
+                                    tone="warning"
+                                    className="h-[18px] px-1.5 text-[10px]"
                                   />
                                 </span>
                               </Tooltip>
-                            )}
-                            {wasReversed && (
-                              <MUIStatusChip
+                            ) : null}
+                            {wasReversed ? (
+                              <TonePill
                                 label={`reversed by ${a.reversedByEntryNo}`}
-                                color="default"
-                                size="small"
-                                autoColor={false}
+                                tone="neutral"
+                                className="h-[18px] px-1.5 text-[10px]"
                               />
-                            )}
+                            ) : null}
                           </span>
                           <span className="flex shrink-0 flex-col items-end">
                             {/* The allocation, never the entry total. */}
-                            <Box component="span" sx={NUMERIC}>
-                              {formatPaise(a.allocatedPaise)}
-                            </Box>
-                            {a.allocatedPaise !== a.entryAmountPaise && (
-                              <Box component="span" sx={{ fontSize: 11, color: 'text.secondary' }}>
+                            <Mono className="font-medium">{formatPaise(a.allocatedPaise)}</Mono>
+                            {a.allocatedPaise !== a.entryAmountPaise ? (
+                              <Mono className="text-[10.5px] text-foreground-tertiary">
                                 of {formatPaise(a.entryAmountPaise)}
-                              </Box>
-                            )}
+                              </Mono>
+                            ) : null}
                           </span>
-                        </Box>
+                        </li>
                       );
                     })}
                   </ul>
                 )}
-              </Box>
-            )}
-          </Card>
+              </div>
+            ) : null}
+          </li>
         );
       })}
     </ul>

@@ -1,7 +1,7 @@
 'use client';
 
 import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import { Box, Paper } from '@mui/material';
+import { Box } from '@mui/material';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { KanbanCardSkeleton } from './kanban-card-skeleton';
@@ -67,30 +67,32 @@ export function KanbanColumn({
   }, [onAddTask, column.code]);
 
   return (
-    <Paper
-      elevation={0}
+    /*
+     * The column is a SUNKEN well, not a bordered box: cards float above it on
+     * `e1`, which is the DS way of saying "these sit inside that". The old
+     * treatment used a 1px outline plus a 3px coloured top rule — two
+     * structural lines the design system does not have. The status colour now
+     * lives on the header dot instead.
+     */
+    <Box
       ref={columnRef}
       role="region"
       aria-label={`${column.label} column, ${column.tasks.length} tasks`}
       sx={{
-        width: 280,
-        minWidth: 280,
-        maxWidth: 280,
+        width: 288,
+        minWidth: 288,
+        maxWidth: 288,
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: isOver ? 'primary.main' : 'divider',
-        borderTop: `3px solid ${column.color}`,
-        bgcolor: isOver ? 'rgba(0,82,204,0.03)' : 'background.default',
-        outline: isOver ? '2px dashed' : 'none',
-        outlineColor: 'primary.light',
-        outlineOffset: -2,
-        transition: 'border-color 0.15s ease, background-color 0.15s ease, outline 0.15s ease',
+        borderRadius: 'var(--radius-r-md)',
+        bgcolor: isOver ? 'var(--ds-accent-subtle)' : 'var(--ds-canvas-sunken)',
+        boxShadow: isOver ? 'inset 0 0 0 2px var(--ds-primary)' : 'none',
+        transition:
+          'background-color 150ms var(--ease-standard), box-shadow 150ms var(--ease-standard)',
         overflow: 'hidden',
         flexShrink: 0,
-        maxHeight: 'calc(100vh - 280px)',
-        minHeight: 120,
+        maxHeight: 'calc(100vh - 300px)',
+        minHeight: 140,
       }}
     >
       {/* Sticky header */}
@@ -107,10 +109,17 @@ export function KanbanColumn({
         sx={{
           flex: 1,
           overflowY: 'auto',
-          p: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          px: 1.25,
+          pb: 1.5,
           minHeight: 80,
           '&::-webkit-scrollbar': { width: 4 },
-          '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 2 },
+          '&::-webkit-scrollbar-thumb': {
+            bgcolor: 'var(--ds-neutral-300)',
+            borderRadius: 999,
+          },
         }}
       >
         {isLoading ? (
@@ -141,7 +150,7 @@ export function KanbanColumn({
           ))
         )}
       </Box>
-    </Paper>
+    </Box>
   );
 }
 

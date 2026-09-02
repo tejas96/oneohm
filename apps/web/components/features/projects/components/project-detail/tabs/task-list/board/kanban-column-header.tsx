@@ -1,8 +1,11 @@
 'use client';
 
-import AddIcon from '@mui/icons-material/Add';
-import { Box, Button, Chip, Tooltip, Typography } from '@mui/material';
+import { Plus } from 'lucide-react';
 import React from 'react';
+
+import { Mono } from '../../../primitives';
+
+import { cn } from '@/lib/utils';
 
 interface KanbanColumnHeaderProps {
   label: string;
@@ -12,6 +15,13 @@ interface KanbanColumnHeaderProps {
   onAddTask: () => void;
 }
 
+/**
+ * The column's name, in the overline device.
+ *
+ * Sticky, and sitting on the column's own sunken fill rather than a white bar
+ * with a rule under it — the DS has no structural lines, so the header
+ * separates from the cards by weight and letter-spacing alone.
+ */
 export function KanbanColumnHeader({
   label,
   color,
@@ -20,74 +30,36 @@ export function KanbanColumnHeader({
   onAddTask,
 }: KanbanColumnHeaderProps): React.JSX.Element {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        px: 1.5,
-        py: 1,
-        position: 'sticky',
-        top: 0,
-        zIndex: 1,
-        bgcolor: 'background.default',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Box
-          sx={{
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            bgcolor: color,
-            flexShrink: 0,
-            transition: 'transform 0.15s ease',
-            transform: isOver ? 'scale(1.3)' : 'scale(1)',
-          }}
-        />
-        <Typography
-          variant="overline"
-          sx={{
-            fontWeight: 700,
-            lineHeight: 1,
-            letterSpacing: 0.5,
-            color: 'text.primary',
-          }}
-        >
-          {label}
-        </Typography>
-        <Chip
-          label={count}
-          size="small"
-          sx={{
-            height: 18,
-            fontSize: 11,
-            fontWeight: 600,
-            bgcolor: isOver ? 'primary.main' : 'action.hover',
-            color: isOver ? 'primary.contrastText' : 'text.secondary',
-            transition: 'background-color 0.15s ease, color 0.15s ease',
-            '& .MuiChip-label': { px: 0.75 },
-          }}
-        />
-      </Box>
-      <Tooltip title={`Create task in ${label}`} placement="top">
-        <Button
-          size="small"
-          variant="text"
-          onClick={onAddTask}
-          sx={{
-            minWidth: 0,
-            p: 0.5,
-            color: 'text.secondary',
-            '&:hover': { color: 'primary.main' },
-          }}
-        >
-          <AddIcon sx={{ fontSize: 16 }} />
-        </Button>
-      </Tooltip>
-    </Box>
+    <div className="sticky top-0 z-[1] flex items-center gap-2 px-3.5 pb-2 pt-3.5 backdrop-blur-[2px]">
+      <span
+        aria-hidden
+        className={cn(
+          'size-2.5 shrink-0 rounded-full transition-transform duration-fast',
+          isOver && 'scale-[1.35]',
+        )}
+        style={{ background: color }}
+      />
+      <h3 className="min-w-0 truncate text-[11px] font-bold uppercase tracking-[0.12em] text-foreground-secondary">
+        {label}
+      </h3>
+      <Mono
+        className={cn(
+          'rounded-pill px-1.5 py-[3px] text-[10px] font-bold leading-none transition-colors duration-fast',
+          isOver ? 'bg-primary-dark text-white' : 'bg-surface text-foreground-secondary',
+        )}
+      >
+        {count}
+      </Mono>
+      <button
+        type="button"
+        onClick={onAddTask}
+        aria-label={`Add a task to ${label}`}
+        title={`Add a task to ${label}`}
+        className="ml-auto flex size-6 shrink-0 items-center justify-center rounded-full text-foreground-tertiary transition-colors duration-fast hover:bg-surface hover:text-primary-dark focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+      >
+        <Plus className="size-3.5" strokeWidth={2.25} />
+      </button>
+    </div>
   );
 }
 

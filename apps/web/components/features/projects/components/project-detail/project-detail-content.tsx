@@ -1,33 +1,35 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import { ProjectStatus } from '@tejas96/shared/types';
 import { FolderOpen } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ProjectChatWidget } from './project-chat-widget';
 import { ProjectDetailHeader } from './project-detail-header';
-import { ProjectDetailTabs } from './project-detail-tabs';
+import { ProjectDetailTabs, type TabCount } from './project-detail-tabs';
 import { EditProjectModal } from '../edit-project-modal';
 import { ProjectBomTab } from './tabs/project-bom-tab';
 import { ProjectDocumentsTab } from './tabs/project-documents-tab';
 import { ProjectOverviewTab } from './tabs/project-overview-tab';
 import { ProjectReportsTab } from './tabs/project-reports-tab';
-import { ProjectSummaryTab } from './tabs/project-summary-tab';
 import { ProjectSurveysTab } from './tabs/project-surveys-tab';
 import { ProjectTasksTab } from './tabs/project-tasks-tab';
+import type { Panel, ProjectDetailData } from './types';
 import { PROJECT_DETAIL_TABS, type ProjectDetailTab } from '../../constants';
+import { useProjectAttention } from '../../hooks/use-project-attention';
 import { useProject, useProjectTeam } from '../../hooks/use-project-detail';
+import { useProjectMilestones } from '../../hooks/use-project-payments';
 import { useProjectReports } from '../../hooks/use-project-reports';
 
 import { ProjectAllocationsTab } from '@/components/features/inventory';
 import { ProjectMoneyTab } from '@/components/features/ledger/project-money-tab';
 import { EntityServiceTicketsTab } from '@/components/features/service-tickets';
-import { Alert } from '@/components/shared/alerts/alert';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useProjectSummary } from '@/lib/hooks/resources';
+import { useProjectLedger } from '@/lib/hooks/resources/ledger';
 import { AccessDeniedContent, ALWAYS_OPEN, useCan } from '@/lib/rbac';
 import { getErrorMessage } from '@/lib/utils/error';
 import { recordRecentView } from '@/lib/utils/recent-views';
@@ -39,41 +41,41 @@ interface ProjectDetailContentProps {
 
 const VALID_TABS = new Set<string>(PROJECT_DETAIL_TABS.map((t) => t.value));
 
-const STATUS_BANNERS = {
-  [ProjectStatus.PLANNING]: {
-    variant: 'info' as const,
-    title: 'Project in Planning Phase',
-    description:
-      'This project is currently in the planning stage. Standard operations and schedules are not yet active.',
-  },
-  [ProjectStatus.ON_HOLD]: {
-    variant: 'warning' as const,
-    title: 'Project On Hold',
-    description:
-      'This project is currently on hold. Normal construction and execution activities are paused.',
-  },
-  [ProjectStatus.CANCELLED]: {
-    variant: 'error' as const,
-    title: 'Project Cancelled',
-    description:
-      'This project has been cancelled. No further actions or transactions should be processed.',
-  },
-};
+/**
+ * Collapses a query into the three states a card draws.
+ *
+ * "Loading" means no data yet and no failure — regardless of react-query's own
+ * `isLoading`, which is false while a query is disabled. "Error" only while
+ * there is nothing to show: a refetch that fails after a success keeps the
+ * figures on screen rather than replacing them with a retry button.
+ */
+function toPanel<T>(query: {
+  data: T | undefined;
+  isError: boolean;
+  refetch: () => unknown;
+}): Panel<T> {
+  const hasData = query.data !== undefined;
+  return {
+    data: query.data,
+    isLoading: !hasData && !query.isError,
+    isError: query.isError && !hasData,
+    refetch: () => {
+      void query.refetch();
+    },
+  };
+}
 
+/** Full-page placeholder: breadcrumb, identity band, tab rail, body. */
 function LoadingSkeleton(): React.JSX.Element {
   return (
-    <div className="p-4 space-y-4">
-      <Skeleton className="h-6 w-48" />
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-6 w-16 rounded-full" />
-      </div>
-      <Skeleton className="h-4 w-96" />
-      <Skeleton className="h-10 w-full" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-lg" />
-        ))}
+    <div className="space-y-4 pb-10" aria-busy>
+      <Skeleton className="h-3.5 w-44 rounded-md" />
+      <Skeleton className="h-[280px] w-full rounded-3xl" />
+      <Skeleton className="h-[42px] w-full max-w-[760px] rounded-pill" />
+      <Skeleton className="h-[230px] w-full rounded-3xl" />
+      <div className="grid grid-cols-12 gap-4">
+        <Skeleton className="col-span-12 h-56 rounded-3xl lg:col-span-7" />
+        <Skeleton className="col-span-12 h-56 rounded-3xl lg:col-span-5" />
       </div>
     </div>
   );
@@ -101,14 +103,28 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
   }, [searchParams]);
 
   const { data: project, isLoading, isError, error, refetch } = useProject(projectId);
-  const { data: projectTeam = [], refetch: refetchTeam } = useProjectTeam(projectId);
-  const { data: reportsData } = useProjectReports(projectId);
+  const projectLoaded = project !== undefined;
+
+  // Every hook below sits above the early returns: a hook that only runs on
+  // some renders changes the hook count between renders and React throws.
   const { user } = useAuth();
-  // Must sit above the early returns below — a hook that only runs on some
-  // renders changes the hook count between renders and React throws.
   const { can } = useCan();
+  const canViewFinance = can('finance.view');
+
+  // The header band and the phase rail sit on every tab, so these load with
+  // the page rather than with the Overview tab. They are gated on the project
+  // having loaded: a bad id should cost one 404, not seven.
+  const teamQuery = useProjectTeam(projectId, { enabled: projectLoaded });
+  const reportsQuery = useProjectReports(projectId, { enabled: projectLoaded });
+  const summaryQuery = useProjectSummary(projectId, { enabled: projectLoaded });
+  const milestonesQuery = useProjectMilestones(projectId, { enabled: projectLoaded });
+  const attentionQuery = useProjectAttention(projectId, { enabled: projectLoaded });
+  // Money is the one region behind a permission. Not requested when blocked,
+  // so a blocked user never sees a failed request where a figure should be.
+  const ledgerQuery = useProjectLedger(projectId, { enabled: projectLoaded && canViewFinance });
 
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const openEditModal = useCallback(() => setEditModalOpen(true), []);
 
   useEffect(() => {
     if (project && user?.id) {
@@ -131,11 +147,53 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
     [router, searchParams],
   );
 
+  const data = useMemo<ProjectDetailData>(
+    () => ({
+      summary: toPanel(summaryQuery),
+      milestones: toPanel(milestonesQuery),
+      attention: toPanel(attentionQuery),
+      ledger: { ...toPanel(ledgerQuery), allowed: canViewFinance },
+      reports: toPanel(reportsQuery),
+      team: toPanel(teamQuery),
+    }),
+    // Each query object is a new identity when its state changes; listing the
+    // fields the panels read keeps the memo honest without re-deriving on
+    // unrelated renders.
+    [
+      summaryQuery.data,
+      summaryQuery.isError,
+      milestonesQuery.data,
+      milestonesQuery.isError,
+      attentionQuery.data,
+      attentionQuery.isError,
+      ledgerQuery.data,
+      ledgerQuery.isError,
+      reportsQuery.data,
+      reportsQuery.isError,
+      teamQuery.data,
+      teamQuery.isError,
+      canViewFinance,
+    ],
+  );
+
+  const tabCounts = useMemo((): Partial<Record<ProjectDetailTab, TabCount>> => {
+    const counts: Partial<Record<ProjectDetailTab, TabCount>> = {};
+    const metrics = summaryQuery.data?.metrics;
+    if (metrics) {
+      counts.tasks = { count: Math.max(0, metrics.totalTasks - metrics.completedTasks) };
+    }
+    const pendingReports = reportsQuery.data?.pendingCount ?? 0;
+    if (pendingReports > 0) {
+      counts.reports = { count: pendingReports, tone: 'warning' };
+    }
+    return counts;
+  }, [summaryQuery.data?.metrics, reportsQuery.data?.pendingCount]);
+
   if (isLoading) return <LoadingSkeleton />;
 
   if (isError || !project) {
     return (
-      <div className="p-4">
+      <div className="py-4">
         {isError ? (
           <ErrorState
             title="Failed to load project"
@@ -161,49 +219,31 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
   const activeTabGate =
     PROJECT_DETAIL_TABS.find((t) => t.value === activeTab)?.permission ?? ALWAYS_OPEN;
 
-  const showStatusBanner =
-    project.status !== ProjectStatus.ACTIVE && project.status !== ProjectStatus.COMPLETED;
-
-  const statusBannerConfig = showStatusBanner
-    ? STATUS_BANNERS[project.status as keyof typeof STATUS_BANNERS]
-    : null;
-
   return (
-    <div className="p-4 space-y-4">
-      <ProjectDetailHeader project={project} onEdit={() => setEditModalOpen(true)} />
-
-      {showStatusBanner && statusBannerConfig && (
-        <Alert variant={statusBannerConfig.variant} title={statusBannerConfig.title}>
-          {statusBannerConfig.description}
-        </Alert>
-      )}
-
-      <ProjectDetailTabs
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        reportsPendingCount={reportsData?.pendingCount}
+    <div className="pb-10">
+      <ProjectDetailHeader
+        project={project}
+        data={data}
+        onEdit={openEditModal}
+        showPhaseRail={activeTab !== 'overview'}
       />
+
+      <div className="mt-2">
+        <ProjectDetailTabs activeTab={activeTab} onTabChange={handleTabChange} counts={tabCounts} />
+      </div>
 
       {/* Guarded around the whole panel region, not per tab.
           These tabs toggle with `display: none`, so every one of them stays
           mounted and fires its data hooks regardless of which is showing.
           Gating them individually would still let a blocked tab fetch. */}
       {!can(activeTabGate) ? (
-        <Box className="mt-4 py-12">
+        <Box role="tabpanel" className="py-12">
           <AccessDeniedContent gate={activeTabGate} />
         </Box>
       ) : (
-        <Box className="mt-4">
+        <Box role="tabpanel" aria-labelledby={`tab-${activeTab}`} className="mt-2">
           <Box sx={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
-            <ProjectOverviewTab project={project} isActive={activeTab === 'overview'} />
-          </Box>
-
-          <Box sx={{ display: activeTab === 'summary' ? 'block' : 'none' }}>
-            <ProjectSummaryTab
-              project={project}
-              projectId={projectId}
-              isActive={activeTab === 'summary'}
-            />
+            <ProjectOverviewTab project={project} data={data} onEditProject={openEditModal} />
           </Box>
 
           <Box sx={{ display: activeTab === 'tasks' ? 'block' : 'none' }}>
@@ -259,10 +299,10 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
         project={project}
-        currentTeam={projectTeam}
+        currentTeam={teamQuery.data ?? []}
         onSuccess={() => {
           void refetch();
-          void refetchTeam();
+          void teamQuery.refetch();
         }}
       />
 
