@@ -39,11 +39,20 @@ export class BomChangeEntity {
   @Column({ name: 'bom_id', type: 'uuid' })
   bomId!: string;
 
-  @ManyToOne(() => BomEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(() => BomEntity, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'bom_id' })
   bom?: BomEntity;
 
-  /** Nullable only for a whole-BOM cascade — individual item rows are never deleted. */
+  /**
+   * Nullable for a change that is not about one item row.
+   *
+   * It is NOT nullable so that a delete can blank it. The FK is ON DELETE
+   * RESTRICT: the append-only trigger rejects UPDATE, so ON DELETE SET NULL
+   * could never fire and merely turned any attempt to delete a referenced
+   * bom_item into a 0A000 'bom_changes is append-only' error naming a table
+   * the caller was not touching. RESTRICT costs nothing here — removing a
+   * line sets quantity = 0, it never deletes the row — and fails by name.
+   */
   @Column({ name: 'bom_item_id', type: 'uuid', nullable: true })
   bomItemId?: string | null;
 
