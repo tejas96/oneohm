@@ -103,6 +103,59 @@ export class CollapseBomItemRows1856400000000 implements MigrationInterface {
         JOIN bom_items bi ON bi.id = agg.keep_id
     `);
 
+    // Two rows in the same group can carry the same serial, and re-pointing
+    // both at the survivor would violate uq_bom_item_serials and roll the
+    // whole migration back. Drop the losers first, naming each one. Prefer
+    // whatever already sits on the survivor, then the oldest id.
+    await queryRunner.query(`
+      CREATE TEMP TABLE bom_item_serial_dupes AS
+      WITH mapped AS (
+        SELECT s.id,
+               s.bom_item_id,
+               s.serial_number,
+               COALESCE(m.survivor_id, s.bom_item_id) AS target_id
+          FROM bom_item_serials s
+          LEFT JOIN bom_item_merge m ON s.bom_item_id = ANY(m.member_ids)
+      ),
+      ranked AS (
+        SELECT id,
+               bom_item_id,
+               serial_number,
+               target_id,
+               ROW_NUMBER() OVER (
+                 PARTITION BY target_id, serial_number
+                 ORDER BY (bom_item_id = target_id) DESC, id ASC
+               ) AS rn
+          FROM mapped
+      )
+      SELECT id, bom_item_id, serial_number, target_id
+        FROM ranked
+       WHERE rn > 1
+    `);
+
+    const dupes = (await queryRunner.query(`
+      SELECT id, bom_item_id, serial_number, target_id FROM bom_item_serial_dupes
+    `)) as Array<{
+      id: string;
+      bom_item_id: string;
+      serial_number: string;
+      target_id: string;
+    }>;
+    for (const d of dupes) {
+      console.warn(
+        `[migration] Serial '${d.serial_number}' on bom_item ${d.bom_item_id} duplicates one ` +
+          `already merging onto bom_item ${d.target_id}; dropping the duplicate. ` +
+          `Re-enter it in the UI if both units are real.`,
+      );
+    }
+
+    await queryRunner.query(`
+      DELETE FROM bom_item_serials s
+       USING bom_item_serial_dupes d
+       WHERE s.id = d.id
+    `);
+    await queryRunner.query(`DROP TABLE bom_item_serial_dupes`);
+
     await queryRunner.query(`
       UPDATE bom_item_serials s
          SET bom_item_id = m.survivor_id
@@ -156,18 +209,106 @@ export class CollapseBomItemRows1856400000000 implements MigrationInterface {
       UPDATE bom_items SET pricing_basis = 'per_unit' WHERE pricing_basis IS NULL
     `);
 
+    // A non-positive quantity cannot carry the line's money: quantity *
+    // unit_price_paise is 0 for a qty-0 row and negative for a negative one.
+    // Legacy total_price would mask that until Task 16 stops reading it, at
+    // which point the line's value would vanish with no warning. So decide it
+    // here, out loud, instead of letting an ELSE branch swallow it.
+    const nonPositive = (await queryRunner.query(`
+      SELECT id,
+             bom_id,
+             quantity::text                  AS quantity,
+             COALESCE(total_price, 0)::text  AS total_price
+        FROM bom_items
+       WHERE quantity <= 0
+       ORDER BY bom_id, id
+    `)) as Array<{
+      id: string;
+      bom_id: string;
+      quantity: string;
+      total_price: string;
+    }>;
+
+    if (nonPositive.length > 0) {
+      const bomIds = [...new Set(nonPositive.map((r) => r.bom_id))];
+      console.warn(
+        `[migration] ${nonPositive.length} bom_items row(s) have quantity <= 0, across ` +
+          `${bomIds.length} BOM(s): ${bomIds.join(', ')}`,
+      );
+
+      const withMoney = nonPositive.filter((r) => Number(r.total_price) !== 0);
+      if (withMoney.length > 0) {
+        const offenders = withMoney
+          .map(
+            (r) =>
+              `${r.id} (bom ${r.bom_id}, quantity ${r.quantity}, ` +
+              `total_price ${r.total_price})`,
+          )
+          .join('; ');
+        throw new Error(
+          `[migration] Refusing to continue: ${withMoney.length} bom_items row(s) carry money ` +
+            `on a non-positive quantity, so quantity * unit_price_paise cannot reproduce ` +
+            `total_price and the money would be silently lost. Correct the quantity or remove ` +
+            `the row, then re-run. Offending rows: ${offenders}`,
+        );
+      }
+
+      console.warn(
+        `[migration] All of them carry total_price = 0, so no money is at stake; ` +
+          `their unit_price_paise is set to 0.`,
+      );
+    }
+
     // total_price is authoritative in the old data (unit_price was sometimes a
     // per-unit split and sometimes a system total), so derive from it. By now
-    // total_price holds the whole group's money, not one unit's share.
+    // total_price holds the whole group's money, not one unit's share. The
+    // guard above has already proved the ELSE branch carries no money.
     await queryRunner.query(`
       UPDATE bom_items
          SET unit_price_paise = CASE
                WHEN quantity > 0 THEN ROUND(COALESCE(total_price, 0) * 100 / quantity)
-               ELSE ROUND(COALESCE(total_price, 0) * 100)
+               ELSE 0
              END
     `);
 
     // --- 7. Restate per_kw lines as quantity-in-kW at rupees per kW ---
+    // Some project BOMs cannot resolve a system size, so their per_kw line is
+    // left in the old shape. That is the one branch here that actually fires
+    // on real data, so it must not be the silent one.
+    const unresolved = (await queryRunner.query(`
+      SELECT b.id AS bom_id,
+             b.bom_number,
+             CASE
+               WHEN pr.id IS NULL
+                 THEN 'bom.entity_id points at no projects row (dangling reference)'
+               WHEN pr.contract_quote_version_id IS NULL
+                 THEN 'project has no contract_quote_version_id'
+               WHEN qv.id IS NULL
+                 THEN 'contract quote version row is missing'
+               ELSE 'contract quote version has total_wattage_wp <= 0'
+             END AS reason
+        FROM bom b
+        LEFT JOIN projects pr ON pr.id = b.entity_id
+        LEFT JOIN quote_versions qv ON qv.id = pr.contract_quote_version_id
+       WHERE b.entity_type = 'project'
+         AND COALESCE(qv.total_wattage_wp, 0) <= 0
+         AND EXISTS (
+           SELECT 1
+             FROM bom_items bi
+            WHERE bi.bom_id = b.id
+              AND bi.pricing_basis = 'per_kw'
+              AND bi.quantity = 1
+         )
+       ORDER BY b.bom_number
+    `)) as Array<{ bom_id: string; bom_number: string; reason: string }>;
+    for (const u of unresolved) {
+      console.warn(
+        `[migration] BOM ${u.bom_number} (${u.bom_id}) has a per_kw line but no resolvable ` +
+          `system size — ${u.reason}. Left at quantity 1 with the whole-system total as its ` +
+          `unit price; not restated.`,
+      );
+    }
+
     // The old shape was quantity 1 with the whole-system total as unit price,
     // so at quantity 1 unit_price_paise IS the line total.
     // system_size_kw comes from the project's contract quote version.
