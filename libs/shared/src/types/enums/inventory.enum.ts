@@ -148,3 +148,16 @@ export enum BomAllocationStatus {
 export const SERIALIZED_BOM_ITEM_TYPES = ['panel', 'inverter', 'battery'] as const;
 
 export type SerializedBomItemType = (typeof SERIALIZED_BOM_ITEM_TYPES)[number];
+
+/**
+ * Product type codes whose units carry individual serial numbers.
+ *
+ * Distinct from SERIALIZED_BOM_ITEM_TYPES, which holds legacy
+ * `bom_items.item_type` values ('panel'), not product_types.code
+ * ('solar_panel'). Once a BOM line is a real product FK, eligibility is
+ * decided on the product type. The old constant stays until Task 20 drops
+ * bom_items.item_type.
+ */
+export const SERIALIZED_PRODUCT_TYPE_CODES = ['solar_panel', 'inverter', 'battery'] as const;
+
+export type SerializedProductTypeCode = (typeof SERIALIZED_PRODUCT_TYPE_CODES)[number];

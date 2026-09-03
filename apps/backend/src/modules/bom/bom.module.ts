@@ -4,13 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { InventoryModule } from '../inventory/inventory.module';
 import { BomItemsController } from './controllers/bom-items.controller';
 import { BomController } from './controllers/bom.controller';
-import { BomEntity, BomItemEntity } from './entities';
+import { BomChangeEntity, BomEntity, BomItemEntity, BomItemSerialEntity } from './entities';
 import { BomRepository } from './repositories/bom.repository';
 import { BomService } from './services/bom.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([BomEntity, BomItemEntity]),
+    TypeOrmModule.forFeature([BomEntity, BomItemEntity, BomChangeEntity, BomItemSerialEntity]),
     forwardRef(() => InventoryModule),
   ],
   controllers: [BomController, BomItemsController],
