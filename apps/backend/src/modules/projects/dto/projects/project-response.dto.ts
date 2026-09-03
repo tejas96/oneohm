@@ -9,7 +9,6 @@ import { Expose, Transform, Type } from 'class-transformer';
 
 import { systemSizeKwOf, toNum } from '../../../../common/utils';
 import { CustomerPropertyResponseDto } from '../../../customers/dto/customer-property-response.dto';
-import { MaterialResponseDto } from '../materials/material-response.dto';
 
 const latestQuoteVersion = (obj: Record<string, unknown>) =>
   (obj.quote as { versions?: Array<Record<string, unknown>> } | undefined)?.versions?.[0];
@@ -222,13 +221,6 @@ export class ProjectResponseDto {
   @Expose()
   @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   metadata?: ProjectMetadata;
-
-  // ==================== Related Entities ====================
-
-  @ApiPropertyOptional({ type: [MaterialResponseDto] })
-  @Expose()
-  @Type(() => MaterialResponseDto)
-  materials?: MaterialResponseDto[];
 
   // ==================== Timestamps ====================
   @ApiProperty({ example: '2025-01-15T10:30:00Z' })

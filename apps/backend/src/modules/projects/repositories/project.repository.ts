@@ -111,7 +111,6 @@ export class ProjectRepository {
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.creator', 'creator')
       .leftJoinAndSelect('project.updater', 'updater')
-      .leftJoinAndSelect('project.materials', 'materials')
       .where('project.id = :id', { id })
       .getOne();
 
@@ -580,7 +579,6 @@ export class ProjectRepository {
       .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
-      .leftJoinAndSelect('project.materials', 'materials')
       .where('property.customerId = :customerId', { customerId })
       .andWhere('project.deletedAt IS NULL')
       .orderBy('project.createdAt', 'DESC')

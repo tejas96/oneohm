@@ -9,7 +9,6 @@ import {
   OneToOne,
 } from 'typeorm';
 
-import { ProjectMaterialEntity } from './project-material.entity';
 import { ProjectTaskEntity } from './project-task.entity';
 import { ProjectTeamMemberEntity } from './project-team-member.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
@@ -136,9 +135,6 @@ export class ProjectEntity extends BaseEntity {
 
   @OneToMany(() => ProjectTaskEntity, (task) => task.project)
   tasks!: ProjectTaskEntity[];
-
-  @OneToMany(() => ProjectMaterialEntity, (material) => material.project)
-  materials!: ProjectMaterialEntity[];
 
   /**
    * Declared purely so the list query can `loadRelationCountAndMap` the active

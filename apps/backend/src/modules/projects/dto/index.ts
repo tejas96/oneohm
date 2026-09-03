@@ -5,9 +5,6 @@ export * from './attention-response.dto';
 // Analytics DTOs
 export * from './analytics';
 
-// Material DTOs
-export * from './materials';
-
 // Workflow Step DTOs
 export * from './workflow-steps';
 
