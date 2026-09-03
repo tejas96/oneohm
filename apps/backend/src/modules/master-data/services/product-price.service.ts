@@ -40,14 +40,14 @@ export class ProductPriceService {
 
     this.validateDateRange(effectiveFrom, effectiveTo);
 
+    await this.deactivateExistingPrices(productId, dto.projectType, effectiveFrom);
+
     await this.assertNoOverlap(
       productId,
       dto.projectType ?? null,
       this.formatDate(effectiveFrom),
       effectiveTo ? this.formatDate(effectiveTo) : null,
     );
-
-    await this.deactivateExistingPrices(productId, dto.projectType, effectiveFrom);
 
     return this.productPriceRepository.create({
       ...dto,
@@ -90,6 +90,10 @@ export class ProductPriceService {
       Object.prototype.hasOwnProperty.call(dto, 'effectiveTo') ||
       Object.prototype.hasOwnProperty.call(dto, 'isActive');
 
+    if (nextIsActive && (projectTypeChanged || touchesScheduleOrActive)) {
+      await this.deactivateExistingPrices(productId, nextProjectType, effectiveFrom, id);
+    }
+
     if (nextIsActive) {
       await this.assertNoOverlap(
         productId,
@@ -98,10 +102,6 @@ export class ProductPriceService {
         effectiveTo ? this.formatDate(effectiveTo) : null,
         id,
       );
-    }
-
-    if (nextIsActive && (projectTypeChanged || touchesScheduleOrActive)) {
-      await this.deactivateExistingPrices(productId, nextProjectType, effectiveFrom, id);
     }
 
     const updateData: Partial<ProductPriceEntity> = {
@@ -244,8 +244,14 @@ export class ProductPriceService {
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
-  private yesterday(reference: Date): Date {
-    const day = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
+  /**
+   * Same Date/string hydration quirk as formatDate() above: `effectiveFrom` can
+   * arrive here as `existing.effectiveFrom` (a string) when update() doesn't
+   * touch the date, not just the Date instances toDate() builds.
+   */
+  private yesterday(reference: Date | string): Date {
+    const value = typeof reference === 'string' ? new Date(reference) : reference;
+    const day = new Date(value.getFullYear(), value.getMonth(), value.getDate());
     day.setDate(day.getDate() - 1);
     return day;
   }
