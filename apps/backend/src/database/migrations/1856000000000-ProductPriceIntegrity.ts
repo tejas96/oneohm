@@ -11,8 +11,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
  * COALESCE(project_type, '') is required: NULL <> NULL in a unique index, so
  * two universal rows sharing an effective_from would otherwise both be allowed.
  */
-export class ProductPriceIntegrity1788450549003 implements MigrationInterface {
-  name = 'ProductPriceIntegrity1788450549003';
+export class ProductPriceIntegrity1856000000000 implements MigrationInterface {
+  name = 'ProductPriceIntegrity1856000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Fail loudly rather than silently dropping data if duplicates already exist.
