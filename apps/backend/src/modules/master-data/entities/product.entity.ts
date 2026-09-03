@@ -7,7 +7,7 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 @Entity('products')
-@Index(['code'], { unique: true })
+@Index('uq_products_code', ['code'], { unique: true, where: '"deleted_at" IS NULL' })
 @Index(['status', 'deletedAt'])
 @Index(['productTypeId', 'status'])
 @Index(['brandId'])

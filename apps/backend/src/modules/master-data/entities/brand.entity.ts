@@ -3,7 +3,7 @@ import { Column, DeleteDateColumn, Entity, Index } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
 @Entity('brands')
-@Index(['name'], { unique: true })
+@Index('uq_brands_name', ['name'], { unique: true, where: '"deleted_at" IS NULL' })
 export class BrandEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 100 })
   name!: string;
