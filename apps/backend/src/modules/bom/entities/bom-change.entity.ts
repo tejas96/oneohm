@@ -44,14 +44,19 @@ export class BomChangeEntity {
   bom?: BomEntity;
 
   /**
-   * Nullable for a change that is not about one item row.
+   * Nullable, because a change need not be about one particular item row.
    *
-   * It is NOT nullable so that a delete can blank it. The FK is ON DELETE
-   * RESTRICT: the append-only trigger rejects UPDATE, so ON DELETE SET NULL
-   * could never fire and merely turned any attempt to delete a referenced
-   * bom_item into a 0A000 'bom_changes is append-only' error naming a table
-   * the caller was not touching. RESTRICT costs nothing here — removing a
-   * line sets quantity = 0, it never deletes the row — and fails by name.
+   * The nullability is NOT a deletion mechanism. This FK is ON DELETE
+   * RESTRICT, so a bom_item named by any change row cannot be deleted at all:
+   * the delete fails with a plain foreign-key violation naming this
+   * constraint. That is intended — removing a line sets quantity = 0, the
+   * design never deletes an item row.
+   *
+   * It was ON DELETE SET NULL until Task 8. That could never fire, because
+   * blanking this column is an UPDATE and the append-only trigger rejects
+   * UPDATE outright — so deleting a referenced bom_item failed with a 0A000
+   * 'bom_changes is append-only' error about a table the caller had not
+   * touched.
    */
   @Column({ name: 'bom_item_id', type: 'uuid', nullable: true })
   bomItemId?: string | null;
