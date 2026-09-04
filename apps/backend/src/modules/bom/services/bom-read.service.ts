@@ -43,6 +43,30 @@ export interface ProcurementStatus {
   };
 }
 
+/**
+ * The raw shapes `getProcurementStatus` reads back from its two raw queries.
+ *
+ * These are annotations on the receiving variables rather than `as` casts on
+ * the calls: `DataSource.query` is typed to return `any`, so a cast is what
+ * `no-unnecessary-type-assertion` rejects, while leaving the variable untyped
+ * is what leaves the later `.map((r) => ...)` with an implicit-any parameter.
+ * The annotation satisfies both — it names the shape without asserting one.
+ *
+ * Every field is the string Postgres sends over the wire; the numbers are
+ * parsed at the point of use, not here.
+ */
+interface ProcurementRow {
+  product_id: string;
+  name: string;
+  unit: string;
+  target_qty: string;
+  unit_price: string | null;
+}
+
+interface MaterialsSpendRow {
+  spentPaise: string;
+}
+
 @Injectable()
 export class BomReadService {
   constructor(
@@ -353,7 +377,7 @@ export class BomReadService {
    * `bi.unit` survives — it is still a mapped column on the entity.
    */
   async getProcurementStatus(projectId: string): Promise<ProcurementStatus> {
-    const rows = (await this.dataSource.query(
+    const rows: ProcurementRow[] = await this.dataSource.query(
       `SELECT bi.product_id,
               MIN(p.name)                       AS name,
               MIN(bi.unit)                      AS unit,
@@ -367,13 +391,7 @@ export class BomReadService {
         GROUP BY bi.product_id
         ORDER BY MIN(p.name)`,
       [projectId],
-    )) as Array<{
-      product_id: string;
-      name: string;
-      unit: string;
-      target_qty: string;
-      unit_price: string | null;
-    }>;
+    );
 
     // `COALESCE(e.category, o.category)` is the whole trick: an entry counts as
     // materials by its OWN category, or — when it has none — by the category of
@@ -395,7 +413,7 @@ export class BomReadService {
     //
     // `lower(...)` guards the legacy rows written while the category was free
     // text and case-sensitive: 'Materials' would otherwise be missed.
-    const spendRows = (await this.dataSource.query(
+    const spendRows: MaterialsSpendRow[] = await this.dataSource.query(
       `SELECT COALESCE(SUM(-e.amount_paise), 0)::BIGINT AS "spentPaise"
          FROM ledger_entries e
          LEFT JOIN ledger_entries o ON o.id = e.reverses_id
@@ -403,7 +421,7 @@ export class BomReadService {
           AND e.direction = 'out'
           AND lower(COALESCE(e.category, o.category)) = 'materials'`,
       [projectId],
-    )) as Array<{ spentPaise: string }>;
+    );
 
     const items: ProcurementItem[] = rows.map((r) => {
       const targetQty = Number(r.target_qty);
