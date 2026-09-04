@@ -13,49 +13,42 @@ export class BomRepository {
     private readonly dataSource: DataSource,
   ) {}
 
+  async findByProject(projectId: string): Promise<BomEntity | null> {
+    return this.repository.findOne({
+      where: { projectId },
+      relations: ['items', 'items.product', 'items.product.productType', 'items.serials'],
+      order: { items: { sortOrder: 'ASC' } },
+    });
+  }
+
+  async findById(id: string): Promise<BomEntity | null> {
+    return this.repository.findOne({
+      where: { id },
+      relations: ['items', 'items.product', 'items.product.productType', 'items.serials'],
+      order: { items: { sortOrder: 'ASC' } },
+    });
+  }
+
   /**
-   * Persist a new BOM with all its items atomically.
+   * Create the header only. Lines are added by BomBaselineService, each with
+   * its own change-log row, so there is no path that inserts items without
+   * logging them.
+   *
    * Wraps generateBomNumber (which uses a pessimistic write lock) and the
    * subsequent INSERT inside a single transaction so the lock is always held
    * within an open transaction context.
    */
-  async create(data: Partial<BomEntity>): Promise<BomEntity> {
+  async createForProject(data: {
+    projectId: string;
+    baselineQuoteVersionId?: string | null;
+    createdBy: string;
+    notes?: string;
+  }): Promise<BomEntity> {
     return this.dataSource.transaction(async (manager) => {
-      // Resolve the org code within the transaction context
-
       const bomNumber = await this.generateBomNumber(COMPANY.code, manager);
       const repo = manager.getRepository(BomEntity);
       return repo.save(repo.create({ ...data, bomNumber }));
     });
-  }
-
-  async findByEntity(entityType: string, entityId: string): Promise<BomEntity | null> {
-    return this.repository.findOne({
-      where: { entityType, entityId },
-      relations: ['items'],
-      order: { items: { sortOrder: 'ASC' } },
-    });
-  }
-
-  async findByEntityId(id: string): Promise<BomEntity | null> {
-    return this.repository.findOne({
-      where: { id },
-      relations: ['items'],
-      order: { items: { sortOrder: 'ASC' } },
-    });
-  }
-
-  /**
-   * Delete the BOM for a given entity, scoped to the organization.
-   * organizationId prevents cross-tenant deletion.
-   */
-  async deleteByEntity(entityType: string, entityId: string): Promise<void> {
-    const bom = await this.repository.findOne({
-      where: { entityType, entityId },
-    });
-    if (bom) {
-      await this.repository.remove(bom);
-    }
   }
 
   /**
@@ -63,8 +56,8 @@ export class BomRepository {
    * Pattern: BOM-{ORG_CODE}-{YEAR}-{NNNN}
    *
    * MUST be called inside an open transaction (manager must be provided) so
-   * the pessimistic write lock is valid. The public `create()` method handles
-   * this automatically.
+   * the pessimistic write lock is valid. The public `createForProject()`
+   * method handles this automatically.
    */
   async generateBomNumber(organizationCode: string, manager: EntityManager): Promise<string> {
     const year = new Date().getFullYear();

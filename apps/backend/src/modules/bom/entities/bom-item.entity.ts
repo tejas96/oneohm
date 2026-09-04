@@ -1,29 +1,24 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
+import { BomChangeSource } from './bom-change.entity';
+import { BomItemSerialEntity } from './bom-item-serial.entity';
 import { BomEntity } from './bom.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { paiseTransformer } from '../../ledger/domain/paise';
+import { ProductEntity } from '../../master-data/entities/product.entity';
 
 /**
  * BOM Item Entity
  *
- * A single line item in a bill of materials.  All fields are *snapshot* values
- * captured at BOM creation time -- product catalog changes afterwards do not
- * affect the BOM.
- *
- * Type-specific attributes are stored in the `specifications` JSONB column
- * for extensibility:
- *   Panel:     { isDcr, technology, wattagePerPanel, pricePerWatt, performanceWarrantyYears }
- *   Inverter:  { capacityKw }
- *   Structure: { structureType }
+ * A single line item in a bill of materials. `product_id` is a real FK now,
+ * so catalog attributes (name, brand, specifications, warranty) are reached
+ * by joining `product` rather than snapshotted onto this row. Serial numbers
+ * live on `BomItemSerialEntity`, one row per unit — see its own comment for
+ * why this table went back to one row per product.
  */
 @Entity('bom_items')
 @Index(['bomId'])
-@Index(['bomId', 'groupKey'])
-@Index(['serialNumber'])
-@Index(['bomId', 'serialNumber'], {
-  unique: true,
-  where: '"serial_number" IS NOT NULL',
-})
+@Index(['bomId', 'productId'], { unique: true })
 export class BomItemEntity extends BaseEntity {
   // ==================== Parent ====================
   @Column({ name: 'bom_id', type: 'uuid' })
@@ -33,58 +28,62 @@ export class BomItemEntity extends BaseEntity {
   @JoinColumn({ name: 'bom_id' })
   bom!: BomEntity;
 
-  // ==================== Classification ====================
-  @Column({ name: 'item_type', type: 'varchar', length: 50 })
-  itemType!: string;
+  // ==================== Product ====================
+  @Column({ name: 'product_id', type: 'uuid' })
+  productId!: string;
 
-  // Traceability reference only -- no FK constraint (product may change/be deleted)
-  @Column({ name: 'product_id', type: 'uuid', nullable: true })
-  productId?: string;
-
-  // ==================== Snapshot Fields ====================
-  @Column({ type: 'varchar', length: 255 })
-  name!: string;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  brand?: string;
-
-  @Column({ type: 'jsonb', default: '{}' })
-  specifications!: Record<string, unknown>;
+  @ManyToOne(() => ProductEntity, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'product_id' })
+  product?: ProductEntity;
 
   // ==================== Quantity & Pricing ====================
-  @Column({ type: 'integer', default: 1 })
-  quantity!: number;
 
-  @Column({ type: 'varchar', length: 20, default: 'nos' })
+  /**
+   * What the project needs now. NUMERIC because cable is sold in metres and a
+   * per_kw line's quantity IS its kW.
+   *
+   * TypeORM maps numeric to string to avoid float loss. Callers convert
+   * deliberately — never assume a number here.
+   */
+  @Column({ type: 'numeric', precision: 12, scale: 3 })
+  quantity!: string;
+
+  /** What the baseline said. NULL means this line was never quoted. */
+  @Column({ name: 'quoted_quantity', type: 'numeric', precision: 12, scale: 3, nullable: true })
+  quotedQuantity?: string | null;
+
+  @Column({ type: 'varchar', length: 20 })
   unit!: string;
 
-  @Column({ name: 'unit_price', type: 'decimal', precision: 15, scale: 2, nullable: true })
-  unitPrice?: number;
+  /**
+   * Resolved once through PricingService when the line was added, then never
+   * re-read. A catalog price change must not move a signed project's figures.
+   */
+  @Column({ name: 'unit_price_paise', type: 'bigint', transformer: paiseTransformer })
+  unitPricePaise!: number;
 
-  @Column({ name: 'total_price', type: 'decimal', precision: 15, scale: 2, nullable: true })
-  totalPrice?: number;
+  /**
+   * per_unit | per_watt | per_kw, snapshotted from the product type. Tells a
+   * reader what `quantity` counts even if the type's basis is edited later.
+   */
+  @Column({ name: 'pricing_basis', type: 'varchar', length: 20 })
+  pricingBasis!: string;
 
-  @Column({ name: 'gst_rate', type: 'decimal', precision: 5, scale: 2, nullable: true })
-  gstRate?: number;
-
-  @Column({ name: 'gst_amount', type: 'decimal', precision: 15, scale: 2, nullable: true })
-  gstAmount?: number;
-
-  // ==================== Warranty ====================
-  @Column({ name: 'warranty_years', type: 'integer', nullable: true })
-  warrantyYears?: number;
-
-  // ==================== Serialization ====================
-  @Column({ name: 'serial_number', type: 'varchar', length: 100, nullable: true })
-  serialNumber?: string;
-
-  @Column({ name: 'group_key', type: 'varchar', length: 64, nullable: true })
-  groupKey?: string;
-
-  @Column({ name: 'unit_index', type: 'integer', nullable: true })
-  unitIndex?: number;
+  @Column({ type: 'varchar', length: 10 })
+  source!: BomChangeSource;
 
   // ==================== Ordering ====================
   @Column({ name: 'sort_order', type: 'integer', default: 0 })
   sortOrder!: number;
+
+  // ==================== Audit ====================
+  @Column({ name: 'created_by', type: 'uuid' })
+  createdBy!: string;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy?: string | null;
+
+  // ==================== Serialization ====================
+  @OneToMany(() => BomItemSerialEntity, (s) => s.bomItem, { cascade: false })
+  serials?: BomItemSerialEntity[];
 }
