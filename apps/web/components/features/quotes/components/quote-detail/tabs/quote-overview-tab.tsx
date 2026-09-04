@@ -2,6 +2,7 @@
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Paper, Typography } from '@mui/material';
+import type { Bom } from '@tejas96/shared/types';
 import React, { useMemo } from 'react';
 
 import { QuoteEquipmentCard } from './overview/quote-equipment-card';
@@ -15,7 +16,6 @@ import { QuoteSystemConfigCard } from './overview/quote-system-config-card';
 import type { QuoteDetail } from '../../../hooks/types';
 
 import { Can } from '@/components/shared/guards';
-import { type Bom } from '@/lib/hooks/resources';
 import { useCan } from '@/lib/rbac';
 import { formatDate } from '@/lib/utils/format';
 
@@ -84,9 +84,9 @@ export function QuoteOverviewTab({
   const profitPercent = calcObj?.profitabilityPercent as number | undefined;
   const profitAmount = calcObj?.profitabilityAmount as number | undefined;
 
-  const panelItems = bom?.items?.filter((i) => i.itemType === 'panel') ?? [];
-  const inverterItems = bom?.items?.filter((i) => i.itemType === 'inverter') ?? [];
-  const structureItem = bom?.items?.find((i) => i.itemType === 'structure');
+  const panelItems = bom?.items.filter((i) => i.itemType === 'panel') ?? [];
+  const inverterItems = bom?.items.filter((i) => i.itemType === 'inverter') ?? [];
+  const structureItem = bom?.items.find((i) => i.itemType === 'structure');
 
   const dcrPanelItems = useMemo(
     () => panelItems.filter((item) => Boolean(item.specifications.isDcr)),
