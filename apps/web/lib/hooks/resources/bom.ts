@@ -189,12 +189,28 @@ export function useAllocateBomPending() {
       void queryClient.invalidateQueries({ queryKey: ['inventory-transactions'] });
       void queryClient.invalidateQueries({ queryKey: ['bom'] });
 
-      if (data.pendingStock.length === 0) {
-        showToast.success('Stock reserved successfully');
-      } else {
+      // Three outcomes, not two. The old branch tested only `pendingStock`,
+      // so a run that reserved NOTHING — every product short, `allocated`
+      // empty — still reported "Stock partially reserved", telling the
+      // operator something had happened when nothing had. That is the most
+      // likely outcome on a warehouse that has not been stocked yet, and it
+      // is the one worth naming precisely: what is short, and by how much.
+      const shortfalls = data.pendingStock
+        .map((p) => `${p.name} (short ${p.shortfall})`)
+        .join(', ');
+
+      if (data.allocated.length === 0 && data.pendingStock.length > 0) {
+        showToast.warning(`Nothing could be reserved — ${shortfalls}.`);
+      } else if (data.pendingStock.length > 0) {
         showToast.warning(
-          `Stock partially reserved. ${data.pendingStock.length} item(s) still pending.`,
+          `Reserved ${data.allocated.length} item(s). Still short: ${shortfalls}.`,
         );
+      } else if (data.allocated.length > 0) {
+        showToast.success(`Stock reserved for ${data.allocated.length} item(s).`);
+      } else {
+        // Nothing allocated, nothing short: every line was already covered by
+        // an earlier reservation. Silence here reads as a failed click.
+        showToast.success('Every line is already reserved.');
       }
     },
     onError: (err) => {

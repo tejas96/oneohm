@@ -95,9 +95,17 @@ export function ProjectDashboardPage(): React.JSX.Element {
       const projectId = p.id;
       return {
         queryKey: [...bomResourceKeys.all(), 'project', projectId] as const,
+        // `/bom?entityType=project&entityId=…` — the shape this used to call —
+        // stopped existing when the BOM rebuild made every BOM project-scoped
+        // (`bom.project_id` replaced entity_type/entity_id, and the columns
+        // were dropped). The route now 404s, so `data` was always undefined and
+        // the `if (!bomResult) return` below skipped every project: the "BOM
+        // Shortage" alerts this query exists to raise silently stopped
+        // appearing. `allocationStatus` sits at the top level of both shapes,
+        // so only the URL needed correcting.
         queryFn: async ({ signal }): Promise<Record<string, unknown> | null> => {
           const { data } = await apiClient.get<Record<string, unknown> | null>(
-            `/bom?entityType=project&entityId=${projectId}`,
+            `/projects/${projectId}/bom`,
             { signal },
           );
           return data;
