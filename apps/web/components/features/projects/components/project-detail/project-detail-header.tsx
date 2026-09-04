@@ -3,7 +3,7 @@
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import Button from '@mui/material/Button';
 import { ProjectStatus, type ProjectType } from '@tejas96/shared/types';
-import { FileText, Mail, MapPin, Phone, UserRound } from 'lucide-react';
+import { FileText, MapPin, Phone, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 
@@ -36,7 +36,6 @@ import { Mono, Overline, TONE, TonePill, type Tone } from './primitives';
 import type { ProjectDetailData } from './types';
 
 import { rupeesShort } from '@/components/features/dashboard/business/lib/format';
-import { WhatsAppIcon } from '@/components/ui';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -52,7 +51,6 @@ import {
   cn,
   formatDate,
   formatNumber,
-  formatPhoneForWhatsApp,
   formatSystemSize,
   getInitials,
   toTitleLabel,
@@ -384,8 +382,6 @@ export const ProjectDetailHeader = React.memo(
     const projectPath = buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id });
     const customerName = project.property?.customerName?.trim() || 'Customer';
     const phone = project.property?.customerPhone?.trim();
-    const email = project.property?.customerEmail?.trim();
-    const whatsapp = phone ? formatPhoneForWhatsApp(phone) : '';
     const location = [project.property?.city, project.property?.state].filter(Boolean).join(', ');
     const manager = projectManager(data.team.data);
 
@@ -672,33 +668,20 @@ export const ProjectDetailHeader = React.memo(
                         {phone}
                       </Fact>
                     ) : null}
-                    {whatsapp ? (
-                      <Fact
-                        icon={<WhatsAppIcon className="size-3.5" />}
-                        href={`https://wa.me/${whatsapp}`}
-                        external
-                        label="Message on WhatsApp"
-                      >
-                        WhatsApp
-                      </Fact>
-                    ) : null}
-                    {email ? (
-                      <Fact icon={<Mail />} href={`mailto:${email}`} label="Email customer">
-                        {email}
-                      </Fact>
-                    ) : null}
+                    {/* WhatsApp and email deliberately absent. This header is
+                        for working the PROJECT; the customer's full contact
+                        card is one click away on the customer link above, which
+                        is where reaching out belongs. Carrying a full email
+                        address here also stretched the line badly on a long
+                        address while saying nothing about the project. */}
                     {location ? <Fact icon={<MapPin />}>{location}</Fact> : null}
                     {manager ? <Fact icon={<UserRound />}>PM {memberName(manager)}</Fact> : null}
                   </div>
 
-                  {project.description?.trim() ? (
-                    <p
-                      className="mt-2 line-clamp-2 max-w-[68ch] text-[12.5px] leading-relaxed text-foreground-secondary"
-                      title={project.description}
-                    >
-                      {project.description}
-                    </p>
-                  ) : null}
+                  {/* The description is gone too. On a converted project it is
+                      generated boilerplate — "Solar installation project
+                      converted from quote QT-…" — restating the quote number
+                      already shown as a chip in the line above. */}
                 </div>
               </div>
 
