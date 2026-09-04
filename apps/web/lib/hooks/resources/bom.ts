@@ -17,10 +17,10 @@ import { getErrorMessage } from '@/lib/utils/error';
 // BomTotalsDto / BomChangeResponseDto in
 // apps/backend/src/modules/bom/dto/bom-response.dto.ts field-for-field.
 //
-// Deliberately NOT the `Bom` / `BomItem` interfaces exported from
-// `@tejas96/shared/types` — those still describe the polymorphic
-// (entityType/entityId) snapshot that `GET /projects/:projectId/bom`
-// replaced, and this task does not touch the shared package.
+// The `Bom` / `BomItem` interfaces in `@tejas96/shared/types` now describe
+// this same response — Task 20 replaced the polymorphic (entityType/entityId)
+// shape they used to carry. These stay local because every resource module
+// here declares the shape it fetches; keep the two in step when the DTO moves.
 
 export type BomLineChangeState = 'unchanged' | 'added' | 'increased' | 'decreased' | 'removed';
 export type BomItemSource = 'quote' | 'site' | 'office';

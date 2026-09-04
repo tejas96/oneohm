@@ -15,7 +15,6 @@
  */
 
 import type {
-  BomItem,
   CalculatedInstallationCost,
   CalculatedPanelConfig,
   CalculatedSubsidy as SharedCalculatedSubsidy,
@@ -225,6 +224,40 @@ export interface QuotePdfOrgConfig {
   latePaymentRatePercent?: number;
 }
 
+/* -------------------------------------------------------------- equipment lines */
+
+/**
+ * One equipment line on the quotation, as the PDF renders it.
+ *
+ * NOT the `BomItem` from `../../types`, which this used to borrow. That type
+ * describes a `bom_items` row on a project's bill of materials, and a
+ * quotation has no BOM — these lines come from the quote's own calculation
+ * snapshot via `quoteBomLines()`, which is what `quote-detail-content.tsx`
+ * actually passes. Sharing one type across both let the project BOM's shape
+ * dictate the quotation's, and the two have nothing to do with each other.
+ *
+ * `itemType` is a plain string, not the union `quoteBomLines()` emits
+ * ('panel' | 'inverter' | 'structure'): the template also filters for
+ * 'cables', 'earthing', 'meter' and friends, which no current producer sends,
+ * so those branches fall through to the hardcoded rows below them. Typed
+ * against the wire, like everything else in this file.
+ */
+export interface QuotePdfBomItem {
+  id: string;
+  itemType: string;
+  name: string;
+  brand?: string;
+  specifications?: Record<string, unknown>;
+  quantity: number;
+  unit: string;
+  unitPrice?: number;
+  totalPrice?: number;
+  gstRate?: number;
+  gstAmount?: number;
+  warrantyYears?: number;
+  sortOrder?: number;
+}
+
 /* ------------------------------------------------------------------ the root */
 
 export interface QuotePdfData {
@@ -239,6 +272,6 @@ export interface QuotePdfData {
   gstConfig: GstConfig;
   companyInfo?: Partial<PdfCompanyInfo>;
   orgConfig?: Partial<QuotePdfOrgConfig>;
-  bomItems?: BomItem[];
+  bomItems?: QuotePdfBomItem[];
   customerNotes?: string;
 }

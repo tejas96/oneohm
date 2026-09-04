@@ -2,7 +2,6 @@
 
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Paper, Typography } from '@mui/material';
-import type { Bom } from '@tejas96/shared/types';
 import React, { useMemo } from 'react';
 
 import { QuoteEquipmentCard } from './overview/quote-equipment-card';
@@ -22,7 +21,6 @@ import { formatDate } from '@/lib/utils/format';
 interface QuoteOverviewTabProps {
   quote: QuoteDetail;
   isActive: boolean;
-  bom?: Bom;
   isBomLoading?: boolean;
   isLatestPropertyQuote: boolean;
 }
@@ -31,7 +29,6 @@ const round2 = (v: number): number => Math.round(v * 100) / 100;
 
 export function QuoteOverviewTab({
   quote,
-  bom,
   isBomLoading,
   isLatestPropertyQuote,
 }: QuoteOverviewTabProps): React.JSX.Element {
@@ -84,19 +81,6 @@ export function QuoteOverviewTab({
   const profitPercent = calcObj?.profitabilityPercent as number | undefined;
   const profitAmount = calcObj?.profitabilityAmount as number | undefined;
 
-  const panelItems = bom?.items.filter((i) => i.itemType === 'panel') ?? [];
-  const inverterItems = bom?.items.filter((i) => i.itemType === 'inverter') ?? [];
-  const structureItem = bom?.items.find((i) => i.itemType === 'structure');
-
-  const dcrPanelItems = useMemo(
-    () => panelItems.filter((item) => Boolean(item.specifications.isDcr)),
-    [panelItems],
-  );
-  const nonDcrPanelItems = useMemo(
-    () => panelItems.filter((item) => !item.specifications.isDcr),
-    [panelItems],
-  );
-
   interface SnapPanel {
     productId?: string;
     name?: string;
@@ -128,7 +112,6 @@ export function QuoteOverviewTab({
   const snapInverterObj = calcObj?.inverters as { inverters?: SnapInverter[] } | undefined;
   const snapInverters = snapInverterObj?.inverters ?? [];
   const snapStructure = calcObj?.structure as SnapStructure | undefined;
-  const hasBomEquipment = panelItems.length > 0;
   const hasSnapEquipment = snapPanels.length > 0;
 
   const snapDcrPanels = useMemo(
@@ -194,15 +177,23 @@ export function QuoteOverviewTab({
           />
 
           {/* Equipment Details */}
+          {/* A quotation has no BOM. It once read one back through
+              `useEntityBom('quote_version', ...)`, but that endpoint is gone
+              and `quote-detail-content.tsx` has never passed a `bom` prop
+              since — the equipment shown here comes from the quote's own
+              calculation snapshot (`snap*` below), which was always the
+              record. The BOM-derived props stay only because
+              QuoteEquipmentCard still declares them; they were already
+              resolving to exactly these empty values at runtime. */}
           <QuoteEquipmentCard
             isBomLoading={isBomLoading}
-            hasBomEquipment={hasBomEquipment}
+            hasBomEquipment={false}
             hasSnapEquipment={hasSnapEquipment}
             canViewEquipmentPricing={canViewEquipmentPricing}
-            dcrPanelItems={dcrPanelItems}
-            nonDcrPanelItems={nonDcrPanelItems}
-            expandedInverterItems={inverterItems}
-            structureItem={structureItem}
+            dcrPanelItems={[]}
+            nonDcrPanelItems={[]}
+            expandedInverterItems={[]}
+            structureItem={undefined}
             snapDcrPanels={snapDcrPanels}
             snapNonDcrPanels={snapNonDcrPanels}
             expandedSnapInverters={snapInverters}

@@ -134,7 +134,11 @@ export enum BomStatus {
 
 /**
  * BOM Allocation Status — tracks per-BOM stock reservation progress.
- * Stored in the `allocation_status` column on the `bom` table.
+ *
+ * Derived per request by BomReadService from live stock_allocations, never
+ * stored. It used to sit in a `bom.allocation_status` column, but every read
+ * recomputed it and overwrote the loaded value before returning, so the stored
+ * copy disagreed with every answer the API gave. The column is gone.
  *   pending          — no items have been reserved yet
  *   partial          — some items reserved, some still pending stock
  *   fully_allocated  — every product line is 100% reserved
@@ -145,18 +149,15 @@ export enum BomAllocationStatus {
   FULLY_ALLOCATED = 'fully_allocated',
 }
 
-export const SERIALIZED_BOM_ITEM_TYPES = ['panel', 'inverter', 'battery'] as const;
-
-export type SerializedBomItemType = (typeof SERIALIZED_BOM_ITEM_TYPES)[number];
-
 /**
  * Product type codes whose units carry individual serial numbers.
  *
- * Distinct from SERIALIZED_BOM_ITEM_TYPES, which holds legacy
- * `bom_items.item_type` values ('panel'), not product_types.code
- * ('solar_panel'). Once a BOM line is a real product FK, eligibility is
- * decided on the product type. The old constant stays until Task 20 drops
- * bom_items.item_type.
+ * Matched against `product_types.code`. It replaced SERIALIZED_BOM_ITEM_TYPES,
+ * which listed legacy `bom_items.item_type` values ('panel') that never
+ * matched a real product type code ('solar_panel') — so the old check could
+ * not identify a serialized panel at all. Both that constant and the column it
+ * described are gone; a BOM line is a product FK, so eligibility is decided on
+ * the product type.
  */
 export const SERIALIZED_PRODUCT_TYPE_CODES = ['solar_panel', 'inverter', 'battery'] as const;
 
