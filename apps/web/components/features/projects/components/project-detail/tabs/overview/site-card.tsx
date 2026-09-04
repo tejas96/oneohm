@@ -64,7 +64,31 @@ export function SiteCard({ project, className }: SiteCardProps): React.JSX.Eleme
   const street = property?.address?.trim() || property?.propertyName?.trim() || '';
   const cityState = [property?.city, property?.state].filter(Boolean).join(', ');
   const pincode = property?.pincode?.trim();
-  const secondLine = [cityState, pincode].filter(Boolean).join(' · ');
+
+  /*
+   * The second line carries only what the address above does NOT already say.
+   *
+   * `address` is free text, and how much of the location it repeats varies by
+   * how it was typed. One site here reads "Sangli Bus Stand, VH36+6W5, Sangli,
+   * Patrakar Nagar, Sangli Miraj Kupwad, Maharashtra 416416" — city, state and
+   * pincode all present — and the line beneath restated every one of them.
+   * Another reads "Plot 14, Shivaji Nagar", where that same line is the only
+   * place the city appears at all. So neither always-show nor always-hide is
+   * right; each part is dropped on its own, and the line disappears when
+   * nothing is left to add.
+   */
+  const streetHaystack = street.toLowerCase();
+  const addsSomething = (part?: string | null): boolean =>
+    !!part?.trim() && !streetHaystack.includes(part.trim().toLowerCase());
+  const secondLine = [
+    [property?.city, property?.state].filter(addsSomething).join(', '),
+    addsSomething(pincode) ? pincode : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  // The maps query keeps every part regardless: a search wants the fullest
+  // string available, and duplication costs nothing there.
   const mapsQuery = [street, cityState, pincode].filter(Boolean).join(', ');
   const mapsHref = mapsQuery ? `https://maps.google.com/?q=${encodeURIComponent(mapsQuery)}` : null;
 
