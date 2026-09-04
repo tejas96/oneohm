@@ -39,7 +39,7 @@ import {
 } from '../../utils/change-request-display';
 import { EditSiteDataModal } from '../components/edit-site-data-modal';
 
-import { PROPERTY_STATUS_TONE, QUOTE_STATUS_TONE } from '@/components/features/customers/constants';
+import { getSiteLifecycle, QUOTE_STATUS_TONE } from '@/components/features/customers/constants';
 import {
   DetailCard,
   EmptyPane,
@@ -146,6 +146,9 @@ function SiteProfileCard({ property }: { property: CustomerPropertyResponse }): 
       .filter(Boolean)
       .join(', ') || '—';
   const isInPlay = IN_PLAY_STATUSES.includes(property.status);
+  // The site's own status stops at "Converted" for life; once a project
+  // exists, its state is what this site is actually doing.
+  const siteLifecycle = getSiteLifecycle(property);
 
   return (
     <DetailCard>
@@ -163,8 +166,8 @@ function SiteProfileCard({ property }: { property: CustomerPropertyResponse }): 
             label: 'Status',
             value: (
               <TonePill
-                label={toTitleLabel(property.status)}
-                tone={PROPERTY_STATUS_TONE[property.status] ?? 'neutral'}
+                label={siteLifecycle.label}
+                tone={siteLifecycle.tone}
                 dot
               />
             ),

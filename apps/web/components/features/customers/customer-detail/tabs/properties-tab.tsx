@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import type { JSX } from 'react';
 
-import { PROPERTY_STATUS_TONE, QUOTE_STATUS_TONE } from '../../constants';
+import { getSiteLifecycle, QUOTE_STATUS_TONE } from '../../constants';
 import type { CustomerPropertyResponse } from '../../hooks';
 import {
   DetailCard,
@@ -137,7 +137,10 @@ export function PropertiesTab({
             </TableHead>
             <TableBody>
               {properties.map((property) => {
-                const statusTone = PROPERTY_STATUS_TONE[property.status] ?? 'neutral';
+                // The site's own status stops at "Converted" for life; once a
+                // project exists, its state is what this site is actually
+                // doing — see getSiteLifecycle.
+                const lifecycle = getSiteLifecycle(property);
                 // A converted site is worth what its contract says today, not
                 // what its quote said at signing — see lib/utils/site-value.ts.
                 const value = siteValue(property);
@@ -155,7 +158,7 @@ export function PropertiesTab({
                   >
                     <TableCell>
                       <Stack direction="row" alignItems="center" gap={1.25} sx={{ minWidth: 0 }}>
-                        <IconCircle tone={statusTone}>
+                        <IconCircle tone={lifecycle.tone}>
                           <HomeWorkOutlinedIcon />
                         </IconCircle>
                         <Box sx={{ minWidth: 0 }}>
@@ -225,7 +228,7 @@ export function PropertiesTab({
                     </TableCell>
 
                     <TableCell>
-                      <TonePill label={toTitleLabel(property.status)} tone={statusTone} dot />
+                      <TonePill label={lifecycle.label} tone={lifecycle.tone} dot />
                     </TableCell>
 
                     <TableCell align="right">

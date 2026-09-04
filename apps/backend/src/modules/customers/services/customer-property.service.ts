@@ -12,6 +12,7 @@ import {
   CustomerStatus,
   LeadTemperature,
   LoanStatus,
+  ProjectStatus,
   type PropertyDocument,
   PropertyStatus,
   QuoteStatus,
@@ -55,6 +56,14 @@ const TERMINAL_LOAN_STATUSES: LoanStatus[] = [
  */
 type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   projectId?: string;
+  /**
+   * The linked project's status as it stands today.
+   *
+   * A site's own `status` freezes at CONVERTED the moment its project is
+   * created, so it cannot say whether that project finished, stalled or was
+   * called off. Lists read this instead once a site has a project.
+   */
+  projectStatus?: ProjectStatus;
   hasActiveLoan?: boolean;
   latestQuoteId?: string;
   latestQuoteNumber?: string;
@@ -273,7 +282,7 @@ export class CustomerPropertyService {
     // Batch-load latest quote per property (single query, avoids N+1)
     const propertyIds = properties.map((p) => p.id);
     const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
-    const projectIdMap = await this.propertyRepository.findProjectIdsByPropertyIds(propertyIds);
+    const projectMap = await this.propertyRepository.findProjectsByPropertyIds(propertyIds);
     const contractMap =
       await this.propertyRepository.findContractValuesByPropertyIds(propertyIds);
     const activeLoanPropertyIds =
@@ -286,7 +295,8 @@ export class CustomerPropertyService {
       const contract = contractMap.get(property.id);
       return {
         ...property,
-        projectId: projectIdMap.get(property.id),
+        projectId: projectMap.get(property.id)?.id,
+        projectStatus: projectMap.get(property.id)?.status,
         hasActiveLoan: activeLoanPropertyIds.has(property.id),
         contractValue: contract?.contractValue,
         quotedValue: contract?.quotedValue,
@@ -336,6 +346,10 @@ export class CustomerPropertyService {
     const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
     const contractMap =
       await this.propertyRepository.findContractValuesByPropertyIds(propertyIds);
+    // The customer's own site list showed a flat "Converted" on every site that
+    // had ever become a project, including finished and cancelled ones, because
+    // this path never loaded the project at all. `findAll` already did.
+    const projectMap = await this.propertyRepository.findProjectsByPropertyIds(propertyIds);
     const followupStateMap =
       await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
 
@@ -345,6 +359,8 @@ export class CustomerPropertyService {
       const contract = contractMap.get(property.id);
       return {
         ...property,
+        projectId: projectMap.get(property.id)?.id,
+        projectStatus: projectMap.get(property.id)?.status,
         contractValue: contract?.contractValue,
         quotedValue: contract?.quotedValue,
         changeOrderValue: contract?.changeOrderValue,
@@ -559,7 +575,7 @@ export class CustomerPropertyService {
   }
 
   private async assertDeletable(propertyId: string, manager: EntityManager): Promise<void> {
-    const projectMap = await this.propertyRepository.findProjectIdsByPropertyIds(
+    const projectMap = await this.propertyRepository.findProjectsByPropertyIds(
       [propertyId],
       manager,
     );

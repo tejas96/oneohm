@@ -11,7 +11,7 @@ import { type JSX, useMemo, useState } from 'react';
 
 import {
   LEAD_SOURCE_LABELS,
-  PROPERTY_STATUS_TONE,
+  getSiteLifecycle,
   QUOTE_STATUS_TONE,
   type CustomerDetailTab,
 } from '../../constants';
@@ -368,7 +368,9 @@ function SiteRow({
   property: CustomerPropertyResponse;
   onOpen: () => void;
 }): JSX.Element {
-  const statusTone = PROPERTY_STATUS_TONE[property.status] ?? 'neutral';
+  // The site's own status stops at "Converted" for life; once a project
+  // exists, its state is what this site is actually doing — see getSiteLifecycle.
+  const lifecycle = getSiteLifecycle(property);
   // A converted site is worth what its contract says today, not what its quote
   // said at signing — see lib/utils/site-value.ts.
   const value = siteValue(property);
@@ -411,7 +413,7 @@ function SiteRow({
       }}
     >
       <Stack direction="row" alignItems="center" gap={1.25} sx={{ minWidth: 0 }}>
-        <IconCircle tone={statusTone}>
+        <IconCircle tone={lifecycle.tone}>
           <HomeWorkOutlinedIcon />
         </IconCircle>
         <Box sx={{ minWidth: 0 }}>

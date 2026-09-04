@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   LeadTemperature,
+  ProjectStatus,
   PropertyStatus,
   PropertySortField,
   SortOrder,
@@ -206,12 +207,18 @@ export class CustomerPropertyRepository {
   }
 
   /**
-   * Batch lookup active project IDs for a list of property IDs.
+   * Batch lookup each property's live project — its id AND its current status.
+   *
+   * The status travels with the id because a site's own `status` column stops
+   * moving the moment it converts: it is written to CONVERTED when the project
+   * is created and back to ACTIVE only if that project is deleted. Nothing
+   * marks a site whose project finished, stalled or was called off, so every
+   * list that shows a site's state has to read the project to tell the truth.
    */
-  async findProjectIdsByPropertyIds(
+  async findProjectsByPropertyIds(
     propertyIds: string[],
     manager?: EntityManager,
-  ): Promise<Map<string, string>> {
+  ): Promise<Map<string, { id: string; status: ProjectStatus }>> {
     if (propertyIds.length === 0) {
       return new Map();
     }
@@ -220,12 +227,13 @@ export class CustomerPropertyRepository {
       .createQueryBuilder()
       .select('project.property_id', 'propertyId')
       .addSelect('project.id', 'projectId')
+      .addSelect('project.status', 'status')
       .from('projects', 'project')
       .where('project.property_id IN (:...propertyIds)', { propertyIds })
       .andWhere('project.deleted_at IS NULL')
-      .getRawMany<{ propertyId: string; projectId: string }>();
+      .getRawMany<{ propertyId: string; projectId: string; status: ProjectStatus }>();
 
-    return new Map(rows.map((row) => [row.propertyId, row.projectId]));
+    return new Map(rows.map((row) => [row.propertyId, { id: row.projectId, status: row.status }]));
   }
 
   /**

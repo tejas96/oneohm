@@ -10,13 +10,13 @@ import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import { Box, Button, CircularProgress, Skeleton, Tooltip } from '@mui/material';
-import { PropertyStatus, PropertyType } from '@tejas96/shared/types';
+import { ProjectStatus, PropertyStatus, PropertyType } from '@tejas96/shared/types';
 import { useRouter } from 'next/navigation';
 import { type ComponentType, type JSX, useCallback, useMemo, useState } from 'react';
 
 import {
+  getSiteLifecycle,
   getSiteStageIndex,
-  PROPERTY_STATUS_TONE,
   PROPERTY_TYPE_TONE,
   QUOTE_STATUS_TONE,
   SITE_STAGES,
@@ -196,18 +196,22 @@ function SiteRow({
 }: SiteRowProps): JSX.Element {
   const typeTone: CrmTone = PROPERTY_TYPE_TONE[property.propertyType] ?? 'neutral';
   const TypeIcon = TYPE_ICON[property.propertyType] ?? HomeOutlinedIcon;
-  const statusTone: CrmTone = PROPERTY_STATUS_TONE[property.status] ?? 'neutral';
+  const lifecycle = getSiteLifecycle(property);
 
   const stageIndex = getSiteStageIndex(property);
   const stagePct = `${Math.round(((stageIndex + 1) / SITE_STAGES.length) * 100)}%`;
   // A lost or stalled site keeps its progress bar but recolours it, so the bar
-  // never implies healthy momentum on a site that has none.
+  // never implies healthy momentum on a site that has none. A cancelled or
+  // held project is exactly that case: the rail is as long as the work got,
+  // and the colour says the work is not coming back on its own.
   const stageTone: CrmTone =
-    property.status === PropertyStatus.INACTIVE
+    property.status === PropertyStatus.INACTIVE ||
+    property.projectStatus === ProjectStatus.CANCELLED
       ? 'danger'
-      : property.status === PropertyStatus.PENDING_VERIFICATION
+      : property.status === PropertyStatus.PENDING_VERIFICATION ||
+          property.projectStatus === ProjectStatus.ON_HOLD
         ? 'warning'
-        : stageIndex >= 4
+        : stageIndex >= SITE_STAGES.length - 1
           ? 'success'
           : 'accent';
 
@@ -459,7 +463,7 @@ function SiteRow({
 
       {/* Status */}
       <Box sx={cellSx}>
-        <CrmStatusPill label={toTitleLabel(property.status)} tone={statusTone} size="xs" />
+        <CrmStatusPill label={lifecycle.label} tone={lifecycle.tone} size="xs" />
       </Box>
 
       {/* Added */}

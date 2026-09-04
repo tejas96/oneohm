@@ -4,6 +4,7 @@ import {
   LeadTemperature,
   type GpsCoordinates,
   type StoredChangeRequest,
+  ProjectStatus,
   PropertyStatus,
   PropertyType,
   QuoteStatus,
@@ -200,6 +201,22 @@ export class CustomerPropertyResponseDto {
   @Expose()
   @Transform(({ obj }) => obj.projectId ?? obj.project?.id ?? undefined)
   projectId?: string;
+
+  /**
+   * What the site's project is doing NOW — not what the site did to become one.
+   *
+   * `status` above freezes at CONVERTED at project creation and only ever moves
+   * back if the project is deleted, so it cannot distinguish a live build from
+   * one that finished or was called off. Screens showing a site's state read
+   * this in preference wherever it is present.
+   *
+   * Falls back to the loaded relation so the single-property endpoint, which
+   * joins `project` rather than batching the lookup, reports it too.
+   */
+  @ApiPropertyOptional({ enum: ProjectStatus })
+  @Expose()
+  @Transform(({ obj }) => obj.projectStatus ?? obj.project?.status ?? undefined)
+  projectStatus?: ProjectStatus;
 
   // ==================== Audit Fields ====================
   @ApiProperty()
