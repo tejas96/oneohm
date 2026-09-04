@@ -123,14 +123,18 @@ export class BomBaselineService {
    * project, which is the property Task 19 asserts — and it makes a new project
    * indistinguishable from one Task 8's backfill migrated.
    *
-   * Only lines with a resolvable, priced product are seeded. A calculation line
-   * with no productId, or a product with no active price, is reported by name
-   * and skipped rather than stubbed at zero: under "physical items only" a BOM
-   * line must be a real product, and a zero-priced line would corrupt every
-   * total that reads it. A missing price must not block project creation, the
-   * way copyQuoteBomToProject's try/catch did not — but a genuine failure now
-   * throws instead of being swallowed, because a warning in a log is exactly
-   * how the empty-BOM regression stayed invisible for a whole task cycle.
+   * Only lines naming a real product are seeded. A calculation line with no
+   * productId, one whose product is missing or deleted, or one with a
+   * non-positive quantity (no price can be derived from its line total) is
+   * reported by name and skipped: under "physical items only" a BOM line must
+   * be a real product. A lapsed CATALOG price is not a reason to skip anything
+   * here — since the price fix, seeding stamps the price the quote was struck
+   * at, read from the snapshot's own line total, so it never consults the
+   * catalog for a price at all. Skipping a line must not block project
+   * creation, the way copyQuoteBomToProject's try/catch did not — but a genuine
+   * failure now throws instead of being swallowed, because a warning in a log
+   * is exactly how the empty-BOM regression stayed invisible for a whole task
+   * cycle.
    */
   async seedFromQuoteVersion(
     projectId: string,
@@ -140,13 +144,26 @@ export class BomBaselineService {
     const version = await this.loadVersion(quoteVersionId);
     const incoming = await this.buildIncoming(this.dataSource.manager, version, projectId);
 
-    const bom = await this.bomRepository.createForProject({
-      projectId,
-      baselineQuoteVersionId: quoteVersionId,
-      createdBy: userId,
-    });
+    // ONE transaction for the header, the items AND the log rows. The header
+    // used to be created in a transaction of its own, which meant a failure
+    // while writing the items left an EMPTY BOM behind — and seedProjectBom's
+    // idempotency check only asks whether a BOM exists, so that empty header
+    // permanently blocked re-seeding, with the project row already committed
+    // and recovery only by hand. Rolling all three back together means the next
+    // conversion attempt can seed cleanly.
+    //
+    // createForProject takes the manager so generateBomNumber's pessimistic
+    // lock is still taken inside an open transaction — this one.
+    const bom = await this.dataSource.transaction(async (manager) => {
+      const header = await this.bomRepository.createForProject(
+        {
+          projectId,
+          baselineQuoteVersionId: quoteVersionId,
+          createdBy: userId,
+        },
+        manager,
+      );
 
-    await this.dataSource.transaction(async (manager) => {
       const itemRepo = manager.getRepository(BomItemEntity);
       const changes: Array<Partial<BomChangeEntity>> = [];
       let sortOrder = 0;
@@ -154,7 +171,7 @@ export class BomBaselineService {
       for (const line of incoming) {
         const item = await itemRepo.save(
           itemRepo.create({
-            bomId: bom.id,
+            bomId: header.id,
             productId: line.productId,
             quantity: String(line.quantity),
             // Equal to quantity at seeding, and immutable after it. This is
@@ -174,7 +191,7 @@ export class BomBaselineService {
         );
 
         changes.push({
-          bomId: bom.id,
+          bomId: header.id,
           bomItemId: item.id,
           productId: line.productId,
           changeType: 'add',
@@ -195,6 +212,8 @@ export class BomBaselineService {
       if (changes.length > 0) {
         await this.bomChangeRepository.append(changes, manager);
       }
+
+      return header;
     });
 
     const seeded = await this.bomRepository.findById(bom.id);

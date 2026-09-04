@@ -43,18 +43,32 @@ export class BomRepository {
    * Wraps generateBomNumber (which uses a pessimistic write lock) and the
    * subsequent INSERT inside a single transaction so the lock is always held
    * within an open transaction context.
+   *
+   * Pass `manager` to join a transaction the caller has already opened. The
+   * number sequence stays under exactly the same lock either way — it is still
+   * taken inside an open transaction, just the caller's rather than one of our
+   * own. BomBaselineService.seedFromQuoteVersion needs this: creating the
+   * header in a separate transaction from its items leaves an EMPTY BOM behind
+   * whenever the item write fails, and an empty header then permanently blocks
+   * re-seeding, because the caller's idempotency check only asks whether a BOM
+   * exists. That is the same "silently empty BOM" failure this rebuild exists
+   * to close, reached by another route.
    */
-  async createForProject(data: {
-    projectId: string;
-    baselineQuoteVersionId?: string | null;
-    createdBy: string;
-    notes?: string;
-  }): Promise<BomEntity> {
-    return this.dataSource.transaction(async (manager) => {
-      const bomNumber = await this.generateBomNumber(COMPANY.code, manager);
-      const repo = manager.getRepository(BomEntity);
+  async createForProject(
+    data: {
+      projectId: string;
+      baselineQuoteVersionId?: string | null;
+      createdBy: string;
+      notes?: string;
+    },
+    manager?: EntityManager,
+  ): Promise<BomEntity> {
+    const insert = async (m: EntityManager): Promise<BomEntity> => {
+      const bomNumber = await this.generateBomNumber(COMPANY.code, m);
+      const repo = m.getRepository(BomEntity);
       return repo.save(repo.create({ ...data, bomNumber }));
-    });
+    };
+    return manager ? insert(manager) : this.dataSource.transaction(insert);
   }
 
   /**
