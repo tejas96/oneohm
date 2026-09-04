@@ -49,7 +49,7 @@ const EMPTY_SITE_PORTFOLIO: SitePortfolioSummary = {
   convertedCount: 0,
   quotedSiteCount: 0,
   totalSystemSizeKw: 0,
-  totalQuotedAmount: 0,
+  totalPortfolioAmount: 0,
 };
 
 /** Normalize email to lowercase, trimmed. Returns undefined for empty/whitespace-only input. */

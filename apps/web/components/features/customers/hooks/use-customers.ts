@@ -87,7 +87,11 @@ export interface SitePortfolio {
   convertedCount: number;
   quotedSiteCount: number;
   totalSystemSizeKw: number;
-  totalQuotedAmount: number;
+  /**
+   * A converted site counted at its contract, everything else at its quote.
+   * Not "quoted": the contract moves when material added on site is billed.
+   */
+  totalPortfolioAmount: number;
 }
 
 export interface Customer {

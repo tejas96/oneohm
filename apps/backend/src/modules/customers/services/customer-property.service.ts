@@ -62,6 +62,19 @@ type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   latestQuoteDate?: Date;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;
+  /**
+   * What the site's project is worth NOW, present only once it has one.
+   *
+   * `latestQuoteFinalPrice` above is the quote's own value, frozen at signing.
+   * That is the right thing to show against a QUOTE and the wrong thing to show
+   * against a converted site: billing the customer for material added on site
+   * moves the project's contract while the quote stays where it was, and every
+   * screen reading only the quote figure then reports a number the project's
+   * own Money tab contradicts.
+   */
+  contractValue?: number;
+  quotedValue?: number;
+  changeOrderValue?: number;
   nextFollowupAt?: Date;
   needsFollowup?: boolean;
 };
@@ -261,6 +274,8 @@ export class CustomerPropertyService {
     const propertyIds = properties.map((p) => p.id);
     const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
     const projectIdMap = await this.propertyRepository.findProjectIdsByPropertyIds(propertyIds);
+    const contractMap =
+      await this.propertyRepository.findContractValuesByPropertyIds(propertyIds);
     const activeLoanPropertyIds =
       await this.loanApplicationRepository.findPropertyIdsWithActiveLoans(propertyIds);
     const followupStateMap =
@@ -268,10 +283,14 @@ export class CustomerPropertyService {
 
     const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
+      const contract = contractMap.get(property.id);
       return {
         ...property,
         projectId: projectIdMap.get(property.id),
         hasActiveLoan: activeLoanPropertyIds.has(property.id),
+        contractValue: contract?.contractValue,
+        quotedValue: contract?.quotedValue,
+        changeOrderValue: contract?.changeOrderValue,
         latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
         latestQuoteStatus: quoteInfo?.status,
@@ -315,14 +334,20 @@ export class CustomerPropertyService {
     // Query 2: Get latest quotes for all properties (single batch query)
     const propertyIds = properties.map((p) => p.id);
     const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
+    const contractMap =
+      await this.propertyRepository.findContractValuesByPropertyIds(propertyIds);
     const followupStateMap =
       await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
 
     // Enrich properties with quote data
     return properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
+      const contract = contractMap.get(property.id);
       return {
         ...property,
+        contractValue: contract?.contractValue,
+        quotedValue: contract?.quotedValue,
+        changeOrderValue: contract?.changeOrderValue,
         latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
         latestQuoteStatus: quoteInfo?.status,

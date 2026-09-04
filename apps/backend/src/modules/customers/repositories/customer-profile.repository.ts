@@ -39,7 +39,7 @@ export interface SitePortfolioSummary {
    */
   totalSystemSizeKw: number;
   /** Σ final price across each site's current quote version. */
-  totalQuotedAmount: number;
+  totalPortfolioAmount: number;
 }
 
 /** Company-wide CRM roll-up behind the four KPI cards on the list page. */
@@ -438,7 +438,7 @@ export class CustomerProfileRepository {
         count: string;
         quotedCount: string;
         systemSizeKw: string;
-        quotedAmount: string;
+        portfolioAmount: string;
       }[]
     >(
       `
@@ -452,8 +452,23 @@ export class CustomerProfileRepository {
                     ELSE 0
                END
              ), 0)                                       AS "systemSizeKw",
-             COALESCE(SUM(cv.final_price), 0)            AS "quotedAmount"
+             /*
+              * A converted site counts at its CONTRACT, everything else at its
+              * quote. Summing cv.final_price alone reported a customer's
+              * portfolio at the price their sites were quoted, which stops
+              * moving the moment they sign — so billing them for material added
+              * on site raised the project, the site list and the customer's own
+              * Outstanding tile while this total stayed behind, with nothing on
+              * screen reconciling them.
+              *
+              * v_project_balance is the same view the projects list and the
+              * site rows read, so all four now answer with one number.
+              */
+             COALESCE(SUM(COALESCE(bal.contract_paise / 100.0, cv.final_price)), 0)
+                                                         AS "portfolioAmount"
       FROM customer_properties prop
+      LEFT JOIN projects pj ON pj.property_id = prop.id AND pj.deleted_at IS NULL
+      LEFT JOIN v_project_balance bal ON bal.project_id = pj.id
       ${latestQuoteJoins()} WHERE prop.customer_id = ANY($1::uuid[])
         AND prop.deleted_at IS NULL
       GROUP BY prop.customer_id, prop.status
@@ -468,7 +483,7 @@ export class CustomerProfileRepository {
         convertedCount: 0,
         quotedSiteCount: 0,
         totalSystemSizeKw: 0,
-        totalQuotedAmount: 0,
+        totalPortfolioAmount: 0,
       };
 
       const count = Number(row.count);
@@ -477,7 +492,7 @@ export class CustomerProfileRepository {
       if (row.status === CONVERTED_STATUS) existing.convertedCount += count;
       existing.quotedSiteCount += Number(row.quotedCount);
       existing.totalSystemSizeKw += Number(row.systemSizeKw);
-      existing.totalQuotedAmount += Number(row.quotedAmount);
+      existing.totalPortfolioAmount += Number(row.portfolioAmount);
 
       summaries.set(row.customerId, existing);
     }

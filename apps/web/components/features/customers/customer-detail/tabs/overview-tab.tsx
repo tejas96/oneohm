@@ -48,6 +48,7 @@ import {
   formatDate,
   formatFollowupWhen,
   formatSystemSize,
+  siteValue,
   toTitleLabel,
 } from '@/lib/utils';
 
@@ -368,6 +369,9 @@ function SiteRow({
   onOpen: () => void;
 }): JSX.Element {
   const statusTone = PROPERTY_STATUS_TONE[property.status] ?? 'neutral';
+  // A converted site is worth what its contract says today, not what its quote
+  // said at signing — see lib/utils/site-value.ts.
+  const value = siteValue(property);
   const quoteStatus = property.latestQuoteStatus;
   const quoteTone: DetailTone = quoteStatus
     ? (QUOTE_STATUS_TONE[quoteStatus] ?? 'neutral')
@@ -443,12 +447,21 @@ function SiteRow({
       <Box sx={{ minWidth: 0 }}>
         <SiteStageBar property={property} />
         {quoteStatus && (
-          <Stack direction="row" alignItems="center" gap={0.75} sx={{ mt: 0.625 }}>
-            <TonePill label={toTitleLabel(quoteStatus)} tone={quoteTone} />
-            {property.latestQuoteFinalPrice ? (
-              <Mono sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-secondary)' }}>
-                {formatCurrency(property.latestQuoteFinalPrice)}
-              </Mono>
+          <Stack gap={0.25} sx={{ mt: 0.625 }}>
+            <Stack direction="row" alignItems="center" gap={0.75}>
+              <TonePill label={toTitleLabel(quoteStatus)} tone={quoteTone} />
+              {value.label ? (
+                <Mono sx={{ fontSize: '0.6875rem', color: 'var(--ds-text-secondary)' }}>
+                  {value.label}
+                </Mono>
+              ) : null}
+            </Stack>
+            {value.note ? (
+              <Typography
+                sx={{ fontSize: '0.625rem', color: 'var(--ds-text-tertiary)', lineHeight: 1.35 }}
+              >
+                {value.note}
+              </Typography>
             ) : null}
           </Stack>
         )}

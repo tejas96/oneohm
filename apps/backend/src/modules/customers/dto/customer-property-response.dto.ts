@@ -334,6 +334,39 @@ export class CustomerPropertyResponseDto {
   @Transform(({ value }) => toNum(value))
   latestQuoteFinalPrice?: number;
 
+  /**
+   * The three below are present only for a site that has become a project, and
+   * describe that project as it stands today rather than as it was quoted.
+   *
+   * `latestQuoteFinalPrice` above is the quote's own value and does not move
+   * when material is added on site and billed; the contract does. A screen
+   * showing a converted site should read `contractValue` and explain the gap
+   * with the other two, the way the projects list does.
+   */
+  @ApiPropertyOptional({
+    description: "The project's contract as it stands: quoted plus every change order",
+    example: 1232225.94,
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  contractValue?: number;
+
+  @ApiPropertyOptional({
+    description: 'The part of the contract that came from the signed quote',
+    example: 1048738.47,
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  quotedValue?: number;
+
+  @ApiPropertyOptional({
+    description: 'Agreed after signing. quotedValue + changeOrderValue === contractValue',
+    example: 183487.47,
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  changeOrderValue?: number;
+
   @ApiPropertyOptional({
     description: 'System size in kW from the current version of the latest quote',
     example: 4.08,

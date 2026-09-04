@@ -21,6 +21,17 @@ export interface PropertyFinanceSnapshot {
   receivedAmount: number;
   /** Most recent received date (YYYY-MM-DD), not record date. */
   lastReceiptDate: string | null;
+  /**
+   * The contract as it stands, and its split (rupees).
+   *
+   * The page's "Quote value" tile shows the quote's own price, which is right —
+   * it is the document the customer signed. But billing for material added on
+   * site moves the CONTRACT and never the quote, so without these the page had
+   * no way to say the two had diverged, and reported a figure the project's own
+   * Money tab contradicted.
+   */
+  contractAmount: number;
+  changeOrderAmount: number;
   hasProject: boolean;
 }
 
@@ -41,6 +52,8 @@ const EMPTY_SNAPSHOT: PropertyFinanceSnapshot = {
   openTermCount: 0,
   receivedAmount: 0,
   lastReceiptDate: null,
+  contractAmount: 0,
+  changeOrderAmount: 0,
   hasProject: false,
 };
 
@@ -114,6 +127,8 @@ export function usePropertyFinanceSnapshot(
       openTermCount: openTerms.length,
       receivedAmount,
       lastReceiptDate,
+      contractAmount: ledger ? ledger.contractPaise / 100 : 0,
+      changeOrderAmount: ledger ? ledger.changeOrderPaise / 100 : 0,
       hasProject: true,
     };
   }, [hasProject, openTerms, ledgerQ.data, receipts]);

@@ -8,12 +8,13 @@ import type { JSX } from 'react';
 
 import { PROPERTY_STATUS_TONE, PROPERTY_TYPE_TONE, QUOTE_STATUS_TONE } from '../constants';
 import { type CustomerPropertyResponse } from '../hooks';
-import { FieldGrid, SectionHeading, TonePill, type DetailTone } from './primitives';
+import { FieldGrid, Mono, SectionHeading, TonePill, type DetailTone } from './primitives';
 import { SiteStageBar } from './site-stage';
 
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import {
+  contractMovedNote,
   formatCurrency,
   formatDate,
   formatFollowupWhen,
@@ -226,11 +227,34 @@ export function PropertyDetailDrawer({
                       value: <TonePill label={toTitleLabel(quoteStatus)} tone={quoteTone} dot />,
                     },
                     {
+                      // This panel is about the QUOTE, so the quote's own price
+                      // stays — it is the document the customer signed and
+                      // rewriting it would be a lie. But saying nothing is what
+                      // made the figures look contradictory: bill for material
+                      // added on site and the project's Money tab moves while
+                      // this stays put. So it says what it was, and points at
+                      // what the project became.
                       label: 'Value',
-                      value: property.latestQuoteFinalPrice
-                        ? formatCurrency(property.latestQuoteFinalPrice)
-                        : '—',
-                      mono: true,
+                      value: (
+                        <Stack gap={0.25}>
+                          <Mono>
+                            {property.latestQuoteFinalPrice
+                              ? formatCurrency(property.latestQuoteFinalPrice)
+                              : '—'}
+                          </Mono>
+                          {contractMovedNote(property) ? (
+                            <Typography
+                              sx={{
+                                fontSize: '0.6875rem',
+                                color: 'var(--ds-text-tertiary)',
+                                lineHeight: 1.35,
+                              }}
+                            >
+                              {contractMovedNote(property)}
+                            </Typography>
+                          ) : null}
+                        </Stack>
+                      ),
                     },
                     {
                       label: 'System size',

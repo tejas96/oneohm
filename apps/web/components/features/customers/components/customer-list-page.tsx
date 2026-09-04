@@ -625,7 +625,14 @@ function LocationCell({ row }: { row: Customer }): JSX.Element {
 
 /**
  * The site-portfolio summary: count · capacity, a status distribution bar, and
- * the quoted total.
+ * what the sites are worth.
+ *
+ * That last figure used to read "₹X quoted" and sum each site's quote price. A
+ * converted site now counts at its CONTRACT instead, because a quote price
+ * stops moving the moment it is signed while the contract rises every time
+ * material added on site is billed — so this total drifted below the customer's
+ * own Outstanding tile with nothing explaining the gap. The word "quoted" went
+ * with it: the number is no longer only quotes.
  *
  * Every figure comes from the list payload's server-computed `sitePortfolio`,
  * so a page of 25 customers costs zero extra requests. `propertyCount` is the
@@ -684,7 +691,7 @@ function PortfolioCell({
   })).filter((segment) => segment.count > 0);
 
   const capacity = portfolio?.totalSystemSizeKw ?? 0;
-  const quoted = portfolio?.totalQuotedAmount ?? 0;
+  const portfolioValue = portfolio?.totalPortfolioAmount ?? 0;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.625, minWidth: 0, pr: 2 }}>
@@ -746,7 +753,7 @@ function PortfolioCell({
           ...ellipsisSx,
         }}
       >
-        {quoted > 0 ? `${formatCurrency(quoted)} quoted` : 'Not quoted yet'}
+        {portfolioValue > 0 ? formatCurrency(portfolioValue) : 'Not quoted yet'}
       </Box>
     </Box>
   );
