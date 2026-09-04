@@ -98,8 +98,15 @@ export class ProjectBomController {
     @Param('itemId', ParseUUIDPipe) itemId: string,
     @Body() body: PatchBomItemDto,
   ): Promise<{ costImpactPaise: number } | { newItemId: string; costImpactPaise: number }> {
-    const hasQuantity = body.quantity !== undefined;
-    const hasReplacement = body.replaceWithProductId !== undefined;
+    // `!= null`, NOT `!== undefined`. @IsOptional() treats null as ABSENT and
+    // skips the field's other validators, so {"quantity": null} passes
+    // validation with the property still sitting there as null. A presence test
+    // that disagreed with the validator called that PRESENT, sent it past the
+    // XOR check into changeQuantity, and String(null) reached Postgres as the
+    // text "null" — a 500 for a body that is plainly a 400. The validator and
+    // this test have to answer "is it there?" the same way.
+    const hasQuantity = body.quantity != null;
+    const hasReplacement = body.replaceWithProductId != null;
 
     if (hasQuantity === hasReplacement) {
       throw new BadRequestException(
