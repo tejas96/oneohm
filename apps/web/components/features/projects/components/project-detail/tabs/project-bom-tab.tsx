@@ -24,6 +24,7 @@ import { ProcurementSection } from '@/components/features/projects/components/pr
 import { useQuoteDetail } from '@/components/features/quotes';
 import { OtherCostsCard } from '@/components/features/quotes/components/quote-detail/tabs/overview/other-costs-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useProjectLedger } from '@/lib/hooks/resources/ledger';
 import {
   useAllocateBomPending,
   useBomProcurementStatus,
@@ -95,12 +96,15 @@ function Stat({
   value,
   tone,
   action,
+  sub,
 }: {
   label: string;
   value: string;
   tone?: Tone;
   /** A small control beside the value — used only by "Change since quote". */
   action?: React.ReactNode;
+  /** A quiet line under the figure, for a fact the figure alone cannot carry. */
+  sub?: React.ReactNode;
 }): React.JSX.Element {
   return (
     <div className="min-w-0">
@@ -116,6 +120,9 @@ function Stat({
         </span>
         {action}
       </dd>
+      {sub ? (
+        <dd className="mt-1.5 text-[11px] leading-snug text-foreground-tertiary">{sub}</dd>
+      ) : null}
     </div>
   );
 }
@@ -141,6 +148,11 @@ export const ProjectBomTab = React.memo(
     // Same cache entry the Procurement section below reads — one network
     // call serves both, react-query dedupes the identical query key.
     const { data: procurement } = useBomProcurementStatus(projectId);
+    // What has been agreed with the customer since signing. The BOM knows how
+    // much the PLAN moved; only the ledger knows how much of that has been
+    // turned into money owed, and the tab needs both to stop offering the whole
+    // variance again on a project already billed for most of it.
+    const { data: ledger } = useProjectLedger(projectId);
     const [billingOpen, setBillingOpen] = React.useState(false);
     const [addOpen, setAddOpen] = React.useState(false);
     // One piece of state drives the shared edit dialog: the row it acts on
@@ -185,6 +197,27 @@ export const ProjectBomTab = React.memo(
      * when the bill has no panels, or none carrying a rated wattage — in which
      * case the shortfall is unknown, not zero, and nothing is claimed.
      */
+    /*
+     * The variance is a fact about the material PLAN and never moves when the
+     * customer is billed — billing does not take material back off the project,
+     * and zeroing it here would destroy the answer to "what did we add after
+     * the quote?", which is the question this tab exists for.
+     *
+     * But the button beside it acts on money, and offering the full variance on
+     * a project already billed for most of it is how the same material gets
+     * charged twice. So the figure stays and the line beneath says how much of
+     * it is actually still unbilled; the button follows that remainder.
+     *
+     * `changeOrderPaise` is everything agreed after signing, not only what was
+     * raised from this button — the change-order endpoint takes any amount for
+     * any reason. So the remainder is a floor, clamped at zero, and the wording
+     * says "in change orders" rather than claiming a precise BOM linkage that
+     * does not exist in the data.
+     */
+    const variancePaise = bom?.totals.variancePaise ?? 0;
+    const billedPaise = ledger?.changeOrderPaise ?? 0;
+    const unbilledPaise = Math.max(0, variancePaise - billedPaise);
+
     const quotedWp = bom?.totals.quotedSystemWp ?? null;
     const currentWp = bom?.totals.currentSystemWp ?? null;
     const shortfallWp = quotedWp !== null && currentWp !== null ? quotedWp - currentWp : 0;
@@ -319,16 +352,27 @@ export const ProjectBomTab = React.memo(
                         ? 'warning'
                         : 'success'
                   }
+                  sub={
+                    billedPaise > 0
+                      ? `${formatCurrency(billedPaise / 100)} already in change orders · ${formatCurrency(unbilledPaise / 100)} not yet billed`
+                      : undefined
+                  }
                   action={
                     <button
                       type="button"
                       onClick={billCustomer.onGatedClick}
                       aria-disabled={!billCustomer.allowed}
-                      disabled={bom.totals.variancePaise <= 0}
+                      // Follows what is UNBILLED, not the variance. The variance
+                      // is a plan fact and stays put once billed; the button is
+                      // about money, and on a project already billed for most of
+                      // its change it was still offering the whole amount again.
+                      disabled={unbilledPaise <= 0}
                       title={
                         bom.totals.variancePaise <= 0
                           ? 'Nothing to bill — material cost has not increased since the quote.'
-                          : 'Raise a change order for the increase in material cost since the quote.'
+                          : unbilledPaise <= 0
+                            ? 'Already covered by change orders on this contract.'
+                            : 'Raise a change order for the material cost not yet billed.'
                       }
                       className="inline-flex h-6 shrink-0 items-center rounded-pill bg-primary px-2.5 text-[10.5px] font-semibold text-white transition-[filter] duration-fast hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     >

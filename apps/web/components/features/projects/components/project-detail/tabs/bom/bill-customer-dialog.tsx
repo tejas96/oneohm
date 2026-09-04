@@ -68,30 +68,35 @@ export function BillCustomerDialog({
     setAmount('');
   }, [open]);
 
-  // Billing does not change the BOM — that is the whole point, and it is why
-  // `variancePaise` still reads +₹3,385 after a ₹3,385 change order has been
-  // raised. This dialog used to re-fill the amount box with that full variance
-  // every single time it opened, so a project already billed in full silently
-  // offered the identical amount again: one more description typed and the
-  // customer is charged twice for the same material change.
-  //
-  // So the suggestion is now conditional, and it waits for the summary rather
-  // than guessing while it loads: pre-fill only when nothing has been agreed
-  // after signing yet. Once anything has, the box starts empty and the panel
-  // below says what is already on the contract, making a second charge a
-  // deliberate act instead of an accident.
-  //
-  // `changeOrderPaise` is everything agreed after signing, not only what was
-  // billed from this tab — the change-order endpoint takes "free text and any
-  // amount" and nothing links one back to the BOM. That is why the amount is
-  // withheld and the total shown, rather than a remainder being computed: a
-  // subtraction would be a guess, and a wrong one would block legitimate
-  // billing.
+  /*
+   * Billing does not change the BOM. That is deliberate — a change order moves
+   * what the customer owes, the bill records what the project needs — and it is
+   * why `variancePaise` still reads its full value after part of it has been
+   * charged. This box used to re-offer that full variance on every open, so a
+   * project already billed for most of its change silently proposed the whole
+   * amount again: one description typed and the same material is charged twice.
+   *
+   * It now offers the remainder, and waits for the summary rather than guessing
+   * while it loads. On a contract with nothing agreed since signing the two are
+   * identical, so the first bill is unchanged.
+   *
+   * `changeOrderPaise` is everything agreed after signing, not only what was
+   * raised from this button — the endpoint takes any amount for any reason. So
+   * the remainder is a floor rather than an exact BOM figure, the panel above
+   * says what is being subtracted and why the operator might disagree with it,
+   * and the field stays editable.
+   */
   useEffect(() => {
     if (!open || seeded.current || changeOrderPaise === undefined) return;
     seeded.current = true;
-    if (changeOrderPaise === 0 && variancePaise > 0) {
-      setAmount(paiseToRupees(variancePaise).toFixed(2));
+    // The UNBILLED remainder, not the whole variance. On a clean contract the
+    // two are identical, so the first bill is unchanged. On one already billed
+    // for part of its change, this is the only figure that does not charge the
+    // same material twice — and it is exactly what the tab's own "not yet
+    // billed" line beside the button says.
+    const unbilled = variancePaise - changeOrderPaise;
+    if (unbilled > 0) {
+      setAmount(paiseToRupees(unbilled).toFixed(2));
     }
   }, [open, changeOrderPaise, variancePaise]);
 
@@ -139,9 +144,10 @@ export function BillCustomerDialog({
                   has already been agreed on this contract since the quote was signed.
                 </span>
                 <span className="text-xs">
-                  The material change below still reads its full value — billing never changes
-                  the BOM. Check the Finance tab before charging again, and enter only what is
-                  genuinely still unbilled.
+                  The material change stays at its full value — billing never takes material
+                  back off the project. The amount below is what remains unbilled against it;
+                  check the Finance tab if any of those change orders were raised for something
+                  other than material.
                 </span>
               </div>
             </Alert>
