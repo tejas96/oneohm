@@ -16,7 +16,13 @@ export class BomRepository {
   async findByProject(projectId: string): Promise<BomEntity | null> {
     return this.repository.findOne({
       where: { projectId },
-      relations: ['items', 'items.product', 'items.product.productType', 'items.serials'],
+      relations: [
+        'items',
+        'items.product',
+        'items.product.productType',
+        'items.product.brand',
+        'items.serials',
+      ],
       order: { items: { sortOrder: 'ASC' } },
     });
   }
