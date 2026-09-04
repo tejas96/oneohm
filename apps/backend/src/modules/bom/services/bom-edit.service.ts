@@ -71,12 +71,6 @@ export class BomEditService {
         );
       }
 
-      const { unitPricePaise, pricingBasis, unit } = await this.resolvePrice(
-        manager,
-        dto.productId,
-        projectId,
-      );
-
       // A line that was quoted keeps the price its quote was struck at, even
       // when it is coming back from a removal. bom-item.entity.ts states the
       // rule: "Resolved once through PricingService when the line was added,
@@ -88,43 +82,64 @@ export class BomEditService {
       // revival consistent with changeQuantity, which never re-prices: the
       // same end state must not depend on the route taken to it.
       const wasQuoted = existing?.quotedQuantity !== null && existing?.quotedQuantity !== undefined;
-      const effectivePricePaise = existing && wasQuoted ? existing.unitPricePaise : unitPricePaise;
 
-      // Whether the row is new or a removed one coming back, its contribution
-      // before this call was 0 — a removed line sits at quantity 0.
-      const costImpactPaise = this.lineTotalPaise(dto.quantity, effectivePricePaise);
-
+      let effectivePricePaise: number;
       let itemId: string;
-      if (existing) {
-        // A previously-removed line coming back. Reuse the row so the unique
-        // index holds and the line's history stays on one item id.
+
+      if (existing && wasQuoted) {
+        // A previously-removed QUOTED line coming back. It keeps its stamped
+        // price, so it needs no catalog lookup AT ALL — and must not do one.
+        // Resolving a price here would throw "has no active price" whenever the
+        // product's price has since lapsed, blocking a field worker from undoing
+        // their own mis-removal of a line whose price this path never uses.
         //
-        // quotedQuantity and source are left alone on purpose: the line's
-        // provenance is what it always was, and if it was quoted, the read
-        // service should still show it against its quoted figure rather than
-        // reclassify it as newly added.
+        // Reuse the row so the unique index holds and the line's history stays
+        // on one item id. quotedQuantity and source are left alone on purpose:
+        // the line's provenance is what it always was, and the read service
+        // should still show it against its quoted figure rather than reclassify
+        // it as newly added.
+        effectivePricePaise = existing.unitPricePaise;
         existing.quantity = String(dto.quantity);
-        if (!wasQuoted) {
-          existing.unitPricePaise = unitPricePaise;
-          existing.pricingBasis = pricingBasis;
-          existing.unit = unit;
-        }
         existing.updatedBy = userId;
         await itemRepo.save(existing);
         itemId = existing.id;
       } else {
-        itemId = await this.insertItem(manager, {
-          bomId: bom.id,
-          productId: dto.productId,
-          quantity: dto.quantity,
-          unit,
-          unitPricePaise,
-          pricingBasis,
-          source,
-          sortOrder: await this.nextSortOrder(manager, bom.id),
-          userId,
-        });
+        // Everything else genuinely takes a catalog price: a brand-new line, or
+        // a never-quoted line coming back, which has no quoted baseline to
+        // protect.
+        const { unitPricePaise, pricingBasis, unit } = await this.resolvePrice(
+          manager,
+          dto.productId,
+          projectId,
+        );
+        effectivePricePaise = unitPricePaise;
+
+        if (existing) {
+          existing.quantity = String(dto.quantity);
+          existing.unitPricePaise = unitPricePaise;
+          existing.pricingBasis = pricingBasis;
+          existing.unit = unit;
+          existing.updatedBy = userId;
+          await itemRepo.save(existing);
+          itemId = existing.id;
+        } else {
+          itemId = await this.insertItem(manager, {
+            bomId: bom.id,
+            productId: dto.productId,
+            quantity: dto.quantity,
+            unit,
+            unitPricePaise,
+            pricingBasis,
+            source,
+            sortOrder: await this.nextSortOrder(manager, bom.id),
+            userId,
+          });
+        }
       }
+
+      // Whether the row is new or a removed one coming back, its contribution
+      // before this call was 0 — a removed line sits at quantity 0.
+      const costImpactPaise = this.lineTotalPaise(dto.quantity, effectivePricePaise);
 
       await this.bomChangeRepository.append(
         [
@@ -277,16 +292,9 @@ export class BomEditService {
       }
 
       const oldTotalPaise = this.lineTotalPaise(quantity, old.unitPricePaise);
-      const { unitPricePaise, pricingBasis, unit } = await this.resolvePrice(
-        manager,
-        dto.replaceWithProductId,
-        projectId,
-      );
 
-      old.quantity = '0';
-      old.updatedBy = userId;
-      await itemRepo.save(old);
-
+      // Loaded BEFORE resolving any price, because whether a catalog price is
+      // needed at all depends on what is already on the BOM.
       const target = await itemRepo.findOne({
         where: { bomId: bom.id, productId: dto.replaceWithProductId },
       });
@@ -303,37 +311,58 @@ export class BomEditService {
       const targetWasQuoted =
         target?.quotedQuantity !== null && target?.quotedQuantity !== undefined;
       const targetKeepsItsPrice = !!target && (targetBefore > 0 || targetWasQuoted);
-      const effectivePricePaise =
-        target && targetKeepsItsPrice ? target.unitPricePaise : unitPricePaise;
+
+      // Resolve a catalog price ONLY when the target is actually going to take
+      // one. A stamped-price target needs no lookup, and doing one anyway would
+      // throw "has no active price" for a price this path never uses — the same
+      // dead end addItem's revival path avoids.
+      let effectivePricePaise: number;
+      let resolved: { unitPricePaise: number; pricingBasis: string; unit: string } | null = null;
+
+      if (target && targetKeepsItsPrice) {
+        effectivePricePaise = target.unitPricePaise;
+      } else {
+        resolved = await this.resolvePrice(manager, dto.replaceWithProductId, projectId);
+        effectivePricePaise = resolved.unitPricePaise;
+      }
+
       const targetTotalBefore = target
         ? this.lineTotalPaise(targetBefore, target.unitPricePaise)
         : 0;
       const targetTotalAfter = this.lineTotalPaise(targetBefore + quantity, effectivePricePaise);
 
+      old.quantity = '0';
+      old.updatedBy = userId;
+      await itemRepo.save(old);
+
       let newItemId: string;
       if (target) {
         target.quantity = String(targetBefore + quantity);
-        if (!targetKeepsItsPrice) {
-          target.unitPricePaise = unitPricePaise;
-          target.pricingBasis = pricingBasis;
-          target.unit = unit;
+        if (resolved) {
+          target.unitPricePaise = resolved.unitPricePaise;
+          target.pricingBasis = resolved.pricingBasis;
+          target.unit = resolved.unit;
         }
         target.updatedBy = userId;
         await itemRepo.save(target);
         newItemId = target.id;
-      } else {
+      } else if (resolved) {
         newItemId = await this.insertItem(manager, {
           bomId: bom.id,
           productId: dto.replaceWithProductId,
           quantity,
-          unit,
-          unitPricePaise,
-          pricingBasis,
+          unit: resolved.unit,
+          unitPricePaise: resolved.unitPricePaise,
+          pricingBasis: resolved.pricingBasis,
           source,
           // The replacement sits where the line it replaces sat.
           sortOrder: old.sortOrder,
           userId,
         });
+      } else {
+        // Unreachable: with no target row targetKeepsItsPrice is false, so the
+        // price above resolved. A typed guard rather than a non-null assertion.
+        throw new Error('Replacement price was not resolved for a new BOM line');
       }
 
       // Measured, not predicted: what the two touched lines actually moved by.
@@ -397,11 +426,12 @@ export class BomEditService {
     projectId: string,
   ): Promise<{ unitPricePaise: number; pricingBasis: string; unit: string }> {
     // withDeleted, because ProductEntity.deletedAt is a @DeleteDateColumn:
-    // without it TypeORM filters soft-deleted rows out of the query and the
-    // "has been deleted" message below is unreachable — a deleted product
-    // would report as simply not found. PricingService resolves through
-    // findAnyById, which does see deleted products, so this check has to be
-    // the one that catches them.
+    // without it TypeORM filters soft-deleted rows out of the query entirely
+    // and the "has been deleted" message below is unreachable — a deleted
+    // product would report as simply not found. PricingService is no help
+    // either: its findAnyById passes no withDeleted, so it would raise its own
+    // generic NotFoundException. Loading the row deleted-and-all is the only
+    // way this method can tell a deleted product from a missing one.
     const product = await manager.getRepository(ProductEntity).findOne({
       where: { id: productId },
       withDeleted: true,
