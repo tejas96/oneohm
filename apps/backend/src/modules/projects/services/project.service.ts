@@ -22,7 +22,8 @@ import { DataSource, type EntityManager } from 'typeorm';
 
 import { ChangeRequestTaskService } from './change-request-task.service';
 import { systemSizeKwOf } from '../../../common/utils';
-import { BomService } from '../../bom/services/bom.service';
+import { BomBaselineService } from '../../bom/services/bom-baseline.service';
+import { BomReadService } from '../../bom/services/bom-read.service';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
 import { LeadClosureService } from '../../customers/services/lead-closure.service';
@@ -77,7 +78,8 @@ export class ProjectService {
     private readonly workflowStepRepository: WorkflowStepRepository,
     private readonly taskRepository: ProjectTaskRepository,
     private readonly teamRepository: ProjectTeamRepository,
-    private readonly bomService: BomService,
+    private readonly bomBaselineService: BomBaselineService,
+    private readonly bomReadService: BomReadService,
     private readonly changeRequestTaskService: ChangeRequestTaskService,
     @Inject(forwardRef(() => MilestoneService))
     private readonly milestoneService: MilestoneService,
@@ -500,8 +502,8 @@ export class ProjectService {
       },
     });
 
-    // Copy BOM from quote version to project
-    await this.copyQuoteBomToProject(contractVersion.id, project.id, createdBy);
+    // Seed the project BOM from the version the contract was struck from.
+    await this.seedProjectBom(contractVersion.id, project.id, createdBy);
 
     // Notify consumer about project onboarding (fire-and-forget)
     this.eventEmitter.emit(
@@ -1136,109 +1138,72 @@ export class ProjectService {
   }
 
   /**
-   * Sync (rebuild) the project BOM from the quote snapshot.
-   * Uses the calculation data persisted in quote_snapshot.calculation to regenerate
-   * the project BOM via BomService.createFromCalculation.
-   * Idempotent: deletes any existing project BOM before recreating.
+   * Re-baseline the project BOM onto a quote version, after showing the diff.
+   *
+   * Replaces syncBomFromSnapshot, which took the LATEST quote version and
+   * handed it to BomService.reconcileFromCalculation. Two defects in one: it
+   * re-priced a signed deal (the same drift projects.contract_quote_version_id
+   * exists to stop), and reconcileFromCalculation DELETED any bom_items row
+   * whose product was absent from the calculation, cancelling its stock
+   * allocation — so every site addition would have been destroyed by the next
+   * sync.
+   *
+   * Preview applies nothing; apply never touches a source = 'site' line and
+   * logs everything it does touch as source = 'office'.
    */
-  async syncBomFromSnapshot(projectId: string, userId: string): Promise<void> {
-    const project = await this.projectRepository.findById(projectId);
+  async previewBomRebaseline(projectId: string, quoteVersionId: string) {
+    return this.bomBaselineService.previewRebaseline(projectId, quoteVersionId);
+  }
 
-    const quote = await this.quoteService.findById(project.quoteId);
-
-    const latestVersion =
-      [...(quote.versions ?? [])].sort((a, b) => {
-        const createdDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        if (createdDiff !== 0) return createdDiff;
-        return b.versionNumber - a.versionNumber;
-      })[0] ?? null;
-
-    if (!latestVersion?.quoteSnapshot?.calculation) {
-      throw new BadRequestException(
-        'Cannot sync BOM: quote has no calculation snapshot. Please re-calculate the quote first.',
-      );
-    }
-
-    const calculation = latestVersion.quoteSnapshot
-      .calculation as import('../../quotes/dto/calculator/calculate-quote-response.dto').CalculateQuoteResponseDto;
-
-    // Non-destructive reconcile: diffs existing BOM rather than delete+create.
-    // If no project BOM exists yet, this creates it from the calculation.
-    const reconcileResult = await this.bomService.reconcileFromCalculation(
-      projectId,
-      calculation,
-      userId,
-    );
-
-    this.logger.log(
-      `Reconciled BOM for project ${projectId} from quote version ${latestVersion.id} ` +
-        `(added: ${reconcileResult.added.length}, removed: ${reconcileResult.removed.length}, ` +
-        `increased: ${reconcileResult.increased.length}, decreased: ${reconcileResult.decreased.length})`,
-    );
+  async applyBomRebaseline(
+    projectId: string,
+    quoteVersionId: string,
+    userId: string,
+    reason: string,
+  ) {
+    return this.bomBaselineService.applyRebaseline(projectId, quoteVersionId, userId, reason);
   }
 
   /**
-   * Copy BOM from quote version to project.
-   * This ensures project has its own BOM for stock allocation.
-   * If quote version has no BOM or copying fails, log warning but don't block project creation.
+   * Seed the project's BOM from the quote version its contract was struck from.
+   *
+   * Replaces copyQuoteBomToProject, which cloned the quote version's own bom
+   * rows. Task 10 deleted every quote_version BOM, so that lookup has returned
+   * null ever since — and because the whole body sat in a try/catch that only
+   * logged, every project created since then silently got an EMPTY BOM. The
+   * seed derives from the version's calculation snapshot, which is the record.
+   *
+   * Pinned to contract_quote_version_id, never the latest version: that column
+   * exists precisely because readers taking the latest silently re-priced
+   * signed deals.
+   *
+   * No try/catch. A missing product price is already handled inside the seed
+   * (the line is reported by name and skipped, so it cannot block a
+   * conversion); anything else is a real failure and must be loud, because a
+   * swallowed warning is exactly how the empty-BOM regression stayed invisible.
    */
-  private async copyQuoteBomToProject(
-    quoteVersionId: string | undefined,
+  private async seedProjectBom(
+    contractQuoteVersionId: string | undefined,
     projectId: string,
     createdBy: string,
   ): Promise<void> {
-    if (!quoteVersionId) {
-      this.logger.warn(`Project ${projectId}: No quote version ID available, skipping BOM copy`);
+    const existing = await this.bomReadService.getForProject(projectId);
+    if (existing) {
+      this.logger.debug(`Project ${projectId} already has BOM ${existing.bomNumber}`);
+      return; // idempotent, as before
+    }
+
+    if (!contractQuoteVersionId) {
+      this.logger.warn(
+        `Project ${projectId}: no contract quote version pinned, BOM not seeded.`,
+      );
       return;
     }
 
-    try {
-      // Check if project already has a BOM (idempotency)
-      const existingProjectBom = await this.bomService.findByEntity('project', projectId);
-      if (existingProjectBom) {
-        this.logger.debug(`Project ${projectId} already has BOM ${existingProjectBom.bomNumber}`);
-        return;
-      }
-
-      // Find quote version BOM
-      const quoteBom = await this.bomService.findByEntity('quote_version', quoteVersionId);
-
-      if (!quoteBom) {
-        this.logger.warn(
-          `Project ${projectId}: No BOM found for quote version ${quoteVersionId}, skipping BOM copy`,
-        );
-        return;
-      }
-
-      const clonedItems = (quoteBom.items || []).map((item) => ({
-        itemType: item.itemType,
-        productId: item.productId,
-        name: item.name,
-        brand: item.brand,
-        specifications: item.specifications ?? {},
-        quantity: item.quantity,
-        unit: item.unit,
-        unitPrice: Number(item.unitPrice ?? 0),
-        totalPrice: Number(item.totalPrice ?? 0),
-        gstRate: Number(item.gstRate ?? 0),
-        gstAmount: Number(item.gstAmount ?? 0),
-        warrantyYears: item.warrantyYears,
-        serialNumber: undefined,
-        groupKey: item.groupKey,
-        unitIndex: item.unitIndex,
-        sortOrder: item.sortOrder,
-      }));
-
-      await this.bomService.createFromItems('project', projectId, clonedItems, createdBy);
-
-      this.logger.log(
-        `Successfully copied BOM from quote version ${quoteVersionId} to project ${projectId}`,
-      );
-    } catch (error) {
-      // Log error but don't fail project creation
-      this.logger.error(
-        `Failed to copy BOM from quote version ${quoteVersionId} to project ${projectId}: ${(error as Error).message}`,
-      );
-    }
+    await this.bomBaselineService.seedFromQuoteVersion(
+      projectId,
+      contractQuoteVersionId,
+      createdBy,
+    );
   }
 }

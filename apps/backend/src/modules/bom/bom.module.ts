@@ -9,6 +9,7 @@ import { BomController } from './controllers/bom.controller';
 import { BomChangeEntity, BomEntity, BomItemEntity, BomItemSerialEntity } from './entities';
 import { BomChangeRepository } from './repositories/bom-change.repository';
 import { BomRepository } from './repositories/bom.repository';
+import { BomBaselineService } from './services/bom-baseline.service';
 import { BomEditService } from './services/bom-edit.service';
 import { BomReadService } from './services/bom-read.service';
 import { BomService } from './services/bom.service';
@@ -22,9 +23,26 @@ import { BomService } from './services/bom.service';
     MasterDataModule,
   ],
   controllers: [BomController, BomItemsController, BomEditController],
-  providers: [BomService, BomReadService, BomEditService, BomRepository, BomChangeRepository],
+  providers: [
+    BomService,
+    BomReadService,
+    BomEditService,
+    BomBaselineService,
+    BomRepository,
+    BomChangeRepository,
+  ],
   // BomEditService is exported for Task 15's applyRebaseline, which drives the
   // same four operations with source = 'office'.
-  exports: [BomService, BomReadService, BomEditService, BomChangeRepository],
+  //
+  // BomBaselineService and BomReadService are exported for ProjectService:
+  // seeding a new project's BOM at conversion, and the idempotency check that
+  // guards it.
+  exports: [
+    BomService,
+    BomReadService,
+    BomEditService,
+    BomBaselineService,
+    BomChangeRepository,
+  ],
 })
 export class BomModule {}
