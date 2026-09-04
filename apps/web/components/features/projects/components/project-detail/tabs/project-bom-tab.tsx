@@ -13,6 +13,8 @@ import {
   TonePill,
   type Tone,
 } from '../primitives';
+import { BillCustomerDialog } from './bom/bill-customer-dialog';
+import { BomChangesPanel } from './bom/bom-changes-panel';
 import { ProjectWarehouseSelector } from './overview/project-warehouse-selector';
 
 import { ProcurementSection } from '@/components/features/projects/components/procurement/procurement-section';
@@ -24,6 +26,7 @@ import {
   type BomItem,
   type BomLineChangeState,
 } from '@/lib/hooks/resources';
+import { useGatedAction } from '@/lib/rbac';
 import { cn, formatCurrency, formatNumber } from '@/lib/utils';
 
 interface ProjectBomTabProps {
@@ -82,21 +85,27 @@ function Stat({
   label,
   value,
   tone,
+  action,
 }: {
   label: string;
   value: string;
   tone?: Tone;
+  /** A small control beside the value — used only by "Change since quote". */
+  action?: React.ReactNode;
 }): React.JSX.Element {
   return (
     <div className="min-w-0">
       <dt className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-foreground-secondary">
         {label}
       </dt>
-      <dd
-        className="mt-1.5 truncate text-[20px] font-bold leading-none tracking-[-0.025em] tabular-nums"
-        style={{ color: tone ? TONE[tone].ink : 'var(--ds-text-primary)' }}
-      >
-        {value}
+      <dd className="mt-1.5 flex min-w-0 items-center gap-2">
+        <span
+          className="min-w-0 truncate text-[20px] font-bold leading-none tracking-[-0.025em] tabular-nums"
+          style={{ color: tone ? TONE[tone].ink : 'var(--ds-text-primary)' }}
+        >
+          {value}
+        </span>
+        {action}
       </dd>
     </div>
   );
@@ -123,6 +132,15 @@ export const ProjectBomTab = React.memo(
     // Same cache entry the Procurement section below reads — one network
     // call serves both, react-query dedupes the identical query key.
     const { data: procurement } = useBomProcurementStatus(projectId);
+    const [billingOpen, setBillingOpen] = React.useState(false);
+    // A BOM edit never moves the contract by itself — billing is the one
+    // explicit human action that does, and it moves money just like the
+    // money tab's own record-payment and change-order buttons.
+    const billCustomer = useGatedAction(
+      'finance.payments.record',
+      () => setBillingOpen(true),
+      'Bill customer',
+    );
 
     const isFullyAllocated = bom?.allocationStatus === 'fully_allocated';
     const hasAnyAllocation = bom?.allocationStatus === 'partial' || isFullyAllocated;
@@ -214,6 +232,22 @@ export const ProjectBomTab = React.memo(
                       : bom.totals.variancePaise > 0
                         ? 'warning'
                         : 'success'
+                  }
+                  action={
+                    <button
+                      type="button"
+                      onClick={billCustomer.onGatedClick}
+                      aria-disabled={!billCustomer.allowed}
+                      disabled={bom.totals.variancePaise <= 0}
+                      title={
+                        bom.totals.variancePaise <= 0
+                          ? 'Nothing to bill — material cost has not increased since the quote.'
+                          : 'Raise a change order for the increase in material cost since the quote.'
+                      }
+                      className="inline-flex h-6 shrink-0 items-center rounded-pill bg-primary px-2.5 text-[10.5px] font-semibold text-white transition-[filter] duration-fast hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    >
+                      Bill customer
+                    </button>
                   }
                 />
                 <Stat label="Spent so far" value={formatCurrency(actualSpend)} />
@@ -353,9 +387,20 @@ export const ProjectBomTab = React.memo(
           )}
         </DetailCard>
 
+        <BomChangesPanel projectId={projectId} />
+
         <div className="col-span-12">
           <ProcurementSection projectId={projectId} />
         </div>
+
+        {bom ? (
+          <BillCustomerDialog
+            projectId={projectId}
+            variancePaise={bom.totals.variancePaise}
+            open={billingOpen}
+            onClose={() => setBillingOpen(false)}
+          />
+        ) : null}
       </div>
     );
   },
