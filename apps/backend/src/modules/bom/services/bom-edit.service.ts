@@ -71,7 +71,7 @@ export class BomEditService {
         );
       }
 
-      const { product, unitPricePaise, pricingBasis, unit } = await this.resolvePrice(
+      const { unitPricePaise, pricingBasis, unit } = await this.resolvePrice(
         manager,
         dto.productId,
         projectId,
@@ -115,7 +115,7 @@ export class BomEditService {
       } else {
         itemId = await this.insertItem(manager, {
           bomId: bom.id,
-          product,
+          productId: dto.productId,
           quantity: dto.quantity,
           unit,
           unitPricePaise,
@@ -169,6 +169,12 @@ export class BomEditService {
         return { costImpactPaise: 0 };
       }
 
+      // DO NOT simplify to ROUND((dto.quantity - before) * price). The two
+      // are not equal when a quantity is fractional, and the items side is the
+      // difference of two rounded totals — measured on this data's real per_kw
+      // line, 3.420 -> 3.423 at 491228 paise, the shortcut writes 1474 where
+      // the items move by 1473. bom_changes is append-only: that paisa could
+      // never be taken back.
       const costImpactPaise =
         this.lineTotalPaise(dto.quantity, item.unitPricePaise) -
         this.lineTotalPaise(before, item.unitPricePaise);
@@ -271,7 +277,7 @@ export class BomEditService {
       }
 
       const oldTotalPaise = this.lineTotalPaise(quantity, old.unitPricePaise);
-      const { product, unitPricePaise, pricingBasis, unit } = await this.resolvePrice(
+      const { unitPricePaise, pricingBasis, unit } = await this.resolvePrice(
         manager,
         dto.replaceWithProductId,
         projectId,
@@ -318,7 +324,7 @@ export class BomEditService {
       } else {
         newItemId = await this.insertItem(manager, {
           bomId: bom.id,
-          product,
+          productId: dto.replaceWithProductId,
           quantity,
           unit,
           unitPricePaise,
@@ -364,6 +370,11 @@ export class BomEditService {
    * reconciliation assertion rounds it: per line, before summing. quantity is
    * NUMERIC(12,3) and unit_price_paise is BIGINT, so their product can land on
    * a fraction of a paisa. BomReadService rounds identically.
+   *
+   * Every cost_impact_paise in this service is a difference of two of these,
+   * never a delta-quantity multiplied by a price. That is what makes the log
+   * reconstruct the items side EXACTLY, which is the invariant Task 19 asserts
+   * in the database.
    */
   private lineTotalPaise(quantity: number, unitPricePaise: number): number {
     return Math.round(quantity * unitPricePaise);
@@ -384,12 +395,7 @@ export class BomEditService {
     manager: EntityManager,
     productId: string,
     projectId: string,
-  ): Promise<{
-    product: ProductEntity;
-    unitPricePaise: number;
-    pricingBasis: string;
-    unit: string;
-  }> {
+  ): Promise<{ unitPricePaise: number; pricingBasis: string; unit: string }> {
     // withDeleted, because ProductEntity.deletedAt is a @DeleteDateColumn:
     // without it TypeORM filters soft-deleted rows out of the query and the
     // "has been deleted" message below is unreachable — a deleted product
@@ -398,7 +404,6 @@ export class BomEditService {
     // the one that catches them.
     const product = await manager.getRepository(ProductEntity).findOne({
       where: { id: productId },
-      relations: ['productType', 'brand'],
       withDeleted: true,
     });
     if (!product) throw new NotFoundException(`Product ${productId} not found`);
@@ -417,7 +422,6 @@ export class BomEditService {
     }
 
     return {
-      product,
       // rupeesToPaise, not Math.round(x * 100): the house helper normalises
       // through toFixed(6) first, so a price like 1.005 does not round down
       // to 100 paise on the nearest-double representation.
@@ -459,36 +463,24 @@ export class BomEditService {
   /**
    * Insert a BOM line.
    *
-   * Written as raw SQL rather than itemRepo.save() because bom_items still
-   * carries legacy columns that BomItemEntity deliberately no longer maps —
-   * and two of them, item_type and name, are NOT NULL with no default. An
-   * entity-shaped INSERT therefore fails outright:
+   * A plain entity insert. It was raw SQL until migration 1856760000000: two
+   * unmapped legacy columns, item_type and name, were still NOT NULL with no
+   * default, so an entity-shaped INSERT failed outright and the columns had to
+   * be written by hand. That migration drops both NOT NULLs, which is where the
+   * fix belongs — Task 20 drops the columns themselves, and a service that
+   * names them would be a landmine for whoever does it.
    *
-   *   null value in column "item_type" of relation "bom_items"
-   *     violates not-null constraint
-   *
-   * The query builder is no use here either: .into('bom_items') resolves the
-   * table name back to BomItemEntity and silently DROPS every key that is not
-   * a mapped property, so the same insert arrives with bom_id, product_id and
-   * unit_price_paise all null. Raw SQL is the only form that writes columns
-   * the entity does not know about.
-   *
-   * Task 20 drops these columns and this method goes back to itemRepo.save().
-   * Until then they are populated from the product rather than stubbed,
-   * following Task 7's ruling that the legacy money columns be restated on
-   * rows the new code writes: the pre-Task-16 read path still displays
-   * name/brand/item_type and sums total_price.
-   *
-   * The legacy money columns are NOT kept in sync by the three update paths
-   * above, which go through itemRepo.save() and so touch mapped columns only.
-   * Nothing reads them but bom.service.ts's own recomputeBomTotals, which is
-   * only reachable from the legacy write path that Tasks 15 and 16 delete.
+   * Worth knowing if you ever need to write an unmapped column: the query
+   * builder cannot. `.into('bom_items')` resolves the table name back to
+   * BomItemEntity and SILENTLY DROPS every key that is not a mapped property —
+   * no error, just a row with bom_id, product_id and unit_price_paise null.
+   * Only manager.query() reaches columns the entity does not know about.
    */
   private async insertItem(
     manager: EntityManager,
     row: {
       bomId: string;
-      product: ProductEntity;
+      productId: string;
       quantity: number;
       unit: string;
       unitPricePaise: number;
@@ -498,40 +490,25 @@ export class BomEditService {
       userId: string;
     },
   ): Promise<string> {
-    const rows: Array<{ id: string }> = await manager.query(
-      `INSERT INTO bom_items
-         (bom_id, product_id, quantity, quoted_quantity, unit, unit_price_paise,
-          pricing_basis, source, sort_order, created_by, updated_by,
-          item_type, name, brand, unit_price, total_price)
-       VALUES
-         -- quoted_quantity is NULL, not 0: this line was never quoted, and that
-         -- is what makes BomReadService classify it as 'added', not 'increased'.
-         ($1, $2, $3, NULL, $4, $5, $6, $7, $8, $9, $9, $10, $11, $12, $13, $14)
-       RETURNING id`,
-      [
-        row.bomId,
-        row.product.id,
-        row.quantity,
-        row.unit,
-        row.unitPricePaise,
-        row.pricingBasis,
-        row.source,
-        row.sortOrder,
-        row.userId,
-        // Legacy columns, dropped by Task 20 — see the comment above.
-        row.product.productType?.code ?? 'other',
-        row.product.name,
-        row.product.brand?.name ?? null,
-        row.unitPricePaise / 100,
-        this.lineTotalPaise(row.quantity, row.unitPricePaise) / 100,
-      ],
+    const itemRepo = manager.getRepository(BomItemEntity);
+    const saved = await itemRepo.save(
+      itemRepo.create({
+        bomId: row.bomId,
+        productId: row.productId,
+        quantity: String(row.quantity),
+        // NULL, not 0: this line was never quoted, and that is what makes
+        // BomReadService classify it as 'added' rather than 'increased'.
+        quotedQuantity: null,
+        unit: row.unit,
+        unitPricePaise: row.unitPricePaise,
+        pricingBasis: row.pricingBasis,
+        source: row.source,
+        sortOrder: row.sortOrder,
+        createdBy: row.userId,
+        updatedBy: row.userId,
+      }),
     );
-
-    const insertedId = rows[0]?.id;
-    if (!insertedId) {
-      throw new Error('Inserting a BOM line returned no id');
-    }
-    return insertedId;
+    return saved.id;
   }
 
   /** Next free sort position on this BOM, so a new line lands at the bottom. */
