@@ -237,6 +237,38 @@ export class ProjectRepository {
       query.andWhere('COALESCE(project.progressPercentage, 0) < 80');
     }
 
+    /*
+     * Projects whose bill of materials costs more than the customer is paying
+     * for material — that is, more than the quote plus every change order
+     * raised since. The excess is margin already spent and never charged.
+     *
+     * Deliberately NOT "spend beyond contract", which is the same question
+     * asked of the ledger. Only a handful of projects carry any recorded
+     * expense at all, so that filter would return nothing on almost every
+     * project and be quietly untrustworthy. The BOM is seeded for every
+     * converted project and moves whenever the site edits it, so this one
+     * answers from data that exists.
+     *
+     * A line's contribution is ROUNDed per row before summing, matching how
+     * BomReadService computes the same totals — summing first and rounding once
+     * drifts by a paisa on fractional quantities, and that is the difference
+     * between a project appearing on this list and not.
+     */
+    if (filters?.healthStatus === 'unbilled_overrun') {
+      query.andWhere(
+        `project.id IN (
+           SELECT b.project_id
+             FROM bom b
+             JOIN bom_items bi ON bi.bom_id = b.id
+             LEFT JOIN v_project_balance bal ON bal.project_id = b.project_id
+            GROUP BY b.project_id, bal.change_order_paise
+           HAVING SUM(ROUND(bi.quantity * bi.unit_price_paise))
+                - SUM(ROUND(COALESCE(bi.quoted_quantity, 0) * bi.unit_price_paise))
+                > COALESCE(bal.change_order_paise, 0)
+         )`,
+      );
+    }
+
     if (filters?.memberId) {
       // Use a subquery to find projects that have the specified member.
       // We pass the parameter to the outer query so TypeORM can bind it correctly.

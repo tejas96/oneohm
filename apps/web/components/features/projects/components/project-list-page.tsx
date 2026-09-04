@@ -107,6 +107,18 @@ const STATUS_TONE: Record<string, CrmTone> = {
 /** Health values ride in the same `status` filter field — see `toProjectFilters`. */
 const HEALTH_DELAYED = 'health:delayed';
 const HEALTH_AT_RISK = 'health:at_risk';
+/**
+ * Projects whose bill of materials costs more than the customer is paying for
+ * material — the quote plus every change order raised since. The excess is
+ * margin already committed and never charged.
+ *
+ * Deliberately not "spend over contract", the same question asked of the
+ * ledger: only a handful of projects carry any recorded expense, so that chip
+ * would sit at zero on almost every project and teach people to ignore it. The
+ * BOM is seeded for every converted project and moves whenever the site edits
+ * it, so this asks a question the data can answer.
+ */
+const HEALTH_UNBILLED_OVERRUN = 'health:unbilled_overrun';
 
 // ============================================================================
 // Adapter functions (module-level — no closures, no re-creation per render)
@@ -159,7 +171,18 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
     // Composite health status values from the quick-filter chips (e.g. 'health:delayed')
     if (status.startsWith('health:')) {
       const healthValue = status.slice('health:'.length);
-      result.status = ProjectStatus.ACTIVE;
+      /*
+       * Overdue and At risk are only meaningful on a running project — a
+       * finished one cannot be late — so those pin the status to active.
+       *
+       * Unbilled extras must not. A COMPLETED project carrying material that
+       * was never charged is the worst version of that problem, because there
+       * is no longer any work left during which to raise the change order.
+       * Pinning to active would hide precisely the rows worth finding.
+       */
+      if (healthValue !== 'unbilled_overrun') {
+        result.status = ProjectStatus.ACTIVE;
+      }
       result.healthStatus = healthValue;
     } else {
       result.status = status as ProjectStatus;
@@ -827,6 +850,12 @@ export function ProjectListPage(): JSX.Element {
       })),
       { key: HEALTH_DELAYED, label: 'Overdue', tone: 'danger' as CrmTone, dot: true },
       { key: HEALTH_AT_RISK, label: 'At risk', tone: 'warning' as CrmTone, dot: true },
+      {
+        key: HEALTH_UNBILLED_OVERRUN,
+        label: 'Unbilled extras',
+        tone: 'danger' as CrmTone,
+        dot: true,
+      },
     ],
     [],
   );
