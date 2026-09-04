@@ -109,6 +109,13 @@ export class ProjectRepository {
       .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
+      // The site card renders the DISCOM's name and, on demand, the circle,
+      // division, subdivision and section it sits under with their engineers
+      // and contacts — the details a DISCOM application form asks for. Only
+      // `discomId` came back before, so `property.discom` was always undefined
+      // and that field read "—" on every project ever opened, including sites
+      // that plainly had one.
+      .leftJoinAndSelect('property.discom', 'discom')
       .leftJoinAndSelect('project.creator', 'creator')
       .leftJoinAndSelect('project.updater', 'updater')
       .where('project.id = :id', { id })

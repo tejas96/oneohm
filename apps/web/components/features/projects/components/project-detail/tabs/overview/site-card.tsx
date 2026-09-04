@@ -7,6 +7,7 @@ import * as React from 'react';
 import type { ProjectDetail } from '../../../../hooks/types';
 import { CardLink, DetailCard, IconCircle } from '../../primitives';
 
+import type { DiscomResponse } from '@/components/features/properties/hooks/use-discoms';
 import { cn, toTitleLabel } from '@/lib/utils';
 
 interface SiteCardProps {
@@ -48,6 +49,89 @@ function Field({
         <span className="mt-0.5 block text-[13px] text-foreground-muted">—</span>
       )}
     </div>
+  );
+}
+
+/**
+ * The DISCOM, collapsed by default.
+ *
+ * The card used to give it a single slot showing the utility's name, which was
+ * both too little and too much: too little because filing a net-metering
+ * application needs the circle, division, subdivision and section it sits
+ * under, each with its engineer, plus the office's address and contacts — and
+ * too much because on most days nobody looks at any of it.
+ *
+ * So it sits at the end, shut, one line tall, naming the utility. Opened, it
+ * lays out everything the form asks for. Native <details>, so it works without
+ * JavaScript, keyboard-toggles for free, and the browser's own find-in-page can
+ * reach inside it.
+ *
+ * Rows are omitted when empty rather than printed as "—": a shut panel promises
+ * detail, and opening it onto a column of dashes is worse than the single slot
+ * this replaces.
+ */
+function DiscomPanel({ discom }: { discom?: DiscomResponse | null }): React.JSX.Element {
+  const rows: Array<{ label: string; value?: string | null; mono?: boolean; wide?: boolean }> = [
+    { label: 'Circle', value: discom?.circleName },
+    { label: 'Circle in-charge', value: discom?.circleInchargeName },
+    { label: 'Division', value: discom?.divisionName },
+    { label: 'Division in-charge', value: discom?.divisionInchargeName },
+    { label: 'Subdivision', value: discom?.subdivisionName },
+    { label: 'Subdivision in-charge', value: discom?.subdivisionInchargeName },
+    { label: 'Section', value: discom?.sectionName },
+    { label: 'Section engineer', value: discom?.sectionEngineerName },
+    { label: 'Testing unit', value: discom?.testingUnitName },
+    { label: 'AEQC engineer', value: discom?.aeqcEngineerName },
+    { label: 'Office address', value: discom?.officeAddress, wide: true },
+    { label: 'Mobile', value: discom?.mobileNo, mono: true },
+    { label: 'Email', value: discom?.email },
+  ].filter((row) => !!row.value?.trim());
+
+  // Nothing to open into: state the fact in the same slot the old field used,
+  // rather than offering a control that reveals an empty box.
+  if (!discom || rows.length === 0) {
+    return (
+      <div className="mt-3 border-t border-border-subtle pt-3">
+        <Field label="DISCOM" value={discom?.label} />
+      </div>
+    );
+  }
+
+  return (
+    <details className="group mt-3 border-t border-border-subtle pt-3">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-rf-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className="shrink-0 text-foreground-muted transition-transform duration-fast group-open:rotate-90"
+        >
+          <path
+            d="m9 6 6 6-6 6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="text-[11px] font-medium text-foreground-tertiary">DISCOM</span>
+        <span className="min-w-0 truncate text-[13px] text-foreground">{discom.label}</span>
+      </summary>
+
+      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+        {rows.map((row) => (
+          <Field
+            key={row.label}
+            label={row.label}
+            value={row.value}
+            mono={row.mono}
+            wide={row.wide}
+          />
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -125,7 +209,6 @@ export function SiteCard({ project, className }: SiteCardProps): React.JSX.Eleme
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
-        <Field label="DISCOM" value={property?.discom?.label} />
         {/* Raw DB enums ("single_phase") are not words. Title-case them. */}
         <Field label="Connection" value={enumLabel(property?.connectionType)} />
         <Field
@@ -134,8 +217,10 @@ export function SiteCard({ project, className }: SiteCardProps): React.JSX.Eleme
         />
         <Field label="Current load" value={formatCurrentLoadLabel(property?.currentLoad)} />
         <Field label="Consumer name" value={property?.consumerName} />
-        <Field label="Consumer number" value={property?.consumerNumber} mono />
+        <Field label="Consumer number" value={property?.consumerNumber} mono wide />
       </div>
+
+      <DiscomPanel discom={property?.discom} />
     </DetailCard>
   );
 }
