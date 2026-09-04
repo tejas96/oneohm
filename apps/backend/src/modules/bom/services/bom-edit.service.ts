@@ -98,6 +98,7 @@ export class BomEditService {
         // the line's provenance is what it always was, and the read service
         // should still show it against its quoted figure rather than reclassify
         // it as newly added.
+        this.assertQuantityFitsUnit(dto.quantity, existing.unit);
         effectivePricePaise = existing.unitPricePaise;
         existing.quantity = String(dto.quantity);
         existing.updatedBy = userId;
@@ -112,6 +113,7 @@ export class BomEditService {
           dto.productId,
           projectId,
         );
+        this.assertQuantityFitsUnit(dto.quantity, unit);
         effectivePricePaise = unitPricePaise;
 
         if (existing) {
@@ -176,6 +178,8 @@ export class BomEditService {
       const itemRepo = manager.getRepository(BomItemEntity);
       const item = await itemRepo.findOne({ where: { id: itemId, bomId: bom.id } });
       if (!item) throw new NotFoundException(`BOM item ${itemId} not found on this project`);
+
+      this.assertQuantityFitsUnit(dto.quantity, item.unit);
 
       const before = Number(item.quantity);
       if (before === dto.quantity) {
@@ -407,6 +411,36 @@ export class BomEditService {
    */
   private lineTotalPaise(quantity: number, unitPricePaise: number): number {
     return Math.round(quantity * unitPricePaise);
+  }
+
+  /**
+   * Units that count indivisible things. A quantity against one of these must
+   * be a whole number.
+   *
+   * The DTOs allow three decimal places, and that is right for the units this
+   * set leaves out: `set` carries fractions by design (a mounting structure is
+   * priced per kW, so 6.1 set is an ordinary value on real data) and `mtr`
+   * measures cable. But nothing checked the unit, so `9.5 pcs` of solar panel
+   * saved happily and the bill of materials then asked procurement to buy half
+   * a panel. The DTO cannot make this check — it never sees the line, so it
+   * cannot know the unit — which is why it lives here.
+   */
+  private static readonly DISCRETE_UNITS = new Set(['pcs', 'nos']);
+
+  /**
+   * Refuse a fractional quantity on a unit that cannot be divided.
+   *
+   * `unit` is whatever the line carries; anything outside DISCRETE_UNITS is
+   * left alone rather than guessed at, so a unit added later is permissive
+   * until someone decides it should not be.
+   */
+  private assertQuantityFitsUnit(quantity: number, unit: string): void {
+    if (!BomEditService.DISCRETE_UNITS.has(unit)) return;
+    if (Number.isInteger(quantity)) return;
+    throw new BadRequestException(
+      `Quantity must be a whole number for a product measured in ${unit} — ` +
+        `got ${quantity}. Fractions are only meaningful for units like set or mtr.`,
+    );
   }
 
   /**

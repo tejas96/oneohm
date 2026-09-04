@@ -104,10 +104,17 @@ export function BomLineEditDialog({
   const productId = form.watch('productId');
 
   const reasonGiven = reason.trim().length > 0;
+  // Zero is NOT a quantity the server accepts: PatchBomItemDto carries
+  // @Min(0.001) precisely so that emptying a line goes through DELETE, and the
+  // change log records `remove` rather than a quantity change to nothing —
+  // those read very differently to whoever audits the log later. Submitting 0
+  // came back as a raw "quantity must not be less than 0.001", so it is caught
+  // here and the operator is pointed at the action that does work.
+  const wantsZero = quantityIsNumber && nextQuantity === 0;
   const valid =
     reasonGiven &&
     (mode === 'remove' ||
-      (mode === 'quantity' && quantityIsNumber && nextQuantity >= 0 && nextQuantity !== item?.quantity) ||
+      (mode === 'quantity' && quantityIsNumber && nextQuantity > 0 && nextQuantity !== item?.quantity) ||
       (mode === 'replace' && productId !== '' && productId !== item?.productId));
 
   const submit = async (): Promise<void> => {
@@ -175,7 +182,11 @@ export function BomLineEditDialog({
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               autoFocus
-              helperText="Setting this to 0 removes the line."
+              error={
+                wantsZero
+                  ? 'To take this line off the bill, use Remove line from the row menu — that records it as a removal rather than a change to zero.'
+                  : undefined
+              }
             />
           ) : null}
 
