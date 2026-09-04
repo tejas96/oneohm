@@ -160,7 +160,7 @@ export class ProjectController {
   @ApiQuery({
     name: 'healthStatus',
     required: false,
-    enum: ['delayed', 'at_risk', 'unbilled_overrun'],
+    enum: ['delayed', 'at_risk', 'unbilled_overrun', 'completed_unpaid'],
     description:
       'Filter by computed health: overdue, at-risk, or projects whose bill of materials ' +
       'costs more than the customer is paying for material (quote plus change orders)',
@@ -235,7 +235,8 @@ export class ProjectController {
     const healthStatus =
       healthStatusRaw === 'delayed' ||
       healthStatusRaw === 'at_risk' ||
-      healthStatusRaw === 'unbilled_overrun'
+      healthStatusRaw === 'unbilled_overrun' ||
+      healthStatusRaw === 'completed_unpaid'
         ? healthStatusRaw
         : undefined;
 

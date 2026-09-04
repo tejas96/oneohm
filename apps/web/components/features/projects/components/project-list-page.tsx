@@ -119,6 +119,14 @@ const HEALTH_AT_RISK = 'health:at_risk';
  * it, so this asks a question the data can answer.
  */
 const HEALTH_UNBILLED_OVERRUN = 'health:unbilled_overrun';
+/**
+ * Completed, and still owing. Neither half is a problem alone — a finished
+ * project is ordinary, and a balance on a running one is just work in progress.
+ * Together they are a job nobody is working on any more with money nobody is
+ * chasing, and the usual way a project lands here is not a decision at all:
+ * ticking the last task auto-completes it regardless of the balance.
+ */
+const HEALTH_COMPLETED_UNPAID = 'health:completed_unpaid';
 
 // ============================================================================
 // Adapter functions (module-level — no closures, no re-creation per render)
@@ -180,7 +188,9 @@ function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters
        * is no longer any work left during which to raise the change order.
        * Pinning to active would hide precisely the rows worth finding.
        */
-      if (healthValue !== 'unbilled_overrun') {
+      // 'completed_unpaid' sets its own status on the server, and pinning
+      // active here would make it match nothing at all.
+      if (healthValue !== 'unbilled_overrun' && healthValue !== 'completed_unpaid') {
         result.status = ProjectStatus.ACTIVE;
       }
       result.healthStatus = healthValue;
@@ -853,6 +863,12 @@ export function ProjectListPage(): JSX.Element {
       {
         key: HEALTH_UNBILLED_OVERRUN,
         label: 'Unbilled extras',
+        tone: 'danger' as CrmTone,
+        dot: true,
+      },
+      {
+        key: HEALTH_COMPLETED_UNPAID,
+        label: 'Completed, unpaid',
         tone: 'danger' as CrmTone,
         dot: true,
       },

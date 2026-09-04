@@ -12,6 +12,9 @@ import {
 } from '../constants';
 import { useUpdateProjectStatus } from '../hooks';
 
+import { useProjectLedger } from '@/lib/hooks/resources/ledger';
+import { formatPaise } from '@/lib/utils/paise';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -55,6 +58,20 @@ export const ProjectStatusDropdown = React.memo(
     const [pendingTargetStatus, setPendingTargetStatus] = useState<ProjectStatus | null>(null);
 
     const updateStatusMutation = useUpdateProjectStatus(projectId);
+
+    /*
+     * What the customer still owes, read only while the confirmation is open —
+     * the dropdown itself sits on list rows too, and fetching a ledger per row
+     * to answer a question nobody has asked yet would be wasteful.
+     *
+     * Marking a project complete with a balance is allowed: the crew finishing
+     * and the final payment arriving are different days in EPC. But it should
+     * never happen without the person seeing the number.
+     */
+    const ledger = useProjectLedger(projectId, { enabled: confirmModalOpen });
+    const outstandingPaise = ledger.data?.outstandingPaise ?? 0;
+    const completingWithBalance =
+      pendingTargetStatus === ProjectStatus.COMPLETED && outstandingPaise > 0;
 
     const transitions = PROJECT_STATUS_TRANSITIONS[status] || [];
     const label = PROJECT_STATUS_LABELS[status] || status;
@@ -179,6 +196,19 @@ export const ProjectStatusDropdown = React.memo(
               </span>
               .
             </p>
+
+            {completingWithBalance ? (
+              <p
+                className="mt-3 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
+                style={{ background: 'var(--ds-warning-bg)', color: 'var(--ds-warning)' }}
+              >
+                <span className="font-semibold">
+                  {formatPaise(outstandingPaise)} is still outstanding on this contract.
+                </span>{' '}
+                Completing does not close the money — the balance stays collectable, and the
+                project will show it until it is received or the remaining milestones are waived.
+              </p>
+            ) : null}
           </MUIDialogBody>
           <MUIDialogFooter>
             <Button

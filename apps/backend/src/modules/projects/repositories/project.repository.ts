@@ -254,6 +254,30 @@ export class ProjectRepository {
      * drifts by a paisa on fractional quantities, and that is the difference
      * between a project appearing on this list and not.
      */
+    /*
+     * Completed projects that still owe money.
+     *
+     * The pairing matters: neither half is a problem alone. A completed project
+     * is ordinary, and an outstanding balance on a running project is just work
+     * in progress. Together they are a job nobody is working on any more with
+     * money nobody is chasing.
+     *
+     * `v_project_balance.outstanding_paise` already excludes waived milestones,
+     * so a residual somebody deliberately wrote off does not keep a project on
+     * this list.
+     */
+    if (filters?.healthStatus === 'completed_unpaid') {
+      query.andWhere('project.status = :completedStatus', {
+        completedStatus: ProjectStatus.COMPLETED,
+      });
+      query.andWhere(
+        `project.id IN (
+           SELECT bal.project_id FROM v_project_balance bal
+            WHERE bal.outstanding_paise > 0
+         )`,
+      );
+    }
+
     if (filters?.healthStatus === 'unbilled_overrun') {
       query.andWhere(
         `project.id IN (

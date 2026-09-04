@@ -391,6 +391,28 @@ export const ProjectDetailHeader = React.memo(
     const health = computeHealth(project);
     const notice = STATUS_NOTICE[project.status];
 
+    /*
+     * A completed project that still has money to collect says so, on every
+     * tab, until it is settled.
+     *
+     * This is not a status notice keyed off `project.status`, because the state
+     * it describes is a COMBINATION — completed AND owing — and because the way
+     * a project usually reaches it is not the dropdown at all. Ticking the last
+     * task drives progress to 100%, and ProjectRepository.updateProgress flips
+     * the status to completed with no checks of any kind. A guard on the
+     * dropdown alone would be theatre: the path that actually fires walks
+     * straight past it. A strip that reads the project's CURRENT state catches
+     * both, and keeps catching it afterwards.
+     *
+     * Not a blocker. The crew finishing and the final payment arriving are
+     * genuinely different days in EPC — commissioning money often lands weeks
+     * after handover — so refusing to complete would strand projects in Active
+     * long after the site was signed off.
+     */
+    const outstandingPaise = data.ledger.allowed ? (data.ledger.data?.outstandingPaise ?? 0) : 0;
+    const completedWithBalance =
+      project.status === ProjectStatus.COMPLETED && outstandingPaise > 0;
+
     const typeLabel =
       project.projectType && project.projectType in PROJECT_TYPE_LABELS
         ? PROJECT_TYPE_LABELS[project.projectType as ProjectType]
@@ -712,6 +734,20 @@ export const ProjectDetailHeader = React.memo(
                 style={{ background: TONE[notice.tone].tint, color: TONE[notice.tone].ink }}
               >
                 <span className="font-semibold">{notice.title}.</span> {notice.body}
+              </div>
+            ) : null}
+
+            {completedWithBalance ? (
+              <div
+                role="status"
+                className="mt-4 rounded-2xl px-4 py-2.5 text-[12.5px] leading-relaxed"
+                style={{ background: TONE.warning.tint, color: TONE.warning.ink }}
+              >
+                <span className="font-semibold">
+                  Completed with {formatPaise(outstandingPaise)} still to collect.
+                </span>{' '}
+                The work is signed off but the contract is not settled. This stays here until the
+                balance is received or the remaining milestones are waived.
               </div>
             ) : null}
 
