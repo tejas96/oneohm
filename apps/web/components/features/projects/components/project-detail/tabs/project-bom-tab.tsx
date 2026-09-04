@@ -175,7 +175,10 @@ export const ProjectBomTab = React.memo(
 
     const isFullyAllocated = bom?.allocationStatus === 'fully_allocated';
     const hasAnyAllocation = bom?.allocationStatus === 'partial' || isFullyAllocated;
-    const actualSpend = procurement?.totals.actualSpend ?? 0;
+    // Ledger expenses categorised `materials` for this project. Project-level:
+    // the ledger records the money and its category, not which product it
+    // bought, so this cannot be split per line.
+    const materialSpend = procurement?.totals.materialSpend ?? 0;
 
     return (
       <div className="grid grid-cols-12 gap-4">
@@ -292,7 +295,13 @@ export const ProjectBomTab = React.memo(
                     </button>
                   }
                 />
-                <Stat label="Spent so far" value={formatCurrency(actualSpend)} />
+                <Stat
+                  label="Spent on materials"
+                  value={formatCurrency(materialSpend)}
+                  tone={
+                    materialSpend > bom.totals.currentPaise / 100 ? 'warning' : undefined
+                  }
+                />
               </dl>
 
               {baselineInstallation ? (

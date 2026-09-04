@@ -36,21 +36,24 @@ interface RecordMoneyDialogProps {
   milestones?: MilestoneBalance[];
 }
 
-/** Form-only sentinel — never sent to the API; resolved to trimmed custom text on submit. */
-const CATEGORY_OTHER = 'other';
-
-const EXPENSE_CATEGORY_OPTIONS = [
-  ...Object.values(ExpenseCategory).map((c) => ({
-    value: c,
-    label: EXPENSE_CATEGORY_LABELS[c],
-  })),
-  { value: CATEGORY_OTHER, label: 'Other' },
-];
-
-function resolveExpenseCategory(category: string, categoryOther: string): string {
-  if (category === CATEGORY_OTHER) return categoryOther.trim();
-  return category;
-}
+/**
+ * The seven categories, and nothing else.
+ *
+ * There used to be an eighth option, "Other", with a free-text box beside it
+ * whose contents were sent as the category verbatim. It is gone: it defeated
+ * the point of having a fixed list, and it is what put `labour` alongside
+ * `labor`, plus `Insurance` and `Other`, into the live ledger — making every
+ * total grouped by category unreliable.
+ *
+ * Nothing is lost by removing it. `Miscellaneous` already covers the case the
+ * escape hatch was reached for, and the detail that used to be typed into it
+ * ("Insurance", "Training") belongs in the Notes field below, which is free
+ * text by design and is not summed by anything.
+ */
+const EXPENSE_CATEGORY_OPTIONS = Object.values(ExpenseCategory).map((c) => ({
+  value: c,
+  label: EXPENSE_CATEGORY_LABELS[c],
+}));
 
 /** Today as an IST date, matching how the backend stamps a value date. */
 function todayIst(): string {
@@ -91,9 +94,7 @@ export function RecordMoneyDialog({
   const [valueDate, setValueDate] = useState(todayIst());
   const [method, setMethod] = useState<string>(PaymentMethod.UPI);
   const [reference, setReference] = useState('');
-  const [category, setCategory] = useState<string>(ExpenseCategory.MATERIALS);
-  const [categoryOther, setCategoryOther] = useState('');
-  const [categoryOtherTouched, setCategoryOtherTouched] = useState(false);
+  const [category, setCategory] = useState<ExpenseCategory>(ExpenseCategory.MATERIALS);
   const [amountTouched, setAmountTouched] = useState(false);
   const [payee, setPayee] = useState('');
   const [notes, setNotes] = useState('');
@@ -104,23 +105,15 @@ export function RecordMoneyDialog({
   const isReceipt = mode === 'receipt';
   const pending = recordReceipt.isPending || recordExpense.isPending;
   const amountPaise = amount ? rupeesToPaise(Number(amount)) : 0;
-  const categoryValid =
-    isReceipt ||
-    (category !== CATEGORY_OTHER
-      ? true
-      : categoryOther.trim().length > 0 && categoryOther.trim().length <= 30);
-  const showCategoryOtherError =
-    !isReceipt &&
-    category === CATEGORY_OTHER &&
-    (categoryOtherTouched || amountPaise > 0) &&
-    !categoryOther.trim();
-  // Submit is disabled on these, and without a reason the operator just sees a
-  // dead button. The category length is not covered here on purpose: the input
-  // carries maxLength=30, so the browser refuses the 31st character and a
-  // message for it could never be reached.
+  // The category needs no validation any more: it is a dropdown over the fixed
+  // list and starts on Materials, so it cannot be empty or unrecognised. The
+  // check it replaces existed solely to police the free-text "Other" box.
+  //
+  // Submit is disabled on the two below, and without a message the operator
+  // just sees a dead button.
   const showAmountError = amountTouched && amountPaise <= 0;
   const showFutureDateError = valueDate > todayIst();
-  const valid = amountPaise > 0 && valueDate <= todayIst() && categoryValid;
+  const valid = amountPaise > 0 && valueDate <= todayIst();
 
   const reset = (): void => {
     setAmount('');
@@ -128,8 +121,6 @@ export function RecordMoneyDialog({
     setMethod(PaymentMethod.UPI);
     setReference('');
     setCategory(ExpenseCategory.MATERIALS);
-    setCategoryOther('');
-    setCategoryOtherTouched(false);
     setAmountTouched(false);
     setPayee('');
     setNotes('');
@@ -162,7 +153,7 @@ export function RecordMoneyDialog({
       await recordExpense.mutateAsync({
         amountPaise,
         valueDate,
-        category: resolveExpenseCategory(category, categoryOther),
+        category,
         payee: payee || undefined,
         paymentMethod: method,
         notes: notes || undefined,
@@ -240,29 +231,9 @@ export function RecordMoneyDialog({
                 fieldLabel="Category"
                 value={category}
                 disabled={pending || uploading}
-                onChange={(e) => {
-                  const next = String(e.target.value);
-                  setCategory(next);
-                  if (next !== CATEGORY_OTHER) {
-                    setCategoryOther('');
-                    setCategoryOtherTouched(false);
-                  }
-                }}
+                onChange={(e) => setCategory(String(e.target.value) as ExpenseCategory)}
                 options={EXPENSE_CATEGORY_OPTIONS}
               />
-              {category === CATEGORY_OTHER && (
-                <MUIInput
-                  fieldLabel="Specify category"
-                  required
-                  value={categoryOther}
-                  onChange={(e) => setCategoryOther(e.target.value)}
-                  onBlur={() => setCategoryOtherTouched(true)}
-                  placeholder="e.g. Insurance, Training"
-                  inputProps={{ maxLength: 30 }}
-                  error={showCategoryOtherError ? 'Please specify the category' : undefined}
-                  disabled={pending || uploading}
-                />
-              )}
               <MUIInput
                 fieldLabel="Paid to"
                 value={payee}

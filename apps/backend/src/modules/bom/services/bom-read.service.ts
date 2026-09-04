@@ -20,25 +20,26 @@ export interface ProcurementItem {
   name: string;
   unit: string;
   targetQty: number;
-  spentQty: number;
-  status: 'pending' | 'partial' | 'procured';
-  over: boolean;
-  remaining: number;
   unitPrice: number | null;
   targetSpend: number | null;
-  actualSpend: number;
 }
 
 export interface ProcurementStatus {
   items: ProcurementItem[];
   totals: {
     totalProducts: number;
-    pending: number;
-    partial: number;
-    procured: number;
-    overProcuredProducts: number;
+    /** What the current BOM says the materials should cost, in rupees. */
     targetSpend: number;
-    actualSpend: number;
+    /**
+     * What has actually been spent on materials for this project, in rupees:
+     * the sum of ledger expenses categorised `materials`.
+     *
+     * Project-level, not per-product. The ledger records the money but not
+     * which product it bought, so a per-product split is not derivable today.
+     * This number is the honest half of that question, and the per-product
+     * columns that used to sit beside it are gone rather than showing zero.
+     */
+    materialSpend: number;
   };
 }
 
@@ -278,16 +279,41 @@ export class BomReadService {
   }
 
   /**
-   * Procurement status for a project (plan §3.4). Joins BOM items
-   * (target qty + name + unit price for spend-budget) with the
-   * already-spent qty pulled from `expense_product_links`. Status is
-   * derived per row:
-   *   procured  : spent >= target
-   *   partial   : 0 < spent < target
-   *   pending   : spent == 0
-   * Rows where spent > target are flagged via the `over` boolean.
+   * What the project's materials should cost, and what has actually been spent
+   * on materials so far.
    *
-   * Three columns this CTE used to read are gone or going:
+   * THE PER-PRODUCT SPEND COLUMNS ARE GONE, AND THAT IS THE POINT.
+   *
+   * This query used to read a `spent` CTE off `expense_product_links` joined to
+   * `project_expenses`. Both tables hold zero rows and have no writer: the
+   * header of LedgerWriteService records that it "Replaces `ReceiptService` and
+   * `ProjectExpenseService`", and nothing ever ported the product links across.
+   * So every row reported spent = 0, remaining = target, progress = 0% and
+   * status = Pending, for every product on every project, permanently — under a
+   * panel telling the reader it "Updates live as materials expenses are
+   * recorded". It could not.
+   *
+   * A per-product split is not derivable at all today. `ledger_entries` has no
+   * product dimension; it records the money and a category, not what was
+   * bought. Rebuilding that link is real work with a real design (one invoice
+   * covers several products, at prices that need not match the BOM's), and is
+   * deliberately not attempted here.
+   *
+   * What IS knowable is the project-level figure: the sum of ledger expenses
+   * categorised `materials`. It is returned as `totals.materialSpend`, and the
+   * columns that could only ever show zero are removed rather than left
+   * showing it.
+   *
+   * Two details in that sum:
+   *
+   * - money out is stored NEGATIVE, so it is negated to read as spend — the
+   *   same convention as SPEND_BY_CATEGORY_SQL in the finance module;
+   * - reversals are included and net out, via the LEFT JOIN explained at the
+   *   query itself. Without that, reversing a materials expense would leave its
+   *   cost counted forever.
+   *
+   * On the target side, three columns this query used to read were gone or
+   * going:
    *
    * - `b.entity_type = 'project' AND b.entity_id = $1` is now `b.project_id`.
    *   entity_type is NULL on every BOM written since Task 11, so the old
@@ -303,85 +329,77 @@ export class BomReadService {
    * `bi.unit` survives — it is still a mapped column on the entity.
    */
   async getProcurementStatus(projectId: string): Promise<ProcurementStatus> {
-    const rows = await this.dataSource.query(
-      `WITH bom_targets AS (
-         SELECT bi.product_id,
-                MIN(p.name)                       AS name,
-                MIN(bi.unit)                      AS unit,
-                SUM(bi.quantity)                  AS target_qty,
-                MAX(bi.unit_price_paise) / 100.0  AS unit_price
-           FROM bom b
-           JOIN bom_items bi ON bi.bom_id = b.id
-           JOIN products p ON p.id = bi.product_id
-          WHERE b.project_id = $1::uuid
-            AND bi.product_id IS NOT NULL
-          GROUP BY bi.product_id
-       ),
-       spent AS (
-         SELECT epl.product_id,
-                COALESCE(SUM(epl.quantity), 0) AS spent_qty,
-                COALESCE(SUM(epl.quantity * COALESCE(epl.unit_price, 0)), 0) AS actual_spend
-           FROM expense_product_links epl
-           JOIN project_expenses pe ON pe.id = epl.expense_id
-          WHERE pe.project_id = $1::uuid
-            AND pe.deleted_at IS NULL
-            AND epl.product_id IS NOT NULL
-          GROUP BY epl.product_id
-       )
-       SELECT t.product_id,
-              t.name,
-              t.unit,
-              t.target_qty,
-              COALESCE(s.spent_qty, 0)        AS spent_qty,
-              t.unit_price,
-              COALESCE(s.actual_spend, 0)     AS actual_spend
-         FROM bom_targets t
-         LEFT JOIN spent s ON s.product_id = t.product_id
-        ORDER BY t.name`,
+    const rows = (await this.dataSource.query(
+      `SELECT bi.product_id,
+              MIN(p.name)                       AS name,
+              MIN(bi.unit)                      AS unit,
+              SUM(bi.quantity)                  AS target_qty,
+              MAX(bi.unit_price_paise) / 100.0  AS unit_price
+         FROM bom b
+         JOIN bom_items bi ON bi.bom_id = b.id
+         JOIN products p ON p.id = bi.product_id
+        WHERE b.project_id = $1::uuid
+          AND bi.product_id IS NOT NULL
+        GROUP BY bi.product_id
+        ORDER BY MIN(p.name)`,
       [projectId],
-    );
+    )) as Array<{
+      product_id: string;
+      name: string;
+      unit: string;
+      target_qty: string;
+      unit_price: string | null;
+    }>;
 
-    const items: ProcurementItem[] = rows.map(
-      (r: {
-        product_id: string;
-        name: string;
-        unit: string;
-        target_qty: string;
-        spent_qty: string;
-        unit_price: string | null;
-        actual_spend: string;
-      }) => {
-        const targetQty = Number(r.target_qty);
-        const spentQty = Number(r.spent_qty);
-        const unitPrice = r.unit_price === null ? null : Number(r.unit_price);
-        const status: 'pending' | 'partial' | 'procured' =
-          spentQty <= 0 ? 'pending' : spentQty >= targetQty ? 'procured' : 'partial';
-        return {
-          productId: r.product_id,
-          name: r.name,
-          unit: r.unit,
-          targetQty,
-          spentQty,
-          status,
-          over: spentQty > targetQty + 1e-6,
-          remaining: Math.max(targetQty - spentQty, 0),
-          unitPrice,
-          targetSpend: unitPrice !== null ? unitPrice * targetQty : null,
-          actualSpend: Number(r.actual_spend),
-        };
-      },
-    );
+    // `COALESCE(e.category, o.category)` is the whole trick: an entry counts as
+    // materials by its OWN category, or — when it has none — by the category of
+    // the entry it reverses.
+    //
+    // A reversal posts the opposite amount with `reverses_id` set, and until
+    // recently it copied the original's payment method and reference but not
+    // its category. So reversing a ₹5,000 materials expense left −5,000 under
+    // 'materials' and the compensating +5,000 under nothing, and this sum would
+    // have read ₹5,000 for a project that had spent ₹0. One such pair is live
+    // on PRJ-ONEOHM_EPC-2026-0138.
+    //
+    // The obvious fix — backfill the category onto those reversal rows — is not
+    // available and should not be: `trg_ledger_entries_append_only` rejects any
+    // UPDATE, because a posted financial entry is not something a migration
+    // gets to rewrite. Reading through the link costs one LEFT JOIN, needs no
+    // history rewritten, and stays correct for rows written before
+    // LedgerWriteService started copying the category forward as well as after.
+    //
+    // `lower(...)` guards the legacy rows written while the category was free
+    // text and case-sensitive: 'Materials' would otherwise be missed.
+    const spendRows = (await this.dataSource.query(
+      `SELECT COALESCE(SUM(-e.amount_paise), 0)::BIGINT AS "spentPaise"
+         FROM ledger_entries e
+         LEFT JOIN ledger_entries o ON o.id = e.reverses_id
+        WHERE e.project_id = $1::uuid
+          AND e.direction = 'out'
+          AND lower(COALESCE(e.category, o.category)) = 'materials'`,
+      [projectId],
+    )) as Array<{ spentPaise: string }>;
+
+    const items: ProcurementItem[] = rows.map((r) => {
+      const targetQty = Number(r.target_qty);
+      const unitPrice = r.unit_price === null ? null : Number(r.unit_price);
+      return {
+        productId: r.product_id,
+        name: r.name,
+        unit: r.unit,
+        targetQty,
+        unitPrice,
+        targetSpend: unitPrice !== null ? unitPrice * targetQty : null,
+      };
+    });
 
     return {
       items,
       totals: {
         totalProducts: items.length,
-        pending: items.filter((i) => i.status === 'pending').length,
-        partial: items.filter((i) => i.status === 'partial').length,
-        procured: items.filter((i) => i.status === 'procured').length,
-        overProcuredProducts: items.filter((i) => i.over).length,
-        targetSpend: items.reduce((s, i) => s + (i.targetSpend ?? 0), 0),
-        actualSpend: items.reduce((s, i) => s + i.actualSpend, 0),
+        targetSpend: items.reduce((sum, i) => sum + (i.targetSpend ?? 0), 0),
+        materialSpend: Number(spendRows[0]?.spentPaise ?? 0) / 100,
       },
     };
   }

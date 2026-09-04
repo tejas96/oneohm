@@ -293,7 +293,6 @@ export {
   bomProcurementKeys,
   type BomProcurementItem,
   type BomProcurementStatus,
-  type BomProcurementItemStatus,
 } from './bom-procurement';
 
 // Inventory — Stock

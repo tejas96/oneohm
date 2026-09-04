@@ -332,6 +332,21 @@ export class LedgerWriteService {
         amountPaise: -original.amountPaise,
         // The reversal is an event of TODAY, not a rewrite of the original's date.
         valueDate: todayIst(),
+        // The reversal carries the original's category for the same reason it
+        // carries the opposite amount: any sum filtered by category has to net
+        // to zero once an entry is reversed. Leaving it null counted the
+        // original's -X under 'materials' while the compensating +X landed
+        // under nothing, so every category total overstated spend by the full
+        // reversed amount. paymentMethod and reference were already copied for
+        // the same "a reversal is the original, undone" reason; category was
+        // simply missed.
+        //
+        // This fixes it going forward only. Rows written before it cannot be
+        // corrected — `trg_ledger_entries_append_only` forbids updating a
+        // posted entry, and rightly so. Readers that must be correct over
+        // historical data resolve the category through `reverses_id` instead;
+        // BomReadService.getProcurementStatus is the worked example.
+        category: original.category ?? null,
         paymentMethod: original.paymentMethod ?? null,
         reference: original.reference ?? null,
         reversesId: original.id,

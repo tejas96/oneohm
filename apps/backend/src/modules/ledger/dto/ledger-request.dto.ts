@@ -1,16 +1,16 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ExpenseCategory } from '@tejas96/shared/types';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
+  IsEnum,
   IsInt,
-  IsNotEmpty,
   IsOptional,
   IsPositive,
   IsString,
   IsUUID,
   MaxLength,
-  NotEquals,
   ValidateNested,
 } from 'class-validator';
 
@@ -148,13 +148,26 @@ export class RecordExpenseDto {
   @IsOptional()
   valueDate?: string;
 
-  @ApiProperty({ example: 'materials' })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(30)
-  @NotEquals('other', { message: 'Please specify a category' })
-  category!: string;
+  /**
+   * One of the seven `ExpenseCategory` values — free text is refused.
+   *
+   * This used to be any non-empty string up to 30 characters, blocked only
+   * from the literal lowercase 'other'. The web form has always offered the
+   * fixed list as a dropdown, but it also offered an "Other" option with a
+   * free-text box beside it, and whatever was typed there arrived here and was
+   * stored verbatim. The live database ended up holding `labor` and `labour`
+   * as separate categories, plus `Insurance`, plus `Other` — which slipped
+   * past the guard below because the comparison was case-sensitive.
+   *
+   * Any total grouped by category is wrong while that is possible, so the
+   * constraint belongs here rather than in the form: the form is one caller.
+   */
+  @ApiProperty({ enum: ExpenseCategory, example: ExpenseCategory.MATERIALS })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+  @IsEnum(ExpenseCategory, {
+    message: `category must be one of: ${Object.values(ExpenseCategory).join(', ')}`,
+  })
+  category!: ExpenseCategory;
 
   @ApiPropertyOptional({ description: 'Who was paid' })
   @IsString()
