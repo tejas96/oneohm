@@ -55,7 +55,9 @@ import { UsersModule } from '../users/users.module';
     QuotesModule,
     CustomersModule,
     UsersModule,
-    BomModule,
+    // forwardRef since Task 16: BomModule imports this one back, for the
+    // ProjectTeamGuard that guards projects/:projectId/bom.
+    forwardRef(() => BomModule),
     forwardRef(() => LedgerModule),
   ],
   controllers: [

@@ -1138,33 +1138,6 @@ export class ProjectService {
   }
 
   /**
-   * Re-baseline the project BOM onto a quote version, after showing the diff.
-   *
-   * Replaces syncBomFromSnapshot, which took the LATEST quote version and
-   * handed it to BomService.reconcileFromCalculation. Two defects in one: it
-   * re-priced a signed deal (the same drift projects.contract_quote_version_id
-   * exists to stop), and reconcileFromCalculation DELETED any bom_items row
-   * whose product was absent from the calculation, cancelling its stock
-   * allocation — so every site addition would have been destroyed by the next
-   * sync.
-   *
-   * Preview applies nothing; apply never touches a source = 'site' line and
-   * logs everything it does touch as source = 'office'.
-   */
-  async previewBomRebaseline(projectId: string, quoteVersionId: string) {
-    return this.bomBaselineService.previewRebaseline(projectId, quoteVersionId);
-  }
-
-  async applyBomRebaseline(
-    projectId: string,
-    quoteVersionId: string,
-    userId: string,
-    reason: string,
-  ) {
-    return this.bomBaselineService.applyRebaseline(projectId, quoteVersionId, userId, reason);
-  }
-
-  /**
    * Seed the project's BOM from the quote version its contract was struck from.
    *
    * Replaces copyQuoteBomToProject, which cloned the quote version's own bom
@@ -1194,9 +1167,7 @@ export class ProjectService {
     }
 
     if (!contractQuoteVersionId) {
-      this.logger.warn(
-        `Project ${projectId}: no contract quote version pinned, BOM not seeded.`,
-      );
+      this.logger.warn(`Project ${projectId}: no contract quote version pinned, BOM not seeded.`);
       return;
     }
 

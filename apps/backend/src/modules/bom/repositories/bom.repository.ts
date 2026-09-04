@@ -13,6 +13,18 @@ export class BomRepository {
     private readonly dataSource: DataSource,
   ) {}
 
+  /**
+   * ORDER BY sort_order, created_at — the tiebreak is not cosmetic.
+   *
+   * replaceItem stamps the new line with the OLD line's sortOrder so the
+   * replacement sits where the line it replaces sat, and the old row survives
+   * at quantity 0 rather than being deleted. Two rows therefore share a
+   * sort_order by design, and on sort_order alone Postgres was free to return
+   * them in either order — so whether the struck-through original rendered
+   * above or below its replacement varied between reads of the same BOM.
+   * created_at breaks the tie the way a reader expects: the original first,
+   * then what replaced it.
+   */
   async findByProject(projectId: string): Promise<BomEntity | null> {
     return this.repository.findOne({
       where: { projectId },
@@ -23,7 +35,7 @@ export class BomRepository {
         'items.product.brand',
         'items.serials',
       ],
-      order: { items: { sortOrder: 'ASC' } },
+      order: { items: { sortOrder: 'ASC', createdAt: 'ASC' } },
     });
   }
 
@@ -31,7 +43,7 @@ export class BomRepository {
     return this.repository.findOne({
       where: { id },
       relations: ['items', 'items.product', 'items.product.productType', 'items.serials'],
-      order: { items: { sortOrder: 'ASC' } },
+      order: { items: { sortOrder: 'ASC', createdAt: 'ASC' } },
     });
   }
 

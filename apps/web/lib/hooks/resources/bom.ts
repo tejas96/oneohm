@@ -263,39 +263,6 @@ export function useBulkUpdateBomItemSerials() {
   };
 }
 
-/**
- * Force-resync BOM from quote snapshot (admin/emergency path only).
- * Not exposed in the main UI — kept for ops/admin use via direct API or admin panel.
- */
-export function useSyncProjectBom(projectId: string) {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation<{ message: string }, unknown>({
-    mutationFn: async () => {
-      const { data } = await apiClient.post<{ message: string }>(
-        `/projects/${projectId}/sync-bom`,
-        {},
-      );
-      return data;
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: [...bomResourceKeys.all(), 'project', projectId],
-      });
-      void queryClient.invalidateQueries({ queryKey: ['bom'] });
-      showToast.success('BOM resynced from quote');
-    },
-    onError: (err) => {
-      showToast.error(getErrorMessage(err));
-    },
-  });
-
-  return {
-    ...mutation,
-    execute: () => mutation.mutateAsync(),
-  };
-}
-
 export function useBomSerialConflicts(serialNumber: string | undefined) {
   const normalizedSerial = serialNumber?.trim() ?? '';
 

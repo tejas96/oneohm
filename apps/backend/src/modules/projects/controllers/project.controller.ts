@@ -28,9 +28,7 @@ import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import { hasAdminBypassRole, resolveProjectListMemberId } from '../../iam/constants';
 import {
-  ApplyBomRebaselineDto,
   ConvertFromQuoteDto,
-  PreviewBomRebaselineDto,
   ProjectResponseDto,
   UpdateProjectDto,
   UpdateProjectStatusDto,
@@ -474,52 +472,6 @@ export class ProjectController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ReturnType<typeof this.projectService.getProjectProgress>> {
     return this.projectService.getProjectProgress(id);
-  }
-
-  /**
-   * Re-baseline the project BOM onto a quote version.
-   *
-   * Replaces POST :id/sync-bom, which rebuilt the BOM from whatever version
-   * happened to be newest and deleted any line the calculation did not name —
-   * destroying site additions and cancelling their stock allocations. The
-   * version is now named explicitly, the diff is shown before anything is
-   * applied, and a source = 'site' line is never touched.
-   *
-   * Task 16 owns the final BOM routing surface; these two routes exist so the
-   * replacement is reachable at all.
-   */
-  @Post(':id/bom-rebaseline/preview')
-  @ApiOperation({
-    summary: 'Preview re-baselining the project BOM onto a quote version',
-    description:
-      'Shows what would change, applying nothing. Site-added lines are listed under ' +
-      'protectedSiteLines and appear in no other bucket.',
-  })
-  async previewBomRebaseline(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: PreviewBomRebaselineDto,
-  ): Promise<ReturnType<typeof this.projectService.previewBomRebaseline>> {
-    return this.projectService.previewBomRebaseline(id, dto.quoteVersionId);
-  }
-
-  @Post(':id/bom-rebaseline')
-  @ApiOperation({
-    summary: 'Apply a BOM re-baseline',
-    description:
-      'Applies the preview through the BOM edit operations, each logged with source = office. ' +
-      'Site-added lines are left alone.',
-  })
-  async applyBomRebaseline(
-    @CurrentUser() currentUser: CurrentUserType,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: ApplyBomRebaselineDto,
-  ): Promise<{ applied: number }> {
-    return this.projectService.applyBomRebaseline(
-      id,
-      dto.quoteVersionId,
-      currentUser.id,
-      dto.reason,
-    );
   }
 
   /**

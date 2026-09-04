@@ -1,16 +1,51 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { BomAllocationStatus } from '@tejas96/shared/types';
+import { DataSource } from 'typeorm';
 
 import { BomAllocationService } from '../../inventory/services/bom-allocation.service';
-import { BomItemResponseDto, BomResponseDto, BomTotalsDto } from '../dto/bom-response.dto';
+import {
+  BomChangeResponseDto,
+  BomItemResponseDto,
+  BomResponseDto,
+  BomTotalsDto,
+} from '../dto/bom-response.dto';
 import { BomChangeRepository } from '../repositories/bom-change.repository';
 import { BomRepository } from '../repositories/bom.repository';
 
 export type BomLineChangeState = 'unchanged' | 'added' | 'increased' | 'decreased' | 'removed';
 
+export interface ProcurementItem {
+  productId: string;
+  name: string;
+  unit: string;
+  targetQty: number;
+  spentQty: number;
+  status: 'pending' | 'partial' | 'procured';
+  over: boolean;
+  remaining: number;
+  unitPrice: number | null;
+  targetSpend: number | null;
+  actualSpend: number;
+}
+
+export interface ProcurementStatus {
+  items: ProcurementItem[];
+  totals: {
+    totalProducts: number;
+    pending: number;
+    partial: number;
+    procured: number;
+    overProcuredProducts: number;
+    targetSpend: number;
+    actualSpend: number;
+  };
+}
+
 @Injectable()
 export class BomReadService {
   constructor(
+    @InjectDataSource() private readonly dataSource: DataSource,
     private readonly bomRepository: BomRepository,
     private readonly bomChangeRepository: BomChangeRepository,
     private readonly allocationService: BomAllocationService,
@@ -165,5 +200,181 @@ export class BomReadService {
     return (bom.items ?? [])
       .flatMap((item) => (item.serials ?? []).map((s) => s.serialNumber))
       .filter((s): s is string => Boolean(s?.trim()));
+  }
+
+  /**
+   * The project's BOM change log, newest first. Every mutation carries a
+   * mandatory reason, so this reads as the "why" history of the bill of
+   * materials rather than a diff nobody can explain.
+   */
+  async getChanges(projectId: string): Promise<BomChangeResponseDto[]> {
+    const bom = await this.bomRepository.findByProject(projectId);
+    if (!bom) throw new NotFoundException(`Project ${projectId} has no BOM yet`);
+
+    const changes = await this.bomChangeRepository.findByBom(bom.id);
+    return changes.map((change) => ({
+      id: change.id,
+      bomId: change.bomId,
+      bomItemId: change.bomItemId ?? null,
+      productId: change.productId,
+      changeType: change.changeType,
+      quantityBefore: change.quantityBefore === null ? null : Number(change.quantityBefore),
+      quantityAfter: change.quantityAfter === null ? null : Number(change.quantityAfter),
+      replacedProductId: change.replacedProductId ?? null,
+      unitPricePaise: change.unitPricePaise,
+      costImpactPaise: change.costImpactPaise,
+      reason: change.reason,
+      source: change.source,
+      createdBy: change.createdBy,
+      createdAt: change.createdAt,
+    }));
+  }
+
+  // ============================================================
+  // PROCUREMENT (plan §2.5 / §3.4)
+  // ============================================================
+
+  /**
+   * Sum BOM-target quantities per product for a project. Returns a map
+   * keyed by productId — products absent from the BOM are absent from
+   * the map (caller must treat that as 0).
+   *
+   * Pulls only the requested productIds when supplied.
+   */
+  async getBomTargetsForProject(
+    projectId: string,
+    productIdsFilter?: string[],
+  ): Promise<Map<string, number>> {
+    const params: unknown[] = [projectId];
+    let filterSql = '';
+    if (productIdsFilter && productIdsFilter.length > 0) {
+      params.push(productIdsFilter);
+      filterSql = `AND bi.product_id = ANY($2::uuid[])`;
+    }
+
+    const rows = await this.dataSource.query(
+      `SELECT bi.product_id AS product_id,
+              COALESCE(SUM(bi.quantity), 0)::numeric AS target
+         FROM bom b
+         JOIN bom_items bi ON bi.bom_id = b.id
+        WHERE b.project_id = $1::uuid
+          AND bi.product_id IS NOT NULL
+          ${filterSql}
+        GROUP BY bi.product_id`,
+      params,
+    );
+
+    const out = new Map<string, number>();
+    for (const r of rows) out.set(r.product_id, Number(r.target));
+    return out;
+  }
+
+  /**
+   * Procurement status for a project (plan §3.4). Joins BOM items
+   * (target qty + name + unit price for spend-budget) with the
+   * already-spent qty pulled from `expense_product_links`. Status is
+   * derived per row:
+   *   procured  : spent >= target
+   *   partial   : 0 < spent < target
+   *   pending   : spent == 0
+   * Rows where spent > target are flagged via the `over` boolean.
+   *
+   * Three columns this CTE used to read are gone or going:
+   *
+   * - `b.entity_type = 'project' AND b.entity_id = $1` is now `b.project_id`.
+   *   entity_type is NULL on every BOM written since Task 11, so the old
+   *   predicate matched nothing at all for a newly-created project.
+   * - `MIN(bi.name)` is now `MIN(p.name)` off a products join. bom_items.name
+   *   is unmapped legacy that Task 20 drops, and BomEditService leaves it
+   *   blank, so a site-added line showed a nameless row.
+   * - `MAX(bi.unit_price)` is now `MAX(bi.unit_price_paise) / 100.0`. Same
+   *   story: bi.unit_price is NULL on every line written since Task 14, so
+   *   those lines reported a blank target spend and silently contributed 0 to
+   *   the totals.targetSpend a procurement manager budgets against.
+   *
+   * `bi.unit` survives — it is still a mapped column on the entity.
+   */
+  async getProcurementStatus(projectId: string): Promise<ProcurementStatus> {
+    const rows = await this.dataSource.query(
+      `WITH bom_targets AS (
+         SELECT bi.product_id,
+                MIN(p.name)                       AS name,
+                MIN(bi.unit)                      AS unit,
+                SUM(bi.quantity)                  AS target_qty,
+                MAX(bi.unit_price_paise) / 100.0  AS unit_price
+           FROM bom b
+           JOIN bom_items bi ON bi.bom_id = b.id
+           JOIN products p ON p.id = bi.product_id
+          WHERE b.project_id = $1::uuid
+            AND bi.product_id IS NOT NULL
+          GROUP BY bi.product_id
+       ),
+       spent AS (
+         SELECT epl.product_id,
+                COALESCE(SUM(epl.quantity), 0) AS spent_qty,
+                COALESCE(SUM(epl.quantity * COALESCE(epl.unit_price, 0)), 0) AS actual_spend
+           FROM expense_product_links epl
+           JOIN project_expenses pe ON pe.id = epl.expense_id
+          WHERE pe.project_id = $1::uuid
+            AND pe.deleted_at IS NULL
+            AND epl.product_id IS NOT NULL
+          GROUP BY epl.product_id
+       )
+       SELECT t.product_id,
+              t.name,
+              t.unit,
+              t.target_qty,
+              COALESCE(s.spent_qty, 0)        AS spent_qty,
+              t.unit_price,
+              COALESCE(s.actual_spend, 0)     AS actual_spend
+         FROM bom_targets t
+         LEFT JOIN spent s ON s.product_id = t.product_id
+        ORDER BY t.name`,
+      [projectId],
+    );
+
+    const items: ProcurementItem[] = rows.map(
+      (r: {
+        product_id: string;
+        name: string;
+        unit: string;
+        target_qty: string;
+        spent_qty: string;
+        unit_price: string | null;
+        actual_spend: string;
+      }) => {
+        const targetQty = Number(r.target_qty);
+        const spentQty = Number(r.spent_qty);
+        const unitPrice = r.unit_price === null ? null : Number(r.unit_price);
+        const status: 'pending' | 'partial' | 'procured' =
+          spentQty <= 0 ? 'pending' : spentQty >= targetQty ? 'procured' : 'partial';
+        return {
+          productId: r.product_id,
+          name: r.name,
+          unit: r.unit,
+          targetQty,
+          spentQty,
+          status,
+          over: spentQty > targetQty + 1e-6,
+          remaining: Math.max(targetQty - spentQty, 0),
+          unitPrice,
+          targetSpend: unitPrice !== null ? unitPrice * targetQty : null,
+          actualSpend: Number(r.actual_spend),
+        };
+      },
+    );
+
+    return {
+      items,
+      totals: {
+        totalProducts: items.length,
+        pending: items.filter((i) => i.status === 'pending').length,
+        partial: items.filter((i) => i.status === 'partial').length,
+        procured: items.filter((i) => i.status === 'procured').length,
+        overProcuredProducts: items.filter((i) => i.over).length,
+        targetSpend: items.reduce((s, i) => s + (i.targetSpend ?? 0), 0),
+        actualSpend: items.reduce((s, i) => s + i.actualSpend, 0),
+      },
+    };
   }
 }

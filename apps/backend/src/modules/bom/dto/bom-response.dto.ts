@@ -1,5 +1,6 @@
 import { BomAllocationStatus } from '@tejas96/shared/types';
 
+import type { BomChangeSource, BomChangeType } from '../entities/bom-change.entity';
 import type { BomLineChangeState } from '../services/bom-read.service';
 
 export class BomItemSerialResponseDto {
@@ -75,4 +76,32 @@ export class BomResponseDto {
   totals!: BomTotalsDto;
   createdAt!: Date;
   updatedAt!: Date;
+}
+
+/**
+ * One row of the BOM change log.
+ *
+ * Numeric quantities come back as numbers even though the columns are
+ * NUMERIC(12,3) (TypeORM hands those over as strings) — a client rendering a
+ * quantity should not have to know that. Money stays in paise, integer, the
+ * way it is stored: `costImpactPaise` is signed, and summing it over a BOM is
+ * the log's own claim about that BOM's variance from its quote.
+ */
+export class BomChangeResponseDto {
+  id!: string;
+  bomId!: string;
+  /** Null when the change is not about one particular row. */
+  bomItemId!: string | null;
+  productId!: string;
+  changeType!: BomChangeType;
+  quantityBefore!: number | null;
+  quantityAfter!: number | null;
+  /** What a 'replace' swapped out. Null on every other change type. */
+  replacedProductId!: string | null;
+  unitPricePaise!: number;
+  costImpactPaise!: number;
+  reason!: string;
+  source!: BomChangeSource;
+  createdBy!: string;
+  createdAt!: Date;
 }

@@ -1,18 +1,19 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { InventoryModule } from '../inventory/inventory.module';
 import { MasterDataModule } from '../master-data/master-data.module';
-import { BomEditController } from './controllers/bom-edit.controller';
+import { ProjectsModule } from '../projects/projects.module';
 import { BomItemsController } from './controllers/bom-items.controller';
 import { BomController } from './controllers/bom.controller';
+import { ProjectBomController } from './controllers/project-bom.controller';
 import { BomChangeEntity, BomEntity, BomItemEntity, BomItemSerialEntity } from './entities';
 import { BomChangeRepository } from './repositories/bom-change.repository';
 import { BomRepository } from './repositories/bom.repository';
 import { BomBaselineService } from './services/bom-baseline.service';
 import { BomEditService } from './services/bom-edit.service';
 import { BomReadService } from './services/bom-read.service';
-import { BomService } from './services/bom.service';
+import { BomSerialService } from './services/bom-serial.service';
 
 @Module({
   imports: [
@@ -21,27 +22,34 @@ import { BomService } from './services/bom.service';
     // For PricingService — the only place that knows how per_unit, per_watt
     // and per_kw differ. BOM never computes a price itself.
     MasterDataModule,
+    // For ProjectTeamGuard, which ProjectBomController puts on every route.
+    // forwardRef both ways because ProjectsModule imports this module back for
+    // BomBaselineService and BomReadService — a BOM belongs to a project and a
+    // project owns a BOM, so the cycle is in the domain, not an accident.
+    forwardRef(() => ProjectsModule),
+    // QuoteVersionEntity, which BomBaselineService reads, needs no forFeature:
+    // it goes through the shared DataSource, which knows every entity.
   ],
-  controllers: [BomController, BomItemsController, BomEditController],
+  controllers: [BomController, BomItemsController, ProjectBomController],
   providers: [
-    BomService,
-    BomReadService,
-    BomEditService,
-    BomBaselineService,
     BomRepository,
     BomChangeRepository,
-  ],
-  // BomEditService is exported for Task 15's applyRebaseline, which drives the
-  // same four operations with source = 'office'.
-  //
-  // BomBaselineService and BomReadService are exported for ProjectService:
-  // seeding a new project's BOM at conversion, and the idempotency check that
-  // guards it.
-  exports: [
-    BomService,
     BomReadService,
     BomEditService,
     BomBaselineService,
+    BomSerialService,
+  ],
+  // BomEditService is exported for applyRebaseline, which drives the same four
+  // operations with source = 'office'.
+  //
+  // BomBaselineService and BomReadService are exported for ProjectService:
+  // seeding a new project's BOM at conversion, the idempotency check that
+  // guards it, and the report providers' panel serials.
+  exports: [
+    BomReadService,
+    BomEditService,
+    BomBaselineService,
+    BomSerialService,
     BomChangeRepository,
   ],
 })

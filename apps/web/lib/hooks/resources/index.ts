@@ -206,7 +206,6 @@ export {
   useUpdateBomItemSerial,
   useBomSerialConflicts,
   useAllocateBomPending,
-  useSyncProjectBom,
   bomResourceKeys,
   type Bom,
   type BomItem,
