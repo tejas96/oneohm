@@ -32,7 +32,6 @@ import { type JSX, useCallback, useMemo, useRef, useState } from 'react';
 
 import { CustomerKpiCards } from './customer-kpi-cards';
 import { CustomerPropertiesExpandedRow } from './customer-properties-expanded-row';
-import { ImportCustomersModal } from './import-customers-modal';
 import {
   CUSTOMER_STATUS_TONE,
   LEAD_SOURCE_TONE,
@@ -963,19 +962,12 @@ export function CustomerListPage(): JSX.Element {
     getId: (customer) => customer.id,
   });
 
-  const [importOpen, setImportOpen] = useState(false);
-
   const addCustomer = useGatedAction(
     'customers.create',
     () => {
       void router.push(ROUTES.ONBOARDING.NEW);
     },
     'Add customer',
-  );
-  const importCustomers = useGatedAction(
-    'customers.create',
-    () => setImportOpen(true),
-    'Import customers',
   );
 
   const rawLeadTemperature = searchParams.get('leadTemperature');
@@ -1474,14 +1466,6 @@ export function CustomerListPage(): JSX.Element {
 
         <Stack direction="row" spacing={1.25} alignItems="center" sx={{ pt: { lg: 2.25 } }}>
           <Button
-            variant="outlined"
-            size="small"
-            onClick={importCustomers.onGatedClick}
-            aria-disabled={!importCustomers.allowed}
-          >
-            Import
-          </Button>
-          <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={addCustomer.onGatedClick}
@@ -1560,7 +1544,6 @@ export function CustomerListPage(): JSX.Element {
         itemLabel="customers"
       />
 
-      <ImportCustomersModal open={importOpen} onOpenChange={setImportOpen} />
 
       <DeleteConfirmationDialog
         open={deleteConfirmation.isOpen}
