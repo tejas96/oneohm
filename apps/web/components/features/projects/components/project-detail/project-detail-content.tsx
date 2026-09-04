@@ -269,7 +269,11 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
           </Box>
 
           <Box sx={{ display: activeTab === 'bom' ? 'block' : 'none' }}>
-            <ProjectBomTab projectId={projectId} defaultWarehouseId={project.defaultWarehouseId} />
+            <ProjectBomTab
+              projectId={projectId}
+              defaultWarehouseId={project.defaultWarehouseId}
+              quoteId={project.quoteId}
+            />
           </Box>
 
           <Box sx={{ display: activeTab === 'allocations' ? 'block' : 'none' }}>

@@ -4,15 +4,16 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Paper, Typography } from '@mui/material';
 import React, { useMemo } from 'react';
 
+import { OtherCostsCard } from './overview/other-costs-card';
 import { QuoteEquipmentCard } from './overview/quote-equipment-card';
 import { QuoteHeroCard } from './overview/quote-hero-card';
-import { QuoteInstallationCard } from './overview/quote-installation-card';
 import { QuoteMilestonesCard } from './overview/quote-milestones-card';
 import { QuotePricingCard } from './overview/quote-pricing-card';
 import { QuoteSidebar } from './overview/quote-sidebar';
 import { QuoteSustainabilityCard } from './overview/quote-sustainability-card';
 import { QuoteSystemConfigCard } from './overview/quote-system-config-card';
 import type { QuoteDetail } from '../../../hooks/types';
+import { quoteBomLines } from '../../../utils/quote-bom-lines';
 
 import { Can } from '@/components/shared/guards';
 import { useCan } from '@/lib/rbac';
@@ -59,25 +60,19 @@ export function QuoteOverviewTab({
   const calcObj = activeSnapshot?.calculation as unknown as Record<string, unknown> | undefined;
   const actualKw = round2(systemSizeKw);
 
-  type InstallationRecord = Partial<
-    Record<
-      | 'electricalWork'
-      | 'fixedMaterial'
-      | 'variableFloor'
-      | 'structureCost'
-      | 'installationLabor'
-      | 'loadingUnloading'
-      | 'msedclCharges'
-      | 'supervision'
-      | 'transport'
-      | 'totalBeforeTax'
-      | 'gstAmount'
-      | 'gstRate'
-      | 'totalWithGst',
-      number
-    >
-  >;
-  const installationData = calcObj?.installation as InstallationRecord | undefined;
+  // Same snapshot the equipment cards already read, but as the BOM lines
+  // Task 9 defines rather than the raw panel/inverter/structure arrays —
+  // this is the one true "physical items" total the reconciliation card
+  // below checks against the quote's base price.
+  const bomLines = useMemo(
+    () => (activeSnapshot?.calculation ? quoteBomLines(activeSnapshot.calculation) : []),
+    [activeSnapshot],
+  );
+  const bomTotal = useMemo(
+    () => bomLines.reduce((sum, line) => sum + line.totalPrice, 0),
+    [bomLines],
+  );
+  const installation = activeSnapshot?.calculation?.installation;
   const profitPercent = calcObj?.profitabilityPercent as number | undefined;
   const profitAmount = calcObj?.profitabilityAmount as number | undefined;
 
@@ -225,14 +220,21 @@ export function QuoteOverviewTab({
             profitAmount={profitAmount}
           />
 
-          {/* Installation Costs */}
-          {installationData &&
-            ((installationData.totalBeforeTax ?? 0) > 0 ||
-              (installationData.totalWithGst ?? 0) > 0) && (
-              <Can permission={'quotes.profitability'}>
-                <QuoteInstallationCard installationData={installationData} />
-              </Can>
-            )}
+          {/* Other Costs — reconciles the BOM total against the quote's
+              base price. Replaces the old QuoteInstallationCard: that card
+              and this one both showed the installation figures, and two
+              cards for the same numbers is the duplication this rebuild
+              exists to remove. Same permission gate as the card it
+              replaces — this is still internal cost data. */}
+          {installation && (
+            <Can permission={'quotes.profitability'}>
+              <OtherCostsCard
+                installation={installation}
+                bomTotal={bomTotal}
+                quoteBasePrice={breakdown?.basePrice ?? 0}
+              />
+            </Can>
+          )}
 
           {/* Sidebar Info/Actions */}
           <QuoteSidebar

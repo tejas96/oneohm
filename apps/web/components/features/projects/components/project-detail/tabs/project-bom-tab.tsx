@@ -18,6 +18,8 @@ import { BomChangesPanel } from './bom/bom-changes-panel';
 import { ProjectWarehouseSelector } from './overview/project-warehouse-selector';
 
 import { ProcurementSection } from '@/components/features/projects/components/procurement/procurement-section';
+import { useQuoteDetail } from '@/components/features/quotes';
+import { OtherCostsCard } from '@/components/features/quotes/components/quote-detail/tabs/overview/other-costs-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useAllocateBomPending,
@@ -32,6 +34,8 @@ import { cn, formatCurrency, formatNumber } from '@/lib/utils';
 interface ProjectBomTabProps {
   projectId: string;
   defaultWarehouseId?: string;
+  /** The project's source quote, used only to look up the pinned baseline version's snapshot. */
+  quoteId?: string;
 }
 
 const CHANGE_TONE: Record<BomLineChangeState, Tone> = {
@@ -126,13 +130,26 @@ function Stat({
  * warehouse it draws from.
  */
 export const ProjectBomTab = React.memo(
-  ({ projectId, defaultWarehouseId }: ProjectBomTabProps): React.JSX.Element => {
+  ({ projectId, defaultWarehouseId, quoteId }: ProjectBomTabProps): React.JSX.Element => {
     const { data: bom, isLoading, isError, refetch } = useProjectBom(projectId);
     const { execute: allocatePending, isPending: isAllocating } = useAllocateBomPending();
     // Same cache entry the Procurement section below reads — one network
     // call serves both, react-query dedupes the identical query key.
     const { data: procurement } = useBomProcurementStatus(projectId);
     const [billingOpen, setBillingOpen] = React.useState(false);
+
+    // The "Other costs" card needs the quote's base price and installation
+    // breakdown as they stood when the contract was struck — not today's
+    // quote, which may have moved on to later versions. `bom.baselineQuoteVersionId`
+    // pins the exact version; fetching the whole quote and finding it
+    // client-side reuses the existing `GET /quotes/:id` route (which already
+    // returns every version's full snapshot) instead of adding a new one.
+    const { data: baselineQuote } = useQuoteDetail(quoteId ?? '', { enabled: !!quoteId });
+    const baselineVersion = baselineQuote?.versions?.find(
+      (version) => version.id === bom?.baselineQuoteVersionId,
+    );
+    const baselineInstallation = baselineVersion?.quoteSnapshot?.calculation?.installation;
+    const baselineBasePrice = baselineVersion?.quoteSnapshot?.pricing?.basePrice ?? 0;
     // A BOM edit never moves the contract by itself — billing is the one
     // explicit human action that does, and it moves money just like the
     // money tab's own record-payment and change-order buttons.
@@ -252,6 +269,16 @@ export const ProjectBomTab = React.memo(
                 />
                 <Stat label="Spent so far" value={formatCurrency(actualSpend)} />
               </dl>
+
+              {baselineInstallation ? (
+                <OtherCostsCard
+                  installation={baselineInstallation}
+                  bomTotal={bom.totals.currentPaise / 100}
+                  quoteBasePrice={baselineBasePrice}
+                  title="Other costs (as quoted)"
+                  className="mb-4"
+                />
+              ) : null}
 
               <ProjectWarehouseSelector
                 projectId={projectId}
