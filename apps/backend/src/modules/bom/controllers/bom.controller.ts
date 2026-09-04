@@ -16,7 +16,7 @@ import type { CurrentUserType } from '../../auth/types';
 import { BomResponseDto } from '../dto/bom-response.dto';
 import { BomService } from '../services/bom.service';
 
-const ALLOWED_ENTITY_TYPES = ['quote_version', 'project'] as const;
+const ALLOWED_ENTITY_TYPES = ['project'] as const;
 
 @ApiTags('BOM')
 @ApiBearerAuth()
