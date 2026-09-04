@@ -94,6 +94,17 @@ export class BomReadService {
     let removed = 0;
     let changed = 0;
 
+    /*
+     * Watts-peak on the panel lines, quoted and current.
+     *
+     * Tracked as `null` until a panel with a rated wattage is actually seen, so
+     * a bill with no panels — or panels whose product carries no wattage —
+     * reports "unknown" rather than "0 kW". A screen must not announce a
+     * shortfall it cannot measure.
+     */
+    let quotedWp: number | null = null;
+    let currentWp: number | null = null;
+
     const items: BomItemResponseDto[] = (bom.items ?? []).map((item) => {
       const quoted =
         item.quotedQuantity === null || item.quotedQuantity === undefined
@@ -111,6 +122,17 @@ export class BomReadService {
 
       quotedPaise += quotedTotalPaise;
       currentPaise += currentTotalPaise;
+
+      // Only solar panels carry generating capacity. `specifications.wattage`
+      // is the product's rated Wp; anything non-numeric is treated as absent
+      // rather than zero.
+      if (item.product?.productType?.code === 'solar_panel') {
+        const rated = Number(item.product.specifications?.['wattage']);
+        if (Number.isFinite(rated) && rated > 0) {
+          quotedWp = (quotedWp ?? 0) + (quoted ?? 0) * rated;
+          currentWp = (currentWp ?? 0) + current * rated;
+        }
+      }
 
       let changeState: BomLineChangeState;
       // `current === 0` is tested FIRST, before `quoted === null`. A line that
@@ -181,6 +203,8 @@ export class BomReadService {
       addedLineCount: added,
       removedLineCount: removed,
       changedLineCount: changed,
+      quotedSystemWp: quotedWp,
+      currentSystemWp: currentWp,
     };
 
     return {

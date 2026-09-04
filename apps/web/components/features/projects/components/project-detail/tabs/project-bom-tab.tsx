@@ -32,7 +32,7 @@ import {
   type BomLineChangeState,
 } from '@/lib/hooks/resources';
 import { useGatedAction } from '@/lib/rbac';
-import { cn, formatCurrency, formatNumber } from '@/lib/utils';
+import { cn, formatCurrency, formatNumber, formatSystemSize } from '@/lib/utils';
 
 interface ProjectBomTabProps {
   projectId: string;
@@ -180,6 +180,17 @@ export const ProjectBomTab = React.memo(
     // bought, so this cannot be split per line.
     const materialSpend = procurement?.totals.materialSpend ?? 0;
 
+    /*
+     * Panel capacity as quoted versus as the bill now stands. Both are null
+     * when the bill has no panels, or none carrying a rated wattage — in which
+     * case the shortfall is unknown, not zero, and nothing is claimed.
+     */
+    const quotedWp = bom?.totals.quotedSystemWp ?? null;
+    const currentWp = bom?.totals.currentSystemWp ?? null;
+    const shortfallWp = quotedWp !== null && currentWp !== null ? quotedWp - currentWp : 0;
+    const quotedKw = (quotedWp ?? 0) / 1000;
+    const currentKw = (currentWp ?? 0) / 1000;
+
     return (
       <div className="grid grid-cols-12 gap-4">
         <DetailCard
@@ -256,6 +267,36 @@ export const ProjectBomTab = React.memo(
                   <span className="font-semibold">This BOM does not reconcile.</span> The change
                   log and the line items disagree on the total. Nothing below should be trusted
                   until this is fixed.
+                </p>
+              ) : null}
+
+              {/*
+                * A falling material cost means one of two opposite things, and
+                * the money cannot tell them apart. Swapping to a cheaper
+                * structure leaves the customer with the system they signed for
+                * and the saving is the company's. Dropping a panel does not —
+                * and nothing on this project said so, because the system card
+                * reads its size from the quote snapshot and never looks at the
+                * bill, so it went on advertising 10 panels while this tab
+                * carried 9.
+                *
+                * Shown whenever capacity has fallen, at any variance: a bill
+                * can lose a panel and still cost MORE than quoted, and that is
+                * the case most worth catching — the money looks like ordinary
+                * extra scope while the customer quietly gets less.
+                */}
+              {shortfallWp > 0 ? (
+                <p
+                  className="mb-3 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
+                  style={{ background: TONE.warning.tint, color: TONE.warning.ink }}
+                >
+                  <span className="font-semibold">
+                    This bill builds a smaller system than the quote sold.
+                  </span>{' '}
+                  {formatSystemSize(currentKw)} kW of panels against{' '}
+                  {formatSystemSize(quotedKw)} kW quoted — {formatSystemSize(shortfallWp / 1000)} kW
+                  short. The customer signed for the larger system, so either restore the panels or
+                  agree the smaller one with them.
                 </p>
               ) : null}
 

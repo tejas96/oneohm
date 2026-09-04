@@ -69,6 +69,13 @@ export interface BomTotals {
   addedLineCount: number;
   removedLineCount: number;
   changedLineCount: number;
+  /**
+   * Panel capacity in watts-peak, as quoted and as the bill stands. Null when
+   * the bill carries no panels, or none with a rated wattage — absent, not
+   * zero, so a shortfall is never claimed that cannot be measured.
+   */
+  quotedSystemWp: number | null;
+  currentSystemWp: number | null;
 }
 
 export interface Bom {

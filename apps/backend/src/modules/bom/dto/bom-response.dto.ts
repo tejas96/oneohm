@@ -54,6 +54,26 @@ export class BomTotalsDto {
   addedLineCount!: number;
   removedLineCount!: number;
   changedLineCount!: number;
+
+  /**
+   * The generating capacity the panel lines add up to, as quoted and as the
+   * bill now stands — watts-peak, summed from each panel product's rated
+   * wattage times its quantity.
+   *
+   * These exist because a falling material cost means two opposite things and
+   * money alone cannot tell them apart. Swapping to a cheaper structure leaves
+   * the customer with exactly the system they signed for and the saving is the
+   * contractor's. Dropping a panel does not: the customer signed for 6.1 kW and
+   * is being handed 5.49 kW, and nothing on the project said so — the system
+   * card reads its size from the quote snapshot and never looks at the bill, so
+   * it kept advertising 10 panels while the BOM carried 9.
+   *
+   * Null when no line on the bill is a solar panel, or when the panels carry no
+   * rated wattage: absent is not the same as zero, and a page must not report a
+   * shortfall it cannot actually measure.
+   */
+  quotedSystemWp!: number | null;
+  currentSystemWp!: number | null;
 }
 
 export class BomResponseDto {
