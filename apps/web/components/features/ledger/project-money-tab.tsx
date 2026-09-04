@@ -42,7 +42,22 @@ import { formatPaise } from '@/lib/utils/paise';
  */
 const PENDING_PREVIEW_LIMIT = 10;
 
-const ENTRY_COLS = 'md:grid-cols-[104px_128px_minmax(0,1fr)_132px_128px]';
+/*
+ * Track widths sized to what the cells actually hold, measured rather than
+ * guessed. Two were too narrow and their content simply overflowed, because
+ * nothing in either cell truncates:
+ *
+ *  - Date was 104px. The block is two lines — the value date, and "Recorded
+ *    5 Sept 2026" beneath it — and that second line runs 115px, so it spilled
+ *    11px past its own track into the gap before Entry.
+ *  - Actions was 128px. A receipt row carries both Receipt and Reverse, 147px
+ *    together, so the pair started 19px to the LEFT of the track and sat under
+ *    the amount.
+ *
+ * Widened to 120px and 152px, which clears both with a few pixels spare. Detail
+ * is the 1fr track and simply absorbs the difference.
+ */
+const ENTRY_COLS = 'md:grid-cols-[120px_128px_minmax(0,1fr)_132px_152px]';
 
 interface ProjectMoneyTabProps {
   projectId: string;
