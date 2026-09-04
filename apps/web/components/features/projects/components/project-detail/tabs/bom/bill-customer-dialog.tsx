@@ -2,7 +2,7 @@
 
 import { Alert, Button, CircularProgress } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 
 import {
   MUIDialog,
@@ -46,18 +46,54 @@ export function BillCustomerDialog({
   // the mutation: `useLedgerMutations` already invalidates the ledger root on
   // success, which is what moves this number once the change order lands.
   const summary = useProjectLedger(projectId, { enabled: open });
+  // Everything agreed after the quote was signed. `undefined` while the
+  // summary is still in flight — the seeding effect below waits for it.
+  const changeOrderPaise = summary.data?.changeOrderPaise;
 
   const [reason, setReason] = useState('');
   const [amount, setAmount] = useState('');
+  // Whether the amount has been seeded for THIS opening. A ref, not state:
+  // seeding must happen exactly once per open, and re-rendering on it would
+  // re-run the effect that reads it.
+  const seeded = useRef(false);
 
-  // Re-derive from the live variance every time the dialog opens, rather than
-  // once on mount — a BOM edit made since this was last open must not leave a
-  // stale suggestion sitting in the field.
+  // Clear both fields on every open. A BOM edit made since this was last open
+  // must not leave a stale suggestion sitting in the field.
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      seeded.current = false;
+      return;
+    }
     setReason('');
-    setAmount(variancePaise > 0 ? paiseToRupees(variancePaise).toFixed(2) : '');
-  }, [open, variancePaise]);
+    setAmount('');
+  }, [open]);
+
+  // Billing does not change the BOM — that is the whole point, and it is why
+  // `variancePaise` still reads +₹3,385 after a ₹3,385 change order has been
+  // raised. This dialog used to re-fill the amount box with that full variance
+  // every single time it opened, so a project already billed in full silently
+  // offered the identical amount again: one more description typed and the
+  // customer is charged twice for the same material change.
+  //
+  // So the suggestion is now conditional, and it waits for the summary rather
+  // than guessing while it loads: pre-fill only when nothing has been agreed
+  // after signing yet. Once anything has, the box starts empty and the panel
+  // below says what is already on the contract, making a second charge a
+  // deliberate act instead of an accident.
+  //
+  // `changeOrderPaise` is everything agreed after signing, not only what was
+  // billed from this tab — the change-order endpoint takes "free text and any
+  // amount" and nothing links one back to the BOM. That is why the amount is
+  // withheld and the total shown, rather than a remainder being computed: a
+  // subtraction would be a guess, and a wrong one would block legitimate
+  // billing.
+  useEffect(() => {
+    if (!open || seeded.current || changeOrderPaise === undefined) return;
+    seeded.current = true;
+    if (changeOrderPaise === 0 && variancePaise > 0) {
+      setAmount(paiseToRupees(variancePaise).toFixed(2));
+    }
+  }, [open, changeOrderPaise, variancePaise]);
 
   const amountPaise = amount ? rupeesToPaise(Number(amount)) : 0;
   const valid = reason.trim().length > 0 && amountPaise > 0;
@@ -93,6 +129,24 @@ export function BillCustomerDialog({
 
       <MUIDialogBody>
         <div className="flex flex-col gap-4">
+          {changeOrderPaise !== undefined && changeOrderPaise > 0 ? (
+            <Alert severity="warning" variant="outlined">
+              <div className="flex flex-col gap-1 text-sm">
+                <span>
+                  <span className="font-medium">
+                    {formatCurrency(changeOrderPaise / 100)}
+                  </span>{' '}
+                  has already been agreed on this contract since the quote was signed.
+                </span>
+                <span className="text-xs">
+                  The material change below still reads its full value — billing never changes
+                  the BOM. Check the Finance tab before charging again, and enter only what is
+                  genuinely still unbilled.
+                </span>
+              </div>
+            </Alert>
+          ) : null}
+
           <MUIInput
             fieldLabel="What's being billed"
             required
