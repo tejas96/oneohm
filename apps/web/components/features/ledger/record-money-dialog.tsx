@@ -178,6 +178,31 @@ export function RecordMoneyDialog({
           paymentMethod: method,
           reference: reference || undefined,
           notes: notes || undefined,
+          /*
+           * Opened from a milestone's Record button, so the money is aimed at
+           * that milestone rather than left to the waterfall.
+           *
+           * Without this the server falls back to filling milestones in order
+           * and spilling over, which is right for an untargeted receipt and
+           * wrong here: a payment recorded against milestone 4 landed on
+           * milestone 2 because 1 was already settled. The row said one thing
+           * and the ledger did another, and the operator had no way to see it
+           * until they went looking at the schedule afterwards.
+           *
+           * Only the portion up to that milestone's own balance is aimed at
+           * it. Anything beyond is left unallocated so the server can spill it
+           * the usual way — pinning the whole amount to one milestone would
+           * over-allocate it, and the operator is allowed to record a payment
+           * larger than the term it came in for.
+           */
+          allocations: forMilestone
+            ? [
+                {
+                  milestoneId: forMilestone.milestoneId,
+                  amountPaise: Math.min(amountPaise, forMilestone.balancePaise),
+                },
+              ]
+            : undefined,
           proofDocument: proof ?? undefined,
         });
         reset();
@@ -325,7 +350,11 @@ export function RecordMoneyDialog({
           </div>
 
           {isReceipt && amountPaise > 0 && milestones.length > 0 && (
-            <AllocationPreview milestones={milestones} amountPaise={amountPaise} />
+            <AllocationPreview
+              milestones={milestones}
+              amountPaise={amountPaise}
+              forMilestone={forMilestone}
+            />
           )}
         </div>
       </MUIDialogBody>
@@ -361,15 +390,35 @@ export function RecordMoneyDialog({
 function AllocationPreview({
   milestones,
   amountPaise,
+  forMilestone,
 }: {
   milestones: MilestoneBalance[];
   amountPaise: number;
+  /** Set when the dialog was opened from one milestone's Record button. */
+  forMilestone?: MilestoneBalance | null;
 }): JSX.Element {
   let remaining = amountPaise;
   const planned: Array<{ name: string; paise: number }> = [];
 
+  /*
+   * A targeted receipt takes its own milestone FIRST, then spills the rest down
+   * the waterfall — mirroring exactly what submit() sends and what the server
+   * then does with it.
+   *
+   * Simulating the plain waterfall here would put this preview back in the
+   * position the bug came from: showing the money landing on milestone 2 while
+   * it is actually aimed at milestone 4. A preview that disagrees with the
+   * submission is worse than no preview.
+   */
+  if (forMilestone && forMilestone.balancePaise > 0) {
+    const take = Math.min(remaining, forMilestone.balancePaise);
+    planned.push({ name: forMilestone.name, paise: take });
+    remaining -= take;
+  }
+
   for (const m of milestones) {
     if (remaining <= 0) break;
+    if (m.milestoneId === forMilestone?.milestoneId) continue;
     if (m.derivedStatus === 'waived' || m.balancePaise <= 0) continue;
     const take = Math.min(remaining, m.balancePaise);
     planned.push({ name: m.name, paise: take });
