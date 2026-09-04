@@ -93,22 +93,44 @@ export class DeleteQuoteVersionBoms1856700000000 implements MigrationInterface {
     await queryRunner.query(`DROP TRIGGER trg_bom_changes_append_only ON bom_changes`);
     await queryRunner.query(`DROP TRIGGER trg_bom_changes_no_truncate ON bom_changes`);
 
-    // ---- 3. Delete ONLY the trigger-probe row ----
+    // ---- 3. Delete the trigger-probe row IF ONE EXISTS ----
+    //
+    // AT MOST one, never exactly one. The probe was written BY HAND during
+    // development to prove the append-only trigger rejects a DELETE — no
+    // migration creates it. So it exists only on a database that went through
+    // that session, and on every other one — a fresh clone, staging,
+    // production, CI, a teammate's laptop — the count is legitimately 0.
+    //
+    // Requiring exactly 1 made this migration refuse to run anywhere it had
+    // not already been run by hand. That is the opposite of what a migration
+    // is for. Found by running this batch against a second, untouched
+    // database; every review passed because they all only ever saw the first.
+    //
+    // More than one is still an error: the probe is a single known row, and
+    // several would mean something else is writing that reason string.
     const probeBefore = (await queryRunner.query(
       `SELECT COUNT(*)::int AS n FROM bom_changes WHERE reason = 'trigger probe'`,
     )) as Array<{ n: number }>;
-    if ((probeBefore[0]?.n ?? 0) !== 1) {
+    const probeCount = probeBefore[0]?.n ?? 0;
+
+    if (probeCount > 1) {
       throw new Error(
-        `Expected exactly 1 'trigger probe' row in bom_changes, found ` +
-          `${probeBefore[0]?.n ?? 0}. Aborting rather than guessing what to delete.`,
+        `Found ${probeCount} 'trigger probe' rows in bom_changes; expected at most 1. ` +
+          `Aborting rather than guessing what to delete.`,
       );
     }
-    await queryRunner.query(`DELETE FROM bom_changes WHERE reason = 'trigger probe'`);
-    const probeAfter = (await queryRunner.query(
-      `SELECT COUNT(*)::int AS n FROM bom_changes WHERE reason = 'trigger probe'`,
-    )) as Array<{ n: number }>;
-    if ((probeAfter[0]?.n ?? 0) !== 0) {
-      throw new Error(`'trigger probe' row survived its own DELETE — aborting.`);
+
+    if (probeCount === 1) {
+      await queryRunner.query(`DELETE FROM bom_changes WHERE reason = 'trigger probe'`);
+      const probeAfter = (await queryRunner.query(
+        `SELECT COUNT(*)::int AS n FROM bom_changes WHERE reason = 'trigger probe'`,
+      )) as Array<{ n: number }>;
+      if ((probeAfter[0]?.n ?? 0) !== 0) {
+        throw new Error(`'trigger probe' row survived its own DELETE — aborting.`);
+      }
+      console.warn(`[migration] Removed the hand-written 'trigger probe' row.`);
+    } else {
+      console.warn(`[migration] No 'trigger probe' row present — nothing to clean up.`);
     }
 
     // ---- 4. Delete the quote_version BOMs (bom_items cascades) ----
