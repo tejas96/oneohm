@@ -58,7 +58,14 @@ export class BomChangeRepository {
     }));
   }
 
-  /** Signed sum. Equals current BOM value minus quoted BOM value. */
+  /**
+   * Signed sum of every logged impact for a BOM. Equals the CURRENT BOM
+   * value, not current minus quoted: seeding logs each line's FULL total as
+   * an `add` (there being no prior quoted value to net against at that
+   * point), so the quoted value is already folded into the sum before any
+   * later edit lands. Read against `currentPaise`, never against variance —
+   * see bom-read.service.ts's `reconciles` check.
+   */
   async sumImpact(bomId: string, manager?: EntityManager): Promise<number> {
     const repo = (manager ?? this.dataSource).getRepository(BomChangeEntity);
     const row = await repo

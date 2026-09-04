@@ -364,7 +364,12 @@ export class BomBaselineService {
    * Every movement goes through BomEditService with source = 'office', so an
    * office-driven re-baseline is distinguishable from a site edit in the log
    * and nothing bypasses the change log. Each of those calls is its own
-   * transaction that writes the item and its log row together.
+   * transaction that writes the item and its log row together — but the LOOP
+   * over all of them is NOT itself atomic: a failure partway through leaves a
+   * partial re-baseline applied. That is safe because the operation is
+   * convergent — re-running preview→apply only ever proposes what is still
+   * left to move — and the append-only change log stays consistent either
+   * way, with one committed row per movement that actually landed.
    *
    * DELIBERATELY does NOT move bom.baseline_quote_version_id or any line's
    * quoted_quantity. DO NOT "FIX" THIS.
@@ -522,6 +527,14 @@ export class BomBaselineService {
         this.logger.warn(
           `Project ${projectId}: quote line "${line.name}" has quantity ${quantity}, so no ` +
             `unit price can be derived from its line total; skipped.`,
+        );
+        continue;
+      }
+
+      if (line.totalPrice <= 0) {
+        this.logger.warn(
+          `Project ${projectId}: quote line "${line.name}" has no total price, so no unit ` +
+            `price can be derived from it; skipped.`,
         );
         continue;
       }

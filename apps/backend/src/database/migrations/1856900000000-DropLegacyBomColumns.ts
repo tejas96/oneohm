@@ -62,12 +62,27 @@ export class DropLegacyBomColumns1856900000000 implements MigrationInterface {
         (SELECT COUNT(*)::int FROM bom_items WHERE created_by IS NULL)  AS item_no_creator,
         (SELECT COUNT(*)::int FROM bom_items bi
            LEFT JOIN products p ON p.id = bi.product_id
-          WHERE bi.product_id IS NOT NULL AND p.id IS NULL)             AS item_bad_product
+          WHERE bi.product_id IS NOT NULL AND p.id IS NULL)             AS item_bad_product,
+        (SELECT COUNT(*)::int FROM (
+           SELECT project_id FROM bom GROUP BY project_id HAVING COUNT(*) > 1
+         ) d)                                                           AS bom_dup_project,
+        (SELECT COUNT(*)::int FROM bom_items
+          WHERE quantity IS NOT NULL AND quantity < 0)                  AS item_neg_quantity,
+        (SELECT COUNT(*)::int FROM bom_items
+          WHERE pricing_basis IS NOT NULL
+            AND pricing_basis NOT IN ('per_unit','per_watt','per_kw'))  AS item_bad_pricing_basis,
+        (SELECT COUNT(*)::int FROM bom_items
+          WHERE source IS NOT NULL
+            AND source NOT IN ('quote','site','office'))                AS item_bad_source
     `)) as Array<{
       bom_no_project: number;
       item_no_product: number;
       item_no_creator: number;
       item_bad_product: number;
+      bom_dup_project: number;
+      item_neg_quantity: number;
+      item_bad_pricing_basis: number;
+      item_bad_source: number;
     }>;
 
     if (counts && counts.bom_no_project > 0) {
@@ -92,6 +107,32 @@ export class DropLegacyBomColumns1856900000000 implements MigrationInterface {
       throw new Error(
         `Cannot migrate: ${counts.item_bad_product} bom_items row(s) reference a product ` +
           `that no longer exists. fk_bom_items_product would fail validation — resolve them first.`,
+      );
+    }
+    if (counts && counts.bom_dup_project > 0) {
+      throw new Error(
+        `Cannot migrate: ${counts.bom_dup_project} project(s) have more than one bom row. ` +
+          `uq_bom_project requires at most one per project — merge or delete the extras first.`,
+      );
+    }
+    if (counts && counts.item_neg_quantity > 0) {
+      throw new Error(
+        `Cannot migrate: ${counts.item_neg_quantity} bom_items row(s) have a negative ` +
+          `quantity. chk_bom_items_quantity_non_negative would fail validation — resolve them first.`,
+      );
+    }
+    if (counts && counts.item_bad_pricing_basis > 0) {
+      throw new Error(
+        `Cannot migrate: ${counts.item_bad_pricing_basis} bom_items row(s) have a ` +
+          `pricing_basis outside ('per_unit','per_watt','per_kw'). chk_bom_items_pricing_basis ` +
+          `would fail validation — resolve them first.`,
+      );
+    }
+    if (counts && counts.item_bad_source > 0) {
+      throw new Error(
+        `Cannot migrate: ${counts.item_bad_source} bom_items row(s) have a source outside ` +
+          `('quote','site','office'). chk_bom_items_source would fail validation — resolve ` +
+          `them first.`,
       );
     }
 

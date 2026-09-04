@@ -275,7 +275,7 @@ export const ProjectBomTab = React.memo(
               {baselineInstallation ? (
                 <OtherCostsCard
                   installation={baselineInstallation}
-                  bomTotal={bom.totals.currentPaise / 100}
+                  bomTotal={bom.totals.quotedPaise / 100}
                   quoteBasePrice={baselineBasePrice}
                   profitabilityAmount={baselineProfitabilityAmount}
                   title="Other costs (as quoted)"
