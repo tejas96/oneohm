@@ -558,8 +558,15 @@ export const ProjectDetailHeader = React.memo(
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
+              {/* The project CODE, not its name. The name is a sentence built
+                  from customer, site and size — "Rohan Deshmukh - rohan-2nd-
+                  house - 20.13kW" — which the 260px cap then truncated, so the
+                  crumb identified the project by a prefix it shared with every
+                  other project of the same customer. The code is short, unique,
+                  and the string people actually quote to each other. The full
+                  name is directly below in the header, so nothing is lost. */}
               <BreadcrumbPage className="max-w-[260px] truncate font-medium">
-                {project.name}
+                {project.projectNumber || project.name}
               </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
