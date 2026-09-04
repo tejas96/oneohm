@@ -15,7 +15,6 @@ import { QuoteSystemConfigCard } from './overview/quote-system-config-card';
 import type { QuoteDetail } from '../../../hooks/types';
 import { quoteBomLines } from '../../../utils/quote-bom-lines';
 
-import { Can } from '@/components/shared/guards';
 import { useCan } from '@/lib/rbac';
 import { formatDate } from '@/lib/utils/format';
 
@@ -224,16 +223,21 @@ export function QuoteOverviewTab({
               base price. Replaces the old QuoteInstallationCard: that card
               and this one both showed the installation figures, and two
               cards for the same numbers is the duplication this rebuild
-              exists to remove. Same permission gate as the card it
-              replaces — this is still internal cost data. */}
+              exists to remove.
+
+              Not wrapped in <Can>, unlike the card it replaces: the
+              component list and the Other-costs subtotal are fine for
+              anyone who can see the quote. Only the reconciliation down to
+              Quote base price needs `quotes.profitability` (it would leak
+              margin), so that gate now lives inside OtherCostsCard itself,
+              same as QuotePricingCard's own cost/margin rows above. */}
           {installation && (
-            <Can permission={'quotes.profitability'}>
-              <OtherCostsCard
-                installation={installation}
-                bomTotal={bomTotal}
-                quoteBasePrice={breakdown?.basePrice ?? 0}
-              />
-            </Can>
+            <OtherCostsCard
+              installation={installation}
+              bomTotal={bomTotal}
+              quoteBasePrice={breakdown?.basePrice ?? 0}
+              profitabilityAmount={profitAmount}
+            />
           )}
 
           {/* Sidebar Info/Actions */}

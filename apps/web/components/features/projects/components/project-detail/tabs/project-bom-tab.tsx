@@ -150,6 +150,8 @@ export const ProjectBomTab = React.memo(
     );
     const baselineInstallation = baselineVersion?.quoteSnapshot?.calculation?.installation;
     const baselineBasePrice = baselineVersion?.quoteSnapshot?.pricing?.basePrice ?? 0;
+    const baselineProfitabilityAmount =
+      baselineVersion?.quoteSnapshot?.calculation?.profitabilityAmount;
     // A BOM edit never moves the contract by itself — billing is the one
     // explicit human action that does, and it moves money just like the
     // money tab's own record-payment and change-order buttons.
@@ -275,6 +277,7 @@ export const ProjectBomTab = React.memo(
                   installation={baselineInstallation}
                   bomTotal={bom.totals.currentPaise / 100}
                   quoteBasePrice={baselineBasePrice}
+                  profitabilityAmount={baselineProfitabilityAmount}
                   title="Other costs (as quoted)"
                   className="mb-4"
                 />

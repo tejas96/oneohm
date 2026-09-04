@@ -3,6 +3,7 @@
 import React from 'react';
 
 import type { CalculatedInstallation } from '@/components/features/quotes/types/calculator.types';
+import { useCan } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -74,6 +75,15 @@ export interface OtherCostsCardProps {
   /** `pricing.basePrice` from the same snapshot, in rupees. */
   quoteBasePrice: number;
   /**
+   * `calculation.profitabilityAmount` from the same snapshot, in rupees —
+   * the margin `calculatePricing` adds on top of raw component costs before
+   * GST (`basePrice = rawBasePrice + profitabilityAmount`). Without this,
+   * "Materials + Other costs" can never reach `quoteBasePrice`: that gap
+   * *is* the margin, not a sign of a missing cost component. Only read when
+   * the viewer can see margin — see `canSeeMargin` below.
+   */
+  profitabilityAmount?: number | null;
+  /**
    * Card header, and the reconciliation row's label for this card's own
    * total. Defaults to "Other costs". The project BOM tab passes
    * "Other costs (as quoted)" so nobody mistakes these for figures
@@ -89,14 +99,27 @@ export interface OtherCostsCardProps {
  * everything the BOM deliberately excludes — labour, statutory fees,
  * transport, supervision, floor access — whatever
  * installation_pricing.cost_components happens to hold for this quote.
+ *
+ * The reconciliation itself (Materials + Other costs + Margin = Quote base
+ * price) is gated on `quotes.profitability`, the same permission
+ * `quote-pricing-card.tsx` uses to narrow its own cost/margin rows — margin
+ * is exactly the kind of figure that gate exists to protect, and showing a
+ * partial sum that looks wrong (without margin, the three numbers never
+ * balance) is worse than not showing the sum at all. Anyone can still see
+ * the itemised cost components and their subtotal; only the tie-out to the
+ * quote's base price is restricted.
  */
 export function OtherCostsCard({
   installation,
   bomTotal,
   quoteBasePrice,
+  profitabilityAmount,
   title = 'Other costs',
   className,
 }: OtherCostsCardProps): React.JSX.Element | null {
+  const { can } = useCan();
+  const canSeeMargin = can('quotes.profitability');
+
   const breakdown = installation?.breakdown;
   const entries = breakdown
     ? Object.entries(breakdown).filter(([key]) => !SKIP_KEYS.has(key))
@@ -105,7 +128,8 @@ export function OtherCostsCard({
   if (entries.length === 0) return null;
 
   const otherTotal = entries.reduce((sum, [, value]) => sum + (Number(value) || 0), 0);
-  const diff = bomTotal + otherTotal - quoteBasePrice;
+  const margin = profitabilityAmount ?? 0;
+  const diff = bomTotal + otherTotal + margin - quoteBasePrice;
   const reconciles = Math.abs(diff) <= 1;
 
   return (
@@ -130,17 +154,27 @@ export function OtherCostsCard({
         </div>
       )}
 
-      <div className="mt-3 space-y-1.5 border-t border-border pt-3">
-        <Row label="Materials (BOM)" value={formatCurrency(bomTotal)} />
-        <Row label={title} value={formatCurrency(otherTotal)} />
-        <Row label="Quote base price" value={formatCurrency(quoteBasePrice)} emphasis />
-        {!reconciles && (
-          <p className="pt-1 text-xs text-amber-600">
-            Materials plus other costs differ from the base price by {formatCurrency(Math.abs(diff))}.
-            The breakdown may be incomplete.
-          </p>
-        )}
-      </div>
+      {canSeeMargin ? (
+        <div className="mt-3 space-y-1.5 border-t border-border pt-3">
+          <Row label="Materials (BOM)" value={formatCurrency(bomTotal)} />
+          <Row label={title} value={formatCurrency(otherTotal)} />
+          <Row label="Margin" value={formatCurrency(margin)} />
+          <Row label="Quote base price" value={formatCurrency(quoteBasePrice)} emphasis />
+          {!reconciles && (
+            <p className="pt-1 text-xs text-amber-600">
+              Materials, other costs and margin differ from the base price by{' '}
+              {formatCurrency(Math.abs(diff))}. The breakdown may be incomplete.
+            </p>
+          )}
+        </div>
+      ) : (
+        // No `quotes.profitability`: margin is invisible, so the three-way
+        // tie-out cannot be shown without either leaking margin or showing a
+        // sum that looks broken. Component list and this subtotal only.
+        <div className="mt-3 border-t border-border pt-3">
+          <Row label={title} value={formatCurrency(otherTotal)} />
+        </div>
+      )}
     </div>
   );
 }
