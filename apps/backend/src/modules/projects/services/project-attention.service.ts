@@ -1,14 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import {
-  type AttentionItem,
-  type AttentionSeverity,
-  MaterialStatus,
-  TaskStatus,
-} from '@tejas96/shared/types';
+import { type AttentionItem, type AttentionSeverity, TaskStatus } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import type { AttentionResponseDto } from '../dto/attention-response.dto';
-import { MaterialRepository } from '../repositories/material.repository';
 import { ProjectTaskRepository } from '../repositories/project-task.repository';
 import { ProjectRepository } from '../repositories/project.repository';
 
@@ -26,7 +20,6 @@ const ATTENTION_SERVICE_CONSTANTS = {
   MILESTONE_DUE_SOON_DAYS: 3,
   MAX_ITEMS: 10,
   PAYMENT_SAMPLE_SIZE: 2,
-  MATERIAL_SAMPLE_SIZE: 2,
   /**
    * Below one rupee is not a debt, it is rounding residue.
    *
@@ -68,7 +61,6 @@ export class ProjectAttentionService {
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly projectTaskRepository: ProjectTaskRepository,
-    private readonly materialRepository: MaterialRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -76,9 +68,8 @@ export class ProjectAttentionService {
     // Ownership validation first to guarantee org isolation for all downstream queries.
     await this.projectRepository.findById(projectId);
 
-    const [tasks, materials, outstanding] = await Promise.all([
+    const [tasks, outstanding] = await Promise.all([
       this.projectTaskRepository.findAllForBoard(projectId),
-      this.materialRepository.findByProject(projectId),
       this.findOutstandingMilestones(projectId),
     ]);
 
@@ -189,25 +180,6 @@ export class ProjectAttentionService {
           dueDate: endDate.toISOString(),
         });
       }
-    }
-
-    // ── Material pending alerts ────────────────────────────────────────────
-    const pendingMaterials = materials
-      .filter(
-        (material) => ![MaterialStatus.ALLOCATED, MaterialStatus.USED].includes(material.status),
-      )
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-      .slice(0, ATTENTION_SERVICE_CONSTANTS.MATERIAL_SAMPLE_SIZE);
-
-    for (const material of pendingMaterials) {
-      items.push({
-        id: `material:${material.id}:pending`,
-        kind: 'material_pending',
-        severity: 'warning',
-        title: `${material.materialName} is pending`,
-        subtitle: `Status: ${material.status.replace(/_/g, ' ')}`,
-        href: `/projects/${projectId}?tab=bom`,
-      });
     }
 
     // ── Outstanding milestone alerts ──────────────────────────────────────

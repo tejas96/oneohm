@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import type { JSX } from 'react';
 
-import { PROPERTY_STATUS_TONE, QUOTE_STATUS_TONE } from '../../constants';
+import { getSiteLifecycle, QUOTE_STATUS_TONE } from '../../constants';
 import type { CustomerPropertyResponse } from '../../hooks';
 import {
   DetailCard,
@@ -36,7 +36,7 @@ import { detailTableSx, tableCardSx } from '../styles';
 
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { useGatedAction } from '@/lib/rbac';
-import { formatCurrency, formatSystemSize, toTitleLabel } from '@/lib/utils';
+import { formatSystemSize, siteValue, toTitleLabel } from '@/lib/utils';
 
 export interface PropertiesTabProps {
   customerId: string;
@@ -127,14 +127,23 @@ export function PropertiesTab({
                 <TableCell sx={{ minWidth: 220 }}>Site</TableCell>
                 <TableCell sx={{ minWidth: 130 }}>Location</TableCell>
                 <TableCell sx={{ minWidth: 190 }}>Stage</TableCell>
-                <TableCell sx={{ minWidth: 150 }}>Latest quote</TableCell>
+                {/* Not "Latest quote": once a site converts, the figure below
+                    is the project's contract, which moves with change orders
+                    while the quote never does. */}
+                <TableCell sx={{ minWidth: 150 }}>Quote &amp; value</TableCell>
                 <TableCell sx={{ minWidth: 110 }}>Status</TableCell>
                 <TableCell align="right" sx={{ width: 56 }} />
               </TableRow>
             </TableHead>
             <TableBody>
               {properties.map((property) => {
-                const statusTone = PROPERTY_STATUS_TONE[property.status] ?? 'neutral';
+                // The site's own status stops at "Converted" for life; once a
+                // project exists, its state is what this site is actually
+                // doing — see getSiteLifecycle.
+                const lifecycle = getSiteLifecycle(property);
+                // A converted site is worth what its contract says today, not
+                // what its quote said at signing — see lib/utils/site-value.ts.
+                const value = siteValue(property);
                 const quoteStatus = property.latestQuoteStatus;
                 const quoteTone: DetailTone = quoteStatus
                   ? (QUOTE_STATUS_TONE[quoteStatus] ?? 'neutral')
@@ -149,7 +158,7 @@ export function PropertiesTab({
                   >
                     <TableCell>
                       <Stack direction="row" alignItems="center" gap={1.25} sx={{ minWidth: 0 }}>
-                        <IconCircle tone={statusTone}>
+                        <IconCircle tone={lifecycle.tone}>
                           <HomeWorkOutlinedIcon />
                         </IconCircle>
                         <Box sx={{ minWidth: 0 }}>
@@ -188,10 +197,8 @@ export function PropertiesTab({
                         <Stack gap={0.5} alignItems="flex-start">
                           <TonePill label={toTitleLabel(quoteStatus)} tone={quoteTone} dot />
                           <Stack direction="row" alignItems="baseline" gap={0.75}>
-                            {property.latestQuoteFinalPrice ? (
-                              <Mono sx={{ fontWeight: 500 }}>
-                                {formatCurrency(property.latestQuoteFinalPrice)}
-                              </Mono>
+                            {value.label ? (
+                              <Mono sx={{ fontWeight: 500 }}>{value.label}</Mono>
                             ) : null}
                             {property.latestQuoteSystemSizeKw ? (
                               <Typography
@@ -201,6 +208,17 @@ export function PropertiesTab({
                               </Typography>
                             ) : null}
                           </Stack>
+                          {value.note ? (
+                            <Typography
+                              sx={{
+                                fontSize: '0.625rem',
+                                color: 'var(--ds-text-tertiary)',
+                                lineHeight: 1.35,
+                              }}
+                            >
+                              {value.note}
+                            </Typography>
+                          ) : null}
                         </Stack>
                       ) : (
                         <Typography sx={{ fontSize: '0.75rem', color: 'var(--ds-text-tertiary)' }}>
@@ -210,7 +228,7 @@ export function PropertiesTab({
                     </TableCell>
 
                     <TableCell>
-                      <TonePill label={toTitleLabel(property.status)} tone={statusTone} dot />
+                      <TonePill label={lifecycle.label} tone={lifecycle.tone} dot />
                     </TableCell>
 
                     <TableCell align="right">

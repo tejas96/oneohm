@@ -234,7 +234,11 @@ export class ProductRepository {
     }
 
     if (preferredWattage) {
-      query.andWhere("(product.specifications->>'min_wattage')::int = :preferredWattage", {
+      // `wattage` is the REQUIRED attribute on solar_panel and is what this query
+      // orders by and what PricingService.extractWattage reads. The previous
+      // filter used the OPTIONAL `min_wattage`, so a panel carrying only
+      // `wattage` was invisible to a request for its own wattage.
+      query.andWhere("(product.specifications->>'wattage')::int = :preferredWattage", {
         preferredWattage,
       });
     }

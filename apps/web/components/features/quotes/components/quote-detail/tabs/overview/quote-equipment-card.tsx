@@ -346,10 +346,11 @@ export function QuoteEquipmentCard({
                   <div>
                     <h4 className="font-semibold text-foreground text-xs">{snapStructure.name}</h4>
                     <span className="text-[10px] text-foreground-tertiary mt-0.5 block leading-none">
-                      {snapStructure.structureType
-                        ? snapStructure.structureType.replace(/_/g, ' ')
-                        : ''}{' '}
-                      · Qty: {snapStructure.quantity ?? 0}
+                      {/* Raw, unformatted — matches the BOM-sourced branch above so a
+                          quote renders identically regardless of which branch a given
+                          quote takes (see quote-detail-content.tsx's bomLines memo). */}
+                      {snapStructure.structureType ?? ''}
+                      {' · '}Qty: {snapStructure.quantity ?? 0}
                     </span>
                   </div>
                   {canViewEquipmentPricing && (

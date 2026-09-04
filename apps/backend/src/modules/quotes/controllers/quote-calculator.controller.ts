@@ -26,7 +26,6 @@ import { plainToInstance } from 'class-transformer';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { BomService } from '../../bom/services/bom.service';
 import {
   InstallationPricingResponseDto,
   QuoteConfigurationResponseDto,
@@ -74,7 +73,6 @@ export class QuoteCalculatorController {
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
     private readonly installationPricingRepo: InstallationPricingRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
-    private readonly bomService: BomService,
   ) {}
 
   /**
@@ -268,8 +266,6 @@ export class QuoteCalculatorController {
 
     const quote = await this.quoteService.create(createDto, currentUser.id);
 
-    await this.persistBom(quote.versionId, calculation, currentUser.id);
-
     return {
       quoteId: quote.id,
       quoteNumber: quote.quoteNumber,
@@ -427,22 +423,5 @@ export class QuoteCalculatorController {
     return plainToInstance(InstallationPricingResponseDto, result.data, {
       excludeExtraneousValues: true,
     });
-  }
-
-  /**
-   * Create a BOM snapshot from the calculation result.
-   * Non-fatal: failures are logged but don't block the quote save.
-   */
-  private async persistBom(
-    versionId: string,
-    calculation: CalculateQuoteResponseDto,
-    userId: string,
-  ): Promise<void> {
-    try {
-      await this.bomService.deleteByEntity('quote_version', versionId);
-      await this.bomService.createFromCalculation('quote_version', versionId, calculation, userId);
-    } catch (error) {
-      this.logger.warn(`BOM creation failed for version ${versionId}: ${(error as Error).message}`);
-    }
   }
 }

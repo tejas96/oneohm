@@ -3,4 +3,3 @@ export { CriticalAlerts } from './critical-alerts';
 export { WorkerMatrix } from './worker-matrix';
 export { ProjectMilestones } from './project-milestones';
 export { ProgressTrend } from './progress-trend';
-export { SiteProgress } from './site-activity';

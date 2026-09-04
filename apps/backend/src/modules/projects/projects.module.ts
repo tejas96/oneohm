@@ -2,7 +2,6 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
-  MaterialController,
   ProjectAttentionController,
   ProjectAnalyticsController,
   ProjectController,
@@ -14,7 +13,6 @@ import {
 } from './controllers';
 import {
   ProjectEntity,
-  ProjectMaterialEntity,
   ProjectTaskEntity,
   ProjectTeamMemberEntity,
   ProjectChatMessageEntity,
@@ -22,7 +20,6 @@ import {
 } from './entities';
 import { ProjectTeamGuard } from './guards';
 import {
-  MaterialRepository,
   ProjectRepository,
   ProjectTaskRepository,
   ProjectTeamRepository,
@@ -30,7 +27,6 @@ import {
   WorkflowStepRepository,
 } from './repositories';
 import {
-  MaterialService,
   ProjectAttentionService,
   ProjectAnalyticsService,
   ProjectService,
@@ -51,7 +47,6 @@ import { UsersModule } from '../users/users.module';
   imports: [
     TypeOrmModule.forFeature([
       ProjectEntity,
-      ProjectMaterialEntity,
       WorkflowStepEntity,
       ProjectTaskEntity,
       ProjectTeamMemberEntity,
@@ -60,14 +55,15 @@ import { UsersModule } from '../users/users.module';
     QuotesModule,
     CustomersModule,
     UsersModule,
-    BomModule,
+    // forwardRef since Task 16: BomModule imports this one back, for the
+    // ProjectTeamGuard that guards projects/:projectId/bom.
+    forwardRef(() => BomModule),
     forwardRef(() => LedgerModule),
   ],
   controllers: [
     ProjectAnalyticsController, // registered before ProjectController — static 'analytics' segments resolve first
     ProjectAttentionController, // static ':id/attention' should resolve before generic ':id' routes
     ProjectController,
-    MaterialController,
     WorkflowStepController,
     ProjectTaskController,
     ProjectTeamController,
@@ -77,7 +73,6 @@ import { UsersModule } from '../users/users.module';
   providers: [
     // Repositories
     ProjectRepository,
-    MaterialRepository,
     WorkflowStepRepository,
     ProjectTaskRepository,
     ProjectTeamRepository,
@@ -85,7 +80,6 @@ import { UsersModule } from '../users/users.module';
     // Services
     ProjectService,
     ProjectAttentionService,
-    MaterialService,
     WorkflowStepService,
     WorkflowEngineService,
     ProjectTaskService,
@@ -98,14 +92,12 @@ import { UsersModule } from '../users/users.module';
   ],
   exports: [
     ProjectRepository,
-    MaterialRepository,
     WorkflowStepRepository,
     ProjectTaskRepository,
     ProjectTeamRepository,
     ProjectChatRepository,
     ProjectService,
     ProjectAttentionService,
-    MaterialService,
     WorkflowStepService,
     ProjectTaskService,
     ChangeRequestTaskService,

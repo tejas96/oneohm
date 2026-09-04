@@ -32,9 +32,8 @@ import { customerAvatarSx } from './styles';
 import { getCustomerDisplayName } from './utils';
 import type { Customer } from '../hooks';
 
-import { WhatsAppIcon } from '@/components/ui';
 import { useGatedAction } from '@/lib/rbac';
-import { formatDate, formatPhoneForWhatsApp, getInitials, toTitleLabel } from '@/lib/utils';
+import { formatDate, getInitials, toTitleLabel } from '@/lib/utils';
 
 export interface HeaderSignal {
   id: string;
@@ -147,7 +146,6 @@ export function CustomerDetailHeader({
 
   const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
   const fullName = getCustomerDisplayName(customer);
-  const phoneForWhatsApp = customer.phone ? formatPhoneForWhatsApp(customer.phone) : '';
   const statusTone = CUSTOMER_STATUS_TONE[customer.status] ?? 'neutral';
   const location = [customer.city, customer.state].filter(Boolean).join(', ');
 
@@ -229,16 +227,6 @@ export function CustomerDetailHeader({
                   label="Call customer"
                 >
                   {customer.phone}
-                </Fact>
-              )}
-              {phoneForWhatsApp && (
-                <Fact
-                  icon={<WhatsAppIcon className="size-3.5" />}
-                  href={`https://wa.me/${phoneForWhatsApp}`}
-                  external
-                  label="Message on WhatsApp"
-                >
-                  WhatsApp
                 </Fact>
               )}
               {customer.email && (

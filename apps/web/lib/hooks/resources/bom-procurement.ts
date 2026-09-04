@@ -9,35 +9,34 @@ import { apiClient } from '@/lib/api/client';
 // Types — mirror BomService.getProcurementStatus return shape.
 // ============================================================================
 
-export type BomProcurementItemStatus = 'pending' | 'partial' | 'procured';
-
 export interface BomProcurementItem {
   productId: string;
   name: string;
   unit: string;
   targetQty: number;
-  spentQty: number;
-  status: BomProcurementItemStatus;
-  /** True when spentQty > targetQty (procurement guard was overridden). */
-  over: boolean;
-  remaining: number;
   unitPrice: number | null;
   /** unitPrice * targetQty when unitPrice is known; null otherwise. */
   targetSpend: number | null;
-  /** Sum of (link.quantity * link.unitPrice) across all expense links. */
-  actualSpend: number;
 }
 
 export interface BomProcurementStatus {
   items: BomProcurementItem[];
   totals: {
     totalProducts: number;
-    pending: number;
-    partial: number;
-    procured: number;
-    overProcuredProducts: number;
+    /** What the current BOM says the materials should cost, in rupees. */
     targetSpend: number;
-    actualSpend: number;
+    /**
+     * Total spent on materials for this project, in rupees: the sum of ledger
+     * expenses categorised `materials`.
+     *
+     * Project-level, never per-product. `spentQty`, `remaining`, `status`,
+     * `over` and `actualSpend` used to sit on each item, sourced from
+     * `expense_product_links` — a table with no writer, so they were zero on
+     * every row of every project. The ledger that replaced it records the money
+     * and its category, not the product it bought, so a per-product figure is
+     * not derivable and those fields are gone rather than lying.
+     */
+    materialSpend: number;
   };
 }
 
@@ -55,9 +54,9 @@ export const bomProcurementKeys = {
 // ============================================================================
 
 /**
- * Per-product procurement status for a project: target qty (from BOM)
- * vs spent qty (from expense_product_links). Powers the Procurement
- * section of the BOM tab and the spend-budget metric on the Finance tab.
+ * The project's materials budget: per-product target quantity and cost from the
+ * BOM, plus one project-level total of what has actually been spent on
+ * materials. Powers the Materials budget panel on the BOM tab.
  */
 export function useBomProcurementStatus(
   projectId: string,

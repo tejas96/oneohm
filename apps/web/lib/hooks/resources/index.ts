@@ -202,17 +202,36 @@ export { useQuoteListResource, quoteResourceKeys, type QuoteListFilters } from '
 
 // BOM (FDAL resource)
 export {
-  useEntityBom,
-  useUpdateBomItemSerial,
-  useBomSerialConflicts,
+  useProjectBom,
+  useBomChanges,
   useAllocateBomPending,
-  useSyncProjectBom,
+  useAddBomItem,
+  useChangeBomQuantity,
+  useReplaceBomItem,
+  useRemoveBomItem,
+  useSetBomItemSerials,
+  useBomSerialConflicts,
   bomResourceKeys,
   type Bom,
   type BomItem,
+  type BomItemSerial,
+  type BomTotals,
+  type BomChange,
+  type BomLineChangeState,
+  type BomItemSource,
+  type BomItemAllocationStatus,
+  type BomAllocationStatus,
+  type BomChangeType,
   type BomSerialConflict,
-  type UpdateBomItemSerialPayload,
   type AllocateBomPendingResult,
+  type BomEditResult,
+  type AddBomItemPayload,
+  type AddBomItemResult,
+  type ChangeBomQuantityPayload,
+  type ReplaceBomItemPayload,
+  type ReplaceBomItemResult,
+  type RemoveBomItemPayload,
+  type SetBomItemSerialsPayload,
 } from './bom';
 
 // Finance — Payment Terms (planned receivables)
@@ -274,7 +293,6 @@ export {
   bomProcurementKeys,
   type BomProcurementItem,
   type BomProcurementStatus,
-  type BomProcurementItemStatus,
 } from './bom-procurement';
 
 // Inventory — Stock

@@ -2,61 +2,49 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm
 
 import { BomItemEntity } from './bom-item.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
  * Bill of Materials (BOM) Entity
  *
- * Standalone, decoupled header for a bill of materials.
- * Uses a polymorphic (entity_type, entity_id) reference so the same table
- * can serve quote versions, projects, work orders, or any future entity.
+ * One BOM per project.
  */
 @Entity('bom')
-@Index(['entityType', 'entityId'], { unique: true })
+@Index(['projectId'], { unique: true })
 export class BomEntity extends BaseEntity {
-  // ==================== Organization ====================
-
   // ==================== Identity ====================
   @Column({ name: 'bom_number', type: 'varchar', length: 50, unique: true })
   bomNumber!: string;
 
-  // ==================== Polymorphic Reference ====================
-  @Column({ name: 'entity_type', type: 'varchar', length: 50 })
-  entityType!: string;
+  // ==================== Project ====================
 
-  @Column({ name: 'entity_id', type: 'uuid' })
-  entityId!: string;
+  /**
+   * One BOM per project. Replaces the (entity_type, entity_id) polymorphic
+   * reference, which only ever held 'project' and 'quote_version' and carried
+   * no foreign key in either direction.
+   *
+   * ON DELETE RESTRICT because stock_allocations.bom_id restricts too — a BOM
+   * with reserved stock must be released deliberately, not cascaded away.
+   */
+  @Column({ name: 'project_id', type: 'uuid' })
+  projectId!: string;
 
-  // ==================== Summary ====================
-  @Column({ type: 'varchar', length: 20, default: 'finalized' })
-  status!: string;
+  @ManyToOne(() => ProjectEntity, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'project_id' })
+  project?: ProjectEntity;
 
-  @Column({ name: 'total_items', type: 'integer', default: 0 })
-  totalItems!: number;
-
-  @Column({ name: 'total_cost', type: 'decimal', precision: 15, scale: 2, default: 0 })
-  totalCost!: number;
+  /**
+   * The quote version this BOM was seeded from — what "originally quoted"
+   * means for this project. Mirrors projects.contract_quote_version_id, whose
+   * own comment records the bug this prevents: readers taking the LATEST quote
+   * version silently re-priced a signed deal.
+   */
+  @Column({ name: 'baseline_quote_version_id', type: 'uuid', nullable: true })
+  baselineQuoteVersionId?: string | null;
 
   @Column({ type: 'text', nullable: true })
   notes?: string;
-
-  // ==================== Allocation Tracking ====================
-
-  /**
-   * Granular allocation progress for this BOM:
-   *   pending          — no items reserved yet
-   *   partial          — some items reserved, some pending stock
-   *   fully_allocated  — every product line 100% reserved
-   *
-   * Warehouse is stored on the project (projects.default_warehouse_id) — not here.
-   */
-  @Column({
-    name: 'allocation_status',
-    type: 'varchar',
-    length: 20,
-    default: 'pending',
-  })
-  allocationStatus!: string;
 
   // ==================== Line Items ====================
   @OneToMany(() => BomItemEntity, (item) => item.bom, { cascade: true, eager: false })

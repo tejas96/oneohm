@@ -54,6 +54,15 @@ export interface PropertyItem {
   latestQuoteStatus?: QuoteStatus;
   latestQuoteDate?: string;
   latestQuoteFinalPrice?: number;
+  /**
+   * Present only once the site has become a project. `contractValue` is what
+   * the project is worth TODAY; `latestQuoteFinalPrice` is what its quote said
+   * at signing and never moves again. Use `siteValue()` rather than picking
+   * between them by hand — see lib/utils/site-value.ts.
+   */
+  contractValue?: number;
+  quotedValue?: number;
+  changeOrderValue?: number;
   latestQuoteSystemSizeKw?: number;
 }
 

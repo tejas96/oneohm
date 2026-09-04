@@ -44,6 +44,12 @@ export class ProductPriceRepository {
       query.orderBy(`CASE WHEN price.project_type IS NULL THEN 0 ELSE 1 END`, 'ASC');
     }
 
+    // Deterministic tiebreaker. Without this, two rows in the same project_type
+    // bucket resolved to whichever Postgres returned first — and the winner is
+    // stamped permanently onto BOM lines.
+    query.addOrderBy('price.effectiveFrom', 'DESC');
+    query.addOrderBy('price.createdAt', 'DESC');
+
     return query.getOne();
   }
 
@@ -80,7 +86,11 @@ export class ProductPriceRepository {
         `CASE WHEN price.project_type = :projectType THEN 0 WHEN price.project_type IS NULL THEN 1 ELSE 2 END`,
         'ASC',
       );
+    } else {
+      query.addOrderBy(`CASE WHEN price.project_type IS NULL THEN 0 ELSE 1 END`, 'ASC');
     }
+    query.addOrderBy('price.effectiveFrom', 'DESC');
+    query.addOrderBy('price.createdAt', 'DESC');
 
     const allPrices = await query.getMany();
 
@@ -127,6 +137,41 @@ export class ProductPriceRepository {
 
   async deactivate(id: string): Promise<void> {
     await this.repository.update({ id }, { isActive: false });
+  }
+
+  /**
+   * Active rows whose effective window overlaps [effectiveFrom, effectiveTo].
+   * An open-ended row (effective_to IS NULL) overlaps everything after its start.
+   * Used by the service to refuse an ambiguous price rather than let the reader
+   * pick one arbitrarily.
+   */
+  async findOverlappingActive(
+    productId: string,
+    projectType: string | null,
+    effectiveFrom: string,
+    effectiveTo: string | null,
+    excludeId?: string,
+  ): Promise<ProductPriceEntity[]> {
+    const query = this.repository
+      .createQueryBuilder('price')
+      .where('price.product_id = :productId', { productId })
+      .andWhere('price.is_active = true')
+      .andWhere(
+        projectType === null ? 'price.project_type IS NULL' : 'price.project_type = :projectType',
+        projectType === null ? {} : { projectType },
+      )
+      .andWhere('(:effectiveTo::date IS NULL OR price.effective_from <= :effectiveTo::date)', {
+        effectiveTo,
+      })
+      .andWhere('(price.effective_to IS NULL OR price.effective_to >= :effectiveFrom::date)', {
+        effectiveFrom,
+      });
+
+    if (excludeId) {
+      query.andWhere('price.id <> :excludeId', { excludeId });
+    }
+
+    return query.getMany();
   }
 
   private formatDate(value: Date): string {

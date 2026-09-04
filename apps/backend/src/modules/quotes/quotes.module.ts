@@ -5,7 +5,6 @@ import { QuoteController, QuoteCalculatorController } from './controllers';
 import { QuoteEntity, QuoteVersionEntity } from './entities';
 import { QuoteRepository } from './repositories';
 import { QuoteService, QuoteCalculatorService } from './services';
-import { BomModule } from '../bom/bom.module';
 import { CustomersModule } from '../customers/customers.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
@@ -26,7 +25,6 @@ import { StorageModule } from '../storage/storage.module';
     IntegrationsModule,
     StorageModule,
     forwardRef(() => CustomersModule),
-    forwardRef(() => BomModule),
     forwardRef(() => InventoryModule),
   ],
   controllers: [QuoteController, QuoteCalculatorController],

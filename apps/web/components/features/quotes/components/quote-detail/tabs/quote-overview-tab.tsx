@@ -4,25 +4,23 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Paper, Typography } from '@mui/material';
 import React, { useMemo } from 'react';
 
+import { OtherCostsCard } from './overview/other-costs-card';
 import { QuoteEquipmentCard } from './overview/quote-equipment-card';
 import { QuoteHeroCard } from './overview/quote-hero-card';
-import { QuoteInstallationCard } from './overview/quote-installation-card';
 import { QuoteMilestonesCard } from './overview/quote-milestones-card';
 import { QuotePricingCard } from './overview/quote-pricing-card';
 import { QuoteSidebar } from './overview/quote-sidebar';
 import { QuoteSustainabilityCard } from './overview/quote-sustainability-card';
 import { QuoteSystemConfigCard } from './overview/quote-system-config-card';
 import type { QuoteDetail } from '../../../hooks/types';
+import { quoteBomLines } from '../../../utils/quote-bom-lines';
 
-import { Can } from '@/components/shared/guards';
-import { type Bom } from '@/lib/hooks/resources';
 import { useCan } from '@/lib/rbac';
 import { formatDate } from '@/lib/utils/format';
 
 interface QuoteOverviewTabProps {
   quote: QuoteDetail;
   isActive: boolean;
-  bom?: Bom;
   isBomLoading?: boolean;
   isLatestPropertyQuote: boolean;
 }
@@ -31,7 +29,6 @@ const round2 = (v: number): number => Math.round(v * 100) / 100;
 
 export function QuoteOverviewTab({
   quote,
-  bom,
   isBomLoading,
   isLatestPropertyQuote,
 }: QuoteOverviewTabProps): React.JSX.Element {
@@ -62,40 +59,21 @@ export function QuoteOverviewTab({
   const calcObj = activeSnapshot?.calculation as unknown as Record<string, unknown> | undefined;
   const actualKw = round2(systemSizeKw);
 
-  type InstallationRecord = Partial<
-    Record<
-      | 'electricalWork'
-      | 'fixedMaterial'
-      | 'variableFloor'
-      | 'structureCost'
-      | 'installationLabor'
-      | 'loadingUnloading'
-      | 'msedclCharges'
-      | 'supervision'
-      | 'transport'
-      | 'totalBeforeTax'
-      | 'gstAmount'
-      | 'gstRate'
-      | 'totalWithGst',
-      number
-    >
-  >;
-  const installationData = calcObj?.installation as InstallationRecord | undefined;
+  // Same snapshot the equipment cards already read, but as the BOM lines
+  // Task 9 defines rather than the raw panel/inverter/structure arrays —
+  // this is the one true "physical items" total the reconciliation card
+  // below checks against the quote's base price.
+  const bomLines = useMemo(
+    () => (activeSnapshot?.calculation ? quoteBomLines(activeSnapshot.calculation) : []),
+    [activeSnapshot],
+  );
+  const bomTotal = useMemo(
+    () => bomLines.reduce((sum, line) => sum + line.totalPrice, 0),
+    [bomLines],
+  );
+  const installation = activeSnapshot?.calculation?.installation;
   const profitPercent = calcObj?.profitabilityPercent as number | undefined;
   const profitAmount = calcObj?.profitabilityAmount as number | undefined;
-
-  const panelItems = bom?.items?.filter((i) => i.itemType === 'panel') ?? [];
-  const inverterItems = bom?.items?.filter((i) => i.itemType === 'inverter') ?? [];
-  const structureItem = bom?.items?.find((i) => i.itemType === 'structure');
-
-  const dcrPanelItems = useMemo(
-    () => panelItems.filter((item) => Boolean(item.specifications.isDcr)),
-    [panelItems],
-  );
-  const nonDcrPanelItems = useMemo(
-    () => panelItems.filter((item) => !item.specifications.isDcr),
-    [panelItems],
-  );
 
   interface SnapPanel {
     productId?: string;
@@ -128,7 +106,6 @@ export function QuoteOverviewTab({
   const snapInverterObj = calcObj?.inverters as { inverters?: SnapInverter[] } | undefined;
   const snapInverters = snapInverterObj?.inverters ?? [];
   const snapStructure = calcObj?.structure as SnapStructure | undefined;
-  const hasBomEquipment = panelItems.length > 0;
   const hasSnapEquipment = snapPanels.length > 0;
 
   const snapDcrPanels = useMemo(
@@ -194,15 +171,23 @@ export function QuoteOverviewTab({
           />
 
           {/* Equipment Details */}
+          {/* A quotation has no BOM. It once read one back through
+              `useEntityBom('quote_version', ...)`, but that endpoint is gone
+              and `quote-detail-content.tsx` has never passed a `bom` prop
+              since — the equipment shown here comes from the quote's own
+              calculation snapshot (`snap*` below), which was always the
+              record. The BOM-derived props stay only because
+              QuoteEquipmentCard still declares them; they were already
+              resolving to exactly these empty values at runtime. */}
           <QuoteEquipmentCard
             isBomLoading={isBomLoading}
-            hasBomEquipment={hasBomEquipment}
+            hasBomEquipment={false}
             hasSnapEquipment={hasSnapEquipment}
             canViewEquipmentPricing={canViewEquipmentPricing}
-            dcrPanelItems={dcrPanelItems}
-            nonDcrPanelItems={nonDcrPanelItems}
-            expandedInverterItems={inverterItems}
-            structureItem={structureItem}
+            dcrPanelItems={[]}
+            nonDcrPanelItems={[]}
+            expandedInverterItems={[]}
+            structureItem={undefined}
             snapDcrPanels={snapDcrPanels}
             snapNonDcrPanels={snapNonDcrPanels}
             expandedSnapInverters={snapInverters}
@@ -234,14 +219,26 @@ export function QuoteOverviewTab({
             profitAmount={profitAmount}
           />
 
-          {/* Installation Costs */}
-          {installationData &&
-            ((installationData.totalBeforeTax ?? 0) > 0 ||
-              (installationData.totalWithGst ?? 0) > 0) && (
-              <Can permission={'quotes.profitability'}>
-                <QuoteInstallationCard installationData={installationData} />
-              </Can>
-            )}
+          {/* Other Costs — reconciles the BOM total against the quote's
+              base price. Replaces the old QuoteInstallationCard: that card
+              and this one both showed the installation figures, and two
+              cards for the same numbers is the duplication this rebuild
+              exists to remove.
+
+              Not wrapped in <Can>, unlike the card it replaces: the
+              component list and the Other-costs subtotal are fine for
+              anyone who can see the quote. Only the reconciliation down to
+              Quote base price needs `quotes.profitability` (it would leak
+              margin), so that gate now lives inside OtherCostsCard itself,
+              same as QuotePricingCard's own cost/margin rows above. */}
+          {installation && (
+            <OtherCostsCard
+              installation={installation}
+              bomTotal={bomTotal}
+              quoteBasePrice={breakdown?.basePrice ?? 0}
+              profitabilityAmount={profitAmount}
+            />
+          )}
 
           {/* Sidebar Info/Actions */}
           <QuoteSidebar

@@ -45,12 +45,14 @@ export class SitePortfolioDto {
   totalSystemSizeKw!: number;
 
   @ApiProperty({
-    description: 'Total quoted value across each site’s current quote version',
+    description:
+      'What the customer’s sites are worth: a converted site at its contract, ' +
+      'everything else at its current quote version',
     example: 1845200,
   })
   @Expose()
   @Transform(({ value }) => toNum(value) ?? 0)
-  totalQuotedAmount!: number;
+  totalPortfolioAmount!: number;
 }
 
 /**

@@ -86,6 +86,15 @@ export interface Property {
   latestQuoteDate?: string;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;
+  /**
+   * Present once the site has become a project. Reach for these — via
+   * `siteValue()` in lib/utils — rather than `latestQuoteFinalPrice` whenever
+   * a row stands for the SITE: the quote's price is frozen at signing, while
+   * the contract moves every time material added on site is billed.
+   */
+  contractValue?: number;
+  quotedValue?: number;
+  changeOrderValue?: number;
   projectId?: string;
   hasActiveLoan?: boolean;
 }

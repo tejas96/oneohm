@@ -160,8 +160,10 @@ export class ProjectController {
   @ApiQuery({
     name: 'healthStatus',
     required: false,
-    enum: ['delayed', 'at_risk'],
-    description: 'Filter by computed health status (overdue or at-risk projects)',
+    enum: ['delayed', 'at_risk', 'unbilled_overrun', 'completed_unpaid'],
+    description:
+      'Filter by computed health: overdue, at-risk, or projects whose bill of materials ' +
+      'costs more than the customer is paying for material (quote plus change orders)',
   })
   @ApiQuery({
     name: 'createdBy',
@@ -227,9 +229,16 @@ export class ProjectController {
     const pageNum = Math.max(1, page ? parseInt(page, 10) || 1 : 1);
     const limitNum = Math.min(100, Math.max(1, limit ? parseInt(limit, 10) || 20 : 20));
 
-    // Validate healthStatus to only accept known values
+    // Validate healthStatus to only accept known values. An unrecognised value
+    // becomes undefined rather than an error: the filter is a view, and a stale
+    // bookmarked URL should show the unfiltered list rather than a 400.
     const healthStatus =
-      healthStatusRaw === 'delayed' || healthStatusRaw === 'at_risk' ? healthStatusRaw : undefined;
+      healthStatusRaw === 'delayed' ||
+      healthStatusRaw === 'at_risk' ||
+      healthStatusRaw === 'unbilled_overrun' ||
+      healthStatusRaw === 'completed_unpaid'
+        ? healthStatusRaw
+        : undefined;
 
     // This endpoint takes its filters as bare @Query params rather than a DTO,
     // so the global ValidationPipe never sees them and a class-validator
@@ -472,24 +481,6 @@ export class ProjectController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ReturnType<typeof this.projectService.getProjectProgress>> {
     return this.projectService.getProjectProgress(id);
-  }
-
-  /**
-   * Sync (rebuild) the project BOM from the quote calculation snapshot.
-   * Idempotent: replaces any existing project BOM.
-   */
-  @Post(':id/sync-bom')
-  @ApiOperation({
-    summary: 'Sync project BOM from quote snapshot',
-    description:
-      'Rebuilds the project BOM from the linked quote calculation snapshot. Use when BOM is missing or outdated.',
-  })
-  async syncBom(
-    @CurrentUser() currentUser: CurrentUserType,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ message: string }> {
-    await this.projectService.syncBomFromSnapshot(id, currentUser.id);
-    return { message: 'BOM synced successfully' };
   }
 
   /**

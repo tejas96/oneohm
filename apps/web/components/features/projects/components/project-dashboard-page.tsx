@@ -14,7 +14,6 @@ import {
   KPIGrid,
   ProgressTrend,
   ProjectMilestones,
-  SiteProgress,
   WorkerMatrix,
 } from './dashboard';
 
@@ -95,9 +94,17 @@ export function ProjectDashboardPage(): React.JSX.Element {
       const projectId = p.id;
       return {
         queryKey: [...bomResourceKeys.all(), 'project', projectId] as const,
+        // `/bom?entityType=project&entityId=…` — the shape this used to call —
+        // stopped existing when the BOM rebuild made every BOM project-scoped
+        // (`bom.project_id` replaced entity_type/entity_id, and the columns
+        // were dropped). The route now 404s, so `data` was always undefined and
+        // the `if (!bomResult) return` below skipped every project: the "BOM
+        // Shortage" alerts this query exists to raise silently stopped
+        // appearing. `allocationStatus` sits at the top level of both shapes,
+        // so only the URL needed correcting.
         queryFn: async ({ signal }): Promise<Record<string, unknown> | null> => {
           const { data } = await apiClient.get<Record<string, unknown> | null>(
-            `/bom?entityType=project&entityId=${projectId}`,
+            `/projects/${projectId}/bom`,
             { signal },
           );
           return data;
@@ -406,10 +413,14 @@ export function ProjectDashboardPage(): React.JSX.Element {
             />
           </div>
 
-          {/* Resource Optimization & Site Activity */}
+          {/* Resource Optimization.
+              The "Live Site Progress" card that used to sit beside this one is
+              gone. It rendered a blurred mock — an installer check-in at "Plot
+              14, Hinjawadi Sector-3", liaison documents uploaded — under a
+              pulsing "Coming Soon" badge, i.e. a third of the row spent on
+              invented data for a feature that does not exist. */}
           <div className="flex flex-col lg:flex-row gap-6">
             <WorkerMatrix workers={dashboardData.workers} />
-            <SiteProgress />
           </div>
 
           {/* Delivery Velocity Charts */}

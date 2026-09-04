@@ -3,7 +3,7 @@
 import { Alert, Box, Button, CircularProgress } from '@mui/material';
 import { EXPENSE_CATEGORY_LABELS } from '@tejas96/shared';
 import { ExpenseCategory, PaymentMethod } from '@tejas96/shared/types';
-import { type JSX, useRef, useState } from 'react';
+import { type JSX, useEffect, useRef, useState } from 'react';
 
 import {
   MUIDialog,
@@ -23,7 +23,7 @@ import {
   type ProofDocumentInput,
 } from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
-import { formatPaise, rupeesToPaise } from '@/lib/utils/paise';
+import { formatPaise, paiseToRupees, parseRupeeInput, rupeeInputError } from '@/lib/utils/paise';
 
 type Mode = 'receipt' | 'expense';
 
@@ -34,23 +34,31 @@ interface RecordMoneyDialogProps {
   mode: Mode;
   /** Shown so the operator can see where an un-targeted receipt will land. */
   milestones?: MilestoneBalance[];
+  /**
+   * Set when the dialog was opened from a specific milestone's Record button,
+   * so the amount can start at what that milestone is still owed.
+   */
+  forMilestone?: MilestoneBalance | null;
 }
 
-/** Form-only sentinel — never sent to the API; resolved to trimmed custom text on submit. */
-const CATEGORY_OTHER = 'other';
-
-const EXPENSE_CATEGORY_OPTIONS = [
-  ...Object.values(ExpenseCategory).map((c) => ({
-    value: c,
-    label: EXPENSE_CATEGORY_LABELS[c],
-  })),
-  { value: CATEGORY_OTHER, label: 'Other' },
-];
-
-function resolveExpenseCategory(category: string, categoryOther: string): string {
-  if (category === CATEGORY_OTHER) return categoryOther.trim();
-  return category;
-}
+/**
+ * The seven categories, and nothing else.
+ *
+ * There used to be an eighth option, "Other", with a free-text box beside it
+ * whose contents were sent as the category verbatim. It is gone: it defeated
+ * the point of having a fixed list, and it is what put `labour` alongside
+ * `labor`, plus `Insurance` and `Other`, into the live ledger — making every
+ * total grouped by category unreliable.
+ *
+ * Nothing is lost by removing it. `Miscellaneous` already covers the case the
+ * escape hatch was reached for, and the detail that used to be typed into it
+ * ("Insurance", "Training") belongs in the Notes field below, which is free
+ * text by design and is not summed by anything.
+ */
+const EXPENSE_CATEGORY_OPTIONS = Object.values(ExpenseCategory).map((c) => ({
+  value: c,
+  label: EXPENSE_CATEGORY_LABELS[c],
+}));
 
 /** Today as an IST date, matching how the backend stamps a value date. */
 function todayIst(): string {
@@ -84,16 +92,16 @@ export function RecordMoneyDialog({
   projectId,
   mode,
   milestones = [],
+  forMilestone = null,
 }: RecordMoneyDialogProps): JSX.Element {
   const save = useGatedAction('finance.payments.record', () => undefined, 'Record money');
   const { recordReceipt, recordExpense } = useLedgerMutations(projectId);
   const [amount, setAmount] = useState('');
+
   const [valueDate, setValueDate] = useState(todayIst());
   const [method, setMethod] = useState<string>(PaymentMethod.UPI);
   const [reference, setReference] = useState('');
-  const [category, setCategory] = useState<string>(ExpenseCategory.MATERIALS);
-  const [categoryOther, setCategoryOther] = useState('');
-  const [categoryOtherTouched, setCategoryOtherTouched] = useState(false);
+  const [category, setCategory] = useState<ExpenseCategory>(ExpenseCategory.MATERIALS);
   const [amountTouched, setAmountTouched] = useState(false);
   const [payee, setPayee] = useState('');
   const [notes, setNotes] = useState('');
@@ -101,26 +109,46 @@ export function RecordMoneyDialog({
   const [proofName, setProofName] = useState('');
   const [uploading, setUploading] = useState(false);
 
+  /*
+   * Opened from a milestone row: start at what that milestone is still short
+   * by, so the common case — the customer paid this term, in full — is one
+   * click and a date.
+   *
+   * `balancePaise`, not `expectedPaise`. On every unpaid row the two are the
+   * same number, which is what the schedule shows as both "Expected" and
+   * "Short by". They part company the moment a milestone is part paid, and
+   * there `expectedPaise` would suggest the FULL term again on top of what has
+   * already been received — a double charge, pre-filled, one click from being
+   * recorded. The balance is the amount actually owed either way.
+   *
+   * Re-seeded on every open rather than once on mount: a receipt recorded
+   * since must not leave a stale suggestion behind. It stays editable, because
+   * a customer paying part of a term is ordinary.
+   */
+  useEffect(() => {
+    if (!open) return;
+    setAmount(
+      mode === 'receipt' && forMilestone && forMilestone.balancePaise > 0
+        ? paiseToRupees(forMilestone.balancePaise).toFixed(2)
+        : '',
+    );
+  }, [open, mode, forMilestone]);
+
   const isReceipt = mode === 'receipt';
   const pending = recordReceipt.isPending || recordExpense.isPending;
-  const amountPaise = amount ? rupeesToPaise(Number(amount)) : 0;
-  const categoryValid =
-    isReceipt ||
-    (category !== CATEGORY_OTHER
-      ? true
-      : categoryOther.trim().length > 0 && categoryOther.trim().length <= 30);
-  const showCategoryOtherError =
-    !isReceipt &&
-    category === CATEGORY_OTHER &&
-    (categoryOtherTouched || amountPaise > 0) &&
-    !categoryOther.trim();
-  // Submit is disabled on these, and without a reason the operator just sees a
-  // dead button. The category length is not covered here on purpose: the input
-  // carries maxLength=30, so the browser refuses the 31st character and a
-  // message for it could never be reached.
-  const showAmountError = amountTouched && amountPaise <= 0;
+  // Same parser as the Bill customer dialog: accepts "1,000", refuses text and
+  // amounts past the point where paise stop being exact, and says which.
+  const parsedAmount = parseRupeeInput(amount);
+  const amountPaise = parsedAmount.ok ? parsedAmount.paise : 0;
+  // The category needs no validation any more: it is a dropdown over the fixed
+  // list and starts on Materials, so it cannot be empty or unrecognised. The
+  // check it replaces existed solely to police the free-text "Other" box.
+  //
+  // Submit is disabled on the two below, and without a message the operator
+  // just sees a dead button.
+  const showAmountError = amountTouched && !parsedAmount.ok;
   const showFutureDateError = valueDate > todayIst();
-  const valid = amountPaise > 0 && valueDate <= todayIst() && categoryValid;
+  const valid = parsedAmount.ok && valueDate <= todayIst();
 
   const reset = (): void => {
     setAmount('');
@@ -128,8 +156,6 @@ export function RecordMoneyDialog({
     setMethod(PaymentMethod.UPI);
     setReference('');
     setCategory(ExpenseCategory.MATERIALS);
-    setCategoryOther('');
-    setCategoryOtherTouched(false);
     setAmountTouched(false);
     setPayee('');
     setNotes('');
@@ -152,6 +178,31 @@ export function RecordMoneyDialog({
           paymentMethod: method,
           reference: reference || undefined,
           notes: notes || undefined,
+          /*
+           * Opened from a milestone's Record button, so the money is aimed at
+           * that milestone rather than left to the waterfall.
+           *
+           * Without this the server falls back to filling milestones in order
+           * and spilling over, which is right for an untargeted receipt and
+           * wrong here: a payment recorded against milestone 4 landed on
+           * milestone 2 because 1 was already settled. The row said one thing
+           * and the ledger did another, and the operator had no way to see it
+           * until they went looking at the schedule afterwards.
+           *
+           * Only the portion up to that milestone's own balance is aimed at
+           * it. Anything beyond is left unallocated so the server can spill it
+           * the usual way — pinning the whole amount to one milestone would
+           * over-allocate it, and the operator is allowed to record a payment
+           * larger than the term it came in for.
+           */
+          allocations: forMilestone
+            ? [
+                {
+                  milestoneId: forMilestone.milestoneId,
+                  amountPaise: Math.min(amountPaise, forMilestone.balancePaise),
+                },
+              ]
+            : undefined,
           proofDocument: proof ?? undefined,
         });
         reset();
@@ -162,7 +213,7 @@ export function RecordMoneyDialog({
       await recordExpense.mutateAsync({
         amountPaise,
         valueDate,
-        category: resolveExpenseCategory(category, categoryOther),
+        category,
         payee: payee || undefined,
         paymentMethod: method,
         notes: notes || undefined,
@@ -195,13 +246,22 @@ export function RecordMoneyDialog({
         <div className="flex flex-col gap-4">
           <MUIInput
             fieldLabel="Amount (₹)"
-            type="number"
+            /* Not type="number": that input rejects a comma before any handler
+               sees it, so "1,000" could not be typed at all — and it also lets a
+               scroll wheel over a focused field silently change an amount.
+               inputMode keeps the numeric keypad on mobile; parseRupeeInput does
+               the validating. */
+            inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             onBlur={() => setAmountTouched(true)}
             placeholder="0.00"
             autoFocus
-            error={showAmountError ? 'Enter an amount greater than zero.' : undefined}
+            error={
+              showAmountError
+                ? (rupeeInputError(parsedAmount) ?? 'Enter an amount greater than zero.')
+                : undefined
+            }
           />
 
           <MUIInput
@@ -240,29 +300,9 @@ export function RecordMoneyDialog({
                 fieldLabel="Category"
                 value={category}
                 disabled={pending || uploading}
-                onChange={(e) => {
-                  const next = String(e.target.value);
-                  setCategory(next);
-                  if (next !== CATEGORY_OTHER) {
-                    setCategoryOther('');
-                    setCategoryOtherTouched(false);
-                  }
-                }}
+                onChange={(e) => setCategory(String(e.target.value) as ExpenseCategory)}
                 options={EXPENSE_CATEGORY_OPTIONS}
               />
-              {category === CATEGORY_OTHER && (
-                <MUIInput
-                  fieldLabel="Specify category"
-                  required
-                  value={categoryOther}
-                  onChange={(e) => setCategoryOther(e.target.value)}
-                  onBlur={() => setCategoryOtherTouched(true)}
-                  placeholder="e.g. Insurance, Training"
-                  inputProps={{ maxLength: 30 }}
-                  error={showCategoryOtherError ? 'Please specify the category' : undefined}
-                  disabled={pending || uploading}
-                />
-              )}
               <MUIInput
                 fieldLabel="Paid to"
                 value={payee}
@@ -310,7 +350,11 @@ export function RecordMoneyDialog({
           </div>
 
           {isReceipt && amountPaise > 0 && milestones.length > 0 && (
-            <AllocationPreview milestones={milestones} amountPaise={amountPaise} />
+            <AllocationPreview
+              milestones={milestones}
+              amountPaise={amountPaise}
+              forMilestone={forMilestone}
+            />
           )}
         </div>
       </MUIDialogBody>
@@ -346,15 +390,35 @@ export function RecordMoneyDialog({
 function AllocationPreview({
   milestones,
   amountPaise,
+  forMilestone,
 }: {
   milestones: MilestoneBalance[];
   amountPaise: number;
+  /** Set when the dialog was opened from one milestone's Record button. */
+  forMilestone?: MilestoneBalance | null;
 }): JSX.Element {
   let remaining = amountPaise;
   const planned: Array<{ name: string; paise: number }> = [];
 
+  /*
+   * A targeted receipt takes its own milestone FIRST, then spills the rest down
+   * the waterfall — mirroring exactly what submit() sends and what the server
+   * then does with it.
+   *
+   * Simulating the plain waterfall here would put this preview back in the
+   * position the bug came from: showing the money landing on milestone 2 while
+   * it is actually aimed at milestone 4. A preview that disagrees with the
+   * submission is worse than no preview.
+   */
+  if (forMilestone && forMilestone.balancePaise > 0) {
+    const take = Math.min(remaining, forMilestone.balancePaise);
+    planned.push({ name: forMilestone.name, paise: take });
+    remaining -= take;
+  }
+
   for (const m of milestones) {
     if (remaining <= 0) break;
+    if (m.milestoneId === forMilestone?.milestoneId) continue;
     if (m.derivedStatus === 'waived' || m.balancePaise <= 0) continue;
     const take = Math.min(remaining, m.balancePaise);
     planned.push({ name: m.name, paise: take });

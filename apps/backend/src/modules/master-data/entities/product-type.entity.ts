@@ -4,7 +4,7 @@ import { ProductTypeAttributeEntity } from './product-type-attribute.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
 @Entity('product_types')
-@Index(['code'], { unique: true })
+@Index('uq_product_types_code', ['code'], { unique: true, where: '"deleted_at" IS NULL' })
 export class ProductTypeEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 100 })
   name!: string;

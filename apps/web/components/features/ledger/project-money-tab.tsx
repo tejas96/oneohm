@@ -42,7 +42,22 @@ import { formatPaise } from '@/lib/utils/paise';
  */
 const PENDING_PREVIEW_LIMIT = 10;
 
-const ENTRY_COLS = 'md:grid-cols-[104px_128px_minmax(0,1fr)_132px_128px]';
+/*
+ * Track widths sized to what the cells actually hold, measured rather than
+ * guessed. Two were too narrow and their content simply overflowed, because
+ * nothing in either cell truncates:
+ *
+ *  - Date was 104px. The block is two lines — the value date, and "Recorded
+ *    5 Sept 2026" beneath it — and that second line runs 115px, so it spilled
+ *    11px past its own track into the gap before Entry.
+ *  - Actions was 128px. A receipt row carries both Receipt and Reverse, 147px
+ *    together, so the pair started 19px to the LEFT of the track and sat under
+ *    the amount.
+ *
+ * Widened to 120px and 152px, which clears both with a few pixels spare. Detail
+ * is the 1fr track and simply absorbs the difference.
+ */
+const ENTRY_COLS = 'md:grid-cols-[120px_128px_minmax(0,1fr)_132px_152px]';
 
 interface ProjectMoneyTabProps {
   projectId: string;
@@ -99,10 +114,29 @@ export function ProjectMoneyTab({
   const summary = useProjectLedger(projectId, { enabled: isActive });
   const entries = useProjectEntries(projectId, { enabled: isActive });
   const [dialog, setDialog] = useState<'receipt' | 'expense' | 'changeOrder' | null>(null);
+  /*
+   * The milestone a row's Record button was clicked on, so the receipt dialog
+   * can open with the amount that milestone is still short by already filled
+   * in. Cleared when the dialog closes and when the header's own Record
+   * payment button opens it — that button is about the project, not any one
+   * milestone, and inheriting the last row clicked would be a figure the
+   * operator never asked for.
+   */
+  const [recordFor, setRecordFor] = useState<MilestoneBalance | null>(null);
 
   // Money-moving controls. `useGatedAction` keeps them clickable so a blocked
   // user gets told which permission they need, rather than a dead button.
   const recordPayment = useGatedAction(
+    'finance.payments.record',
+    () => {
+      setRecordFor(null);
+      setDialog('receipt');
+    },
+    'Record payment',
+  );
+  // The same gate, entered from a milestone row: identical permission, but it
+  // remembers which milestone so the dialog can suggest its shortfall.
+  const recordForMilestone = useGatedAction(
     'finance.payments.record',
     () => setDialog('receipt'),
     'Record payment',
@@ -226,7 +260,10 @@ export function ProjectMoneyTab({
           // The gate, not the raw setter: the waterfall opens the same receipt
           // dialog as the header button, so passing `setDialog` here would walk
           // straight past the gate declared for it.
-          onRecordPayment={recordPayment.onGatedClick}
+          onRecordPayment={(milestoneId) => {
+            setRecordFor(s.milestones.find((m) => m.milestoneId === milestoneId) ?? null);
+            recordForMilestone.onGatedClick();
+          }}
           onWaive={setWaiving}
         />
       </DetailCard>
@@ -253,7 +290,11 @@ export function ProjectMoneyTab({
           mode={dialog}
           projectId={projectId}
           milestones={s.milestones}
-          onClose={() => setDialog(null)}
+          forMilestone={recordFor}
+          onClose={() => {
+            setDialog(null);
+            setRecordFor(null);
+          }}
         />
       ) : null}
 

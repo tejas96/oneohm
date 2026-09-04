@@ -412,11 +412,23 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         value: headlineQuote?.finalPrice ? formatCurrency(headlineQuote.finalPrice) : '—',
         isLoading: quoteSummary.isLoading,
         intent: headlineQuote?.status === QuoteStatus.ACCEPTED ? 'success' : 'neutral',
+        /*
+         * The tile keeps showing the QUOTE's price — it is labelled "Quote
+         * value" and that is the document the customer signed. What it could
+         * not say before is that the project has since moved: bill for material
+         * added on site and the contract rises while this figure stays put, so
+         * this tile and the project's Money tab reported different numbers with
+         * nothing reconciling them. When they have diverged, that takes
+         * precedence over the subsidy line — a contract the customer is now
+         * liable for matters more than a restatement of the same price.
+         */
         secondary: !headlineQuote
           ? 'Nothing quoted yet'
-          : hasSubsidy && headlineQuote.effectivePrice != null
-            ? `${formatCurrency(headlineQuote.effectivePrice)} after subsidy`
-            : `${headlineQuote.quoteNumber} · ${toTitleLabel(headlineQuote.status)}`,
+          : hasLinkedProject && financeSnapshot.changeOrderAmount !== 0
+            ? `Contract now ${formatCurrency(financeSnapshot.contractAmount)} after change orders`
+            : hasSubsidy && headlineQuote.effectivePrice != null
+              ? `${formatCurrency(headlineQuote.effectivePrice)} after subsidy`
+              : `${headlineQuote.quoteNumber} · ${toTitleLabel(headlineQuote.status)}`,
         onClick: () => goToTab('quotes'),
       },
       {

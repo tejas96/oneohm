@@ -45,6 +45,7 @@ import {
   WarehouseRepository,
 } from './repositories';
 import {
+  BomAllocationService,
   InventoryBulkService,
   InventorySearchService,
   InventoryStatsService,
@@ -62,6 +63,8 @@ import {
   VendorService,
   WarehouseService,
 } from './services';
+import { BomEntity } from '../bom/entities/bom.entity';
+import { BomRepository } from '../bom/repositories/bom.repository';
 import { ProductEntity } from '../master-data/entities/product.entity';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -93,6 +96,7 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
       // External entities needed by cross-module repositories
       ProjectEntity,
       ProductEntity,
+      BomEntity,
     ]),
     MasterDataModule,
     NotificationsModule,
@@ -123,6 +127,7 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     MaterialDispatchRepository,
     MaterialDispatchItemRepository,
     ProjectRepository,
+    BomRepository,
     // Stats repositories (Part 10)
     PurchaseOrderStatsRepository,
     InventoryTransactionStatsRepository,
@@ -144,6 +149,7 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     MaterialDispatchService,
     InventoryBulkService,
     InventorySearchService,
+    BomAllocationService,
     // Stats services (Part 10)
     PurchaseOrderStatsService,
     InventoryStatsService,
@@ -170,6 +176,7 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     PurchaseOrderService,
     StockAllocationService,
     MaterialDispatchService,
+    BomAllocationService,
   ],
 })
 export class InventoryModule {}

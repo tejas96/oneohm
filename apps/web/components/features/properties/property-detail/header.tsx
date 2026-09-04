@@ -31,10 +31,7 @@ import { LEAD_TEMPERATURE_TONE, PROPERTY_TYPE_LABELS } from '../constants';
 import type { CustomerPropertyResponse } from '../hooks';
 import { getPropertyDisplayName } from '../utils';
 
-import {
-  PROPERTY_STATUS_TONE,
-  PROPERTY_TYPE_TONE,
-} from '@/components/features/customers/constants';
+import { getSiteLifecycle, PROPERTY_TYPE_TONE } from '@/components/features/customers/constants';
 import {
   DetailCard,
   IconCircle,
@@ -185,7 +182,9 @@ export function PropertyDetailHeader({
   const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
 
   const siteName = getPropertyDisplayName(property);
-  const statusTone = PROPERTY_STATUS_TONE[property.status] ?? 'neutral';
+  // The site's own status stops at "Converted" for life; once a project
+  // exists, its state is what this site is actually doing.
+  const lifecycle = getSiteLifecycle(property);
   const typeTone = PROPERTY_TYPE_TONE[property.propertyType] ?? 'neutral';
   const address = [property.address, property.city, property.state, property.pincode]
     .filter(Boolean)
@@ -269,7 +268,7 @@ export function PropertyDetailHeader({
               >
                 {siteName}
               </Typography>
-              <TonePill label={toTitleLabel(property.status)} tone={statusTone} dot />
+              <TonePill label={lifecycle.label} tone={lifecycle.tone} dot />
               {property.isPrimary && <TonePill label="Primary" tone="accent" />}
               {isInPlay && (
                 <TonePill

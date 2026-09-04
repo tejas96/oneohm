@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   LeadTemperature,
+  ProjectStatus,
   PropertyStatus,
   PropertySortField,
   SortOrder,
@@ -12,6 +13,18 @@ import { PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
 import { systemSizeKwSql } from '../../../common/utils/transform.util';
 import { PropertyQueryDto } from '../dto/property-query.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
+
+/**
+ * A converted site's live contract, and how it splits.
+ *
+ * `quotedValue + changeOrderValue === contractValue` — asserted in the
+ * database, so the split can be printed without re-deriving it.
+ */
+export interface PropertyContractValue {
+  contractValue: number;
+  quotedValue: number;
+  changeOrderValue: number;
+}
 
 /**
  * Field mapping for safe sorting (prevents SQL injection via sortBy)
@@ -194,12 +207,18 @@ export class CustomerPropertyRepository {
   }
 
   /**
-   * Batch lookup active project IDs for a list of property IDs.
+   * Batch lookup each property's live project — its id AND its current status.
+   *
+   * The status travels with the id because a site's own `status` column stops
+   * moving the moment it converts: it is written to CONVERTED when the project
+   * is created and back to ACTIVE only if that project is deleted. Nothing
+   * marks a site whose project finished, stalled or was called off, so every
+   * list that shows a site's state has to read the project to tell the truth.
    */
-  async findProjectIdsByPropertyIds(
+  async findProjectsByPropertyIds(
     propertyIds: string[],
     manager?: EntityManager,
-  ): Promise<Map<string, string>> {
+  ): Promise<Map<string, { id: string; status: ProjectStatus }>> {
     if (propertyIds.length === 0) {
       return new Map();
     }
@@ -208,12 +227,70 @@ export class CustomerPropertyRepository {
       .createQueryBuilder()
       .select('project.property_id', 'propertyId')
       .addSelect('project.id', 'projectId')
+      .addSelect('project.status', 'status')
       .from('projects', 'project')
       .where('project.property_id IN (:...propertyIds)', { propertyIds })
       .andWhere('project.deleted_at IS NULL')
-      .getRawMany<{ propertyId: string; projectId: string }>();
+      .getRawMany<{ propertyId: string; projectId: string; status: ProjectStatus }>();
 
-    return new Map(rows.map((row) => [row.propertyId, row.projectId]));
+    return new Map(rows.map((row) => [row.propertyId, { id: row.projectId, status: row.status }]));
+  }
+
+  /**
+   * What each property's project is worth NOW, split into the part that came
+   * from the signed quote and the part agreed since.
+   *
+   * Every screen that lists a site used to show `latestQuoteFinalPrice` — the
+   * quote's own value, frozen at signing. That is right for a row that stands
+   * for a QUOTE, and wrong for a row that stands for a converted site: bill the
+   * customer for material added on site and the project's Money tab moves while
+   * the customer page, the property page and the site list all keep reporting
+   * the original figure, with nothing on screen explaining the gap.
+   *
+   * Read from `v_project_balance`, the same view the projects list already uses
+   * for exactly this reason (see ProjectRepository.getPaymentSummaries) — one
+   * definition of "what this project is worth", not a second one computed here.
+   */
+  async findContractValuesByPropertyIds(
+    propertyIds: string[],
+    manager?: EntityManager,
+  ): Promise<Map<string, PropertyContractValue>> {
+    if (propertyIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await (manager ?? this.repository.manager).query<
+      Array<{
+        propertyId: string;
+        contractPaise: string;
+        quotedPaise: string;
+        changeOrderPaise: string;
+      }>
+    >(
+      `SELECT p.property_id      AS "propertyId",
+              b.contract_paise   AS "contractPaise",
+              b.quoted_paise     AS "quotedPaise",
+              b.change_order_paise AS "changeOrderPaise"
+         FROM projects p
+         JOIN v_project_balance b ON b.project_id = p.id
+        WHERE p.property_id = ANY($1::uuid[])
+          AND p.deleted_at IS NULL`,
+      [propertyIds],
+    );
+
+    return new Map(
+      rows.map((row) => [
+        row.propertyId,
+        {
+          // Rupees, matching latestQuoteFinalPrice beside which these are
+          // rendered. The ledger's own unit is paise; conversion happens once,
+          // here, rather than in each of the five screens that read this.
+          contractValue: Number(row.contractPaise) / 100,
+          quotedValue: Number(row.quotedPaise) / 100,
+          changeOrderValue: Number(row.changeOrderPaise) / 100,
+        },
+      ]),
+    );
   }
 
   /**

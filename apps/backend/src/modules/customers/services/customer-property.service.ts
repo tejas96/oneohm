@@ -12,6 +12,7 @@ import {
   CustomerStatus,
   LeadTemperature,
   LoanStatus,
+  ProjectStatus,
   type PropertyDocument,
   PropertyStatus,
   QuoteStatus,
@@ -55,6 +56,14 @@ const TERMINAL_LOAN_STATUSES: LoanStatus[] = [
  */
 type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   projectId?: string;
+  /**
+   * The linked project's status as it stands today.
+   *
+   * A site's own `status` freezes at CONVERTED the moment its project is
+   * created, so it cannot say whether that project finished, stalled or was
+   * called off. Lists read this instead once a site has a project.
+   */
+  projectStatus?: ProjectStatus;
   hasActiveLoan?: boolean;
   latestQuoteId?: string;
   latestQuoteNumber?: string;
@@ -62,6 +71,19 @@ type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   latestQuoteDate?: Date;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;
+  /**
+   * What the site's project is worth NOW, present only once it has one.
+   *
+   * `latestQuoteFinalPrice` above is the quote's own value, frozen at signing.
+   * That is the right thing to show against a QUOTE and the wrong thing to show
+   * against a converted site: billing the customer for material added on site
+   * moves the project's contract while the quote stays where it was, and every
+   * screen reading only the quote figure then reports a number the project's
+   * own Money tab contradicts.
+   */
+  contractValue?: number;
+  quotedValue?: number;
+  changeOrderValue?: number;
   nextFollowupAt?: Date;
   needsFollowup?: boolean;
 };
@@ -260,7 +282,8 @@ export class CustomerPropertyService {
     // Batch-load latest quote per property (single query, avoids N+1)
     const propertyIds = properties.map((p) => p.id);
     const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
-    const projectIdMap = await this.propertyRepository.findProjectIdsByPropertyIds(propertyIds);
+    const projectMap = await this.propertyRepository.findProjectsByPropertyIds(propertyIds);
+    const contractMap = await this.propertyRepository.findContractValuesByPropertyIds(propertyIds);
     const activeLoanPropertyIds =
       await this.loanApplicationRepository.findPropertyIdsWithActiveLoans(propertyIds);
     const followupStateMap =
@@ -268,10 +291,15 @@ export class CustomerPropertyService {
 
     const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
+      const contract = contractMap.get(property.id);
       return {
         ...property,
-        projectId: projectIdMap.get(property.id),
+        projectId: projectMap.get(property.id)?.id,
+        projectStatus: projectMap.get(property.id)?.status,
         hasActiveLoan: activeLoanPropertyIds.has(property.id),
+        contractValue: contract?.contractValue,
+        quotedValue: contract?.quotedValue,
+        changeOrderValue: contract?.changeOrderValue,
         latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
         latestQuoteStatus: quoteInfo?.status,
@@ -315,14 +343,25 @@ export class CustomerPropertyService {
     // Query 2: Get latest quotes for all properties (single batch query)
     const propertyIds = properties.map((p) => p.id);
     const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
+    const contractMap = await this.propertyRepository.findContractValuesByPropertyIds(propertyIds);
+    // The customer's own site list showed a flat "Converted" on every site that
+    // had ever become a project, including finished and cancelled ones, because
+    // this path never loaded the project at all. `findAll` already did.
+    const projectMap = await this.propertyRepository.findProjectsByPropertyIds(propertyIds);
     const followupStateMap =
       await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
 
     // Enrich properties with quote data
     return properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
+      const contract = contractMap.get(property.id);
       return {
         ...property,
+        projectId: projectMap.get(property.id)?.id,
+        projectStatus: projectMap.get(property.id)?.status,
+        contractValue: contract?.contractValue,
+        quotedValue: contract?.quotedValue,
+        changeOrderValue: contract?.changeOrderValue,
         latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
         latestQuoteStatus: quoteInfo?.status,
@@ -534,7 +573,7 @@ export class CustomerPropertyService {
   }
 
   private async assertDeletable(propertyId: string, manager: EntityManager): Promise<void> {
-    const projectMap = await this.propertyRepository.findProjectIdsByPropertyIds(
+    const projectMap = await this.propertyRepository.findProjectsByPropertyIds(
       [propertyId],
       manager,
     );

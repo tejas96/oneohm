@@ -6,14 +6,15 @@ import { Box, Button, Drawer, IconButton, Stack, Typography } from '@mui/materia
 import NextLink from 'next/link';
 import type { JSX } from 'react';
 
-import { PROPERTY_STATUS_TONE, PROPERTY_TYPE_TONE, QUOTE_STATUS_TONE } from '../constants';
+import { getSiteLifecycle, PROPERTY_TYPE_TONE, QUOTE_STATUS_TONE } from '../constants';
 import { type CustomerPropertyResponse } from '../hooks';
-import { FieldGrid, SectionHeading, TonePill, type DetailTone } from './primitives';
+import { FieldGrid, Mono, SectionHeading, TonePill, type DetailTone } from './primitives';
 import { SiteStageBar } from './site-stage';
 
 import { getPropertyDisplayName } from '@/components/features/properties/utils';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import {
+  contractMovedNote,
   formatCurrency,
   formatDate,
   formatFollowupWhen,
@@ -47,9 +48,9 @@ export function PropertyDetailDrawer({
     ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id })
     : undefined;
 
-  const statusTone: DetailTone = property
-    ? (PROPERTY_STATUS_TONE[property.status] ?? 'neutral')
-    : 'neutral';
+  // The site's own status stops at "Converted" for life; once a project
+  // exists, its state is what this site is actually doing.
+  const lifecycle = property ? getSiteLifecycle(property) : null;
   const typeTone: DetailTone = property
     ? (PROPERTY_TYPE_TONE[property.propertyType] ?? 'neutral')
     : 'neutral';
@@ -126,7 +127,7 @@ export function PropertyDetailDrawer({
 
         {property && (
           <Stack direction="row" gap={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
-            <TonePill label={toTitleLabel(property.status)} tone={statusTone} dot />
+            {lifecycle ? <TonePill label={lifecycle.label} tone={lifecycle.tone} dot /> : null}
             <TonePill label={toTitleLabel(property.propertyType)} tone={typeTone} />
             {property.isPrimary && <TonePill label="Primary" tone="accent" />}
             {property.wantsLoan && <TonePill label="Wants loan" tone="warning" />}
@@ -226,11 +227,34 @@ export function PropertyDetailDrawer({
                       value: <TonePill label={toTitleLabel(quoteStatus)} tone={quoteTone} dot />,
                     },
                     {
+                      // This panel is about the QUOTE, so the quote's own price
+                      // stays — it is the document the customer signed and
+                      // rewriting it would be a lie. But saying nothing is what
+                      // made the figures look contradictory: bill for material
+                      // added on site and the project's Money tab moves while
+                      // this stays put. So it says what it was, and points at
+                      // what the project became.
                       label: 'Value',
-                      value: property.latestQuoteFinalPrice
-                        ? formatCurrency(property.latestQuoteFinalPrice)
-                        : '—',
-                      mono: true,
+                      value: (
+                        <Stack gap={0.25}>
+                          <Mono>
+                            {property.latestQuoteFinalPrice
+                              ? formatCurrency(property.latestQuoteFinalPrice)
+                              : '—'}
+                          </Mono>
+                          {contractMovedNote(property) ? (
+                            <Typography
+                              sx={{
+                                fontSize: '0.6875rem',
+                                color: 'var(--ds-text-tertiary)',
+                                lineHeight: 1.35,
+                              }}
+                            >
+                              {contractMovedNote(property)}
+                            </Typography>
+                          ) : null}
+                        </Stack>
+                      ),
                     },
                     {
                       label: 'System size',

@@ -7,6 +7,7 @@
  */
 
 import {
+  ProjectStatus,
   PropertyStatus,
   PropertyType,
   type CustomerStatus,
@@ -17,6 +18,7 @@ import type { CrmTone } from '@/components/shared/crm-table';
 import type { BadgeProps } from '@/components/ui/badge';
 import type { StatusChipColor } from '@/components/ui/mui-status-chip';
 import type { Gate } from '@/lib/rbac/catalog';
+import { toTitleLabel } from '@/lib/utils';
 
 // ============================================================================
 // Detail Page: Tab Configuration
@@ -170,6 +172,7 @@ export const SITE_STAGES = [
   'Design ready',
   'Quote sent',
   'Converted',
+  'Commissioned',
 ] as const;
 
 /** Quote states that mean the quote has actually gone out to the customer. */
@@ -179,17 +182,23 @@ const QUOTE_SENT_STATUSES: readonly string[] = ['sent', 'viewed', 'accepted', 'r
  * Derive a site's stage index from the facts already on the property record.
  *
  * There is no `stage` column — the stage IS the highest milestone the site has
- * reached, so it is computed from converted status, quote state, and survey
- * completion rather than stored and risked going stale. Checked highest-first:
- * a converted site is converted regardless of what its quote says.
+ * reached, so it is computed from the linked project, converted status, quote
+ * state and survey completion rather than stored and risked going stale.
+ * Checked highest-first: a converted site is converted regardless of what its
+ * quote says, and a commissioned one regardless of both.
  */
 export function getSiteStageIndex(property: {
   status?: string;
+  projectStatus?: string;
   latestQuoteId?: string;
   latestQuoteStatus?: string;
   surveyDone?: boolean;
   siteVisitDone?: boolean;
 }): number {
+  // Conversion is not the end of the journey — handover is. Only a finished
+  // project fills the rail; a cancelled one stops where it stopped rather than
+  // reading as progress, and the status pill carries the bad news.
+  if (property.projectStatus === ProjectStatus.COMPLETED) return 5;
   if (property.status === PropertyStatus.CONVERTED) return 4;
   if (property.latestQuoteStatus && QUOTE_SENT_STATUSES.includes(property.latestQuoteStatus)) {
     return 3;
@@ -197,6 +206,66 @@ export function getSiteStageIndex(property: {
   if (property.latestQuoteId) return 2;
   if (property.surveyDone || property.siteVisitDone) return 1;
   return 0;
+}
+
+// ============================================================================
+// CRM list: what a site is actually doing
+// ============================================================================
+
+/**
+ * How a project's state reads when it is describing a SITE rather than a
+ * project. "Planning" on a project row means the build has not started; on a
+ * site row it has to also say that the site is no longer in the sales pipeline,
+ * hence "In planning" over the bare status word.
+ */
+const PROJECT_STATUS_SITE_LABEL: Record<ProjectStatus, string> = {
+  [ProjectStatus.PLANNING]: 'In planning',
+  [ProjectStatus.ACTIVE]: 'In progress',
+  [ProjectStatus.COMPLETED]: 'Completed',
+  [ProjectStatus.CANCELLED]: 'Cancelled',
+  [ProjectStatus.ON_HOLD]: 'On hold',
+};
+
+const PROJECT_STATUS_SITE_TONE: Record<ProjectStatus, CrmTone> = {
+  [ProjectStatus.PLANNING]: 'info',
+  [ProjectStatus.ACTIVE]: 'accent',
+  [ProjectStatus.COMPLETED]: 'success',
+  [ProjectStatus.CANCELLED]: 'danger',
+  [ProjectStatus.ON_HOLD]: 'warning',
+};
+
+export interface SiteLifecycle {
+  label: string;
+  tone: CrmTone;
+}
+
+/**
+ * What to show in a site's status pill.
+ *
+ * A property's own `status` column is written to CONVERTED when its project is
+ * created and moves again only if that project is deleted. It is therefore a
+ * record of one past event, not a state: a finished install, a stalled one and
+ * a cancelled one all read "Converted", in success green. Wherever a project
+ * exists, its status is the honest answer and this returns that instead.
+ *
+ * LOST wins over the project state on purpose. A site marked lost is a sales
+ * outcome the operator recorded deliberately, and it should not be overwritten
+ * by whatever a leftover project row says.
+ */
+export function getSiteLifecycle(property: {
+  status: PropertyStatus;
+  projectStatus?: ProjectStatus;
+}): SiteLifecycle {
+  if (property.status !== PropertyStatus.LOST && property.projectStatus) {
+    return {
+      label: PROJECT_STATUS_SITE_LABEL[property.projectStatus],
+      tone: PROJECT_STATUS_SITE_TONE[property.projectStatus],
+    };
+  }
+  return {
+    label: toTitleLabel(property.status),
+    tone: PROPERTY_STATUS_TONE[property.status] ?? 'neutral',
+  };
 }
 
 // ============================================================================

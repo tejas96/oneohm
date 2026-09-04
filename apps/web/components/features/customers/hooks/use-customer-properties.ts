@@ -4,6 +4,7 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import {
   ConnectionType,
   LeadTemperature,
+  type ProjectStatus,
   type GpsCoordinates,
   type PropertyDocument,
   PropertyStatus,
@@ -65,6 +66,13 @@ export interface CustomerPropertyResponse {
   status: PropertyStatus;
   notes?: string;
   projectId?: string;
+  /**
+   * The linked project's live status. Present on every list that enriches it —
+   * `status` above stops at CONVERTED forever, so it cannot say whether the
+   * project finished, stalled or was called off. Read it via `getSiteLifecycle`
+   * rather than branching on it at each call site.
+   */
+  projectStatus?: ProjectStatus;
   // Site Visit / Survey
   siteStatus: SiteStatus;
   siteVisitDone: boolean;

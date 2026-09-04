@@ -1,47 +1,30 @@
-import {
-  BadRequestException,
-  Controller,
-  Get,
-  Param,
-  ParseUUIDPipe,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { BomResponseDto } from '../dto/bom-response.dto';
-import { BomService } from '../services/bom.service';
+import { BomAllocationService } from '../../inventory/services/bom-allocation.service';
+import { BomReadService, ProcurementStatus } from '../services/bom-read.service';
 
-const ALLOWED_ENTITY_TYPES = ['quote_version', 'project'] as const;
-
+/**
+ * What is left of the BOM-id-addressed surface: the two operations that are
+ * genuinely about a BOM rather than about a project's bill of materials.
+ *
+ * `GET /bom?entityType=project&entityId=...` is gone. It looked a BOM up by a
+ * polymorphic column pair that has been NULL on every BOM written since Task
+ * 11, and `GET /projects/:projectId/bom` replaces it with the foreign key that
+ * actually exists.
+ */
 @ApiTags('BOM')
 @ApiBearerAuth()
 @Controller('bom')
 @UseGuards(JwtAuthGuard)
 export class BomController {
-  constructor(private readonly bomService: BomService) {}
-
-  @Get()
-  async findByEntity(
-    @Query('entityType') entityType: string,
-    @Query('entityId', ParseUUIDPipe) entityId: string,
-  ): Promise<BomResponseDto | null> {
-    if (
-      !entityType ||
-      !ALLOWED_ENTITY_TYPES.includes(entityType as (typeof ALLOWED_ENTITY_TYPES)[number])
-    ) {
-      throw new BadRequestException(
-        `entityType must be one of: ${ALLOWED_ENTITY_TYPES.join(', ')}`,
-      );
-    }
-
-    const bom = await this.bomService.findByEntity(entityType, entityId);
-    return bom;
-  }
+  constructor(
+    private readonly bomReadService: BomReadService,
+    private readonly bomAllocationService: BomAllocationService,
+  ) {}
 
   /**
    * Procurement status for a project — per-product target vs spent
@@ -54,8 +37,8 @@ export class BomController {
   })
   async getProcurementStatus(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-  ): Promise<ReturnType<BomService['getProcurementStatus']>> {
-    return this.bomService.getProcurementStatus(projectId);
+  ): Promise<ProcurementStatus> {
+    return this.bomReadService.getProcurementStatus(projectId);
   }
 
   /**
@@ -75,6 +58,6 @@ export class BomController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.bomService.allocatePending(id, currentUser.id);
+    return this.bomAllocationService.allocatePending(id, currentUser.id);
   }
 }

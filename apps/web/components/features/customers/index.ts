@@ -19,19 +19,15 @@ export type { CustomerDetailTab } from './constants';
 // feature actually needs them; a one-line addition when that happens.
 export { CustomerListPage } from './components/customer-list-page';
 export { CustomerDetailPage } from './components/customer-detail-page';
-export { ImportCustomersModal } from './components/import-customers-modal';
 export { PropertyCard } from './components/property-card';
 export { PropertySelectModal } from './components/property-select-modal';
 export { DocumentPreviewModal } from './components/document-preview-modal';
 export type { PreviewDocument } from './components/document-preview-modal';
 
 // Schemas
-export { createCustomerProfileSchema, importCustomersSchema } from './schemas/customer.schema';
+export { createCustomerProfileSchema } from './schemas/customer.schema';
 
-export type {
-  CreateCustomerProfileFormData,
-  ImportCustomersFormData,
-} from './schemas/customer.schema';
+export type { CreateCustomerProfileFormData } from './schemas/customer.schema';
 
 // Hooks
 export {

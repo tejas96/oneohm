@@ -3,7 +3,7 @@
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import Button from '@mui/material/Button';
 import { ProjectStatus, type ProjectType } from '@tejas96/shared/types';
-import { FileText, Mail, MapPin, Phone, UserRound } from 'lucide-react';
+import { FileText, MapPin, Phone, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 
@@ -36,7 +36,6 @@ import { Mono, Overline, TONE, TonePill, type Tone } from './primitives';
 import type { ProjectDetailData } from './types';
 
 import { rupeesShort } from '@/components/features/dashboard/business/lib/format';
-import { WhatsAppIcon } from '@/components/ui';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -52,7 +51,6 @@ import {
   cn,
   formatDate,
   formatNumber,
-  formatPhoneForWhatsApp,
   formatSystemSize,
   getInitials,
   toTitleLabel,
@@ -384,8 +382,6 @@ export const ProjectDetailHeader = React.memo(
     const projectPath = buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id });
     const customerName = project.property?.customerName?.trim() || 'Customer';
     const phone = project.property?.customerPhone?.trim();
-    const email = project.property?.customerEmail?.trim();
-    const whatsapp = phone ? formatPhoneForWhatsApp(phone) : '';
     const location = [project.property?.city, project.property?.state].filter(Boolean).join(', ');
     const manager = projectManager(data.team.data);
 
@@ -394,6 +390,27 @@ export const ProjectDetailHeader = React.memo(
     const priorityTone = PRIORITY_TONE[project.priority] ?? 'neutral';
     const health = computeHealth(project);
     const notice = STATUS_NOTICE[project.status];
+
+    /*
+     * A completed project that still has money to collect says so, on every
+     * tab, until it is settled.
+     *
+     * This is not a status notice keyed off `project.status`, because the state
+     * it describes is a COMBINATION — completed AND owing — and because the way
+     * a project usually reaches it is not the dropdown at all. Ticking the last
+     * task drives progress to 100%, and ProjectRepository.updateProgress flips
+     * the status to completed with no checks of any kind. A guard on the
+     * dropdown alone would be theatre: the path that actually fires walks
+     * straight past it. A strip that reads the project's CURRENT state catches
+     * both, and keeps catching it afterwards.
+     *
+     * Not a blocker. The crew finishing and the final payment arriving are
+     * genuinely different days in EPC — commissioning money often lands weeks
+     * after handover — so refusing to complete would strand projects in Active
+     * long after the site was signed off.
+     */
+    const outstandingPaise = data.ledger.allowed ? (data.ledger.data?.outstandingPaise ?? 0) : 0;
+    const completedWithBalance = project.status === ProjectStatus.COMPLETED && outstandingPaise > 0;
 
     const typeLabel =
       project.projectType && project.projectType in PROJECT_TYPE_LABELS
@@ -558,8 +575,15 @@ export const ProjectDetailHeader = React.memo(
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
+              {/* The project CODE, not its name. The name is a sentence built
+                  from customer, site and size — "Rohan Deshmukh - rohan-2nd-
+                  house - 20.13kW" — which the 260px cap then truncated, so the
+                  crumb identified the project by a prefix it shared with every
+                  other project of the same customer. The code is short, unique,
+                  and the string people actually quote to each other. The full
+                  name is directly below in the header, so nothing is lost. */}
               <BreadcrumbPage className="max-w-[260px] truncate font-medium">
-                {project.name}
+                {project.projectNumber || project.name}
               </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
@@ -608,43 +632,7 @@ export const ProjectDetailHeader = React.memo(
                     ) : null}
                   </div>
 
-                  <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[12px] text-foreground-secondary">
-                    <Mono className="text-foreground">{project.projectNumber}</Mono>
-                    {project.systemSizeKw != null && project.systemSizeKw > 0 ? (
-                      <>
-                        <span aria-hidden>·</span>
-                        <span className="tabular-nums">
-                          {formatSystemSize(project.systemSizeKw)} kW
-                        </span>
-                      </>
-                    ) : null}
-                    {typeLabel ? (
-                      <>
-                        <span aria-hidden>·</span>
-                        <span>{typeLabel}</span>
-                      </>
-                    ) : null}
-                    {project.startDate ? (
-                      <>
-                        <span aria-hidden>·</span>
-                        <span>Started {formatDate(project.startDate)}</span>
-                      </>
-                    ) : null}
-                    {project.quoteId ? (
-                      <>
-                        <span aria-hidden>·</span>
-                        <Link
-                          href={buildRoute(ROUTES.QUOTES.DETAIL, { id: project.quoteId })}
-                          className="inline-flex items-center gap-1 font-medium text-secondary hover:underline"
-                        >
-                          <FileText className="size-3" aria-hidden />
-                          {project.quoteNumber ?? 'Quote'}
-                        </Link>
-                      </>
-                    ) : null}
-                  </p>
-
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                  <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
                     <Fact
                       icon={<UserRound />}
                       href={
@@ -665,33 +653,60 @@ export const ProjectDetailHeader = React.memo(
                         {phone}
                       </Fact>
                     ) : null}
-                    {whatsapp ? (
-                      <Fact
-                        icon={<WhatsAppIcon className="size-3.5" />}
-                        href={`https://wa.me/${whatsapp}`}
-                        external
-                        label="Message on WhatsApp"
-                      >
-                        WhatsApp
-                      </Fact>
-                    ) : null}
-                    {email ? (
-                      <Fact icon={<Mail />} href={`mailto:${email}`} label="Email customer">
-                        {email}
-                      </Fact>
-                    ) : null}
+                    {/* WhatsApp and email deliberately absent. This header is
+                        for working the PROJECT; the customer's full contact
+                        card is one click away on the customer link above, which
+                        is where reaching out belongs. Carrying a full email
+                        address here also stretched the line badly on a long
+                        address while saying nothing about the project. */}
                     {location ? <Fact icon={<MapPin />}>{location}</Fact> : null}
                     {manager ? <Fact icon={<UserRound />}>PM {memberName(manager)}</Fact> : null}
                   </div>
 
-                  {project.description?.trim() ? (
-                    <p
-                      className="mt-2 line-clamp-2 max-w-[68ch] text-[12.5px] leading-relaxed text-foreground-secondary"
-                      title={project.description}
-                    >
-                      {project.description}
-                    </p>
-                  ) : null}
+                  {/* Built as a list and joined, rather than each entry
+                      carrying its own leading separator. The project number
+                      used to lead this line and was the one entry guaranteed to
+                      render, so every other entry could safely prefix itself
+                      with a dot. The number now lives in the breadcrumb — it was
+                      being stated twice on one screen — and with it gone that
+                      invariant went too: the first surviving entry would have
+                      opened the line with a stray "·", and which entry that is
+                      depends on which of these a project happens to have. */}
+                  <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-[12px] text-foreground-secondary">
+                    {(
+                      [
+                        project.systemSizeKw != null && project.systemSizeKw > 0 ? (
+                          <span key="size" className="tabular-nums">
+                            {formatSystemSize(project.systemSizeKw)} kW
+                          </span>
+                        ) : null,
+                        typeLabel ? <span key="type">{typeLabel}</span> : null,
+                        project.startDate ? (
+                          <span key="started">Started {formatDate(project.startDate)}</span>
+                        ) : null,
+                        project.quoteId ? (
+                          <Link
+                            key="quote"
+                            href={buildRoute(ROUTES.QUOTES.DETAIL, { id: project.quoteId })}
+                            className="inline-flex items-center gap-1 font-medium text-secondary hover:underline"
+                          >
+                            <FileText className="size-3" aria-hidden />
+                            {project.quoteNumber ?? 'Quote'}
+                          </Link>
+                        ) : null,
+                      ].filter(Boolean) as React.JSX.Element[]
+                    ).map((entry, index) => (
+                      <React.Fragment key={entry.key}>
+                        {index > 0 ? <span aria-hidden>·</span> : null}
+                        {entry}
+                      </React.Fragment>
+                    ))}
+                  </p>
+
+                  {/* The description is gone too. On a converted project it is
+                      generated boilerplate — "Solar installation project
+                      converted from quote QT-…" — restating the quote number
+                      already shown as a chip in the line above. */}
                 </div>
               </div>
 
@@ -718,6 +733,20 @@ export const ProjectDetailHeader = React.memo(
                 style={{ background: TONE[notice.tone].tint, color: TONE[notice.tone].ink }}
               >
                 <span className="font-semibold">{notice.title}.</span> {notice.body}
+              </div>
+            ) : null}
+
+            {completedWithBalance ? (
+              <div
+                role="status"
+                className="mt-4 rounded-2xl px-4 py-2.5 text-[12.5px] leading-relaxed"
+                style={{ background: TONE.warning.tint, color: TONE.warning.ink }}
+              >
+                <span className="font-semibold">
+                  Completed with {formatPaise(outstandingPaise)} still to collect.
+                </span>{' '}
+                The work is signed off but the contract is not settled. This stays here until the
+                balance is received or the remaining milestones are waived.
               </div>
             ) : null}
 

@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ProjectType } from '@tejas96/shared/types';
 
 import { CreateProductPriceDto, UpdateProductPriceDto } from '../dto/product-prices';
@@ -36,6 +41,13 @@ export class ProductPriceService {
     this.validateDateRange(effectiveFrom, effectiveTo);
 
     await this.deactivateExistingPrices(productId, dto.projectType, effectiveFrom);
+
+    await this.assertNoOverlap(
+      productId,
+      dto.projectType ?? null,
+      this.formatDate(effectiveFrom),
+      effectiveTo ? this.formatDate(effectiveTo) : null,
+    );
 
     return this.productPriceRepository.create({
       ...dto,
@@ -80,6 +92,16 @@ export class ProductPriceService {
 
     if (nextIsActive && (projectTypeChanged || touchesScheduleOrActive)) {
       await this.deactivateExistingPrices(productId, nextProjectType, effectiveFrom, id);
+    }
+
+    if (nextIsActive) {
+      await this.assertNoOverlap(
+        productId,
+        nextProjectType ?? null,
+        this.formatDate(effectiveFrom),
+        effectiveTo ? this.formatDate(effectiveTo) : null,
+        id,
+      );
     }
 
     const updateData: Partial<ProductPriceEntity> = {
@@ -129,6 +151,39 @@ export class ProductPriceService {
     }
   }
 
+  /**
+   * An overlapping active price makes resolution ambiguous, and the resolved
+   * value is stamped permanently onto BOM lines. Refuse it at write time — that
+   * is the only point where a human can still fix it.
+   */
+  private async assertNoOverlap(
+    productId: string,
+    projectType: string | null,
+    effectiveFrom: string,
+    effectiveTo: string | null,
+    excludeId?: string,
+  ): Promise<void> {
+    const clashes = await this.productPriceRepository.findOverlappingActive(
+      productId,
+      projectType,
+      effectiveFrom,
+      effectiveTo,
+      excludeId,
+    );
+    if (clashes.length > 0) {
+      const windows = clashes
+        .map(
+          (c) =>
+            `${this.formatDate(c.effectiveFrom)} → ${c.effectiveTo ? this.formatDate(c.effectiveTo) : 'open'}`,
+        )
+        .join(', ');
+      throw new ConflictException(
+        `An active price for this product and project type already covers that period (${windows}). ` +
+          `Set an end date on the existing price first, or deactivate it.`,
+      );
+    }
+  }
+
   private async deactivateExistingPrices(
     productId: string,
     projectType: ProjectType | undefined,
@@ -170,13 +225,33 @@ export class ProductPriceService {
     return parsed;
   }
 
+  /**
+   * TypeORM hydrates a `date`-typed column (ProductPriceEntity.effectiveFrom /
+   * effectiveTo) as a plain 'YYYY-MM-DD' string at runtime, not a Date, despite
+   * the entity's TS type. Values built locally via toDate() are real Date
+   * instances. Accept both so callers don't need to know which they hold.
+   */
+  private formatDate(value: Date | string): string {
+    if (typeof value === 'string') return value.slice(0, 10);
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   private today(): Date {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
-  private yesterday(reference: Date): Date {
-    const day = new Date(reference.getFullYear(), reference.getMonth(), reference.getDate());
+  /**
+   * Same Date/string hydration quirk as formatDate() above: `effectiveFrom` can
+   * arrive here as `existing.effectiveFrom` (a string) when update() doesn't
+   * touch the date, not just the Date instances toDate() builds.
+   */
+  private yesterday(reference: Date | string): Date {
+    const value = typeof reference === 'string' ? new Date(reference) : reference;
+    const day = new Date(value.getFullYear(), value.getMonth(), value.getDate());
     day.setDate(day.getDate() - 1);
     return day;
   }
