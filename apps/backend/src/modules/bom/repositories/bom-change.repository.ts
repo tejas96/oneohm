@@ -27,11 +27,35 @@ export class BomChangeRepository {
     return repo.save(rows.map((r) => repo.create(r)));
   }
 
-  async findByBom(bomId: string): Promise<BomChangeEntity[]> {
-    return this.dataSource.getRepository(BomChangeEntity).find({
-      where: { bomId },
-      order: { createdAt: 'DESC' },
-    });
+  /**
+   * `created_by` on a row is a bare uuid — the durable reference — so a
+   * display name is resolved alongside it here, the same shape the ledger
+   * already uses for `recordedByName`/`approvedByName`
+   * (ledger.repository.ts's `getEntryAttributionByProject`): `NULLIF(TRIM(...))`
+   * so a user with no name comes back null rather than an empty string, and a
+   * LEFT JOIN so a row whose author no longer resolves (a deleted user, or
+   * historical data seeded straight into the table) still returns the row
+   * with `createdByName: null` instead of dropping it.
+   */
+  async findByBom(bomId: string): Promise<Array<BomChangeEntity & { createdByName: string | null }>> {
+    const { entities, raw } = await this.dataSource
+      .getRepository(BomChangeEntity)
+      .createQueryBuilder('c')
+      .leftJoin('users', 'u', 'u.id = c.created_by')
+      .addSelect(`NULLIF(TRIM(CONCAT_WS(' ', u.first_name, u.last_name)), '')`, 'createdByName')
+      .where('c.bom_id = :bomId', { bomId })
+      // `c` is the createQueryBuilder root — an ENTITY alias — so orderBy needs
+      // the property path (`createdAt`), not the raw column
+      // (`created_at`): see orderby-property-paths.spec.ts. `u`, below, is a
+      // plain-string leftJoin with no entity metadata, so ITS columns
+      // (first_name/last_name in addSelect) correctly stay raw SQL names.
+      .orderBy('c.createdAt', 'DESC')
+      .getRawAndEntities();
+
+    return entities.map((entity, i) => ({
+      ...entity,
+      createdByName: (raw[i]?.createdByName as string | undefined) ?? null,
+    }));
   }
 
   /** Signed sum. Equals current BOM value minus quoted BOM value. */

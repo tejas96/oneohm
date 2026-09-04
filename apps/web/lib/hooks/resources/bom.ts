@@ -101,6 +101,8 @@ export interface BomChange {
   reason: string;
   source: BomItemSource;
   createdBy: string;
+  /** Resolved display name for `createdBy`. Null when it doesn't resolve to a named user. */
+  createdByName: string | null;
   createdAt: string;
 }
 

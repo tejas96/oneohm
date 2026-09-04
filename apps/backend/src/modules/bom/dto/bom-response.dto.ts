@@ -103,5 +103,11 @@ export class BomChangeResponseDto {
   reason!: string;
   source!: BomChangeSource;
   createdBy!: string;
+  /**
+   * Resolved display name for `createdBy`, the same shape as the ledger's
+   * `recordedByName`. Null when the user has no name on file, or when
+   * `createdBy` no longer resolves to a row in `users` — never guessed.
+   */
+  createdByName!: string | null;
   createdAt!: Date;
 }

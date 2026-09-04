@@ -226,6 +226,7 @@ export class BomReadService {
       reason: change.reason,
       source: change.source,
       createdBy: change.createdBy,
+      createdByName: change.createdByName,
       createdAt: change.createdAt,
     }));
   }

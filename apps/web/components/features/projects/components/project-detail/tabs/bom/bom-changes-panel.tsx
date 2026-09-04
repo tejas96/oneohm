@@ -17,7 +17,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBomChanges, useProjectBom, type BomChange, type BomChangeType } from '@/lib/hooks/resources';
 import { cn, formatCurrency, formatDate, formatFollowupClockTime, formatNumber } from '@/lib/utils';
-import { useAuth, type User } from '@/providers/auth-provider';
 
 interface BomChangesPanelProps {
   projectId: string;
@@ -40,22 +39,15 @@ const TYPE_TONE: Record<BomChangeType, Tone> = {
 const COLS = 'grid-cols-[128px_minmax(180px,1.2fr)_110px_130px_150px_minmax(260px,2fr)]';
 
 /**
- * `createdBy` on a change row is a bare user id — `bom_changes.created_by` is
- * a uuid column with no name join (bom-response.dto.ts), unlike a ledger
- * entry's `recordedByName` / `approvedByName`, which the API resolves
- * server-side. This task adds no backend change, so the one name this panel
- * can show with certainty is the viewer's own — every edit made from this
- * screen, including the one this task's own verification makes. Anyone
- * else's shows as a shortened id rather than a guessed name.
+ * `createdByName` is resolved server-side — the same shape as the ledger's
+ * `recordedByName` / `approvedByName` (a `NULLIF(TRIM(CONCAT_WS(...)))` join
+ * onto `users`, null rather than guessed when it doesn't resolve). Falling
+ * back to the viewer's own session here would produce a plausible-looking
+ * WRONG name on anyone else's edit, which is worse than an id — so the only
+ * fallback is the durable `createdBy` uuid, shortened for legibility.
  */
-function creatorLabel(userId: string, currentUser: User | null): string {
-  if (userId === currentUser?.id) {
-    const fullName =
-      currentUser.fullName?.trim() ||
-      [currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ').trim();
-    return fullName || currentUser.email || userId;
-  }
-  return `${userId.slice(0, 8)}…`;
+function creatorLabel(change: BomChange): string {
+  return change.createdByName ?? `${change.createdBy.slice(0, 8)}…`;
 }
 
 interface ProductInfo {
@@ -77,7 +69,6 @@ export function BomChangesPanel({ projectId }: BomChangesPanelProps): React.JSX.
   // costs no extra request, and is how a row resolves a productId into a name
   // instead of showing a bare id.
   const { data: bom } = useProjectBom(projectId);
-  const { user } = useAuth();
 
   const productInfo = React.useMemo(() => {
     const map = new Map<string, ProductInfo>();
@@ -136,7 +127,7 @@ export function BomChangesPanel({ projectId }: BomChangesPanelProps): React.JSX.
                 key={change.id}
                 change={change}
                 resolveProduct={resolveProduct}
-                creatorName={creatorLabel(change.createdBy, user)}
+                creatorName={creatorLabel(change)}
               />
             ))}
           </div>
