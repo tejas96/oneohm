@@ -14,7 +14,6 @@ import {
   KPIGrid,
   ProgressTrend,
   ProjectMilestones,
-  SiteProgress,
   WorkerMatrix,
 } from './dashboard';
 
@@ -414,10 +413,14 @@ export function ProjectDashboardPage(): React.JSX.Element {
             />
           </div>
 
-          {/* Resource Optimization & Site Activity */}
+          {/* Resource Optimization.
+              The "Live Site Progress" card that used to sit beside this one is
+              gone. It rendered a blurred mock — an installer check-in at "Plot
+              14, Hinjawadi Sector-3", liaison documents uploaded — under a
+              pulsing "Coming Soon" badge, i.e. a third of the row spent on
+              invented data for a feature that does not exist. */}
           <div className="flex flex-col lg:flex-row gap-6">
             <WorkerMatrix workers={dashboardData.workers} />
-            <SiteProgress />
           </div>
 
           {/* Delivery Velocity Charts */}
