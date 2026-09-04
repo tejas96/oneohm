@@ -112,12 +112,19 @@ export class BomReadService {
       currentPaise += currentTotalPaise;
 
       let changeState: BomLineChangeState;
-      if (quoted === null) {
-        changeState = 'added';
-        added += 1;
-      } else if (current === 0) {
+      // `current === 0` is tested FIRST, before `quoted === null`. A line that
+      // was added on site and then removed again has both properties, and the
+      // state that matters to a reader is the one that survives: it is gone.
+      // Testing `quoted === null` first labelled such a row "Added" while it
+      // showed 0 pcs — the badge contradicted the quantity beside it. Money was
+      // never affected (the line contributes 0 to both totals either way); only
+      // the label and the added/removed counters were wrong.
+      if (current === 0) {
         changeState = 'removed';
         removed += 1;
+      } else if (quoted === null) {
+        changeState = 'added';
+        added += 1;
       } else if (current > quoted) {
         changeState = 'increased';
         changed += 1;
