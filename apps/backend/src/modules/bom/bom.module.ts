@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { InventoryModule } from '../inventory/inventory.module';
@@ -12,7 +12,7 @@ import { BomService } from './services/bom.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([BomEntity, BomItemEntity, BomChangeEntity, BomItemSerialEntity]),
-    forwardRef(() => InventoryModule),
+    InventoryModule,
   ],
   controllers: [BomController, BomItemsController],
   providers: [BomService, BomRepository, BomChangeRepository],

@@ -3,41 +3,27 @@ import { randomUUID } from 'crypto';
 import {
   BadRequestException,
   ConflictException,
-  Inject,
   Injectable,
   Logger,
   NotFoundException,
-  forwardRef,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import {
   BomAllocationStatus,
   SERIALIZED_BOM_ITEM_TYPES,
-  StockAllocationSourceType,
   StockAllocationStatus,
 } from '@tejas96/shared/types';
-import { DataSource, EntityManager, In, IsNull, Not, QueryFailedError } from 'typeorm';
+import { DataSource, EntityManager, In, Not, QueryFailedError } from 'typeorm';
 
-import { InventoryStockEntity } from '../../inventory/entities/inventory-stock.entity';
 import { ReturnRequestEntity } from '../../inventory/entities/return-request.entity';
 import { StockAllocationEntity } from '../../inventory/entities/stock-allocation.entity';
+import { BomAllocationService } from '../../inventory/services/bom-allocation.service';
 import { StockAllocationService } from '../../inventory/services/stock-allocation.service';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { CalculateQuoteResponseDto } from '../../quotes/dto/calculator/calculate-quote-response.dto';
 import { BomItemEntity } from '../entities/bom-item.entity';
 import { BomEntity } from '../entities/bom.entity';
 import { BomRepository } from '../repositories/bom.repository';
-
-// ============================================================
-// LOCK ORDERING (deadlock prevention — must never be violated):
-//   1. BOM row          (SELECT ... FOR UPDATE on bom)
-//   2. StockAllocation  (SELECT ... FOR UPDATE on stock_allocations)
-//   3. InventoryStock   (SELECT ... FOR UPDATE on inventory_stock)
-//
-// reconcileFromCalculation and allocatePending both start by locking the BOM row.
-// cancel/fulfill in StockAllocationService lock allocation then inventory — no BOM lock, no inversion.
-// Any NEW code that touches allocations must follow this order.
-// ============================================================
 
 const SERIALIZED_BOM_ITEM_TYPES_SET = new Set<string>(SERIALIZED_BOM_ITEM_TYPES);
 
@@ -47,8 +33,8 @@ export class BomService {
 
   constructor(
     private readonly bomRepository: BomRepository,
-    @Inject(forwardRef(() => StockAllocationService))
     private readonly stockAllocationService: StockAllocationService,
+    private readonly bomAllocationService: BomAllocationService,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
@@ -185,64 +171,35 @@ export class BomService {
     entityType: string,
     entityId: string,
   ): Promise<
-    | (BomEntity & { productAllocationStatus: Record<string, 'allocated' | 'partial' | 'pending'> })
+    | (BomEntity & {
+        productAllocationStatus: Record<string, 'allocated' | 'partial' | 'pending'>;
+        allocationStatus: BomAllocationStatus;
+      })
     | null
   > {
     const bom = await this.bomRepository.findByEntity(entityType, entityId);
     if (!bom) return null;
 
-    // Build per-product allocation status from live BOM-linked allocations
-    const productAllocationStatus: Record<string, 'allocated' | 'partial' | 'pending'> = {};
+    // Per-product allocation status now lives in inventory (it reads
+    // StockAllocation rows, which is inventory's data). BOM-level status
+    // below is derived from that same map — nothing here writes it back,
+    // there is no column left to write.
+    const productAllocationStatus =
+      bom.entityType === 'project' && bom.items?.length
+        ? await this.bomAllocationService.statusByProduct(bom.id)
+        : {};
 
-    if (bom.entityType === 'project' && bom.items?.length) {
-      const allocRepo = this.dataSource.getRepository(StockAllocationEntity);
-
-      // Compute required qty per product from BOM items
-      const required = new Map<string, number>();
-      for (const item of bom.items) {
-        if (!item.productId) continue;
-        required.set(item.productId, (required.get(item.productId) ?? 0) + item.quantity);
-      }
-
-      if (required.size > 0) {
-        const activeAllocs = await allocRepo.find({
-          where: { bomId: bom.id, status: Not(StockAllocationStatus.CANCELLED) },
-          select: ['productId', 'allocatedQuantity'],
-        });
-
-        const reserved = new Map<string, number>();
-        for (const a of activeAllocs) {
-          reserved.set(a.productId, (reserved.get(a.productId) ?? 0) + Number(a.allocatedQuantity));
-        }
-
-        let fullyAllocatedCount = 0;
-        let partialCount = 0;
-
-        for (const [productId, requiredQty] of required) {
-          const reservedQty = reserved.get(productId) ?? 0;
-          if (reservedQty >= requiredQty) {
-            productAllocationStatus[productId] = 'allocated';
-            fullyAllocatedCount++;
-          } else if (reservedQty > 0) {
-            productAllocationStatus[productId] = 'partial';
-            partialCount++;
-          } else {
-            productAllocationStatus[productId] = 'pending';
-          }
-        }
-
-        // Recompute BOM-level allocationStatus from live data — overrides the stale DB column
-        if (fullyAllocatedCount === required.size) {
-          bom.allocationStatus = BomAllocationStatus.FULLY_ALLOCATED;
-        } else if (fullyAllocatedCount > 0 || partialCount > 0) {
-          bom.allocationStatus = BomAllocationStatus.PARTIAL;
-        } else {
-          bom.allocationStatus = BomAllocationStatus.PENDING;
-        }
+    const statuses = Object.values(productAllocationStatus);
+    let allocationStatus: BomAllocationStatus = BomAllocationStatus.PENDING;
+    if (statuses.length > 0) {
+      if (statuses.every((status) => status === 'allocated')) {
+        allocationStatus = BomAllocationStatus.FULLY_ALLOCATED;
+      } else if (statuses.some((status) => status === 'allocated' || status === 'partial')) {
+        allocationStatus = BomAllocationStatus.PARTIAL;
       }
     }
 
-    return Object.assign(bom, { productAllocationStatus });
+    return Object.assign(bom, { productAllocationStatus, allocationStatus });
   }
 
   async deleteByEntity(entityType: string, entityId: string): Promise<void> {
@@ -436,7 +393,7 @@ export class BomService {
 
           if (warehouseId) {
             const totalQty = savedItems.reduce((s, i) => s + i.quantity, 0);
-            const result = await this.allocateForProduct(
+            const result = await this.bomAllocationService.reserveForProduct(
               manager,
               existingBom,
               incoming.productId!,
@@ -480,7 +437,7 @@ export class BomService {
           );
 
           if (warehouseId) {
-            const result = await this.allocateForProduct(
+            const result = await this.bomAllocationService.reserveForProduct(
               manager,
               existingBom,
               productId,
@@ -505,13 +462,23 @@ export class BomService {
               // Release undispatched portion from reservation
               const releaseQty = allocated - newRequired;
               if (releaseQty > 0) {
-                await this.releaseReservation(manager, alloc, releaseQty, userId);
+                await this.bomAllocationService.releaseReservation(
+                  manager,
+                  alloc,
+                  releaseQty,
+                  userId,
+                );
               }
             } else {
               // OVER-DISPATCH: required drops below what's already physically sent
               const undispatchedToRelease = allocated - dispatched;
               if (undispatchedToRelease > 0) {
-                await this.releaseReservation(manager, alloc, undispatchedToRelease, userId);
+                await this.bomAllocationService.releaseReservation(
+                  manager,
+                  alloc,
+                  undispatchedToRelease,
+                  userId,
+                );
               }
               // Create return request for the surplus that was dispatched
               const returnQty = dispatched - newRequired;
@@ -542,372 +509,12 @@ export class BomService {
         }
       }
 
-      // Recompute BOM totals and allocation status
+      // Recompute BOM totals. Allocation status is no longer stored on the BOM
+      // row — findByEntity derives it live from BomAllocationService.statusByProduct.
       await this.recomputeBomTotals(manager, existingBom);
-      await this.recomputeAllocationStatus(manager, existingBom);
 
       return { added, removed, increased, decreased, pendingStock, overDispatched };
     });
-  }
-
-  /**
-   * Reserve stock for all pending BOM product lines.
-   *
-   * Reads the project's defaultWarehouseId (fails with 400 if not set).
-   * Partial allocation is normal — items without sufficient stock are returned
-   * in the `pendingStock` array.  Idempotent: already-satisfied lines are skipped.
-   *
-   * Lock order: BOM row → inventory_stock row (via allocateForProduct).
-   */
-  async allocatePending(
-    bomId: string,
-    userId: string,
-  ): Promise<{
-    allocated: Array<{ productId: string; name: string; reserved: number }>;
-    pendingStock: Array<{ productId: string; name: string; shortfall: number }>;
-    alreadySatisfied: Array<{ productId: string; name: string }>;
-  }> {
-    const bom = await this.bomRepository.findByEntityId(bomId);
-    if (!bom) throw new NotFoundException(`BOM ${bomId} not found`);
-
-    if (bom.entityType !== 'project') {
-      throw new BadRequestException('Can only allocate BOMs associated with a project');
-    }
-
-    if (!bom.items?.length) {
-      throw new BadRequestException('No BOM for this project. Create or sync materials first.');
-    }
-
-    // Resolve project's warehouse
-    const projectRow = await this.dataSource
-      .getRepository(ProjectEntity)
-      .findOne({ where: { id: bom.entityId }, select: ['id', 'defaultWarehouseId'] });
-
-    const warehouseId = projectRow?.defaultWarehouseId;
-    if (!warehouseId) {
-      throw new BadRequestException(
-        'No default warehouse set for this project. Set it in the Project Overview before reserving stock.',
-      );
-    }
-
-    const result = await this.dataSource.transaction(async (manager) => {
-      // Lock BOM row first
-      const bomRepo = manager.getRepository(BomEntity);
-      const lockedBom = await bomRepo
-        .createQueryBuilder('bom')
-        .where('bom.id = :id', { id: bomId })
-        .setLock('pessimistic_write')
-        .getOne();
-      if (!lockedBom) throw new NotFoundException(`BOM ${bomId} not found`);
-
-      // Reload items within transaction
-      const itemRepo = manager.getRepository(BomItemEntity);
-      const items = await itemRepo.find({ where: { bomId } });
-
-      // Group by productId
-      const groupedItems = items.reduce<
-        Map<string, { productId: string; name: string; totalQty: number }>
-      >((acc, item) => {
-        if (!item.productId) return acc;
-        const existing = acc.get(item.productId);
-        if (existing) {
-          existing.totalQty += item.quantity;
-        } else {
-          acc.set(item.productId, {
-            productId: item.productId,
-            name: item.name,
-            totalQty: item.quantity,
-          });
-        }
-        return acc;
-      }, new Map());
-
-      const allocated: Array<{ productId: string; name: string; reserved: number }> = [];
-      const pendingStock: Array<{ productId: string; name: string; shortfall: number }> = [];
-      const alreadySatisfied: Array<{ productId: string; name: string }> = [];
-
-      for (const { productId, name, totalQty } of groupedItems.values()) {
-        const alloc = await this.allocateForProduct(
-          manager,
-          lockedBom,
-          productId,
-          warehouseId,
-          totalQty,
-          userId,
-        );
-        if (alloc.status === 'satisfied') {
-          alreadySatisfied.push({ productId, name });
-        } else if (alloc.reserved > 0 && alloc.shortfall === 0) {
-          allocated.push({ productId, name, reserved: alloc.reserved });
-        } else if (alloc.reserved > 0 && alloc.shortfall > 0) {
-          allocated.push({ productId, name, reserved: alloc.reserved });
-          pendingStock.push({ productId, name, shortfall: alloc.shortfall });
-        } else {
-          pendingStock.push({ productId, name, shortfall: totalQty });
-        }
-      }
-
-      await this.recomputeAllocationStatus(manager, lockedBom);
-      return { allocated, pendingStock, alreadySatisfied };
-    });
-
-    return result;
-  }
-
-  /**
-   * Helper: reserve stock for one product line within an open transaction.
-   *
-   * Lock order: (caller holds BOM lock) → inventory_stock row.
-   *
-   * @returns { reserved, shortfall, status }
-   *   status: 'satisfied' | 'partial' | 'new'
-   */
-  private async allocateForProduct(
-    manager: EntityManager,
-    bom: BomEntity,
-    productId: string,
-    warehouseId: string,
-    requiredQty: number,
-    userId: string,
-  ): Promise<{ reserved: number; shortfall: number; status: 'satisfied' | 'partial' | 'new' }> {
-    const allocRepo = manager.getRepository(StockAllocationEntity);
-
-    // Find active (non-cancelled) BOM-linked allocation for this (bom, product)
-    let existingAlloc = await allocRepo.findOne({
-      where: {
-        bomId: bom.id,
-        productId,
-        status: Not(StockAllocationStatus.CANCELLED),
-      },
-    });
-
-    // Mismatched warehouse guard
-    if (existingAlloc && existingAlloc.warehouseId !== warehouseId) {
-      throw new ConflictException(
-        `Allocation for product ${productId} already exists in a different warehouse. Release it first.`,
-      );
-    }
-
-    // If no BOM-linked allocation exists yet, check for a manual project-scoped allocation
-    // (bom_id IS NULL) for the same product+warehouse. If one exists, adopt it by stamping
-    // bom_id onto it — this avoids double-reserving stock that is already physically reserved
-    // and makes recomputeAllocationStatus correctly count it toward BOM coverage.
-    if (!existingAlloc) {
-      const manualAlloc = await allocRepo.findOne({
-        where: {
-          bomId: IsNull(),
-          projectId: bom.entityId,
-          productId,
-          warehouseId,
-          status: Not(StockAllocationStatus.CANCELLED),
-        },
-      });
-      if (manualAlloc) {
-        manualAlloc.bomId = bom.id;
-        manualAlloc.notes = `${manualAlloc.notes ? `${manualAlloc.notes} | ` : ''}Linked to BOM ${bom.bomNumber} on reserve`;
-        manualAlloc.updatedBy = userId;
-        await allocRepo.save(manualAlloc);
-        existingAlloc = manualAlloc;
-      }
-    }
-
-    const alreadyAllocated = existingAlloc ? Number(existingAlloc.allocatedQuantity) : 0;
-
-    if (alreadyAllocated >= requiredQty) {
-      return { reserved: 0, shortfall: 0, status: 'satisfied' };
-    }
-
-    const topUpNeeded = requiredQty - alreadyAllocated;
-
-    // Lock the inventory row
-    const stockRepo = manager.getRepository(InventoryStockEntity);
-    const stock = await stockRepo
-      .createQueryBuilder('stock')
-      .where('stock.warehouseId = :wid', { wid: warehouseId })
-      .andWhere('stock.productId = :pid', { pid: productId })
-      .setLock('pessimistic_write')
-      .getOne();
-
-    const available = stock ? Number(stock.availableQuantity) : 0;
-    if (available <= 0) {
-      return { reserved: 0, shortfall: topUpNeeded, status: 'new' };
-    }
-
-    const reserve = Math.min(available, topUpNeeded);
-    const shortfall = topUpNeeded - reserve;
-
-    // Update inventory stock
-    if (stock) {
-      stock.availableQuantity = Number(stock.availableQuantity) - reserve;
-      stock.reservedQuantity = Number(stock.reservedQuantity) + reserve;
-      stock.updatedAt = new Date();
-      await stockRepo.save(stock);
-    }
-
-    const { InventoryTransactionEntity } = await import(
-      '../../inventory/entities/inventory-transaction.entity'
-    );
-    const { InventoryTransactionType } = await import('@tejas96/shared/types');
-    const txnRepo = manager.getRepository(InventoryTransactionEntity);
-
-    if (existingAlloc) {
-      // Top-up existing allocation
-      existingAlloc.allocatedQuantity = alreadyAllocated + reserve;
-      existingAlloc.updatedBy = userId;
-      await allocRepo.save(existingAlloc);
-
-      await txnRepo.save(
-        txnRepo.create({
-          warehouseId,
-          productId,
-          transactionType: InventoryTransactionType.ALLOCATION,
-          quantity: reserve,
-          transactionDate: new Date(),
-          referenceType: 'stock_allocation',
-          referenceId: existingAlloc.id,
-          notes: `BOM top-up allocation (${bom.bomNumber})`,
-          createdBy: userId,
-        }),
-      );
-    } else {
-      // Create new allocation
-      const newAlloc = allocRepo.create({
-        projectId: bom.entityId,
-        warehouseId,
-        productId,
-        bomId: bom.id,
-        allocatedQuantity: reserve,
-        dispatchedQuantity: 0,
-        returnedQuantity: 0,
-        sourceType: StockAllocationSourceType.OWN,
-        status: StockAllocationStatus.ALLOCATED,
-        notes: `Auto-allocated from BOM ${bom.bomNumber}`,
-        createdBy: userId,
-      });
-      await allocRepo.save(newAlloc);
-
-      await txnRepo.save(
-        txnRepo.create({
-          warehouseId,
-          productId,
-          transactionType: InventoryTransactionType.ALLOCATION,
-          quantity: reserve,
-          transactionDate: new Date(),
-          referenceType: 'stock_allocation',
-          referenceId: newAlloc.id,
-          notes: `Stock reserved for BOM ${bom.bomNumber}`,
-          createdBy: userId,
-        }),
-      );
-    }
-
-    return { reserved: reserve, shortfall, status: 'new' };
-  }
-
-  /**
-   * Release a portion of reserved inventory back to available.
-   * Operates within an open transaction (lock-order: BOM already held by caller).
-   */
-  private async releaseReservation(
-    manager: EntityManager,
-    allocation: StockAllocationEntity,
-    releaseQty: number,
-    userId: string,
-  ): Promise<void> {
-    const stockRepo = manager.getRepository(InventoryStockEntity);
-    const stock = await stockRepo
-      .createQueryBuilder('stock')
-      .where('stock.warehouseId = :wid', { wid: allocation.warehouseId })
-      .andWhere('stock.productId = :pid', { pid: allocation.productId })
-      .setLock('pessimistic_write')
-      .getOne();
-
-    if (stock) {
-      stock.availableQuantity = Number(stock.availableQuantity) + releaseQty;
-      stock.reservedQuantity = Math.max(0, Number(stock.reservedQuantity) - releaseQty);
-      stock.updatedAt = new Date();
-      await stockRepo.save(stock);
-    }
-
-    const allocRepo = manager.getRepository(StockAllocationEntity);
-    allocation.allocatedQuantity = Number(allocation.allocatedQuantity) - releaseQty;
-    allocation.updatedBy = userId;
-    await allocRepo.save(allocation);
-
-    const { InventoryTransactionEntity } = await import(
-      '../../inventory/entities/inventory-transaction.entity'
-    );
-    const { InventoryTransactionType } = await import('@tejas96/shared/types');
-    const txnRepo = manager.getRepository(InventoryTransactionEntity);
-    await txnRepo.save(
-      txnRepo.create({
-        warehouseId: allocation.warehouseId,
-        productId: allocation.productId,
-        transactionType: InventoryTransactionType.ALLOCATION,
-        quantity: releaseQty,
-        transactionDate: new Date(),
-        referenceType: 'stock_allocation',
-        referenceId: allocation.id,
-        notes: 'Released reserved stock (BOM reconcile)',
-        createdBy: userId,
-      }),
-    );
-  }
-
-  /** Recompute BOM.allocationStatus from live allocations. */
-  private async recomputeAllocationStatus(manager: EntityManager, bom: BomEntity): Promise<void> {
-    const itemRepo = manager.getRepository(BomItemEntity);
-    const allocRepo = manager.getRepository(StockAllocationEntity);
-
-    const items = await itemRepo.find({ where: { bomId: bom.id } });
-    const productGroups = new Map<string, number>();
-    for (const item of items) {
-      if (!item.productId) continue;
-      productGroups.set(item.productId, (productGroups.get(item.productId) ?? 0) + item.quantity);
-    }
-
-    if (productGroups.size === 0) {
-      await manager
-        .getRepository(BomEntity)
-        .update(bom.id, { allocationStatus: BomAllocationStatus.PENDING });
-      return;
-    }
-
-    const activeAllocs = await allocRepo.find({
-      where: { bomId: bom.id, status: Not(StockAllocationStatus.CANCELLED) },
-      select: ['productId', 'allocatedQuantity'],
-    });
-    // Sum quantities per product — defensive against edge-case duplicate rows
-    const allocByProduct = new Map<string, number>();
-    for (const a of activeAllocs) {
-      allocByProduct.set(
-        a.productId,
-        (allocByProduct.get(a.productId) ?? 0) + Number(a.allocatedQuantity),
-      );
-    }
-
-    let fullyAllocated = 0;
-    let partiallyAllocated = 0;
-
-    for (const [productId, requiredQty] of productGroups) {
-      const reserved = allocByProduct.get(productId) ?? 0;
-      if (reserved >= requiredQty) {
-        fullyAllocated++;
-      } else if (reserved > 0) {
-        partiallyAllocated++;
-      }
-    }
-
-    let newStatus: BomAllocationStatus;
-    if (fullyAllocated === productGroups.size) {
-      newStatus = BomAllocationStatus.FULLY_ALLOCATED;
-    } else if (fullyAllocated > 0 || partiallyAllocated > 0) {
-      newStatus = BomAllocationStatus.PARTIAL;
-    } else {
-      newStatus = BomAllocationStatus.PENDING;
-    }
-
-    await manager.getRepository(BomEntity).update(bom.id, { allocationStatus: newStatus });
   }
 
   /** Recompute totalItems and totalCost from live items within a transaction. */
@@ -1133,7 +740,7 @@ export class BomService {
       await itemRepo.save(newItems.map((i) => itemRepo.create({ ...i, bomId: bom.id })));
 
       if (warehouseId && incoming.productId) {
-        await this.allocateForProduct(
+        await this.bomAllocationService.reserveForProduct(
           manager,
           bom,
           incoming.productId,

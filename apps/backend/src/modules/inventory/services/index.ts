@@ -8,6 +8,7 @@ export * from './vendor.service';
 export * from './project-vendor.service';
 export * from './purchase-order.service';
 export * from './stock-allocation.service';
+export * from './bom-allocation.service';
 export * from './return-request.service';
 export * from './material-dispatch.service';
 export * from './inventory-bulk.service';

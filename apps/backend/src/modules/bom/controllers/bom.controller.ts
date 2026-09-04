@@ -13,6 +13,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { BomAllocationService } from '../../inventory/services/bom-allocation.service';
 import { BomResponseDto } from '../dto/bom-response.dto';
 import { BomService } from '../services/bom.service';
 
@@ -23,7 +24,10 @@ const ALLOWED_ENTITY_TYPES = ['project'] as const;
 @Controller('bom')
 @UseGuards(JwtAuthGuard)
 export class BomController {
-  constructor(private readonly bomService: BomService) {}
+  constructor(
+    private readonly bomService: BomService,
+    private readonly bomAllocationService: BomAllocationService,
+  ) {}
 
   @Get()
   async findByEntity(
@@ -75,6 +79,6 @@ export class BomController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.bomService.allocatePending(id, currentUser.id);
+    return this.bomAllocationService.allocatePending(id, currentUser.id);
   }
 }
