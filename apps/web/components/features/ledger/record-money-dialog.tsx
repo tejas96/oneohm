@@ -3,7 +3,7 @@
 import { Alert, Box, Button, CircularProgress } from '@mui/material';
 import { EXPENSE_CATEGORY_LABELS } from '@tejas96/shared';
 import { ExpenseCategory, PaymentMethod } from '@tejas96/shared/types';
-import { type JSX, useRef, useState } from 'react';
+import { type JSX, useEffect, useRef, useState } from 'react';
 
 import {
   MUIDialog,
@@ -23,7 +23,7 @@ import {
   type ProofDocumentInput,
 } from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
-import { formatPaise, rupeesToPaise } from '@/lib/utils/paise';
+import { formatPaise, paiseToRupees, rupeesToPaise } from '@/lib/utils/paise';
 
 type Mode = 'receipt' | 'expense';
 
@@ -34,6 +34,11 @@ interface RecordMoneyDialogProps {
   mode: Mode;
   /** Shown so the operator can see where an un-targeted receipt will land. */
   milestones?: MilestoneBalance[];
+  /**
+   * Set when the dialog was opened from a specific milestone's Record button,
+   * so the amount can start at what that milestone is still owed.
+   */
+  forMilestone?: MilestoneBalance | null;
 }
 
 /**
@@ -87,10 +92,12 @@ export function RecordMoneyDialog({
   projectId,
   mode,
   milestones = [],
+  forMilestone = null,
 }: RecordMoneyDialogProps): JSX.Element {
   const save = useGatedAction('finance.payments.record', () => undefined, 'Record money');
   const { recordReceipt, recordExpense } = useLedgerMutations(projectId);
   const [amount, setAmount] = useState('');
+
   const [valueDate, setValueDate] = useState(todayIst());
   const [method, setMethod] = useState<string>(PaymentMethod.UPI);
   const [reference, setReference] = useState('');
@@ -101,6 +108,31 @@ export function RecordMoneyDialog({
   const [proof, setProof] = useState<ProofDocumentInput | null>(null);
   const [proofName, setProofName] = useState('');
   const [uploading, setUploading] = useState(false);
+
+  /*
+   * Opened from a milestone row: start at what that milestone is still short
+   * by, so the common case — the customer paid this term, in full — is one
+   * click and a date.
+   *
+   * `balancePaise`, not `expectedPaise`. On every unpaid row the two are the
+   * same number, which is what the schedule shows as both "Expected" and
+   * "Short by". They part company the moment a milestone is part paid, and
+   * there `expectedPaise` would suggest the FULL term again on top of what has
+   * already been received — a double charge, pre-filled, one click from being
+   * recorded. The balance is the amount actually owed either way.
+   *
+   * Re-seeded on every open rather than once on mount: a receipt recorded
+   * since must not leave a stale suggestion behind. It stays editable, because
+   * a customer paying part of a term is ordinary.
+   */
+  useEffect(() => {
+    if (!open) return;
+    setAmount(
+      mode === 'receipt' && forMilestone && forMilestone.balancePaise > 0
+        ? paiseToRupees(forMilestone.balancePaise).toFixed(2)
+        : '',
+    );
+  }, [open, mode, forMilestone]);
 
   const isReceipt = mode === 'receipt';
   const pending = recordReceipt.isPending || recordExpense.isPending;

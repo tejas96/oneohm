@@ -99,10 +99,29 @@ export function ProjectMoneyTab({
   const summary = useProjectLedger(projectId, { enabled: isActive });
   const entries = useProjectEntries(projectId, { enabled: isActive });
   const [dialog, setDialog] = useState<'receipt' | 'expense' | 'changeOrder' | null>(null);
+  /*
+   * The milestone a row's Record button was clicked on, so the receipt dialog
+   * can open with the amount that milestone is still short by already filled
+   * in. Cleared when the dialog closes and when the header's own Record
+   * payment button opens it — that button is about the project, not any one
+   * milestone, and inheriting the last row clicked would be a figure the
+   * operator never asked for.
+   */
+  const [recordFor, setRecordFor] = useState<MilestoneBalance | null>(null);
 
   // Money-moving controls. `useGatedAction` keeps them clickable so a blocked
   // user gets told which permission they need, rather than a dead button.
   const recordPayment = useGatedAction(
+    'finance.payments.record',
+    () => {
+      setRecordFor(null);
+      setDialog('receipt');
+    },
+    'Record payment',
+  );
+  // The same gate, entered from a milestone row: identical permission, but it
+  // remembers which milestone so the dialog can suggest its shortfall.
+  const recordForMilestone = useGatedAction(
     'finance.payments.record',
     () => setDialog('receipt'),
     'Record payment',
@@ -226,7 +245,10 @@ export function ProjectMoneyTab({
           // The gate, not the raw setter: the waterfall opens the same receipt
           // dialog as the header button, so passing `setDialog` here would walk
           // straight past the gate declared for it.
-          onRecordPayment={recordPayment.onGatedClick}
+          onRecordPayment={(milestoneId) => {
+            setRecordFor(s.milestones.find((m) => m.milestoneId === milestoneId) ?? null);
+            recordForMilestone.onGatedClick();
+          }}
           onWaive={setWaiving}
         />
       </DetailCard>
@@ -253,7 +275,11 @@ export function ProjectMoneyTab({
           mode={dialog}
           projectId={projectId}
           milestones={s.milestones}
-          onClose={() => setDialog(null)}
+          forMilestone={recordFor}
+          onClose={() => {
+            setDialog(null);
+            setRecordFor(null);
+          }}
         />
       ) : null}
 
