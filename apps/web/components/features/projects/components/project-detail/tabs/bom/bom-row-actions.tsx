@@ -15,17 +15,14 @@ export interface BomRowActionsProps {
 }
 
 /**
- * The three line edits, behind one control that stays invisible until the row
- * is hovered or the button is focused.
+ * The three line edits, behind one control on every row.
  *
- * The table already carries eight columns of numbers and pills. Three inline
- * buttons per row would triple its visual weight for actions used a handful of
- * times per project, so the resting state costs one transparent 28px square and
- * the menu carries everything.
- *
- * `opacity-0` rather than `hidden`: the button stays in the layout and stays
- * reachable by keyboard, and `focus-visible:opacity-100` brings it back for
- * anyone tabbing through. `group-hover` is driven by the row.
+ * Three inline buttons per row would triple the table's visual weight for
+ * actions used a handful of times per project, so they live behind one menu.
+ * That menu is always visible, though: it was hover-only, which kept the table
+ * quiet at the cost of the rows never looking editable at all — you had to
+ * already know to go looking. A single muted 28px glyph is a price worth paying
+ * for the table saying what it can do.
  */
 export function BomRowActions({
   productName,
@@ -50,7 +47,7 @@ export function BomRowActions({
         type="button"
         aria-label={`Edit ${productName}`}
         onClick={(e) => setAnchorEl(e.currentTarget)}
-        className="flex size-7 shrink-0 items-center justify-center rounded-full text-foreground-tertiary opacity-0 transition-[opacity,background-color,color] duration-fast hover:bg-surface hover:text-foreground focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary group-hover:opacity-100 aria-expanded:opacity-100"
+        className="flex size-7 shrink-0 items-center justify-center rounded-full text-foreground-tertiary transition-colors duration-fast hover:bg-surface hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
         aria-expanded={Boolean(anchorEl)}
       >
         <MoreVertical className="size-4" />

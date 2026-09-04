@@ -85,8 +85,8 @@ const ALLOC_LABEL: Record<RowAllocStatus, string> = {
   pending: 'Pending',
 };
 
-// Trailing 36px column holds the per-row actions menu. It is always present so
-// the header and body stay aligned, but carries nothing until a row is hovered.
+// Trailing 36px column holds the per-row actions menu, on every row that has
+// one. Present in the header too, empty, so header and body stay aligned.
 const COLS = 'grid-cols-[minmax(180px,1.6fr)_84px_84px_108px_112px_112px_84px_100px_36px]';
 
 /** One number in the four-figure header: overline label, large mono value. */
@@ -334,7 +334,11 @@ export const ProjectBomTab = React.memo(
               <div className="overflow-x-auto">
                 <div className="min-w-[960px]">
                   <div className={cn('grid items-center gap-3 pb-1.5', ROW_BLEED, COLS)} aria-hidden>
-                    <ColumnHeader>Product</ColumnHeader>
+                    {/* Indented to match the rows below, which carry the same
+                        pl-1 so the product name is not flush against the card's
+                        edge. Header and body must move together or the column
+                        stops reading as one. */}
+                    <ColumnHeader className="pl-1">Product</ColumnHeader>
                     <ColumnHeader className="text-right">Quoted</ColumnHeader>
                     <ColumnHeader className="text-right">Now</ColumnHeader>
                     <ColumnHeader className="text-right">Unit price</ColumnHeader>
@@ -356,7 +360,7 @@ export const ProjectBomTab = React.memo(
                           COLS,
                         )}
                       >
-                        <div className="min-w-0">
+                        <div className="min-w-0 pl-1">
                           <span
                             className={cn(
                               'block truncate text-[12.5px] font-medium text-foreground',
