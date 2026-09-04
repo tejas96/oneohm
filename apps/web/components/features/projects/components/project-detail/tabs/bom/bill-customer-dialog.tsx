@@ -15,7 +15,8 @@ import {
 } from '@/components/ui';
 import { useLedgerMutations, useProjectLedger } from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
-import { formatCurrency, paiseToRupees, rupeesToPaise } from '@/lib/utils';
+import { formatCurrency, paiseToRupees } from '@/lib/utils';
+import { parseRupeeInput, rupeeInputError } from '@/lib/utils/paise';
 
 export interface BillCustomerDialogProps {
   projectId: string;
@@ -100,8 +101,21 @@ export function BillCustomerDialog({
     }
   }, [open, changeOrderPaise, variancePaise]);
 
-  const amountPaise = amount ? rupeesToPaise(Number(amount)) : 0;
-  const valid = reason.trim().length > 0 && amountPaise > 0;
+  const parsed = parseRupeeInput(amount);
+  const amountPaise = parsed.ok ? parsed.paise : 0;
+  const amountError = rupeeInputError(parsed);
+  const valid = reason.trim().length > 0 && parsed.ok;
+
+  /*
+   * Billing MORE than the material change accounts for is allowed — scope
+   * agreed on site is not always material, and the operator may be folding in
+   * labour they settled separately. But it is worth saying out loud, because
+   * the other way it happens is a fat finger: typing 206500 when 2,065 was
+   * meant is one keystroke, lands two orders of magnitude out, and nothing on
+   * this screen would have questioned it.
+   */
+  const unbilledPaise = Math.max(0, variancePaise - (changeOrderPaise ?? 0));
+  const overBillingPaise = amountPaise > unbilledPaise ? amountPaise - unbilledPaise : 0;
 
   const submit = async (): Promise<void> => {
     if (!valid) return;
@@ -168,11 +182,25 @@ export function BillCustomerDialog({
           <MUIInput
             fieldLabel="Amount to bill (₹)"
             required
-            type="number"
+            /* Deliberately not type="number" — see record-money-dialog. */
+            inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
+            error={amountError}
           />
+
+          {overBillingPaise > 0 ? (
+            <Alert severity="warning" variant="outlined">
+              <span className="text-sm">
+                That is {formatCurrency(overBillingPaise / 100)} more than the material change
+                still accounts for
+                {unbilledPaise > 0 ? ` (${formatCurrency(unbilledPaise / 100)} unbilled)` : ''}.
+                Fine if you are billing agreed scope beyond materials — worth a second look
+                otherwise.
+              </span>
+            </Alert>
+          ) : null}
 
           {amountPaise > 0 && contractPaise != null ? (
             <Alert severity="info" variant="outlined">

@@ -23,7 +23,7 @@ import {
   type ProofDocumentInput,
 } from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
-import { formatPaise, paiseToRupees, rupeesToPaise } from '@/lib/utils/paise';
+import { formatPaise, paiseToRupees, parseRupeeInput, rupeeInputError } from '@/lib/utils/paise';
 
 type Mode = 'receipt' | 'expense';
 
@@ -136,16 +136,19 @@ export function RecordMoneyDialog({
 
   const isReceipt = mode === 'receipt';
   const pending = recordReceipt.isPending || recordExpense.isPending;
-  const amountPaise = amount ? rupeesToPaise(Number(amount)) : 0;
+  // Same parser as the Bill customer dialog: accepts "1,000", refuses text and
+  // amounts past the point where paise stop being exact, and says which.
+  const parsedAmount = parseRupeeInput(amount);
+  const amountPaise = parsedAmount.ok ? parsedAmount.paise : 0;
   // The category needs no validation any more: it is a dropdown over the fixed
   // list and starts on Materials, so it cannot be empty or unrecognised. The
   // check it replaces existed solely to police the free-text "Other" box.
   //
   // Submit is disabled on the two below, and without a message the operator
   // just sees a dead button.
-  const showAmountError = amountTouched && amountPaise <= 0;
+  const showAmountError = amountTouched && !parsedAmount.ok;
   const showFutureDateError = valueDate > todayIst();
-  const valid = amountPaise > 0 && valueDate <= todayIst();
+  const valid = parsedAmount.ok && valueDate <= todayIst();
 
   const reset = (): void => {
     setAmount('');
@@ -218,13 +221,22 @@ export function RecordMoneyDialog({
         <div className="flex flex-col gap-4">
           <MUIInput
             fieldLabel="Amount (₹)"
-            type="number"
+            /* Not type="number": that input rejects a comma before any handler
+               sees it, so "1,000" could not be typed at all — and it also lets a
+               scroll wheel over a focused field silently change an amount.
+               inputMode keeps the numeric keypad on mobile; parseRupeeInput does
+               the validating. */
+            inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             onBlur={() => setAmountTouched(true)}
             placeholder="0.00"
             autoFocus
-            error={showAmountError ? 'Enter an amount greater than zero.' : undefined}
+            error={
+              showAmountError
+                ? (rupeeInputError(parsedAmount) ?? 'Enter an amount greater than zero.')
+                : undefined
+            }
           />
 
           <MUIInput
