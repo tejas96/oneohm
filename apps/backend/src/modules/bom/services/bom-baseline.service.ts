@@ -43,18 +43,35 @@ export interface RebaselinePreview {
 }
 
 /**
- * One line of the quote version, resolved against the catalog.
+ * One line of the quote version. Carries TWO prices, because seeding and
+ * re-baselining are answering different questions.
  *
- * `unitPricePaise` is null when the product has no active price today. That is
- * not fatal: an existing BOM line carries its own stamped price and can still
- * be re-quantified, so a lapsed catalog price must not turn a line that IS in
- * the quote into a removal. Only a brand-new line genuinely needs a price.
+ * `quotedUnitPricePaise` is the price the deal was actually struck at, derived
+ * from the snapshot's own line total: ROUND(lineTotal_paise / quantity). That
+ * is what seeding stamps. Reading the catalog instead re-prices a signed deal —
+ * measured on BOM-ONEOHM_EPC-2026-1184, whose structure line came out at
+ * Rs 2,800/kW against a quote struck at Rs 16,800 / 6.1 kW = Rs 2,754.10/kW,
+ * Rs 280 adrift on one line. That is the exact class of drift
+ * projects.contract_quote_version_id exists to stop, and it also broke the
+ * design's requirement that a freshly seeded project and a Task-8-migrated one
+ * be indistinguishable: the migration derived unit_price the same way from the
+ * snapshot's totals.
+ *
+ * `catalogUnitPricePaise` is today's catalog price, and is null when the
+ * product has no active price. It is used ONLY to price an `add` on a
+ * re-baseline, because that is what BomEditService.addItem will actually stamp
+ * — a line arriving now was never quoted on this project, so it legitimately
+ * takes today's price, and the preview has to predict what the apply does. A
+ * null here is not fatal to anything else: an existing BOM line carries its own
+ * stamped price and can still be re-quantified, so a lapsed catalog price must
+ * not turn a line that IS in the quote into a removal.
  */
 interface IncomingLine {
   productId: string;
   productName: string;
   quantity: number;
-  unitPricePaise: number | null;
+  quotedUnitPricePaise: number;
+  catalogUnitPricePaise: number | null;
   pricingBasis: string;
   unit: string;
 }
@@ -135,14 +152,6 @@ export class BomBaselineService {
       let sortOrder = 0;
 
       for (const line of incoming) {
-        if (line.unitPricePaise === null) {
-          this.logger.warn(
-            `Project ${projectId}: quote line "${line.productName}" has no active price ` +
-              `and was NOT seeded. Set one in the product admin, then add it to the BOM.`,
-          );
-          continue;
-        }
-
         const item = await itemRepo.save(
           itemRepo.create({
             bomId: bom.id,
@@ -154,7 +163,8 @@ export class BomBaselineService {
             // cannot move a signed project's quoted figure.
             quotedQuantity: String(line.quantity),
             unit: line.unit,
-            unitPricePaise: line.unitPricePaise,
+            // The price the QUOTE was struck at, never today's catalog price.
+            unitPricePaise: line.quotedUnitPricePaise,
             pricingBasis: line.pricingBasis,
             source: 'quote',
             sortOrder: sortOrder++,
@@ -170,11 +180,12 @@ export class BomBaselineService {
           changeType: 'add',
           quantityBefore: null,
           quantityAfter: String(line.quantity),
-          unitPricePaise: line.unitPricePaise,
+          unitPricePaise: line.quotedUnitPricePaise,
           // A line's whole contribution, rounded exactly once — the same
           // ROUND(quantity * unit_price_paise) the reconciliation assertion
-          // applies per row.
-          costImpactPaise: this.lineTotalPaise(line.quantity, line.unitPricePaise),
+          // applies per row. Computed from the stamped price, so the log
+          // reconstructs the items side no matter how the price was derived.
+          costImpactPaise: this.lineTotalPaise(line.quantity, line.quotedUnitPricePaise),
           reason: `Seeded from quote version ${version.versionNumber}`,
           source: 'quote',
           createdBy: userId,
@@ -285,10 +296,15 @@ export class BomBaselineService {
     for (const [productId, target] of incoming) {
       if (seen.has(productId)) continue;
 
-      // An add is the only movement that takes a freshly resolved price, and
-      // therefore the only one that needs one. Without a price it cannot be
-      // proposed, because applyRebaseline could not carry it out.
-      if (target.unitPricePaise === null) {
+      // An add is the only movement that takes a freshly resolved CATALOG
+      // price, and therefore the only one that needs one. A line arriving now
+      // was never quoted on this project, so it legitimately takes today's
+      // price — and, decisively, that is what BomEditService.addItem will
+      // actually stamp, so pricing it any other way would make the preview stop
+      // predicting the apply. Without a price it cannot be proposed at all,
+      // because applyRebaseline could not carry it out; it is reported by name
+      // rather than priced at zero.
+      if (target.catalogUnitPricePaise === null) {
         this.logger.warn(
           `Project ${projectId}: quote line "${target.productName}" is new on this ` +
             `re-baseline but has no active price, so it is not being proposed. ` +
@@ -302,7 +318,7 @@ export class BomBaselineService {
         productName: target.productName,
         from: null,
         to: target.quantity,
-        impactPaise: this.lineTotalPaise(target.quantity, target.unitPricePaise),
+        impactPaise: this.lineTotalPaise(target.quantity, target.catalogUnitPricePaise),
       });
     }
 
@@ -331,12 +347,19 @@ export class BomBaselineService {
    * and nothing bypasses the change log. Each of those calls is its own
    * transaction that writes the item and its log row together.
    *
-   * Deliberately does NOT move bom.baseline_quote_version_id or any line's
-   * quoted_quantity. Those two record what the contract was struck at, and
-   * BomReadService derives every "originally quoted" figure from
-   * quoted_quantity — moving the pointer while leaving the quantities would
-   * make the BOM claim a provenance its own numbers do not support. Variance
-   * against the quote is exactly what a re-baseline is meant to surface.
+   * DELIBERATELY does NOT move bom.baseline_quote_version_id or any line's
+   * quoted_quantity. DO NOT "FIX" THIS.
+   *
+   * quoted_quantity records what was ORIGINALLY quoted. Moving it would reset
+   * every line's variance to zero and erase the very record this feature exists
+   * to produce — the whole point is to show how far the project has drifted
+   * from the deal that was signed. baseline_quote_version_id is provenance: the
+   * BOM WAS seeded from that version, and the movements onto a later one live
+   * in the change log as source = 'office', which is more honest than
+   * overwriting the pointer and losing them. BomReadService derives every
+   * "originally quoted" figure from quoted_quantity, so moving the pointer
+   * while leaving the quantities would also make the BOM claim a provenance its
+   * own numbers do not support.
    */
   async applyRebaseline(
     projectId: string,
@@ -458,8 +481,12 @@ export class BomBaselineService {
         continue;
       }
 
-      const priced = await this.resolveSeedPrice(manager, line.productId, projectId);
-      if (!priced) {
+      // Catalog lookup, for the product-type facts a snapshot does not carry:
+      // the pricing basis and the unit of measure. Those are product facts, not
+      // prices, and they do not move with the price list. It also yields
+      // today's price, which ONLY a re-baseline `add` uses.
+      const catalog = await this.resolveCatalogPricing(manager, line.productId, projectId);
+      if (!catalog) {
         this.logger.warn(
           `Project ${projectId}: quote line "${line.name}" names product ${line.productId}, ` +
             `which is missing or deleted; skipped.`,
@@ -468,19 +495,34 @@ export class BomBaselineService {
       }
 
       // A per_kw line's quantity IS its kW, matching the purchase-order form's
-      // convention and the price resolved for it (rupees per kW).
-      const isPerKw = priced.pricingBasis === 'per_kw' || priced.pricingBasis === 'per_kw_system';
+      // convention; the price that goes with it is then rupees per kW.
+      const isPerKw = catalog.pricingBasis === 'per_kw' || catalog.pricingBasis === 'per_kw_system';
       const quantity = isPerKw ? this.systemSizeKw(version) : line.quantity;
+
+      if (quantity <= 0) {
+        this.logger.warn(
+          `Project ${projectId}: quote line "${line.name}" has quantity ${quantity}, so no ` +
+            `unit price can be derived from its line total; skipped.`,
+        );
+        continue;
+      }
+
+      // THE PRICE THE DEAL WAS STRUCK AT, read back out of the snapshot's own
+      // line total rather than the catalog. Mirrors what Task 7's migration did
+      // to produce unit_price from total_price, so a freshly seeded project and
+      // a migrated one agree. See IncomingLine for the Rs 280 this fixes.
+      const quotedUnitPricePaise = Math.round(rupeesToPaise(line.totalPrice) / quantity);
 
       const existing = byProduct.get(line.productId);
       if (!existing) {
         byProduct.set(line.productId, {
           productId: line.productId,
-          productName: priced.productName || line.name,
+          productName: catalog.productName || line.name,
           quantity,
-          unitPricePaise: priced.unitPricePaise,
-          pricingBasis: priced.pricingBasis,
-          unit: priced.unit,
+          quotedUnitPricePaise,
+          catalogUnitPricePaise: catalog.unitPricePaise,
+          pricingBasis: catalog.pricingBasis,
+          unit: catalog.unit,
         });
         continue;
       }
@@ -489,23 +531,39 @@ export class BomBaselineService {
       // same product twice has to collapse to one line or the insert fails.
       // Counted quantities add up; a per_kw quantity is the system size and is
       // the same number both times, so it does not.
-      if (!isPerKw) existing.quantity += quantity;
+      if (!isPerKw) {
+        // Re-derive the price from the two line totals rather than keeping the
+        // first one, so the collapsed line still reproduces what the snapshot
+        // said the product cost in aggregate.
+        const combinedTotalPaise =
+          this.lineTotalPaise(existing.quantity, existing.quotedUnitPricePaise) +
+          this.lineTotalPaise(quantity, quotedUnitPricePaise);
+        existing.quantity += quantity;
+        existing.quotedUnitPricePaise = Math.round(combinedTotalPaise / existing.quantity);
+      }
     }
 
     return [...byProduct.values()];
   }
 
   /**
-   * The price to stamp on a seeded line, and the basis that says what its
-   * quantity counts. Mirrors BomEditService.resolvePrice, with one difference:
-   * a product with no active price returns a null price rather than throwing,
-   * so a lapsed catalog price neither blocks project creation nor — because an
-   * existing line keeps its own stamped price — turns a quoted line into a
-   * removal on a re-baseline.
+   * Today's catalog facts for a product: its pricing basis, its unit, its name,
+   * and its current price.
+   *
+   * Named for what it is. It does NOT supply the price a seeded line is stamped
+   * with — that comes from the quote snapshot's own line total, because reading
+   * the catalog at seeding time re-prices a signed deal. Only a re-baseline
+   * `add` uses the price returned here, and only because that is what
+   * BomEditService.addItem will stamp.
+   *
+   * Mirrors BomEditService.resolvePrice, with one difference: a product with no
+   * active price returns a null price rather than throwing, so a lapsed catalog
+   * price neither blocks project creation nor — because an existing line keeps
+   * its own stamped price — turns a quoted line into a removal on a re-baseline.
    *
    * Returns null only when the product itself is gone.
    */
-  private async resolveSeedPrice(
+  private async resolveCatalogPricing(
     manager: EntityManager,
     productId: string,
     projectId: string,
