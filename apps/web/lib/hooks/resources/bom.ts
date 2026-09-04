@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { createResourceKeys, defineResource } from '../core';
+import { createResourceKeys } from '../core';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
@@ -107,22 +107,16 @@ export interface BomChange {
 }
 
 // ============================================================================
-// Registry
+// Query keys
 // ============================================================================
 
-defineResource<Bom>(
-  'bom',
-  {
-    endpoint: '/bom',
-    defaultPageSize: 10,
-    syncToUrl: false,
-    defaultSort: { field: 'createdAt', order: 'DESC' },
-  },
-  {
-    view: 'quotes.view',
-  },
-);
-
+// There is deliberately no `defineResource('bom', ...)` here. It registered
+// `GET /bom` as a generic FDAL list endpoint, and that route no longer exists —
+// the BOM is read per project via `GET /projects/:projectId/bom`. A registration
+// is only ever read by `getResourceConfig` / `getResourcePermissions`, and
+// nothing passes 'bom' to either, so it was dead config pointing at a dead route.
+//
+// `createResourceKeys` is unrelated: it just namespaces the query keys below.
 export const bomResourceKeys = createResourceKeys('bom');
 
 // ============================================================================
