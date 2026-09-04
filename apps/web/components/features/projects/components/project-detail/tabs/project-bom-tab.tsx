@@ -24,7 +24,6 @@ import { ProcurementSection } from '@/components/features/projects/components/pr
 import { useQuoteDetail } from '@/components/features/quotes';
 import { OtherCostsCard } from '@/components/features/quotes/components/quote-detail/tabs/overview/other-costs-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useProjectLedger } from '@/lib/hooks/resources/ledger';
 import {
   useAllocateBomPending,
   useBomProcurementStatus,
@@ -32,6 +31,7 @@ import {
   type BomItem,
   type BomLineChangeState,
 } from '@/lib/hooks/resources';
+import { useProjectLedger } from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
 import { cn, formatCurrency, formatNumber, formatSystemSize } from '@/lib/utils';
 
@@ -297,27 +297,27 @@ export const ProjectBomTab = React.memo(
                   className="mb-3 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
                   style={{ background: TONE.danger.tint, color: TONE.danger.ink }}
                 >
-                  <span className="font-semibold">This BOM does not reconcile.</span> The change
-                  log and the line items disagree on the total. Nothing below should be trusted
-                  until this is fixed.
+                  <span className="font-semibold">This BOM does not reconcile.</span> The change log
+                  and the line items disagree on the total. Nothing below should be trusted until
+                  this is fixed.
                 </p>
               ) : null}
 
               {/*
-                * A falling material cost means one of two opposite things, and
-                * the money cannot tell them apart. Swapping to a cheaper
-                * structure leaves the customer with the system they signed for
-                * and the saving is the company's. Dropping a panel does not —
-                * and nothing on this project said so, because the system card
-                * reads its size from the quote snapshot and never looks at the
-                * bill, so it went on advertising 10 panels while this tab
-                * carried 9.
-                *
-                * Shown whenever capacity has fallen, at any variance: a bill
-                * can lose a panel and still cost MORE than quoted, and that is
-                * the case most worth catching — the money looks like ordinary
-                * extra scope while the customer quietly gets less.
-                */}
+               * A falling material cost means one of two opposite things, and
+               * the money cannot tell them apart. Swapping to a cheaper
+               * structure leaves the customer with the system they signed for
+               * and the saving is the company's. Dropping a panel does not —
+               * and nothing on this project said so, because the system card
+               * reads its size from the quote snapshot and never looks at the
+               * bill, so it went on advertising 10 panels while this tab
+               * carried 9.
+               *
+               * Shown whenever capacity has fallen, at any variance: a bill
+               * can lose a panel and still cost MORE than quoted, and that is
+               * the case most worth catching — the money looks like ordinary
+               * extra scope while the customer quietly gets less.
+               */}
               {shortfallWp > 0 ? (
                 <p
                   className="mb-3 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
@@ -326,10 +326,10 @@ export const ProjectBomTab = React.memo(
                   <span className="font-semibold">
                     This bill builds a smaller system than the quote sold.
                   </span>{' '}
-                  {formatSystemSize(currentKw)} kW of panels against{' '}
-                  {formatSystemSize(quotedKw)} kW quoted — {formatSystemSize(shortfallWp / 1000)} kW
-                  short. The customer signed for the larger system, so either restore the panels or
-                  agree the smaller one with them.
+                  {formatSystemSize(currentKw)} kW of panels against {formatSystemSize(quotedKw)} kW
+                  quoted — {formatSystemSize(shortfallWp / 1000)} kW short. The customer signed for
+                  the larger system, so either restore the panels or agree the smaller one with
+                  them.
                 </p>
               ) : null}
 
@@ -383,9 +383,7 @@ export const ProjectBomTab = React.memo(
                 <Stat
                   label="Spent on materials"
                   value={formatCurrency(materialSpend)}
-                  tone={
-                    materialSpend > bom.totals.currentPaise / 100 ? 'warning' : undefined
-                  }
+                  tone={materialSpend > bom.totals.currentPaise / 100 ? 'warning' : undefined}
                 />
               </dl>
 
@@ -418,7 +416,10 @@ export const ProjectBomTab = React.memo(
 
               <div className="overflow-x-auto">
                 <div className="min-w-[960px]">
-                  <div className={cn('grid items-center gap-3 pb-1.5', ROW_BLEED, COLS)} aria-hidden>
+                  <div
+                    className={cn('grid items-center gap-3 pb-1.5', ROW_BLEED, COLS)}
+                    aria-hidden
+                  >
                     {/* Indented to match the rows below, which carry the same
                         pl-1 so the product name is not flush against the card's
                         edge. Header and body must move together or the column
@@ -563,11 +564,7 @@ export const ProjectBomTab = React.memo(
           />
         ) : null}
 
-        <AddBomItemDialog
-          projectId={projectId}
-          open={addOpen}
-          onClose={() => setAddOpen(false)}
-        />
+        <AddBomItemDialog projectId={projectId} open={addOpen} onClose={() => setAddOpen(false)} />
 
         <BomLineEditDialog
           projectId={projectId}

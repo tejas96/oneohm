@@ -30,9 +30,7 @@ export interface QuoteBomLine {
  * (non-exploded) BOM item shape — see `apps/web/components/features/quotes/
  * utils/quote-bom-lines.ts` for the web copy, which must be kept identical.
  */
-export function bomLinesFromCalculation(
-  calculation: CalculateQuoteResponseDto,
-): QuoteBomLine[] {
+export function bomLinesFromCalculation(calculation: CalculateQuoteResponseDto): QuoteBomLine[] {
   const lines: QuoteBomLine[] = [];
   let sortOrder = 0;
 

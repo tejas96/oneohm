@@ -126,12 +126,8 @@ export class AddBomChangeLogAndSerials1856300000000 implements MigrationInterfac
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP TRIGGER IF EXISTS trg_bom_changes_no_truncate ON bom_changes`,
-    );
-    await queryRunner.query(
-      `DROP TRIGGER IF EXISTS trg_bom_changes_append_only ON bom_changes`,
-    );
+    await queryRunner.query(`DROP TRIGGER IF EXISTS trg_bom_changes_no_truncate ON bom_changes`);
+    await queryRunner.query(`DROP TRIGGER IF EXISTS trg_bom_changes_append_only ON bom_changes`);
     await queryRunner.query(`DROP FUNCTION IF EXISTS bom_changes_forbid_mutation()`);
     await queryRunner.query(`DROP TABLE IF EXISTS bom_changes`);
     await queryRunner.query(`DROP TABLE IF EXISTS bom_item_serials`);

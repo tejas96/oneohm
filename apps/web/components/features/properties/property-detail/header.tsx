@@ -31,10 +31,7 @@ import { LEAD_TEMPERATURE_TONE, PROPERTY_TYPE_LABELS } from '../constants';
 import type { CustomerPropertyResponse } from '../hooks';
 import { getPropertyDisplayName } from '../utils';
 
-import {
-  getSiteLifecycle,
-  PROPERTY_TYPE_TONE,
-} from '@/components/features/customers/constants';
+import { getSiteLifecycle, PROPERTY_TYPE_TONE } from '@/components/features/customers/constants';
 import {
   DetailCard,
   IconCircle,

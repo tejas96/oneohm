@@ -157,9 +157,7 @@ export class ProductPriceRepository {
       .where('price.product_id = :productId', { productId })
       .andWhere('price.is_active = true')
       .andWhere(
-        projectType === null
-          ? 'price.project_type IS NULL'
-          : 'price.project_type = :projectType',
+        projectType === null ? 'price.project_type IS NULL' : 'price.project_type = :projectType',
         projectType === null ? {} : { projectType },
       )
       .andWhere('(:effectiveTo::date IS NULL OR price.effective_from <= :effectiveTo::date)', {

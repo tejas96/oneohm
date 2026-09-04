@@ -164,13 +164,7 @@ function SiteProfileCard({ property }: { property: CustomerPropertyResponse }): 
           },
           {
             label: 'Status',
-            value: (
-              <TonePill
-                label={siteLifecycle.label}
-                tone={siteLifecycle.tone}
-                dot
-              />
-            ),
+            value: <TonePill label={siteLifecycle.label} tone={siteLifecycle.tone} dot />,
           },
           { label: 'Address', value: address, wide: true },
           { label: 'Added by', value: property.creatorName || '—' },

@@ -15,7 +15,12 @@ import {
 } from '../../primitives';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { useBomChanges, useProjectBom, type BomChange, type BomChangeType } from '@/lib/hooks/resources';
+import {
+  useBomChanges,
+  useProjectBom,
+  type BomChange,
+  type BomChangeType,
+} from '@/lib/hooks/resources';
 import { cn, formatCurrency, formatDate, formatFollowupClockTime, formatNumber } from '@/lib/utils';
 
 interface BomChangesPanelProps {
@@ -189,7 +194,9 @@ function ChangeRow({
       <Mono className="text-right text-[12.5px] text-foreground-secondary">
         {quantityLabel}
         {product.unit ? (
-          <span className="ml-1 font-sans text-[11px] text-foreground-tertiary">{product.unit}</span>
+          <span className="ml-1 font-sans text-[11px] text-foreground-tertiary">
+            {product.unit}
+          </span>
         ) : null}
       </Mono>
 

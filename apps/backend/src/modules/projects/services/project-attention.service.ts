@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  type AttentionItem,
-  type AttentionSeverity,
-  TaskStatus,
-} from '@tejas96/shared/types';
+import { type AttentionItem, type AttentionSeverity, TaskStatus } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import type { AttentionResponseDto } from '../dto/attention-response.dto';

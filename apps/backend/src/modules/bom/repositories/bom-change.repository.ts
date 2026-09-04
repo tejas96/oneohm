@@ -37,7 +37,9 @@ export class BomChangeRepository {
    * historical data seeded straight into the table) still returns the row
    * with `createdByName: null` instead of dropping it.
    */
-  async findByBom(bomId: string): Promise<Array<BomChangeEntity & { createdByName: string | null }>> {
+  async findByBom(
+    bomId: string,
+  ): Promise<Array<BomChangeEntity & { createdByName: string | null }>> {
     const { entities, raw } = await this.dataSource
       .getRepository(BomChangeEntity)
       .createQueryBuilder('c')

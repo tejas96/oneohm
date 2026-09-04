@@ -224,9 +224,9 @@ export class DeleteQuoteVersionBoms1856700000000 implements MigrationInterface {
     savepoint: string,
     sql: string,
   ): Promise<void> {
-    const guard = (await queryRunner.query(
-      `SELECT COUNT(*)::int AS n FROM bom_changes`,
-    )) as Array<{ n: number }>;
+    const guard = (await queryRunner.query(`SELECT COUNT(*)::int AS n FROM bom_changes`)) as Array<{
+      n: number;
+    }>;
     if ((guard[0]?.n ?? 0) === 0) {
       throw new Error('bom_changes is empty — cannot verify the trigger rejects a mutation.');
     }

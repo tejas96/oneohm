@@ -209,9 +209,7 @@ export function useAllocateBomPending() {
       if (data.allocated.length === 0 && data.pendingStock.length > 0) {
         showToast.warning(`Nothing could be reserved — ${shortfalls}.`);
       } else if (data.pendingStock.length > 0) {
-        showToast.warning(
-          `Reserved ${data.allocated.length} item(s). Still short: ${shortfalls}.`,
-        );
+        showToast.warning(`Reserved ${data.allocated.length} item(s). Still short: ${shortfalls}.`);
       } else if (data.allocated.length > 0) {
         showToast.success(`Stock reserved for ${data.allocated.length} item(s).`);
       } else {

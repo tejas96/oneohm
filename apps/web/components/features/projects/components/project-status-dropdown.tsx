@@ -12,9 +12,6 @@ import {
 } from '../constants';
 import { useUpdateProjectStatus } from '../hooks';
 
-import { useProjectLedger } from '@/lib/hooks/resources/ledger';
-import { formatPaise } from '@/lib/utils/paise';
-
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,7 +22,9 @@ import {
   MUIDialogHeader,
   MUIDialogTitle,
 } from '@/components/ui/mui-dialog';
+import { useProjectLedger } from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
+import { formatPaise } from '@/lib/utils/paise';
 
 type BadgeVariant =
   | 'muted'
@@ -205,8 +204,8 @@ export const ProjectStatusDropdown = React.memo(
                 <span className="font-semibold">
                   {formatPaise(outstandingPaise)} is still outstanding on this contract.
                 </span>{' '}
-                Completing does not close the money — the balance stays collectable, and the
-                project will show it until it is received or the remaining milestones are waived.
+                Completing does not close the money — the balance stays collectable, and the project
+                will show it until it is received or the remaining milestones are waived.
               </p>
             ) : null}
           </MUIDialogBody>

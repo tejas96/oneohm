@@ -150,9 +150,7 @@ export class DropLegacyBomColumns1856900000000 implements MigrationInterface {
     `);
     // One BOM per project — the constraint BomEntity has declared since Task 11
     // (@Index(['projectId'], { unique: true })) and the database never had.
-    await queryRunner.query(
-      `CREATE UNIQUE INDEX IF NOT EXISTS uq_bom_project ON bom (project_id)`,
-    );
+    await queryRunner.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_bom_project ON bom (project_id)`);
 
     // ---- bom_items: real product FK -----------------------------------
     await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN product_id SET NOT NULL`);
@@ -226,7 +224,9 @@ export class DropLegacyBomColumns1856900000000 implements MigrationInterface {
     // Restore 1856600000000's defaults: reverting past this migration puts the
     // legacy writer back in play, and it supplies none of these three.
     await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN unit_price_paise SET DEFAULT 0`);
-    await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN pricing_basis SET DEFAULT 'per_unit'`);
+    await queryRunner.query(
+      `ALTER TABLE bom_items ALTER COLUMN pricing_basis SET DEFAULT 'per_unit'`,
+    );
     await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN source SET DEFAULT 'quote'`);
     await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN created_by DROP NOT NULL`);
     await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN product_id DROP NOT NULL`);

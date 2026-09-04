@@ -60,7 +60,9 @@ function Row({
       <span className={emphasis ? 'font-semibold text-foreground' : 'text-foreground-secondary'}>
         {label}
       </span>
-      <span className={emphasis ? 'text-sm font-bold text-primary-dark' : 'font-medium text-foreground'}>
+      <span
+        className={emphasis ? 'text-sm font-bold text-primary-dark' : 'font-medium text-foreground'}
+      >
         {value}
       </span>
     </div>
@@ -121,9 +123,7 @@ export function OtherCostsCard({
   const canSeeMargin = can('quotes.profitability');
 
   const breakdown = installation?.breakdown;
-  const entries = breakdown
-    ? Object.entries(breakdown).filter(([key]) => !SKIP_KEYS.has(key))
-    : [];
+  const entries = breakdown ? Object.entries(breakdown).filter(([key]) => !SKIP_KEYS.has(key)) : [];
 
   if (entries.length === 0) return null;
 

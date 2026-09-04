@@ -27,9 +27,7 @@ export type { PreviewDocument } from './components/document-preview-modal';
 // Schemas
 export { createCustomerProfileSchema } from './schemas/customer.schema';
 
-export type {
-  CreateCustomerProfileFormData,
-} from './schemas/customer.schema';
+export type { CreateCustomerProfileFormData } from './schemas/customer.schema';
 
 // Hooks
 export {

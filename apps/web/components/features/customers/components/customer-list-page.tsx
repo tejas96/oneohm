@@ -1544,7 +1544,6 @@ export function CustomerListPage(): JSX.Element {
         itemLabel="customers"
       />
 
-
       <DeleteConfirmationDialog
         open={deleteConfirmation.isOpen}
         title="Delete Customer"

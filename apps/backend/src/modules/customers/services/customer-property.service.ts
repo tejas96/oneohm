@@ -283,8 +283,7 @@ export class CustomerPropertyService {
     const propertyIds = properties.map((p) => p.id);
     const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
     const projectMap = await this.propertyRepository.findProjectsByPropertyIds(propertyIds);
-    const contractMap =
-      await this.propertyRepository.findContractValuesByPropertyIds(propertyIds);
+    const contractMap = await this.propertyRepository.findContractValuesByPropertyIds(propertyIds);
     const activeLoanPropertyIds =
       await this.loanApplicationRepository.findPropertyIdsWithActiveLoans(propertyIds);
     const followupStateMap =
@@ -344,8 +343,7 @@ export class CustomerPropertyService {
     // Query 2: Get latest quotes for all properties (single batch query)
     const propertyIds = properties.map((p) => p.id);
     const quoteMap = await this.quoteRepository.findLatestByPropertyIds(propertyIds);
-    const contractMap =
-      await this.propertyRepository.findContractValuesByPropertyIds(propertyIds);
+    const contractMap = await this.propertyRepository.findContractValuesByPropertyIds(propertyIds);
     // The customer's own site list showed a flat "Converted" on every site that
     // had ever become a project, including finished and cancelled ones, because
     // this path never loaded the project at all. `findAll` already did.

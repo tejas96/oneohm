@@ -26,7 +26,10 @@ export class ProductPriceIntegrity1856000000000 implements MigrationInterface {
 
     if (dupes.length > 0) {
       const detail = dupes
-        .map((d) => `product=${d.product_id} project_type='${d.pt}' from=${d.effective_from} (${d.n} rows)`)
+        .map(
+          (d) =>
+            `product=${d.product_id} project_type='${d.pt}' from=${d.effective_from} (${d.n} rows)`,
+        )
         .join('; ');
       throw new Error(
         `Cannot migrate: duplicate active product_prices rows exist. ` +

@@ -410,8 +410,7 @@ export const ProjectDetailHeader = React.memo(
      * long after the site was signed off.
      */
     const outstandingPaise = data.ledger.allowed ? (data.ledger.data?.outstandingPaise ?? 0) : 0;
-    const completedWithBalance =
-      project.status === ProjectStatus.COMPLETED && outstandingPaise > 0;
+    const completedWithBalance = project.status === ProjectStatus.COMPLETED && outstandingPaise > 0;
 
     const typeLabel =
       project.projectType && project.projectType in PROJECT_TYPE_LABELS

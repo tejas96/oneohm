@@ -42,15 +42,11 @@ export class BomItemTransitionalDefaults1856600000000 implements MigrationInterf
   name = 'BomItemTransitionalDefaults1856600000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE bom_items ALTER COLUMN source SET DEFAULT 'quote'`,
-    );
+    await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN source SET DEFAULT 'quote'`);
     await queryRunner.query(
       `ALTER TABLE bom_items ALTER COLUMN pricing_basis SET DEFAULT 'per_unit'`,
     );
-    await queryRunner.query(
-      `ALTER TABLE bom_items ALTER COLUMN unit_price_paise SET DEFAULT 0`,
-    );
+    await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN unit_price_paise SET DEFAULT 0`);
 
     // quoted_quantity is deliberately left without a default. It is still
     // nullable, so the legacy writer does not trip on it, and a NULL there
@@ -58,12 +54,8 @@ export class BomItemTransitionalDefaults1856600000000 implements MigrationInterf
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE bom_items ALTER COLUMN unit_price_paise DROP DEFAULT`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE bom_items ALTER COLUMN pricing_basis DROP DEFAULT`,
-    );
+    await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN unit_price_paise DROP DEFAULT`);
+    await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN pricing_basis DROP DEFAULT`);
     await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN source DROP DEFAULT`);
   }
 }

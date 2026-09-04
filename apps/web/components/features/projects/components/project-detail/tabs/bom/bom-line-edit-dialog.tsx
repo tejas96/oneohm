@@ -4,6 +4,7 @@ import { Alert, Button, CircularProgress } from '@mui/material';
 import { useEffect, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { ProductPicker } from '@/components/features/inventory';
 import {
   MUIDialog,
   MUIDialogBody,
@@ -13,7 +14,6 @@ import {
   MUIDialogTitle,
   MUIInput,
 } from '@/components/ui';
-import { ProductPicker } from '@/components/features/inventory';
 import {
   useChangeBomQuantity,
   useRemoveBomItem,
@@ -40,9 +40,12 @@ const TITLE: Record<BomLineEditMode, string> = {
 };
 
 const DESCRIPTION: Record<BomLineEditMode, string> = {
-  quantity: 'Adjust how much of this product the project needs. The old quantity is kept in the change log.',
-  replace: 'Swap this product for a different one at the same quantity. The line it replaces stays in the change log.',
-  remove: 'Drop this line from the bill. It stays visible at quantity zero so what was dropped is still readable against the quote.',
+  quantity:
+    'Adjust how much of this product the project needs. The old quantity is kept in the change log.',
+  replace:
+    'Swap this product for a different one at the same quantity. The line it replaces stays in the change log.',
+  remove:
+    'Drop this line from the bill. It stays visible at quantity zero so what was dropped is still readable against the quote.',
 };
 
 const ACTION_LABEL: Record<BomLineEditMode, string> = {
@@ -96,8 +99,7 @@ export function BomLineEditDialog({
     form.reset({ productId: '' });
   }, [open, item, form]);
 
-  const isPending =
-    changeQuantity.isPending || replaceItem.isPending || removeItem.isPending;
+  const isPending = changeQuantity.isPending || replaceItem.isPending || removeItem.isPending;
 
   const nextQuantity = Number(quantity);
   const quantityIsNumber = quantity.trim() !== '' && Number.isFinite(nextQuantity);
@@ -114,7 +116,10 @@ export function BomLineEditDialog({
   const valid =
     reasonGiven &&
     (mode === 'remove' ||
-      (mode === 'quantity' && quantityIsNumber && nextQuantity > 0 && nextQuantity !== item?.quantity) ||
+      (mode === 'quantity' &&
+        quantityIsNumber &&
+        nextQuantity > 0 &&
+        nextQuantity !== item?.quantity) ||
       (mode === 'replace' && productId !== '' && productId !== item?.productId));
 
   const submit = async (): Promise<void> => {
@@ -191,12 +196,7 @@ export function BomLineEditDialog({
           ) : null}
 
           {mode === 'replace' ? (
-            <ProductPicker
-              control={form.control}
-              name="productId"
-              label="Replace with"
-              required
-            />
+            <ProductPicker control={form.control} name="productId" label="Replace with" required />
           ) : null}
 
           <MUIInput
@@ -224,8 +224,8 @@ export function BomLineEditDialog({
           ) : null}
 
           <p className="text-xs text-muted-foreground">
-            This changes the material plan, not what the customer owes. Bill the customer
-            separately once you are happy with the whole change.
+            This changes the material plan, not what the customer owes. Bill the customer separately
+            once you are happy with the whole change.
           </p>
         </div>
       </MUIDialogBody>

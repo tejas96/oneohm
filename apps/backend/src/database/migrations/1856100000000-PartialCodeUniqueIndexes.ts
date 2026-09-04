@@ -36,9 +36,7 @@ export class PartialCodeUniqueIndexes1856100000000 implements MigrationInterface
 
       if (dupes.length > 0) {
         const detail = dupes.map((d) => `${d.value} (${d.n})`).join(', ');
-        throw new Error(
-          `Cannot migrate: ${t.table}.${t.column} has live duplicates: ${detail}`,
-        );
+        throw new Error(`Cannot migrate: ${t.table}.${t.column} has live duplicates: ${detail}`);
       }
 
       await queryRunner.query(`DROP INDEX IF EXISTS ${t.index}`);

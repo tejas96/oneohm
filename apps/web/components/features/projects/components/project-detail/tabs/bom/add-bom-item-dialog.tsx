@@ -4,6 +4,7 @@ import { Button, CircularProgress } from '@mui/material';
 import { useEffect, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { ProductPicker } from '@/components/features/inventory';
 import {
   MUIDialog,
   MUIDialogBody,
@@ -13,7 +14,6 @@ import {
   MUIDialogTitle,
   MUIInput,
 } from '@/components/ui';
-import { ProductPicker } from '@/components/features/inventory';
 import { useAddBomItem } from '@/lib/hooks/resources';
 
 export interface AddBomItemDialogProps {
@@ -34,11 +34,7 @@ export interface AddBomItemDialogProps {
  * could disagree with the one actually written. The success toast reports the
  * real impact instead.
  */
-export function AddBomItemDialog({
-  projectId,
-  open,
-  onClose,
-}: AddBomItemDialogProps): JSX.Element {
+export function AddBomItemDialog({ projectId, open, onClose }: AddBomItemDialogProps): JSX.Element {
   const addItem = useAddBomItem(projectId);
 
   const [reason, setReason] = useState('');
@@ -54,7 +50,8 @@ export function AddBomItemDialog({
 
   const productId = form.watch('productId');
   const parsedQuantity = Number(quantity);
-  const quantityValid = quantity.trim() !== '' && Number.isFinite(parsedQuantity) && parsedQuantity > 0;
+  const quantityValid =
+    quantity.trim() !== '' && Number.isFinite(parsedQuantity) && parsedQuantity > 0;
   const valid = productId !== '' && quantityValid && reason.trim().length > 0;
 
   const submit = async (): Promise<void> => {
@@ -78,8 +75,8 @@ export function AddBomItemDialog({
       <MUIDialogHeader>
         <MUIDialogTitle>Add material</MUIDialogTitle>
         <MUIDialogDescription>
-          Adds a product the quote did not carry. It is recorded as a site addition, priced from
-          the product&apos;s current price list.
+          Adds a product the quote did not carry. It is recorded as a site addition, priced from the
+          product&apos;s current price list.
         </MUIDialogDescription>
       </MUIDialogHeader>
 
@@ -108,8 +105,8 @@ export function AddBomItemDialog({
           />
 
           <p className="text-xs text-muted-foreground">
-            This changes the material plan, not what the customer owes. Bill the customer
-            separately once you are happy with the whole change.
+            This changes the material plan, not what the customer owes. Bill the customer separately
+            once you are happy with the whole change.
           </p>
         </div>
       </MUIDialogBody>

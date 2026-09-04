@@ -248,9 +248,7 @@ async function seed(dataSource: DataSource): Promise<void> {
     }
 
     await qr.commitTransaction();
-    console.error(
-      `Seeded ${TYPES.length} material product types and ${PRODUCTS.length} products.`,
-    );
+    console.error(`Seeded ${TYPES.length} material product types and ${PRODUCTS.length} products.`);
   } catch (err) {
     await qr.rollbackTransaction();
     throw err;

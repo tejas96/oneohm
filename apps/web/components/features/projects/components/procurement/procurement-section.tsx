@@ -178,8 +178,8 @@ export function ProcurementSection({ projectId }: ProcurementSectionProps): JSX.
 
       <MUITypography variant="finePrint" className="text-foreground-muted flex items-center gap-1">
         <ShoppingBagOutlinedIcon sx={{ fontSize: 12 }} />
-        Spend is the total of expenses categorised Materials on the Finance tab. It is not split
-        per product — the ledger records what was paid, not what it bought.
+        Spend is the total of expenses categorised Materials on the Finance tab. It is not split per
+        product — the ledger records what was paid, not what it bought.
       </MUITypography>
     </div>
   );

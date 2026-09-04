@@ -165,9 +165,7 @@ export class CollapseBomItemRows1856400000000 implements MigrationInterface {
     `);
 
     // --- 3. Widen quantity before the summed value lands on it ---
-    await queryRunner.query(
-      `ALTER TABLE bom_items ALTER COLUMN quantity TYPE NUMERIC(12,3)`,
-    );
+    await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN quantity TYPE NUMERIC(12,3)`);
 
     // --- 4. Sum quantity AND money onto the survivor ---
     // The money has to move with the quantity: the merged-away rows each held
@@ -330,12 +328,8 @@ export class CollapseBomItemRows1856400000000 implements MigrationInterface {
          AND bi.quantity = 1
     `);
 
-    await queryRunner.query(
-      `ALTER TABLE bom_items ALTER COLUMN unit_price_paise SET NOT NULL`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE bom_items ALTER COLUMN pricing_basis SET NOT NULL`,
-    );
+    await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN unit_price_paise SET NOT NULL`);
+    await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN pricing_basis SET NOT NULL`);
 
     // --- 8. One row per product, from here on ---
     await queryRunner.query(`
@@ -347,12 +341,8 @@ export class CollapseBomItemRows1856400000000 implements MigrationInterface {
     // The row explosion is not reconstructible — the per-unit split is gone.
     // This restores the shape so the chain stays valid.
     await queryRunner.query(`DROP INDEX IF EXISTS uq_bom_items_bom_product`);
-    await queryRunner.query(
-      `ALTER TABLE bom_items ALTER COLUMN pricing_basis DROP NOT NULL`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE bom_items ALTER COLUMN unit_price_paise DROP NOT NULL`,
-    );
+    await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN pricing_basis DROP NOT NULL`);
+    await queryRunner.query(`ALTER TABLE bom_items ALTER COLUMN unit_price_paise DROP NOT NULL`);
     await queryRunner.query(
       `ALTER TABLE bom_items ALTER COLUMN quantity TYPE INTEGER USING ROUND(quantity)::integer`,
     );

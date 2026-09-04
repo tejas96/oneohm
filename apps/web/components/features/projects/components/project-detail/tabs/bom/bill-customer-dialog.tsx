@@ -141,8 +141,8 @@ export function BillCustomerDialog({
       <MUIDialogHeader>
         <MUIDialogTitle>Bill customer</MUIDialogTitle>
         <MUIDialogDescription>
-          Raises a change order for material added after the quote. This is the only path from a
-          BOM change to what the customer owes — expenses never move it on their own.
+          Raises a change order for material added after the quote. This is the only path from a BOM
+          change to what the customer owes — expenses never move it on their own.
         </MUIDialogDescription>
       </MUIDialogHeader>
 
@@ -152,16 +152,14 @@ export function BillCustomerDialog({
             <Alert severity="warning" variant="outlined">
               <div className="flex flex-col gap-1 text-sm">
                 <span>
-                  <span className="font-medium">
-                    {formatCurrency(changeOrderPaise / 100)}
-                  </span>{' '}
-                  has already been agreed on this contract since the quote was signed.
+                  <span className="font-medium">{formatCurrency(changeOrderPaise / 100)}</span> has
+                  already been agreed on this contract since the quote was signed.
                 </span>
                 <span className="text-xs">
-                  The material change stays at its full value — billing never takes material
-                  back off the project. The amount below is what remains unbilled against it;
-                  check the Finance tab if any of those change orders were raised for something
-                  other than material.
+                  The material change stays at its full value — billing never takes material back
+                  off the project. The amount below is what remains unbilled against it; check the
+                  Finance tab if any of those change orders were raised for something other than
+                  material.
                 </span>
               </div>
             </Alert>
@@ -193,8 +191,8 @@ export function BillCustomerDialog({
           {overBillingPaise > 0 ? (
             <Alert severity="warning" variant="outlined">
               <span className="text-sm">
-                That is {formatCurrency(overBillingPaise / 100)} more than the material change
-                still accounts for
+                That is {formatCurrency(overBillingPaise / 100)} more than the material change still
+                accounts for
                 {unbilledPaise > 0 ? ` (${formatCurrency(unbilledPaise / 100)} unbilled)` : ''}.
                 Fine if you are billing agreed scope beyond materials — worth a second look
                 otherwise.

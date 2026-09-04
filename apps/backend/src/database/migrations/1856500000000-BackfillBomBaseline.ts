@@ -105,9 +105,7 @@ export class BackfillBomBaseline1856500000000 implements MigrationInterface {
       // Counted before the fact, not from a RETURNING clause: TypeORM's Postgres
       // driver hands back [rows, rowCount] for DELETE, so `.length` on the raw
       // result is 2 no matter how many rows went.
-      await queryRunner.query(`DELETE FROM bom_items WHERE bom_id = ANY($1::uuid[])`, [
-        ids,
-      ]);
+      await queryRunner.query(`DELETE FROM bom_items WHERE bom_id = ANY($1::uuid[])`, [ids]);
       await queryRunner.query(`DELETE FROM bom WHERE id = ANY($1::uuid[])`, [ids]);
 
       console.warn(
@@ -247,8 +245,6 @@ export class BackfillBomBaseline1856500000000 implements MigrationInterface {
     await queryRunner.query(
       `UPDATE bom_items SET quoted_quantity = NULL, source = NULL, created_by = NULL, updated_by = NULL`,
     );
-    await queryRunner.query(
-      `UPDATE bom SET project_id = NULL, baseline_quote_version_id = NULL`,
-    );
+    await queryRunner.query(`UPDATE bom SET project_id = NULL, baseline_quote_version_id = NULL`);
   }
 }
