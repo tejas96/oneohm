@@ -7,7 +7,6 @@ import * as React from 'react';
 import type { ProjectDetail } from '../../../../hooks/types';
 import { CardLink, DetailCard, IconCircle } from '../../primitives';
 
-import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { cn, toTitleLabel } from '@/lib/utils';
 
 interface SiteCardProps {
@@ -55,9 +54,15 @@ function Field({
 /**
  * The roof, and the numbers a DISCOM form asks for.
  *
- * Deliberately carries no customer contact block: the page header already
- * holds the name, phone, WhatsApp and email, and it sits on every tab. A
- * second copy one card down would be the same four links twice on one screen.
+ * Deliberately carries no customer contact block: the page header already holds
+ * the name and phone, and it sits on every tab. A second copy one card down
+ * would be the same links twice on one screen.
+ *
+ * No "Open site" link either. The card is the site — everything it would take
+ * you to read is already on it, and the property page adds a survey and quote
+ * history that belong to the site's own workflow rather than this project's.
+ * "Open in Maps" below is the one link worth keeping, because it does something
+ * this page cannot.
  */
 export function SiteCard({ project, className }: SiteCardProps): React.JSX.Element {
   const property = project.property;
@@ -93,17 +98,7 @@ export function SiteCard({ project, className }: SiteCardProps): React.JSX.Eleme
   const mapsHref = mapsQuery ? `https://maps.google.com/?q=${encodeURIComponent(mapsQuery)}` : null;
 
   return (
-    <DetailCard
-      label="Site"
-      action={
-        project.propertyId ? (
-          <CardLink href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: project.propertyId })}>
-            Open site
-          </CardLink>
-        ) : null
-      }
-      className={className}
-    >
+    <DetailCard label="Site" className={className}>
       <div className="flex gap-3">
         <IconCircle tone="accent" size={40}>
           <MapPin className="size-[18px]" strokeWidth={1.75} />

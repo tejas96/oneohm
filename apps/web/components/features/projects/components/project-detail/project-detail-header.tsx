@@ -611,47 +611,7 @@ export const ProjectDetailHeader = React.memo(
                     ) : null}
                   </div>
 
-                  {/* Built as a list and joined, rather than each entry
-                      carrying its own leading separator. The project number
-                      used to lead this line and was the one entry guaranteed to
-                      render, so every other entry could safely prefix itself
-                      with a dot. The number now lives in the breadcrumb — it was
-                      being stated twice on one screen — and with it gone that
-                      invariant went too: the first surviving entry would have
-                      opened the line with a stray "·", and which entry that is
-                      depends on which of these a project happens to have. */}
-                  <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[12px] text-foreground-secondary">
-                    {(
-                      [
-                        project.systemSizeKw != null && project.systemSizeKw > 0 ? (
-                          <span key="size" className="tabular-nums">
-                            {formatSystemSize(project.systemSizeKw)} kW
-                          </span>
-                        ) : null,
-                        typeLabel ? <span key="type">{typeLabel}</span> : null,
-                        project.startDate ? (
-                          <span key="started">Started {formatDate(project.startDate)}</span>
-                        ) : null,
-                        project.quoteId ? (
-                          <Link
-                            key="quote"
-                            href={buildRoute(ROUTES.QUOTES.DETAIL, { id: project.quoteId })}
-                            className="inline-flex items-center gap-1 font-medium text-secondary hover:underline"
-                          >
-                            <FileText className="size-3" aria-hidden />
-                            {project.quoteNumber ?? 'Quote'}
-                          </Link>
-                        ) : null,
-                      ].filter(Boolean) as React.JSX.Element[]
-                    ).map((entry, index) => (
-                      <React.Fragment key={entry.key}>
-                        {index > 0 ? <span aria-hidden>·</span> : null}
-                        {entry}
-                      </React.Fragment>
-                    ))}
-                  </p>
-
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+                  <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
                     <Fact
                       icon={<UserRound />}
                       href={
@@ -681,6 +641,46 @@ export const ProjectDetailHeader = React.memo(
                     {location ? <Fact icon={<MapPin />}>{location}</Fact> : null}
                     {manager ? <Fact icon={<UserRound />}>PM {memberName(manager)}</Fact> : null}
                   </div>
+
+                  {/* Built as a list and joined, rather than each entry
+                      carrying its own leading separator. The project number
+                      used to lead this line and was the one entry guaranteed to
+                      render, so every other entry could safely prefix itself
+                      with a dot. The number now lives in the breadcrumb — it was
+                      being stated twice on one screen — and with it gone that
+                      invariant went too: the first surviving entry would have
+                      opened the line with a stray "·", and which entry that is
+                      depends on which of these a project happens to have. */}
+                  <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-[12px] text-foreground-secondary">
+                    {(
+                      [
+                        project.systemSizeKw != null && project.systemSizeKw > 0 ? (
+                          <span key="size" className="tabular-nums">
+                            {formatSystemSize(project.systemSizeKw)} kW
+                          </span>
+                        ) : null,
+                        typeLabel ? <span key="type">{typeLabel}</span> : null,
+                        project.startDate ? (
+                          <span key="started">Started {formatDate(project.startDate)}</span>
+                        ) : null,
+                        project.quoteId ? (
+                          <Link
+                            key="quote"
+                            href={buildRoute(ROUTES.QUOTES.DETAIL, { id: project.quoteId })}
+                            className="inline-flex items-center gap-1 font-medium text-secondary hover:underline"
+                          >
+                            <FileText className="size-3" aria-hidden />
+                            {project.quoteNumber ?? 'Quote'}
+                          </Link>
+                        ) : null,
+                      ].filter(Boolean) as React.JSX.Element[]
+                    ).map((entry, index) => (
+                      <React.Fragment key={entry.key}>
+                        {index > 0 ? <span aria-hidden>·</span> : null}
+                        {entry}
+                      </React.Fragment>
+                    ))}
+                  </p>
 
                   {/* The description is gone too. On a converted project it is
                       generated boilerplate — "Solar installation project
