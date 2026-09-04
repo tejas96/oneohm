@@ -1,6 +1,6 @@
 'use client';
 
-import { PackageCheck, PackageX } from 'lucide-react';
+import { PackageCheck, PackageX, Plus } from 'lucide-react';
 import React from 'react';
 
 import {
@@ -13,8 +13,11 @@ import {
   TonePill,
   type Tone,
 } from '../primitives';
+import { AddBomItemDialog } from './bom/add-bom-item-dialog';
 import { BillCustomerDialog } from './bom/bill-customer-dialog';
 import { BomChangesPanel } from './bom/bom-changes-panel';
+import { BomLineEditDialog, type BomLineEditMode } from './bom/bom-line-edit-dialog';
+import { BomRowActions } from './bom/bom-row-actions';
 import { ProjectWarehouseSelector } from './overview/project-warehouse-selector';
 
 import { ProcurementSection } from '@/components/features/projects/components/procurement/procurement-section';
@@ -82,7 +85,9 @@ const ALLOC_LABEL: Record<RowAllocStatus, string> = {
   pending: 'Pending',
 };
 
-const COLS = 'grid-cols-[minmax(180px,1.6fr)_84px_84px_108px_112px_112px_84px_100px]';
+// Trailing 36px column holds the per-row actions menu. It is always present so
+// the header and body stay aligned, but carries nothing until a row is hovered.
+const COLS = 'grid-cols-[minmax(180px,1.6fr)_84px_84px_108px_112px_112px_84px_100px_36px]';
 
 /** One number in the four-figure header: overline label, large mono value. */
 function Stat({
@@ -137,6 +142,13 @@ export const ProjectBomTab = React.memo(
     // call serves both, react-query dedupes the identical query key.
     const { data: procurement } = useBomProcurementStatus(projectId);
     const [billingOpen, setBillingOpen] = React.useState(false);
+    const [addOpen, setAddOpen] = React.useState(false);
+    // One piece of state drives the shared edit dialog: the row it acts on
+    // (null closes it) and which of the three edits it is performing. The mode
+    // is kept while closing so the dialog does not flicker to another title on
+    // its way out.
+    const [editing, setEditing] = React.useState<BomItem | null>(null);
+    const [editMode, setEditMode] = React.useState<BomLineEditMode>('quantity');
 
     // The "Other costs" card needs the quote's base price and installation
     // breakdown as they stood when the contract was struck — not today's
@@ -181,6 +193,17 @@ export const ProjectBomTab = React.memo(
           errorHeight={240}
           action={
             <div className="flex items-center gap-2">
+              {bom ? (
+                <button
+                  type="button"
+                  onClick={() => setAddOpen(true)}
+                  title="Add a product the quote did not carry."
+                  className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-pill border border-border px-3 text-[12.5px] font-medium text-foreground-secondary transition-colors duration-fast hover:bg-surface hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  <Plus className="size-3.5" strokeWidth={2} aria-hidden />
+                  Add material
+                </button>
+              ) : null}
               {isFullyAllocated ? (
                 <TonePill label="Stock reserved" tone="success" dot />
               ) : bom?.id ? (
@@ -310,6 +333,7 @@ export const ProjectBomTab = React.memo(
                     <ColumnHeader className="text-right">Variance</ColumnHeader>
                     <ColumnHeader>Source</ColumnHeader>
                     <ColumnHeader>Stock</ColumnHeader>
+                    <span />
                   </div>
 
                   {bom.items.map((item) => {
@@ -318,7 +342,7 @@ export const ProjectBomTab = React.memo(
                       <div
                         key={item.id}
                         className={cn(
-                          'grid items-center gap-3 rounded-xl py-2.5 transition-colors duration-fast even:bg-surface-alt hover:bg-background-tertiary',
+                          'group grid items-center gap-3 rounded-xl py-2.5 transition-colors duration-fast even:bg-surface-alt hover:bg-background-tertiary',
                           ROW_BLEED,
                           COLS,
                         )}
@@ -408,6 +432,15 @@ export const ProjectBomTab = React.memo(
                             tone={ALLOC_TONE[item.allocationStatus]}
                           />
                         </div>
+
+                        <BomRowActions
+                          productName={item.productName}
+                          removed={removed}
+                          onPick={(mode) => {
+                            setEditMode(mode);
+                            setEditing(item);
+                          }}
+                        />
                       </div>
                     );
                   })}
@@ -431,6 +464,19 @@ export const ProjectBomTab = React.memo(
             onClose={() => setBillingOpen(false)}
           />
         ) : null}
+
+        <AddBomItemDialog
+          projectId={projectId}
+          open={addOpen}
+          onClose={() => setAddOpen(false)}
+        />
+
+        <BomLineEditDialog
+          projectId={projectId}
+          item={editing}
+          mode={editMode}
+          onClose={() => setEditing(null)}
+        />
       </div>
     );
   },
