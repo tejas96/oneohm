@@ -14,6 +14,15 @@ export interface GpsCoordinates {
   longitude: number;
   accuracy?: number; // In meters
   altitude?: number; // In meters
+  /**
+   * Who put this pin here, and when.
+   *
+   * A pin typed by the office from a phone call and a pin dropped by a rep
+   * standing on the roof are the same two numbers and completely different
+   * facts. Absent means the office guessed.
+   */
+  verifiedBy?: string;
+  verifiedAt?: string;
 }
 
 /**
