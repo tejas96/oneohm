@@ -19,11 +19,9 @@ export type ChecklistItem = z.infer<typeof checklistItemSchema>;
  * rejecting it here would block the whole submit with no field to hang the
  * message on.
  */
-function blankableInt(message: string): z.ZodType<
-  number | null,
-  z.ZodTypeDef,
-  '' | number | null | undefined
-> {
+function blankableInt(
+  message: string,
+): z.ZodType<number | null, z.ZodTypeDef, '' | number | null | undefined> {
   return z
     .union([z.literal(''), z.null(), z.nan(), z.coerce.number().int(message).min(0, message)])
     .optional()

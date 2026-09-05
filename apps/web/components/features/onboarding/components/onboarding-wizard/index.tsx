@@ -501,7 +501,8 @@ export function OnboardingWizard({
         are already saved by now, so a failure here must not read as "nothing
         was created".
       */
-      const siteJobs: Array<{ type: FollowupType; subject: string; owner: string; at: string }> = [];
+      const siteJobs: Array<{ type: FollowupType; subject: string; owner: string; at: string }> =
+        [];
       const visitAt = form.getValues('siteVisitScheduledAt');
       const surveyAt = form.getValues('siteSurveyScheduledAt');
       if (siteVisitAssignee && visitAt) {

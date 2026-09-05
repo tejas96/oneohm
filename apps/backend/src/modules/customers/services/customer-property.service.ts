@@ -759,11 +759,7 @@ export class CustomerPropertyService {
       followups list, which filters site types out — while the rep's queue
       keeps offering a job they have already done.
     */
-    await this.followupRepository.completeSiteWorkFor(
-      propertyId,
-      [FollowupType.VISIT],
-      userId,
-    );
+    await this.followupRepository.completeSiteWorkFor(propertyId, [FollowupType.VISIT], userId);
 
     this.logger.log(`Site visit completed for property ${propertyId} by user ${userId}`);
     return updated;

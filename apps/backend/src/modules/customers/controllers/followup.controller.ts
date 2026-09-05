@@ -31,9 +31,9 @@ import { FollowupResponseDto } from '../dto/followup-response.dto';
 import { FollowupSummaryResponseDto } from '../dto/followup-summary-response.dto';
 import { ReassignFollowupDto, ReassignFollowupsBulkDto } from '../dto/reassign-followup.dto';
 import { RescheduleFollowupDto } from '../dto/reschedule-followup.dto';
+import { SiteWorkItemDto } from '../dto/site-work-item.dto';
 import { UpdateFollowupDto } from '../dto/update-followup.dto';
 import { FollowupService } from '../services/followup.service';
-import { SiteWorkItemDto } from '../dto/site-work-item.dto';
 import { SiteWorkService } from '../services/site-work.service';
 
 /**

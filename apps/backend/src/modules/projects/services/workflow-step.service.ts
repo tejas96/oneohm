@@ -143,9 +143,7 @@ export class WorkflowStepService {
     // task keeps pointing at the step for history, so the step cannot go.
     const taskCount = await this.taskRepository.countByWorkflowStepId(id);
     if (taskCount > 0) {
-      throw new ConflictException(
-        `Cannot delete workflow step: ${taskCount} task(s) reference it`,
-      );
+      throw new ConflictException(`Cannot delete workflow step: ${taskCount} task(s) reference it`);
     }
 
     // Dependency codes are a text[], not a foreign key, so deleting a step leaves
@@ -201,9 +199,7 @@ export class WorkflowStepService {
   ): Promise<void> {
     if (!step.isSpecial) {
       if (step.changeRequestType) {
-        throw new BadRequestException(
-          'changeRequestType can only be set on a change request step',
-        );
+        throw new BadRequestException('changeRequestType can only be set on a change request step');
       }
       return;
     }

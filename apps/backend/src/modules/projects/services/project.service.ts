@@ -17,7 +17,11 @@ import {
   QuoteStatus,
   TaskStatus,
 } from '@tejas96/shared/types';
-import { canonicalMilestoneOrder, compareMilestoneSequence, isProjectBaselineStep } from '@tejas96/shared/utils';
+import {
+  canonicalMilestoneOrder,
+  compareMilestoneSequence,
+  isProjectBaselineStep,
+} from '@tejas96/shared/utils';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { ChangeRequestTaskService } from './change-request-task.service';
