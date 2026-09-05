@@ -11,6 +11,7 @@ import {
   ChangeRequestStatus,
   CustomerStatus,
   LeadTemperature,
+  FollowupType,
   LoanStatus,
   ProjectStatus,
   type PropertyDocument,
@@ -39,6 +40,7 @@ import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
+import { FollowupRepository } from '../repositories/followup.repository';
 import {
   mergeChangeRequestsForUpdate,
   normalizeChangeRequestsForStorage,
@@ -106,6 +108,7 @@ export class CustomerPropertyService {
     private readonly eventEmitter: EventEmitter2,
     private readonly dataSource: DataSource,
     private readonly leadClosureService: LeadClosureService,
+    private readonly followupRepository: FollowupRepository,
   ) {}
 
   /**
@@ -750,6 +753,18 @@ export class CustomerPropertyService {
       throw new NotFoundException(`Property ${propertyId} not found after update`);
     }
 
+    /*
+      The visit was SCHEDULED as a followup, so finishing it closes that
+      followup too. Left open it lingers pending for ever — invisible in the
+      followups list, which filters site types out — while the rep's queue
+      keeps offering a job they have already done.
+    */
+    await this.followupRepository.completeSiteWorkFor(
+      propertyId,
+      [FollowupType.VISIT],
+      userId,
+    );
+
     this.logger.log(`Site visit completed for property ${propertyId} by user ${userId}`);
     return updated;
   }
@@ -815,6 +830,17 @@ export class CustomerPropertyService {
     if (!updated) {
       throw new NotFoundException(`Property ${propertyId} not found after update`);
     }
+
+    /*
+      Both types when the survey closed an open visit, because both jobs are
+      finished and both were scheduled. Closing only the survey would leave the
+      visit's own followup pending against a site that is already done.
+    */
+    await this.followupRepository.completeSiteWorkFor(
+      propertyId,
+      closesAnOpenVisit ? [FollowupType.VISIT, FollowupType.SURVEY] : [FollowupType.SURVEY],
+      userId,
+    );
 
     this.logger.log(
       closesAnOpenVisit

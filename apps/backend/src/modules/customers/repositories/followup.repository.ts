@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FollowupStatus, FollowupType } from '@tejas96/shared/types';
+import { FollowupOutcome, FollowupStatus, FollowupType } from '@tejas96/shared/types';
 import {
   type EntityManager,
   In,
@@ -440,6 +440,42 @@ export class FollowupRepository {
    * Cancels every pending followup on a lead unit. Called when the unit reaches
    * a terminal state, so a won or dead deal stops nagging without a second click.
    */
+  /**
+   * Close the scheduled job a completed site visit or survey answers.
+   *
+   * Site work is scheduled as a followup, so finishing it has to close that
+   * followup too — otherwise the row stays pending for ever, invisible in the
+   * followups list because site types are filtered out of it, and the queue
+   * keeps offering a job somebody already did.
+   *
+   * `outcome` is `SITE_VISIT_DONE`, which has sat in FollowupOutcome unused
+   * since before this feature existed. It was always the answer to this.
+   */
+  async completeSiteWorkFor(
+    propertyId: string,
+    types: readonly FollowupType[],
+    updatedBy: string,
+    manager?: EntityManager,
+  ): Promise<number> {
+    const repo = manager ? manager.getRepository(FollowupEntity) : this.repository;
+    const result = await repo
+      .createQueryBuilder()
+      .update(FollowupEntity)
+      .set({
+        status: FollowupStatus.COMPLETED,
+        outcome: FollowupOutcome.SITE_VISIT_DONE,
+        completedAt: new Date(),
+        updatedBy,
+      })
+      .where('property_id = :propertyId', { propertyId })
+      .andWhere('type IN (:...types)', { types: [...types] })
+      .andWhere('status = :pending', { pending: FollowupStatus.PENDING })
+      .andWhere('deleted_at IS NULL')
+      .execute();
+
+    return result.affected ?? 0;
+  }
+
   async cancelPendingFor(
     customerId: string,
     propertyId: string | null,
