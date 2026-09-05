@@ -70,6 +70,17 @@ export class SiteWorkItemDto {
   @Expose()
   surveyDone!: boolean;
 
+  /**
+   * When THIS job was finished, or absent while it is open.
+   *
+   * Per kind, not per site: a visit can be closed for a week while the survey
+   * is still outstanding, and one shared timestamp would have the queue
+   * reporting the wrong job as done.
+   */
+  @ApiPropertyOptional()
+  @Expose()
+  completedAt?: Date;
+
   @ApiPropertyOptional()
   @Expose()
   gpsCoordinates?: Record<string, unknown>;

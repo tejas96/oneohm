@@ -20,6 +20,7 @@ interface SiteWorkRow {
   systemSizeKw: string | null;
   siteVisitDone: boolean;
   surveyDone: boolean;
+  completedAt: Date | null;
   gpsCoordinates: Record<string, unknown> | null;
 }
 
@@ -58,6 +59,8 @@ export class SiteWorkService {
               ${systemSizeKwSqlRaw('qv')} AS "systemSizeKw",
               p.site_visit_done   AS "siteVisitDone",
               p.survey_done       AS "surveyDone",
+              CASE WHEN f.type = 'visit' THEN p.site_visit_completed_at
+                   ELSE p.site_survey_completed_at END AS "completedAt",
               p.gps_coordinates   AS "gpsCoordinates"
          FROM followups f
          JOIN customer_properties p ON p.id = f.property_id AND p.deleted_at IS NULL
@@ -96,6 +99,7 @@ export class SiteWorkService {
       systemSizeKw: row.systemSizeKw === null ? undefined : Number(row.systemSizeKw),
       siteVisitDone: row.siteVisitDone,
       surveyDone: row.surveyDone,
+      completedAt: row.completedAt ?? undefined,
       gpsCoordinates: row.gpsCoordinates ?? undefined,
     }));
   }
