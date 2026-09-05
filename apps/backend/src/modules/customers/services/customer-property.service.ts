@@ -756,16 +756,22 @@ export class CustomerPropertyService {
 
   /**
    * Complete a site survey for a property.
-   * Requires that the site visit has already been completed.
+   *
+   * Closes an open site visit as a side effect. That used to be a refusal:
+   * the survey threw whenever `siteVisitDone` was false. With one person doing
+   * both jobs the guard was invisible. With two — which the separate
+   * `siteVisitAssignee` and `siteSurveyAssignee` columns have always allowed —
+   * it strands a surveyor on a roof, survey finished, unable to save, because
+   * a colleague forgot to tap a button last week.
+   *
+   * The survey is the stronger evidence of the two. You cannot measure a roof
+   * you did not stand on, so a completed survey proves the visit happened more
+   * convincingly than the visit's own checkbox does.
    */
   async completeSurvey(propertyId: string, userId: string): Promise<CustomerPropertyEntity> {
     const property = await this.propertyRepository.findByIdAndOrganization(propertyId);
     if (!property) {
       throw new NotFoundException(`Property ${propertyId} not found`);
-    }
-
-    if (!property.siteVisitDone) {
-      throw new BadRequestException('Site visit must be completed before completing the survey');
     }
 
     if (property.surveyDone) {
@@ -783,11 +789,26 @@ export class CustomerPropertyService {
       );
     }
 
+    // Both timestamps and both assignees stay separate, so the office loses no
+    // detail by the two closing together — it can still read who attended and
+    // who measured, and when. Only the refusal is gone.
+    const closesAnOpenVisit = !property.siteVisitDone;
+    const now = new Date();
+
     const updates: Partial<CustomerPropertyEntity> = {
       surveyDone: true,
-      siteSurveyCompletedAt: new Date(),
+      siteSurveyCompletedAt: now,
       siteStatus: SiteStatus.COMPLETED,
       updatedBy: userId,
+      ...(closesAnOpenVisit
+        ? {
+            siteVisitDone: true,
+            siteVisitCompletedAt: now,
+            // Whoever was already down for the visit keeps the credit. Only an
+            // unassigned visit is attributed to the surveyor standing there.
+            siteVisitAssignee: property.siteVisitAssignee ?? userId,
+          }
+        : {}),
     };
 
     const updated = await this.propertyRepository.update(propertyId, updates);
@@ -795,7 +816,11 @@ export class CustomerPropertyService {
       throw new NotFoundException(`Property ${propertyId} not found after update`);
     }
 
-    this.logger.log(`Site survey completed for property ${propertyId} by user ${userId}`);
+    this.logger.log(
+      closesAnOpenVisit
+        ? `Site survey completed for property ${propertyId} by user ${userId}, closing its open site visit`
+        : `Site survey completed for property ${propertyId} by user ${userId}`,
+    );
     return updated;
   }
 
