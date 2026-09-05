@@ -23,7 +23,7 @@ export interface InstallationPricingItem {
   gstRate: number;
   costComponents: InstallationCostComponents;
   effectiveFrom: string;
-  effectiveTo?: string;
+  effectiveTo?: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

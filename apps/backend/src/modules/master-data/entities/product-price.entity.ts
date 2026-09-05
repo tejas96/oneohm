@@ -28,7 +28,7 @@ export class ProductPriceEntity extends BaseEntity {
   effectiveFrom!: Date;
 
   @Column({ name: 'effective_to', type: 'date', nullable: true })
-  effectiveTo?: Date;
+  effectiveTo?: Date | null;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

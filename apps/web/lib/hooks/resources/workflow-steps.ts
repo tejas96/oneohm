@@ -24,6 +24,10 @@ export interface WorkflowStepFilters extends BaseFilters {
   type?: string;
 }
 
+// The active-only reference list is cached under its own resource key, so a
+// mutation on 'workflow-steps' does not touch it unless we say so.
+const WORKFLOW_STEPS_REF = 'workflow-steps-ref';
+
 // ── Resource Registration ──────────────────────────────────────
 
 defineResource<WorkflowStep>(
@@ -51,11 +55,17 @@ export function useWorkflowSteps(
   return useResourceList<WorkflowStep, WorkflowStepFilters>({ ...config, ...overrides });
 }
 
+/**
+ * The active-only catalogue every consumer of workflow steps reads: the project
+ * create wizard, the projects list filter, and the admin dependency picker. Only
+ * these steps become tasks on a new project, so a deactivated step has to leave
+ * this list -- see WORKFLOW_STEPS_REF in the mutations' invalidateRelated.
+ */
 export function useAllActiveWorkflowSteps(): ReturnType<
   typeof useResourceList<WorkflowStep, WorkflowStepFilters>
 > {
   return useResourceList<WorkflowStep, WorkflowStepFilters>({
-    resource: 'workflow-steps-ref',
+    resource: WORKFLOW_STEPS_REF,
     endpoint: '/workflow-steps',
     defaultPageSize: 200,
     syncToUrl: false,
@@ -77,6 +87,10 @@ export function useWorkflowStepMutations(): ReturnType<typeof useResourceMutatio
   return useResourceMutations<WorkflowStep>({
     resource: 'workflow-steps',
     endpoint: '/workflow-steps',
+    // Activating, deactivating, editing or deleting a step changes which steps a
+    // new project gets. Without this the wizard keeps offering a step it can no
+    // longer create, for the whole staleTime window.
+    invalidateRelated: [WORKFLOW_STEPS_REF],
     customActions: {
       toggleStatus: {
         method: 'PATCH',

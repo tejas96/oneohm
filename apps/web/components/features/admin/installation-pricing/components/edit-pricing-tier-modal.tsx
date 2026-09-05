@@ -98,7 +98,7 @@ export function EditPricingTierModal({
       data: {
         ...data,
         maxSystemSizeKw: data.maxSystemSizeKw ?? null,
-        effectiveTo: data.effectiveTo || undefined,
+        effectiveTo: data.effectiveTo || null,
       },
     }),
   });

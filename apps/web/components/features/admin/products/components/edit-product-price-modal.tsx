@@ -86,7 +86,7 @@ export function EditProductPriceModal({
         currency: data.currency,
         projectType: data.projectType ?? null,
         effectiveFrom: data.effectiveFrom,
-        effectiveTo: data.effectiveTo || undefined,
+        effectiveTo: data.effectiveTo || null,
       },
     }),
   });

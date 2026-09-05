@@ -37,13 +37,23 @@ export const subsidyConfigSchema = z
       ])
       .optional(),
     requiresDcr: z.boolean(),
-    tiers: z.array(tierSchema).min(1, 'At least one tier is required'),
+    // A "No Subsidy" rule grants nothing, so it has no rate bands. Requiring one
+    // forced a fake 0-rate tier onto it. Every other scheme still needs a band.
+    tiers: z.array(tierSchema),
     effectiveFrom: z.string().optional(),
     effectiveTo: z.string().optional(),
     isActive: z.boolean(),
     description: z.string().trim().optional(),
   })
   .superRefine((data, ctx) => {
+    if (data.schemeType !== SubsidySchemeType.NONE && data.tiers.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'At least one tier is required',
+        path: ['tiers'],
+      });
+    }
+
     data.tiers.forEach((tier, index) => {
       if (tier.toKw != null && tier.toKw <= tier.fromKw) {
         ctx.addIssue({

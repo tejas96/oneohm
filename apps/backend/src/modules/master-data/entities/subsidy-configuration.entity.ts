@@ -163,7 +163,7 @@ export class SubsidyConfiguration extends BaseEntity {
     name: 'effective_from',
     nullable: true,
   })
-  effectiveFrom?: Date;
+  effectiveFrom?: Date | null;
 
   /**
    * Date until which this configuration is effective
@@ -173,7 +173,7 @@ export class SubsidyConfiguration extends BaseEntity {
     name: 'effective_to',
     nullable: true,
   })
-  effectiveTo?: Date;
+  effectiveTo?: Date | null;
 
   // ==================== Audit ====================
 

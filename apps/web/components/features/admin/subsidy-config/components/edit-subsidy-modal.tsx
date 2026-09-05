@@ -64,6 +64,7 @@ export function EditSubsidyModal({
   });
 
   const tiersFieldArray = useFieldArray({ control: form.control, name: 'tiers' });
+  const watchedSchemeType = form.watch('schemeType');
 
   useEffect(() => {
     if (!target) return;
@@ -96,10 +97,10 @@ export function EditSubsidyModal({
       data: {
         ...data,
         schemeName: data.schemeName.trim(),
-        schemeCode: data.schemeCode?.trim() || undefined,
-        description: data.description?.trim() || undefined,
-        effectiveFrom: data.effectiveFrom || undefined,
-        effectiveTo: data.effectiveTo || undefined,
+        schemeCode: data.schemeCode?.trim() || null,
+        description: data.description?.trim() || null,
+        effectiveFrom: data.effectiveFrom || null,
+        effectiveTo: data.effectiveTo || null,
       },
     }),
   });
@@ -318,7 +319,10 @@ export function EditSubsidyModal({
                         variant="ghost"
                         size="sm"
                         onClick={() => tiersFieldArray.remove(index)}
-                        disabled={tiersFieldArray.fields.length <= 1}
+                        disabled={
+                          watchedSchemeType !== SubsidySchemeType.NONE &&
+                          tiersFieldArray.fields.length <= 1
+                        }
                       >
                         <Trash2 className="mr-2 size-icon-sm" />
                         Remove

@@ -15,4 +15,5 @@ export const SCHEME_TYPE_OPTIONS = [
   { value: SubsidySchemeType.STATE_SUBSIDY, label: 'State Subsidy' },
   { value: SubsidySchemeType.MNRE, label: 'MNRE' },
   { value: SubsidySchemeType.CUSTOM, label: 'Custom' },
+  { value: SubsidySchemeType.NONE, label: 'No Subsidy' },
 ];

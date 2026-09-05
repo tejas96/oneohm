@@ -53,11 +53,17 @@ export class SubsidyConfigurationService {
   ): Promise<SubsidyConfiguration> {
     const existing = await this.findById(id);
 
-    const effectiveFrom = dto.effectiveFrom
-      ? this.toDate(dto.effectiveFrom, 'effectiveFrom')
+    // A present-but-null date means "clear it". `?? undefined` on the way out
+    // would drop the key and leave the old date in place under a 200 response.
+    const effectiveFrom = Object.prototype.hasOwnProperty.call(dto, 'effectiveFrom')
+      ? dto.effectiveFrom
+        ? this.toDate(dto.effectiveFrom, 'effectiveFrom')
+        : null
       : (existing.effectiveFrom ?? null);
-    const effectiveTo = dto.effectiveTo
-      ? this.toDate(dto.effectiveTo, 'effectiveTo')
+    const effectiveTo = Object.prototype.hasOwnProperty.call(dto, 'effectiveTo')
+      ? dto.effectiveTo
+        ? this.toDate(dto.effectiveTo, 'effectiveTo')
+        : null
       : (existing.effectiveTo ?? null);
     this.validateDateRange(effectiveFrom, effectiveTo);
 
@@ -65,8 +71,8 @@ export class SubsidyConfigurationService {
     return this.subsidyConfigurationRepository.update(id, {
       ...dto,
       tiers,
-      effectiveFrom: effectiveFrom ?? undefined,
-      effectiveTo: effectiveTo ?? undefined,
+      effectiveFrom,
+      effectiveTo,
       updatedBy,
     });
   }

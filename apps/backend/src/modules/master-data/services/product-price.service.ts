@@ -72,9 +72,14 @@ export class ProductPriceService {
     const effectiveFrom = dto.effectiveFrom
       ? this.toDate(dto.effectiveFrom, 'effectiveFrom')
       : existing.effectiveFrom;
-    const effectiveTo = dto.effectiveTo
-      ? this.toDate(dto.effectiveTo, 'effectiveTo')
-      : existing.effectiveTo;
+
+    // A present-but-null effectiveTo means "clear the end date". Falling back on
+    // a falsy check would silently keep the old date under a 200 response.
+    const effectiveTo = Object.prototype.hasOwnProperty.call(dto, 'effectiveTo')
+      ? dto.effectiveTo
+        ? this.toDate(dto.effectiveTo, 'effectiveTo')
+        : null
+      : (existing.effectiveTo ?? null);
 
     this.validateDateRange(effectiveFrom, effectiveTo);
 
@@ -211,7 +216,7 @@ export class ProductPriceService {
     );
   }
 
-  private validateDateRange(effectiveFrom: Date, effectiveTo?: Date): void {
+  private validateDateRange(effectiveFrom: Date, effectiveTo?: Date | null): void {
     if (effectiveTo && effectiveTo < effectiveFrom) {
       throw new BadRequestException('effectiveTo must be on or after effectiveFrom');
     }

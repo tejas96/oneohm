@@ -15,11 +15,11 @@ import {
 export interface Brand {
   id: string;
   name: string;
-  manufacturerName?: string;
-  logoUrl?: string;
-  website?: string;
-  supportContact?: string;
-  description?: string;
+  manufacturerName?: string | null;
+  logoUrl?: string | null;
+  website?: string | null;
+  supportContact?: string | null;
+  description?: string | null;
   isActive: boolean;
   productTypeIds?: string[];
   createdAt: string;

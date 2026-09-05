@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import Alert from '@mui/material/Alert';
 import MuiButton from '@mui/material/Button';
+import { isProjectBaselineStep } from '@tejas96/shared/utils';
 import { useMemo } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 
@@ -37,7 +38,12 @@ export function Step5TasksMilestones({ form }: Step5TasksMilestonesProps): React
   const teamMembers = watch('teamMembers');
 
   const { items: rawTemplates, isLoading: stepsLoading } = useAllActiveWorkflowSteps();
-  const templates: WorkflowStep[] = rawTemplates as WorkflowStep[];
+  // Same rule the backend applies when it builds the tasks. Without it the wizard
+  // lists the change-request templates and promises tasks the project never gets.
+  const templates: WorkflowStep[] = useMemo(
+    () => (rawTemplates as WorkflowStep[]).filter(isProjectBaselineStep),
+    [rawTemplates],
+  );
   const { items: employees } = useEmployees({ status: 'active' });
 
   // Build team member options for assignee dropdown
