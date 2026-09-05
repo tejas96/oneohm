@@ -1,4 +1,4 @@
-import { type TaskChecklist, ChangeRequestType } from '@tejas96/shared/types';
+import { type TaskChecklist, ChangeRequestType, WorkflowStepType } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 
 import { ProjectTaskEntity } from './project-task.entity';
@@ -21,7 +21,7 @@ export class WorkflowStepEntity extends BaseEntity {
   description?: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  type?: string;
+  type?: WorkflowStepType | null;
 
   @Column({ name: 'default_department', type: 'varchar', length: 100, nullable: true })
   defaultDepartment?: string;
@@ -60,7 +60,7 @@ export class WorkflowStepEntity extends BaseEntity {
   isSpecial!: boolean;
 
   @Column({ name: 'change_request_type', type: 'varchar', length: 50, nullable: true })
-  changeRequestType?: ChangeRequestType;
+  changeRequestType?: ChangeRequestType | null;
 
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp with time zone' })
   deletedAt?: Date;

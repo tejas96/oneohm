@@ -16,8 +16,8 @@ export class WorkflowStepRepository {
     return this.repository.save(step);
   }
 
-  async findById(id: string): Promise<WorkflowStepEntity | null> {
-    return this.repository.findOne({
+  async findById(id: string, manager?: EntityManager): Promise<WorkflowStepEntity | null> {
+    return this.getRepo(manager).findOne({
       where: {
         id,
         deletedAt: IsNull(),
@@ -73,15 +73,35 @@ export class WorkflowStepRepository {
     });
   }
 
-  async update(id: string, data: Record<string, unknown>): Promise<WorkflowStepEntity | null> {
-    await this.repository.update(
+  async update(
+    id: string,
+    data: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<WorkflowStepEntity | null> {
+    const repo = this.getRepo(manager);
+    await repo.update(
       {
         id,
         deletedAt: IsNull(),
       },
       data,
     );
-    return this.findById(id);
+    return this.findById(id, manager);
+  }
+
+  /**
+   * Steps that list `code` among their dependencies. Dependency codes are a
+   * text[] of spellings, not foreign keys, so nothing keeps them in step with a
+   * renamed step -- callers have to rewrite them by hand.
+   */
+  async findByDependencyCode(code: string, manager?: EntityManager): Promise<WorkflowStepEntity[]> {
+    const repo = this.getRepo(manager);
+    return repo
+      .createQueryBuilder('step')
+      .where('step.deleted_at IS NULL')
+      .andWhere(':code = ANY(step.depends_on_task_codes)', { code })
+      .orderBy('step.sequenceOrder', 'ASC')
+      .getMany();
   }
 
   async softDelete(id: string): Promise<boolean> {
@@ -89,6 +109,31 @@ export class WorkflowStepRepository {
       id,
     });
     return (result.affected ?? 0) > 0;
+  }
+
+  /**
+   * Another undeleted step already claiming this change-request type.
+   *
+   * Mirrors `idx_workflow_steps_org_change_request_type`, the partial unique index
+   * from migration 1850700000000: one live row per type, whether or not it is
+   * active. Checking only active rows would let the insert reach the database and
+   * come back as a 500 instead of a readable message.
+   */
+  async existsChangeRequestType(
+    changeRequestType: string,
+    excludeId?: string,
+    manager?: EntityManager,
+  ): Promise<boolean> {
+    const queryBuilder = this.getRepo(manager)
+      .createQueryBuilder('step')
+      .where('step.change_request_type = :changeRequestType', { changeRequestType })
+      .andWhere('step.deleted_at IS NULL');
+
+    if (excludeId) {
+      queryBuilder.andWhere('step.id != :excludeId', { excludeId });
+    }
+
+    return (await queryBuilder.getCount()) > 0;
   }
 
   async existsByCode(code: string, excludeId?: string): Promise<boolean> {

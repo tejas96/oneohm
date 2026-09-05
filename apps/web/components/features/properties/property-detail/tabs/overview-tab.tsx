@@ -724,12 +724,24 @@ function ReadinessCard({ property }: { property: CustomerPropertyResponse }): JS
           index={2}
           title="Technical survey"
           done={property.surveyDone}
-          disabled={isCancelled || !property.siteVisitDone}
+          disabled={isCancelled}
           facts={surveyFacts}
+          /*
+            No longer gated on the visit. `completeSurvey` used to refuse while
+            `siteVisitDone` was false and now closes the visit itself, because
+            a survey and a visit can be done by different people and the
+            surveyor should not be stopped by a checkbox the other one forgot.
+            Leaving the button disabled here would keep enforcing on the client
+            a rule the server has dropped.
+          */
           action={
             !property.surveyDone && !isCancelled ? (
               <Tooltip
-                title={property.siteVisitDone ? '' : 'Complete the site visit first'}
+                title={
+                  property.siteVisitDone
+                    ? ''
+                    : 'The site visit is still open — completing the survey closes it too'
+                }
                 placement="top"
               >
                 <span>
@@ -738,7 +750,7 @@ function ReadinessCard({ property }: { property: CustomerPropertyResponse }): JS
                     variant="outlined"
                     onClick={markSurvey.onGatedClick}
                     aria-disabled={!markSurvey.allowed}
-                    disabled={isPending || !property.siteVisitDone}
+                    disabled={isPending}
                   >
                     Mark survey complete
                   </Button>

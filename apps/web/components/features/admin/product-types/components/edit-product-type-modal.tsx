@@ -151,11 +151,13 @@ export function EditProductTypeModal({
         dataType: attr.dataType,
         isRequired: attr.isRequired,
         isFilterable: attr.isFilterable,
-        validation: Object.keys(validation).length ? validation : undefined,
-        defaultValue: attr.defaultValue?.trim() || undefined,
+        // The backend merges each incoming attribute over the stored one, so a
+        // dropped key keeps the old value. Cleared fields must say null.
+        validation: Object.keys(validation).length ? validation : null,
+        defaultValue: attr.defaultValue?.trim() || null,
         groupName: attr.groupName.trim(),
         sortOrder: attr.sortOrder,
-        helpText: attr.helpText?.trim() || undefined,
+        helpText: attr.helpText?.trim() || null,
       };
     });
 
@@ -171,8 +173,8 @@ export function EditProductTypeModal({
       data: {
         name: data.name.trim(),
         code: data.code.trim(),
-        description: data.description?.trim() || undefined,
-        icon: data.icon?.trim() || undefined,
+        description: data.description?.trim() || null,
+        icon: data.icon?.trim() || null,
         defaultUnitOfMeasure: data.defaultUnitOfMeasure,
         defaultPricingBasis: data.defaultPricingBasis,
         defaultGstRate: data.defaultGstRate,

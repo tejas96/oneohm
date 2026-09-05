@@ -1,3 +1,5 @@
+import { WorkflowStepType } from '@tejas96/shared/types';
+
 import { buildWorkflowStepPayload } from './workflow-step-payload';
 import { type WorkflowStepFormValues } from '../schemas/workflow-step.schema';
 
@@ -6,7 +8,7 @@ function makeFormValues(overrides: Partial<WorkflowStepFormValues> = {}): Workfl
     name: 'Panel Installation',
     code: 'EXEC-001',
     description: '',
-    type: 'execution',
+    type: WorkflowStepType.EXECUTION,
     defaultRoleCode: '',
     defaultDepartment: '',
     defaultMilestoneName: 'Installation',

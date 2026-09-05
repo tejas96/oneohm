@@ -31,8 +31,10 @@ import { FollowupResponseDto } from '../dto/followup-response.dto';
 import { FollowupSummaryResponseDto } from '../dto/followup-summary-response.dto';
 import { ReassignFollowupDto, ReassignFollowupsBulkDto } from '../dto/reassign-followup.dto';
 import { RescheduleFollowupDto } from '../dto/reschedule-followup.dto';
+import { SiteWorkItemDto } from '../dto/site-work-item.dto';
 import { UpdateFollowupDto } from '../dto/update-followup.dto';
 import { FollowupService } from '../services/followup.service';
+import { SiteWorkService } from '../services/site-work.service';
 
 /**
  * Followup Controller
@@ -43,7 +45,10 @@ import { FollowupService } from '../services/followup.service';
 @Controller('followups')
 @UseGuards(JwtAuthGuard)
 export class FollowupController {
-  constructor(private readonly followupService: FollowupService) {}
+  constructor(
+    private readonly followupService: FollowupService,
+    private readonly siteWorkService: SiteWorkService,
+  ) {}
 
   /**
    * Create a new followup
@@ -230,6 +235,23 @@ export class FollowupController {
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
     const result = await this.followupService.findOverdueFollowups(assignedToUserId, page, limit);
     return toPaginatedResponse(FollowupResponseDto, result.data, result.total, page, limit);
+  }
+
+  /**
+   * The field rep's own site queue.
+   *
+   * Declared ABOVE the `:id` route on purpose: Nest matches in declaration
+   * order, so below it `my-site-work` is read as an id and dies in the UUID
+   * pipe. `/gaps` and `/summary` sit above it for the same reason.
+   *
+   * A bare array, not paginated, matching `/followups/gaps`. A rep has a day's
+   * work, not a caseload, and the screen filters and counts over what it holds.
+   */
+  @Get('my-site-work')
+  @ApiOperation({ summary: 'Site visits and surveys assigned to the current user' })
+  @ApiOkResponse({ type: [SiteWorkItemDto] })
+  async findMySiteWork(@CurrentUser() currentUser: CurrentUserType): Promise<SiteWorkItemDto[]> {
+    return this.siteWorkService.findMine(currentUser.id);
   }
 
   /**

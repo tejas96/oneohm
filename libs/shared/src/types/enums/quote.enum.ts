@@ -65,6 +65,12 @@ export enum SubsidySchemeType {
   STATE_SUBSIDY = 'state_subsidy',
   MNRE = 'mnre',
   CUSTOM = 'custom',
+  /**
+   * A rule that grants nothing, used to say "this project category gets no
+   * subsidy" explicitly. Seeded rows already carried 'none'; without it here the
+   * admin form could never validate them, so Save stayed disabled forever.
+   */
+  NONE = 'none',
 }
 
 /**

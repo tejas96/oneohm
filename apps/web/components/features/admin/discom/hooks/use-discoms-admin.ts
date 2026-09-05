@@ -80,16 +80,17 @@ export interface DiscomPayload {
   circleInchargeName: string;
   divisionName: string;
   divisionInchargeName: string;
-  testingUnitName?: string;
-  subdivisionName?: string;
-  subdivisionInchargeName?: string;
-  aeqcEngineerName?: string;
-  sectionName?: string;
-  sectionEngineerName?: string;
-  officeAddress?: string;
-  mobileNo?: string;
-  email?: string;
-  geoLocation?: DiscomGeoLocation;
+  // Nullable so an emptied field can be cleared: PATCH drops undefined keys.
+  testingUnitName?: string | null;
+  subdivisionName?: string | null;
+  subdivisionInchargeName?: string | null;
+  aeqcEngineerName?: string | null;
+  sectionName?: string | null;
+  sectionEngineerName?: string | null;
+  officeAddress?: string | null;
+  mobileNo?: string | null;
+  email?: string | null;
+  geoLocation?: DiscomGeoLocation | null;
   isActive?: boolean;
 }
 

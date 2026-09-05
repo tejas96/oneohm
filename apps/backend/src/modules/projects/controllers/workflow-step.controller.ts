@@ -28,6 +28,15 @@ import type { CurrentUserType } from '../../auth/types';
 import { CreateWorkflowStepDto, WorkflowStepResponseDto, UpdateWorkflowStepDto } from '../dto';
 import { WorkflowStepService } from '../services';
 
+/**
+ * The step catalogue is a small, admin-curated reference list that every consumer
+ * -- the project create wizard above all -- reads whole rather than page by page.
+ * The shared 100 cap would silently truncate it, and a step missing from that list
+ * is a step that never becomes a task on a new project. Raised, not removed: the
+ * shared cap still protects the endpoints over tables that actually grow.
+ */
+const WORKFLOW_STEP_MAX_LIMIT = 500;
+
 @ApiTags('Workflow Steps')
 @ApiBearerAuth()
 @Controller('workflow-steps')
@@ -62,7 +71,13 @@ export class WorkflowStepController {
     @Query('type') type?: string,
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<WorkflowStepResponseDto>> {
-    const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
+    const { page: pageNum, limit: limitNum } = parsePaginationParams(
+      page,
+      limit,
+      1,
+      20,
+      WORKFLOW_STEP_MAX_LIMIT,
+    );
 
     const result = await this.stepService.findAll(pageNum, limitNum, {
       isActive: isActive !== undefined ? isActive === 'true' : undefined,

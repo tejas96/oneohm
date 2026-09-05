@@ -95,3 +95,27 @@ export enum TaskPriority {
 }
 
 // TaskType enum has been removed - tasks are now categorized via labels instead
+
+/**
+ * The department a workflow step belongs to. Was free text on the admin screen,
+ * which produced "Execution" alongside "execution" and a misspelled
+ * "liasioning " with a trailing space -- all invisible to the type filter.
+ * Values stay lowercase snake_case to match the rows already stored.
+ */
+export enum WorkflowStepType {
+  DESIGN = 'design',
+  LIAISONING = 'liaisoning',
+  STORE = 'store',
+  EXECUTION = 'execution',
+  LOAN = 'loan',
+  CHANGE_REQUEST = 'change_request',
+}
+
+export const WORKFLOW_STEP_TYPE_LABELS: Record<WorkflowStepType, string> = {
+  [WorkflowStepType.DESIGN]: 'Design',
+  [WorkflowStepType.LIAISONING]: 'Liaisoning',
+  [WorkflowStepType.STORE]: 'Store',
+  [WorkflowStepType.EXECUTION]: 'Execution',
+  [WorkflowStepType.LOAN]: 'Loan',
+  [WorkflowStepType.CHANGE_REQUEST]: 'Change Request',
+};

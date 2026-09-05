@@ -25,8 +25,8 @@ export interface ProductAdminItem {
   brand?: { id: string; name: string };
   name: string;
   code: string;
-  description?: string;
-  modelNumber?: string;
+  description?: string | null;
+  modelNumber?: string | null;
   specifications: ProductSpecifications;
   unitOfMeasure: UnitOfMeasure;
   productWarrantyYears?: number;

@@ -13,7 +13,7 @@ export interface ProductPrice {
   gstRate: number;
   currency: string;
   effectiveFrom: string;
-  effectiveTo?: string;
+  effectiveTo?: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

@@ -82,11 +82,13 @@ export function EditBrandModal({ open, onOpenChange, target }: EditBrandModalPro
       id: target?.id ?? '',
       data: {
         name: data.name.trim(),
-        manufacturerName: data.manufacturerName?.trim() || undefined,
-        logoUrl: data.logoUrl?.trim() || undefined,
-        website: data.website?.trim() || undefined,
-        supportContact: data.supportContact?.trim() || undefined,
-        description: data.description?.trim() || undefined,
+        // null, not undefined: PATCH drops undefined keys, so an emptied field
+        // would leave the old value in place under a "saved" toast.
+        manufacturerName: data.manufacturerName?.trim() || null,
+        logoUrl: data.logoUrl?.trim() || null,
+        website: data.website?.trim() || null,
+        supportContact: data.supportContact?.trim() || null,
+        description: data.description?.trim() || null,
         isActive: data.isActive,
         productTypeIds: data.productTypeIds ?? [],
       },

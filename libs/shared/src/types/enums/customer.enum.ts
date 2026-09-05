@@ -75,11 +75,16 @@ export enum LeadSource {
 }
 
 /**
- * Followup Type Enum
- * Types of scheduled follow-up activities
+ * Types of scheduled follow-up activity.
+ *
+ * VISIT and SURVEY are site work, not sales work. They are scheduled the same
+ * way as any other follow-up — one calendar, one overdue rule — but they are
+ * excluded from the follow-ups list and shown in their own queue, so a rep sees
+ * each job exactly once. See `findWithFilters` and `GET /followups/my-site-work`.
  */
 export enum FollowupType {
   VISIT = 'visit',
+  SURVEY = 'survey',
   MEETING = 'meeting',
   TASK = 'task',
   REMINDER = 'reminder',

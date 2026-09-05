@@ -1,7 +1,8 @@
 'use client';
 
+import { isProjectBaselineStep } from '@tejas96/shared/utils';
 import { useRouter } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 
 import type { ProjectCreateFormData } from '../../../schemas/project-create.schema';
@@ -27,7 +28,12 @@ export function useProjectCreateSubmit(
 ): UseProjectCreateSubmitReturn {
   const router = useRouter();
   const { execute, isPending } = useConvertFromQuote();
-  const { items: workflowSteps = [] } = useAllActiveWorkflowSteps();
+  const { items: rawWorkflowSteps = [] } = useAllActiveWorkflowSteps();
+  // Only baseline steps become tasks, so only they can carry an auto-assignment.
+  const workflowSteps = useMemo(
+    () => rawWorkflowSteps.filter(isProjectBaselineStep),
+    [rawWorkflowSteps],
+  );
   const { items: employees = [] } = useEmployees({ status: 'active' });
 
   const submit = useCallback(async () => {

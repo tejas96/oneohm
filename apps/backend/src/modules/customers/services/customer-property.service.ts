@@ -11,6 +11,7 @@ import {
   ChangeRequestStatus,
   CustomerStatus,
   LeadTemperature,
+  FollowupType,
   LoanStatus,
   ProjectStatus,
   type PropertyDocument,
@@ -39,6 +40,7 @@ import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
+import { FollowupRepository } from '../repositories/followup.repository';
 import {
   mergeChangeRequestsForUpdate,
   normalizeChangeRequestsForStorage,
@@ -106,6 +108,7 @@ export class CustomerPropertyService {
     private readonly eventEmitter: EventEmitter2,
     private readonly dataSource: DataSource,
     private readonly leadClosureService: LeadClosureService,
+    private readonly followupRepository: FollowupRepository,
   ) {}
 
   /**
@@ -750,22 +753,36 @@ export class CustomerPropertyService {
       throw new NotFoundException(`Property ${propertyId} not found after update`);
     }
 
+    /*
+      The visit was SCHEDULED as a followup, so finishing it closes that
+      followup too. Left open it lingers pending for ever — invisible in the
+      followups list, which filters site types out — while the rep's queue
+      keeps offering a job they have already done.
+    */
+    await this.followupRepository.completeSiteWorkFor(propertyId, [FollowupType.VISIT], userId);
+
     this.logger.log(`Site visit completed for property ${propertyId} by user ${userId}`);
     return updated;
   }
 
   /**
    * Complete a site survey for a property.
-   * Requires that the site visit has already been completed.
+   *
+   * Closes an open site visit as a side effect. That used to be a refusal:
+   * the survey threw whenever `siteVisitDone` was false. With one person doing
+   * both jobs the guard was invisible. With two — which the separate
+   * `siteVisitAssignee` and `siteSurveyAssignee` columns have always allowed —
+   * it strands a surveyor on a roof, survey finished, unable to save, because
+   * a colleague forgot to tap a button last week.
+   *
+   * The survey is the stronger evidence of the two. You cannot measure a roof
+   * you did not stand on, so a completed survey proves the visit happened more
+   * convincingly than the visit's own checkbox does.
    */
   async completeSurvey(propertyId: string, userId: string): Promise<CustomerPropertyEntity> {
     const property = await this.propertyRepository.findByIdAndOrganization(propertyId);
     if (!property) {
       throw new NotFoundException(`Property ${propertyId} not found`);
-    }
-
-    if (!property.siteVisitDone) {
-      throw new BadRequestException('Site visit must be completed before completing the survey');
     }
 
     if (property.surveyDone) {
@@ -783,11 +800,26 @@ export class CustomerPropertyService {
       );
     }
 
+    // Both timestamps and both assignees stay separate, so the office loses no
+    // detail by the two closing together — it can still read who attended and
+    // who measured, and when. Only the refusal is gone.
+    const closesAnOpenVisit = !property.siteVisitDone;
+    const now = new Date();
+
     const updates: Partial<CustomerPropertyEntity> = {
       surveyDone: true,
-      siteSurveyCompletedAt: new Date(),
+      siteSurveyCompletedAt: now,
       siteStatus: SiteStatus.COMPLETED,
       updatedBy: userId,
+      ...(closesAnOpenVisit
+        ? {
+            siteVisitDone: true,
+            siteVisitCompletedAt: now,
+            // Whoever was already down for the visit keeps the credit. Only an
+            // unassigned visit is attributed to the surveyor standing there.
+            siteVisitAssignee: property.siteVisitAssignee ?? userId,
+          }
+        : {}),
     };
 
     const updated = await this.propertyRepository.update(propertyId, updates);
@@ -795,7 +827,22 @@ export class CustomerPropertyService {
       throw new NotFoundException(`Property ${propertyId} not found after update`);
     }
 
-    this.logger.log(`Site survey completed for property ${propertyId} by user ${userId}`);
+    /*
+      Both types when the survey closed an open visit, because both jobs are
+      finished and both were scheduled. Closing only the survey would leave the
+      visit's own followup pending against a site that is already done.
+    */
+    await this.followupRepository.completeSiteWorkFor(
+      propertyId,
+      closesAnOpenVisit ? [FollowupType.VISIT, FollowupType.SURVEY] : [FollowupType.SURVEY],
+      userId,
+    );
+
+    this.logger.log(
+      closesAnOpenVisit
+        ? `Site survey completed for property ${propertyId} by user ${userId}, closing its open site visit`
+        : `Site survey completed for property ${propertyId} by user ${userId}`,
+    );
     return updated;
   }
 

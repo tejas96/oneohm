@@ -190,19 +190,21 @@ function toPayload(values: DiscomFormValues): DiscomPayload {
     circleInchargeName: values.circleInchargeName.trim(),
     divisionName: values.divisionName.trim(),
     divisionInchargeName: values.divisionInchargeName.trim(),
-    testingUnitName: values.testingUnitName?.trim() || undefined,
-    subdivisionName: values.subdivisionName?.trim() || undefined,
-    subdivisionInchargeName: values.subdivisionInchargeName?.trim() || undefined,
-    aeqcEngineerName: values.aeqcEngineerName?.trim() || undefined,
-    sectionName: values.sectionName?.trim() || undefined,
-    sectionEngineerName: values.sectionEngineerName?.trim() || undefined,
-    officeAddress: values.officeAddress?.trim() || undefined,
-    mobileNo: values.mobileNo?.trim() || undefined,
-    email: values.email?.trim() || undefined,
+    // null, not undefined: PATCH drops undefined keys, so an emptied field
+    // would leave the old value in place under a "saved" toast.
+    testingUnitName: values.testingUnitName?.trim() || null,
+    subdivisionName: values.subdivisionName?.trim() || null,
+    subdivisionInchargeName: values.subdivisionInchargeName?.trim() || null,
+    aeqcEngineerName: values.aeqcEngineerName?.trim() || null,
+    sectionName: values.sectionName?.trim() || null,
+    sectionEngineerName: values.sectionEngineerName?.trim() || null,
+    officeAddress: values.officeAddress?.trim() || null,
+    mobileNo: values.mobileNo?.trim() || null,
+    email: values.email?.trim() || null,
     geoLocation:
       !Number.isNaN(latNum) && !Number.isNaN(lngNum)
         ? { latitude: latNum, longitude: lngNum }
-        : undefined,
+        : null,
     isActive: values.isActive,
   };
 }

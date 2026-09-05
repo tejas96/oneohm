@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FollowupStatus } from '@tejas96/shared/types';
+import { FollowupOutcome, FollowupStatus, FollowupType } from '@tejas96/shared/types';
 import {
   type EntityManager,
+  In,
   IsNull,
   LessThan,
   MoreThanOrEqual,
@@ -13,6 +14,29 @@ import {
 
 import { CUSTOMER_LEAD_NEEDS_FOLLOWUP, PROPERTY_NEEDS_FOLLOWUP } from './followup-predicates';
 import { FollowupEntity } from '../entities/followup.entity';
+
+/**
+ * Site work is scheduled as a follow-up but never listed as one.
+ *
+ * A visit and a survey each have their own queue on the mobile app, reading
+ * `GET /followups/my-site-work`. Leaving them in the generic list would show a
+ * rep the same job in two places, which is the duplication this whole design
+ * exists to avoid.
+ *
+ * Applied to every read a rep can see: the filtered list, their own list, the
+ * today/overdue scopes, and the counts drawn above them. The counts matter as
+ * much as the lists — this file already carries two long comments about a
+ * summary and a list disagreeing, and a count that includes site work over a
+ * list that excludes it would be the third.
+ *
+ * NOT applied to `findByCustomer`, `findByProperty`, `countPendingForUnit` or
+ * `findGaps`. Those answer "what does this site owe", not "what is on my
+ * plate", and a scheduled visit is a real answer to the first question.
+ */
+const SITE_WORK_TYPES: readonly FollowupType[] = [FollowupType.VISIT, FollowupType.SURVEY];
+
+/** SQL form of the same rule, for the two raw-query readers below. */
+const SITE_WORK_TYPES_SQL = `('${FollowupType.VISIT}', '${FollowupType.SURVEY}')`;
 
 /** One open lead unit that nobody currently owes an action. */
 export interface FollowupGapRow {
@@ -72,6 +96,7 @@ export class FollowupRepository {
   ): Promise<[FollowupEntity[], number]> {
     const where: Record<string, unknown> = {
       deletedAt: IsNull(),
+      type: Not(In([...SITE_WORK_TYPES])),
     };
 
     if (filters.status) {
@@ -119,6 +144,7 @@ export class FollowupRepository {
     const where: Record<string, unknown> = {
       assignedToUserId,
       deletedAt: IsNull(),
+      type: Not(In([...SITE_WORK_TYPES])),
     };
 
     if (status) {
@@ -183,6 +209,9 @@ export class FollowupRepository {
       .leftJoinAndSelect('followup.assignedToUser', 'assignedToUser')
       .where('followup.deletedAt IS NULL')
       .andWhere('followup.status = :status', { status: FollowupStatus.PENDING })
+      .andWhere('followup.type NOT IN (:...siteWorkTypes)', {
+        siteWorkTypes: [...SITE_WORK_TYPES],
+      })
       .andWhere(scheduledAtClause);
 
     if (assignedToUserId) {
@@ -392,6 +421,7 @@ export class FollowupRepository {
       FROM followups f
       WHERE f.deleted_at IS NULL
         AND f.status = 'pending'
+        AND f.type NOT IN ${SITE_WORK_TYPES_SQL}
         AND ($1::uuid IS NULL OR f.assigned_to_user_id = $1::uuid)
     `,
         [userId],
@@ -410,6 +440,42 @@ export class FollowupRepository {
    * Cancels every pending followup on a lead unit. Called when the unit reaches
    * a terminal state, so a won or dead deal stops nagging without a second click.
    */
+  /**
+   * Close the scheduled job a completed site visit or survey answers.
+   *
+   * Site work is scheduled as a followup, so finishing it has to close that
+   * followup too — otherwise the row stays pending for ever, invisible in the
+   * followups list because site types are filtered out of it, and the queue
+   * keeps offering a job somebody already did.
+   *
+   * `outcome` is `SITE_VISIT_DONE`, which has sat in FollowupOutcome unused
+   * since before this feature existed. It was always the answer to this.
+   */
+  async completeSiteWorkFor(
+    propertyId: string,
+    types: readonly FollowupType[],
+    updatedBy: string,
+    manager?: EntityManager,
+  ): Promise<number> {
+    const repo = manager ? manager.getRepository(FollowupEntity) : this.repository;
+    const result = await repo
+      .createQueryBuilder()
+      .update(FollowupEntity)
+      .set({
+        status: FollowupStatus.COMPLETED,
+        outcome: FollowupOutcome.SITE_VISIT_DONE,
+        completedAt: new Date(),
+        updatedBy,
+      })
+      .where('property_id = :propertyId', { propertyId })
+      .andWhere('type IN (:...types)', { types: [...types] })
+      .andWhere('status = :pending', { pending: FollowupStatus.PENDING })
+      .andWhere('deleted_at IS NULL')
+      .execute();
+
+    return result.affected ?? 0;
+  }
+
   async cancelPendingFor(
     customerId: string,
     propertyId: string | null,

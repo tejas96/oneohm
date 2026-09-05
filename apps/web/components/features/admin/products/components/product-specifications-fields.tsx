@@ -17,7 +17,7 @@ interface ProductSpecificationsFieldsProps {
 }
 
 function getValidationNumber(
-  validation: Record<string, unknown> | undefined,
+  validation: Record<string, unknown> | null | undefined,
   key: 'min' | 'max',
 ): number | undefined {
   const value = validation?.[key];
@@ -29,7 +29,7 @@ function getValidationNumber(
   return undefined;
 }
 
-function getValidationValues(validation: Record<string, unknown> | undefined): string[] {
+function getValidationValues(validation: Record<string, unknown> | null | undefined): string[] {
   const options = validation?.options;
   if (Array.isArray(options)) return options as string[];
   const values = validation?.values;

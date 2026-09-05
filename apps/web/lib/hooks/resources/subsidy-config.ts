@@ -17,7 +17,7 @@ import {
 export interface SubsidyConfigItem {
   id: string;
   schemeName: string;
-  schemeCode?: string;
+  schemeCode?: string | null;
   schemeType: SubsidySchemeType;
   projectType: ProjectType;
   maxSubsidyKw: number;
@@ -25,9 +25,9 @@ export interface SubsidyConfigItem {
   requiresDcr: boolean;
   tiers: SubsidyTier[];
   isActive: boolean;
-  description?: string;
-  effectiveFrom?: string;
-  effectiveTo?: string;
+  description?: string | null;
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
   createdAt: string;
   updatedAt: string;
 }

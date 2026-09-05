@@ -1,9 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { type TaskChecklist } from '@tejas96/shared/types';
+import { type TaskChecklist, ChangeRequestType, WorkflowStepType } from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -31,10 +32,10 @@ export class CreateWorkflowStepDto {
   @IsOptional()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Task type' })
-  @IsString()
+  @ApiPropertyOptional({ description: 'Which department owns this step', enum: WorkflowStepType })
+  @IsEnum(WorkflowStepType)
   @IsOptional()
-  type?: string;
+  type?: WorkflowStepType | null;
 
   @ApiPropertyOptional({ description: 'Default department' })
   @IsString()
@@ -101,4 +102,21 @@ export class CreateWorkflowStepDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Marks a change-request template. These are not part of a new project; they are created only when a property has a pending request of the matching type.',
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isSpecial?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Which change request this template serves. Required when isSpecial is set.',
+    enum: ChangeRequestType,
+  })
+  @IsEnum(ChangeRequestType)
+  @IsOptional()
+  changeRequestType?: ChangeRequestType | null;
 }

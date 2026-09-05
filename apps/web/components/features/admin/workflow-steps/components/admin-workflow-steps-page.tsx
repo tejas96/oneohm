@@ -2,7 +2,12 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { MILESTONE_LIFECYCLE_SEQUENCE } from '@tejas96/shared/constants';
-import type { WorkflowStep } from '@tejas96/shared/types';
+import {
+  ChangeRequestType,
+  WORKFLOW_STEP_TYPE_LABELS,
+  WorkflowStepType,
+  type WorkflowStep,
+} from '@tejas96/shared/types';
 import {
   CheckCircle2,
   ChevronDown,
@@ -64,6 +69,10 @@ import {
 const NONE_SENTINEL = '__none__';
 
 const DEFAULT_MILESTONE_SUGGESTIONS = MILESTONE_LIFECYCLE_SEQUENCE;
+
+const CHANGE_REQUEST_TYPES = Object.values(ChangeRequestType);
+
+const WORKFLOW_STEP_TYPES = Object.values(WorkflowStepType);
 
 // ── Page Component ─────────────────────────────────────────────
 
@@ -209,12 +218,29 @@ export function AdminWorkflowStepsPage(): React.JSX.Element {
       <div className="bg-white rounded-lg shadow-e2 overflow-hidden">
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-sm text-foreground-secondary">No workflow steps configured yet.</p>
-            {permissions.canCreate && (
-              <Button size="sm" variant="outline" className="mt-3" onClick={handleCreate}>
-                <Plus className="size-icon-sm mr-1" />
-                Create First Step
-              </Button>
+            {/* A filter that matches nothing is not a fresh install. Offering
+                "Create First Step" there sends the admin to add a 51st step. */}
+            {hasActiveFilters ? (
+              <>
+                <p className="text-sm text-foreground-secondary">
+                  No workflow steps match this search or filter.
+                </p>
+                <Button size="sm" variant="outline" className="mt-3" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-foreground-secondary">
+                  No workflow steps configured yet.
+                </p>
+                {permissions.canCreate && (
+                  <Button size="sm" variant="outline" className="mt-3" onClick={handleCreate}>
+                    <Plus className="size-icon-sm mr-1" />
+                    Create First Step
+                  </Button>
+                )}
+              </>
             )}
           </div>
         ) : (
@@ -264,8 +290,9 @@ export function AdminWorkflowStepsPage(): React.JSX.Element {
             <DialogTitle>Delete Workflow Step</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete{' '}
-              <span className="font-medium">{deleteConfirmation.target?.name}</span>? Active tasks
-              referencing this step will prevent deletion.
+              <span className="font-medium">{deleteConfirmation.target?.name}</span>? Deletion is
+              refused while any task uses this step, completed ones included, or while another step
+              lists it as a dependency.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -468,15 +495,17 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
       name: '',
       code: '',
       description: '',
-      type: '',
+      type: null,
       defaultRoleCode: '',
       defaultDepartment: '',
       defaultMilestoneName: null,
       defaultMilestoneOrder: null,
       sequenceOrder: 1,
-      effortDays: '' as unknown as number,
+      effortDays: '',
       isMandatory: true,
       canRunParallel: false,
+      isSpecial: false,
+      changeRequestType: null,
       dependsOnTaskCodes: [],
       checklistTemplate: [],
     },
@@ -490,15 +519,17 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         name: step.name,
         code: step.code,
         description: step.description ?? '',
-        type: step.type ?? '',
+        type: step.type ?? null,
         defaultRoleCode: step.defaultRoleCode ?? '',
         defaultDepartment: step.defaultDepartment ?? '',
         defaultMilestoneName: step.defaultMilestoneName ?? null,
         defaultMilestoneOrder: step.defaultMilestoneOrder ?? null,
         sequenceOrder: step.sequenceOrder,
-        effortDays: step.effortDays ?? ('' as unknown as number),
+        effortDays: step.effortDays ?? '',
         isMandatory: step.isMandatory,
         canRunParallel: step.canRunParallel,
+        isSpecial: step.isSpecial ?? false,
+        changeRequestType: step.changeRequestType ?? null,
         dependsOnTaskCodes: step.dependsOnTaskCodes ?? [],
         checklistTemplate:
           step.checklistTemplate?.items.map((item, idx) => ({
@@ -513,15 +544,17 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         name: '',
         code: '',
         description: '',
-        type: '',
+        type: null,
         defaultRoleCode: '',
         defaultDepartment: '',
         defaultMilestoneName: null,
         defaultMilestoneOrder: null,
         sequenceOrder: 1,
-        effortDays: '' as unknown as number,
+        effortDays: '',
         isMandatory: true,
         canRunParallel: false,
+        isSpecial: false,
+        changeRequestType: null,
         dependsOnTaskCodes: [],
         checklistTemplate: [],
       });
@@ -593,7 +626,47 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Type</Label>
-                <Input {...form.register('type')} placeholder="e.g. execution" />
+                <Controller
+                  name="type"
+                  control={form.control}
+                  render={({ field }): React.JSX.Element => {
+                    // Rows predating the dropdown hold free text ("Execution",
+                    // "liasioning "). Show it rather than blanking the field, so
+                    // the admin can see what they are replacing.
+                    const isLegacy =
+                      !!field.value &&
+                      !WORKFLOW_STEP_TYPES.includes(field.value as WorkflowStepType);
+
+                    return (
+                      <Select
+                        value={field.value ?? NONE_SENTINEL}
+                        onValueChange={(v) =>
+                          field.onChange(v === NONE_SENTINEL ? null : (v as WorkflowStepType))
+                        }
+                      >
+                        <SelectTrigger className="h-input-lg text-sm">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={NONE_SENTINEL}>None</SelectItem>
+                          {isLegacy && (
+                            <SelectItem value={field.value!} disabled>
+                              {field.value} (not a standard type)
+                            </SelectItem>
+                          )}
+                          {WORKFLOW_STEP_TYPES.map((value) => (
+                            <SelectItem key={value} value={value}>
+                              {WORKFLOW_STEP_TYPE_LABELS[value]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
+                />
+                {form.formState.errors.type && (
+                  <p className="text-xs text-error">{form.formState.errors.type.message}</p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label>Sequence Order *</Label>
@@ -693,12 +766,19 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
               </div>
               <div className="space-y-1.5">
                 <Label>Milestone Order</Label>
+                {/* No valueAsNumber: it turns an emptied box into NaN, which the
+                    schema cannot read as "cleared". */}
                 <Input
                   type="number"
-                  {...form.register('defaultMilestoneOrder', { valueAsNumber: true })}
-                  min={1}
+                  {...form.register('defaultMilestoneOrder')}
+                  min={0}
                   placeholder="e.g. 1"
                 />
+                {form.formState.errors.defaultMilestoneOrder && (
+                  <p className="text-xs text-error">
+                    {form.formState.errors.defaultMilestoneOrder.message}
+                  </p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -710,6 +790,9 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
                   min={0}
                   placeholder="e.g. 2"
                 />
+                {form.formState.errors.effortDays && (
+                  <p className="text-xs text-error">{form.formState.errors.effortDays.message}</p>
+                )}
               </div>
             </div>
           </fieldset>
@@ -740,6 +823,67 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
                 />
               </div>
             </div>
+          </fieldset>
+
+          {/* ─── Section: Change Request ─── */}
+          <fieldset className="space-y-4 rounded-lg shadow-e2 p-4">
+            <legend className="px-2 text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
+              Change Request
+            </legend>
+
+            <Alert variant="info" appearance="minimal" className="text-xs">
+              A change request step is not part of a new project. It is created only when a property
+              raises a request of the type you pick here, so each type can have one active step.
+            </Alert>
+
+            <div className="rounded-md p-3 shadow-e1">
+              <Checkbox
+                id="isSpecial"
+                checked={form.watch('isSpecial')}
+                onCheckedChange={(checked) => {
+                  const on = checked === true;
+                  form.setValue('isSpecial', on);
+                  if (!on) form.setValue('changeRequestType', null);
+                }}
+                label="This is a change request step"
+                description="Keeps it out of every new project's task list."
+              />
+            </div>
+
+            {form.watch('isSpecial') && (
+              <div className="space-y-1.5">
+                <Label>Change Request Type *</Label>
+                <Controller
+                  name="changeRequestType"
+                  control={form.control}
+                  render={({ field }): React.JSX.Element => (
+                    <Select
+                      value={field.value ?? NONE_SENTINEL}
+                      onValueChange={(v) =>
+                        field.onChange(v === NONE_SENTINEL ? null : (v as ChangeRequestType))
+                      }
+                    >
+                      <SelectTrigger className="h-input-lg text-sm">
+                        <SelectValue placeholder="Select a request type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE_SENTINEL}>None</SelectItem>
+                        {CHANGE_REQUEST_TYPES.map((value) => (
+                          <SelectItem key={value} value={value}>
+                            {value.replace(/_/g, ' ')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {form.formState.errors.changeRequestType && (
+                  <p className="text-xs text-error">
+                    {form.formState.errors.changeRequestType.message}
+                  </p>
+                )}
+              </div>
+            )}
           </fieldset>
 
           {/* ─── Section: Dependencies ─── */}

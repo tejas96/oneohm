@@ -21,11 +21,11 @@ export interface ProductTypeAttribute {
   dataType: string;
   isRequired: boolean;
   isFilterable: boolean;
-  validation?: Record<string, unknown>;
-  defaultValue?: string;
+  validation?: Record<string, unknown> | null;
+  defaultValue?: string | null;
   groupName: string;
   sortOrder: number;
-  helpText?: string;
+  helpText?: string | null;
   isSystem?: boolean;
 }
 
@@ -33,8 +33,8 @@ export interface ProductType {
   id: string;
   name: string;
   code: string;
-  description?: string;
-  icon?: string;
+  description?: string | null;
+  icon?: string | null;
   defaultUnitOfMeasure: string;
   defaultPricingBasis: string;
   defaultGstRate: number;

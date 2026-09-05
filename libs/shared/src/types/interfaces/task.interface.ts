@@ -1,5 +1,6 @@
 import type { FileAttachment, TaskActivityEntry, TaskChecklist } from './project.interface';
-import { type TaskPriority, TaskStatus } from '../enums/project.enum';
+import { ChangeRequestType } from '../enums/change-request.enum';
+import { type TaskPriority, TaskStatus, WorkflowStepType } from '../enums/project.enum';
 
 // ============================================================================
 // Workflow Step
@@ -9,21 +10,23 @@ export interface WorkflowStep {
   id: string;
   name: string;
   code: string;
-  description?: string;
-  type?: string;
-  defaultDepartment?: string;
-  defaultRoleCode?: string;
+  // Optional columns are nullable in the database, and the admin screen clears
+  // one by sending an explicit null, so null is part of the shape both ways.
+  description?: string | null;
+  type?: WorkflowStepType | null;
+  defaultDepartment?: string | null;
+  defaultRoleCode?: string | null;
   defaultMilestoneName?: string | null;
   defaultMilestoneOrder?: number | null;
   sequenceOrder: number;
   isMandatory: boolean;
   canRunParallel: boolean;
   dependsOnTaskCodes?: string[];
-  effortDays?: number;
+  effortDays?: number | null;
   checklistTemplate?: TaskChecklist;
   isActive: boolean;
   isSpecial?: boolean;
-  changeRequestType?: string;
+  changeRequestType?: ChangeRequestType | null;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;

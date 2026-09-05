@@ -17,7 +17,11 @@ import {
   QuoteStatus,
   TaskStatus,
 } from '@tejas96/shared/types';
-import { canonicalMilestoneOrder, compareMilestoneSequence } from '@tejas96/shared/utils';
+import {
+  canonicalMilestoneOrder,
+  compareMilestoneSequence,
+  isProjectBaselineStep,
+} from '@tejas96/shared/utils';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { ChangeRequestTaskService } from './change-request-task.service';
@@ -953,7 +957,7 @@ export class ProjectService {
     }
 
     // Change-request templates are only instantiated when property has pending requests.
-    steps = steps.filter((s) => !s.isSpecial && !s.changeRequestType);
+    steps = steps.filter(isProjectBaselineStep);
 
     if (steps.length === 0) return;
 
