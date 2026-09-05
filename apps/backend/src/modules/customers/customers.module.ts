@@ -13,6 +13,7 @@ import { FollowupRepository } from './repositories/followup.repository';
 import { CustomerPropertyService } from './services/customer-property.service';
 import { CustomerService } from './services/customer.service';
 import { FollowupService } from './services/followup.service';
+import { SiteWorkService } from './services/site-work.service';
 import { LeadClosureService } from './services/lead-closure.service';
 import { DiscomsModule } from '../discoms/discoms.module';
 import { EmployeesModule } from '../employees/employees.module';
@@ -44,6 +45,7 @@ import { UsersModule } from '../users/users.module';
     CustomerPropertyService,
     FollowupService,
     LeadClosureService,
+    SiteWorkService,
     CustomerProfileRepository,
     CustomerPropertyRepository,
     FollowupRepository,
