@@ -100,6 +100,8 @@ function buildDefaults(
     sameAsBilling: mode === 'create' || mode === 'create-site',
     siteVisitAssignee: property?.siteVisitAssignee ?? '',
     siteSurveyAssignee: property?.siteSurveyAssignee ?? '',
+    siteVisitScheduledAt: '',
+    siteSurveyScheduledAt: '',
     customerCountry: customer?.country || 'India',
   };
 
@@ -397,6 +399,8 @@ export function OnboardingWizard({
     'sameAsBilling',
     'siteVisitAssignee',
     'siteSurveyAssignee',
+    'siteVisitScheduledAt',
+    'siteSurveyScheduledAt',
     'customerCountry',
     'customerLatitude',
     'customerLongitude',
@@ -481,6 +485,58 @@ export function OnboardingWizard({
           });
         } catch {
           showToast.warning('Site created — assign the engineer from the site record.');
+        }
+      }
+
+      /*
+        The date is what makes the job reachable.
+
+        An assignee alone sits on the property where no queue can see it, which
+        is how site visits went quiet for weeks with nobody able to name one as
+        late. A VISIT or SURVEY followup carries the date instead — the same
+        calendar and the same overdue rule as every other scheduled thing,
+        rather than a second set of columns that would disagree with it.
+
+        Best-effort, like the assignee patch above: the site and its documents
+        are already saved by now, so a failure here must not read as "nothing
+        was created".
+      */
+      const siteJobs: Array<{ type: FollowupType; subject: string; owner: string; at: string }> = [];
+      const visitAt = form.getValues('siteVisitScheduledAt');
+      const surveyAt = form.getValues('siteSurveyScheduledAt');
+      if (siteVisitAssignee && visitAt) {
+        siteJobs.push({
+          type: FollowupType.VISIT,
+          subject: 'Site visit',
+          owner: siteVisitAssignee,
+          at: visitAt,
+        });
+      }
+      if (siteSurveyAssignee && surveyAt) {
+        siteJobs.push({
+          type: FollowupType.SURVEY,
+          subject: 'Technical survey',
+          owner: siteSurveyAssignee,
+          at: surveyAt,
+        });
+      }
+
+      if (siteJobs.length > 0 && resolvedCustomerId) {
+        for (const job of siteJobs) {
+          try {
+            await createFollowupMutation.mutateAsync({
+              customerId: resolvedCustomerId,
+              propertyId: created.id,
+              type: job.type,
+              subject: job.subject,
+              scheduledAt: new Date(job.at).toISOString(),
+              assignedToUserId: job.owner,
+            });
+          } catch {
+            showToast.warning(
+              `Site created — schedule the ${job.subject.toLowerCase()} from the site record.`,
+            );
+          }
         }
       }
 

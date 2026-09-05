@@ -24,6 +24,13 @@ const wizardOnlyFields = {
   siteVisitAssignee: z.string().uuid().optional().or(z.literal('')),
   siteSurveyAssignee: z.string().uuid().optional().or(z.literal('')),
   /**
+   * When each site job is due. A plain yyyy-mm-dd off a date input, not a Date:
+   * these become the `scheduledAt` of a VISIT or SURVEY followup, which is the
+   * only place a site visit has ever had a date at all.
+   */
+  siteVisitScheduledAt: z.string().optional().or(z.literal('')),
+  siteSurveyScheduledAt: z.string().optional().or(z.literal('')),
+  /**
    * First followup. Optional here because the edit flows reuse this shape and
    * must not demand a new followup to save a name change; the create flows
    * layer the requirement on top (see requiredFirstFollowup).

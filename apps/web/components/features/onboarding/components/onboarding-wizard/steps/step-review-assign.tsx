@@ -13,7 +13,7 @@ import {
   type ReviewStepIndices,
 } from '@/components/features/properties/components/property-fields';
 import { type DraftDocument } from '@/components/shared/document-manager';
-import { MUIUserAssigneeSelector } from '@/components/ui';
+import { MUIInput, MUIUserAssigneeSelector } from '@/components/ui';
 import { color, radius } from '@/lib/theme/tokens';
 
 interface StepReviewAssignProps {
@@ -134,8 +134,8 @@ export function StepReviewAssign({
             maxWidth: 540,
           }}
         >
-          Optional — pick who does the first site visit and technical survey. They can also be
-          assigned later from the site record.
+          Optional — pick who does the first site visit and technical survey, and when. Without a
+          date the job never reaches their phone. Both can also be set later from the site record.
         </Box>
         <Box
           sx={{
@@ -176,6 +176,37 @@ export function StepReviewAssign({
                 employees={employees}
                 optionsLoading={employeesLoading}
                 allowUnassign
+              />
+            )}
+          />
+          {/*
+            The date sits beside its own assignee, not in a section of its own,
+            because the two are one decision: naming somebody without saying
+            when is what left site visits with no way to be early or late.
+          */}
+          <Controller
+            name="siteVisitScheduledAt"
+            control={control}
+            render={({ field }) => (
+              <MUIInput
+                fieldLabel="Site Visit Date"
+                type="date"
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
+          />
+          <Controller
+            name="siteSurveyScheduledAt"
+            control={control}
+            render={({ field }) => (
+              <MUIInput
+                fieldLabel="Survey Date"
+                type="date"
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value)}
+                InputLabelProps={{ shrink: true }}
               />
             )}
           />
