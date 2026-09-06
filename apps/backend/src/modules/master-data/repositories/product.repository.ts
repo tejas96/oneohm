@@ -6,6 +6,37 @@ import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialE
 
 import { ProductEntity } from '../entities/product.entity';
 
+/**
+ * A numeric specification value, read in the only way that cannot raise.
+ *
+ * These expressions sit in ORDER BY clauses that run on EVERY call, so a cast that
+ * throws on one row does not merely hide that product — it 500s the whole quote
+ * calculator for every user. `'600.5'::int` and `''::int` both raise 22P02.
+ *
+ * Two guards already stop most bad values, and neither is enough on its own:
+ * the `trg_validate_product_specs` trigger only proves a value is NUMERIC, so it
+ * lets a decimal through into an `integer` attribute; the partial expression
+ * indexes re-cast on write, but only cover `wattage` and `capacity_kw`, and only
+ * WHERE deleted_at IS NULL. `min_wattage` is behind neither, so a decimal there is
+ * storable today.
+ *
+ * The regexp decides before the cast, so an unreadable value becomes NULL rather
+ * than an error: invisible to the filters (NULL never satisfies = or >=) instead of
+ * fatal. `numeric` is the widest of the three types these feed, so no valid value
+ * is lost to the cast either. Every ordering built on them must say NULLS LAST, or
+ * an unreadable row would sort ahead of the real ones.
+ *
+ * Called with literals at module scope only — never pass a caller-supplied key,
+ * which would interpolate straight into the SQL.
+ */
+const numericSpec = (key: string): string =>
+  `CASE WHEN product.specifications->>'${key}' ~ '^-?[0-9]+(\\.[0-9]+)?$'` +
+  ` THEN (product.specifications->>'${key}')::numeric END`;
+
+const SPEC_WATTAGE = numericSpec('wattage');
+const SPEC_MIN_WATTAGE = numericSpec('min_wattage');
+const SPEC_CAPACITY_KW = numericSpec('capacity_kw');
+
 @Injectable()
 export class ProductRepository {
   constructor(
@@ -234,17 +265,20 @@ export class ProductRepository {
     }
 
     if (preferredWattage) {
-      // `wattage` is the REQUIRED attribute on solar_panel and is what this query
-      // orders by and what PricingService.extractWattage reads. The previous
-      // filter used the OPTIONAL `min_wattage`, so a panel carrying only
-      // `wattage` was invisible to a request for its own wattage.
-      query.andWhere("(product.specifications->>'wattage')::int = :preferredWattage", {
-        preferredWattage,
-      });
+      // This number is NOT a nominal wattage — it is the low end of the band on the
+      // button the user tapped ("TOPCON 600-620Wp" sends 600). Web and mobile both
+      // build it in `derivePanelBrands` as `min_wattage || wattage`, so the filter has
+      // to resolve the same way or the panel the user just picked disappears.
+      // NULLIF mirrors that JS `||`, where 0 is falsy; COALESCE covers a panel that
+      // carries only `wattage`, which is what matching on `wattage` alone was for.
+      query.andWhere(
+        `COALESCE(NULLIF(${SPEC_MIN_WATTAGE}, 0), ${SPEC_WATTAGE}) = :preferredWattage`,
+        { preferredWattage },
+      );
     }
 
     query
-      .orderBy("(product.specifications->>'wattage')::int", 'DESC')
+      .orderBy(SPEC_WATTAGE, 'DESC', 'NULLS LAST')
       .addOrderBy('price.unit_price', 'ASC', 'NULLS LAST');
 
     return query.getOne();
@@ -281,13 +315,13 @@ export class ProductRepository {
     }
 
     if (minWattage) {
-      query.andWhere("(product.specifications->>'wattage')::int >= :minWattage", {
+      query.andWhere(`${SPEC_WATTAGE} >= :minWattage`, {
         minWattage: Math.ceil(minWattage),
       });
     }
 
     query
-      .orderBy("(product.specifications->>'wattage')::int", 'ASC')
+      .orderBy(SPEC_WATTAGE, 'ASC', 'NULLS LAST')
       .addOrderBy('price.unit_price', 'ASC', 'NULLS LAST');
 
     return query.getMany();
@@ -313,12 +347,12 @@ export class ProductRepository {
     }
 
     if (preferredCapacityKw !== undefined) {
-      query.andWhere("(product.specifications->>'capacity_kw')::float = :capacityKw", {
+      query.andWhere(`${SPEC_CAPACITY_KW} = :capacityKw`, {
         capacityKw: preferredCapacityKw,
       });
     }
 
-    query.orderBy("(product.specifications->>'capacity_kw')::float", 'DESC');
+    query.orderBy(SPEC_CAPACITY_KW, 'DESC', 'NULLS LAST');
 
     return query.getMany();
   }
