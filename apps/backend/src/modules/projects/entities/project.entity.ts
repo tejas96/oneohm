@@ -6,7 +6,6 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
 } from 'typeorm';
 
 import { ProjectTaskEntity } from './project-task.entity';
@@ -23,7 +22,9 @@ import { UserEntity } from '../../users/entities/user.entity';
  * Represents a solar installation project from quote acceptance to handover.
  *
  * Organization, customer, address, and coordinates are derived from the
- * required property relation (OneToOne: one property = one project).
+ * required property relation (ManyToOne: a roof can hold several cancelled
+ * projects plus at most one live one — see CustomerPropertyEntity.projects
+ * and migration 1857015000000-OneLiveProjectPerRoof).
  */
 @Entity('projects')
 export class ProjectEntity extends BaseEntity {
@@ -134,7 +135,7 @@ export class ProjectEntity extends BaseEntity {
 
   // ==================== Relations ====================
 
-  @OneToOne(() => CustomerPropertyEntity, (property) => property.project)
+  @ManyToOne(() => CustomerPropertyEntity, (property) => property.projects)
   @JoinColumn({ name: 'property_id' })
   property!: CustomerPropertyEntity;
 

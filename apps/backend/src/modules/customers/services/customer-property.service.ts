@@ -396,7 +396,7 @@ export class CustomerPropertyService {
         status: Not(PropertyStatus.INACTIVE),
         deletedAt: IsNull(),
       },
-      relations: ['project', 'quotes', 'quotes.versions', 'customer'],
+      relations: ['projects', 'quotes', 'quotes.versions', 'customer'],
       order: {
         isPrimary: 'DESC',
         createdAt: 'DESC',
