@@ -1339,7 +1339,9 @@ git commit -m "feat: cancellation is terminal and reports its own cleanup"
 - Consumes: nothing.
 - Produces: nothing new.
 
-`findByUserId`, `findAllByUserId` and `countSummaryForUser` already exclude cancelled projects. `findUserTaskProjects` is the one that does not, so a dead project still appears in the My Tasks project filter.
+`findByUserId`, `findAllByUserId` and `countSummaryForUser` already exclude cancelled projects. `findUserTaskProjects` is the one that does not.
+
+**Correction, found during implementation.** This plan claimed the gap was visible in the My Tasks project dropdown. It is not: `findUserTaskProjects` has no caller anywhere in `apps/backend` or `apps/web`. It is dead code. The filter is still worth adding — it is one line, and it makes the method correct for whoever wires it up — but it fixes nothing a user can see today, and the plan should not have claimed otherwise. The method is left in place rather than deleted; removing pre-existing dead code is not this feature's business.
 
 - [ ] **Step 1: Add the same filter its neighbours use**
 
@@ -1359,7 +1361,7 @@ After the existing `.andWhere('task.assigned_to_user_id = :userId', { userId })`
 docker exec oneohm-postgres psql -U root -d oneohm_epc -c "select count(*) as cancelled_projects_with_open_tasks from projects p where p.status='cancelled' and exists (select 1 from project_tasks t where t.project_id=p.id and t.status <> 'done');"
 ```
 
-Expected: a non-zero count — that is exactly what used to leak into the dropdown. Then open My Tasks at `http://localhost:3001` and confirm none of those projects is listed.
+Expected: a non-zero count — those are the projects the unfiltered query would have returned. There is no screen to check, because nothing calls this method; the count and the compiled filter are the whole verification.
 
 - [ ] **Step 3: Commit**
 
