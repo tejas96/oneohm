@@ -326,7 +326,7 @@ Expected: PASS.
 
 - [ ] **Step 6: Change the view source of truth**
 
-In `06-views.sql.ts`, replace the `balance_paise` line (38) and the `derived_status` CASE (40-45) inside `CREATE_V_MILESTONE_BALANCE`:
+In `sql/org-cleanup/04-views.sql.ts`, inside `CREATE_V_MILESTONE_BALANCE_V2`, replace the `balance_paise` line and the `derived_status` CASE. Make the character-identical change in `sql/ledger/06-views.sql.ts` too, so the superseded copy does not silently drift:
 
 ```sql
     CASE WHEN m.status = 'cancelled' THEN 0
@@ -353,33 +353,47 @@ Create `1857010000000-MilestoneCancelledStatus.ts`. It drops both views and recr
 ```ts
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-import { CREATE_LEDGER_VIEWS, DROP_LEDGER_VIEWS } from './sql/ledger/06-views.sql';
+import { ORG_CLEANUP_CREATE_VIEWS, ORG_CLEANUP_DROP_VIEWS } from './sql/org-cleanup/04-views.sql';
 
 export class MilestoneCancelledStatus1857010000000 implements MigrationInterface {
   name = 'MilestoneCancelledStatus1857010000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    for (const sql of DROP_LEDGER_VIEWS) {
+    // Constraint first: if it fails, no view has been touched.
+    await queryRunner.query(`ALTER TABLE payment_milestones DROP CONSTRAINT chk_payment_milestones_status`);
+    await queryRunner.query(`ALTER TABLE payment_milestones ADD CONSTRAINT chk_payment_milestones_status
+      CHECK (status IN ('active', 'waived', 'cancelled'))`);
+
+    for (const sql of ORG_CLEANUP_DROP_VIEWS) {
       await queryRunner.query(sql);
     }
-    for (const sql of CREATE_LEDGER_VIEWS) {
+    for (const sql of ORG_CLEANUP_CREATE_VIEWS) {
       await queryRunner.query(sql);
     }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // The previous definition differs only in the two expressions above, and
-    // both are forward-compatible: no row carries status 'cancelled' until the
-    // cancellation service ships. Recreating from source is the honest revert.
-    for (const sql of DROP_LEDGER_VIEWS) {
+    // PRECONDITION: no milestone may carry status 'cancelled'. The two-value
+    // CHECK is validated against existing rows, so once a project has been
+    // cancelled this revert fails at its first statement — by design. Decide
+    // what those milestones become before reverting.
+    await queryRunner.query(`ALTER TABLE payment_milestones DROP CONSTRAINT chk_payment_milestones_status`);
+    await queryRunner.query(`ALTER TABLE payment_milestones ADD CONSTRAINT chk_payment_milestones_status
+      CHECK (status IN ('active', 'waived'))`);
+
+    for (const sql of ORG_CLEANUP_DROP_VIEWS) {
       await queryRunner.query(sql);
     }
-    for (const sql of CREATE_LEDGER_VIEWS) {
+    for (const sql of ORG_CLEANUP_CREATE_VIEWS) {
       await queryRunner.query(sql);
     }
   }
 }
 ```
+
+**Keep the two domain helpers in lockstep.** `derived-status.ts` exports `milestoneBalancePaise` alongside `derivedMilestoneStatus`, and it mirrors the same `balance_paise` expression. It must gain a `rowStatus` parameter and return `0` for a cancelled row, or the module whose whole purpose is preventing drift will itself have drifted. Extend its pinned table in the spec to match.
+
+**Add the missing bucket to `v_project_balance`.** `contract_paise` sums every milestone while `expected_paise` and `waived_paise` sum by status, so `contract = expected + waived` silently stops holding the moment a milestone is cancelled. Add `cancelled_paise` beside `waived_paise`, exactly as that filter is written, so the buckets reconcile again. View only — do not wire it into a DTO until something needs it.
 
 - [ ] **Step 8: Run it and prove the view behaves**
 
