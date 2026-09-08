@@ -136,6 +136,21 @@ export class CustomerPropertyResponseDto {
   @Expose()
   status!: PropertyStatus;
 
+  /**
+   * Why this roof was closed, as the rep typed it.
+   *
+   * `POST /customer-properties/:id/lost` REQUIRES a reason of up to 500
+   * characters, so on a lost property this is always populated in the database.
+   * It was missing from this DTO, and because the class is `@Exclude()`-by-
+   * default the column was silently stripped from every response — the trap
+   * this file warns about twice further down. No client could show why a roof
+   * was lost, and the mobile property screen was reduced to saying it could not
+   * see the reason.
+   */
+  @ApiPropertyOptional({ description: 'Why the property was closed as lost', maxLength: 500 })
+  @Expose()
+  lostReason?: string;
+
   // ==================== Notes ====================
   @ApiPropertyOptional()
   @Expose()
