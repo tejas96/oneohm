@@ -1,4 +1,4 @@
-import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@tejas96/shared/types';
+import { LossReason, ProjectPriority, ProjectStatus, type ProjectMetadata } from '@tejas96/shared/types';
 import {
   Column,
   DeleteDateColumn,
@@ -100,6 +100,23 @@ export class ProjectEntity extends BaseEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   metadata?: ProjectMetadata;
+
+  // ==================== Cancellation & Settlement ====================
+
+  @Column({ name: 'cancel_reason', type: 'text', nullable: true })
+  cancelReason?: string;
+
+  @Column({ name: 'loss_reason', type: 'varchar', length: 40, nullable: true })
+  lossReason?: LossReason;
+
+  @Column({ name: 'cancelled_at', type: 'timestamptz', nullable: true })
+  cancelledAt?: Date;
+
+  @Column({ name: 'settled_at', type: 'timestamptz', nullable: true })
+  settledAt?: Date;
+
+  @Column({ name: 'settled_by', type: 'uuid', nullable: true })
+  settledBy?: string;
 
   // ==================== Ownership / Audit ====================
 

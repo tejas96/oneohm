@@ -1,6 +1,7 @@
 import {
   ConnectionType,
   LeadTemperature,
+  LossReason,
   type GpsCoordinates,
   type PropertyDocument,
   type StoredChangeRequest,
@@ -175,6 +176,9 @@ export class CustomerPropertyEntity extends BaseEntity {
 
   @Column({ name: 'lost_at', type: 'timestamptz', nullable: true })
   lostAt?: Date;
+
+  @Column({ name: 'loss_reason', type: 'varchar', length: 40, nullable: true })
+  lossReason?: LossReason;
 
   // ==================== NOTES ====================
   @Column({ type: 'text', nullable: true })

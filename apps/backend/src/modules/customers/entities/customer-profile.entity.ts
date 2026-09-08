@@ -1,4 +1,4 @@
-import { CustomerStatus } from '@tejas96/shared/types';
+import { CustomerStatus, LossReason } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { CustomerPropertyEntity } from './customer-property.entity';
@@ -120,6 +120,9 @@ export class CustomerProfileEntity extends BaseEntity {
 
   @Column({ name: 'lost_at', type: 'timestamptz', nullable: true })
   lostAt?: Date;
+
+  @Column({ name: 'loss_reason', type: 'varchar', length: 40, nullable: true })
+  lossReason?: LossReason;
 
   // ==================== Audit Fields ====================
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })

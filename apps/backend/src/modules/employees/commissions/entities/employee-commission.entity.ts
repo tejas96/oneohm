@@ -73,6 +73,13 @@ export class EmployeeCommissionEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   notes?: string;
 
+  // ==================== Recovery ====================
+  @Column({ name: 'recovered_at', type: 'timestamptz', nullable: true })
+  recoveredAt?: Date;
+
+  @Column({ name: 'recovery_notes', type: 'text', nullable: true })
+  recoveryNotes?: string;
+
   // ==================== Audit Fields ====================
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt?: Date;

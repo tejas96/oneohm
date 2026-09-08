@@ -131,6 +131,26 @@ export enum FollowupOutcome {
 }
 
 /**
+ * Why a deal died. Covers both a lead that never became a project and a
+ * project that was cancelled — one enum, because two would drift apart.
+ *
+ * Same discipline as FollowupOutcome: if OTHER exceeds ~10% of rows, read the
+ * notes and promote a real value here.
+ */
+export enum LossReason {
+  LOST_ON_PRICE = 'lost_on_price',
+  LOST_TO_COMPETITOR = 'lost_to_competitor',
+  CUSTOMER_DROPPED = 'customer_dropped',
+  NOT_REACHABLE = 'not_reachable',
+  SITE_NOT_FEASIBLE = 'site_not_feasible',
+  SUBSIDY_ISSUE = 'subsidy_issue',
+  FINANCING_REJECTED = 'financing_rejected',
+  CUSTOMER_DEFAULTED = 'customer_defaulted',
+  DELAY_BY_US = 'delay_by_us',
+  OTHER = 'other',
+}
+
+/**
  * Customer Sort Field Enum
  * Allowed sort fields for customer list API
  * Values must match entity property names (camelCase)
