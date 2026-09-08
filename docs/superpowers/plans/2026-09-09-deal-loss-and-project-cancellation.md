@@ -462,7 +462,7 @@ Add only this one method. A single-quote `voidById` has no caller in this plan; 
 
 - [ ] **Step 3: Sharpen the three lock messages**
 
-The three call sites at `quote.service.ts:91`, `:242` and `:597` need no logic change — the repository now hides voided rows. Update the message text at line 94 so the reason a roof is locked is legible:
+There are **four** call sites, not three: `quote.service.ts:91`, `:242`, `:597`, and `quote-calculator.controller.ts:240`. None needs a logic change — the repository now hides voided rows, so all four inherit the fix. Update the message text at `quote.service.ts:94` **and** the identical string at `quote-calculator.controller.ts:242`, so the same condition does not get described two different ways:
 
 ```ts
           `Property already has a live accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
@@ -473,10 +473,12 @@ The three call sites at `quote.service.ts:91`, `:242` and `:597` need no logic c
 Start the API, pick a property that has an accepted quote, and confirm the lock endpoint flips once the quote is voided:
 
 ```bash
-docker exec oneohm-postgres psql -U root -d oneohm_epc -c "begin; update quotes set voided_at = now() where status='accepted' and property_id = (select property_id from quotes where status='accepted' limit 1); select count(*) as still_locking from quotes where status='accepted' and voided_at is null and property_id = (select property_id from quotes where status='accepted' limit 1); rollback;"
+docker exec oneohm-postgres psql -U root -d oneohm_epc -c "begin; create temp table t as select property_id as pid from quotes where status='accepted' order by property_id limit 1; update quotes set voided_at = now() where status='accepted' and property_id = (select pid from t); select count(*) as still_locking from quotes where status='accepted' and voided_at is null and property_id = (select pid from t); rollback;"
 ```
 
 Expected: `still_locking = 0`.
+
+The property is pinned in a temp table on purpose. Two separate `LIMIT 1` subqueries with no `ORDER BY` can select different rows, which makes the check report a failure that is not there.
 
 - [ ] **Step 5: Commit**
 
