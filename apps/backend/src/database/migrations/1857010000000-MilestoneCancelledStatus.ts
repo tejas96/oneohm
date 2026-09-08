@@ -58,11 +58,22 @@ import { ORG_CLEANUP_CREATE_VIEWS, ORG_CLEANUP_DROP_VIEWS } from './sql/org-clea
  * 'cancelled'` depends on this constraint already accepting the value. The
  * constraint change runs first, before either view is touched, so a failure
  * there leaves both views exactly as they were. `down()` restores the
- * two-value version. `chk_payment_milestones_waive_fields` — which reads
- * `(status = 'waived') = (waived_at IS NOT NULL)` — is deliberately left
- * alone: a cancelled row satisfies it as long as it was `active` beforehand,
- * and every caller cancels only `active` rows, so widening it would weaken a
- * real invariant for no reason.
+ * two-value version — but only while it can. Postgres validates a `CHECK`
+ * constraint against every existing row at the moment it is (re-)added, so
+ * that first statement in `down()` fails outright the moment any
+ * `payment_milestones` row already carries `status = 'cancelled'` — which
+ * Task 7 and Task 12 later in this same plan both do. That failure is
+ * intentional, not a regression: reverting past this migration once
+ * cancellation has shipped requires deciding what those cancelled milestones
+ * become — reactivated, deleted, or something else — a data decision this
+ * migration cannot make on a caller's behalf, so whoever reverts must resolve
+ * it first, before `down()` can succeed.
+ *
+ * `chk_payment_milestones_waive_fields` — which reads `(status = 'waived') =
+ * (waived_at IS NOT NULL)` — is deliberately left alone: a cancelled row
+ * satisfies it as long as it was `active` beforehand, and every caller
+ * cancels only `active` rows, so widening it would weaken a real invariant
+ * for no reason.
  */
 export class MilestoneCancelledStatus1857010000000 implements MigrationInterface {
   name = 'MilestoneCancelledStatus1857010000000';
@@ -95,9 +106,14 @@ export class MilestoneCancelledStatus1857010000000 implements MigrationInterface
         CHECK (status IN ('active', 'waived'));
     `);
 
-    // The previous definition differs only in the two expressions above, and
-    // both are forward-compatible: no row carries status 'cancelled' until the
-    // cancellation service ships. Recreating from source is the honest revert.
+    // The previous view definition differs from this one only in the two
+    // expressions this migration changed (balance_paise, derived_status),
+    // and both add a branch for status = 'cancelled' that is unreachable
+    // while no row carries it. Recreating from source is therefore an honest
+    // revert of the views ONLY under that same precondition — the one the
+    // constraint restore above already enforces, by failing first and loudly
+    // if it does not hold. See this file's top-level JSDoc for what reverting
+    // requires once it doesn't.
     for (const sql of ORG_CLEANUP_DROP_VIEWS) {
       await queryRunner.query(sql);
     }

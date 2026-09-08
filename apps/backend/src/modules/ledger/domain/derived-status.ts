@@ -6,8 +6,9 @@
  * a stale `paid` state while still showing outstanding money, and it is the
  * cache the whole dashboard read from.
  *
- * Here `status` on the row is only `active | waived`; everything a user sees is
- * computed from the allocations.
+ * Here `status` on the row is `active | waived | cancelled`. For an `active`
+ * row, everything a user sees is computed from the allocations; `waived` and
+ * `cancelled` short-circuit that computation instead.
  *
  * ⚠️ This function MUST stay in lockstep with the `CASE` expression in
  * `v_milestone_balance`. `derived-status.spec.ts` pins the table of outcomes so
@@ -45,8 +46,20 @@ export function derivedMilestoneStatus(
   return 'partial';
 }
 
-/** Outstanding for a milestone. Clamped at zero — over-allocation is reported separately. */
-export function milestoneBalancePaise(expectedPaise: number, allocatedPaise: number): number {
+/**
+ * Outstanding for a milestone. Clamped at zero — over-allocation is reported
+ * separately. A cancelled row's balance is forced to zero, mirroring the
+ * `CASE WHEN m.status = 'cancelled' THEN 0 ELSE GREATEST(...)` branch in
+ * `v_milestone_balance` exactly — see the lockstep warning above.
+ */
+export function milestoneBalancePaise(
+  expectedPaise: number,
+  allocatedPaise: number,
+  rowStatus: MilestoneRowStatus,
+): number {
+  if (rowStatus === 'cancelled') {
+    return 0;
+  }
   return Math.max(0, expectedPaise - allocatedPaise);
 }
 

@@ -108,6 +108,7 @@ export const CREATE_V_PROJECT_BALANCE_V2 = `
     COALESCE(ms.contract_paise, 0)::BIGINT            AS contract_paise,
     COALESCE(ms.expected_paise, 0)::BIGINT            AS expected_paise,
     COALESCE(ms.waived_paise,   0)::BIGINT            AS waived_paise,
+    COALESCE(ms.cancelled_paise, 0)::BIGINT           AS cancelled_paise,
     COALESCE(le.received_paise, 0)::BIGINT            AS received_paise,
     COALESCE(le.spent_paise,    0)::BIGINT            AS spent_paise,
     -- Summed from the MILESTONE view, not recomputed here. Subtracting all
@@ -138,6 +139,7 @@ export const CREATE_V_PROJECT_BALANCE_V2 = `
                                                                         AS change_order_paise,
            SUM(m.amount_paise) FILTER (WHERE m.status = 'active')::BIGINT AS expected_paise,
            SUM(m.amount_paise) FILTER (WHERE m.status = 'waived')::BIGINT AS waived_paise,
+           SUM(m.amount_paise) FILTER (WHERE m.status = 'cancelled')::BIGINT AS cancelled_paise,
            COUNT(*)::int                                                AS milestone_count
       FROM payment_milestones m WHERE m.project_id = p.id
   ) ms ON TRUE
