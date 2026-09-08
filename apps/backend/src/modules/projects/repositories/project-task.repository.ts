@@ -773,7 +773,10 @@ export class ProjectTaskRepository {
       .andWhere('task.status NOT IN (:...excludedStatuses)', {
         excludedStatuses: [TaskStatus.DONE],
       })
-      .andWhere('task.assigned_to_user_id = :userId', { userId });
+      .andWhere('task.assigned_to_user_id = :userId', { userId })
+      .andWhere('project.status != :cancelledStatus', {
+        cancelledStatus: ProjectStatus.CANCELLED,
+      });
 
     return qb.getRawMany<{ id: string; name: string; projectNumber: string }>();
   }
