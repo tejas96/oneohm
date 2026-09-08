@@ -680,11 +680,15 @@ export class QuoteService {
           updatedBy,
         );
         // A closed roof must not leave a live `sent` quote behind for someone
-        // to chase.
+        // to chase — except this one. This quote carries the customer's own
+        // rejection; stamping "Site closed" over it would replace a genuine
+        // decision with an administrative marker and lose why the deal died.
         await this.quoteRepository.voidAllOpenForProperty(
           quote.propertyId,
           `Site closed: ${statusDto.rejectionReason}`,
           updatedBy,
+          undefined,
+          id,
         );
       } catch (error) {
         this.logger.error(

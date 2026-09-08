@@ -1,5 +1,6 @@
 export * from './project.service';
 export * from './project-attention.service';
+export * from './project-cancellation.service';
 export * from './workflow-step.service';
 export * from './workflow-engine.service';
 export * from './project-task.service';

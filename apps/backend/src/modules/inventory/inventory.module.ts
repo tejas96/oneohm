@@ -177,6 +177,9 @@ import { ProjectRepository } from '../projects/repositories/project.repository';
     StockAllocationService,
     MaterialDispatchService,
     BomAllocationService,
+    // ProjectsModule raises a return request for anything already at site when
+    // a project is cancelled, so this must leave the module.
+    ReturnRequestService,
   ],
 })
 export class InventoryModule {}

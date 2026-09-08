@@ -328,22 +328,32 @@ export class QuoteRepository {
   /**
    * Kill every quote on a roof that a rep could still act on. Without this a
    * `sent` quote survives the site being closed and gets chased.
+   *
+   * `excludeQuoteId` spares one quote. The rejection path passes the rejected
+   * quote's own id: voiding it would stamp an administrative marker over the
+   * customer's genuine decision, so the quote that CARRIES the decision keeps
+   * it. Project cancellation deliberately passes nothing — there, voiding the
+   * accepted quote is the entire point, because that is what unlocks the roof.
    */
   async voidAllOpenForProperty(
     propertyId: string,
     reason: string,
     userId: string,
     manager?: EntityManager,
+    excludeQuoteId?: string,
   ): Promise<number> {
     const repo = manager ? manager.getRepository(QuoteEntity) : this.repository;
-    const result = await repo
+    const qb = repo
       .createQueryBuilder()
       .update(QuoteEntity)
       .set({ voidedAt: new Date(), voidReason: reason, updatedBy: userId })
       .where('property_id = :propertyId', { propertyId })
       .andWhere('voided_at IS NULL')
-      .andWhere('deleted_at IS NULL')
-      .execute();
+      .andWhere('deleted_at IS NULL');
+    if (excludeQuoteId) {
+      qb.andWhere('id != :excludeQuoteId', { excludeQuoteId });
+    }
+    const result = await qb.execute();
     return result.affected ?? 0;
   }
 

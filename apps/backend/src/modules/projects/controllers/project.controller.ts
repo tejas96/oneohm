@@ -28,6 +28,7 @@ import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import { hasAdminBypassRole, resolveProjectListMemberId } from '../../iam/constants';
 import {
+  CancelProjectDto,
   ConvertFromQuoteDto,
   ProjectResponseDto,
   UpdateProjectDto,
@@ -36,6 +37,7 @@ import {
 import { TeamMemberResponseDto, SubmitTeamFeedbackDto } from '../dto/project-team';
 import { ProjectListItemDto } from '../dto/projects/project-list-item.dto';
 import { ProjectRepository } from '../repositories';
+import { ProjectCancellationService } from '../services/project-cancellation.service';
 import { ProjectTeamService } from '../services/project-team.service';
 import { ProjectService } from '../services/project.service';
 
@@ -54,6 +56,7 @@ export class ProjectController {
     private readonly projectService: ProjectService,
     private readonly teamService: ProjectTeamService,
     private readonly projectRepository: ProjectRepository,
+    private readonly cancellationService: ProjectCancellationService,
   ) {}
 
   /**
@@ -449,6 +452,23 @@ export class ProjectController {
     @Body() statusDto: UpdateProjectStatusDto,
   ): Promise<ProjectResponseDto> {
     const project = await this.projectService.updateStatus(id, statusDto.status);
+
+    return plainToInstance(ProjectResponseDto, project, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Cancel a project and clean up everything it holds
+   */
+  @Post(':id/cancel')
+  @ApiOperation({ summary: 'Cancel a project and clean up everything it holds' })
+  async cancel(
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CancelProjectDto,
+  ): Promise<ProjectResponseDto> {
+    const project = await this.cancellationService.cancel(id, dto, currentUser.id);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
