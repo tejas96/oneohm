@@ -242,8 +242,21 @@ git commit -m "feat: loss reason enum and deal-loss columns"
 - Modify: `apps/backend/src/modules/ledger/domain/derived-status.ts`
 - Modify: `apps/backend/src/modules/ledger/domain/derived-status.spec.ts`
 - Modify: `apps/backend/src/modules/consumer/dto/consumer-contract.spec.ts:66-70` (stale comment only)
-- Modify: `apps/backend/src/database/migrations/sql/ledger/06-views.sql.ts:40-53`
+- Modify: `apps/backend/src/database/migrations/sql/org-cleanup/04-views.sql.ts` — **the live definitions**
+- Modify: `apps/backend/src/database/migrations/sql/ledger/06-views.sql.ts:40-53` — superseded on a fresh install, changed only to keep the two consistent
 - Create: `apps/backend/src/database/migrations/1857010000000-MilestoneCancelledStatus.ts`
+
+**Correction, found during implementation.** `06-views.sql.ts` is stale: it still selects `m.organization_id`, which `RemoveOrganizations1852000000000` dropped when it moved the live view definitions to `sql/org-cleanup/04-views.sql.ts`. Migration `1851000000002` creates the views from `06`, then `1852000000000` replaces them from `org-cleanup/04`, so `org-cleanup/04` is what actually runs. Build the migration against `ORG_CLEANUP_CREATE_VIEWS` / `ORG_CLEANUP_DROP_VIEWS`. Rebuilding from `06` fails with `column m.organization_id does not exist`.
+
+**Also required: widen the CHECK constraint.** `chk_payment_milestones_status` currently allows only `active` and `waived`, so the database rejects the very status this task introduces. The migration must drop and recreate it to include `cancelled`:
+
+```sql
+ALTER TABLE payment_milestones DROP CONSTRAINT chk_payment_milestones_status;
+ALTER TABLE payment_milestones ADD CONSTRAINT chk_payment_milestones_status
+  CHECK (status IN ('active', 'waived', 'cancelled'));
+```
+
+`down()` restores the two-value version. Leave `chk_payment_milestones_waive_fields` alone — it reads `(status = 'waived') = (waived_at IS NOT NULL)`, which a cancelled row satisfies as long as it was `active` beforehand, and Task 7 and Task 12 both only cancel `active` rows.
 
 **Interfaces:**
 - Consumes: nothing from Task 1.
