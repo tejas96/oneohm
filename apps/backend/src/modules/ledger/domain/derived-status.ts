@@ -14,15 +14,15 @@
  * the two definitions cannot drift silently.
  */
 
-export type MilestoneRowStatus = 'active' | 'waived';
+export type MilestoneRowStatus = 'active' | 'waived' | 'cancelled';
 
-export type DerivedMilestoneStatus = 'pending' | 'partial' | 'paid' | 'waived';
+export type DerivedMilestoneStatus = 'pending' | 'partial' | 'paid' | 'waived' | 'cancelled';
 
 /**
  * The five strings the consumer mobile app switches on are
  * `pending | partial | paid | waived | cancelled`, defaulting to `'LOCKED'` for
  * anything unrecognised — which would silently render a fully-paid milestone as
- * a greyed-out locked card. We emit four of the five and never `cancelled`;
+ * a greyed-out locked card. The ledger now emits all five of them;
  * `consumer-contract.spec.ts` freezes that.
  */
 export function derivedMilestoneStatus(
@@ -30,6 +30,9 @@ export function derivedMilestoneStatus(
   allocatedPaise: number,
   rowStatus: MilestoneRowStatus,
 ): DerivedMilestoneStatus {
+  if (rowStatus === 'cancelled') {
+    return 'cancelled';
+  }
   if (rowStatus === 'waived') {
     return 'waived';
   }

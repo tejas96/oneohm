@@ -24,6 +24,9 @@ describe('derivedMilestoneStatus', () => {
     [10_000, 5_000, 'waived', 'waived'], // waived wins even with money against it
     [10_000, 10_000, 'waived', 'waived'],
     [10_000, -500, 'active', 'pending'], // fully reversed
+    [100000, 0, 'cancelled', 'cancelled'],
+    [100000, 40000, 'cancelled', 'cancelled'],
+    [100000, 100000, 'cancelled', 'cancelled'],
   ])('expected=%i allocated=%i row=%s => %s', (expected, allocated, row, want) => {
     expect(derivedMilestoneStatus(expected, allocated, row)).toBe(want);
   });
@@ -31,10 +34,10 @@ describe('derivedMilestoneStatus', () => {
   it('only ever emits values the consumer mobile app understands', () => {
     // map-consumer-payments.ts switches on these and falls through to 'LOCKED',
     // which would render a paid milestone as a greyed-out locked card.
-    const allowed = new Set(['pending', 'partial', 'paid', 'waived']);
+    const allowed = new Set(['pending', 'partial', 'paid', 'waived', 'cancelled']);
     for (const expected of [0, 1, 10_000]) {
       for (const allocated of [-1, 0, 1, 9_999, 10_000, 99_999]) {
-        for (const row of ['active', 'waived'] as MilestoneRowStatus[]) {
+        for (const row of ['active', 'waived', 'cancelled'] as MilestoneRowStatus[]) {
           expect(allowed.has(derivedMilestoneStatus(expected, allocated, row))).toBe(true);
         }
       }

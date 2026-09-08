@@ -12,7 +12,19 @@
  * other character is unchanged from the source.
  */
 
-/** From sql/ledger/06-views.sql.ts, minus `m.organization_id`. */
+/**
+ * From sql/ledger/06-views.sql.ts, minus `m.organization_id`.
+ *
+ * This is the copy actually installed on any database that has run
+ * RemoveOrganizations1852000000000 — which by now is every real one. `06`'s own
+ * `CREATE_V_MILESTONE_BALANCE` still selects `m.organization_id`, so it can only
+ * apply cleanly to a database frozen between migrations 1851000000002 and
+ * 1852000000000; every later migration that touches this view's `balance_paise`
+ * or `derived_status` (starting with 1857010000000) must edit the CASE
+ * expressions in BOTH copies, or the one nobody re-runs quietly goes stale
+ * again. `derivedMilestoneStatus()` in `modules/ledger/domain/derived-status.ts`
+ * mirrors this CASE; `derived-status.spec.ts` pins the outcome table.
+ */
 export const CREATE_V_MILESTONE_BALANCE_V2 = `
   CREATE VIEW v_milestone_balance AS
   SELECT
@@ -26,9 +38,12 @@ export const CREATE_V_MILESTONE_BALANCE_V2 = `
     m.due_date,
     m.amount_paise                                    AS expected_paise,
     COALESCE(a.allocated_paise, 0)::BIGINT            AS allocated_paise,
-    GREATEST(m.amount_paise - COALESCE(a.allocated_paise, 0), 0)::BIGINT AS balance_paise,
+    CASE WHEN m.status = 'cancelled' THEN 0
+         ELSE GREATEST(m.amount_paise - COALESCE(a.allocated_paise, 0), 0)
+    END::BIGINT                                       AS balance_paise,
     GREATEST(COALESCE(a.allocated_paise, 0) - m.amount_paise, 0)::BIGINT AS over_allocated_paise,
     CASE
+      WHEN m.status = 'cancelled'                             THEN 'cancelled'
       WHEN m.status = 'waived'                                THEN 'waived'
       WHEN COALESCE(a.allocated_paise, 0) <= 0                THEN 'pending'
       WHEN COALESCE(a.allocated_paise, 0) >= m.amount_paise   THEN 'paid'

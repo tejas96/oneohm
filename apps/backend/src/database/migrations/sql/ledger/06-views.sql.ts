@@ -35,9 +35,12 @@ export const CREATE_V_MILESTONE_BALANCE = `
     m.due_date,
     m.amount_paise                                    AS expected_paise,
     COALESCE(a.allocated_paise, 0)::BIGINT            AS allocated_paise,
-    GREATEST(m.amount_paise - COALESCE(a.allocated_paise, 0), 0)::BIGINT AS balance_paise,
+    CASE WHEN m.status = 'cancelled' THEN 0
+         ELSE GREATEST(m.amount_paise - COALESCE(a.allocated_paise, 0), 0)
+    END::BIGINT                                       AS balance_paise,
     GREATEST(COALESCE(a.allocated_paise, 0) - m.amount_paise, 0)::BIGINT AS over_allocated_paise,
     CASE
+      WHEN m.status = 'cancelled'                             THEN 'cancelled'
       WHEN m.status = 'waived'                                THEN 'waived'
       WHEN COALESCE(a.allocated_paise, 0) <= 0                THEN 'pending'
       WHEN COALESCE(a.allocated_paise, 0) >= m.amount_paise   THEN 'paid'

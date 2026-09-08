@@ -64,9 +64,9 @@ const PAYMENT_KEYS = [
 ] as const;
 
 /**
- * The five values the mobile app's switch recognises. We emit at most four of
- * them — `cancelled` no longer exists in the ledger model — but emitting
- * anything OUTSIDE this set is what triggers the silent 'LOCKED' render.
+ * The five values the mobile app's switch recognises. The ledger emits all
+ * five of them, and emitting anything OUTSIDE this set is what triggers the
+ * silent 'LOCKED' render.
  */
 const APP_RECOGNISED_STATUSES = ['pending', 'partial', 'paid', 'waived', 'cancelled'];
 
