@@ -543,6 +543,37 @@ Import `Not` and `IsNull` from `typeorm` and `ProjectStatus` from `@oneohm/share
 
 `consumer-project.controller.ts:56`: change `findOneByPropertyId` to `findLiveByPropertyId`. A consumer must never be shown the dead project.
 
+- [ ] **Step 2b: The database enforces the old rule too — relax it**
+
+Found in review. The application guard is not the only thing holding the roof shut:
+
+```
+UNIQUE INDEX UQ_projects_property_id ON projects (property_id) WHERE deleted_at IS NULL
+```
+
+Cancelling does not soft-delete, so a cancelled project keeps its slot and the new project's `INSERT` violates this index. The guard passes and Postgres throws instead — the roof is still stuck, one layer deeper. Verified on the live database: all three cancelled projects still hold `deleted_at IS NULL`.
+
+New migration `1857015000000-OneLiveProjectPerRoof.ts` drops and recreates it:
+
+```sql
+DROP INDEX IF EXISTS "UQ_projects_property_id";
+CREATE UNIQUE INDEX "UQ_projects_property_id" ON projects (property_id)
+  WHERE deleted_at IS NULL AND status <> 'cancelled';
+```
+
+`down()` restores the original predicate. That will fail if any roof already carries a cancelled project plus a live one — state the precondition in the JSDoc, as the milestone migration does.
+
+- [ ] **Step 2c: The entity relation says one-to-one and is now a lie**
+
+A roof may now hold several cancelled projects and one live one, so:
+
+- `project.entity.ts` — `property` becomes `@ManyToOne`
+- `customer-property.entity.ts:62-63` — `@OneToOne('ProjectEntity', 'property') project` becomes `@OneToMany` `projects?: ProjectEntity[]`
+- the three places that load the relation by name — `customer-property.repository.ts:99`, `:113` and `customer-property.service.ts:399` — move from `'project'` to `'projects'`
+- `customer-property-response.dto.ts:233` reads `obj.project?.status` for its `projectStatus` field; it must pick the live project, not whichever row the ORM happened to return, or a re-sold roof reports the status of the dead deal
+
+Left as `@OneToOne`, TypeORM returns an arbitrary one of the matching rows. The property screen would show a cancelled status for a roof with a live project.
+
 - [ ] **Step 3: Confirm no caller was missed**
 
 ```bash
