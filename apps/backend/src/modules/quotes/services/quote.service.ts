@@ -91,7 +91,7 @@ export class QuoteService {
       const accepted = await this.quoteRepository.findAcceptedByPropertyId(createDto.propertyId);
       if (accepted) {
         throw new BadRequestException(
-          `Property already has an accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
+          `Property already has a live accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
         );
       }
     }

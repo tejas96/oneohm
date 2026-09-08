@@ -317,11 +317,34 @@ export class QuoteRepository {
       .createQueryBuilder('quote')
       .andWhere('quote.propertyId = :propertyId', { propertyId })
       .andWhere('quote.status = :status', { status: QuoteStatus.ACCEPTED })
-      .andWhere('quote.deletedAt IS NULL');
+      .andWhere('quote.deletedAt IS NULL')
+      .andWhere('quote.voidedAt IS NULL');
     if (excludeQuoteId) {
       qb.andWhere('quote.id != :excludeQuoteId', { excludeQuoteId });
     }
     return qb.getOne();
+  }
+
+  /**
+   * Kill every quote on a roof that a rep could still act on. Without this a
+   * `sent` quote survives the site being closed and gets chased.
+   */
+  async voidAllOpenForProperty(
+    propertyId: string,
+    reason: string,
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<number> {
+    const repo = manager ? manager.getRepository(QuoteEntity) : this.repository;
+    const result = await repo
+      .createQueryBuilder()
+      .update(QuoteEntity)
+      .set({ voidedAt: new Date(), voidReason: reason, updatedBy: userId })
+      .where('property_id = :propertyId', { propertyId })
+      .andWhere('voided_at IS NULL')
+      .andWhere('deleted_at IS NULL')
+      .execute();
+    return result.affected ?? 0;
   }
 
   /**
