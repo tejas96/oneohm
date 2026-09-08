@@ -444,19 +444,31 @@ In `quote.repository.ts`:
     reason: string,
     userId: string,
     manager?: EntityManager,
+    excludeQuoteId?: string,
   ): Promise<number> {
     const repo = manager ? manager.getRepository(QuoteEntity) : this.repository;
-    const result = await repo
+    const qb = repo
       .createQueryBuilder()
       .update(QuoteEntity)
       .set({ voidedAt: new Date(), voidReason: reason, updatedBy: userId })
       .where('property_id = :propertyId', { propertyId })
       .andWhere('voided_at IS NULL')
-      .andWhere('deleted_at IS NULL')
-      .execute();
+      .andWhere('deleted_at IS NULL');
+
+    // The quote that carries the customer's own decision must keep only that
+    // decision. `voided_at` marks a quote swept aside administratively, and
+    // anything reading it as "not a genuine outcome" would misfile a real
+    // rejection stamped with both.
+    if (excludeQuoteId) {
+      qb.andWhere('id != :excludeQuoteId', { excludeQuoteId });
+    }
+
+    const result = await qb.execute();
     return result.affected ?? 0;
   }
 ```
+
+`excludeQuoteId` is passed only by the quote-rejection path. Project cancellation deliberately omits it: there, voiding the accepted quote is the point.
 
 Add only this one method. A single-quote `voidById` has no caller in this plan; add it when something needs it.
 
@@ -812,6 +824,8 @@ and, after `const result = await this.quoteRepository.update(id, updateData);`:
           quote.propertyId,
           `Site closed: ${statusDto.rejectionReason}`,
           updatedBy,
+          undefined,
+          id,
         );
       } catch (error) {
         this.logger.error(
