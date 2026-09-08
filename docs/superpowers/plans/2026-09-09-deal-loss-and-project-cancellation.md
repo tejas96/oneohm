@@ -396,7 +396,7 @@ git commit -m "feat: cancelled milestone status through the ledger view"
 
 **Interfaces:**
 - Consumes: `quotes.voided_at` from Task 1.
-- Produces: `QuoteRepository.findAcceptedByPropertyId(propertyId, excludeQuoteId?)` ignoring voided rows; `QuoteRepository.voidAllOpenForProperty(propertyId, reason, userId, manager?): Promise<number>`; `QuoteRepository.voidById(quoteId, reason, userId, manager?): Promise<void>`.
+- Produces: `QuoteRepository.findAcceptedByPropertyId(propertyId, excludeQuoteId?)` ignoring voided rows; `QuoteRepository.voidAllOpenForProperty(propertyId, reason, userId, manager?): Promise<number>`.
 
 - [ ] **Step 1: Make the lock ignore voided quotes**
 
@@ -428,20 +428,9 @@ In `quote.repository.ts`:
       .execute();
     return result.affected ?? 0;
   }
-
-  async voidById(
-    quoteId: string,
-    reason: string,
-    userId: string,
-    manager?: EntityManager,
-  ): Promise<void> {
-    const repo = manager ? manager.getRepository(QuoteEntity) : this.repository;
-    await repo.update(
-      { id: quoteId },
-      { voidedAt: new Date(), voidReason: reason, updatedBy: userId },
-    );
-  }
 ```
+
+Add only this one method. A single-quote `voidById` has no caller in this plan; add it when something needs it.
 
 - [ ] **Step 3: Sharpen the three lock messages**
 
@@ -604,6 +593,8 @@ In `mark-lost.dto.ts`, add below `reason`:
     });
   }
 ```
+
+The requirement is that a real `NULL` reaches the database, not that cast. If a query builder types cleanly here — `.set({ lostReason: () => 'NULL', ... })` — prefer it and drop the casts.
 
 Apply the same `lossReason` change to `customer-profile.repository.ts:290`.
 
@@ -1192,13 +1183,17 @@ git commit -m "feat: cancelling a project cleans up everything it holds"
 
 - [ ] **Step 1: Close the door**
 
-In `project.service.ts`, change the transition map so `CANCELLED` is terminal, and remove `CANCELLED` from the routes into it that the cancel endpoint now owns:
+In `project.service.ts`, `POST /projects/:id/cancel` is now the only route into cancellation, so the plain status map must offer neither a way in nor a way out. Remove `ProjectStatus.CANCELLED` from the `PLANNING`, `ACTIVE` and `ON_HOLD` target lists, and empty its own:
 
 ```ts
+      [ProjectStatus.PLANNING]: [ProjectStatus.ACTIVE],
+      [ProjectStatus.ACTIVE]: [ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED],
+      [ProjectStatus.ON_HOLD]: [ProjectStatus.ACTIVE],
+      [ProjectStatus.COMPLETED]: [ProjectStatus.ACTIVE],
       [ProjectStatus.CANCELLED]: [],
 ```
 
-Mirror it in `apps/web/components/features/projects/constants.ts:47` so the status dropdown does not offer a transition the API will reject.
+Mirror all five lines in `apps/web/components/features/projects/constants.ts:43-47`, so the status dropdown offers no transition the API will reject. Cancelling moves to its own action in Task 11.
 
 - [ ] **Step 2: Add the checklist DTO**
 
