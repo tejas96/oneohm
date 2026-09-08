@@ -13,6 +13,7 @@ import {
   DocumentCategory,
   IntegrationProvider,
   type ITemplateMessage,
+  LossReason,
   PaymentMilestone,
   type PaymentMilestoneConfig,
   type PricingBreakdown,
@@ -607,8 +608,15 @@ export class QuoteService {
 
     this.validateStatusTransition(quote.status, statusDto.status);
 
-    if (statusDto.status === QuoteStatus.REJECTED && !statusDto.rejectionReason) {
-      throw new BadRequestException('Rejection reason is required when rejecting a quote');
+    if (statusDto.status === QuoteStatus.REJECTED) {
+      if (!statusDto.rejectionReason) {
+        throw new BadRequestException('Rejection reason is required when rejecting a quote');
+      }
+      if (!statusDto.rejectionOutcome) {
+        throw new BadRequestException(
+          'Say what happens to the site: "requote" keeps it, "close" marks it lost.',
+        );
+      }
     }
 
     if (statusDto.status === QuoteStatus.ACCEPTED && !statusDto.customerSignature) {
@@ -650,6 +658,37 @@ export class QuoteService {
       } catch (error) {
         this.logger.error(
           `Quote ${id} accepted but its followups could not be closed: ${String(error)}`,
+        );
+      }
+    }
+
+    // Closing the site is best-effort in the same shape as acceptance: the
+    // rejection has already saved, and a failure here must not read as
+    // "the rejection did not save".
+    if (
+      statusDto.status === QuoteStatus.REJECTED &&
+      statusDto.rejectionOutcome === 'close' &&
+      quote.propertyId &&
+      quote.customerId
+    ) {
+      try {
+        await this.leadClosureService.markPropertyLost(
+          quote.propertyId,
+          quote.customerId,
+          statusDto.rejectionReason!,
+          statusDto.lossReason ?? LossReason.OTHER,
+          updatedBy,
+        );
+        // A closed roof must not leave a live `sent` quote behind for someone
+        // to chase.
+        await this.quoteRepository.voidAllOpenForProperty(
+          quote.propertyId,
+          `Site closed: ${statusDto.rejectionReason}`,
+          updatedBy,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Quote ${id} rejected but the site could not be closed: ${String(error)}`,
         );
       }
     }
