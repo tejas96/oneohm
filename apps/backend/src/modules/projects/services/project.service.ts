@@ -437,10 +437,10 @@ export class ProjectService {
       );
     }
 
-    const existingProject = await this.projectRepository.findOneByPropertyId(quote.propertyId);
+    const existingProject = await this.projectRepository.findLiveByPropertyId(quote.propertyId);
     if (existingProject) {
       throw new BadRequestException(
-        `Property already has a project (${existingProject.projectNumber}). One property can only have one project.`,
+        `Property already has a live project (${existingProject.projectNumber}). One property can only have one live project.`,
       );
     }
 
