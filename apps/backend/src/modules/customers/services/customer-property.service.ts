@@ -13,6 +13,7 @@ import {
   LeadTemperature,
   FollowupType,
   LoanStatus,
+  LossReason,
   ProjectStatus,
   type PropertyDocument,
   PropertyStatus,
@@ -118,7 +119,12 @@ export class CustomerPropertyService {
    * must not remove the other two from the pipeline. Cancels this property's
    * pending followups so a dead lead stops nagging.
    */
-  async markLost(id: string, reason: string, userId: string): Promise<CustomerPropertyEntity> {
+  async markLost(
+    id: string,
+    reason: string,
+    lossReason: LossReason | undefined,
+    userId: string,
+  ): Promise<CustomerPropertyEntity> {
     const property = await this.propertyRepository.findById(id);
     if (!property) {
       throw new NotFoundException('Property not found');
@@ -130,7 +136,36 @@ export class CustomerPropertyService {
       throw new BadRequestException('Cannot mark a converted property as lost');
     }
 
-    await this.leadClosureService.markPropertyLost(id, property.customerId, reason, userId);
+    await this.leadClosureService.markPropertyLost(
+      id,
+      property.customerId,
+      reason,
+      lossReason ?? LossReason.OTHER,
+      userId,
+    );
+
+    const updated = await this.propertyRepository.findById(id);
+    if (!updated) {
+      throw new NotFoundException('Property not found');
+    }
+    return updated;
+  }
+
+  /**
+   * Bring a lost site back into the pipeline. The survey, roof data, DISCOM and
+   * photos are all still here; only the deal died. Voided quotes stay voided —
+   * the next quote is a fresh one.
+   */
+  async reopen(id: string, userId: string): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findById(id);
+    if (!property) {
+      throw new NotFoundException('Property not found');
+    }
+    if (property.status !== PropertyStatus.LOST) {
+      throw new BadRequestException('Only a lost property can be reopened');
+    }
+
+    await this.propertyRepository.reopen(id, userId);
 
     const updated = await this.propertyRepository.findById(id);
     if (!updated) {

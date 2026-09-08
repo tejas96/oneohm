@@ -8,7 +8,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { COMPANY } from '@tejas96/shared/constants';
-import { CustomerStatus, UserProfileType, UserStatus } from '@tejas96/shared/types';
+import { CustomerStatus, LossReason, UserProfileType, UserStatus } from '@tejas96/shared/types';
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource, In, IsNull } from 'typeorm';
 
@@ -498,7 +498,12 @@ export class CustomerService {
    * A customer who already has sites is never marked lost this way — losing a
    * site is a property-level action.
    */
-  async markLost(id: string, reason: string, userId: string): Promise<CustomerProfileEntity> {
+  async markLost(
+    id: string,
+    reason: string,
+    lossReason: LossReason | undefined,
+    userId: string,
+  ): Promise<CustomerProfileEntity> {
     const customer = await this.customerRepository.findById(id);
     if (!customer) {
       throw new NotFoundException('Customer not found');
@@ -507,7 +512,12 @@ export class CustomerService {
       throw new BadRequestException('Customer is already marked lost');
     }
 
-    await this.leadClosureService.markCustomerLost(id, reason, userId);
+    await this.leadClosureService.markCustomerLost(
+      id,
+      reason,
+      lossReason ?? LossReason.OTHER,
+      userId,
+    );
 
     const updated = await this.customerRepository.findById(id);
     if (!updated) {

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   LeadTemperature,
+  LossReason,
   ProjectStatus,
   PropertyStatus,
   PropertySortField,
@@ -79,6 +80,7 @@ export class CustomerPropertyRepository {
   async markLost(
     id: string,
     reason: string,
+    lossReason: LossReason,
     updatedBy: string,
     manager?: EntityManager,
   ): Promise<void> {
@@ -86,9 +88,35 @@ export class CustomerPropertyRepository {
     await repo.update(id, {
       status: PropertyStatus.LOST,
       lostReason: reason,
+      lossReason,
       lostAt: new Date(),
       updatedBy,
     });
+  }
+
+  /**
+   * Hand the roof back. The reason columns are set to a raw SQL `NULL` via
+   * the query builder rather than the JS value `undefined` — TypeORM's
+   * `repository.update` drops an `undefined` property from the UPDATE
+   * entirely, and the entity types (`lostReason?: string`, etc.) do not
+   * admit `null`, so a plain object literal can't express "clear this"
+   * without a cast. A real NULL has to reach the database, or the dead
+   * reason survives onto a live site.
+   */
+  async reopen(id: string, updatedBy: string, manager?: EntityManager): Promise<void> {
+    const repo = this.getRepo(manager);
+    await repo
+      .createQueryBuilder()
+      .update(CustomerPropertyEntity)
+      .set({
+        status: PropertyStatus.ACTIVE,
+        lostReason: () => 'NULL',
+        lossReason: () => 'NULL',
+        lostAt: () => 'NULL',
+        updatedBy,
+      })
+      .where('id = :id', { id })
+      .execute();
   }
 
   async findById(id: string): Promise<CustomerPropertyEntity | null> {

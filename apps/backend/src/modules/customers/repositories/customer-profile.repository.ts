@@ -5,6 +5,7 @@ import {
   CustomerSortField,
   CustomerStatus,
   LeadSource,
+  LossReason,
   PropertyStatus,
   QuoteStatus,
   SortOrder,
@@ -290,6 +291,7 @@ export class CustomerProfileRepository {
   async markLost(
     id: string,
     reason: string,
+    lossReason: LossReason,
     updatedBy: string,
     manager?: EntityManager,
   ): Promise<void> {
@@ -297,6 +299,7 @@ export class CustomerProfileRepository {
     await repo.update({ id }, {
       status: CustomerStatus.LOST,
       lostReason: reason,
+      lossReason,
       lostAt: new Date(),
       updatedBy,
     } as Record<string, unknown>);
