@@ -15,6 +15,7 @@
 - Branch: `feat/deal-loss-and-project-cancellation`. Already created.
 - **Do not add new unit test files.** This project verifies by running the screens. The only test files touched are two existing pinned specs the spec names: `apps/backend/src/modules/ledger/domain/derived-status.spec.ts` and `apps/backend/src/modules/consumer/dto/consumer-contract.spec.ts`.
 - Migrations only; `synchronize` is `false` everywhere. Run with `cd apps/backend && npm run migration:run`.
+- Every migration in this repo opens with a top-of-file JSDoc saying why it exists. The snippets below omit it to stay readable — add one, matching the neighbouring migrations.
 - Migration timestamps continue the existing sequence. The highest today is `1856900000000`. Use `1857000000000`, `1857010000000`, `1857020000000` in that order.
 - Money out is stored as a **negative** `amount_paise`. `LedgerWriteService.recordExpense` negates the input; a refund must do the same.
 - `ledger_entries` has an append-only trigger. Rows are inserted, never updated.
