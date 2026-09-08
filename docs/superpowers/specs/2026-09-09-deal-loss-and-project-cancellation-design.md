@@ -163,9 +163,10 @@ Then, in one transaction:
 - Dispatched or partly dispatched material creates a `return_requests` row in
   `pending` against the project.
 - Every purchase order on the project in `draft`, `pending_approval`,
-  `approved`, `sent`, `confirmed` or `partially_received` creates a
-  project-level task: "cancel or redirect PO-xxxx with the vendor". Orders in
-  `received` or `cancelled` are already closed and are skipped.
+  `approved`, `sent`, `confirmed` or `partially_received` appears on the
+  cleanup checklist as "cancel or redirect PO-xxxx with the vendor". Orders in
+  `received` or `cancelled` are already closed and are skipped. Nothing is
+  written for these — the checklist reads the orders directly.
 - Commissions in `paid` stay `paid` and appear as a recovery item until
   `recovered_at` is set.
 
@@ -241,11 +242,18 @@ is needed.
 `settled_at` and `settled_by` are stamped once the dialog is answered, including
 when the answer is "keep everything".
 
-### Outstanding queries
+### Outstanding queries need no change
 
-Every outstanding, ageing and receivables query in
-`finance-ledger-queries.sql.ts` excludes projects in `cancelled`. This is what
-removes the ₹5,50,457 above.
+Verified while planning: every accounts-receivable path already filters
+`status = 'active'` on the milestone — `RECEIVABLES_FILTERS`,
+`TOP_CUSTOMERS_OUTSTANDING_SQL` and `CUSTOMERS_AR_SQL` in
+`finance-ledger-queries.sql.ts`, and the `b.status = 'active'` lateral inside
+`v_project_balance`.
+
+So flipping the milestones to `cancelled` is by itself enough to remove the
+₹5,50,457. No SQL filter on `projects.status` is added. Adding one would be a
+second, redundant definition of the same rule, and the two would eventually
+disagree.
 
 ## Unlocking the roof
 
