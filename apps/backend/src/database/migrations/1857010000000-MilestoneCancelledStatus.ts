@@ -49,15 +49,33 @@ import { ORG_CLEANUP_CREATE_VIEWS, ORG_CLEANUP_DROP_VIEWS } from './sql/org-clea
  * `CREATE_V_PROJECT_BALANCE`, which lacks both columns and would have silently
  * reintroduced the exact bug 1851000000012-ContractComposition.ts fixed.
  *
- * No existing row is affected: `chk_payment_milestones_status` still only
- * permits `active | waived`, so nothing can carry `status = 'cancelled'` until
- * whichever later task starts writing it also widens that constraint. Until
- * then this migration only changes how the views WOULD read such a row.
+ * This migration also widens `chk_payment_milestones_status` itself, from
+ * `active | waived` to `active | waived | cancelled`. Verified directly
+ * against the live database: without this, the status this task exists to
+ * introduce is rejected outright, and Task 2's entire claim — that a
+ * milestone can carry `status = 'cancelled'` — would be false while the
+ * narrower constraint stood. A later task's `UPDATE ... SET status =
+ * 'cancelled'` depends on this constraint already accepting the value. The
+ * constraint change runs first, before either view is touched, so a failure
+ * there leaves both views exactly as they were. `down()` restores the
+ * two-value version. `chk_payment_milestones_waive_fields` — which reads
+ * `(status = 'waived') = (waived_at IS NOT NULL)` — is deliberately left
+ * alone: a cancelled row satisfies it as long as it was `active` beforehand,
+ * and every caller cancels only `active` rows, so widening it would weaken a
+ * real invariant for no reason.
  */
 export class MilestoneCancelledStatus1857010000000 implements MigrationInterface {
   name = 'MilestoneCancelledStatus1857010000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // Widen the CHECK constraint before touching either view: if this fails,
+    // nothing below has run yet, so a failure here leaves nothing half-applied.
+    await queryRunner.query(`
+      ALTER TABLE payment_milestones DROP CONSTRAINT chk_payment_milestones_status;
+      ALTER TABLE payment_milestones ADD CONSTRAINT chk_payment_milestones_status
+        CHECK (status IN ('active', 'waived', 'cancelled'));
+    `);
+
     for (const sql of ORG_CLEANUP_DROP_VIEWS) {
       await queryRunner.query(sql);
     }
@@ -67,6 +85,16 @@ export class MilestoneCancelledStatus1857010000000 implements MigrationInterface
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    // Restore the two-value constraint first, mirroring up()'s ordering: a
+    // failure here leaves the views (rebuilt below) as the only side effect
+    // still to run, rather than leaving the constraint change half-applied
+    // alongside an already-rebuilt view pair.
+    await queryRunner.query(`
+      ALTER TABLE payment_milestones DROP CONSTRAINT chk_payment_milestones_status;
+      ALTER TABLE payment_milestones ADD CONSTRAINT chk_payment_milestones_status
+        CHECK (status IN ('active', 'waived'));
+    `);
+
     // The previous definition differs only in the two expressions above, and
     // both are forward-compatible: no row carries status 'cancelled' until the
     // cancellation service ships. Recreating from source is the honest revert.
