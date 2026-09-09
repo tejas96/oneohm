@@ -493,6 +493,24 @@ export class ProjectController {
   }
 
   /**
+   * What each payer has actually collected, to pre-fill the cancel dialog's
+   * settlement lines. Backed by the same figure the cancel transaction uses
+   * for its refund math, so the dialog and the transaction cannot disagree.
+   */
+  @Get(':id/settlement-preview')
+  @ApiOperation({
+    summary: 'Get settlement preview for project cancellation',
+    description:
+      "What each payer has actually collected so far, keyed by payer type. Pre-fills the " +
+      'cancel dialog before the settlement decision is made.',
+  })
+  async getSettlementPreview(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<Awaited<ReturnType<ProjectCancellationService['getSettlementPreview']>>> {
+    return this.cancellationService.getSettlementPreview(id);
+  }
+
+  /**
    * Get project timeline data for Gantt visualization
    */
   @Get(':id/timeline')

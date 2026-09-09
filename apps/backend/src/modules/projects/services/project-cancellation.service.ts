@@ -53,7 +53,10 @@ export class ProjectCancellationService {
       throw new NotFoundException('Property not found for this project');
     }
 
-    const collected = await this.collectedByPayer(projectId);
+    const settlementPreview = await this.getSettlementPreview(projectId);
+    const collected: Record<string, number> = Object.fromEntries(
+      settlementPreview.map((line) => [line.payerType, line.collectedPaise]),
+    );
     const seenPayers = new Set<string>();
     for (const settlement of dto.settlements ?? []) {
       // Two lines for the same payer would each compute
@@ -329,10 +332,18 @@ export class ProjectCancellationService {
   }
 
   /**
-   * Who actually paid. Allocations carry the payer through the milestone they
-   * paid; cash that was never allocated to a milestone is the customer's.
+   * Who actually paid, per payer. Allocations carry the payer through the
+   * milestone they paid; cash that was never allocated to a milestone is the
+   * customer's. Public because the cancel dialog pre-fills its settlement
+   * lines from this exact figure — `cancel()` above calls it too, for the
+   * refund math, so the two cannot disagree. Summing `allocatedPaise` by
+   * `payerType` off the milestones endpoint instead would miss the
+   * unallocated share computed below and under-state what the customer
+   * actually paid.
    */
-  private async collectedByPayer(projectId: string): Promise<Record<string, number>> {
+  async getSettlementPreview(
+    projectId: string,
+  ): Promise<Array<{ payerType: 'customer' | 'lender'; collectedPaise: number }>> {
     const rows: Array<{ payer_type: string; paise: string }> = await this.dataSource.query(
       `SELECT m.payer_type, SUM(a.amount_paise)::text AS paise
          FROM ledger_allocations a
@@ -355,6 +366,13 @@ export class ProjectCancellationService {
     const spare = Math.max(Number(unallocated?.paise ?? 0), 0);
     if (spare > 0) totals.customer = (totals.customer ?? 0) + spare;
 
-    return totals;
+    // Zero-collected payers are omitted rather than sent as a zero-pre-filled
+    // row: a payer who paid nothing has no settlement decision to make.
+    return Object.entries(totals)
+      .filter(([, collectedPaise]) => collectedPaise > 0)
+      .map(([payerType, collectedPaise]) => ({
+        payerType: payerType as 'customer' | 'lender',
+        collectedPaise,
+      }));
   }
 }

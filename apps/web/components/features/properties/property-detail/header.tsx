@@ -11,6 +11,7 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import PostAddOutlinedIcon from '@mui/icons-material/PostAddOutlined';
+import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
 import {
   Box,
   Button,
@@ -64,6 +65,7 @@ interface PropertyDetailHeaderProps {
   onGoToProject: () => void;
   onLogFollowup: () => void;
   onMarkLost: () => void;
+  onReopen?: () => void;
   showDelete?: boolean;
   deleteDisabled?: boolean;
   deleteTooltip?: string;
@@ -163,6 +165,7 @@ export function PropertyDetailHeader({
   onGoToProject,
   onLogFollowup,
   onMarkLost,
+  onReopen,
   showDelete = false,
   deleteDisabled = false,
   deleteTooltip,
@@ -199,6 +202,7 @@ export function PropertyDetailHeader({
    */
   const isInPlay = LOSABLE_STATUSES.includes(property.status);
   const canMarkLost = isInPlay;
+  const canReopen = property.status === PropertyStatus.LOST;
 
   /*
    * GPS beats the typed address when we have it — a pin drops on the roof, a
@@ -407,7 +411,7 @@ export function PropertyDetailHeader({
           >
             Log follow-up
           </Button>
-          {(canMarkLost || showDelete) && (
+          {(canMarkLost || canReopen || showDelete) && (
             <IconButton
               size="small"
               aria-label="More actions"
@@ -419,7 +423,7 @@ export function PropertyDetailHeader({
         </Stack>
       </Stack>
 
-      {(canMarkLost || showDelete) && (
+      {(canMarkLost || canReopen || showDelete) && (
         <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
           {canMarkLost && (
             <MenuItem
@@ -434,7 +438,20 @@ export function PropertyDetailHeader({
               Mark as lost
             </MenuItem>
           )}
-          {canMarkLost && showDelete && <Divider />}
+          {canReopen && onReopen && (
+            <MenuItem
+              onClick={() => {
+                setMoreAnchor(null);
+                onReopen();
+              }}
+            >
+              <ListItemIcon>
+                <RestartAltOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              Reopen
+            </MenuItem>
+          )}
+          {(canMarkLost || canReopen) && showDelete && <Divider />}
           {showDelete && (
             <Tooltip title={deleteTooltip ?? ''}>
               <span>

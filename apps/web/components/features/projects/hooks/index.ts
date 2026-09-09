@@ -56,6 +56,18 @@ export { useDocumentDownload } from './use-document-download';
 export { useCreateProjectTask, type CreateProjectTaskPayload } from './use-create-project-task';
 
 export { useUpdateProjectStatus } from './use-update-project-status';
+export {
+  cancellationKeys,
+  useCancelProject,
+  useCancellationCleanup,
+  useSettlementPreview,
+} from './use-project-cancellation';
+export type {
+  CancellationCleanup,
+  CancelProjectPayload,
+  CancelProjectSettlement,
+  SettlementPreviewLine,
+} from './use-project-cancellation';
 export { useEditProject, useProjectMemberTasks } from './use-edit-project';
 export type {
   UpdateProjectPayload,

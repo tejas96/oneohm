@@ -1,8 +1,8 @@
 'use client';
 
-import { Menu, MenuItem } from '@mui/material';
+import { Divider, Menu, MenuItem } from '@mui/material';
 import { ProjectStatus } from '@tejas96/shared/types';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, XCircle } from 'lucide-react';
 import React, { useState } from 'react';
 
 import {
@@ -11,6 +11,7 @@ import {
   PROJECT_STATUS_TRANSITIONS,
 } from '../constants';
 import { useUpdateProjectStatus } from '../hooks';
+import { CancelProjectDialog } from './project-detail/cancel-project-dialog';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ export const ProjectStatusDropdown = React.memo(
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [confirmModalOpen, setConfirmModalOpen] = useState(false);
     const [pendingTargetStatus, setPendingTargetStatus] = useState<ProjectStatus | null>(null);
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
     const updateStatusMutation = useUpdateProjectStatus(projectId);
 
@@ -76,6 +78,12 @@ export const ProjectStatusDropdown = React.memo(
     const label = PROJECT_STATUS_LABELS[status] || status;
     const variant = (PROJECT_STATUS_BADGE_VARIANT[status] || 'secondary') as BadgeVariant;
     const isTerminal = transitions.length === 0;
+    // Cancellation no longer goes through this dropdown's plain transitions —
+    // the API rejects that route — so it is its own menu entry, gated
+    // separately from `transitions`. Not offered once a project is done
+    // (backend refuses it) or already cancelled (isTerminal already covers
+    // that case below).
+    const canCancel = status !== ProjectStatus.COMPLETED && status !== ProjectStatus.CANCELLED;
 
     const handleOpen = (event: React.MouseEvent<HTMLButtonElement>): void => {
       event.stopPropagation();
@@ -164,6 +172,21 @@ export const ProjectStatusDropdown = React.memo(
               </MenuItem>
             );
           })}
+          {canCancel && transitions.length > 0 && <Divider sx={{ my: 0.5 }} />}
+          {canCancel && (
+            <MenuItem
+              dense
+              onClick={(e) => {
+                e.stopPropagation();
+                setAnchorEl(null);
+                setCancelDialogOpen(true);
+              }}
+              sx={{ gap: 1, px: 1.5, color: 'error.main' }}
+            >
+              <XCircle className="size-3.5" />
+              Cancel project
+            </MenuItem>
+          )}
         </Menu>
 
         {/* Transition Confirmation Modal */}
@@ -226,6 +249,12 @@ export const ProjectStatusDropdown = React.memo(
             </Button>
           </MUIDialogFooter>
         </MUIDialog>
+
+        <CancelProjectDialog
+          open={cancelDialogOpen}
+          onClose={() => setCancelDialogOpen(false)}
+          projectId={projectId}
+        />
       </>
     );
   },

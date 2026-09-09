@@ -4,9 +4,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Divider, IconButton, ListItemIcon, Menu, MenuItem, Tooltip } from '@mui/material';
+import { PropertyStatus } from '@tejas96/shared/types';
 import { useRouter } from 'next/navigation';
 import { type JSX, useState } from 'react';
 
@@ -21,6 +23,7 @@ import { buildRoute, ROUTES } from '@/lib/config/routes';
 export interface PropertyRowActionsTarget {
   id: string;
   customerId: string;
+  status?: PropertyStatus;
   latestQuoteId?: string;
   propertyName?: string;
   propertyCode?: string;
@@ -30,6 +33,7 @@ export interface PropertyRowActionsTarget {
 interface PropertyRowActionsMenuProps {
   property: PropertyRowActionsTarget;
   onMarkAsLost: (property: PropertyRowActionsTarget) => void;
+  onReopen?: (property: PropertyRowActionsTarget) => void;
   onRequestDelete?: (property: PropertyRowActionsTarget) => void;
   showDelete?: boolean;
 }
@@ -37,6 +41,7 @@ interface PropertyRowActionsMenuProps {
 export function PropertyRowActionsMenu({
   property,
   onMarkAsLost,
+  onReopen,
   onRequestDelete,
   showDelete = false,
 }: PropertyRowActionsMenuProps): JSX.Element {
@@ -126,20 +131,36 @@ export function PropertyRowActionsMenu({
           Create Quote
         </GatedMenuItem>
 
-        <GatedMenuItem
-          permission="properties.edit"
-          subject="Mark as lost"
-          onAction={() => {
-            handleClose();
-            onMarkAsLost(property);
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <ListItemIcon>
-            <WarningAmberIcon fontSize="small" sx={{ color: 'error.main' }} />
-          </ListItemIcon>
-          Mark as Lost
-        </GatedMenuItem>
+        {property.status === PropertyStatus.LOST ? (
+          <GatedMenuItem
+            permission="properties.edit"
+            subject="Reopen site"
+            onAction={() => {
+              handleClose();
+              onReopen?.(property);
+            }}
+          >
+            <ListItemIcon>
+              <RestartAltOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            Reopen
+          </GatedMenuItem>
+        ) : (
+          <GatedMenuItem
+            permission="properties.edit"
+            subject="Mark as lost"
+            onAction={() => {
+              handleClose();
+              onMarkAsLost(property);
+            }}
+            sx={{ color: 'error.main' }}
+          >
+            <ListItemIcon>
+              <WarningAmberIcon fontSize="small" sx={{ color: 'error.main' }} />
+            </ListItemIcon>
+            Mark as Lost
+          </GatedMenuItem>
+        )}
 
         {showDelete && <Divider />}
         {showDelete && (
