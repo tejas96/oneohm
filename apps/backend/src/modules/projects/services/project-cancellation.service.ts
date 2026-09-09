@@ -265,14 +265,13 @@ export class ProjectCancellationService {
       return;
     }
 
-    const bomId = allocation.bomId ?? (await this.findProjectBomId(allocation.projectId));
-    if (!bomId) {
-      this.logger.error(
-        `Allocation ${allocation.id} has ${quantity} dispatched units and no BOM; ` +
-          `no return request could be raised. Recover this material by hand.`,
-      );
-      return;
-    }
+    // A BOM is nice to have, not required. Plenty of projects have none, and
+    // the panels are at a customer's site either way — completing the return
+    // resolves the allocation, not the BOM. This used to bail out and log,
+    // which stranded the material AND let the cleanup checklist report the
+    // project settled, since that checklist reads `return_requests`.
+    const bomId = allocation.bomId ?? (await this.findProjectBomId(allocation.projectId)) ?? undefined;
+
     await this.returnRequestService.create(
       { allocationId: allocation.id, bomId, quantity, reason },
       userId,

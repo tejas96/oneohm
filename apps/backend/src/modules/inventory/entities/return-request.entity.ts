@@ -29,17 +29,18 @@ export class ReturnRequestEntity extends BaseEntity {
   @JoinColumn({ name: 'allocation_id' })
   allocation!: StockAllocationEntity;
 
-  @ManyToOne(() => BomEntity)
+  @ManyToOne(() => BomEntity, { nullable: true })
   @JoinColumn({ name: 'bom_id' })
-  bom!: BomEntity;
+  bom?: BomEntity;
 
   // ==================== Foreign Keys ====================
 
   @Column({ name: 'allocation_id', type: 'uuid' })
   allocationId!: string;
 
-  @Column({ name: 'bom_id', type: 'uuid' })
-  bomId!: string;
+  /** Null when the project has no BOM — the material still has to be recovered. */
+  @Column({ name: 'bom_id', type: 'uuid', nullable: true })
+  bomId?: string;
 
   // ==================== Payload ====================
 
