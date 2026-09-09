@@ -344,7 +344,11 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
                 {orderedPropertyQuotes.map((propertyQuote, idx) => (
                   <option key={propertyQuote.id} value={propertyQuote.id}>
                     {propertyQuote.quoteNumber}
-                    {idx === 0 ? ' (Current Version)' : ' (Historical)'}
+                    {propertyQuote.voidedAt
+                      ? ' (Voided)'
+                      : idx === 0
+                        ? ' (Current Version)'
+                        : ' (Historical)'}
                   </option>
                 ))}
               </select>
@@ -357,7 +361,13 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
                   : 'bg-gray-100 text-gray-700 border border-gray-200'
               }`}
             >
-              {isPrimaryPropertyQuote ? 'Current Active Version' : 'Historical Version'}
+              {/* With one quote on the roof the primary-selection picks it even
+                  when it is voided. A dead contract must never read "active". */}
+              {quote.voidedAt
+                ? 'Voided Version'
+                : isPrimaryPropertyQuote
+                  ? 'Current Active Version'
+                  : 'Historical Version'}
             </span>
           </div>
         )}
