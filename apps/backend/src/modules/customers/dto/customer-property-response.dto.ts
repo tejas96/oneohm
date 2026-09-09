@@ -11,6 +11,7 @@ import {
   type ShadingAnalysis,
   SiteStatus,
   type SurveyData,
+  LossReason,
 } from '@tejas96/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
@@ -183,6 +184,20 @@ export class CustomerPropertyResponseDto {
   @ApiPropertyOptional({ description: 'Why the property was closed as lost', maxLength: 500 })
   @Expose()
   lostReason?: string;
+
+  /**
+   * The picklist answer behind `lostReason`'s free text. Both travel: the code
+   * is what the loss-reason chart counts, the note is what a person wrote. The
+   * code was captured from day one but exposed nowhere, so the site screen
+   * could say a roof was lost without saying why.
+   */
+  @ApiPropertyOptional({ enum: LossReason, description: 'Why we lost it, as a countable code' })
+  @Expose()
+  lossReason?: LossReason;
+
+  @ApiPropertyOptional({ description: 'When the property was closed as lost' })
+  @Expose()
+  lostAt?: Date;
 
   // ==================== Notes ====================
   @ApiPropertyOptional()

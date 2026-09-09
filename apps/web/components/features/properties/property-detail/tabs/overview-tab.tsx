@@ -1,5 +1,6 @@
 'use client';
 
+import { LOSS_REASON_LABELS } from '@tejas96/shared/constants';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
@@ -166,6 +167,29 @@ function SiteProfileCard({ property }: { property: CustomerPropertyResponse }): 
             label: 'Status',
             value: <TonePill label={siteLifecycle.label} tone={siteLifecycle.tone} dot />,
           },
+          /*
+           * Why we lost it, right under the status that says we did. The reason
+           * was captured from the first release and shown nowhere but a
+           * dashboard chart, so the one screen a rep opens to ask "what
+           * happened here?" could not answer. Only rendered while the site is
+           * lost — a reopened roof clears these.
+           */
+          ...(property.status === PropertyStatus.LOST && (property.lossReason || property.lostReason)
+            ? [
+                {
+                  label: 'Why lost',
+                  value: [
+                    property.lossReason ? LOSS_REASON_LABELS[property.lossReason] : null,
+                    property.lostAt ? `on ${formatDate(property.lostAt)}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · '),
+                },
+                ...(property.lostReason
+                  ? [{ label: 'What they said', value: property.lostReason, wide: true }]
+                  : []),
+              ]
+            : []),
           { label: 'Address', value: address, wide: true },
           { label: 'Added by', value: property.creatorName || '—' },
           { label: 'Added on', value: formatDate(property.createdAt) },

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import {
+import { LossReason,
   ConnectionType,
   LeadTemperature,
   type ProjectStatus,
@@ -64,6 +64,11 @@ export interface CustomerPropertyResponse {
   changeRequests?: StoredChangeRequest[];
   // Status
   status: PropertyStatus;
+  /** Free text a person wrote when closing the site. */
+  lostReason?: string;
+  /** The countable picklist code behind it. */
+  lossReason?: LossReason;
+  lostAt?: string;
   notes?: string;
   projectId?: string;
   /**
