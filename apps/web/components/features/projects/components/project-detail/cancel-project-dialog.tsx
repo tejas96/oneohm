@@ -46,6 +46,9 @@ const PROPERTY_OUTCOME_OPTIONS: ReadonlyArray<SegmentedOption<'requote' | 'close
 
 type ParsedKept = { ok: true; paise: number } | { ok: false; message: string };
 
+/** The untouched value of a settlement line: keep everything that was collected. */
+const defaultKept = (collectedPaise: number): string => paiseToRupees(collectedPaise).toFixed(2);
+
 /**
  * Reads one settlement line's typed rupee text against what that payer
  * actually collected. Zero is a valid answer — it means refund everything —
@@ -92,6 +95,19 @@ export function CancelProjectDialog({
   const [lossReason, setLossReason] = useState<LossReason | ''>('');
   const [cancelReason, setCancelReason] = useState('');
   const [propertyOutcome, setPropertyOutcome] = useState<'requote' | 'close'>('requote');
+  /*
+   * Only what a person actually TYPED. The "keep everything" default is not
+   * stored here — it is rendered from the preview at `keptFor` below.
+   *
+   * This dialog is mounted unconditionally by ProjectStatusDropdown, so its
+   * state survives close and reopen. Seeding the defaults into state needed
+   * an effect to re-seed them, and that effect could not fire on reopen: it
+   * depended on `preview.data`, and react-query hands back the same `data`
+   * reference on an unchanged refetch (staleTime 60s). So the reset below
+   * emptied every amount box and nothing refilled it — second time anyone
+   * opened this dialog on a project with money, validation complained and
+   * submit was dead. No seeded state, no stale seed.
+   */
   const [keptText, setKeptText] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -102,45 +118,59 @@ export function CancelProjectDialog({
     setKeptText({});
   }, [open]);
 
-  /*
-   * Default every line to keeping the full amount, so the common case — keep
-   * everything, refund nothing — is one click. Re-seeded whenever the
-   * preview lands, but this never overwrites a line the person already
-   * edited: it only fills in payers not yet present in `keptText`.
-   */
-  useEffect(() => {
-    if (!preview.data) return;
-    setKeptText((current) => {
-      let changed = false;
-      const next = { ...current };
-      for (const line of preview.data ?? []) {
-        if (!(line.payerType in next)) {
-          next[line.payerType] = paiseToRupees(line.collectedPaise).toFixed(2);
-          changed = true;
-        }
-      }
-      return changed ? next : current;
-    });
-  }, [preview.data]);
-
   const lines = useMemo(() => preview.data ?? [], [preview.data]);
+
+  /*
+   * What a line shows when nobody has typed in it. Keeping the full amount is
+   * the common case — keep everything, refund nothing — so it is the default,
+   * and it is one click.
+   *
+   * `??`, not `||`: clearing the box to type 0 leaves an empty string, and
+   * that must stay empty so it fails validation rather than silently
+   * springing back to the full amount. One helper, used by both the input and
+   * the validator, so what is displayed and what is submitted cannot drift.
+   */
+  const keptFor = (payerType: string, collectedPaise: number): string =>
+    keptText[payerType] ?? defaultKept(collectedPaise);
+
   const parsedLines = useMemo(
     () =>
       lines.map((line) => ({
         payerType: line.payerType,
         collectedPaise: line.collectedPaise,
-        parsed: parseKeptInput(keptText[line.payerType] ?? '', line.collectedPaise),
+        parsed: parseKeptInput(
+          keptText[line.payerType] ?? defaultKept(line.collectedPaise),
+          line.collectedPaise,
+        ),
       })),
     [lines, keptText],
   );
 
+  /*
+   * The settlement decision has to have LANDED before anything can be
+   * cancelled. `parsedLines` is empty while the preview is in flight and
+   * empty if it failed, and an empty `settlements` array means "keep
+   * everything" to the backend — so a fast operator, or any operator when
+   * the preview errors, used to cancel with no refund and no warning.
+   *
+   * Same rule the project detail cards use: a failure only counts while
+   * there is nothing to show, so a refetch that fails on top of figures we
+   * already have keeps those figures rather than blocking on them.
+   */
+  const settlementReady = preview.data !== undefined;
+  const settlementFailed = preview.isError && !settlementReady;
+
   const canSubmit =
+    settlementReady &&
     Boolean(lossReason) &&
     cancelReason.trim().length > 0 &&
     parsedLines.every((line) => line.parsed.ok);
 
   const handleSubmit = (): void => {
     if (!lossReason || !cancelReason.trim()) return;
+    // Belt and braces: without the preview we do not know what was collected,
+    // and sending `settlements: []` would tell the backend to keep it all.
+    if (!settlementReady) return;
 
     const settlements: CancelProjectSettlement[] = [];
     let anyRefund = false;
@@ -239,7 +269,30 @@ export function CancelProjectDialog({
             />
           </Box>
 
-          {lines.length > 0 && (
+          {/* Three states, because "no lines yet" and "no money on this
+              project" are not the same thing and must not look the same:
+              submit waits for the first, and is allowed by the second. */}
+          {!settlementReady && (
+            <>
+              <Divider />
+              <Box>
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Settlement
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color={settlementFailed ? 'error.main' : 'text.secondary'}
+                  sx={{ display: 'block', mt: 0.5 }}
+                >
+                  {settlementFailed
+                    ? 'Could not read what this project has collected, so there is no way to tell what should be refunded. Cancelling is blocked until this loads — close this and try again.'
+                    : 'Checking what this project has collected. Cancelling is blocked until it loads, so nothing is refunded or kept by accident.'}
+                </Typography>
+              </Box>
+            </>
+          )}
+
+          {settlementReady && lines.length > 0 && (
             <>
               <Divider />
               <Box>
@@ -259,7 +312,7 @@ export function CancelProjectDialog({
                       key={line.payerType}
                       fieldLabel={`${PAYER_LABELS[line.payerType]} — collected ${formatPaise(line.collectedPaise)}`}
                       inputMode="decimal"
-                      value={keptText[line.payerType] ?? ''}
+                      value={keptFor(line.payerType, line.collectedPaise)}
                       onChange={(event) =>
                         setKeptText((current) => ({
                           ...current,
