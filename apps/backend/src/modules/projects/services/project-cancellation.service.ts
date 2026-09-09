@@ -178,26 +178,47 @@ export class ProjectCancellationService {
       // `dispatched − returned`, so such a request could never be completed.
       const atSite = Number(allocation.dispatchedQuantity) - Number(allocation.returnedQuantity);
 
+      // Decide by quantity, not status. `status !== DISPATCHED` used to be the
+      // guard here, but that misses COMPLETED — set once an allocation is
+      // fully dispatched *and* delivered — so a completed allocation would
+      // reach cancel(), find nothing undispatched to release, and still get
+      // flipped to CANCELLED for no gain. cancel() itself only rejects a
+      // DISPATCHED allocation, not a COMPLETED one, so the decision has to be
+      // made here. The two quantities are disjoint — cancel() releases the
+      // undispatched remainder, raiseReturn recovers what is at site — so both
+      // can run on one allocation without double-counting, and neither
+      // depends on the other succeeding.
+      const undispatched =
+        Number(allocation.allocatedQuantity) - Number(allocation.dispatchedQuantity);
+
       // This whole half runs after the cancellation has committed, so a
       // failure here must not report the cancellation as failed, and one bad
       // allocation must not strand the rest. Log loudly instead — Task 8's
       // cleanup checklist is what surfaces whatever is left holding stock.
-      try {
-        // Anything still in the warehouse goes back to free stock. A fully
-        // dispatched allocation has nothing to release and cancel() rejects it.
-        if (allocation.status !== StockAllocationStatus.DISPATCHED) {
+      // The two steps are independent, so each gets its own try/catch: one
+      // failing must not silently skip the other, and the log must say which
+      // recovery actually failed rather than blaming both on "released".
+      if (undispatched > 0) {
+        try {
           await this.stockAllocationService.cancel(allocation.id, note, userId);
+        } catch (error) {
+          this.logger.error(
+            `Project ${projectNumber} cancelled, but allocation ${allocation.id}'s undispatched ` +
+              `stock could not be released: ${String(error)}. Free this stock by hand.`,
+          );
         }
+      }
 
-        // Anything already at site is a physical recovery, not a status flip.
-        if (atSite > 0) {
+      // Anything already at site is a physical recovery, not a status flip.
+      if (atSite > 0) {
+        try {
           await this.raiseReturn(allocation, atSite, note, userId);
+        } catch (error) {
+          this.logger.error(
+            `Project ${projectNumber} cancelled, but allocation ${allocation.id}'s return request ` +
+              `for material at site could not be raised: ${String(error)}. Recover this material by hand.`,
+          );
         }
-      } catch (error) {
-        this.logger.error(
-          `Project ${projectNumber} cancelled, but allocation ${allocation.id} could not be ` +
-            `released: ${String(error)}. Free this stock by hand.`,
-        );
       }
     }
   }

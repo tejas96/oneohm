@@ -340,7 +340,7 @@ export class StockAllocationService {
    *
    * Status transitions:
    *  DISPATCHED / COMPLETED → PARTIALLY_DISPATCHED  (items no longer fully at site)
-   *  Any other non-cancelled status stays unchanged.
+   *  Any other status, CANCELLED included, stays unchanged.
    */
   async returnToStock(
     id: string,
@@ -372,9 +372,16 @@ export class StockAllocationService {
       if (!allocationRow) {
         throw new NotFoundException(`Stock Allocation with ID ${id} not found`);
       }
-      if (allocationRow.status === StockAllocationStatus.CANCELLED) {
-        throw new BadRequestException('Cannot return stock from a cancelled allocation');
-      }
+
+      // No status guard here on purpose — do not reinstate one. Material
+      // physically at site can come back regardless of the allocation's
+      // administrative status. In particular, project cancellation cancels
+      // the allocation and then raises a return request against that same,
+      // now-cancelled allocation for whatever was already dispatched; a
+      // status guard here made that return permanently uncompletable. The
+      // quantity guard right below (`maxReturnQty <= 0`) already rejects an
+      // allocation that never shipped, which is the case this guard was
+      // actually protecting.
 
       // Max returnable = total ever dispatched minus total already returned.
       const maxReturnQty =
