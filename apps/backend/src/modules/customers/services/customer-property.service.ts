@@ -22,7 +22,6 @@ import {
 import { DataSource, IsNull, Not, type EntityManager } from 'typeorm';
 
 import { LeadClosureService } from './lead-closure.service';
-
 import { systemSizeKwOf } from '../../../common/utils';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { DiscomService } from '../../discoms/services/discom.service';

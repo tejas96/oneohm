@@ -13,12 +13,6 @@ import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource, In, IsNull } from 'typeorm';
 
 import { LeadClosureService } from './lead-closure.service';
-import {
-  FollowupRepository,
-  rollUpAssignees,
-  type FollowupAssignee,
-  type FollowupAssigneeRow,
-} from '../repositories/followup.repository';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
@@ -37,6 +31,12 @@ import {
   type CustomerOverviewStats,
   type SitePortfolioSummary,
 } from '../repositories/customer-profile.repository';
+import {
+  FollowupRepository,
+  rollUpAssignees,
+  type FollowupAssignee,
+  type FollowupAssigneeRow,
+} from '../repositories/followup.repository';
 
 type CustomerWithDeleteInfo = CustomerProfileEntity & {
   deleteBlockReasons?: string[];
