@@ -9,7 +9,7 @@ import { ReturnRequestService } from '../../inventory/services/return-request.se
 import { StockAllocationService } from '../../inventory/services/stock-allocation.service';
 import { LedgerWriteService } from '../../ledger/services/ledger-write.service';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
-import { CancelProjectDto } from '../dto';
+import { CancelProjectDto, CancellationCleanupDto } from '../dto';
 import { ProjectEntity } from '../entities/project.entity';
 import { ProjectRepository } from '../repositories';
 
@@ -160,6 +160,46 @@ export class ProjectCancellationService {
     return this.projectRepository.findById(projectId);
   }
 
+  /**
+   * Derived on read from the four things that can still be outstanding. A
+   * stored flag would be one more cache to fall out of step with the rows it
+   * describes.
+   */
+  async getCleanup(projectId: string): Promise<CancellationCleanupDto> {
+    const [row] = await this.dataSource.query(
+      `SELECT
+         (SELECT COALESCE(SUM(s.dispatched_quantity - s.returned_quantity), 0)
+            FROM stock_allocations s
+           WHERE s.project_id = $1
+             AND s.dispatched_quantity > s.returned_quantity)::numeric    AS units_at_site,
+         (SELECT COUNT(*) FROM return_requests r
+            JOIN stock_allocations s ON s.id = r.allocation_id
+           WHERE s.project_id = $1 AND r.status = 'pending')::int         AS pending_returns,
+         (SELECT COUNT(*) FROM purchase_orders po
+           WHERE po.project_id = $1
+             AND po.status NOT IN ('received', 'cancelled'))::int         AS open_purchase_orders,
+         (SELECT COUNT(*) FROM employee_commissions c
+           WHERE c.project_id = $1
+             AND c.status = 'paid'
+             AND c.recovered_at IS NULL)::int                             AS unrecovered_commissions,
+         (SELECT settled_at IS NOT NULL FROM projects WHERE id = $1)      AS settled`,
+      [projectId],
+    );
+
+    // The stock gate is `units_at_site`, the physical fact, NOT `pending_returns`.
+    // A return request that was never created must not read as "nothing to do".
+    const open = Number(row.units_at_site) + row.open_purchase_orders + row.unrecovered_commissions;
+
+    return {
+      unitsAtSite: Number(row.units_at_site),
+      pendingReturns: row.pending_returns,
+      openPurchaseOrders: row.open_purchase_orders,
+      unrecoveredCommissions: row.unrecovered_commissions,
+      settled: row.settled,
+      state: open === 0 && row.settled ? 'settled' : 'cleanup_pending',
+    };
+  }
+
   private async releaseStock(
     projectId: string,
     projectNumber: string,
@@ -270,7 +310,8 @@ export class ProjectCancellationService {
     // resolves the allocation, not the BOM. This used to bail out and log,
     // which stranded the material AND let the cleanup checklist report the
     // project settled, since that checklist reads `return_requests`.
-    const bomId = allocation.bomId ?? (await this.findProjectBomId(allocation.projectId)) ?? undefined;
+    const bomId =
+      allocation.bomId ?? (await this.findProjectBomId(allocation.projectId)) ?? undefined;
 
     await this.returnRequestService.create(
       { allocationId: allocation.id, bomId, quantity, reason },

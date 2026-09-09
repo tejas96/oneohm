@@ -29,6 +29,7 @@ import type { CurrentUserType } from '../../auth/types';
 import { hasAdminBypassRole, resolveProjectListMemberId } from '../../iam/constants';
 import {
   CancelProjectDto,
+  CancellationCleanupDto,
   ConvertFromQuoteDto,
   ProjectResponseDto,
   UpdateProjectDto,
@@ -473,6 +474,22 @@ export class ProjectController {
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Get what a cancelled project still has hanging
+   */
+  @Get(':id/cancellation-cleanup')
+  @ApiOperation({
+    summary: 'Get cancellation cleanup checklist',
+    description:
+      'Units still at site, open purchase orders and unrecovered commissions for a ' +
+      'cancelled project, derived at read time from the rows themselves.',
+  })
+  async getCancellationCleanup(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CancellationCleanupDto> {
+    return this.cancellationService.getCleanup(id);
   }
 
   /**

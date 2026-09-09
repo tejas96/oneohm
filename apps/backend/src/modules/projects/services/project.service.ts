@@ -661,15 +661,11 @@ export class ProjectService {
    */
   private validateStatusTransition(currentStatus: ProjectStatus, newStatus: ProjectStatus): void {
     const validTransitions: Record<ProjectStatus, ProjectStatus[]> = {
-      [ProjectStatus.PLANNING]: [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED],
-      [ProjectStatus.ACTIVE]: [
-        ProjectStatus.ON_HOLD,
-        ProjectStatus.COMPLETED,
-        ProjectStatus.CANCELLED,
-      ],
-      [ProjectStatus.ON_HOLD]: [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED],
+      [ProjectStatus.PLANNING]: [ProjectStatus.ACTIVE],
+      [ProjectStatus.ACTIVE]: [ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED],
+      [ProjectStatus.ON_HOLD]: [ProjectStatus.ACTIVE],
       [ProjectStatus.COMPLETED]: [ProjectStatus.ACTIVE],
-      [ProjectStatus.CANCELLED]: [ProjectStatus.ACTIVE],
+      [ProjectStatus.CANCELLED]: [],
     };
 
     const allowed = validTransitions[currentStatus] || [];
