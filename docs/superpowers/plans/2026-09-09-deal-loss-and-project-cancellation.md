@@ -1289,10 +1289,18 @@ In `project.service.ts`, `POST /projects/:id/cancel` is now the only route into 
 
 Mirror all five lines in `apps/web/components/features/projects/constants.ts:43-47`, so the status dropdown offers no transition the API will reject. Cancelling moves to its own action in Task 11.
 
+**Correction, learned from Task 7 — the gate must be the fact, not the paperwork.**
+
+This task originally gated on "no pending `return_requests`". Twice in Task 7 a return request failed to exist while panels were still at a customer's site: once because the project had no BOM, once because already-cancelled allocations were skipped. In both cases this checklist would have reported the project **settled**. A checklist that certifies the opposite of the truth is worse than none.
+
+Gate on the physical fact instead: **no allocation on the project where `dispatched_quantity > returned_quantity`.** It cannot be defeated by a missing row, and completing a return raises `returned_quantity`, so it clears on its own. Keep the pending-return count as detail on the line — "4 units at site, 1 pending return" — never as the gate.
+
 - [ ] **Step 2: Add the checklist DTO**
 
 ```ts
 export class CancellationCleanupDto {
+  @ApiProperty({ example: 4, description: 'Units still at site: dispatched minus returned' })
+  unitsAtSite!: number;
   @ApiProperty({ example: 1 }) pendingReturns!: number;
   @ApiProperty({ example: 2 }) openPurchaseOrders!: number;
   @ApiProperty({ example: 0 }) unrecoveredCommissions!: number;
@@ -1313,6 +1321,10 @@ export class CancellationCleanupDto {
   async getCleanup(projectId: string): Promise<CancellationCleanupDto> {
     const [row] = await this.dataSource.query(
       `SELECT
+         (SELECT COALESCE(SUM(s.dispatched_quantity - s.returned_quantity), 0)
+            FROM stock_allocations s
+           WHERE s.project_id = $1
+             AND s.dispatched_quantity > s.returned_quantity)::numeric    AS units_at_site,
          (SELECT COUNT(*) FROM return_requests r
             JOIN stock_allocations s ON s.id = r.allocation_id
            WHERE s.project_id = $1 AND r.status = 'pending')::int         AS pending_returns,
@@ -1327,10 +1339,13 @@ export class CancellationCleanupDto {
       [projectId],
     );
 
+    // The stock gate is `units_at_site`, the physical fact, NOT `pending_returns`.
+    // A return request that was never created must not read as "nothing to do".
     const open =
-      row.pending_returns + row.open_purchase_orders + row.unrecovered_commissions;
+      Number(row.units_at_site) + row.open_purchase_orders + row.unrecovered_commissions;
 
     return {
+      unitsAtSite: Number(row.units_at_site),
       pendingReturns: row.pending_returns,
       openPurchaseOrders: row.open_purchase_orders,
       unrecoveredCommissions: row.unrecovered_commissions,
