@@ -1165,7 +1165,26 @@ export class ProjectCancellationService {
   }
 ```
 
-Add `ReturnRequestService` and a `findProjectBomId` helper (a single `SELECT id FROM boms WHERE project_id = $1 ORDER BY created_at DESC LIMIT 1`) to the constructor and the class. Register `ProjectCancellationService` in `projects.module.ts` and import the inventory, ledger, quotes and customers modules it depends on, following the import style already used by `ProjectService`.
+Add `ReturnRequestService` and a `findProjectBomId` helper (a single `SELECT id FROM bom WHERE project_id = $1 ORDER BY created_at DESC LIMIT 1` — the table is `bom`, singular) to the constructor and the class.
+
+**Correction, found in review — this loop as written cannot work.**
+
+`cancel()` sets the allocation to `CANCELLED`, and `returnToStock` refuses a cancelled allocation outright (`stock-allocation.service.ts:375-377`). So for any allocation with material at site, this loop cancels it and then raises a return request that can **never** be completed: the panels can only be written off. Reordering does not help — the refusal happens at completion time, not creation.
+
+Two changes fix it:
+
+1. **Relax the guard in `returnToStock`.** Delete the `status === CANCELLED` check. Material physically at site can come back regardless of the allocation's administrative status, and the quantity guard three lines below (`maxReturnQty = dispatched − returned; if (maxReturnQty <= 0) throw`) already rejects an allocation that never shipped — which is the case the status guard was really protecting. Say so in a comment so nobody reinstates it.
+
+2. **Decide on quantities, not status.** `if (allocation.status !== DISPATCHED)` misses `COMPLETED`, which is set when an allocation is fully dispatched *and* delivered. `cancel()` then releases nothing and flips a delivered allocation to `CANCELLED` for no gain. Call `cancel()` only when there is something to release:
+
+```ts
+      const undispatched = Number(allocation.allocatedQuantity) - Number(allocation.dispatchedQuantity);
+      if (undispatched > 0) {
+        await this.stockAllocationService.cancel(allocation.id, note, userId);
+      }
+```
+
+The two quantities are disjoint — `cancel()` releases the undispatched remainder, the return request recovers what is at site — so both can run on one allocation without double-counting. Register `ProjectCancellationService` in `projects.module.ts` and import the inventory, ledger, quotes and customers modules it depends on, following the import style already used by `ProjectService`.
 
 - [ ] **Step 6: Add `collectedByPayer`**
 
