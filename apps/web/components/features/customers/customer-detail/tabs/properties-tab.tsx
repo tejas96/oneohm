@@ -220,6 +220,21 @@ export function PropertiesTab({
                             </Typography>
                           ) : null}
                         </Stack>
+                      ) : property.latestQuoteVoided && value.label ? (
+                        /* Quoted, then the deal died. "Not quoted" would erase
+                           the most useful thing about a lost site — that we
+                           tried, and for how much. The status is deliberately
+                           absent: a voided quote keeps whatever status it had. */
+                        <Stack gap={0.25} alignItems="flex-start">
+                          <Mono sx={{ fontWeight: 500, color: 'var(--ds-text-secondary)' }}>
+                            {value.label}
+                          </Mono>
+                          <Typography
+                            sx={{ fontSize: '0.625rem', color: 'var(--ds-text-tertiary)' }}
+                          >
+                            quoted, no longer live
+                          </Typography>
+                        </Stack>
                       ) : (
                         <Typography sx={{ fontSize: '0.75rem', color: 'var(--ds-text-tertiary)' }}>
                           Not quoted

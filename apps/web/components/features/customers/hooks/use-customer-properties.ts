@@ -102,6 +102,11 @@ export interface CustomerPropertyResponse {
   latestQuoteId?: string;
   latestQuoteNumber?: string;
   latestQuoteStatus?: QuoteStatus;
+  /**
+   * The roof has no live quote and the figures above come from a voided one.
+   * Show the value as history; `latestQuoteStatus` is deliberately absent.
+   */
+  latestQuoteVoided?: boolean;
   latestQuoteDate?: string;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;

@@ -386,6 +386,15 @@ export class CustomerPropertyResponseDto {
   @Expose()
   latestQuoteStatus?: QuoteStatus;
 
+  @ApiProperty({
+    required: false,
+    description:
+      'True when the roof has no live quote and the figures above come from a ' +
+      'voided one. Present the value as history, never as a current status.',
+  })
+  @Expose()
+  latestQuoteVoided?: boolean;
+
   @ApiPropertyOptional({
     description: 'Date of the latest quote (official quote date)',
     example: '2026-01-24',

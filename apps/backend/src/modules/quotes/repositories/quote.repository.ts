@@ -15,6 +15,13 @@ export interface LatestQuoteInfo {
   id: string;
   quoteNumber: string;
   status: QuoteStatus;
+  /**
+   * True when no LIVE quote exists on the roof and this is the newest voided
+   * one, kept for its value alone. Callers must not present `status` as the
+   * roof's current state when this is set — a voided quote keeps whatever
+   * status it had, which is how a dead contract used to read "accepted".
+   */
+  voided: boolean;
   quoteDate: Date;
   finalPrice?: number;
   systemSizeKw?: number;
@@ -442,9 +449,13 @@ export class QuoteRepository {
       ])
       .distinctOn(['quote.propertyId'])
       .where('quote.propertyId IN (:...propertyIds)', { propertyIds })
+      .addSelect('quote.voidedAt')
       .andWhere('quote.deletedAt IS NULL')
-      .andWhere('quote.voidedAt IS NULL')
+      // Live quotes win outright. A voided one is only reached when the roof
+      // has nothing live left — it still carries the value of what was tried,
+      // which a lost site needs in order to say "we quoted X and lost".
       .orderBy('quote.propertyId')
+      .addOrderBy('CASE WHEN quote.voided_at IS NULL THEN 0 ELSE 1 END', 'ASC')
       .addOrderBy('quote.createdAt', 'DESC')
       .addOrderBy('quote.id', 'DESC')
       .getMany();
@@ -458,6 +469,7 @@ export class QuoteRepository {
           id: quote.id,
           quoteNumber: quote.quoteNumber,
           status: quote.status,
+          voided: quote.voidedAt != null,
           quoteDate: quote.quoteDate,
           finalPrice: cv?.finalPrice != null ? Number(cv.finalPrice) : undefined,
           systemSizeKw: systemSizeKwOf(cv ?? {}),

@@ -71,6 +71,8 @@ type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   latestQuoteId?: string;
   latestQuoteNumber?: string;
   latestQuoteStatus?: QuoteStatus;
+  /** Set when the only quote left on the roof is voided — value without a live status. */
+  latestQuoteVoided?: boolean;
   latestQuoteDate?: Date;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;
@@ -340,7 +342,11 @@ export class CustomerPropertyService {
         changeOrderValue: contract?.changeOrderValue,
         latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
-        latestQuoteStatus: quoteInfo?.status,
+        // A voided quote keeps whatever status it had, so publishing it would
+        // show a dead contract as the roof's current state. The value and
+        // number still travel — a lost site needs to say what was quoted.
+        latestQuoteStatus: quoteInfo?.voided ? undefined : quoteInfo?.status,
+        latestQuoteVoided: quoteInfo?.voided,
         latestQuoteDate: quoteInfo?.quoteDate,
         latestQuoteFinalPrice: quoteInfo?.finalPrice,
         latestQuoteSystemSizeKw: systemSizeKwOf({
@@ -402,7 +408,11 @@ export class CustomerPropertyService {
         changeOrderValue: contract?.changeOrderValue,
         latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
-        latestQuoteStatus: quoteInfo?.status,
+        // A voided quote keeps whatever status it had, so publishing it would
+        // show a dead contract as the roof's current state. The value and
+        // number still travel — a lost site needs to say what was quoted.
+        latestQuoteStatus: quoteInfo?.voided ? undefined : quoteInfo?.status,
+        latestQuoteVoided: quoteInfo?.voided,
         latestQuoteDate: quoteInfo?.quoteDate,
         latestQuoteFinalPrice: quoteInfo?.finalPrice,
         latestQuoteSystemSizeKw: systemSizeKwOf({
