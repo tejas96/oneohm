@@ -262,11 +262,19 @@ export class CustomerPropertyRepository {
       .from('projects', 'project')
       .where('project.property_id IN (:...propertyIds)', { propertyIds })
       .andWhere('project.deleted_at IS NULL')
-      .getRawMany<{ propertyId: string; projectId: string; status: ProjectStatus; createdAt: Date }>();
+      .getRawMany<{
+        propertyId: string;
+        projectId: string;
+        status: ProjectStatus;
+        createdAt: Date;
+      }>();
 
     const current = this.pickCurrentProjectPerProperty(rows);
     return new Map(
-      Array.from(current, ([propertyId, row]) => [propertyId, { id: row.projectId, status: row.status }]),
+      Array.from(current, ([propertyId, row]) => [
+        propertyId,
+        { id: row.projectId, status: row.status },
+      ]),
     );
   }
 

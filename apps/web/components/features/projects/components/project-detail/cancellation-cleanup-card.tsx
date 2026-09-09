@@ -124,14 +124,22 @@ export function CancellationCleanupCard({
         {rows.map((row) =>
           row.href ? (
             <RowLink key={row.key} href={row.href}>
-              <WarningAmberOutlinedIcon sx={{ fontSize: 17, color: 'warning.main', flexShrink: 0 }} />
-              <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">{row.text}</span>
+              <WarningAmberOutlinedIcon
+                sx={{ fontSize: 17, color: 'warning.main', flexShrink: 0 }}
+              />
+              <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">
+                {row.text}
+              </span>
               <ChevronRightIcon sx={{ fontSize: 16, color: 'text.disabled', flexShrink: 0 }} />
             </RowLink>
           ) : (
             <div key={row.key} className="-mx-2.5 flex min-w-0 items-center gap-3 px-2.5 py-2">
-              <WarningAmberOutlinedIcon sx={{ fontSize: 17, color: 'warning.main', flexShrink: 0 }} />
-              <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">{row.text}</span>
+              <WarningAmberOutlinedIcon
+                sx={{ fontSize: 17, color: 'warning.main', flexShrink: 0 }}
+              />
+              <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">
+                {row.text}
+              </span>
             </div>
           ),
         )}

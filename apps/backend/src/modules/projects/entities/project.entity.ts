@@ -1,12 +1,10 @@
-import { LossReason, ProjectPriority, ProjectStatus, type ProjectMetadata } from '@tejas96/shared/types';
 import {
-  Column,
-  DeleteDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-} from 'typeorm';
+  LossReason,
+  ProjectPriority,
+  ProjectStatus,
+  type ProjectMetadata,
+} from '@tejas96/shared/types';
+import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { ProjectTaskEntity } from './project-task.entity';
 import { ProjectTeamMemberEntity } from './project-team-member.entity';

@@ -71,12 +71,7 @@ describe('LeadClosureService', () => {
   });
 
   it('markCustomerLost closes the customer chain with a null propertyId', async () => {
-    await service.markCustomerLost(
-      'cust-1',
-      'Never reachable',
-      LossReason.NOT_REACHABLE,
-      'user-1',
-    );
+    await service.markCustomerLost('cust-1', 'Never reachable', LossReason.NOT_REACHABLE, 'user-1');
 
     expect(customerRepo.markLost.mock.calls[0][1]).toBe('Never reachable');
     expect(customerRepo.markLost.mock.calls[0][2]).toBe(LossReason.NOT_REACHABLE);

@@ -197,7 +197,10 @@ export class SalesPipelineService {
    * counted independently, so a property that was later converted and then
    * had ITS project cancelled can contribute to both columns.
    */
-  async getLossReasons(fromDate?: string, toDate?: string): Promise<LossReasonBreakdownResponseDto> {
+  async getLossReasons(
+    fromDate?: string,
+    toDate?: string,
+  ): Promise<LossReasonBreakdownResponseDto> {
     const window = resolveStatsWindow(fromDate, toDate);
     return this.dataSource.query<LossReasonBreakdownEntryDto[]>(LOSS_REASON_BREAKDOWN_SQL, [
       window.fromDate,

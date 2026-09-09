@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { LossReason,
+import {
+  LossReason,
   ConnectionType,
   LeadTemperature,
   type ProjectStatus,

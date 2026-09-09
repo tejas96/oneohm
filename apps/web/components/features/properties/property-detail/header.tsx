@@ -29,7 +29,6 @@ import { PropertyStatus } from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { useState, type JSX, type ReactNode } from 'react';
 
-
 import { LEAD_TEMPERATURE_TONE, PROPERTY_TYPE_LABELS } from '../constants';
 import type { CustomerPropertyResponse } from '../hooks';
 import { getPropertyDisplayName } from '../utils';

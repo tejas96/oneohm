@@ -124,8 +124,8 @@ function LossReasonBreakdownCard({
                 />
               </div>
               <div className="mt-1 text-[11.5px] text-foreground-tertiary">
-                {entry.leadsLost} lead{entry.leadsLost === 1 ? '' : 's'} ·{' '}
-                {entry.projectsCancelled} project{entry.projectsCancelled === 1 ? '' : 's'}
+                {entry.leadsLost} lead{entry.leadsLost === 1 ? '' : 's'} · {entry.projectsCancelled}{' '}
+                project{entry.projectsCancelled === 1 ? '' : 's'}
               </div>
             </div>
           );

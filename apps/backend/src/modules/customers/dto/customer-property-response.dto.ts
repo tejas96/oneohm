@@ -280,7 +280,9 @@ export class CustomerPropertyResponseDto {
    */
   @ApiPropertyOptional({ enum: ProjectStatus })
   @Expose()
-  @Transform(({ obj }) => obj.projectStatus ?? resolveCurrentProject(obj.projects)?.status ?? undefined)
+  @Transform(
+    ({ obj }) => obj.projectStatus ?? resolveCurrentProject(obj.projects)?.status ?? undefined,
+  )
   projectStatus?: ProjectStatus;
 
   // ==================== Audit Fields ====================

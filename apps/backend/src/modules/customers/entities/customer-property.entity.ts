@@ -11,15 +11,7 @@ import {
   SiteStatus,
   type SurveyData,
 } from '@tejas96/shared/types';
-import {
-  Column,
-  DeleteDateColumn,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-} from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { CustomerProfileEntity } from './customer-profile.entity';
 import type { FollowupEntity } from './followup.entity';

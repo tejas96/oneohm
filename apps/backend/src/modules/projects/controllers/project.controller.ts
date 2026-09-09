@@ -501,7 +501,7 @@ export class ProjectController {
   @ApiOperation({
     summary: 'Get settlement preview for project cancellation',
     description:
-      "What each payer has actually collected so far, keyed by payer type. Pre-fills the " +
+      'What each payer has actually collected so far, keyed by payer type. Pre-fills the ' +
       'cancel dialog before the settlement decision is made.',
   })
   async getSettlementPreview(

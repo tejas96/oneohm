@@ -80,8 +80,7 @@ export class SalesPipelineController {
   @Get('loss-reasons')
   @ApiOperation({
     summary: 'Why we lose',
-    description:
-      'Lost leads and cancelled projects grouped by loss_reason, biggest reason first.',
+    description: 'Lost leads and cancelled projects grouped by loss_reason, biggest reason first.',
   })
   async getLossReasons(
     @Query() query: AnalyticsDateRangeQueryDto,

@@ -411,7 +411,9 @@ export const ProjectDetailHeader = React.memo(
         ? {
             tone: STATUS_NOTICE[ProjectStatus.CANCELLED]!.tone,
             title:
-              cleanup.data?.state === 'settled' ? 'Cancelled — settled' : 'Cancelled — cleanup pending',
+              cleanup.data?.state === 'settled'
+                ? 'Cancelled — settled'
+                : 'Cancelled — cleanup pending',
             body: STATUS_NOTICE[ProjectStatus.CANCELLED]!.body,
           }
         : STATUS_NOTICE[project.status];
