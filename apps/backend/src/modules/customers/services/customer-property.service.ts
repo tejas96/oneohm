@@ -22,6 +22,7 @@ import {
 import { DataSource, IsNull, Not, type EntityManager } from 'typeorm';
 
 import { LeadClosureService } from './lead-closure.service';
+
 import { systemSizeKwOf } from '../../../common/utils';
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { DiscomService } from '../../discoms/services/discom.service';
@@ -40,7 +41,12 @@ import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
-import { FollowupRepository } from '../repositories/followup.repository';
+import {
+  FollowupRepository,
+  rollUpAssignees,
+  type FollowupAssignee,
+  type FollowupAssigneeRow,
+} from '../repositories/followup.repository';
 import {
   mergeChangeRequestsForUpdate,
   normalizeChangeRequestsForStorage,
@@ -73,6 +79,11 @@ type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   latestQuoteDate?: Date;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;
+  /**
+   * Who is on the hook for THIS roof specifically. The parent customer row
+   * carries the rolled-up list; expanding splits it so each site owns its own.
+   */
+  followupAssignees?: FollowupAssignee[];
   /**
    * What the site's project is worth NOW, present only once it has one.
    *
@@ -292,6 +303,19 @@ export class CustomerPropertyService {
     const followupStateMap =
       await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
 
+    // Scoped to this one customer, so it is a single extra query for the whole
+    // expanded row rather than one per site.
+    const assigneeRows = await this.followupRepository.findAssigneesForCustomers(
+      Array.from(new Set(properties.map((p) => p.customerId))),
+    );
+    const assigneesByProperty = new Map<string, FollowupAssigneeRow[]>();
+    for (const row of assigneeRows) {
+      if (row.propertyId === null) continue;
+      const bucket = assigneesByProperty.get(row.propertyId);
+      if (bucket) bucket.push(row);
+      else assigneesByProperty.set(row.propertyId, [row]);
+    }
+
     const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
       const contract = contractMap.get(property.id);
@@ -311,6 +335,7 @@ export class CustomerPropertyService {
         latestQuoteSystemSizeKw: systemSizeKwOf({
           totalWattageWp: quoteInfo?.totalWattageWp,
         }),
+        followupAssignees: rollUpAssignees(assigneesByProperty.get(property.id) ?? []),
         nextFollowupAt: followupStateMap.get(property.id)?.nextAt ?? undefined,
         needsFollowup: followupStateMap.get(property.id)?.needsFollowup ?? false,
       };
@@ -355,6 +380,17 @@ export class CustomerPropertyService {
       await this.propertyRepository.findFollowupStateByPropertyIds(propertyIds);
 
     // Enrich properties with quote data
+    // One query for the whole expanded row, not one per site.
+    const assigneeRows = await this.followupRepository.findAssigneesForCustomers([customerId]);
+    const assigneesByProperty = new Map<string, FollowupAssigneeRow[]>();
+    for (const row of assigneeRows) {
+      // Customer-level rows belong to the parent, which carries its own list.
+      if (row.propertyId === null) continue;
+      const bucket = assigneesByProperty.get(row.propertyId);
+      if (bucket) bucket.push(row);
+      else assigneesByProperty.set(row.propertyId, [row]);
+    }
+
     return properties.map((property) => {
       const quoteInfo = quoteMap.get(property.id);
       const contract = contractMap.get(property.id);
@@ -373,6 +409,7 @@ export class CustomerPropertyService {
         latestQuoteSystemSizeKw: systemSizeKwOf({
           totalWattageWp: quoteInfo?.totalWattageWp,
         }),
+        followupAssignees: rollUpAssignees(assigneesByProperty.get(property.id) ?? []),
         nextFollowupAt: followupStateMap.get(property.id)?.nextAt ?? undefined,
         needsFollowup: followupStateMap.get(property.id)?.needsFollowup ?? false,
       };

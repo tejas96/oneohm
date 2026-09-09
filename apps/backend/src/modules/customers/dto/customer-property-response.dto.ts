@@ -14,6 +14,7 @@ import {
 } from '@tejas96/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
+import { FollowupAssigneeDto } from './customer-response.dto';
 import { PropertyDocumentDto } from './property-document.dto';
 import { toNum } from '../../../common/utils';
 import { DiscomResponseDto } from '../../discoms/dto/discom-response.dto';
@@ -406,6 +407,19 @@ export class CustomerPropertyResponseDto {
   @Expose()
   @Transform(({ value }) => toNum(value))
   latestQuoteSystemSizeKw?: number;
+
+  /**
+   * Who is on the hook for THIS roof. The parent CRM row carries the rolled-up
+   * list across the whole customer; expanding splits it so each site owns its
+   * own and the same face never means two things on one screen.
+   */
+  @ApiPropertyOptional({
+    type: [FollowupAssigneeDto],
+    description: 'Followup assignees on this property',
+  })
+  @Expose()
+  @Type(() => FollowupAssigneeDto)
+  followupAssignees?: FollowupAssigneeDto[];
 
   @ApiPropertyOptional({
     description: 'Whether the property has an active (initiated/applied) loan application',

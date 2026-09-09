@@ -88,6 +88,33 @@ export class CustomerOverviewStatsDto {
  * Used in API responses to control what data is exposed
  */
 @Exclude()
+/**
+ * One person attached to a customer's followups, as the CRM avatar column shows
+ * them.
+ *
+ * `live` is the whole point of the field. Somebody who still owes a call and
+ * somebody who merely closed the last one are both "assigned", and rendering
+ * them identically would leave the column unable to answer which sites actually
+ * need chasing.
+ */
+export class FollowupAssigneeDto {
+  @ApiProperty()
+  @Expose()
+  userId!: string;
+
+  @ApiProperty()
+  @Expose()
+  firstName!: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  @Expose()
+  lastName?: string | null;
+
+  @ApiProperty({ description: 'True while they still owe work; false when they only closed it last' })
+  @Expose()
+  live!: boolean;
+}
+
 export class CustomerResponseDto {
   @ApiProperty()
   @Expose()
@@ -205,6 +232,30 @@ export class CustomerResponseDto {
   @Expose()
   @Type(() => SitePortfolioDto)
   sitePortfolio?: SitePortfolioDto;
+
+  /**
+   * Everyone on the hook across this customer and all its sites, deduped, live
+   * first. The collapsed CRM row shows these; expanding splits them back apart.
+   */
+  @ApiPropertyOptional({
+    type: [FollowupAssigneeDto],
+    description: 'Followup assignees across this customer and its sites (list responses only)',
+  })
+  @Expose()
+  @Type(() => FollowupAssigneeDto)
+  followupAssignees?: FollowupAssigneeDto[];
+
+  /**
+   * Only the customer's own followups. The expanded CRM row shows these, so the
+   * parent stops claiming people who belong to one specific site.
+   */
+  @ApiPropertyOptional({
+    type: [FollowupAssigneeDto],
+    description: "Followup assignees on the customer itself, excluding its sites",
+  })
+  @Expose()
+  @Type(() => FollowupAssigneeDto)
+  ownFollowupAssignees?: FollowupAssigneeDto[];
 
   @ApiPropertyOptional({
     type: [String],
