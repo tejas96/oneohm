@@ -507,7 +507,16 @@ export const ProjectDetailHeader = React.memo(
             moneyIsBad = true;
             moneySubIsBad = true;
           } else if (ledger.outstandingPaise <= 0) {
-            moneySub = ledger.contractPaise > 0 ? 'Fully collected' : 'No contract value yet';
+            // A cancelled project owes nothing because the balance was
+            // cancelled, not because the customer paid it. "Fully collected"
+            // on a project that was stopped mid-way — and may have been
+            // refunded — claims money arrived that never did.
+            moneySub =
+              project.status === ProjectStatus.CANCELLED
+                ? 'Nothing further owed'
+                : ledger.contractPaise > 0
+                  ? 'Fully collected'
+                  : 'No contract value yet';
           } else if (next) {
             moneySub = next.dueDate
               ? `Next: ${next.name} · due ${formatDate(next.dueDate)}`

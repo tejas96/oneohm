@@ -64,7 +64,10 @@ export function CancellationCleanupCard({
       <DetailCard label="Cleanup" className="mt-4">
         <div className="flex items-center gap-2 py-1 text-[13px] text-foreground-secondary">
           <CheckCircleOutlineIcon sx={{ fontSize: 18, color: 'success.main' }} />
-          Cancelled — settled. Nothing left to clean up.
+          {/* The header banner directly above already says "Cancelled — settled".
+              This card sits under a "Cleanup" label and only has to answer what
+              is left, not restate the status. */}
+          Nothing left to clean up.
         </div>
         {commissionNote}
       </DetailCard>
