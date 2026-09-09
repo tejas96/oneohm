@@ -169,6 +169,13 @@ export class ProjectCancellationService {
    * describes.
    */
   async getCleanup(projectId: string): Promise<CancellationCleanupDto> {
+    // The query below has no FROM clause, so it returns exactly one row even
+    // for an id that matches no project — and `settled_at IS NOT NULL` on zero
+    // rows is SQL NULL, which would hand the caller `settled: null` where the
+    // DTO promises a boolean. Guard first, the way cancel(), getTimeline() and
+    // getProgress() all do, so a bad id is a 404 rather than a lie.
+    await this.projectRepository.findById(projectId);
+
     const [row] = await this.dataSource.query(
       `SELECT
          (SELECT COALESCE(SUM(s.dispatched_quantity - s.returned_quantity), 0)
