@@ -161,8 +161,14 @@ export class QuoteRepository {
         continue;
       }
 
-      const existingAccepted = existing.status === QuoteStatus.ACCEPTED;
-      const candidateAccepted = quote.status === QuoteStatus.ACCEPTED;
+      // A voided quote still carries `status = 'accepted'` (voiding leaves
+      // `status` alone), so "accepted" here must mean the LIVE contract -
+      // same rule as the accepted-first ordering in findAllByPropertyId
+      // below. Otherwise a dead accepted quote could outrank and replace a
+      // newer, still-live, non-accepted quote as the only row shown for the
+      // property.
+      const existingAccepted = existing.status === QuoteStatus.ACCEPTED && !existing.voidedAt;
+      const candidateAccepted = quote.status === QuoteStatus.ACCEPTED && !quote.voidedAt;
       if (!existingAccepted && candidateAccepted) {
         latestPerProperty.set(quote.propertyId, quote);
       }
@@ -372,11 +378,21 @@ export class QuoteRepository {
   }
 
   /**
-   * Find latest quote for each property ID (batch lookup)
+   * Find the latest LIVE quote for each property ID (batch lookup)
    * Uses PostgreSQL DISTINCT ON for efficient single-query retrieval
    *
+   * Voided quotes are excluded here, not just demoted. This feeds
+   * `latestQuoteStatus` on every property/customer surface that treats it as
+   * "the current quote" (cards, list/detail pages, the sales-pipeline stage
+   * calc) - a voided quote is not current, and those surfaces were never
+   * designed to render a void state. A property whose only quote has been
+   * voided is correctly absent from the returned map (reads as "no live
+   * quote"), never the dead quote's status. The full history, voided quotes
+   * included, is still available via findAllByPropertyId.
+   *
    * @param propertyIds - Array of property IDs to look up
-   * @returns Map of propertyId -> latest quote info
+   * @returns Map of propertyId -> latest LIVE quote info (properties whose
+   *   only quote(s) are voided are absent from the map)
    */
   async findLatestByPropertyIds(
     propertyIds: string[],
@@ -407,6 +423,7 @@ export class QuoteRepository {
       .distinctOn(['quote.propertyId'])
       .where('quote.propertyId IN (:...propertyIds)', { propertyIds })
       .andWhere('quote.deletedAt IS NULL')
+      .andWhere('quote.voidedAt IS NULL')
       .orderBy('quote.propertyId')
       .addOrderBy('quote.createdAt', 'DESC')
       .addOrderBy('quote.id', 'DESC')
