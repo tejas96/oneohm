@@ -11,6 +11,8 @@ import type { AxiosError } from 'axios';
 import { followupKeys } from './followup-keys';
 import { type FollowupResponse } from './use-followups';
 
+import { customerKeys } from '@/components/features/customers/hooks/use-create-customer';
+import { propertyKeys } from '@/components/features/properties/hooks/property-keys';
 import { apiClient } from '@/lib/api/client';
 
 export interface NextFollowupInput {
@@ -50,11 +52,21 @@ export interface CreateFollowupInput {
  * Blunt on purpose: a completion changes the property tab, the customer tab,
  * the /followups buckets and the counts at once, and a partially-stale view of
  * "what do I owe today" is worse than a refetch.
+ *
+ * The customer and property lists are busted too, and that is not incidental.
+ * The CRM assignee column is built from followups, so a reassignment moves a
+ * face from one row to another and a completion turns a live avatar stale.
+ * Without these two the list keeps serving its cached copy: filtering by the
+ * person you just removed still returns the customer, and only a hard refresh
+ * corrects it — which is exactly the bug this comment exists to prevent
+ * reappearing.
  */
 function useInvalidateFollowups(): () => void {
   const queryClient = useQueryClient();
   return () => {
     void queryClient.invalidateQueries({ queryKey: followupKeys.all });
+    void queryClient.invalidateQueries({ queryKey: customerKeys.all() });
+    void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
   };
 }
 
