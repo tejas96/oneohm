@@ -1,7 +1,9 @@
 'use client';
 
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import * as React from 'react';
 
+import { BusinessCard } from './business-card';
 import { CashFlowCard } from './cash-flow-card';
 import { HeadlineBand, type HeadlineTile } from './headline-band';
 import { LeadsWonCard } from './leads-won-card';
@@ -14,6 +16,9 @@ import { currentMonthRange, money, rupeesExact, type MoneyFormat } from '../lib/
 import { businessLinks, type BusinessRange } from '../lib/links';
 
 import { useServiceTicketStats } from '@/components/features/service-tickets/hooks/use-service-tickets';
+import { apiClient } from '@/lib/api/client';
+import { CHART_COLORS } from '@/lib/charts/palette';
+import { STALE_TIMES } from '@/lib/hooks/core';
 import { useOrgCustomersAr, useOrgOutstanding } from '@/lib/hooks/resources/finance-org';
 import { useCashFlow, useFinanceKpis } from '@/lib/hooks/resources/ledger';
 import { usePipelineDashboard } from '@/lib/hooks/resources/pipeline';
@@ -23,6 +28,112 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 const OLDEST_DEBT_ROWS = 3;
+
+// ============================================================================
+// Loss-reason breakdown
+// ============================================================================
+//
+// This mirrors the shape of `lib/hooks/resources/pipeline.ts` (same
+// `apiClient`, same query-key/stale-time conventions) but is kept local to
+// this file rather than added there: business-mode.tsx is the only file
+// Task 13 touches on the web side.
+
+/** Mirrors the backend's `LossReasonBreakdownEntryDto` (analytics/sales-pipeline). */
+interface LossReasonEntry {
+  lossReason: string;
+  leadsLost: number;
+  projectsCancelled: number;
+}
+
+const ANALYTICS_LOSS_REASONS = '/analytics/sales-pipeline/loss-reasons';
+
+function useLossReasons(range: BusinessRange, enabled: boolean): UseQueryResult<LossReasonEntry[]> {
+  return useQuery<LossReasonEntry[]>({
+    queryKey: ['sales-pipeline', 'loss-reasons', range.from, range.to],
+    enabled,
+    staleTime: STALE_TIMES.standard,
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<LossReasonEntry[]>(ANALYTICS_LOSS_REASONS, {
+        params: { fromDate: range.from, toDate: range.to },
+        signal,
+      });
+      return data;
+    },
+  });
+}
+
+/** `snake_case` reason code -> readable label, e.g. `customer_defaulted` -> "Customer defaulted". */
+function formatLossReason(reason: string): string {
+  const words = reason.split('_').filter(Boolean);
+  if (words.length === 0) return reason;
+  return [words[0]!.charAt(0).toUpperCase() + words[0]!.slice(1), ...words.slice(1)].join(' ');
+}
+
+interface LossReasonBreakdownCardProps {
+  entries: LossReasonEntry[];
+  isError: boolean;
+  onRetry: () => void;
+}
+
+/**
+ * Why we lose, biggest reason first — the API already sorts this way, so the
+ * card just renders the order it receives rather than re-sorting.
+ *
+ * Combines two different events (a lead marked lost, a project cancelled)
+ * under one reason code. They are shown as two counts per row rather than
+ * summed into one, because a reader comparing this to the funnel's "Lost"
+ * count needs to see the lead half on its own.
+ */
+function LossReasonBreakdownCard({
+  entries,
+  isError,
+  onRetry,
+}: LossReasonBreakdownCardProps): React.JSX.Element {
+  const maxTotal = Math.max(...entries.map((e) => e.leadsLost + e.projectsCancelled), 1);
+
+  return (
+    <BusinessCard
+      label="Why we lose"
+      aside="leads + projects"
+      isError={isError}
+      onRetry={onRetry}
+      errorHeight={180}
+    >
+      {entries.length === 0 ? (
+        <p className="pb-2 pt-0.5 text-[13.5px] text-foreground-tertiary">
+          No losses or cancellations in this period.
+        </p>
+      ) : (
+        entries.map((entry) => {
+          const total = entry.leadsLost + entry.projectsCancelled;
+          return (
+            <div key={entry.lossReason} className="py-1.5">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[13px] font-medium tracking-[-0.01em]">
+                  {formatLossReason(entry.lossReason)}
+                </span>
+                <span className="text-[13px] font-medium tabular-nums">{total}</span>
+              </div>
+              <div className="mt-1 flex h-[8px] items-center">
+                <div
+                  className="h-[8px] rounded-pill"
+                  style={{
+                    width: `${Math.max(2, (total / maxTotal) * 100).toFixed(1)}%`,
+                    background: CHART_COLORS[2],
+                  }}
+                />
+              </div>
+              <div className="mt-1 text-[11.5px] text-foreground-tertiary">
+                {entry.leadsLost} lead{entry.leadsLost === 1 ? '' : 's'} ·{' '}
+                {entry.projectsCancelled} project{entry.projectsCancelled === 1 ? '' : 's'}
+              </div>
+            </div>
+          );
+        })
+      )}
+    </BusinessCard>
+  );
+}
 
 interface BusinessModeProps {
   /** Passed down so the header, the body and every outgoing link agree. */
@@ -75,6 +186,7 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
     window: { fromDate: range.from, toDate: range.to },
     enabled: mayFetch(showSales),
   });
+  const lossReasons = useLossReasons(range, mayFetch(showSales));
   const aging = useOrgCustomersAr({ enabled: mayFetch(showMoney) });
   const outstanding = useOrgOutstanding(
     { limit: OLDEST_DEBT_ROWS },
@@ -307,6 +419,14 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
         range={range}
         isError={pipeline.isError}
         onRetry={() => void pipeline.refetch()}
+      />
+    ) : null,
+    showSales ? (
+      <LossReasonBreakdownCard
+        key="loss-reasons"
+        entries={lossReasons.data ?? []}
+        isError={lossReasons.isError}
+        onRetry={() => void lossReasons.refetch()}
       />
     ) : null,
     showMoney ? serviceCard : null,

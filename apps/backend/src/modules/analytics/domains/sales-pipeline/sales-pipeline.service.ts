@@ -7,6 +7,8 @@ import {
   SALES_PIPELINE_STAGE_LABELS,
 } from './constants/sales-pipeline-stages';
 import type {
+  LossReasonBreakdownEntryDto,
+  LossReasonBreakdownResponseDto,
   SalesPipelineDashboardResponseDto,
   SalesPipelineFunnelResponseDto,
   SalesPipelineLeaderboardEntryDto,
@@ -14,6 +16,7 @@ import type {
   SalesPipelineStatsResponseDto,
   SalesPipelineTrendResponseDto,
 } from './dto';
+import { LOSS_REASON_BREAKDOWN_SQL } from './helpers/loss-reason-sql.helper';
 import {
   buildCohortCte,
   buildFunnelAndStatsAggregationSql,
@@ -184,6 +187,22 @@ export class SalesPipelineService {
       granularity,
       points: trend.points,
     };
+  }
+
+  /**
+   * Why we lose: every `loss_reason` seen on either a lost lead
+   * (`customer_properties`) or a cancelled project, in one grouped pass.
+   * Unlike the funnel/stats/leaderboard queries above, this has no cohort —
+   * a lead lost in the window and a project cancelled in the window are
+   * counted independently, so a property that was later converted and then
+   * had ITS project cancelled can contribute to both columns.
+   */
+  async getLossReasons(fromDate?: string, toDate?: string): Promise<LossReasonBreakdownResponseDto> {
+    const window = resolveStatsWindow(fromDate, toDate);
+    return this.dataSource.query<LossReasonBreakdownEntryDto[]>(LOSS_REASON_BREAKDOWN_SQL, [
+      window.fromDate,
+      window.toDate,
+    ]);
   }
 
   private buildFilters(
