@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ProjectStatus, PropertyStatus, StockAllocationStatus } from '@tejas96/shared/types';
+import { ProjectStatus, StockAllocationStatus } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
@@ -117,14 +117,14 @@ export class ProjectCancellationService {
           manager,
         );
       } else {
-        // Handed straight back to the pipeline. `updateStatusById` is the
-        // existing transaction-aware setter; it does no ownership check, which
-        // is fine because the project was already loaded above.
-        await this.propertyRepository.updateStatusById(
-          project.propertyId,
-          PropertyStatus.ACTIVE,
-          manager,
-        );
+        // Handed straight back to the pipeline. `reopen` — not
+        // `updateStatusById` — because the roof may well have been marked lost
+        // before: a property closed on a rejection and later revived still
+        // carries `lostReason` / `lossReason` / `lostAt`. Writing only
+        // `status` would leave a live site displaying why it was lost and
+        // counting into the loss-reason breakdown. `reopen` sets the status
+        // and clears all three, in this transaction.
+        await this.propertyRepository.reopen(project.propertyId, userId, manager);
       }
 
       // 5. Refunds. Keeping everything writes nothing.
@@ -164,9 +164,14 @@ export class ProjectCancellationService {
   }
 
   /**
-   * Derived on read from the four things that can still be outstanding. A
-   * stored flag would be one more cache to fall out of step with the rows it
+   * Derived on read from the things that can still be outstanding. A stored
+   * flag would be one more cache to fall out of step with the rows it
    * describes.
+   *
+   * Every gate is a PHYSICAL fact — stock the warehouse still holds or has
+   * not got back, and orders still live with a supplier. Paperwork that
+   * nobody can currently stamp is reported but does not gate; see
+   * `unrecovered_commissions` below.
    */
   async getCleanup(projectId: string): Promise<CancellationCleanupDto> {
     // The query below has no FROM clause, so it returns exactly one row even
@@ -182,11 +187,17 @@ export class ProjectCancellationService {
             FROM stock_allocations s
            WHERE s.project_id = $1
              AND s.dispatched_quantity > s.returned_quantity)::numeric    AS units_at_site,
+         (SELECT COALESCE(SUM(s.allocated_quantity - s.dispatched_quantity), 0)
+            FROM stock_allocations s
+           WHERE s.project_id = $1
+             AND s.status <> 'cancelled'
+             AND s.allocated_quantity > s.dispatched_quantity)::numeric   AS units_reserved,
          (SELECT COUNT(*) FROM return_requests r
             JOIN stock_allocations s ON s.id = r.allocation_id
            WHERE s.project_id = $1 AND r.status = 'pending')::int         AS pending_returns,
          (SELECT COUNT(*) FROM purchase_orders po
            WHERE po.project_id = $1
+             AND po.deleted_at IS NULL
              AND po.status NOT IN ('received', 'cancelled'))::int         AS open_purchase_orders,
          (SELECT COUNT(*) FROM employee_commissions c
            WHERE c.project_id = $1
@@ -196,12 +207,37 @@ export class ProjectCancellationService {
       [projectId],
     );
 
-    // The stock gate is `units_at_site`, the physical fact, NOT `pending_returns`.
-    // A return request that was never created must not read as "nothing to do".
-    const open = Number(row.units_at_site) + row.open_purchase_orders + row.unrecovered_commissions;
+    /*
+      The gate is the physical fact in both directions.
+
+      `units_at_site` is stock that left the warehouse and has not come back,
+      NOT `pending_returns` — a return request that was never created must not
+      read as "nothing to do".
+
+      `units_reserved` is its mirror: stock the warehouse is still holding for
+      a project that no longer exists. Cancellation releases it outside the
+      transaction and only LOGS a failure, so without this line a failed
+      release is invisible — a purely reserved allocation has
+      `dispatched − returned = 0`, so `units_at_site` sees nothing and the
+      project reports `settled` while the warehouse cannot sell the material.
+      Cancelled allocations are excluded: their remainder was released when
+      they were cancelled, though their allocated/dispatched figures remain.
+
+      `unrecovered_commissions` is ADVISORY and deliberately NOT in this sum.
+      Nothing in this codebase ever writes `employee_commissions.recovered_at`
+      — the column exists in a migration and in the entity, and this SELECT is
+      its only reader. Folding it in makes a gate nobody can clear: any
+      cancelled project that ever paid a commission would report
+      `cleanup_pending` forever, which teaches everyone to ignore the state
+      entirely. It is reported so the money is visible, and it stays out of the
+      arithmetic. Do NOT fold it back in until something can actually stamp
+      recovery — a gate with no way to clear it is worse than no gate.
+    */
+    const open = Number(row.units_at_site) + Number(row.units_reserved) + row.open_purchase_orders;
 
     return {
       unitsAtSite: Number(row.units_at_site),
+      unitsReserved: Number(row.units_reserved),
       pendingReturns: row.pending_returns,
       openPurchaseOrders: row.open_purchase_orders,
       unrecoveredCommissions: row.unrecovered_commissions,
@@ -253,8 +289,12 @@ export class ProjectCancellationService {
 
       // This whole half runs after the cancellation has committed, so a
       // failure here must not report the cancellation as failed, and one bad
-      // allocation must not strand the rest. Log loudly instead — Task 8's
-      // cleanup checklist is what surfaces whatever is left holding stock.
+      // allocation must not strand the rest. Log loudly instead — and the
+      // cleanup checklist is what surfaces whatever is left holding stock:
+      // `units_reserved` catches a release that failed here (the warehouse
+      // still holds it), `units_at_site` catches a recovery that failed. Both
+      // read the quantities, not this method's success, so a swallowed error
+      // cannot report itself as clean.
       // The two steps are independent, so each gets its own try/catch: one
       // failing must not silently skip the other, and the log must say which
       // recovery actually failed rather than blaming both on "released".
