@@ -1503,7 +1503,17 @@ Measured on 2026-09-09: three cancelled projects hold ₹5,50,457 of receivables
 docker exec oneohm-postgres psql -U root -d oneohm_epc -c "select p.project_number, (select coalesce(sum(e.amount_paise),0) from ledger_entries e where e.project_id=p.id and e.direction='in') as collected_paise from projects p where p.status='cancelled' and p.deleted_at is null;"
 ```
 
-Expected: `collected_paise = 0` on every row. If any is non-zero, stop — that project needs a settlement decision from a person, and the migration must skip it rather than guess.
+**Correction, found during implementation.** This originally expected `collected_paise = 0` on every cancelled project, and said to stop otherwise. That was written when the only cancelled projects were the three legacy ones. Verifying the cancellation endpoint has since cancelled several projects properly — with money collected, settlements answered and `settled_at` stamped — so a non-zero row is now normal and is **not** a reason to stop.
+
+What matters is that the migration touches only projects with no receipts at all. Confirm the split instead:
+
+```bash
+docker exec oneohm-postgres psql -U root -d oneohm_epc -c "select (select count(*) from projects p where p.status='cancelled' and p.deleted_at is null and exists (select 1 from ledger_entries e where e.project_id=p.id and e.direction='in')) as skipped_has_money, (select count(*) from projects p where p.status='cancelled' and p.deleted_at is null and not exists (select 1 from ledger_entries e where e.project_id=p.id and e.direction='in')) as targeted;"
+```
+
+Both counts should be non-zero, and every targeted project must have no receipts — which is what the migration's own `NOT EXISTS` clause enforces. Stop only if a project with receipts would be targeted.
+
+The headline figure is unchanged and re-measured: **₹5,50,457** of phantom receivables, all of it on the three legacy projects, which are the ones still carrying `active` milestones.
 
 - [ ] **Step 2: Write the migration**
 
