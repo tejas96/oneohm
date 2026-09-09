@@ -48,6 +48,64 @@ export interface FollowupGapRow {
   attributedUserId: string | null;
 }
 
+/**
+ * One person attached to one lead unit. `propertyId` null means the followup
+ * was raised on the customer rather than a specific roof.
+ */
+export interface FollowupAssigneeRow {
+  customerId: string;
+  propertyId: string | null;
+  userId: string;
+  /** True while they still owe work; false when this is only who closed it last. */
+  live: boolean;
+  firstName: string;
+  lastName: string | null;
+}
+
+/**
+ * One person on the hook for a customer, as the CRM row shows them.
+ *
+ * `live` separates "owes work now" from "handled it last". They render
+ * differently on purpose — identical avatars for both would make the column
+ * unable to answer the question it exists for.
+ */
+export interface FollowupAssignee {
+  userId: string;
+  firstName: string;
+  lastName: string | null;
+  live: boolean;
+}
+
+/**
+ * Collapse a customer's units into one avatar list.
+ *
+ * A person can owe work on one roof and merely have closed the last followup on
+ * another. Deduping without care would let whichever row arrived second decide
+ * how they render, so `live` always wins — losing a real assignment to a closed
+ * one is the worse error.
+ */
+export function rollUpAssignees(rows: FollowupAssigneeRow[]): FollowupAssignee[] {
+  const byUser = new Map<string, FollowupAssignee>();
+  for (const row of rows) {
+    const existing = byUser.get(row.userId);
+    if (!existing) {
+      byUser.set(row.userId, {
+        userId: row.userId,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        live: row.live,
+      });
+    } else if (row.live) {
+      existing.live = true;
+    }
+  }
+  // Live first, so the three avatars a collapsed row has space for are the
+  // three that still owe something.
+  return Array.from(byUser.values()).sort(
+    (a, b) => Number(b.live) - Number(a.live) || a.firstName.localeCompare(b.firstName),
+  );
+}
+
 @Injectable()
 export class FollowupRepository {
   constructor(
@@ -496,5 +554,72 @@ export class FollowupRepository {
       .execute();
 
     return result.affected ?? 0;
+  }
+
+  /**
+   * Who is on the hook for each lead unit — one query for a whole page.
+   *
+   * A "unit" is either the customer itself (`propertyId` null) or one of its
+   * properties, which is exactly how followups are already scoped. For each
+   * unit this returns:
+   *
+   * - every assignee of a PENDING followup, marked `live` — they owe work now
+   * - failing that, the assignee of the most recently closed one, marked stale
+   *
+   * The fallback is deliberate. A unit that goes blank the moment its last
+   * followup completes loses the one person who knows the site, which is
+   * precisely when someone asks "who dealt with these people?". Stale rows are
+   * flagged rather than hidden so the caller can render them differently — an
+   * assignee who owes work and one who merely handled it last must not look
+   * identical.
+   *
+   * `IS NOT DISTINCT FROM` does the property comparison because `property_id`
+   * is null on customer-level rows, and `=` never matches null to null.
+   */
+  async findAssigneesForCustomers(customerIds: string[]): Promise<FollowupAssigneeRow[]> {
+    if (customerIds.length === 0) return [];
+
+    return this.repository.query(
+      `
+      WITH live AS (
+        SELECT DISTINCT f.customer_id, f.property_id, f.assigned_to_user_id
+          FROM followups f
+         WHERE f.customer_id = ANY($1::uuid[])
+           AND f.deleted_at IS NULL
+           AND f.status = $2
+      ),
+      last_closed AS (
+        SELECT DISTINCT ON (f.customer_id, f.property_id)
+               f.customer_id, f.property_id, f.assigned_to_user_id
+          FROM followups f
+         WHERE f.customer_id = ANY($1::uuid[])
+           AND f.deleted_at IS NULL
+           AND f.status <> $2
+         ORDER BY f.customer_id,
+                  f.property_id,
+                  COALESCE(f.completed_at, f.updated_at) DESC
+      )
+      SELECT u.customer_id        AS "customerId",
+             u.property_id        AS "propertyId",
+             u.assigned_to_user_id AS "userId",
+             u.live               AS "live",
+             usr.first_name       AS "firstName",
+             usr.last_name        AS "lastName"
+        FROM (
+          SELECT customer_id, property_id, assigned_to_user_id, TRUE AS live FROM live
+          UNION ALL
+          SELECT c.customer_id, c.property_id, c.assigned_to_user_id, FALSE
+            FROM last_closed c
+           WHERE NOT EXISTS (
+             SELECT 1 FROM live l
+              WHERE l.customer_id = c.customer_id
+                AND l.property_id IS NOT DISTINCT FROM c.property_id
+           )
+        ) u
+        JOIN users usr ON usr.id = u.assigned_to_user_id AND usr.deleted_at IS NULL
+       ORDER BY u.live DESC, usr.first_name
+      `,
+      [customerIds, FollowupStatus.PENDING],
+    );
   }
 }

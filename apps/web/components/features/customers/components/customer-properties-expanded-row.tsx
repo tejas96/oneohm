@@ -37,6 +37,7 @@ import { ReopenPropertyDialog } from '@/components/features/properties/property-
 import { ORG_ADMIN_ROLES } from '@/components/features/properties/utils/delete-eligibility';
 import { CRM_TONE_FILL, CrmStatusPill, type CrmTone } from '@/components/shared/crm-table';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
+import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useGatedAction } from '@/lib/rbac';
@@ -59,6 +60,78 @@ const TYPE_ICON: Record<PropertyType, ComponentType<{ sx?: object }>> = {
 };
 
 /** Column tracks for the sites sub-grid, straight from the theme. */
+/**
+ * This roof's own followup assignees.
+ *
+ * Same rule as the collapsed customer row: solid means they still owe work,
+ * dimmed means they only closed the last one. A site that has never had a
+ * followup shows a dash — which is itself the signal that nobody has booked
+ * anything here.
+ */
+function SiteFollowupAssignees({
+  assignees,
+}: {
+  assignees?: { userId: string; firstName: string; lastName?: string | null; live: boolean }[];
+}): JSX.Element {
+  if (!assignees || assignees.length === 0) {
+    return (
+      <Box component="span" sx={{ fontSize: crm['text-row-sm'], color: color['text-tertiary'] }}>
+        —
+      </Box>
+    );
+  }
+
+  const shown = assignees.slice(0, 3);
+  const overflow = assignees.length - shown.length;
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+      {shown.map((person, index) => {
+        const name = [person.firstName, person.lastName].filter(Boolean).join(' ');
+        return (
+          <Tooltip
+            key={person.userId}
+            title={person.live ? `${name} — owes work` : `${name} — handled it last`}
+          >
+            <Box
+              sx={{
+                ml: index === 0 ? 0 : '-6px',
+                borderRadius: '50%',
+                border: '2px solid var(--ds-canvas)',
+                opacity: person.live ? 1 : 0.45,
+                filter: person.live ? 'none' : 'grayscale(1)',
+                display: 'flex',
+              }}
+            >
+              <MUIAvatar name={name} size={22} />
+            </Box>
+          </Tooltip>
+        );
+      })}
+      {overflow > 0 ? (
+        <Box
+          component="span"
+          sx={{
+            ml: '-6px',
+            display: 'grid',
+            placeItems: 'center',
+            width: 22,
+            height: 22,
+            borderRadius: '50%',
+            border: '2px solid var(--ds-canvas)',
+            bgcolor: 'var(--ds-canvas-sunken)',
+            color: color['text-secondary'],
+            fontSize: '0.5625rem',
+            fontWeight: 600,
+          }}
+        >
+          +{overflow}
+        </Box>
+      ) : null}
+    </Box>
+  );
+}
+
 const SITES_GRID_TEMPLATE = [
   crm['sites-col-site'],
   crm['sites-col-type'],
@@ -66,6 +139,7 @@ const SITES_GRID_TEMPLATE = [
   crm['sites-col-quote'],
   crm['sites-col-cost'],
   crm['sites-col-discom'],
+  crm['sites-col-followups'],
   crm['sites-col-status'],
   crm['sites-col-added'],
   crm['sites-col-actions'],
@@ -78,6 +152,7 @@ const SITES_HEADERS = [
   'Quote',
   'Quoted cost',
   'Discom · load',
+  'Followups',
   'Status',
   'Added',
   '',
@@ -462,6 +537,13 @@ function SiteRow({
             {loadParts.join(' · ')}
           </Box>
         ) : null}
+      </Box>
+
+      {/* Followups — this roof's own assignees only. The collapsed customer row
+          carries the rolled-up list; here each site owns its own, so the same
+          face never means two different things on one screen. */}
+      <Box sx={cellSx}>
+        <SiteFollowupAssignees assignees={property.followupAssignees} />
       </Box>
 
       {/* Status */}

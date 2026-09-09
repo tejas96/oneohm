@@ -712,6 +712,28 @@ export class CustomerProfileRepository {
       qb.andWhere('LOWER(customer.city) LIKE LOWER(:city)', { city: `%${query.city}%` });
     }
 
+    /*
+     * Followup assignee, matched across the whole unit — the customer's own
+     * followups and every one of its sites'.
+     *
+     * EXISTS rather than a join: a customer with six followups assigned to the
+     * same person would otherwise return six duplicate rows and wreck the page
+     * count. Status is deliberately unfiltered, because the avatar column falls
+     * back to whoever closed the last followup when nothing is pending, and a
+     * filter that could not find the row you can see would be worse than none.
+     */
+    if (query.followupAssigneeId) {
+      qb.andWhere(
+        `EXISTS (
+           SELECT 1 FROM followups f
+            WHERE f.customer_id = customer.id
+              AND f.deleted_at IS NULL
+              AND f.assigned_to_user_id = :followupAssigneeId
+         )`,
+        { followupAssigneeId: query.followupAssigneeId },
+      );
+    }
+
     if (query.leadSource) {
       if (String(query.leadSource) === String(LeadSource.OTHER)) {
         // "Other" means any lead_source that is not one of the standard enum values

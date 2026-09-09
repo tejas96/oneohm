@@ -12,6 +12,7 @@ import {
 } from '@tejas96/shared/types';
 import { Transform, Type } from 'class-transformer';
 import {
+  IsUUID,
   IsDateString,
   IsEnum,
   IsInt,
@@ -95,6 +96,18 @@ export class CustomerQueryDto {
   @IsString()
   @Transform(({ value }: { value: string }) => value?.trim())
   city?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter to customers where this user is a followup assignee, on the customer ' +
+      'itself or on any of its sites. Matches the same units the avatar column shows, ' +
+      'including the stale fallback — a person who only closed the last followup still ' +
+      'appears on the row, so filtering by them must find it.',
+    format: 'uuid',
+  })
+  @IsOptional()
+  @IsUUID()
+  followupAssigneeId?: string;
 
   @ApiPropertyOptional({
     description: 'Filter by lead source',

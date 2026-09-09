@@ -70,6 +70,16 @@ export interface CustomerPropertyResponse {
   /** The countable picklist code behind it. */
   lossReason?: LossReason;
   lostAt?: string;
+  /**
+   * Who is on the hook for THIS roof. `live` false means they only closed the
+   * last followup — shown so the cell never empties the moment work finishes.
+   */
+  followupAssignees?: {
+    userId: string;
+    firstName: string;
+    lastName?: string | null;
+    live: boolean;
+  }[];
   notes?: string;
   projectId?: string;
   /**

@@ -368,6 +368,8 @@ const root = {
     'col-status': '106px',
     'col-onboarded': '102px',
     'col-owner': 'minmax(122px,1fr)',
+    /** Followup assignees — three avatars plus an overflow chip. */
+    'col-followup-assignees': '108px',
     /** "Created by" — hidden by default, same width as owner. */
     'col-creator': 'minmax(122px,1fr)',
     'col-actions': '40px',
@@ -524,6 +526,8 @@ const root = {
     'sites-col-quote': '112px',
     'sites-col-cost': '118px',
     'sites-col-discom': 'minmax(132px,1fr)',
+    /** Followup assignees on one site — three avatars plus overflow. */
+    'sites-col-followups': '96px',
     'sites-col-status': '100px',
     'sites-col-added': '88px',
     'sites-col-actions': '34px',

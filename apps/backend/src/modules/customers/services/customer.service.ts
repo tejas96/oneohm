@@ -31,10 +31,32 @@ import {
   type CustomerOverviewStats,
   type SitePortfolioSummary,
 } from '../repositories/customer-profile.repository';
+import {
+  FollowupRepository,
+  rollUpAssignees,
+  type FollowupAssignee,
+  type FollowupAssigneeRow,
+} from '../repositories/followup.repository';
 
 type CustomerWithDeleteInfo = CustomerProfileEntity & {
   deleteBlockReasons?: string[];
   sitePortfolio?: SitePortfolioSummary;
+  /**
+   * Everyone attached to this customer's followups — their own and every one of
+   * their sites', rolled into one list for the collapsed CRM row. Expanding the
+   * row splits it again: the customer keeps only its own, each site shows its
+   * own. See `rollUpAssignees` for why `live` wins on a duplicate.
+   */
+  followupAssignees?: FollowupAssignee[];
+  /**
+   * Only the followups raised on the customer itself, not on any of its sites.
+   *
+   * Expanding a CRM row splits the rolled-up list: the customer keeps this, each
+   * site shows its own. Without it the parent row would keep claiming people who
+   * are actually assigned to a specific roof, and the same face would appear on
+   * two rows meaning two different things.
+   */
+  ownFollowupAssignees?: FollowupAssignee[];
 };
 
 /**
@@ -76,6 +98,7 @@ export class CustomerService {
     private readonly storageService: StorageService,
     private readonly dataSource: DataSource,
     private readonly leadClosureService: LeadClosureService,
+    private readonly followupRepository: FollowupRepository,
   ) {}
 
   /**
@@ -205,16 +228,28 @@ export class CustomerService {
   ): Promise<{ data: CustomerWithDeleteInfo[]; total: number }> {
     const customerIds = data.map((customer) => customer.id);
 
-    const [blockerMap, portfolioMap] = await Promise.all([
+    const [blockerMap, portfolioMap, assigneeRows] = await Promise.all([
       this.customerRepository.getCustomerDeleteBlockersBatch(customerIds),
       this.customerRepository.getSitePortfolioSummaries(customerIds),
+      this.followupRepository.findAssigneesForCustomers(customerIds),
     ]);
+
+    const assigneesByCustomer = new Map<string, FollowupAssigneeRow[]>();
+    for (const row of assigneeRows) {
+      const bucket = assigneesByCustomer.get(row.customerId);
+      if (bucket) bucket.push(row);
+      else assigneesByCustomer.set(row.customerId, [row]);
+    }
 
     return {
       data: data.map((customer) => ({
         ...customer,
         deleteBlockReasons: blockerMap.get(customer.id) ?? [],
         sitePortfolio: portfolioMap.get(customer.id) ?? EMPTY_SITE_PORTFOLIO,
+        followupAssignees: rollUpAssignees(assigneesByCustomer.get(customer.id) ?? []),
+        ownFollowupAssignees: rollUpAssignees(
+          (assigneesByCustomer.get(customer.id) ?? []).filter((row) => row.propertyId === null),
+        ),
       })),
       total,
     };

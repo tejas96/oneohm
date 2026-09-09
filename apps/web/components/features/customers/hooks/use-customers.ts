@@ -36,6 +36,21 @@ import { apiClient } from '@/lib/api/client';
  * Customer filters for the list API
  * Supports pagination, search, filtering, and sorting
  */
+/**
+ * One person attached to a customer's followups.
+ *
+ * `live` is the field the column turns on: someone who still owes work and
+ * someone who merely closed the last followup are both assigned, and showing
+ * them identically would make the avatars unable to say which sites need
+ * chasing.
+ */
+export interface FollowupAssignee {
+  userId: string;
+  firstName: string;
+  lastName?: string | null;
+  live: boolean;
+}
+
 export interface CustomerFilters {
   // Pagination
   page?: number;
@@ -47,6 +62,12 @@ export interface CustomerFilters {
   city?: string;
   leadSource?: LeadSource;
   createdBy?: string; // 'me' for field workers or actual userId
+  /**
+   * Narrow to customers where this user is a followup assignee, on the customer
+   * or on any of its sites — the same units the avatar column shows, stale
+   * fallback included.
+   */
+  followupAssigneeId?: string;
   assigneeId?: string; // 'me' or actual userId
   hasProperty?: boolean;
   /** Customers with (true) or without (false) open or in-progress tickets. */
@@ -125,6 +146,13 @@ export interface Customer {
   creatorName?: string;
   assigneeId?: string;
   assigneeName?: string;
+  /**
+   * Everyone on the hook across this customer AND all its sites, deduped, live
+   * first. The collapsed CRM row shows these.
+   */
+  followupAssignees?: FollowupAssignee[];
+  /** Only the customer's own followups — what the row shows once expanded. */
+  ownFollowupAssignees?: FollowupAssignee[];
 }
 
 export type { PaginationMeta };
@@ -222,6 +250,9 @@ export function useCustomers(
       // Filters
       if (queryFilters.status) params.append('status', queryFilters.status);
       if (queryFilters.city) params.append('city', queryFilters.city);
+      if (queryFilters.followupAssigneeId) {
+        params.append('followupAssigneeId', queryFilters.followupAssigneeId);
+      }
       if (queryFilters.leadSource) params.append('leadSource', queryFilters.leadSource);
       if (queryFilters.createdBy) params.append('createdBy', queryFilters.createdBy);
       if (queryFilters.assigneeId) params.append('assigneeId', queryFilters.assigneeId);
