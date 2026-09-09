@@ -170,7 +170,17 @@ export class ProjectCancellationService {
     const note = `Project ${projectNumber} cancelled: ${reason}`;
 
     for (const allocation of allocations) {
-      if (allocation.status === StockAllocationStatus.CANCELLED) continue;
+      // An already-cancelled allocation is NOT skipped. `StockAllocationService
+      // .cancel` refuses only a fully DISPATCHED allocation, so cancelling a
+      // partially dispatched one is allowed — it releases the undispatched
+      // remainder and raises no return for what had already gone out. That
+      // leaves a CANCELLED allocation with material at a customer's site and
+      // nothing tracking it. Skipping it here would strand those panels
+      // silently, and the cleanup checklist reads `return_requests`, so with no
+      // row raised the project would report "settled" while the material is
+      // still out. Only the release half is skipped below; the at-site recovery
+      // still runs.
+      const alreadyCancelled = allocation.status === StockAllocationStatus.CANCELLED;
 
       // What is physically at site is everything dispatched that has not
       // already come back. Raising a return for the gross dispatched figure
@@ -198,7 +208,12 @@ export class ProjectCancellationService {
       // The two steps are independent, so each gets its own try/catch: one
       // failing must not silently skip the other, and the log must say which
       // recovery actually failed rather than blaming both on "released".
-      if (undispatched > 0) {
+      // `alreadyCancelled` gates this half only. A cancelled allocation keeps
+      // its allocated and dispatched figures, so `undispatched` is still
+      // positive on one that was partially dispatched — but its remainder was
+      // released when it was cancelled, and `cancel()` would throw "already
+      // cancelled", logging a failure that is not one.
+      if (!alreadyCancelled && undispatched > 0) {
         try {
           await this.stockAllocationService.cancel(allocation.id, note, userId);
         } catch (error) {
@@ -234,6 +249,22 @@ export class ProjectCancellationService {
     reason: string,
     userId: string,
   ): Promise<void> {
+    // An allocation cancelled on its own may already have a return outstanding
+    // from whoever cancelled it. A second row for the same material cannot be
+    // completed — `returnToStock` caps at `dispatched − returned`, so once the
+    // first completes the second exceeds the cap and throws — leaving a pending
+    // request nobody can clear.
+    const pending = await this.returnRequestService.list({
+      allocationId: allocation.id,
+      status: 'pending',
+    });
+    if (pending.length > 0) {
+      this.logger.log(
+        `Allocation ${allocation.id} already has a pending return request; not raising another.`,
+      );
+      return;
+    }
+
     const bomId = allocation.bomId ?? (await this.findProjectBomId(allocation.projectId));
     if (!bomId) {
       this.logger.error(
