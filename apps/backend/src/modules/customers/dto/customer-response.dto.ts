@@ -110,7 +110,9 @@ export class FollowupAssigneeDto {
   @Expose()
   lastName?: string | null;
 
-  @ApiProperty({ description: 'True while they still owe work; false when they only closed it last' })
+  @ApiProperty({
+    description: 'True while they still owe work; false when they only closed it last',
+  })
   @Expose()
   live!: boolean;
 }
@@ -251,7 +253,7 @@ export class CustomerResponseDto {
    */
   @ApiPropertyOptional({
     type: [FollowupAssigneeDto],
-    description: "Followup assignees on the customer itself, excluding its sites",
+    description: 'Followup assignees on the customer itself, excluding its sites',
   })
   @Expose()
   @Type(() => FollowupAssigneeDto)

@@ -59,7 +59,6 @@ type CustomerWithDeleteInfo = CustomerProfileEntity & {
   ownFollowupAssignees?: FollowupAssignee[];
 };
 
-
 /**
  * Zero portfolio, used for customers the aggregate returned no row for (i.e. no
  * sites at all). Returning this instead of `undefined` keeps the list response
