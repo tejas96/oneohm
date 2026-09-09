@@ -206,6 +206,16 @@ export class QuoteRepository {
     return [groupedQuotes.slice(start, end), total];
   }
 
+  /**
+   * Every quote ever raised on a roof, live ones first.
+   *
+   * Voided quotes are NOT filtered out — they are the history of what was
+   * tried on this site, and dropping them would make a cancelled project's
+   * contract vanish. They are only demoted: the accepted-first ordering asks
+   * for the LIVE contract, and a voided quote that still reads `accepted`
+   * (voiding leaves `status` alone) is not one. Sorting it to the top would
+   * put a dead contract where the reader looks for the current one.
+   */
   async findAllByPropertyId(propertyId: string): Promise<QuoteEntity[]> {
     return this.repository
       .createQueryBuilder('quote')
@@ -216,7 +226,11 @@ export class QuoteRepository {
       .leftJoinAndSelect('quote.property', 'property')
       .andWhere('quote.propertyId = :propertyId', { propertyId })
       .andWhere('quote.deletedAt IS NULL')
-      .orderBy('CASE WHEN quote.status = :acceptedStatus THEN 0 ELSE 1 END', 'ASC')
+      .orderBy(
+        'CASE WHEN quote.status = :acceptedStatus AND quote.voidedAt IS NULL THEN 0 ELSE 1 END',
+        'ASC',
+      )
+      .addOrderBy('CASE WHEN quote.voidedAt IS NULL THEN 0 ELSE 1 END', 'ASC')
       .setParameter('acceptedStatus', QuoteStatus.ACCEPTED)
       .addOrderBy('quote.createdAt', 'DESC')
       .addOrderBy('quote.id', 'DESC')

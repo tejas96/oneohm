@@ -594,6 +594,23 @@ export class QuoteService {
   ): Promise<QuoteEntity> {
     const quote = await this.quoteRepository.findById(id);
 
+    /*
+      A voided quote is dead paper. Voiding is what closing a site and
+      cancelling a project both do to release the roof, and `status` is left
+      exactly as it was — a voided quote can still read `accepted`. Without
+      this guard the status machine happily walks that dead quote forward,
+      re-locking a roof someone just released.
+
+      Terminal, and it stays terminal: there is no un-void, by design. The
+      quote is history; the way back into the pipeline is a new quote.
+    */
+    if (quote.voidedAt) {
+      throw new BadRequestException(
+        `Quote ${quote.quoteNumber} was voided${quote.voidReason ? ` — ${quote.voidReason}` : ''}. ` +
+          'A voided quote is closed for good; raise a new quote for this property instead.',
+      );
+    }
+
     if (quote.propertyId) {
       const accepted = await this.quoteRepository.findAcceptedByPropertyId(
         quote.propertyId,
