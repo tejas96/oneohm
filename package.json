@@ -134,7 +134,7 @@
     "@nx/js": "22.5.4",
     "@nx/nest": "22.5.4",
     "@nx/next": "22.5.4",
-    "@nx/react": "22.5.4",
+    "@nx/react": "23.1.0",
     "@nx/web": "22.5.4",
     "@nx/workspace": "22.5.4",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
