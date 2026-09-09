@@ -619,8 +619,11 @@ export class CustomerPropertyService {
       throw new ConflictException('Cannot delete: property has been converted to a project');
     }
 
-    const quoteMap = await this.quoteRepository.findLatestByPropertyIds([propertyId], manager);
-    if (quoteMap.has(propertyId)) {
+    // Existence, not recency. `findLatestByPropertyIds` skips voided quotes so
+    // property cards stop showing a dead quote as current — using it here
+    // would let a roof whose only quotes are voided be hard-deleted, orphaning
+    // them. A voided quote is still a quote that was raised on this site.
+    if (await this.quoteRepository.existsAnyForProperty(propertyId, manager)) {
       throw new ConflictException('Cannot delete: property has quotations');
     }
 

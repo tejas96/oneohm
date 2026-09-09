@@ -213,6 +213,26 @@ export class QuoteRepository {
   }
 
   /**
+   * Has this roof ever been quoted at all — voided quotes included.
+   *
+   * Deliberately NOT `findLatestByPropertyIds`, which answers a different
+   * question: that one skips voided quotes so cards stop showing a dead
+   * quote's status as current. Using it as an existence check would let a
+   * property whose only quotes are voided pass the hard-delete guard and
+   * orphan those rows. "Is there a live quote" and "was anything ever
+   * quoted here" are separate questions and need separate queries.
+   */
+  async existsAnyForProperty(propertyId: string, manager?: EntityManager): Promise<boolean> {
+    const repo = manager ? manager.getRepository(QuoteEntity) : this.repository;
+    const count = await repo
+      .createQueryBuilder('quote')
+      .where('quote.propertyId = :propertyId', { propertyId })
+      .andWhere('quote.deletedAt IS NULL')
+      .getCount();
+    return count > 0;
+  }
+
+  /**
    * Every quote ever raised on a roof, live ones first.
    *
    * Voided quotes are NOT filtered out — they are the history of what was
