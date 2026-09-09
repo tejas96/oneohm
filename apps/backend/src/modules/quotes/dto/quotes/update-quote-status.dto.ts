@@ -36,8 +36,10 @@ export class UpdateQuoteStatusDto {
   @ApiPropertyOptional({
     enum: ['requote', 'close'],
     description:
-      'What happens to the site. "requote" keeps it in the pipeline; "close" ' +
-      'marks it lost. Required when status is rejected.',
+      'What happens to the site when a quote is rejected. "requote" keeps it ' +
+      'in the pipeline; "close" marks it lost and voids every other quote on ' +
+      'the roof. Optional so the current mobile build keeps working; an ' +
+      'omitted value defaults to "requote", the branch that destroys nothing.',
   })
   @IsOptional()
   @IsIn(['requote', 'close'])

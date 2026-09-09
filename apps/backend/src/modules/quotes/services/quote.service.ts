@@ -629,12 +629,22 @@ export class QuoteService {
       if (!statusDto.rejectionReason) {
         throw new BadRequestException('Rejection reason is required when rejecting a quote');
       }
-      if (!statusDto.rejectionOutcome) {
-        throw new BadRequestException(
-          'Say what happens to the site: "requote" keeps it, "close" marks it lost.',
-        );
-      }
     }
+
+    /*
+      What happens to the site when a quote is rejected, defaulted rather than
+      demanded. Mobile ships from a separate repository on its own release
+      cadence, so a build that predates this field must keep working — the
+      same reason `MarkLostDto.lossReason` was left optional.
+
+      The default has to be the non-destructive branch. `requote` keeps the
+      roof in the pipeline and loses nothing: the site can still be closed
+      afterwards, by hand or by the next rejection that says so. `close` would
+      mark the property lost and void every other quote on it, so defaulting to
+      that would have an old client silently killing live sites it never meant
+      to touch. Losing a day of pipeline hygiene beats losing a customer.
+    */
+    const rejectionOutcome = statusDto.rejectionOutcome ?? 'requote';
 
     if (statusDto.status === QuoteStatus.ACCEPTED && !statusDto.customerSignature) {
       throw new BadRequestException('Customer signature is required when accepting a quote');
@@ -684,7 +694,7 @@ export class QuoteService {
     // "the rejection did not save".
     if (
       statusDto.status === QuoteStatus.REJECTED &&
-      statusDto.rejectionOutcome === 'close' &&
+      rejectionOutcome === 'close' &&
       quote.propertyId &&
       quote.customerId
     ) {
