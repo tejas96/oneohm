@@ -25,8 +25,15 @@ import { apiClient } from '@/lib/api/client';
  */
 export interface CancellationCleanup {
   unitsAtSite: number;
+  /** Stock the warehouse still holds for this project: a release that failed. */
+  unitsReserved: number;
   pendingReturns: number;
   openPurchaseOrders: number;
+  /**
+   * Advisory only — deliberately NOT part of `state`. Nothing writes
+   * `recovered_at` yet, so gating on it would pin every project that ever
+   * paid a commission at cleanup_pending forever.
+   */
   unrecoveredCommissions: number;
   settled: boolean;
   state: 'cleanup_pending' | 'settled';

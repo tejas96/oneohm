@@ -2,6 +2,7 @@
 
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import { type JSX } from 'react';
 
@@ -39,6 +40,25 @@ export function CancellationCleanupCard({
   const data = cleanup.data;
   if (!data) return null;
 
+  /*
+   * Reported, never blocking. Nothing in the system can stamp a commission
+   * recovered — `recovered_at` has no writer — so this cannot gate `settled`
+   * without pinning every project that ever paid a commission at
+   * cleanup_pending forever. It is money someone still has to chase by hand,
+   * so it is said out loud on both branches below, in a quieter voice than
+   * the blocking lines.
+   */
+  const commissionNote =
+    data.unrecoveredCommissions > 0 ? (
+      <div className="flex items-center gap-2 py-1 text-[13px] text-foreground-tertiary">
+        <InfoOutlinedIcon sx={{ fontSize: 17, color: 'text.disabled', flexShrink: 0 }} />
+        <span className="min-w-0 flex-1">
+          {plural(data.unrecoveredCommissions, 'paid commission')} not recovered — recover it
+          outside the system; it does not hold this project open.
+        </span>
+      </div>
+    ) : null;
+
   if (data.state === 'settled') {
     return (
       <DetailCard label="Cleanup" className="mt-4">
@@ -46,6 +66,7 @@ export function CancellationCleanupCard({
           <CheckCircleOutlineIcon sx={{ fontSize: 18, color: 'success.main' }} />
           Cancelled — settled. Nothing left to clean up.
         </div>
+        {commissionNote}
       </DetailCard>
     );
   }
@@ -60,17 +81,21 @@ export function CancellationCleanupCard({
       href: ROUTES.INVENTORY.ALLOCATIONS,
     });
   }
+  // Stock the warehouse is still holding for a project that no longer exists:
+  // the release failed and only logged. Nobody can sell this material until
+  // someone frees it by hand, so it blocks, same as material at site.
+  if (data.unitsReserved > 0) {
+    rows.push({
+      key: 'reserved',
+      text: `${plural(data.unitsReserved, 'unit')} still reserved in the warehouse`,
+      href: ROUTES.INVENTORY.ALLOCATIONS,
+    });
+  }
   if (data.openPurchaseOrders > 0) {
     rows.push({
       key: 'po',
       text: plural(data.openPurchaseOrders, 'open purchase order'),
       href: ROUTES.INVENTORY.PURCHASE_ORDERS,
-    });
-  }
-  if (data.unrecoveredCommissions > 0) {
-    rows.push({
-      key: 'commissions',
-      text: plural(data.unrecoveredCommissions, 'unrecovered commission'),
     });
   }
 
@@ -85,6 +110,7 @@ export function CancellationCleanupCard({
           <CheckCircleOutlineIcon sx={{ fontSize: 18, color: 'success.main' }} />
           Nothing outstanding.
         </div>
+        {commissionNote}
       </DetailCard>
     );
   }
@@ -106,6 +132,7 @@ export function CancellationCleanupCard({
             </div>
           ),
         )}
+        {commissionNote}
       </div>
     </DetailCard>
   );
