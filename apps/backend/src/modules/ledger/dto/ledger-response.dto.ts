@@ -292,6 +292,11 @@ export class ProjectLedgerSummaryDto {
   @Transform(({ value }) => toNum(value))
   spentPaise!: number;
 
+  @ApiProperty({ description: 'Money handed back to a payer; not a cost of the work.' })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  refundedPaise!: number;
+
   @ApiProperty()
   @Expose()
   @Transform(({ value }) => toNum(value))

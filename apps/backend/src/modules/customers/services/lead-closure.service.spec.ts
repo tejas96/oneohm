@@ -7,6 +7,7 @@
  */
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { Test } from '@nestjs/testing';
+import { LossReason } from '@tejas96/shared/types';
 
 import { LeadClosureService } from './lead-closure.service';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
@@ -56,16 +57,24 @@ describe('LeadClosureService', () => {
   });
 
   it('markPropertyLost records the reason and closes the chain', async () => {
-    await service.markPropertyLost('prop-1', 'cust-1', 'Competitor pricing', 'user-1');
+    await service.markPropertyLost(
+      'prop-1',
+      'cust-1',
+      'Competitor pricing',
+      LossReason.LOST_TO_COMPETITOR,
+      'user-1',
+    );
 
     expect(propertyRepo.markLost.mock.calls[0][1]).toBe('Competitor pricing');
+    expect(propertyRepo.markLost.mock.calls[0][2]).toBe(LossReason.LOST_TO_COMPETITOR);
     expect(followupRepo.cancelPendingFor.mock.calls.length).toBe(1);
   });
 
   it('markCustomerLost closes the customer chain with a null propertyId', async () => {
-    await service.markCustomerLost('cust-1', 'Never reachable', 'user-1');
+    await service.markCustomerLost('cust-1', 'Never reachable', LossReason.NOT_REACHABLE, 'user-1');
 
     expect(customerRepo.markLost.mock.calls[0][1]).toBe('Never reachable');
+    expect(customerRepo.markLost.mock.calls[0][2]).toBe(LossReason.NOT_REACHABLE);
     expect(followupRepo.cancelPendingFor.mock.calls[0][1]).toBeNull();
   });
 });

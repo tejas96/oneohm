@@ -340,7 +340,7 @@ export class StockAllocationService {
    *
    * Status transitions:
    *  DISPATCHED / COMPLETED → PARTIALLY_DISPATCHED  (items no longer fully at site)
-   *  Any other non-cancelled status stays unchanged.
+   *  Any other status, CANCELLED included, stays unchanged.
    */
   async returnToStock(
     id: string,
@@ -348,6 +348,18 @@ export class StockAllocationService {
     reason: string,
     performedBy: string,
   ): Promise<StockAllocationEntity> {
+    // Coerced once, at the boundary. The parameter is TYPED number but callers
+    // hand it a string: `ReturnRequestService.complete` passes
+    // `request.quantity`, and a `numeric` column with no transformer comes back
+    // from TypeORM as "20.000". Every comparison below coerces on its own (`>`
+    // does), so the guards looked fine while `+` silently concatenated —
+    // Number(180) + "20.000" is "18020.000", which then persisted as the
+    // warehouse's available stock.
+    const returnQuantity = Number(quantity);
+    if (!Number.isFinite(returnQuantity) || returnQuantity <= 0) {
+      throw new BadRequestException(`Return quantity must be a positive number, got ${quantity}`);
+    }
+
     const updatedAllocationId = await this.dataSource.transaction(async (manager) => {
       // Pessimistic-lock the allocation row first — serialises concurrent returns.
       const allocationRepo = manager.getRepository(StockAllocationEntity);
@@ -360,9 +372,16 @@ export class StockAllocationService {
       if (!allocationRow) {
         throw new NotFoundException(`Stock Allocation with ID ${id} not found`);
       }
-      if (allocationRow.status === StockAllocationStatus.CANCELLED) {
-        throw new BadRequestException('Cannot return stock from a cancelled allocation');
-      }
+
+      // No status guard here on purpose — do not reinstate one. Material
+      // physically at site can come back regardless of the allocation's
+      // administrative status. In particular, project cancellation cancels
+      // the allocation and then raises a return request against that same,
+      // now-cancelled allocation for whatever was already dispatched; a
+      // status guard here made that return permanently uncompletable. The
+      // quantity guard right below (`maxReturnQty <= 0`) already rejects an
+      // allocation that never shipped, which is the case this guard was
+      // actually protecting.
 
       // Max returnable = total ever dispatched minus total already returned.
       const maxReturnQty =
@@ -370,13 +389,13 @@ export class StockAllocationService {
       if (maxReturnQty <= 0) {
         throw new BadRequestException('No dispatched stock available to return');
       }
-      if (quantity > maxReturnQty) {
+      if (returnQuantity > maxReturnQty) {
         throw new BadRequestException(
-          `Return quantity ${quantity} exceeds returnable quantity ${maxReturnQty}`,
+          `Return quantity ${returnQuantity} exceeds returnable quantity ${maxReturnQty}`,
         );
       }
 
-      const newReturnedQuantity = Number(allocationRow.returnedQuantity) + quantity;
+      const newReturnedQuantity = Number(allocationRow.returnedQuantity) + returnQuantity;
 
       // If the allocation was fully dispatched or completed, revert to PARTIALLY_DISPATCHED
       // so the allocation is no longer considered complete (items are back in the warehouse).
@@ -400,13 +419,13 @@ export class StockAllocationService {
         const newStock = stockRepo.create({
           warehouseId: allocationRow.warehouseId,
           productId: allocationRow.productId,
-          availableQuantity: quantity,
+          availableQuantity: returnQuantity,
           reservedQuantity: 0,
           inTransitQuantity: 0,
         });
         await stockRepo.save(newStock);
       } else {
-        stock.availableQuantity = Number(stock.availableQuantity) + quantity;
+        stock.availableQuantity = Number(stock.availableQuantity) + returnQuantity;
         stock.updatedAt = new Date();
         await stockRepo.save(stock);
       }
@@ -417,7 +436,7 @@ export class StockAllocationService {
           warehouseId: allocationRow.warehouseId,
           productId: allocationRow.productId,
           transactionType: InventoryTransactionType.RETURN,
-          quantity,
+          quantity: returnQuantity,
           transactionDate: new Date(),
           referenceType: 'stock_allocation_return',
           referenceId: allocationRow.id,

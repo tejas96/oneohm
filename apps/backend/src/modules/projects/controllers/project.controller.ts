@@ -28,6 +28,8 @@ import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import { hasAdminBypassRole, resolveProjectListMemberId } from '../../iam/constants';
 import {
+  CancelProjectDto,
+  CancellationCleanupDto,
   ConvertFromQuoteDto,
   ProjectResponseDto,
   UpdateProjectDto,
@@ -36,6 +38,7 @@ import {
 import { TeamMemberResponseDto, SubmitTeamFeedbackDto } from '../dto/project-team';
 import { ProjectListItemDto } from '../dto/projects/project-list-item.dto';
 import { ProjectRepository } from '../repositories';
+import { ProjectCancellationService } from '../services/project-cancellation.service';
 import { ProjectTeamService } from '../services/project-team.service';
 import { ProjectService } from '../services/project.service';
 
@@ -54,6 +57,7 @@ export class ProjectController {
     private readonly projectService: ProjectService,
     private readonly teamService: ProjectTeamService,
     private readonly projectRepository: ProjectRepository,
+    private readonly cancellationService: ProjectCancellationService,
   ) {}
 
   /**
@@ -453,6 +457,57 @@ export class ProjectController {
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Cancel a project and clean up everything it holds
+   */
+  @Post(':id/cancel')
+  @ApiOperation({ summary: 'Cancel a project and clean up everything it holds' })
+  async cancel(
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CancelProjectDto,
+  ): Promise<ProjectResponseDto> {
+    const project = await this.cancellationService.cancel(id, dto, currentUser.id);
+
+    return plainToInstance(ProjectResponseDto, project, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Get what a cancelled project still has hanging
+   */
+  @Get(':id/cancellation-cleanup')
+  @ApiOperation({
+    summary: 'Get cancellation cleanup checklist',
+    description:
+      'Units still at site, open purchase orders and unrecovered commissions for a ' +
+      'cancelled project, derived at read time from the rows themselves.',
+  })
+  async getCancellationCleanup(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CancellationCleanupDto> {
+    return this.cancellationService.getCleanup(id);
+  }
+
+  /**
+   * What each payer has actually collected, to pre-fill the cancel dialog's
+   * settlement lines. Backed by the same figure the cancel transaction uses
+   * for its refund math, so the dialog and the transaction cannot disagree.
+   */
+  @Get(':id/settlement-preview')
+  @ApiOperation({
+    summary: 'Get settlement preview for project cancellation',
+    description:
+      'What each payer has actually collected so far, keyed by payer type. Pre-fills the ' +
+      'cancel dialog before the settlement decision is made.',
+  })
+  async getSettlementPreview(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<Awaited<ReturnType<ProjectCancellationService['getSettlementPreview']>>> {
+    return this.cancellationService.getSettlementPreview(id);
   }
 
   /**

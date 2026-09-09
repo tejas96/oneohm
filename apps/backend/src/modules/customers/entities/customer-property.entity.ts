@@ -1,6 +1,7 @@
 import {
   ConnectionType,
   LeadTemperature,
+  LossReason,
   type GpsCoordinates,
   type PropertyDocument,
   type StoredChangeRequest,
@@ -10,16 +11,7 @@ import {
   SiteStatus,
   type SurveyData,
 } from '@tejas96/shared/types';
-import {
-  Column,
-  DeleteDateColumn,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  OneToOne,
-} from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { CustomerProfileEntity } from './customer-profile.entity';
 import type { FollowupEntity } from './followup.entity';
@@ -55,11 +47,12 @@ export class CustomerPropertyEntity extends BaseEntity {
   @OneToMany(() => QuoteEntity, (quote) => quote.property)
   quotes?: QuoteEntity[];
 
-  // ==================== PROJECT (One-to-One) ====================
-  // One property can have only one project
+  // ==================== PROJECTS (One-to-Many) ====================
+  // A roof can hold several cancelled projects plus at most one live one —
+  // see project.entity.ts and migration 1857015000000-OneLiveProjectPerRoof.
   // Using string reference to avoid circular import (ProjectEntity imports CustomerPropertyEntity)
-  @OneToOne('ProjectEntity', 'property')
-  project?: ProjectEntity;
+  @OneToMany('ProjectEntity', 'property')
+  projects?: ProjectEntity[];
 
   // ==================== Human-readable Code ====================
   @Column({ name: 'property_code', type: 'varchar', length: 50, nullable: true, unique: true })
@@ -175,6 +168,9 @@ export class CustomerPropertyEntity extends BaseEntity {
 
   @Column({ name: 'lost_at', type: 'timestamptz', nullable: true })
   lostAt?: Date;
+
+  @Column({ name: 'loss_reason', type: 'varchar', length: 40, nullable: true })
+  lossReason?: LossReason;
 
   // ==================== NOTES ====================
   @Column({ type: 'text', nullable: true })

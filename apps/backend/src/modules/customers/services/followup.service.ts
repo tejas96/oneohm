@@ -4,6 +4,7 @@ import {
   FollowupPriority,
   FollowupStatus,
   FollowupType,
+  LossReason,
 } from '@tejas96/shared/types';
 
 import { LeadClosureService } from './lead-closure.service';
@@ -277,12 +278,17 @@ export class FollowupService {
               propertyId,
               followup.customerId,
               dto.lostReason!,
+              // This dialog has no picklist yet — same free-text-only state
+              // the mobile mark-lost screen is in until it ships one.
+              LossReason.OTHER,
               userId,
+              manager,
             );
           } else {
             await this.leadClosureService.markCustomerLost(
               followup.customerId,
               dto.lostReason!,
+              LossReason.OTHER,
               userId,
             );
           }

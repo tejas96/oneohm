@@ -154,6 +154,14 @@ export interface Quote {
   status: QuoteStatus;
   acceptedAt?: string;
   rejectionReason?: string;
+  /**
+   * Set when the quote was voided — the site was closed, or the project built
+   * from it was cancelled. `status` is left untouched by voiding, so a voided
+   * quote still reads `accepted` or `sent`; this is the only field that says
+   * it is dead. Treat any quote with `voidedAt` as terminal.
+   */
+  voidedAt?: string;
+  voidReason?: string;
   internalNotes?: string;
   customerNotes?: string;
   createdAt: string;

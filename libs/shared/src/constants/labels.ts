@@ -6,6 +6,7 @@ import {
   ExpensePaidByType,
   LoanDocumentType,
   LoanStatus,
+  LossReason,
   PaymentTermSource,
   PaymentTermStatus,
   ProjectType,
@@ -190,4 +191,21 @@ export const REIMBURSEMENT_STATUS_LABELS: Record<ReimbursementStatus, string> = 
   [ReimbursementStatus.NOT_APPLICABLE]: 'N/A',
   [ReimbursementStatus.PENDING]: 'Pending',
   [ReimbursementStatus.REIMBURSED]: 'Reimbursed',
+};
+
+// ============================================
+// LOSS REASON LABELS
+// ============================================
+
+export const LOSS_REASON_LABELS: Record<LossReason, string> = {
+  [LossReason.LOST_ON_PRICE]: 'Lost on price',
+  [LossReason.LOST_TO_COMPETITOR]: 'Lost to competitor',
+  [LossReason.CUSTOMER_DROPPED]: 'Customer dropped',
+  [LossReason.NOT_REACHABLE]: 'Not reachable',
+  [LossReason.SITE_NOT_FEASIBLE]: 'Site not feasible',
+  [LossReason.SUBSIDY_ISSUE]: 'Subsidy issue',
+  [LossReason.FINANCING_REJECTED]: 'Financing rejected',
+  [LossReason.CUSTOMER_DEFAULTED]: 'Customer defaulted',
+  [LossReason.DELAY_BY_US]: 'Delay by us',
+  [LossReason.OTHER]: 'Other',
 };

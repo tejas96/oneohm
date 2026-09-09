@@ -758,26 +758,6 @@ export class ProjectTaskRepository {
     return this.repository.count({ where: whereConditions });
   }
 
-  async findUserTaskProjects(
-    userId: string,
-  ): Promise<Array<{ id: string; name: string; projectNumber: string }>> {
-    const qb = this.repository
-      .createQueryBuilder('task')
-      .innerJoin('task.project', 'project')
-      .innerJoin('project.property', 'property')
-      .select('project.id', 'id')
-      .addSelect('project.name', 'name')
-      .addSelect('project.project_number', 'projectNumber')
-      .distinct(true)
-      .where('task.deleted_at IS NULL')
-      .andWhere('task.status NOT IN (:...excludedStatuses)', {
-        excludedStatuses: [TaskStatus.DONE],
-      })
-      .andWhere('task.assigned_to_user_id = :userId', { userId });
-
-    return qb.getRawMany<{ id: string; name: string; projectNumber: string }>();
-  }
-
   /**
    * Compute unfiltered summary counts for the My Tasks dashboard cards.
    * Uses COUNT queries (no full entity load) for efficiency.

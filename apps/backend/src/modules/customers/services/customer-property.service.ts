@@ -13,6 +13,7 @@ import {
   LeadTemperature,
   FollowupType,
   LoanStatus,
+  LossReason,
   ProjectStatus,
   type PropertyDocument,
   PropertyStatus,
@@ -70,6 +71,8 @@ type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   latestQuoteId?: string;
   latestQuoteNumber?: string;
   latestQuoteStatus?: QuoteStatus;
+  /** Set when the only quote left on the roof is voided — value without a live status. */
+  latestQuoteVoided?: boolean;
   latestQuoteDate?: Date;
   latestQuoteFinalPrice?: number;
   latestQuoteSystemSizeKw?: number;
@@ -118,7 +121,12 @@ export class CustomerPropertyService {
    * must not remove the other two from the pipeline. Cancels this property's
    * pending followups so a dead lead stops nagging.
    */
-  async markLost(id: string, reason: string, userId: string): Promise<CustomerPropertyEntity> {
+  async markLost(
+    id: string,
+    reason: string,
+    lossReason: LossReason | undefined,
+    userId: string,
+  ): Promise<CustomerPropertyEntity> {
     const property = await this.propertyRepository.findById(id);
     if (!property) {
       throw new NotFoundException('Property not found');
@@ -130,7 +138,36 @@ export class CustomerPropertyService {
       throw new BadRequestException('Cannot mark a converted property as lost');
     }
 
-    await this.leadClosureService.markPropertyLost(id, property.customerId, reason, userId);
+    await this.leadClosureService.markPropertyLost(
+      id,
+      property.customerId,
+      reason,
+      lossReason ?? LossReason.OTHER,
+      userId,
+    );
+
+    const updated = await this.propertyRepository.findById(id);
+    if (!updated) {
+      throw new NotFoundException('Property not found');
+    }
+    return updated;
+  }
+
+  /**
+   * Bring a lost site back into the pipeline. The survey, roof data, DISCOM and
+   * photos are all still here; only the deal died. Voided quotes stay voided —
+   * the next quote is a fresh one.
+   */
+  async reopen(id: string, userId: string): Promise<CustomerPropertyEntity> {
+    const property = await this.propertyRepository.findById(id);
+    if (!property) {
+      throw new NotFoundException('Property not found');
+    }
+    if (property.status !== PropertyStatus.LOST) {
+      throw new BadRequestException('Only a lost property can be reopened');
+    }
+
+    await this.propertyRepository.reopen(id, userId);
 
     const updated = await this.propertyRepository.findById(id);
     if (!updated) {
@@ -305,7 +342,11 @@ export class CustomerPropertyService {
         changeOrderValue: contract?.changeOrderValue,
         latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
-        latestQuoteStatus: quoteInfo?.status,
+        // A voided quote keeps whatever status it had, so publishing it would
+        // show a dead contract as the roof's current state. The value and
+        // number still travel — a lost site needs to say what was quoted.
+        latestQuoteStatus: quoteInfo?.voided ? undefined : quoteInfo?.status,
+        latestQuoteVoided: quoteInfo?.voided,
         latestQuoteDate: quoteInfo?.quoteDate,
         latestQuoteFinalPrice: quoteInfo?.finalPrice,
         latestQuoteSystemSizeKw: systemSizeKwOf({
@@ -367,7 +408,11 @@ export class CustomerPropertyService {
         changeOrderValue: contract?.changeOrderValue,
         latestQuoteId: quoteInfo?.id,
         latestQuoteNumber: quoteInfo?.quoteNumber,
-        latestQuoteStatus: quoteInfo?.status,
+        // A voided quote keeps whatever status it had, so publishing it would
+        // show a dead contract as the roof's current state. The value and
+        // number still travel — a lost site needs to say what was quoted.
+        latestQuoteStatus: quoteInfo?.voided ? undefined : quoteInfo?.status,
+        latestQuoteVoided: quoteInfo?.voided,
         latestQuoteDate: quoteInfo?.quoteDate,
         latestQuoteFinalPrice: quoteInfo?.finalPrice,
         latestQuoteSystemSizeKw: systemSizeKwOf({
@@ -396,7 +441,7 @@ export class CustomerPropertyService {
         status: Not(PropertyStatus.INACTIVE),
         deletedAt: IsNull(),
       },
-      relations: ['project', 'quotes', 'quotes.versions', 'customer'],
+      relations: ['projects', 'quotes', 'quotes.versions', 'customer'],
       order: {
         isPrimary: 'DESC',
         createdAt: 'DESC',
@@ -584,8 +629,11 @@ export class CustomerPropertyService {
       throw new ConflictException('Cannot delete: property has been converted to a project');
     }
 
-    const quoteMap = await this.quoteRepository.findLatestByPropertyIds([propertyId], manager);
-    if (quoteMap.has(propertyId)) {
+    // Existence, not recency. `findLatestByPropertyIds` skips voided quotes so
+    // property cards stop showing a dead quote as current — using it here
+    // would let a roof whose only quotes are voided be hard-deleted, orphaning
+    // them. A voided quote is still a quote that was raised on this site.
+    if (await this.quoteRepository.existsAnyForProperty(propertyId, manager)) {
       throw new ConflictException('Cannot delete: property has quotations');
     }
 

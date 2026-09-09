@@ -419,6 +419,22 @@ export class ProjectService {
       throw new BadRequestException('Only accepted quotes can be converted to projects');
     }
 
+    /*
+      A voided quote is not a contract any more, and `status` does not say so:
+      cancelling a project voids its accepted quote while leaving the status
+      reading `accepted`. The three checks below all pass on such a quote — it
+      IS accepted, the cancellation set the property back to `active`, and the
+      cancelled project is not `live` — so without this guard the dead contract
+      re-creates the dead project, quietly undoing the cancellation's refunds,
+      stock release and roof release.
+    */
+    if (quote.voidedAt) {
+      throw new BadRequestException(
+        `Quote ${quote.quoteNumber} was voided${quote.voidReason ? ` — ${quote.voidReason}` : ''}. ` +
+          'A voided quote is no longer a contract; raise a new quote for this property to start again.',
+      );
+    }
+
     if (!quote.propertyId) {
       throw new BadRequestException(
         'Cannot convert quote to project: Quote must have a property assigned',
@@ -437,10 +453,10 @@ export class ProjectService {
       );
     }
 
-    const existingProject = await this.projectRepository.findOneByPropertyId(quote.propertyId);
+    const existingProject = await this.projectRepository.findLiveByPropertyId(quote.propertyId);
     if (existingProject) {
       throw new BadRequestException(
-        `Property already has a project (${existingProject.projectNumber}). One property can only have one project.`,
+        `Property already has a live project (${existingProject.projectNumber}). One property can only have one live project.`,
       );
     }
 
@@ -661,15 +677,11 @@ export class ProjectService {
    */
   private validateStatusTransition(currentStatus: ProjectStatus, newStatus: ProjectStatus): void {
     const validTransitions: Record<ProjectStatus, ProjectStatus[]> = {
-      [ProjectStatus.PLANNING]: [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED],
-      [ProjectStatus.ACTIVE]: [
-        ProjectStatus.ON_HOLD,
-        ProjectStatus.COMPLETED,
-        ProjectStatus.CANCELLED,
-      ],
-      [ProjectStatus.ON_HOLD]: [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED],
+      [ProjectStatus.PLANNING]: [ProjectStatus.ACTIVE],
+      [ProjectStatus.ACTIVE]: [ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED],
+      [ProjectStatus.ON_HOLD]: [ProjectStatus.ACTIVE],
       [ProjectStatus.COMPLETED]: [ProjectStatus.ACTIVE],
-      [ProjectStatus.CANCELLED]: [ProjectStatus.ACTIVE],
+      [ProjectStatus.CANCELLED]: [],
     };
 
     const allowed = validTransitions[currentStatus] || [];

@@ -71,6 +71,8 @@ export interface ProjectBalanceRow {
   waivedPaise: number;
   receivedPaise: number;
   spentPaise: number;
+  /** Money handed back to a payer. Not a cost of delivering the work. */
+  refundedPaise: number;
   outstandingPaise: number;
   /** Money received but not attributed to any milestone — customer credit. */
   unallocatedPaise: number;
@@ -139,6 +141,7 @@ export class LedgerRepository {
     'waivedPaise',
     'receivedPaise',
     'spentPaise',
+    'refundedPaise',
     'outstandingPaise',
     'unallocatedPaise',
     'netCashPaise',
@@ -284,6 +287,7 @@ export class LedgerRepository {
          waived_paise      AS "waivedPaise",
          received_paise    AS "receivedPaise",
          spent_paise       AS "spentPaise",
+         refunded_paise    AS "refundedPaise",
          outstanding_paise AS "outstandingPaise",
          unallocated_paise AS "unallocatedPaise",
          net_cash_paise    AS "netCashPaise",

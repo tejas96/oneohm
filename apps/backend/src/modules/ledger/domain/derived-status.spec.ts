@@ -24,6 +24,9 @@ describe('derivedMilestoneStatus', () => {
     [10_000, 5_000, 'waived', 'waived'], // waived wins even with money against it
     [10_000, 10_000, 'waived', 'waived'],
     [10_000, -500, 'active', 'pending'], // fully reversed
+    [100000, 0, 'cancelled', 'cancelled'],
+    [100000, 40000, 'cancelled', 'cancelled'],
+    [100000, 100000, 'cancelled', 'cancelled'],
   ])('expected=%i allocated=%i row=%s => %s', (expected, allocated, row, want) => {
     expect(derivedMilestoneStatus(expected, allocated, row)).toBe(want);
   });
@@ -31,17 +34,17 @@ describe('derivedMilestoneStatus', () => {
   it('only ever emits values the consumer mobile app understands', () => {
     // map-consumer-payments.ts switches on these and falls through to 'LOCKED',
     // which would render a paid milestone as a greyed-out locked card.
-    const allowed = new Set(['pending', 'partial', 'paid', 'waived']);
+    const allowed = new Set(['pending', 'partial', 'paid', 'waived', 'cancelled']);
     for (const expected of [0, 1, 10_000]) {
       for (const allocated of [-1, 0, 1, 9_999, 10_000, 99_999]) {
-        for (const row of ['active', 'waived'] as MilestoneRowStatus[]) {
+        for (const row of ['active', 'waived', 'cancelled'] as MilestoneRowStatus[]) {
           expect(allowed.has(derivedMilestoneStatus(expected, allocated, row))).toBe(true);
         }
       }
     }
   });
 
-  it("never emits 'cancelled' — that state does not exist in the new model", () => {
+  it("an 'active' or 'waived' row never derives to 'cancelled'", () => {
     const results = new Set<string>();
     for (const allocated of [-100, 0, 50, 100, 200]) {
       results.add(derivedMilestoneStatus(100, allocated, 'active'));
@@ -52,13 +55,16 @@ describe('derivedMilestoneStatus', () => {
 });
 
 describe('milestoneBalancePaise', () => {
-  it.each([
-    [10_000, 0, 10_000],
-    [10_000, 2_000, 8_000], // the client's "short by ₹8,000" case
-    [10_000, 10_000, 0],
-    [10_000, 15_000, 0], // clamped: over-allocation is not negative outstanding
-  ])('expected=%i allocated=%i => %i', (expected, allocated, want) => {
-    expect(milestoneBalancePaise(expected, allocated)).toBe(want);
+  it.each<[number, number, MilestoneRowStatus, number]>([
+    [10_000, 0, 'active', 10_000],
+    [10_000, 2_000, 'active', 8_000], // the client's "short by ₹8,000" case
+    [10_000, 10_000, 'active', 0],
+    [10_000, 15_000, 'active', 0], // clamped: over-allocation is not negative outstanding
+    [100000, 0, 'cancelled', 0],
+    [100000, 40000, 'cancelled', 0], // cancelled zeroes the balance regardless of allocation
+    [100000, 100000, 'cancelled', 0],
+  ])('expected=%i allocated=%i row=%s => %i', (expected, allocated, row, want) => {
+    expect(milestoneBalancePaise(expected, allocated, row)).toBe(want);
   });
 });
 
@@ -76,6 +82,6 @@ describe('milestoneOverAllocatedPaise', () => {
     const expected = 1_444_442; // ₹14,444.42
     const allocated = 13_000_000; // ₹1,30,000
     expect(milestoneOverAllocatedPaise(expected, allocated)).toBe(11_555_558);
-    expect(milestoneBalancePaise(expected, allocated)).toBe(0);
+    expect(milestoneBalancePaise(expected, allocated, 'active')).toBe(0);
   });
 });

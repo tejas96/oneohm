@@ -28,6 +28,10 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
   partial: { label: 'Part paid', tone: 'warning' },
   pending: { label: 'Pending', tone: 'neutral' },
   waived: { label: 'Waived', tone: 'neutral' },
+  // Without this the `?? STATUS.pending` fallback below labels a cancelled
+  // project's milestones "Pending", which reads as money still expected from
+  // a customer who owes nothing.
+  cancelled: { label: 'Cancelled', tone: 'neutral' },
 };
 
 /**
@@ -102,7 +106,8 @@ export function MilestoneWaterfall({
                     <span
                       className={cn(
                         'truncate text-[13px] font-semibold text-foreground',
-                        m.derivedStatus === 'waived' && 'line-through',
+                        (m.derivedStatus === 'waived' || m.derivedStatus === 'cancelled') &&
+                          'line-through',
                       )}
                     >
                       {m.name}

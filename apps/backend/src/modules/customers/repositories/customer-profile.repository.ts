@@ -5,6 +5,7 @@ import {
   CustomerSortField,
   CustomerStatus,
   LeadSource,
+  LossReason,
   PropertyStatus,
   QuoteStatus,
   SortOrder,
@@ -290,6 +291,7 @@ export class CustomerProfileRepository {
   async markLost(
     id: string,
     reason: string,
+    lossReason: LossReason,
     updatedBy: string,
     manager?: EntityManager,
   ): Promise<void> {
@@ -297,6 +299,7 @@ export class CustomerProfileRepository {
     await repo.update({ id }, {
       status: CustomerStatus.LOST,
       lostReason: reason,
+      lossReason,
       lostAt: new Date(),
       updatedBy,
     } as Record<string, unknown>);
@@ -422,6 +425,20 @@ export class CustomerProfileRepository {
    * precedence `CustomerPropertyService.findByCustomer` already applies —
    * this query must not silently disagree with the nested sites panel, which
    * reads that service.
+   *
+   * The `pj` join carries `AND pj.status <> 'cancelled'`, matching
+   * `ProjectRepository.findLiveByPropertyId`. A roof can now hold several
+   * cancelled projects plus at most one live one (the DB's own
+   * `UQ_projects_property_id` index only enforces uniqueness among the
+   * non-cancelled rows — see migration 1857015000000-OneLiveProjectPerRoof),
+   * so an unfiltered join fans one property row out into one row per project.
+   * `COUNT(*)`, `quotedCount` and `systemSizeKw` read `prop`/`cv` values that
+   * do not vary with `pj` at all, so that fan-out does not just double-count
+   * `bal.contract_paise` — it inflates every aggregate in this query by the
+   * number of extra project rows. Filtering to the live project caps the join
+   * at exactly the one row the index guarantees; a property whose only
+   * project is cancelled (never re-sold) falls back to `cv.final_price`, the
+   * same value a not-yet-converted site reports.
    */
   async getSitePortfolioSummaries(
     customerIds: string[],
@@ -468,6 +485,7 @@ export class CustomerProfileRepository {
                                                          AS "portfolioAmount"
       FROM customer_properties prop
       LEFT JOIN projects pj ON pj.property_id = prop.id AND pj.deleted_at IS NULL
+        AND pj.status <> 'cancelled'
       LEFT JOIN v_project_balance bal ON bal.project_id = pj.id
       ${latestQuoteJoins()} WHERE prop.customer_id = ANY($1::uuid[])
         AND prop.deleted_at IS NULL

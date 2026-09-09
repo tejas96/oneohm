@@ -1,13 +1,10 @@
-import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@tejas96/shared/types';
 import {
-  Column,
-  DeleteDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  OneToOne,
-} from 'typeorm';
+  LossReason,
+  ProjectPriority,
+  ProjectStatus,
+  type ProjectMetadata,
+} from '@tejas96/shared/types';
+import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { ProjectTaskEntity } from './project-task.entity';
 import { ProjectTeamMemberEntity } from './project-team-member.entity';
@@ -23,7 +20,9 @@ import { UserEntity } from '../../users/entities/user.entity';
  * Represents a solar installation project from quote acceptance to handover.
  *
  * Organization, customer, address, and coordinates are derived from the
- * required property relation (OneToOne: one property = one project).
+ * required property relation (ManyToOne: a roof can hold several cancelled
+ * projects plus at most one live one — see CustomerPropertyEntity.projects
+ * and migration 1857015000000-OneLiveProjectPerRoof).
  */
 @Entity('projects')
 export class ProjectEntity extends BaseEntity {
@@ -101,6 +100,23 @@ export class ProjectEntity extends BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   metadata?: ProjectMetadata;
 
+  // ==================== Cancellation & Settlement ====================
+
+  @Column({ name: 'cancel_reason', type: 'text', nullable: true })
+  cancelReason?: string;
+
+  @Column({ name: 'loss_reason', type: 'varchar', length: 40, nullable: true })
+  lossReason?: LossReason;
+
+  @Column({ name: 'cancelled_at', type: 'timestamptz', nullable: true })
+  cancelledAt?: Date;
+
+  @Column({ name: 'settled_at', type: 'timestamptz', nullable: true })
+  settledAt?: Date;
+
+  @Column({ name: 'settled_by', type: 'uuid', nullable: true })
+  settledBy?: string;
+
   // ==================== Ownership / Audit ====================
 
   @Column({ type: 'uuid', name: 'property_id' })
@@ -117,7 +133,7 @@ export class ProjectEntity extends BaseEntity {
 
   // ==================== Relations ====================
 
-  @OneToOne(() => CustomerPropertyEntity, (property) => property.project)
+  @ManyToOne(() => CustomerPropertyEntity, (property) => property.projects)
   @JoinColumn({ name: 'property_id' })
   property!: CustomerPropertyEntity;
 

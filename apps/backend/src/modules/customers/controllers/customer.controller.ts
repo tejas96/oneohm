@@ -365,7 +365,12 @@ export class CustomerController {
     @Body() dto: MarkLostDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    const customer = await this.customerService.markLost(id, dto.reason, currentUser.id);
+    const customer = await this.customerService.markLost(
+      id,
+      dto.reason,
+      dto.lossReason,
+      currentUser.id,
+    );
     return toDto(CustomerResponseDto, customer);
   }
 }

@@ -11,14 +11,48 @@ import {
   type ShadingAnalysis,
   SiteStatus,
   type SurveyData,
+  LossReason,
 } from '@tejas96/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { PropertyDocumentDto } from './property-document.dto';
-import { toNum } from '../../../common/utils';
+import { toDto, toNum } from '../../../common/utils';
 import { DiscomResponseDto } from '../../discoms/dto/discom-response.dto';
 import { ProjectResponseDto } from '../../projects/dto/projects/project-response.dto';
 import { QuoteResponseDto } from '../../quotes/dto/quotes/quote-response.dto';
+
+/**
+ * The project that currently represents this roof.
+ *
+ * A property's `projects` relation can hold several cancelled rows plus at
+ * most one live (non-cancelled) row — see CustomerPropertyEntity.projects
+ * and migration 1857015000000-OneLiveProjectPerRoof. `projectId`,
+ * `projectStatus` and `project` below all describe that one current
+ * project: the live row once the roof has been re-sold after a
+ * cancellation, or — for a roof whose only history is a single cancelled
+ * deal — the most recently created cancelled row, so a real project the
+ * roof once had doesn't just disappear from these fields. Never an
+ * arbitrary row off the relation, and never a stale live status after the
+ * roof has moved on.
+ */
+interface CurrentProjectCandidate {
+  id?: string;
+  status?: ProjectStatus;
+  createdAt?: Date;
+}
+
+function resolveCurrentProject(
+  projects?: CurrentProjectCandidate[],
+): CurrentProjectCandidate | undefined {
+  return projects?.reduce<CurrentProjectCandidate | undefined>((current, candidate) => {
+    if (!current) return candidate;
+    if (current.status !== ProjectStatus.CANCELLED) return current;
+    if (candidate.status !== ProjectStatus.CANCELLED) return candidate;
+    const currentTime = current.createdAt ? new Date(current.createdAt).getTime() : 0;
+    const candidateTime = candidate.createdAt ? new Date(candidate.createdAt).getTime() : 0;
+    return candidateTime > currentTime ? candidate : current;
+  }, undefined);
+}
 
 /**
  * DTO for customer property response
@@ -151,6 +185,20 @@ export class CustomerPropertyResponseDto {
   @Expose()
   lostReason?: string;
 
+  /**
+   * The picklist answer behind `lostReason`'s free text. Both travel: the code
+   * is what the loss-reason chart counts, the note is what a person wrote. The
+   * code was captured from day one but exposed nowhere, so the site screen
+   * could say a roof was lost without saying why.
+   */
+  @ApiPropertyOptional({ enum: LossReason, description: 'Why we lost it, as a countable code' })
+  @Expose()
+  lossReason?: LossReason;
+
+  @ApiPropertyOptional({ description: 'When the property was closed as lost' })
+  @Expose()
+  lostAt?: Date;
+
   // ==================== Notes ====================
   @ApiPropertyOptional()
   @Expose()
@@ -214,7 +262,7 @@ export class CustomerPropertyResponseDto {
 
   @ApiPropertyOptional()
   @Expose()
-  @Transform(({ obj }) => obj.projectId ?? obj.project?.id ?? undefined)
+  @Transform(({ obj }) => obj.projectId ?? resolveCurrentProject(obj.projects)?.id ?? undefined)
   projectId?: string;
 
   /**
@@ -226,11 +274,15 @@ export class CustomerPropertyResponseDto {
    * this in preference wherever it is present.
    *
    * Falls back to the loaded relation so the single-property endpoint, which
-   * joins `project` rather than batching the lookup, reports it too.
+   * joins `projects` rather than batching the lookup, reports it too —
+   * resolved to the current project (see resolveCurrentProject above),
+   * never an arbitrary row off a roof that can now hold several.
    */
   @ApiPropertyOptional({ enum: ProjectStatus })
   @Expose()
-  @Transform(({ obj }) => obj.projectStatus ?? obj.project?.status ?? undefined)
+  @Transform(
+    ({ obj }) => obj.projectStatus ?? resolveCurrentProject(obj.projects)?.status ?? undefined,
+  )
   projectStatus?: ProjectStatus;
 
   // ==================== Audit Fields ====================
@@ -351,6 +403,15 @@ export class CustomerPropertyResponseDto {
   @Expose()
   latestQuoteStatus?: QuoteStatus;
 
+  @ApiProperty({
+    required: false,
+    description:
+      'True when the roof has no live quote and the figures above come from a ' +
+      'voided one. Present the value as history, never as a current status.',
+  })
+  @Expose()
+  latestQuoteVoided?: boolean;
+
   @ApiPropertyOptional({
     description: 'Date of the latest quote (official quote date)',
     example: '2026-01-24',
@@ -413,9 +474,19 @@ export class CustomerPropertyResponseDto {
   @Expose()
   hasActiveLoan?: boolean;
 
+  /**
+   * The current project (see resolveCurrentProject above), converted to its
+   * response shape here rather than left to @Type: a custom @Transform
+   * fully replaces class-transformer's own value for this property, so
+   * @Type's usual recursive conversion never runs for it — skipping toDto
+   * here would leak the raw, unfiltered ProjectEntity into the response.
+   */
   @ApiPropertyOptional({ type: () => ProjectResponseDto })
   @Expose()
-  @Type(() => ProjectResponseDto)
+  @Transform(({ obj }) => {
+    const current = resolveCurrentProject(obj.projects);
+    return current ? toDto(ProjectResponseDto, current) : undefined;
+  })
   project?: ProjectResponseDto;
 
   @ApiPropertyOptional({ type: () => [QuoteResponseDto] })

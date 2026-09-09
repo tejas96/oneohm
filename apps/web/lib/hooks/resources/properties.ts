@@ -52,6 +52,11 @@ export interface PropertyItem {
   creatorName?: string;
   latestQuoteNumber?: string;
   latestQuoteStatus?: QuoteStatus;
+  /**
+   * The roof has no live quote and the figures above come from a voided one.
+   * Show the value as history; there is deliberately no `latestQuoteStatus`.
+   */
+  latestQuoteVoided?: boolean;
   latestQuoteDate?: string;
   latestQuoteFinalPrice?: number;
   /**

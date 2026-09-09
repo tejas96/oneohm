@@ -35,9 +35,12 @@ export const CREATE_V_MILESTONE_BALANCE = `
     m.due_date,
     m.amount_paise                                    AS expected_paise,
     COALESCE(a.allocated_paise, 0)::BIGINT            AS allocated_paise,
-    GREATEST(m.amount_paise - COALESCE(a.allocated_paise, 0), 0)::BIGINT AS balance_paise,
+    CASE WHEN m.status = 'cancelled' THEN 0
+         ELSE GREATEST(m.amount_paise - COALESCE(a.allocated_paise, 0), 0)
+    END::BIGINT                                       AS balance_paise,
     GREATEST(COALESCE(a.allocated_paise, 0) - m.amount_paise, 0)::BIGINT AS over_allocated_paise,
     CASE
+      WHEN m.status = 'cancelled'                             THEN 'cancelled'
       WHEN m.status = 'waived'                                THEN 'waived'
       WHEN COALESCE(a.allocated_paise, 0) <= 0                THEN 'pending'
       WHEN COALESCE(a.allocated_paise, 0) >= m.amount_paise   THEN 'paid'
@@ -84,6 +87,7 @@ export const CREATE_V_PROJECT_BALANCE = `
     COALESCE(ms.contract_paise, 0)::BIGINT            AS contract_paise,
     COALESCE(ms.expected_paise, 0)::BIGINT            AS expected_paise,
     COALESCE(ms.waived_paise,   0)::BIGINT            AS waived_paise,
+    COALESCE(ms.cancelled_paise, 0)::BIGINT           AS cancelled_paise,
     COALESCE(le.received_paise, 0)::BIGINT            AS received_paise,
     COALESCE(le.spent_paise,    0)::BIGINT            AS spent_paise,
     -- Summed from the MILESTONE view, not recomputed here. Subtracting all
@@ -105,6 +109,7 @@ export const CREATE_V_PROJECT_BALANCE = `
     SELECT SUM(m.amount_paise)::BIGINT                                  AS contract_paise,
            SUM(m.amount_paise) FILTER (WHERE m.status = 'active')::BIGINT AS expected_paise,
            SUM(m.amount_paise) FILTER (WHERE m.status = 'waived')::BIGINT AS waived_paise,
+           SUM(m.amount_paise) FILTER (WHERE m.status = 'cancelled')::BIGINT AS cancelled_paise,
            COUNT(*)::int                                                AS milestone_count
       FROM payment_milestones m WHERE m.project_id = p.id
   ) ms ON TRUE

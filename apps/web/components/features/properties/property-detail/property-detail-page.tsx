@@ -33,6 +33,7 @@ import {
 } from '../hooks';
 import { PropertyDetailHeader, type PropertyHeaderSignal } from './header';
 import { MarkAsLostDialog } from './mark-as-lost-dialog';
+import { ReopenPropertyDialog } from './reopen-property-dialog';
 import { PropertyTabRail } from './tab-rail';
 import { PageSkeleton, TabSkeleton } from './tab-skeleton';
 import { useDeleteProperty } from '../hooks/use-properties';
@@ -142,6 +143,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
   const [followupDrawerOpen, setFollowupDrawerOpen] = useState(false);
   const [speedDialOpen, setSpeedDialOpen] = useState(false);
   const [markLostOpen, setMarkLostOpen] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
 
   const { followupId, openFollowup, closeFollowup } = useFollowupDetailQuery();
 
@@ -587,6 +589,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
         onGoToProject={handleGoToProject}
         onLogFollowup={() => setFollowupDrawerOpen(true)}
         onMarkLost={() => setMarkLostOpen(true)}
+        onReopen={() => setReopenOpen(true)}
         showDelete={isOrgAdmin}
         deleteDisabled={propertyDeleteReasons.length > 0}
         deleteTooltip={formatDeleteBlockTooltip(propertyDeleteReasons)}
@@ -703,6 +706,13 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
       <MarkAsLostDialog
         open={markLostOpen}
         onClose={() => setMarkLostOpen(false)}
+        propertyId={property.id}
+        propertyName={propertyName}
+      />
+
+      <ReopenPropertyDialog
+        open={reopenOpen}
+        onClose={() => setReopenOpen(false)}
         propertyId={property.id}
         propertyName={propertyName}
       />
