@@ -34,6 +34,16 @@ type BadgeVariant = 'muted' | 'info' | 'success' | 'warning' | 'error' | 'pendin
 interface QuoteStatusDropdownProps {
   quoteId: string;
   status: QuoteStatus;
+  /**
+   * Set when the quote was voided — the site was closed, or the project built
+   * from it was cancelled. Voiding leaves `status` alone, so a voided quote
+   * still reads "Accepted" or "Sent"; this is the only field that says it is
+   * dead. A voided quote is terminal whatever its status: the API refuses
+   * every transition on it, so offering one here would only produce a 400.
+   */
+  voidedAt?: string;
+  /** Why it was voided, shown on the badge's tooltip. */
+  voidReason?: string;
   /** Badge size — xs for list rows, sm for detail header */
   size?: 'xs' | 'sm' | 'default';
   disabled?: boolean;
@@ -48,6 +58,8 @@ export const QuoteStatusDropdown = React.memo(
   ({
     quoteId,
     status,
+    voidedAt,
+    voidReason,
     size = 'default',
     disabled,
     disabledReason,
@@ -75,7 +87,10 @@ export const QuoteStatusDropdown = React.memo(
     const rejectMutation = useRejectQuote();
     const sendMutation = useSendQuote();
 
-    const transitions = QUOTE_STATUS_TRANSITIONS[status];
+    const isVoided = Boolean(voidedAt);
+    // A voided quote offers nothing, whatever its status says. The status
+    // machine on the server refuses every transition on it.
+    const transitions = isVoided ? [] : QUOTE_STATUS_TRANSITIONS[status];
     const label = QUOTE_STATUS_LABELS[status];
     const variant = QUOTE_STATUS_BADGE_VARIANTS[status] as BadgeVariant;
     const isTerminal = transitions.length === 0;
@@ -258,6 +273,29 @@ export const QuoteStatusDropdown = React.memo(
       }
       submitRejection('close');
     };
+
+    /*
+     * Voided reads before everything else, including `disabled`, because it
+     * outranks every other thing this badge could say.
+     *
+     * It shows "Voided", NOT the stored status: voiding does not touch
+     * `status`, so a quote killed by a cancellation still reads "Accepted" —
+     * a live-looking contract for a roof that was released. Showing both
+     * would put two competing truths in one spot; the tooltip carries what it
+     * was and why it died, which is where the history belongs.
+     */
+    if (isVoided) {
+      return (
+        <Tooltip title={`Voided${voidReason ? ` — ${voidReason}` : ''}. Was: ${label}.`} arrow>
+          <span className="inline-flex items-center gap-1 cursor-help">
+            <Badge variant="muted" shape="pill" size={size}>
+              Voided
+            </Badge>
+            <HelpOutlineIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+          </span>
+        </Tooltip>
+      );
+    }
 
     if (disabled) {
       return (

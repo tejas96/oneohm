@@ -194,6 +194,8 @@ export const QuoteDetailHeader = React.memo(
               <QuoteStatusDropdown
                 quoteId={quote.id}
                 status={quote.status}
+                voidedAt={quote.voidedAt}
+                voidReason={quote.voidReason}
                 size="sm"
                 disabled={!!isPropertyLocked}
                 disabledReason={lockReason}

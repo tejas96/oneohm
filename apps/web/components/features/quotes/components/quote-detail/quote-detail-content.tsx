@@ -269,6 +269,8 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
             id: quote.id,
             quoteNumber: quote.quoteNumber,
             status: quote.status,
+            voidedAt: quote.voidedAt,
+            voidReason: quote.voidReason,
             createdAt: quote.createdAt,
             quoteDate: quote.quoteDate,
             systemSizeKw: quote.systemSizeKw,
@@ -276,10 +278,21 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
             effectivePrice: quote.effectivePrice,
           },
         ];
-  const acceptedQuotes = fallbackQuotes.filter((q) => q.status === QuoteStatus.ACCEPTED);
-  const nonAcceptedQuotes = fallbackQuotes.filter((q) => q.status !== QuoteStatus.ACCEPTED);
-  const orderedPropertyQuotes =
-    acceptedQuotes.length > 0 ? [...acceptedQuotes, ...nonAcceptedQuotes] : fallbackQuotes;
+  /*
+   * Live quotes first, voided ones last — the same ordering the API applies,
+   * re-applied here because this component re-sorts by createdAt and would
+   * otherwise undo it.
+   *
+   * "Accepted" alone is not the live contract: voiding a quote (site closed,
+   * or its project cancelled) leaves `status` reading `accepted`, so without
+   * the `voidedAt` test a dead contract sorts first and the page labels it
+   * "Current Version" while the real state of the roof is that it has none.
+   */
+  const isLive = (q: { status: QuoteStatus; voidedAt?: string }): boolean => !q.voidedAt;
+  const liveAccepted = fallbackQuotes.filter((q) => isLive(q) && q.status === QuoteStatus.ACCEPTED);
+  const liveOther = fallbackQuotes.filter((q) => isLive(q) && q.status !== QuoteStatus.ACCEPTED);
+  const voidedQuotes = fallbackQuotes.filter((q) => !isLive(q));
+  const orderedPropertyQuotes = [...liveAccepted, ...liveOther, ...voidedQuotes];
   const primaryPropertyQuoteId = orderedPropertyQuotes[0]?.id;
   const isPrimaryPropertyQuote = primaryPropertyQuoteId
     ? primaryPropertyQuoteId === quote.id

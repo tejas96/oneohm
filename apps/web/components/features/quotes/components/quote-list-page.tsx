@@ -294,7 +294,13 @@ const COLUMNS: ColumnConfig<QuoteRow>[] = [
     filterOptions: STATUS_OPTIONS,
     flex: 1.5,
     renderCell: ({ row }) => (
-      <QuoteStatusDropdown quoteId={row.id} status={row.status as QuoteStatus} size="xs" />
+      <QuoteStatusDropdown
+        quoteId={row.id}
+        status={row.status as QuoteStatus}
+        voidedAt={row.voidedAt as string | undefined}
+        voidReason={row.voidReason as string | undefined}
+        size="xs"
+      />
     ),
   },
   {
