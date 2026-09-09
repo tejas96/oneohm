@@ -256,7 +256,18 @@ export function getSiteLifecycle(property: {
   status: PropertyStatus;
   projectStatus?: ProjectStatus;
 }): SiteLifecycle {
-  if (property.status !== PropertyStatus.LOST && property.projectStatus) {
+  /*
+   * A CANCELLED project does not define the site any more. Cancelling releases
+   * the roof — it can be reopened, re-quoted and converted again — so letting
+   * the dead project's label win made a live, quotable site read "Cancelled",
+   * which is the exact confusion this whole flow exists to remove. The site's
+   * own status is the truth once its project is cancelled.
+   */
+  if (
+    property.status !== PropertyStatus.LOST &&
+    property.projectStatus &&
+    property.projectStatus !== ProjectStatus.CANCELLED
+  ) {
     return {
       label: PROJECT_STATUS_SITE_LABEL[property.projectStatus],
       tone: PROJECT_STATUS_SITE_TONE[property.projectStatus],
