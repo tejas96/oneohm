@@ -1470,9 +1470,15 @@ git commit -m "feat(web): rejecting a quote asks whether the site is dead"
 - Consumes: `POST /projects/:id/cancel`, `GET /projects/:id/cancellation-cleanup`, `POST /customer-properties/:id/reopen`.
 - Produces: nothing later tasks depend on.
 
+- [ ] **Step 0: The dialog needs a number no endpoint returns yet**
+
+The settlement lines must be pre-filled with what each payer actually paid, and **the web must not work that figure out for itself.** The obvious shortcut — summing `allocatedPaise` by `payerType` from `GET projects/:id/ledger/milestones` — is wrong: it misses cash that was received but never allocated to a milestone, which `ProjectCancellationService.collectedByPayer` attributes to the customer. The dialog would then pre-fill "keep everything" at less than was truly collected, and confirming it would refund the difference. A money bug, caused by two places computing the same figure differently.
+
+So expose the one the transaction itself uses. In `ProjectCancellationService`, promote `collectedByPayer` to a public `getSettlementPreview(projectId): Promise<Array<{ payerType: 'customer' | 'lender'; collectedPaise: number }>>`, and add `GET /projects/:id/settlement-preview` beside the cleanup route. The dialog pre-fills from it, and the refund is later computed by the same function — so the two cannot disagree.
+
 - [ ] **Step 1: Build the cancel dialog**
 
-Three fields in one dialog: the `LossReason` select, the free-text note, and the roof choice (**Close the site** / **Keep it for a re-quote**). Below them, one row per payer returned as having paid, each pre-filled with the full collected amount so the common case is a single click. Model the dialog shell on `mark-as-lost-dialog.tsx`, which already has the busy-state and escape-key handling this needs.
+Three fields in one dialog: the `LossReason` select, the free-text note, and the roof choice (**Close the site** / **Keep it for a re-quote**). Below them, one row per payer returned by the preview endpoint, each pre-filled with the full collected amount so the common case is a single click. Model the dialog shell on `mark-as-lost-dialog.tsx`, which already has the busy-state and escape-key handling this needs.
 
 Wire it to the **Cancel project** action in the header status menu. Cancellation no longer goes through the plain status dropdown, because it now needs answers.
 
