@@ -1,6 +1,5 @@
 'use client';
 
-import { LOSS_REASON_LABELS } from '@tejas96/shared/constants';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
@@ -8,6 +7,7 @@ import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
 import { Box, Button, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
+import { LOSS_REASON_LABELS } from '@tejas96/shared/constants';
 import {
   ChangeRequestStatus,
   FollowupStatus,
