@@ -129,6 +129,9 @@ export interface ProjectLedgerSummary {
   waivedPaise: Paise;
   receivedPaise: Paise;
   spentPaise: Paise;
+  /** Money handed back to a payer. Kept apart from spend: a refund is
+   *  returned revenue, not a cost of delivering the work. */
+  refundedPaise: Paise;
   outstandingPaise: Paise;
   /** Money received but not attributed to a milestone — customer credit. Surface it. */
   unallocatedPaise: Paise;

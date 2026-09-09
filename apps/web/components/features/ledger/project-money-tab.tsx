@@ -375,6 +375,13 @@ function SummaryCard({
     { label: 'Spent', value: s.spentPaise },
   ];
 
+  // Only when there is one. A refund is money handed back, not job cost, so it
+  // gets its own tile rather than inflating Spent — a cancelled project with no
+  // expenses at all used to read "Spent = the refund".
+  if (s.refundedPaise > 0) {
+    figures.push({ label: 'Refunded', value: s.refundedPaise, ink: TONE.warning.ink });
+  }
+
   return (
     <DetailCard
       label="Money"

@@ -111,6 +111,7 @@ export const CREATE_V_PROJECT_BALANCE_V2 = `
     COALESCE(ms.cancelled_paise, 0)::BIGINT           AS cancelled_paise,
     COALESCE(le.received_paise, 0)::BIGINT            AS received_paise,
     COALESCE(le.spent_paise,    0)::BIGINT            AS spent_paise,
+    COALESCE(le.refunded_paise, 0)::BIGINT            AS refunded_paise,
     -- Summed from the MILESTONE view, not recomputed here. Subtracting all
     -- project allocations from active-milestone expected re-credits a waived
     -- milestone's receipts against the remaining ones: waive a partially-paid
@@ -120,7 +121,10 @@ export const CREATE_V_PROJECT_BALANCE_V2 = `
     COALESCE(msb.outstanding_paise, 0)::BIGINT        AS outstanding_paise,
     GREATEST(COALESCE(le.received_paise, 0) - COALESCE(al.allocated_paise, 0), 0)::BIGINT
                                                       AS unallocated_paise,
-    (COALESCE(le.received_paise, 0) - COALESCE(le.spent_paise, 0))::BIGINT
+    -- Refunds left the bank too, so net cash still subtracts them. Splitting
+    -- them out of spent_paise must not quietly inflate the cash position.
+    (COALESCE(le.received_paise, 0) - COALESCE(le.spent_paise, 0)
+       - COALESCE(le.refunded_paise, 0))::BIGINT
                                                       AS net_cash_paise,
     COALESCE(le.receipt_count,   0)::int              AS receipt_count,
     COALESCE(ms.milestone_count, 0)::int              AS milestone_count,
@@ -149,7 +153,17 @@ export const CREATE_V_PROJECT_BALANCE_V2 = `
            -- raw yields a negative "spend" and then received-minus-spent ADDS the
            -- expenditure to net cash. KPIS_SQL already negates; these two must
            -- agree or the dashboard and the project page report different money.
-           SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out')::BIGINT AS spent_paise,
+           --
+           -- spent_paise is what the JOB COST: expenses and write-offs. A
+           -- refund is not a cost of delivering the work, it is revenue handed
+           -- back, and counting it here made a cancelled project with zero
+           -- expenses report SPENT = the refund on its money card.
+           SUM(-e.amount_paise) FILTER (
+             WHERE e.direction = 'out' AND e.entry_type <> 'refund'
+           )::BIGINT                                                      AS spent_paise,
+           SUM(-e.amount_paise) FILTER (
+             WHERE e.direction = 'out' AND e.entry_type = 'refund'
+           )::BIGINT                                                      AS refunded_paise,
            COUNT(*) FILTER (WHERE e.direction = 'in' AND e.reverses_id IS NULL)::int
                                                                           AS receipt_count
       FROM ledger_entries e WHERE e.project_id = p.id
