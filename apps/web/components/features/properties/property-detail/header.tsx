@@ -24,9 +24,11 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { LOSS_REASON_LABELS } from '@tejas96/shared/constants';
 import { PropertyStatus } from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { useState, type JSX, type ReactNode } from 'react';
+
 
 import { LEAD_TEMPERATURE_TONE, PROPERTY_TYPE_LABELS } from '../constants';
 import type { CustomerPropertyResponse } from '../hooks';
@@ -493,6 +495,38 @@ export function PropertyDetailHeader({
         >
           {customerName} is inactive. Creating quotes and converting this site stay blocked until
           they are reactivated.
+        </Box>
+      )}
+
+      {/*
+       * Why this roof was lost, as a page-level banner rather than a field
+       * buried in the profile card — it changes how everything below it reads.
+       *
+       * Deliberately MUTED, not the danger red the project page uses for a
+       * cancellation. Most leads are lost; that is sales, not a fault. Painting
+       * a routine outcome red teaches people to stop seeing red, and then it
+       * fails on the project page where it means "record nothing more here".
+       * The site is not frozen either — it can be reopened and re-quoted.
+       */}
+      {property.status === PropertyStatus.LOST && (property.lossReason || property.lostReason) && (
+        <Box
+          sx={{
+            mt: 2,
+            px: 1.75,
+            py: 1,
+            borderRadius: 'var(--radius-rf-md)',
+            bgcolor: 'var(--ds-canvas-sunken)',
+            color: 'var(--ds-text-secondary)',
+            fontSize: '0.75rem',
+            lineHeight: 1.5,
+          }}
+        >
+          <Box component="span" sx={{ fontWeight: 600 }}>
+            Lost
+            {property.lossReason ? ` — ${LOSS_REASON_LABELS[property.lossReason]}` : ''}
+            {property.lostAt ? ` · ${formatDate(property.lostAt)}` : ''}.
+          </Box>
+          {property.lostReason ? ` ${property.lostReason}` : ''}
         </Box>
       )}
     </DetailCard>
