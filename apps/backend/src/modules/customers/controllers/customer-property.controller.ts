@@ -481,7 +481,31 @@ export class CustomerPropertyController {
     @Body() dto: MarkLostDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
-    const property = await this.propertyService.markLost(id, dto.reason, currentUser.id);
+    const property = await this.propertyService.markLost(
+      id,
+      dto.reason,
+      dto.lossReason,
+      currentUser.id,
+    );
+    return toDto(CustomerPropertyResponseDto, property);
+  }
+
+  /**
+   * Reopen a lost property so it can be quoted again.
+   *
+   * Per-property by design, same as `markLost`: the survey, roof data, DISCOM
+   * and photos all stay; only the deal's dead state is undone.
+   */
+  @Post(':id/reopen')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reopen a lost property so it can be quoted again' })
+  @ApiParam({ name: 'id', description: 'Property ID', type: 'string', format: 'uuid' })
+  @ApiResponse({ status: HttpStatus.OK, type: CustomerPropertyResponseDto })
+  async reopen(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerPropertyResponseDto> {
+    const property = await this.propertyService.reopen(id, currentUser.id);
     return toDto(CustomerPropertyResponseDto, property);
   }
 }

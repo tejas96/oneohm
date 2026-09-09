@@ -7,13 +7,7 @@ import { FileText, MapPin, Phone, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 
-import {
-  HEALTH_STATUS_LABELS,
-  PROJECT_PRIORITY_LABELS,
-  PROJECT_TYPE_LABELS,
-} from '../../constants';
-import type { ProjectDetail } from '../../hooks/types';
-import { ProjectStatusDropdown } from '../project-status-dropdown';
+import { CancellationCleanupCard } from './cancellation-cleanup-card';
 import {
   computeClock,
   computeHealth,
@@ -34,6 +28,14 @@ import {
 } from './lib/derive';
 import { Mono, Overline, TONE, TonePill, type Tone } from './primitives';
 import type { ProjectDetailData } from './types';
+import {
+  HEALTH_STATUS_LABELS,
+  PROJECT_PRIORITY_LABELS,
+  PROJECT_TYPE_LABELS,
+} from '../../constants';
+import type { ProjectDetail } from '../../hooks/types';
+import { useCancellationCleanup } from '../../hooks/use-project-cancellation';
+import { ProjectStatusDropdown } from '../project-status-dropdown';
 
 import { rupeesShort } from '@/components/features/dashboard/business/lib/format';
 import {
@@ -389,7 +391,32 @@ export const ProjectDetailHeader = React.memo(
       PROJECT_PRIORITY_LABELS[project.priority] ?? toTitleLabel(project.priority);
     const priorityTone = PRIORITY_TONE[project.priority] ?? 'neutral';
     const health = computeHealth(project);
-    const notice = STATUS_NOTICE[project.status];
+
+    /*
+     * Only fetched for a cancelled project — every other status has nothing
+     * to ask this endpoint. Same query key as CancellationCleanupCard below,
+     * so the two read one cached response and cannot disagree.
+     */
+    const cleanup = useCancellationCleanup(project.id, {
+      enabled: project.status === ProjectStatus.CANCELLED,
+    });
+
+    // The cancelled title is the one entry this map cannot state statically:
+    // "cleanup pending" vs "settled" is a fact about the rows, not the status.
+    // The existing `timeSub` line below (search "Project cancelled") stays the
+    // only other place cancellation is described, so this and that never say
+    // the same thing twice.
+    const notice =
+      project.status === ProjectStatus.CANCELLED
+        ? {
+            tone: STATUS_NOTICE[ProjectStatus.CANCELLED]!.tone,
+            title:
+              cleanup.data?.state === 'settled'
+                ? 'Cancelled — settled'
+                : 'Cancelled — cleanup pending',
+            body: STATUS_NOTICE[ProjectStatus.CANCELLED]!.body,
+          }
+        : STATUS_NOTICE[project.status];
 
     /*
      * A completed project that still has money to collect says so, on every
@@ -482,7 +509,16 @@ export const ProjectDetailHeader = React.memo(
             moneyIsBad = true;
             moneySubIsBad = true;
           } else if (ledger.outstandingPaise <= 0) {
-            moneySub = ledger.contractPaise > 0 ? 'Fully collected' : 'No contract value yet';
+            // A cancelled project owes nothing because the balance was
+            // cancelled, not because the customer paid it. "Fully collected"
+            // on a project that was stopped mid-way — and may have been
+            // refunded — claims money arrived that never did.
+            moneySub =
+              project.status === ProjectStatus.CANCELLED
+                ? 'Nothing further owed'
+                : ledger.contractPaise > 0
+                  ? 'Fully collected'
+                  : 'No contract value yet';
           } else if (next) {
             moneySub = next.dueDate
               ? `Next: ${next.name} · due ${formatDate(next.dueDate)}`
@@ -734,6 +770,13 @@ export const ProjectDetailHeader = React.memo(
               >
                 <span className="font-semibold">{notice.title}.</span> {notice.body}
               </div>
+            ) : null}
+
+            {/* The header strip above states the one-word cleanup summary;
+                this card is the itemised detail behind it — different scope,
+                not the same fact twice. */}
+            {project.status === ProjectStatus.CANCELLED ? (
+              <CancellationCleanupCard projectId={project.id} />
             ) : null}
 
             {completedWithBalance ? (

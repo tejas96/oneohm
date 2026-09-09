@@ -11,6 +11,7 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
 import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
 import PostAddOutlinedIcon from '@mui/icons-material/PostAddOutlined';
+import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
 import {
   Box,
   Button,
@@ -23,6 +24,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { LOSS_REASON_LABELS } from '@tejas96/shared/constants';
 import { PropertyStatus } from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { useState, type JSX, type ReactNode } from 'react';
@@ -64,6 +66,7 @@ interface PropertyDetailHeaderProps {
   onGoToProject: () => void;
   onLogFollowup: () => void;
   onMarkLost: () => void;
+  onReopen?: () => void;
   showDelete?: boolean;
   deleteDisabled?: boolean;
   deleteTooltip?: string;
@@ -163,6 +166,7 @@ export function PropertyDetailHeader({
   onGoToProject,
   onLogFollowup,
   onMarkLost,
+  onReopen,
   showDelete = false,
   deleteDisabled = false,
   deleteTooltip,
@@ -199,6 +203,7 @@ export function PropertyDetailHeader({
    */
   const isInPlay = LOSABLE_STATUSES.includes(property.status);
   const canMarkLost = isInPlay;
+  const canReopen = property.status === PropertyStatus.LOST;
 
   /*
    * GPS beats the typed address when we have it — a pin drops on the roof, a
@@ -407,7 +412,7 @@ export function PropertyDetailHeader({
           >
             Log follow-up
           </Button>
-          {(canMarkLost || showDelete) && (
+          {(canMarkLost || canReopen || showDelete) && (
             <IconButton
               size="small"
               aria-label="More actions"
@@ -419,7 +424,7 @@ export function PropertyDetailHeader({
         </Stack>
       </Stack>
 
-      {(canMarkLost || showDelete) && (
+      {(canMarkLost || canReopen || showDelete) && (
         <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
           {canMarkLost && (
             <MenuItem
@@ -434,7 +439,20 @@ export function PropertyDetailHeader({
               Mark as lost
             </MenuItem>
           )}
-          {canMarkLost && showDelete && <Divider />}
+          {canReopen && onReopen && (
+            <MenuItem
+              onClick={() => {
+                setMoreAnchor(null);
+                onReopen();
+              }}
+            >
+              <ListItemIcon>
+                <RestartAltOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              Reopen
+            </MenuItem>
+          )}
+          {(canMarkLost || canReopen) && showDelete && <Divider />}
           {showDelete && (
             <Tooltip title={deleteTooltip ?? ''}>
               <span>
@@ -476,6 +494,38 @@ export function PropertyDetailHeader({
         >
           {customerName} is inactive. Creating quotes and converting this site stay blocked until
           they are reactivated.
+        </Box>
+      )}
+
+      {/*
+       * Why this roof was lost, as a page-level banner rather than a field
+       * buried in the profile card — it changes how everything below it reads.
+       *
+       * Deliberately MUTED, not the danger red the project page uses for a
+       * cancellation. Most leads are lost; that is sales, not a fault. Painting
+       * a routine outcome red teaches people to stop seeing red, and then it
+       * fails on the project page where it means "record nothing more here".
+       * The site is not frozen either — it can be reopened and re-quoted.
+       */}
+      {property.status === PropertyStatus.LOST && (property.lossReason || property.lostReason) && (
+        <Box
+          sx={{
+            mt: 2,
+            px: 1.75,
+            py: 1,
+            borderRadius: 'var(--radius-rf-md)',
+            bgcolor: 'var(--ds-canvas-sunken)',
+            color: 'var(--ds-text-secondary)',
+            fontSize: '0.75rem',
+            lineHeight: 1.5,
+          }}
+        >
+          <Box component="span" sx={{ fontWeight: 600 }}>
+            Lost
+            {property.lossReason ? ` — ${LOSS_REASON_LABELS[property.lossReason]}` : ''}
+            {property.lostAt ? ` · ${formatDate(property.lostAt)}` : ''}.
+          </Box>
+          {property.lostReason ? ` ${property.lostReason}` : ''}
         </Box>
       )}
     </DetailCard>

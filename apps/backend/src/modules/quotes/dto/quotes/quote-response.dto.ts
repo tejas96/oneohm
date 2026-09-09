@@ -263,6 +263,24 @@ export class QuoteResponseDto {
   @Expose()
   rejectionReason?: string;
 
+  /**
+   * Set when the quote was killed administratively — the site was closed, or
+   * the project built from it was cancelled. `status` is deliberately left
+   * alone, so a voided quote still reads `accepted` or `sent`; this field is
+   * the only thing that says it is dead. Every client must treat a quote with
+   * `voidedAt` as terminal and offer it no transitions.
+   */
+  @ApiPropertyOptional({
+    example: '2025-03-04T09:12:00Z',
+    description: 'Set when the quote was voided. A voided quote is terminal whatever its status.',
+  })
+  @Expose()
+  voidedAt?: string;
+
+  @ApiPropertyOptional({ example: 'Project PRJ-ONEOHM-2025-0042 cancelled: customer withdrew' })
+  @Expose()
+  voidReason?: string;
+
   @ApiPropertyOptional({ example: 'High priority customer' })
   @Expose()
   internalNotes?: string;

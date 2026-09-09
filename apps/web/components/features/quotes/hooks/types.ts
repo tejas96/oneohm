@@ -52,6 +52,13 @@ export interface QuoteDetail {
   status: QuoteStatus;
   acceptedAt?: string;
   rejectionReason?: string;
+  /**
+   * Set when the quote was voided — the site was closed, or the project built
+   * from it was cancelled. Voiding leaves `status` untouched, so a voided
+   * quote still reads `accepted`; this is the only field that says it is dead.
+   */
+  voidedAt?: string;
+  voidReason?: string;
   internalNotes?: string;
   customerNotes?: string;
   createdAt: string;

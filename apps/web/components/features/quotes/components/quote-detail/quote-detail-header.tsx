@@ -194,6 +194,8 @@ export const QuoteDetailHeader = React.memo(
               <QuoteStatusDropdown
                 quoteId={quote.id}
                 status={quote.status}
+                voidedAt={quote.voidedAt}
+                voidReason={quote.voidReason}
                 size="sm"
                 disabled={!!isPropertyLocked}
                 disabledReason={lockReason}
@@ -208,7 +210,11 @@ export const QuoteDetailHeader = React.memo(
                     : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
                 }`}
               >
-                {isLatestPropertyQuote ? 'Current Version' : 'Historical Version'}
+                {quote.voidedAt
+                  ? 'Voided Version'
+                  : isLatestPropertyQuote
+                    ? 'Current Version'
+                    : 'Historical Version'}
               </span>
               {isExpired && quote.status !== QuoteStatus.EXPIRED && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs font-semibold bg-warning/10 text-warning border border-warning/20">
@@ -256,7 +262,10 @@ export const QuoteDetailHeader = React.memo(
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {quote.status === QuoteStatus.ACCEPTED && (
+            {/* A voided quote is dead paperwork: the backend refuses to convert
+                it, so offering the button only produces an error. `status` alone
+                is not enough — voiding deliberately leaves it `accepted`. */}
+            {quote.status === QuoteStatus.ACCEPTED && !quote.voidedAt && (
               <button
                 onClick={convertToProject.onGatedClick}
                 aria-disabled={!convertToProject.allowed}

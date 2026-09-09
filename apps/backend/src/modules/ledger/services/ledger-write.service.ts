@@ -232,6 +232,45 @@ export class LedgerWriteService {
   }
 
   /**
+   * Money handed back. Like an expense it carries no allocation — it does not
+   * pay a milestone, it undoes a receipt. Stored negative, same as every other
+   * outbound row, so SUM over the ledger stays the cash position.
+   */
+  async recordRefund(
+    input: {
+      projectId: string;
+      amountPaise: number;
+      payee: string;
+      valueDate?: string;
+      notes?: string;
+    },
+    createdBy: string,
+    externalManager?: EntityManager,
+  ): Promise<LedgerEntryEntity> {
+    this.assertWritesAllowed();
+    const valueDate = this.resolveValueDate(input.valueDate);
+    this.assertAmount(input.amountPaise);
+    await this.assertProjectInOrg(input.projectId);
+
+    return this.runInTransaction(externalManager, async (manager) =>
+      this.insertEntry(manager, {
+        projectId: input.projectId,
+        customerId: null,
+        entryNo: await this.sequenceService.getNextNumber(FinanceSequenceScope.REFUND, manager),
+        entryType: 'refund',
+        direction: 'out',
+        amountPaise: -input.amountPaise,
+        valueDate,
+        paymentMethod: null,
+        counterparty: input.payee,
+        category: null,
+        notes: input.notes ?? null,
+        createdBy,
+      }),
+    );
+  }
+
+  /**
    * Attach proof to an entry, inside the same transaction.
    *
    * Reuses the existing polymorphic `documents` table and the S3 presigned

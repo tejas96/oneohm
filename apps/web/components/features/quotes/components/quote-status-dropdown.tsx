@@ -1,8 +1,9 @@
 'use client';
 
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import { Menu, MenuItem, Tooltip } from '@mui/material';
-import { QuoteStatus } from '@tejas96/shared/types';
+import { Menu, MenuItem, TextField, Tooltip } from '@mui/material';
+import { LOSS_REASON_LABELS } from '@tejas96/shared/constants';
+import { LossReason, QuoteStatus } from '@tejas96/shared/types';
 import { ChevronDown } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -33,6 +34,16 @@ type BadgeVariant = 'muted' | 'info' | 'success' | 'warning' | 'error' | 'pendin
 interface QuoteStatusDropdownProps {
   quoteId: string;
   status: QuoteStatus;
+  /**
+   * Set when the quote was voided — the site was closed, or the project built
+   * from it was cancelled. Voiding leaves `status` alone, so a voided quote
+   * still reads "Accepted" or "Sent"; this is the only field that says it is
+   * dead. A voided quote is terminal whatever its status: the API refuses
+   * every transition on it, so offering one here would only produce a 400.
+   */
+  voidedAt?: string;
+  /** Why it was voided, shown on the badge's tooltip. */
+  voidReason?: string;
   /** Badge size — xs for list rows, sm for detail header */
   size?: 'xs' | 'sm' | 'default';
   disabled?: boolean;
@@ -47,6 +58,8 @@ export const QuoteStatusDropdown = React.memo(
   ({
     quoteId,
     status,
+    voidedAt,
+    voidReason,
     size = 'default',
     disabled,
     disabledReason,
@@ -62,13 +75,22 @@ export const QuoteStatusDropdown = React.memo(
     const { requestAccess } = useAccessDialog();
     const [customerSignature, setCustomerSignature] = useState('');
     const [rejectionReason, setRejectionReason] = useState('');
+    const [lossReason, setLossReason] = useState<LossReason | ''>('');
+    // The "Site is lost" footer button doubles as the field's reveal trigger:
+    // its first click arms the lost path (showing the loss-reason select
+    // below the textarea) instead of submitting, so the field never shows on
+    // the re-quote path, which has lost nothing. Its second click submits.
+    const [lostPathArmed, setLostPathArmed] = useState(false);
     const [isSharingWhatsapp, setIsSharingWhatsapp] = useState(false);
 
     const acceptMutation = useAcceptQuote();
     const rejectMutation = useRejectQuote();
     const sendMutation = useSendQuote();
 
-    const transitions = QUOTE_STATUS_TRANSITIONS[status];
+    const isVoided = Boolean(voidedAt);
+    // A voided quote offers nothing, whatever its status says. The status
+    // machine on the server refuses every transition on it.
+    const transitions = isVoided ? [] : QUOTE_STATUS_TRANSITIONS[status];
     const label = QUOTE_STATUS_LABELS[status];
     const variant = QUOTE_STATUS_BADGE_VARIANTS[status] as BadgeVariant;
     const isTerminal = transitions.length === 0;
@@ -196,18 +218,25 @@ export const QuoteStatusDropdown = React.memo(
       );
     };
 
-    const handleReject = (): void => {
-      if (!rejectionReason.trim()) {
-        showToast.error('Please provide a reason for rejection');
-        return;
-      }
+    const submitRejection = (rejectionOutcome: 'requote' | 'close'): void => {
       rejectMutation.mutate(
-        { quoteId, rejectionReason: rejectionReason.trim() },
+        {
+          quoteId,
+          rejectionReason: rejectionReason.trim(),
+          rejectionOutcome,
+          // Optional even on the lost path — the backend defaults an
+          // omitted reason to LossReason.OTHER rather than rejecting it.
+          lossReason: rejectionOutcome === 'close' && lossReason ? lossReason : undefined,
+        },
         {
           onSuccess: () => {
-            showToast.success('Quote rejected');
+            showToast.success(
+              rejectionOutcome === 'close' ? 'Quote rejected — site marked lost' : 'Quote rejected',
+            );
             setRejectModalOpen(false);
             setRejectionReason('');
+            setLossReason('');
+            setLostPathArmed(false);
           },
           onError: (err) => {
             showToast.error(
@@ -218,6 +247,55 @@ export const QuoteStatusDropdown = React.memo(
         },
       );
     };
+
+    const handleRequote = (): void => {
+      if (!rejectionReason.trim()) {
+        showToast.error('Please provide a reason for rejection');
+        return;
+      }
+      setLostPathArmed(false);
+      submitRejection('requote');
+    };
+
+    /**
+     * First click arms the lost path and reveals the loss-reason select;
+     * second click confirms and submits. One control doing two jobs, rather
+     * than a separate toggle whose only purpose is to reveal the field.
+     */
+    const handleSiteIsLostClick = (): void => {
+      if (!rejectionReason.trim()) {
+        showToast.error('Please provide a reason for rejection');
+        return;
+      }
+      if (!lostPathArmed) {
+        setLostPathArmed(true);
+        return;
+      }
+      submitRejection('close');
+    };
+
+    /*
+     * Voided reads before everything else, including `disabled`, because it
+     * outranks every other thing this badge could say.
+     *
+     * It shows "Voided", NOT the stored status: voiding does not touch
+     * `status`, so a quote killed by a cancellation still reads "Accepted" —
+     * a live-looking contract for a roof that was released. Showing both
+     * would put two competing truths in one spot; the tooltip carries what it
+     * was and why it died, which is where the history belongs.
+     */
+    if (isVoided) {
+      return (
+        <Tooltip title={`Voided${voidReason ? ` — ${voidReason}` : ''}. Was: ${label}.`} arrow>
+          <span className="inline-flex items-center gap-1 cursor-help">
+            <Badge variant="muted" shape="pill" size={size}>
+              Voided
+            </Badge>
+            <HelpOutlineIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+          </span>
+        </Tooltip>
+      );
+    }
 
     if (disabled) {
       return (
@@ -407,24 +485,54 @@ export const QuoteStatusDropdown = React.memo(
         </MUIDialog>
 
         {/* Reject Modal */}
+        {/* size="default" (not "sm") — the footer now carries three buttons
+            (Cancel / Re-quote / Site is lost), and "sm"'s 400px wraps them
+            onto two lines, same fix as the Send modal below. */}
         <MUIDialog
           open={rejectModalOpen}
           onOpenChange={(open) => {
             setRejectModalOpen(open);
-            if (!open) setRejectionReason('');
+            if (!open) {
+              setRejectionReason('');
+              setLossReason('');
+              setLostPathArmed(false);
+            }
           }}
-          size="sm"
+          size="default"
         >
           <MUIDialogHeader>
             <MUIDialogTitle>Reject Quote</MUIDialogTitle>
-            <MUIDialogDescription>Please provide a reason for rejection.</MUIDialogDescription>
+            <MUIDialogDescription>
+              Provide a reason, then say what happens to the site.
+            </MUIDialogDescription>
           </MUIDialogHeader>
-          <MUIDialogBody>
+          <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Textarea
               placeholder="Reason for rejection..."
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
             />
+            {/* Only for the "Site is lost" path — a re-quote has not lost
+                anything, and showing this on both paths would state the same
+                fact in two places. Revealed by the first click on that
+                button below, not shown up front. */}
+            {lostPathArmed && (
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Loss reason"
+                value={lossReason}
+                onChange={(e) => setLossReason(e.target.value as LossReason)}
+                helperText="Recorded against the site, so the loss can be counted later."
+              >
+                {Object.values(LossReason).map((value) => (
+                  <MenuItem key={value} value={value}>
+                    {LOSS_REASON_LABELS[value]}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
           </MUIDialogBody>
           <MUIDialogFooter>
             <Button
@@ -435,11 +543,22 @@ export const QuoteStatusDropdown = React.memo(
               Cancel
             </Button>
             <Button
-              variant="destructive"
-              onClick={handleReject}
+              variant="secondary"
+              onClick={handleRequote}
               disabled={rejectMutation.isPending || !rejectionReason.trim()}
             >
-              {rejectMutation.isPending ? 'Rejecting...' : 'Reject Quote'}
+              Re-quote
+            </Button>
+            <Button
+              variant={lostPathArmed ? 'destructive' : 'destructive-outline'}
+              onClick={handleSiteIsLostClick}
+              disabled={rejectMutation.isPending || !rejectionReason.trim()}
+            >
+              {rejectMutation.isPending
+                ? 'Rejecting...'
+                : lostPathArmed
+                  ? 'Confirm — site is lost'
+                  : 'Site is lost'}
             </Button>
           </MUIDialogFooter>
         </MUIDialog>

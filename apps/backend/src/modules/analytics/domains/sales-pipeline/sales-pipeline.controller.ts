@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   SalesPipelineQueryDto,
   SalesPipelineTrendQueryDto,
+  type LossReasonBreakdownResponseDto,
   type SalesPipelineDashboardResponseDto,
   type SalesPipelineFunnelResponseDto,
   type SalesPipelineLeaderboardResponseDto,
@@ -12,6 +13,7 @@ import {
 } from './dto';
 import { SalesPipelineService } from './sales-pipeline.service';
 import { JwtAuthGuard } from '../../../auth/guards';
+import { AnalyticsDateRangeQueryDto } from '../../common/dto/analytics-date-range.dto';
 
 @ApiTags('Analytics')
 @ApiBearerAuth()
@@ -73,5 +75,16 @@ export class SalesPipelineController {
       query.granularity ?? 'week',
       query.salesPersonId,
     );
+  }
+
+  @Get('loss-reasons')
+  @ApiOperation({
+    summary: 'Why we lose',
+    description: 'Lost leads and cancelled projects grouped by loss_reason, biggest reason first.',
+  })
+  async getLossReasons(
+    @Query() query: AnalyticsDateRangeQueryDto,
+  ): Promise<LossReasonBreakdownResponseDto> {
+    return this.salesPipelineService.getLossReasons(query.fromDate, query.toDate);
   }
 }

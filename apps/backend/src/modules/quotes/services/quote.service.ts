@@ -13,6 +13,7 @@ import {
   DocumentCategory,
   IntegrationProvider,
   type ITemplateMessage,
+  LossReason,
   PaymentMilestone,
   type PaymentMilestoneConfig,
   type PricingBreakdown,
@@ -91,7 +92,7 @@ export class QuoteService {
       const accepted = await this.quoteRepository.findAcceptedByPropertyId(createDto.propertyId);
       if (accepted) {
         throw new BadRequestException(
-          `Property already has an accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
+          `Property already has a live accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
         );
       }
     }
@@ -593,6 +594,23 @@ export class QuoteService {
   ): Promise<QuoteEntity> {
     const quote = await this.quoteRepository.findById(id);
 
+    /*
+      A voided quote is dead paper. Voiding is what closing a site and
+      cancelling a project both do to release the roof, and `status` is left
+      exactly as it was — a voided quote can still read `accepted`. Without
+      this guard the status machine happily walks that dead quote forward,
+      re-locking a roof someone just released.
+
+      Terminal, and it stays terminal: there is no un-void, by design. The
+      quote is history; the way back into the pipeline is a new quote.
+    */
+    if (quote.voidedAt) {
+      throw new BadRequestException(
+        `Quote ${quote.quoteNumber} was voided${quote.voidReason ? ` — ${quote.voidReason}` : ''}. ` +
+          'A voided quote is closed for good; raise a new quote for this property instead.',
+      );
+    }
+
     if (quote.propertyId) {
       const accepted = await this.quoteRepository.findAcceptedByPropertyId(
         quote.propertyId,
@@ -607,9 +625,26 @@ export class QuoteService {
 
     this.validateStatusTransition(quote.status, statusDto.status);
 
-    if (statusDto.status === QuoteStatus.REJECTED && !statusDto.rejectionReason) {
-      throw new BadRequestException('Rejection reason is required when rejecting a quote');
+    if (statusDto.status === QuoteStatus.REJECTED) {
+      if (!statusDto.rejectionReason) {
+        throw new BadRequestException('Rejection reason is required when rejecting a quote');
+      }
     }
+
+    /*
+      What happens to the site when a quote is rejected, defaulted rather than
+      demanded. Mobile ships from a separate repository on its own release
+      cadence, so a build that predates this field must keep working — the
+      same reason `MarkLostDto.lossReason` was left optional.
+
+      The default has to be the non-destructive branch. `requote` keeps the
+      roof in the pipeline and loses nothing: the site can still be closed
+      afterwards, by hand or by the next rejection that says so. `close` would
+      mark the property lost and void every other quote on it, so defaulting to
+      that would have an old client silently killing live sites it never meant
+      to touch. Losing a day of pipeline hygiene beats losing a customer.
+    */
+    const rejectionOutcome = statusDto.rejectionOutcome ?? 'requote';
 
     if (statusDto.status === QuoteStatus.ACCEPTED && !statusDto.customerSignature) {
       throw new BadRequestException('Customer signature is required when accepting a quote');
@@ -650,6 +685,41 @@ export class QuoteService {
       } catch (error) {
         this.logger.error(
           `Quote ${id} accepted but its followups could not be closed: ${String(error)}`,
+        );
+      }
+    }
+
+    // Closing the site is best-effort in the same shape as acceptance: the
+    // rejection has already saved, and a failure here must not read as
+    // "the rejection did not save".
+    if (
+      statusDto.status === QuoteStatus.REJECTED &&
+      rejectionOutcome === 'close' &&
+      quote.propertyId &&
+      quote.customerId
+    ) {
+      try {
+        await this.leadClosureService.markPropertyLost(
+          quote.propertyId,
+          quote.customerId,
+          statusDto.rejectionReason!,
+          statusDto.lossReason ?? LossReason.OTHER,
+          updatedBy,
+        );
+        // A closed roof must not leave a live `sent` quote behind for someone
+        // to chase — except this one. This quote carries the customer's own
+        // rejection; stamping "Site closed" over it would replace a genuine
+        // decision with an administrative marker and lose why the deal died.
+        await this.quoteRepository.voidAllOpenForProperty(
+          quote.propertyId,
+          `Site closed: ${statusDto.rejectionReason}`,
+          updatedBy,
+          undefined,
+          id,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Quote ${id} rejected but the site could not be closed: ${String(error)}`,
         );
       }
     }

@@ -29,6 +29,7 @@ import {
 import {
   ProjectAttentionService,
   ProjectAnalyticsService,
+  ProjectCancellationService,
   ProjectService,
   ProjectTaskService,
   ProjectTeamService,
@@ -39,6 +40,7 @@ import {
 } from './services';
 import { BomModule } from '../bom/bom.module';
 import { CustomersModule } from '../customers/customers.module';
+import { InventoryModule } from '../inventory/inventory.module';
 import { LedgerModule } from '../ledger/ledger.module';
 import { QuotesModule } from '../quotes/quotes.module';
 import { UsersModule } from '../users/users.module';
@@ -55,6 +57,11 @@ import { UsersModule } from '../users/users.module';
     QuotesModule,
     CustomersModule,
     UsersModule,
+    // Cancelling a project releases the stock it reserved and raises a return
+    // request for anything already at site — StockAllocationService and
+    // ReturnRequestService both live here. InventoryModule does not import
+    // this module back, so no forwardRef is needed.
+    InventoryModule,
     // forwardRef since Task 16: BomModule imports this one back, for the
     // ProjectTeamGuard that guards projects/:projectId/bom.
     forwardRef(() => BomModule),
@@ -80,6 +87,7 @@ import { UsersModule } from '../users/users.module';
     // Services
     ProjectService,
     ProjectAttentionService,
+    ProjectCancellationService,
     WorkflowStepService,
     WorkflowEngineService,
     ProjectTaskService,
@@ -98,6 +106,7 @@ import { UsersModule } from '../users/users.module';
     ProjectChatRepository,
     ProjectService,
     ProjectAttentionService,
+    ProjectCancellationService,
     WorkflowStepService,
     ProjectTaskService,
     ChangeRequestTaskService,

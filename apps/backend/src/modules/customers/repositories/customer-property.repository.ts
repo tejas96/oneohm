@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   LeadTemperature,
+  LossReason,
   ProjectStatus,
   PropertyStatus,
   PropertySortField,
@@ -79,6 +80,7 @@ export class CustomerPropertyRepository {
   async markLost(
     id: string,
     reason: string,
+    lossReason: LossReason,
     updatedBy: string,
     manager?: EntityManager,
   ): Promise<void> {
@@ -86,9 +88,35 @@ export class CustomerPropertyRepository {
     await repo.update(id, {
       status: PropertyStatus.LOST,
       lostReason: reason,
+      lossReason,
       lostAt: new Date(),
       updatedBy,
     });
+  }
+
+  /**
+   * Hand the roof back. The reason columns are set to a raw SQL `NULL` via
+   * the query builder rather than the JS value `undefined` — TypeORM's
+   * `repository.update` drops an `undefined` property from the UPDATE
+   * entirely, and the entity types (`lostReason?: string`, etc.) do not
+   * admit `null`, so a plain object literal can't express "clear this"
+   * without a cast. A real NULL has to reach the database, or the dead
+   * reason survives onto a live site.
+   */
+  async reopen(id: string, updatedBy: string, manager?: EntityManager): Promise<void> {
+    const repo = this.getRepo(manager);
+    await repo
+      .createQueryBuilder()
+      .update(CustomerPropertyEntity)
+      .set({
+        status: PropertyStatus.ACTIVE,
+        lostReason: () => 'NULL',
+        lossReason: () => 'NULL',
+        lostAt: () => 'NULL',
+        updatedBy,
+      })
+      .where('id = :id', { id })
+      .execute();
   }
 
   async findById(id: string): Promise<CustomerPropertyEntity | null> {
@@ -96,7 +124,7 @@ export class CustomerPropertyRepository {
       where: { id, deletedAt: IsNull() },
       relations: [
         'customer',
-        'project',
+        'projects',
         'discom',
         'siteVisitAssigneeUser',
         'siteSurveyAssigneeUser',
@@ -110,7 +138,7 @@ export class CustomerPropertyRepository {
       relations: [
         'customer',
         'creator',
-        'project',
+        'projects',
         'discom',
         'siteVisitAssigneeUser',
         'siteSurveyAssigneeUser',
@@ -207,7 +235,9 @@ export class CustomerPropertyRepository {
   }
 
   /**
-   * Batch lookup each property's live project — its id AND its current status.
+   * Batch lookup each property's current project — its id AND its current
+   * status. "Current" means the live one when the roof has one, otherwise
+   * the most recently cancelled one (see pickCurrentProjectPerProperty).
    *
    * The status travels with the id because a site's own `status` column stops
    * moving the moment it converts: it is written to CONVERTED when the project
@@ -228,12 +258,24 @@ export class CustomerPropertyRepository {
       .select('project.property_id', 'propertyId')
       .addSelect('project.id', 'projectId')
       .addSelect('project.status', 'status')
+      .addSelect('project.created_at', 'createdAt')
       .from('projects', 'project')
       .where('project.property_id IN (:...propertyIds)', { propertyIds })
       .andWhere('project.deleted_at IS NULL')
-      .getRawMany<{ propertyId: string; projectId: string; status: ProjectStatus }>();
+      .getRawMany<{
+        propertyId: string;
+        projectId: string;
+        status: ProjectStatus;
+        createdAt: Date;
+      }>();
 
-    return new Map(rows.map((row) => [row.propertyId, { id: row.projectId, status: row.status }]));
+    const current = this.pickCurrentProjectPerProperty(rows);
+    return new Map(
+      Array.from(current, ([propertyId, row]) => [
+        propertyId,
+        { id: row.projectId, status: row.status },
+      ]),
+    );
   }
 
   /**
@@ -250,6 +292,9 @@ export class CustomerPropertyRepository {
    * Read from `v_project_balance`, the same view the projects list already uses
    * for exactly this reason (see ProjectRepository.getPaymentSummaries) — one
    * definition of "what this project is worth", not a second one computed here.
+   * Reports the current project's value (see pickCurrentProjectPerProperty)
+   * for the same reason findProjectsByPropertyIds resolves to one row: a
+   * re-sold roof's cancelled deal must not shadow the live one's figures.
    */
   async findContractValuesByPropertyIds(
     propertyIds: string[],
@@ -262,12 +307,16 @@ export class CustomerPropertyRepository {
     const rows = await (manager ?? this.repository.manager).query<
       Array<{
         propertyId: string;
+        status: ProjectStatus;
+        createdAt: string;
         contractPaise: string;
         quotedPaise: string;
         changeOrderPaise: string;
       }>
     >(
       `SELECT p.property_id      AS "propertyId",
+              p.status           AS "status",
+              p.created_at       AS "createdAt",
               b.contract_paise   AS "contractPaise",
               b.quoted_paise     AS "quotedPaise",
               b.change_order_paise AS "changeOrderPaise"
@@ -278,9 +327,10 @@ export class CustomerPropertyRepository {
       [propertyIds],
     );
 
+    const current = this.pickCurrentProjectPerProperty(rows);
     return new Map(
-      rows.map((row) => [
-        row.propertyId,
+      Array.from(current, ([propertyId, row]) => [
+        propertyId,
         {
           // Rupees, matching latestQuoteFinalPrice beside which these are
           // rendered. The ledger's own unit is paise; conversion happens once,
@@ -528,6 +578,41 @@ export class CustomerPropertyRepository {
       temperature: r.temperature,
       count: parseInt(r.count, 10),
     }));
+  }
+
+  /**
+   * Collapses a batch query's raw rows — one per (property, project) pair —
+   * down to at most one row per `propertyId`: the live project when one
+   * exists, otherwise the most recently created cancelled one.
+   *
+   * A roof's projects can now include several cancelled rows plus at most
+   * one live (non-cancelled) row (ProjectEntity.property, migration
+   * 1857015000000-OneLiveProjectPerRoof). Before that migration, at most
+   * one row could ever match `deleted_at IS NULL` for a given property_id,
+   * so the batch methods below could key straight into a Map with whatever
+   * row Postgres returned. That is no longer safe — naive last-row-wins
+   * keying would let a re-sold roof's dead, cancelled deal shadow its live
+   * one, depending on row order alone.
+   */
+  private pickCurrentProjectPerProperty<
+    T extends { propertyId: string; status: ProjectStatus; createdAt: Date | string },
+  >(rows: T[]): Map<string, T> {
+    const current = new Map<string, T>();
+    for (const row of rows) {
+      const existing = current.get(row.propertyId);
+      if (!existing) {
+        current.set(row.propertyId, row);
+        continue;
+      }
+      if (existing.status !== ProjectStatus.CANCELLED) {
+        continue; // at most one live row per property — keep it
+      }
+      const rowIsLive = row.status !== ProjectStatus.CANCELLED;
+      if (rowIsLive || new Date(row.createdAt) > new Date(existing.createdAt)) {
+        current.set(row.propertyId, row);
+      }
+    }
+    return current;
   }
 
   private getRepo(manager?: EntityManager): Repository<CustomerPropertyEntity> {

@@ -40,11 +40,11 @@ export const PROJECT_STATUS_BADGE_VARIANT: Record<string, string> = {
 };
 
 export const PROJECT_STATUS_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
-  [ProjectStatus.PLANNING]: [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED],
-  [ProjectStatus.ACTIVE]: [ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED, ProjectStatus.CANCELLED],
-  [ProjectStatus.ON_HOLD]: [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED],
+  [ProjectStatus.PLANNING]: [ProjectStatus.ACTIVE],
+  [ProjectStatus.ACTIVE]: [ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED],
+  [ProjectStatus.ON_HOLD]: [ProjectStatus.ACTIVE],
   [ProjectStatus.COMPLETED]: [ProjectStatus.ACTIVE],
-  [ProjectStatus.CANCELLED]: [ProjectStatus.ACTIVE],
+  [ProjectStatus.CANCELLED]: [],
 };
 
 export const PROJECT_PRIORITY_LABELS: Record<string, string> = {

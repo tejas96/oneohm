@@ -76,6 +76,12 @@ export class QuoteEntity extends BaseEntity {
   @Column({ type: 'text', name: 'rejection_reason', nullable: true })
   rejectionReason?: string;
 
+  @Column({ type: 'timestamptz', name: 'voided_at', nullable: true })
+  voidedAt?: Date;
+
+  @Column({ type: 'varchar', name: 'void_reason', length: 500, nullable: true })
+  voidReason?: string;
+
   // ==================== Notes ====================
   @Column({ type: 'text', name: 'internal_notes', nullable: true })
   internalNotes?: string;

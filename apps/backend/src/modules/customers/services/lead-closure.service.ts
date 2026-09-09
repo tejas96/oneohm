@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { LossReason } from '@tejas96/shared/types';
 import { type EntityManager } from 'typeorm';
 
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
@@ -48,15 +49,22 @@ export class LeadClosureService {
     propertyId: string,
     customerId: string,
     reason: string,
+    lossReason: LossReason,
     userId: string,
+    manager?: EntityManager,
   ): Promise<void> {
-    await this.propertyRepository.markLost(propertyId, reason, userId);
-    await this.closeProperty(propertyId, customerId, userId);
+    await this.propertyRepository.markLost(propertyId, reason, lossReason, userId, manager);
+    await this.closeProperty(propertyId, customerId, userId, manager);
   }
 
   /** For an enquiry that never got a site. propertyId is null by definition. */
-  async markCustomerLost(customerId: string, reason: string, userId: string): Promise<void> {
-    await this.customerRepository.markLost(customerId, reason, userId);
+  async markCustomerLost(
+    customerId: string,
+    reason: string,
+    lossReason: LossReason,
+    userId: string,
+  ): Promise<void> {
+    await this.customerRepository.markLost(customerId, reason, lossReason, userId);
     await this.followupRepository.cancelPendingFor(customerId, null, userId);
   }
 

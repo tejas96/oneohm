@@ -15,6 +15,13 @@ export interface LatestQuoteInfo {
   id: string;
   quoteNumber: string;
   status: QuoteStatus;
+  /**
+   * True when no LIVE quote exists on the roof and this is the newest voided
+   * one, kept for its value alone. Callers must not present `status` as the
+   * roof's current state when this is set — a voided quote keeps whatever
+   * status it had, which is how a dead contract used to read "accepted".
+   */
+  voided: boolean;
   quoteDate: Date;
   finalPrice?: number;
   systemSizeKw?: number;
@@ -161,8 +168,14 @@ export class QuoteRepository {
         continue;
       }
 
-      const existingAccepted = existing.status === QuoteStatus.ACCEPTED;
-      const candidateAccepted = quote.status === QuoteStatus.ACCEPTED;
+      // A voided quote still carries `status = 'accepted'` (voiding leaves
+      // `status` alone), so "accepted" here must mean the LIVE contract -
+      // same rule as the accepted-first ordering in findAllByPropertyId
+      // below. Otherwise a dead accepted quote could outrank and replace a
+      // newer, still-live, non-accepted quote as the only row shown for the
+      // property.
+      const existingAccepted = existing.status === QuoteStatus.ACCEPTED && !existing.voidedAt;
+      const candidateAccepted = quote.status === QuoteStatus.ACCEPTED && !quote.voidedAt;
       if (!existingAccepted && candidateAccepted) {
         latestPerProperty.set(quote.propertyId, quote);
       }
@@ -206,6 +219,36 @@ export class QuoteRepository {
     return [groupedQuotes.slice(start, end), total];
   }
 
+  /**
+   * Has this roof ever been quoted at all — voided quotes included.
+   *
+   * Deliberately NOT `findLatestByPropertyIds`, which answers a different
+   * question: that one skips voided quotes so cards stop showing a dead
+   * quote's status as current. Using it as an existence check would let a
+   * property whose only quotes are voided pass the hard-delete guard and
+   * orphan those rows. "Is there a live quote" and "was anything ever
+   * quoted here" are separate questions and need separate queries.
+   */
+  async existsAnyForProperty(propertyId: string, manager?: EntityManager): Promise<boolean> {
+    const repo = manager ? manager.getRepository(QuoteEntity) : this.repository;
+    const count = await repo
+      .createQueryBuilder('quote')
+      .where('quote.propertyId = :propertyId', { propertyId })
+      .andWhere('quote.deletedAt IS NULL')
+      .getCount();
+    return count > 0;
+  }
+
+  /**
+   * Every quote ever raised on a roof, live ones first.
+   *
+   * Voided quotes are NOT filtered out — they are the history of what was
+   * tried on this site, and dropping them would make a cancelled project's
+   * contract vanish. They are only demoted: the accepted-first ordering asks
+   * for the LIVE contract, and a voided quote that still reads `accepted`
+   * (voiding leaves `status` alone) is not one. Sorting it to the top would
+   * put a dead contract where the reader looks for the current one.
+   */
   async findAllByPropertyId(propertyId: string): Promise<QuoteEntity[]> {
     return this.repository
       .createQueryBuilder('quote')
@@ -216,7 +259,11 @@ export class QuoteRepository {
       .leftJoinAndSelect('quote.property', 'property')
       .andWhere('quote.propertyId = :propertyId', { propertyId })
       .andWhere('quote.deletedAt IS NULL')
-      .orderBy('CASE WHEN quote.status = :acceptedStatus THEN 0 ELSE 1 END', 'ASC')
+      .orderBy(
+        'CASE WHEN quote.status = :acceptedStatus AND quote.voidedAt IS NULL THEN 0 ELSE 1 END',
+        'ASC',
+      )
+      .addOrderBy('CASE WHEN quote.voidedAt IS NULL THEN 0 ELSE 1 END', 'ASC')
       .setParameter('acceptedStatus', QuoteStatus.ACCEPTED)
       .addOrderBy('quote.createdAt', 'DESC')
       .addOrderBy('quote.id', 'DESC')
@@ -317,7 +364,8 @@ export class QuoteRepository {
       .createQueryBuilder('quote')
       .andWhere('quote.propertyId = :propertyId', { propertyId })
       .andWhere('quote.status = :status', { status: QuoteStatus.ACCEPTED })
-      .andWhere('quote.deletedAt IS NULL');
+      .andWhere('quote.deletedAt IS NULL')
+      .andWhere('quote.voidedAt IS NULL');
     if (excludeQuoteId) {
       qb.andWhere('quote.id != :excludeQuoteId', { excludeQuoteId });
     }
@@ -325,11 +373,53 @@ export class QuoteRepository {
   }
 
   /**
-   * Find latest quote for each property ID (batch lookup)
+   * Kill every quote on a roof that a rep could still act on. Without this a
+   * `sent` quote survives the site being closed and gets chased.
+   *
+   * `excludeQuoteId` spares one quote. The rejection path passes the rejected
+   * quote's own id: voiding it would stamp an administrative marker over the
+   * customer's genuine decision, so the quote that CARRIES the decision keeps
+   * it. Project cancellation deliberately passes nothing — there, voiding the
+   * accepted quote is the entire point, because that is what unlocks the roof.
+   */
+  async voidAllOpenForProperty(
+    propertyId: string,
+    reason: string,
+    userId: string,
+    manager?: EntityManager,
+    excludeQuoteId?: string,
+  ): Promise<number> {
+    const repo = manager ? manager.getRepository(QuoteEntity) : this.repository;
+    const qb = repo
+      .createQueryBuilder()
+      .update(QuoteEntity)
+      .set({ voidedAt: new Date(), voidReason: reason, updatedBy: userId })
+      .where('property_id = :propertyId', { propertyId })
+      .andWhere('voided_at IS NULL')
+      .andWhere('deleted_at IS NULL');
+    if (excludeQuoteId) {
+      qb.andWhere('id != :excludeQuoteId', { excludeQuoteId });
+    }
+    const result = await qb.execute();
+    return result.affected ?? 0;
+  }
+
+  /**
+   * Find the latest LIVE quote for each property ID (batch lookup)
    * Uses PostgreSQL DISTINCT ON for efficient single-query retrieval
    *
+   * Voided quotes are excluded here, not just demoted. This feeds
+   * `latestQuoteStatus` on every property/customer surface that treats it as
+   * "the current quote" (cards, list/detail pages, the sales-pipeline stage
+   * calc) - a voided quote is not current, and those surfaces were never
+   * designed to render a void state. A property whose only quote has been
+   * voided is correctly absent from the returned map (reads as "no live
+   * quote"), never the dead quote's status. The full history, voided quotes
+   * included, is still available via findAllByPropertyId.
+   *
    * @param propertyIds - Array of property IDs to look up
-   * @returns Map of propertyId -> latest quote info
+   * @returns Map of propertyId -> latest LIVE quote info (properties whose
+   *   only quote(s) are voided are absent from the map)
    */
   async findLatestByPropertyIds(
     propertyIds: string[],
@@ -359,8 +449,13 @@ export class QuoteRepository {
       ])
       .distinctOn(['quote.propertyId'])
       .where('quote.propertyId IN (:...propertyIds)', { propertyIds })
+      .addSelect('quote.voidedAt')
       .andWhere('quote.deletedAt IS NULL')
+      // Live quotes win outright. A voided one is only reached when the roof
+      // has nothing live left — it still carries the value of what was tried,
+      // which a lost site needs in order to say "we quoted X and lost".
       .orderBy('quote.propertyId')
+      .addOrderBy('CASE WHEN quote.voided_at IS NULL THEN 0 ELSE 1 END', 'ASC')
       .addOrderBy('quote.createdAt', 'DESC')
       .addOrderBy('quote.id', 'DESC')
       .getMany();
@@ -374,6 +469,7 @@ export class QuoteRepository {
           id: quote.id,
           quoteNumber: quote.quoteNumber,
           status: quote.status,
+          voided: quote.voidedAt != null,
           quoteDate: quote.quoteDate,
           finalPrice: cv?.finalPrice != null ? Number(cv.finalPrice) : undefined,
           systemSizeKw: systemSizeKwOf(cv ?? {}),

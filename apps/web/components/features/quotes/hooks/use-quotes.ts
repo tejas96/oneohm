@@ -89,6 +89,14 @@ export interface QuoteListItem {
   subsidyAmount?: number;
   effectivePrice?: number;
   status: QuoteStatus;
+  /**
+   * Set when the quote was voided — the site was closed, or the project built
+   * from it was cancelled. Voiding leaves `status` untouched, so a voided
+   * quote still reads `accepted`; this is the only field that says it is dead,
+   * and the API refuses every transition on such a quote.
+   */
+  voidedAt?: string;
+  voidReason?: string;
   validUntil: string;
   quoteDate: string;
   internalNotes?: string;
@@ -103,6 +111,9 @@ export interface PropertyQuoteVersionItem {
   id: string;
   quoteNumber: string;
   status: QuoteStatus;
+  /** See QuoteListItem.voidedAt — a voided quote is terminal, not live. */
+  voidedAt?: string;
+  voidReason?: string;
   createdAt: string;
   quoteDate: string;
   systemSizeKw?: number;

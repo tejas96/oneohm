@@ -22,7 +22,13 @@ import { getErrorMessage } from '@/lib/utils/error';
 export type Paise = number;
 
 export type LedgerDirection = 'in' | 'out';
-export type MilestoneDerivedStatus = 'pending' | 'partial' | 'paid' | 'waived';
+/**
+ * Mirrors the backend's `DerivedMilestoneStatus`. `cancelled` is emitted for
+ * every milestone of a cancelled project — it was missing here, so the UI's
+ * status map had no branch for it and silently labelled those milestones
+ * "Pending", i.e. money still expected from a customer who owes nothing.
+ */
+export type MilestoneDerivedStatus = 'pending' | 'partial' | 'paid' | 'waived' | 'cancelled';
 
 export interface LedgerEntry {
   /**
@@ -123,6 +129,9 @@ export interface ProjectLedgerSummary {
   waivedPaise: Paise;
   receivedPaise: Paise;
   spentPaise: Paise;
+  /** Money handed back to a payer. Kept apart from spend: a refund is
+   *  returned revenue, not a cost of delivering the work. */
+  refundedPaise: Paise;
   outstandingPaise: Paise;
   /** Money received but not attributed to a milestone — customer credit. Surface it. */
   unallocatedPaise: Paise;

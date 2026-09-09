@@ -72,3 +72,12 @@ export interface SalesPipelineDashboardResponseDto {
   leaderboard: Pick<SalesPipelineLeaderboardResponseDto, 'entries'>;
   trend: Pick<SalesPipelineTrendResponseDto, 'granularity' | 'points'>;
 }
+
+/** One row of `GET .../loss-reasons`: a `loss_reason` value and its split across the two sources that can carry it. */
+export interface LossReasonBreakdownEntryDto {
+  lossReason: string;
+  leadsLost: number;
+  projectsCancelled: number;
+}
+
+export type LossReasonBreakdownResponseDto = LossReasonBreakdownEntryDto[];

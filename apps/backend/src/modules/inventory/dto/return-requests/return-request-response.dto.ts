@@ -13,8 +13,8 @@ export class ReturnRequestResponseDto {
   allocationId!: string;
 
   @Expose()
-  @ApiProperty()
-  bomId!: string;
+  @ApiProperty({ required: false, nullable: true })
+  bomId?: string;
 
   @Expose()
   @ApiProperty()

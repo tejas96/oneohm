@@ -53,7 +53,7 @@ export class ConsumerProjectController {
   async findProjectByProperty(
     @Param('propertyId', ParseUUIDPipe) propertyId: string,
   ): Promise<{ project: ProjectResponseDto | null }> {
-    const existing = await this.projectRepository.findOneByPropertyId(propertyId);
+    const existing = await this.projectRepository.findLiveByPropertyId(propertyId);
 
     if (!existing) {
       return { project: null };

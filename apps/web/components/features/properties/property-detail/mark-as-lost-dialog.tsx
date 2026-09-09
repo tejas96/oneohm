@@ -2,6 +2,8 @@
 
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Button, TextField, Typography } from '@mui/material';
+import { LOSS_REASON_LABELS } from '@tejas96/shared/constants';
+import { LossReason } from '@tejas96/shared/types';
 import { useEffect, useState, type JSX } from 'react';
 
 import { useMarkPropertyLost } from '@/components/features/followups';
@@ -12,6 +14,7 @@ import {
   MUIDialogFooter,
   MUIDialogHeader,
   MUIDialogTitle,
+  MUISelect,
   showToast,
 } from '@/components/ui';
 import { useGatedAction } from '@/lib/rbac';
@@ -40,15 +43,19 @@ export function MarkAsLostDialog({
 }: MarkAsLostDialogProps): JSX.Element {
   const save = useGatedAction('properties.edit', () => handleSubmit(), 'Mark as lost');
   const [reason, setReason] = useState('');
+  const [lossReason, setLossReason] = useState<LossReason | ''>('');
   const markLost = useMarkPropertyLost();
 
   useEffect(() => {
-    if (open) setReason('');
+    if (open) {
+      setReason('');
+      setLossReason('');
+    }
   }, [open]);
 
   const handleSubmit = (): void => {
     markLost.mutate(
-      { propertyId, reason: reason.trim() },
+      { propertyId, reason: reason.trim(), lossReason: lossReason || undefined },
       {
         onSuccess: () => {
           showToast.success('Marked as lost — follow-ups closed');
@@ -98,6 +105,17 @@ export function MarkAsLostDialog({
         <Typography variant="body2" sx={{ mb: 2 }}>
           Closing <strong>{propertyName || 'this site'}</strong>.
         </Typography>
+        <MUISelect
+          fieldLabel="Loss reason"
+          placeholder="Select a reason"
+          value={lossReason}
+          onChange={(event) => setLossReason(event.target.value as LossReason)}
+          options={Object.values(LossReason).map((value) => ({
+            value,
+            label: LOSS_REASON_LABELS[value],
+          }))}
+          formControlProps={{ sx: { mb: 2 } }}
+        />
         <TextField
           fullWidth
           size="small"

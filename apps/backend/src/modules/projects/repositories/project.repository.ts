@@ -6,7 +6,7 @@ import {
   ProjectStatus,
   TaskStatus,
 } from '@tejas96/shared/types';
-import { type EntityManager, IsNull, Repository } from 'typeorm';
+import { type EntityManager, IsNull, Not, Repository } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { systemSizeKwSql } from '../../../common/utils/transform.util';
@@ -649,16 +649,21 @@ export class ProjectRepository {
   }
 
   /**
-   * Find single project by property ID (for OneToOne check)
-   * Returns null if no project exists for the property
+   * The project that currently owns this roof.
+   *
+   * A cancelled project does not own anything — its stock is released, its
+   * milestones are dead and its roof has been handed back. Counting it would
+   * make a re-sold site permanently unconvertible.
    */
-  async findOneByPropertyId(propertyId: string): Promise<ProjectEntity | null> {
-    return this.repository
-      .createQueryBuilder('project')
-      .innerJoin('project.property', 'property')
-      .where('project.propertyId = :propertyId', { propertyId })
-      .andWhere('project.deletedAt IS NULL')
-      .getOne();
+  async findLiveByPropertyId(propertyId: string): Promise<ProjectEntity | null> {
+    return this.repository.findOne({
+      where: {
+        propertyId,
+        status: Not(ProjectStatus.CANCELLED),
+        deletedAt: IsNull(),
+      },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   /**

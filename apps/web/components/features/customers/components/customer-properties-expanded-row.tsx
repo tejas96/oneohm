@@ -33,6 +33,7 @@ import {
 import { PROPERTY_TYPE_LABELS } from '@/components/features/properties/constants';
 import { useDeleteProperty } from '@/components/features/properties/hooks/use-properties';
 import { MarkAsLostDialog } from '@/components/features/properties/property-detail/mark-as-lost-dialog';
+import { ReopenPropertyDialog } from '@/components/features/properties/property-detail/reopen-property-dialog';
 import { ORG_ADMIN_ROLES } from '@/components/features/properties/utils/delete-eligibility';
 import { CRM_TONE_FILL, CrmStatusPill, type CrmTone } from '@/components/shared/crm-table';
 import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
@@ -257,6 +258,7 @@ interface SiteRowProps {
   index: number;
   isOrgAdmin: boolean;
   onMarkAsLost: (property: PropertyRowActionsTarget) => void;
+  onReopen: (property: PropertyRowActionsTarget) => void;
   onRequestDelete: (property: PropertyRowActionsTarget) => void;
   onOpen: (propertyId: string) => void;
 }
@@ -266,6 +268,7 @@ function SiteRow({
   index,
   isOrgAdmin,
   onMarkAsLost,
+  onReopen,
   onRequestDelete,
   onOpen,
 }: SiteRowProps): JSX.Element {
@@ -568,6 +571,7 @@ function SiteRow({
         <PropertyRowActionsMenu
           property={property}
           onMarkAsLost={onMarkAsLost}
+          onReopen={onReopen}
           onRequestDelete={onRequestDelete}
           showDelete={isOrgAdmin}
         />
@@ -620,9 +624,14 @@ export function CustomerPropertiesExpandedRow({
   } = useCustomerProperties(customerId);
 
   const [markLostTarget, setMarkLostTarget] = useState<PropertyRowActionsTarget | null>(null);
+  const [reopenTarget, setReopenTarget] = useState<PropertyRowActionsTarget | null>(null);
 
   const handleMarkAsLost = useCallback((property: PropertyRowActionsTarget): void => {
     setMarkLostTarget(property);
+  }, []);
+
+  const handleReopen = useCallback((property: PropertyRowActionsTarget): void => {
+    setReopenTarget(property);
   }, []);
 
   const handleOpenSite = useCallback(
@@ -846,6 +855,7 @@ export function CustomerPropertiesExpandedRow({
             index={index}
             isOrgAdmin={isOrgAdmin}
             onMarkAsLost={handleMarkAsLost}
+            onReopen={handleReopen}
             onRequestDelete={deleteConfirmation.requestDelete}
             onOpen={handleOpenSite}
           />
@@ -858,6 +868,15 @@ export function CustomerPropertiesExpandedRow({
           onClose={() => setMarkLostTarget(null)}
           propertyId={markLostTarget.id}
           propertyName={markLostTarget.propertyName ?? markLostTarget.propertyCode}
+        />
+      )}
+
+      {reopenTarget && (
+        <ReopenPropertyDialog
+          open
+          onClose={() => setReopenTarget(null)}
+          propertyId={reopenTarget.id}
+          propertyName={reopenTarget.propertyName ?? reopenTarget.propertyCode}
         />
       )}
 
