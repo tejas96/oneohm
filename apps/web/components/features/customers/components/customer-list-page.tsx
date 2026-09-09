@@ -39,6 +39,7 @@ import {
   PROPERTY_STATUS_TONE,
 } from '../constants';
 import {
+  type FollowupAssignee,
   Customer as CustomerBase,
   type CustomerFilters,
   useCustomerGroups,
@@ -167,6 +168,10 @@ function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilte
   }
 
   return {
+    followupAssigneeId:
+      typeof filters.followupAssigneeId === 'string' && filters.followupAssigneeId
+        ? filters.followupAssigneeId
+        : undefined,
     status:
       typeof filters.status === 'string' && filters.status
         ? (filters.status as CustomerStatus)
@@ -758,6 +763,81 @@ function PortfolioCell({
   );
 }
 
+/**
+ * Who is on the hook for this row, as avatars.
+ *
+ * Two kinds of person share the column and must not look the same. A LIVE
+ * assignee still owes a call or a visit. A stale one merely closed the last
+ * followup — shown so the column never empties the moment work finishes, which
+ * is precisely when someone asks who dealt with these people.
+ *
+ * Stale faces are dimmed and outlined rather than filled, so "needs chasing"
+ * and "quiet, ask this person" read differently at a glance. Rendering both
+ * identically would leave the column unable to answer the question it exists
+ * for.
+ */
+function FollowupAssigneeCell({ assignees }: { assignees?: FollowupAssignee[] }): JSX.Element {
+  if (!assignees || assignees.length === 0) {
+    return (
+      <Box component="span" sx={{ fontSize: crm['text-row'], color: color['text-tertiary'] }}>
+        —
+      </Box>
+    );
+  }
+
+  const shown = assignees.slice(0, 3);
+  const overflow = assignees.length - shown.length;
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+      {shown.map((person, index) => {
+        const name = [person.firstName, person.lastName].filter(Boolean).join(' ');
+        return (
+          <Tooltip
+            key={person.userId}
+            title={person.live ? `${name} — owes work` : `${name} — handled it last`}
+          >
+            <Box
+              sx={{
+                ml: index === 0 ? 0 : '-6px',
+                borderRadius: '50%',
+                // The ring is what separates overlapping faces; a stale one gets
+                // the page colour so it reads as recessed rather than missing.
+                border: '2px solid var(--ds-canvas)',
+                opacity: person.live ? 1 : 0.45,
+                filter: person.live ? 'none' : 'grayscale(1)',
+                display: 'flex',
+              }}
+            >
+              <MUIAvatar name={name} size={24} />
+            </Box>
+          </Tooltip>
+        );
+      })}
+      {overflow > 0 ? (
+        <Box
+          component="span"
+          sx={{
+            ml: '-6px',
+            display: 'grid',
+            placeItems: 'center',
+            width: 24,
+            height: 24,
+            borderRadius: '50%',
+            border: '2px solid var(--ds-canvas)',
+            bgcolor: 'var(--ds-canvas-sunken)',
+            color: color['text-secondary'],
+            fontSize: '0.625rem',
+            fontWeight: 600,
+          }}
+        >
+          +{overflow}
+        </Box>
+      ) : null}
+    </Box>
+  );
+}
+
 function PersonCell({ name }: { name?: string }): JSX.Element {
   if (!name) {
     return (
@@ -798,6 +878,12 @@ function PersonCell({ name }: { name?: string }): JSX.Element {
 // ============================================================================
 
 const FILTER_COLUMNS: ColumnConfig<Customer>[] = [
+  {
+    field: 'followupAssigneeId',
+    headerName: 'Followup assignee',
+    filterable: true,
+    filterType: 'select',
+  },
   {
     field: 'city',
     headerName: 'City',
@@ -1139,6 +1225,20 @@ export function CustomerListPage(): JSX.Element {
 
   const filterColumns = useMemo<ColumnConfig<Customer>[]>(() => {
     return FILTER_COLUMNS.map((col) => {
+      if (col.field === 'followupAssigneeId') {
+        return {
+          ...col,
+          filterOptions: baseEmployeeOptions,
+          renderFilter: ({ value, onChange }) => (
+            <FilterAutocomplete
+              options={baseEmployeeOptions}
+              value={value}
+              onChange={onChange}
+              placeholder="Search person..."
+            />
+          ),
+        };
+      }
       if (col.field === 'groupSearch') {
         return {
           ...col,
@@ -1183,7 +1283,7 @@ export function CustomerListPage(): JSX.Element {
       }
       return col;
     });
-  }, [creatorOptions, assigneeOptions, groupOptions]);
+  }, [creatorOptions, assigneeOptions, groupOptions, baseEmployeeOptions]);
 
   const handleAddSite = useCallback(
     (customerId: string) => {
@@ -1303,6 +1403,23 @@ export function CustomerListPage(): JSX.Element {
             </Box>
           );
         },
+      },
+      {
+        field: 'followupAssignees',
+        header: 'Followups',
+        track: crm['col-followup-assignees'],
+        /*
+         * Collapsed, this row stands for the whole unit, so it shows everyone
+         * across the customer and its sites. Expanded, each site row below
+         * carries its own — so the parent drops to the customer's own followups
+         * only. Otherwise the same face appears twice on one screen meaning two
+         * different things.
+         */
+        renderCell: (row, { isExpanded }) => (
+          <FollowupAssigneeCell
+            assignees={isExpanded ? row.ownFollowupAssignees : row.followupAssignees}
+          />
+        ),
       },
       {
         field: 'owner',

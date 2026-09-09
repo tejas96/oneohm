@@ -740,7 +740,7 @@ export function CrmTable<TRow>({
                           ...col.cellSx,
                         }}
                       >
-                        {col.renderCell(row)}
+                        {col.renderCell(row, { isExpanded })}
                       </Box>
                     ))}
                   </Box>

@@ -73,7 +73,14 @@ export interface CrmColumn<TRow> {
   /** Extra styles merged onto the cell wrapper. */
   cellSx?: SxProps<Theme>;
 
-  renderCell: (row: TRow) => ReactNode;
+  /**
+   * `meta.isExpanded` lets a column say something different once the row is
+   * open. The followup column uses it: collapsed it shows the customer AND all
+   * its sites rolled together, expanded it drops to the customer's own, because
+   * each site row then shows its own and the same face must not appear twice
+   * meaning two different things.
+   */
+  renderCell: (row: TRow, meta: { isExpanded: boolean }) => ReactNode;
 }
 
 // ============================================================================

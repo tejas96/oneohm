@@ -175,6 +175,7 @@
   --crm-col-status: 106px;
   --crm-col-onboarded: 102px;
   --crm-col-owner: minmax(122px,1fr);
+  --crm-col-followup-assignees: 108px;
   --crm-col-creator: minmax(122px,1fr);
   --crm-col-actions: 40px;
   --crm-col-approval-request: 152px;
@@ -282,6 +283,7 @@
   --crm-sites-col-quote: 112px;
   --crm-sites-col-cost: 118px;
   --crm-sites-col-discom: minmax(132px,1fr);
+  --crm-sites-col-followups: 96px;
   --crm-sites-col-status: 100px;
   --crm-sites-col-added: 88px;
   --crm-sites-col-actions: 34px;

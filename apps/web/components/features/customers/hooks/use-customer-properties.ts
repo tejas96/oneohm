@@ -64,6 +64,16 @@ export interface CustomerPropertyResponse {
   changeRequests?: StoredChangeRequest[];
   // Status
   status: PropertyStatus;
+  /**
+   * Who is on the hook for THIS roof. `live` false means they only closed the
+   * last followup — shown so the cell never empties the moment work finishes.
+   */
+  followupAssignees?: {
+    userId: string;
+    firstName: string;
+    lastName?: string | null;
+    live: boolean;
+  }[];
   notes?: string;
   projectId?: string;
   /**
