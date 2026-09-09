@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { QuoteStatus } from '@tejas96/shared/types';
+import { LossReason, QuoteStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { quoteKeys } from './use-quotes';
@@ -39,6 +39,10 @@ interface UpdateQuoteStatusPayload {
   status: QuoteStatus;
   rejectionReason?: string;
   customerSignature?: string;
+  /** What happens to the site: "requote" keeps it, "close" marks it lost. */
+  rejectionOutcome?: 'requote' | 'close';
+  /** Only meaningful alongside rejectionOutcome: 'close'. */
+  lossReason?: LossReason;
 }
 
 interface ConvertToProjectPayload {
@@ -86,9 +90,23 @@ export function useAcceptQuote() {
 export function useRejectQuote() {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, AxiosError, { quoteId: string; rejectionReason: string }>({
-    mutationFn: ({ quoteId, rejectionReason }) =>
-      updateQuoteStatus(quoteId, { status: QuoteStatus.REJECTED, rejectionReason }),
+  return useMutation<
+    unknown,
+    AxiosError,
+    {
+      quoteId: string;
+      rejectionReason: string;
+      rejectionOutcome: 'requote' | 'close';
+      lossReason?: LossReason;
+    }
+  >({
+    mutationFn: ({ quoteId, rejectionReason, rejectionOutcome, lossReason }) =>
+      updateQuoteStatus(quoteId, {
+        status: QuoteStatus.REJECTED,
+        rejectionReason,
+        rejectionOutcome,
+        lossReason,
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
     },
