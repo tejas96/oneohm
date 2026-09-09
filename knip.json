@@ -1,0 +1,55 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/**/*.{ts,js,mjs,cjs}"
+      ],
+      "project": [
+        "scripts/**/*.{ts,js,mjs,cjs}",
+        "*.{ts,js,mjs,cjs}"
+      ]
+    },
+    "apps/backend": {
+      "entry": [
+        "src/main.ts",
+        "src/database/ormconfig.ts",
+        "src/database/migrations/*.ts",
+        "src/database/seeds/**/*.ts",
+        "src/scripts/**/*.ts",
+        "src/**/*.spec.ts",
+        "test/**/*.ts"
+      ],
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "apps/web": {
+      "entry": [
+        "app/**/{page,layout,route,template,default,error,global-error,loading,not-found}.{ts,tsx}",
+        "middleware.ts",
+        "next.config.ts",
+        "tailwind.config.ts",
+        "postcss.config.mjs"
+      ],
+      "project": [
+        "{app,components,lib,providers}/**/*.{ts,tsx}"
+      ]
+    },
+    "libs/shared": {
+      "entry": [
+        "src/index.ts",
+        "tsup.config.ts"
+      ],
+      "project": [
+        "src/**/*.ts"
+      ]
+    }
+  },
+  "ignore": [
+    "**/dist/**",
+    "**/coverage/**",
+    "**/tmp/**",
+    "**/*.d.ts"
+  ]
+}

@@ -1,2 +1,0 @@
-// Export calendar components
-export {};
