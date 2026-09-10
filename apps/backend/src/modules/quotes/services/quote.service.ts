@@ -230,26 +230,6 @@ export class QuoteService {
     }
 
     /*
-      Withdrawn.
-
-      Checked separately from `status` because voiding deliberately leaves
-      `status` alone — a voided quote still reads `sent`, or `draft`, and walks
-      straight past the check above. Without this, the one act that exists to
-      take a price back does not stop that price being sent again: `voidQuote`
-      marks it dead, `updateStatus` refuses to move it, and sharing would hand
-      it to the customer anyway, flipping a voided DRAFT to SENT on the way out.
-
-      This is the same hole the property-lock guard below was added to close,
-      in the same method, for the same reason.
-    */
-    if (quote.voidedAt) {
-      throw new BadRequestException(
-        `Quote ${quote.quoteNumber} was withdrawn${quote.voidReason ? ` \u2014 ${quote.voidReason}` : ''}. ` +
-          'A withdrawn quote cannot be sent; raise a new quote for this property instead.',
-      );
-    }
-
-    /*
       A property with a signed quote is closed, and that has to include sharing.
 
       `updateStatus` has enforced this from the start; sharing never did. So a
