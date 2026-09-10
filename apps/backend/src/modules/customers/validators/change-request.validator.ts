@@ -91,7 +91,7 @@ function hasOnlyAllowedKeys(item: Record<string, unknown>): boolean {
 }
 
 @ValidatorConstraint({ name: 'isValidChangeRequestItem', async: false })
-export class ChangeRequestItemConstraint implements ValidatorConstraintInterface {
+class ChangeRequestItemConstraint implements ValidatorConstraintInterface {
   private lastError = 'Invalid change request item';
 
   validate(value: unknown): boolean {
@@ -120,20 +120,8 @@ export class ChangeRequestItemConstraint implements ValidatorConstraintInterface
   }
 }
 
-export function IsValidChangeRequestItem(validationOptions?: ValidationOptions) {
-  return (object: object, propertyName: string): void => {
-    registerDecorator({
-      target: object.constructor,
-      propertyName,
-      options: validationOptions,
-      constraints: [],
-      validator: ChangeRequestItemConstraint,
-    });
-  };
-}
-
 @ValidatorConstraint({ name: 'hasUniqueChangeRequestTypes', async: false })
-export class UniqueChangeRequestTypesConstraint implements ValidatorConstraintInterface {
+class UniqueChangeRequestTypesConstraint implements ValidatorConstraintInterface {
   validate(value: unknown): boolean {
     if (value === undefined || value === null) return true;
     if (!Array.isArray(value)) return false;
@@ -159,7 +147,7 @@ export function HasUniqueChangeRequestTypes(validationOptions?: ValidationOption
 }
 
 @ValidatorConstraint({ name: 'isValidChangeRequestArray', async: false })
-export class ChangeRequestArrayConstraint implements ValidatorConstraintInterface {
+class ChangeRequestArrayConstraint implements ValidatorConstraintInterface {
   private itemConstraint = new ChangeRequestItemConstraint();
 
   validate(value: unknown): boolean {

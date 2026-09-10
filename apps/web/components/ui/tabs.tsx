@@ -32,7 +32,7 @@ const tabsListVariants = cva('inline-flex items-center', {
   },
 });
 
-export interface TabsListProps
+interface TabsListProps
   extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>,
     VariantProps<typeof tabsListVariants> {}
 
@@ -88,9 +88,9 @@ const COUNT_COLORS = {
   muted: 'bg-muted text-foreground-secondary',
 } as const;
 
-export type CountVariant = keyof typeof COUNT_COLORS;
+type CountVariant = keyof typeof COUNT_COLORS;
 
-export interface TabsTriggerProps
+interface TabsTriggerProps
   extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>,
     VariantProps<typeof tabsTriggerVariants> {
   /** Optional count badge */
@@ -190,16 +190,6 @@ const VerticalTabsContent = React.forwardRef<
 ));
 VerticalTabsContent.displayName = 'VerticalTabsContent';
 
-export {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-  VerticalTabsList,
-  VerticalTabsTrigger,
-  VerticalTabsContent,
-  tabsListVariants,
-  tabsTriggerVariants,
-};
+export { Tabs, TabsList, TabsTrigger, TabsContent };
 
 // Types are already exported via interface declarations above

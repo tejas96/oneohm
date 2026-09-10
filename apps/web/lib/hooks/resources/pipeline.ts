@@ -12,9 +12,6 @@ import {
 
 import { apiClient } from '@/lib/api/client';
 
-export type { StatsWindowInput, ResolvedStatsWindow };
-export { resolveStatsWindow };
-
 // ============================================================================
 // Response types — mirror backend sales-pipeline DTOs
 // ============================================================================
@@ -29,7 +26,7 @@ export interface PipelineFunnelStage {
   negotiationValue?: number;
 }
 
-export interface PipelineFunnelResponse {
+interface PipelineFunnelResponse {
   fromDate: string;
   toDate: string;
   stages: PipelineFunnelStage[];
@@ -67,7 +64,7 @@ export interface PipelineLeaderboardEntry {
   isUnassigned: boolean;
 }
 
-export interface PipelineLeaderboardResponse {
+interface PipelineLeaderboardResponse {
   fromDate: string;
   toDate: string;
   entries: PipelineLeaderboardEntry[];
@@ -79,7 +76,7 @@ export interface PipelineTrendPoint {
   wonCount: number;
 }
 
-export interface PipelineTrendResponse {
+interface PipelineTrendResponse {
   fromDate: string;
   toDate: string;
   granularity: 'week' | 'month';
@@ -169,49 +166,5 @@ export function usePipelineDashboard(
     'dashboard',
     fullParams,
     resolved !== null && opts.enabled !== false,
-  );
-}
-
-export function usePipelineFunnel(
-  opts: PipelineQueryOptions,
-): UseQueryResult<PipelineFunnelResponse, unknown> {
-  const { resolved, params } = buildBaseParams(opts.window, opts.salesPersonId);
-  return usePipelineQuery(
-    `${ANALYTICS_SALES_PIPELINE}/funnel`,
-    'funnel',
-    params,
-    resolved !== null,
-  );
-}
-
-export function usePipelineStats(
-  opts: PipelineQueryOptions,
-): UseQueryResult<PipelineStatsResponse, unknown> {
-  const { resolved, params } = buildBaseParams(opts.window, opts.salesPersonId);
-  return usePipelineQuery(`${ANALYTICS_SALES_PIPELINE}/stats`, 'stats', params, resolved !== null);
-}
-
-export function usePipelineLeaderboard(
-  opts: Omit<PipelineQueryOptions, 'salesPersonId'>,
-): UseQueryResult<PipelineLeaderboardResponse, unknown> {
-  const { resolved, params } = buildBaseParams(opts.window);
-  return usePipelineQuery(
-    `${ANALYTICS_SALES_PIPELINE}/by-salesperson`,
-    'leaderboard',
-    params,
-    resolved !== null && opts.enabled !== false,
-  );
-}
-
-export function usePipelineTrend(
-  opts: PipelineQueryOptions & { granularity?: 'week' | 'month' },
-): UseQueryResult<PipelineTrendResponse, unknown> {
-  const { resolved, params } = buildBaseParams(opts.window, opts.salesPersonId);
-  const fullParams = { ...params, granularity: opts.granularity ?? 'week' };
-  return usePipelineQuery(
-    `${ANALYTICS_SALES_PIPELINE}/trend`,
-    'trend',
-    fullParams,
-    resolved !== null,
   );
 }

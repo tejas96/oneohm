@@ -30,7 +30,7 @@ import {
 import { ROUTES, getPanelKeyForPath } from './routes';
 
 import { ALWAYS_OPEN, SUPERADMIN_ONLY } from '@/lib/rbac/catalog';
-import type { NavigationConfig, PanelConfig } from '@/lib/types';
+import type { NavigationConfig } from '@/lib/types';
 
 /**
  * Centralized Navigation Configuration
@@ -595,40 +595,11 @@ export const navigationConfig: NavigationConfig = {
   },
 };
 
-/**
- * Get panel config by route pathname
- */
-export function getPanelConfigByPath(pathname: string): { key: string; config: PanelConfig } {
-  // Find matching rail item
-  const allRailItems = [...navigationConfig.railTop, ...navigationConfig.railBottom];
-
-  // Check for exact match first, then prefix match
-  const matchedItem = allRailItems.find(
-    (item) =>
-      pathname === item.href ||
-      (item.href !== ROUTES.DASHBOARD.HOME && pathname.startsWith(item.href)),
-  );
-
-  const panelConfig = matchedItem ? navigationConfig.panels[matchedItem.panelKey] : undefined;
-
-  if (panelConfig) {
-    return {
-      key: matchedItem!.panelKey,
-      config: panelConfig,
-    };
-  }
-
-  // Default to dashboard (guaranteed to exist)
-  return {
-    key: 'dashboard',
-    config: navigationConfig.panels.dashboard!,
-  };
-}
-
 /** Read project list status/health filters from URL or table filter params. */
-export function getProjectListFilterFromSearchParams(searchParams: {
-  get(name: string): string | null;
-}): { status: string | null; healthStatus: string | null } {
+function getProjectListFilterFromSearchParams(searchParams: { get(name: string): string | null }): {
+  status: string | null;
+  healthStatus: string | null;
+} {
   let status = searchParams.get('status');
   let healthStatus = searchParams.get('healthStatus');
 

@@ -22,7 +22,7 @@ const Breadcrumb = React.forwardRef<
 >(({ ...props }, ref) => <nav ref={ref} aria-label="breadcrumb" {...props} />);
 Breadcrumb.displayName = 'Breadcrumb';
 
-export interface BreadcrumbListProps extends React.ComponentPropsWithoutRef<'ol'> {
+interface BreadcrumbListProps extends React.ComponentPropsWithoutRef<'ol'> {
   /** Visual variant */
   variant?: 'default' | 'contained';
 }
@@ -49,7 +49,7 @@ const BreadcrumbItem = React.forwardRef<HTMLLIElement, React.ComponentPropsWitho
 );
 BreadcrumbItem.displayName = 'BreadcrumbItem';
 
-export interface BreadcrumbLinkProps extends React.ComponentPropsWithoutRef<'a'> {
+interface BreadcrumbLinkProps extends React.ComponentPropsWithoutRef<'a'> {
   asChild?: boolean;
   /** Use primary color instead of gray */
   colored?: boolean;
@@ -88,7 +88,7 @@ const BreadcrumbPage = React.forwardRef<HTMLSpanElement, React.ComponentPropsWit
 );
 BreadcrumbPage.displayName = 'BreadcrumbPage';
 
-export interface BreadcrumbSeparatorProps extends React.ComponentProps<'li'> {
+interface BreadcrumbSeparatorProps extends React.ComponentProps<'li'> {
   /** Separator type */
   type?: 'chevron' | 'slash';
 }
@@ -165,6 +165,4 @@ export {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-  BreadcrumbEllipsis,
-  BreadcrumbHome,
 };

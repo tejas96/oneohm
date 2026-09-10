@@ -10,7 +10,7 @@
 
 import { TOKENS } from './tokens';
 
-export const GENERATED_HEADER = [
+const GENERATED_HEADER = [
   '/* ─────────────────────────────────────────────────────────────────────',
   '   AUTO-GENERATED — DO NOT EDIT.',
   '   Source:    apps/web/lib/theme/tokens.ts',

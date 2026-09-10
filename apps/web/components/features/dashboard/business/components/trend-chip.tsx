@@ -11,7 +11,7 @@ import { color } from '@/lib/theme/tokens';
  * the previous period, so no percentage is meaningful — see
  * `computeTrendMetric`, which deliberately refuses to fabricate "+100%".
  */
-export interface TrendMetric {
+interface TrendMetric {
   value: number;
   direction: 'up' | 'down' | 'flat' | 'new';
 }

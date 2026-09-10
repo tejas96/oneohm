@@ -16,21 +16,20 @@ import type {
 } from '@tejas96/shared/types';
 
 // Re-export shared types that consumers already reference by local names
-export type { ProfitMarginTier } from '@tejas96/shared/types';
-export type ValidationWarning = SharedValidationWarning;
-export type SubsidySchemeResult = SharedSubsidySchemeResult;
-export type SubsidyTier = SharedSubsidyTier;
+type ValidationWarning = SharedValidationWarning;
+type SubsidySchemeResult = SharedSubsidySchemeResult;
+type SubsidyTier = SharedSubsidyTier;
 
 // ============================================================================
 // Request Types (mirrors backend CalculateQuoteDto)
 // ============================================================================
 
-export interface PanelOverride {
+interface PanelOverride {
   productId: string;
   quantity: number;
 }
 
-export interface InverterOverride {
+interface InverterOverride {
   productId: string;
   quantity: number;
 }
@@ -75,7 +74,7 @@ export interface CreateFromCalculationRequest extends CalculateQuoteRequest {
 // response differs slightly from the canonical shared interface.
 // ============================================================================
 
-export interface SystemConfig {
+interface SystemConfig {
   totalSystemSizeKw: number;
   dcrSizeKw: number;
   nonDcrSizeKw: number;
@@ -86,11 +85,11 @@ export interface SystemConfig {
  * Frontend alias for shared CalculatedPanelConfig.
  * Identical structure -- gstRate is optional in the API response.
  */
-export interface CalculatedPanel extends Omit<CalculatedPanelConfig, 'gstRate'> {
+interface CalculatedPanel extends Omit<CalculatedPanelConfig, 'gstRate'> {
   gstRate?: number;
 }
 
-export interface InverterItem {
+interface InverterItem {
   productId: string;
   name: string;
   brand: string;
@@ -104,14 +103,14 @@ export interface InverterItem {
   productWarrantyYears?: number;
 }
 
-export interface CalculatedInverter {
+interface CalculatedInverter {
   inverters: InverterItem[];
   totalCapacityKw: number;
   totalCost: number;
   totalGst: number;
 }
 
-export interface CalculatedStructure {
+interface CalculatedStructure {
   productId: string;
   name: string;
   description?: string;
@@ -131,23 +130,15 @@ export interface CalculatedInstallation extends Omit<CalculatedInstallationCost,
   gstRate?: number;
 }
 
-export interface SubsidyBreakdown {
-  fromKw: number;
-  toKw: number;
-  kw: number;
-  ratePerKw: number;
-  amount: number;
-}
-
 /**
  * Frontend CalculatedSubsidy -- mirrors shared but with optional `schemes`
  * for backward compatibility with API responses that predate multi-scheme.
  */
-export interface CalculatedSubsidy extends Omit<SharedCalculatedSubsidy, 'schemes'> {
+interface CalculatedSubsidy extends Omit<SharedCalculatedSubsidy, 'schemes'> {
   schemes?: SubsidySchemeResult[];
 }
 
-export interface PricingSummary {
+interface PricingSummary {
   basePrice: number;
   gst5Amount: number;
   gst18Amount: number;
@@ -157,7 +148,7 @@ export interface PricingSummary {
   finalPrice: number;
 }
 
-export interface InventoryStatus {
+interface InventoryStatus {
   productId: string;
   productName: string;
   requiredQuantity: number;
@@ -217,7 +208,7 @@ export interface SaveQuoteResponse {
  * `PaymentMilestone` remains a different, smaller type — see the note at the
  * foot of this file.
  */
-export type PaymentMilestone = QuotePdfPaymentMilestone;
+type PaymentMilestone = QuotePdfPaymentMilestone;
 
 export interface QuoteConfigResponse {
   defaultValidityDays: number;
@@ -261,11 +252,4 @@ export interface SubsidyConfigResponse {
   substituted by accident, and the shared one has no `amount` — the schedule
   would print as a column of zeroes.
 */
-export type { QuotePdfPaymentMilestone };
-export type {
-  PdfCompanyInfo,
-  QuoteCustomerInfo,
-  QuotePdfData,
-  QuotePdfOrgConfig,
-  QuotePropertyInfo,
-} from '@tejas96/shared/reports';
+export type { QuotePdfData } from '@tejas96/shared/reports';

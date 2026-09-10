@@ -39,7 +39,7 @@ export interface DonutChartImplProps
   valueFormatter?: (value: number) => string;
 }
 
-export function DonutChartImpl({
+function DonutChartImpl({
   data,
   centerLabel,
   centerSubLabel,

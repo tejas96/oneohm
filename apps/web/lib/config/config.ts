@@ -128,4 +128,3 @@ class WebConfigService {
 export const config = new WebConfigService();
 
 // Export class for type reference
-export { WebConfigService };

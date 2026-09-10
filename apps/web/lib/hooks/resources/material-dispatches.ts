@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  createResourceKeys,
   defineResource,
   useResourceDetail,
   useResourceList,
@@ -83,8 +82,6 @@ defineResource<MaterialDispatch>(
 // ============================================================================
 // Query keys
 // ============================================================================
-
-export const materialDispatchKeys = createResourceKeys('material-dispatches');
 
 // ============================================================================
 // Hooks

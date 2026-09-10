@@ -148,5 +148,3 @@ export function UserMenu({ className }: UserMenuProps) {
     </DropdownMenu>
   );
 }
-
-export default UserMenu;

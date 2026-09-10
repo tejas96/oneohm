@@ -3,7 +3,6 @@
 import * as React from 'react';
 
 import { GatedLink } from './gated-link';
-import { money, rupeesExact, type MoneyFormat } from '../lib/format';
 
 import type { Gate } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
@@ -147,5 +146,3 @@ export function HeadlineBand({
 }
 
 /** Re-exported so callers format hero figures the same way this band does. */
-export { money, rupeesExact };
-export type { MoneyFormat };

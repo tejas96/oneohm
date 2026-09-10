@@ -10,7 +10,7 @@ import { MUITypography } from '@/components/ui';
 // Types
 // ============================================================================
 
-export interface ProjectMixItem {
+interface ProjectMixItem {
   id: string;
   label: string;
   value: number; // percentage

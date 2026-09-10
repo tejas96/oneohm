@@ -83,7 +83,7 @@ const warehouseFormSchema = z
     }
   });
 
-export type WarehouseFormValues = z.infer<typeof warehouseFormSchema>;
+type WarehouseFormValues = z.infer<typeof warehouseFormSchema>;
 
 function getDefaultValues(warehouse?: Warehouse): WarehouseFormValues {
   return {

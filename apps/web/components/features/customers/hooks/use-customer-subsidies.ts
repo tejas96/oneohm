@@ -25,7 +25,7 @@ export interface CustomerSubsidyApplication {
   };
 }
 
-export const customerSubsidyKeys = {
+const customerSubsidyKeys = {
   all: () => ['customer-subsidies'] as const,
   byCustomer: (customerId: string) => [...customerSubsidyKeys.all(), customerId] as const,
 };

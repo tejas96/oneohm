@@ -16,7 +16,7 @@ export interface TableUrlSortModel {
 /** Inline filter state — mirrors FilterState without a circular import */
 export type TableUrlFilterRecord = Record<string, unknown>;
 
-export interface TableUrlState {
+interface TableUrlState {
   page: number;
   pageSize: number;
   search: string;
@@ -53,7 +53,7 @@ export interface UseTableUrlStateReturn {
 // Pure serialisation helpers (no side-effects, unit-testable)
 // ============================================================================
 
-export function safeJsonParse<T>(raw: string | null, fallback: T): T {
+function safeJsonParse<T>(raw: string | null, fallback: T): T {
   if (raw == null) return fallback;
   try {
     return JSON.parse(raw) as T;
@@ -62,7 +62,7 @@ export function safeJsonParse<T>(raw: string | null, fallback: T): T {
   }
 }
 
-export function safeInt(raw: string | null, fallback: number, min = 0): number {
+function safeInt(raw: string | null, fallback: number, min = 0): number {
   if (raw == null) return fallback;
   const n = parseInt(raw, 10);
   return isNaN(n) || n < min ? fallback : n;
@@ -110,7 +110,7 @@ function normalizeFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord {
 }
 
 /** Read table state from a URLSearchParams instance */
-export function parseTableStateFromParams(
+function parseTableStateFromParams(
   params: URLSearchParams,
   prefix: string,
   defaultPageSize: number,
@@ -129,7 +129,7 @@ export function parseTableStateFromParams(
 }
 
 /** Write table state into an existing URLSearchParams (mutates in place) */
-export function writeTableStateToParams(
+function writeTableStateToParams(
   params: URLSearchParams,
   next: TableUrlState,
   prefix: string,

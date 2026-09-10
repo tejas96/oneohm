@@ -12,7 +12,7 @@ import { SalesPipelineCard } from './sales-pipeline-card';
 import { SalespeopleCard } from './salespeople-card';
 import { ServiceLoadCard } from './service-load-card';
 import { WorkloadCard } from './workload-card';
-import { currentMonthRange, money, rupeesExact, type MoneyFormat } from '../lib/format';
+import { money, rupeesExact, type MoneyFormat } from '../lib/format';
 import { businessLinks, type BusinessRange } from '../lib/links';
 
 import { useServiceTicketStats } from '@/components/features/service-tickets/hooks/use-service-tickets';
@@ -473,5 +473,3 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
     </div>
   );
 }
-
-export { currentMonthRange };

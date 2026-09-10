@@ -9,7 +9,7 @@ import { resetPasswordSchema, type ResetPasswordFormData } from '../schemas/auth
 import { ROUTES, useRoutes } from '@/lib/hooks';
 import { useAuth } from '@/providers/auth-provider';
 
-export interface PasswordStrength {
+interface PasswordStrength {
   score: number;
   label: string;
   color: string;

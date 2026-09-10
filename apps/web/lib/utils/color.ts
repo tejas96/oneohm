@@ -5,7 +5,7 @@
  * polynomial hash — reduces clustering on similar string prefixes).
  * Same seed and size always produce the same index.
  */
-export function deterministicIndex(seed: string, size: number): number {
+function deterministicIndex(seed: string, size: number): number {
   if (!seed || size <= 0) return 0;
   let hash = 5381;
   for (let i = 0; i < seed.length; i += 1) {

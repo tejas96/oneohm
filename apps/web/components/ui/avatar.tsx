@@ -61,7 +61,7 @@ const AVATAR_FALLBACK_COLORS = [
 
 type AvatarFallbackColorClass = (typeof AVATAR_FALLBACK_COLORS)[number];
 
-export function getAvatarFallbackColorClass(name: string): string {
+function getAvatarFallbackColorClass(name: string): string {
   return pickDeterministic(
     name,
     AVATAR_FALLBACK_COLORS,
@@ -69,7 +69,7 @@ export function getAvatarFallbackColorClass(name: string): string {
   ) as AvatarFallbackColorClass;
 }
 
-export interface AvatarProps
+interface AvatarProps
   extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>,
     VariantProps<typeof avatarSizeVariants> {}
 
@@ -96,7 +96,7 @@ const AvatarImage = React.forwardRef<
 ));
 AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 
-export interface AvatarFallbackProps
+interface AvatarFallbackProps
   extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>,
     VariantProps<typeof avatarFallbackTextVariants> {
   /**
@@ -144,7 +144,7 @@ const statusColors = {
   busy: 'bg-error',
 } as const;
 
-export interface AvatarStatusProps extends React.HTMLAttributes<HTMLSpanElement> {
+interface AvatarStatusProps extends React.HTMLAttributes<HTMLSpanElement> {
   status: keyof typeof statusColors;
   /** Size matches the avatar size */
   size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl';
@@ -189,7 +189,7 @@ AvatarStatus.displayName = 'AvatarStatus';
  *   <Avatar>...</Avatar>
  * </AvatarGroup>
  */
-export interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Maximum number of avatars to show before "+X" */
   max?: number;
   /** Size of avatars in the group */
@@ -252,4 +252,4 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
 );
 AvatarGroup.displayName = 'AvatarGroup';
 
-export { Avatar, AvatarFallback, AvatarGroup, AvatarImage, AvatarStatus };
+export { Avatar, AvatarFallback };

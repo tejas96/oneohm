@@ -4,7 +4,7 @@ import { IsIn, IsOptional, IsString, Matches } from 'class-validator';
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The four the client asked for, plus the one their CSV omits. */
-export const WORKLOAD_DEPARTMENTS = [
+const WORKLOAD_DEPARTMENTS = [
   'Execution Department',
   'Liaisoning Department',
   'Loan Department',

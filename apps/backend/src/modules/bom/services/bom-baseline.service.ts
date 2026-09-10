@@ -16,7 +16,7 @@ import { BomChangeRepository } from '../repositories/bom-change.repository';
 import { BomRepository } from '../repositories/bom.repository';
 
 /** One proposed movement on one product. Nothing here has been applied. */
-export interface PreviewLine {
+interface PreviewLine {
   productId: string;
   productName: string;
   /** Current quantity. null on an add — there is no line yet. */

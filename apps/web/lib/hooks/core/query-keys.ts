@@ -1,5 +1,3 @@
-export type ResourceKeys = ReturnType<typeof createResourceKeys>;
-
 export function stableHash(obj: unknown): string {
   if (obj === undefined || obj === null) return '';
   if (typeof obj !== 'object') return `${obj as string | number | boolean}`;

@@ -70,7 +70,7 @@ function pivot(data: ReadonlyArray<TrendPoint>): { rows: PivotedRow[]; series: s
   return { rows, series: Array.from(seriesSet) };
 }
 
-export function StackedBarChartImpl({
+function StackedBarChartImpl({
   data,
   yTickFormatter,
   valueFormatter,

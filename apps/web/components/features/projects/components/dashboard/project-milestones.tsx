@@ -9,7 +9,7 @@ import { MUITypography } from '@/components/ui';
 // Types
 // ============================================================================
 
-export interface ProjectMilestoneHealth {
+interface ProjectMilestoneHealth {
   id: string;
   projectNumber: string;
   name: string;

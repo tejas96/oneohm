@@ -86,5 +86,3 @@ export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
     </header>
   );
 }
-
-export default GlobalHeader;

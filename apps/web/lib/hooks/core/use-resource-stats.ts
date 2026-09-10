@@ -42,14 +42,3 @@ export function useResourceStats<TStats = Record<string, number>>(
     },
   };
 }
-
-export function mapStatsToFilterTabs<TStats extends Record<string, number>>(
-  stats: TStats | undefined,
-  tabs: Array<{ key: string; label: string; value: string }>,
-): Array<{ label: string; value: string; count?: number }> {
-  return tabs.map((tab) => ({
-    label: tab.label,
-    value: tab.value,
-    count: stats?.[tab.key],
-  }));
-}

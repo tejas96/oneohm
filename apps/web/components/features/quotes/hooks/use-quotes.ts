@@ -122,8 +122,6 @@ export interface PropertyQuoteVersionItem {
   effectivePrice?: number;
 }
 
-export type { PaginationMeta };
-
 export interface QuoteListResponse {
   data: QuoteListItem[];
   meta: PaginationMeta;
@@ -194,20 +192,6 @@ export function useQuotes(
     },
     enabled: callerEnabled !== false,
     placeholderData: keepPreviousData,
-  });
-}
-
-/**
- * Fetch a single quote by ID with all versions.
- */
-export function useQuote(id: string): UseQueryResult<QuoteListItem, AxiosError> {
-  return useQuery({
-    queryKey: quoteKeys.detail(id),
-    queryFn: async (): Promise<QuoteListItem> => {
-      const { data } = await apiClient.get<QuoteListItem>(`/quotes/${id}`, {});
-      return data;
-    },
-    enabled: !!id,
   });
 }
 
@@ -357,7 +341,11 @@ export function useWhatsappMessagingHealth(): UseQueryResult<
 }
 
 /**
- * Soft-delete a quote.
+ * Soft-delete a quote. Drafts only - the API refuses anything else.
+ *
+ * Callers must gate the button on `status === DRAFT` themselves rather than
+ * letting the request fail: offering Delete on a sent quote and then rejecting
+ * it reads as a bug, not as a rule.
  */
 export function useDeleteQuote(): UseMutationResult<void, AxiosError, string> {
   const queryClient = useQueryClient();
@@ -368,6 +356,31 @@ export function useDeleteQuote(): UseMutationResult<void, AxiosError, string> {
     },
     onSuccess: (_, quoteId) => {
       queryClient.removeQueries({ queryKey: quoteKeys.detail(quoteId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
+    },
+  });
+}
+
+/**
+ * Withdraw a quote that is live with the customer (`sent` or `viewed`).
+ *
+ * Unlike delete, the quote stays: the detail cache is invalidated, not removed,
+ * because the page the user is standing on must now re-render as voided rather
+ * than 404.
+ */
+export function useVoidQuote(): UseMutationResult<
+  void,
+  AxiosError,
+  { quoteId: string; reason: string }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ quoteId, reason }): Promise<void> => {
+      await apiClient.post(`/quotes/${quoteId}/void`, { reason });
+    },
+    onSuccess: (_, { quoteId }) => {
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.detail(quoteId) });
       void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
     },
   });

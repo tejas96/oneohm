@@ -16,7 +16,7 @@
  *
  * Purely additive: two new columns, every existing column and value unchanged.
  */
-export const RECREATE_V_PROJECT_BALANCE_WITH_COMPOSITION = `
+const RECREATE_V_PROJECT_BALANCE_WITH_COMPOSITION = `
   CREATE OR REPLACE VIEW v_project_balance AS
   SELECT
     p.id                                              AS project_id,
@@ -87,7 +87,7 @@ export const RECREATE_V_PROJECT_BALANCE_WITH_COMPOSITION = `
 `;
 
 /** The composition must always reconstruct the total, on every project. */
-export const ASSERT_CONTRACT_COMPOSITION = `
+const ASSERT_CONTRACT_COMPOSITION = `
   DO $$
   DECLARE bad INT;
   BEGIN

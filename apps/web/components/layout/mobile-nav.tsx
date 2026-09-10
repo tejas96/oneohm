@@ -284,5 +284,3 @@ export function MobileNav() {
     </Sheet>
   );
 }
-
-export default MobileNav;

@@ -72,7 +72,7 @@ const RICH_TEXT_COLORS = {
   light: 'text-foreground-secondary',
 } as const;
 
-export interface TooltipContentProps
+interface TooltipContentProps
   extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>,
     VariantProps<typeof tooltipContentVariants> {
   /** Show arrow indicator */
@@ -112,7 +112,7 @@ TooltipContent.displayName = TooltipPrimitive.Content.displayName;
  * RichTooltip - Tooltip with title and description
  * Reference: apps/ux/web/v2/components/tooltips.html - Rich Content Tooltips
  */
-export interface RichTooltipContentProps extends TooltipContentProps {
+interface RichTooltipContentProps extends TooltipContentProps {
   title?: string;
 }
 
@@ -131,7 +131,7 @@ RichTooltipContent.displayName = 'RichTooltipContent';
  * HelpTooltip - Form field help text tooltip
  * Pre-built trigger with help icon
  */
-export interface HelpTooltipProps {
+interface HelpTooltipProps {
   content: React.ReactNode;
   side?: 'top' | 'right' | 'bottom' | 'left';
 }
@@ -157,14 +157,6 @@ const HelpTooltip = React.forwardRef<HTMLButtonElement, HelpTooltipProps>(
 );
 HelpTooltip.displayName = 'HelpTooltip';
 
-export {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-  RichTooltipContent,
-  HelpTooltip,
-  tooltipContentVariants,
-};
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, HelpTooltip };
 
 // Types are already exported via interface declarations above

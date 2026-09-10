@@ -16,22 +16,6 @@ import { toTitleLabel } from '@/lib/utils';
 // Form: Required Fields
 // ---------------------------------------------------------------------------
 
-export const REQUIRED_FIELD_KEYS = [
-  'customerId',
-  'propertyName',
-  'propertyType',
-  'address',
-  'city',
-  'pincode',
-  'discomId',
-  'consumerName',
-  'consumerNumber',
-  'connectionType',
-  'leadTemperature',
-] as const;
-
-export const REQUIRED_FIELDS_TOTAL = REQUIRED_FIELD_KEYS.length;
-
 // ---------------------------------------------------------------------------
 // Form: Alert Messages
 // ---------------------------------------------------------------------------
@@ -137,12 +121,6 @@ export const LEAD_TEMPERATURE_TONE: Record<LeadTemperature, CrmTone> = {
 // ---------------------------------------------------------------------------
 // List Page: MUI theme color tokens for lead temperature dot
 // ---------------------------------------------------------------------------
-
-export const TEMP_DOT_MUI_COLOR: Record<LeadTemperature, string> = {
-  [LeadTemperature.HOT]: 'error.main',
-  [LeadTemperature.WARM]: 'warning.main',
-  [LeadTemperature.COLD]: 'info.main',
-};
 
 // ---------------------------------------------------------------------------
 // List Page: Filter select options — built from shared enums via Object.values()

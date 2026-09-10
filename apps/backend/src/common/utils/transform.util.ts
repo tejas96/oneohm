@@ -11,7 +11,7 @@ export const toNum = (v: unknown): number | undefined => (v != null ? Number(v) 
  */
 export const toNumNullable = (v: unknown): number | null => (v != null ? Number(v) : null);
 
-export const WATTS_PER_KW = 1000;
+const WATTS_PER_KW = 1000;
 
 /**
  * Convert panel wattage (Wp) to system size in kW, rounded to 2 decimal places.

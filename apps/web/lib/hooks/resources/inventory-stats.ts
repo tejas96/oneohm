@@ -47,7 +47,7 @@ import { apiClient } from '@/lib/api/client';
  * dashboard charts to feed objects into Recharts as keys and produced
  * the "two children with the same key `[object Object]`" warning.
  */
-export interface StatsTrendPoint {
+interface StatsTrendPoint {
   date: string;
   total: number;
   series?: Record<string, number>;
@@ -64,7 +64,7 @@ export interface StatsTrendResponse {
  * Mirrors the backend `TopItem`. Note `name` (not `label`) and the
  * optional `meta` bag for auxiliary columns (orderCount, warehouse, ...).
  */
-export interface StatsTopItem {
+interface StatsTopItem {
   id: string | null;
   name: string;
   value: number;
@@ -83,7 +83,7 @@ export interface StatsTopItemsResponse {
  * dashboard adapter is responsible for mapping status enum values into
  * human-readable labels for the funnel chart primitive.
  */
-export interface StatsFunnelStage {
+interface StatsFunnelStage {
   status: string;
   count: number;
 }
@@ -99,7 +99,7 @@ export interface StatsFunnelResponse {
 // Window resolution: URL TimeWindowPicker shape -> backend query params
 // ============================================================================
 
-export type StatsRangePreset = '7d' | '30d' | '90d' | '365d' | 'custom';
+type StatsRangePreset = '7d' | '30d' | '90d' | '365d' | 'custom';
 
 export interface StatsWindowInput {
   /**

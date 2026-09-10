@@ -269,5 +269,3 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
     </aside>
   );
 }
-
-export default Panel;

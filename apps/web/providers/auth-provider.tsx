@@ -25,7 +25,6 @@ import type {
   OtpVerifyData,
   PasswordResetOtpVerifyResponse,
   PasswordResetResponse,
-  ProfileSummary,
   ResetPasswordData,
   User,
   VerifyPasswordResetOtpData,
@@ -33,8 +32,6 @@ import type {
 import { getErrorMessage } from '@/lib/utils';
 
 // Re-export types for backward compatibility
-export type { ProfileSummary, User };
-
 /**
  * Auth context type - all state and actions
  */
@@ -477,20 +474,4 @@ export function useAuth(): AuthContextType {
 export function useIsAdmin(): boolean {
   const { hasAnyRole } = useAuth();
   return hasAnyRole([...FULL_ACCESS_ROLES]);
-}
-
-/**
- * Hook to get current user
- */
-export function useCurrentUser(): User | null {
-  const { user } = useAuth();
-  return user;
-}
-
-/**
- * Hook to check authentication status
- */
-export function useIsAuthenticated(): boolean {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated;
 }

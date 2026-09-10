@@ -4,11 +4,9 @@ import {
   type BaseFilters,
   defineResource,
   getResourceConfig,
-  getResourcePermissions,
   STALE_TIMES,
   useResourceList,
   useResourceMutations,
-  useResourcePermissions,
   type ResourceConfig,
 } from '../core';
 
@@ -70,8 +68,4 @@ export function useBrandMutations() {
       delete: { success: 'Brand deleted', error: 'Failed to delete brand' },
     },
   });
-}
-
-export function useBrandPermissions() {
-  return useResourcePermissions(getResourcePermissions('brands'));
 }

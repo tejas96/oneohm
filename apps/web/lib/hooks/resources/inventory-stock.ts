@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
-  createResourceKeys,
   defineResource,
   useResourceDetail,
   useResourceList,
@@ -91,8 +90,6 @@ defineResource<InventoryStock>(
 // ============================================================================
 // Query keys
 // ============================================================================
-
-export const inventoryStockKeys = createResourceKeys('inventory-stock');
 
 // ============================================================================
 // Hooks

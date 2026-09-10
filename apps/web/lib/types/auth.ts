@@ -150,12 +150,3 @@ export interface PasswordResetOtpVerifyResponse {
 // ============================================
 // Error Types
 // ============================================
-
-/**
- * Auth error response structure
- */
-export interface AuthError {
-  message: string;
-  statusCode?: number;
-  error?: string;
-}

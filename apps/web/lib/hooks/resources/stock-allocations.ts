@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  createResourceKeys,
   defineResource,
   useResourceDetail,
   useResourceList,
@@ -46,11 +45,6 @@ export interface StockAllocationFilters extends BaseFilters {
   productId?: string;
 }
 
-export interface ReturnStockPayload {
-  quantity: number;
-  reason: string;
-}
-
 // ============================================================================
 // Registry
 // ============================================================================
@@ -74,8 +68,6 @@ defineResource<StockAllocation>(
 // ============================================================================
 // Query keys
 // ============================================================================
-
-export const stockAllocationKeys = createResourceKeys('stock-allocations');
 
 // ============================================================================
 // Hooks

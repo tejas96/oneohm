@@ -6,11 +6,9 @@ import {
   type BaseFilters,
   defineResource,
   getResourceConfig,
-  getResourcePermissions,
   STALE_TIMES,
   useResourceList,
   useResourceMutations,
-  useResourcePermissions,
   type ResourceConfig,
 } from '../core';
 
@@ -70,8 +68,4 @@ export function useSubsidyConfigMutations() {
       delete: { success: 'Subsidy rule deleted', error: 'Failed to delete subsidy rule' },
     },
   });
-}
-
-export function useSubsidyConfigPermissions() {
-  return useResourcePermissions(getResourcePermissions('subsidy-config'));
 }

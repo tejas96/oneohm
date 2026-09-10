@@ -32,7 +32,7 @@
  * quoted_paise is derived the same way, from quoted_quantity, so it is built
  * on the identical rounding rule as current_paise and log_impact_paise.
  */
-export const CREATE_V_PROJECT_BOM_VARIANCE = `
+const CREATE_V_PROJECT_BOM_VARIANCE = `
   CREATE OR REPLACE VIEW v_project_bom_variance AS
   SELECT b.project_id,
          b.id                                                   AS bom_id,
@@ -65,7 +65,7 @@ export const CREATE_V_PROJECT_BOM_VARIANCE = `
 `;
 
 /** The log must always reconstruct the current BOM value, on every project. */
-export const ASSERT_BOM_RECONCILES = `
+const ASSERT_BOM_RECONCILES = `
   DO $$
   DECLARE bad INT;
   BEGIN

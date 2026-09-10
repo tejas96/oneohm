@@ -596,7 +596,7 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
 // Main FieldDisplay Component
 // ============================================================================
 
-export function FieldDisplay(props: FieldDisplayProps) {
+function FieldDisplay(props: FieldDisplayProps) {
   const size = props.size || 'full';
 
   switch (props.variant) {

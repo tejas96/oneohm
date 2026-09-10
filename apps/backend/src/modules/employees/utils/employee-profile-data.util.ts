@@ -1,14 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
 import { EmployeeProfileKind, UserProfileType } from '@tejas96/shared/types';
-import { AADHAAR_ALREADY_REGISTERED_MESSAGE } from '@tejas96/shared/utils';
 import { plainToInstance } from 'class-transformer';
 import { validate, type ValidationError } from 'class-validator';
 
 import { EmployeeProfileDataDto } from '../dto/employee-profile-data.dto';
 
-export { AADHAAR_ALREADY_REGISTERED_MESSAGE };
-
-export const RESELLER_ONLY_PROFILE_FIELDS = [
+const RESELLER_ONLY_PROFILE_FIELDS = [
   'aadhaarNumber',
   'currentProfession',
   'yearsOfExperience',
@@ -25,7 +22,7 @@ export const RESELLER_ONLY_PROFILE_FIELDS = [
 ] as const;
 
 /** Allowed keys on inline employee/reseller profile payloads (CreateEmployeeDto minus userId). */
-export const EMPLOYEE_PROFILE_DATA_FIELDS = [
+const EMPLOYEE_PROFILE_DATA_FIELDS = [
   'employeeId',
   'designation',
   'department',
@@ -65,8 +62,6 @@ function pickAllowedProfileData(profileData: Record<string, unknown>): Record<st
   }
   return sanitized;
 }
-
-export type ResellerOnlyProfileField = (typeof RESELLER_ONLY_PROFILE_FIELDS)[number];
 
 function hasProfileFieldValue(value: unknown): boolean {
   return value !== undefined && value !== null && value !== '';

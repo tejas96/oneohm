@@ -6,31 +6,16 @@ import type { AxiosError } from 'axios';
 
 import { quoteKeys } from './use-quotes';
 
-import { projectKeys } from '@/components/features/projects/hooks';
 import { apiClient } from '@/lib/api/client';
 
 // Re-export everything from use-quotes
 export * from './use-quotes';
 
 // Quote detail hooks
-export { quoteDetailKeys, useQuoteDetail } from './use-quote-detail';
+export { useQuoteDetail } from './use-quote-detail';
 
 // Types
-export type { QuoteDetail, QuoteVersionDetail, QuotePaymentMilestone } from './types';
-
 // Quote builder hooks
-export { useQuoteConfig } from './use-quote-config';
-export type { PhaseTypeOption } from './use-quote-config';
-
-export { useCalculateQuote } from './use-calculate-quote';
-export { useInstallationPricing } from './use-installation-pricing';
-export { useSaveQuote } from './use-save-quote';
-export { useQuoteFormLogic } from './use-quote-form-logic';
-export type { UseQuoteFormLogicOptions, UseQuoteFormLogicReturn } from './use-quote-form-logic';
-export { useQuotePdf } from './use-quote-pdf';
-export { useQuotePermissions } from './use-quote-permissions';
-export type { QuotePermissions } from './use-quote-permissions';
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -45,29 +30,12 @@ interface UpdateQuoteStatusPayload {
   lossReason?: LossReason;
 }
 
-interface ConvertToProjectPayload {
-  projectManagerId?: string;
-  teamMembers?: { userId: string; roleName: string }[];
-  startDate?: string;
-  endDate?: string;
-  priority?: string;
-}
-
 // ============================================================================
 // API Functions
 // ============================================================================
 
 async function updateQuoteStatus(quoteId: string, payload: UpdateQuoteStatusPayload) {
   const { data } = await apiClient.patch(`/quotes/${quoteId}/status`, payload, {});
-  return data;
-}
-
-async function convertQuoteToProject(quoteId: string, payload?: ConvertToProjectPayload) {
-  const { data } = await apiClient.post(
-    `/projects/convert-from-quote/${quoteId}`,
-    payload ?? {},
-    {},
-  );
   return data;
 }
 
@@ -109,18 +77,6 @@ export function useRejectQuote() {
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
-    },
-  });
-}
-
-export function useConvertToProject() {
-  const queryClient = useQueryClient();
-
-  return useMutation<unknown, AxiosError, { quoteId: string; payload?: ConvertToProjectPayload }>({
-    mutationFn: ({ quoteId, payload }) => convertQuoteToProject(quoteId, payload),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all() });
-      void queryClient.invalidateQueries({ queryKey: projectKeys.all() });
     },
   });
 }

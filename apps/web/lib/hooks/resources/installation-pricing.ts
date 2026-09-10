@@ -6,11 +6,9 @@ import {
   type BaseFilters,
   defineResource,
   getResourceConfig,
-  getResourcePermissions,
   STALE_TIMES,
   useResourceList,
   useResourceMutations,
-  useResourcePermissions,
   type ResourceConfig,
 } from '../core';
 
@@ -66,8 +64,4 @@ export function useInstallationPricingMutations() {
       delete: { success: 'Pricing tier deleted', error: 'Failed to delete pricing tier' },
     },
   });
-}
-
-export function useInstallationPricingPermissions() {
-  return useResourcePermissions(getResourcePermissions('installation-pricing'));
 }

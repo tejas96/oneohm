@@ -52,7 +52,7 @@ const CARD_PADDING: Record<CardPadding, string> = {
   lg: 'p-6',
 };
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: CardVariant;
   padding?: CardPadding;
 }
@@ -129,7 +129,7 @@ CardFooter.displayName = 'CardFooter';
  * StatsCard - Dashboard-style card for metrics
  * Reference: apps/ux/web/v2/components/cards.html - Stats Card section
  */
-export interface StatsCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface StatsCardProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string;
   value: string | number;
   trend?: {
@@ -171,6 +171,4 @@ const StatsCard = React.forwardRef<HTMLDivElement, StatsCardProps>(
 );
 StatsCard.displayName = 'StatsCard';
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, StatsCard };
-
-export type { CardProps as CardPropsType };
+export { Card, CardHeader, CardTitle, CardContent, StatsCard };

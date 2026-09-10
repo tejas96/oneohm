@@ -24,9 +24,9 @@ import { CreateEmployeeDto } from '../../employees/dto/create-employee.dto';
 // Reseller profiles are now employee_profiles rows (profileKind='reseller'),
 // so CreateEmployeeDto (which now carries the reseller-only fields) is reused
 // for both the employee and reseller partial DTOs below.
-export class PartialEmployeeProfileDto extends PartialType(CreateEmployeeDto) {}
-export class PartialCustomerProfileDto extends PartialType(CreateCustomerDto) {}
-export class PartialResellerProfileDto extends PartialType(CreateEmployeeDto) {}
+class PartialEmployeeProfileDto extends PartialType(CreateEmployeeDto) {}
+class PartialCustomerProfileDto extends PartialType(CreateCustomerDto) {}
+class PartialResellerProfileDto extends PartialType(CreateEmployeeDto) {}
 
 // Union type for profileData
 export type ProfileDataType =

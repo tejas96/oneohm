@@ -728,16 +728,91 @@ export class QuoteService {
   }
 
   /**
-   * Delete quote
+   * Delete quote.
+   *
+   * Draft only. A draft is paper nobody outside the office has seen, so
+   * removing the row removes the whole quote.
+   *
+   * The moment a quote is sent it also exists in two places this soft delete
+   * cannot reach: the PDF sitting in the customer's WhatsApp, and the "New
+   * Quotation Ready" notification pointing at `/consumer/quotations/<id>`.
+   * Deleting the row left the customer holding a live-looking price behind a
+   * link that 404s, and left us with no record of what we had promised. `void`
+   * is the honest form of that same intent - it keeps the row, marks it dead,
+   * and says why.
+   *
+   * A voided quote is not deletable either, whatever its status. Voiding is an
+   * administrative decision that has been recorded; deleting the row afterwards
+   * would erase the record of it. `updateStatus` reads `voidedAt` as terminal
+   * for the same reason.
    */
   async delete(id: string): Promise<void> {
     const quote = await this.quoteRepository.findById(id);
 
-    if (quote.status === QuoteStatus.ACCEPTED) {
-      throw new ForbiddenException('Cannot delete accepted quotes');
+    if (quote.voidedAt) {
+      throw new ForbiddenException(
+        `Quote ${quote.quoteNumber} was voided${quote.voidReason ? ` \u2014 ${quote.voidReason}` : ''}. ` +
+          'A voided quote is history and cannot be deleted.',
+      );
+    }
+
+    if (quote.status !== QuoteStatus.DRAFT) {
+      throw new ForbiddenException(
+        `Quote ${quote.quoteNumber} is ${quote.status} and cannot be deleted. ` +
+          'Only a draft can be deleted. A quote the customer has already seen must be voided instead.',
+      );
     }
 
     return this.quoteRepository.delete(id);
+  }
+
+  /**
+   * Void a quote that is live in front of the customer.
+   *
+   * `sent` and `viewed` only, and that narrowness is the point: those are the
+   * two states where the customer is holding a price we want to take back, and
+   * the only two with no other way out.
+   *
+   * - `draft` is excluded because `delete` already covers it, and deleting a
+   *   quote nobody has seen is cleaner than leaving a dead one in the history.
+   * - `accepted` is excluded because an accepted quote is what locks the roof.
+   *   Releasing it is project cancellation's job - which calls
+   *   `voidAllOpenForProperty` itself - and must never be a menu item on the
+   *   quote, or a rep could unlock a roof out from under a running project.
+   * - `rejected` and `expired` are excluded because they are already dead. A
+   *   void marker over a customer's real decision only hides what happened.
+   *
+   * Terminal, and it stays terminal: there is no un-void, by design. The way
+   * back into the pipeline is a new quote.
+   */
+  async voidQuote(id: string, reason: string, userId: string): Promise<QuoteEntity> {
+    const quote = await this.quoteRepository.findById(id);
+
+    if (quote.voidedAt) {
+      throw new BadRequestException(
+        `Quote ${quote.quoteNumber} was already voided${quote.voidReason ? ` \u2014 ${quote.voidReason}` : ''}.`,
+      );
+    }
+
+    if (quote.status === QuoteStatus.ACCEPTED) {
+      throw new BadRequestException(
+        `Quote ${quote.quoteNumber} has been accepted and cannot be voided here. ` +
+          'Cancel the project built from it to release this property.',
+      );
+    }
+
+    if (quote.status !== QuoteStatus.SENT && quote.status !== QuoteStatus.VIEWED) {
+      throw new BadRequestException(
+        `Quote ${quote.quoteNumber} is ${quote.status} and does not need voiding. ` +
+          'Only a quote that is live with the customer (sent or viewed) can be voided; a draft can be deleted.',
+      );
+    }
+
+    return this.quoteRepository.update(id, {
+      voidedAt: new Date(),
+      voidReason: reason,
+      updatedBy: userId,
+    });
   }
 
   /**

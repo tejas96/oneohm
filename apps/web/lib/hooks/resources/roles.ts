@@ -3,11 +3,9 @@
 import {
   defineResource,
   getResourceConfig,
-  getResourcePermissions,
   useResourceList,
   useResourceDetail,
   useResourceMutations,
-  useResourcePermissions,
   type ResourceConfig,
   type BaseFilters,
 } from '../core';
@@ -27,7 +25,7 @@ export interface AdminRole {
   updatedAt: string;
 }
 
-export interface RoleWithPermissions {
+interface RoleWithPermissions {
   id: string;
   name: string;
   code: string;
@@ -105,8 +103,4 @@ export function useRoleMutations(): ReturnType<typeof useResourceMutations<Admin
       },
     },
   });
-}
-
-export function useRolePermissions(): ReturnType<typeof useResourcePermissions> {
-  return useResourcePermissions(getResourcePermissions('roles'));
 }

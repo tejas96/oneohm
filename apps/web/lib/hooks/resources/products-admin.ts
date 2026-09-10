@@ -5,14 +5,11 @@ import { ProductStatus, type ProductSpecifications, UnitOfMeasure } from '@tejas
 
 import {
   type BaseFilters,
-  createResourceKeys,
   defineResource,
   getResourceConfig,
-  getResourcePermissions,
   STALE_TIMES,
   useResourceList,
   useResourceMutations,
-  useResourcePermissions,
   type ResourceConfig,
 } from '../core';
 
@@ -86,89 +83,9 @@ export function useProductAdminMutations() {
   });
 }
 
-export function useProductAdminPermissions() {
-  return useResourcePermissions(getResourcePermissions('products-admin'));
-}
-
 // ============================================================================
 // Product Prices (read-only helper)
 // ============================================================================
-
-export interface ProductPrice {
-  id: string;
-  productId: string;
-  projectType?: string | null;
-  unitPrice: number;
-  costMultiplier: number;
-  gstRate: number;
-  currency: string;
-  effectiveFrom: string;
-  effectiveTo?: string | null;
-  isActive: boolean;
-}
-
-const productPriceKeys = createResourceKeys('product-prices');
-
-/**
- * Fetches active price rows for a product.
- * Used by the PO create form to auto-fill `unitPrice` and `taxRate` when
- * the user selects a product. Cache-stable so repeated picks are instant.
- */
-export function useProductPrices(
-  productId: string | undefined,
-  options?: { enabled?: boolean },
-): {
-  data: ProductPrice[] | undefined;
-  isLoading: boolean;
-  isError: boolean;
-} {
-  const query = useQuery<ProductPrice[]>({
-    queryKey: productPriceKeys.list({ productId, isActive: true }),
-    queryFn: async ({ signal }) => {
-      const { data } = await apiClient.get<ProductPrice[]>(
-        `/products/${productId}/prices?isActive=true`,
-        { signal },
-      );
-      return data;
-    },
-    enabled: Boolean(productId) && (options?.enabled ?? true),
-    staleTime: STALE_TIMES.standard,
-  });
-
-  return {
-    data: query.data,
-    isLoading: query.isLoading,
-    isError: query.isError,
-  };
-}
-
-/**
- * Picks the "best" active price for the given product.
- * Strategy: prefer the row with no projectType (default/general), else
- * take the row with the latest effectiveFrom that is on/before today.
- * Returns null when no usable price exists.
- */
-export function pickBestProductPrice(prices: ProductPrice[] | undefined): ProductPrice | null {
-  if (!prices || prices.length === 0) return null;
-  const today = new Date();
-  const inWindow = (p: ProductPrice): boolean => {
-    const from = new Date(p.effectiveFrom);
-    if (Number.isNaN(from.getTime())) return false;
-    if (from > today) return false;
-    if (p.effectiveTo) {
-      const to = new Date(p.effectiveTo);
-      if (!Number.isNaN(to.getTime()) && to < today) return false;
-    }
-    return p.isActive;
-  };
-  const usable = prices.filter(inWindow);
-  if (usable.length === 0) return null;
-  const generic = usable.filter((p) => !p.projectType);
-  const pool = generic.length > 0 ? generic : usable;
-  return pool.reduce((latest, p) =>
-    new Date(p.effectiveFrom) > new Date(latest.effectiveFrom) ? p : latest,
-  );
-}
 
 // ============================================================================
 // Effective Unit Price (canonical ₹-per-piece resolver)

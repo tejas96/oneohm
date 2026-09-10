@@ -9,7 +9,7 @@ import { MUITypography } from '@/components/ui';
 // Types
 // ============================================================================
 
-export interface WorkerPerformance {
+interface WorkerPerformance {
   userId: string;
   name: string;
   activeProjects: number;

@@ -54,7 +54,7 @@ const textareaVariants = ({
     TEXTAREA_RESIZE[resize ?? 'vertical'],
   );
 
-export interface TextareaProps extends Omit<React.ComponentProps<'textarea'>, 'resize' | 'size'> {
+interface TextareaProps extends Omit<React.ComponentProps<'textarea'>, 'resize' | 'size'> {
   size?: TextareaSize | null;
   variant?: TextareaVariant | null;
   resize?: TextareaResize | null;
@@ -79,4 +79,4 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 );
 Textarea.displayName = 'Textarea';
 
-export { Textarea, textareaVariants };
+export { Textarea };

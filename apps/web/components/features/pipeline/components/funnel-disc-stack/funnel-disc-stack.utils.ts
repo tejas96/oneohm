@@ -52,7 +52,7 @@ function rgbToHex(r: number, g: number, b: number): string {
   return `#${[r, g, b].map((v) => clamp(v).toString(16).padStart(2, '0')).join('')}`;
 }
 
-export function shadeColor(hex: string, percent: number): string {
+function shadeColor(hex: string, percent: number): string {
   const [r, g, b] = hexToRgb(hex);
   const t = percent < 0 ? 0 : 255;
   const p = Math.abs(percent);

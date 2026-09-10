@@ -192,7 +192,7 @@ const vendorFormSchema = z
     }
   });
 
-export type VendorFormValues = z.infer<typeof vendorFormSchema>;
+type VendorFormValues = z.infer<typeof vendorFormSchema>;
 
 const VENDOR_TYPE_OPTIONS = Object.entries(VENDOR_TYPE_LABEL).map(([value, label]) => ({
   value,

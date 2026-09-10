@@ -33,5 +33,3 @@ export function MainContent({ isPanelOpen, children, className }: MainContentPro
     </main>
   );
 }
-
-export default MainContent;

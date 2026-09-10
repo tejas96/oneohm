@@ -1,12 +1,10 @@
 'use client';
 
 import {
-  createResourceKeys,
   defineResource,
   useResourceDetail,
   useResourceList,
   useResourceMutations,
-  useResourceStats,
   type BaseFilters,
   type ResourceConfig,
 } from '../core';
@@ -73,8 +71,6 @@ defineResource<Vendor>(
 // Query keys
 // ============================================================================
 
-export const vendorKeys = createResourceKeys('vendors');
-
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -118,12 +114,5 @@ export function useVendorMutations() {
       changeStatus: { success: 'Status updated', error: 'Failed to update status' },
       updateRating: { success: 'Rating updated', error: 'Failed to update rating' },
     },
-  });
-}
-
-export function useVendorStats() {
-  return useResourceStats({
-    resource: 'vendors',
-    endpoint: '/vendors/stats/summary',
   });
 }

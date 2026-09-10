@@ -39,7 +39,7 @@ export interface TopItemsResponse {
   items: TopItem[];
 }
 
-export interface FunnelStage {
+interface FunnelStage {
   status: string;
   count: number;
 }

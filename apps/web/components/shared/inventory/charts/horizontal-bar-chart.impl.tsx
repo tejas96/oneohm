@@ -39,7 +39,7 @@ export interface HorizontalBarChartImplProps
   labelWidth?: number;
 }
 
-export function HorizontalBarChartImpl({
+function HorizontalBarChartImpl({
   data,
   xTickFormatter,
   valueFormatter,

@@ -24,7 +24,7 @@ import {
 /** Any UUID version. Deliberately not pinned to v4 — ids here come from more than one generator. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export const CURRENT_USER_TOKEN = 'me';
+const CURRENT_USER_TOKEN = 'me';
 
 /**
  * The predicate, usable without class-validator.
@@ -44,7 +44,7 @@ export function isUserRefOrMe(value: unknown): boolean {
 }
 
 @ValidatorConstraint({ name: 'isUserRefOrMe', async: false })
-export class UserRefOrMeConstraint implements ValidatorConstraintInterface {
+class UserRefOrMeConstraint implements ValidatorConstraintInterface {
   validate(value: unknown): boolean {
     return isUserRefOrMe(value);
   }

@@ -1,6 +1,6 @@
 import type { DashboardItem, DashboardSection, MyWorkResponse } from '@tejas96/shared/types';
 
-export type SectionKey = keyof MyWorkResponse['sections'];
+type SectionKey = keyof MyWorkResponse['sections'];
 
 /** Project health keeps its critical rows. See the block comment below. */
 const DOES_NOT_LIFT: ReadonlySet<SectionKey> = new Set<SectionKey>(['projects']);

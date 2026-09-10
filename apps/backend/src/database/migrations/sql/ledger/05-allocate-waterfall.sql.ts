@@ -42,7 +42,7 @@
  * corrupted data. It survives forever via `ledger_entries.source_id`.
  */
 
-export const ALLOCATE_WATERFALL = `
+const ALLOCATE_WATERFALL = `
   WITH ms AS (
     SELECT
       m.id,
@@ -102,7 +102,7 @@ export const ALLOCATE_WATERFALL = `
  * ever runs, without weakening the trigger's deferred semantics for runtime
  * writes.
  */
-export const FIRE_DEFERRED_ALLOCATION_TRIGGERS = `
+const FIRE_DEFERRED_ALLOCATION_TRIGGERS = `
   SET CONSTRAINTS trg_ledger_allocations_not_over_allocated IMMEDIATE
 `;
 
@@ -110,7 +110,7 @@ export const FIRE_DEFERRED_ALLOCATION_TRIGGERS = `
  * Gate R7 — the assertion this whole migration exists to satisfy.
  * Must hold immediately after the waterfall runs.
  */
-export const ASSERT_NO_OVER_ALLOCATED_MILESTONES = `
+const ASSERT_NO_OVER_ALLOCATED_MILESTONES = `
   DO $$
   DECLARE n INTEGER;
   BEGIN
@@ -122,7 +122,7 @@ export const ASSERT_NO_OVER_ALLOCATED_MILESTONES = `
 `;
 
 /** No receipt may have more allocated than it carries — that would create money. */
-export const ASSERT_NO_OVER_ALLOCATED_ENTRIES = `
+const ASSERT_NO_OVER_ALLOCATED_ENTRIES = `
   DO $$
   DECLARE n INTEGER;
   BEGIN

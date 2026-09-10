@@ -13,7 +13,7 @@ import { getErrorMessage } from '@/lib/utils/error';
 
 // ── Payload Types ──────────────────────────────────────────────
 
-export interface UpdateProjectPayload {
+interface UpdateProjectPayload {
   name?: string;
   description?: string;
   priority?: ProjectPriority;
@@ -34,12 +34,12 @@ export interface UpdateTeamMemberPayload {
   isProjectManager?: boolean;
 }
 
-export interface RemoveTeamMemberPayload {
+interface RemoveTeamMemberPayload {
   /** The team membership record ID (not userId). */
   memberId: string;
 }
 
-export interface ReassignTaskPayload {
+interface ReassignTaskPayload {
   taskId: string;
   assignedToUserId: string;
 }

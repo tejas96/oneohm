@@ -31,7 +31,7 @@
  * and allocate the overlap. Σ per entry ≤ its remainder and Σ per milestone ≤
  * its balance both fall out of the algebra rather than out of testing.
  */
-export const SWEEP_EXISTING_CREDIT = `
+const SWEEP_EXISTING_CREDIT = `
   WITH credit AS (
     SELECT e.project_id,
            e.id           AS entry_id,
@@ -87,7 +87,7 @@ export const SWEEP_EXISTING_CREDIT = `
 `;
 
 /** No milestone may end up holding more than it expects. */
-export const ASSERT_SWEEP_NO_OVER_ALLOCATED_MILESTONES = `
+const ASSERT_SWEEP_NO_OVER_ALLOCATED_MILESTONES = `
   DO $$
   DECLARE bad INT;
   BEGIN
@@ -101,7 +101,7 @@ export const ASSERT_SWEEP_NO_OVER_ALLOCATED_MILESTONES = `
 `;
 
 /** No entry may end up allocating more than it carries. */
-export const ASSERT_SWEEP_NO_OVER_ALLOCATED_ENTRIES = `
+const ASSERT_SWEEP_NO_OVER_ALLOCATED_ENTRIES = `
   DO $$
   DECLARE bad INT;
   BEGIN
@@ -123,7 +123,7 @@ export const ASSERT_SWEEP_NO_OVER_ALLOCATED_ENTRIES = `
  * sitting as credit — the sweep moves money between those two buckets and must
  * never change their total.
  */
-export const ASSERT_SWEEP_CONSERVATION = `
+const ASSERT_SWEEP_CONSERVATION = `
   DO $$
   DECLARE bad INT;
   BEGIN

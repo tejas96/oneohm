@@ -37,6 +37,7 @@ import {
   ShareQuoteWhatsappResponseDto,
   UpdateQuoteDto,
   UpdateQuoteStatusDto,
+  VoidQuoteDto,
 } from '../dto';
 import { QuoteService } from '../services/quote.service';
 import type { UploadedPdfFile } from '../types/uploaded-pdf-file.interface';
@@ -255,11 +256,49 @@ export class QuoteController {
   }
 
   /**
+   * Void quote
+   */
+  @Post(':id/void')
+  @ApiOperation({
+    summary: 'Void quote',
+    description: `
+      Withdraw a quote that is live with the customer. \`sent\` and \`viewed\` only.
+
+      A sent quote cannot be deleted, because deleting it cannot reach the PDF
+      already in the customer's WhatsApp or the notification already on their
+      phone. Voiding keeps the quote, marks it dead whatever its status says,
+      and records why.
+
+      Voiding is terminal - there is no un-void. Raise a new quote instead.
+
+      An accepted quote is refused here: it is what locks the property, and only
+      cancelling the project built from it releases that.
+    `,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Quote voided',
+    type: QuoteResponseDto,
+  })
+  async voidQuote(
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: VoidQuoteDto,
+  ): Promise<QuoteResponseDto> {
+    const quote = await this.quoteService.voidQuote(id, dto.reason, currentUser.id);
+
+    return plainToInstance(QuoteResponseDto, quote, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
    * Delete quote
    */
   @ApiDelete({
     summary: 'Delete quote',
-    description: 'Soft delete a quote. Cannot delete accepted quotes.',
+    description:
+      'Soft delete a quote. Drafts only - a quote the customer has already seen must be voided.',
   })
   async delete(
     @CurrentUser() _currentUser: CurrentUserType,

@@ -3,7 +3,7 @@ import type { QuoteSnapshot } from '@tejas96/shared/types';
 import { systemSizeKwOf } from '../../../common/utils';
 import type { ProjectEntity } from '../../projects/entities/project.entity';
 
-export function getLatestQuoteVersion(project: ProjectEntity) {
+function getLatestQuoteVersion(project: ProjectEntity) {
   const versions = project.quote?.versions ?? [];
   if (!versions.length) return null;
   return [...versions].sort((a, b) => {

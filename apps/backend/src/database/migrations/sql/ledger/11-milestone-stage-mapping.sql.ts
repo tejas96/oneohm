@@ -26,7 +26,7 @@
  * means "use the default map". This migration writes NO data — it is pure DDL.
  */
 
-export const CREATE_FN_WORK_STAGE_KEY = `
+const CREATE_FN_WORK_STAGE_KEY = `
   CREATE OR REPLACE FUNCTION fn_work_stage_key(p_name TEXT)
   RETURNS TEXT LANGUAGE sql IMMUTABLE PARALLEL SAFE RETURNS NULL ON NULL INPUT AS $fn$
     SELECT CASE
@@ -48,7 +48,7 @@ export const CREATE_FN_WORK_STAGE_KEY = `
   $fn$
 `;
 
-export const CREATE_FN_PAYMENT_STAGE_WORK_KEY = `
+const CREATE_FN_PAYMENT_STAGE_WORK_KEY = `
   CREATE OR REPLACE FUNCTION fn_payment_stage_work_key(p_stage TEXT)
   RETURNS TEXT LANGUAGE sql IMMUTABLE PARALLEL SAFE RETURNS NULL ON NULL INPUT AS $fn$
     SELECT CASE btrim(lower(p_stage))
@@ -70,7 +70,7 @@ export const CREATE_FN_PAYMENT_STAGE_WORK_KEY = `
  * list gains `stage` and `work_stage_key`, and Postgres refuses a REPLACE that
  * changes the output shape.
  */
-export const RECREATE_V_MILESTONE_COMPLETION = `
+const RECREATE_V_MILESTONE_COMPLETION = `
   CREATE VIEW v_milestone_completion AS
   WITH m AS (
     SELECT
@@ -112,7 +112,7 @@ export const RECREATE_V_MILESTONE_COMPLETION = `
  * The COR-* steps are left alone on purpose: change-of-request work is raised
  * ad hoc and genuinely belongs to no delivery milestone.
  */
-export const BACKFILL_WORKFLOW_STEP_MILESTONES = `
+const BACKFILL_WORKFLOW_STEP_MILESTONES = `
   UPDATE workflow_steps
      SET default_milestone_name  = 'Permits & Approvals',
          default_milestone_order = 3,
@@ -122,7 +122,7 @@ export const BACKFILL_WORKFLOW_STEP_MILESTONES = `
      AND default_milestone_name IS NULL
 `;
 
-export const BACKFILL_WORKFLOW_STEP_MILESTONES_LOAN = `
+const BACKFILL_WORKFLOW_STEP_MILESTONES_LOAN = `
   UPDATE workflow_steps
      SET default_milestone_name  = 'Planning',
          default_milestone_order = 2,
@@ -136,7 +136,7 @@ export const BACKFILL_WORKFLOW_STEP_MILESTONES_LOAN = `
  * Existing tasks created from those two templates before the fix. Same guard:
  * only rows that are still ungrouped, only those two step codes.
  */
-export const BACKFILL_UNGROUPED_TASKS = `
+const BACKFILL_UNGROUPED_TASKS = `
   UPDATE project_tasks t
      SET milestone_name  = ws.default_milestone_name,
          milestone_order = ws.default_milestone_order,
@@ -149,7 +149,7 @@ export const BACKFILL_UNGROUPED_TASKS = `
 `;
 
 /** Report — never fail — on payment milestones no task can ever complete. */
-export const ASSERT_STAGE_MAPPING_COVERAGE = `
+const ASSERT_STAGE_MAPPING_COVERAGE = `
   DO $$
   DECLARE unmapped INT;
   BEGIN

@@ -2,7 +2,7 @@ import type { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types
 
 import { apiClient } from './client';
 
-export interface DocumentUser {
+interface DocumentUser {
   id: string;
   firstName: string;
   lastName: string;
@@ -88,9 +88,4 @@ export async function deleteDocument(id: string, options?: { permanent?: boolean
   await apiClient.delete(`/documents/${id}`, {
     params: options?.permanent ? { permanent: 'true' } : undefined,
   });
-}
-
-export async function getDocumentDownloadUrl(id: string): Promise<string> {
-  const { data } = await apiClient.get<{ url: string }>(`/documents/${id}/download`, {});
-  return data.url;
 }

@@ -25,7 +25,7 @@ import { getErrorMessage } from '@/lib/utils/error';
  * carries `entryId`, so the rows belonging to this entry can be picked out
  * exactly rather than inferred from amounts.
  */
-export function buildReceiptData(
+function buildReceiptData(
   entry: LedgerEntry,
   summary: ProjectLedgerSummary,
   project: ProjectDetail,

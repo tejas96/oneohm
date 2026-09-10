@@ -35,7 +35,7 @@ interface PaginatedDiscomsResponse {
   };
 }
 
-export const discomKeys = {
+const discomKeys = {
   all: ['discoms'] as const,
   lists: () => [...discomKeys.all, 'list'] as const,
   list: () => [...discomKeys.lists(), 'active'] as const,

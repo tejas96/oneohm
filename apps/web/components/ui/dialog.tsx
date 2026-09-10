@@ -1,10 +1,8 @@
 'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X, HelpCircle, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { X } from 'lucide-react';
 import * as React from 'react';
-
-import { Button } from './button';
 
 import { cva, type VariantProps } from '@/lib/cva';
 import { cn } from '@/lib/utils';
@@ -45,8 +43,6 @@ import { cn } from '@/lib/utils';
  */
 
 const Dialog = DialogPrimitive.Root;
-
-const DialogTrigger = DialogPrimitive.Trigger;
 
 const DialogPortal = DialogPrimitive.Portal;
 
@@ -100,7 +96,7 @@ const dialogContentVariants = cva(
   },
 );
 
-export interface DialogContentProps
+interface DialogContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof dialogContentVariants> {
   /** @deprecated Close button is now rendered inside DialogHeader. Use hideCloseButton on DialogHeader instead. */
@@ -197,110 +193,8 @@ DialogDescription.displayName = DialogPrimitive.Description.displayName;
  * Reference: apps/ux/web/v2/components/modals.html - Confirmation Modal
  */
 
-/** Icon colors per variant - module scope for performance */
-const ICON_COLORS = {
-  info: 'bg-info/10 text-info',
-  success: 'bg-success/10 text-success',
-  warning: 'bg-warning/10 text-warning',
-  error: 'bg-error/10 text-error',
-} as const;
-
-/** Icon components per variant - using lucide-react */
-const ICON_COMPONENTS = {
-  info: HelpCircle,
-  success: CheckCircle,
-  warning: AlertTriangle,
-  error: XCircle,
-} as const;
-
-/** Button variant mapping for ConfirmDialog */
-const CONFIRM_BUTTON_VARIANTS = {
-  default: 'secondary',
-  destructive: 'destructive',
-  success: 'success',
-  warning: 'warning',
-} as const;
-
-export type IconVariant = keyof typeof ICON_COLORS;
-export type ConfirmButtonVariant = keyof typeof CONFIRM_BUTTON_VARIANTS;
-
-export interface ConfirmDialogProps {
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  title: string;
-  description: string;
-  icon?: React.ReactNode;
-  iconVariant?: IconVariant;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  onConfirm?: () => void;
-  onCancel?: () => void;
-  confirmVariant?: ConfirmButtonVariant;
-}
-
-const ConfirmDialog = ({
-  open,
-  onOpenChange,
-  title,
-  description,
-  icon,
-  iconVariant = 'info',
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
-  onConfirm,
-  onCancel,
-  confirmVariant = 'default',
-}: ConfirmDialogProps) => {
-  const IconComponent = ICON_COMPONENTS[iconVariant];
-  const buttonVariant = CONFIRM_BUTTON_VARIANTS[confirmVariant];
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="sm" className="text-center">
-        <div className="p-6">
-          <div
-            className={cn(
-              'size-container-xl rounded-full flex items-center justify-center mx-auto mb-4',
-              ICON_COLORS[iconVariant],
-            )}
-          >
-            {icon || <IconComponent className="size-icon-xl" />}
-          </div>
-          <DialogTitle className="mb-2">{title}</DialogTitle>
-          <DialogDescription className="mb-6">{description}</DialogDescription>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => {
-                onCancel?.();
-                onOpenChange?.(false);
-              }}
-            >
-              {cancelLabel}
-            </Button>
-            <Button
-              variant={buttonVariant}
-              className="flex-1"
-              onClick={() => {
-                onConfirm?.();
-                onOpenChange?.(false);
-              }}
-            >
-              {confirmLabel}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
 export {
   Dialog,
-  DialogPortal,
-  DialogOverlay,
-  DialogTrigger,
   DialogClose,
   DialogContent,
   DialogHeader,
@@ -309,8 +203,6 @@ export {
   DialogForm,
   DialogTitle,
   DialogDescription,
-  ConfirmDialog,
-  dialogContentVariants,
 };
 
 // Types are already exported via interface declarations above

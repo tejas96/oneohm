@@ -10,7 +10,7 @@ import { apiClient } from '@/lib/api/client';
 // Types
 // ============================================================================
 
-export interface EmployeeUser {
+interface EmployeeUser {
   id: string;
   firstName: string;
   lastName?: string;
@@ -50,7 +50,7 @@ export interface UseEmployeesOptions {
 // Query key factory
 // ============================================================================
 
-export const employeeKeys = {
+const employeeKeys = {
   all: () => ['employees'] as const,
   list: (filters?: Record<string, unknown>) => [...employeeKeys.all(), 'list', filters] as const,
 };

@@ -4,8 +4,6 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User } from '@/lib/types/auth';
 
 // Re-export for backward compatibility
-export type { ProfileSummary, User } from '@/lib/types/auth';
-
 /**
  * The two roles that pass every permission check.
  *
@@ -146,34 +144,3 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
-
-/**
- * Hook to check if the user holds a full-access role.
- *
- * Uses the same set that the permission helpers short-circuit on, so the
- * "is admin" UI cue can never disagree with the actual bypass.
- */
-export function useIsAdmin(): boolean {
-  return useAuthStore((state) => state.hasAnyRole([...FULL_ACCESS_ROLES]));
-}
-
-/**
- * Hook to get current user
- */
-export function useCurrentUser(): User | null {
-  return useAuthStore((state) => state.user);
-}
-
-/**
- * Hook to check authentication status
- */
-export function useIsAuthenticated(): boolean {
-  return useAuthStore((state) => state.isAuthenticated);
-}
-
-/**
- * Hook to check if auth store has hydrated from localStorage
- */
-export function useHasHydrated(): boolean {
-  return useAuthStore((state) => state._hasHydrated);
-}

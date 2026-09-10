@@ -17,12 +17,12 @@
  * and system size should be read from.
  */
 
-export const ADD_CONTRACT_QUOTE_VERSION_COLUMN = `
+const ADD_CONTRACT_QUOTE_VERSION_COLUMN = `
   ALTER TABLE projects
     ADD COLUMN IF NOT EXISTS contract_quote_version_id UUID
 `;
 
-export const ADD_CONTRACT_QUOTE_VERSION_FK = `
+const ADD_CONTRACT_QUOTE_VERSION_FK = `
   ALTER TABLE projects
     ADD CONSTRAINT fk_projects_contract_quote_version
     FOREIGN KEY (contract_quote_version_id)
@@ -38,7 +38,7 @@ export const ADD_CONTRACT_QUOTE_VERSION_FK = `
  *
  * Deliberately never the latest version: that is the bug being fixed.
  */
-export const BACKFILL_CONTRACT_QUOTE_VERSION = `
+const BACKFILL_CONTRACT_QUOTE_VERSION = `
   UPDATE projects p
      SET contract_quote_version_id = COALESCE(
        (SELECT t.source_quote_version_id
@@ -57,7 +57,7 @@ export const BACKFILL_CONTRACT_QUOTE_VERSION = `
    WHERE p.contract_quote_version_id IS NULL
 `;
 
-export const CREATE_CONTRACT_QUOTE_VERSION_INDEX = `
+const CREATE_CONTRACT_QUOTE_VERSION_INDEX = `
   CREATE INDEX IF NOT EXISTS idx_projects_contract_quote_version
     ON projects (contract_quote_version_id) WHERE deleted_at IS NULL
 `;

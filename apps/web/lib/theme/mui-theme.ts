@@ -28,7 +28,7 @@ export const MUI_FINE_PRINT_FONT_SIZE = '0.6875rem'; // 11px — meta labels / f
 export const MUI_DRAWER_TITLE_FONT_SIZE = '1.25rem';
 export const MUI_BORDER_RADIUS = 6;
 export const MUI_BORDER_COLOR = color['neutral-300'];
-export const MUI_INPUT_PADDING = '6px 10px';
+
 export const MUI_LABEL_GAP = '4px';
 export const MUI_LABEL_MB = '6px';
 

@@ -38,7 +38,7 @@ export interface InverterConfig {
 // Project Detail Types
 // ============================================================================
 
-export interface ProjectDetailProperty {
+interface ProjectDetailProperty {
   id: string;
   customerId: string;
   customerName?: string;
@@ -121,7 +121,7 @@ export interface MilestoneAggregateItem {
   status: MilestoneDisplayStatus;
 }
 
-export interface ProjectMaterial {
+interface ProjectMaterial {
   id: string;
   materialName: string;
   category?: string;
@@ -134,7 +134,7 @@ export interface ProjectMaterial {
   status: MaterialStatus;
 }
 
-export interface ProjectPayment {
+interface ProjectPayment {
   id: string;
   paymentNumber: string;
   expectedAmount: number;
@@ -152,17 +152,6 @@ export interface ProjectPayment {
   createdAt: string;
 }
 
-export interface ProjectDocument {
-  id: string;
-  documentType: string;
-  fileName: string;
-  filePath: string;
-  fileSize?: number;
-  status?: string;
-  projectId?: string;
-  createdAt: string;
-}
-
 // ============================================================================
 // Derived / Aggregated Types
 // ============================================================================
@@ -170,13 +159,6 @@ export interface ProjectDocument {
 export interface TaskStatsSummary {
   total: number;
   byStatus: Record<TaskStatus, number>;
-}
-
-export interface PaymentSummaryDetail {
-  totalExpected: number;
-  totalPaid: number;
-  pendingAmount: number;
-  paymentCount: number;
 }
 
 export interface MilestoneWithPayment extends MilestoneAggregateItem {

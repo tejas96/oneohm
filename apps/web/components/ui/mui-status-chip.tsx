@@ -19,7 +19,7 @@ export type StatusChipColor =
   | 'info'
   | 'success';
 
-export type StatusChipVariant = 'filled' | 'outlined';
+type StatusChipVariant = 'filled' | 'outlined';
 
 export interface MUIStatusChipProps extends Omit<ChipProps, 'color' | 'variant'> {
   /**

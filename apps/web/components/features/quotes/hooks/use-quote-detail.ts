@@ -12,7 +12,7 @@ import { apiClient } from '@/lib/api/client';
 // Query Keys
 // ============================================================================
 
-export const quoteDetailKeys = {
+const quoteDetailKeys = {
   ...quoteKeys,
   versions: (id: string) => [...quoteKeys.detail(id), 'versions'] as const,
 };

@@ -16,12 +16,7 @@ import { apiClient } from '@/lib/api/client';
 // Overview money card render.
 // ============================================================================
 
-export type AgingBucket = 'current' | '0-30' | '31-60' | '61-90' | '90+';
-
-export interface DateRangeFilter {
-  from?: string;
-  to?: string;
-}
+type AgingBucket = 'current' | '0-30' | '31-60' | '61-90' | '90+';
 
 // ---- Outstanding terms ------------------------------------------------------
 
@@ -79,7 +74,7 @@ export interface CustomerAging {
 // Query keys
 // ============================================================================
 
-export const orgFinanceKeys = {
+const orgFinanceKeys = {
   root: () => ['finance-org'] as const,
   outstanding: (filters: OutstandingFilters) =>
     [...orgFinanceKeys.root(), 'outstanding', filters] as const,

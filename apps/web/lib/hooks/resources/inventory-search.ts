@@ -41,7 +41,7 @@ export interface InventorySearchHit {
   score?: number;
 }
 
-export interface InventorySearchResponse {
+interface InventorySearchResponse {
   query: string;
   hits: InventorySearchHit[];
   /**

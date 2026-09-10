@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
  * `?` icon next to a chart title. `summary` is a one-liner (also used
  * as the tooltip text on hover); `details` is the long-form body.
  */
-export interface ChartHelpContent {
+interface ChartHelpContent {
   summary: string;
   /** Long-form body. Use a fragment to mix paragraphs / lists. */
   details: React.ReactNode;

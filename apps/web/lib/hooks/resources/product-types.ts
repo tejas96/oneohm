@@ -4,12 +4,10 @@ import {
   type BaseFilters,
   defineResource,
   getResourceConfig,
-  getResourcePermissions,
   STALE_TIMES,
   useResourceList,
   useResourceDetail,
   useResourceMutations,
-  useResourcePermissions,
   type ResourceConfig,
 } from '../core';
 
@@ -99,8 +97,4 @@ export function useProductType(productTypeId: string) {
     endpoint: '/product-types',
     id: productTypeId,
   });
-}
-
-export function useProductTypePermissions() {
-  return useResourcePermissions(getResourcePermissions('product-types'));
 }

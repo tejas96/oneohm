@@ -1,7 +1,7 @@
 'use client';
 
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import { Button, IconButton, Tooltip } from '@mui/material';
+import { IconButton, Tooltip } from '@mui/material';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -79,5 +79,3 @@ export function AllocationDetailHeader({
     </header>
   );
 }
-
-export const AllocationDetailHeaderButton = Button;

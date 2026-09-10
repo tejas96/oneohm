@@ -15,7 +15,7 @@ import { BomRepository } from '../repositories/bom.repository';
 
 export type BomLineChangeState = 'unchanged' | 'added' | 'increased' | 'decreased' | 'removed';
 
-export interface ProcurementItem {
+interface ProcurementItem {
   productId: string;
   name: string;
   unit: string;

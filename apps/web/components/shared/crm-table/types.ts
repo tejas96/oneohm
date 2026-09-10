@@ -13,9 +13,9 @@ import type { ColumnConfig, FilterState, TableSortModel } from '../advanced-tabl
  * to every other list in the app — and a fix to filtering lands in both tables
  * at once instead of drifting.
  */
-export type { ColumnConfig, FilterState, TableSortModel };
+export type { FilterState, TableSortModel };
 
-export type CrmDensity = 'comfortable' | 'compact';
+type CrmDensity = 'comfortable' | 'compact';
 
 /** Semantic tones available to quick-filter chips and status pills. */
 export type CrmTone = 'neutral' | 'accent' | 'success' | 'info' | 'warning' | 'danger';

@@ -13,7 +13,7 @@ import {
  * point load on the DB (each id triggers a transactional cancel with row
  * locks). 100 is the same cap used elsewhere for bulk write paths.
  */
-export const BULK_IDS_MAX = 100;
+const BULK_IDS_MAX = 100;
 
 export class BulkIdsDto {
   @ApiProperty({

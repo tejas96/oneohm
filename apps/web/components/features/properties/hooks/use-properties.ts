@@ -5,13 +5,10 @@ import type { ChangeRequestItemFormData } from '@tejas96/shared/schemas';
 import type {
   ConnectionType,
   LeadTemperature,
-  PaginationMeta,
   PropertyDocument,
-  PropertySortField,
   PropertyStatus,
   PropertyType,
   QuoteStatus,
-  SortOrder,
   ShadingAnalysis,
   SurveyData,
 } from '@tejas96/shared/types';
@@ -26,27 +23,6 @@ import { apiClient } from '@/lib/api/client';
 // ============================================================================
 // Types (kept for backward compatibility with detail/form pages)
 // ============================================================================
-
-export interface PropertyFilters {
-  page?: number;
-  limit?: number;
-  search?: string;
-  leadTemperature?: LeadTemperature;
-  propertyType?: PropertyType;
-  status?: PropertyStatus;
-  connectionType?: ConnectionType;
-  city?: string;
-  state?: string;
-  createdBy?: string;
-  fromDate?: string;
-  toDate?: string;
-  quoteStatus?: QuoteStatus;
-  systemSizeMin?: number;
-  systemSizeMax?: number;
-  sortBy?: PropertySortField;
-  sortOrder?: SortOrder;
-  enabled?: boolean;
-}
 
 export interface Property {
   id: string;
@@ -97,19 +73,6 @@ export interface Property {
   changeOrderValue?: number;
   projectId?: string;
   hasActiveLoan?: boolean;
-}
-
-export type { PaginationMeta };
-
-export interface PropertyListResponse {
-  data: Property[];
-  meta: PaginationMeta;
-}
-
-export interface PropertyStatsResponse {
-  hot: number;
-  warm: number;
-  cold: number;
 }
 
 export interface UpdatePropertyData {

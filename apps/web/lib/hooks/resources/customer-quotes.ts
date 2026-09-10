@@ -6,7 +6,6 @@ import { QuoteStatus } from '@tejas96/shared/types';
 import { createResourceKeys } from '../core';
 
 import {
-  quoteKeys as featureQuoteKeys,
   type CustomerQuote,
   type CustomerQuotesResponse,
 } from '@/components/features/customers/hooks/use-customer-quotes';
@@ -15,8 +14,6 @@ import { apiClient } from '@/lib/api/client';
 // ── Types ──────────────────────────────────────────────────────
 
 export type { CustomerQuote, CustomerQuotesResponse };
-export { featureQuoteKeys as quoteKeys };
-
 // ── Query Keys ─────────────────────────────────────────────────
 
 const cqKeys = createResourceKeys('customer-quotes');

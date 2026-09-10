@@ -13,11 +13,7 @@ import {
   type GroupedMyTasksResponse,
   type MyTask,
   type MyTaskFilters,
-  type MyTaskListItem,
-  type MyTasksGroup,
   type MyTasksGroupTasksResponse,
-  type MyTasksProject,
-  type MyTasksSummary,
 } from '@tejas96/shared/types';
 
 import { myTasksSummaryKeys } from '@/components/features/tasks/hooks/use-my-tasks-summary';
@@ -31,11 +27,7 @@ export type {
   GroupedMyTasksResponse,
   MyTask,
   MyTaskFilters,
-  MyTaskListItem,
-  MyTasksGroup,
   MyTasksGroupTasksResponse,
-  MyTasksProject,
-  MyTasksSummary,
 };
 
 // ============================================================================

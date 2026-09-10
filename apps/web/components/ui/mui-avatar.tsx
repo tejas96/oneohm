@@ -23,7 +23,7 @@ import { getInitials } from '@/lib/utils/format';
  * | lg     | 40 |
  * | xl     | 48 |
  */
-export const AVATAR_SIZES = {
+const AVATAR_SIZES = {
   xs: 20,
   sm: 24,
   md: 32,
@@ -31,7 +31,7 @@ export const AVATAR_SIZES = {
   xl: 48,
 } as const;
 
-export type AvatarSize = keyof typeof AVATAR_SIZES;
+type AvatarSize = keyof typeof AVATAR_SIZES;
 
 // Font size is ~35% of the avatar diameter so initials never clip
 function avatarFontSize(px: number): string {

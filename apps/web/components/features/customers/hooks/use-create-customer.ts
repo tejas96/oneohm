@@ -44,7 +44,7 @@ export interface CustomerResponse {
   updatedAt: string;
 }
 
-export interface AvailabilityResponse {
+interface AvailabilityResponse {
   phoneExists: boolean;
   emailExists: boolean;
   phoneError?: string;

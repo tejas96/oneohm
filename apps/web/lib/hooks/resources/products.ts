@@ -2,9 +2,6 @@
 
 import {
   type ProductOptionInput,
-  type PanelBrandOption,
-  type InverterBrandOption,
-  type StructureTypeOption,
   type PanelTechnologyVariant,
   type InverterCapacityOption,
   derivePanelBrands,
@@ -18,14 +15,7 @@ import { useResourceList, STALE_TIMES, type BaseFilters } from '../core';
 
 // ── Types ──────────────────────────────────────────────────────
 
-export type { ProductOptionInput as ProductItem };
-export type {
-  PanelBrandOption,
-  InverterBrandOption,
-  StructureTypeOption,
-  PanelTechnologyVariant,
-  InverterCapacityOption,
-};
+export type { PanelTechnologyVariant, InverterCapacityOption };
 
 interface ProductListFilters extends BaseFilters {
   type?: string;
@@ -51,7 +41,7 @@ interface ProductListFilters extends BaseFilters {
   Panels are unaffected in the current catalogue (22 either way) and are filtered
   anyway: the bug is the missing rule, not the rows it happens to drop today.
 */
-export function useAllPanelProducts() {
+function useAllPanelProducts() {
   return useResourceList<ProductOptionInput, ProductListFilters>({
     resource: 'products-panels',
     endpoint: '/products',
@@ -66,7 +56,7 @@ export function useAllPanelProducts() {
   });
 }
 
-export function useAllInverterProducts() {
+function useAllInverterProducts() {
   return useResourceList<ProductOptionInput, ProductListFilters>({
     resource: 'products-inverters',
     endpoint: '/products',
@@ -81,7 +71,7 @@ export function useAllInverterProducts() {
   });
 }
 
-export function useAllStructureProducts() {
+function useAllStructureProducts() {
   return useResourceList<ProductOptionInput, ProductListFilters>({
     resource: 'products-structures',
     endpoint: '/products',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { normalizeApiError } from './error-adapter';
@@ -43,25 +43,4 @@ export function useResourceDetail<T>(config: UseResourceDetailConfig<T>) {
     ...query,
     error: query.error ? normalizeApiError(query.error) : (null as NormalizedError | null),
   };
-}
-
-export function prefetchResourceDetail<T>(
-  queryClient: ReturnType<typeof useQueryClient>,
-  config: {
-    resource: string;
-    endpoint: string;
-    id: string;
-  },
-): void {
-  const keys = createResourceKeys(config.resource);
-  void queryClient.prefetchQuery({
-    queryKey: keys.detail(config.id),
-    queryFn: async ({ signal }): Promise<T> => {
-      const { data } = await apiClient.get<T>(`${config.endpoint}/${config.id}`, {
-        signal,
-      });
-      return data as T;
-    },
-    staleTime: RESOURCE_QUERY_DEFAULTS.staleTime,
-  });
 }

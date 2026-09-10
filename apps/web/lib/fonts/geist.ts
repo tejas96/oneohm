@@ -20,7 +20,7 @@ import localFont from 'next/font/local';
  * mid-range Android hardware the field app targets.
  */
 
-export const geistSans = localFont({
+const geistSans = localFont({
   src: './geist/Geist-Variable.woff2',
   weight: '100 900',
   style: 'normal',
@@ -30,7 +30,7 @@ export const geistSans = localFont({
   fallback: ['Inter', '-apple-system', 'system-ui', 'sans-serif'],
 });
 
-export const geistMono = localFont({
+const geistMono = localFont({
   src: './geist/GeistMono-Variable.woff2',
   weight: '100 900',
   style: 'normal',

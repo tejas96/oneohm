@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserProfileType } from '@tejas96/shared/types';
-import { IsNotEmpty, IsString, IsEnum, IsOptional, IsObject } from 'class-validator';
+import { IsNotEmpty, IsEnum, IsObject } from 'class-validator';
 
 /**
  * Create Profile DTO
@@ -43,62 +43,4 @@ export class CreateProfileDto {
   @IsObject()
   @IsNotEmpty()
   profileData!: Record<string, unknown>;
-}
-
-/**
- * Update User Basic Info DTO
- */
-export class UpdateUserBasicInfoDto {
-  @ApiProperty({ example: 'John', required: false })
-  @IsOptional()
-  @IsString()
-  firstName?: string;
-
-  @ApiProperty({ example: 'Doe', required: false })
-  @IsOptional()
-  @IsString()
-  lastName?: string;
-
-  @ApiProperty({ example: 'john@example.com', required: false })
-  @IsOptional()
-  @IsString()
-  email?: string;
-}
-
-/**
- * Profile Summary Response DTO
- */
-export class ProfileSummaryResponseDto {
-  @ApiProperty()
-  userId!: string;
-
-  @ApiProperty()
-  phone!: string;
-
-  @ApiProperty({ required: false })
-  email?: string;
-
-  @ApiProperty()
-  firstName!: string;
-
-  @ApiProperty({ required: false })
-  lastName?: string;
-
-  @ApiProperty()
-  profileCompleted!: boolean;
-
-  @ApiProperty({
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        type: { type: 'string', enum: Object.values(UserProfileType) },
-        profileId: { type: 'string' },
-      },
-    },
-  })
-  profiles!: {
-    type: UserProfileType;
-    profileId: string;
-  }[];
 }

@@ -17,7 +17,7 @@ import { LoanDocumentType, type DocumentSlot } from './types';
  * Default loan/KYC document slots
  * Aadhaar is required when loan is wanted, others are optional
  */
-export const LOAN_DOCUMENT_SLOTS: DocumentSlot[] = [
+const LOAN_DOCUMENT_SLOTS: DocumentSlot[] = [
   {
     id: LoanDocumentType.AADHAAR_CARD,
     label: 'Aadhaar Card',

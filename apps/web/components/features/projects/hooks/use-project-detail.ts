@@ -3,7 +3,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-import type { ProjectDetail, ProjectTeamMember, TaskStatsSummary } from './types';
+import type { ProjectDetail, ProjectTeamMember } from './types';
 import { projectKeys } from './use-projects';
 
 import { apiClient } from '@/lib/api/client';
@@ -47,23 +47,6 @@ export function useProjectTeam(
     queryKey: projectDetailKeys.team(projectId),
     queryFn: async (): Promise<ProjectTeamMember[]> => {
       const { data } = await apiClient.get<ProjectTeamMember[]>(`/projects/${projectId}/team`, {});
-      return data;
-    },
-    enabled: !!projectId && options?.enabled !== false,
-    staleTime: 30_000,
-  });
-}
-
-export function useProjectTaskStats(
-  projectId: string,
-  options?: { enabled?: boolean },
-): UseQueryResult<TaskStatsSummary, AxiosError> {
-  return useQuery({
-    queryKey: projectDetailKeys.taskStats(projectId),
-    queryFn: async (): Promise<TaskStatsSummary> => {
-      const { data } = await apiClient.get<TaskStatsSummary>(
-        `/projects/${projectId}/tasks/stats/summary`,
-      );
       return data;
     },
     enabled: !!projectId && options?.enabled !== false,

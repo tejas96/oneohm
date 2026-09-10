@@ -13,7 +13,7 @@ export {
   formatSystemSize,
 } from '@tejas96/shared/utils';
 
-import { formatDate, formatSystemSize } from '@tejas96/shared/utils';
+import { formatDate } from '@tejas96/shared/utils';
 
 export function formatLabel(key: string): string {
   return key
@@ -85,14 +85,6 @@ export function formatDueDatePendingLabel(endDate: string): string {
   if (diffDays < 0) return `${Math.abs(diffDays)}d late`;
   if (diffDays === 0) return 'Today';
   return `in ${diffDays}d`;
-}
-
-/**
- * Plain-string fallback for contexts that cannot render JSX (e.g. subtitle string building).
- */
-export function formatSystemSizeDisplay(kw?: number): string {
-  if (kw == null) return '—';
-  return `${formatSystemSize(kw)} kW`;
 }
 
 /**

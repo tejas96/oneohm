@@ -1,6 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
 
-import { ROUTES } from '@/lib/config/routes';
 import type { Gate } from '@/lib/rbac/catalog';
 
 /**
@@ -120,33 +119,6 @@ export interface NavigationConfig {
   panels: Record<string, PanelConfig>;
 }
 
-/** Function to check if a path matches a nav item */
-export type PathMatcher = (pathname: string, href: string, exactMatch?: boolean) => boolean;
-
-/** Default path matcher - checks if pathname starts with href */
-export const defaultPathMatcher: PathMatcher = (pathname, href, exactMatch = false) => {
-  // Strip query params for comparison
-  const cleanPathname = pathname.split('?')[0] ?? pathname;
-  const cleanHref = href.split('?')[0] ?? href;
-
-  if (exactMatch) {
-    return cleanPathname === cleanHref;
-  }
-
-  if (cleanHref === ROUTES.DASHBOARD.HOME) {
-    return cleanPathname === ROUTES.DASHBOARD.HOME || cleanPathname === ROUTES.HOME;
-  }
-
-  return cleanPathname.startsWith(cleanHref);
-};
-
-/** Exact path matcher - checks exact match (ignores query params) */
-export const exactPathMatcher: PathMatcher = (pathname, href) => {
-  const cleanPathname = pathname.split('?')[0] ?? pathname;
-  const cleanHref = href.split('?')[0] ?? href;
-  return cleanPathname === cleanHref;
-};
-
 /**
  * A nav item annotated with whether the current user may use it.
  *
@@ -155,16 +127,3 @@ export const exactPathMatcher: PathMatcher = (pathname, href) => {
  * superadmin for — the whole reason the access dialog exists.
  */
 export type Gated<T> = T & { allowed: boolean };
-
-/** The `role` variants are gone. There is one question now: does this gate open? */
-export function hasAccess(item: { permission: Gate }, can: (gate: Gate) => boolean): boolean {
-  return can(item.permission);
-}
-
-/** Annotate items with `allowed` rather than filtering them out. */
-export function annotateAccess<T extends { permission: Gate }>(
-  items: T[],
-  can: (gate: Gate) => boolean,
-): Gated<T>[] {
-  return items.map((item) => ({ ...item, allowed: can(item.permission) }));
-}

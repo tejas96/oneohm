@@ -21,7 +21,7 @@
  * This view is literally the client's requirement: "milestone 1 expects ₹10,000,
  * customer paid ₹2,000, flag that he is ₹8,000 short".
  */
-export const CREATE_V_MILESTONE_BALANCE = `
+const CREATE_V_MILESTONE_BALANCE = `
   CREATE OR REPLACE VIEW v_milestone_balance AS
   SELECT
     m.id                                              AS milestone_id,

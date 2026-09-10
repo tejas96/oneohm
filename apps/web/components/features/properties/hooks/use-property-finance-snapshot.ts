@@ -12,7 +12,7 @@ import {
 /** Open-term query cap; callers surface a note when the cap bites. */
 export const PROPERTY_FINANCE_PAGE_LIMIT = 100;
 
-export interface PropertyFinanceSnapshot {
+interface PropertyFinanceSnapshot {
   totalOutstanding: number;
   overdueAmount: number;
   maxDaysOverdue: number;

@@ -40,7 +40,7 @@
  */
 
 /** Must pass before M4 — a duplicate would collide on uq_ledger_entries_entry_no. */
-export const ASSERT_NO_DUPLICATE_PAYMENT_NUMBERS = `
+const ASSERT_NO_DUPLICATE_PAYMENT_NUMBERS = `
   DO $$
   DECLARE n INTEGER;
   BEGIN
@@ -59,7 +59,7 @@ export const ASSERT_NO_DUPLICATE_PAYMENT_NUMBERS = `
 `;
 
 /** Must pass before M4 — ledger_entries.created_by is NOT NULL. */
-export const ASSERT_NO_NULL_PAYMENT_CREATED_BY = `
+const ASSERT_NO_NULL_PAYMENT_CREATED_BY = `
   DO $$
   DECLARE n INTEGER;
   BEGIN
@@ -75,7 +75,7 @@ export const ASSERT_NO_NULL_PAYMENT_CREATED_BY = `
 `;
 
 /** Logs what is being left behind, so the excluded set is never silent. */
-export const REPORT_EXCLUDED_PAYMENTS = `
+const REPORT_EXCLUDED_PAYMENTS = `
   DO $$
   DECLARE excluded_count INTEGER; excluded_sum NUMERIC;
   BEGIN
@@ -89,7 +89,7 @@ export const REPORT_EXCLUDED_PAYMENTS = `
   END $$
 `;
 
-export const BACKFILL_LEDGER_RECEIPTS = `
+const BACKFILL_LEDGER_RECEIPTS = `
   INSERT INTO ledger_entries (
     id, organization_id, project_id, customer_id,
     entry_no, entry_type, direction, amount_paise,
@@ -127,7 +127,7 @@ export const BACKFILL_LEDGER_RECEIPTS = `
  * and be exercised so the code is not written for the first time under pressure.
  * Expenses are money OUT, so `amount_paise` is negative.
  */
-export const BACKFILL_LEDGER_EXPENSES = `
+const BACKFILL_LEDGER_EXPENSES = `
   INSERT INTO ledger_entries (
     id, organization_id, project_id,
     entry_no, entry_type, direction, amount_paise,

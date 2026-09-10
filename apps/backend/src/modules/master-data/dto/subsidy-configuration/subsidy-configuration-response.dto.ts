@@ -97,25 +97,3 @@ export class SubsidyConfigurationResponseDto {
   @Expose()
   updatedAt!: Date;
 }
-
-/**
- * DTO for paginated subsidy configurations response
- */
-export class SubsidyConfigurationListResponseDto {
-  @ApiProperty({ type: [SubsidyConfigurationResponseDto] })
-  @Expose()
-  @Type(() => SubsidyConfigurationResponseDto)
-  data!: SubsidyConfigurationResponseDto[];
-
-  @ApiProperty({ example: 10 })
-  @Expose()
-  total!: number;
-
-  @ApiProperty({ example: 1 })
-  @Expose()
-  page!: number;
-
-  @ApiProperty({ example: 20 })
-  @Expose()
-  limit!: number;
-}

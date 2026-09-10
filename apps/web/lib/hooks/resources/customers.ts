@@ -4,15 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 
 import { createResourceKeys, useResourceDetail } from '../core';
 
-import { customerKeys } from '@/components/features/customers/hooks/use-create-customer';
 import { Customer } from '@/components/features/customers/hooks/use-customers';
 import { apiClient } from '@/lib/api/client';
 
 // ── Types ──────────────────────────────────────────────────────
 
 export type { Customer };
-export { customerKeys };
-
 interface CustomerListResponse {
   data: Customer[];
   meta: { total: number; page: number; limit: number; totalPages: number };

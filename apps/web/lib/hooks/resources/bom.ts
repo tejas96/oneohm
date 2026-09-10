@@ -23,12 +23,12 @@ import { getErrorMessage } from '@/lib/utils/error';
 // here declares the shape it fetches; keep the two in step when the DTO moves.
 
 export type BomLineChangeState = 'unchanged' | 'added' | 'increased' | 'decreased' | 'removed';
-export type BomItemSource = 'quote' | 'site' | 'office';
-export type BomItemAllocationStatus = 'allocated' | 'partial' | 'pending';
-export type BomAllocationStatus = 'pending' | 'partial' | 'fully_allocated';
+type BomItemSource = 'quote' | 'site' | 'office';
+type BomItemAllocationStatus = 'allocated' | 'partial' | 'pending';
+type BomAllocationStatus = 'pending' | 'partial' | 'fully_allocated';
 export type BomChangeType = 'add' | 'quantity' | 'remove' | 'replace';
 
-export interface BomItemSerial {
+interface BomItemSerial {
   id: string;
   serialNumber: string;
 }
@@ -57,7 +57,7 @@ export interface BomItem {
   sortOrder: number;
 }
 
-export interface BomTotals {
+interface BomTotals {
   quotedPaise: number;
   currentPaise: number;
   variancePaise: number;
@@ -407,126 +407,3 @@ export function useRemoveBomItem(projectId: string) {
 // ============================================================================
 // Hooks — serials
 // ============================================================================
-
-interface BomMutationContext {
-  snapshots: Array<[readonly unknown[], Bom | null | undefined]>;
-}
-
-export interface SetBomItemSerialsPayload {
-  itemId: string;
-  /** The whole serial list for this line. Send [] to clear it. */
-  serials: string[];
-}
-
-/**
- * Replace the whole serial-number list for one BOM line.
- *
- * Replaces `useUpdateBomItemSerial` (one serial, one exploded row) and
- * `useBulkUpdateBomItemSerials` (many rows, one serial each) — both existed
- * only because a serialized line used to be one bom_items row per unit.
- * Serials now live on their own table under a single per-product line, so
- * there is one route (`PATCH /bom-items/:itemId/serials`) and one hook.
- *
- * No 404-recovery branch: the old mutation could lose a race against a
- * quantity change that deleted the very row it was patching, because units
- * used to be exploded into one row each and a quantity drop deleted rows.
- * A line is never deleted now — only ever kept at quantity 0 — so that race
- * cannot happen.
- */
-export function useSetBomItemSerials() {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation<
-    BomItemSerial[],
-    unknown,
-    SetBomItemSerialsPayload,
-    BomMutationContext
-  >({
-    mutationFn: async ({ itemId, serials }) => {
-      const { data } = await apiClient.patch<{ data: BomItemSerial[] }>(
-        `/bom-items/${itemId}/serials`,
-        { serials },
-      );
-      return data.data;
-    },
-    onMutate: async ({ itemId, serials }) => {
-      const targetKeyPrefix = bomResourceKeys.all();
-      await queryClient.cancelQueries({ queryKey: targetKeyPrefix });
-
-      const snapshots = queryClient.getQueriesData<Bom | null>({ queryKey: targetKeyPrefix });
-      for (const [queryKey, cachedBom] of snapshots) {
-        if (!cachedBom) continue;
-        const updatedItems = cachedBom.items.map((item) => {
-          if (item.id !== itemId) return item;
-          // Optimistic only — the real rows come back in onSuccess. An
-          // existing id is kept where a serial's position didn't move, so
-          // this doesn't thrash React's reconciliation keys for the common
-          // one-entry edit.
-          const optimisticSerials = serials.map((serialNumber, index) => ({
-            id: item.serials[index]?.id ?? `pending-${itemId}-${index}`,
-            serialNumber,
-          }));
-          return { ...item, serials: optimisticSerials };
-        });
-        queryClient.setQueryData<Bom>(queryKey, { ...cachedBom, items: updatedItems });
-      }
-
-      return { snapshots };
-    },
-    onSuccess: (updatedSerials, { itemId }) => {
-      const targetKeyPrefix = bomResourceKeys.all();
-      const snapshots = queryClient.getQueriesData<Bom | null>({ queryKey: targetKeyPrefix });
-      for (const [queryKey, cachedBom] of snapshots) {
-        if (!cachedBom) continue;
-        const updatedItems = cachedBom.items.map((item) =>
-          item.id === itemId ? { ...item, serials: updatedSerials } : item,
-        );
-        queryClient.setQueryData<Bom>(queryKey, { ...cachedBom, items: updatedItems });
-      }
-      void queryClient.invalidateQueries({ queryKey: ['bom'] });
-    },
-    onError: (err, _variables, context) => {
-      if (context?.snapshots) {
-        for (const [queryKey, cachedBom] of context.snapshots) {
-          queryClient.setQueryData<Bom | null>(queryKey, cachedBom ?? null);
-        }
-      }
-      showToast.error(getErrorMessage(err));
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ['bom'] });
-    },
-  });
-
-  return {
-    ...mutation,
-    execute: (payload: SetBomItemSerialsPayload) => mutation.mutateAsync(payload),
-  };
-}
-
-export interface BomSerialConflict {
-  bomId: string;
-  bomNumber: string;
-  entityType: string;
-  entityId: string;
-  itemId: string;
-  itemType: string;
-  itemName: string;
-}
-
-export function useBomSerialConflicts(serialNumber: string | undefined) {
-  const normalizedSerial = serialNumber?.trim() ?? '';
-
-  return useQuery({
-    queryKey: [...bomResourceKeys.all(), 'serial-conflicts', normalizedSerial] as const,
-    queryFn: async ({ signal }): Promise<BomSerialConflict[]> => {
-      const { data } = await apiClient.get<{ data: BomSerialConflict[] }>(
-        `/bom-items/check-serial?serialNumber=${encodeURIComponent(normalizedSerial)}`,
-        { signal },
-      );
-      return data.data ?? [];
-    },
-    enabled: normalizedSerial.length > 0,
-    staleTime: 15_000,
-  });
-}

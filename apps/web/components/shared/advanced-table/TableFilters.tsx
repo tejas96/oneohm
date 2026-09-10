@@ -41,7 +41,7 @@ interface TableFiltersProps<TRow> {
 /** Above MUI Popover (1300) so autocomplete menus are not clipped inside filter panels. */
 const FILTER_AUTOCOMPLETE_Z_INDEX = 1600;
 
-export interface FilterAutocompleteOption {
+interface FilterAutocompleteOption {
   label: string;
   value: string;
 }

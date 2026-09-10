@@ -31,7 +31,7 @@ import { getErrorMessage, toTitleLabel } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Minimal shape needed to offer a property choice — avoids importing the full DTO. */
-export interface FollowupDrawerProperty {
+interface FollowupDrawerProperty {
   id: string;
   propertyName?: string | null;
   city?: string | null;

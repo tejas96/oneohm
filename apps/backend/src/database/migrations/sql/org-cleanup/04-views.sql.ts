@@ -25,7 +25,7 @@
  * again. `derivedMilestoneStatus()` in `modules/ledger/domain/derived-status.ts`
  * mirrors this CASE; `derived-status.spec.ts` pins the outcome table.
  */
-export const CREATE_V_MILESTONE_BALANCE_V2 = `
+const CREATE_V_MILESTONE_BALANCE_V2 = `
   CREATE VIEW v_milestone_balance AS
   SELECT
     m.id                                              AS milestone_id,
@@ -100,7 +100,7 @@ export const CREATE_V_MILESTONE_COMPLETION_V2 = `
 `;
 
 /** From sql/ledger/12-contract-composition.sql.ts, minus `cp.organization_id`. */
-export const CREATE_V_PROJECT_BALANCE_V2 = `
+const CREATE_V_PROJECT_BALANCE_V2 = `
   CREATE VIEW v_project_balance AS
   SELECT
     p.id                                              AS project_id,

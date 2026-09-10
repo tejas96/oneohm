@@ -75,7 +75,7 @@ const iconColorVariants = {
   info: 'text-info',
 };
 
-export interface AlertProps
+interface AlertProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof alertVariants> {
   /** Alert title (optional) */
@@ -173,4 +173,4 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
 );
 Alert.displayName = 'Alert';
 
-export { Alert, alertVariants };
+export { Alert };

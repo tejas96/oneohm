@@ -38,15 +38,6 @@ export const PAYMENT_STATUS_LABEL: Record<string, string> = {
   paid: 'Paid',
 };
 
-export const PAYMENT_STATUS_COLOR: Record<
-  string,
-  'default' | 'warning' | 'info' | 'success' | 'error'
-> = {
-  pending: 'warning',
-  partial: 'info',
-  paid: 'success',
-};
-
 export const PO_STATUS_COLOR: Record<string, 'default' | 'warning' | 'info' | 'success' | 'error'> =
   {
     draft: 'default',
@@ -160,12 +151,3 @@ export const TRANSACTION_TYPE_COLOR: Record<
   allocation: 'warning',
   return: 'info',
 };
-
-// Reason codes for stock adjustment
-export const ADJUSTMENT_REASONS = [
-  { value: 'damaged', label: 'Damaged / Defective' },
-  { value: 'expired', label: 'Expired' },
-  { value: 'stocktake', label: 'Stock Take Correction' },
-  { value: 'theft', label: 'Theft / Loss' },
-  { value: 'other', label: 'Other' },
-];

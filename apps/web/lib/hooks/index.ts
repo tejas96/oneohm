@@ -4,7 +4,6 @@ export * from './use-debounce';
 export * from './use-leads';
 export * from './use-filtered-navigation';
 export * from './use-routes';
-export * from './use-navigation-counts';
 export * from './use-url-filters';
 export * from './use-table-url-state';
 export * from './use-body-scroll-lock';

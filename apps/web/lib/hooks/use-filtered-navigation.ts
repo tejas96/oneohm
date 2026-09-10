@@ -20,7 +20,7 @@ import type { Gated, NavItem, NavSection, PanelConfig, RailNavItem } from '@/lib
  */
 export type GatedNavItem = Gated<Omit<NavItem, 'children'>> & { children?: GatedNavItem[] };
 export type GatedRailItem = Gated<RailNavItem>;
-export interface GatedSection extends Omit<NavSection, 'items'> {
+interface GatedSection extends Omit<NavSection, 'items'> {
   allowed: boolean;
   items: GatedNavItem[];
 }

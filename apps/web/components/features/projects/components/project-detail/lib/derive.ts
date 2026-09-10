@@ -24,7 +24,7 @@ import type { MilestoneBalance, ProjectLedgerSummary } from '@/lib/hooks/resourc
 // ============================================================================
 
 /** Local start-of-day in ms, or null when the value is absent or unparseable. */
-export function dayStart(value: string | Date | null | undefined): number | null {
+function dayStart(value: string | Date | null | undefined): number | null {
   if (!value) return null;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
@@ -188,7 +188,7 @@ export function milestoneTasksHref(projectPath: string, milestoneName: string): 
 // Journey
 // ============================================================================
 
-export interface JourneySegment {
+interface JourneySegment {
   key: string;
   name: string;
   status: MilestoneDisplayStatus;
@@ -296,10 +296,6 @@ export function waivedRemainderPaise(ledger: ProjectLedgerSummary): number {
 /** Milestones past their due date with money still owed on them. */
 export function overdueMilestones(ledger: ProjectLedgerSummary): MilestoneBalance[] {
   return ledger.milestones.filter((m) => isOpen(m) && m.daysOverdue > 0);
-}
-
-export function overduePaise(ledger: ProjectLedgerSummary): number {
-  return overdueMilestones(ledger).reduce((sum, m) => sum + m.balancePaise, 0);
 }
 
 /**

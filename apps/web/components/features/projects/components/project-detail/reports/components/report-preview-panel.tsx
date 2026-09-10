@@ -130,5 +130,3 @@ export function ReportPreviewPanel({ html, loading = false }: ReportPreviewPanel
     </Box>
   );
 }
-
-export { REPORT_A4_WIDTH_PX, REPORT_A4_HEIGHT_PX } from '../constants/report-a4.constants';

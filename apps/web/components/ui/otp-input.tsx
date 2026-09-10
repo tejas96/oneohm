@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-export interface OtpInputProps {
+interface OtpInputProps {
   /** Number of OTP digits */
   length?: number;
   /** Current OTP value */

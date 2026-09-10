@@ -16,7 +16,7 @@ import { IsDateString, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, Min } fro
  * coerces and `@IsIn` actually rejects.
  */
 
-export class LedgerRangeQueryDto {
+class LedgerRangeQueryDto {
   @ApiPropertyOptional({ description: 'Start of the period (inclusive)', example: '2026-07-01' })
   @IsDateString()
   @IsOptional()

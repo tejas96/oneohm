@@ -52,7 +52,7 @@ const ICON_TEXT_COLORS = {
   error: 'text-error',
 } as const;
 
-export interface EmptyStateProps
+interface EmptyStateProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof emptyStateVariants> {
   /** Custom icon to display */
@@ -147,7 +147,7 @@ EmptyState.displayName = 'EmptyState';
  */
 
 /** Generic no data state */
-export const NoData = React.forwardRef<
+const NoData = React.forwardRef<
   HTMLDivElement,
   Omit<EmptyStateProps, 'icon' | 'title'> & { title?: string }
 >(({ title = 'No data available', ...props }, ref) => (
@@ -189,19 +189,18 @@ export const NoSearchResults = React.forwardRef<HTMLDivElement, NoSearchResultsP
 NoSearchResults.displayName = 'NoSearchResults';
 
 /** No customers state */
-export const NoCustomers = React.forwardRef<
-  HTMLDivElement,
-  Omit<EmptyStateProps, 'icon' | 'title'>
->(({ ...props }, ref) => (
-  <EmptyState
-    ref={ref}
-    icon={<Users className="w-full h-full" />}
-    iconColor="primary"
-    title="No customers yet"
-    description="Your customer list is empty. Add your first customer to get started with lead management."
-    {...props}
-  />
-));
+const NoCustomers = React.forwardRef<HTMLDivElement, Omit<EmptyStateProps, 'icon' | 'title'>>(
+  ({ ...props }, ref) => (
+    <EmptyState
+      ref={ref}
+      icon={<Users className="w-full h-full" />}
+      iconColor="primary"
+      title="No customers yet"
+      description="Your customer list is empty. Add your first customer to get started with lead management."
+      {...props}
+    />
+  ),
+);
 NoCustomers.displayName = 'NoCustomers';
 
 /** Error state */
@@ -234,7 +233,7 @@ export const ErrorState = React.forwardRef<HTMLDivElement, ErrorStateProps>(
 ErrorState.displayName = 'ErrorState';
 
 /** Table empty state - compact for use inside tables */
-export const TableEmpty = React.forwardRef<
+const TableEmpty = React.forwardRef<
   HTMLDivElement,
   Omit<EmptyStateProps, 'icon' | 'variant'> & { icon?: React.ReactNode }
 >(({ icon, ...props }, ref) => (
@@ -249,7 +248,7 @@ export const TableEmpty = React.forwardRef<
 TableEmpty.displayName = 'TableEmpty';
 
 /** Compact no quotes state */
-export const NoQuotes = React.forwardRef<
+const NoQuotes = React.forwardRef<
   HTMLDivElement,
   Omit<EmptyStateProps, 'icon' | 'title' | 'variant'>
 >(({ ...props }, ref) => (
@@ -264,4 +263,4 @@ export const NoQuotes = React.forwardRef<
 ));
 NoQuotes.displayName = 'NoQuotes';
 
-export { EmptyState, emptyStateVariants };
+export { EmptyState };

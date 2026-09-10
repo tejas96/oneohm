@@ -22,7 +22,7 @@ import {
  * component, sx, gutterBottom, classes, children, etc.) — only MUI's own
  * `variant` prop is replaced by this semantic token union.
  */
-export type MUITypographyVariant =
+type MUITypographyVariant =
   | 'sectionTitle' // 0.875rem / 600 / text.primary  — section headings (Description, Activity, Checklist)
   | 'body' // 0.875rem / text.secondary       — body copy, alert paragraphs, activity labels
   | 'bodyPrimary' // 0.875rem / text.primary         — comment text, strong body copy

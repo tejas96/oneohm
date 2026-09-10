@@ -4,7 +4,7 @@ import { Box, Button } from '@mui/material';
 import { type JSX } from 'react';
 
 import type { DiscomAdmin } from '../hooks/use-discoms-admin';
-import { buildDiscomPreviewLabel, formatDiscomGeo } from '../utils/discom-display.util';
+import { formatDiscomGeo } from '../utils/discom-display.util';
 
 import { color, crm, radius, shadow } from '@/lib/theme/tokens';
 import { formatDate } from '@/lib/utils';
@@ -140,8 +140,4 @@ export function DiscomExpandedRow({ discom, onEdit }: DiscomExpandedRowProps): J
       </Box>
     </Box>
   );
-}
-
-export function buildDiscomExpandedTitle(discom: DiscomAdmin): string {
-  return buildDiscomPreviewLabel(discom) || discom.divisionName;
 }

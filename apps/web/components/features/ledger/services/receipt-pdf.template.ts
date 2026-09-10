@@ -251,7 +251,7 @@ export function generateReceiptHtml(data: ReceiptPdfData): string {
 </div>`;
 }
 
-export function getReceiptStyles(): string {
+function getReceiptStyles(): string {
   return `
   /* padding-bottom is load-bearing: html2canvas captures the element box, and
      the footer's own margin-top falls outside it — without this the last line

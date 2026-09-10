@@ -36,26 +36,6 @@ export function useMarkPropertyLost(): UseMutationResult<
   });
 }
 
-/** Close an enquiry that never got a site. */
-export function useMarkCustomerLost(): UseMutationResult<
-  unknown,
-  AxiosError,
-  { customerId: string; reason: string }
-> {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ customerId, reason }) => {
-      const { data } = await apiClient.post(`/customers/${customerId}/lost`, { reason });
-      return data;
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: followupKeys.all });
-      void queryClient.invalidateQueries({ queryKey: ['customers'] });
-      void queryClient.invalidateQueries({ queryKey: ['customer'] });
-    },
-  });
-}
-
 /**
  * Undo a lost mark. The site returns exactly to Active — the loss reason and
  * note are cleared server-side, not archived, so nothing that reads the

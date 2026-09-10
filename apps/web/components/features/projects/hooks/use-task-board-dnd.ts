@@ -16,7 +16,7 @@ import { PROJECT_TASKS_QUERY_KEY } from '../constants';
 import { useUpdateTask } from '@/components/features/tasks/hooks';
 import { showToast } from '@/components/ui/sonner';
 
-export interface DragState {
+interface DragState {
   isDragging: boolean;
   draggingTaskId: string | null;
   draggingFromStatus: string | null;
@@ -132,7 +132,7 @@ export function useTaskBoardDnd(): UseTaskBoardDndResult {
   return { dragState, activeDropColumn, setActiveDropColumn };
 }
 
-export const BOARD_DND_TASK_TYPE = 'task' as const;
+const BOARD_DND_TASK_TYPE = 'task' as const;
 
 /** Data payload attached to a draggable task card element. */
 export interface DraggableTaskData {
@@ -140,26 +140,4 @@ export interface DraggableTaskData {
   taskId: string;
   fromStatus: string;
   taskCompletionPct: number;
-}
-
-/** Data payload attached to a droppable column element. */
-export interface DroppableColumnData {
-  type: 'column';
-  toStatus: string;
-}
-
-/** Type guard for draggable task data. */
-export function isDraggableTaskData(data: unknown): data is DraggableTaskData {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    (data as Record<string, unknown>).type === BOARD_DND_TASK_TYPE
-  );
-}
-
-/** Type guard for droppable column data. */
-export function isDroppableColumnData(data: unknown): data is DroppableColumnData {
-  return (
-    typeof data === 'object' && data !== null && (data as Record<string, unknown>).type === 'column'
-  );
 }

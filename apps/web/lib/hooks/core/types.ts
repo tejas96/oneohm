@@ -1,4 +1,3 @@
-import type { UseMutationResult } from '@tanstack/react-query';
 import type { PaginationMeta } from '@tejas96/shared/types';
 
 // ── Filter Types ──────────────────────────────────────────────
@@ -96,13 +95,13 @@ export interface MutationConfig<T = unknown> {
   invalidateRelated?: readonly string[];
 }
 
-export interface OptimisticConfig<T> {
+interface OptimisticConfig<T> {
   create?: (payload: Partial<T>, list: T[]) => T[];
   update?: (id: string, payload: Partial<T>, list: T[]) => T[];
   delete?: (id: string, list: T[]) => T[];
 }
 
-export interface MutationToastConfig {
+interface MutationToastConfig {
   create?: { success?: string; error?: string };
   update?: { success?: string; error?: string };
   delete?: { success?: string; error?: string };
@@ -130,20 +129,6 @@ export interface FieldAvailabilityConfig {
 }
 
 // ── Companion Hook Types ──────────────────────────────────────
-
-export interface DeleteConfirmationOptions<T> {
-  mutation: UseMutationResult<unknown, unknown, string>;
-  getId: (item: T) => string;
-  /** @deprecated No longer used — kept for backward compatibility */
-  entityName?: string;
-  onSuccess?: () => void;
-}
-
-export interface ModalFormOptions<TForm extends Record<string, unknown>, TPayload = TForm> {
-  mutation: UseMutationResult<unknown, unknown, TPayload>;
-  transformPayload?: (data: TForm) => TPayload;
-  onSuccess?: () => void;
-}
 
 // ── Pagination State ──────────────────────────────────────────
 

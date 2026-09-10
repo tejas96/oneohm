@@ -184,14 +184,6 @@ export function buildFunnelAndStatsAggregationSql(parts: CohortQueryParts): stri
   `;
 }
 
-export function buildFunnelAggregationSql(parts: CohortQueryParts): string {
-  return buildFunnelAndStatsAggregationSql(parts);
-}
-
-export function buildStatsAggregationSql(parts: CohortQueryParts): string {
-  return buildFunnelAndStatsAggregationSql(parts);
-}
-
 export function buildLeaderboardSql(parts: CohortQueryParts): string {
   return `
     ${parts.cteSql}

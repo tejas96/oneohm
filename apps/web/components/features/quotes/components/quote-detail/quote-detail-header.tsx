@@ -1,6 +1,7 @@
 'use client';
 
 import AddIcon from '@mui/icons-material/Add';
+import BlockIcon from '@mui/icons-material/Block';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
@@ -13,6 +14,7 @@ import React, { useCallback, useState } from 'react';
 import type { QuoteDetail } from '../../hooks/types';
 import { useDeleteQuote, usePropertyLockStatus } from '../../hooks/use-quotes';
 import { QuoteStatusDropdown } from '../quote-status-dropdown';
+import { VoidQuoteDialog } from '../void-quote-dialog';
 
 import { Can } from '@/components/shared/guards';
 import {
@@ -74,6 +76,7 @@ export const QuoteDetailHeader = React.memo(
 
     const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
     const [deleteOpen, setDeleteOpen] = useState(false);
+    const [voidOpen, setVoidOpen] = useState(false);
 
     const isPropertyLocked = lockStatus?.locked && quote.status !== QuoteStatus.ACCEPTED;
     const lockReason = lockStatus?.acceptedQuoteNumber
@@ -116,7 +119,28 @@ export const QuoteDetailHeader = React.memo(
       setDeleteOpen(false);
     }, [deleteQuote, quote.id, router]);
 
-    const canDelete = quote.status !== QuoteStatus.ACCEPTED;
+    const handleVoidClick = useCallback(() => {
+      handleMenuClose();
+      setVoidOpen(true);
+    }, [handleMenuClose]);
+
+    /*
+      Delete and Void are the same intent at two different points in a quote's
+      life, so the menu offers exactly one of them and never both.
+
+      A draft has never left the office: deleting it destroys the whole quote
+      and nothing is left dangling. Once the quote is sent, the customer holds
+      the PDF and a notification linking to it, and a delete can reach neither -
+      it just turns their link into a 404 while they keep the price. Void is the
+      honest move there: the quote stays, marked dead, with the reason on it.
+
+      A voided quote offers neither. It is already terminal, and there is no
+      un-void.
+    */
+    const isVoided = Boolean(quote.voidedAt);
+    const canDelete = !isVoided && quote.status === QuoteStatus.DRAFT;
+    const canVoid =
+      !isVoided && (quote.status === QuoteStatus.SENT || quote.status === QuoteStatus.VIEWED);
 
     // "Create New Quote" navigates to the builder, so it is a create, not an
     // edit. Sending on WhatsApp puts the quote in front of the customer, which
@@ -343,6 +367,14 @@ export const QuoteDetailHeader = React.memo(
                     <ListItemText>Delete Quote</ListItemText>
                   </MenuItem>
                 )}
+                {canVoid && (
+                  <MenuItem onClick={handleVoidClick} sx={{ color: 'error.main' }}>
+                    <ListItemIcon>
+                      <BlockIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText>Void Quote</ListItemText>
+                  </MenuItem>
+                )}
               </Can>
             </Menu>
           </div>
@@ -370,6 +402,14 @@ export const QuoteDetailHeader = React.memo(
             </Button>
           </MUIDialogFooter>
         </MUIDialog>
+
+        <VoidQuoteDialog
+          open={voidOpen}
+          onOpenChange={setVoidOpen}
+          quoteId={quote.id}
+          quoteNumber={quote.quoteNumber}
+          customerName={quote.customerName}
+        />
       </div>
     );
   },

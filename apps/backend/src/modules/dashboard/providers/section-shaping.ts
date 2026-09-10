@@ -30,7 +30,7 @@ export interface ProviderRow {
  * enforce it, because backend RBAC does not exist in this app. The web mutes
  * the control and opens the access dialog.
  */
-export const GATE_FOR_ACTION: Record<string, string | null> = {
+const GATE_FOR_ACTION: Record<string, string | null> = {
   add_property: 'properties.create',
   open_property: 'properties.view',
   complete_survey: 'properties.edit',

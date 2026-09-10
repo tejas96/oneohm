@@ -31,7 +31,7 @@
  * sentinel at. Inventing a UUID would violate an FK to `users` if one is ever
  * added. (`ledger_entries.created_by` IS NOT NULL — verified zero NULLs there.)
  */
-export const CREATE_PAYMENT_MILESTONES = `
+const CREATE_PAYMENT_MILESTONES = `
   CREATE TABLE IF NOT EXISTS payment_milestones (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id         UUID NOT NULL,
@@ -94,13 +94,13 @@ export const CREATE_PAYMENT_MILESTONES = `
  * DEFERRABLE so a reorder transaction can swap display_order values without
  * tripping the constraint mid-statement.
  */
-export const CREATE_PAYMENT_MILESTONES_ORDER_UNIQUE = `
+const CREATE_PAYMENT_MILESTONES_ORDER_UNIQUE = `
   ALTER TABLE payment_milestones
     ADD CONSTRAINT uq_payment_milestones_project_order
     UNIQUE (project_id, display_order) DEFERRABLE INITIALLY IMMEDIATE
 `;
 
-export const CREATE_PAYMENT_MILESTONES_INDEXES = [
+const CREATE_PAYMENT_MILESTONES_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_payment_milestones_project_order
      ON payment_milestones (project_id, display_order)`,
   `CREATE INDEX IF NOT EXISTS idx_payment_milestones_due_active
@@ -109,7 +109,7 @@ export const CREATE_PAYMENT_MILESTONES_INDEXES = [
      ON payment_milestones (organization_id)`,
 ];
 
-export const CREATE_PAYMENT_MILESTONES_UPDATED_AT_TRIGGER = `
+const CREATE_PAYMENT_MILESTONES_UPDATED_AT_TRIGGER = `
   CREATE TRIGGER trg_payment_milestones_updated_at
     BEFORE UPDATE ON payment_milestones
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
@@ -123,7 +123,7 @@ export const CREATE_PAYMENT_MILESTONES_UPDATED_AT_TRIGGER = `
  * `SUM(amount_paise)` is automatically net of reversals everywhere, with no
  * status machine and no special-casing.
  */
-export const CREATE_LEDGER_ENTRIES = `
+const CREATE_LEDGER_ENTRIES = `
   CREATE TABLE IF NOT EXISTS ledger_entries (
     id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id        UUID NOT NULL,
@@ -183,7 +183,7 @@ export const CREATE_LEDGER_ENTRIES = `
   )
 `;
 
-export const CREATE_LEDGER_ENTRIES_INDEXES = [
+const CREATE_LEDGER_ENTRIES_INDEXES = [
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_ledger_entries_entry_no
      ON ledger_entries (organization_id, entry_no)`,
   // an entry may be reversed at most once
@@ -213,7 +213,7 @@ export const CREATE_LEDGER_ENTRIES_INDEXES = [
  * below, which make a cross-project allocation impossible at the database level
  * rather than by code review.
  */
-export const CREATE_LEDGER_ALLOCATIONS = `
+const CREATE_LEDGER_ALLOCATIONS = `
   CREATE TABLE IF NOT EXISTS ledger_allocations (
     id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     entry_id     UUID   NOT NULL,
@@ -235,7 +235,7 @@ export const CREATE_LEDGER_ALLOCATIONS = `
   )
 `;
 
-export const CREATE_LEDGER_ALLOCATIONS_INDEXES = [
+const CREATE_LEDGER_ALLOCATIONS_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_ledger_allocations_milestone
      ON ledger_allocations (milestone_id) INCLUDE (amount_paise)`,
   `CREATE INDEX IF NOT EXISTS idx_ledger_allocations_entry
@@ -257,7 +257,7 @@ export const CREATE_LEDGER_ALLOCATIONS_INDEXES = [
  * That is legitimate (genuine overpayment) and 114 migrated projects carry it,
  * so it is surfaced as `over_allocated_paise` data rather than blocked.
  */
-export const CREATE_ALLOCATION_GUARD_FUNCTION = `
+const CREATE_ALLOCATION_GUARD_FUNCTION = `
   CREATE OR REPLACE FUNCTION ledger_assert_entry_not_over_allocated()
   RETURNS trigger AS $$
   DECLARE
@@ -289,7 +289,7 @@ export const CREATE_ALLOCATION_GUARD_FUNCTION = `
   $$ LANGUAGE plpgsql
 `;
 
-export const CREATE_ALLOCATION_GUARD_TRIGGER = `
+const CREATE_ALLOCATION_GUARD_TRIGGER = `
   CREATE CONSTRAINT TRIGGER trg_ledger_allocations_not_over_allocated
     AFTER INSERT ON ledger_allocations
     DEFERRABLE INITIALLY DEFERRED

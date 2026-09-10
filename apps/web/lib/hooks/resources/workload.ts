@@ -5,7 +5,7 @@ import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';
 
-export interface WorkloadStep {
+interface WorkloadStep {
   stepId: string;
   stepName: string;
   /** Open right now. NOT scoped to the date range. */
@@ -68,7 +68,7 @@ export interface WorkloadFilters {
   department?: string;
 }
 
-export const workloadKeys = {
+const workloadKeys = {
   root: () => ['workload'] as const,
   list: (filters: WorkloadFilters) => [...workloadKeys.root(), filters] as const,
   bottlenecks: () => [...workloadKeys.root(), 'bottlenecks'] as const,

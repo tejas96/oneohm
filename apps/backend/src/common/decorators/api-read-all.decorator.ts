@@ -8,16 +8,6 @@ import {
 } from '@nestjs/swagger';
 
 /**
- * Pagination response wrapper type for Swagger
- */
-export class PaginatedResponseDto<T> {
-  items!: T[];
-  total!: number;
-  page!: number;
-  limit!: number;
-}
-
-/**
  * API Read All Decorator
  * Combines common decorators for GET/ (list) endpoints with pagination
  *

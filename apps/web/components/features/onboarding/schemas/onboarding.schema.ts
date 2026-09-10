@@ -60,7 +60,7 @@ const requiredFirstFollowup = {
 const optionalPropertyShape = addPropertySchema.partial().shape;
 
 /** Full run: customer (unless reusing one) + property. */
-export const onboardingCreateSchema = z
+const onboardingCreateSchema = z
   .object({
     ...wizardOnlyFields,
     ...requiredFirstFollowup,
@@ -88,21 +88,21 @@ export const onboardingCreateSchema = z
   });
 
 /** Editing a customer: only their own fields are required. */
-export const onboardingCustomerSchema = z.object({
+const onboardingCustomerSchema = z.object({
   ...wizardOnlyFields,
   customer: createCustomerProfileSchema,
   ...optionalPropertyShape,
 });
 
 /** Editing a site: property fields only, no new followup demanded. */
-export const onboardingPropertySchema = z.object({
+const onboardingPropertySchema = z.object({
   ...wizardOnlyFields,
   customer: createCustomerProfileSchema.optional(),
   ...addPropertySchema.shape,
 });
 
 /** Adding a site to a known customer — a new lead, so a first followup is required. */
-export const onboardingCreateSiteSchema = z.object({
+const onboardingCreateSiteSchema = z.object({
   ...wizardOnlyFields,
   ...requiredFirstFollowup,
   customer: createCustomerProfileSchema.optional(),

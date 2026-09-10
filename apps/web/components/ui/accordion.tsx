@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 
 const Accordion = AccordionPrimitive.Root;
 
-export interface AccordionItemProps
+interface AccordionItemProps
   extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item> {
   /** Visual variant */
   variant?: 'default' | 'flush' | 'separated';
@@ -42,7 +42,7 @@ const AccordionItem = React.forwardRef<
 ));
 AccordionItem.displayName = 'AccordionItem';
 
-export interface AccordionTriggerProps
+interface AccordionTriggerProps
   extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger> {
   /** Optional icon to display before title */
   icon?: React.ReactNode;
