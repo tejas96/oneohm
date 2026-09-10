@@ -132,11 +132,9 @@ export function useTaskBoardDnd(): UseTaskBoardDndResult {
   return { dragState, activeDropColumn, setActiveDropColumn };
 }
 
-const BOARD_DND_TASK_TYPE = 'task' as const;
-
 /** Data payload attached to a draggable task card element. */
 export interface DraggableTaskData {
-  type: typeof BOARD_DND_TASK_TYPE;
+  type: 'task';
   taskId: string;
   fromStatus: string;
   taskCompletionPct: number;
