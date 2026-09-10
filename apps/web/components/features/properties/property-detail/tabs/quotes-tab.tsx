@@ -58,6 +58,18 @@ const LIVE_STATUSES: readonly QuoteStatus[] = [
   QuoteStatus.VIEWED,
 ];
 
+/**
+ * A voided quote, whatever its status says.
+ *
+ * Voiding leaves `status` untouched on purpose, so a withdrawn quote still
+ * reads `sent` and a withdrawn signed one still reads `accepted`. `voidedAt`
+ * is the only field that says it is dead, and every surface that presents a
+ * quote as live has to read it.
+ *
+ * Presented `muted`, not `danger` — the same treatment `QuoteStatusDropdown`
+ * gives it. A void is a record, not a failure, and painting it red would rank
+ * it above the genuine rejections in the same column.
+ */
 interface Validity {
   label: string;
   tone: DetailTone;
@@ -71,10 +83,16 @@ interface Validity {
  * the one date a rep chases, when the price stops being real, was invisible on
  * the site's own quote list.
  */
-function getValidity(validUntil: string | undefined, status: QuoteStatus): Validity | null {
+function getValidity(
+  validUntil: string | undefined,
+  status: QuoteStatus,
+  /* A voided quote has no clock left to run: see the note above the pill. It
+     is passed in rather than read off `status`, which a void never changes. */
+  isVoided = false,
+): Validity | null {
   if (!validUntil) return null;
   const label = formatDate(validUntil);
-  if (!LIVE_STATUSES.includes(status)) {
+  if (isVoided || !LIVE_STATUSES.includes(status)) {
     return { label, tone: 'neutral', emphasis: false };
   }
   const daysLeft = Math.ceil((new Date(validUntil).getTime() - Date.now()) / DAY_MS);
@@ -187,8 +205,11 @@ export function QuotesTab({
             <TableBody>
               {quotes.map((quote) => {
                 const href = buildRoute(ROUTES.QUOTES.DETAIL, { id: quote.id });
-                const tone: DetailTone = QUOTE_STATUS_TONE[quote.status] ?? 'neutral';
-                const validity = getValidity(quote.validUntil, quote.status);
+                const isVoided = Boolean(quote.voidedAt);
+                const tone: DetailTone = isVoided
+                  ? 'neutral'
+                  : (QUOTE_STATUS_TONE[quote.status] ?? 'neutral');
+                const validity = getValidity(quote.validUntil, quote.status, isVoided);
                 const hasSubsidy = Boolean(quote.subsidyAmount && quote.subsidyAmount > 0);
                 const displayKw = quote.systemSizeKw;
 
@@ -258,7 +279,18 @@ export function QuotesTab({
                     </TableCell>
 
                     <TableCell>
-                      <TonePill label={toTitleLabel(quote.status)} tone={tone} dot />
+                      {isVoided ? (
+                        <Tooltip
+                          arrow
+                          title={`Voided${quote.voidReason ? ` \u2014 ${quote.voidReason}` : ''}. Was: ${toTitleLabel(quote.status)}.`}
+                        >
+                          <span>
+                            <TonePill label="Voided" tone="neutral" dot />
+                          </span>
+                        </Tooltip>
+                      ) : (
+                        <TonePill label={toTitleLabel(quote.status)} tone={tone} dot />
+                      )}
                     </TableCell>
 
                     <TableCell>

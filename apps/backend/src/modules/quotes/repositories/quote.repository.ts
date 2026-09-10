@@ -151,39 +151,68 @@ export class QuoteRepository {
       qb.andWhere('quote.quoteDate <= CAST(:toDate AS date)', { toDate: query.toDate });
     }
 
-    // Fetch all matching quotes ordered by createdAt desc, then keep one row per property.
-    // Rule: if a property has any accepted quote, show the latest accepted quote; otherwise
-    // show the latest quote by creation date.
+    /*
+      Fetch all matching quotes ordered by createdAt desc, then keep one row per
+      property — the one that best represents the roof; see `rank` below.
+
+      That collapse is a LIST rule — the quotes page shows each roof once,
+      represented by its current quote — and it is skipped when the caller has
+      already named a property (see `rows` below).
+    */
     const allMatched = await qb
       .orderBy('quote.createdAt', 'DESC')
       .addOrderBy('quote.id', 'DESC')
       .getMany();
 
+    /*
+      Which quote stands for a roof. Highest wins; ties go to the one already
+      held, which is the newer, because `allMatched` is newest-first.
+
+        2  a LIVE acceptance — the signed price is the roof's real price,
+           whatever has been drafted since.
+        1  any other live quote.
+        0  a voided one.
+
+      A voided quote scores below everything live, and that is the whole point
+      of the rank. `status` cannot express this: voiding deliberately leaves it
+      alone, so a withdrawn quote still reads `sent` and a withdrawn signed one
+      still reads `accepted`. Ordered by date alone, a roof quoted again after
+      a withdrawal was represented on the quotes list by the dead quote, and
+      the live one it had been replaced with was not shown at all.
+
+      Zero rather than excluded: a roof whose every quote has been withdrawn
+      still has to appear on the list, or it silently leaves the pipeline.
+    */
+    const rank = (quote: QuoteEntity): number => {
+      if (quote.voidedAt) return 0;
+      return quote.status === QuoteStatus.ACCEPTED ? 2 : 1;
+    };
+
     const latestPerProperty = new Map<string, QuoteEntity>();
     for (const quote of allMatched) {
       if (!quote.propertyId) continue;
       const existing = latestPerProperty.get(quote.propertyId);
-      if (!existing) {
-        latestPerProperty.set(quote.propertyId, quote);
-        continue;
-      }
-
-      // A voided quote still carries `status = 'accepted'` (voiding leaves
-      // `status` alone), so "accepted" here must mean the LIVE contract -
-      // same rule as the accepted-first ordering in findAllByPropertyId
-      // below. Otherwise a dead accepted quote could outrank and replace a
-      // newer, still-live, non-accepted quote as the only row shown for the
-      // property.
-      const existingAccepted = existing.status === QuoteStatus.ACCEPTED && !existing.voidedAt;
-      const candidateAccepted = quote.status === QuoteStatus.ACCEPTED && !quote.voidedAt;
-      if (!existingAccepted && candidateAccepted) {
+      if (!existing || rank(quote) > rank(existing)) {
         latestPerProperty.set(quote.propertyId, quote);
       }
     }
 
-    const groupedQuotes = Array.from(latestPerProperty.values());
+    /*
+      Asking for ONE roof's quotes and getting one row back is not a summary,
+      it is a truncation. The collapse above exists so the list page shows each
+      roof once; with `propertyId` already filtering to a single roof it has
+      nothing left to collapse and only hides that roof's history.
+
+      It hid real things. The property page's Quotes tab read "QUOTES 1" for a
+      site with five, and the header above it took its system size and quote
+      value from whichever single row survived — which, ordered by `createdAt`
+      alone, could be a quote the office had already voided. The tab and the
+      header disagreed with the version list on the quote page, which uses
+      `findAllByPropertyId` and has always returned all of them.
+    */
+    const rows = query.propertyId ? allMatched : Array.from(latestPerProperty.values());
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
-    groupedQuotes.sort((a, b) => {
+    rows.sort((a, b) => {
       const dir = sortDirection === 'ASC' ? 1 : -1;
       const av = a.versions[0];
       const bv = b.versions[0];
@@ -213,10 +242,10 @@ export class QuoteRepository {
       }
     });
 
-    const total = groupedQuotes.length;
+    const total = rows.length;
     const start = (query.page - 1) * query.limit;
     const end = start + query.limit;
-    return [groupedQuotes.slice(start, end), total];
+    return [rows.slice(start, end), total];
   }
 
   /**

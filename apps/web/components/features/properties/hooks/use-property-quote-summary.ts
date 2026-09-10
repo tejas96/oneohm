@@ -24,11 +24,17 @@ export interface PropertyQuoteSummary {
    * The quote that speaks for this site: the accepted one if there is one,
    * otherwise the most recent. An accepted quote outranks a later draft —
    * the signed price is the real price no matter what has been drafted since.
+   *
+   * Voided quotes are skipped, never merely demoted, so a site whose only
+   * quote has been withdrawn is `null` here and reads as having no quote —
+   * which it does. This mirrors `findLatestByPropertyIds` on the server,
+   * which feeds the same `latestQuote*` fields from the list endpoint; the
+   * two must not disagree about what the current quote is.
    */
   headline: CustomerQuote | null;
-  /** Present only once a quote has actually been accepted. */
+  /** Present only once a quote has actually been accepted, and not voided since. */
   accepted: CustomerQuote | null;
-  /** Every quote for the site, newest first. */
+  /** Every quote for the site, newest first. Voided ones included — this is the history. */
   quotes: CustomerQuote[];
   count: number;
   isLoading: boolean;
@@ -49,13 +55,29 @@ export function usePropertyQuoteSummary(
     );
   }, [data?.data]);
 
+  /*
+    `!quote.voidedAt` on both lookups, because voiding deliberately leaves
+    `status` alone: a withdrawn quote still reads `accepted`, and a withdrawn
+    draft still reads `draft`. Reading `status` by itself let a dead price
+    stand as the site's headline — the property page showed "Quote value
+    ₹5,16,697" from a quote the office had already taken back, directly above
+    a table row correctly marked Voided.
+
+    Cancelling a project is what voids an accepted quote, and that is exactly
+    the moment the roof is free again, so a voided acceptance must not keep
+    speaking for the site either.
+  */
+  const isLive = (quote: CustomerQuote): boolean => !quote.voidedAt;
+
   const accepted = useMemo(
-    () => quotes.find((quote) => quote.status === QuoteStatus.ACCEPTED) ?? null,
+    () => quotes.find((quote) => quote.status === QuoteStatus.ACCEPTED && isLive(quote)) ?? null,
     [quotes],
   );
 
+  const latestLive = useMemo(() => quotes.find(isLive) ?? null, [quotes]);
+
   return {
-    headline: accepted ?? quotes[0] ?? null,
+    headline: accepted ?? latestLive,
     accepted,
     quotes,
     count: quotes.length,

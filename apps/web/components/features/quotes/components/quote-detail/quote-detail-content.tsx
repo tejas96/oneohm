@@ -309,7 +309,11 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
           void handleDownloadPdf();
         }}
         canSendWhatsapp={canSendWhatsapp}
-        showWhatsappButton={quote.status === QuoteStatus.SENT}
+        /* Hidden on a voided quote for the same reason Convert to Project is:
+           the backend refuses to send one, so the button only produces an
+           error. `status` alone cannot see it — voiding leaves `status` at
+           `sent`, which is exactly the value this test looks for. */
+        showWhatsappButton={quote.status === QuoteStatus.SENT && !quote.voidedAt}
         whatsappLoading={whatsappLoading}
         whatsappBlockedReason={whatsappBlockedReason}
         whatsappLabel="Resend via WhatsApp"
