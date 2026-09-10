@@ -14,7 +14,7 @@ const labelVariants = cva(
   'text-xs font-medium leading-none text-foreground-secondary peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
 );
 
-export interface LabelProps
+interface LabelProps
   extends React.LabelHTMLAttributes<HTMLLabelElement>,
     VariantProps<typeof labelVariants> {
   /** Show red asterisk for required fields */
@@ -31,4 +31,4 @@ const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
 );
 Label.displayName = 'Label';
 
-export { Label, labelVariants };
+export { Label };

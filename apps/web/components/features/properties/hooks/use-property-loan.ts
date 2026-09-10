@@ -6,7 +6,7 @@ import type { AxiosError } from 'axios';
 import type { CustomerLoanApplication } from '@/components/features/customers/hooks';
 import { apiClient } from '@/lib/api/client';
 
-export const propertyLoanKeys = {
+const propertyLoanKeys = {
   all: () => ['property-loans'] as const,
   detail: (propertyId: string) => [...propertyLoanKeys.all(), propertyId] as const,
 };

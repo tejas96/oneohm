@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 // Column Configuration
 // ============================================================================
 
-export type ColumnType = 'string' | 'number' | 'date' | 'boolean';
+type ColumnType = 'string' | 'number' | 'date' | 'boolean';
 export type FilterType = 'text' | 'select' | 'date' | 'range';
 export type SortDirection = 'asc' | 'desc';
 
@@ -13,7 +13,7 @@ export interface FilterState {
   [field: string]: unknown;
 }
 
-export interface CellParams<TRow = Record<string, unknown>> {
+interface CellParams<TRow = Record<string, unknown>> {
   row: TRow;
   value: unknown;
   field: string;
@@ -93,7 +93,7 @@ export type TableFilterModel = FilterState;
 // Pagination
 // ============================================================================
 
-export type PaginationMode = 'server' | 'client';
+type PaginationMode = 'server' | 'client';
 
 // ============================================================================
 // Row Selection / Bulk Actions

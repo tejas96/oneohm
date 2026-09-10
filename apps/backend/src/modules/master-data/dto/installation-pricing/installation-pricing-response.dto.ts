@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { InstallationCostComponents } from '@tejas96/shared/types';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';
 
@@ -68,23 +68,4 @@ export class InstallationPricingResponseDto {
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   @Expose()
   updatedAt!: Date;
-}
-
-export class InstallationPricingListResponseDto {
-  @ApiProperty({ type: [InstallationPricingResponseDto] })
-  @Expose()
-  @Type(() => InstallationPricingResponseDto)
-  data!: InstallationPricingResponseDto[];
-
-  @ApiProperty({ example: 100 })
-  @Expose()
-  total!: number;
-
-  @ApiProperty({ example: 1 })
-  @Expose()
-  page!: number;
-
-  @ApiProperty({ example: 20 })
-  @Expose()
-  limit!: number;
 }

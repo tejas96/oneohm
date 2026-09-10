@@ -12,7 +12,7 @@ import { buildRoute, ROUTES } from '@/lib/config/routes';
 // Types
 // ============================================================================
 
-export interface OpportunityItem {
+interface OpportunityItem {
   id: string;
   customer: string;
   value: number;

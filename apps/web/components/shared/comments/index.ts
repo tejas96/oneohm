@@ -1,2 +1,0 @@
-// Export comment components
-export {};

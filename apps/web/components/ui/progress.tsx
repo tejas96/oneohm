@@ -47,7 +47,7 @@ const indicatorVariants = cva('h-full rounded-full transition-all', {
   },
 });
 
-export interface ProgressProps
+interface ProgressProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'color'>,
     VariantProps<typeof progressVariants>,
     VariantProps<typeof indicatorVariants> {
@@ -98,7 +98,7 @@ Progress.displayName = 'Progress';
  * ProgressWithLabel Component
  * Progress bar with external label showing percentage
  */
-export interface ProgressWithLabelProps extends Omit<ProgressProps, 'showLabel'> {
+interface ProgressWithLabelProps extends Omit<ProgressProps, 'showLabel'> {
   label?: string;
 }
 
@@ -130,7 +130,7 @@ const CIRCULAR_CONFIG = {
   lg: { size: 128, radius: 56, strokeWidth: 8 },
 } as const;
 
-export interface CircularProgressProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CircularProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: number;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'primary' | 'success' | 'warning' | 'error' | 'info';
@@ -217,7 +217,7 @@ CircularProgress.displayName = 'CircularProgress';
  * SegmentedProgress Component
  * Multi-step progress indicator
  */
-export interface SegmentedProgressProps extends React.HTMLAttributes<HTMLDivElement> {
+interface SegmentedProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   steps: Array<{
     label: string;
     status: 'complete' | 'current' | 'pending';
@@ -256,11 +256,4 @@ const SegmentedProgress = React.forwardRef<HTMLDivElement, SegmentedProgressProp
 );
 SegmentedProgress.displayName = 'SegmentedProgress';
 
-export {
-  Progress,
-  progressVariants,
-  indicatorVariants,
-  ProgressWithLabel,
-  CircularProgress,
-  SegmentedProgress,
-};
+export { Progress };

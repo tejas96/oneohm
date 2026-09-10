@@ -32,7 +32,7 @@
  */
 
 /** Must return zero rows before M3 runs. */
-export const ASSERT_NO_CANCELLED_TERMS = `
+const ASSERT_NO_CANCELLED_TERMS = `
   DO $$
   DECLARE n INTEGER;
   BEGIN
@@ -47,7 +47,7 @@ export const ASSERT_NO_CANCELLED_TERMS = `
 `;
 
 /** Must return zero rows before M3 runs — a non-positive amount cannot be represented. */
-export const ASSERT_NO_NONPOSITIVE_TERM_AMOUNTS = `
+const ASSERT_NO_NONPOSITIVE_TERM_AMOUNTS = `
   DO $$
   DECLARE n INTEGER;
   BEGIN
@@ -61,7 +61,7 @@ export const ASSERT_NO_NONPOSITIVE_TERM_AMOUNTS = `
   END $$
 `;
 
-export const BACKFILL_PAYMENT_MILESTONES = `
+const BACKFILL_PAYMENT_MILESTONES = `
   INSERT INTO payment_milestones (
     id, organization_id, project_id,
     source, source_quote_version_id,
@@ -108,7 +108,7 @@ export const BACKFILL_PAYMENT_MILESTONES = `
  * the entire M1-M7 transaction on a raw constraint name instead of failing a
  * readable gate. Report it up front rather than discovering it at cutover.
  */
-export const ASSERT_PERCENTAGES_IN_RANGE = `
+const ASSERT_PERCENTAGES_IN_RANGE = `
   DO $$
   DECLARE n INTEGER;
   BEGIN

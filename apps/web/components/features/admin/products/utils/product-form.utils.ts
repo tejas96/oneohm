@@ -2,7 +2,7 @@ import { normalizeStructureTypeCode } from '@tejas96/shared/utils';
 
 import type { ProductFormData } from '../schemas/product.schema';
 
-export const MOUNTING_STRUCTURE_PRODUCT_TYPE_CODE = 'mounting_structure';
+const MOUNTING_STRUCTURE_PRODUCT_TYPE_CODE = 'mounting_structure';
 
 export const STRUCTURE_TYPE_FIELD = 'specifications.structure_type' as const;
 

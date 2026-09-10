@@ -25,7 +25,7 @@ export interface CustomerLoanApplication {
   };
 }
 
-export const customerLoanKeys = {
+const customerLoanKeys = {
   all: () => ['customer-loans'] as const,
   byCustomer: (customerId: string) => [...customerLoanKeys.all(), customerId] as const,
 };

@@ -1,4 +1,1 @@
-export {
-  createCustomerProfileSchema,
-  type CreateCustomerProfileFormData,
-} from '@tejas96/shared/schemas';
+export { type CreateCustomerProfileFormData } from '@tejas96/shared/schemas';

@@ -16,7 +16,7 @@
  * Idempotent by construction: guarded on `IS NULL`, so re-running is a no-op.
  * Deliberately never picks the latest version — that is the drift being fixed.
  */
-export const REPIN_NULL_CONTRACT_QUOTE_VERSIONS = `
+const REPIN_NULL_CONTRACT_QUOTE_VERSIONS = `
   UPDATE projects p
      SET contract_quote_version_id = COALESCE(
        (SELECT t.source_quote_version_id
@@ -50,7 +50,7 @@ export const REPIN_NULL_CONTRACT_QUOTE_VERSIONS = `
  * created without a quote, and failing the migration on a data shape we have
  * not audited across every environment is not worth the strictness.
  */
-export const ASSERT_CONTRACT_VERSION_PINNED = `
+const ASSERT_CONTRACT_VERSION_PINNED = `
   DO $$
   DECLARE unpinned INT;
   BEGIN

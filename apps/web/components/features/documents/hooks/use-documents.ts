@@ -8,11 +8,8 @@
 export {
   useDocumentsByEntity as useDocuments,
   useDocumentsByProperty,
-  useDocumentsByEntityBatch,
   useUploadDocument,
   useUploadDocumentsBulk,
-  useUpdateDocument,
   useDeleteDocument,
   documentKeys,
-  type DeleteDocumentInput,
 } from '@/lib/hooks/resources/documents';

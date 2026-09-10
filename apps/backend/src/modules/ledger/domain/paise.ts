@@ -49,17 +49,6 @@ export function paiseToRupees(paise: number): number {
   return paise / 100;
 }
 
-/** Format paise for display with Indian digit grouping, e.g. `₹1,23,456.78`. */
-export function formatPaise(paise: number): string {
-  assertInteger(paise, 'formatPaise');
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(paise / 100);
-}
-
 /**
  * Split a total across percentage weights so the parts sum **exactly** to the
  * total.

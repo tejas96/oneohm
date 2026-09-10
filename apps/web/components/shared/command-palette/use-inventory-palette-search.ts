@@ -44,7 +44,7 @@ export type InventoryPaletteHit = InventorySearchHit & {
   href: string;
 };
 
-export interface InventoryPaletteGroup {
+interface InventoryPaletteGroup {
   type: InventorySearchType;
   /** Heading rendered above the group. */
   label: string;

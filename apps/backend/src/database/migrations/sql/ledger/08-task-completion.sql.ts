@@ -21,7 +21,7 @@
  * one-time migration, not a query path.
  */
 
-export const ADD_TASK_COMPLETED_AT = `
+const ADD_TASK_COMPLETED_AT = `
   ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ
 `;
 
@@ -33,7 +33,7 @@ export const ADD_TASK_COMPLETED_AT = `
  * predates activity logging get no date — deliberately NULL rather than a
  * fabricated `updated_at`, so a KPI never counts a completion it cannot evidence.
  */
-export const BACKFILL_TASK_COMPLETED_AT = `
+const BACKFILL_TASK_COMPLETED_AT = `
   UPDATE project_tasks t
      SET completed_at = src.completed_at
     FROM (
@@ -50,14 +50,14 @@ export const BACKFILL_TASK_COMPLETED_AT = `
      AND t.completed_at IS NULL
 `;
 
-export const CREATE_TASK_COMPLETED_AT_INDEX = `
+const CREATE_TASK_COMPLETED_AT_INDEX = `
   CREATE INDEX IF NOT EXISTS idx_project_tasks_completed_at
     ON project_tasks (completed_at)
     WHERE deleted_at IS NULL AND completed_at IS NOT NULL
 `;
 
 /** Speeds the milestone-name join used by the completion view. */
-export const CREATE_TASK_MILESTONE_INDEX = `
+const CREATE_TASK_MILESTONE_INDEX = `
   CREATE INDEX IF NOT EXISTS idx_project_tasks_project_milestone
     ON project_tasks (project_id, milestone_name)
     WHERE deleted_at IS NULL AND milestone_name IS NOT NULL

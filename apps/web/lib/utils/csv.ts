@@ -8,8 +8,6 @@
  * cleanly.
  */
 
-export const CSV_CAP = 5000;
-
 export interface CsvColumn<T> {
   header: string;
   accessor: (row: T) => string | number | boolean | null | undefined;

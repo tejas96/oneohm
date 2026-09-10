@@ -1,9 +1,7 @@
 'use client';
 
 import {
-  createResourceKeys,
   defineResource,
-  useResourceDetail,
   useResourceList,
   useResourceStats,
   type BaseFilters,
@@ -66,8 +64,6 @@ defineResource<InventoryTransaction>(
 // Query keys
 // ============================================================================
 
-export const inventoryTransactionKeys = createResourceKeys('inventory-transactions');
-
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -86,14 +82,6 @@ export function useInventoryTransactions(
     },
     options,
   );
-}
-
-export function useInventoryTransaction(id: string) {
-  return useResourceDetail<InventoryTransaction>({
-    resource: 'inventory-transactions',
-    endpoint: '/inventory-transactions',
-    id,
-  });
 }
 
 export function useInventoryTransactionStats() {

@@ -7,7 +7,7 @@ import { Input, type InputProps } from './input';
 
 import { cn } from '@/lib/utils';
 
-export interface PasswordInputProps extends Omit<InputProps, 'type'> {
+interface PasswordInputProps extends Omit<InputProps, 'type'> {
   /** Show password strength meter */
   showStrength?: boolean;
   /** Custom strength labels */

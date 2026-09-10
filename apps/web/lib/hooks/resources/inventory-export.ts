@@ -28,7 +28,7 @@ import { PayloadTooLargeError, downloadFromUrl } from '@/lib/utils/download';
  * backend Content-Disposition emits, but the consumer can override.
  */
 
-export type InventoryExportResource =
+type InventoryExportResource =
   | 'purchase-orders'
   | 'material-dispatches'
   | 'stock-allocations'
@@ -47,7 +47,7 @@ const RESOURCE_PATHS: Record<InventoryExportResource, string> = {
   warehouses: '/inventory/export/warehouses.csv',
 };
 
-export interface ExportInventoryOptions {
+interface ExportInventoryOptions {
   /** Resource to export. Determines the backend path. */
   resource: InventoryExportResource;
   /** Optional filter object — forwarded as URL query params. */

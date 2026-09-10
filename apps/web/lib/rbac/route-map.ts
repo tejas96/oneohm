@@ -11,7 +11,7 @@ import { ALWAYS_OPEN, SUPERADMIN_ONLY, type Gate } from './catalog';
  * Read by `middleware.ts` (server-side, before any HTML is sent) and by the
  * dashboard layout (client-side, for soft navigation).
  */
-export const ROUTE_GATES: ReadonlyArray<{ pattern: RegExp; gate: Gate }> = [
+const ROUTE_GATES: ReadonlyArray<{ pattern: RegExp; gate: Gate }> = [
   // The admin panel is gated by ROLE, not permission. `admin` is refused here;
   // only `super_admin` gets in. There are deliberately no `admin.*` codes.
   { pattern: /^\/admin(\/|$)/, gate: SUPERADMIN_ONLY },

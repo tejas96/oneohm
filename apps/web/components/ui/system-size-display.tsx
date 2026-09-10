@@ -8,8 +8,8 @@ import { formatSystemSize } from '@/lib/utils';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-export type SystemSizeDisplaySize = 'sm' | 'md' | 'lg';
-export type SystemSizeDisplayLayout = 'inline' | 'stacked';
+type SystemSizeDisplaySize = 'sm' | 'md' | 'lg';
+type SystemSizeDisplayLayout = 'inline' | 'stacked';
 
 export interface SystemSizeDisplayProps {
   /** Calculated system size in kW (from totalWattageWp) */

@@ -49,7 +49,7 @@ import {
   getDueDateMuiColor,
 } from '@/lib/utils';
 
-export type ServiceTicketScope = 'customer' | 'property' | 'project';
+type ServiceTicketScope = 'customer' | 'property' | 'project';
 
 export interface EntityServiceTicketsTabProps {
   scope: ServiceTicketScope;

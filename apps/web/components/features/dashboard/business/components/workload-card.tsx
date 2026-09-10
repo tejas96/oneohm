@@ -4,7 +4,6 @@ import * as React from 'react';
 
 import { BusinessCard } from './business-card';
 import { GatedLink } from './gated-link';
-import { businessLinks } from '../lib/links';
 
 import { CHART_COLORS } from '@/lib/charts/palette';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -91,5 +90,3 @@ export function WorkloadCard({
     </BusinessCard>
   );
 }
-
-export { businessLinks };

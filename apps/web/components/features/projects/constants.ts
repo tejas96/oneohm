@@ -1,11 +1,8 @@
 import { PROJECT_TYPE_LABELS as _PROJECT_TYPE_LABELS } from '@tejas96/shared/constants';
 import {
-  MaterialStatus,
-  PaymentTransactionStatus,
   ProjectPriority,
   ProjectStatus,
   ProjectType,
-  TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
   TaskPriority,
   TaskStatus,
@@ -54,68 +51,13 @@ export const PROJECT_PRIORITY_LABELS: Record<string, string> = {
   [ProjectPriority.URGENT]: 'Urgent',
 };
 
-export const PROJECT_PRIORITY_BADGE_VARIANT: Record<string, string> = {
-  [ProjectPriority.LOW]: 'muted',
-  [ProjectPriority.NORMAL]: 'secondary',
-  [ProjectPriority.HIGH]: 'warning',
-  [ProjectPriority.URGENT]: 'error',
-};
-
 export const PROJECT_TYPE_LABELS: Record<string, string> = _PROJECT_TYPE_LABELS;
-
-export const PROJECT_TYPE_BADGE_VARIANT: Record<string, string> = {
-  [ProjectType.RESIDENTIAL]: 'teal',
-  [ProjectType.RESIDENTIAL_APARTMENT]: 'teal',
-  [ProjectType.COMMERCIAL]: 'purple',
-  [ProjectType.INDUSTRIAL]: 'amber',
-  [ProjectType.AGRICULTURAL]: 'green-subtle',
-};
 
 export const HEALTH_STATUS_LABELS: Record<string, string> = {
   on_track: 'On Track',
   at_risk: 'At Risk',
   delayed: 'Delayed',
 };
-
-export const HEALTH_STATUS_BADGE_VARIANT: Record<string, string> = {
-  on_track: 'green-subtle',
-  at_risk: 'amber',
-  delayed: 'red-subtle',
-};
-
-export const HEALTH_STATUS_PROGRESS_VARIANT: Record<
-  string,
-  'primary' | 'success' | 'warning' | 'error'
-> = {
-  on_track: 'primary',
-  at_risk: 'warning',
-  delayed: 'error',
-};
-
-/**
- * Phase labels passthrough — currentPhase is now a free-text milestone name string,
- * not a MilestoneType enum. This identity map is kept so any consumers that do
- * `PHASE_LABELS[phase] ?? phase` continue to work without change.
- */
-export function PHASE_LABELS(phase: string | null | undefined): string {
-  return phase ?? '';
-}
-
-/**
- * AdvancedTable select filterOptions — enum-driven, stays in sync automatically.
- * Use these in ColumnConfig.filterOptions for the project list AdvancedTable.
- *
- * Health-based filters use composite values ('health:delayed', 'health:at_risk')
- * which are decoded in toProjectFilters() to set both status and healthStatus.
- */
-export const PROJECT_STATUS_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
-  ...Object.values(ProjectStatus).map((v) => ({
-    value: v,
-    label: PROJECT_STATUS_LABELS[v] ?? toTitleLabel(v),
-  })),
-  { value: 'health:delayed', label: 'Overdue' },
-  { value: 'health:at_risk', label: 'At Risk' },
-];
 
 export const PROJECT_PRIORITY_OPTIONS: ReadonlyArray<{ value: ProjectPriority; label: string }> =
   Object.values(ProjectPriority).map((v) => ({
@@ -134,15 +76,7 @@ export const PROJECT_TYPE_OPTIONS: ReadonlyArray<{ value: ProjectType; label: st
 // Labels imported from @tejas96/shared/types and re-exported for convenience
 // ---------------------------------------------------------------------------
 
-export { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS };
-
-export const TASK_PRIORITY_DOT_COLOR: Record<string, string> = {
-  [TaskPriority.LOW]: 'bg-foreground-tertiary',
-  [TaskPriority.NORMAL]: 'bg-info',
-  [TaskPriority.MEDIUM]: 'bg-info',
-  [TaskPriority.HIGH]: 'bg-warning',
-  [TaskPriority.URGENT]: 'bg-error',
-};
+export { TASK_STATUS_LABELS };
 
 /** Hex colors matching the Tailwind semantic tokens above — used for inline styles (e.g. MUI).
  *  Must stay in sync with the CSS token values in tailwind.config.ts:
@@ -244,8 +178,6 @@ export const TASK_GROUP_VARIANT_MAP: Record<
 };
 
 /** When groupBy=project exceeds this count, tasks load on group expand. */
-export { MY_TASKS_PROJECT_LAZY_GROUP_THRESHOLD as PROJECT_LAZY_GROUP_THRESHOLD } from '@tejas96/shared/constants';
-
 /** Initial number of project group headers rendered before "Load more groups". */
 export const VISIBLE_GROUPS_BATCH = 30;
 
@@ -279,53 +211,13 @@ export const STALE_THRESHOLDS: Record<string, number> = {
   [TaskStatus.BACKLOG]: 7,
 };
 
-export interface QuickFilterChip {
-  key: string;
-  label: string;
-  filter: { status?: string; priority?: string; dueDateFilter?: string };
-}
-
 // ---------------------------------------------------------------------------
 // Payment constants (for Project Detail - Payments tab)
 // ---------------------------------------------------------------------------
 
-export const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  [PaymentTransactionStatus.PENDING]: 'Pending',
-  [PaymentTransactionStatus.RECEIVED]: 'Received',
-  [PaymentTransactionStatus.VERIFIED]: 'Verified',
-  [PaymentTransactionStatus.CLEARED]: 'Cleared',
-  [PaymentTransactionStatus.BOUNCED]: 'Bounced',
-  [PaymentTransactionStatus.REFUNDED]: 'Refunded',
-};
-
-export const PAYMENT_STATUS_BADGE_VARIANT: Record<string, string> = {
-  [PaymentTransactionStatus.PENDING]: 'warning',
-  [PaymentTransactionStatus.RECEIVED]: 'info',
-  [PaymentTransactionStatus.VERIFIED]: 'green-subtle',
-  [PaymentTransactionStatus.CLEARED]: 'success',
-  [PaymentTransactionStatus.BOUNCED]: 'error',
-  [PaymentTransactionStatus.REFUNDED]: 'red-subtle',
-};
-
 // ---------------------------------------------------------------------------
 // Material constants (for Project Detail - BOM tab)
 // ---------------------------------------------------------------------------
-
-export const MATERIAL_STATUS_LABELS: Record<string, string> = {
-  [MaterialStatus.REQUIRED]: 'Required',
-  [MaterialStatus.ORDERED]: 'Ordered',
-  [MaterialStatus.IN_TRANSIT]: 'In Transit',
-  [MaterialStatus.ALLOCATED]: 'Allocated',
-  [MaterialStatus.USED]: 'Used',
-};
-
-export const MATERIAL_STATUS_BADGE_VARIANT: Record<string, string> = {
-  [MaterialStatus.REQUIRED]: 'secondary',
-  [MaterialStatus.ORDERED]: 'info',
-  [MaterialStatus.IN_TRANSIT]: 'amber',
-  [MaterialStatus.ALLOCATED]: 'green-subtle',
-  [MaterialStatus.USED]: 'success',
-};
 
 // Survey constants removed – survey data now accessed via CustomerPropertyEntity
 
@@ -333,9 +225,6 @@ export const MATERIAL_STATUS_BADGE_VARIANT: Record<string, string> = {
 // Display limits
 // ---------------------------------------------------------------------------
 
-export const MAX_DISPLAYED_TEAM_MEMBERS = 5;
-export const MAX_DISPLAYED_MILESTONES = 6;
-export const MAX_TASKS_PER_COLUMN = 3;
 export const TASKS_PAGE_SIZE = 20;
 
 /** Maximum tasks fetched in board view. Avoids unbounded queries while

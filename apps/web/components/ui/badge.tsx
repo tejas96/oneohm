@@ -125,41 +125,6 @@ function Badge({
 }
 
 /**
- * DotBadge - Simple dot indicator with text
- * Used for online/offline status, etc.
- */
-export interface DotBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  /** Color of the dot */
-  color?: 'green' | 'gray' | 'amber' | 'red' | 'blue';
-}
-
-function DotBadge({
-  className,
-  color = 'green',
-  children,
-  ...props
-}: DotBadgeProps): React.ReactElement {
-  // Uses theme tokens for colors
-  const dotColors = {
-    green: 'bg-success',
-    gray: 'bg-foreground-tertiary',
-    amber: 'bg-warning',
-    red: 'bg-error',
-    blue: 'bg-info',
-  };
-
-  return (
-    <span
-      className={cn('inline-flex items-center gap-2 text-sm text-foreground', className)}
-      {...props}
-    >
-      <span className={cn('size-radio-indicator-sm rounded-full', dotColors[color])} />
-      {children}
-    </span>
-  );
-}
-
-/**
  * CountBadge - Numeric badge for notifications
  * Shows count with optional max value (e.g., "99+")
  *
@@ -169,7 +134,7 @@ function DotBadge({
  * - sm: 18px badge, 9px text - sidebar badges
  * - default: 20px badge, 12px text - standard notifications
  */
-export interface CountBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+interface CountBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** The count to display */
   count: number;
   /** Maximum value before showing "+" (default: 99) */
@@ -226,4 +191,4 @@ function CountBadge({
   );
 }
 
-export { Badge, badgeVariants, CountBadge, DotBadge };
+export { Badge, CountBadge };

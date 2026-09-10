@@ -20,7 +20,7 @@ export interface KPICardData {
   avgDeal: string;
 }
 
-export interface KPICardProps {
+interface KPICardProps {
   title: string;
   value: string;
   change: string;

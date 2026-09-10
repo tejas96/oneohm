@@ -39,7 +39,7 @@ const DialogCloseContext = React.createContext<(() => void) | undefined>(undefin
 /*  MUIDialog                                                                  */
 /* -------------------------------------------------------------------------- */
 
-export interface MUIDialogProps {
+interface MUIDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   size?: DialogSize;

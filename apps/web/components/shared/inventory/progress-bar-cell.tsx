@@ -27,13 +27,7 @@ import { cn } from '@/lib/utils';
  * cells where 100% means "completely depleted").
  */
 
-export type ProgressBarIntent =
-  | 'auto'
-  | 'auto-inverted'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'info';
+type ProgressBarIntent = 'auto' | 'auto-inverted' | 'success' | 'warning' | 'danger' | 'info';
 
 export interface ProgressBarCellProps {
   numerator: number;

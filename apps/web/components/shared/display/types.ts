@@ -20,7 +20,7 @@ export interface GPSData {
 // Shading analysis display
 export type ShadingLevel = 'none' | 'minimal' | 'moderate' | 'significant';
 
-export interface ShadingDetail {
+interface ShadingDetail {
   timeRange: string;
   status: 'clear' | 'shaded';
   note?: string;
@@ -35,9 +35,9 @@ export interface ShadingData {
 }
 
 // Document status display
-export type DocumentStatus = 'uploaded' | 'pending' | 'missing';
+type DocumentStatus = 'uploaded' | 'pending' | 'missing';
 
-export interface DocumentItem {
+interface DocumentItem {
   name: string;
   status: DocumentStatus;
 }
@@ -49,7 +49,7 @@ export interface DocumentStatusData {
 }
 
 // Connection details display
-export type ConnectionType = 'single' | 'three';
+type ConnectionType = 'single' | 'three';
 
 export interface ConnectionData {
   consumerNumber?: string;
@@ -73,7 +73,7 @@ export interface LoanData {
 // FieldDisplay Props (Discriminated Union)
 // ============================================================================
 
-export type FieldDisplaySize = 'compact' | 'full';
+type FieldDisplaySize = 'compact' | 'full';
 
 export type FieldDisplayProps =
   | {

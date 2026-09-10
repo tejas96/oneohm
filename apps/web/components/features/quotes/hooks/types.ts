@@ -75,7 +75,7 @@ export interface QuoteDetail {
 // Quote Version Types
 // ============================================================================
 
-export interface QuoteVersionDetail {
+interface QuoteVersionDetail {
   id: string;
   quoteId: string;
   versionNumber: number;
@@ -98,11 +98,3 @@ export interface QuoteVersionDetail {
 // ============================================================================
 // Payment Milestone Display Type
 // ============================================================================
-
-export interface QuotePaymentMilestone {
-  stage: string;
-  name: string;
-  percentage: number;
-  amount: number;
-  order: number;
-}

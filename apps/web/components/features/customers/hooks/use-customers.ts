@@ -101,7 +101,7 @@ export interface CustomerFilters {
  *
  * Mirrors `SitePortfolioDto`.
  */
-export interface SitePortfolio {
+interface SitePortfolio {
   siteCount: number;
   /** Site counts keyed by `PropertyStatus` — drives the distribution bar. */
   statusCounts: Record<string, number>;
@@ -154,8 +154,6 @@ export interface Customer {
   /** Only the customer's own followups — what the row shows once expanded. */
   ownFollowupAssignees?: FollowupAssignee[];
 }
-
-export type { PaginationMeta };
 
 export interface CustomerListResponse {
   data: Customer[];

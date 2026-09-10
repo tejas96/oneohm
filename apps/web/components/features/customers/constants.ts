@@ -15,7 +15,6 @@ import {
 } from '@tejas96/shared/types';
 
 import type { CrmTone } from '@/components/shared/crm-table';
-import type { BadgeProps } from '@/components/ui/badge';
 import type { StatusChipColor } from '@/components/ui/mui-status-chip';
 import type { Gate } from '@/lib/rbac/catalog';
 import { toTitleLabel } from '@/lib/utils';
@@ -67,15 +66,6 @@ export const CUSTOMER_STATUS_CHIP_COLOR: Record<CustomerStatus, StatusChipColor>
 // ============================================================================
 // Detail Page: Quote Status Badge Variants
 // ============================================================================
-
-export const QUOTE_STATUS_BADGE_VARIANT: Record<QuoteStatus, BadgeProps['variant']> = {
-  draft: 'default',
-  sent: 'info',
-  viewed: 'secondary',
-  accepted: 'success',
-  rejected: 'error',
-  expired: 'warning',
-};
 
 // ============================================================================
 // CRM list: semantic tone maps

@@ -60,7 +60,7 @@ defineResource<QuoteListItem>(
 // which invalidate ['quotes'] will also bust these list cache entries.
 // ============================================================================
 
-export const quoteResourceKeys = createResourceKeys('quotes');
+const quoteResourceKeys = createResourceKeys('quotes');
 
 // ============================================================================
 // List hook

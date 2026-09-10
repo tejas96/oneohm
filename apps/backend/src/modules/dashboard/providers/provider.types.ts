@@ -2,7 +2,7 @@ import type { DashboardSection } from '@tejas96/shared/types';
 
 export type OkSection = Extract<DashboardSection, { status: 'ok' }>;
 
-export type DashboardSectionKey = 'workflow' | 'followups' | 'service' | 'projects' | 'finance';
+type DashboardSectionKey = 'workflow' | 'followups' | 'service' | 'projects' | 'finance';
 
 /**
  * One section of the dashboard.

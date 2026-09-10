@@ -28,7 +28,7 @@ export type LedgerDirection = 'in' | 'out';
  * status map had no branch for it and silently labelled those milestones
  * "Pending", i.e. money still expected from a customer who owes nothing.
  */
-export type MilestoneDerivedStatus = 'pending' | 'partial' | 'paid' | 'waived' | 'cancelled';
+type MilestoneDerivedStatus = 'pending' | 'partial' | 'paid' | 'waived' | 'cancelled';
 
 export interface LedgerEntry {
   /**
@@ -75,7 +75,7 @@ export interface LedgerEntry {
  * milestones. Showing the entry total under a milestone overstates it, which is
  * the defect this type exists to make impossible.
  */
-export interface MilestoneAllocation {
+interface MilestoneAllocation {
   allocationId: string;
   entryId: string;
   entryNo: string;
@@ -221,7 +221,7 @@ export interface LedgerFilters {
  * because `paid_amount` was cached in two tables and could disagree. With every
  * balance derived from the ledger there is exactly one cache to bust.
  */
-export const ledgerKeys = {
+const ledgerKeys = {
   root: () => ['ledger'] as const,
   kpis: (from?: string, to?: string) => [...ledgerKeys.root(), 'kpis', from, to] as const,
   cashFlow: (from?: string, to?: string, grain?: string) =>

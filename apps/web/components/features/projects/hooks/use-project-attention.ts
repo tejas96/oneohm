@@ -6,7 +6,7 @@ import type { AxiosError } from 'axios';
 
 import { apiClient } from '@/lib/api/client';
 
-export const projectAttentionKeys = {
+const projectAttentionKeys = {
   all: () => ['project-attention'] as const,
   byProject: (projectId: string) => [...projectAttentionKeys.all(), projectId] as const,
 };

@@ -36,7 +36,7 @@ const tableVariants = cva(
   },
 );
 
-export interface TableProps
+interface TableProps
   extends React.HTMLAttributes<HTMLTableElement>,
     VariantProps<typeof tableVariants> {}
 
@@ -87,7 +87,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
 );
 TableRow.displayName = 'TableRow';
 
-export interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElement> {
+interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElement> {
   sortable?: boolean;
   sorted?: 'asc' | 'desc' | false;
 }
@@ -181,16 +181,6 @@ const TableCaption = React.forwardRef<
 ));
 TableCaption.displayName = 'TableCaption';
 
-export {
-  Table,
-  TableHeader,
-  TableBody,
-  TableFooter,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableCaption,
-  tableVariants,
-};
+export { Table, TableHeader, TableBody, TableHead, TableRow, TableCell };
 
 // Types are already exported via interface declarations above

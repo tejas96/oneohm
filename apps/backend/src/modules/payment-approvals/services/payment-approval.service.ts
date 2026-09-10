@@ -66,7 +66,7 @@ export interface ApprovalRow extends Omit<PendingLedgerEntryEntity, 'createdAt' 
   proofs: ProofRef[];
 }
 
-export interface ProofRef {
+interface ProofRef {
   id: string;
   url: string;
   fileName: string | null;

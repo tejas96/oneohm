@@ -55,7 +55,7 @@ export interface PaymentApproval {
   possibleDuplicates?: PaymentApproval[];
 }
 
-export interface ProofRef {
+interface ProofRef {
   id: string;
   url: string;
   fileName?: string | null;
@@ -83,7 +83,7 @@ export interface ApprovalPage {
   limit: number;
 }
 
-export interface ImpactLine {
+interface ImpactLine {
   milestoneId: string;
   milestoneName: string;
   appliedPaise: number;
@@ -114,7 +114,7 @@ export interface BulkApproveResult {
 // Query keys
 // ============================================================================
 
-export const approvalKeys = {
+const approvalKeys = {
   root: () => ['payment-approvals'] as const,
   list: (filters: ApprovalFilters) => [...approvalKeys.root(), 'list', filters] as const,
   one: (id: string) => [...approvalKeys.root(), 'one', id] as const,

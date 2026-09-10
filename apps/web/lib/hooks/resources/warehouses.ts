@@ -1,12 +1,10 @@
 'use client';
 
 import {
-  createResourceKeys,
   defineResource,
   useResourceDetail,
   useResourceList,
   useResourceMutations,
-  useResourceStats,
   type BaseFilters,
   type ResourceConfig,
 } from '../core';
@@ -62,8 +60,6 @@ defineResource<Warehouse>(
 // Query keys
 // ============================================================================
 
-export const warehouseKeys = createResourceKeys('warehouses');
-
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -102,12 +98,5 @@ export function useWarehouseMutations() {
       delete: { success: 'Warehouse deleted', error: 'Failed to delete warehouse' },
       changeStatus: { success: 'Status updated', error: 'Failed to update status' },
     },
-  });
-}
-
-export function useWarehouseStats() {
-  return useResourceStats({
-    resource: 'warehouses',
-    endpoint: '/warehouses/stats/summary',
   });
 }

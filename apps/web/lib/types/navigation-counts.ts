@@ -4,7 +4,7 @@
  */
 
 /** CRM-related counts */
-export interface CrmCounts {
+interface CrmCounts {
   /** Total active customers */
   totalCustomers: number;
   /** Total properties */
@@ -18,7 +18,7 @@ export interface CrmCounts {
 }
 
 /** Quotes-related counts */
-export interface QuotesCounts {
+interface QuotesCounts {
   /** Total quotes */
   total: number;
   /** Draft quotes */
@@ -32,7 +32,7 @@ export interface QuotesCounts {
 }
 
 /** Projects-related counts */
-export interface ProjectsCounts {
+interface ProjectsCounts {
   /** Total projects */
   total: number;
   /** Active/in-progress projects */
@@ -44,7 +44,7 @@ export interface ProjectsCounts {
 }
 
 /** Inventory-related counts */
-export interface InventoryCounts {
+interface InventoryCounts {
   /** Total items */
   total: number;
   /** Items with low stock */
@@ -56,7 +56,7 @@ export interface InventoryCounts {
 }
 
 /** Finance-related counts */
-export interface FinanceCounts {
+interface FinanceCounts {
   /** Pending invoices */
   pendingInvoices: number;
   /** Overdue payments */
@@ -64,7 +64,7 @@ export interface FinanceCounts {
 }
 
 /** User task counts */
-export interface TaskCounts {
+interface TaskCounts {
   /** Tasks due today */
   dueToday: number;
   /** Overdue tasks */
@@ -93,41 +93,3 @@ export interface NavigationCountsState {
   /** Refetch counts from server */
   refetch: () => void;
 }
-
-/** Default/empty counts */
-export const DEFAULT_NAVIGATION_COUNTS: NavigationCounts = {
-  crm: {
-    totalCustomers: 0,
-    totalProperties: 0,
-    properties: { hot: 0, warm: 0, cold: 0 },
-  },
-  quotes: {
-    total: 0,
-    drafts: 0,
-    sent: 0,
-    approved: 0,
-    expiringSoon: 0,
-  },
-  projects: {
-    total: 0,
-    active: 0,
-    pending: 0,
-    completedThisMonth: 0,
-  },
-  inventory: {
-    total: 0,
-    lowStock: 0,
-    outOfStock: 0,
-    pendingPOs: 0,
-  },
-  finance: {
-    pendingInvoices: 0,
-    overduePayments: 0,
-  },
-  tasks: {
-    dueToday: 0,
-    overdue: 0,
-    pending: 0,
-  },
-  lastUpdated: null,
-};

@@ -54,18 +54,6 @@ export function useDocumentsByProperty(
   });
 }
 
-export function useDocumentsByEntityBatch(
-  entityType: DocumentEntityType,
-  entityIds: string[],
-): UseQueryResult<DocumentRecord[]> {
-  return useQuery({
-    queryKey: [...documentKeys.all(), entityType, 'batch', ...entityIds],
-    queryFn: (): Promise<DocumentRecord[]> =>
-      getDocuments({ entityType, entityIds: entityIds.join(',') }),
-    enabled: entityIds.length > 0,
-  });
-}
-
 // ── Mutation Hooks ─────────────────────────────────────────────
 
 export function useUploadDocument(): UseMutationResult<

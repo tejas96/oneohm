@@ -186,7 +186,7 @@ type TypographyElement =
   | 'small'
   | 'a';
 
-export interface TypographyProps
+interface TypographyProps
   extends Omit<React.HTMLAttributes<HTMLElement>, 'color'>,
     VariantProps<typeof typographyVariants> {
   /** Render as a different HTML element */

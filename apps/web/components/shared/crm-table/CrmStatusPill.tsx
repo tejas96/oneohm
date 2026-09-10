@@ -34,7 +34,7 @@ export const CRM_TONE_FILL: Record<CrmTone, string> = {
   danger: color.danger,
 };
 
-export type CrmPillSize = 'md' | 'sm' | 'xs';
+type CrmPillSize = 'md' | 'sm' | 'xs';
 
 const SIZE_METRICS: Record<CrmPillSize, { height: string; px: number; fontSize: string }> = {
   /** Customer-row status. */

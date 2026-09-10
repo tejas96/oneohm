@@ -10,8 +10,6 @@
  */
 export const ADMIN_BYPASS_ROLES = ['super_admin', 'admin'] as const;
 
-export type AdminBypassRole = (typeof ADMIN_BYPASS_ROLES)[number];
-
 export function hasAdminBypassRole(roles: string[]): boolean {
   return ADMIN_BYPASS_ROLES.some((adminRole) => roles.includes(adminRole));
 }

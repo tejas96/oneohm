@@ -40,8 +40,6 @@ export const CHART_COLORS = {
   8: color['chart-8'],
 } as const;
 
-export type ChartColorIndex = keyof typeof CHART_COLORS;
-
 /** Ordered palette for series-by-index assignment (`series[i % length]`). */
 export const CHART_SERIES_COLORS: readonly string[] = [
   CHART_COLORS[1],
@@ -62,15 +60,13 @@ export const CHART_SERIES_COLORS: readonly string[] = [
  * These are the vivid `-main` fills, not the readable foregrounds — a chart
  * segment is a fill, not text.
  */
-export const SEMANTIC_CHART_COLORS = {
+const SEMANTIC_CHART_COLORS = {
   success: color['success-main'],
   warning: color['warning-main'],
   danger: color.danger,
   info: color['info-main'],
   neutral: color.neutral,
 } as const;
-
-export type SemanticChartColor = keyof typeof SEMANTIC_CHART_COLORS;
 
 /**
  * Look up a chart colour by zero-based series index, wrapping around the
@@ -88,17 +84,6 @@ export function getChartColor(index: number, fallback = SEMANTIC_CHART_COLORS.ne
 }
 
 /**
- * Look up a semantic colour by name; returns `neutral` if a caller passes an
- * unknown key (rare but possible when a status enum widens).
- */
-export function getSemanticChartColor(name: SemanticChartColor | (string & {})): string {
-  if (name in SEMANTIC_CHART_COLORS) {
-    return SEMANTIC_CHART_COLORS[name as SemanticChartColor];
-  }
-  return SEMANTIC_CHART_COLORS.neutral;
-}
-
-/**
  * Standard axis tick styling for recharts XAxis/YAxis. Uses `text-secondary`
  * (7.63:1 on white) rather than `text-tertiary` — the DS tertiary tone is
  * 2.52:1 and fails WCAG AA, which matters for axis labels people actually
@@ -108,9 +93,6 @@ export const CHART_AXIS_TICK_STYLE = {
   fontSize: 11,
   fill: color['text-secondary'],
 } as const;
-
-/** Gridlines sit at the quietest step so series stay dominant. */
-export const CHART_GRIDLINE_COLOR = color['chart-gridline'];
 
 /**
  * Subtle hover cursor for `<Tooltip cursor={CHART_TOOLTIP_CURSOR} />`.

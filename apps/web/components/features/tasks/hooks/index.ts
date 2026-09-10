@@ -1,2 +1,1 @@
-export { taskDetailKeys, useTaskDetail } from './use-task-detail';
-export { useUpdateTask, useAddComment } from './use-task-mutations';
+export { useUpdateTask } from './use-task-mutations';

@@ -12,7 +12,7 @@ import { MUITypography } from '@/components/ui';
 // Types
 // ============================================================================
 
-export interface AlertItem {
+interface AlertItem {
   id: string;
   text: string;
   type: 'blocked' | 'overdue' | 'bottleneck';

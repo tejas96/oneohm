@@ -1,12 +1,6 @@
 import { PROJECT_TYPE_LABELS as _PROJECT_TYPE_LABELS } from '@tejas96/shared/constants';
 import { SYSTEM_SIZE_CONFIG, DISCOUNT_PRESETS, DISTANCE_CONFIG } from '@tejas96/shared/schemas';
-import {
-  QuoteStatus,
-  SystemType,
-  ProjectType,
-  DcrPreference,
-  ItemCategory,
-} from '@tejas96/shared/types';
+import { QuoteStatus, SystemType, ProjectType, DcrPreference } from '@tejas96/shared/types';
 import { type LucideIcon, Building2, Factory, Home, Landmark, Warehouse } from 'lucide-react';
 
 // ============================================================================
@@ -57,9 +51,6 @@ export const SYSTEM_TYPE_LABELS: Record<SystemType, string> = {
 // ============================================================================
 // Defaults
 // ============================================================================
-
-export const DEFAULT_PAGE_SIZE = 10;
-export const SEARCH_DEBOUNCE_MS = 550;
 
 // ============================================================================
 // Project Type Options
@@ -174,18 +165,3 @@ export const PRICING_AFFECTING_FIELDS = [
 // ============================================================================
 // Item Category Labels
 // ============================================================================
-
-export const ITEM_CATEGORY_LABELS: Record<ItemCategory, string> = {
-  [ItemCategory.SOLAR_PANELS]: 'Solar Panels',
-  [ItemCategory.INVERTERS]: 'Inverters',
-  [ItemCategory.BATTERIES]: 'Batteries',
-  [ItemCategory.MOUNTING]: 'Mounting Structure',
-  [ItemCategory.ACCESSORIES]: 'Accessories',
-  [ItemCategory.CABLES_WIRING]: 'Cables & Wiring',
-  [ItemCategory.EARTHING]: 'Earthing',
-  [ItemCategory.LABOR]: 'Labor',
-  [ItemCategory.INSTALLATION]: 'Installation',
-  [ItemCategory.COMMISSIONING]: 'Commissioning',
-  [ItemCategory.TRANSPORTATION]: 'Transportation',
-  [ItemCategory.OTHER]: 'Other',
-};

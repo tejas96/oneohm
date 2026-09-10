@@ -59,7 +59,7 @@ export interface TeamMemberSummary {
  * own Money tab showed this figure under "Contract" — both correct, neither
  * reconcilable without opening the project.
  */
-export interface PaymentSummary {
+interface PaymentSummary {
   totalExpected: number;
   totalPaid: number;
   contractValue: number;
@@ -105,8 +105,6 @@ export interface ProjectListItem {
   createdAt: string;
   updatedAt: string;
 }
-
-export type { PaginationMeta };
 
 export interface ProjectListResponse {
   data: ProjectListItem[];

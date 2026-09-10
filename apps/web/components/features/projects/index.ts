@@ -8,5 +8,3 @@ export { ProjectNewPage } from './components/project-new-page';
 export { ProjectMyTasksPage } from './components/project-my-tasks-page';
 
 // Hooks
-export { projectKeys, useProjects } from './hooks';
-export type { ProjectFilters, ProjectListItem, ProjectListResponse } from './hooks';

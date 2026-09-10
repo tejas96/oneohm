@@ -1,5 +1,5 @@
 import type { ConfigService } from '@nestjs/config';
-import { type DataSourceOptions, DataSource } from 'typeorm';
+import { type DataSourceOptions } from 'typeorm';
 
 import type { Configuration } from '../config/config.interface';
 
@@ -133,13 +133,4 @@ export const createDataSourceOptions = (
     maxQueryExecutionTime: nodeEnv === 'development' ? 1000 : 5000,
     poolSize: dbConfig.poolMax || 20,
   };
-};
-
-/**
- * TypeORM DataSource
- * Used for migrations and CLI commands
- */
-export const createDataSource = (configService: ConfigService<Configuration>): DataSource => {
-  const options = createDataSourceOptions(configService);
-  return new DataSource(options);
 };

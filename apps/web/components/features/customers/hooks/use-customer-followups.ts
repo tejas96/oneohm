@@ -4,16 +4,9 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import { type FollowupStatus } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
-import {
-  useFollowups,
-  type FollowupsListResponse,
-  type FollowupResponse,
-} from '@/components/features/followups/hooks';
+import { useFollowups, type FollowupsListResponse } from '@/components/features/followups/hooks';
 
-export type { FollowupResponse, FollowupsListResponse };
-export type { CreateFollowupInput } from '@/components/features/followups/hooks';
-export { followupKeys } from '@/components/features/followups/hooks';
-
+export type { FollowupsListResponse };
 /**
  * Customer-scoped followups — every property's followups plus any
  * customer-level ones.

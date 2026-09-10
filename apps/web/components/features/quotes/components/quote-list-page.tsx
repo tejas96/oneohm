@@ -1,6 +1,7 @@
 'use client';
 
 import AddIcon from '@mui/icons-material/Add';
+import BlockIcon from '@mui/icons-material/Block';
 import AlertIcon from '@mui/icons-material/ErrorOutline';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import UploadIcon from '@mui/icons-material/Upload';
@@ -24,6 +25,7 @@ import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react
 import { QUOTE_STATUS_LABELS } from '../constants';
 import { useQuoteStatusCounts, useDeleteQuote, type QuoteListItem } from '../hooks';
 import { QuoteStatusDropdown } from './quote-status-dropdown';
+import { VoidQuoteDialog } from './void-quote-dialog';
 
 import { StatsCard } from '@/components/shared';
 import {
@@ -132,6 +134,7 @@ function toQuoteFilters(filters: TableUrlFilterRecord): Partial<QuoteListFilters
 function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [voidOpen, setVoidOpen] = useState(false);
   const deleteQuoteMutation = useDeleteQuote();
 
   const handleClose = (): void => setAnchorEl(null);
@@ -149,7 +152,29 @@ function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
     });
   };
 
-  const isAccepted = quote.status === QuoteStatus.ACCEPTED;
+  const handleVoid = (): void => {
+    handleClose();
+    if (!removeQuote.allowed) {
+      removeQuote.onGatedClick();
+      return;
+    }
+    setVoidOpen(true);
+  };
+
+  /*
+    Same split as the quote detail header: a draft is deletable because nobody
+    outside the office has seen it, and anything already in front of the
+    customer is voidable instead - deleting it would leave them holding a PDF
+    and a notification pointing at a row that no longer answers.
+
+    Both sit behind `quotes.delete`. Void is the gentler of the two (it keeps
+    the quote), so it needs no permission of its own, and a new permission code
+    would start out granted to nobody and read as a missing button.
+  */
+  const isVoided = Boolean(quote.voidedAt);
+  const canDelete = !isVoided && quote.status === QuoteStatus.DRAFT;
+  const canVoid =
+    !isVoided && (quote.status === QuoteStatus.SENT || quote.status === QuoteStatus.VIEWED);
 
   return (
     <>
@@ -185,7 +210,7 @@ function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
           View Details
         </MenuItem>
 
-        {!isAccepted && (
+        {canDelete && (
           <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
             <ListItemIcon>
               <AlertIcon fontSize="small" sx={{ color: 'error.main' }} />
@@ -193,7 +218,24 @@ function RowActionsMenu({ quote }: { quote: QuoteRow }): JSX.Element {
             Delete
           </MenuItem>
         )}
+
+        {canVoid && (
+          <MenuItem onClick={handleVoid} sx={{ color: 'error.main' }}>
+            <ListItemIcon>
+              <BlockIcon fontSize="small" sx={{ color: 'error.main' }} />
+            </ListItemIcon>
+            Void
+          </MenuItem>
+        )}
       </Menu>
+
+      <VoidQuoteDialog
+        open={voidOpen}
+        onOpenChange={setVoidOpen}
+        quoteId={quote.id}
+        quoteNumber={quote.quoteNumber}
+        customerName={quote.customerName}
+      />
     </>
   );
 }

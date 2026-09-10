@@ -19,7 +19,7 @@ export type ReceivableRow = Receivable & Record<string, unknown>;
  * Colour is never the only signal — the label carries it too, so the list is
  * still readable to someone who cannot distinguish the tones.
  */
-export function ageingBucket(days: number): { label: string; tone: CrmTone } {
+function ageingBucket(days: number): { label: string; tone: CrmTone } {
   if (days <= 0) return { label: 'Current', tone: 'neutral' };
   if (days <= 30) return { label: '1–30 days', tone: 'warning' };
   if (days <= 60) return { label: '31–60 days', tone: 'warning' };

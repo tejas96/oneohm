@@ -29,18 +29,6 @@ export interface ReportSaveResponse {
   downloadUrl: string;
 }
 
-export interface ReportCatalogItem {
-  id: string;
-  name: string;
-  description: string;
-  documentTag: string;
-}
-
-export async function listReports(): Promise<ReportCatalogItem[]> {
-  const { data } = await apiClient.get<ReportCatalogItem[]>('/reports');
-  return data;
-}
-
 export async function initializeReport(payload: {
   reportId: string;
   context: ReportContextPayload;
@@ -80,7 +68,7 @@ export async function saveReport(payload: {
   return data;
 }
 
-export interface ReportCompletenessField {
+interface ReportCompletenessField {
   key: string;
   label: string;
 }

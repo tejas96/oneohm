@@ -15,7 +15,7 @@ import { customerKeys } from '@/components/features/customers/hooks/use-create-c
 import { propertyKeys } from '@/components/features/properties/hooks/property-keys';
 import { apiClient } from '@/lib/api/client';
 
-export interface NextFollowupInput {
+interface NextFollowupInput {
   scheduledAt: string;
   assignedToUserId: string;
   subject: string;
@@ -95,23 +95,6 @@ export function useRescheduleFollowup(): UseMutationResult<
     mutationFn: async ({ id, scheduledAt }) => {
       const { data } = await apiClient.post<FollowupResponse>(`/followups/${id}/reschedule`, {
         scheduledAt,
-      });
-      return data;
-    },
-    onSuccess: invalidate,
-  });
-}
-
-export function useReassignFollowup(): UseMutationResult<
-  FollowupResponse,
-  AxiosError,
-  { id: string; assignedToUserId: string }
-> {
-  const invalidate = useInvalidateFollowups();
-  return useMutation({
-    mutationFn: async ({ id, assignedToUserId }) => {
-      const { data } = await apiClient.post<FollowupResponse>(`/followups/${id}/reassign`, {
-        assignedToUserId,
       });
       return data;
     },

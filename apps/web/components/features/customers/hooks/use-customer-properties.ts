@@ -26,8 +26,6 @@ import { apiClient } from '@/lib/api/client';
 // Types
 // ============================================================================
 
-export type { PropertyDocument };
-
 /**
  * Customer Property - Installation site belonging to a customer
  * Matches CustomerPropertyResponseDto from backend
@@ -139,8 +137,6 @@ export interface CustomerPropertyResponse {
 // ============================================================================
 // Query Keys
 // ============================================================================
-
-export { propertyKeys } from '@/components/features/properties/hooks/property-keys';
 
 // ============================================================================
 // Hooks

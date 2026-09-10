@@ -43,7 +43,7 @@ export interface OnboardingStepConfig {
   fields: string[];
 }
 
-export const ONBOARDING_STEPS: OnboardingStepConfig[] = [
+const ONBOARDING_STEPS: OnboardingStepConfig[] = [
   {
     key: 'find-customer',
     label: 'Find customer',

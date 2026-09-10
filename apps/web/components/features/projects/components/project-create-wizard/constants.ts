@@ -35,6 +35,4 @@ export const WIZARD_STEPS = [
   },
 ] as const;
 
-export type WizardStepId = (typeof WIZARD_STEPS)[number]['id'];
-
 export const TOTAL_STEPS = WIZARD_STEPS.length;

@@ -9,13 +9,13 @@ import {
   type QuoteStatus,
 } from '@tejas96/shared/types';
 
-import { defineResource, useResourceMutations, type BaseFilters } from '../core';
+import { defineResource } from '../core';
 
 import type { DiscomResponse } from '@/components/features/properties/hooks/use-discoms';
 
 // ── Types ──────────────────────────────────────────────────────
 
-export interface PropertyItem {
+interface PropertyItem {
   id: string;
   customerId: string;
   propertyCode?: string;
@@ -71,18 +71,6 @@ export interface PropertyItem {
   latestQuoteSystemSizeKw?: number;
 }
 
-export interface PropertyListFilters extends BaseFilters {
-  leadTemperature?: string;
-  propertyType?: string;
-  status?: string;
-  city?: string;
-  state?: string;
-  createdBy?: string;
-  fromDate?: string;
-  toDate?: string;
-  siteStatus?: string;
-}
-
 // ── Resource Registration (kept for usePropertyMutations) ────────
 
 defineResource<PropertyItem>('properties', {
@@ -94,14 +82,3 @@ defineResource<PropertyItem>('properties', {
 });
 
 // ── Hooks ──────────────────────────────────────────────────────
-
-export function usePropertyMutations(): ReturnType<typeof useResourceMutations<PropertyItem>> {
-  return useResourceMutations<PropertyItem>({
-    resource: 'properties',
-    endpoint: '/customer-properties',
-    toast: {
-      update: { success: 'Property updated', error: 'Failed to update property' },
-      delete: { success: 'Property deleted', error: 'Failed to delete property' },
-    },
-  });
-}

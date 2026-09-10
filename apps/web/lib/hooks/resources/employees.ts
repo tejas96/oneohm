@@ -8,14 +8,11 @@ import {
   type ResourceConfig,
 } from '../core';
 
-import type {
-  EmployeeListItem,
-  EmployeeUser,
-} from '@/components/features/projects/hooks/use-employees';
+import type { EmployeeListItem } from '@/components/features/projects/hooks/use-employees';
 
 // ── Types ──────────────────────────────────────────────────────
 
-export type { EmployeeListItem, EmployeeUser };
+export type { EmployeeListItem };
 
 export interface EmployeeFilters extends BaseFilters {
   status?: string;

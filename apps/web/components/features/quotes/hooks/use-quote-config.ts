@@ -48,7 +48,7 @@ const quoteConfigKeys = {
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
-export interface PhaseTypeOption {
+interface PhaseTypeOption {
   value: string;
   label: string;
   subtitle?: string;

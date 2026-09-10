@@ -210,7 +210,7 @@ export type RoutePath = ExtractPaths<typeof ROUTES>;
  * Route parameter types - only define for routes WITH params
  * Routes not listed here have no required params
  */
-export interface RouteParamTypes {
+interface RouteParamTypes {
   // Auth
   '/login': { redirect?: string };
   '/otp-verify': { phone?: string };
@@ -287,20 +287,6 @@ export const AUTH_ROUTES = [
   ROUTES.AUTH.RESET_PASSWORD,
 ] as const;
 
-/** Routes that require admin role */
-export const ADMIN_ROUTES = [
-  ROUTES.ADMIN.HOME,
-  ROUTES.ADMIN.USERS,
-  ROUTES.ADMIN.ROLES,
-  ROUTES.ADMIN.PERMISSIONS,
-  ROUTES.ADMIN.SETTINGS,
-  ROUTES.ADMIN.WORKFLOW_STEPS,
-  ROUTES.ADMIN.WORKFLOWS,
-  ROUTES.ADMIN.INTEGRATIONS,
-  ROUTES.ADMIN.AUDIT,
-  ROUTES.ADMIN.DISCOM,
-] as const;
-
 // ============================================
 // Helper Functions
 // ============================================
@@ -342,61 +328,6 @@ export function buildRoute<T extends RoutePath>(
   return url;
 }
 
-/**
- * Check if a path matches a route pattern
- * @example
- * matchRoute('/customers/123', '/customers/[id]') // true
- */
-export function matchRoute(pathname: string, pattern: RoutePath): boolean {
-  const patternParts = pattern.split('/');
-  const pathParts = pathname.split('/');
-
-  if (patternParts.length !== pathParts.length) {
-    return false;
-  }
-
-  return patternParts.every((part, i) => {
-    if (part.startsWith('[') && part.endsWith(']')) {
-      return true; // Dynamic segment matches anything
-    }
-    return part === pathParts[i];
-  });
-}
-
-/**
- * Extract params from a path based on a route pattern
- * @example
- * extractParams('/customers/123', '/customers/[id]') // { id: '123' }
- */
-export function extractParams(pathname: string, pattern: RoutePath): Record<string, string> | null {
-  const patternParts = pattern.split('/');
-  const pathParts = pathname.split('/');
-
-  if (patternParts.length !== pathParts.length) {
-    return null;
-  }
-
-  const params: Record<string, string> = {};
-
-  for (let i = 0; i < patternParts.length; i++) {
-    const patternPart = patternParts[i];
-    const pathPart = pathParts[i];
-
-    if (patternPart === undefined || pathPart === undefined) {
-      return null;
-    }
-
-    if (patternPart.startsWith('[') && patternPart.endsWith(']')) {
-      const paramName = patternPart.slice(1, -1);
-      params[paramName] = pathPart;
-    } else if (patternPart !== pathPart) {
-      return null;
-    }
-  }
-
-  return params;
-}
-
 // ============================================
 // Route to Panel Mapping
 // ============================================
@@ -406,7 +337,7 @@ export function extractParams(pathname: string, pattern: RoutePath): Record<stri
  * Uses ROUTES constants to avoid hardcoded paths (DRY principle).
  * Order matters - more specific routes should come first.
  */
-export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
+const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   // CRM routes (all should show CRM panel)
   [ROUTES.CUSTOMERS.LIST]: 'crm',
   '/properties': 'crm',

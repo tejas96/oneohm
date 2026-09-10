@@ -130,7 +130,7 @@ export const PERMISSIONS = [
     code: 'quotes.delete',
     module: 'quotes',
     name: 'Delete Quotes',
-    description: 'Remove a quotation',
+    description: 'Delete a draft quotation, or withdraw one already sent to the customer',
   },
   {
     code: 'quotes.send',
@@ -328,7 +328,7 @@ export const PERMISSIONS = [
  * the shape. Annotating `PERMISSIONS: readonly PermissionMeta[]` instead would
  * widen `code` back to `string` and every typo would compile silently.
  */
-export type PermissionCode = (typeof PERMISSIONS)[number]['code'];
+type PermissionCode = (typeof PERMISSIONS)[number]['code'];
 
 /** Anything that can gate a route, nav item, tab or button. */
 export type Gate = PermissionCode | typeof ALWAYS_OPEN | typeof SUPERADMIN_ONLY;

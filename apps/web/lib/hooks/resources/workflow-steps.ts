@@ -1,16 +1,12 @@
 'use client';
 
-import type { StatisticsResponse, WorkflowStep } from '@tejas96/shared/types';
+import type { WorkflowStep } from '@tejas96/shared/types';
 
 import {
   defineResource,
   getResourceConfig,
-  getResourcePermissions,
-  useResourceDetail,
   useResourceList,
   useResourceMutations,
-  useResourcePermissions,
-  useResourceStats,
   type BaseFilters,
   type ResourceConfig,
 } from '../core';
@@ -75,14 +71,6 @@ export function useAllActiveWorkflowSteps(): ReturnType<
   });
 }
 
-export function useWorkflowStep(id: string): ReturnType<typeof useResourceDetail<WorkflowStep>> {
-  return useResourceDetail<WorkflowStep>({
-    resource: 'workflow-steps',
-    endpoint: '/workflow-steps',
-    id,
-  });
-}
-
 export function useWorkflowStepMutations(): ReturnType<typeof useResourceMutations<WorkflowStep>> {
   return useResourceMutations<WorkflowStep>({
     resource: 'workflow-steps',
@@ -104,15 +92,4 @@ export function useWorkflowStepMutations(): ReturnType<typeof useResourceMutatio
       toggleStatus: { success: 'Step status toggled', error: 'Failed to toggle step status' },
     },
   });
-}
-
-export function useWorkflowStepStats(): ReturnType<typeof useResourceStats<StatisticsResponse>> {
-  return useResourceStats<StatisticsResponse>({
-    resource: 'workflow-steps',
-    endpoint: '/workflow-steps/stats/summary',
-  });
-}
-
-export function useWorkflowStepPermissions(): ReturnType<typeof useResourcePermissions> {
-  return useResourcePermissions(getResourcePermissions('workflow-steps'));
 }

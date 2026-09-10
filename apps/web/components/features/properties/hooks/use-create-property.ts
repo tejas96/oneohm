@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseMutationResult,
-} from '@tanstack/react-query';
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import { propertyKeys } from './property-keys';
@@ -58,32 +53,8 @@ export interface PropertyResponse {
   updatedAt: string;
 }
 
-export interface CustomerResponse {
-  id: string;
-  firstName: string;
-  lastName?: string;
-  phone: string;
-  email?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  pincode?: string;
-  status: string;
-  propertyCount?: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
 // Document type matching backend PropertyDocumentDto
-export interface PropertyDocumentDto {
+interface PropertyDocumentDto {
   url: string;
   tag: string;
   fileName: string;
@@ -134,36 +105,6 @@ export function useCreateProperty(): UseMutationResult<
 // useCustomersList Hook
 // ============================================================================
 
-/**
- * Hook to fetch customers list for selector dropdown
- */
-export function useCustomersList(enabled = true) {
-  return useQuery({
-    queryKey: customerKeys.lists(),
-    queryFn: async (): Promise<PaginatedResponse<CustomerResponse>> => {
-      const { data } = await apiClient.get<PaginatedResponse<CustomerResponse>>('/customers', {
-        params: { limit: 100 },
-      });
-      return data;
-    },
-    enabled: enabled,
-  });
-}
-
 // ============================================================================
 // useCustomerById Hook
 // ============================================================================
-
-/**
- * Hook to fetch a single customer by ID
- */
-export function useCustomerById(customerId: string | undefined) {
-  return useQuery({
-    queryKey: customerKeys.detail(customerId ?? ''),
-    queryFn: async (): Promise<CustomerResponse> => {
-      const { data } = await apiClient.get<CustomerResponse>(`/customers/${customerId}`, {});
-      return data;
-    },
-    enabled: !!customerId,
-  });
-}

@@ -11,7 +11,7 @@ import { MUI_FONT_SIZE } from '@/lib/theme/mui-theme';
 /*  Types                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export type MUIBreadcrumbItem = {
+type MUIBreadcrumbItem = {
   /** Label text to display */
   label: string;
   /** Optional href - if provided, renders as a link; otherwise renders as text */

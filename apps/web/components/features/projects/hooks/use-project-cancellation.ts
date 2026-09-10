@@ -62,7 +62,7 @@ export interface CancelProjectPayload {
 // Query keys
 // ============================================================================
 
-export const cancellationKeys = {
+const cancellationKeys = {
   cleanup: (projectId: string) =>
     [...projectDetailKeys.detail(projectId), 'cancellation-cleanup'] as const,
   settlementPreview: (projectId: string) =>

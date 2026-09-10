@@ -32,7 +32,7 @@ interface EmployeeListResponse {
   limit: number;
 }
 
-export const employeeKeys = {
+const employeeKeys = {
   all: () => ['employees'] as const,
   lists: () => [...employeeKeys.all(), 'list'] as const,
   list: (filters: Record<string, unknown>) => [...employeeKeys.lists(), filters] as const,

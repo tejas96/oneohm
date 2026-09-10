@@ -78,9 +78,9 @@ export function CancellationCleanupCard({
   if (data.unitsAtSite > 0) {
     rows.push({
       key: 'stock',
-      text:
-        `${plural(data.unitsAtSite, 'unit')} still at site` +
-        (data.pendingReturns > 0 ? ` — ${plural(data.pendingReturns, 'pending return')}` : ''),
+      text: `${plural(data.unitsAtSite, 'unit')} still at site${
+        data.pendingReturns > 0 ? ` — ${plural(data.pendingReturns, 'pending return')}` : ''
+      }`,
       href: ROUTES.INVENTORY.ALLOCATIONS,
     });
   }
@@ -119,7 +119,7 @@ export function CancellationCleanupCard({
   }
 
   return (
-    <DetailCard label="Cleanup" aside={plural(rows.length, 'item') + ' open'} className="mt-4">
+    <DetailCard label="Cleanup" aside={`${plural(rows.length, 'item')} open`} className="mt-4">
       <div className="flex flex-col gap-0.5">
         {rows.map((row) =>
           row.href ? (

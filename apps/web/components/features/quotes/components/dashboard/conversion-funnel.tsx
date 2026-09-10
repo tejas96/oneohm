@@ -9,7 +9,7 @@ import { MUITypography } from '@/components/ui';
 // Types
 // ============================================================================
 
-export interface FunnelData {
+interface FunnelData {
   draft: number;
   sent: number;
   accepted: number;

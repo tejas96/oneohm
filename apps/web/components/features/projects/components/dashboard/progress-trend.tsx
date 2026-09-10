@@ -10,7 +10,7 @@ import { MUITypography } from '@/components/ui';
 // Types
 // ============================================================================
 
-export interface TrendPoint {
+interface TrendPoint {
   month: string;
   approved: number;
   completed: number;

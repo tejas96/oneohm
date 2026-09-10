@@ -12,7 +12,7 @@ import { ROUTES } from '@/lib/config/routes';
 // Types
 // ============================================================================
 
-export interface ActionItem {
+interface ActionItem {
   id: string;
   text: string;
 }

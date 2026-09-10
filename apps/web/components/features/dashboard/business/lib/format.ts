@@ -15,7 +15,7 @@
  */
 
 /** Indian digit grouping — 1,42,10,450, not 142,10,450. */
-export function groupIndian(value: number): string {
+function groupIndian(value: number): string {
   const digits = String(Math.round(Math.abs(value)));
   if (digits.length <= 3) return digits;
 
@@ -53,17 +53,6 @@ export function money(value: number, format: MoneyFormat): string {
 /** A signed percentage for the period-over-period chips: +8.4% / −2.1%. */
 export function signedPercent(value: number): string {
   return `${value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(1)}%`;
-}
-
-/**
- * Whether a movement should read as good.
- *
- * `upIsGood` is false for the sales cycle — a SHORTER cycle is an improvement,
- * so a fall renders green. Getting this backwards paints every improvement red,
- * which is the single easiest mistake on a metrics screen.
- */
-export function trendTone(value: number, upIsGood: boolean): 'good' | 'bad' {
-  return value >= 0 === upIsGood ? 'good' : 'bad';
 }
 
 /** dd MMM yyyy, the form the design uses for the "as of today" chip. */

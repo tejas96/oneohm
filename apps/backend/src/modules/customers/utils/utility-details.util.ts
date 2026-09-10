@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { isValidConsumerNumber } from '@tejas96/shared/utils';
 
-export const UTILITY_DETAILS_INCOMPLETE_MESSAGE =
+const UTILITY_DETAILS_INCOMPLETE_MESSAGE =
   'Consumer name, consumer number, DISCOM, and connection type are required with a valid 10–12 digit consumer number.';
 
 export interface UtilityDetailsFields {
@@ -11,7 +11,7 @@ export interface UtilityDetailsFields {
   connectionType?: string | null;
 }
 
-export function isUtilityDetailsComplete(property: UtilityDetailsFields): boolean {
+function isUtilityDetailsComplete(property: UtilityDetailsFields): boolean {
   return Boolean(
     property.consumerName?.trim() &&
       property.consumerNumber?.trim() &&

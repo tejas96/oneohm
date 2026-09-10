@@ -9,7 +9,7 @@ import { apiClient } from '@/lib/api/client';
 // Types — mirror BomService.getProcurementStatus return shape.
 // ============================================================================
 
-export interface BomProcurementItem {
+interface BomProcurementItem {
   productId: string;
   name: string;
   unit: string;
@@ -45,7 +45,7 @@ export interface BomProcurementStatus {
 // can invalidate procurement views without dropping the underlying BOM.
 // ============================================================================
 
-export const bomProcurementKeys = {
+const bomProcurementKeys = {
   byProject: (projectId: string) => ['bom-procurement-status', projectId] as const,
 };
 

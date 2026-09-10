@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Indicator, Item, Root } from '@/lib/radio-group';
 import { cn } from '@/lib/utils';
 
-export interface RadioCardProps {
+interface RadioCardProps {
   /** Card title */
   title: string;
   /** Optional description text */
@@ -64,7 +64,7 @@ const RadioCard = React.forwardRef<HTMLButtonElement, RadioCardProps>(
 );
 RadioCard.displayName = 'RadioCard';
 
-export interface RadioCardGroupProps {
+interface RadioCardGroupProps {
   /** Radio card children */
   children: React.ReactNode;
   /** Currently selected value */
@@ -98,5 +98,3 @@ const RadioCardGroup = React.forwardRef<HTMLDivElement, RadioCardGroupProps>(
   ),
 );
 RadioCardGroup.displayName = 'RadioCardGroup';
-
-export { RadioCard, RadioCardGroup };

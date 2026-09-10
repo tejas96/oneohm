@@ -35,7 +35,7 @@ const REFRESH_TOKEN_KEY = 'refreshToken';
 /**
  * Get access token from cookies
  */
-export function getAccessToken(): string | undefined {
+function getAccessToken(): string | undefined {
   return Cookies.get(ACCESS_TOKEN_KEY);
 }
 

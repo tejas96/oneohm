@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
  *     Used for things like a vendor's website on a vendor card.
  */
 
-export type EntityType =
+type EntityType =
   | 'product'
   | 'vendor'
   | 'warehouse'
@@ -35,7 +35,7 @@ export type EntityType =
   | 'user'
   | 'generic';
 
-export interface EntityLinkProps {
+interface EntityLinkProps {
   href: string;
   label: string;
   /** Optional secondary text shown small after the label (e.g. PO code). */
@@ -51,7 +51,7 @@ export interface EntityLinkProps {
   className?: string;
 }
 
-export function EntityLink({
+function EntityLink({
   href,
   label,
   secondary,

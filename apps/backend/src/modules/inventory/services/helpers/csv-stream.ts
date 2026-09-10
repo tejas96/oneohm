@@ -16,7 +16,7 @@ import { PayloadTooLargeException, StreamableFile } from '@nestjs/common';
  * double-quotes with embedded quotes doubled.
  */
 
-export const CSV_ROW_HARD_CAP = 50_000;
+const CSV_ROW_HARD_CAP = 50_000;
 export const CSV_CHUNK_SIZE = 500;
 
 export interface CsvColumn<TRow> {
@@ -41,7 +41,7 @@ export interface CsvStreamSource<TRow> {
  * RFC 4180 cell escaping.
  * https://www.rfc-editor.org/rfc/rfc4180
  */
-export function escapeCsvCell(value: unknown): string {
+function escapeCsvCell(value: unknown): string {
   if (value == null) return '';
   const str = stringifyCsvValue(value);
   if (/[",\n\r]/.test(str)) {

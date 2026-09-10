@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildRoute, type RoutePath, type RouteParams } from '@/lib/config/routes';
 
 // Re-export types for convenience
-export type { RoutePath, RouteParams, RouteParamTypes } from '@/lib/config/routes';
+export type { RoutePath, RouteParams } from '@/lib/config/routes';
 export { ROUTES } from '@/lib/config/routes';
 
 /**
@@ -251,5 +251,3 @@ export function useRoutes() {
     router,
   };
 }
-
-export default useRoutes;

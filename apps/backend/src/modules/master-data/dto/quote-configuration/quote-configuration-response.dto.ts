@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { GstConfig, PaymentMilestoneConfig, ProfitMarginTier } from '@tejas96/shared/types';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 /**
  * DTO for quote configuration response
@@ -105,26 +105,4 @@ export class QuoteConfigurationResponseDto {
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   @Expose()
   updatedAt!: Date;
-}
-
-/**
- * DTO for paginated quote configurations response
- */
-export class QuoteConfigurationListResponseDto {
-  @ApiProperty({ type: [QuoteConfigurationResponseDto] })
-  @Expose()
-  @Type(() => QuoteConfigurationResponseDto)
-  data!: QuoteConfigurationResponseDto[];
-
-  @ApiProperty({ example: 5 })
-  @Expose()
-  total!: number;
-
-  @ApiProperty({ example: 1 })
-  @Expose()
-  page!: number;
-
-  @ApiProperty({ example: 20 })
-  @Expose()
-  limit!: number;
 }

@@ -583,7 +583,7 @@ export const color = root.ds;
 export const radius = theme.radius;
 export const shadow = theme.shadow;
 export const ease = theme.ease;
-export const font = root.font;
+
 export const duration = root.dur;
 export const gradient = root.gradient;
 /**
@@ -592,8 +592,3 @@ export const gradient = root.gradient;
  * resolve to the same authored value.
  */
 export const crm = root.crm;
-
-export type ColorToken = keyof typeof root.ds;
-export type RadiusToken = keyof typeof theme.radius;
-export type ShadowToken = keyof typeof theme.shadow;
-export type CrmToken = keyof typeof root.crm;

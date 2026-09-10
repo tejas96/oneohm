@@ -1,6 +1,6 @@
 'use client';
 
-import { useResourceList, useResourceMutations, type BaseFilters } from '../core';
+import { useResourceMutations } from '../core';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -15,23 +15,7 @@ export interface Invitation {
   createdAt: string;
 }
 
-export interface InvitationFilters extends BaseFilters {
-  status?: string;
-}
-
 // ── Hooks ──────────────────────────────────────────────────────
-
-export function useInvitations(): ReturnType<
-  typeof useResourceList<Invitation, InvitationFilters>
-> {
-  return useResourceList<Invitation, InvitationFilters>({
-    resource: 'invitations',
-    endpoint: '/invitations',
-    defaultPageSize: 10,
-    syncToUrl: false,
-    paramMapping: { limit: 'pageSize' },
-  });
-}
 
 export function useInvitationMutations(): ReturnType<typeof useResourceMutations<Invitation>> {
   return useResourceMutations<Invitation>({

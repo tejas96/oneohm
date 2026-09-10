@@ -4,27 +4,12 @@
  */
 
 export * from './config.interface';
-export { config, WebConfigService } from './config';
-
 // Navigation configuration
 export {
-  navigationConfig,
-  getPanelConfigByPath,
   isNavItemActive,
-  getProjectListFilterFromSearchParams,
   isProjectStatusSubItemActive,
   isAllProjectsNavActive,
 } from './navigation';
 
 // Routes configuration
-export {
-  ROUTES,
-  PUBLIC_ROUTES,
-  AUTH_ROUTES,
-  ADMIN_ROUTES,
-  buildRoute,
-  matchRoute,
-  extractParams,
-  type RouteParams,
-  type RoutePath,
-} from './routes';
+export { ROUTES } from './routes';

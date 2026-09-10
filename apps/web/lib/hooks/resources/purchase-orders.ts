@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  createResourceKeys,
   defineResource,
   useResourceDetail,
   useResourceList,
@@ -67,11 +66,6 @@ export interface PurchaseOrderFilters extends BaseFilters {
   toDate?: string;
 }
 
-export interface ReceivePOPayload {
-  items: Array<{ itemId: string; quantityReceived: number }>;
-  receivingDate?: string;
-}
-
 // ============================================================================
 // Registry
 // ============================================================================
@@ -95,8 +89,6 @@ defineResource<PurchaseOrder>(
 // ============================================================================
 // Query keys
 // ============================================================================
-
-export const purchaseOrderKeys = createResourceKeys('purchase-orders');
 
 // ============================================================================
 // Hooks
@@ -170,13 +162,6 @@ export function usePurchaseOrderMutations() {
 // ============================================================================
 // Payment-recorded payload — typed wrapper around the customAction.
 // ============================================================================
-
-export interface RecordPaymentPayload {
-  /** Currency-decimal amount; backend validates 0 < amount <= outstanding. */
-  amount: number;
-  /** Optional free-text note attached to the audit trail. */
-  notes?: string;
-}
 
 export function usePurchaseOrderStats() {
   return useResourceStats({

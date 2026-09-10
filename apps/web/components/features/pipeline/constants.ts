@@ -2,7 +2,7 @@
  * Sales pipeline stage constants and display config.
  */
 
-export const PIPELINE_STAGE_IDS = {
+const PIPELINE_STAGE_IDS = {
   LEADS: 'leads',
   QUALIFIED: 'qualified',
   QUOTED: 'quoted',
@@ -10,8 +10,6 @@ export const PIPELINE_STAGE_IDS = {
   NEGOTIATION: 'negotiation',
   LOST: 'lost',
 } as const;
-
-export type PipelineStageId = (typeof PIPELINE_STAGE_IDS)[keyof typeof PIPELINE_STAGE_IDS];
 
 export interface PipelineStageVisualConfig {
   accentBorder: string;
@@ -56,14 +54,6 @@ export const PIPELINE_STAGE_CONFIG: Record<string, PipelineStageVisualConfig> = 
     barClass: 'bg-success',
     chartStroke: '#22c55e',
   },
-};
-
-/** @deprecated Use PIPELINE_STAGE_CONFIG[id].dotClass */
-export const PIPELINE_STAGE_COLORS: Record<string, string> = {
-  [PIPELINE_STAGE_IDS.LEADS]: 'bg-primary',
-  [PIPELINE_STAGE_IDS.QUALIFIED]: 'bg-info',
-  [PIPELINE_STAGE_IDS.QUOTED]: 'bg-warning',
-  [PIPELINE_STAGE_IDS.WON]: 'bg-success',
 };
 
 export const PIPELINE_CHART_COLORS = {

@@ -37,7 +37,7 @@ import type { SavedView, SavedViewResource } from '@/lib/hooks/resources';
  * keeps that consistent.
  */
 
-export type SavedViewStatus = 'all' | 'fresh' | 'modified' | 'stale';
+type SavedViewStatus = 'all' | 'fresh' | 'modified' | 'stale';
 
 export interface UseSavedViewStateOptions {
   /** Resource the bar is mounted for. Used only for memo keys today. */

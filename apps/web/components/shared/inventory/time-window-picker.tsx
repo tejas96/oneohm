@@ -37,9 +37,9 @@ import { cn } from '@/lib/utils';
  * round-trips the user's selection.
  */
 
-export type TimeWindowPreset = '7d' | '30d' | '90d' | '365d' | 'custom';
+type TimeWindowPreset = '7d' | '30d' | '90d' | '365d' | 'custom';
 
-export const TIME_WINDOW_PRESETS: ReadonlyArray<{ value: TimeWindowPreset; label: string }> = [
+const TIME_WINDOW_PRESETS: ReadonlyArray<{ value: TimeWindowPreset; label: string }> = [
   { value: '7d', label: 'Last 7 days' },
   { value: '30d', label: 'Last 30 days' },
   { value: '90d', label: 'Last 90 days' },

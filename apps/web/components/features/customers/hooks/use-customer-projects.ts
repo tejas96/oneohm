@@ -32,7 +32,7 @@ export interface CustomerProjectItem {
   property: CustomerPropertyResponse;
 }
 
-export const customerProjectKeys = {
+const customerProjectKeys = {
   all: () => ['customer-projects'] as const,
   byCustomer: (customerId: string) => [...customerProjectKeys.all(), customerId] as const,
 };

@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
  * nothing on a desktop. Override with `columns` if needed.
  */
 
-export type KpiStripeColumns = 2 | 3 | 4 | 5 | 6 | 8;
+type KpiStripeColumns = 2 | 3 | 4 | 5 | 6 | 8;
 
 export interface KpiStripeProps {
   /**

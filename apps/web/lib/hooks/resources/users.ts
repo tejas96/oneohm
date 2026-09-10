@@ -6,14 +6,9 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   defineResource,
-  getResourceConfig,
-  getResourcePermissions,
-  useResourceList,
   useResourceDetail,
   useResourceMutations,
-  useResourcePermissions,
   useFieldAvailability,
-  type ResourceConfig,
   type BaseFilters,
 } from '../core';
 import { createResourceKeys } from '../core/query-keys';
@@ -39,7 +34,7 @@ export interface AdminUser {
   updatedAt: string;
 }
 
-export interface AdminUserFilters extends BaseFilters {
+interface AdminUserFilters extends BaseFilters {
   status?: string;
   roleId?: string;
   showDeleted?: boolean;
@@ -86,11 +81,6 @@ defineResource<AdminUser>(
 
 // ── Hooks ──────────────────────────────────────────────────────
 
-export function useAdminUsers(): ReturnType<typeof useResourceList<AdminUser, AdminUserFilters>> {
-  const config = getResourceConfig('users') as ResourceConfig<AdminUser, AdminUserFilters>;
-  return useResourceList<AdminUser, AdminUserFilters>(config);
-}
-
 export function useAdminUser(
   userId: string,
   options?: { enabled?: boolean },
@@ -122,10 +112,6 @@ export function useAdminUserMutations(): ReturnType<typeof useResourceMutations<
       restore: { success: 'User restored successfully', error: 'Failed to restore user' },
     },
   });
-}
-
-export function useAdminUserPermissions(): ReturnType<typeof useResourcePermissions> {
-  return useResourcePermissions(getResourcePermissions('users'));
 }
 
 /**

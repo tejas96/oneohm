@@ -12,7 +12,6 @@ import { useMemo } from 'react';
 import {
   RESOURCE_MUTATION_DEFAULTS,
   STALE_TIMES,
-  createResourceKeys,
   defineResource,
   normalizeApiError,
 } from '../core';
@@ -57,13 +56,13 @@ export interface SavedView {
   updatedAt: string;
 }
 
-export interface CreateSavedViewPayload {
+interface CreateSavedViewPayload {
   resource: SavedViewResource;
   name: string;
   filters: Record<string, unknown>;
 }
 
-export interface UpdateSavedViewPayload {
+interface UpdateSavedViewPayload {
   name?: string;
   filters?: Record<string, unknown>;
 }
@@ -83,8 +82,6 @@ defineResource<SavedView>(
   // No permission codes — this is the user's own data.
 );
 
-export const savedViewKeys = createResourceKeys('saved-views');
-
 // ============================================================================
 // Read hooks
 // ============================================================================
@@ -101,21 +98,6 @@ export function useSavedViews(resource: SavedViewResource): UseQueryResult<Saved
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<SavedView[]>('/saved-views', {
         params: { resource },
-        signal,
-      });
-      return data;
-    },
-  });
-}
-
-/** Fetch a single saved view by id. Cross-user/cross-org returns 404. */
-export function useSavedView(id: string | undefined): UseQueryResult<SavedView, unknown> {
-  return useQuery<SavedView>({
-    queryKey: ['saved-views', 'detail', id ?? ''] as const,
-    enabled: Boolean(id),
-    staleTime: STALE_TIMES.standard,
-    queryFn: async ({ signal }) => {
-      const { data } = await apiClient.get<SavedView>(`/saved-views/${id ?? ''}`, {
         signal,
       });
       return data;

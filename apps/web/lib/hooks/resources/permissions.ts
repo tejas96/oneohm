@@ -3,9 +3,7 @@
 import {
   defineResource,
   getResourceConfig,
-  getResourcePermissions,
   useResourceList,
-  useResourcePermissions,
   type ResourceConfig,
   type BaseFilters,
 } from '../core';
@@ -36,7 +34,7 @@ export interface Permission {
   module: string;
 }
 
-export interface PermissionFilters extends BaseFilters {
+interface PermissionFilters extends BaseFilters {
   module?: string;
 }
 
@@ -75,8 +73,4 @@ export function useAllPermissions(): ReturnType<typeof useResourceList<AdminPerm
     syncToUrl: false,
     paramMapping: { limit: 'pageSize' },
   });
-}
-
-export function usePermissionPermissions(): ReturnType<typeof useResourcePermissions> {
-  return useResourcePermissions(getResourcePermissions('permissions'));
 }

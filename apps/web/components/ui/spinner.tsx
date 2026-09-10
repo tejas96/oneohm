@@ -24,7 +24,7 @@ const spinnerVariants = cva('rounded-full border-3 animate-spin', {
   },
 });
 
-export interface SpinnerProps
+interface SpinnerProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof spinnerVariants> {
   /** Message to display with spinner */
@@ -124,7 +124,7 @@ const loadingDotsVariants = cva('flex items-center gap-1', {
   },
 });
 
-export interface LoadingDotsProps
+interface LoadingDotsProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof loadingDotsVariants> {}
 
@@ -147,4 +147,4 @@ const LoadingDots = React.forwardRef<HTMLDivElement, LoadingDotsProps>(
 );
 LoadingDots.displayName = 'LoadingDots';
 
-export { Spinner, spinnerVariants, LoadingDots, loadingDotsVariants };
+export { Spinner };

@@ -125,7 +125,7 @@ const sizeSx = (size: Size) => {
   };
 };
 
-export interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'color'> {
+interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'color'> {
   variant?: Variant;
   size?: Size;
   /** Buttons are already pill via the theme; kept for API compatibility. */

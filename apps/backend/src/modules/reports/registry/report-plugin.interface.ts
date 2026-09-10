@@ -6,7 +6,7 @@ export interface ReportEngineContext {
   userId: string;
 }
 
-export interface ReportDataProvider<TRaw> {
+interface ReportDataProvider<TRaw> {
   fetch(ctx: ReportEngineContext): Promise<TRaw>;
 }
 

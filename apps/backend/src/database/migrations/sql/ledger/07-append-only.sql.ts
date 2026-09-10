@@ -22,7 +22,7 @@
  * bypass mechanism and no permanent escape hatch from the guarantee ever exists.
  */
 
-export const CREATE_APPEND_ONLY_FUNCTION = `
+const CREATE_APPEND_ONLY_FUNCTION = `
   CREATE OR REPLACE FUNCTION ledger_forbid_mutation()
   RETURNS trigger AS $$
   BEGIN
@@ -34,7 +34,7 @@ export const CREATE_APPEND_ONLY_FUNCTION = `
   $$ LANGUAGE plpgsql
 `;
 
-export const CREATE_APPEND_ONLY_TRIGGERS: string[] = [
+const CREATE_APPEND_ONLY_TRIGGERS: string[] = [
   `CREATE TRIGGER trg_ledger_entries_append_only
      BEFORE UPDATE OR DELETE ON ledger_entries
      FOR EACH ROW EXECUTE FUNCTION ledger_forbid_mutation()`,

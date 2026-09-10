@@ -3,19 +3,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import {
-  defineResource,
-  useResourceDetail,
-  useResourceMutations,
-  createResourceKeys,
-} from '../core';
+import { defineResource, useResourceMutations, createResourceKeys } from '../core';
 
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
 // ── Types ──────────────────────────────────────────────────────
 
-export interface EmployeeProfileUser {
+interface EmployeeProfileUser {
   id: string;
   firstName: string;
   lastName?: string;
@@ -76,20 +71,6 @@ defineResource<EmployeeProfile>(
 );
 
 // ── Hooks ──────────────────────────────────────────────────────
-
-/**
- * Fetch a single employee profile by profile ID.
- */
-export function useEmployeeProfile(
-  employeeId: string,
-): ReturnType<typeof useResourceDetail<EmployeeProfile>> {
-  return useResourceDetail<EmployeeProfile>({
-    resource: 'employee-profile',
-    endpoint: '/employees',
-    id: employeeId,
-    enabled: !!employeeId,
-  });
-}
 
 /**
  * Fetch the current authenticated user's employee profile via GET /employees/me.

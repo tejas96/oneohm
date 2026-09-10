@@ -206,5 +206,3 @@ export const editUserSchema = z
   .superRefine(validateUserForm);
 
 export type CreateUserFormData = z.infer<typeof createUserSchema>;
-export type EditUserFormData = z.infer<typeof editUserSchema>;
-export type UserFormData = CreateUserFormData | EditUserFormData;

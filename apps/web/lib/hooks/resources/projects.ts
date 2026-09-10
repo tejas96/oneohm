@@ -31,7 +31,7 @@ export interface TeamWorkloadEntry {
   workloadPercent: number;
 }
 
-export interface MilestoneProgressEntry {
+interface MilestoneProgressEntry {
   id: string;
   name: string;
   totalTasks: number;
@@ -39,13 +39,13 @@ export interface MilestoneProgressEntry {
   percent: number;
 }
 
-export interface UpcomingDeadline {
+interface UpcomingDeadline {
   id: string;
   name: string;
   endDate: string;
 }
 
-export interface ProjectSummaryMetrics {
+interface ProjectSummaryMetrics {
   totalTasks: number;
   completedTasks: number;
   inProgressTasks: number;
@@ -209,9 +209,7 @@ export function useProjectTaskList(
 
 // ── Convert From Quote ──────────────────────────────────────────
 
-export type { ConvertFromQuotePayload } from '../../../components/features/projects/hooks/use-create-project';
-
-export interface ProjectResponse {
+interface ProjectResponse {
   id: string;
   projectNumber: string;
   name: string;

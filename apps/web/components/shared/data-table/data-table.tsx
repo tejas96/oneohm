@@ -12,7 +12,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ArrowUpDown, ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
 import * as React from 'react';
 
 import { TablePagination } from './pagination';
@@ -84,29 +84,9 @@ export interface DataTableProps<TData, TValue> {
 // ============================================================================
 
 /**
- * Create a sortable header for a column
- */
-export function createSortableHeader(
-  column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void },
-  label: string,
-): React.ReactNode {
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="-ml-3 h-8 font-semibold text-2xs uppercase tracking-wider"
-      onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-    >
-      {label}
-      <ArrowUpDown className="ml-2 size-icon-sm" />
-    </Button>
-  );
-}
-
-/**
  * Create a selection column
  */
-export function createSelectionColumn<TData>(): ColumnDef<TData> {
+function createSelectionColumn<TData>(): ColumnDef<TData> {
   return {
     id: 'select',
     header: ({ table }) => (

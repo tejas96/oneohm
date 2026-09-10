@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProductStatus, UnitOfMeasure } from '@tejas96/shared/types';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 export class ProductResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -86,23 +86,4 @@ export class ProductResponseDto {
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   @Expose()
   updatedAt!: Date;
-}
-
-export class ProductsListResponseDto {
-  @ApiProperty({ type: [ProductResponseDto] })
-  @Expose()
-  @Type(() => ProductResponseDto)
-  data!: ProductResponseDto[];
-
-  @ApiProperty({ example: 100 })
-  @Expose()
-  total!: number;
-
-  @ApiProperty({ example: 1 })
-  @Expose()
-  page!: number;
-
-  @ApiProperty({ example: 20 })
-  @Expose()
-  limit!: number;
 }

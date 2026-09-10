@@ -13,7 +13,7 @@ import { apiClient } from './client';
 
 export { FileCategory };
 
-export interface RequestUploadUrlDto {
+interface RequestUploadUrlDto {
   fileName: string;
   contentType: string;
   fileSize?: number;
@@ -23,14 +23,14 @@ export interface RequestUploadUrlDto {
   subCategory?: string;
 }
 
-export interface PresignedUploadUrlResponse {
+interface PresignedUploadUrlResponse {
   uploadUrl: string;
   fileKey: string;
   publicUrl: string;
   expiresAt: string;
 }
 
-export interface UploadProgress {
+interface UploadProgress {
   loaded: number;
   total: number;
   percent: number;
@@ -58,9 +58,7 @@ export interface UploadResult {
 /**
  * Get a presigned URL for uploading a file
  */
-export async function getPresignedUrl(
-  dto: RequestUploadUrlDto,
-): Promise<PresignedUploadUrlResponse> {
+async function getPresignedUrl(dto: RequestUploadUrlDto): Promise<PresignedUploadUrlResponse> {
   const { data } = await apiClient.post<PresignedUploadUrlResponse>('/storage/presigned-url', dto);
   return data;
 }
@@ -184,7 +182,7 @@ export async function deleteFile(fileKey: string): Promise<void> {
 // Download Functions
 // ============================================================================
 
-export interface PresignedDownloadUrlResponse {
+interface PresignedDownloadUrlResponse {
   downloadUrl: string;
   expiresAt: string;
 }

@@ -8,7 +8,7 @@ const MAX_LINE_NOTES = 500;
 const MAX_TERMS = 2000;
 const MAX_NOTES = 2000;
 
-export const poLineSchema = z.object({
+const poLineSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
   orderedQuantity: z.coerce
     .number()

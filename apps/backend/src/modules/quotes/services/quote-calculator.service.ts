@@ -1635,11 +1635,6 @@ export class QuoteCalculatorService {
       }, 0);
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- helper used for sorting, not direct computation
-    const getCombinationCapacity = (combo: Combination): number => {
-      return combo.reduce((sum, c) => sum + getInverterCapacity(c.inverter) * c.quantity, 0);
-    };
-
     const getInverterCount = (combo: Combination): number => {
       return combo.reduce((sum, c) => sum + c.quantity, 0);
     };

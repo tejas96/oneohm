@@ -35,7 +35,7 @@ const CHECK_ICON_SIZES = {
   lg: 'size-checkbox-lg',
 } as const;
 
-export interface CheckboxProps
+interface CheckboxProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'checked' | 'onChange'>,
     VariantProps<typeof checkboxVariants> {
   /** Checked state */
@@ -139,4 +139,4 @@ const Checkbox = React.forwardRef<HTMLButtonElement, CheckboxProps>(
 );
 Checkbox.displayName = 'Checkbox';
 
-export { Checkbox, checkboxVariants };
+export { Checkbox };

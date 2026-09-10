@@ -154,5 +154,3 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
     </TooltipProvider>
   );
 }
-
-export default Rail;

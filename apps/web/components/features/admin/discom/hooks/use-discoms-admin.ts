@@ -13,7 +13,7 @@ import { showToast } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/utils';
 
-export interface DiscomGeoLocation {
+interface DiscomGeoLocation {
   latitude: number;
   longitude: number;
   accuracy?: number;
@@ -49,7 +49,7 @@ export interface DiscomListStats {
   linkedProperties: number;
 }
 
-export interface DiscomListMeta {
+interface DiscomListMeta {
   page: number;
   limit: number;
   total: number;

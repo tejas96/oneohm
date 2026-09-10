@@ -35,9 +35,9 @@ import { cn } from '@/lib/utils';
  * own component if the rebuild needs them.
  */
 
-export type InlineEditVariant = 'text' | 'multiline' | 'date' | 'number';
+type InlineEditVariant = 'text' | 'multiline' | 'date' | 'number';
 
-export interface InlineEditCellProps {
+interface InlineEditCellProps {
   value: string;
   /** Display fallback when value is empty. */
   placeholder?: string;
@@ -55,7 +55,7 @@ export interface InlineEditCellProps {
   className?: string;
 }
 
-export function InlineEditCell({
+function InlineEditCell({
   value,
   placeholder = '—',
   variant = 'text',

@@ -44,7 +44,7 @@ export function paiseToRupees(paise: number): number {
  * residential or commercial solar contract while staying three orders of
  * magnitude inside that limit.
  */
-export const MAX_MONEY_INPUT_PAISE = 100_00_00_000_00;
+const MAX_MONEY_INPUT_PAISE = 100_00_00_000_00;
 
 export type RupeeInput =
   | { ok: true; paise: number }

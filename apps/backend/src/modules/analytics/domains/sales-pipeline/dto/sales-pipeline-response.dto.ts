@@ -1,6 +1,6 @@
 import type { AnalyticsTrendMetric } from '../../../common/dto/trend-metric.dto';
 
-export interface SalesPipelineFunnelStageDto {
+interface SalesPipelineFunnelStageDto {
   id: string;
   label: string;
   count: number;
@@ -18,7 +18,7 @@ export interface SalesPipelineFunnelResponseDto {
   lostValue: number;
 }
 
-export type SalesPipelineTrendMetricDto = AnalyticsTrendMetric;
+type SalesPipelineTrendMetricDto = AnalyticsTrendMetric;
 
 export interface SalesPipelineStatsResponseDto {
   fromDate: string;
@@ -51,7 +51,7 @@ export interface SalesPipelineLeaderboardResponseDto {
   entries: SalesPipelineLeaderboardEntryDto[];
 }
 
-export interface SalesPipelineTrendPointDto {
+interface SalesPipelineTrendPointDto {
   period: string;
   leadsCount: number;
   wonCount: number;

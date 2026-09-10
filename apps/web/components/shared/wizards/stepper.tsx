@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 // Types
 // ============================================================================
 
-export interface Step {
+interface Step {
   /** Unique identifier for the step */
   id: string;
   /** Step title/label */
@@ -21,7 +21,7 @@ export interface Step {
   icon?: React.ReactNode;
 }
 
-export type StepStatus = 'completed' | 'current' | 'pending' | 'error';
+type StepStatus = 'completed' | 'current' | 'pending' | 'error';
 
 export interface StepperProps {
   /** Array of steps to display */
