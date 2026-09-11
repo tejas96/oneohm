@@ -132,6 +132,17 @@ export class CustomerPropertyRepository {
     });
   }
 
+  /** Reads the row with a write lock; a concurrent save of this site waits for this transaction. */
+  async findByIdForUpdate(
+    id: string,
+    manager: EntityManager,
+  ): Promise<CustomerPropertyEntity | null> {
+    return this.getRepo(manager).findOne({
+      where: { id },
+      lock: { mode: 'pessimistic_write' },
+    });
+  }
+
   async findByIdAndOrganization(id: string): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
@@ -221,12 +232,18 @@ export class CustomerPropertyRepository {
    * Set a property as primary for a customer
    * Unsets all other properties as non-primary first
    */
-  async setPrimary(propertyId: string, customerId: string, updatedBy?: string): Promise<void> {
+  async setPrimary(
+    propertyId: string,
+    customerId: string,
+    updatedBy?: string,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = this.getRepo(manager);
     // First, unset all primary flags for this customer
-    await this.repository.update({ customerId, deletedAt: IsNull() }, { isPrimary: false });
+    await repo.update({ customerId, deletedAt: IsNull() }, { isPrimary: false });
 
     // Then set the specified property as primary
-    await this.repository.update({ id: propertyId }, { isPrimary: true, updatedBy });
+    await repo.update({ id: propertyId }, { isPrimary: true, updatedBy });
   }
 
   async countByCustomer(customerId: string): Promise<number> {

@@ -78,6 +78,11 @@ export class LoanTaskSyncService {
       propertyType: event.propertyTypeBefore,
     };
 
+    // Locked, so a task someone starts during this save counts as started.
+    await manager.query('SELECT id FROM project_tasks WHERE project_id = $1 FOR UPDATE', [
+      project.id,
+    ]);
+
     const allTasks = await manager.getRepository(ProjectTaskEntity).find({
       where: { projectId: project.id },
       relations: { workflowStep: true },
@@ -178,12 +183,7 @@ export class LoanTaskSyncService {
 
     const created: Array<{ step: WorkflowStepEntity; taskId: string }> = [];
     for (const step of steps) {
-      let code: string;
-      try {
-        code = await this.taskRepository.generateTaskCode(COMPANY.code, manager);
-      } catch {
-        code = step.code;
-      }
+      const code = await this.taskRepository.generateTaskCode(COMPANY.code, manager);
 
       const task = await this.taskRepository.create(
         buildTaskFromStep({ step, projectId, code, baseDate: today, createdBy: actorUserId }),

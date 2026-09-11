@@ -543,12 +543,7 @@ export class CustomerPropertyService {
       await this.discomService.assertActiveDiscom(updateDto.discomId);
     }
 
-    // Handle primary flag change FIRST (before main update)
-    if (updateDto.isPrimary === true && !property.isPrimary) {
-      await this.propertyRepository.setPrimary(id, property.customerId, updatedBy);
-    }
-
-    // Prepare update data (exclude isPrimary since handled above, normalize documents)
+    // Prepare update data (exclude isPrimary, handled inside the transaction; normalize documents)
 
     const { isPrimary: unusedIsPrimary, documents, changeRequests, ...restDto } = updateDto;
 
@@ -566,12 +561,22 @@ export class CustomerPropertyService {
       );
     }
 
-    // The loan sync lands with the save or not at all: a site that says "no loan"
-    // while its project still waits on loan tasks is the state this exists to end.
-    const loanChanged =
-      updateDto.wantsLoan !== undefined && updateDto.wantsLoan !== property.wantsLoan;
-
     const { updated, taskRuleSync } = await this.dataSource.transaction(async (manager) => {
+      const locked = await this.propertyRepository.findByIdForUpdate(id, manager);
+      if (!locked) {
+        throw new NotFoundException(`Property with ID '${id}' not found`);
+      }
+
+      // Handle primary flag change FIRST (before main update)
+      if (updateDto.isPrimary === true && !locked.isPrimary) {
+        await this.propertyRepository.setPrimary(id, locked.customerId, updatedBy, manager);
+      }
+
+      // The loan sync lands with the save or not at all: a site that says "no loan"
+      // while its project still waits on loan tasks is the state this exists to end.
+      const loanChanged =
+        updateDto.wantsLoan !== undefined && updateDto.wantsLoan !== locked.wantsLoan;
+
       const saved = await this.propertyRepository.update(id, updatePayload, manager);
       if (!saved) {
         throw new NotFoundException(`Property with ID '${id}' not found`);
@@ -583,9 +588,9 @@ export class CustomerPropertyService {
           SITE_EVENTS.LOAN_CHANGED,
           new SiteLoanChangedEvent(
             id,
-            property.wantsLoan,
+            locked.wantsLoan,
             updateDto.wantsLoan === true,
-            property.propertyType,
+            locked.propertyType,
             updatedBy ?? null,
             manager,
           ),

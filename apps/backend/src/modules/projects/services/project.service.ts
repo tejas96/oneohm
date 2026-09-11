@@ -870,6 +870,7 @@ export class ProjectService {
       const converted = await manager.getRepository(CustomerPropertyEntity).findOne({
         where: { id: propertyId },
         select: { id: true, customerId: true, wantsLoan: true, propertyType: true },
+        lock: { mode: 'pessimistic_write' },
       });
       if (converted) {
         await this.leadClosureService.closeProperty(
