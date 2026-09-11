@@ -42,16 +42,19 @@ export function Step5TasksMilestones({ form }: Step5TasksMilestonesProps): React
   const { data: property, isLoading: propertyLoading } = useProperty(propertyId);
 
   const { items: rawTemplates, isLoading: stepsLoading } = useAllActiveWorkflowSteps();
+  // Explicit element type at the source: useAllActiveWorkflowSteps()'s `items` is
+  // typed loosely, and that looseness otherwise leaks into every .filter() below.
+  const activeTemplates: WorkflowStep[] = rawTemplates;
   // The same two rules the backend applies when it builds the tasks:
   // change-request templates never join a new project, and a step whose task rule
   // this site fails is left out. Without them the wizard promises tasks the
   // project never gets.
   const baselineTemplates: WorkflowStep[] = useMemo(
-    () => (rawTemplates as WorkflowStep[]).filter(isProjectBaselineStep),
-    [rawTemplates],
+    (): WorkflowStep[] => activeTemplates.filter(isProjectBaselineStep),
+    [activeTemplates],
   );
   const templates: WorkflowStep[] = useMemo(
-    () =>
+    (): WorkflowStep[] =>
       property
         ? baselineTemplates.filter((step) =>
             stepAppliesToSite(step, {

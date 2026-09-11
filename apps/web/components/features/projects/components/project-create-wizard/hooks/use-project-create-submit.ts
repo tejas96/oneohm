@@ -13,6 +13,7 @@ import {
   useAllActiveWorkflowSteps,
   useConvertFromQuote,
   useEmployees,
+  type WorkflowStep,
 } from '@/lib/hooks/resources';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -30,12 +31,15 @@ export function useProjectCreateSubmit(
   const router = useRouter();
   const { execute, isPending } = useConvertFromQuote();
   const { items: rawWorkflowSteps = [] } = useAllActiveWorkflowSteps();
+  // Explicit element type at the source: useAllActiveWorkflowSteps()'s `items` is
+  // typed loosely, and that looseness otherwise leaks into the .filter() chain below.
+  const activeWorkflowSteps: WorkflowStep[] = rawWorkflowSteps;
   const { data: property } = useProperty(form.watch('propertyId'));
   // Only steps that become tasks can carry an auto-assignment: baseline steps
   // whose task rule this site passes — the same filter step 5 shows.
-  const workflowSteps = useMemo(
-    () =>
-      rawWorkflowSteps
+  const workflowSteps: WorkflowStep[] = useMemo(
+    (): WorkflowStep[] =>
+      activeWorkflowSteps
         .filter(isProjectBaselineStep)
         .filter((step) =>
           property
@@ -45,7 +49,7 @@ export function useProjectCreateSubmit(
               })
             : true,
         ),
-    [rawWorkflowSteps, property],
+    [activeWorkflowSteps, property],
   );
   const { items: employees = [] } = useEmployees({ status: 'active' });
 
