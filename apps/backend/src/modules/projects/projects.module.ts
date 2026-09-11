@@ -19,6 +19,7 @@ import {
   WorkflowStepEntity,
 } from './entities';
 import { ProjectTeamGuard } from './guards';
+import { SiteLoanChangedListener } from './listeners/site-loan-changed.listener';
 import {
   ProjectRepository,
   ProjectTaskRepository,
@@ -37,6 +38,7 @@ import {
   WorkflowEngineService,
   WorkflowStepService,
   ChangeRequestTaskService,
+  LoanTaskSyncService,
 } from './services';
 import { BomModule } from '../bom/bom.module';
 import { CustomersModule } from '../customers/customers.module';
@@ -92,6 +94,8 @@ import { UsersModule } from '../users/users.module';
     WorkflowEngineService,
     ProjectTaskService,
     ChangeRequestTaskService,
+    LoanTaskSyncService,
+    SiteLoanChangedListener,
     ProjectTeamService,
     ProjectChatService,
     ProjectAnalyticsService,

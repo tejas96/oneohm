@@ -12,6 +12,7 @@ import {
   SiteStatus,
   type SurveyData,
   LossReason,
+  type TaskRuleSyncResult,
 } from '@tejas96/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
@@ -487,6 +488,14 @@ export class CustomerPropertyResponseDto {
   })
   @Expose()
   hasActiveLoan?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Only on a save that changed the loan flag: what that did to the live project’s loan tasks',
+  })
+  @Expose()
+  @Transform(({ obj }) => (obj as { taskRuleSync?: TaskRuleSyncResult }).taskRuleSync)
+  taskRuleSync?: TaskRuleSyncResult;
 
   /**
    * The current project (see resolveCurrentProject above), converted to its
