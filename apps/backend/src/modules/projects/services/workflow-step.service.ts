@@ -8,12 +8,21 @@ import {
 import {
   type ChangeRequestType,
   type PaginatedResponse,
+  type PropertyType,
   type StatisticsResponse,
 } from '@tejas96/shared/types';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { type WorkflowStepEntity } from '../entities';
 import { ProjectTaskRepository, WorkflowStepRepository } from '../repositories';
+
+/** An empty type list is stored as NULL, so it can never read as "no property type". */
+function normalizePropertyTypes(
+  types: PropertyType[] | null | undefined,
+): PropertyType[] | null {
+  if (!types || types.length === 0) return null;
+  return [...new Set(types)];
+}
 
 @Injectable()
 export class WorkflowStepService {
@@ -35,9 +44,11 @@ export class WorkflowStepService {
     }
 
     await this.assertChangeRequestShape(createDto);
+    this.assertRuleShape(createDto);
 
     return this.stepRepository.create({
       ...createDto,
+      propertyTypes: normalizePropertyTypes(createDto.propertyTypes),
       createdBy: currentUserId,
       updatedBy: currentUserId,
     } as Partial<WorkflowStepEntity>);
@@ -92,6 +103,12 @@ export class WorkflowStepService {
     }
 
     await this.assertChangeRequestShape({ ...existing, ...updateDto }, id);
+    this.assertRuleShape({ ...existing, ...updateDto });
+
+    const changes: Partial<WorkflowStepEntity> = { ...updateDto };
+    if (Object.prototype.hasOwnProperty.call(updateDto, 'propertyTypes')) {
+      changes.propertyTypes = normalizePropertyTypes(updateDto.propertyTypes);
+    }
 
     const renamedFrom =
       updateDto.code && updateDto.code !== existing.code ? existing.code : undefined;
@@ -103,7 +120,7 @@ export class WorkflowStepService {
       const updated = await this.stepRepository.update(
         id,
         {
-          ...updateDto,
+          ...changes,
           updatedBy: currentUserId,
         },
         manager,
@@ -217,6 +234,24 @@ export class WorkflowStepService {
         `A change request step for "${step.changeRequestType}" already exists. ` +
           'Delete or re-type that step first.',
       );
+    }
+  }
+
+  /**
+   * A change-request step is created only for a matching request, never from the
+   * baseline catalogue, so a task rule on it would never be read. Refuse it
+   * rather than store a rule that silently does nothing.
+   */
+  private assertRuleShape(step: {
+    isSpecial?: boolean;
+    changeRequestType?: ChangeRequestType | null;
+    loanOnly?: boolean;
+    propertyTypes?: PropertyType[] | null;
+  }): void {
+    const isChangeRequestStep = Boolean(step.isSpecial || step.changeRequestType);
+    const hasRule = Boolean(step.loanOnly) || (step.propertyTypes?.length ?? 0) > 0;
+    if (isChangeRequestStep && hasRule) {
+      throw new BadRequestException('A change request step cannot have task rules');
     }
   }
 

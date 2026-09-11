@@ -76,6 +76,14 @@ export class WorkflowStepResponseDto {
   @Expose()
   changeRequestType?: string;
 
+  @ApiProperty({ description: 'Task rule: the step goes only to sites that want a loan.' })
+  @Expose()
+  loanOnly!: boolean;
+
+  @ApiPropertyOptional({ type: [String], nullable: true })
+  @Expose()
+  propertyTypes?: string[] | null;
+
   @ApiProperty()
   @Expose()
   createdAt!: Date;

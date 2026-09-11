@@ -1,4 +1,9 @@
-import { type TaskChecklist, ChangeRequestType, WorkflowStepType } from '@tejas96/shared/types';
+import {
+  type PropertyType,
+  type TaskChecklist,
+  ChangeRequestType,
+  WorkflowStepType,
+} from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 
 import { ProjectTaskEntity } from './project-task.entity';
@@ -61,6 +66,14 @@ export class WorkflowStepEntity extends BaseEntity {
 
   @Column({ name: 'change_request_type', type: 'varchar', length: 50, nullable: true })
   changeRequestType?: ChangeRequestType | null;
+
+  /** Task rule: only sites that want a loan get this step's task. */
+  @Column({ name: 'loan_only', type: 'boolean', default: false })
+  loanOnly!: boolean;
+
+  /** Task rule: only these property types get this step's task. NULL means every type. */
+  @Column({ name: 'property_types', type: 'varchar', length: 50, array: true, nullable: true })
+  propertyTypes?: PropertyType[] | null;
 
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp with time zone' })
   deletedAt?: Date;

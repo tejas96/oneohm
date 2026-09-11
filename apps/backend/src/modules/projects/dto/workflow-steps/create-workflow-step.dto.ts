@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { type TaskChecklist, ChangeRequestType, WorkflowStepType } from '@tejas96/shared/types';
+import {
+  type TaskChecklist,
+  ChangeRequestType,
+  PropertyType,
+  WorkflowStepType,
+} from '@tejas96/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -119,4 +124,24 @@ export class CreateWorkflowStepDto {
   @IsEnum(ChangeRequestType)
   @IsOptional()
   changeRequestType?: ChangeRequestType | null;
+
+  @ApiPropertyOptional({
+    description: 'Task rule: the step goes only to sites that want a loan.',
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  loanOnly?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Task rule: the step goes only to these property types. Null or empty means every type.',
+    enum: PropertyType,
+    isArray: true,
+    nullable: true,
+  })
+  @IsArray()
+  @IsEnum(PropertyType, { each: true })
+  @IsOptional()
+  propertyTypes?: PropertyType[] | null;
 }
