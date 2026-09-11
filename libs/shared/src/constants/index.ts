@@ -1,4 +1,5 @@
 export * from './app';
+export * from './banks';
 export * from './my-tasks';
 export * from './company';
 export * from './labels';

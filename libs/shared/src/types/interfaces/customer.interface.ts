@@ -66,6 +66,11 @@ export interface CustomerProperty {
   currentLoad?: string;
   /** Whether customer wants loan financing for this property */
   wantsLoan: boolean;
+  /**
+   * Lender the customer named. A `BANKS` code, or a name typed under "Other" —
+   * render it with `bankLabel`, which handles both.
+   */
+  financingBank?: string;
   /** Whether this is the primary property for the customer */
   isPrimary: boolean;
   /** Property status */
