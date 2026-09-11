@@ -15,12 +15,13 @@ import {
   ProjectStatus,
   PropertyStatus,
   QuoteStatus,
+  type SiteTaskFacts,
   TaskStatus,
 } from '@tejas96/shared/types';
 import {
-  canonicalMilestoneOrder,
   compareMilestoneSequence,
   isProjectBaselineStep,
+  stepAppliesToSite,
 } from '@tejas96/shared/utils';
 import { DataSource, type EntityManager } from 'typeorm';
 
@@ -50,17 +51,11 @@ import {
   ProjectTeamRepository,
   WorkflowStepRepository,
 } from '../repositories';
+import { buildTaskFromStep } from '../utils/task-from-step';
 
 const PROJECT_CONSTANTS = {
   ALL_TASKS_LIMIT: 10000,
-  KANBAN_ORDER_MULTIPLIER: 100,
 } as const;
-
-function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
 
 /**
  * Project Service
@@ -757,6 +752,7 @@ export class ProjectService {
    */
   private detectDependencyCycles(
     steps: { code: string; dependsOnTaskCodes?: string[] | null }[],
+    ruleSkippedCodes: ReadonlySet<string> = new Set(),
   ): void {
     const codeSet = new Set(steps.map((s) => s.code));
     const adjList = new Map<string, string[]>();
@@ -771,7 +767,10 @@ export class ProjectService {
       if (s.dependsOnTaskCodes) {
         for (const dep of s.dependsOnTaskCodes) {
           if (!codeSet.has(dep)) {
-            this.logger.warn(`Step "${s.code}" depends on missing code "${dep}" — skipping dep`);
+            // A step left out by a task rule is expected to be missing here.
+            if (!ruleSkippedCodes.has(dep)) {
+              this.logger.warn(`Step "${s.code}" depends on missing code "${dep}" — skipping dep`);
+            }
             continue;
           }
           adjList.get(dep)!.push(s.code);
@@ -868,9 +867,10 @@ export class ProjectService {
       //
       // ProjectEntity has no customerId of its own — it is derived from the
       // property — so read it back rather than threading it through the params.
-      const converted = await manager
-        .getRepository(CustomerPropertyEntity)
-        .findOne({ where: { id: propertyId }, select: { id: true, customerId: true } });
+      const converted = await manager.getRepository(CustomerPropertyEntity).findOne({
+        where: { id: propertyId },
+        select: { id: true, customerId: true, wantsLoan: true, propertyType: true },
+      });
       if (converted) {
         await this.leadClosureService.closeProperty(
           propertyId,
@@ -896,6 +896,9 @@ export class ProjectService {
         excludedStepIds,
         project.startDate,
         manager,
+        converted
+          ? { wantsLoan: converted.wantsLoan, propertyType: converted.propertyType }
+          : null,
       );
 
       await this.changeRequestTaskService.applyChangeRequestTasks({
@@ -945,6 +948,10 @@ export class ProjectService {
   /**
    * Apply workflow steps to a new project, setting milestone_name and milestone_order
    * directly on each task. Overrides from the wizard take precedence over step defaults.
+   *
+   * A step whose task rule the site fails (stepAppliesToSite) never becomes a task.
+   * `siteFacts` is read inside the creation transaction, so the rule sees the site
+   * exactly as the project is created against it.
    */
   private async applyWorkflowStepsWithMilestones(
     projectId: string,
@@ -958,6 +965,7 @@ export class ProjectService {
     excludedStepIds?: string[],
     projectStartDate?: Date,
     manager?: EntityManager,
+    siteFacts?: SiteTaskFacts | null,
   ): Promise<void> {
     let steps = await this.workflowStepRepository.findAllActive(manager);
 
@@ -971,9 +979,19 @@ export class ProjectService {
     // Change-request templates are only instantiated when property has pending requests.
     steps = steps.filter(isProjectBaselineStep);
 
+    // Task rules: a step whose rule this site fails never becomes a task.
+    const ruleSkippedCodes = new Set<string>();
+    if (siteFacts) {
+      steps = steps.filter((step) => {
+        const applies = stepAppliesToSite(step, siteFacts);
+        if (!applies) ruleSkippedCodes.add(step.code);
+        return applies;
+      });
+    }
+
     if (steps.length === 0) return;
 
-    this.detectDependencyCycles(steps);
+    this.detectDependencyCycles(steps, ruleSkippedCodes);
 
     const orgCode = COMPANY.code;
 
@@ -994,42 +1012,18 @@ export class ProjectService {
 
       const override = overrideMap.get(step.id);
 
-      // Resolve milestone name: explicit override wins, then step default
-      let milestoneName: string | null = null;
-      let milestoneOrder: number | null = null;
-
-      if (override !== undefined) {
-        milestoneName = override.milestoneName;
-        milestoneOrder =
-          override.milestoneOrder ??
-          (milestoneName ? (milestoneNameToOrder.get(milestoneName) ?? null) : null);
-      } else {
-        milestoneName = step.defaultMilestoneName ?? null;
-        milestoneOrder =
-          step.defaultMilestoneOrder ??
-          (milestoneName ? (milestoneNameToOrder.get(milestoneName) ?? null) : null);
-      }
-
-      if (milestoneName) {
-        const canonical = canonicalMilestoneOrder(milestoneName);
-        if (canonical !== undefined) {
-          milestoneOrder = canonical;
-        }
-      }
-
       const task = await this.taskRepository.create(
-        {
+        buildTaskFromStep({
+          step,
           projectId,
-          workflowStepId: step.id,
           code: taskCode,
-          kanbanOrder: step.sequenceOrder * PROJECT_CONSTANTS.KANBAN_ORDER_MULTIPLIER,
-          endDate: step.effortDays != null ? addDays(baseDate, step.effortDays) : undefined,
-          status: TaskStatus.BACKLOG,
-          milestoneName,
-          milestoneOrder,
+          baseDate,
           createdBy,
-          updatedBy: createdBy,
-        },
+          milestone: override
+            ? { name: override.milestoneName, order: override.milestoneOrder }
+            : undefined,
+          milestoneNameToOrder,
+        }),
         manager,
       );
 
@@ -1047,6 +1041,10 @@ export class ProjectService {
           const depTaskId = codeToTaskId.get(depCode);
           if (depTaskId) {
             dependsOnTaskIds.push(depTaskId);
+          } else if (ruleSkippedCodes.has(depCode)) {
+            this.logger.debug(
+              `Task dependency skipped: "${depCode}" is left out by a task rule (step "${step.code}")`,
+            );
           } else {
             this.logger.warn(
               `Task dependency resolution: code "${depCode}" not found for step "${step.code}"`,
