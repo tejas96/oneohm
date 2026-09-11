@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { ChangeRequestType } from '../types/enums/change-request.enum';
 import { WorkflowStepType } from '../types/enums/project.enum';
+import { PropertyType } from '../types/enums/customer.enum';
 
 const checklistItemSchema = z.object({
   id: z.string(),
@@ -54,6 +55,8 @@ export const workflowStepSchema = z
     changeRequestType: z.nativeEnum(ChangeRequestType).nullable().optional(),
     dependsOnTaskCodes: z.array(z.string()).optional().default([]),
     checklistTemplate: z.array(checklistItemSchema).optional().default([]),
+    loanOnly: z.boolean().default(false),
+    propertyTypes: z.array(z.nativeEnum(PropertyType)).default([]),
   })
   .superRefine((data, ctx) => {
     // A change-request template is only ever found through its type, so the pair
