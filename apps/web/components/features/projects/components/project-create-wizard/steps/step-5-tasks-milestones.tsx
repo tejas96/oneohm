@@ -4,7 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import Alert from '@mui/material/Alert';
 import MuiButton from '@mui/material/Button';
-import { isProjectBaselineStep } from '@tejas96/shared/utils';
+import { isProjectBaselineStep, stepAppliesToSite } from '@tejas96/shared/utils';
 import { useMemo } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 
@@ -17,6 +17,7 @@ import type {
   TeamMemberOption,
 } from '../components/task-row-wizard';
 
+import { useProperty } from '@/components/features/customers/hooks';
 import { MUITypography } from '@/components/ui';
 import { useAllActiveWorkflowSteps, useEmployees, type WorkflowStep } from '@/lib/hooks/resources';
 
@@ -37,13 +38,31 @@ export function Step5TasksMilestones({ form }: Step5TasksMilestonesProps): React
   const taskMilestoneOverrides: TaskMilestoneOverride[] = watch('taskMilestoneOverrides');
   const teamMembers = watch('teamMembers');
 
+  const propertyId: string = watch('propertyId');
+  const { data: property, isLoading: propertyLoading } = useProperty(propertyId);
+
   const { items: rawTemplates, isLoading: stepsLoading } = useAllActiveWorkflowSteps();
-  // Same rule the backend applies when it builds the tasks. Without it the wizard
-  // lists the change-request templates and promises tasks the project never gets.
-  const templates: WorkflowStep[] = useMemo(
+  // The same two rules the backend applies when it builds the tasks:
+  // change-request templates never join a new project, and a step whose task rule
+  // this site fails is left out. Without them the wizard promises tasks the
+  // project never gets.
+  const baselineTemplates: WorkflowStep[] = useMemo(
     () => (rawTemplates as WorkflowStep[]).filter(isProjectBaselineStep),
     [rawTemplates],
   );
+  const templates: WorkflowStep[] = useMemo(
+    () =>
+      property
+        ? baselineTemplates.filter((step) =>
+            stepAppliesToSite(step, {
+              wantsLoan: property.wantsLoan,
+              propertyType: property.propertyType,
+            }),
+          )
+        : baselineTemplates,
+    [baselineTemplates, property],
+  );
+  const skippedByRules = baselineTemplates.length - templates.length;
   const { items: employees } = useEmployees({ status: 'active' });
 
   // Build team member options for assignee dropdown
@@ -240,7 +259,13 @@ export function Step5TasksMilestones({ form }: Step5TasksMilestonesProps): React
         </Alert>
       )}
 
-      {stepsLoading ? (
+      {skippedByRules > 0 && (
+        <MUITypography variant="body" className="text-foreground-secondary mb-3">
+          {skippedByRules} step{skippedByRules > 1 ? 's' : ''} skipped by rules
+        </MUITypography>
+      )}
+
+      {stepsLoading || propertyLoading ? (
         <div className="p-8 text-center">
           <MUITypography variant="body" className="text-foreground-secondary">
             Loading workflow steps…
