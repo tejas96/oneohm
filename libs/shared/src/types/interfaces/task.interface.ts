@@ -1,7 +1,7 @@
 import type { FileAttachment, TaskActivityEntry, TaskChecklist } from './project.interface';
 import { ChangeRequestType } from '../enums/change-request.enum';
-import { type TaskPriority, TaskStatus, WorkflowStepType } from '../enums/project.enum';
 import { type PropertyType } from '../enums/customer.enum';
+import { type TaskPriority, TaskStatus, WorkflowStepType } from '../enums/project.enum';
 
 // ============================================================================
 // Workflow Step

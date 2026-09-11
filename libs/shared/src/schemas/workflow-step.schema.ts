@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 import { ChangeRequestType } from '../types/enums/change-request.enum';
-import { WorkflowStepType } from '../types/enums/project.enum';
 import { PropertyType } from '../types/enums/customer.enum';
+import { WorkflowStepType } from '../types/enums/project.enum';
 
 const checklistItemSchema = z.object({
   id: z.string(),
