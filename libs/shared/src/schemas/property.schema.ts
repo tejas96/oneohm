@@ -69,6 +69,16 @@ export const createPropertySchema = z.object({
     errorMap: () => ({ message: 'Please select lead temperature' }),
   }),
   wantsLoan: z.boolean().optional(),
+  /**
+   * Which lender the customer named, when they want financing.
+   *
+   * Either a `BANKS` code or, when they picked "Other", the name the rep typed
+   * — one field for both, so there is nothing to strip before sending and no
+   * cross-field rule to keep in sync across two apps. Optional even with
+   * `wantsLoan` on: a rep at the door often does not know the bank yet, and
+   * blocking the step for it only teaches people to type junk.
+   */
+  financingBank: z.string().max(100, 'Bank name too long').optional().or(z.literal('')),
   notes: z.string().max(1000, 'Notes too long').optional().or(z.literal('')),
   changeRequests: changeRequestsSchema,
 });
