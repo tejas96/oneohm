@@ -73,7 +73,8 @@ export class RenumberDuplicateTaskCodes1857105000000 implements MigrationInterfa
     }
   }
 
-  public async down(): Promise<void> {
+  public down(): Promise<void> {
     console.warn('[migration] RenumberDuplicateTaskCodes1857105000000: nothing to restore.');
+    return Promise.resolve();
   }
 }
