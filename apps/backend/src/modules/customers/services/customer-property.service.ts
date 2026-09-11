@@ -548,7 +548,7 @@ export class CustomerPropertyService {
       await this.propertyRepository.setPrimary(id, property.customerId, updatedBy);
     }
 
-    // Prepare update data (exclude isPrimary, handled inside the transaction; normalize documents)
+    // Prepare update data (exclude isPrimary since handled above, normalize documents)
 
     const { isPrimary: unusedIsPrimary, documents, changeRequests, ...restDto } = updateDto;
 
