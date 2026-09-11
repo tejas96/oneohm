@@ -290,11 +290,10 @@ Side effects, all intended:
 ## Phases
 
 1. **This spec: one `oneohm` PR.** Shared, backend, migrations, web.
-2. **Part 2: WhatsApp alerts** for completed steps. A separate spec. It relies on
-   this one, so an alert only fires for tasks a site really has. It also gives
-   task completion one path for its side effects. Today `PATCH /tasks/:id` does
-   not write `completed_at`, and only `PATCH …/status` writes a change request
-   back to the property.
+2. **Part 2: WhatsApp alerts** for completed steps, in
+   `2026-09-11-whatsapp-step-alerts-design.md`. It relies on this one, so an
+   alert only fires for tasks a site really has. It also makes
+   `PATCH /tasks/:id` write `completed_at`.
 
 ## Verification
 
