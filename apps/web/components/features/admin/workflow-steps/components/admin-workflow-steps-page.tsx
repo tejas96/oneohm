@@ -8,6 +8,7 @@ import {
   WorkflowStepType,
   type WorkflowStep,
 } from '@tejas96/shared/types';
+import { describeStepRule } from '@tejas96/shared/utils';
 import {
   CheckCircle2,
   ChevronDown,
@@ -33,6 +34,7 @@ import { buildWorkflowStepPayload } from '../utils/workflow-step-payload';
 
 import { Alert } from '@/components/shared/alerts/alert';
 import { TablePagination } from '@/components/shared/data-table';
+import { SelectableChip } from '@/components/shared/forms';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -56,6 +58,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { PROPERTY_TYPE_OPTIONS } from '@/lib/config/constants';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import {
   useAllActiveWorkflowSteps,
@@ -347,6 +350,9 @@ function WorkflowStepRow({
   canUpdate,
   canDelete,
 }: WorkflowStepRowProps): React.JSX.Element {
+  const ruleShort = describeStepRule(step, { short: true });
+  const ruleFull = describeStepRule(step);
+
   return (
     <div className="bg-background">
       <div
@@ -371,6 +377,11 @@ function WorkflowStepRow({
             Change Request
           </Badge>
         ) : null}
+        {ruleShort && (
+          <Badge variant="info" className="text-xs" title={ruleFull ?? undefined}>
+            {ruleShort}
+          </Badge>
+        )}
         {step.defaultRoleCode && (
           <Badge variant="secondary" className="text-xs">
             {step.defaultRoleCode}
@@ -506,6 +517,8 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
       canRunParallel: false,
       isSpecial: false,
       changeRequestType: null,
+      loanOnly: false,
+      propertyTypes: [],
       dependsOnTaskCodes: [],
       checklistTemplate: [],
     },
@@ -530,6 +543,8 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         canRunParallel: step.canRunParallel,
         isSpecial: step.isSpecial ?? false,
         changeRequestType: step.changeRequestType ?? null,
+        loanOnly: step.loanOnly ?? false,
+        propertyTypes: step.propertyTypes ?? [],
         dependsOnTaskCodes: step.dependsOnTaskCodes ?? [],
         checklistTemplate:
           step.checklistTemplate?.items.map((item, idx) => ({
@@ -555,6 +570,8 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         canRunParallel: false,
         isSpecial: false,
         changeRequestType: null,
+        loanOnly: false,
+        propertyTypes: [],
         dependsOnTaskCodes: [],
         checklistTemplate: [],
       });
@@ -825,6 +842,56 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
             </div>
           </fieldset>
 
+          {/* ─── Section: When to add this step ─── */}
+          {!form.watch('isSpecial') && (
+            <fieldset className="space-y-4 rounded-lg shadow-e2 p-4">
+              <legend className="px-2 text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
+                When to add this step
+              </legend>
+
+              <Alert variant="info" appearance="minimal" className="text-xs">
+                Rules decide which tasks a new project gets. The loan rule also follows a
+                site&apos;s loan changes.
+              </Alert>
+
+              <div className="rounded-md p-3 shadow-e1">
+                <Checkbox
+                  id="loanOnly"
+                  checked={form.watch('loanOnly') ?? false}
+                  onCheckedChange={(checked) => form.setValue('loanOnly', checked === true)}
+                  label="Only when the site needs a loan"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Property types</Label>
+                <div className="flex flex-wrap gap-2">
+                  {PROPERTY_TYPE_OPTIONS.map((option) => {
+                    const selected = form.watch('propertyTypes') ?? [];
+                    const active = selected.includes(option.value);
+                    return (
+                      <SelectableChip
+                        key={option.value}
+                        active={active}
+                        onClick={() =>
+                          form.setValue(
+                            'propertyTypes',
+                            active
+                              ? selected.filter((value) => value !== option.value)
+                              : [...selected, option.value],
+                          )
+                        }
+                      >
+                        {option.label}
+                      </SelectableChip>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-foreground-tertiary">None picked means every type.</p>
+              </div>
+            </fieldset>
+          )}
+
           {/* ─── Section: Change Request ─── */}
           <fieldset className="space-y-4 rounded-lg shadow-e2 p-4">
             <legend className="px-2 text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
@@ -844,6 +911,11 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
                   const on = checked === true;
                   form.setValue('isSpecial', on);
                   if (!on) form.setValue('changeRequestType', null);
+                  // A change-request step never takes a task rule.
+                  if (on) {
+                    form.setValue('loanOnly', false);
+                    form.setValue('propertyTypes', []);
+                  }
                 }}
                 label="This is a change request step"
                 description="Keeps it out of every new project's task list."
