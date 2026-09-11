@@ -156,18 +156,7 @@ export class LoanTaskSyncService {
       .getRepository(ProjectTaskEntity)
       .update({ id: In(taskIds) }, { deletedAt: new Date(), removalReason: 'rule_not_applicable' });
 
-    // The same clean-up ProjectTaskService.remove does, so nothing waits on a
-    // task that no longer exists.
-    for (const taskId of taskIds) {
-      await manager.query(
-        `UPDATE project_tasks
-            SET depends_on_task_ids = array_remove(depends_on_task_ids, $1::uuid)
-          WHERE project_id = $2
-            AND deleted_at IS NULL
-            AND $1::uuid = ANY(depends_on_task_ids)`,
-        [taskId, projectId],
-      );
-    }
+    await this.taskRepository.removeDependencyReferences(projectId, taskIds, manager);
   }
 
   private async addTasks(

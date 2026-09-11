@@ -52,6 +52,25 @@ export class ProjectTaskRepository {
     await repo.update(id, data);
   }
 
+  /** Takes each given task id out of `depends_on_task_ids` on the project's live tasks. */
+  async removeDependencyReferences(
+    projectId: string,
+    taskIds: string[],
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = this.getRepo(manager);
+    for (const taskId of taskIds) {
+      await repo.query(
+        `UPDATE project_tasks
+         SET depends_on_task_ids = array_remove(depends_on_task_ids, $1::uuid)
+         WHERE project_id = $2
+           AND deleted_at IS NULL
+           AND $1::uuid = ANY(depends_on_task_ids)`,
+        [taskId, projectId],
+      );
+    }
+  }
+
   /**
    * Find all tasks for a project with optional relations (transaction-aware)
    */
