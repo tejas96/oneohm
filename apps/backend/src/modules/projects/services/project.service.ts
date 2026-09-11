@@ -897,9 +897,7 @@ export class ProjectService {
         excludedStepIds,
         project.startDate,
         manager,
-        converted
-          ? { wantsLoan: converted.wantsLoan, propertyType: converted.propertyType }
-          : null,
+        converted ? { wantsLoan: converted.wantsLoan, propertyType: converted.propertyType } : null,
       );
 
       await this.changeRequestTaskService.applyChangeRequestTasks({

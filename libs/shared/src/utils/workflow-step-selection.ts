@@ -54,9 +54,7 @@ export function describeStepRule(step: StepRule, options: { short?: boolean } = 
   if (types.length > 0) {
     const labels = types.map((type) => PROPERTY_TYPE_LABELS[type] ?? type);
     parts.push(
-      options.short && labels.length > 1
-        ? `${labels[0]} +${labels.length - 1}`
-        : labels.join(', '),
+      options.short && labels.length > 1 ? `${labels[0]} +${labels.length - 1}` : labels.join(', '),
     );
   }
 

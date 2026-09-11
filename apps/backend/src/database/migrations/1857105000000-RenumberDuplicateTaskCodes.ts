@@ -62,7 +62,9 @@ export class RenumberDuplicateTaskCodes1857105000000 implements MigrationInterfa
       RETURNING t.id
     `)) as [Array<{ id: string }>, number];
 
-    console.warn(`[migration] Renumbered ${renumbered.length} task code(s) that another task also held.`);
+    console.warn(
+      `[migration] Renumbered ${renumbered.length} task code(s) that another task also held.`,
+    );
 
     const [row] = (await queryRunner.query(
       `SELECT count(*)::int AS shared FROM (${SHARED_CODES}) s`,

@@ -104,8 +104,7 @@ export class LoanTaskSyncService {
 
       if (appliesAfter) {
         const deletedByPerson = allTasks.some(
-          (task) =>
-            task.workflowStepId === step.id && task.deletedAt && task.removalReason == null,
+          (task) => task.workflowStepId === step.id && task.deletedAt && task.removalReason == null,
         );
         if (step.isActive && stepTasks.length === 0 && !excluded.has(step.id) && !deletedByPerson) {
           toAdd.push(step);

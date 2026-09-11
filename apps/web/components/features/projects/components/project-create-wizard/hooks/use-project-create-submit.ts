@@ -39,16 +39,14 @@ export function useProjectCreateSubmit(
   // whose task rule this site passes — the same filter step 5 shows.
   const workflowSteps: WorkflowStep[] = useMemo(
     (): WorkflowStep[] =>
-      activeWorkflowSteps
-        .filter(isProjectBaselineStep)
-        .filter((step) =>
-          property
-            ? stepAppliesToSite(step, {
-                wantsLoan: property.wantsLoan,
-                propertyType: property.propertyType,
-              })
-            : true,
-        ),
+      activeWorkflowSteps.filter(isProjectBaselineStep).filter((step) =>
+        property
+          ? stepAppliesToSite(step, {
+              wantsLoan: property.wantsLoan,
+              propertyType: property.propertyType,
+            })
+          : true,
+      ),
     [activeWorkflowSteps, property],
   );
   const { items: employees = [] } = useEmployees({ status: 'active' });

@@ -232,11 +232,7 @@ export class CustomerPropertyRepository {
    * Set a property as primary for a customer
    * Unsets all other properties as non-primary first
    */
-  async setPrimary(
-    propertyId: string,
-    customerId: string,
-    updatedBy?: string,
-  ): Promise<void> {
+  async setPrimary(propertyId: string, customerId: string, updatedBy?: string): Promise<void> {
     // First, unset all primary flags for this customer
     await this.repository.update({ customerId, deletedAt: IsNull() }, { isPrimary: false });
 

@@ -17,9 +17,7 @@ import { type WorkflowStepEntity } from '../entities';
 import { ProjectTaskRepository, WorkflowStepRepository } from '../repositories';
 
 /** An empty type list is stored as NULL, so it can never read as "no property type". */
-function normalizePropertyTypes(
-  types: PropertyType[] | null | undefined,
-): PropertyType[] | null {
+function normalizePropertyTypes(types: PropertyType[] | null | undefined): PropertyType[] | null {
   if (!types || types.length === 0) return null;
   return [...new Set(types)];
 }
