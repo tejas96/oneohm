@@ -41,7 +41,7 @@ export async function generateEntityCode<T extends object>(
     .withDeleted()
     .select(`e.${actualDbColumn}`, 'code')
     .where(`e.${actualDbColumn} LIKE :pattern`, { pattern })
-    .orderBy(`CAST(SUBSTRING(e.${actualDbColumn} FROM '(\\d+)$') AS INTEGER)`, 'DESC')
+    .orderBy(`CAST(SUBSTRING(e.${actualDbColumn} FROM '(\\d+)$') AS INTEGER)`, 'DESC', 'NULLS LAST')
     .limit(1)
     .getRawOne<{ code: string }>();
 
