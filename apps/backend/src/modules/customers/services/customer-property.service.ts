@@ -543,6 +543,11 @@ export class CustomerPropertyService {
       await this.discomService.assertActiveDiscom(updateDto.discomId);
     }
 
+    // Handle primary flag change FIRST (before main update)
+    if (updateDto.isPrimary === true && !property.isPrimary) {
+      await this.propertyRepository.setPrimary(id, property.customerId, updatedBy);
+    }
+
     // Prepare update data (exclude isPrimary, handled inside the transaction; normalize documents)
 
     const { isPrimary: unusedIsPrimary, documents, changeRequests, ...restDto } = updateDto;
@@ -565,11 +570,6 @@ export class CustomerPropertyService {
       const locked = await this.propertyRepository.findByIdForUpdate(id, manager);
       if (!locked) {
         throw new NotFoundException(`Property with ID '${id}' not found`);
-      }
-
-      // Handle primary flag change FIRST (before main update)
-      if (updateDto.isPrimary === true && !locked.isPrimary) {
-        await this.propertyRepository.setPrimary(id, locked.customerId, updatedBy, manager);
       }
 
       // The loan sync lands with the save or not at all: a site that says "no loan"

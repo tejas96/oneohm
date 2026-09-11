@@ -236,14 +236,12 @@ export class CustomerPropertyRepository {
     propertyId: string,
     customerId: string,
     updatedBy?: string,
-    manager?: EntityManager,
   ): Promise<void> {
-    const repo = this.getRepo(manager);
     // First, unset all primary flags for this customer
-    await repo.update({ customerId, deletedAt: IsNull() }, { isPrimary: false });
+    await this.repository.update({ customerId, deletedAt: IsNull() }, { isPrimary: false });
 
     // Then set the specified property as primary
-    await repo.update({ id: propertyId }, { isPrimary: true, updatedBy });
+    await this.repository.update({ id: propertyId }, { isPrimary: true, updatedBy });
   }
 
   async countByCustomer(customerId: string): Promise<number> {
