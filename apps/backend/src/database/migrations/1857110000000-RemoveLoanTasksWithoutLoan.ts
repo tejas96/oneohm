@@ -36,8 +36,10 @@ const RECOMPUTE_PROGRESS = `
  * project that would reach 100% is logged for a person to complete in the UI,
  * so no project completes — and no customer is told so — from a migration.
  *
- * REVERTING: down() restores every task carrying REASON and recomputes progress.
- * The dependency links this removed from other tasks are not restored.
+ * REVERTING: down() restores every task carrying REASON and recomputes progress,
+ * except a task whose project has a live task for the same step again (the loan
+ * sync adds one when a site's loan is turned on). That task stays deleted, and the
+ * log counts it. The dependency links this removed from other tasks are not restored.
  */
 export class RemoveLoanTasksWithoutLoan1857110000000 implements MigrationInterface {
   name = 'RemoveLoanTasksWithoutLoan1857110000000';
@@ -120,10 +122,16 @@ export class RemoveLoanTasksWithoutLoan1857110000000 implements MigrationInterfa
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     const [restored] = (await queryRunner.query(
-      `UPDATE project_tasks
+      `UPDATE project_tasks t
           SET deleted_at = NULL, removal_reason = NULL, updated_at = CURRENT_TIMESTAMP
-        WHERE removal_reason = $1
-       RETURNING project_id`,
+        WHERE t.removal_reason = $1
+          AND NOT EXISTS (
+                SELECT 1
+                  FROM project_tasks live
+                 WHERE live.project_id = t.project_id
+                   AND live.workflow_step_id = t.workflow_step_id
+                   AND live.deleted_at IS NULL)
+       RETURNING t.project_id`,
       [REASON],
     )) as [Array<{ project_id: string }>, number];
 
@@ -134,5 +142,16 @@ export class RemoveLoanTasksWithoutLoan1857110000000 implements MigrationInterfa
     console.warn(
       `[migration] Restored ${restored.length} loan task(s) on ${projectIds.length} project(s).`,
     );
+
+    const left: Array<{ n: number }> = await queryRunner.query(
+      `SELECT count(*)::int AS n FROM project_tasks WHERE removal_reason = $1`,
+      [REASON],
+    );
+    const leftCount = left[0]?.n ?? 0;
+    if (leftCount > 0) {
+      console.warn(
+        `[migration] Left ${leftCount} loan task(s) deleted: their project has a live task for the same step again.`,
+      );
+    }
   }
 }
