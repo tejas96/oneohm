@@ -150,12 +150,12 @@ export const ProjectTasksTab = React.memo(
       mutation: deleteTaskMutation,
       getId: (task) => task.id,
       onSuccess: () => {
-        // The drawer may be showing the task that just went away.
+        // Only the drawer needs handling here: useDeleteTask already busts the
+        // project task list and the milestone rollup, unlike useUpdateTask.
         if (pendingDeleteRef.current?.id === openTaskId) {
           setDrawerOpen(false);
           setOpenTaskId(null);
         }
-        invalidateProjectTasks();
       },
     });
 

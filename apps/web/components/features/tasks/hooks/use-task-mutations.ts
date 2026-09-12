@@ -99,8 +99,9 @@ export function useAddComment() {
  * how the task rules tell "a person deleted this" from "a rule removed it" —
  * a task deleted here is never added back.
  *
- * Invalidates the same keys a task create does, plus the caller's own task
- * lists.
+ * Invalidates what a task create does (the project task list and the project's
+ * task stats), plus the milestone rollup and "My tasks" — a delete moves every
+ * one of those counts, so a caller does not invalidate them again.
  */
 export function useDeleteTask(projectId: string): UseMutationResult<void, unknown, string> {
   const queryClient = useQueryClient();
