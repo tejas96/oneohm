@@ -77,6 +77,25 @@ export interface CustomerWhatsappStatus {
   reason: string | null;
 }
 
+/**
+ * The latest attempt, stored on `project_tasks.customer_whatsapp`. "Waiting" is
+ * never stored: a task is waiting when its step is ticked and it is done with no
+ * record yet, so there is nothing to write when a task is merely finished.
+ */
+export interface TaskWhatsappRecord {
+  status: Exclude<CustomerWhatsappState, 'waiting'>;
+  /** The completion this attempt answers, so a later finish can send again. */
+  taskCompletedAt: string;
+  updatedAt: string;
+  phone?: string | null;
+  updateText?: string | null;
+  reason?: string | null;
+  providerMessageId?: string | null;
+  sentAt?: string | null;
+  deliveredAt?: string | null;
+  readAt?: string | null;
+}
+
 // ============================================================================
 // Project Task
 // ============================================================================

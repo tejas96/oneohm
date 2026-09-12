@@ -5,6 +5,7 @@ import {
   type FileAttachment,
   type TaskActivityEntry,
   type TaskChecklist,
+  type TaskWhatsappRecord,
 } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
@@ -110,6 +111,14 @@ export class ProjectTaskEntity extends BaseEntity {
    */
   @Column({ name: 'completed_at', type: 'timestamptz', nullable: true })
   completedAt?: Date | null;
+
+  /**
+   * The latest customer WhatsApp attempt for this task, or NULL while it has
+   * never been messaged. Written only by the send job and the WhatsApp webhook,
+   * with raw SQL, so it never bumps `updatedAt` or `version`.
+   */
+  @Column({ name: 'customer_whatsapp', type: 'jsonb', nullable: true })
+  customerWhatsapp?: TaskWhatsappRecord | null;
 
   // ==================== Status & Priority ====================
 

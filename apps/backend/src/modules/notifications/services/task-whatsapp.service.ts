@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { IntegrationProvider, MessageType, ProjectStatus } from '@tejas96/shared/types';
+import {
+  IntegrationProvider,
+  MessageType,
+  ProjectStatus,
+  type TaskWhatsappRecord,
+} from '@tejas96/shared/types';
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
 import { DataSource } from 'typeorm';
 
@@ -85,10 +90,14 @@ export class TaskWhatsappService {
 
   private async unstick(): Promise<void> {
     await this.dataSource.query(
-      `UPDATE task_whatsapp_messages
-          SET status = 'failed', reason = 'Send interrupted', updated_at = now()
-        WHERE status = 'sending'
-          AND updated_at < now() - make_interval(mins => $1)`,
+      `UPDATE project_tasks
+          SET customer_whatsapp = customer_whatsapp || jsonb_build_object(
+                'status', 'failed',
+                'reason', 'Send interrupted',
+                'updatedAt', to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+              )
+        WHERE customer_whatsapp ->> 'status' = 'sending'
+          AND (customer_whatsapp ->> 'updatedAt')::timestamptz < now() - make_interval(mins => $1)`,
       [TASK_WHATSAPP_STUCK_MINUTES],
     );
   }
@@ -98,15 +107,17 @@ export class TaskWhatsappService {
       `SELECT t.id AS "taskId", t.project_id AS "projectId", t.completed_at AS "completedAt"
          FROM project_tasks t
          JOIN workflow_steps s ON s.id = t.workflow_step_id
-    LEFT JOIN task_whatsapp_messages m ON m.project_task_id = t.id
         WHERE t.deleted_at IS NULL
           AND t.status = 'done'
           AND t.completed_at IS NOT NULL
           AND s.whatsapp_since IS NOT NULL
           AND t.completed_at >= s.whatsapp_since
           AND (
-                m.id IS NULL
-             OR (m.status IN ('failed', 'skipped') AND m.task_completed_at < t.completed_at)
+                t.customer_whatsapp IS NULL
+             OR (
+                  t.customer_whatsapp ->> 'status' IN ('failed', 'skipped')
+                  AND (t.customer_whatsapp ->> 'taskCompletedAt')::timestamptz < t.completed_at
+                )
               )
         ORDER BY t.completed_at ASC
         LIMIT $1`,
@@ -114,42 +125,48 @@ export class TaskWhatsappService {
     );
   }
 
-  /** The row id when this run won the task; null when another run has it or it was already sent. */
-  private async claim(task: DueTask): Promise<string | null> {
-    const rows: Array<{ id: string }> = await this.dataSource.query(
-      `INSERT INTO task_whatsapp_messages (project_task_id, project_id, task_completed_at, status)
-       VALUES ($1, $2, $3, 'sending')
-       ON CONFLICT (project_task_id) DO UPDATE
-          SET status = 'sending',
-              task_completed_at = EXCLUDED.task_completed_at,
-              phone = NULL,
-              update_text = NULL,
-              reason = NULL,
-              provider_message_id = NULL,
-              sent_at = NULL,
-              delivered_at = NULL,
-              read_at = NULL,
-              updated_at = now()
-        WHERE task_whatsapp_messages.status IN ('failed', 'skipped')
-          AND task_whatsapp_messages.task_completed_at < EXCLUDED.task_completed_at
+  /**
+   * Takes the task, or returns false when another run already has it.
+   *
+   * The WHERE repeats the due test, so the row lock decides the winner: a second
+   * instance reaching the same task finds the status already `sending` and
+   * updates nothing. Only `customer_whatsapp` is written, so the task's own
+   * `updated_at` and `version` never move.
+   */
+  private async claim(task: DueTask): Promise<boolean> {
+    const rows: unknown[] = await this.dataSource.query(
+      `UPDATE project_tasks
+          SET customer_whatsapp = jsonb_build_object(
+                'status', 'sending',
+                'taskCompletedAt', to_char($2::timestamptz AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+                'updatedAt', to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+              )
+        WHERE id = $1
+          AND (
+                customer_whatsapp IS NULL
+             OR (
+                  customer_whatsapp ->> 'status' IN ('failed', 'skipped')
+                  AND (customer_whatsapp ->> 'taskCompletedAt')::timestamptz < $2::timestamptz
+                )
+              )
        RETURNING id`,
-      [task.taskId, task.projectId, task.completedAt],
+      [task.taskId, task.completedAt],
     );
-    return rows[0]?.id ?? null;
+    return rows.length > 0;
   }
 
   private async process(task: DueTask): Promise<void> {
-    const messageId = await this.claim(task);
-    if (!messageId) return;
+    const won = await this.claim(task);
+    if (!won) return;
 
     try {
       const context = await this.loadContext(task.taskId);
       const skipReason = this.skipReason(task, context);
       if (skipReason || !context) {
-        await this.dataSource.query(
-          `UPDATE task_whatsapp_messages SET status = 'skipped', reason = $2, updated_at = now() WHERE id = $1`,
-          [messageId, skipReason ?? 'Task not found'],
-        );
+        await this.record(task.taskId, {
+          status: 'skipped',
+          reason: skipReason ?? 'Task not found',
+        });
         return;
       }
 
@@ -174,21 +191,32 @@ export class TaskWhatsappService {
         IntegrationProvider.WHATSAPP_BUSINESS,
       );
 
-      await this.dataSource.query(
-        `UPDATE task_whatsapp_messages
-            SET status = 'sent', provider_message_id = $2, sent_at = now(),
-                phone = $3, update_text = $4, reason = NULL, updated_at = now()
-          WHERE id = $1`,
-        [messageId, result.messageId, phone, updateText],
-      );
+      await this.record(task.taskId, {
+        status: 'sent',
+        providerMessageId: result.messageId,
+        sentAt: new Date().toISOString(),
+        phone,
+        updateText,
+        reason: null,
+      });
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'Send failed';
-      await this.dataSource.query(
-        `UPDATE task_whatsapp_messages SET status = 'failed', reason = $2, updated_at = now() WHERE id = $1`,
-        [messageId, reason],
-      );
+      await this.record(task.taskId, { status: 'failed', reason });
       this.logger.warn(`WhatsApp update for task ${task.taskId} failed: ${reason}`);
     }
+  }
+
+  /**
+   * Merges the outcome into the task's record, keeping what the claim wrote
+   * (the completion it answers) and touching no other column on the task.
+   */
+  private async record(taskId: string, patch: Partial<TaskWhatsappRecord>): Promise<void> {
+    await this.dataSource.query(
+      `UPDATE project_tasks
+          SET customer_whatsapp = customer_whatsapp || $2::jsonb
+        WHERE id = $1`,
+      [taskId, JSON.stringify({ ...patch, updatedAt: new Date().toISOString() })],
+    );
   }
 
   private async loadContext(taskId: string): Promise<SendContext | null> {

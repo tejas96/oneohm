@@ -19,7 +19,6 @@ import {
 } from '@tejas96/shared/constants';
 import {
   type ChecklistProgress,
-  type CustomerWhatsappState,
   type CustomerWhatsappStatus,
   type PaginatedResponse,
   ProjectStatus,
@@ -1226,7 +1225,7 @@ export class ProjectTaskService {
       statusMap,
       priorityMap,
     );
-    return { ...enriched, customerWhatsapp: await this.resolveCustomerWhatsapp(task) };
+    return { ...enriched, customerWhatsapp: this.resolveCustomerWhatsapp(task) };
   }
 
   /**
@@ -1235,24 +1234,8 @@ export class ProjectTaskService {
    * waits to retry a failed or skipped attempt). Null when there is nothing to
    * say — the step is not ticked, or the task was done before the tick.
    */
-  private async resolveCustomerWhatsapp(
-    task: ProjectTaskEntity,
-  ): Promise<CustomerWhatsappStatus | null> {
-    const rows: Array<{
-      status: Exclude<CustomerWhatsappState, 'waiting'>;
-      reason: string | null;
-      task_completed_at: Date;
-      sent_at: Date | null;
-      delivered_at: Date | null;
-      read_at: Date | null;
-      updated_at: Date;
-    }> = await this.dataSource.query(
-      `SELECT status, reason, task_completed_at, sent_at, delivered_at, read_at, updated_at
-         FROM task_whatsapp_messages
-        WHERE project_task_id = $1`,
-      [task.id],
-    );
-    const row = rows[0];
+  private resolveCustomerWhatsapp(task: ProjectTaskEntity): CustomerWhatsappStatus | null {
+    const record = task.customerWhatsapp ?? null;
 
     const since = task.workflowStep?.whatsappSince
       ? new Date(task.workflowStep.whatsappSince)
@@ -1263,9 +1246,9 @@ export class ProjectTaskService {
       completedAt !== null &&
       task.status === TaskStatus.DONE &&
       completedAt >= since &&
-      (!row ||
-        ((row.status === 'failed' || row.status === 'skipped') &&
-          new Date(row.task_completed_at) < completedAt));
+      (!record ||
+        ((record.status === 'failed' || record.status === 'skipped') &&
+          new Date(record.taskCompletedAt) < completedAt));
 
     if (waiting && completedAt) {
       return {
@@ -1274,17 +1257,21 @@ export class ProjectTaskService {
         reason: null,
       };
     }
-    if (!row) return null;
+    if (!record) return null;
 
     const at =
-      row.status === 'read'
-        ? row.read_at
-        : row.status === 'delivered'
-          ? row.delivered_at
-          : row.status === 'sent'
-            ? row.sent_at
-            : row.updated_at;
-    return { state: row.status, at: at ? new Date(at).toISOString() : null, reason: row.reason };
+      record.status === 'read'
+        ? record.readAt
+        : record.status === 'delivered'
+          ? record.deliveredAt
+          : record.status === 'sent'
+            ? record.sentAt
+            : record.updatedAt;
+    return {
+      state: record.status,
+      at: at ? new Date(at).toISOString() : null,
+      reason: record.reason ?? null,
+    };
   }
 
   async updateTaskCrossProject(

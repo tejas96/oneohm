@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectDataSource } from '@nestjs/typeorm';
+import { type TaskWhatsappRecord } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import {
@@ -39,25 +40,22 @@ export class WhatsappStatusListener {
 
     try {
       if (event.status === 'delivered') {
-        await this.dataSource.query(
-          `UPDATE task_whatsapp_messages
-              SET status = 'delivered', delivered_at = $2, updated_at = now()
-            WHERE provider_message_id = $1 AND status NOT IN ('delivered', 'read')`,
-          [event.providerMessageId, at],
+        await this.apply(
+          event.providerMessageId,
+          { status: 'delivered', deliveredAt: at.toISOString() },
+          `customer_whatsapp ->> 'status' NOT IN ('delivered', 'read')`,
         );
       } else if (event.status === 'read') {
-        await this.dataSource.query(
-          `UPDATE task_whatsapp_messages
-              SET status = 'read', read_at = $2, updated_at = now()
-            WHERE provider_message_id = $1 AND status <> 'read'`,
-          [event.providerMessageId, at],
+        await this.apply(
+          event.providerMessageId,
+          { status: 'read', readAt: at.toISOString() },
+          `customer_whatsapp ->> 'status' <> 'read'`,
         );
       } else if (event.status === 'failed') {
-        await this.dataSource.query(
-          `UPDATE task_whatsapp_messages
-              SET status = 'failed', reason = $2, updated_at = now()
-            WHERE provider_message_id = $1 AND status NOT IN ('delivered', 'read')`,
-          [event.providerMessageId, describeWhatsappError(event.errors)],
+        await this.apply(
+          event.providerMessageId,
+          { status: 'failed', reason: describeWhatsappError(event.errors) },
+          `customer_whatsapp ->> 'status' NOT IN ('delivered', 'read')`,
         );
       }
       // 'sent' is already recorded by the send itself.
@@ -67,5 +65,24 @@ export class WhatsappStatusListener {
         error,
       );
     }
+  }
+
+  /**
+   * Merges Meta's outcome into the task carrying that message id. The partial
+   * index on the id means this reads only tasks that were actually messaged,
+   * and a status for someone else's message (a quote, an OTP) matches nothing.
+   */
+  private async apply(
+    providerMessageId: string,
+    patch: Partial<TaskWhatsappRecord>,
+    guard: string,
+  ): Promise<void> {
+    await this.dataSource.query(
+      `UPDATE project_tasks
+          SET customer_whatsapp = customer_whatsapp || $2::jsonb
+        WHERE customer_whatsapp ->> 'providerMessageId' = $1
+          AND ${guard}`,
+      [providerMessageId, JSON.stringify({ ...patch, updatedAt: new Date().toISOString() })],
+    );
   }
 }
