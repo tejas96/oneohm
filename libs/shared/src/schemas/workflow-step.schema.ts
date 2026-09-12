@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { ChangeRequestType } from '../types/enums/change-request.enum';
 import { PropertyType } from '../types/enums/customer.enum';
 import { WorkflowStepType } from '../types/enums/project.enum';
+import {
+  customerUpdateTextProblem,
+  normalizeCustomerUpdateText,
+} from '../utils/customer-update-text';
 
 const checklistItemSchema = z.object({
   id: z.string(),
@@ -57,6 +61,8 @@ export const workflowStepSchema = z
     checklistTemplate: z.array(checklistItemSchema).optional().default([]),
     loanOnly: z.boolean().default(false),
     propertyTypes: z.array(z.nativeEnum(PropertyType)).default([]),
+    whatsappOnDone: z.boolean().default(false),
+    customerUpdateText: z.string().nullable().optional(),
   })
   .superRefine((data, ctx) => {
     // A change-request template is only ever found through its type, so the pair
@@ -67,6 +73,22 @@ export const workflowStepSchema = z
         message: 'Pick which change request this step handles',
         path: ['changeRequestType'],
       });
+    }
+
+    // The same rules the backend applies: required when ticked, and nothing Meta
+    // would refuse inside a template parameter.
+    const updateText = normalizeCustomerUpdateText(data.customerUpdateText);
+    if (data.whatsappOnDone && !updateText) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Write the update the customer gets',
+        path: ['customerUpdateText'],
+      });
+    } else if (updateText) {
+      const problem = customerUpdateTextProblem(updateText);
+      if (problem) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: problem, path: ['customerUpdateText'] });
+      }
     }
   });
 

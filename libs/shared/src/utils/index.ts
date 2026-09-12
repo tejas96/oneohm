@@ -15,3 +15,4 @@ export * from './customer-property-filters';
 export * from './sql';
 export * from './my-tasks-filters';
 export * from './workflow-step-selection';
+export * from './customer-update-text';
