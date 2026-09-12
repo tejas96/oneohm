@@ -11,6 +11,7 @@ import {
   type PropertyType,
   type StatisticsResponse,
 } from '@tejas96/shared/types';
+import { customerUpdateTextProblem, normalizeCustomerUpdateText } from '@tejas96/shared/utils';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { type WorkflowStepEntity } from '../entities';
@@ -33,7 +34,7 @@ export class WorkflowStepService {
   ) {}
 
   async create(
-    createDto: Partial<WorkflowStepEntity> & { code: string },
+    createDto: Partial<WorkflowStepEntity> & { code: string; whatsappOnDone?: boolean },
     currentUserId: string,
   ): Promise<WorkflowStepEntity> {
     const codeExists = await this.stepRepository.existsByCode(createDto.code);
@@ -44,9 +45,16 @@ export class WorkflowStepService {
     await this.assertChangeRequestShape(createDto);
     this.assertRuleShape(createDto);
 
+    // `whatsappOnDone` is the tick box; the column is the time it was ticked.
+    const { whatsappOnDone, ...stepFields } = createDto;
+    const customerUpdateText = normalizeCustomerUpdateText(stepFields.customerUpdateText);
+    this.assertWhatsappShape(whatsappOnDone === true, customerUpdateText);
+
     return this.stepRepository.create({
-      ...createDto,
-      propertyTypes: normalizePropertyTypes(createDto.propertyTypes),
+      ...stepFields,
+      propertyTypes: normalizePropertyTypes(stepFields.propertyTypes),
+      customerUpdateText,
+      whatsappSince: whatsappOnDone ? new Date() : null,
       createdBy: currentUserId,
       updatedBy: currentUserId,
     } as Partial<WorkflowStepEntity>);
@@ -88,7 +96,7 @@ export class WorkflowStepService {
 
   async update(
     id: string,
-    updateDto: Partial<WorkflowStepEntity>,
+    updateDto: Partial<WorkflowStepEntity> & { whatsappOnDone?: boolean },
     currentUserId: string,
   ): Promise<WorkflowStepEntity> {
     const existing = await this.findById(id);
@@ -103,10 +111,25 @@ export class WorkflowStepService {
     await this.assertChangeRequestShape({ ...existing, ...updateDto }, id);
     this.assertRuleShape({ ...existing, ...updateDto });
 
-    const changes: Partial<WorkflowStepEntity> = { ...updateDto };
+    const { whatsappOnDone, ...stepFields } = updateDto;
+    const changes: Partial<WorkflowStepEntity> = { ...stepFields };
     if (Object.prototype.hasOwnProperty.call(updateDto, 'propertyTypes')) {
       changes.propertyTypes = normalizePropertyTypes(updateDto.propertyTypes);
     }
+    if (Object.prototype.hasOwnProperty.call(updateDto, 'customerUpdateText')) {
+      changes.customerUpdateText = normalizeCustomerUpdateText(updateDto.customerUpdateText);
+    }
+    if (whatsappOnDone !== undefined) {
+      // Saving an already-ticked step keeps its time, so completions made since
+      // the first tick still send. Unticking clears it.
+      changes.whatsappSince = whatsappOnDone ? (existing.whatsappSince ?? new Date()) : null;
+    }
+    this.assertWhatsappShape(
+      whatsappOnDone ?? existing.whatsappSince != null,
+      Object.prototype.hasOwnProperty.call(changes, 'customerUpdateText')
+        ? (changes.customerUpdateText ?? null)
+        : (existing.customerUpdateText ?? null),
+    );
 
     const renamedFrom =
       updateDto.code && updateDto.code !== existing.code ? existing.code : undefined;
@@ -250,6 +273,20 @@ export class WorkflowStepService {
     const hasRule = Boolean(step.loanOnly) || (step.propertyTypes?.length ?? 0) > 0;
     if (isChangeRequestStep && hasRule) {
       throw new BadRequestException('A change request step cannot have task rules');
+    }
+  }
+
+  /**
+   * A ticked step needs text, and no text may hold what Meta refuses inside a
+   * template parameter. The form checks the same with the shared rules.
+   */
+  private assertWhatsappShape(whatsappOn: boolean, text: string | null): void {
+    if (text) {
+      const problem = customerUpdateTextProblem(text);
+      if (problem) throw new BadRequestException(problem);
+    }
+    if (whatsappOn && !text) {
+      throw new BadRequestException('Write the update the customer gets on WhatsApp');
     }
   }
 

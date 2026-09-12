@@ -382,6 +382,11 @@ function WorkflowStepRow({
             {ruleShort}
           </Badge>
         )}
+        {step.whatsappOnDone && (
+          <Badge variant="success" className="text-xs">
+            WhatsApp
+          </Badge>
+        )}
         {step.defaultRoleCode && (
           <Badge variant="secondary" className="text-xs">
             {step.defaultRoleCode}
@@ -521,6 +526,8 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
       propertyTypes: [],
       dependsOnTaskCodes: [],
       checklistTemplate: [],
+      whatsappOnDone: false,
+      customerUpdateText: '',
     },
   });
 
@@ -543,6 +550,8 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         canRunParallel: step.canRunParallel,
         isSpecial: step.isSpecial ?? false,
         changeRequestType: step.changeRequestType ?? null,
+        whatsappOnDone: step.whatsappOnDone ?? false,
+        customerUpdateText: step.customerUpdateText ?? '',
         loanOnly: step.loanOnly ?? false,
         propertyTypes: step.propertyTypes ?? [],
         dependsOnTaskCodes: step.dependsOnTaskCodes ?? [],
@@ -574,6 +583,8 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         propertyTypes: [],
         dependsOnTaskCodes: [],
         checklistTemplate: [],
+        whatsappOnDone: false,
+        customerUpdateText: '',
       });
     }
   }, [open, step, form]);
@@ -891,6 +902,46 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
               </div>
             </fieldset>
           )}
+
+          {/* ─── Section: Customer WhatsApp ─── */}
+          <fieldset className="space-y-4 rounded-lg shadow-e2 p-4">
+            <legend className="px-2 text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
+              Customer WhatsApp
+            </legend>
+
+            <Alert variant="info" appearance="minimal" className="text-xs">
+              Sent at 6 pm each day, for tasks done after you tick this.
+            </Alert>
+
+            <div className="rounded-md p-3 shadow-e1">
+              <Checkbox
+                id="whatsappOnDone"
+                checked={form.watch('whatsappOnDone') ?? false}
+                onCheckedChange={(checked) =>
+                  form.setValue('whatsappOnDone', checked === true, {
+                    shouldValidate: form.formState.isSubmitted,
+                  })
+                }
+                label="WhatsApp the customer when this step is done"
+              />
+            </div>
+
+            {form.watch('whatsappOnDone') && (
+              <div className="space-y-1.5">
+                <Label>Update text *</Label>
+                <Input
+                  {...form.register('customerUpdateText')}
+                  maxLength={200}
+                  placeholder="e.g. Your solar panels are installed"
+                />
+                {form.formState.errors.customerUpdateText && (
+                  <p className="text-xs text-error">
+                    {form.formState.errors.customerUpdateText.message}
+                  </p>
+                )}
+              </div>
+            )}
+          </fieldset>
 
           {/* ─── Section: Change Request ─── */}
           <fieldset className="space-y-4 rounded-lg shadow-e2 p-4">

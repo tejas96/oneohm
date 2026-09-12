@@ -11,8 +11,14 @@ import {
   Query,
   UnauthorizedException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import {
+  WHATSAPP_EVENTS,
+  WhatsappMessageStatusEvent,
+  type WhatsappStatusError,
+} from '../events/whatsapp.events';
 import { IntegrationService } from '../services';
 
 @ApiTags('WhatsApp Webhooks')
@@ -20,7 +26,10 @@ import { IntegrationService } from '../services';
 export class WhatsappWebhookController {
   private readonly logger = new Logger(WhatsappWebhookController.name);
 
-  constructor(private readonly integrationService: IntegrationService) {}
+  constructor(
+    private readonly integrationService: IntegrationService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   @Get('webhook')
   @Header('Content-Type', 'text/plain')
@@ -89,6 +98,16 @@ export class WhatsappWebhookController {
               `WhatsApp ${messageStatus}, recipient ${String(recipient)}, message ${messageId}`,
             );
           }
+
+          this.eventEmitter.emit(
+            WHATSAPP_EVENTS.MESSAGE_STATUS,
+            new WhatsappMessageStatusEvent(
+              messageId,
+              messageStatus,
+              typeof status.timestamp === 'string' ? status.timestamp : null,
+              errors as WhatsappStatusError[],
+            ),
+          );
         }
 
         const messages = Array.isArray(value.messages) ? value.messages : [];

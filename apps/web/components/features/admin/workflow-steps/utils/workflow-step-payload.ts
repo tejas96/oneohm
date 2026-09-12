@@ -43,6 +43,9 @@ export function buildWorkflowStepPayload(data: WorkflowStepFormValues): Partial<
     loanOnly: data.isSpecial ? false : (data.loanOnly ?? false),
     // No type picked means every type, and travels as null so an emptied list clears.
     propertyTypes: data.isSpecial || !data.propertyTypes?.length ? null : data.propertyTypes,
+    whatsappOnDone: data.whatsappOnDone ?? false,
+    // Emptied text travels as null, or the column keeps its old value.
+    customerUpdateText: textOrNull(data.customerUpdateText),
     checklistTemplate: { items: checklistItems } as TaskChecklist,
   };
 }

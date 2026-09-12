@@ -144,4 +144,22 @@ export class CreateWorkflowStepDto {
   @IsEnum(PropertyType, { each: true })
   @IsOptional()
   propertyTypes?: PropertyType[] | null;
+
+  @ApiPropertyOptional({
+    description: 'Customer WhatsApp: send an update when a task of this step is done.',
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  whatsappOnDone?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'The one-line update the customer gets. Required when whatsappOnDone is true.',
+    maxLength: 200,
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  customerUpdateText?: string | null;
 }

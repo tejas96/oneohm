@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { type CustomerWhatsappStatus } from '@tejas96/shared/types';
+import { Expose, Transform, Type } from 'class-transformer';
 
 import { ProjectTaskResponseDto } from './project-task-response.dto';
 
@@ -27,6 +28,21 @@ export class MyTaskResponseDto extends ProjectTaskResponseDto {
   @ApiProperty({ example: 'Smith Residence Solar', description: 'Project name' })
   @Expose()
   projectName!: string;
+
+  @ApiPropertyOptional({
+    description: 'What happened to the customer WhatsApp update for this task (detail only)',
+    nullable: true,
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    // Only the computed line goes out. Anything else — most of all the stored
+    // record, which holds the customer's phone and Meta's message id — is
+    // dropped, so an endpoint that forgets to compute it returns null rather
+    // than leaking the row.
+    const value: unknown = (obj as { customerWhatsapp?: unknown }).customerWhatsapp;
+    return value !== null && typeof value === 'object' && 'state' in value ? value : null;
+  })
+  customerWhatsapp?: CustomerWhatsappStatus | null;
 
   @ApiPropertyOptional({
     example: 'Installation',

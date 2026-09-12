@@ -75,6 +75,17 @@ export class WorkflowStepEntity extends BaseEntity {
   @Column({ name: 'property_types', type: 'varchar', length: 50, array: true, nullable: true })
   propertyTypes?: PropertyType[] | null;
 
+  /**
+   * Customer WhatsApp: when the admin ticked it. Only completions at or after
+   * this time send. NULL means off.
+   */
+  @Column({ name: 'whatsapp_since', type: 'timestamptz', nullable: true })
+  whatsappSince?: Date | null;
+
+  /** The {{update}} text of the `project_step_update` WhatsApp template. */
+  @Column({ name: 'customer_update_text', type: 'varchar', length: 200, nullable: true })
+  customerUpdateText?: string | null;
+
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp with time zone' })
   deletedAt?: Date;
 

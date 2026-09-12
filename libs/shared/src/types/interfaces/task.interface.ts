@@ -32,6 +32,10 @@ export interface WorkflowStep {
   loanOnly?: boolean;
   /** Task rule: only these property types get this step's task. Null means every type. */
   propertyTypes?: PropertyType[] | null;
+  /** Customer WhatsApp: send the update when a task of this step is done. */
+  whatsappOnDone?: boolean;
+  /** The {{update}} text of the WhatsApp template. */
+  customerUpdateText?: string | null;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
@@ -54,6 +58,42 @@ export interface TaskRuleSyncResult {
   kept: number;
   /** The change took the project to 100%, so it completed. */
   completed: boolean;
+}
+
+export type CustomerWhatsappState =
+  | 'waiting'
+  | 'sending'
+  | 'sent'
+  | 'delivered'
+  | 'read'
+  | 'failed'
+  | 'skipped';
+
+/** What happened to a task's customer WhatsApp update, for the task drawer. */
+export interface CustomerWhatsappStatus {
+  state: CustomerWhatsappState;
+  /** waiting: when it goes out. sent, delivered, read: when that happened. */
+  at: string | null;
+  reason: string | null;
+}
+
+/**
+ * The latest attempt, stored on `project_tasks.customer_whatsapp`. "Waiting" is
+ * never stored: a task is waiting when its step is ticked and it is done with no
+ * record yet, so there is nothing to write when a task is merely finished.
+ */
+export interface TaskWhatsappRecord {
+  status: Exclude<CustomerWhatsappState, 'waiting'>;
+  /** The completion this attempt answers, so a later finish can send again. */
+  taskCompletedAt: string;
+  updatedAt: string;
+  phone?: string | null;
+  updateText?: string | null;
+  reason?: string | null;
+  providerMessageId?: string | null;
+  sentAt?: string | null;
+  deliveredAt?: string | null;
+  readAt?: string | null;
 }
 
 // ============================================================================
@@ -115,6 +155,8 @@ export interface MyTask extends ProjectTask {
   dependencyNames?: string[];
   dependencyCodes?: string[];
   hasDependencyBlockers?: boolean;
+  /** Only on the task detail response. */
+  customerWhatsapp?: CustomerWhatsappStatus | null;
 }
 
 /** Slim task shape for My Tasks list rows (no activityLog, checklist, attachments). */

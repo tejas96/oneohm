@@ -19,6 +19,7 @@ import {
 } from '@tejas96/shared/constants';
 import {
   type ChecklistProgress,
+  type CustomerWhatsappStatus,
   type PaginatedResponse,
   ProjectStatus,
   type StatisticsResponse,
@@ -30,6 +31,7 @@ import { compareMilestoneSequence } from '@tejas96/shared/utils';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
 import { hasAdminBypassRole } from '../../iam/constants';
+import { nextCustomerWhatsappSendAt } from '../../notifications/constants/task-whatsapp.constants';
 import {
   CONSUMER_EVENTS,
   ProjectCompletedEvent,
@@ -1214,7 +1216,7 @@ export class ProjectTaskService {
     const statusMap = this.getStatusCatalogMap();
     const priorityMap = this.getPriorityCatalogMap();
 
-    return this.enrichMyTask(
+    const enriched = this.enrichMyTask(
       task,
       today,
       depNameMap,
@@ -1223,6 +1225,53 @@ export class ProjectTaskService {
       statusMap,
       priorityMap,
     );
+    return { ...enriched, customerWhatsapp: this.resolveCustomerWhatsapp(task) };
+  }
+
+  /**
+   * The customer WhatsApp line for the task drawer: the task's send log, or
+   * "waiting" while a ticked step's completion waits for the next 6 pm send (or
+   * waits to retry a failed or skipped attempt). Null when there is nothing to
+   * say — the step is not ticked, or the task was done before the tick.
+   */
+  private resolveCustomerWhatsapp(task: ProjectTaskEntity): CustomerWhatsappStatus | null {
+    const record = task.whatsappRecord ?? null;
+
+    const since = task.workflowStep?.whatsappSince
+      ? new Date(task.workflowStep.whatsappSince)
+      : null;
+    const completedAt = task.completedAt ? new Date(task.completedAt) : null;
+    const waiting =
+      since !== null &&
+      completedAt !== null &&
+      task.status === TaskStatus.DONE &&
+      completedAt >= since &&
+      (!record ||
+        ((record.status === 'failed' || record.status === 'skipped') &&
+          new Date(record.taskCompletedAt) < completedAt));
+
+    if (waiting && completedAt) {
+      return {
+        state: 'waiting',
+        at: nextCustomerWhatsappSendAt(completedAt).toISOString(),
+        reason: null,
+      };
+    }
+    if (!record) return null;
+
+    const at =
+      record.status === 'read'
+        ? record.readAt
+        : record.status === 'delivered'
+          ? record.deliveredAt
+          : record.status === 'sent'
+            ? record.sentAt
+            : record.updatedAt;
+    return {
+      state: record.status,
+      at: at ? new Date(at).toISOString() : null,
+      reason: record.reason ?? null,
+    };
   }
 
   async updateTaskCrossProject(
@@ -1298,6 +1347,12 @@ export class ProjectTaskService {
           if (!task.endDate) updateData.endDate = new Date();
           if (sMeta.autoCompletePct !== undefined)
             updateData.completionPercentage = sMeta.autoCompletePct;
+          // Same as updateStatus and moveTask. Without it a task finished from
+          // My Work never counted as complete for a payment milestone, and never
+          // triggered the customer's WhatsApp update.
+          updateData.completedAt = new Date();
+        } else if (task.completedAt) {
+          updateData.completedAt = null;
         }
       }
     }
