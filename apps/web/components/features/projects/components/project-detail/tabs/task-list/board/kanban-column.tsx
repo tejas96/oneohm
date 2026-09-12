@@ -8,6 +8,7 @@ import { KanbanCardSkeleton } from './kanban-card-skeleton';
 import { KanbanColumnHeader } from './kanban-column-header';
 import { KanbanEmptyColumn } from './kanban-empty-column';
 import { KanbanTaskCard } from './kanban-task-card';
+import type { TaskDeleteTarget } from '../../../../../hooks/types';
 import type { KanbanColumnData } from '../../../../../hooks/use-project-task-board';
 
 interface KanbanColumnProps {
@@ -18,6 +19,7 @@ interface KanbanColumnProps {
   onOpenTask: (taskId: string) => void;
   onMoveToStatus: (taskId: string, newStatus: string, currentCompletionPct: number) => void;
   onAddTask: (status: string) => void;
+  onRequestDelete?: (task: TaskDeleteTarget) => void;
 }
 
 export function KanbanColumn({
@@ -28,6 +30,7 @@ export function KanbanColumn({
   onOpenTask,
   onMoveToStatus,
   onAddTask,
+  onRequestDelete,
 }: KanbanColumnProps): React.JSX.Element {
   const columnRef = useRef<HTMLDivElement>(null);
   const [isOver, setIsOver] = useState(false);
@@ -144,6 +147,7 @@ export function KanbanColumn({
               allColumns={allColumns}
               onOpenTask={onOpenTask}
               onMoveToStatus={onMoveToStatus}
+              onRequestDelete={onRequestDelete}
               isDraggingThis={draggingTaskId === task.id}
               hasDependencyBlockers={task.hasDependencyBlockers}
             />

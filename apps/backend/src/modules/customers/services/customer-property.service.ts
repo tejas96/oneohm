@@ -19,6 +19,7 @@ import {
   PropertyStatus,
   QuoteStatus,
   SiteStatus,
+  type TaskRuleSyncResult,
 } from '@tejas96/shared/types';
 import { DataSource, IsNull, Not, type EntityManager } from 'typeorm';
 
@@ -30,8 +31,10 @@ import { DocumentEntity } from '../../documents/entities/document.entity';
 import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
 import {
   CONSUMER_EVENTS,
+  ProjectCompletedEvent,
   PropertyCreatedEvent,
 } from '../../notifications/events/consumer-notification.events';
+import { SITE_EVENTS, SiteLoanChangedEvent } from '../../projects/events/site-loan-changed.event';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { StorageService } from '../../storage/services/storage.service';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
@@ -563,10 +566,48 @@ export class CustomerPropertyService {
       );
     }
 
-    const updated = await this.propertyRepository.update(id, updatePayload);
+    const { updated, taskRuleSync } = await this.dataSource.transaction(async (manager) => {
+      const locked = await this.propertyRepository.findByIdForUpdate(id, manager);
+      if (!locked) {
+        throw new NotFoundException(`Property with ID '${id}' not found`);
+      }
 
-    if (!updated) {
-      throw new NotFoundException(`Property with ID '${id}' not found`);
+      // The loan sync lands with the save or not at all: a site that says "no loan"
+      // while its project still waits on loan tasks is the state this exists to end.
+      const loanChanged =
+        updateDto.wantsLoan !== undefined && updateDto.wantsLoan !== locked.wantsLoan;
+
+      const saved = await this.propertyRepository.update(id, updatePayload, manager);
+      if (!saved) {
+        throw new NotFoundException(`Property with ID '${id}' not found`);
+      }
+
+      let sync: TaskRuleSyncResult | null = null;
+      if (loanChanged) {
+        const results: unknown[] = await this.eventEmitter.emitAsync(
+          SITE_EVENTS.LOAN_CHANGED,
+          new SiteLoanChangedEvent(
+            id,
+            locked.wantsLoan,
+            updateDto.wantsLoan === true,
+            locked.propertyType,
+            updatedBy ?? null,
+            manager,
+          ),
+        );
+        sync = (results.find(Boolean) as TaskRuleSyncResult | undefined) ?? null;
+      }
+
+      return { updated: saved, taskRuleSync: sync };
+    });
+
+    // After the commit, so a rolled-back save never tells a customer their
+    // project is complete.
+    if (taskRuleSync?.completed) {
+      this.eventEmitter.emit(
+        CONSUMER_EVENTS.PROJECT_COMPLETED,
+        new ProjectCompletedEvent(taskRuleSync.projectId, id, taskRuleSync.projectName),
+      );
     }
 
     if (hasUtilityFieldUpdate(updateDto)) {
@@ -574,7 +615,7 @@ export class CustomerPropertyService {
     }
 
     this.logger.log(`Property updated successfully: ${id}`);
-    return updated;
+    return taskRuleSync ? Object.assign(updated, { taskRuleSync }) : updated;
   }
 
   /**

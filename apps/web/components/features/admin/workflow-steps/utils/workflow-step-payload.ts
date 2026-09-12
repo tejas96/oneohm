@@ -39,6 +39,10 @@ export function buildWorkflowStepPayload(data: WorkflowStepFormValues): Partial<
     // Only a change-request step carries a type; clearing the flag clears the pair.
     changeRequestType: data.isSpecial ? (data.changeRequestType ?? null) : null,
     dependsOnTaskCodes: depCodes,
+    // A change-request step never takes a rule; the backend refuses one.
+    loanOnly: data.isSpecial ? false : (data.loanOnly ?? false),
+    // No type picked means every type, and travels as null so an emptied list clears.
+    propertyTypes: data.isSpecial || !data.propertyTypes?.length ? null : data.propertyTypes,
     checklistTemplate: { items: checklistItems } as TaskChecklist,
   };
 }

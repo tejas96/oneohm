@@ -171,3 +171,16 @@ export interface MilestoneWithPayment extends MilestoneAggregateItem {
 // ProjectTaskItem is the canonical FDAL type — re-export from the resource layer
 // to avoid duplication while keeping the feature types module as the single barrel for consumers.
 export type { ProjectTaskItem } from '@/lib/hooks/resources';
+
+/**
+ * What a task row or board card hands back when someone asks to delete a task.
+ *
+ * The list and the board hold different shapes — a full `ProjectTaskItem` and a
+ * handful of card props — so the callback takes only the three fields the
+ * confirmation needs: which task to delete, and what to call it on screen.
+ */
+export interface TaskDeleteTarget {
+  id: string;
+  code: string;
+  name: string;
+}

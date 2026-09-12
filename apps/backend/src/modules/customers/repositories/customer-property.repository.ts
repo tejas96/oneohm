@@ -119,8 +119,8 @@ export class CustomerPropertyRepository {
       .execute();
   }
 
-  async findById(id: string): Promise<CustomerPropertyEntity | null> {
-    return this.repository.findOne({
+  async findById(id: string, manager?: EntityManager): Promise<CustomerPropertyEntity | null> {
+    return this.getRepo(manager).findOne({
       where: { id, deletedAt: IsNull() },
       relations: [
         'customer',
@@ -129,6 +129,17 @@ export class CustomerPropertyRepository {
         'siteVisitAssigneeUser',
         'siteSurveyAssigneeUser',
       ],
+    });
+  }
+
+  /** Reads the row with a write lock; a concurrent save of this site waits for this transaction. */
+  async findByIdForUpdate(
+    id: string,
+    manager: EntityManager,
+  ): Promise<CustomerPropertyEntity | null> {
+    return this.getRepo(manager).findOne({
+      where: { id },
+      lock: { mode: 'pessimistic_write' },
     });
   }
 
@@ -193,10 +204,11 @@ export class CustomerPropertyRepository {
   async update(
     id: string,
     updates: Partial<CustomerPropertyEntity>,
+    manager?: EntityManager,
   ): Promise<CustomerPropertyEntity | null> {
     // Use type assertion to avoid TypeScript recursion issues with circular entity references
-    await this.repository.update({ id }, updates as Record<string, unknown>);
-    return this.findById(id);
+    await this.getRepo(manager).update({ id }, updates as Record<string, unknown>);
+    return this.findById(id, manager);
   }
 
   async softDelete(id: string, deletedBy?: string): Promise<boolean> {

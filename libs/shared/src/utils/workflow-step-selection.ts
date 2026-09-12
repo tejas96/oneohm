@@ -1,3 +1,6 @@
+import { PROPERTY_TYPE_LABELS, type PropertyType } from '../types/enums/customer.enum';
+import { type SiteTaskFacts } from '../types/interfaces/task.interface';
+
 /**
  * Which workflow steps a brand-new project turns into tasks.
  *
@@ -15,4 +18,45 @@ export function isProjectBaselineStep(step: {
   changeRequestType?: string | null;
 }): boolean {
   return !step.isSpecial && !step.changeRequestType;
+}
+
+interface StepRule {
+  loanOnly?: boolean | null;
+  propertyTypes?: PropertyType[] | null;
+}
+
+/**
+ * Whether a step's task rule lets its task onto a site.
+ *
+ * No rule: every site. "Loan only": the site must want a loan. A type list: the
+ * site's type must be in it; an empty or missing list means every type. When
+ * both are set, both must match.
+ *
+ * Project creation, the loan sync and the create wizard all call this, so what
+ * the wizard shows is what the project gets.
+ */
+export function stepAppliesToSite(step: StepRule, site: SiteTaskFacts): boolean {
+  if (step.loanOnly && !site.wantsLoan) return false;
+  const types = step.propertyTypes ?? [];
+  if (types.length > 0 && !types.includes(site.propertyType)) return false;
+  return true;
+}
+
+/**
+ * The rule in words, or null when the step has no rule.
+ * Full: "Loan only · Residential, Commercial". Short: "Loan only · Residential +1".
+ */
+export function describeStepRule(step: StepRule, options: { short?: boolean } = {}): string | null {
+  const parts: string[] = [];
+  if (step.loanOnly) parts.push('Loan only');
+
+  const types = step.propertyTypes ?? [];
+  if (types.length > 0) {
+    const labels = types.map((type) => PROPERTY_TYPE_LABELS[type] ?? type);
+    parts.push(
+      options.short && labels.length > 1 ? `${labels[0]} +${labels.length - 1}` : labels.join(', '),
+    );
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : null;
 }

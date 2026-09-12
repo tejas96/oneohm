@@ -1,5 +1,6 @@
 import type { FileAttachment, TaskActivityEntry, TaskChecklist } from './project.interface';
 import { ChangeRequestType } from '../enums/change-request.enum';
+import { type PropertyType } from '../enums/customer.enum';
 import { type TaskPriority, TaskStatus, WorkflowStepType } from '../enums/project.enum';
 
 // ============================================================================
@@ -27,10 +28,32 @@ export interface WorkflowStep {
   isActive: boolean;
   isSpecial?: boolean;
   changeRequestType?: ChangeRequestType | null;
+  /** Task rule: only sites that want a loan get this step's task. */
+  loanOnly?: boolean;
+  /** Task rule: only these property types get this step's task. Null means every type. */
+  propertyTypes?: PropertyType[] | null;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
   updatedBy?: string;
+}
+
+/** The site facts a step's task rule is checked against. */
+export interface SiteTaskFacts {
+  wantsLoan: boolean;
+  propertyType: PropertyType;
+}
+
+/** What a change to a site's loan flag did to its live project's tasks. */
+export interface TaskRuleSyncResult {
+  projectId: string;
+  projectNumber: string;
+  projectName: string;
+  added: number;
+  removed: number;
+  kept: number;
+  /** The change took the project to 100%, so it completed. */
+  completed: boolean;
 }
 
 // ============================================================================

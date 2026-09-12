@@ -14,6 +14,7 @@ import {
 } from './lib/apply-task-status-change';
 import { PROJECT_TASKS_QUERY_KEY, type TaskListFilters } from '../../../../constants';
 import { useProjectTaskBoard, useTaskBoardDnd, type KanbanColumnData } from '../../../../hooks';
+import type { TaskDeleteTarget } from '../../../../hooks/types';
 import { EmptyPane, ErrorPane } from '../../primitives';
 
 import { useUpdateTask } from '@/components/features/tasks/hooks';
@@ -27,6 +28,8 @@ interface TaskBoardViewProps {
   filters: TaskListFilters;
   onOpenTask: (taskId: string) => void;
   onOpenCreate: (preselectedStatus?: string) => void;
+  /** Left out when the viewer may not manage tasks: the card then has no delete item. */
+  onRequestDelete?: (task: TaskDeleteTarget) => void;
 }
 
 // ── Skeleton board (loading state) ───────────────────────────────────────────
@@ -64,6 +67,7 @@ export function TaskBoardView({
   filters,
   onOpenTask,
   onOpenCreate,
+  onRequestDelete,
 }: TaskBoardViewProps): React.JSX.Element {
   const queryClient = useQueryClient();
   const { mutate: updateTask } = useUpdateTask();
@@ -202,6 +206,7 @@ export function TaskBoardView({
             onOpenTask={onOpenTask}
             onMoveToStatus={handleMoveToStatus}
             onAddTask={handleAddTask}
+            onRequestDelete={onRequestDelete}
           />
         ))}
       </Box>

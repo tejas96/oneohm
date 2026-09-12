@@ -535,14 +535,7 @@ export class ProjectTaskService {
 
     await this.dataSource.transaction(async (manager) => {
       await manager.softDelete(ProjectTaskEntity, { id, projectId });
-      await manager.query(
-        `UPDATE project_tasks
-         SET depends_on_task_ids = array_remove(depends_on_task_ids, $1::uuid)
-         WHERE project_id = $2
-           AND deleted_at IS NULL
-           AND $1::uuid = ANY(depends_on_task_ids)`,
-        [id, projectId],
-      );
+      await this.taskRepository.removeDependencyReferences(projectId, [id], manager);
       const { done, total } = await this.taskRepository.computeProgress(projectId, manager);
       const progress = total > 0 ? Math.round((100 * done) / total) : 0;
       await this.projectRepository.updateProgressById(projectId, progress, manager);

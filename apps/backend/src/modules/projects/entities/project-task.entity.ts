@@ -136,6 +136,14 @@ export class ProjectTaskEntity extends BaseEntity {
   @Column({ name: 'source_change_request_index', type: 'integer', nullable: true })
   sourceChangeRequestIndex?: number;
 
+  /**
+   * Why the system removed this task: `rule_not_applicable` (loan sync) or
+   * `rule_cleanup` (one-time cleanup). NULL on a deleted task means a person
+   * deleted it, and the loan sync never brings such a task back.
+   */
+  @Column({ name: 'removal_reason', type: 'varchar', length: 40, nullable: true })
+  removalReason?: string | null;
+
   // ==================== Dependencies ====================
 
   @Column({ name: 'depends_on_task_ids', type: 'uuid', array: true, nullable: true })

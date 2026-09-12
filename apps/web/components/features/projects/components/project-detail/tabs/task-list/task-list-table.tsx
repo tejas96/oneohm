@@ -5,8 +5,9 @@ import { type TaskPriority, TASK_PRIORITY_LABELS } from '@tejas96/shared/types';
 import { ChevronDown, ChevronRight, ListChecks, Lock, Minus } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
+import { TaskRowActions } from './task-row-actions';
 import { TASK_PRIORITY_HEX_COLOR } from '../../../../constants';
-import type { ProjectTaskItem } from '../../../../hooks/types';
+import type { ProjectTaskItem, TaskDeleteTarget } from '../../../../hooks/types';
 import { ColorDotLabel, QuickSelect, type MUISelectOption } from '../../../quick-select';
 import { ColumnHeader, EmptyPane, Mono, ROW_BLEED, TonePill } from '../../primitives';
 
@@ -29,6 +30,8 @@ interface TaskListTableProps {
     currentCompletionPct: number,
   ) => void;
   onPriorityChange?: (taskId: string, priority: string) => void;
+  /** Left out when the viewer may not manage tasks: the row then has no menu. */
+  onRequestDelete?: (task: TaskDeleteTarget) => void;
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
 }
@@ -56,8 +59,10 @@ const PRIORITY_OPTIONS: MUISelectOption[] = (
   ),
 }));
 
-const COLS_WITH_PHASE = 'md:grid-cols-[62px_minmax(0,1fr)_118px_100px_44px_84px_84px_104px]';
-const COLS_WITHOUT_PHASE = 'md:grid-cols-[62px_minmax(0,1fr)_100px_44px_84px_84px_104px]';
+// The last track is the row's actions menu. It holds its width whether or not
+// the viewer may delete, so rows never shift as permissions change.
+const COLS_WITH_PHASE = 'md:grid-cols-[62px_minmax(0,1fr)_118px_100px_44px_84px_84px_104px_36px]';
+const COLS_WITHOUT_PHASE = 'md:grid-cols-[62px_minmax(0,1fr)_100px_44px_84px_84px_104px_36px]';
 
 /**
  * The readable half of a task code.
@@ -111,6 +116,7 @@ function TableHead({ hasPhase }: { hasPhase: boolean }): React.JSX.Element {
       <ColumnHeader>Due</ColumnHeader>
       <ColumnHeader>Progress</ColumnHeader>
       <ColumnHeader>Status</ColumnHeader>
+      <span aria-hidden />
     </div>
   );
 }
@@ -125,6 +131,7 @@ function TaskRow({
   onOpenTask,
   onStatusChange,
   onPriorityChange,
+  onRequestDelete,
   statusOptions,
 }: {
   task: ProjectTaskItem;
@@ -139,6 +146,7 @@ function TaskRow({
     currentCompletionPct: number,
   ) => void;
   onPriorityChange?: (taskId: string, priority: string) => void;
+  onRequestDelete?: (task: TaskDeleteTarget) => void;
   statusOptions: MUISelectOption[];
 }): React.JSX.Element {
   const priorityColor = TASK_PRIORITY_HEX_COLOR[task.priority] ?? '#94a3b8';
@@ -313,6 +321,15 @@ function TaskRow({
           </span>
         )}
       </div>
+
+      <div className="flex shrink-0 items-center justify-end" onClick={(e) => e.stopPropagation()}>
+        {onRequestDelete ? (
+          <TaskRowActions
+            taskName={task.name}
+            onDelete={() => onRequestDelete({ id: task.id, code: task.code, name: task.name })}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -325,6 +342,7 @@ function TaskGroupSection({
   onOpenTask,
   onStatusChange,
   onPriorityChange,
+  onRequestDelete,
   statusOptions,
 }: {
   group: TaskGroup;
@@ -337,6 +355,7 @@ function TaskGroupSection({
     currentCompletionPct: number,
   ) => void;
   onPriorityChange?: (taskId: string, priority: string) => void;
+  onRequestDelete?: (task: TaskDeleteTarget) => void;
   statusOptions: MUISelectOption[];
 }): React.JSX.Element {
   const [expanded, setExpanded] = useState(true);
@@ -383,6 +402,7 @@ function TaskGroupSection({
               onOpenTask={onOpenTask}
               onStatusChange={onStatusChange}
               onPriorityChange={onPriorityChange}
+              onRequestDelete={onRequestDelete}
               statusOptions={statusOptions}
             />
           ))}
@@ -401,6 +421,7 @@ export function TaskListTable({
   onOpenTask,
   onStatusChange,
   onPriorityChange,
+  onRequestDelete,
   hasActiveFilters = false,
   onClearFilters,
 }: TaskListTableProps): React.JSX.Element {
@@ -496,6 +517,7 @@ export function TaskListTable({
           onOpenTask={onOpenTask}
           onStatusChange={onStatusChange}
           onPriorityChange={onPriorityChange}
+          onRequestDelete={onRequestDelete}
           statusOptions={statusOptions}
         />
       ))}

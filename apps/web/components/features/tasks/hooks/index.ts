@@ -1,1 +1,1 @@
-export { useUpdateTask } from './use-task-mutations';
+export { useDeleteTask, useUpdateTask } from './use-task-mutations';

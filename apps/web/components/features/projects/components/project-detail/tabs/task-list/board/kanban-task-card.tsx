@@ -10,6 +10,7 @@ import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import {
   Box,
   Chip,
+  Divider,
   IconButton,
   LinearProgress,
   Menu,
@@ -23,6 +24,7 @@ import { createPortal } from 'react-dom';
 
 import { CardPreview, PRIORITY_FALLBACK_ICON, PRIORITY_ICON } from './kanban-card-preview';
 import { TASK_PRIORITY_HEX_COLOR } from '../../../../../constants';
+import type { TaskDeleteTarget } from '../../../../../hooks/types';
 import type { KanbanColumnData } from '../../../../../hooks/use-project-task-board';
 import type { DraggableTaskData } from '../../../../../hooks/use-task-board-dnd';
 
@@ -47,6 +49,8 @@ interface KanbanTaskCardProps {
   allColumns: KanbanColumnData[];
   onOpenTask: (taskId: string) => void;
   onMoveToStatus: (taskId: string, newStatus: string, currentCompletionPct: number) => void;
+  /** Left out when the viewer may not manage tasks: the menu then has no delete item. */
+  onRequestDelete?: (task: TaskDeleteTarget) => void;
   /** Whether a drag is currently in progress globally (used to show ghost). */
   isDraggingThis: boolean;
   hasDependencyBlockers?: boolean;
@@ -69,6 +73,7 @@ export function KanbanTaskCard({
   allColumns,
   onOpenTask,
   onMoveToStatus,
+  onRequestDelete,
   isDraggingThis,
   hasDependencyBlockers = false,
 }: KanbanTaskCardProps): React.JSX.Element {
@@ -88,6 +93,9 @@ export function KanbanTaskCard({
   const isDueToday = dueDateColor === 'warning.main';
   const visibleLabels = labels.slice(0, 2);
   const extraLabels = labels.length > 2 ? labels.length - 2 : 0;
+  // The statuses this card can move to. Held once: the menu lists them, and the
+  // divider above "Delete task" only earns its line when at least one exists.
+  const moveTargets = allColumns.filter((col) => col.code !== status && col.code !== '__other__');
 
   // Register draggable
   useEffect(() => {
@@ -427,13 +435,13 @@ export function KanbanTaskCard({
               </Tooltip>
             )}
 
-            {/* Move to menu for keyboard/mobile */}
-            <Tooltip title="Move to…" placement="top">
+            {/* Card actions for keyboard/mobile: move to a status, and delete. */}
+            <Tooltip title="Task actions" placement="top">
               <IconButton
                 size="small"
                 onClick={handleMoveMenuOpen}
                 sx={{ p: 0.25, opacity: 0.5, '&:hover': { opacity: 1 } }}
-                aria-label="Move task to another status"
+                aria-label={`Actions for ${name}`}
               >
                 <OpenWithIcon sx={{ fontSize: 12 }} />
               </IconButton>
@@ -450,24 +458,36 @@ export function KanbanTaskCard({
         onClick={(e) => e.stopPropagation()}
         slotProps={{ paper: { elevation: 3, sx: { minWidth: 160 } } }}
       >
-        {allColumns
-          .filter((col) => col.code !== status && col.code !== '__other__')
-          .map((col) => (
-            <MenuItem key={col.code} onClick={() => handleMoveToStatus(col.code)} dense>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    bgcolor: col.color,
-                    flexShrink: 0,
-                  }}
-                />
-                <Typography variant="body2">{col.label}</Typography>
-              </Box>
-            </MenuItem>
-          ))}
+        {moveTargets.map((col) => (
+          <MenuItem key={col.code} onClick={() => handleMoveToStatus(col.code)} dense>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  bgcolor: col.color,
+                  flexShrink: 0,
+                }}
+              />
+              <Typography variant="body2">{col.label}</Typography>
+            </Box>
+          </MenuItem>
+        ))}
+
+        {onRequestDelete && moveTargets.length > 0 ? <Divider sx={{ my: 0.5 }} /> : null}
+        {onRequestDelete ? (
+          <MenuItem
+            dense
+            sx={{ color: 'error.main' }}
+            onClick={() => {
+              setMenuAnchor(null);
+              onRequestDelete({ id: taskId, code, name });
+            }}
+          >
+            Delete task
+          </MenuItem>
+        ) : null}
       </Menu>
 
       {/* Custom drag preview rendered via portal */}

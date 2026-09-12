@@ -1,10 +1,11 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import type { MyTask, TaskChecklist, TaskPriority, TaskStatus } from '@tejas96/shared/types';
 
 import { taskDetailKeys } from './use-task-detail';
-import { myTaskKeys } from '../../projects/hooks';
+import { PROJECT_MILESTONE_AGG_QUERY_KEY, PROJECT_TASKS_QUERY_KEY } from '../../projects/constants';
+import { myTaskKeys, projectDetailKeys } from '../../projects/hooks';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
@@ -80,6 +81,41 @@ export function useAddComment() {
       void queryClient.invalidateQueries({
         queryKey: taskDetailKeys.detail(variables.taskId),
       });
+    },
+    onError: (error) => {
+      showToast.error(getErrorMessage(error));
+    },
+  });
+}
+
+/**
+ * Delete one task off a project.
+ *
+ * Project-scoped, unlike the other task mutations: the endpoint lives under the
+ * project, so the hook takes the project once and the task id per call. That
+ * shape is also what `useDeleteConfirmation` expects.
+ *
+ * The backend soft-deletes the row and leaves `removalReason` NULL, which is
+ * how the task rules tell "a person deleted this" from "a rule removed it" —
+ * a task deleted here is never added back.
+ *
+ * Invalidates what a task create does (the project task list and the project's
+ * task stats), plus the milestone rollup and "My tasks" — a delete moves every
+ * one of those counts, so a caller does not invalidate them again.
+ */
+export function useDeleteTask(projectId: string): UseMutationResult<void, unknown, string> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (taskId: string) => {
+      await apiClient.delete(`/projects/${projectId}/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      showToast.success('Task deleted');
+      void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY() });
+      void queryClient.invalidateQueries({ queryKey: PROJECT_MILESTONE_AGG_QUERY_KEY(projectId) });
+      void queryClient.invalidateQueries({ queryKey: projectDetailKeys.taskStats(projectId) });
+      void queryClient.invalidateQueries({ queryKey: myTaskKeys.all() });
     },
     onError: (error) => {
       showToast.error(getErrorMessage(error));

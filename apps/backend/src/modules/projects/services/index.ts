@@ -8,3 +8,4 @@ export * from './change-request-task.service';
 export * from './project-team.service';
 export * from './project-chat.service';
 export * from './project-analytics.service';
+export * from './loan-task-sync.service';

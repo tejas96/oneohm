@@ -24,6 +24,19 @@ export enum PropertyType {
 }
 
 /**
+ * Screen labels for property types. Same wording as PROPERTY_TYPE_OPTIONS in
+ * apps/web/lib/config/constants.ts.
+ */
+export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
+  [PropertyType.RESIDENTIAL]: 'Residential',
+  [PropertyType.RESIDENTIAL_APARTMENT]: 'Apartment',
+  [PropertyType.COMMERCIAL]: 'Commercial',
+  [PropertyType.INDUSTRIAL]: 'Industrial',
+  [PropertyType.AGRICULTURAL]: 'Agricultural',
+  [PropertyType.INSTITUTIONAL]: 'Institutional',
+};
+
+/**
  * Property Status Enum
  * Represents the status of a customer property/opportunity
  */

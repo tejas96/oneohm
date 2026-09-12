@@ -1,17 +1,19 @@
 'use client';
 
-import { isProjectBaselineStep } from '@tejas96/shared/utils';
+import { isProjectBaselineStep, stepAppliesToSite } from '@tejas96/shared/utils';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 
 import type { ProjectCreateFormData } from '../../../schemas/project-create.schema';
 
+import { useProperty } from '@/components/features/customers/hooks';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import {
   useAllActiveWorkflowSteps,
   useConvertFromQuote,
   useEmployees,
+  type WorkflowStep,
 } from '@/lib/hooks/resources';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -29,10 +31,23 @@ export function useProjectCreateSubmit(
   const router = useRouter();
   const { execute, isPending } = useConvertFromQuote();
   const { items: rawWorkflowSteps = [] } = useAllActiveWorkflowSteps();
-  // Only baseline steps become tasks, so only they can carry an auto-assignment.
-  const workflowSteps = useMemo(
-    () => rawWorkflowSteps.filter(isProjectBaselineStep),
-    [rawWorkflowSteps],
+  // Explicit element type at the source: useAllActiveWorkflowSteps()'s `items` is
+  // typed loosely, and that looseness otherwise leaks into the .filter() chain below.
+  const activeWorkflowSteps: WorkflowStep[] = rawWorkflowSteps;
+  const { data: property } = useProperty(form.watch('propertyId'));
+  // Only steps that become tasks can carry an auto-assignment: baseline steps
+  // whose task rule this site passes — the same filter step 5 shows.
+  const workflowSteps: WorkflowStep[] = useMemo(
+    (): WorkflowStep[] =>
+      activeWorkflowSteps.filter(isProjectBaselineStep).filter((step) =>
+        property
+          ? stepAppliesToSite(step, {
+              wantsLoan: property.wantsLoan,
+              propertyType: property.propertyType,
+            })
+          : true,
+      ),
+    [activeWorkflowSteps, property],
   );
   const { items: employees = [] } = useEmployees({ status: 'active' });
 

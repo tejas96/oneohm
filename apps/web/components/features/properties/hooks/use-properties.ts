@@ -11,12 +11,14 @@ import type {
   QuoteStatus,
   ShadingAnalysis,
   SurveyData,
+  TaskRuleSyncResult,
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
 import { customerKeys, propertyKeys } from './use-create-property';
 import type { DiscomResponse } from './use-discoms';
 
+import { projectKeys } from '@/components/features/projects/hooks/use-projects';
 import { showToast } from '@/components/ui';
 import { apiClient } from '@/lib/api/client';
 
@@ -73,6 +75,8 @@ export interface Property {
   changeOrderValue?: number;
   projectId?: string;
   hasActiveLoan?: boolean;
+  /** Only on a save that changed the loan flag: what it did to the project's loan tasks. */
+  taskRuleSync?: TaskRuleSyncResult;
 }
 
 export interface UpdatePropertyData {
@@ -107,6 +111,21 @@ export interface UpdatePropertyData {
 // Hooks (update & delete kept for detail/form pages)
 // ============================================================================
 
+/** "PRJ-0123: 8 loan tasks added" — what a loan change did to the project's tasks. */
+function describeTaskRuleSync(result: TaskRuleSyncResult): string {
+  const parts: string[] = [];
+  if (result.added > 0) {
+    parts.push(`${result.added} loan task${result.added === 1 ? '' : 's'} added`);
+  }
+  if (result.removed > 0) {
+    parts.push(`${result.removed} loan task${result.removed === 1 ? '' : 's'} removed`);
+  }
+  if (result.kept > 0) {
+    parts.push(`${result.kept} started task${result.kept === 1 ? '' : 's'} kept`);
+  }
+  return `${result.projectNumber}: ${parts.join(', ')}`;
+}
+
 /**
  * Hook to update a property
  * Invalidates list and detail query keys on success
@@ -132,7 +151,11 @@ export function useUpdateProperty(): UseMutationResult<
       );
       return response;
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (response.taskRuleSync) {
+        showToast.success(describeTaskRuleSync(response.taskRuleSync));
+        void queryClient.invalidateQueries({ queryKey: projectKeys.all() });
+      }
       void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
       void queryClient.invalidateQueries({
         queryKey: customerKeys.lists(),

@@ -31,12 +31,17 @@ export async function generateEntityCode<T extends object>(
 
   const effectiveRepo = manager ? manager.getRepository(repo.target) : repo;
 
+  // Plain `ORDER BY code DESC` sorts lexicographically, so once the sequence
+  // passes 9999 a 5-digit code (e.g. "...-10000") sorts BELOW "...-9999" (the
+  // character '1' precedes '9'). That stalls the sequence on the old 4-digit
+  // max forever, handing out the same "next" code to every caller. Ordering
+  // by the numeric suffix itself finds the true maximum regardless of width.
   const result = await effectiveRepo
     .createQueryBuilder('e')
     .withDeleted()
     .select(`e.${actualDbColumn}`, 'code')
     .where(`e.${actualDbColumn} LIKE :pattern`, { pattern })
-    .orderBy(`e.${actualDbColumn}`, 'DESC')
+    .orderBy(`CAST(SUBSTRING(e.${actualDbColumn} FROM '(\\d+)$') AS INTEGER)`, 'DESC', 'NULLS LAST')
     .limit(1)
     .getRawOne<{ code: string }>();
 
