@@ -12,6 +12,7 @@ import { TaskDrawerDependencies } from './task-drawer-dependencies';
 import { TaskDrawerHeader } from './task-drawer-header';
 import { TaskDrawerMainContent, SectionHeading } from './task-drawer-main-content';
 import { TaskDrawerMetadata } from './task-drawer-metadata';
+import { TaskDrawerWhatsapp } from './task-drawer-whatsapp';
 import { useTaskDetail } from '../hooks/use-task-detail';
 import { useAddComment, useUpdateTask } from '../hooks/use-task-mutations';
 
@@ -297,6 +298,7 @@ export function TaskDrawer({
                     onAssigneeChange={handleAssigneeChange}
                     onDueDateChange={handleDueDateChange}
                   />
+                  {task.customerWhatsapp && <TaskDrawerWhatsapp status={task.customerWhatsapp} />}
                 </Box>
 
                 {/* Main content area */}

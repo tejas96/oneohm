@@ -19,6 +19,8 @@ import {
 } from '@tejas96/shared/constants';
 import {
   type ChecklistProgress,
+  type CustomerWhatsappState,
+  type CustomerWhatsappStatus,
   type PaginatedResponse,
   ProjectStatus,
   type StatisticsResponse,
@@ -30,6 +32,7 @@ import { compareMilestoneSequence } from '@tejas96/shared/utils';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
 import { hasAdminBypassRole } from '../../iam/constants';
+import { TASK_WHATSAPP_DELAY_MINUTES } from '../../notifications/constants/task-whatsapp.constants';
 import {
   CONSUMER_EVENTS,
   ProjectCompletedEvent,
@@ -1214,7 +1217,7 @@ export class ProjectTaskService {
     const statusMap = this.getStatusCatalogMap();
     const priorityMap = this.getPriorityCatalogMap();
 
-    return this.enrichMyTask(
+    const enriched = this.enrichMyTask(
       task,
       today,
       depNameMap,
@@ -1223,6 +1226,63 @@ export class ProjectTaskService {
       statusMap,
       priorityMap,
     );
+    return { ...enriched, customerWhatsapp: await this.resolveCustomerWhatsapp(task) };
+  }
+
+  /**
+   * The customer WhatsApp line for the task drawer: the task's send log, or
+   * "waiting" while a ticked step's completion sits in the 10-minute wait (or
+   * waits to retry a failed or skipped attempt). Null when there is nothing to
+   * say — the step is not ticked, or the task was done before the tick.
+   */
+  private async resolveCustomerWhatsapp(
+    task: ProjectTaskEntity,
+  ): Promise<CustomerWhatsappStatus | null> {
+    const rows: Array<{
+      status: Exclude<CustomerWhatsappState, 'waiting'>;
+      reason: string | null;
+      task_completed_at: Date;
+      sent_at: Date | null;
+      delivered_at: Date | null;
+      read_at: Date | null;
+      updated_at: Date;
+    }> = await this.dataSource.query(
+      `SELECT status, reason, task_completed_at, sent_at, delivered_at, read_at, updated_at
+         FROM task_whatsapp_messages
+        WHERE project_task_id = $1`,
+      [task.id],
+    );
+    const row = rows[0];
+
+    const since = task.workflowStep?.whatsappSince ? new Date(task.workflowStep.whatsappSince) : null;
+    const completedAt = task.completedAt ? new Date(task.completedAt) : null;
+    const waiting =
+      since !== null &&
+      completedAt !== null &&
+      task.status === TaskStatus.DONE &&
+      completedAt >= since &&
+      (!row ||
+        ((row.status === 'failed' || row.status === 'skipped') &&
+          new Date(row.task_completed_at) < completedAt));
+
+    if (waiting && completedAt) {
+      return {
+        state: 'waiting',
+        at: new Date(completedAt.getTime() + TASK_WHATSAPP_DELAY_MINUTES * 60_000).toISOString(),
+        reason: null,
+      };
+    }
+    if (!row) return null;
+
+    const at =
+      row.status === 'read'
+        ? row.read_at
+        : row.status === 'delivered'
+          ? row.delivered_at
+          : row.status === 'sent'
+            ? row.sent_at
+            : row.updated_at;
+    return { state: row.status, at: at ? new Date(at).toISOString() : null, reason: row.reason };
   }
 
   async updateTaskCrossProject(

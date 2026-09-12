@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { type CustomerWhatsappStatus } from '@tejas96/shared/types';
+import { Expose, Transform, Type } from 'class-transformer';
 
 import { ProjectTaskResponseDto } from './project-task-response.dto';
 
@@ -27,6 +28,14 @@ export class MyTaskResponseDto extends ProjectTaskResponseDto {
   @ApiProperty({ example: 'Smith Residence Solar', description: 'Project name' })
   @Expose()
   projectName!: string;
+
+  @ApiPropertyOptional({
+    description: 'What happened to the customer WhatsApp update for this task (detail only)',
+    nullable: true,
+  })
+  @Expose()
+  @Transform(({ obj }) => (obj as { customerWhatsapp?: unknown }).customerWhatsapp ?? null)
+  customerWhatsapp?: CustomerWhatsappStatus | null;
 
   @ApiPropertyOptional({
     example: 'Installation',

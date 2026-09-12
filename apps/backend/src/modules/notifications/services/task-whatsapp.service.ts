@@ -21,7 +21,7 @@ interface DueTask {
 }
 
 interface SendContext {
-  projectStatus: string;
+  projectStatus: ProjectStatus;
   projectNumber: string;
   firstName: string | null;
   phone: string | null;
