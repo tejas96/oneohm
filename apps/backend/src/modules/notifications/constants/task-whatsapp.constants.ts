@@ -20,9 +20,6 @@ export const PROJECT_STEP_UPDATE_TEMPLATE = {
 export const TASK_WHATSAPP_SEND_CRON = '0 18 * * *';
 export const TASK_WHATSAPP_TIMEZONE = 'Asia/Kolkata';
 
-/** 77 of 5,003 tasks marked done went back within 10 minutes (2026-09-11). */
-export const TASK_WHATSAPP_DELAY_MINUTES = 10;
-
 /**
  * One run now carries a whole day. The busiest day in the data finished 437
  * tasks, so a batch sized for a per-minute job would have dropped most of them.
@@ -37,6 +34,7 @@ export const TASK_WHATSAPP_STUCK_MINUTES = 10;
  *
  * This has to clear a full day, because a task finished just after 6 pm waits
  * until the next evening and is already nearly 24 hours old when it is sent.
+ * The extra day on top is the slack for a run that does not happen.
  */
 export const TASK_WHATSAPP_MAX_AGE_HOURS = 48;
 
@@ -45,17 +43,17 @@ const SEND_HOUR_UTC = 12;
 const SEND_MINUTE_UTC = 30;
 
 /**
- * When a task finished at `completedAt` will actually be messaged: the next
- * 6 pm India time at or after its 10-minute wait ends.
+ * When a task finished at `completedAt` will be messaged: the next 6 pm India
+ * time at or after it finished.
  *
  * The task drawer shows this, so the office can tell a customer when the update
  * goes out rather than guessing.
  */
 export function nextCustomerWhatsappSendAt(completedAt: Date): Date {
-  const earliest = completedAt.getTime() + TASK_WHATSAPP_DELAY_MINUTES * 60_000;
-  const sendAt = new Date(earliest);
+  const finished = completedAt.getTime();
+  const sendAt = new Date(finished);
   sendAt.setUTCHours(SEND_HOUR_UTC, SEND_MINUTE_UTC, 0, 0);
-  if (sendAt.getTime() < earliest) {
+  if (sendAt.getTime() < finished) {
     sendAt.setUTCDate(sendAt.getUTCDate() + 1);
   }
   return sendAt;

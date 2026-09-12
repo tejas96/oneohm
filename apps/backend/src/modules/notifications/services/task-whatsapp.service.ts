@@ -9,7 +9,6 @@ import { IntegrationService } from '../../integrations/services';
 import {
   PROJECT_STEP_UPDATE_TEMPLATE,
   TASK_WHATSAPP_BATCH_SIZE,
-  TASK_WHATSAPP_DELAY_MINUTES,
   TASK_WHATSAPP_MAX_AGE_HOURS,
   TASK_WHATSAPP_SEND_CRON,
   TASK_WHATSAPP_STUCK_MINUTES,
@@ -33,11 +32,15 @@ interface SendContext {
 const VALID_E164 = /^\+\d{11,15}$/;
 
 /**
- * Sends a customer their step update on WhatsApp, 10 minutes after a task of a
- * ticked step is done.
+ * Sends customers their step updates on WhatsApp, once a day at 6 pm India time.
+ *
+ * There is no "since yesterday" window. The run asks for done tasks of ticked
+ * steps that have no message row yet, so the message table is the memory: a
+ * missed run sends late rather than losing anything, and a task already sent
+ * never comes back.
  *
  * `completed_at` is the only trigger, so no task code has to call this: a task
- * reopened inside the 10 minutes has lost its `completed_at` and is never picked.
+ * reopened before the send has lost its `completed_at` and is never picked.
  * Each task is claimed in one INSERT … ON CONFLICT before sending, so two
  * instances during a rolling deploy cannot both send it.
  *
@@ -101,14 +104,13 @@ export class TaskWhatsappService {
           AND t.completed_at IS NOT NULL
           AND s.whatsapp_since IS NOT NULL
           AND t.completed_at >= s.whatsapp_since
-          AND t.completed_at <= now() - make_interval(mins => $1)
           AND (
                 m.id IS NULL
              OR (m.status IN ('failed', 'skipped') AND m.task_completed_at < t.completed_at)
               )
         ORDER BY t.completed_at ASC
-        LIMIT $2`,
-      [TASK_WHATSAPP_DELAY_MINUTES, TASK_WHATSAPP_BATCH_SIZE],
+        LIMIT $1`,
+      [TASK_WHATSAPP_BATCH_SIZE],
     );
   }
 
