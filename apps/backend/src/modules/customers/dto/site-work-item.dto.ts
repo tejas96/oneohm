@@ -11,17 +11,23 @@ import { Expose } from 'class-transformer';
  * weak connection that is the reason the rep is standing outside.
  */
 export class SiteWorkItemDto {
-  @ApiProperty()
+  /**
+   * Absent when the site has an assignee but nobody booked a date. Setting
+   * "Visit assignee" on a property does not create a followup, and those jobs
+   * are still the rep's work.
+   */
+  @ApiPropertyOptional()
   @Expose()
-  followupId!: string;
+  followupId?: string;
 
   @ApiProperty({ enum: ['visit', 'survey'] })
   @Expose()
   kind!: 'visit' | 'survey';
 
-  @ApiProperty()
+  /** Absent for the same unbooked jobs as `followupId`. */
+  @ApiPropertyOptional()
   @Expose()
-  scheduledAt!: Date;
+  scheduledAt?: Date;
 
   @ApiProperty()
   @Expose()
