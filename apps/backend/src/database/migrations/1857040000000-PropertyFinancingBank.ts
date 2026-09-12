@@ -35,8 +35,6 @@ export class PropertyFinancingBank1857040000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE customer_properties DROP COLUMN IF EXISTS financing_bank`,
-    );
+    await queryRunner.query(`ALTER TABLE customer_properties DROP COLUMN IF EXISTS financing_bank`);
   }
 }
