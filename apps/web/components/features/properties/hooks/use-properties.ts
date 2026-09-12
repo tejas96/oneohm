@@ -48,6 +48,7 @@ export interface Property {
   leadTemperature: LeadTemperature;
   isPrimary: boolean;
   wantsLoan: boolean;
+  financingBank?: string;
   status: PropertyStatus;
   notes?: string;
   createdAt: string;
@@ -94,6 +95,7 @@ export interface UpdatePropertyData {
   currentLoad?: string;
   leadTemperature?: LeadTemperature;
   wantsLoan?: boolean;
+  financingBank?: string;
   status?: PropertyStatus;
   notes?: string;
   isPrimary?: boolean;

@@ -113,7 +113,25 @@ const MUISelectInner = (
           variant={variant}
           color={resolvedColor}
           inputRef={mergedRef}
-          MenuProps={selectProps.MenuProps}
+          MenuProps={{
+            /*
+             * MUI anchors a Select's menu to the TOP of the field, so an open
+             * menu sits over the control it belongs to and hides the value you
+             * are changing. Anchoring it under the field is what the theme's
+             * `MuiMenu.paper` marginTop has always assumed. Callers spread last
+             * and can still override either origin.
+             */
+            anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+            transformOrigin: { vertical: 'top', horizontal: 'left' },
+            /*
+             * Anchoring alone is not enough: MUI's default cap leaves a long
+             * list taller than the space under the field, and Popover then
+             * flips the whole menu up over the field to keep it on screen.
+             * Capping it near ten rows keeps even the longest list below.
+             */
+            slotProps: { paper: { sx: { maxHeight: 320 } } },
+            ...selectProps.MenuProps,
+          }}
         >
           {resolvedChildren}
         </Select>

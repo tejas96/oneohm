@@ -37,6 +37,7 @@ interface PropertyItem {
   leadTemperature: LeadTemperature;
   isPrimary: boolean;
   wantsLoan: boolean;
+  financingBank?: string;
   status: PropertyStatus;
   notes?: string;
   documents?: PropertyDocument[];

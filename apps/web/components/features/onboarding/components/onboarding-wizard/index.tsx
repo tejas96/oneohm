@@ -155,6 +155,7 @@ function buildDefaults(
       meterNumber: property?.meterNumber ?? '',
       leadTemperature: property?.leadTemperature,
       wantsLoan: property?.wantsLoan ?? false,
+      financingBank: property?.financingBank ?? '',
       notes: property?.notes ?? '',
       changeRequests: pendingChangeRequestsToFormItems(property?.changeRequests) ?? [],
     } as DefaultValues<OnboardingFormData>;
@@ -185,6 +186,7 @@ function buildDefaults(
     meterNumber: '',
     leadTemperature: undefined,
     wantsLoan: false,
+    financingBank: '',
     notes: '',
     changeRequests: [],
   } as DefaultValues<OnboardingFormData>;

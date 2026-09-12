@@ -141,6 +141,16 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ name: 'wants_loan', type: 'boolean', default: false })
   wantsLoan!: boolean;
 
+  /**
+   * Which lender the customer named. A `BANKS` code from the shared package, or
+   * the name a rep typed under "Other" — never the literal word "other".
+   *
+   * Distinct from `loan_applications.lender_name`, which is where they actually
+   * applied, filled in later by the finance team.
+   */
+  @Column({ name: 'financing_bank', type: 'varchar', length: 100, nullable: true })
+  financingBank?: string | null;
+
   // ==================== DOCUMENTS ====================
   /**
    * Property-level documents (identity docs, KYC, etc.)

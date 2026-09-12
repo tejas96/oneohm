@@ -17,6 +17,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { bankLabel } from '@tejas96/shared/constants';
 import { PaymentMethod } from '@tejas96/shared/types';
 import type { JSX } from 'react';
 
@@ -48,6 +49,11 @@ export interface FinanceTabProps {
   projectId: string | null;
   enabled: boolean;
   onGoToProject: () => void;
+  /**
+   * The lender the customer named at onboarding. Stands in for the application
+   * until finance raises one — see the loan section.
+   */
+  financingBank?: string;
 }
 
 /**
@@ -114,6 +120,7 @@ export function FinanceTab({
   projectId,
   enabled,
   onGoToProject,
+  financingBank,
 }: FinanceTabProps): JSX.Element {
   const {
     snapshot,
@@ -492,7 +499,18 @@ export function FinanceTab({
             sx={{ borderRadius: 'var(--radius-card-functional)' }}
           />
         ) : !loan ? (
-          <SectionEmpty description="No loan application is mapped to this site." />
+          /*
+           * Without an application this pane was one grey sentence on every
+           * financed site. The bank the customer named at onboarding is the
+           * fact finance chases the disbursement with, so it stands in here.
+           */
+          <SectionEmpty
+            description={
+              bankLabel(financingBank)
+                ? `${bankLabel(financingBank)} — named at onboarding. No loan application raised yet.`
+                : 'No loan application is mapped to this site.'
+            }
+          />
         ) : (
           <DetailCard>
             <Stack direction="row" alignItems="flex-start" gap={1.5} sx={{ mb: 2 }}>
@@ -504,10 +522,22 @@ export function FinanceTab({
                   <Typography
                     sx={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--ds-text-primary)' }}
                   >
-                    {loan.lenderName || 'Lender not set'}
+                    {loan.lenderName || bankLabel(financingBank) || 'Lender not set'}
                   </Typography>
                   <TonePill label={toTitleLabel(loan.status)} tone={statusTone(loan.status)} dot />
                 </Stack>
+                {/*
+                  Two different facts wear the same name here, so the weaker
+                  one has to say so: `lenderName` is where the customer
+                  actually applied, entered by finance, and it is still empty
+                  on every application raised so far. The onboarding pick
+                  answers the same question earlier and less certainly.
+                */}
+                {!loan.lenderName && bankLabel(financingBank) ? (
+                  <Typography sx={{ fontSize: '0.75rem', color: 'var(--ds-text-tertiary)' }}>
+                    Named at onboarding — not yet confirmed on the application.
+                  </Typography>
+                ) : null}
               </Box>
             </Stack>
 

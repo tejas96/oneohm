@@ -19,6 +19,11 @@ import { formatPaise } from '@/lib/utils/paise';
 
 interface MilestoneWaterfallProps {
   milestones: MilestoneBalance[];
+  /**
+   * The lender named on the site, already through `bankLabel`. Names the "Bank
+   * pays" instalments below; omit it and they stay anonymous, as before.
+   */
+  lenderName?: string;
   onRecordPayment?: (milestoneId: string) => void;
   onWaive?: (milestone: MilestoneBalance) => void;
 }
@@ -43,10 +48,17 @@ const STATUS: Record<string, { label: string; tone: Tone }> = {
  */
 export function MilestoneWaterfall({
   milestones,
+  lenderName,
   onRecordPayment,
   onWaive,
 }: MilestoneWaterfallProps): JSX.Element {
   const [expanded, setExpanded] = useState<string | null>(null);
+  /*
+   * Named once, above the list — never on the pills. A financed project has
+   * two or three lender-funded instalments, and repeating the bank on each is
+   * the same sentence three times.
+   */
+  const namedLender = lenderName && milestones.some((m) => m.payerType === 'lender');
 
   if (milestones.length === 0) {
     return (
@@ -58,7 +70,15 @@ export function MilestoneWaterfall({
   }
 
   return (
-    <ul className="flex flex-col">
+    <>
+      {namedLender ? (
+        <p className="pb-2 text-[11.5px] text-foreground-tertiary">
+          The instalments marked <span className="font-medium">Bank pays</span> are{' '}
+          <span className="font-medium text-foreground-secondary">{lenderName}</span>&rsquo;s to
+          release.
+        </p>
+      ) : null}
+      <ul className="flex flex-col">
       {milestones.map((m) => {
         const status = STATUS[m.derivedStatus] ?? STATUS.pending;
         const pct =
@@ -267,6 +287,7 @@ export function MilestoneWaterfall({
           </li>
         );
       })}
-    </ul>
+      </ul>
+    </>
   );
 }

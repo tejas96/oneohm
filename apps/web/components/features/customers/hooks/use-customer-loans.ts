@@ -22,6 +22,8 @@ export interface CustomerLoanApplication {
     id: string;
     propertyName?: string;
     city?: string;
+    /** The lender named at onboarding. Stands in until finance records one. */
+    financingBank?: string;
   };
 }
 

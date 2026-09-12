@@ -647,6 +647,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 projectId={linkedProjectId}
                 enabled={isTabEnabled('finance')}
                 onGoToProject={handleGoToProject}
+                financingBank={property.financingBank}
               />
             )}
             {activeTab === 'project' && (

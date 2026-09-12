@@ -3,6 +3,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Button, Drawer, IconButton, Stack, Typography } from '@mui/material';
+import { bankLabel } from '@tejas96/shared/constants';
 import NextLink from 'next/link';
 import type { JSX } from 'react';
 
@@ -130,7 +131,18 @@ export function PropertyDetailDrawer({
             {lifecycle ? <TonePill label={lifecycle.label} tone={lifecycle.tone} dot /> : null}
             <TonePill label={toTitleLabel(property.propertyType)} tone={typeTone} />
             {property.isPrimary && <TonePill label="Primary" tone="accent" />}
-            {property.wantsLoan && <TonePill label="Wants loan" tone="warning" />}
+            {/* The bank is the useful half: "wants loan" says a rep should
+                chase paperwork, the name says who to chase it with. */}
+            {property.wantsLoan && (
+              <TonePill
+                label={
+                  bankLabel(property.financingBank)
+                    ? `Loan · ${bankLabel(property.financingBank)}`
+                    : 'Wants loan'
+                }
+                tone="warning"
+              />
+            )}
             {property.needsFollowup && <TonePill label="Needs follow-up" tone="danger" dot />}
           </Stack>
         )}
