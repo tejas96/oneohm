@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { IntegrationProvider, MessageType, ProjectStatus } from '@tejas96/shared/types';
 import { normalizePhoneToE164 } from '@tejas96/shared/utils';
@@ -11,7 +11,9 @@ import {
   TASK_WHATSAPP_BATCH_SIZE,
   TASK_WHATSAPP_DELAY_MINUTES,
   TASK_WHATSAPP_MAX_AGE_HOURS,
+  TASK_WHATSAPP_SEND_CRON,
   TASK_WHATSAPP_STUCK_MINUTES,
+  TASK_WHATSAPP_TIMEZONE,
 } from '../constants/task-whatsapp.constants';
 
 interface DueTask {
@@ -52,7 +54,10 @@ export class TaskWhatsappService {
     private readonly integrationService: IntegrationService,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE, { name: 'notifications:task-whatsapp' })
+  @Cron(TASK_WHATSAPP_SEND_CRON, {
+    name: 'notifications:task-whatsapp',
+    timeZone: TASK_WHATSAPP_TIMEZONE,
+  })
   async run(): Promise<void> {
     // The local database is a production restore with real customer phones.
     if (process.env.NODE_ENV !== 'production' && process.env.TASK_WHATSAPP_ALLOW_LOCAL !== 'true') {

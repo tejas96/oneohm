@@ -32,7 +32,7 @@ import { compareMilestoneSequence } from '@tejas96/shared/utils';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
 import { hasAdminBypassRole } from '../../iam/constants';
-import { TASK_WHATSAPP_DELAY_MINUTES } from '../../notifications/constants/task-whatsapp.constants';
+import { nextCustomerWhatsappSendAt } from '../../notifications/constants/task-whatsapp.constants';
 import {
   CONSUMER_EVENTS,
   ProjectCompletedEvent,
@@ -1231,7 +1231,7 @@ export class ProjectTaskService {
 
   /**
    * The customer WhatsApp line for the task drawer: the task's send log, or
-   * "waiting" while a ticked step's completion sits in the 10-minute wait (or
+   * "waiting" while a ticked step's completion waits for the next 6 pm send (or
    * waits to retry a failed or skipped attempt). Null when there is nothing to
    * say — the step is not ticked, or the task was done before the tick.
    */
@@ -1270,7 +1270,7 @@ export class ProjectTaskService {
     if (waiting && completedAt) {
       return {
         state: 'waiting',
-        at: new Date(completedAt.getTime() + TASK_WHATSAPP_DELAY_MINUTES * 60_000).toISOString(),
+        at: nextCustomerWhatsappSendAt(completedAt).toISOString(),
         reason: null,
       };
     }

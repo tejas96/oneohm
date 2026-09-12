@@ -910,7 +910,7 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
             </legend>
 
             <Alert variant="info" appearance="minimal" className="text-xs">
-              Sent 10 minutes after a task is done, for tasks done after you tick this.
+              Sent at 6 pm each day, for tasks done after you tick this.
             </Alert>
 
             <div className="rounded-md p-3 shadow-e1">

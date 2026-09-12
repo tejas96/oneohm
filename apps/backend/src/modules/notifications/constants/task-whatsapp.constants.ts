@@ -10,13 +10,53 @@ export const PROJECT_STEP_UPDATE_TEMPLATE = {
   language: 'en',
 } as const;
 
+/**
+ * The job sends once a day, at 6 pm India time, so a customer never gets a
+ * message late at night and never gets several in one evening.
+ *
+ * The timezone is pinned because the server runs on UTC: without it the cron
+ * would fire at 11:30 pm India time.
+ */
+export const TASK_WHATSAPP_SEND_CRON = '0 18 * * *';
+export const TASK_WHATSAPP_TIMEZONE = 'Asia/Kolkata';
+
 /** 77 of 5,003 tasks marked done went back within 10 minutes (2026-09-11). */
 export const TASK_WHATSAPP_DELAY_MINUTES = 10;
 
-export const TASK_WHATSAPP_BATCH_SIZE = 50;
+/**
+ * One run now carries a whole day. The busiest day in the data finished 437
+ * tasks, so a batch sized for a per-minute job would have dropped most of them.
+ */
+export const TASK_WHATSAPP_BATCH_SIZE = 500;
 
 /** A row left in `sending` this long belongs to a run that stopped mid-send. */
 export const TASK_WHATSAPP_STUCK_MINUTES = 10;
 
-/** Older completions are skipped rather than sent late, e.g. after an outage. */
-export const TASK_WHATSAPP_MAX_AGE_HOURS = 24;
+/**
+ * Older completions are skipped rather than sent late, e.g. after an outage.
+ *
+ * This has to clear a full day, because a task finished just after 6 pm waits
+ * until the next evening and is already nearly 24 hours old when it is sent.
+ */
+export const TASK_WHATSAPP_MAX_AGE_HOURS = 48;
+
+/** 6 pm in Asia/Kolkata, as UTC. India has no daylight saving, so this is fixed. */
+const SEND_HOUR_UTC = 12;
+const SEND_MINUTE_UTC = 30;
+
+/**
+ * When a task finished at `completedAt` will actually be messaged: the next
+ * 6 pm India time at or after its 10-minute wait ends.
+ *
+ * The task drawer shows this, so the office can tell a customer when the update
+ * goes out rather than guessing.
+ */
+export function nextCustomerWhatsappSendAt(completedAt: Date): Date {
+  const earliest = completedAt.getTime() + TASK_WHATSAPP_DELAY_MINUTES * 60_000;
+  const sendAt = new Date(earliest);
+  sendAt.setUTCHours(SEND_HOUR_UTC, SEND_MINUTE_UTC, 0, 0);
+  if (sendAt.getTime() < earliest) {
+    sendAt.setUTCDate(sendAt.getUTCDate() + 1);
+  }
+  return sendAt;
+}

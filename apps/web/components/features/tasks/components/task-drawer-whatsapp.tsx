@@ -6,11 +6,11 @@ import type { CustomerWhatsappStatus } from '@tejas96/shared/types';
 
 import { SectionHeading } from './task-drawer-main-content';
 
-function formatWhen(iso: string | null, withDate: boolean): string {
+/** The send is once a day, so every time here can be another day — always date it. */
+function formatWhen(iso: string | null): string {
   if (!iso) return '';
   const date = new Date(iso);
   const time = date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
-  if (!withDate) return time;
   return `${date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}, ${time}`;
 }
 
@@ -18,15 +18,15 @@ function formatWhen(iso: string | null, withDate: boolean): string {
 function describeCustomerWhatsapp(status: CustomerWhatsappStatus): string {
   switch (status.state) {
     case 'waiting':
-      return `WhatsApp to customer at ${formatWhen(status.at, false)}`;
+      return `WhatsApp to customer at ${formatWhen(status.at)}`;
     case 'sending':
       return 'Sending WhatsApp to customer';
     case 'sent':
-      return `WhatsApp sent to customer, ${formatWhen(status.at, true)}`;
+      return `WhatsApp sent to customer, ${formatWhen(status.at)}`;
     case 'delivered':
-      return `WhatsApp delivered, ${formatWhen(status.at, true)}`;
+      return `WhatsApp delivered, ${formatWhen(status.at)}`;
     case 'read':
-      return `WhatsApp read by customer, ${formatWhen(status.at, true)}`;
+      return `WhatsApp read by customer, ${formatWhen(status.at)}`;
     case 'failed':
       return `WhatsApp failed: ${status.reason ?? 'no reason given'}`;
     case 'skipped':
