@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationController } from './controllers/notification.controller';
 import { NotificationEntity } from './entities/notification.entity';
 import { ConsumerNotificationListener } from './listeners/consumer-notification.listener';
+import { WhatsappStatusListener } from './listeners/whatsapp-status.listener';
 import { NotificationRepository } from './repositories/notification.repository';
 import { FcmService } from './services/fcm.service';
 import { NotificationService } from './services/notification.service';
@@ -26,6 +27,7 @@ import { UsersModule } from '../users/users.module';
     FcmService,
     ConsumerNotificationListener,
     TaskWhatsappService,
+    WhatsappStatusListener,
   ],
   exports: [NotificationService],
 })
