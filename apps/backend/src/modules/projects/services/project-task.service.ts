@@ -1254,7 +1254,9 @@ export class ProjectTaskService {
     );
     const row = rows[0];
 
-    const since = task.workflowStep?.whatsappSince ? new Date(task.workflowStep.whatsappSince) : null;
+    const since = task.workflowStep?.whatsappSince
+      ? new Date(task.workflowStep.whatsappSince)
+      : null;
     const completedAt = task.completedAt ? new Date(task.completedAt) : null;
     const waiting =
       since !== null &&

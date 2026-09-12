@@ -11,10 +11,7 @@ import {
   type PropertyType,
   type StatisticsResponse,
 } from '@tejas96/shared/types';
-import {
-  customerUpdateTextProblem,
-  normalizeCustomerUpdateText,
-} from '@tejas96/shared/utils';
+import { customerUpdateTextProblem, normalizeCustomerUpdateText } from '@tejas96/shared/utils';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { type WorkflowStepEntity } from '../entities';

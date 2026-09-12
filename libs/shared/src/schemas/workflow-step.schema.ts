@@ -87,7 +87,11 @@ export const workflowStepSchema = z
     } else if (updateText) {
       const problem = customerUpdateTextProblem(updateText);
       if (problem) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: problem, path: ['customerUpdateText'] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: problem,
+          path: ['customerUpdateText'],
+        });
       }
     }
   });

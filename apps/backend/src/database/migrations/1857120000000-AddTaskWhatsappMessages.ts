@@ -55,7 +55,9 @@ export class AddTaskWhatsappMessages1857120000000 implements MigrationInterface 
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE IF EXISTS task_whatsapp_messages`);
-    await queryRunner.query(`ALTER TABLE workflow_steps DROP COLUMN IF EXISTS customer_update_text`);
+    await queryRunner.query(
+      `ALTER TABLE workflow_steps DROP COLUMN IF EXISTS customer_update_text`,
+    );
     await queryRunner.query(`ALTER TABLE workflow_steps DROP COLUMN IF EXISTS whatsapp_since`);
   }
 }

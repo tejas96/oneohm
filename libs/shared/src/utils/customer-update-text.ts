@@ -8,9 +8,18 @@
  */
 export const CUSTOMER_UPDATE_TEXT_MAX = 200;
 
-/** Trim, and drop trailing full stops: the template adds its own. */
+/**
+ * Trim, and drop trailing full stops: the template adds its own.
+ *
+ * The trailing stops are counted in a loop rather than matched with /\.+$/,
+ * because that pattern backtracks on a long run of stops and the text comes
+ * from a form. One pass from the end costs nothing and cannot.
+ */
 export function normalizeCustomerUpdateText(text: string | null | undefined): string | null {
-  const cleaned = (text ?? '').trim().replace(/\.+$/, '').trim();
+  const trimmed = (text ?? '').trim();
+  let end = trimmed.length;
+  while (end > 0 && trimmed[end - 1] === '.') end -= 1;
+  const cleaned = trimmed.slice(0, end).trim();
   return cleaned.length > 0 ? cleaned : null;
 }
 
