@@ -1298,6 +1298,12 @@ export class ProjectTaskService {
           if (!task.endDate) updateData.endDate = new Date();
           if (sMeta.autoCompletePct !== undefined)
             updateData.completionPercentage = sMeta.autoCompletePct;
+          // Same as updateStatus and moveTask. Without it a task finished from
+          // My Work never counted as complete for a payment milestone, and never
+          // triggered the customer's WhatsApp update.
+          updateData.completedAt = new Date();
+        } else if (task.completedAt) {
+          updateData.completedAt = null;
         }
       }
     }
