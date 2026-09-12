@@ -10,6 +10,7 @@ import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import {
   Box,
   Chip,
+  Divider,
   IconButton,
   LinearProgress,
   Menu,
@@ -23,6 +24,7 @@ import { createPortal } from 'react-dom';
 
 import { CardPreview, PRIORITY_FALLBACK_ICON, PRIORITY_ICON } from './kanban-card-preview';
 import { TASK_PRIORITY_HEX_COLOR } from '../../../../../constants';
+import type { TaskDeleteTarget } from '../../../../../hooks/types';
 import type { KanbanColumnData } from '../../../../../hooks/use-project-task-board';
 import type { DraggableTaskData } from '../../../../../hooks/use-task-board-dnd';
 
@@ -47,6 +49,8 @@ interface KanbanTaskCardProps {
   allColumns: KanbanColumnData[];
   onOpenTask: (taskId: string) => void;
   onMoveToStatus: (taskId: string, newStatus: string, currentCompletionPct: number) => void;
+  /** Left out when the viewer may not manage tasks: the menu then has no delete item. */
+  onRequestDelete?: (task: TaskDeleteTarget) => void;
   /** Whether a drag is currently in progress globally (used to show ghost). */
   isDraggingThis: boolean;
   hasDependencyBlockers?: boolean;
@@ -69,6 +73,7 @@ export function KanbanTaskCard({
   allColumns,
   onOpenTask,
   onMoveToStatus,
+  onRequestDelete,
   isDraggingThis,
   hasDependencyBlockers = false,
 }: KanbanTaskCardProps): React.JSX.Element {
@@ -468,6 +473,20 @@ export function KanbanTaskCard({
               </Box>
             </MenuItem>
           ))}
+
+        {onRequestDelete ? <Divider sx={{ my: 0.5 }} /> : null}
+        {onRequestDelete ? (
+          <MenuItem
+            dense
+            sx={{ color: 'error.main' }}
+            onClick={() => {
+              setMenuAnchor(null);
+              onRequestDelete({ id: taskId, code, name });
+            }}
+          >
+            Delete task
+          </MenuItem>
+        ) : null}
       </Menu>
 
       {/* Custom drag preview rendered via portal */}

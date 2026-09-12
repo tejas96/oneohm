@@ -7,7 +7,7 @@ export type { EmployeeListItem } from './use-employees';
 export { myTaskKeys, useMyTasks, useMyTasksGroupTasks, useUpdateTaskStatus } from './use-my-tasks';
 export type { GroupByMode, MyTaskFilters } from './use-my-tasks';
 
-export { useProjectTeam, useProjectTasks } from './use-project-detail';
+export { projectDetailKeys, useProjectTeam, useProjectTasks } from './use-project-detail';
 
 // FDAL resource hooks — re-exported for feature consumers
 export { useProjectTaskList, type ProjectTaskItem } from '@/lib/hooks/resources';

@@ -8,7 +8,7 @@ import {
 } from '@tejas96/shared/constants';
 import { TaskStatus, type TaskPriority } from '@tejas96/shared/types';
 import { Plus } from 'lucide-react';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import {
   PROJECT_MILESTONE_AGG_QUERY_KEY,
@@ -26,14 +26,16 @@ import {
   useProjectTaskList,
   useProjectTeam,
 } from '../../../hooks';
-import type { ProjectDetail } from '../../../hooks/types';
+import type { ProjectDetail, TaskDeleteTarget } from '../../../hooks/types';
 import { DetailCard, ROW_BLEED } from '../primitives';
 import { CreateProjectTaskModal } from './create-project-task-modal';
 import { TaskBoardView, TaskFilterBar, TaskListTable, TaskViewToggle } from './task-list';
 
 import { TaskDrawer } from '@/components/features/tasks';
-import { useUpdateTask } from '@/components/features/tasks/hooks';
+import { useDeleteTask, useUpdateTask } from '@/components/features/tasks/hooks';
 import { TablePagination } from '@/components/shared/data-table/pagination';
+import { DeleteConfirmationDialog } from '@/components/shared/delete-confirmation-dialog';
+import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useUrlFilters } from '@/lib/hooks/use-url-filters';
 import { useGatedAction } from '@/lib/rbac';
 import { cn, formatNumber } from '@/lib/utils';
@@ -134,6 +136,44 @@ export const ProjectTasksTab = React.memo(
       'projects.tasks.manage',
       () => setCreateDialogOpen(true),
       'Add task',
+    );
+
+    // Deleting runs through the same gate as creating, so a viewer without the
+    // permission gets the access dialog rather than a control that does
+    // nothing. The gate's action takes no arguments, so the task picked in the
+    // row or card menu waits in a ref — state would still be the previous task
+    // on this render.
+    const pendingDeleteRef = useRef<TaskDeleteTarget | null>(null);
+    const deleteTaskMutation = useDeleteTask(projectId);
+
+    const deleteConfirmation = useDeleteConfirmation<TaskDeleteTarget>({
+      mutation: deleteTaskMutation,
+      getId: (task) => task.id,
+      onSuccess: () => {
+        // The drawer may be showing the task that just went away.
+        if (pendingDeleteRef.current?.id === openTaskId) {
+          setDrawerOpen(false);
+          setOpenTaskId(null);
+        }
+        invalidateProjectTasks();
+      },
+    });
+
+    const { onGatedClick: requestDeleteThroughGate } = useGatedAction(
+      'projects.tasks.manage',
+      () => {
+        const target = pendingDeleteRef.current;
+        if (target) deleteConfirmation.requestDelete(target);
+      },
+      'Delete task',
+    );
+
+    const handleRequestDelete = useCallback(
+      (task: TaskDeleteTarget) => {
+        pendingDeleteRef.current = task;
+        requestDeleteThroughGate();
+      },
+      [requestDeleteThroughGate],
     );
 
     const handleOpenTask = useCallback((taskId: string) => {
@@ -268,6 +308,7 @@ export const ProjectTasksTab = React.memo(
                 onOpenTask={handleOpenTask}
                 onStatusChange={handleStatusChange}
                 onPriorityChange={handlePriorityChange}
+                onRequestDelete={handleRequestDelete}
                 hasActiveFilters={hasActiveFilters}
                 onClearFilters={clearFilters}
               />
@@ -295,6 +336,7 @@ export const ProjectTasksTab = React.memo(
                 projectId={projectId}
                 filters={filters}
                 onOpenTask={handleOpenTask}
+                onRequestDelete={handleRequestDelete}
                 onOpenCreate={(preselectedStatus?: string) => {
                   setCreatePreselectedStatus(preselectedStatus ?? null);
                   // Through the gate, not straight to the setter — the board's
@@ -317,6 +359,19 @@ export const ProjectTasksTab = React.memo(
           onOpenChange={setCreateDialogOpen}
           projectId={projectId}
           preselectedStatus={createPreselectedStatus}
+        />
+        <DeleteConfirmationDialog
+          open={deleteConfirmation.isOpen}
+          title="Delete task"
+          itemName={
+            deleteConfirmation.target
+              ? `${deleteConfirmation.target.code} · ${deleteConfirmation.target.name}`
+              : 'this task'
+          }
+          permanent={false}
+          isPending={deleteConfirmation.isPending}
+          onCancel={deleteConfirmation.cancel}
+          onConfirm={() => void deleteConfirmation.confirm()}
         />
       </>
     );
