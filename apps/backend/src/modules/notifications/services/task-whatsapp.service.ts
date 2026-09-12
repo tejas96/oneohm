@@ -29,12 +29,27 @@ interface DueTask {
 interface SendContext {
   projectStatus: ProjectStatus;
   projectNumber: string;
+  projectName: string | null;
   firstName: string | null;
   phone: string | null;
   updateText: string | null;
 }
 
 const VALID_E164 = /^\+\d{11,15}$/;
+
+/**
+ * What the customer is told their project is: its name in quotes, because a
+ * name reads as theirs where a code does not.
+ *
+ * Runs of whitespace are collapsed. A project name is free text an admin typed,
+ * and Meta refuses a template parameter holding a new line, a tab or four or
+ * more spaces — one stray name would otherwise fail every send for that project.
+ * Falls back to the project number when the name is blank.
+ */
+function describeProject(context: SendContext): string {
+  const name = (context.projectName ?? '').replace(/\s+/g, ' ').trim();
+  return name ? `"${name}"` : context.projectNumber;
+}
 
 /**
  * Sends customers their step updates on WhatsApp, once a day at 6 pm India time.
@@ -205,7 +220,11 @@ export class TaskWhatsappService {
           templateParameters: {
             body: {
               customer_name: context.firstName?.trim() || 'Customer',
-              project_number: context.projectNumber,
+              // The parameter is still named `project_number` because that is
+              // what the approved template declares, and renaming it would need
+              // Meta to approve the template again. Only the value changed: a
+              // customer recognises their project's name, not its code.
+              project_number: describeProject(context),
               update: updateText,
             },
           },
@@ -253,6 +272,7 @@ export class TaskWhatsappService {
     const rows: SendContext[] = await this.dataSource.query(
       `SELECT p.status               AS "projectStatus",
               p.project_number       AS "projectNumber",
+              p.name                 AS "projectName",
               c.first_name           AS "firstName",
               c.phone                AS "phone",
               s.customer_update_text AS "updateText"
