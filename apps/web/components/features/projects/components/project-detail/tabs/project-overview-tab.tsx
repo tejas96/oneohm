@@ -1,5 +1,6 @@
 'use client';
 
+import { bankLabel } from '@tejas96/shared/constants';
 import type { JSX } from 'react';
 
 import type { ProjectDetail } from '../../../hooks/types';
@@ -65,6 +66,7 @@ export function ProjectOverviewTab({
       <MoneyCard
         ledger={data.ledger}
         projectPath={projectPath}
+        lenderName={bankLabel(project.property?.financingBank)}
         className={`col-span-12 lg:col-span-5 ${RISE} animation-delay-200`}
       />
 

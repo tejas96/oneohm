@@ -1,6 +1,7 @@
 'use client';
 
 import { Tooltip } from '@mui/material';
+import { bankLabel } from '@tejas96/shared/constants';
 import { ArrowDownLeft, ArrowUpRight, IndianRupee, ReceiptText } from 'lucide-react';
 import { type JSX, useState } from 'react';
 
@@ -257,6 +258,7 @@ export function ProjectMoneyTab({
       >
         <MilestoneWaterfall
           milestones={s.milestones}
+          lenderName={bankLabel(project?.property?.financingBank)}
           // The gate, not the raw setter: the waterfall opens the same receipt
           // dialog as the header button, so passing `setDialog` here would walk
           // straight past the gate declared for it.

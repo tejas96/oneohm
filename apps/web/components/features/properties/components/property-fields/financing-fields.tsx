@@ -1,6 +1,15 @@
 'use client';
 
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
+import { ListSubheader, MenuItem } from '@mui/material';
+import {
+  BANK_CATEGORY_LABELS,
+  BANK_CATEGORY_ORDER,
+  BANK_OTHER,
+  bankLabel,
+  banksByCategory,
+  isCustomBank,
+} from '@tejas96/shared/constants';
 import { DocumentEntityType, DocumentTag } from '@tejas96/shared/types';
 import * as React from 'react';
 import { useFormContext } from 'react-hook-form';
@@ -9,7 +18,7 @@ import { PROPERTY_ALERTS } from '../../constants';
 
 import { Alert } from '@/components/shared';
 import { DocumentManager, type DraftDocument } from '@/components/shared/document-manager';
-import { MUISwitch, MUITypography } from '@/components/ui';
+import { MUIInput, MUISelect, MUISwitch, MUITypography } from '@/components/ui';
 
 interface FinancingFieldsProps {
   isEditMode: boolean;
@@ -18,7 +27,9 @@ interface FinancingFieldsProps {
   handleDraftDocsChange: (docs: DraftDocument[]) => void;
 }
 
-/** Loan toggle + KYC documents. Card chrome is supplied by the wizard's StepCard. */
+const BANK_PLACEHOLDER = 'Select a bank or NBFC…';
+
+/** Loan toggle + lender + KYC documents. Card chrome is supplied by the wizard's StepCard. */
 export function FinancingFields({
   isEditMode,
   propertyId,
@@ -28,6 +39,19 @@ export function FinancingFields({
   const { setValue, watch } = useFormContext();
 
   const wantsLoan = Boolean(watch('wantsLoan'));
+  const financingBank = (watch('financingBank') as string | undefined) ?? '';
+
+  /**
+   * "Other" is never stored, so on an edit it has to be inferred: a value that
+   * is none of our codes IS the name somebody typed. The state covers only the
+   * gap between picking Other and typing anything, when the field is empty and
+   * there is nothing to infer from.
+   */
+  const [otherPicked, setOtherPicked] = React.useState(false);
+  const showOther = otherPicked || isCustomBank(financingBank);
+
+  const setBank = (value: string): void =>
+    setValue('financingBank', value, { shouldDirty: true, shouldValidate: true });
 
   return (
     <div className="space-y-5">
@@ -48,9 +72,16 @@ export function FinancingFields({
         <MUISwitch
           id="wantsLoan"
           checked={wantsLoan}
-          onCheckedChange={(checked) =>
-            setValue('wantsLoan', checked, { shouldDirty: true, shouldValidate: true })
-          }
+          onCheckedChange={(checked) => {
+            setValue('wantsLoan', checked, { shouldDirty: true, shouldValidate: true });
+            // A lender only means something next to "wants a loan". Left
+            // behind, it keeps printing on the site's Finance tab, which shows
+            // the bank whether or not the loan is still wanted.
+            if (!checked) {
+              setOtherPicked(false);
+              setBank('');
+            }
+          }}
           disabled={isSubmitting}
         />
       </div>
@@ -60,6 +91,66 @@ export function FinancingFields({
           <Alert variant="info" appearance="minimal" title={PROPERTY_ALERTS.loanBenefits.title}>
             {PROPERTY_ALERTS.loanBenefits.message}
           </Alert>
+
+          <hr className="border-border-light" />
+
+          <div className="space-y-2">
+            <MUISelect
+              fieldLabel="Which lender?"
+              placeholder={BANK_PLACEHOLDER}
+              value={showOther ? BANK_OTHER : financingBank}
+              disabled={isSubmitting}
+              onChange={(e) => {
+                const picked = e.target.value as string;
+                setOtherPicked(picked === BANK_OTHER);
+                // Picking Other empties the field so the text box below starts
+                // blank — the sentinel itself must never reach the form.
+                setBank(picked === BANK_OTHER ? '' : picked);
+              }}
+              renderValue={(selected) => {
+                const value = selected as string;
+                if (!value) {
+                  return <span className="text-foreground-secondary">{BANK_PLACEHOLDER}</span>;
+                }
+                return value === BANK_OTHER ? 'Other' : bankLabel(value);
+              }}
+            >
+              {/*
+                The field is optional, so there has to be a way back out of it.
+                Without this row a rep who picks the wrong bank — or learns the
+                customer has not decided after all — cannot undo the choice,
+                because a plain Select has no way to return to empty.
+              */}
+              <MenuItem value="">
+                <span className="text-foreground-secondary">Not decided yet</span>
+              </MenuItem>
+              {BANK_CATEGORY_ORDER.flatMap((category) => [
+                <ListSubheader key={category}>{BANK_CATEGORY_LABELS[category]}</ListSubheader>,
+                ...banksByCategory(category).map((bank) => (
+                  <MenuItem key={bank.code} value={bank.code}>
+                    {bank.label}
+                  </MenuItem>
+                )),
+              ])}
+              <MenuItem value={BANK_OTHER}>Other</MenuItem>
+            </MUISelect>
+
+            {showOther ? (
+              <MUIInput
+                autoFocus
+                fieldLabel="Lender name"
+                placeholder="e.g. Kolhapur District Co-op Bank"
+                disabled={isSubmitting}
+                inputProps={{ maxLength: 100 }}
+                value={financingBank}
+                onChange={(e) => setBank(e.target.value)}
+              />
+            ) : (
+              <MUITypography variant="body" className="text-foreground-secondary block">
+                Optional. Leave it blank if the customer has not decided yet.
+              </MUITypography>
+            )}
+          </div>
 
           <hr className="border-border-light" />
 

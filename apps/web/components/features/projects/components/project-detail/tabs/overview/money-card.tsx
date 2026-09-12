@@ -23,6 +23,8 @@ const MAX_SCHEDULE_ROWS = 3;
 interface MoneyCardProps {
   ledger: ProjectDetailData['ledger'];
   projectPath: string;
+  /** The site's lender, already through `bankLabel`. Names the "bank pays" rows. */
+  lenderName?: string;
   className?: string;
 }
 
@@ -40,7 +42,12 @@ function dueLabel(m: MilestoneBalance): { text: string; bad: boolean } {
  * the Overview is the *shape* of the contract, the margin left in it, and the
  * next few milestones. Every figure comes from the ledger, in paise.
  */
-export function MoneyCard({ ledger, projectPath, className }: MoneyCardProps): React.JSX.Element {
+export function MoneyCard({
+  ledger,
+  projectPath,
+  lenderName,
+  className,
+}: MoneyCardProps): React.JSX.Element {
   const financeHref = `${projectPath}?tab=finance`;
 
   if (!ledger.allowed) {
@@ -197,6 +204,13 @@ export function MoneyCard({ ledger, projectPath, className }: MoneyCardProps): R
               <p className="mt-4 pb-1 text-[10.5px] font-bold uppercase tracking-[0.12em] text-foreground-secondary">
                 Falls due next
               </p>
+              {/* Gated on the rows actually shown: naming a bank above a list
+                  where none of the three is theirs only raises the question. */}
+              {lenderName && schedule.some((m) => m.payerType === 'lender') ? (
+                <p className="pb-1.5 text-[11px] text-foreground-tertiary">
+                  “bank pays” means {lenderName}
+                </p>
+              ) : null}
               <ol className="flex flex-col gap-1.5">
                 {schedule.map((m) => {
                   const due = dueLabel(m);

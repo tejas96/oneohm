@@ -17,6 +17,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { bankLabel } from '@tejas96/shared/constants';
 import { PaymentMethod } from '@tejas96/shared/types';
 import { useRouter } from 'next/navigation';
 import { type JSX, useMemo } from 'react';
@@ -466,8 +467,16 @@ export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Elemen
                               ''
                             )}
                           </TableCell>
+                          {/*
+                            `lenderName` is filled in by finance after the
+                            customer applies, and on every row so far it is
+                            still empty — so this column read "—" for every
+                            loan. The bank named at onboarding is the same
+                            question answered earlier, which is why it stands
+                            in rather than leaving a dash.
+                          */}
                           <TableCell sx={{ color: 'var(--ds-text-secondary)' }}>
-                            {loan.lenderName || '—'}
+                            {loan.lenderName || bankLabel(loan.property?.financingBank) || '—'}
                           </TableCell>
                           <TableCell align="right">
                             <Mono sx={{ fontWeight: 500 }}>

@@ -158,6 +158,15 @@ export class CustomerPropertyResponseDto {
   @Expose()
   wantsLoan!: boolean;
 
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: 'sbi',
+    description: 'Lender the customer named. Render it with `bankLabel` from the shared package.',
+  })
+  @Expose()
+  financingBank?: string | null;
+
   // ==================== Documents ====================
   @ApiPropertyOptional({
     description: 'Property-level documents (identity docs, KYC, etc.)',

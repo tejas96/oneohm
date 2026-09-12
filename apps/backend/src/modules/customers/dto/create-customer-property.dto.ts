@@ -194,6 +194,20 @@ export class CreateCustomerPropertyDto {
   @IsOptional()
   wantsLoan?: boolean;
 
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    example: 'sbi',
+    description:
+      'Lender the customer named. A `BANKS` code from the shared package, or the ' +
+      'name typed under "Other". Blank clears it.',
+  })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() || null : value))
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  financingBank?: string | null;
+
   // ==================== Documents ====================
   @ApiPropertyOptional({
     type: [PropertyDocumentDto],

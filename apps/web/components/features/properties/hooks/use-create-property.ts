@@ -47,6 +47,7 @@ export interface PropertyResponse {
   leadTemperature: string;
   isPrimary: boolean;
   wantsLoan: boolean;
+  financingBank?: string;
   status: string;
   notes?: string;
   createdAt: string;

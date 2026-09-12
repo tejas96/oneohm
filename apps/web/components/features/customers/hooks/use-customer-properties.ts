@@ -58,6 +58,7 @@ export interface CustomerPropertyResponse {
   // Flags
   isPrimary: boolean;
   wantsLoan: boolean;
+  financingBank?: string;
   // Documents
   documents: PropertyDocument[];
   changeRequests?: StoredChangeRequest[];

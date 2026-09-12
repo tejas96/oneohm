@@ -57,6 +57,9 @@ interface ProjectDetailProperty {
   state?: string;
   pincode?: string;
   propertyType?: string;
+  wantsLoan?: boolean;
+  /** Lender the customer named at onboarding. Render it with `bankLabel`. */
+  financingBank?: string;
 }
 
 export interface ProjectDetail {

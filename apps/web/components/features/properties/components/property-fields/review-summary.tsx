@@ -9,6 +9,7 @@ import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import PriceCheckOutlinedIcon from '@mui/icons-material/PriceCheckOutlined';
 import { Button, Chip } from '@mui/material';
+import { bankLabel } from '@tejas96/shared/constants';
 import {
   ConnectionType,
   LeadTemperature,
@@ -127,6 +128,7 @@ export function ReviewSummary({
 
   const leadTemperature = watch('leadTemperature') as LeadTemperature | undefined;
   const wantsLoan = Boolean(watch('wantsLoan'));
+  const financingBank = bankLabel(watch('financingBank') as string | undefined);
   const notes = watch('notes') as string;
 
   const renderSectionHeader = (title: string, icon: React.ReactNode, stepIndex: number) => (
@@ -441,13 +443,20 @@ export function ReviewSummary({
             <MUITypography variant="timestamp" className="text-foreground-secondary block mb-1">
               Financing / Loan
             </MUITypography>
-            <Chip
-              label={wantsLoan ? 'Interested' : 'Self-Financed'}
-              size="small"
-              color={wantsLoan ? 'success' : 'default'}
-              variant={wantsLoan ? 'filled' : 'outlined'}
-              sx={{ height: 20, fontWeight: 500 }}
-            />
+            <div className="flex items-center gap-2">
+              <Chip
+                label={wantsLoan ? 'Interested' : 'Self-Financed'}
+                size="small"
+                color={wantsLoan ? 'success' : 'default'}
+                variant={wantsLoan ? 'filled' : 'outlined'}
+                sx={{ height: 20, fontWeight: 500 }}
+              />
+              {/* Only alongside "Interested" — the lender is meaningless on a
+                  self-financed site, and a stale one can survive the toggle. */}
+              {wantsLoan && financingBank ? (
+                <span className="text-foreground-secondary">{financingBank}</span>
+              ) : null}
+            </div>
           </div>
           {wantsLoan && (
             <div className="/60 pt-3 space-y-2">
