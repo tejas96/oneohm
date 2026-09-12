@@ -84,6 +84,15 @@ export class WorkflowStepResponseDto {
   @Expose()
   propertyTypes?: string[] | null;
 
+  @ApiProperty({ description: 'Customer WhatsApp is on for this step' })
+  @Expose()
+  @Transform(({ obj }) => (obj as { whatsappSince?: Date | null }).whatsappSince != null)
+  whatsappOnDone!: boolean;
+
+  @ApiPropertyOptional({ nullable: true })
+  @Expose()
+  customerUpdateText?: string | null;
+
   @ApiProperty()
   @Expose()
   createdAt!: Date;
