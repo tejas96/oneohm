@@ -34,7 +34,14 @@ export class MyTaskResponseDto extends ProjectTaskResponseDto {
     nullable: true,
   })
   @Expose()
-  @Transform(({ obj }) => (obj as { customerWhatsapp?: unknown }).customerWhatsapp ?? null)
+  @Transform(({ obj }) => {
+    // Only the computed line goes out. Anything else — most of all the stored
+    // record, which holds the customer's phone and Meta's message id — is
+    // dropped, so an endpoint that forgets to compute it returns null rather
+    // than leaking the row.
+    const value: unknown = (obj as { customerWhatsapp?: unknown }).customerWhatsapp;
+    return value !== null && typeof value === 'object' && 'state' in value ? value : null;
+  })
   customerWhatsapp?: CustomerWhatsappStatus | null;
 
   @ApiPropertyOptional({

@@ -40,14 +40,18 @@ const VALID_E164 = /^\+\d{11,15}$/;
  * Sends customers their step updates on WhatsApp, once a day at 6 pm India time.
  *
  * There is no "since yesterday" window. The run asks for done tasks of ticked
- * steps that have no message row yet, so the message table is the memory: a
- * missed run sends late rather than losing anything, and a task already sent
- * never comes back.
+ * steps whose `project_tasks.customer_whatsapp` is still empty, so that column
+ * is the memory: a missed run sends late rather than losing anything, and a
+ * task already sent never comes back.
  *
  * `completed_at` is the only trigger, so no task code has to call this: a task
  * reopened before the send has lost its `completed_at` and is never picked.
- * Each task is claimed in one INSERT … ON CONFLICT before sending, so two
- * instances during a rolling deploy cannot both send it.
+ *
+ * Two instances cannot both send the same task. `claim` is a single UPDATE
+ * whose WHERE repeats the due test, so Postgres' row lock decides the winner:
+ * the loser re-evaluates the WHERE against the claim the winner just wrote,
+ * matches nothing, and returns no row. Every later write is guarded on the
+ * status still being `sending`, so a webhook outcome is never overwritten.
  *
  * It reads tasks with plain SQL, as ConsumerNotificationListener does, so the
  * notifications module does not import the projects module.
@@ -88,8 +92,17 @@ export class TaskWhatsappService {
     }
   }
 
+  /**
+   * Clears rows left mid-send by a run that stopped, and says so loudly.
+   *
+   * These are not retried: Meta may have accepted the message, and sending
+   * again would reach the customer twice. That makes them a permanent loss, so
+   * the count is logged as an error rather than left to be discovered in the
+   * task drawer one customer at a time. A deploy during the evening send can
+   * strand a whole batch this way.
+   */
   private async unstick(): Promise<void> {
-    await this.dataSource.query(
+    const result: unknown = await this.dataSource.query(
       `UPDATE project_tasks
           SET customer_whatsapp = customer_whatsapp || jsonb_build_object(
                 'status', 'failed',
@@ -100,6 +113,16 @@ export class TaskWhatsappService {
           AND (customer_whatsapp ->> 'updatedAt')::timestamptz < now() - make_interval(mins => $1)`,
       [TASK_WHATSAPP_STUCK_MINUTES],
     );
+
+    // node-postgres returns [rows, rowCount] for an UPDATE with no RETURNING.
+    const stranded = Array.isArray(result) && typeof result[1] === 'number' ? result[1] : 0;
+    if (stranded > 0) {
+      this.logger.error(
+        `${stranded} customer WhatsApp update(s) were interrupted mid-send and will not be retried. ` +
+          `Those customers were not told. Find them with: ` +
+          `SELECT code FROM project_tasks WHERE customer_whatsapp ->> 'reason' = 'Send interrupted'`,
+      );
+    }
   }
 
   private async findDue(): Promise<DueTask[]> {
@@ -207,14 +230,21 @@ export class TaskWhatsappService {
   }
 
   /**
-   * Merges the outcome into the task's record, keeping what the claim wrote
-   * (the completion it answers) and touching no other column on the task.
+   * Merges this run's outcome into the task's record, keeping what the claim
+   * wrote (the completion it answers) and touching no other column on the task.
+   *
+   * It only applies while the record is still `sending`, so an outcome the
+   * webhook has already reported wins. Meta can post a `failed` status within a
+   * second of handing back the message id; without this guard that failure
+   * would be overwritten by our own `sent`, and the office would be told a
+   * rejected message went out.
    */
   private async record(taskId: string, patch: Partial<TaskWhatsappRecord>): Promise<void> {
     await this.dataSource.query(
       `UPDATE project_tasks
           SET customer_whatsapp = customer_whatsapp || $2::jsonb
-        WHERE id = $1`,
+        WHERE id = $1
+          AND customer_whatsapp ->> 'status' = 'sending'`,
       [taskId, JSON.stringify({ ...patch, updatedAt: new Date().toISOString() })],
     );
   }
@@ -242,7 +272,7 @@ export class TaskWhatsappService {
     if (context.projectStatus === ProjectStatus.CANCELLED) return 'Project cancelled';
     const ageMs = Date.now() - new Date(task.completedAt).getTime();
     if (ageMs > TASK_WHATSAPP_MAX_AGE_HOURS * 3_600_000) {
-      return 'Done more than 24 hours before sending';
+      return `Done more than ${TASK_WHATSAPP_MAX_AGE_HOURS} hours before sending`;
     }
     if (!VALID_E164.test(normalizePhoneToE164(context.phone))) return 'No valid phone';
     if (!context.updateText) return 'Step has no update text';

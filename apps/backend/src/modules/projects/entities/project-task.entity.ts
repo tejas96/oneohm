@@ -116,9 +116,15 @@ export class ProjectTaskEntity extends BaseEntity {
    * The latest customer WhatsApp attempt for this task, or NULL while it has
    * never been messaged. Written only by the send job and the WhatsApp webhook,
    * with raw SQL, so it never bumps `updatedAt` or `version`.
+   *
+   * Deliberately NOT named `customerWhatsapp`: that is the API field, and it
+   * carries the computed `{ state, at, reason }` line instead. Several endpoints
+   * build their response by spreading this entity, so sharing the name would
+   * have put this record — the customer's phone, the text and Meta's message id
+   * — straight into those responses.
    */
   @Column({ name: 'customer_whatsapp', type: 'jsonb', nullable: true })
-  customerWhatsapp?: TaskWhatsappRecord | null;
+  whatsappRecord?: TaskWhatsappRecord | null;
 
   // ==================== Status & Priority ====================
 

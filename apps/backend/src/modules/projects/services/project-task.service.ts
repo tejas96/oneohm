@@ -1235,7 +1235,7 @@ export class ProjectTaskService {
    * say — the step is not ticked, or the task was done before the tick.
    */
   private resolveCustomerWhatsapp(task: ProjectTaskEntity): CustomerWhatsappStatus | null {
-    const record = task.customerWhatsapp ?? null;
+    const record = task.whatsappRecord ?? null;
 
     const since = task.workflowStep?.whatsappSince
       ? new Date(task.workflowStep.whatsappSince)

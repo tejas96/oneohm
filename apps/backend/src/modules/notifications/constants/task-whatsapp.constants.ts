@@ -17,8 +17,11 @@ export const PROJECT_STEP_UPDATE_TEMPLATE = {
  * The timezone is pinned because the server runs on UTC: without it the cron
  * would fire at 11:30 pm India time.
  */
-export const TASK_WHATSAPP_SEND_CRON = '0 18 * * *';
+export const TASK_WHATSAPP_SEND_HOUR = 18;
 export const TASK_WHATSAPP_TIMEZONE = 'Asia/Kolkata';
+
+/** Built from the hour above, so the cron and the drawer can never disagree. */
+export const TASK_WHATSAPP_SEND_CRON = `0 ${TASK_WHATSAPP_SEND_HOUR} * * *`;
 
 /**
  * One run now carries a whole day. The busiest day in the data finished 437
@@ -38,9 +41,14 @@ export const TASK_WHATSAPP_STUCK_MINUTES = 10;
  */
 export const TASK_WHATSAPP_MAX_AGE_HOURS = 48;
 
-/** 6 pm in Asia/Kolkata, as UTC. India has no daylight saving, so this is fixed. */
-const SEND_HOUR_UTC = 12;
-const SEND_MINUTE_UTC = 30;
+/**
+ * The send hour as UTC minutes past midnight, derived from the one hour above.
+ * India has no daylight saving, so the offset is a constant 5:30 and this needs
+ * no timezone library. The modulo keeps it right if the hour is ever set early
+ * enough that India's evening is the previous UTC day.
+ */
+const IST_OFFSET_MINUTES = 330;
+const SEND_MINUTES_UTC = (TASK_WHATSAPP_SEND_HOUR * 60 - IST_OFFSET_MINUTES + 1440) % 1440;
 
 /**
  * When a task finished at `completedAt` will be messaged: the next 6 pm India
@@ -52,7 +60,7 @@ const SEND_MINUTE_UTC = 30;
 export function nextCustomerWhatsappSendAt(completedAt: Date): Date {
   const finished = completedAt.getTime();
   const sendAt = new Date(finished);
-  sendAt.setUTCHours(SEND_HOUR_UTC, SEND_MINUTE_UTC, 0, 0);
+  sendAt.setUTCHours(Math.floor(SEND_MINUTES_UTC / 60), SEND_MINUTES_UTC % 60, 0, 0);
   if (sendAt.getTime() < finished) {
     sendAt.setUTCDate(sendAt.getUTCDate() + 1);
   }
