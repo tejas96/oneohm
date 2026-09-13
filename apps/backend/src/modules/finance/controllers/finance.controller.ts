@@ -3,7 +3,12 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { type PaginatedResponse } from '@tejas96/shared/types';
 
 import { JwtAuthGuard } from '../../auth/guards';
-import { CustomerAgingDto, OutstandingQueryDto, OutstandingTermDto } from '../dto';
+import {
+  CustomerAgingDto,
+  OutstandingQueryDto,
+  OutstandingTermDto,
+  PayablesQueryDto,
+} from '../dto';
 import {
   CashFlowQueryDto,
   KpisQueryDto,
@@ -122,6 +127,29 @@ export class FinanceController {
       funding: query.funding,
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,
+    });
+  }
+
+  // A literal path, declared alongside the other literal GETs above rather
+  // than below — the same discipline as `payment-approvals/summary` — so a
+  // future vendor-scoped `:vendorId` route on this controller can never
+  // capture it.
+  @Get('payables')
+  @ApiOperation({
+    summary: 'What we owe each vendor',
+    description:
+      'A net balance per vendor — bills taken on credit, less what has been paid. No ' +
+      'bill-by-bill matching: a net figure cannot drift from the rows behind it. A negative ' +
+      'balance is an advance, not a debt, and is reported separately rather than netted off.',
+  })
+  async getPayables(
+    @Query() query: PayablesQueryDto,
+  ): Promise<Awaited<ReturnType<FinanceReportingService['getPayables']>>> {
+    return this.reportingService.getPayables({
+      page: query.page ?? 1,
+      limit: query.limit ?? 25,
+      search: query.search,
+      onlyOwing: query.onlyOwing,
     });
   }
 

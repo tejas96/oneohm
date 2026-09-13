@@ -18,6 +18,11 @@ import {
   SPEND_BY_CATEGORY_SQL,
   TOP_CUSTOMERS_OUTSTANDING_SQL,
 } from './finance-ledger-queries.sql';
+import {
+  PAYABLES_COUNT_SQL,
+  PAYABLES_PAGE_SQL,
+  PAYABLES_TOTALS_SQL,
+} from './finance-payables-queries.sql';
 
 const rs = (paise: unknown): number => Number(paise ?? 0) / 100;
 
@@ -294,6 +299,68 @@ export class FinanceReportingService {
       total: Number(countRow?.count ?? 0),
       page,
       limit,
+    };
+  }
+
+  /**
+   * What we owe each vendor — a net balance per vendor, not bill-by-bill.
+   *
+   * `payablePaise` may be NEGATIVE: that is an advance, money paid ahead of
+   * any bill, and it is never clamped to zero. `totals` sums debts and
+   * advances SEPARATELY and never nets them — owing one vendor while holding
+   * an advance with another is a debt and a credit, not one smaller number.
+   * A soft-deleted vendor still carrying a balance stays in the list,
+   * flagged `isInactive`; only a soft-deleted vendor at exactly zero
+   * disappears.
+   *
+   * Mirrors `getReceivables` exactly: same option names, same one-indexed
+   * page, same offset maths, three queries in one `Promise.all`.
+   */
+  async getPayables(
+    opts: {
+      page?: number;
+      limit?: number;
+      search?: string | null;
+      onlyOwing?: boolean | null;
+    } = {},
+  ): Promise<{
+    data: Record<string, unknown>[];
+    total: number;
+    page: number;
+    limit: number;
+    totals: { totalPayablePaise: number; vendorsOwedCount: number; advancePaise: number };
+  }> {
+    const page = Math.max(1, opts.page ?? 1);
+    const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
+    // Shared by PAYABLES_PAGE_SQL and PAYABLES_COUNT_SQL: $1 search, $2 onlyOwing.
+    const filters = [opts.search ?? null, opts.onlyOwing ?? null];
+
+    const [rows, [countRow], [totalsRow]] = await Promise.all([
+      this.dataSource.query(PAYABLES_PAGE_SQL, [...filters, limit, (page - 1) * limit]),
+      this.dataSource.query(PAYABLES_COUNT_SQL, filters),
+      // Follows `search` only, not `onlyOwing`: the headline totals describe
+      // every vendor matching the search, not just the page's filtered rows —
+      // the same reason RECEIVABLES_BUCKETS_SQL ignores `bucket`.
+      this.dataSource.query(PAYABLES_TOTALS_SQL, [opts.search ?? null]),
+    ]);
+
+    return {
+      data: rows.map((r: Record<string, unknown>) => ({
+        ...r,
+        // Raw bigint columns straight off the view, not SUM results — but
+        // node-postgres still hands bigint back as a string either way.
+        payablePaise: Number(r.payablePaise),
+        billedPaise: Number(r.billedPaise),
+        paidPaise: Number(r.paidPaise),
+      })),
+      total: Number(countRow?.count ?? 0),
+      page,
+      limit,
+      totals: {
+        totalPayablePaise: Number(totalsRow?.totalPayablePaise ?? 0),
+        vendorsOwedCount: Number(totalsRow?.vendorsOwedCount ?? 0),
+        advancePaise: Number(totalsRow?.advancePaise ?? 0),
+      },
     };
   }
 }
