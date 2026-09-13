@@ -353,8 +353,21 @@ function SummaryCard({
   // project with no change orders the two are identical and a "quote ₹X + ₹0"
   // line would be pure noise.
   const hasChangeOrders = s.changeOrderPaise !== 0;
-  const marginPaise = s.contractPaise > 0 ? s.contractPaise - s.spentPaise : null;
-  const usedPct = s.contractPaise > 0 ? Math.round((s.spentPaise / s.contractPaise) * 100) : 0;
+
+  /**
+   * Cost, not cash.
+   *
+   * `spentPaise` is cash that has left. A bill taken on credit is a cost the
+   * project already carries, and leaving it out reported a project holding
+   * Rs 1,00,000 of unpaid material bills as Rs 1,00,000 more profitable than it
+   * is — with the 80%-of-contract warning staying silent on top.
+   *
+   * Paying the vendor next month does not make the job more profitable this month.
+   */
+  const committedUnpaidPaise = s.committedUnpaidPaise ?? 0;
+  const costPaise = s.spentPaise + committedUnpaidPaise;
+  const marginPaise = s.contractPaise > 0 ? s.contractPaise - costPaise : null;
+  const usedPct = s.contractPaise > 0 ? Math.round((costPaise / s.contractPaise) * 100) : 0;
   const overrun = marginPaise != null && marginPaise < 0;
 
   const figures: Array<{ label: string; value: number; ink?: string; detail?: string | null }> = [
@@ -432,7 +445,16 @@ function SummaryCard({
         ))}
       </dl>
 
-      {s.contractPaise > 0 && s.spentPaise > 0 && usedPct >= 80 ? (
+      {/* Why margin and Spent differ, said plainly rather than left for someone
+          to work out: Spent is cash gone, margin also carries what is owed on
+          a bill taken on credit. */}
+      {committedUnpaidPaise > 0 ? (
+        <p className="mt-2 text-[12px] leading-relaxed text-foreground-tertiary">
+          + {formatPaise(committedUnpaidPaise)} owed to vendors, not yet paid
+        </p>
+      ) : null}
+
+      {s.contractPaise > 0 && costPaise > 0 && usedPct >= 80 ? (
         <p
           className="mt-4 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
           style={{

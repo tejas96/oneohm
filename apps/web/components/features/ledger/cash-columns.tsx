@@ -86,6 +86,47 @@ export const CASH_COLUMNS: CrmColumn<CashRow>[] = [
           </Box>
         );
       }
+      // A vendor payment settles a bill recorded earlier. Two rows for one
+      // cost is correct — the credit bill and the payment that settles it —
+      // but only reads correctly if this one says whose bill it paid.
+      if (row.entryType === 'vendor_payment') {
+        return (
+          <Box sx={{ minWidth: 0 }}>
+            <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              Paid {row.vendorName ?? 'vendor'}
+            </Box>
+            {row.recordedByName || row.approvedByName ? (
+              <Box sx={{ fontSize: crm['text-row-xs'], color: color['text-tertiary'] }}>
+                {row.recordedByName ? `by ${row.recordedByName}` : null}
+                {row.recordedByName && row.approvedByName ? ' · ' : null}
+                {row.approvedByName ? `approved ${row.approvedByName}` : null}
+              </Box>
+            ) : null}
+          </Box>
+        );
+      }
+      // Cash never moved — the cost is taken on, not paid. Labelling it
+      // plainly here is what keeps the amount column from reading as money
+      // that left the bank.
+      if (row.isCash === false) {
+        return (
+          <Box sx={{ minWidth: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+              <CrmStatusPill label="Unpaid" tone="warning" dot={false} size="sm" />
+              <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {row.vendorName ?? 'Vendor'}
+              </Box>
+            </Box>
+            {row.recordedByName || row.approvedByName ? (
+              <Box sx={{ fontSize: crm['text-row-xs'], color: color['text-tertiary'] }}>
+                {row.recordedByName ? `by ${row.recordedByName}` : null}
+                {row.recordedByName && row.approvedByName ? ' · ' : null}
+                {row.approvedByName ? `approved ${row.approvedByName}` : null}
+              </Box>
+            ) : null}
+          </Box>
+        );
+      }
       const parts = [
         row.category ? formatExpenseCategory(row.category) : (row.paymentMethod ?? row.entryType),
         row.counterparty,

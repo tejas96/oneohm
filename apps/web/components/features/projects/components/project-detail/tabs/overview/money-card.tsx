@@ -3,13 +3,7 @@
 import { Lock } from 'lucide-react';
 import * as React from 'react';
 
-import {
-  marginPaise,
-  openMilestonesByUrgency,
-  overdueMilestones,
-  plural,
-  waivedRemainderPaise,
-} from '../../lib/derive';
+import { marginPaise, openMilestonesByUrgency, overdueMilestones, plural } from '../../lib/derive';
 import { CardLink, DetailCard, EmptyPane, Mono, TONE, TonePill } from '../../primitives';
 import type { ProjectDetailData } from '../../types';
 
@@ -72,11 +66,11 @@ export function MoneyCard({
 
   /*
    * The bar splits the contract three ways: collected, still owed, written off.
-   * `waivedRemainderPaise` rather than the API's `waivedPaise` — see the note on
-   * that helper. With it the three shares add up to the contract exactly, so the
-   * bar has no unexplained grey tail.
+   * `waivedPaise` is the money actually written off on a waived milestone — the
+   * unpaid remainder, not its original expected amount — so the three shares
+   * add up to the contract exactly and the bar has no unexplained grey tail.
    */
-  const waived = s ? waivedRemainderPaise(s) : 0;
+  const waived = s ? s.waivedPaise : 0;
   const share = (paise: number): number =>
     s && s.contractPaise > 0 ? Math.max(0, (paise / s.contractPaise) * 100) : 0;
   const receivedShare = Math.min(100, share(s?.receivedPaise ?? 0));

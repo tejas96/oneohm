@@ -273,26 +273,6 @@ function isOpen(m: MilestoneBalance): boolean {
   return (m.derivedStatus === 'pending' || m.derivedStatus === 'partial') && m.balancePaise > 0;
 }
 
-/**
- * The money actually written off, as opposed to the API's `waivedPaise`.
- *
- * `waivedPaise` is the sum of EXPECTED on every waived milestone, so anything
- * already collected against one is counted twice — once as received, once as
- * waived. A real project showed contract ₹1,60,537, received ₹30,000,
- * outstanding ₹16,053 and waived ₹1,44,483: read together those overshoot the
- * contract by exactly the ₹30,000 that had been paid before the milestone was
- * written off.
- *
- * Summing the outstanding BALANCE on waived milestones gives the amount nobody
- * intends to collect, and makes received + outstanding + waived come to the
- * contract to the paisa.
- */
-export function waivedRemainderPaise(ledger: ProjectLedgerSummary): number {
-  return ledger.milestones
-    .filter((m) => m.derivedStatus === 'waived')
-    .reduce((sum, m) => sum + Math.max(0, m.balancePaise), 0);
-}
-
 /** Milestones past their due date with money still owed on them. */
 export function overdueMilestones(ledger: ProjectLedgerSummary): MilestoneBalance[] {
   return ledger.milestones.filter((m) => isOpen(m) && m.daysOverdue > 0);
