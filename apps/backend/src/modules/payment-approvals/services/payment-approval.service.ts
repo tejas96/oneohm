@@ -100,6 +100,24 @@ export interface ImpactLine {
   settlesFully: boolean;
 }
 
+/**
+ * A vendor payment's impact: what the vendor's net payable does, not a
+ * milestone line. Sibling to `lines`/`unallocatedPaise` on the impact
+ * response, never inside `lines` — see the comment in `previewImpact`.
+ */
+export interface VendorPayableImpact {
+  vendorName: string | null;
+  /** The vendor's net payable right now, straight off `v_vendor_payable`. */
+  beforePaise: number;
+  /**
+   * `beforePaise` minus this payment's magnitude. May go NEGATIVE — a vendor
+   * advance, paying ahead of what's owed — and is deliberately NOT clamped:
+   * the negative number is what tells the approver this payment overshoots
+   * the payable.
+   */
+  afterPaise: number;
+}
+
 /** How far back duplicate detection looks. A warning, never a block. */
 const DUPLICATE_WINDOW_HOURS = 24;
 
@@ -631,7 +649,9 @@ export class PaymentApprovalService {
    * Read-only and unlocked. The binding allocation is computed again inside
    * `approve`, because balances can move between viewing and approving.
    */
-  async previewImpact(id: string): Promise<{ lines: ImpactLine[]; unallocatedPaise: number }> {
+  async previewImpact(
+    id: string,
+  ): Promise<{ lines: ImpactLine[]; unallocatedPaise: number; vendorPayable?: VendorPayableImpact }> {
     const row = await this.dataSource
       .getRepository(PendingLedgerEntryEntity)
       .findOne({ where: { id } });
@@ -643,18 +663,47 @@ export class PaymentApprovalService {
     // touch one, and a vendor payment reduces what we owe a vendor, not a
     // project milestone balance.
     //
-    // A vendor payable before/after preview deliberately is NOT bolted onto
-    // `ImpactLine` here: that type is shaped around a milestone allocation
-    // (`milestoneId`, `milestoneName`, `settlesFully` against a milestone
-    // balance it owns) with no honest way to carry a vendor's payable, and the
-    // approval drawer renders every line in `lines` as a milestone row
-    // (`{line.milestoneName}: {formatPaise(line.appliedPaise)} ... still due`).
-    // Forcing vendor data through those fields would either fail to compile
-    // (the brief's suggested `{label, amountPaise}` shape isn't `ImpactLine`)
-    // or, if coerced into the real fields, render as a fabricated milestone
-    // line for money that never touched one. Nothing to preview beats a
-    // dishonest preview, so this returns empty for every non-receipt kind,
-    // vendor_payment included, exactly as it already did before this change.
+    // `lines`/`ImpactLine` stays milestone-only — it is never bent to carry a
+    // vendor's payable. `milestoneId`/`milestoneName`/`settlesFully` name a
+    // milestone specifically, and the approval drawer renders every entry in
+    // `lines` as a milestone row (`{line.milestoneName}: {formatPaise(...)}
+    // ... still due`). Coercing vendor data through those fields would either
+    // fail to compile or render a fabricated milestone for money that never
+    // allocated against one — worse than showing nothing.
+    //
+    // A vendor payment still needs *some* preview though: an approver signing
+    // off money leaving the business should see what it settles, same as a
+    // receipt's approver does. So it gets its own sibling field instead —
+    // `vendorPayable`, additive and optional, never populating `lines`. This
+    // is the one branch below that isn't a plain empty return.
+    if (row.kind === 'vendor_payment') {
+      const [payableRow] = await this.dataSource.query<
+        Array<{ vendorName: string | null; payablePaise: string | number }>
+      >(
+        `
+          SELECT name AS "vendorName", payable_paise AS "payablePaise"
+          FROM v_vendor_payable
+          WHERE vendor_id = $1
+        `,
+        [row.vendorId],
+      );
+      const beforePaise = Number(payableRow?.payablePaise ?? 0);
+      return {
+        lines: [],
+        unallocatedPaise: 0,
+        vendorPayable: {
+          vendorName: payableRow?.vendorName ?? null,
+          beforePaise,
+          // `pending_ledger_entries.amount_paise` is signed (money out is
+          // negative on a vendor_payment) — Math.abs turns it into the plain
+          // magnitude being paid, matching every other branch in this
+          // service that reads that column. Not clamped: see
+          // `VendorPayableImpact.afterPaise`.
+          afterPaise: beforePaise - Math.abs(row.amountPaise),
+        },
+      };
+    }
+
     if (row.kind !== 'receipt') {
       return { lines: [], unallocatedPaise: 0 };
     }

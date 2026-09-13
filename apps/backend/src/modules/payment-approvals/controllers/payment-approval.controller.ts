@@ -21,6 +21,7 @@ import {
   BulkApproveResult,
   ImpactLine,
   PaymentApprovalService,
+  VendorPayableImpact,
 } from '../services';
 
 /**
@@ -106,7 +107,7 @@ export class PaymentApprovalController {
   })
   async impact(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ lines: ImpactLine[]; unallocatedPaise: number }> {
+  ): Promise<{ lines: ImpactLine[]; unallocatedPaise: number; vendorPayable?: VendorPayableImpact }> {
     return this.service.previewImpact(id);
   }
 
