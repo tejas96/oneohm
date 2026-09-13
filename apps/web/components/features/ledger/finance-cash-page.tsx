@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, Card, Skeleton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import NextLink from 'next/link';
 import { type JSX, useMemo, useState } from 'react';
 
 import { CASH_COLUMNS, type CashRow } from './cash-columns';
@@ -8,6 +9,7 @@ import { CASH_COLUMNS, type CashRow } from './cash-columns';
 import type { TableSortModel } from '@/components/shared/advanced-table';
 import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
 import { MUITypography } from '@/components/ui';
+import { ROUTES } from '@/lib/config/routes';
 import {
   useCashFlow,
   useFinanceKpis,
@@ -234,39 +236,55 @@ function KpiStrip({
 }): JSX.Element {
   const rupees = (v: number): string => formatPaise(Math.round((v ?? 0) * 100));
 
-  const flows = [
-    {
-      label: 'Received',
-      value: rupees(data?.revenueInRange ?? 0),
-      sub: `${data?.receiptCountInRange ?? 0} receipts`,
-      tone: 'success',
-    },
-    {
-      label: 'Spent',
-      value: rupees(data?.spendInRange ?? 0),
-      sub: `${data?.expenseCountInRange ?? 0} expenses`,
-      tone: 'default',
-    },
-    {
-      label: 'Net',
-      value: rupees(data?.netCashflowInRange ?? 0),
-      sub: 'in period',
-      tone: (data?.netCashflowInRange ?? 0) < 0 ? 'error' : 'success',
-    },
-    {
-      label: 'Meter installations',
-      value: String(data?.meterInstallations ?? 0),
-      sub: 'completed',
-      tone: 'default',
-    },
-  ];
+  const flows: Array<{ label: string; value: string; sub: string; tone: string; href?: string }> =
+    [
+      {
+        label: 'Received',
+        value: rupees(data?.revenueInRange ?? 0),
+        sub: `${data?.receiptCountInRange ?? 0} receipts`,
+        tone: 'success',
+      },
+      {
+        label: 'Spent',
+        value: rupees(data?.spendInRange ?? 0),
+        sub: `${data?.expenseCountInRange ?? 0} expenses`,
+        tone: 'default',
+      },
+      {
+        label: 'Net',
+        value: rupees(data?.netCashflowInRange ?? 0),
+        sub: 'in period',
+        tone: (data?.netCashflowInRange ?? 0) < 0 ? 'error' : 'success',
+      },
+      {
+        // This used to count TASKS carrying the "Net meter installation" stage
+        // name — 65 all-time, because 26 projects carry that stage on more
+        // than one task. It now counts the PROJECTS themselves (41): a project
+        // has one net meter. The label says so, rather than let a ~38% drop
+        // read as a regression instead of a fix. Links through to Receivables,
+        // whose Recovery scope is selected by this same commissioning event.
+        label: 'Projects commissioned',
+        value: String(data?.meterInstallations ?? 0),
+        sub: 'net meter installed',
+        tone: 'default',
+        href: ROUTES.FINANCE.RECEIVABLES,
+      },
+    ];
 
-  const snapshots = [
+  const snapshots: Array<{ label: string; value: string; sub: string; tone: string }> = [
     {
       label: 'Outstanding',
       value: rupees(data?.outstandingNow ?? 0),
       sub: `${data?.overdueCountNow ?? 0} overdue`,
       tone: 'warning',
+    },
+    {
+      // The mirror of Outstanding, so both directions sit on one screen.
+      // Already netted server-side — never summed here.
+      label: 'Owed to vendors',
+      value: rupees(data?.vendorPayable ?? 0),
+      sub: 'to vendors',
+      tone: 'default',
     },
     {
       label: 'Unapplied credit',
@@ -287,7 +305,7 @@ function KpiStrip({
         <MUITypography variant="finePrint" sx={{ mb: 1 }}>
           As of today — not affected by the selected period
         </MUITypography>
-        <dl className="grid grid-cols-2 gap-3">
+        <dl className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {snapshots.map((t) => (
             <Tile key={t.label} {...t} />
           ))}
@@ -302,11 +320,14 @@ function Tile({
   value,
   sub,
   tone,
+  href,
 }: {
   label: string;
   value: string;
   sub: string;
   tone: string;
+  /** When set, the whole tile becomes a way in to that count's own screen. */
+  href?: string;
 }): JSX.Element {
   // MUI palette tokens rather than Tailwind colour utilities.
   const color =
@@ -314,8 +335,11 @@ function Tile({
       ? `${tone}.main`
       : 'text.primary';
 
-  return (
-    <Card variant="outlined" sx={{ p: 2 }}>
+  const card = (
+    <Card
+      variant="outlined"
+      sx={{ p: 2, ...(href ? { '&:hover': { bgcolor: 'action.hover' } } : {}) }}
+    >
       <MUITypography variant="metaLabel" component="dt">
         {label}
       </MUITypography>
@@ -331,6 +355,17 @@ function Tile({
         {sub}
       </MUITypography>
     </Card>
+  );
+
+  if (!href) return card;
+
+  // Same NextLink-wraps-content affordance already used for a link inside a
+  // CrmTable cell (`cash-columns.tsx`, `columns.tsx`) — applied to a whole
+  // tile instead of a cell, rather than inventing a new one.
+  return (
+    <NextLink href={href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      {card}
+    </NextLink>
   );
 }
 

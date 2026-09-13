@@ -18,14 +18,17 @@ import { VendorDetailKpi } from './vendors/vendor-detail-kpi';
 import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
 import type { TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
+import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
 import { MUIStatusChip } from '@/components/ui/mui-status-chip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiClient } from '@/lib/api/client';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { usePayables } from '@/lib/hooks/resources/ledger';
 import { usePurchaseOrders, type PurchaseOrder } from '@/lib/hooks/resources/purchase-orders';
 import { useVendor } from '@/lib/hooks/resources/vendors';
 import { useCan } from '@/lib/rbac';
 import { formatCurrency } from '@/lib/utils';
+import { formatPaise } from '@/lib/utils/paise';
 import { useAuth } from '@/providers/auth-provider';
 
 interface ProjectVendorAssignment {
@@ -166,6 +169,15 @@ export function VendorDetailPage(): React.JSX.Element {
 
   const { data: vendor, isLoading, isError, refetch } = useVendor(id);
 
+  // The single row this vendor owns on `/finance/payables`, matched on
+  // `vendorId` rather than trusting `data[0]` — the search is an ILIKE on
+  // name/code, so a code that is a substring of another vendor's could
+  // otherwise surface the wrong balance. `search` is undefined until `vendor`
+  // loads; `usePayables` has no `enabled` option, so that one extra
+  // unfiltered fetch runs behind the skeleton below and is immediately
+  // superseded once the vendor's code is known.
+  const payables = usePayables({ search: vendor?.code, limit: 10 });
+
   const {
     items: poItems,
     pagination: poPagination,
@@ -241,11 +253,36 @@ export function VendorDetailPage(): React.JSX.Element {
     );
   }
 
+  const payable = payables.data?.data.find((row) => row.vendorId === id);
+  // NEGATIVE means paid ahead of bills — an advance, never a red debt. Same
+  // wording as the Payables page (`payables-columns.tsx`), so one concept
+  // keeps one name across both screens.
+  const isAdvance = (payable?.payablePaise ?? 0) < 0;
+
   return (
     <div className="flex flex-col gap-4 p-6">
       <VendorDetailHeader vendor={vendor} canEdit={canEdit} onEdit={() => setEditOpen(true)} />
 
       <VendorDetailKpi vendorId={id} />
+
+      <KpiStripe
+        tiles={[
+          {
+            id: 'v-payable',
+            label: 'Payable',
+            value: isAdvance
+              ? `Advance ${formatPaise(-(payable?.payablePaise ?? 0))}`
+              : formatPaise(payable?.payablePaise ?? 0),
+            secondary: isAdvance
+              ? 'paid ahead of bills'
+              : payable && payable.billCount > 0
+                ? `${payable.billCount} bill${payable.billCount === 1 ? '' : 's'}`
+                : 'no bills yet',
+            intent: isAdvance ? 'success' : 'neutral',
+            isLoading: payables.isLoading,
+          },
+        ]}
+      />
 
       <VendorFormDialog
         open={editOpen}

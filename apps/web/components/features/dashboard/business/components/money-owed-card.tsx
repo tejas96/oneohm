@@ -51,6 +51,13 @@ interface MoneyOwedCardProps {
   totalOutstanding: number;
   overdueAmount: number;
   unallocatedCredit: number;
+  /**
+   * The mirror figure: what WE owe vendors, netted, from the same
+   * `/finance/kpis` snapshot as `totalOutstanding`. Shown beside it so the
+   * business view carries both directions, never summed with it — a debt and
+   * a receivable are not one smaller number.
+   */
+  vendorPayable: number;
   format: MoneyFormat;
   today: Date;
   isError: boolean;
@@ -58,12 +65,16 @@ interface MoneyOwedCardProps {
 }
 
 /**
- * What is owed to us, and how long it has been owed.
+ * What is owed to us, and how long it has been owed — plus, in one line, what
+ * we owe back. `vendorPayable` gets no ageing breakdown of its own: it is a
+ * single netted snapshot, not a bucketed view, so it sits beside the
+ * receivable it mirrors rather than duplicating this card's whole shape.
  *
  * This panel does NOT follow the page's date range, and says so twice — a chip
  * and a sentence. Ageing is computed against today by definition; the endpoint
  * takes no date at all. Letting a global range appear to apply here would
- * misrepresent every figure in it.
+ * misrepresent every figure in it. `vendorPayable` is the same kind of
+ * as-of-today snapshot, for the same reason a debt does not belong to a month.
  *
  * Oldest debts are payment TERMS, not customers, because that is the only place
  * a per-row age exists. One customer with three old milestones is three rows,
@@ -76,6 +87,7 @@ export function MoneyOwedCard({
   totalOutstanding,
   overdueAmount,
   unallocatedCredit,
+  vendorPayable,
   format,
   today,
   isError,
@@ -131,7 +143,7 @@ export function MoneyOwedCard({
         unallocatedCredit > 0 ? `${money(unallocatedCredit, format)} unallocated credit` : undefined
       }
     >
-      <div className="flex items-baseline gap-3.5 pb-3.5">
+      <div className="flex items-baseline gap-3.5 pb-1">
         <div className="text-[32px] font-bold tracking-[-0.03em] tabular-nums">
           {money(totalOutstanding, format)}
         </div>
@@ -140,6 +152,17 @@ export function MoneyOwedCard({
           {money(overdueAmount, format)} overdue · {overdueCount} milestone
           {overdueCount === 1 ? '' : 's'}
         </div>
+      </div>
+
+      {/* The other direction — same `/finance/kpis` snapshot as the figure
+          above, just netted the other way. No ageing breakdown exists for
+          it, so it reads as one line beside the receivable it mirrors, not a
+          second chart. */}
+      <div className="flex items-baseline gap-1.5 pb-3.5 text-[13px] text-foreground-secondary">
+        <span className="font-semibold tabular-nums text-foreground">
+          {money(vendorPayable, format)}
+        </span>
+        owed to vendors
       </div>
 
       <div className="flex h-4 overflow-hidden rounded-pill bg-background-tertiary">

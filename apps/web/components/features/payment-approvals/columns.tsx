@@ -1,6 +1,6 @@
 'use client';
 
-import { Box } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 import NextLink from 'next/link';
 import type { JSX } from 'react';
 
@@ -155,7 +155,19 @@ export const APPROVAL_COLUMNS: CrmColumn<ApprovalRow>[] = [
     header: 'Submitted by',
     track: crm['col-approval-submitter'],
     defaultHidden: true,
-    renderCell: (row) => row.submittedByName ?? <Empty />,
+    // The role read as the person's capacity — most senior first, exactly as
+    // the API orders it. Never split, truncated to one, or re-sorted here.
+    // Null (no role held) renders nothing, not an empty second line.
+    renderCell: (row) => (
+      <Stack spacing={0}>
+        <span>{row.submittedByName ?? <Empty />}</span>
+        {row.submittedByRoles ? (
+          <span style={{ fontSize: crm['text-row-sm'], color: color['text-tertiary'] }}>
+            {row.submittedByRoles}
+          </span>
+        ) : null}
+      </Stack>
+    ),
   },
   {
     field: 'submittedAt',

@@ -387,6 +387,7 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
         totalOutstanding={k?.outstandingNow ?? 0}
         overdueAmount={k?.overdueNow ?? 0}
         unallocatedCredit={k?.unallocatedCredit ?? 0}
+        vendorPayable={k?.vendorPayable ?? 0}
         format={format}
         today={new Date()}
         isError={aging.isError || outstanding.isError}

@@ -42,6 +42,18 @@ const KIND_LABEL = {
 } as const;
 
 /**
+ * Same "Advance" wording as the Payables page (`payables-columns.tsx`) — a
+ * negative payable is never shown as a red debt, so one concept keeps one
+ * name everywhere it appears. Applies to both `beforePaise` and `afterPaise`:
+ * either can be negative, and `afterPaise` going negative when `beforePaise`
+ * was not is exactly the "this payment overshoots what's owed" case the
+ * approver needs to see plainly, not as an unexplained minus sign.
+ */
+function formatVendorPayable(paise: number): string {
+  return paise < 0 ? `Advance ${formatPaise(-paise)}` : formatPaise(paise);
+}
+
+/**
  * Where verification actually happens.
  *
  * Shows the claim, the customer's own evidence, and what approving would settle
@@ -91,6 +103,15 @@ export function ApprovalReviewDrawer({
               <Typography variant="body2">{KIND_LABEL[data.kind]}</Typography>
             </Stack>
 
+            {/* An approver must know which of the two they are signing off:
+                this records a debt, or this moves cash right now. */}
+            {data.isCredit ? (
+              <Alert severity="info">
+                On credit · {data.vendorName ?? 'vendor'}. Approving records what we owe. No cash
+                moves.
+              </Alert>
+            ) : null}
+
             <Box>
               <Typography sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
                 {formatPaise(Math.abs(data.amountPaise))}
@@ -118,9 +139,20 @@ export function ApprovalReviewDrawer({
                 {data.projectName ? ` — ${data.projectName}` : ''}
               </MUILink>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                Submitted by {data.submittedByName ?? 'unknown'} on{' '}
+                Submitted by {data.submittedByName ?? 'unknown'}
+                {data.submittedByRoles ? ` (${data.submittedByRoles})` : ''} on{' '}
                 {new Date(data.submittedAt).toLocaleDateString()}
               </Typography>
+              {/* Only once the row has actually been reviewed — `reviewedAt`
+                  is null for both a pending row and one the submitter simply
+                  withdrew, neither of which anyone "reviewed". */}
+              {data.reviewedAt ? (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Reviewed by {data.reviewedByName ?? 'unknown'}
+                  {data.reviewedByRoles ? ` (${data.reviewedByRoles})` : ''} on{' '}
+                  {new Date(data.reviewedAt).toLocaleDateString()}
+                </Typography>
+              ) : null}
             </Box>
 
             {data.notes ? <Typography variant="body2">{data.notes}</Typography> : null}
@@ -226,6 +258,27 @@ export function ApprovalReviewDrawer({
                       will be held as credit against future milestones.
                     </Alert>
                   )}
+                </Box>
+              </>
+            )}
+
+            {/* The vendor-payment sibling of the block above: `lines` is
+                always empty for `kind === 'vendor_payment'` (a vendor
+                payment never allocates against a milestone), so without this
+                the drawer would show no consequence preview at all for that
+                kind. `afterPaise` is rendered exactly as the server sends it
+                — never clamped — because a negative result is the signal
+                that this payment pays ahead of what's owed. */}
+            {impact.data?.vendorPayable && (
+              <>
+                <Divider />
+                <Box>
+                  <MUITypography variant="sectionTitle">If approved, this settles</MUITypography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {impact.data.vendorPayable.vendorName ?? 'This vendor'}&apos;s payable:{' '}
+                    {formatVendorPayable(impact.data.vendorPayable.beforePaise)} →{' '}
+                    {formatVendorPayable(impact.data.vendorPayable.afterPaise)}
+                  </Typography>
                 </Box>
               </>
             )}

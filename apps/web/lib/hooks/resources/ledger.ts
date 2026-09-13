@@ -170,6 +170,15 @@ export interface FinanceKpis {
   expenseCountInRange: number;
   unallocatedCredit: number;
   meterInstallations: number;
+  /**
+   * What we owe vendors, netted — the mirror of `outstandingNow`. A SNAPSHOT
+   * as of today, like that field: a debt does not belong to a month. Like
+   * every other money field on this DTO, `finance-reporting.service.ts`
+   * divides to RUPEES before responding — never feed this straight into
+   * `formatPaise` without the same `* 100` the sibling fields on this
+   * interface already need.
+   */
+  vendorPayable: number;
 }
 
 export interface CashFlowPoint {
