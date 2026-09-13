@@ -3,7 +3,14 @@
 import { Lock } from 'lucide-react';
 import * as React from 'react';
 
-import { marginPaise, openMilestonesByUrgency, overdueMilestones, plural } from '../../lib/derive';
+import {
+  costPaise,
+  costUsedPct,
+  marginPaise,
+  openMilestonesByUrgency,
+  overdueMilestones,
+  plural,
+} from '../../lib/derive';
 import { CardLink, DetailCard, EmptyPane, Mono, TONE, TonePill } from '../../primitives';
 import type { ProjectDetailData } from '../../types';
 
@@ -61,8 +68,16 @@ export function MoneyCard({
   const overdue = s ? overdueMilestones(s) : [];
   const owedLate = overdue.reduce((sum, m) => sum + m.balancePaise, 0);
   const schedule = s ? openMilestonesByUrgency(s).slice(0, MAX_SCHEDULE_ROWS) : [];
+  /**
+   * Cost, not cash — same fields, same formula as the project Money tab
+   * (`costPaise`/`marginPaise`/`costUsedPct` in `lib/derive.ts`, the one place
+   * this arithmetic lives). A bill taken on credit is a cost the project
+   * already carries, so leaving it out of this card the way the Money tab no
+   * longer does would print two different margins for the same project.
+   */
+  const cost = s ? costPaise(s) : 0;
   const margin = s ? marginPaise(s) : null;
-  const usedPct = s && s.contractPaise > 0 ? Math.round((s.spentPaise / s.contractPaise) * 100) : 0;
+  const usedPct = s ? costUsedPct(s) : 0;
 
   /*
    * The bar splits the contract three ways: collected, still owed, written off.
@@ -180,7 +195,7 @@ export function MoneyCard({
             </div>
           </dl>
 
-          {s.spentPaise > 0 && usedPct >= 80 ? (
+          {cost > 0 && usedPct >= 80 ? (
             <p
               className="mt-3 rounded-2xl px-3 py-2 text-[12px]"
               style={{

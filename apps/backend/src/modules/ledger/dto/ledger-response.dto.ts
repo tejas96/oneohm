@@ -20,7 +20,7 @@ export class LedgerEntryResponseDto {
   @Expose()
   entryNo!: string;
 
-  @ApiProperty({ enum: ['receipt', 'expense', 'refund', 'write_off'] })
+  @ApiProperty({ enum: ['receipt', 'expense', 'refund', 'write_off', 'vendor_payment'] })
   @Expose()
   entryType!: string;
 
@@ -59,6 +59,29 @@ export class LedgerEntryResponseDto {
   @ApiPropertyOptional()
   @Expose()
   category?: string | null;
+
+  /**
+   * Did cash actually move? False means the cost is taken on and the money is
+   * still in the bank — a bill on credit, not yet paid. Present on every row:
+   * the column defaults to `true` and is never null at the database.
+   */
+  @ApiProperty({
+    description:
+      'Did cash actually move? False means the cost is taken on and the money is still in the ' +
+      'bank — a bill on credit, not yet paid.',
+  })
+  @Expose()
+  isCash!: boolean;
+
+  @ApiPropertyOptional({ description: 'The vendor this entry is owed to or paid to' })
+  @Expose()
+  vendorId?: string | null;
+
+  @ApiPropertyOptional({
+    description: "The vendor's name — joined in for display, not stored on the entry itself",
+  })
+  @Expose()
+  vendorName?: string | null;
 
   @ApiPropertyOptional()
   @Expose()

@@ -13,6 +13,11 @@ import { ReceiptDates } from './receipt-dates';
 import { RecordMoneyDialog } from './record-money-dialog';
 
 import {
+  costPaise,
+  costUsedPct,
+  marginPaise,
+} from '@/components/features/projects/components/project-detail/lib/derive';
+import {
   ColumnHeader,
   DetailCard,
   EmptyPane,
@@ -363,12 +368,17 @@ function SummaryCard({
    * is — with the 80%-of-contract warning staying silent on top.
    *
    * Paying the vendor next month does not make the job more profitable this month.
+   *
+   * `costPaise`/`marginPaise`/`costUsedPct` live in derive.ts, not here — the
+   * Overview tab's Money card computes the identical figures from the identical
+   * fields by calling the identical three functions, so the two screens cannot
+   * print two different margins for the same project again.
    */
   const committedUnpaidPaise = s.committedUnpaidPaise ?? 0;
-  const costPaise = s.spentPaise + committedUnpaidPaise;
-  const marginPaise = s.contractPaise > 0 ? s.contractPaise - costPaise : null;
-  const usedPct = s.contractPaise > 0 ? Math.round((costPaise / s.contractPaise) * 100) : 0;
-  const overrun = marginPaise != null && marginPaise < 0;
+  const cost = costPaise(s);
+  const margin = marginPaise(s);
+  const usedPct = costUsedPct(s);
+  const overrun = margin != null && margin < 0;
 
   const figures: Array<{ label: string; value: number; ink?: string; detail?: string | null }> = [
     {
@@ -454,7 +464,7 @@ function SummaryCard({
         </p>
       ) : null}
 
-      {s.contractPaise > 0 && costPaise > 0 && usedPct >= 80 ? (
+      {s.contractPaise > 0 && cost > 0 && usedPct >= 80 ? (
         <p
           className="mt-4 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
           style={{
@@ -464,12 +474,12 @@ function SummaryCard({
         >
           <span className="font-semibold">
             {overrun
-              ? `Costs have passed the contract by ${formatPaise(Math.abs(marginPaise ?? 0))}.`
+              ? `Costs have passed the contract by ${formatPaise(Math.abs(margin ?? 0))}.`
               : `Costs are at ${usedPct}% of the contract.`}
           </span>{' '}
           {overrun
             ? 'This does not change what the customer owes. If the extra work was agreed, raise a change order so the contract reflects it.'
-            : `Margin left: ${formatPaise(Math.abs(marginPaise ?? 0))}.`}
+            : `Margin left: ${formatPaise(Math.abs(margin ?? 0))}.`}
         </p>
       ) : null}
 
@@ -600,6 +610,24 @@ function ProjectEntries({
                   {isReversal ? (
                     <span className="text-[12.5px] text-foreground-secondary">
                       Reversal — {e.reversalReason ?? 'no reason given'}
+                    </span>
+                  ) : e.entryType === 'vendor_payment' ? (
+                    // A vendor payment settles a bill recorded earlier — say
+                    // whose, the same way the org-wide Cash page already does.
+                    <span className="block truncate text-[12.5px] text-foreground">
+                      Paid {e.vendorName ?? 'vendor'}
+                    </span>
+                  ) : e.isCash === false ? (
+                    // Cash never moved — the cost is taken on, not paid. This
+                    // is the one screen a credit bill is actually RECORDED on,
+                    // so it is the one screen that must not let it read as an
+                    // ordinary settled expense (or as a duplicate beside the
+                    // vendor_payment that later settles it).
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <TonePill label="Unpaid" tone="warning" />
+                      <span className="min-w-0 truncate text-[12.5px] text-foreground">
+                        {e.vendorName ?? 'Vendor'}
+                      </span>
                     </span>
                   ) : (
                     <span className="block truncate text-[12.5px] text-foreground">

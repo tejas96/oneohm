@@ -396,6 +396,36 @@ export class LedgerRepository {
     );
   }
 
+  /**
+   * The vendor name for entries that carry a `vendor_id` — a credit bill or a
+   * vendor payment. Kept separate from `listEntriesByProject` for the same
+   * reason as `getEntryAttributionByProject` above: the entity read stays a
+   * plain entity read, and this side query is merged in by `entryId` in the
+   * controller.
+   *
+   * Mirrors `LEDGER_PAGE_SQL`'s identical `vendors` join for the org-wide Cash
+   * page — same table, same column, no `deleted_at` filter — so a soft-deleted
+   * vendor still resolves a name here. A settled bill should not lose the
+   * vendor's name just because that vendor was later deactivated.
+   *
+   * An INNER JOIN on purpose: most entries (receipts, most expenses) carry no
+   * `vendor_id` at all, so this returns only the rows worth resolving, the
+   * same shape as the attribution query's own INNER JOIN.
+   */
+  async getEntryVendorNamesByProject(
+    projectId: string,
+    manager?: EntityManager,
+  ): Promise<Array<{ entryId: string; vendorName: string | null }>> {
+    return this.exec(manager).query(
+      `SELECT e.id   AS "entryId",
+              vn.name AS "vendorName"
+         FROM ledger_entries e
+         JOIN vendors vn ON vn.id = e.vendor_id
+        WHERE e.project_id = $1`,
+      [projectId],
+    );
+  }
+
   /** Unused today but kept symmetric with `allocations` injection. */
   get allocationRepository(): Repository<LedgerAllocationEntity> {
     return this.allocations;

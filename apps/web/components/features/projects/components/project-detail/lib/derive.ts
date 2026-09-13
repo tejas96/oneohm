@@ -293,18 +293,40 @@ export function openMilestonesByUrgency(ledger: ProjectLedgerSummary): Milestone
 }
 
 /**
- * Contract minus spend.
+ * Cash spent plus a bill taken on credit but not yet paid.
+ *
+ * `spentPaise` alone is cash that has left; it says nothing about a bill on
+ * credit, which is a cost the project already carries the moment it is taken
+ * on. This is the one place that adds `committedUnpaidPaise` on top of
+ * `spentPaise` — margin, the used-percent and the overrun warning all read
+ * THIS, on every screen that shows them, so the figures cannot drift apart
+ * the way they did when the Money tab computed cost and the Overview card's
+ * Money card computed cash for the same project.
+ */
+export function costPaise(ledger: ProjectLedgerSummary): number {
+  return ledger.spentPaise + (ledger.committedUnpaidPaise ?? 0);
+}
+
+/**
+ * Contract minus cost (cash spent plus committed-but-unpaid).
  *
  * Null until there is a contract AND at least one cost recorded against it.
- * With nothing spent the arithmetic returns the whole contract, which the card
- * then printed as "Margin left ₹1,54,444" beside "Contract ₹1,54,444" — the
- * same figure twice, claiming a margin nobody has verified. Unknown is the
- * honest answer, and the card says so.
+ * With nothing spent or committed the arithmetic returns the whole contract,
+ * which a card would then print as "Margin left ₹1,54,444" beside
+ * "Contract ₹1,54,444" — the same figure twice, claiming a margin nobody has
+ * verified. Unknown is the honest answer, and callers say so.
  */
 export function marginPaise(ledger: ProjectLedgerSummary): number | null {
   if (ledger.contractPaise <= 0) return null;
-  if (ledger.spentPaise <= 0) return null;
-  return ledger.contractPaise - ledger.spentPaise;
+  const cost = costPaise(ledger);
+  if (cost <= 0) return null;
+  return ledger.contractPaise - cost;
+}
+
+/** Cost as a whole percent of the contract. 0 when there is no contract. */
+export function costUsedPct(ledger: ProjectLedgerSummary): number {
+  if (ledger.contractPaise <= 0) return 0;
+  return Math.round((costPaise(ledger) / ledger.contractPaise) * 100);
 }
 
 // ============================================================================
