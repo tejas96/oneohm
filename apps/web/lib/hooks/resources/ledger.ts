@@ -246,7 +246,7 @@ export interface LedgerFilters {
  * because `paid_amount` was cached in two tables and could disagree. With every
  * balance derived from the ledger there is exactly one cache to bust.
  */
-const ledgerKeys = {
+export const ledgerKeys = {
   root: () => ['ledger'] as const,
   kpis: (from?: string, to?: string) => [...ledgerKeys.root(), 'kpis', from, to] as const,
   cashFlow: (from?: string, to?: string, grain?: string) =>
