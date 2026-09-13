@@ -171,6 +171,11 @@ export class PaymentApprovalService {
     if (dto.kind === 'vendor_payment' && !dto.vendorId) {
       throw new BadRequestException('Say which vendor is being paid');
     }
+    // Validation at submission, not approval, so the submitter gets feedback
+    // immediately rather than the approver facing a cryptic error later.
+    if (dto.kind === 'vendor_payment' && dto.paymentMethod === PaymentMethod.CREDIT) {
+      throw new BadRequestException('Settling a credit bill with more credit is not a payment');
+    }
 
     return this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PendingLedgerEntryEntity);
