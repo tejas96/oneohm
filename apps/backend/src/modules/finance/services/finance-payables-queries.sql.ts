@@ -24,7 +24,7 @@ export const PAYABLES_PAGE_SQL = `
     (p.deleted_at IS NOT NULL)                    AS "isInactive"
   FROM v_vendor_payable p
   WHERE ($1::text IS NULL OR p.name ILIKE '%' || $1 || '%' OR p.code ILIKE '%' || $1 || '%')
-    AND ($2::boolean IS NOT TRUE OR p.payable_paise <> 0)
+    AND ($2::boolean IS NOT TRUE OR p.payable_paise > 0) -- "Owing only" is a work list to pay; advances are not owed
     AND (p.deleted_at IS NULL OR p.payable_paise <> 0)
   ORDER BY p.payable_paise DESC, p.name
   LIMIT $3 OFFSET $4
@@ -34,7 +34,7 @@ export const PAYABLES_COUNT_SQL = `
   SELECT COUNT(*)::int AS count
   FROM v_vendor_payable p
   WHERE ($1::text IS NULL OR p.name ILIKE '%' || $1 || '%' OR p.code ILIKE '%' || $1 || '%')
-    AND ($2::boolean IS NOT TRUE OR p.payable_paise <> 0)
+    AND ($2::boolean IS NOT TRUE OR p.payable_paise > 0) -- "Owing only" is a work list to pay; advances are not owed
     AND (p.deleted_at IS NULL OR p.payable_paise <> 0)
 `;
 
