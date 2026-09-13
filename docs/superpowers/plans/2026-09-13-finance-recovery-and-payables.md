@@ -1163,7 +1163,7 @@ WHERE v.status='active' AND v.balance_paise>0 GROUP BY 1;
 "
 ```
 
-Expected exactly: `CASH|25|1322346.38` and `LOAN|16|499575.72`.
+Expected exactly: `CASH|23|1322346.38` and `LOAN|15|499575.72`.
 
 Then hit the API and confirm it agrees:
 
@@ -1982,8 +1982,8 @@ Open `/finance/receivables`. Confirm, exactly:
 
 | Tab | Expect |
 |---|---|
-| Recovery — Cash | 25 projects, ₹13,22,346.38 |
-| Recovery — Loan | 16 projects, ₹4,99,575.72, banner showing |
+| Recovery — Cash | 23 projects, ₹13,22,346.38 |
+| Recovery — Loan | 15 projects, ₹4,99,575.72, banner showing |
 | Not due yet chip | 202 milestones |
 | The no-due-date link | 198 milestones, ₹72,22,805.60 |
 
@@ -2212,8 +2212,8 @@ Through the UI only. No API calls, no SQL, no scripts standing in for a user.
 5. Pay part of it. It queues for approval.
 6. Approve. Cash out moves; the payable drops by exactly that amount.
 7. Reverse the credit bill. The payable falls; **cash is untouched**.
-8. Receivables → Recovery — Cash: 25 projects, ₹13,22,346.38.
-9. Recovery — Loan: 16 projects, ₹4,99,575.72, banner showing.
+8. Receivables → Recovery — Cash: 23 projects, ₹13,22,346.38.
+9. Recovery — Loan: 15 projects, ₹4,99,575.72, banner showing.
 10. **Add bank** on a row with none: saves in place, no reload, filters kept.
 11. The no-due-date link: 198 milestones, ₹72,22,805.60.
 12. Cross-foot a waived project. It balances to the paisa.

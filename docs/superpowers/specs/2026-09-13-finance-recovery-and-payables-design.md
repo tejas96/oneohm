@@ -87,8 +87,8 @@ Projects with the net meter installed and money still open:
 
 | Segment | Projects | Open |
 |---|---|---|
-| Cash | 25 | ₹13.2 lakh |
-| Loan | 16 | ₹5.0 lakh |
+| Cash | 23 | ₹13.2 lakh |
+| Loan | 15 | ₹5.0 lakh |
 
 One project's meter task predates activity logging and has no `completed_at`. Its
 "days since meter" is unknown and renders as `—`, never as 0.
@@ -393,7 +393,7 @@ oldest overdue milestone. `customerPhone` is already returned by `RECEIVABLES_SQ
 
 **Recovery — Loan carries a banner** when any project in scope lacks a lender milestone:
 
-> 14 of 16 loan projects have no bank share recorded. You may be chasing the customer for the
+> 14 of 15 loan projects have no bank share recorded. You may be chasing the customer for the
 > bank's money. **Review these →**
 
 The count is computed server-side alongside the bucket counts. This is defect 5, shown rather
@@ -618,8 +618,8 @@ app, through the UI, with no API calls, SQL or scripts standing in for a user.
 5. Pay the vendor part of it. Confirm it queues for approval.
 6. Approve. Confirm cash out moves, and the payable drops by exactly that amount.
 7. Reverse the credit bill. Confirm the payable falls and cash is untouched.
-8. Open Receivables → Recovery — Cash. Confirm 25 projects and ₹13.2 lakh.
-9. Open Recovery — Loan. Confirm 16 projects, ₹5.0 lakh, and the bank-share banner.
+8. Open Receivables → Recovery — Cash. Confirm 23 projects and ₹13.2 lakh.
+9. Open Recovery — Loan. Confirm 15 projects, ₹5.0 lakh, and the bank-share banner.
 9a. Click **Add bank** on a row with no bank. Pick a listed bank; confirm the row updates in
     place with no reload and no lost filter. Reopen it, choose Other, type a name, confirm it
     saves trimmed. Confirm the same value then renders on the property drawer and the project
@@ -631,8 +631,8 @@ app, through the UI, with no API calls, SQL or scripts standing in for a user.
 
 | Figure | Expected |
 |---|---|
-| Recovery — Cash | 25 projects, ₹13,22,346.38 |
-| Recovery — Loan | 16 projects, ₹4,99,575.72 |
+| Recovery — Cash | 23 projects, ₹13,22,346.38 |
+| Recovery — Loan | 15 projects, ₹4,99,575.72 |
 | Loan projects with no lender milestone | 58 org-wide, ₹20,14,310.82 |
 | Open money, overdue | ₹1,20,07,287.31 over 216 milestones |
 | Open money, not due yet | ₹75,57,212.90 over 202 milestones |
