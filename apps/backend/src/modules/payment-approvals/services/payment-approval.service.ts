@@ -14,6 +14,7 @@ import {
   DocumentTag,
   ExpenseCategory,
   FinanceSequenceScope,
+  PaymentMethod,
 } from '@tejas96/shared/types';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 
@@ -135,6 +136,15 @@ export class PaymentApprovalService {
       throw new BadRequestException(`Value date ${valueDate} is in the future`);
     }
 
+    // Refused here as well as by the database check, so the operator gets a
+    // sentence rather than a constraint-violation stack trace.
+    if (dto.paymentMethod === PaymentMethod.CREDIT && !dto.vendorId) {
+      throw new BadRequestException('A credit bill has to be owed to a vendor');
+    }
+    if (dto.kind === 'vendor_payment' && !dto.vendorId) {
+      throw new BadRequestException('Say which vendor is being paid');
+    }
+
     return this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PendingLedgerEntryEntity);
 
@@ -153,6 +163,7 @@ export class PaymentApprovalService {
         reference: dto.reference ?? null,
         paymentMethod: dto.paymentMethod ?? null,
         counterparty: dto.counterparty ?? null,
+        vendorId: dto.vendorId ?? null,
       };
 
       let row: Partial<PendingLedgerEntryEntity>;
@@ -346,6 +357,22 @@ export class PaymentApprovalService {
           approverId,
           manager,
         );
+      } else if (pending.kind === 'vendor_payment') {
+        entry = await this.ledgerWrite.recordVendorPayment(
+          {
+            projectId: pending.projectId,
+            // recordVendorPayment takes a positive magnitude and negates it
+            // itself; this table already stores the value signed.
+            amountPaise: Math.abs(pending.amountPaise),
+            valueDate: pending.valueDate,
+            vendorId: pending.vendorId as string,
+            paymentMethod: pending.paymentMethod ?? undefined,
+            reference: pending.reference ?? undefined,
+            notes: pending.notes ?? undefined,
+          },
+          approverId,
+          manager,
+        );
       } else {
         entry = await this.ledgerWrite.recordExpense(
           {
@@ -362,6 +389,7 @@ export class PaymentApprovalService {
             payee: pending.counterparty ?? undefined,
             paymentMethod: pending.paymentMethod ?? undefined,
             notes: pending.notes ?? undefined,
+            vendorId: pending.vendorId ?? undefined,
           },
           approverId,
           manager,

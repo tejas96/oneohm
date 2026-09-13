@@ -74,6 +74,11 @@ export class SubmitApprovalDto {
   @MaxLength(255)
   counterparty?: string;
 
+  @ApiPropertyOptional({ description: 'The vendor this money is owed to or paid to' })
+  @IsUUID()
+  @IsOptional()
+  vendorId?: string;
+
   @ApiPropertyOptional({ description: 'Required for expense.' })
   @ValidateIf((o: SubmitApprovalDto) => o.kind === 'expense')
   @IsString()
