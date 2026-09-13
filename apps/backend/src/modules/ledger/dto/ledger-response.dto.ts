@@ -277,7 +277,10 @@ export class ProjectLedgerSummaryDto {
   @Transform(({ value }) => toNum(value))
   expectedPaise!: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    description:
+      'Money actually written off on a waived milestone — the unpaid remainder, not its original expected amount.',
+  })
   @Expose()
   @Transform(({ value }) => toNum(value))
   waivedPaise!: number;
@@ -323,6 +326,13 @@ export class ProjectLedgerSummaryDto {
   @ApiProperty()
   @Expose()
   milestoneCount!: number;
+
+  @ApiProperty({
+    description: 'What the project owes vendors and has not paid yet — the credit mirror of spentPaise.',
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  committedUnpaidPaise!: number;
 
   @ApiProperty({ type: [MilestoneBalanceResponseDto] })
   @Expose()

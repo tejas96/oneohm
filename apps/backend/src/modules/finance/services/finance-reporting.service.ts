@@ -37,6 +37,8 @@ export interface FinanceKpis {
   unallocatedCredit: number;
   /** Meter installations completed in the period — dated by task completion. */
   meterInstallations: number;
+  /** What we owe vendors, netted. A snapshot as of today, like `outstandingNow`. */
+  vendorPayable: number;
 }
 
 /**
@@ -80,6 +82,7 @@ export class FinanceReportingService {
       expenseCountInRange: Number(row?.expenseCount ?? 0),
       unallocatedCredit: rs(row?.unallocatedPaise),
       meterInstallations: Number(row?.meterInstallations ?? 0),
+      vendorPayable: rs(row?.vendorPayablePaise),
     };
   }
 

@@ -32,9 +32,9 @@ export const KPIS_SQL = `
   WITH flows AS (
     SELECT
       COALESCE(SUM(e.amount_paise) FILTER (WHERE e.direction = 'in'), 0)::BIGINT  AS revenue_paise,
-      COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out'), 0)::BIGINT AS spend_paise,
+      COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out' AND e.is_cash), 0)::BIGINT AS spend_paise,
       COUNT(*) FILTER (WHERE e.direction = 'in'  AND e.reverses_id IS NULL)::int  AS receipt_count,
-      COUNT(*) FILTER (WHERE e.direction = 'out' AND e.reverses_id IS NULL)::int  AS expense_count
+      COUNT(*) FILTER (WHERE e.direction = 'out' AND e.is_cash AND e.reverses_id IS NULL)::int  AS expense_count
     FROM ledger_entries e
     JOIN projects pr                   ON pr.id = e.project_id
     LEFT JOIN customer_properties prop ON prop.id = pr.property_id
@@ -71,29 +71,20 @@ export const KPIS_SQL = `
     WHERE status = 'active'
       AND balance_paise > 0
   ),
-  -- Client requirement: "number of meter installations done on the selected date".
-  -- Dated by completed_at - never by end_date, which is a schedule, not a fact.
-  --
-  -- Matched on milestone_name, the workflow stage the task belongs to. The
-  -- original filter tested t.name ILIKE '%meter%' OR t.code ILIKE '%LIA-011%'
-  -- and could never match: project_tasks.name is empty on all 9,778 rows, and
-  -- code holds a generated task number (TSK-ONEOHM_EPC-YYYY-NNNN) rather than a
-  -- workflow code. This KPI therefore reported 0 permanently.
-  --
-  -- 'Net Metering Application' is deliberately excluded - applying to the DISCOM
-  -- is not the same event as the meter going in, and counting both would roughly
-  -- double the figure.
+  -- Was a copy of this predicate inline. It now lives in v_project_commissioning
+  -- so Recovery and this KPI can never drift apart.
   meters AS (
     SELECT COUNT(*)::int AS meter_installations
-    FROM project_tasks t
-    JOIN projects pr             ON pr.id = t.project_id AND pr.deleted_at IS NULL
-    JOIN customer_properties cpr ON cpr.id = pr.property_id
-    WHERE t.deleted_at IS NULL
-      AND t.status = 'done'
-      AND t.completed_at IS NOT NULL
-      AND BTRIM(LOWER(t.milestone_name)) LIKE 'net meter installation%'
-      AND t.completed_at::date >= $1::date
-      AND t.completed_at::date <= $2::date
+    FROM v_project_commissioning c
+    JOIN projects pr ON pr.id = c.project_id AND pr.deleted_at IS NULL
+    WHERE c.meter_completed_at::date >= $1::date
+      AND c.meter_completed_at::date <= $2::date
+  ),
+  -- What WE owe, so the page that shows money owed to us shows both directions.
+  -- A snapshot as of today, like outstanding — a debt does not belong to a month.
+  payable AS (
+    SELECT COALESCE(SUM(payable_paise) FILTER (WHERE payable_paise > 0), 0)::BIGINT AS vendor_payable_paise
+    FROM v_vendor_payable
   ),
   credit AS (
     SELECT COALESCE(SUM(unallocated_paise), 0)::BIGINT AS unallocated_paise
@@ -109,8 +100,9 @@ export const KPIS_SQL = `
     snapshot.overdue_count     AS "overdueCount",
     snapshot.overdue_paise     AS "overduePaise",
     credit.unallocated_paise   AS "unallocatedPaise",
-    meters.meter_installations AS "meterInstallations"
-  FROM flows, snapshot, credit, meters
+    meters.meter_installations AS "meterInstallations",
+    payable.vendor_payable_paise AS "vendorPayablePaise"
+  FROM flows, snapshot, credit, meters, payable
 `;
 
 /**
@@ -131,8 +123,13 @@ export const CASH_FLOW_SQL = `
   SELECT
     to_char(b.bucket, 'YYYY-MM-DD')                                          AS "bucket",
     COALESCE(SUM(e.amount_paise) FILTER (WHERE e.direction = 'in'), 0)::BIGINT  AS "cashInPaise",
-    COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out'), 0)::BIGINT AS "cashOutPaise",
-    COALESCE(SUM(e.amount_paise), 0)::BIGINT                                  AS "netPaise"
+    COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out' AND e.is_cash), 0)::BIGINT AS "cashOutPaise",
+    -- Net must equal cashIn - cashOut on this same row. is_cash is enforced
+    -- true on every 'in' row (chk_ledger_entries_credit_is_out), so filtering
+    -- this SUM on is_cash alone keeps all revenue and only cash spend: a bill
+    -- on credit cannot silently shrink "net cash" while being excluded from the
+    -- cash-out bar right next to it on the same chart.
+    COALESCE(SUM(e.amount_paise) FILTER (WHERE e.is_cash), 0)::BIGINT         AS "netPaise"
   FROM buckets b
   LEFT JOIN ledger_entries e
     ON date_trunc($3, e.value_date) = b.bucket
@@ -143,13 +140,14 @@ export const CASH_FLOW_SQL = `
 /** Money out grouped by category, for the selected period. */
 export const SPEND_BY_CATEGORY_SQL = `
   SELECT
-    COALESCE(category, 'misc')            AS "category",
+    ledger_norm_category(category)        AS "category",
     SUM(-amount_paise)::BIGINT            AS "totalPaise"
   FROM ledger_entries
   WHERE direction = 'out'
+    AND is_cash
     AND value_date >= $1::date
     AND value_date <= $2::date
-  GROUP BY COALESCE(category, 'misc')
+  GROUP BY ledger_norm_category(category)
   ORDER BY "totalPaise" DESC
 `;
 
@@ -187,7 +185,11 @@ export const LEDGER_PAGE_SQL = `
     to_char(e.value_date, 'YYYY-MM-DD') AS "valueDate",
     e.value_date_is_inferred AS "valueDateIsInferred",
     e.payment_method        AS "paymentMethod",
-    e.reference, e.counterparty, e.category, e.notes,
+    e.reference, e.counterparty, e.notes,
+    e.is_cash                     AS "isCash",
+    e.vendor_id                   AS "vendorId",
+    vn.name                       AS "vendorName",
+    ledger_norm_category(e.category) AS "category",
     e.reverses_id           AS "reversesId",
     e.reversal_reason       AS "reversalReason",
     e.created_at            AS "createdAt",
@@ -199,6 +201,7 @@ export const LEDGER_PAGE_SQL = `
   JOIN projects pr              ON pr.id = e.project_id
   LEFT JOIN customer_properties prop ON prop.id = pr.property_id
   LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+  LEFT JOIN vendors vn               ON vn.id = e.vendor_id
   WHERE ($1::text IS NULL OR e.direction = $1)
     AND ($2::date IS NULL OR e.value_date >= $2)
     AND ($3::date IS NULL OR e.value_date <= $3)

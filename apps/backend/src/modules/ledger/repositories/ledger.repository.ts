@@ -79,6 +79,8 @@ export interface ProjectBalanceRow {
   netCashPaise: number;
   receiptCount: number;
   milestoneCount: number;
+  /** What the project owes vendors and has not paid. The credit mirror of `spentPaise`. */
+  committedUnpaidPaise: number;
 }
 
 /**
@@ -147,6 +149,7 @@ export class LedgerRepository {
     'netCashPaise',
     'receiptCount',
     'milestoneCount',
+    'committedUnpaidPaise',
   ] as const;
 
   /**
@@ -292,7 +295,8 @@ export class LedgerRepository {
          unallocated_paise AS "unallocatedPaise",
          net_cash_paise    AS "netCashPaise",
          receipt_count     AS "receiptCount",
-         milestone_count   AS "milestoneCount"
+         milestone_count   AS "milestoneCount",
+         committed_unpaid_paise AS "committedUnpaidPaise"
        FROM v_project_balance
        WHERE project_id = $1`,
       [projectId],
