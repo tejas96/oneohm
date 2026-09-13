@@ -39,15 +39,24 @@ export interface PaymentApproval {
   category?: string | null;
   reference?: string | null;
   notes?: string | null;
+  /** The vendor this claim is about. Set only when `kind === 'vendor_payment'`. */
+  vendorId?: string | null;
+  vendorName?: string | null;
+  /** True when approving this records an obligation rather than moving cash. */
+  isCredit?: boolean;
   reversesEntryId?: string | null;
   reversalReason?: string | null;
   /** Every image attached to this payment, oldest first. */
   proofs?: ProofRef[];
   submittedBy: string;
   submittedByName?: string | null;
+  /** Comma-separated, most senior first. Null when the user holds no role. */
+  submittedByRoles?: string | null;
   submittedAt: string;
   reviewedBy?: string | null;
   reviewedByName?: string | null;
+  /** Comma-separated, most senior first. Null when the user holds no role. */
+  reviewedByRoles?: string | null;
   reviewedAt?: string | null;
   rejectionReason?: string | null;
   ledgerEntryId?: string | null;
@@ -91,9 +100,29 @@ interface ImpactLine {
   settlesFully: boolean;
 }
 
+/**
+ * A vendor payment's impact on what we owe that vendor — a sibling of `lines`,
+ * never folded into it: `lines`/`ImpactLine` is milestone-only, and a vendor
+ * payment never allocates against a milestone. Present only when
+ * `kind === 'vendor_payment'`.
+ */
+export interface VendorPayableImpact {
+  vendorName: string | null;
+  /** The vendor's net payable right now. */
+  beforePaise: number;
+  /**
+   * `beforePaise` minus this payment's magnitude. Can go NEGATIVE — a vendor
+   * advance, paying ahead of what's owed — and is deliberately not clamped:
+   * the negative number is what tells the approver this payment overshoots
+   * the payable.
+   */
+  afterPaise: number;
+}
+
 export interface ApprovalImpact {
   lines: ImpactLine[];
   unallocatedPaise: number;
+  vendorPayable?: VendorPayableImpact;
 }
 
 export interface ApprovalSummary {

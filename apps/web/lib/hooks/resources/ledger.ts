@@ -55,6 +55,14 @@ export interface LedgerEntry {
   counterparty?: string | null;
   category?: string | null;
   notes?: string | null;
+  /**
+   * Did cash actually move? False means the cost is taken on and the money is
+   * still in the bank — a bill on credit.
+   */
+  isCash?: boolean;
+  /** The vendor this entry is owed to or paid to. */
+  vendorId?: string | null;
+  vendorName?: string | null;
   /** Set when this entry reverses another — render it as a correction. */
   reversesId?: string | null;
   reversalReason?: string | null;
@@ -126,6 +134,12 @@ export interface ProjectLedgerSummary {
   /** Agreed after signing. `quotedPaise + changeOrderPaise === contractPaise`. */
   changeOrderPaise: Paise;
   expectedPaise: Paise;
+  /**
+   * Money actually written off on a waived milestone — the unpaid remainder,
+   * not the milestone's original expected amount. A milestone waived after
+   * part of it was already collected writes off only what was left; the part
+   * already collected was never at risk and must not be counted twice.
+   */
   waivedPaise: Paise;
   receivedPaise: Paise;
   spentPaise: Paise;
@@ -138,6 +152,8 @@ export interface ProjectLedgerSummary {
   netCashPaise: Paise;
   receiptCount: number;
   milestoneCount: number;
+  /** What the project owes vendors and has not paid yet — the credit mirror of `spentPaise`. */
+  committedUnpaidPaise?: Paise;
   milestones: MilestoneBalance[];
 }
 
@@ -179,6 +195,15 @@ export interface Receivable {
   dueDate?: string | null;
   daysOverdue: number;
   derivedStatus: MilestoneDerivedStatus;
+  wantsLoan: boolean;
+  /** A BANKS code or a typed name. Render through `bankLabel`. */
+  financingBank?: string | null;
+  meterCompletedAt?: string | null;
+  /**
+   * Null, never 0, when the meter task predates activity logging. Zero would
+   * read as "commissioned today" on a project commissioned months ago.
+   */
+  daysSinceMeter?: number | null;
 }
 
 export interface Paginated<T> {
@@ -295,7 +320,10 @@ export function useLedgerEntries(
 }
 
 export interface ReceivableFilters {
-  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus';
+  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus' | 'no_due_date';
+  /** `recovery` = the net meter is in and money is still open. */
+  scope?: 'all' | 'recovery';
+  funding?: 'loan' | 'cash';
   search?: string;
   sortBy?: 'daysOverdue' | 'outstandingAmount' | 'dueDate' | 'customerName';
   sortOrder?: 'asc' | 'desc';
@@ -318,6 +346,14 @@ export interface ReceivablesPage extends Paginated<Receivable> {
     all: number;
     totalOutstandingPaise: number;
     overduePaise: number;
+    /** `no_due_date` is a SUBSET of `current` — collectible but not forecastable. */
+    noDueDate: number;
+    noDueDatePaise: Paise;
+    /** Distinct projects in scope — `all` counts milestones, this counts projects. */
+    recoveryProjects: number;
+    /** Loan-funded projects with no lender milestone at all — the bank's share
+     *  is not being tracked as anyone's debt. Counted, never repaired. */
+    missingLenderProjects: number;
   };
 }
 
@@ -334,6 +370,46 @@ export function useReceivables(
         params,
         signal,
       });
+      return data;
+    },
+    staleTime: 30_000,
+  });
+}
+
+export interface PayableRow {
+  vendorId: string;
+  vendorName: string;
+  vendorCode: string;
+  creditDays?: number | null;
+  /** NEGATIVE means we have paid ahead — an advance, not a debt. */
+  payablePaise: Paise;
+  billedPaise: Paise;
+  paidPaise: Paise;
+  oldestBillDate?: string | null;
+  billCount: number;
+  daysPastTerms?: number | null;
+  isInactive: boolean;
+}
+
+export interface PayablesPage extends Paginated<PayableRow> {
+  /**
+   * Debts and advances are summed SEPARATELY here, never netted — owing one
+   * vendor while holding an advance with another is a debt and a credit, not
+   * one smaller number.
+   */
+  totals: { totalPayablePaise: Paise; vendorsOwedCount: number; advancePaise: Paise };
+}
+
+export function usePayables(
+  filters: { search?: string; onlyOwing?: boolean; page?: number; limit?: number } = {},
+): UseQueryResult<PayablesPage, AxiosError> {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
+  );
+  return useQuery({
+    queryKey: [...ledgerKeys.root(), 'payables', params],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<PayablesPage>('/finance/payables', { params, signal });
       return data;
     },
     staleTime: 30_000,
@@ -405,6 +481,24 @@ export interface RecordExpenseInput {
   paymentMethod?: string;
   notes?: string;
   proofDocument?: ProofDocumentInput;
+}
+
+export interface RecordVendorPaymentInput {
+  amountPaise: Paise;
+  /** Omit to default to today. */
+  valueDate?: string;
+  vendorId: string;
+  paymentMethod?: string;
+  reference?: string;
+  notes?: string;
+  /**
+   * Plural only. Unlike `RecordReceiptInput`/`RecordExpenseInput`, the
+   * backend's `RecordVendorPaymentDto` has no legacy singular `proofDocument`
+   * field to stay compatible with — this endpoint is new. The global
+   * `ValidationPipe` runs with `forbidNonWhitelisted`, so sending a singular
+   * `proofDocument` here is a 400, not a silently dropped field.
+   */
+  proofDocuments?: ProofDocumentInput[];
 }
 
 /**
@@ -491,6 +585,26 @@ export function useLedgerMutations(projectId: string) {
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
 
+  // Mirrors `recordExpense` exactly — same invalidation, same toast shape.
+  // `invalidate()` busts the whole `ledgerKeys.root()` tree, which is also the
+  // root `usePayables` keys its query on, so a vendor's balance on the
+  // Payables page is never left stale after this is approved.
+  const recordVendorPayment = useMutation({
+    mutationFn: async (input: RecordVendorPaymentInput) => {
+      const { data } = await apiClient.post<PaymentApproval>(
+        `/projects/${projectId}/ledger/vendor-payments`,
+        input,
+      );
+      return data;
+    },
+    onSuccess: (request) => {
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['payment-approvals'] });
+      showToast.success(`${request.requestNo} submitted for approval`);
+    },
+    onError: (error) => showToast.error(getErrorMessage(error)),
+  });
+
   /** Corrections are new rows — the original stays visible forever. */
   const reverseEntry = useMutation({
     mutationFn: async ({ entryId, reason }: { entryId: string; reason: string }) => {
@@ -542,5 +656,12 @@ export function useLedgerMutations(projectId: string) {
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
 
-  return { recordReceipt, recordExpense, reverseEntry, addChangeOrder, waiveMilestone };
+  return {
+    recordReceipt,
+    recordExpense,
+    recordVendorPayment,
+    reverseEntry,
+    addChangeOrder,
+    waiveMilestone,
+  };
 }
