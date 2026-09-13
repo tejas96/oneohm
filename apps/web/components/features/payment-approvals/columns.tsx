@@ -152,9 +152,8 @@ export const APPROVAL_COLUMNS: CrmColumn<ApprovalRow>[] = [
   },
   {
     field: 'submittedByName',
-    header: 'Submitted by',
+    header: 'Recorded by',
     track: crm['col-approval-submitter'],
-    defaultHidden: true,
     // The role read as the person's capacity — most senior first, exactly as
     // the API orders it. Never split, truncated to one, or re-sorted here.
     // Null (no role held) renders nothing, not an empty second line.
