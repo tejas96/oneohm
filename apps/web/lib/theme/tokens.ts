@@ -393,6 +393,11 @@ const root = {
     'col-recv-paid': '112px',
     'col-recv-outstanding': '124px',
     'col-recv-ageing': '116px',
+    // Recovery-only columns, appended after ageing (Task 15). "Since meter"
+    // renders up to 4 digits plus "d"; "Bank" is sized for the longest bank
+    // label, which is roughly as wide as the vendor column.
+    'col-recv-meter': '104px',
+    'col-recv-bank': 'minmax(160px,1.2fr)',
     // Payables grid — vendor, net payable, oldest credit bill, days past
     // agreed terms, bill count, row menu. Payable is sized for
     // "Advance ₹XX,XX,XXX.XX", the longest string that column ever renders.

@@ -1,8 +1,11 @@
 'use client';
 
-import { Box } from '@mui/material';
+import { Box, Button } from '@mui/material';
+import { bankLabel } from '@tejas96/shared/constants';
 import NextLink from 'next/link';
-import type { JSX } from 'react';
+import { useState, type JSX } from 'react';
+
+import { AttachBankDialog } from './attach-bank-dialog';
 
 import { CrmStatusPill, type CrmColumn, type CrmTone } from '@/components/shared/crm-table';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -20,7 +23,10 @@ export type ReceivableRow = Receivable & Record<string, unknown>;
  * still readable to someone who cannot distinguish the tones.
  */
 function ageingBucket(days: number): { label: string; tone: CrmTone } {
-  if (days <= 0) return { label: 'Current', tone: 'neutral' };
+  // "Not due yet", matching the quick-filter chip's rename (finance-receivables-page.tsx)
+  // — the two must agree, or a row's pill and the active chip describe the
+  // same milestone in two different words.
+  if (days <= 0) return { label: 'Not due yet', tone: 'neutral' };
   if (days <= 30) return { label: '1–30 days', tone: 'warning' };
   if (days <= 60) return { label: '31–60 days', tone: 'warning' };
   if (days <= 90) return { label: '61–90 days', tone: 'danger' };
@@ -138,5 +144,89 @@ export const RECEIVABLE_COLUMNS: CrmColumn<ReceivableRow>[] = [
       const { label, tone } = ageingBucket(row.daysOverdue);
       return <CrmStatusPill label={label} tone={tone} size="sm" />;
     },
+  },
+];
+
+/**
+ * The Bank cell owns its own dialog rather than lifting state to the page.
+ *
+ * Unlike `payables-columns.tsx`'s row menu (one dialog, one piece of page
+ * state, a callback threaded through a column-builder function), this column
+ * has to live in a plain exported array — `RECOVERY_COLUMNS` is picked with a
+ * bare ternary alongside the static `RECEIVABLE_COLUMNS` — so there is no
+ * per-row callback to thread. A dialog owned by the cell that opened it needs
+ * none: `AttachBankDialog`'s own `onSuccess` invalidates `ledgerKeys.root()`,
+ * which is what `useReceivables` is keyed on, so the row's `financingBank`
+ * arrives from the next refetch and this cell just re-renders in place — no
+ * page-level state, no lost scroll position, no lost filters.
+ */
+function BankCell({ row }: { row: ReceivableRow }): JSX.Element {
+  const [open, setOpen] = useState(false);
+
+  if (row.financingBank) {
+    return (
+      <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {bankLabel(row.financingBank)}
+      </Box>
+    );
+  }
+
+  // propertyId is non-null for every wantsLoan row (RECEIVABLES_JOINS' LEFT
+  // JOIN only misses when the project has no property at all, and wants_loan
+  // itself lives on that same property row) — the `!propertyId` half of this
+  // guard is a defensive fallback for a state the data cannot actually reach,
+  // not a case this screen expects to render.
+  const { propertyId } = row;
+  if (!row.wantsLoan || !propertyId) {
+    return <Empty />;
+  }
+
+  return (
+    <>
+      {/* Not muted text: a collector looking at this row has a problem —
+          nobody to call — that they cannot fix from anywhere else on this
+          screen. A dash here would hide the exact gap this column exists to
+          surface. */}
+      <Button size="small" variant="outlined" onClick={() => setOpen(true)}>
+        Add bank
+      </Button>
+      <AttachBankDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        propertyId={propertyId}
+        customerName={row.customerName ?? row.projectName}
+        projectNumber={row.projectNumber}
+        outstandingPaise={row.outstandingAmount * 100}
+        currentValue={row.financingBank}
+      />
+    </>
+  );
+}
+
+/**
+ * `RECEIVABLE_COLUMNS` plus the two facts that only matter once you are
+ * chasing a delivered-but-unpaid job: how long it has been since the meter
+ * went live, and who the lender is. `finance-receivables-page.tsx` picks this
+ * array whenever `scope !== 'all'` — Recovery — Cash rows run through it too,
+ * where every `wantsLoan` is false and the Bank cell is always the plain dash.
+ */
+export const RECOVERY_COLUMNS: CrmColumn<ReceivableRow>[] = [
+  ...RECEIVABLE_COLUMNS,
+  {
+    field: 'daysSinceMeter',
+    header: 'Since meter',
+    track: crm['col-recv-meter'],
+    align: 'right',
+    // Null, never 0 — a project commissioned months ago must never read as
+    // "commissioned today". Null means the meter task predates activity
+    // logging, not that zero days have passed.
+    renderCell: (row) => (row.daysSinceMeter == null ? <Empty /> : `${row.daysSinceMeter}d`),
+  },
+  {
+    field: 'financingBank',
+    header: 'Bank',
+    track: crm['col-recv-bank'],
+    stopPropagation: true,
+    renderCell: (row) => <BankCell row={row} />,
   },
 ];

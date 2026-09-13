@@ -196,6 +196,8 @@
   --crm-col-recv-paid: 112px;
   --crm-col-recv-outstanding: 124px;
   --crm-col-recv-ageing: 116px;
+  --crm-col-recv-meter: 104px;
+  --crm-col-recv-bank: minmax(160px,1.2fr);
   --crm-col-pay-vendor: minmax(180px,1.6fr);
   --crm-col-pay-payable: 160px;
   --crm-col-pay-oldest: 112px;

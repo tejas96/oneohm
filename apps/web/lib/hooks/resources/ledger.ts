@@ -195,6 +195,13 @@ export interface Receivable {
   dueDate?: string | null;
   daysOverdue: number;
   derivedStatus: MilestoneDerivedStatus;
+  /**
+   * The customer_properties row this milestone's project is on. Null only
+   * when the project itself has no property, which cannot happen when
+   * `wantsLoan` is true (wants_loan lives on this same row). Feeds
+   * AttachBankDialog's propertyId prop — the recovery-loan "Add bank" action.
+   */
+  propertyId?: string | null;
   wantsLoan: boolean;
   /** A BANKS code or a typed name. Render through `bankLabel`. */
   financingBank?: string | null;

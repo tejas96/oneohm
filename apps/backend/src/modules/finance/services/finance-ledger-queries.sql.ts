@@ -342,6 +342,11 @@ export const RECEIVABLES_SQL = `
     to_char(v.due_date, 'YYYY-MM-DD') AS "dueDate",
     v.days_overdue     AS "daysOverdue",
     v.derived_status   AS "derivedStatus",
+    -- Added for AttachBankDialog's caller (Task 15): RECEIVABLES_JOINS's
+    -- LEFT JOIN means this is NULL only when the project itself has no
+    -- property row, which cannot happen for a wantsLoan row -- wants_loan
+    -- lives on prop, so a true value implies prop matched.
+    prop.id                                          AS "propertyId",
     COALESCE(prop.wants_loan, false)                AS "wantsLoan",
     prop.financing_bank                             AS "financingBank",
     to_char(com.meter_completed_at, 'YYYY-MM-DD')   AS "meterCompletedAt",
