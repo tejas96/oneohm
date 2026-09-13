@@ -240,6 +240,8 @@ export class FinanceReportingService {
       limit?: number;
       bucket?: string | null;
       search?: string | null;
+      scope?: string | null;
+      funding?: string | null;
       sortBy?: string | null;
       sortOrder?: 'asc' | 'desc' | null;
     } = {},
@@ -252,7 +254,9 @@ export class FinanceReportingService {
   }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
-    const filters = [opts.bucket ?? null, opts.search ?? null];
+    // Shared by RECEIVABLES_SQL and RECEIVABLES_COUNT_SQL, which both expand
+    // RECEIVABLES_FILTERS: $1 bucket, $2 search, $3 scope, $4 funding.
+    const filters = [opts.bucket ?? null, opts.search ?? null, opts.scope ?? null, opts.funding ?? null];
 
     const [rows, [countRow], [bucketRow]] = await Promise.all([
       this.dataSource.query(RECEIVABLES_SQL, [
@@ -263,10 +267,17 @@ export class FinanceReportingService {
         (page - 1) * limit,
       ]),
       this.dataSource.query(RECEIVABLES_COUNT_SQL, filters),
-      // Follows `search` but not `bucket`: search narrows the whole page, so
-      // the headline totals must follow it, while selecting one chip must not
-      // zero the counts on the others.
-      this.dataSource.query(RECEIVABLES_BUCKETS_SQL, [opts.search ?? null]),
+      // Follows `search`, `scope` and `funding` but not `bucket`: those three
+      // narrow the whole page, so the headline totals must follow them, while
+      // selecting one ageing chip must not zero the counts on the others.
+      // RECEIVABLES_BUCKETS_SQL does NOT share RECEIVABLES_FILTERS and has its
+      // own, independent placeholder numbering: $1 search, $2 scope, $3
+      // funding — bucket is never passed to it at all.
+      this.dataSource.query(RECEIVABLES_BUCKETS_SQL, [
+        opts.search ?? null,
+        opts.scope ?? null,
+        opts.funding ?? null,
+      ]),
     ]);
 
     return {

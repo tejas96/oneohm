@@ -118,6 +118,8 @@ export class FinanceController {
       limit: query.limit ?? 25,
       bucket: query.bucket,
       search: query.search,
+      scope: query.scope,
+      funding: query.funding,
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,
     });

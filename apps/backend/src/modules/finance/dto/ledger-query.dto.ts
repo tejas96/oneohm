@@ -110,13 +110,33 @@ export class LedgerEntriesQueryDto extends LedgerRangeQueryDto {
 
 export class ReceivablesQueryDto {
   @ApiPropertyOptional({
-    enum: ['current', '1-30', '31-60', '61-90', '90plus'],
-    description: 'Ageing bucket. Computed server-side so the chip counts and the rows agree.',
+    enum: ['current', '1-30', '31-60', '61-90', '90plus', 'no_due_date'],
+    description:
+      'Ageing bucket. `no_due_date` is a SUBSET of `current` — money with no due date at all, ' +
+      'which can be collected but cannot be forecast.',
   })
-  @IsIn(['current', '1-30', '31-60', '61-90', '90plus'])
+  @IsIn(['current', '1-30', '31-60', '61-90', '90plus', 'no_due_date'])
   @IsOptional()
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))
-  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus';
+  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus' | 'no_due_date';
+
+  @ApiPropertyOptional({
+    enum: ['all', 'recovery'],
+    description:
+      '`recovery` keeps only projects whose net meter is installed — the job is delivered and ' +
+      'the money is still open. Never reads projects.status, which is not maintained: 7 rows ' +
+      'claim completed while 41 have the meter in.',
+  })
+  @IsIn(['all', 'recovery'])
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  scope?: 'all' | 'recovery';
+
+  @ApiPropertyOptional({ enum: ['loan', 'cash'], description: 'Reads customer_properties.wants_loan.' })
+  @IsIn(['loan', 'cash'])
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  funding?: 'loan' | 'cash';
 
   @ApiPropertyOptional({ description: 'Matches customer, project number or name, or milestone.' })
   @IsString()

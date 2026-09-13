@@ -278,11 +278,12 @@ const RECEIVABLES_FILTERS = `
     AND v.balance_paise > 0
     AND (
       $1::text IS NULL
-      OR ($1 = 'current' AND v.days_overdue <= 0)
-      OR ($1 = '1-30'    AND v.days_overdue BETWEEN 1 AND 30)
-      OR ($1 = '31-60'   AND v.days_overdue BETWEEN 31 AND 60)
-      OR ($1 = '61-90'   AND v.days_overdue BETWEEN 61 AND 90)
-      OR ($1 = '90plus'  AND v.days_overdue > 90)
+      OR ($1 = 'current'     AND v.days_overdue <= 0)
+      OR ($1 = '1-30'        AND v.days_overdue BETWEEN 1 AND 30)
+      OR ($1 = '31-60'       AND v.days_overdue BETWEEN 31 AND 60)
+      OR ($1 = '61-90'       AND v.days_overdue BETWEEN 61 AND 90)
+      OR ($1 = '90plus'      AND v.days_overdue > 90)
+      OR ($1 = 'no_due_date' AND v.due_date IS NULL)
     )
     AND (
       $2::text IS NULL
@@ -290,6 +291,17 @@ const RECEIVABLES_FILTERS = `
       OR pr.name           ILIKE '%' || $2 || '%'
       OR v.name            ILIKE '%' || $2 || '%'
       OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $2 || '%'
+    )
+    -- $3 scope: 'recovery' keeps only projects whose net meter is installed —
+    -- the job is delivered and the money is still open.
+    AND ($3::text IS NULL OR $3 <> 'recovery' OR com.project_id IS NOT NULL)
+    -- $4 funding: COALESCE on the cash branch so a milestone whose project has
+    -- no property row still appears in one segment. Money in neither tab is
+    -- worse than money in the wrong one.
+    AND (
+      $4::text IS NULL
+      OR ($4 = 'loan' AND prop.wants_loan = true)
+      OR ($4 = 'cash' AND COALESCE(prop.wants_loan, false) = false)
     )
 `;
 
@@ -299,12 +311,18 @@ const RECEIVABLES_FILTERS = `
  * The count previously omitted the customer tables; adding a customer-name
  * search without adding them here too would have made "showing 1-25 of N"
  * disagree with the rows actually returned.
+ *
+ * `v_project_commissioning` is a LEFT join, not an inner one, so the default
+ * `scope = all` is unaffected. The `recovery` scope is expressed as a
+ * predicate in RECEIVABLES_FILTERS rather than by swapping join types, so
+ * this one join clause serves every query.
  */
 const RECEIVABLES_JOINS = `
   FROM v_milestone_balance v
   JOIN projects pr                   ON pr.id = v.project_id AND pr.deleted_at IS NULL
   LEFT JOIN customer_properties prop ON prop.id = pr.property_id
   LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+  LEFT JOIN v_project_commissioning com ON com.project_id = pr.id
 `;
 
 export const RECEIVABLES_SQL = `
@@ -323,22 +341,30 @@ export const RECEIVABLES_SQL = `
     v.balance_paise    AS "balancePaise",
     to_char(v.due_date, 'YYYY-MM-DD') AS "dueDate",
     v.days_overdue     AS "daysOverdue",
-    v.derived_status   AS "derivedStatus"
+    v.derived_status   AS "derivedStatus",
+    COALESCE(prop.wants_loan, false)                AS "wantsLoan",
+    prop.financing_bank                             AS "financingBank",
+    to_char(com.meter_completed_at, 'YYYY-MM-DD')   AS "meterCompletedAt",
+    -- NULL, never 0, when there is no meter date yet — zero would read as
+    -- "commissioned today" on a project commissioned months ago.
+    CASE WHEN com.meter_completed_at IS NULL THEN NULL
+         ELSE (CURRENT_DATE - com.meter_completed_at::date)::int
+    END                                             AS "daysSinceMeter"
   ${RECEIVABLES_JOINS}
   ${RECEIVABLES_FILTERS}
   ORDER BY
-    -- $3/$4 are whitelisted on the DTO and compared, never interpolated.
-    CASE WHEN $3 = 'daysOverdue'       AND $4 = 'asc'  THEN v.days_overdue   END ASC,
-    CASE WHEN $3 = 'daysOverdue'       AND $4 = 'desc' THEN v.days_overdue   END DESC,
-    CASE WHEN $3 = 'outstandingAmount' AND $4 = 'asc'  THEN v.balance_paise  END ASC,
-    CASE WHEN $3 = 'outstandingAmount' AND $4 = 'desc' THEN v.balance_paise  END DESC,
-    CASE WHEN $3 = 'dueDate'           AND $4 = 'asc'  THEN v.due_date       END ASC,
-    CASE WHEN $3 = 'dueDate'           AND $4 = 'desc' THEN v.due_date       END DESC,
-    CASE WHEN $3 = 'customerName'      AND $4 = 'asc'  THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
-    CASE WHEN $3 = 'customerName'      AND $4 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
+    -- $5/$6 are whitelisted on the DTO and compared, never interpolated.
+    CASE WHEN $5 = 'daysOverdue'       AND $6 = 'asc'  THEN v.days_overdue   END ASC,
+    CASE WHEN $5 = 'daysOverdue'       AND $6 = 'desc' THEN v.days_overdue   END DESC,
+    CASE WHEN $5 = 'outstandingAmount' AND $6 = 'asc'  THEN v.balance_paise  END ASC,
+    CASE WHEN $5 = 'outstandingAmount' AND $6 = 'desc' THEN v.balance_paise  END DESC,
+    CASE WHEN $5 = 'dueDate'           AND $6 = 'asc'  THEN v.due_date       END ASC,
+    CASE WHEN $5 = 'dueDate'           AND $6 = 'desc' THEN v.due_date       END DESC,
+    CASE WHEN $5 = 'customerName'      AND $6 = 'asc'  THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
+    CASE WHEN $5 = 'customerName'      AND $6 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
     -- Default: worst overdue first, which is the order to work the list in.
     v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number
-  LIMIT $5 OFFSET $6
+  LIMIT $7 OFFSET $8
 `;
 
 export const RECEIVABLES_COUNT_SQL = `
@@ -354,6 +380,14 @@ export const RECEIVABLES_COUNT_SQL = `
  * headline totals must follow it or they claim a filtered list is worth the
  * org-wide figure. The bucket is deliberately ignored, because selecting one
  * chip must not zero the counts on the others.
+ *
+ * `scope` and `funding` ARE honoured here, so the chips describe the list
+ * actually on screen.
+ *
+ * IMPORTANT: this query does NOT share RECEIVABLES_FILTERS and its
+ * placeholders are numbered independently of RECEIVABLES_SQL /
+ * RECEIVABLES_COUNT_SQL above. Here $1 is `search` (bucket is never a
+ * parameter of this query at all), $2 is `scope`, $3 is `funding`.
  */
 export const RECEIVABLES_BUCKETS_SQL = `
   SELECT
@@ -364,7 +398,18 @@ export const RECEIVABLES_BUCKETS_SQL = `
     COUNT(*) FILTER (WHERE v.days_overdue > 90)                AS "d90plus",
     COUNT(*)                                                   AS "all",
     COALESCE(SUM(v.balance_paise), 0)                          AS "totalOutstandingPaise",
-    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.days_overdue > 0), 0) AS "overduePaise"
+    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.days_overdue > 0), 0) AS "overduePaise",
+    COUNT(*) FILTER (WHERE v.due_date IS NULL)                          AS "noDueDate",
+    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.due_date IS NULL), 0) AS "noDueDatePaise",
+    COUNT(DISTINCT pr.id)                                              AS "recoveryProjects",
+    -- Defect 5: a loan project with no lender milestone means the customer is
+    -- being chased for the bank's share. Counted, never repaired — a 10/70/20
+    -- guess would silently move money off a customer's name.
+    COUNT(DISTINCT pr.id) FILTER (
+      WHERE COALESCE(prop.wants_loan, false)
+        AND NOT EXISTS (SELECT 1 FROM payment_milestones m2
+                         WHERE m2.project_id = pr.id AND m2.payer_type = 'lender')
+    )                                                                  AS "missingLenderProjects"
   ${RECEIVABLES_JOINS}
   WHERE v.status = 'active'
     AND v.balance_paise > 0
@@ -374,6 +419,12 @@ export const RECEIVABLES_BUCKETS_SQL = `
       OR pr.name           ILIKE '%' || $1 || '%'
       OR v.name            ILIKE '%' || $1 || '%'
       OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $1 || '%'
+    )
+    AND ($2::text IS NULL OR $2 <> 'recovery' OR com.project_id IS NOT NULL)
+    AND (
+      $3::text IS NULL
+      OR ($3 = 'loan' AND prop.wants_loan = true)
+      OR ($3 = 'cash' AND COALESCE(prop.wants_loan, false) = false)
     )
 `;
 
