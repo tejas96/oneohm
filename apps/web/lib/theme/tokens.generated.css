@@ -196,6 +196,12 @@
   --crm-col-recv-paid: 112px;
   --crm-col-recv-outstanding: 124px;
   --crm-col-recv-ageing: 116px;
+  --crm-col-pay-vendor: minmax(180px,1.6fr);
+  --crm-col-pay-payable: 160px;
+  --crm-col-pay-oldest: 112px;
+  --crm-col-pay-past-terms: 108px;
+  --crm-col-pay-bills: 76px;
+  --crm-col-pay-actions: 44px;
   --crm-col-cash-date: 104px;
   --crm-col-cash-entry: 150px;
   --crm-col-cash-customer: minmax(150px,1.3fr);
