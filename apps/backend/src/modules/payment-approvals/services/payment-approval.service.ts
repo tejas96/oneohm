@@ -62,7 +62,16 @@ export interface ApprovalRow extends Omit<PendingLedgerEntryEntity, 'createdAt' 
   customerName: string | null;
   customerPhone: string | null;
   submittedByName: string | null;
+  /**
+   * Comma-separated, most senior first (roles.level ascending). Null when the
+   * user holds no role — always present as a column, so never `undefined`.
+   */
+  submittedByRoles: string | null;
   reviewedByName: string | null;
+  reviewedByRoles: string | null;
+  vendorName: string | null;
+  /** True when approving this records an obligation rather than moving cash. */
+  isCredit: boolean;
   /** Every image attached to this payment, oldest first. */
   proofs: ProofRef[];
 }
@@ -630,8 +639,22 @@ export class PaymentApprovalService {
       throw new NotFoundException('Approval request not found');
     }
 
-    // Only receipts allocate. Expenses never touch a milestone, and a reversal's
-    // effect is simply the removal of its target's allocations.
+    // Only receipts allocate against a milestone. Expenses and reversals never
+    // touch one, and a vendor payment reduces what we owe a vendor, not a
+    // project milestone balance.
+    //
+    // A vendor payable before/after preview deliberately is NOT bolted onto
+    // `ImpactLine` here: that type is shaped around a milestone allocation
+    // (`milestoneId`, `milestoneName`, `settlesFully` against a milestone
+    // balance it owns) with no honest way to carry a vendor's payable, and the
+    // approval drawer renders every line in `lines` as a milestone row
+    // (`{line.milestoneName}: {formatPaise(line.appliedPaise)} ... still due`).
+    // Forcing vendor data through those fields would either fail to compile
+    // (the brief's suggested `{label, amountPaise}` shape isn't `ImpactLine`)
+    // or, if coerced into the real fields, render as a fabricated milestone
+    // line for money that never touched one. Nothing to preview beats a
+    // dishonest preview, so this returns empty for every non-receipt kind,
+    // vendor_payment included, exactly as it already did before this change.
     if (row.kind !== 'receipt') {
       return { lines: [], unallocatedPaise: 0 };
     }
