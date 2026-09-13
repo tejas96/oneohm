@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getDataSourceToken } from '@nestjs/typeorm';
+import { PaymentMethod } from '@tejas96/shared/types';
 
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { StorageService } from '../../storage/services/storage.service';
@@ -16,6 +17,14 @@ import { LedgerRepository } from '../repositories/ledger.repository';
 
 const PROJECT = 'project-1';
 const USER = 'user-1';
+
+// task-3-brief.md Step 5 writes its two new tests against these lowerCamelCase
+// names rather than PROJECT/USER above. Aliased here (not renamed in-place)
+// so the brief's test bodies can be copied verbatim.
+const projectId = PROJECT;
+const userId = USER;
+const otherUserId = 'user-2';
+const vendorId = 'vendor-1';
 
 /** Captures what was inserted so the tests can assert on the rows, not the mocks. */
 interface Captured {
@@ -314,6 +323,15 @@ describe('LedgerWriteService', () => {
       );
       expect(captured.allocations).toHaveLength(0);
     });
+
+    it('refuses a credit bill with no vendor', async () => {
+      await expect(
+        service.recordExpense(
+          { projectId, amountPaise: 100_000, category: 'materials', paymentMethod: PaymentMethod.CREDIT },
+          userId,
+        ),
+      ).rejects.toThrow(/owed to a vendor/);
+    });
   });
 
   describe('tenancy', () => {
@@ -468,6 +486,31 @@ describe('LedgerWriteService', () => {
     it('404s on an unknown entry', async () => {
       repo.findEntryById.mockResolvedValue(null);
       await expect(service.reverse('missing', 'x', USER)).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('a reversal inherits the original entry cash flag and vendor', async () => {
+      const original = await service.recordExpense(
+        {
+          projectId,
+          amountPaise: 100_000,
+          category: 'materials',
+          paymentMethod: PaymentMethod.CREDIT,
+          vendorId,
+        },
+        userId,
+      );
+      expect(original.isCash).toBe(false);
+
+      // recordExpense above wrote through the mocked dataSource/manager, not
+      // through `repo` — reverse() reads the entry back via
+      // `ledgerRepository.findEntryById`, so that mock has to be wired to what
+      // was just recorded or `reverse` 404s instead of reversing it.
+      repo.findEntryById.mockResolvedValue(original);
+
+      const reversal = await service.reverse(original.id, 'Wrong vendor', otherUserId);
+
+      expect(reversal.isCash).toBe(false);
+      expect(reversal.vendorId).toBe(vendorId);
     });
   });
 
