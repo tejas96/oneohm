@@ -26,6 +26,7 @@ import {
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { ChangeRequestTaskService } from './change-request-task.service';
+import { TaskScheduleService } from './task-schedule.service';
 import { systemSizeKwOf } from '../../../common/utils';
 import { BomBaselineService } from '../../bom/services/bom-baseline.service';
 import { BomReadService } from '../../bom/services/bom-read.service';
@@ -80,6 +81,7 @@ export class ProjectService {
     private readonly bomBaselineService: BomBaselineService,
     private readonly bomReadService: BomReadService,
     private readonly changeRequestTaskService: ChangeRequestTaskService,
+    private readonly taskSchedule: TaskScheduleService,
     @Inject(forwardRef(() => MilestoneService))
     private readonly milestoneService: MilestoneService,
     private readonly dataSource: DataSource,
@@ -1056,6 +1058,11 @@ export class ProjectService {
         }
       }
     }
+
+    // Every task was built with `project start + effort days`. That only holds
+    // for a task nothing holds up; the rest lose the date here and get a real
+    // one the day their last dependency closes.
+    await this.taskSchedule.onDependenciesEdited(projectId, [...codeToTaskId.values()], manager);
   }
 
   private async addTeamMembers(

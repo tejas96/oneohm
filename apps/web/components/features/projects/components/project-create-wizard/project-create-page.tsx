@@ -62,7 +62,15 @@ function ProjectCreatePageInner(): React.JSX.Element {
 
   async function handleNext(): Promise<void> {
     if (isLastStep) {
-      await submit();
+      try {
+        await submit();
+      } catch {
+        // `useMutationWithToast` has already shown the failure and rethrown.
+        // Nothing above this caught it, so a rejected create used to paint
+        // Next's error overlay over the wizard on top of the toast. Staying on
+        // Review lets the person fix the quote and press the button again.
+        return;
+      }
     } else {
       await goNext();
     }

@@ -43,6 +43,7 @@ import {
 } from '../dto';
 import { ProjectTaskEntity } from '../entities';
 import { ChangeRequestTaskService } from './change-request-task.service';
+import { TaskScheduleService } from './task-schedule.service';
 import { WorkflowEngineService } from './workflow-engine.service';
 import { WorkflowStepEntity } from '../entities/workflow-step.entity';
 import { ProjectTaskRepository } from '../repositories/project-task.repository';
@@ -92,6 +93,7 @@ export class ProjectTaskService {
     private readonly dataSource: DataSource,
     private readonly eventEmitter: EventEmitter2,
     private readonly changeRequestTaskService: ChangeRequestTaskService,
+    private readonly taskSchedule: TaskScheduleService,
   ) {}
 
   async create(createDto: CreateProjectTaskDto, currentUserId: string): Promise<ProjectTaskEntity> {
@@ -149,6 +151,11 @@ export class ProjectTaskService {
     const pendingDeps = createDto.dependsOnTaskIds;
     delete taskData.dependsOnTaskIds;
 
+    // A due date typed by a person is theirs — the dependency schedule leaves it alone.
+    if (createDto.endDate !== undefined) {
+      taskData.dueDateIsAuto = false;
+    }
+
     if (createDto.name) {
       taskData.nameOverride = createDto.name;
       delete taskData.name;
@@ -177,6 +184,10 @@ export class ProjectTaskService {
       }
       return created;
     });
+
+    if (pendingDeps && pendingDeps.length > 0) {
+      await this.taskSchedule.onDependenciesEdited(projectId, [saved.id]);
+    }
 
     await this.updateAllProgress(projectId);
 
@@ -314,6 +325,11 @@ export class ProjectTaskService {
     // Route fields to override columns (resolveTaskFields reads from overrides)
     const updateData: Record<string, unknown> = { ...updateDto };
     delete updateData.dependsOnTaskIds;
+
+    // A due date typed by a person is theirs — the dependency schedule leaves it alone.
+    if (updateDto.endDate !== undefined) {
+      updateData.dueDateIsAuto = false;
+    }
     if (updateDto.name !== undefined) {
       updateData.nameOverride = updateDto.name;
       delete updateData.name;
@@ -354,11 +370,22 @@ export class ProjectTaskService {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
+    // A dependency was added or taken away, so this task's effort may now start
+    // from a different day — or stop being countable at all.
+    if (updateDto.dependsOnTaskIds !== undefined) {
+      await this.taskSchedule.onDependenciesEdited(projectId, [id]);
+    }
+
     // Trigger progress update if milestone assignment changed
     const oldMilestoneName = existingTask.milestoneName;
     const newMilestoneName = (updateDto as { milestoneName?: string | null }).milestoneName;
     if (newMilestoneName !== undefined && newMilestoneName !== oldMilestoneName) {
       await this.updateAllProgress(projectId);
+    }
+
+    // The schedule may have moved or cleared the due date after that write.
+    if (updateDto.dependsOnTaskIds !== undefined) {
+      return this.findById(id, projectId);
     }
 
     return updated;
@@ -425,6 +452,12 @@ export class ProjectTaskService {
 
     if (!updated) {
       throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+
+    // This task may have been the last thing holding others back. Their effort
+    // starts counting from today.
+    if (newStatus !== existingTask.status) {
+      await this.taskSchedule.onDependencyResolved(projectId, [id]);
     }
 
     if (meta.isFinal && updated.isSpecial) {
@@ -537,6 +570,9 @@ export class ProjectTaskService {
 
     await this.dataSource.transaction(async (manager) => {
       await manager.softDelete(ProjectTaskEntity, { id, projectId });
+      // Before the links are cut, while the tasks this one held up can still be
+      // found: a deleted dependency frees them exactly like a finished one.
+      await this.taskSchedule.onDependencyResolved(projectId, [id], manager);
       await this.taskRepository.removeDependencyReferences(projectId, [id], manager);
       const { done, total } = await this.taskRepository.computeProgress(projectId, manager);
       const progress = total > 0 ? Math.round((100 * done) / total) : 0;
@@ -693,6 +729,8 @@ export class ProjectTaskService {
     }
 
     if (result.statusChanged) {
+      // Same as updateStatus: a task moved on the board can free the tasks after it.
+      await this.taskSchedule.onDependencyResolved(projectId, [id]);
       await this.updateAllProgress(projectId);
     }
 
@@ -1385,7 +1423,11 @@ export class ProjectTaskService {
       }
     }
 
-    if (dto.endDate !== undefined) updateData.endDate = dto.endDate;
+    if (dto.endDate !== undefined) {
+      updateData.endDate = dto.endDate;
+      // A due date typed by a person is theirs — the dependency schedule leaves it alone.
+      updateData.dueDateIsAuto = false;
+    }
     if (dto.startDate !== undefined) updateData.startDate = dto.startDate;
     if (dto.description !== undefined) updateData.descriptionOverride = dto.description;
     if (dto.completionPercentage !== undefined)
@@ -1460,6 +1502,15 @@ export class ProjectTaskService {
       if (dto.status && dto.status !== task.status) {
         await this.updateAllProgress(task.projectId);
       }
+    }
+
+    // Finishing a task from My Work frees the tasks behind it, exactly as it
+    // does on the project board.
+    if (dto.status && dto.status !== task.status) {
+      await this.taskSchedule.onDependencyResolved(task.projectId, [taskId]);
+    }
+    if (dto.dependsOnTaskIds !== undefined) {
+      await this.taskSchedule.onDependenciesEdited(task.projectId, [taskId]);
     }
 
     // Re-fetch enriched task

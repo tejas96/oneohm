@@ -107,6 +107,62 @@ export class ProjectTaskRepository {
     }));
   }
 
+  /**
+   * The tasks held up by any of these ones, for `TaskScheduleService`. Finds
+   * them by the array overlap operator, so one query covers a whole batch. The
+   * dependency itself may already be soft-deleted; only the dependent has to be
+   * live.
+   */
+  async findDependentTaskIds(
+    projectId: string,
+    dependencyTaskIds: string[],
+    manager?: EntityManager,
+  ): Promise<string[]> {
+    if (dependencyTaskIds.length === 0) return [];
+    const repo = this.getRepo(manager);
+    const rows: Array<{ id: string }> = await repo.query(
+      `SELECT id
+         FROM project_tasks
+        WHERE project_id = $1
+          AND deleted_at IS NULL
+          AND depends_on_task_ids && $2::uuid[]`,
+      [projectId, dependencyTaskIds],
+    );
+    return rows.map((r) => r.id);
+  }
+
+  /** Tasks with their step loaded, for the due-date rule (needs `effortDays`). */
+  async findWithStepByIds(
+    projectId: string,
+    taskIds: string[],
+    manager?: EntityManager,
+  ): Promise<ProjectTaskEntity[]> {
+    if (taskIds.length === 0) return [];
+    const repo = this.getRepo(manager);
+    return repo.find({
+      where: { id: In(taskIds), projectId, deletedAt: IsNull() },
+      relations: ['workflowStep'],
+    });
+  }
+
+  /** Status of each live task in the list, keyed by id. */
+  async findStatusesByIds(
+    projectId: string,
+    taskIds: string[],
+    manager?: EntityManager,
+  ): Promise<Map<string, TaskStatus>> {
+    if (taskIds.length === 0) return new Map();
+    const repo = this.getRepo(manager);
+    const rows = await repo
+      .createQueryBuilder('task')
+      .select(['task.id', 'task.status'])
+      .where('task.project_id = :projectId', { projectId })
+      .andWhere('task.deleted_at IS NULL')
+      .andWhere('task.id IN (:...taskIds)', { taskIds })
+      .getMany();
+    return new Map(rows.map((r) => [r.id, r.status]));
+  }
+
   async findById(id: string, projectId: string): Promise<ProjectTaskEntity | null> {
     const task = await this.repository.findOne({
       where: {
@@ -513,33 +569,47 @@ export class ProjectTaskRepository {
   ): Promise<{ data: ProjectTaskEntity[]; total: number }> {
     const skip = (page - 1) * limit;
 
-    const base: Record<string, unknown> = {
-      deletedAt: IsNull(),
-      status: Not(In([TaskStatus.DONE])),
-      project: {
-        status: Not(ProjectStatus.CANCELLED),
-      },
-    };
+    const qb = this.repository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.project', 'project')
+      .leftJoinAndSelect('task.workflowStep', 'workflowStep')
+      .where('task.assigned_to_user_id = :userId', { userId })
+      .andWhere('task.deleted_at IS NULL')
+      .andWhere('project.status != :cancelled', { cancelled: ProjectStatus.CANCELLED });
 
     if (filters.status && filters.status !== TaskStatus.DONE) {
-      base.status = filters.status;
+      qb.andWhere('task.status = :status', { status: filters.status });
+    } else {
+      qb.andWhere('task.status != :done', { done: TaskStatus.DONE });
     }
     if (filters.priority) {
-      base.priority = filters.priority;
+      qb.andWhere('task.priority = :priority', { priority: filters.priority });
     }
 
-    const whereConditions: Record<string, unknown>[] = [{ ...base, assignedToUserId: userId }];
+    // A task waiting on an unfinished dependency is not actionable, so it stays
+    // out of My Tasks — the same rule the grouped view applies in memory, done
+    // here in SQL so a page is never short. Only `done` stops blocking
+    // dependents (task catalog: blocksDependents); a dependency that has been
+    // deleted holds nothing up.
+    qb.andWhere(
+      `NOT EXISTS (
+         SELECT 1
+           FROM project_tasks dep
+          WHERE dep.id = ANY(task.depends_on_task_ids)
+            AND dep.deleted_at IS NULL
+            AND dep.status != :doneDep
+       )`,
+      { doneDep: TaskStatus.DONE },
+    );
 
-    const [data, total] = await this.repository.findAndCount({
-      where: whereConditions,
-      relations: ['project', 'workflowStep'],
-      order: {
-        priority: 'DESC',
-        endDate: 'ASC',
-      },
-      skip,
-      take: limit,
-    });
+    const [data, total] = await qb
+      // Property names, not column names: paginating a joined query makes
+      // TypeORM resolve these against the entity metadata first.
+      .orderBy('task.priority', 'DESC')
+      .addOrderBy('task.endDate', 'ASC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
 
     return { data: this.resolveMany(data), total };
   }
