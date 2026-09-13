@@ -413,6 +413,13 @@ export class BomReadService {
     //
     // `lower(...)` guards the legacy rows written while the category was free
     // text and case-sensitive: 'Materials' would otherwise be missed.
+    //
+    // Deliberately NOT filtered on `is_cash`, unlike every total in the finance
+    // module. That filter answers "how much cash left the company"; this figure
+    // answers "how much of this project's materials budget is consumed". Panels
+    // bought on credit are on the roof and the budget is spent, whatever the
+    // bank balance says. Filtering here would under-report materials the project
+    // has actually taken delivery of.
     const spendRows: MaterialsSpendRow[] = await this.dataSource.query(
       `SELECT COALESCE(SUM(-e.amount_paise), 0)::BIGINT AS "spentPaise"
          FROM ledger_entries e

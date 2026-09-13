@@ -71,8 +71,22 @@ export const KPIS_SQL = `
     WHERE status = 'active'
       AND balance_paise > 0
   ),
-  -- Was a copy of this predicate inline. It now lives in v_project_commissioning
-  -- so Recovery and this KPI can never drift apart.
+  -- How many projects had their net meter commissioned in this period.
+  --
+  -- Counts PROJECTS, not tasks. The predicate that used to live here inline
+  -- counted rows in project_tasks, so a project whose workflow carries the
+  -- stage name on more than one task was counted once per task: 65 all-time
+  -- against 41 projects, because 26 projects carry several. A project has one
+  -- net meter. Expect this tile to read ~38% lower than it used to, and to be
+  -- right for the first time.
+  --
+  -- It also now shares its definition with the Recovery scope on Receivables,
+  -- so the two can never drift.
+  --
+  -- One project is missing from every dated period on purpose: its meter task
+  -- predates activity logging and has no completed_at, so the view reports
+  -- meter_dated = false. A completion we cannot evidence is not one we count —
+  -- the same rule 08-task-completion.sql.ts already states.
   meters AS (
     SELECT COUNT(*)::int AS meter_installations
     FROM v_project_commissioning c
