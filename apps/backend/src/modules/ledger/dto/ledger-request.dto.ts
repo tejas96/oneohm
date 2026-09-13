@@ -175,6 +175,11 @@ export class RecordExpenseDto {
   @MaxLength(255)
   payee?: string;
 
+  @ApiPropertyOptional({ description: 'The vendor billed. Required when paymentMethod is credit.' })
+  @IsUUID()
+  @IsOptional()
+  vendorId?: string;
+
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
@@ -191,6 +196,53 @@ export class RecordExpenseDto {
   @Type(() => ProofDocumentDto)
   @IsOptional()
   proofDocument?: ProofDocumentDto;
+
+  @ApiPropertyOptional({ type: [ProofDocumentDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProofDocumentDto)
+  @IsOptional()
+  proofDocuments?: ProofDocumentDto[];
+}
+
+/**
+ * Money paid to a vendor against what we owe them.
+ *
+ * There is no `category`: a settlement is not a new cost. The cost was recorded
+ * when the bill was taken on. Categorising it again would double-count spend the
+ * moment anyone groups by category.
+ */
+export class RecordVendorPaymentDto {
+  @ApiProperty({ description: 'Amount paid, in paise', example: 5000000 })
+  @IsInt()
+  @IsPositive()
+  amountPaise!: number;
+
+  @ApiPropertyOptional({ description: 'The date the money left (IST). Defaults to today.' })
+  @IsDateString()
+  @IsOptional()
+  valueDate?: string;
+
+  @ApiProperty({ description: 'Who was paid' })
+  @IsUUID()
+  vendorId!: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  paymentMethod?: string;
+
+  @ApiPropertyOptional({ description: 'UTR, cheque number, or other bank reference' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  reference?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  notes?: string;
 
   @ApiPropertyOptional({ type: [ProofDocumentDto] })
   @IsArray()

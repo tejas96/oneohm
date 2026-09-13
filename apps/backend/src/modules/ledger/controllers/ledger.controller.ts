@@ -34,6 +34,7 @@ import {
   RecordExpenseDto,
   ProofDocumentDto,
   RecordReceiptDto,
+  RecordVendorPaymentDto,
   ReverseEntryDto,
   WaiveMilestoneDto,
 } from '../dto';
@@ -220,7 +221,37 @@ export class LedgerController {
         valueDate: dto.valueDate,
         category: dto.category,
         counterparty: dto.payee,
+        vendorId: dto.vendorId,
         paymentMethod: dto.paymentMethod,
+        notes: dto.notes,
+        proofDocuments: mergeProofs(dto),
+      },
+      currentUser.id,
+    );
+  }
+
+  @Post('projects/:projectId/ledger/vendor-payments')
+  @ApiOperation({
+    summary: 'Pay a vendor what we owe them',
+    description:
+      'Settles a payable. Every ledger entry belongs to a project, so one cheque covering ' +
+      'three projects is recorded as three lines. Waits for approval like any other money out.',
+  })
+  @ApiParam({ name: 'projectId', type: String })
+  async recordVendorPayment(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() dto: RecordVendorPaymentDto,
+  ): Promise<PendingLedgerEntryEntity> {
+    return this.approvals.submit(
+      {
+        kind: 'vendor_payment',
+        projectId,
+        amountPaise: dto.amountPaise,
+        valueDate: dto.valueDate,
+        vendorId: dto.vendorId,
+        paymentMethod: dto.paymentMethod,
+        reference: dto.reference,
         notes: dto.notes,
         proofDocuments: mergeProofs(dto),
       },
