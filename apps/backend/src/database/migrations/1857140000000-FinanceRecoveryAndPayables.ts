@@ -1,0 +1,127 @@
+import { MigrationInterface, QueryRunner } from 'typeorm';
+
+import { CREATE_V_PROJECT_COMMISSIONING, DROP_V_PROJECT_COMMISSIONING } from './sql/ledger/13-commissioning.sql';
+import {
+  CREATE_LEDGER_NORM_CATEGORY,
+  CREATE_V_VENDOR_PAYABLE,
+  DROP_LEDGER_NORM_CATEGORY,
+  DROP_V_VENDOR_PAYABLE,
+} from './sql/ledger/14-vendor-payable.sql';
+import { CREATE_V_PROJECT_BALANCE_V1, CREATE_V_PROJECT_BALANCE_V2 } from './sql/ledger/15-project-balance-v2.sql';
+
+/**
+ * Vendors and credit on the ledger, and the read model Recovery and Payables need.
+ *
+ * NO ROW IS UPDATED. `trg_ledger_entries_append_only` rejects every UPDATE and
+ * DELETE on `ledger_entries`, and that guarantee is not weakened here, not even
+ * temporarily. Adding a column with a constant DEFAULT does not rewrite rows in
+ * Postgres 11+, so the trigger never fires.
+ *
+ * Two consequences, both accepted. The dirty legacy categories cannot be
+ * rewritten in place and are normalised at read time by `ledger_norm_category`
+ * instead. And the old free-text payees cannot be mapped onto vendors — which
+ * would match zero rows anyway, since no live payee string shares a name with
+ * either vendor.
+ *
+ * Steps 7 and 8 are database guarantees, not form validation. A credit bill owed
+ * to nobody, or money RECEIVED on credit, must be impossible regardless of which
+ * caller writes it.
+ *
+ * `v_project_balance` is rebuilt from `sql/ledger/15-project-balance-v2.sql.ts`,
+ * NOT from `06-views.sql.ts` or `12-contract-composition.sql.ts` — see that
+ * file's header for why: the database this runs against has already gone
+ * through org cleanup, `MilestoneCancelledStatus` and `SplitRefundsOutOfSpend`,
+ * and its live `v_project_balance` carries `cancelled_paise` and
+ * `refunded_paise` that neither of those two files has.
+ */
+export class FinanceRecoveryAndPayables1857140000000 implements MigrationInterface {
+  name = 'FinanceRecoveryAndPayables1857140000000';
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS vendor_id UUID NULL REFERENCES vendors(id)`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE ledger_entries ADD COLUMN IF NOT EXISTS is_cash BOOLEAN NOT NULL DEFAULT true`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE pending_ledger_entries ADD COLUMN IF NOT EXISTS vendor_id UUID NULL REFERENCES vendors(id)`,
+    );
+
+    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type`);
+    await queryRunner.query(`
+      ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_type
+        CHECK (entry_type IN ('receipt','expense','refund','write_off','vendor_payment'))`);
+
+    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type_direction`);
+    await queryRunner.query(`
+      ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_type_direction
+        CHECK ((entry_type = 'receipt' AND direction = 'in')
+            OR (entry_type IN ('expense','refund','write_off','vendor_payment') AND direction = 'out'))`);
+
+    await queryRunner.query(`ALTER TABLE pending_ledger_entries DROP CONSTRAINT IF EXISTS chk_ple_kind`);
+    await queryRunner.query(`
+      ALTER TABLE pending_ledger_entries ADD CONSTRAINT chk_ple_kind
+        CHECK (kind IN ('receipt','expense','reversal','vendor_payment'))`);
+
+    // A credit bill owed to nobody is not a payable, it is a hole.
+    await queryRunner.query(`
+      ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_credit_vendor
+        CHECK (is_cash OR vendor_id IS NOT NULL)`);
+    // Money cannot be RECEIVED on credit. That is a receivable, and it already
+    // has a home in payment_milestones.
+    await queryRunner.query(`
+      ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_credit_is_out
+        CHECK (is_cash OR direction = 'out')`);
+
+    await queryRunner.query(`
+      CREATE INDEX IF NOT EXISTS idx_ledger_entries_vendor
+        ON ledger_entries (vendor_id) WHERE vendor_id IS NOT NULL`);
+
+    await queryRunner.query(CREATE_LEDGER_NORM_CATEGORY);
+    await queryRunner.query(CREATE_V_PROJECT_COMMISSIONING);
+    await queryRunner.query(CREATE_V_VENDOR_PAYABLE);
+    // 16 columns -> 17, appending committed_unpaid_paise at the end: a plain
+    // CREATE OR REPLACE VIEW is sufficient here because Postgres only forbids
+    // REMOVING columns that way, not adding trailing ones (verified against
+    // this database; see 15-project-balance-v2.sql.ts's header). down() cannot
+    // use the same trick in reverse.
+    await queryRunner.query(CREATE_V_PROJECT_BALANCE_V2);
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // v_project_balance first: it is the only object that depends on is_cash.
+    //
+    // This CANNOT be `CREATE OR REPLACE VIEW` with the V1 body directly on top
+    // of V2: V1 has 16 columns, V2 has 17 (committed_unpaid_paise, appended
+    // last), and Postgres refuses to drop a view column that way — confirmed
+    // against this database with a throwaway view ("cannot drop columns from
+    // view"). Explicitly DROP then CREATE instead. Nothing else depends on
+    // v_project_balance (checked via pg_depend against the live database), so
+    // the DROP cannot cascade into anything unexpected.
+    await queryRunner.query(`DROP VIEW IF EXISTS v_project_balance`);
+    await queryRunner.query(CREATE_V_PROJECT_BALANCE_V1);
+    await queryRunner.query(DROP_V_VENDOR_PAYABLE);
+    await queryRunner.query(DROP_V_PROJECT_COMMISSIONING);
+    await queryRunner.query(DROP_LEDGER_NORM_CATEGORY);
+    await queryRunner.query(`DROP INDEX IF EXISTS idx_ledger_entries_vendor`);
+    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_credit_is_out`);
+    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_credit_vendor`);
+    await queryRunner.query(`ALTER TABLE pending_ledger_entries DROP CONSTRAINT IF EXISTS chk_ple_kind`);
+    await queryRunner.query(`
+      ALTER TABLE pending_ledger_entries ADD CONSTRAINT chk_ple_kind
+        CHECK (kind IN ('receipt','expense','reversal'))`);
+    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type_direction`);
+    await queryRunner.query(`
+      ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_type_direction
+        CHECK ((entry_type = 'receipt' AND direction = 'in')
+            OR (entry_type IN ('expense','refund','write_off') AND direction = 'out'))`);
+    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type`);
+    await queryRunner.query(`
+      ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_type
+        CHECK (entry_type IN ('receipt','expense','refund','write_off'))`);
+    await queryRunner.query(`ALTER TABLE pending_ledger_entries DROP COLUMN IF EXISTS vendor_id`);
+    await queryRunner.query(`ALTER TABLE ledger_entries DROP COLUMN IF EXISTS is_cash`);
+    await queryRunner.query(`ALTER TABLE ledger_entries DROP COLUMN IF EXISTS vendor_id`);
+  }
+}
