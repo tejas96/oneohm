@@ -2,7 +2,7 @@
 
 import { Button, CircularProgress } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type JSX, useEffect, useState } from 'react';
+import { type JSX, useEffect, useRef, useState } from 'react';
 
 import { BankSelect } from '@/components/features/shared/bank-select';
 import {
@@ -63,6 +63,10 @@ export function AttachBankDialog({
     if (open) setBank(currentValue ?? '');
   }, [open, currentValue]);
 
+  // A ref, not state: two clicks in the same tick both read the pre-render
+  // value of a state flag, so state cannot stop a double submission.
+  const inFlight = useRef(false);
+
   const attachBank = useMutation({
     mutationFn: async (financingBank: string | null): Promise<void> => {
       // Send null, never undefined, to clear it — an absent key leaves the
@@ -78,9 +82,14 @@ export function AttachBankDialog({
       onClose();
     },
     onError: (error) => showToast.error(getErrorMessage(error)),
+    onSettled: () => {
+      inFlight.current = false;
+    },
   });
 
   const handleSave = (): void => {
+    if (inFlight.current) return;
+    inFlight.current = true;
     attachBank.mutate(bank.trim() || null);
   };
 

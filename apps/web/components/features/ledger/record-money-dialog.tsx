@@ -3,8 +3,9 @@
 import { Alert, Box, Button, CircularProgress } from '@mui/material';
 import { EXPENSE_CATEGORY_LABELS } from '@tejas96/shared';
 import { ExpenseCategory, PaymentMethod } from '@tejas96/shared/types';
-import { type JSX, useEffect, useRef, useState } from 'react';
+import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
 
+import { VendorPickerControlled } from '@/components/features/inventory/components/shared/vendor-picker';
 import {
   MUIDialog,
   MUIDialogBody,
@@ -22,6 +23,7 @@ import {
   type MilestoneBalance,
   type ProofDocumentInput,
 } from '@/lib/hooks/resources/ledger';
+import { useVendors } from '@/lib/hooks/resources/vendors';
 import { useGatedAction } from '@/lib/rbac';
 import { formatPaise, paiseToRupees, parseRupeeInput, rupeeInputError } from '@/lib/utils/paise';
 
@@ -94,12 +96,13 @@ export function RecordMoneyDialog({
   milestones = [],
   forMilestone = null,
 }: RecordMoneyDialogProps): JSX.Element {
+  const isReceipt = mode === 'receipt';
   const save = useGatedAction('finance.payments.record', () => undefined, 'Record money');
   const { recordReceipt, recordExpense } = useLedgerMutations(projectId);
   const [amount, setAmount] = useState('');
 
   const [valueDate, setValueDate] = useState(todayIst());
-  const [method, setMethod] = useState<string>(PaymentMethod.UPI);
+  const [method, setMethod] = useState<PaymentMethod>(PaymentMethod.UPI);
   const [reference, setReference] = useState('');
   const [category, setCategory] = useState<ExpenseCategory>(ExpenseCategory.MATERIALS);
   const [amountTouched, setAmountTouched] = useState(false);
@@ -108,6 +111,54 @@ export function RecordMoneyDialog({
   const [proof, setProof] = useState<ProofDocumentInput | null>(null);
   const [proofName, setProofName] = useState('');
   const [uploading, setUploading] = useState(false);
+  // A credit bill is owed to somebody, so a vendor is required the moment
+  // Credit is picked (`onCredit` below). Query is kept apart from the chosen
+  // id for the same reason `VendorPicker`'s own RHF wrapper keeps them apart:
+  // typing to search must not clobber a selection already made.
+  const [vendorId, setVendorId] = useState('');
+  const [vendorQuery, setVendorQuery] = useState('');
+
+  /*
+   * Vendor list for the Credit picker. Fetched unconditionally, same as
+   * `VendorPicker` (the react-hook-form wrapper) does internally — it has no
+   * `enabled` gate either — because `useVendors` takes no second argument to
+   * pass one through to the underlying query. The picker itself only renders
+   * on the expense side (see below), so the receipt side just carries an
+   * unused list around for as long as it's open; it makes no extra request
+   * beyond the one page already fetched here.
+   */
+  const {
+    items: vendorItems,
+    isFetching: vendorsLoading,
+    setSearch: setVendorSearch,
+  } = useVendors({
+    syncToUrl: false,
+    defaultPageSize: 25,
+    defaultFilters: { status: 'active' } as Record<string, unknown>,
+  });
+
+  useEffect(() => {
+    setVendorSearch(vendorQuery);
+  }, [vendorQuery, setVendorSearch]);
+
+  const vendorOptions = useMemo(
+    () =>
+      vendorItems.map((v) => ({
+        value: v.id,
+        label: v.code ? `${v.name} (${v.code})` : v.name,
+      })),
+    [vendorItems],
+  );
+
+  // Picking a vendor and typing a free-text payee are the same fact recorded
+  // two ways — exactly how `labour` and `labor` both reached the ledger as
+  // separate categories. Choosing a vendor clears whatever was typed here so
+  // only one of the two is ever sent, and the now-hidden field doesn't leave
+  // a stale value riding along underneath it.
+  const handleVendorChange = (next: string): void => {
+    setVendorId(next);
+    if (next) setPayee('');
+  };
 
   /*
    * Opened from a milestone row: start at what that milestone is still short
@@ -132,9 +183,20 @@ export function RecordMoneyDialog({
         ? paiseToRupees(forMilestone.balancePaise).toFixed(2)
         : '',
     );
+    // Belt and braces: this dialog's one caller today only ever mounts a
+    // fresh instance per mode (never keeps one instance across a receipt/
+    // expense flip), so this branch is not reachable in practice. Nothing in
+    // the component's own types enforces that, though, and if it ever were
+    // reached, a leftover `method` of `credit` would both fall out of the
+    // Method select's own option list (filtered below on the receipt side)
+    // and still be what gets submitted on a receipt call — money cannot be
+    // received on credit. Clearing it here removes the possibility rather
+    // than trusting the caller never to create it.
+    if (mode === 'receipt') {
+      setMethod((m) => (m === PaymentMethod.CREDIT ? PaymentMethod.UPI : m));
+    }
   }, [open, mode, forMilestone]);
 
-  const isReceipt = mode === 'receipt';
   const pending = recordReceipt.isPending || recordExpense.isPending;
   // Same parser as the Bill customer dialog: accepts "1,000", refuses text and
   // amounts past the point where paise stop being exact, and says which.
@@ -148,7 +210,14 @@ export function RecordMoneyDialog({
   // just sees a dead button.
   const showAmountError = amountTouched && !parsedAmount.ok;
   const showFutureDateError = valueDate > todayIst();
-  const valid = parsedAmount.ok && valueDate <= todayIst();
+  // Never true on a receipt: Credit is not offered there (see the Method
+  // options below), and money cannot be received on credit.
+  const onCredit = !isReceipt && method === PaymentMethod.CREDIT;
+  // No cash leaves for a credit bill, and the server refuses one with no
+  // vendor ("A credit bill has to be owed to a vendor" — confirmed against
+  // POST .../ledger/expenses), so submit stays blocked until one is chosen
+  // rather than letting the operator find out from a 400.
+  const valid = parsedAmount.ok && valueDate <= todayIst() && (!onCredit || Boolean(vendorId));
 
   const reset = (): void => {
     setAmount('');
@@ -161,6 +230,8 @@ export function RecordMoneyDialog({
     setNotes('');
     setProof(null);
     setProofName('');
+    setVendorId('');
+    setVendorQuery('');
   };
 
   // A ref, not state: two clicks in the same tick both read the pre-render
@@ -215,6 +286,7 @@ export function RecordMoneyDialog({
         valueDate,
         category,
         payee: payee || undefined,
+        vendorId: vendorId || undefined,
         paymentMethod: method,
         notes: notes || undefined,
         proofDocument: proof ?? undefined,
@@ -238,7 +310,9 @@ export function RecordMoneyDialog({
         <MUIDialogDescription>
           {isReceipt
             ? 'Enter the date the money actually arrived — not today, if it came in earlier.'
-            : 'Company cost. This never changes what the customer owes.'}
+            : onCredit
+              ? 'No cash leaves now. This becomes a payable you settle later.'
+              : 'Company cost. This never changes what the customer owes.'}
         </MUIDialogDescription>
       </MUIDialogHeader>
 
@@ -281,11 +355,23 @@ export function RecordMoneyDialog({
           <MUISelect
             fieldLabel="Method"
             value={method}
-            onChange={(e) => setMethod(String(e.target.value))}
-            options={Object.values(PaymentMethod).map((m) => ({
-              value: m,
-              label: m.toUpperCase(),
-            }))}
+            onChange={(e) => setMethod(String(e.target.value) as PaymentMethod)}
+            /*
+             * Credit is hidden entirely on the receipt side, not just
+             * relabelled: money cannot be RECEIVED on credit — that is a
+             * receivable, and it already has a home in payment_milestones —
+             * so offering it here would be a trap. `credit` still joins this
+             * list automatically for an expense since it maps
+             * `Object.values(PaymentMethod)`, but `m.toUpperCase()` alone
+             * would render it `CREDIT`, which reads like a shout next to
+             * `UPI`.
+             */
+            options={Object.values(PaymentMethod)
+              .filter((m) => !isReceipt || m !== PaymentMethod.CREDIT)
+              .map((m) => ({
+                value: m,
+                label: m === PaymentMethod.CREDIT ? 'Credit (pay later)' : m.toUpperCase(),
+              }))}
           />
 
           {isReceipt ? (
@@ -296,6 +382,20 @@ export function RecordMoneyDialog({
             />
           ) : (
             <>
+              <VendorPickerControlled
+                value={vendorId}
+                onChange={handleVendorChange}
+                inputValue={vendorQuery}
+                onInputChange={setVendorQuery}
+                label="Vendor"
+                required={onCredit}
+                placeholder="Search vendors"
+                error={
+                  onCredit && !vendorId ? 'A credit bill has to be owed to someone.' : undefined
+                }
+                options={vendorOptions}
+                loading={vendorsLoading}
+              />
               <MUISelect
                 fieldLabel="Category"
                 value={category}
@@ -303,11 +403,16 @@ export function RecordMoneyDialog({
                 onChange={(e) => setCategory(String(e.target.value) as ExpenseCategory)}
                 options={EXPENSE_CATEGORY_OPTIONS}
               />
-              <MUIInput
-                fieldLabel="Paid to"
-                value={payee}
-                onChange={(e) => setPayee(e.target.value)}
-              />
+              {/* Hidden once a vendor is chosen — see `handleVendorChange`.
+                  Two fields naming the same party is how `labour` and
+                  `labor` both reached this ledger. */}
+              {!vendorId && (
+                <MUIInput
+                  fieldLabel="Paid to"
+                  value={payee}
+                  onChange={(e) => setPayee(e.target.value)}
+                />
+              )}
             </>
           )}
 

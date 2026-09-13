@@ -69,7 +69,7 @@ export function VendorPicker<T extends FieldValues>({
   );
 }
 
-interface ControlledProps {
+export interface VendorPickerControlledProps {
   value: string;
   onChange: (next: string) => void;
   options: VendorOption[];
@@ -82,7 +82,15 @@ interface ControlledProps {
   error?: string;
 }
 
-function VendorPickerControlled({
+/**
+ * The controlled half of the vendor picker, with no react-hook-form
+ * dependency — for a caller like `RecordMoneyDialog` that manages its own
+ * `useState` and has no form to hang a `Control` off of. `VendorPicker` above
+ * is a thin `Controller` wrapper around this; both render the exact same
+ * autocomplete, so a vendor picked here and one picked through the RHF form
+ * look and behave identically.
+ */
+export function VendorPickerControlled({
   value,
   onChange,
   options,
@@ -93,7 +101,7 @@ function VendorPickerControlled({
   required,
   placeholder,
   error,
-}: ControlledProps): React.JSX.Element {
+}: VendorPickerControlledProps): React.JSX.Element {
   const pageHasMatch = options.some((o) => o.value === value);
 
   const detail = useResourceDetail<Vendor>({

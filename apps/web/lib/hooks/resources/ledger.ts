@@ -478,6 +478,8 @@ export interface RecordExpenseInput {
   valueDate?: string;
   category: string;
   payee?: string;
+  /** Required by the server when `paymentMethod` is `'credit'`; a 400 otherwise. */
+  vendorId?: string;
   paymentMethod?: string;
   notes?: string;
   proofDocument?: ProofDocumentInput;
