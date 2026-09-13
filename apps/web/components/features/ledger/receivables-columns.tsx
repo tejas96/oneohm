@@ -108,7 +108,7 @@ export const RECEIVABLE_COLUMNS: CrmColumn<ReceivableRow>[] = [
     track: crm['col-recv-expected'],
     align: 'right',
     cellSx: { pr: 1.5 },
-    renderCell: (row) => formatPaise(row.expectedAmount * 100),
+    renderCell: (row) => formatPaise(row.expectedPaise),
   },
   {
     field: 'paidAmount',
@@ -119,7 +119,7 @@ export const RECEIVABLE_COLUMNS: CrmColumn<ReceivableRow>[] = [
     defaultHidden: true,
     align: 'right',
     cellSx: { pr: 1.5 },
-    renderCell: (row) => formatPaise(row.paidAmount * 100),
+    renderCell: (row) => formatPaise(row.allocatedPaise),
   },
   {
     field: 'outstandingAmount',
@@ -131,7 +131,7 @@ export const RECEIVABLE_COLUMNS: CrmColumn<ReceivableRow>[] = [
     // The number the page exists for, so it carries the weight.
     renderCell: (row) => (
       <Box sx={{ fontWeight: 700, color: color.danger }}>
-        {formatPaise(row.outstandingAmount * 100)}
+        {formatPaise(row.balancePaise)}
       </Box>
     ),
   },
@@ -196,7 +196,7 @@ function BankCell({ row }: { row: ReceivableRow }): JSX.Element {
         propertyId={propertyId}
         customerName={row.customerName ?? row.projectName}
         projectNumber={row.projectNumber}
-        outstandingPaise={row.outstandingAmount * 100}
+        outstandingPaise={row.balancePaise}
         currentValue={row.financingBank}
       />
     </>

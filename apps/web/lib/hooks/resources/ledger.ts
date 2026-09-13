@@ -192,6 +192,18 @@ export interface Receivable {
   expectedAmount: number;
   paidAmount: number;
   outstandingAmount: number;
+  /**
+   * Integer paise — RECEIVABLES_SQL selects these alongside the rupee floats
+   * above (`expectedAmount`/`paidAmount`/`outstandingAmount` are the same
+   * three values, divided once server-side for display). Use these, never
+   * `outstandingAmount * 100` or similar, whenever a paise value needs to
+   * cross the wire again (e.g. AttachBankDialog's `outstandingPaise` prop):
+   * multiplying a rupee float back by 100 can land on a non-integer paise
+   * value (float drift), even when nothing currently mis-renders from it.
+   */
+  expectedPaise: Paise;
+  allocatedPaise: Paise;
+  balancePaise: Paise;
   dueDate?: string | null;
   daysOverdue: number;
   derivedStatus: MilestoneDerivedStatus;

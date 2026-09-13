@@ -35,6 +35,20 @@ const SCOPE_OPTIONS: ReadonlyArray<{ value: Scope; label: string }> = [
   { value: 'recovery-loan', label: 'Recovery — Loan' },
 ];
 
+/**
+ * "Every open milestone, worst overdue first" is only true for `all` — a
+ * Recovery scope selects by the meter being installed, not by ageing, so the
+ * same line under it would claim an ordering/selection principle that is not
+ * what put those rows on screen. One short description per scope state.
+ */
+const SCOPE_INTRO: Record<Scope, string> = {
+  all: 'Every open milestone, worst overdue first. Waived amounts are excluded, so a written-off residual stops being chased.',
+  'recovery-cash':
+    'Meter installed, job delivered, cash still owed. Selected by meter installation, not ageing — waived amounts are excluded.',
+  'recovery-loan':
+    'Meter installed, job delivered, loan still owed. Selected by meter installation, not ageing — waived amounts are excluded.',
+};
+
 function StatCard({
   label,
   value,
@@ -175,8 +189,7 @@ export function FinanceReceivablesPage(): JSX.Element {
           component="p"
           sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
         >
-          Every open milestone, worst overdue first. Waived amounts are excluded, so a written-off
-          residual stops being chased.
+          {SCOPE_INTRO[scope]}
         </Box>
       </Box>
 
@@ -202,16 +215,23 @@ export function FinanceReceivablesPage(): JSX.Element {
           {/*
             A forecasting gap, not hidden debt: per spec §2.4, 178 of these 198
             milestones have zero work done, so the money is genuinely not owed
-            yet — it just cannot be dated. No seventh chip; this note is the
-            only affordance into `bucket=no_due_date`, and it disappears on its
-            own once nothing is left undated.
+            yet — it just cannot be dated. No seventh chip: this note IS the
+            toggle, in both directions. `CrmTableToolbar` has no chip keyed
+            'no_due_date', so none of the six preset chips (nor "All open")
+            lights up while this filter is active — without the note itself
+            changing state, a financier who clicked through would see the row
+            count drop, nothing on screen indicate a filter is on, and no
+            visible way back to "All open". `|| bucket === 'no_due_date'`
+            keeps this block on screen for exactly that state even if a
+            narrower search happens to leave zero undated rows in the current
+            scope, so the way out never disappears while it is still needed.
           */}
-          {buckets && buckets.noDueDate > 0 ? (
+          {buckets && (buckets.noDueDate > 0 || bucket === 'no_due_date') ? (
             <Box
               component="button"
               type="button"
               onClick={() => {
-                setBucket('no_due_date');
+                setBucket(bucket === 'no_due_date' ? undefined : 'no_due_date');
                 setPage(0);
               }}
               sx={{
@@ -226,8 +246,18 @@ export function FinanceReceivablesPage(): JSX.Element {
                 '&:hover': { textDecoration: 'underline' },
               }}
             >
-              {formatPaise(buckets.noDueDatePaise)} of this has no due date — it cannot be
-              forecast. Show these →
+              {bucket === 'no_due_date' ? (
+                <>
+                  Showing only the {buckets.noDueDate} milestones with no due date —{' '}
+                  {formatPaise(buckets.noDueDatePaise)} that just can&apos;t be forecast yet. Show
+                  all →
+                </>
+              ) : (
+                <>
+                  {formatPaise(buckets.noDueDatePaise)} of this has no due date — it cannot be
+                  forecast. Show these →
+                </>
+              )}
             </Box>
           ) : null}
         </Box>
@@ -264,16 +294,25 @@ export function FinanceReceivablesPage(): JSX.Element {
       </Box>
 
       {/*
-        A data gap, not an overdue debt — warning tone, never danger. Every
-        loan recovery row shows the Add-bank button today (0 of 72 open loan
-        milestones have a bank on file), so this reads "N of N" far more often
-        than it reads as a minority; the copy below is written to hold either
-        way rather than assume a minority.
+        A data gap, not an overdue debt — warning tone, never danger.
+        `missingLenderProjects` counts projects with no lender-payer
+        milestone: the bank's share was never split out of the contract.
+        `BankCell`'s "Add bank" button only PATCHes `financingBank` on the
+        property — it does not create that milestone and does not move this
+        count. Confirmed live, not assumed: attach a real bank to a real row
+        and refetch, and the number is unchanged (task-15-report.md,
+        "End-to-end proof of the Add-bank flow"). Attaching a bank and
+        splitting the bank's share out of the contract are different
+        problems, so the copy says outright that the button below does not
+        resolve this banner — otherwise a collector who clicks it and still
+        sees "15 of 15" concludes the feature is broken.
       */}
       {scope === 'recovery-loan' && buckets && buckets.missingLenderProjects > 0 ? (
         <Alert variant="warning">
           {buckets.missingLenderProjects} of {buckets.recoveryProjects} loan projects have no bank
-          share recorded. You may be chasing the customer for the bank&apos;s money.
+          share split out of the contract. The customer may be getting chased for the
+          bank&apos;s money. This needs the project&apos;s payment terms reviewed — adding a bank
+          name below won&apos;t change this count.
         </Alert>
       ) : null}
 
