@@ -1,11 +1,11 @@
 'use client';
 
 import { Box, Card, Skeleton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
-import NextLink from 'next/link';
 import { type JSX, useMemo, useState } from 'react';
 
 import { CASH_COLUMNS, type CashRow } from './cash-columns';
 
+import { GatedLink } from '@/components/features/dashboard/business/components/gated-link';
 import type { TableSortModel } from '@/components/shared/advanced-table';
 import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
 import { MUITypography } from '@/components/ui';
@@ -16,6 +16,7 @@ import {
   useLedgerEntries,
   type LedgerDirection,
 } from '@/lib/hooks/resources/ledger';
+import type { Gate } from '@/lib/rbac';
 import { color, crm } from '@/lib/theme/tokens';
 import { formatPaise } from '@/lib/utils/paise';
 
@@ -236,7 +237,7 @@ function KpiStrip({
 }): JSX.Element {
   const rupees = (v: number): string => formatPaise(Math.round((v ?? 0) * 100));
 
-  const flows: Array<{ label: string; value: string; sub: string; tone: string; href?: string }> =
+  const flows: Array<{ label: string; value: string; sub: string; tone: string; href?: string; gate?: Gate }> =
     [
       {
         label: 'Received',
@@ -268,6 +269,7 @@ function KpiStrip({
         sub: 'net meter installed',
         tone: 'default',
         href: ROUTES.FINANCE.RECEIVABLES,
+        gate: 'finance.receivables.view',
       },
     ];
 
@@ -321,6 +323,7 @@ function Tile({
   sub,
   tone,
   href,
+  gate,
 }: {
   label: string;
   value: string;
@@ -328,6 +331,8 @@ function Tile({
   tone: string;
   /** When set, the whole tile becomes a way in to that count's own screen. */
   href?: string;
+  /** Permission gate the destination requires. Required when href is set. */
+  gate?: Gate;
 }): JSX.Element {
   // MUI palette tokens rather than Tailwind colour utilities.
   const color =
@@ -359,14 +364,20 @@ function Tile({
 
   if (!href) return card;
 
-  // Same NextLink-wraps-content affordance already used for a link inside a
-  // CrmTable cell (`cash-columns.tsx`, `columns.tsx`) — applied to a whole
-  // tile instead of a cell, rather than inventing a new one.
-  return (
-    <NextLink href={href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-      {card}
-    </NextLink>
-  );
+  // Gated link: if a destination route requires a permission gate distinct
+  // from this page's own gate (e.g., /finance/receivables needs
+  // finance.receivables.view, not just finance.view), wrap in GatedLink to
+  // show an access dialog instead of navigating to a permission wall.
+  // Same wrapped-content affordance already used for CrmTable links.
+  if (gate) {
+    return (
+      <GatedLink href={href} gate={gate}>
+        {card}
+      </GatedLink>
+    );
+  }
+
+  return card;
 }
 
 /** Bar pair per period. Deliberately simple — a chart library is not needed here. */
