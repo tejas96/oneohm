@@ -107,19 +107,44 @@ export class FinanceRecoveryAndPayables1857140000000 implements MigrationInterfa
     await queryRunner.query(`DROP INDEX IF EXISTS idx_ledger_entries_vendor`);
     await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_credit_is_out`);
     await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_credit_vendor`);
+
+    // chk_ple_kind CANNOT be narrowed back to 'receipt'/'expense'/'reversal'.
+    // pending_ledger_entries has no append-only trigger of its own, so today's
+    // 11 'vendor_payment' rows could technically be deleted — but that would
+    // only hide the real problem until the next one is created, because a
+    // pending vendor payment that gets approved becomes exactly the kind of
+    // ledger_entries row described below, which cannot be undone. So this
+    // constraint is dropped and put back in the SAME widened form `up()`
+    // creates, not the original narrow one.
     await queryRunner.query(`ALTER TABLE pending_ledger_entries DROP CONSTRAINT IF EXISTS chk_ple_kind`);
     await queryRunner.query(`
       ALTER TABLE pending_ledger_entries ADD CONSTRAINT chk_ple_kind
-        CHECK (kind IN ('receipt','expense','reversal'))`);
+        CHECK (kind IN ('receipt','expense','reversal','vendor_payment'))`);
+
+    // chk_ledger_entries_type_direction and chk_ledger_entries_type, below,
+    // CANNOT be narrowed back either, and for a stricter reason: an approved
+    // vendor payment is a PERMANENT fact here. `trg_ledger_entries_append_only`
+    // rejects every UPDATE and DELETE on `ledger_entries`, by design, with no
+    // exception for a migration. The moment a single 'vendor_payment' row
+    // exists — one already does, in this database — re-adding either
+    // constraint in its pre-migration form throws "violated by some row" and
+    // the revert never completes. Dropping a CHECK is always safe; re-narrowing
+    // one that an existing row would fail is not. So both are dropped and put
+    // back in the SAME widened form `up()` creates. Accepted consequence: a
+    // rolled-back database still has an entry_type value ('vendor_payment')
+    // that the pre-migration code has never heard of. That is a permanent
+    // limit on this migration's reversibility, not a bug in down() — naming it
+    // here is the point.
     await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type_direction`);
     await queryRunner.query(`
       ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_type_direction
         CHECK ((entry_type = 'receipt' AND direction = 'in')
-            OR (entry_type IN ('expense','refund','write_off') AND direction = 'out'))`);
+            OR (entry_type IN ('expense','refund','write_off','vendor_payment') AND direction = 'out'))`);
     await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type`);
     await queryRunner.query(`
       ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_type
-        CHECK (entry_type IN ('receipt','expense','refund','write_off'))`);
+        CHECK (entry_type IN ('receipt','expense','refund','write_off','vendor_payment'))`);
+
     await queryRunner.query(`ALTER TABLE pending_ledger_entries DROP COLUMN IF EXISTS vendor_id`);
     await queryRunner.query(`ALTER TABLE ledger_entries DROP COLUMN IF EXISTS is_cash`);
     await queryRunner.query(`ALTER TABLE ledger_entries DROP COLUMN IF EXISTS vendor_id`);

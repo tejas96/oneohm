@@ -147,8 +147,13 @@ Steps:
 Steps 7 and 8 are database-level guarantees, not form validation. A credit bill owed to
 nobody, or money *received* on credit, must be impossible regardless of which caller writes it.
 
-`down()` reverses every step. Dropping `is_cash` and `vendor_id` is a DDL operation and is
-likewise permitted by the trigger.
+`down()` removes the columns, the index, the function and both new views; that DDL is
+permitted by the trigger the same way `up()`'s column adds are. The widened entry-type CHECK
+constraints on `ledger_entries` and `pending_ledger_entries` are the one exception and stay
+permissive rather than being narrowed back: once a `vendor_payment` row exists,
+`trg_ledger_entries_append_only` means it can never be deleted or updated, so no migration can
+make it satisfy the original narrow CHECK again. A rolled-back database therefore still accepts
+an entry type the pre-migration code has never heard of.
 
 ### 4.2 The three shapes of money out
 

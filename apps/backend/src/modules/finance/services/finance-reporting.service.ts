@@ -292,6 +292,14 @@ export class FinanceReportingService {
         paidAmount: rs(r.allocatedPaise),
         outstandingAmount: rs(r.balancePaise),
         daysOverdue: Number(r.daysOverdue ?? 0),
+        // Raw bigint columns straight off the view, not SUM results — but
+        // node-postgres still hands bigint back as a string either way, same
+        // as getPayables below. AttachBankDialog (receivables-columns.tsx)
+        // holds this raw value instead of formatting it, so it must arrive
+        // as a number, not a string that happens to divide correctly.
+        expectedPaise: Number(r.expectedPaise),
+        allocatedPaise: Number(r.allocatedPaise),
+        balancePaise: Number(r.balancePaise),
       })),
       buckets: Object.fromEntries(
         Object.entries(bucketRow ?? {}).map(([k, v]) => [k, Number(v ?? 0)]),
