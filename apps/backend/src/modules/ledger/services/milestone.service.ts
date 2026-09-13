@@ -453,7 +453,7 @@ export class MilestoneService {
         }
         return resolved.amounts;
       } catch (err) {
-        throw new BadRequestException((err as Error).message);
+        throw this.paymentScheduleError(milestones, projectId, err);
       }
     }
 
@@ -467,7 +467,7 @@ export class MilestoneService {
       try {
         return splitByPercentage(contractPaise, percentages as number[]);
       } catch (err) {
-        throw new BadRequestException((err as Error).message);
+        throw this.paymentScheduleError(milestones, projectId, err);
       }
     }
 
@@ -479,6 +479,51 @@ export class MilestoneService {
     throw new BadRequestException(
       `Cannot snapshot payment milestones for project ${projectId}: ` +
         `${bad.join(', ')} have no usable amount, and no percentage + contract total to derive one from.`,
+    );
+  }
+
+  /**
+   * Turns a ledger guard into something the person who pressed the button can
+   * act on.
+   *
+   * The guards in `domain/paise` speak to developers, and their wording used to
+   * be rethrown verbatim: "splitByPercentage: percentages must sum to 100, got
+   * 60" is what the Create Project toast actually said. Name the quote's fault
+   * instead, and keep the developer's sentence in the log.
+   *
+   * The remedy is a NEW quote, never a correction to this one.
+   * `snapshotFromQuoteVersion` is only ever reached by creating a project from
+   * an accepted quote, and `QuoteService.update` refuses to touch an accepted
+   * quote. The milestone percentages a new quote starts from live in the admin
+   * quote config, whose form already refuses to save a set that misses 100%.
+   */
+  private paymentScheduleError(
+    milestones: SnapshotableMilestone[],
+    projectId: string,
+    err: unknown,
+  ): BadRequestException {
+    this.logger.error(
+      `Payment schedule rejected for project ${projectId}: ${(err as Error).message}`,
+    );
+
+    const percentages = milestones.map((m) => Number(m.percentage));
+    if (percentages.every((p) => Number.isFinite(p) && p > 0)) {
+      const sum = percentages.reduce((a, b) => a + b, 0);
+      if (Math.abs(sum - 100) > 0.01) {
+        const breakdown = percentages
+          .map((pct, i) => `${milestones[i]?.name ?? `#${i + 1}`} ${Number(pct.toFixed(2))}%`)
+          .join(', ');
+        return new BadRequestException(
+          `The payment milestones on this quote add up to ${Number(sum.toFixed(2))}%, not 100% — ` +
+            `${breakdown}. An accepted quote cannot be edited, so raise a new quote for this ` +
+            `property with milestones that add up to 100%.`,
+        );
+      }
+    }
+
+    return new BadRequestException(
+      `The payment schedule on this quote cannot be applied. Check its milestone amounts ` +
+        `and percentages, then create the project again.`,
     );
   }
 }
