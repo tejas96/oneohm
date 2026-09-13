@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsDateString,
@@ -57,6 +57,12 @@ export class SubmitApprovalDto {
     example: 'upi',
     description: 'upi | neft | rtgs | imps | cheque | cash | dd',
   })
+  /**
+   * Normalized to lowercase and trimmed before comparison. `is_cash` is derived
+   * from an exact match on this value, so a capitalised or padded `Credit` would
+   * silently be filed as cash spent.
+   */
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   @IsString()
   @IsOptional()
   @MaxLength(50)

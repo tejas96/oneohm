@@ -180,7 +180,13 @@ export class RecordExpenseDto {
   @IsOptional()
   vendorId?: string;
 
+  /**
+   * Normalized to lowercase and trimmed before comparison. `is_cash` is derived
+   * from an exact match on this value, so a capitalised or padded `Credit` would
+   * silently be filed as cash spent.
+   */
   @ApiPropertyOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   @IsString()
   @IsOptional()
   @MaxLength(50)
@@ -227,7 +233,13 @@ export class RecordVendorPaymentDto {
   @IsUUID()
   vendorId!: string;
 
+  /**
+   * Normalized to lowercase and trimmed before comparison. `is_cash` is derived
+   * from an exact match on this value, so a capitalised or padded `Credit` would
+   * silently be filed as cash spent.
+   */
   @ApiPropertyOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   @IsString()
   @IsOptional()
   @MaxLength(50)
