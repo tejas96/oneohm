@@ -13,7 +13,7 @@ import { ProjectEntity } from '../../projects/entities/project.entity';
 import { paiseTransformer } from '../domain/paise';
 
 export type LedgerDirection = 'in' | 'out';
-export type LedgerEntryType = 'receipt' | 'expense' | 'refund' | 'write_off';
+export type LedgerEntryType = 'receipt' | 'expense' | 'refund' | 'write_off' | 'vendor_payment';
 
 /**
  * LedgerEntryEntity — a single, immutable money fact.
@@ -108,6 +108,24 @@ export class LedgerEntryEntity {
 
   @Column({ name: 'category', type: 'varchar', length: 30, nullable: true })
   category?: string | null;
+
+  /** The vendor this entry is owed to or paid to. Required when `isCash` is false. */
+  @Column({ name: 'vendor_id', type: 'uuid', nullable: true })
+  vendorId?: string | null;
+
+  /**
+   * Did cash actually move?
+   *
+   * False means the cost is taken on and the money is still in the bank — a bill
+   * on credit. Every money-out total in this codebase filters on `is_cash = true`,
+   * so a credit bill never reaches a cash figure; the `vendor_payment` that
+   * settles it does.
+   *
+   * One boolean rather than a compound condition on purpose: it is greppable, and
+   * a query that forgets it is visibly wrong rather than subtly wrong.
+   */
+  @Column({ name: 'is_cash', type: 'boolean', default: true })
+  isCash!: boolean;
 
   /** UTR, cheque number, or other bank reference. */
   @Column({ name: 'reference', type: 'varchar', length: 255, nullable: true })

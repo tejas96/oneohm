@@ -14,7 +14,7 @@ import { getErrorMessage } from '@/lib/utils/error';
 // only learns about it when an approver says yes.
 // ============================================================================
 
-export type ApprovalKind = 'receipt' | 'expense' | 'reversal';
+export type ApprovalKind = 'receipt' | 'expense' | 'reversal' | 'vendor_payment';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
 export interface PaymentApproval {

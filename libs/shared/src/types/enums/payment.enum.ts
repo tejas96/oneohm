@@ -11,6 +11,12 @@ export enum PaymentMethod {
   IMPS = 'imps',
   UPI = 'upi',
   DEMAND_DRAFT = 'demand_draft',
+  /**
+   * Bought now, paid later. Not a way money moved — a statement that it has
+   * NOT yet. A credit expense becomes a vendor payable and is excluded from
+   * every cash total until a vendor payment settles it.
+   */
+  CREDIT = 'credit',
 }
 
 /**

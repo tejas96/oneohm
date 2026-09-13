@@ -38,6 +38,7 @@ const KIND_LABEL = {
   receipt: 'Money received',
   expense: 'Money spent',
   reversal: 'Reversal',
+  vendor_payment: 'Vendor Payment',
 } as const;
 
 /**

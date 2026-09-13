@@ -42,7 +42,7 @@ export interface LedgerEntry {
   approvedAt?: string | null;
   id: string;
   entryNo: string;
-  entryType: 'receipt' | 'expense' | 'refund' | 'write_off';
+  entryType: 'receipt' | 'expense' | 'refund' | 'write_off' | 'vendor_payment';
   direction: LedgerDirection;
   /** Signed. Negative rows are reversals or money out. */
   amountPaise: Paise;

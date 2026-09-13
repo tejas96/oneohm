@@ -80,6 +80,7 @@ const PAYMENT_METHOD_LABEL = {
   [PaymentMethod.IMPS]: 'IMPS',
   [PaymentMethod.UPI]: 'UPI',
   [PaymentMethod.DEMAND_DRAFT]: 'Demand draft',
+  [PaymentMethod.CREDIT]: 'Credit',
 } satisfies Record<PaymentMethod, string>;
 
 function methodLabel(method: string): string {

@@ -24,12 +24,14 @@ const KIND_TONE: Record<PaymentApproval['kind'], CrmTone> = {
   receipt: 'success',
   expense: 'info',
   reversal: 'warning',
+  vendor_payment: 'info',
 };
 
 const KIND_LABEL: Record<PaymentApproval['kind'], string> = {
   receipt: 'Receipt',
   expense: 'Expense',
   reversal: 'Reversal',
+  vendor_payment: 'Vendor Payment',
 };
 
 /**

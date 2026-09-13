@@ -27,8 +27,8 @@ import type { PendingKind } from '../entities';
  * a reversal cannot silently reverse a different figure than the original.
  */
 export class SubmitApprovalDto {
-  @ApiProperty({ enum: ['receipt', 'expense', 'reversal'] })
-  @IsIn(['receipt', 'expense', 'reversal'])
+  @ApiProperty({ enum: ['receipt', 'expense', 'reversal', 'vendor_payment'] })
+  @IsIn(['receipt', 'expense', 'reversal', 'vendor_payment'])
   kind!: PendingKind;
 
   @ApiPropertyOptional({ description: 'Required for receipt and expense.' })
