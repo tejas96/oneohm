@@ -11,6 +11,7 @@ import { PaymentMethod } from '@tejas96/shared/types';
 
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { StorageService } from '../../storage/services/storage.service';
+import { DocumentEntity } from '../../documents/entities/document.entity';
 import { LedgerAllocationEntity, LedgerEntryEntity } from '../entities';
 import { LedgerWriteService } from './ledger-write.service';
 import { LedgerRepository } from '../repositories/ledger.repository';
@@ -30,10 +31,12 @@ const vendorId = 'vendor-1';
 interface Captured {
   entries: any[];
   allocations: any[][];
+  documents: any[];
 }
 
 function makeManager(captured: Captured, insertedEntry: Partial<LedgerEntryEntity>): any {
   return {
+    query: jest.fn(async () => [{ property_id: 'property-1' }]),
     getRepository: (entity: unknown) => {
       if (entity === LedgerEntryEntity) {
         return {
@@ -53,6 +56,14 @@ function makeManager(captured: Captured, insertedEntry: Partial<LedgerEntryEntit
         return {
           insert: jest.fn(async (rows: any[]) => {
             captured.allocations.push(rows);
+            return { identifiers: [] };
+          }),
+        };
+      }
+      if (entity === DocumentEntity) {
+        return {
+          insert: jest.fn(async (values: any) => {
+            captured.documents.push(values);
             return { identifiers: [] };
           }),
         };
@@ -88,7 +99,7 @@ describe('LedgerWriteService', () => {
   });
 
   beforeEach(async () => {
-    captured = { entries: [], allocations: [] };
+    captured = { entries: [], allocations: [], documents: [] };
 
     repo = {
       projectExists: jest.fn(async () => true),
@@ -331,6 +342,37 @@ describe('LedgerWriteService', () => {
           userId,
         ),
       ).rejects.toThrow(/owed to a vendor/);
+    });
+  });
+
+  describe('recordVendorPayment', () => {
+    it('attaches proof when supplied', async () => {
+      const outer = makeManager(captured, {});
+
+      await service.recordVendorPayment(
+        {
+          projectId: PROJECT,
+          amountPaise: 50_000,
+          vendorId: 'vendor-1',
+          proofDocument: {
+            fileKey: 'cheque-2026-09-13.jpg',
+            fileName: 'cheque.jpg',
+            mimeType: 'image/jpeg',
+            fileSize: 245_000,
+          },
+        },
+        USER,
+        outer,
+      );
+
+      expect(captured.documents).toHaveLength(1);
+      expect(captured.documents[0]).toMatchObject({
+        entityType: 'ledger_entry',
+        entityId: 'new-entry-id',
+        fileName: 'cheque.jpg',
+        mimeType: 'image/jpeg',
+        fileSizeBytes: 245_000,
+      });
     });
   });
 

@@ -297,6 +297,9 @@ export class LedgerWriteService {
         vendorId: input.vendorId,
         isCash: true,
         createdBy,
+      }).then(async (entry) => {
+        await this.attachProof(manager, entry, input.proofDocument, createdBy);
+        return entry;
       }),
     );
   }
