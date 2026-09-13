@@ -176,3 +176,6 @@ libs/**/*.d.ts
 !libs/**/*.spec.js
 schema
 apps/backend/secrets/
+
+# Subagent-driven-development scratch
+.superpowers/
