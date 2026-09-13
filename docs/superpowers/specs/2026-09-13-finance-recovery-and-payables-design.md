@@ -397,11 +397,42 @@ oldest overdue milestone. `customerPhone` is already returned by `RECEIVABLES_SQ
 > bank's money. **Review these →**
 
 The count is computed server-side alongside the bucket counts. This is defect 5, shown rather
-than guessed.
+than guessed — the banner reports it, it does not repair it. Repairing the share split means
+deciding 10/70/20 versus something else per project, which is the owner's call, not a default.
 
-Rows for loan projects show `financingBank`, or **"Bank not recorded"** in muted text for the
-149 properties that have none. Blank would read as "no bank involved", which is the opposite of
-the truth.
+Rows for loan projects show `financingBank`, or a **"Add bank"** button for the 149 properties
+that have none. Not muted text and not blank — blank reads as "no bank involved", which is the
+opposite of the truth, and muted text tells a collector about a problem they cannot fix from
+where they are standing.
+
+#### 6.1.1 Attach bank dialog
+
+Clicking **Add bank** on a row opens a small dialog. Nothing else on the page moves.
+
+- Customer, project and amount open are shown read-only at the top, so the user can see who
+  they are answering for.
+- One field: a bank select grouped by `BANK_CATEGORY_ORDER`
+  (Nationalised / Private / NBFC), built from `BANKS` in `@tejas96/shared/constants`, with
+  `BANK_OTHER` revealing a free-text box. **Identical contract to the onboarding wizard** —
+  `financing_bank` holds either a `BANKS` code or a typed name, and `bankLabel()` renders both.
+- Saves with `PATCH /customers/properties/:id` (`financingBank` is already accepted by
+  `UpdateCustomerPropertyDto`). The row updates in place; the list does not reload or lose the
+  user's scroll position or filters.
+
+**The select control is extracted** from the onboarding wizard into
+`components/features/shared/bank-select.tsx` and both places use it. Two independent copies of
+a grouped bank list is how the two would drift, and the wizard is where the defect-5 data comes
+from in the first place. This is a targeted refactor of code this change touches, not a
+general cleanup.
+
+Gated on `customers.edit`, not on a finance code — it writes a customer property. A user with
+finance access but no customer-edit rights sees the button disabled with the usual access
+explanation, rather than a button that fails on click.
+
+**Why this and not a bank share split too:** attaching a bank answers "who do I call", which is
+missing on 149 of 153 properties and has exactly one right answer per property. Splitting
+10/70/20 answers "how much is theirs", which has no safe default (§3, decision 4). The cheap,
+unambiguous half is fixed inline; the expensive, ambiguous half stays a warning.
 
 ### 6.2 Finance → Payables (new page, `/finance/payables`)
 
@@ -438,6 +469,21 @@ usedPct = cost / contractPaise
 ```
 
 Margin is a **cost** question, not a cash question. It stays one number.
+
+Worked example — a ₹5,00,000 contract, ₹2,00,000 paid in cash, ₹1,00,000 of panels taken on
+credit:
+
+| | Today's formula | New formula |
+|---|---|---|
+| Margin | ₹5,00,000 − ₹2,00,000 = **₹3,00,000** | ₹5,00,000 − ₹3,00,000 = **₹2,00,000** |
+
+Today's figure is wrong by exactly the unpaid bill. The panels are on the roof and the money is
+owed; nothing about paying the vendor next month makes the project more profitable this month.
+
+**No existing project changes.** There are zero credit expenses in the database, because the
+feature does not exist yet. Every project's margin on the day this ships is identical to the
+day before. The two formulas only diverge once someone actually records a bill on credit — and
+at that moment the new one is the true one.
 
 Beneath it, one line, shown only when there is something to show:
 
@@ -503,6 +549,7 @@ other surface in this app.
 | Record an expense, a credit bill, or a vendor payment | `finance.payments.record` |
 | See the approval queue | `finance.approvals.view` |
 | Approve or reject | `finance.approvals.process` |
+| Attach a bank to a property (§6.1.1) | `customers.edit` — it writes a customer property, not a ledger row |
 
 "Jr. Accountant" and "Finance Head" are **roles the owner builds in the admin panel**, not
 hardcoded values. Only `super_admin` and `admin` are system roles; every other role is an
@@ -528,7 +575,11 @@ Separation of duties has two independent layers and both stay:
 | Vendor soft-deleted with bills outstanding | The vendor stays in `v_vendor_payable` while `payable_paise <> 0`, marked **Inactive**. Money does not disappear because someone tidied a list. |
 | Meter task done but `completed_at` is null (1 project) | `daysSinceMeter` is null and renders `—`. Never 0, which would read as "commissioned today". |
 | Recovery project with zero outstanding | Not listed. Recovery is a collection list, not a project list. |
-| Loan project with no bank recorded (149 of 153) | Row shows **"Bank not recorded"**, and the banner counts it. |
+| Loan project with no bank recorded (149 of 153) | Row shows an **Add bank** button (§6.1.1), and the banner counts it. |
+| Bank attached from Recovery, then the customer switches lender | The dialog reopens on the existing value and overwrites it. `financing_bank` is a single current fact, not a history. |
+| Bank attached but the share split still missing | The row loses its Add-bank button; the banner still counts it. The two defects are independent and are reported independently. |
+| User has finance access but not `customers.edit` | Add-bank renders disabled with the standard access explanation, never as a button that fails on click. |
+| A property marked `wants_loan` that is really self-financed | Turning `wants_loan` off clears `financing_bank`, which is existing behaviour from #312. Such a project then leaves Recovery — Loan for Recovery — Cash. Correct. |
 | Waived milestone that was part-paid | `waived_paise` counts only the unpaid remainder (§4.6). |
 | Expense with a legacy category | Reported under its normalised name; `uncategorised` for the 5 blanks. |
 | A project cancelled with open milestones | Unchanged — `cancelled_paise` already separates these, and Recovery only sees meter-done projects. |
@@ -569,6 +620,10 @@ app, through the UI, with no API calls, SQL or scripts standing in for a user.
 7. Reverse the credit bill. Confirm the payable falls and cash is untouched.
 8. Open Receivables → Recovery — Cash. Confirm 25 projects and ₹13.2 lakh.
 9. Open Recovery — Loan. Confirm 16 projects, ₹5.0 lakh, and the bank-share banner.
+9a. Click **Add bank** on a row with no bank. Pick a listed bank; confirm the row updates in
+    place with no reload and no lost filter. Reopen it, choose Other, type a name, confirm it
+    saves trimmed. Confirm the same value then renders on the property drawer and the project
+    overview, which already read `financingBank` through `bankLabel()`.
 10. Click the "no due date" note. Confirm ₹72.2 lakh over 198 milestones.
 11. Cross-foot a waived project against §2.2 and confirm it balances to the paisa.
 
