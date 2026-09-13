@@ -9,6 +9,7 @@ import {
 import { isProjectBaselineStep, stepAppliesToSite } from '@tejas96/shared/utils';
 import { type EntityManager, In, IsNull } from 'typeorm';
 
+import { TaskScheduleService } from './task-schedule.service';
 import { ProjectTaskEntity } from '../entities/project-task.entity';
 import { ProjectEntity } from '../entities/project.entity';
 import { WorkflowStepEntity } from '../entities/workflow-step.entity';
@@ -45,6 +46,7 @@ export class LoanTaskSyncService {
   constructor(
     private readonly taskRepository: ProjectTaskRepository,
     private readonly projectRepository: ProjectRepository,
+    private readonly taskSchedule: TaskScheduleService,
   ) {}
 
   /** Null when the site has no live project or nothing changed. */
@@ -160,6 +162,11 @@ export class LoanTaskSyncService {
       .getRepository(ProjectTaskEntity)
       .update({ id: In(taskIds) }, { deletedAt: new Date(), removalReason: 'rule_not_applicable' });
 
+    // A task a rule takes away stops holding anything up, so whatever waited on
+    // it can start counting. Done before the links are cut, while they can still
+    // be found.
+    await this.taskSchedule.onDependencyResolved(projectId, taskIds, manager);
+
     await this.taskRepository.removeDependencyReferences(projectId, taskIds, manager);
   }
 
@@ -200,5 +207,13 @@ export class LoanTaskSyncService {
         await this.taskRepository.updateById(taskId, { dependsOnTaskIds }, manager);
       }
     }
+
+    // Same as project creation: a task added with an unfinished dependency
+    // carries no due date until that dependency closes.
+    await this.taskSchedule.onDependenciesEdited(
+      projectId,
+      created.map((c) => c.taskId),
+      manager,
+    );
   }
 }

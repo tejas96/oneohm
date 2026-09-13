@@ -98,6 +98,15 @@ export class ProjectTaskEntity extends BaseEntity {
   endDate?: Date;
 
   /**
+   * True while `TaskScheduleService` owns `endDate`: the date is the step's
+   * effort counted from the day the task came free of its dependencies. It goes
+   * false the first time a person sets a due date by hand, and the schedule
+   * never touches the date again.
+   */
+  @Column({ name: 'due_date_is_auto', type: 'boolean', default: true })
+  dueDateIsAuto!: boolean;
+
+  /**
    * When the work actually finished. Distinct from `endDate`, which is a plain
    * date and is also used as a planned end.
    *

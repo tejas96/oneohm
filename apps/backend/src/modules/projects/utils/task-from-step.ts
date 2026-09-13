@@ -7,7 +7,8 @@ import { type WorkflowStepEntity } from '../entities/workflow-step.entity';
 /** Tasks sort on the board by their step's sequence, spaced for manual reordering. */
 const KANBAN_ORDER_MULTIPLIER = 100;
 
-function addDays(date: Date, days: number): Date {
+/** The one place the rule "a due date is a start plus an effort" is written. */
+export function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;

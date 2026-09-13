@@ -212,7 +212,11 @@ export function TaskDrawerMetadata({
             },
           }}
         />
-        <FieldHint>Set from the workflow step&rsquo;s effort days. Edit it any time.</FieldHint>
+        <FieldHint>
+          {hasDependencyBlockers
+            ? 'Set the day the last dependency closes: that day plus the step’s effort days. Edit it any time.'
+            : 'Set from the workflow step’s effort days. Edit it any time.'}
+        </FieldHint>
       </Box>
 
       {/* Project — separated by a hairline rule rather than a full divider */}
