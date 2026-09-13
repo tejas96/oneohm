@@ -373,7 +373,7 @@ export class PaymentApprovalService {
           approverId,
           manager,
         );
-      } else {
+      } else if (pending.kind === 'expense') {
         entry = await this.ledgerWrite.recordExpense(
           {
             projectId: pending.projectId,
@@ -394,6 +394,12 @@ export class PaymentApprovalService {
           approverId,
           manager,
         );
+      } else {
+        // A `never` here is the point: adding a fifth PendingKind without a
+        // branch above stops compiling, instead of silently filing that row as
+        // an expense with the wrong entry type and its fields dropped.
+        const unreachable: never = pending.kind;
+        throw new BadRequestException(`Cannot approve an entry of kind ${String(unreachable)}`);
       }
 
       // Move every attached proof onto the entry now that one exists, so it
