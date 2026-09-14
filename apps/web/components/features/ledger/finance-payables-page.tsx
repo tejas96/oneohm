@@ -5,6 +5,7 @@ import { type JSX, useMemo, useState } from 'react';
 
 import { PayVendorDialog } from './pay-vendor-dialog';
 import { buildPayableColumns } from './payables-columns';
+import { VendorBillList } from './vendor-bill-list';
 
 import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
 import { usePayables, type PayableRow } from '@/lib/hooks/resources/ledger';
@@ -114,10 +115,9 @@ export function FinancePayablesPage(): JSX.Element {
 
   const columns = useMemo(() => buildPayableColumns(setPayingVendor), []);
 
-  // The API's `onlyOwing` keeps any nonzero balance — a debt or an advance
-  // either way (`PAYABLES_COUNT_SQL`: `payable_paise <> 0`) — so "Owing only"
-  // can still show an advance row. That is the server's decision from Task
-  // 10, not this page's to second-guess.
+  // "Owing only" keeps vendors we owe money (`payable_paise > 0`). A vendor
+  // holding an advance from us is not one to pay, so it only shows under
+  // "All vendors".
   const quickFilters = useMemo<CrmQuickFilter[]>(
     () => [
       { key: '', label: 'All vendors', tone: 'neutral', dot: false },
@@ -210,6 +210,8 @@ export function FinancePayablesPage(): JSX.Element {
         pageSize={PAGE_SIZE}
         totalRowCount={query.data?.total ?? 0}
         onPageChange={setPage}
+        // Click a vendor to see the bills and payments behind their balance.
+        renderExpandedRow={(row) => <VendorBillList vendorId={row.vendorId} />}
         emptyMessage="Nothing owed to anyone."
       />
 

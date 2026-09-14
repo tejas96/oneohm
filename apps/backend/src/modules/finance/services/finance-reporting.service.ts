@@ -22,6 +22,8 @@ import {
   PAYABLES_COUNT_SQL,
   PAYABLES_PAGE_SQL,
   PAYABLES_TOTALS_SQL,
+  VENDOR_PAYABLE_ENTRIES_COUNT_SQL,
+  VENDOR_PAYABLE_ENTRIES_SQL,
 } from './finance-payables-queries.sql';
 
 const rs = (paise: unknown): number => Number(paise ?? 0) / 100;
@@ -261,7 +263,12 @@ export class FinanceReportingService {
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
     // Shared by RECEIVABLES_SQL and RECEIVABLES_COUNT_SQL, which both expand
     // RECEIVABLES_FILTERS: $1 bucket, $2 search, $3 scope, $4 funding.
-    const filters = [opts.bucket ?? null, opts.search ?? null, opts.scope ?? null, opts.funding ?? null];
+    const filters = [
+      opts.bucket ?? null,
+      opts.search ?? null,
+      opts.scope ?? null,
+      opts.funding ?? null,
+    ];
 
     const [rows, [countRow], [bucketRow]] = await Promise.all([
       this.dataSource.query(RECEIVABLES_SQL, [
@@ -324,6 +331,30 @@ export class FinanceReportingService {
    * Mirrors `getReceivables` exactly: same option names, same one-indexed
    * page, same offset maths, three queries in one `Promise.all`.
    */
+  /**
+   * The credit bills and payments behind one vendor's payable, newest first,
+   * with the balance after each line. At most 100 lines; `total` says how many
+   * exist so the screen can say when older ones are not shown.
+   */
+  async getVendorPayableEntries(
+    vendorId: string,
+  ): Promise<{ data: Record<string, unknown>[]; total: number }> {
+    const [rows, [countRow]] = await Promise.all([
+      this.dataSource.query(VENDOR_PAYABLE_ENTRIES_SQL, [vendorId]),
+      this.dataSource.query(VENDOR_PAYABLE_ENTRIES_COUNT_SQL, [vendorId]),
+    ]);
+    return {
+      // Coerce bigints: node-postgres hands them over as strings, and adding
+      // two of those would concatenate.
+      data: rows.map((r: Record<string, unknown>) => ({
+        ...r,
+        amountPaise: Number(r.amountPaise),
+        balanceAfterPaise: Number(r.balanceAfterPaise),
+      })),
+      total: Number(countRow?.count ?? 0),
+    };
+  }
+
   async getPayables(
     opts: {
       page?: number;

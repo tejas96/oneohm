@@ -448,6 +448,46 @@ export function usePayables(
   });
 }
 
+/** One line behind a vendor's payable: a bill on credit, or a payment. */
+export interface VendorPayableLine {
+  entryId: string;
+  entryNo: string;
+  valueDate: string;
+  kind: 'bill' | 'payment';
+  /** Positive for a bill or payment; NEGATIVE for a reversal, which undoes a line. */
+  amountPaise: Paise;
+  paymentMethod?: string | null;
+  reference?: string | null;
+  projectId: string;
+  projectNumber: string;
+  isReversal: boolean;
+  isReversed: boolean;
+  /** The vendor's payable once this line is counted. Negative = an advance. */
+  balanceAfterPaise: Paise;
+}
+
+/**
+ * The credit bills and payments behind one vendor's payable, newest first.
+ * Keyed under the ledger root, so recording or approving money refreshes it.
+ */
+export function useVendorPayableEntries(
+  vendorId: string,
+  options?: { enabled?: boolean },
+): UseQueryResult<{ data: VendorPayableLine[]; total: number }, AxiosError> {
+  return useQuery({
+    queryKey: [...ledgerKeys.root(), 'payables', 'entries', vendorId],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<{ data: VendorPayableLine[]; total: number }>(
+        `/finance/payables/${vendorId}/entries`,
+        { signal },
+      );
+      return data;
+    },
+    enabled: Boolean(vendorId) && (options?.enabled ?? true),
+    staleTime: 30_000,
+  });
+}
+
 export function useProjectLedger(
   projectId: string,
   options?: { enabled?: boolean },
@@ -711,7 +751,9 @@ export function useLedgerMutations(projectId: string) {
     },
     onSuccess: (_data, { payerType }) => {
       invalidate();
-      showToast.success(payerType === 'lender' ? 'Marked as the bank\'s share' : 'Marked as the customer\'s share');
+      showToast.success(
+        payerType === 'lender' ? "Marked as the bank's share" : "Marked as the customer's share",
+      );
     },
     onError: (error) => showToast.error(getErrorMessage(error)),
   });

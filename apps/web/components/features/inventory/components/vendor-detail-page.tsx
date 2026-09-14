@@ -15,6 +15,7 @@ import { VendorFormDialog } from './vendor-form-dialog';
 import { VendorDetailHeader } from './vendors/vendor-detail-header';
 import { VendorDetailKpi } from './vendors/vendor-detail-kpi';
 
+import { VendorBillList } from '@/components/features/ledger/vendor-bill-list';
 import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
 import type { TableSortModel } from '@/components/shared/advanced-table/types';
 import { EmptyState, ErrorState, NoSearchResults } from '@/components/shared/feedback';
@@ -312,6 +313,14 @@ export function VendorDetailPage(): React.JSX.Element {
             >
               Projects
             </TabsTrigger>
+            <TabsTrigger
+              value="bills"
+              variant="underline"
+              className={can('finance.view') ? undefined : 'opacity-40'}
+              aria-disabled={can('finance.view') ? undefined : true}
+            >
+              Bills &amp; payments
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="pos" className="p-4">
             {poError ? (
@@ -371,6 +380,18 @@ export function VendorDetailPage(): React.JSX.Element {
                 enablePagination
                 itemLabel="assignments"
                 renderEmptyState={renderAssignEmpty}
+              />
+            )}
+          </TabsContent>
+          <TabsContent value="bills" className="p-4">
+            {/* The bills behind the Payable tile above — the same list Payables
+                shows when this vendor's row is expanded. */}
+            {can('finance.view') ? (
+              <VendorBillList vendorId={id} />
+            ) : (
+              <ErrorState
+                title="You can't see this vendor's bills"
+                description="Seeing bills and payments needs access to Finance."
               />
             )}
           </TabsContent>

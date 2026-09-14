@@ -1,5 +1,5 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { type PaginatedResponse } from '@tejas96/shared/types';
 
 import { JwtAuthGuard } from '../../auth/guards';
@@ -151,6 +151,20 @@ export class FinanceController {
       search: query.search,
       onlyOwing: query.onlyOwing,
     });
+  }
+
+  @Get('payables/:vendorId/entries')
+  @ApiOperation({
+    summary: "The credit bills and payments behind one vendor's payable",
+    description:
+      "Newest first, at most 100 lines, each with the vendor's balance after it. Only rows that " +
+      'change what we owe appear — an expense paid on the day never did.',
+  })
+  @ApiParam({ name: 'vendorId', type: String })
+  async getVendorPayableEntries(
+    @Param('vendorId', ParseUUIDPipe) vendorId: string,
+  ): Promise<Awaited<ReturnType<FinanceReportingService['getVendorPayableEntries']>>> {
+    return this.reportingService.getVendorPayableEntries(vendorId);
   }
 
   // ============================================
