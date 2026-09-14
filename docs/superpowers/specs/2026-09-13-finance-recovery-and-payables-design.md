@@ -147,7 +147,17 @@ Steps:
 Steps 7 and 8 are database-level guarantees, not form validation. A credit bill owed to
 nobody, or money *received* on credit, must be impossible regardless of which caller writes it.
 
-`down()` removes the columns, the index, the function and both new views; that DDL is
+**`down()` refuses to run while any credit data exists.** It drops `is_cash` and both
+`vendor_id` columns, and dropping a column destroys what it holds — re-running `up()` brings
+the columns back holding only their defaults. So if any ledger entry has `is_cash = false`, or
+any ledger entry or approval request names a vendor, a rollback would silently record every
+credit bill as cash spent and forget which vendor each bill and payment belonged to, and the
+append-only trigger would stop those rows ever being corrected. Instead `down()` stops with an
+error giving the counts and says to fix forward or restore a backup. This happened for real on a
+development database during review on 2026-09-14, before the guard existed. With nothing to
+lose — every `is_cash` true, every `vendor_id` empty — the rollback proceeds.
+
+When it does proceed, `down()` removes the columns, the index, the function and both new views; that DDL is
 permitted by the trigger the same way `up()`'s column adds are. The widened entry-type CHECK
 constraints on `ledger_entries` and `pending_ledger_entries` are the one exception and stay
 permissive rather than being narrowed back: once a `vendor_payment` row exists,

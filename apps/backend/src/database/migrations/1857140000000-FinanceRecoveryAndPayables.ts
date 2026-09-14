@@ -90,6 +90,9 @@ export class FinanceRecoveryAndPayables1857140000000 implements MigrationInterfa
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    // Before anything is dropped. See refuseIfCreditDataWouldBeLost.
+    await this.refuseIfCreditDataWouldBeLost(queryRunner);
+
     // v_project_balance first: it is the only object that depends on is_cash.
     //
     // This CANNOT be `CREATE OR REPLACE VIEW` with the V1 body directly on top
@@ -148,5 +151,55 @@ export class FinanceRecoveryAndPayables1857140000000 implements MigrationInterfa
     await queryRunner.query(`ALTER TABLE pending_ledger_entries DROP COLUMN IF EXISTS vendor_id`);
     await queryRunner.query(`ALTER TABLE ledger_entries DROP COLUMN IF EXISTS is_cash`);
     await queryRunner.query(`ALTER TABLE ledger_entries DROP COLUMN IF EXISTS vendor_id`);
+  }
+
+  /**
+   * A rollback that would destroy money records refuses to run.
+   *
+   * `down()` drops `ledger_entries.is_cash`, `ledger_entries.vendor_id` and
+   * `pending_ledger_entries.vendor_id`, and dropping a column destroys what it
+   * holds. Re-running `up()` does not bring it back: the columns return holding
+   * their defaults. So once any row carries something other than a default, a
+   * rollback silently records every bill taken on credit as cash already spent,
+   * and forgets which vendor each bill and payment belonged to.
+   *
+   * `ledger_entries` is append-only, so those rows could never be corrected
+   * afterwards. This is not hypothetical: a rollback and re-run during review on
+   * 2026-09-14 did exactly this to a development database, leaving a credit bill
+   * counted as cash and four vendor-payment requests with no vendor.
+   *
+   * With nothing to lose — every `is_cash` true, every `vendor_id` empty — the
+   * rollback proceeds as before.
+   *
+   * The counts are cast to int: Postgres returns COUNT as bigint, which
+   * node-postgres hands over as a string, and adding strings concatenates.
+   */
+  private async refuseIfCreditDataWouldBeLost(queryRunner: QueryRunner): Promise<void> {
+    const [counts] = (await queryRunner.query(`
+      SELECT
+        (SELECT COUNT(*) FROM ledger_entries WHERE NOT is_cash)::int                   AS "creditBills",
+        (SELECT COUNT(*) FROM ledger_entries WHERE vendor_id IS NOT NULL)::int         AS "vendorEntries",
+        (SELECT COUNT(*) FROM pending_ledger_entries WHERE vendor_id IS NOT NULL)::int AS "vendorRequests"
+    `)) as Array<{ creditBills: number; vendorEntries: number; vendorRequests: number }>;
+
+    // A SELECT with no FROM always yields one row. If it somehow did not, fail
+    // closed: nothing here proves the rollback is safe, so it does not run.
+    if (!counts) {
+      throw new Error(`Cannot roll back ${this.name}: could not confirm no credit data would be lost.`);
+    }
+
+    const { creditBills, vendorEntries, vendorRequests } = counts;
+    if (creditBills + vendorEntries + vendorRequests === 0) {
+      return;
+    }
+
+    throw new Error(
+      `Cannot roll back ${this.name}: ${creditBills} ledger entries are bills on credit, ` +
+        `${vendorEntries} ledger entries name a vendor, and ${vendorRequests} approval requests name a vendor. ` +
+        `Rolling back drops the is_cash and vendor_id columns, which would permanently record every credit bill ` +
+        `as cash spent and erase which vendor each bill and payment belongs to. ledger_entries is append-only, ` +
+        `so those rows could never be corrected. Fix forward with a new migration, or restore a backup taken ` +
+        `before this migration ran.`,
+    );
   }
 }
