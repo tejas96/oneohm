@@ -7,7 +7,7 @@ import { CrmStatusPill } from '@/components/shared/crm-table';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useVendorPayableEntries, type VendorPayableLine } from '@/lib/hooks/resources/ledger';
 import { color, crm } from '@/lib/theme/tokens';
-import { formatBusinessDate } from '@/lib/utils';
+import { formatBusinessDate, formatPaymentMethod } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 /** A balance is owed when positive and an advance when negative — same words as Payables. */
@@ -105,7 +105,7 @@ export function VendorBillList({ vendorId }: { vendorId: string }): JSX.Element 
                   <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
                     {line.kind === 'bill'
                       ? 'Bill on credit'
-                      : `Payment${line.paymentMethod ? ` · ${line.paymentMethod.toUpperCase()}` : ''}`}
+                      : `Payment${line.paymentMethod ? ` · ${formatPaymentMethod(line.paymentMethod)}` : ''}`}
                     {line.isReversal ? (
                       <CrmStatusPill label="Reversal" tone="neutral" dot={false} size="sm" />
                     ) : null}

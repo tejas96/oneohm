@@ -28,7 +28,13 @@ import {
   type DetailTone,
 } from '@/components/features/customers/customer-detail/primitives';
 import { useProject } from '@/components/features/projects/hooks/use-project-detail';
-import { formatCurrency, formatDate, formatFollowupWhen, toTitleLabel } from '@/lib/utils';
+import {
+  formatCurrency,
+  formatDate,
+  formatFollowupWhen,
+  formatPaymentMethod,
+  toTitleLabel,
+} from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 export interface ActivityTabProps {
@@ -172,7 +178,7 @@ export function ActivityTab({ property, enabled, onViewFollowup }: ActivityTabPr
         id: `receipt-${receipt.id}`,
         kind: 'receipt',
         title: receipt.entryNo,
-        subtitle: `${formatPaise(receipt.amountPaise)} · ${receipt.paymentMethod ? toTitleLabel(receipt.paymentMethod) : 'Payment'}${recordedNote}`,
+        subtitle: `${formatPaise(receipt.amountPaise)} · ${receipt.paymentMethod ? formatPaymentMethod(receipt.paymentMethod) : 'Payment'}${recordedNote}`,
         date: receipt.valueDate,
         timestamp: new Date(receipt.valueDate).getTime(),
       });
