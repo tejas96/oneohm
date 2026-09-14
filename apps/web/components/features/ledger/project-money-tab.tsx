@@ -39,7 +39,7 @@ import {
 } from '@/lib/hooks/resources/ledger';
 import { usePaymentApprovals, type PaymentApproval } from '@/lib/hooks/resources/payment-approvals';
 import { useGatedAction } from '@/lib/rbac';
-import { cn } from '@/lib/utils';
+import { cn, formatBusinessDate, formatPaymentMethod, toTitleLabel } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 /**
@@ -236,8 +236,9 @@ export function ProjectMoneyTab({
             className="mb-3 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
             style={{ background: TONE.warning.tint, color: TONE.warning.ink }}
           >
-            Not counted in Received or Outstanding. A second person must approve these before they
-            move the customer&apos;s balance.
+            {/* Money in and money out both queue here, so the note names every
+                figure a request can move, not only the customer's balance. */}
+            Not counted in Received, Outstanding or Spent until a second person approves them.
           </p>
           <ul className="flex flex-col gap-1">
             {pendingApprovals.data?.data.map((p) => (
@@ -247,7 +248,7 @@ export function ProjectMoneyTab({
               >
                 <Mono className="text-foreground">{p.requestNo}</Mono>
                 <TonePill label={pendingKindLabel(p)} tone="neutral" />
-                <Mono>{p.valueDate}</Mono>
+                <Mono>{formatBusinessDate(p.valueDate)}</Mono>
                 <Mono className="font-medium text-foreground">
                   {formatPaise(Math.abs(p.amountPaise))}
                 </Mono>
@@ -417,6 +418,16 @@ function SummaryCard({
       label: 'Outstanding',
       value: s.outstandingPaise,
       ink: s.outstandingPaise > 0 ? TONE.warning.ink : undefined,
+      // The rest of the contract, so the card adds up. On a waived or
+      // cancelled project, Contract minus Received and Outstanding left lakhs
+      // unexplained on this tab while the Overview card showed where they went.
+      detail:
+        [
+          (s.waivedPaise ?? 0) > 0 ? `${formatPaise(s.waivedPaise)} written off` : null,
+          (s.cancelledPaise ?? 0) > 0 ? `${formatPaise(s.cancelledPaise ?? 0)} cancelled` : null,
+        ]
+          .filter(Boolean)
+          .join(' · ') || null,
     },
     {
       label: 'Spent',
@@ -671,7 +682,9 @@ function ProjectEntries({
                     <span className="block truncate text-[12.5px] text-foreground">
                       {e.category
                         ? formatExpenseCategory(e.category)
-                        : (e.paymentMethod ?? e.entryType)}
+                        : e.paymentMethod
+                          ? formatPaymentMethod(e.paymentMethod)
+                          : toTitleLabel(e.entryType)}
                       {e.counterparty ? ` · ${e.counterparty}` : ''}
                       {e.reference ? ` · ${e.reference}` : ''}
                     </span>

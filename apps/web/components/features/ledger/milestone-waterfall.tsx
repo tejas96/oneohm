@@ -14,7 +14,7 @@ import {
   type Tone,
 } from '@/components/features/projects/components/project-detail/primitives';
 import type { MilestoneBalance } from '@/lib/hooks/resources/ledger';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatBusinessDate, formatPaymentMethod } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 interface MilestoneWaterfallProps {
@@ -181,7 +181,9 @@ export function MilestoneWaterfall({
                       ) : null}
                       {m.dueDate ? (
                         <span>
-                          Due <Mono>{formatDate(m.dueDate)}</Mono>
+                          {/* A calendar date, not an instant: formatDate shifted it a
+                              day early for anyone west of UTC. */}
+                          Due <Mono>{formatBusinessDate(m.dueDate)}</Mono>
                         </span>
                       ) : null}
                     </span>
@@ -283,7 +285,7 @@ export function MilestoneWaterfall({
                                 {a.entryNo}
                               </Mono>
                               <span className="text-foreground-secondary">
-                                <Mono>{formatDate(a.valueDate)}</Mono>
+                                <Mono>{formatBusinessDate(a.valueDate)}</Mono>
                                 {a.valueDateIsInferred ? (
                                   /* Historical rows have no recoverable value date —
                                    say so rather than implying the date is a fact. */
@@ -294,7 +296,7 @@ export function MilestoneWaterfall({
                               </span>
                               {a.paymentMethod ? (
                                 <span className="text-[11px] uppercase tracking-[0.06em] text-foreground-tertiary">
-                                  {a.paymentMethod}
+                                  {formatPaymentMethod(a.paymentMethod)}
                                 </span>
                               ) : null}
                               {/* Both halves of a reversal stay on screen. Hiding the
