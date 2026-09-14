@@ -48,6 +48,16 @@ export class CashFlowQueryDto extends LedgerRangeQueryDto {
   @IsIn(['day', 'week', 'month', 'year'])
   @IsOptional()
   grain?: 'day' | 'week' | 'month' | 'year';
+
+  @ApiPropertyOptional({
+    description:
+      'Narrows the series to matching entries, the same search the period cards and the ' +
+      'entry list take, so the bars describe the rows on screen.',
+  })
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  search?: string;
 }
 
 export class LedgerEntriesQueryDto extends LedgerRangeQueryDto {

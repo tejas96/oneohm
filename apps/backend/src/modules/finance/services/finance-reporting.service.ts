@@ -37,14 +37,21 @@ export type CashFlowGrain = 'day' | 'week' | 'month' | 'year';
 
 export interface FinanceKpis {
   revenueInRange: number;
+  /** Cash spent on the work: expenses and vendor payments. Refunds are not spend. */
   spendInRange: number;
+  /** Cash handed back to customers. Summed apart from spend; Net subtracts both. */
+  refundInRange: number;
   netCashflowInRange: number;
   outstandingNow: number;
   overdueCountNow: number;
   /** Of `outstandingNow`, how much is past its due date. Same population. */
   overdueNow: number;
+  /** Counts are of entries still standing at the end of the period. */
   receiptCountInRange: number;
+  /** Cash expenses only — vendor payments and refunds are counted on their own. */
   expenseCountInRange: number;
+  vendorPaymentCountInRange: number;
+  refundCountInRange: number;
   unallocatedCredit: number;
   /** Meter installations completed in the period — dated by task completion. */
   meterInstallations: number;
@@ -85,12 +92,15 @@ export class FinanceReportingService {
     return {
       revenueInRange: rs(row?.revenuePaise),
       spendInRange: rs(row?.spendPaise),
+      refundInRange: rs(row?.refundPaise),
       netCashflowInRange: rs(row?.netPaise),
       outstandingNow: rs(row?.outstandingPaise),
       overdueCountNow: Number(row?.overdueCount ?? 0),
       overdueNow: rs(row?.overduePaise),
       receiptCountInRange: Number(row?.receiptCount ?? 0),
       expenseCountInRange: Number(row?.expenseCount ?? 0),
+      vendorPaymentCountInRange: Number(row?.vendorPaymentCount ?? 0),
+      refundCountInRange: Number(row?.refundCount ?? 0),
       unallocatedCredit: rs(row?.unallocatedPaise),
       meterInstallations: Number(row?.meterInstallations ?? 0),
       vendorPayable: rs(row?.vendorPayablePaise),
@@ -105,8 +115,9 @@ export class FinanceReportingService {
     from: string,
     to: string,
     grain: CashFlowGrain = 'month',
+    search?: string | null,
   ): Promise<Array<{ month: string; cashIn: number; cashOut: number; net: number }>> {
-    const rows = await this.dataSource.query(CASH_FLOW_SQL, [from, to, grain]);
+    const rows = await this.dataSource.query(CASH_FLOW_SQL, [from, to, grain, search ?? null]);
     return rows.map((r: Record<string, unknown>) => ({
       month: String(r.bucket),
       cashIn: rs(r.cashInPaise),

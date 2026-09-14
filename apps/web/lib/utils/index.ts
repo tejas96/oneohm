@@ -29,6 +29,7 @@ export {
   formatCurrencyCompact,
   formatCurrencyDecimal,
   formatBusinessDate,
+  formatCount,
   formatLocalDate,
   parseLocalDate,
   formatDate,

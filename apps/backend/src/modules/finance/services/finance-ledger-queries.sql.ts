@@ -32,10 +32,36 @@ export const KPIS_SQL = `
   WITH flows AS (
     SELECT
       COALESCE(SUM(e.amount_paise) FILTER (WHERE e.direction = 'in'), 0)::BIGINT  AS revenue_paise,
-      COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out' AND e.is_cash), 0)::BIGINT AS spend_paise,
-      COUNT(*) FILTER (WHERE e.direction = 'in'  AND e.reverses_id IS NULL)::int  AS receipt_count,
-      COUNT(*) FILTER (WHERE e.direction = 'out' AND e.is_cash AND e.reverses_id IS NULL)::int  AS expense_count
+      -- Spend is what the work cost in cash: expenses and vendor payments. A
+      -- refund is money handed back to a customer, not a cost — the rule
+      -- v_project_balance has followed since 1857030000000 — so it is summed
+      -- on its own. Net subtracts both, so it is unchanged.
+      COALESCE(SUM(-e.amount_paise) FILTER (
+        WHERE e.direction = 'out' AND e.is_cash AND e.entry_type <> 'refund'
+      ), 0)::BIGINT AS spend_paise,
+      COALESCE(SUM(-e.amount_paise) FILTER (
+        WHERE e.direction = 'out' AND e.is_cash AND e.entry_type = 'refund'
+      ), 0)::BIGINT AS refund_paise,
+      -- Counts are of entries still standing at the end of the period. A
+      -- reversal row is not an entry of its own, and the entry it undid no
+      -- longer stands once the reversal is dated inside the period: "8
+      -- receipts" once counted 3 that were reversed the same day. The sums
+      -- need no such care — a reversal carries the opposite sign.
+      COUNT(*) FILTER (
+        WHERE e.direction = 'in' AND e.reverses_id IS NULL AND rev.id IS NULL
+      )::int AS receipt_count,
+      COUNT(*) FILTER (
+        WHERE e.entry_type = 'expense' AND e.is_cash AND e.reverses_id IS NULL AND rev.id IS NULL
+      )::int AS expense_count,
+      COUNT(*) FILTER (
+        WHERE e.entry_type = 'vendor_payment' AND e.reverses_id IS NULL AND rev.id IS NULL
+      )::int AS vendor_payment_count,
+      COUNT(*) FILTER (
+        WHERE e.entry_type = 'refund' AND e.reverses_id IS NULL AND rev.id IS NULL
+      )::int AS refund_count
     FROM ledger_entries e
+    -- At most one row: uq_ledger_entries_reverses allows one reversal per entry.
+    LEFT JOIN ledger_entries rev       ON rev.reverses_id = e.id AND rev.value_date <= $2::date
     JOIN projects pr                   ON pr.id = e.project_id
     LEFT JOIN customer_properties prop ON prop.id = pr.property_id
     LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
@@ -107,9 +133,12 @@ export const KPIS_SQL = `
   SELECT
     flows.revenue_paise        AS "revenuePaise",
     flows.spend_paise          AS "spendPaise",
-    (flows.revenue_paise - flows.spend_paise)::BIGINT AS "netPaise",
+    flows.refund_paise         AS "refundPaise",
+    (flows.revenue_paise - flows.spend_paise - flows.refund_paise)::BIGINT AS "netPaise",
     flows.receipt_count        AS "receiptCount",
     flows.expense_count        AS "expenseCount",
+    flows.vendor_payment_count AS "vendorPaymentCount",
+    flows.refund_count         AS "refundCount",
     snapshot.outstanding_paise AS "outstandingPaise",
     snapshot.overdue_count     AS "overdueCount",
     snapshot.overdue_paise     AS "overduePaise",
@@ -125,6 +154,10 @@ export const KPIS_SQL = `
  * `generate_series` spans the requested range so empty periods appear as zeros
  * rather than being missing — a chart with holes in it reads as lost data.
  * The grain is a parameter, so the same query serves day, week and month.
+ *
+ * `$4` is the same search the period cards and the entry list take. Without it
+ * a search narrowed the cards to one project while the bars beside them kept
+ * showing the whole company.
  */
 export const CASH_FLOW_SQL = `
   WITH buckets AS (
@@ -145,7 +178,20 @@ export const CASH_FLOW_SQL = `
     -- cash-out bar right next to it on the same chart.
     COALESCE(SUM(e.amount_paise) FILTER (WHERE e.is_cash), 0)::BIGINT         AS "netPaise"
   FROM buckets b
-  LEFT JOIN ledger_entries e
+  LEFT JOIN (
+    SELECT e.*
+    FROM ledger_entries e
+    JOIN projects pr                   ON pr.id = e.project_id
+    LEFT JOIN customer_properties prop ON prop.id = pr.property_id
+    LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+    WHERE $4::text IS NULL
+       OR e.entry_no     ILIKE '%' || $4 || '%'
+       OR e.reference    ILIKE '%' || $4 || '%'
+       OR e.counterparty ILIKE '%' || $4 || '%'
+       OR pr.project_number ILIKE '%' || $4 || '%'
+       OR pr.name        ILIKE '%' || $4 || '%'
+       OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $4 || '%'
+  ) e
     ON date_trunc($3, e.value_date) = b.bucket
   GROUP BY b.bucket
   ORDER BY b.bucket
@@ -242,7 +288,12 @@ export const LEDGER_PAGE_SQL = `
     CASE WHEN $7 = 'customerName' AND $8 = 'asc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
     CASE WHEN $7 = 'customerName' AND $8 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
     -- Default: newest money first.
-    e.value_date DESC, e.created_at DESC
+    e.value_date DESC, e.created_at DESC,
+    -- Unique last key, so a tie can never straddle two pages. Entries posted in
+    -- one transaction share created_at (now() is the transaction's time), and
+    -- LIMIT/OFFSET over tied rows may order them differently per page: a row
+    -- would show twice and another never.
+    e.id DESC
   LIMIT $9 OFFSET $10
 `;
 

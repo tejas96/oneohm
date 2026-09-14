@@ -9,7 +9,7 @@ import { CrmStatusPill, type CrmColumn } from '@/components/shared/crm-table';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import type { LedgerEntry } from '@/lib/hooks/resources/ledger';
 import { color, crm } from '@/lib/theme/tokens';
-import { formatBusinessDate } from '@/lib/utils';
+import { formatBusinessDate, formatPaymentMethod, toTitleLabel } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 export type CashRow = LedgerEntry & Record<string, unknown>;
@@ -105,20 +105,12 @@ export const CASH_COLUMNS: CrmColumn<CashRow>[] = [
           </Box>
         );
       }
-      // A bill taken on credit: the cost was taken on when it was recorded, not
-      // paid then. "On credit" rather than "Unpaid" — an entry is a permanent
-      // fact and cannot change once written, so a status label on it would
-      // stay "Unpaid" long after the vendor is paid. Whether a vendor is still
-      // owed is answered by their balance on Payables, not by this row.
-      // Neutral tone for the same reason: it is a description, not a warning.
+      // A bill taken on credit. Its Flow says "On credit"; this says whose.
       if (row.isCash === false) {
         return (
           <Box sx={{ minWidth: 0 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-              <CrmStatusPill label="On credit" tone="neutral" dot={false} size="sm" />
-              <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {row.vendorName ?? 'Vendor'}
-              </Box>
+            <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              Bill from {row.vendorName ?? 'a vendor'}
             </Box>
             {row.recordedByName || row.approvedByName ? (
               <Box sx={{ fontSize: crm['text-row-xs'], color: color['text-tertiary'] }}>
@@ -131,7 +123,11 @@ export const CASH_COLUMNS: CrmColumn<CashRow>[] = [
         );
       }
       const parts = [
-        row.category ? formatExpenseCategory(row.category) : (row.paymentMethod ?? row.entryType),
+        row.category
+          ? formatExpenseCategory(row.category)
+          : row.paymentMethod
+            ? formatPaymentMethod(row.paymentMethod)
+            : toTitleLabel(row.entryType),
         row.counterparty,
         row.reference,
       ].filter(Boolean);
@@ -161,6 +157,13 @@ export const CASH_COLUMNS: CrmColumn<CashRow>[] = [
     renderCell: (row) =>
       row.reversesId ? (
         <CrmStatusPill label="Reversal" tone="warning" dot={false} size="sm" />
+      ) : row.isCash === false ? (
+        // A bill taken on credit moved no cash, so it is not "Out". "On credit"
+        // rather than "Unpaid": an entry is a permanent fact and cannot change
+        // once written, so a status label would stay "Unpaid" long after the
+        // vendor is paid. Whether a vendor is still owed is answered by their
+        // balance on Payables. Neutral, because it describes; it does not warn.
+        <CrmStatusPill label="On credit" tone="neutral" dot={false} size="sm" />
       ) : (
         <CrmStatusPill
           label={row.direction === 'in' ? 'In' : 'Out'}
@@ -184,17 +187,21 @@ export const CASH_COLUMNS: CrmColumn<CashRow>[] = [
         sx={{
           fontWeight: 600,
           fontVariantNumeric: 'tabular-nums',
-          // A reversal is a correction, not cash moving: grey and signed, so
-          // undoing a bill on credit never reads as money coming in.
-          color: row.reversesId
-            ? color['text-secondary']
-            : row.amountPaise < 0
-              ? color.danger
-              : color.success,
+          // Grey is "no cash moved". A reversal is a correction, signed so
+          // undoing a bill never reads as money coming in; a bill on credit is
+          // a debt taken on, unsigned so it never reads as money leaving.
+          color:
+            row.reversesId || row.isCash === false
+              ? color['text-secondary']
+              : row.amountPaise < 0
+                ? color.danger
+                : color.success,
         }}
       >
         {row.reversesId && row.amountPaise > 0 ? '+' : ''}
-        {formatPaise(row.amountPaise)}
+        {formatPaise(
+          row.isCash === false && !row.reversesId ? Math.abs(row.amountPaise) : row.amountPaise,
+        )}
       </Box>
     ),
   },

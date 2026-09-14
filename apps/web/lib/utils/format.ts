@@ -40,6 +40,11 @@ export function formatPaymentMethod(method: string): string {
   );
 }
 
+/** "1 receipt", "5 receipts" — never "1 receipts". */
+export function formatCount(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
 export function formatLabel(key: string): string {
   return key
     .split('_')

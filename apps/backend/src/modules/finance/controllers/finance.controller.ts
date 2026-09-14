@@ -84,7 +84,7 @@ export class FinanceController {
     @Query() query: CashFlowQueryDto,
   ): Promise<Awaited<ReturnType<FinanceReportingService['getCashFlow']>>> {
     const { from, to } = resolveRange(query.from, query.to);
-    return this.reportingService.getCashFlow(from, to, query.grain ?? 'month');
+    return this.reportingService.getCashFlow(from, to, query.grain ?? 'month', query.search);
   }
 
   @Get('entries')

@@ -165,15 +165,22 @@ export interface ProjectLedgerSummary {
 
 export interface FinanceKpis {
   revenueInRange: number;
+  /** Cash spent on the work: expenses and vendor payments. Refunds are not spend. */
   spendInRange: number;
+  /** Cash handed back to customers. Net subtracts it as well as spend. */
+  refundInRange: number;
   netCashflowInRange: number;
   /** A SNAPSHOT as of today — deliberately not bounded by the selected period. */
   outstandingNow: number;
   overdueCountNow: number;
   /** Of `outstandingNow`, how much is past due. Authoritative — see KPIS_SQL. */
   overdueNow: number;
+  /** Counts are of entries still standing at the end of the period — reversed ones drop out. */
   receiptCountInRange: number;
+  /** Cash expenses only; vendor payments and refunds have their own counts. */
   expenseCountInRange: number;
+  vendorPaymentCountInRange: number;
+  refundCountInRange: number;
   unallocatedCredit: number;
   meterInstallations: number;
   /**
@@ -319,14 +326,15 @@ export function useCashFlow(
   from?: string,
   to?: string,
   grain: 'day' | 'week' | 'month' = 'month',
-  options?: { enabled?: boolean },
+  options?: { enabled?: boolean; search?: string },
 ): UseQueryResult<CashFlowPoint[], AxiosError> {
+  const search = options?.search;
   return useQuery({
-    queryKey: ledgerKeys.cashFlow(from, to, grain),
+    queryKey: [...ledgerKeys.cashFlow(from, to, grain), search ?? ''],
     enabled: options?.enabled !== false,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<CashFlowPoint[]>('/finance/cash-flow', {
-        params: { from, to, grain },
+        params: search ? { from, to, grain, search } : { from, to, grain },
         signal,
       });
       return data;

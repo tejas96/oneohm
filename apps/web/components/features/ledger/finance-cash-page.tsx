@@ -18,6 +18,7 @@ import {
 } from '@/lib/hooks/resources/ledger';
 import type { Gate } from '@/lib/rbac';
 import { color, crm } from '@/lib/theme/tokens';
+import { formatBusinessDate, formatCount } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 /** IST today, matching how the backend stamps value dates. */
@@ -94,6 +95,7 @@ export function FinanceCashPage(): JSX.Element {
   const [direction, setDirection] = useState<LedgerDirection | undefined>();
   // CrmTable's `page` is zero-indexed; the API is one-indexed.
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [search, setSearch] = useState('');
   const [sortModel, setSortModel] = useState<TableSortModel | null>(null);
   const range = resolvePreset(preset);
@@ -102,7 +104,9 @@ export function FinanceCashPage(): JSX.Element {
   // screen. The direction chip deliberately does not: the cards show money in
   // and money out side by side, so it is a table view, not a scope change.
   const kpis = useFinanceKpis(range.from, range.to, search || undefined);
-  const cashFlow = useCashFlow(range.from, range.to, preset === 'today' ? 'day' : 'month');
+  const grain = preset === 'today' ? 'day' : 'month';
+  // The bars follow the search too, so they describe the same rows as the cards.
+  const cashFlow = useCashFlow(range.from, range.to, grain, { search: search || undefined });
   const entries = useLedgerEntries({
     ...range,
     direction,
@@ -110,7 +114,7 @@ export function FinanceCashPage(): JSX.Element {
     sortBy: CASH_SORTABLE.find((f) => f === sortModel?.field),
     sortOrder: sortModel?.direction,
     page: page + 1,
-    limit: PAGE_SIZE,
+    limit: pageSize,
   });
 
   const rows = (entries.data?.data ?? []) as CashRow[];
@@ -167,7 +171,7 @@ export function FinanceCashPage(): JSX.Element {
             component="p"
             sx={{ m: 0, fontSize: crm['text-row-title'], color: color['text-secondary'] }}
           >
-            {range.from} to {range.to}
+            {formatBusinessDate(range.from)} to {formatBusinessDate(range.to)}
           </Box>
         </Box>
 
@@ -194,7 +198,7 @@ export function FinanceCashPage(): JSX.Element {
 
       {kpis.isLoading ? <Skeleton variant="rounded" height={104} /> : <KpiStrip data={kpis.data} />}
 
-      <CashFlowChart points={cashFlow.data ?? []} isLoading={cashFlow.isLoading} />
+      <CashFlowChart points={cashFlow.data ?? []} grain={grain} isLoading={cashFlow.isLoading} />
 
       <CrmTable<CashRow>
         columns={CASH_COLUMNS}
@@ -221,9 +225,13 @@ export function FinanceCashPage(): JSX.Element {
           setPage(0);
         }}
         page={page}
-        pageSize={PAGE_SIZE}
+        pageSize={pageSize}
         totalRowCount={entries.data?.total ?? 0}
         onPageChange={setPage}
+        onPageSizeChange={(next) => {
+          setPageSize(next);
+          setPage(0);
+        }}
         emptyMessage="Nothing recorded in this period."
       />
     </Box>
@@ -248,13 +256,32 @@ function KpiStrip({
     {
       label: 'Received',
       value: rupees(data?.revenueInRange ?? 0),
-      sub: `${data?.receiptCountInRange ?? 0} receipts`,
+      sub: formatCount(data?.receiptCountInRange ?? 0, 'receipt'),
       tone: 'success',
     },
     {
+      // What the work cost in cash. Vendor payments are named in the count,
+      // not folded into "expenses" — a payment settling a bill is not a new
+      // expense.
       label: 'Spent',
       value: rupees(data?.spendInRange ?? 0),
-      sub: `${data?.expenseCountInRange ?? 0} expenses`,
+      sub: [
+        formatCount(data?.expenseCountInRange ?? 0, 'expense'),
+        (data?.vendorPaymentCountInRange ?? 0) > 0
+          ? formatCount(data?.vendorPaymentCountInRange ?? 0, 'vendor payment')
+          : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      tone: 'default',
+    },
+    {
+      // Money handed back to customers is not what the work cost, so it is
+      // not in Spent — the project money card has kept the two apart since
+      // refunds existed. Net subtracts both, so it reconciles on screen.
+      label: 'Refunded',
+      value: rupees(data?.refundInRange ?? 0),
+      sub: formatCount(data?.refundCountInRange ?? 0, 'refund'),
       tone: 'default',
     },
     {
@@ -272,7 +299,10 @@ function KpiStrip({
       // selected by this same commissioning event; Loan is one click away.
       label: 'Projects commissioned',
       value: String(data?.meterInstallations ?? 0),
-      sub: 'net meter installed',
+      // The list it opens is not these projects: it is every commissioned job
+      // that still owes money, whatever the period. Said here, so "40" opening
+      // a list of 23 is not a surprise.
+      sub: 'net meter installed · jobs still owing →',
       tone: 'default',
       href: `${ROUTES.FINANCE.RECEIVABLES}?scope=recovery-cash`,
       gate: 'finance.receivables.view',
@@ -283,7 +313,8 @@ function KpiStrip({
     {
       label: 'Outstanding',
       value: rupees(data?.outstandingNow ?? 0),
-      sub: `${data?.overdueCountNow ?? 0} overdue`,
+      // Milestones, not projects or customers: one job can carry several.
+      sub: `${formatCount(data?.overdueCountNow ?? 0, 'milestone')} overdue`,
       tone: 'warning',
     },
     {
@@ -304,14 +335,14 @@ function KpiStrip({
 
   return (
     <div className="flex flex-col gap-3">
-      <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {flows.map((t) => (
           <Tile key={t.label} {...t} />
         ))}
       </dl>
       <div>
         <MUITypography variant="finePrint" sx={{ mb: 1 }}>
-          As of today — not affected by the selected period
+          As of today — not affected by the selected period or the search
         </MUITypography>
         <dl className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           {snapshots.map((t) => (
@@ -389,15 +420,25 @@ function Tile({
 /** Bar pair per period. Deliberately simple — a chart library is not needed here. */
 function CashFlowChart({
   points,
+  grain,
   isLoading,
 }: {
   points: Array<{ month: string; cashIn: number; cashOut: number }>;
+  grain: 'day' | 'month';
   isLoading: boolean;
 }): JSX.Element {
   if (isLoading) return <Skeleton variant="rounded" height={160} />;
   if (points.length === 0) return <></>;
 
   const peak = Math.max(...points.map((p) => Math.max(p.cashIn, p.cashOut)), 1);
+  // The series is in rupees; the tooltip reads like every other amount here.
+  const rupees = (v: number): string => formatPaise(Math.round(v * 100));
+  // A bucket is the first day of its period. A day bucket said "2026-09".
+  const bucketLabel = (bucket: string): string => {
+    if (grain === 'day') return formatBusinessDate(bucket);
+    const [y, m] = bucket.split('-').map(Number) as [number, number];
+    return new Date(y, m - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+  };
 
   return (
     <Card variant="outlined" component="section" sx={{ p: 2 }}>
@@ -410,20 +451,20 @@ function CashFlowChart({
             <div className="flex h-24 w-full items-end justify-center gap-1">
               {/* Bar fills come from the MUI palette, not Tailwind colour
                   utilities — the height is the only thing layout owns here. */}
-              <Tooltip title={`In ${p.cashIn}`}>
+              <Tooltip title={`In ${rupees(p.cashIn)}`}>
                 <Box
                   sx={{ width: '50%', bgcolor: 'success.light', borderRadius: '4px 4px 0 0' }}
                   style={{ height: `${(p.cashIn / peak) * 100}%` }}
                 />
               </Tooltip>
-              <Tooltip title={`Out ${p.cashOut}`}>
+              <Tooltip title={`Out ${rupees(p.cashOut)}`}>
                 <Box
                   sx={{ width: '50%', bgcolor: 'error.light', borderRadius: '4px 4px 0 0' }}
                   style={{ height: `${(p.cashOut / peak) * 100}%` }}
                 />
               </Tooltip>
             </div>
-            <MUITypography variant="finePrint">{p.month.slice(0, 7)}</MUITypography>
+            <MUITypography variant="finePrint">{bucketLabel(p.month)}</MUITypography>
           </div>
         ))}
       </div>

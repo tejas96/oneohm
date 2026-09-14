@@ -24,7 +24,7 @@ import { useCashFlow, useFinanceKpis } from '@/lib/hooks/resources/ledger';
 import { usePipelineDashboard } from '@/lib/hooks/resources/pipeline';
 import { useWorkload } from '@/lib/hooks/resources/workload';
 import { useCan } from '@/lib/rbac';
-import { cn } from '@/lib/utils';
+import { cn, formatCount } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 const OLDEST_DEBT_ROWS = 3;
@@ -251,21 +251,28 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
     {
       label: 'Money in',
       value: money(k?.revenueInRange ?? 0, format),
-      sub: `${k?.receiptCountInRange ?? 0} receipts`,
+      sub: formatCount(k?.receiptCountInRange ?? 0, 'receipt'),
       href: businessLinks.finance(),
       gate: 'finance.view',
     },
     {
+      // Everything that left the bank, refunds included — that is what
+      // "money out" says. The Cash page splits it into Spent and Refunded.
       label: 'Money out',
-      value: money(k?.spendInRange ?? 0, format),
-      sub: `${k?.expenseCountInRange ?? 0} payments`,
+      value: money((k?.spendInRange ?? 0) + (k?.refundInRange ?? 0), format),
+      sub: formatCount(
+        (k?.expenseCountInRange ?? 0) +
+          (k?.vendorPaymentCountInRange ?? 0) +
+          (k?.refundCountInRange ?? 0),
+        'payment',
+      ),
       href: businessLinks.finance(),
       gate: 'finance.view',
     },
     {
       label: 'Outstanding now',
       value: money(k?.outstandingNow ?? 0, format),
-      sub: `${k?.overdueCountNow ?? 0} overdue`,
+      sub: `${formatCount(k?.overdueCountNow ?? 0, 'milestone')} overdue`,
       subIsBad: (k?.overdueCountNow ?? 0) > 0,
       // `/finance/receivables` needs its OWN code, not plain finance.view.
       href: businessLinks.receivables(),
