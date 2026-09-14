@@ -255,7 +255,8 @@ export function PaymentApprovalsPage(): JSX.Element {
         }}
         onRowClick={setSelected}
         enableRowSelection={status === 'pending'}
-        selectionLabel={(count) => `${count} payment${count === 1 ? '' : 's'} selected`}
+        // "requests", like the footer: a selection can hold expenses and bills too.
+        selectionLabel={(count) => `${count} request${count === 1 ? '' : 's'} selected`}
         bulkActions={
           status === 'pending'
             ? [

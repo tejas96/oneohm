@@ -24,6 +24,7 @@ import {
 } from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
 import { color, radius } from '@/lib/theme/tokens';
+import { formatPaymentMethod } from '@/lib/utils';
 import { blurStayedInDialog } from '@/lib/utils/focus';
 import { formatPaise, paiseToRupees, parseRupeeInput, rupeeInputError } from '@/lib/utils/paise';
 
@@ -55,7 +56,8 @@ function todayIst(): string {
  */
 const METHOD_OPTIONS = Object.values(PaymentMethod)
   .filter((m) => m !== PaymentMethod.CREDIT)
-  .map((m) => ({ value: m, label: m.toUpperCase() }));
+  // The app's method labels ("UPI", "Demand draft"), not the raw value upper-cased.
+  .map((m) => ({ value: m, label: formatPaymentMethod(m) }));
 
 interface ProjectPick {
   id: string;

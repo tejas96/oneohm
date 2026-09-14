@@ -26,6 +26,7 @@ import {
 } from '@/lib/hooks/resources/ledger';
 import { useVendors } from '@/lib/hooks/resources/vendors';
 import { useGatedAction } from '@/lib/rbac';
+import { formatPaymentMethod } from '@/lib/utils';
 import { blurStayedInDialog } from '@/lib/utils/focus';
 import { formatPaise, paiseToRupees, parseRupeeInput, rupeeInputError } from '@/lib/utils/paise';
 
@@ -370,15 +371,15 @@ export function RecordMoneyDialog({
              * receivable, and it already has a home in payment_milestones —
              * so offering it here would be a trap. `credit` still joins this
              * list automatically for an expense since it maps
-             * `Object.values(PaymentMethod)`, but `m.toUpperCase()` alone
-             * would render it `CREDIT`, which reads like a shout next to
-             * `UPI`.
+             * `Object.values(PaymentMethod)`, and says what it means there.
+             * The rest use the app's method labels: upper-casing the raw value
+             * showed "DEMAND_DRAFT" and shouted "ONLINE", "CASH", "CHEQUE".
              */
             options={Object.values(PaymentMethod)
               .filter((m) => !isReceipt || m !== PaymentMethod.CREDIT)
               .map((m) => ({
                 value: m,
-                label: m === PaymentMethod.CREDIT ? 'Credit (pay later)' : m.toUpperCase(),
+                label: m === PaymentMethod.CREDIT ? 'Credit (pay later)' : formatPaymentMethod(m),
               }))}
           />
 
