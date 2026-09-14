@@ -293,11 +293,14 @@ export function openMilestonesByUrgency(ledger: ProjectLedgerSummary): Milestone
 }
 
 /**
- * Cash spent plus a bill taken on credit but not yet paid.
+ * What the project has really cost: cash expenses plus bills taken on credit.
  *
- * `spentPaise` alone is cash that has left; it says nothing about a bill on
- * credit, which is a cost the project already carries the moment it is taken
- * on. This is the one place that adds `committedUnpaidPaise` on top of
+ * `spentPaise` is cash that has left, and it includes payments to vendors.
+ * `committedUnpaidPaise` is credit bills LESS those payments. Adding the two
+ * counts each bill once — before it is paid it sits in the second half, after
+ * it is paid its cash sits in the first and it drops out of the second. When a
+ * vendor was paid more than billed, `committedUnpaidPaise` is negative and the
+ * advance correctly stays out of cost. This is the one place that adds `committedUnpaidPaise` on top of
  * `spentPaise` — margin, the used-percent and the overrun warning all read
  * THIS, on every screen that shows them, so the figures cannot drift apart
  * the way they did when the Money tab computed cost and the Overview card's

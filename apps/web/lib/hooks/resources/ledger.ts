@@ -152,7 +152,11 @@ export interface ProjectLedgerSummary {
   netCashPaise: Paise;
   receiptCount: number;
   milestoneCount: number;
-  /** What the project owes vendors and has not paid yet — the credit mirror of `spentPaise`. */
+  /**
+   * Bills on credit less payments made to vendors on this project. NEGATIVE
+   * means vendors hold an advance. Never add it to anything but `spentPaise`,
+   * which already includes those payments — see `costPaise` in derive.ts.
+   */
   committedUnpaidPaise?: Paise;
   milestones: MilestoneBalance[];
 }

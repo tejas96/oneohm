@@ -351,7 +351,9 @@ export class ProjectLedgerSummaryDto {
   milestoneCount!: number;
 
   @ApiProperty({
-    description: 'What the project owes vendors and has not paid yet — the credit mirror of spentPaise.',
+    description:
+      'Bills on credit less payments made to vendors on this project. Negative means vendors hold an ' +
+      'advance. Cost is spentPaise + committedUnpaidPaise: spentPaise already includes vendor payments.',
   })
   @Expose()
   @Transform(({ value }) => toNum(value))

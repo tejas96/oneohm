@@ -456,11 +456,16 @@ function SummaryCard({
       </dl>
 
       {/* Why margin and Spent differ, said plainly rather than left for someone
-          to work out: Spent is cash gone, margin also carries what is owed on
-          a bill taken on credit. */}
+          to work out. Spent is cash gone. Cost also carries credit bills still
+          owed — or, when vendors were paid more than they billed, leaves out
+          that advance, which is not a cost until a bill arrives. */}
       {committedUnpaidPaise > 0 ? (
         <p className="mt-2 text-[12px] leading-relaxed text-foreground-tertiary">
           + {formatPaise(committedUnpaidPaise)} owed to vendors, not yet paid
+        </p>
+      ) : committedUnpaidPaise < 0 ? (
+        <p className="mt-2 text-[12px] leading-relaxed text-foreground-tertiary">
+          {formatPaise(-committedUnpaidPaise)} paid to vendors ahead of their bills
         </p>
       ) : null}
 

@@ -79,7 +79,7 @@ export interface ProjectBalanceRow {
   netCashPaise: number;
   receiptCount: number;
   milestoneCount: number;
-  /** What the project owes vendors and has not paid. The credit mirror of `spentPaise`. */
+  /** Bills on credit less vendor payments on this project. Negative = an advance held by vendors. */
   committedUnpaidPaise: number;
 }
 
