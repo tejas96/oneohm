@@ -275,6 +275,15 @@ COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out'
 `net_cash_paise` is unchanged in formula and therefore becomes true cash, which is what its
 name always claimed.
 
+> **Corrected 2026-09-14 (migration `1857150000000-OwedToVendorsNetOfPayments`).** The column
+> above counted credit bills only, and paying one never reduced it — but the payment is cash out,
+> so it also lands in `spent_paise`. Since cost is `spent_paise + committed_unpaid_paise`, a paid
+> bill was charged to its project **twice**: proved on a ₹1,00,000 bill, cost read ₹1,00,000 after
+> the bill and ₹2,00,000 after paying it. `committed_unpaid_paise` is now **credit bills minus
+> vendor payments** on the project. Cost is still `spent + committed_unpaid`, and that sum now
+> equals cash expenses plus credit bills. It may be negative, meaning vendors hold an advance; the
+> Money tab then says "paid to vendors ahead of their bills", and the advance stays out of cost.
+
 **Downstream cleanup, mandatory and in the same change:** `waivedRemainderPaise` in
 `apps/web/components/features/projects/components/project-detail/lib/derive.ts` exists solely
 to work around the old `waivedPaise`. It is deleted and its callers read `waivedPaise`
@@ -415,6 +424,14 @@ The count is computed server-side alongside the bucket counts. This is defect 5,
 than guessed — the banner reports it, it does not repair it. Repairing the share split means
 deciding 10/70/20 versus something else per project, which is the owner's call, not a default.
 
+> **Added 2026-09-14.** The banner first pointed at a fix nobody could make: no screen or API
+> could change who pays a milestone. `PATCH ledger/milestones/:id/payer` now sets `customer` or
+> `lender`, and a loan project's payment schedule shows a **Customer / Bank** switch on every open
+> milestone. It moves no money, mirrors Waive's transaction, audit and permission
+> (`finance.payments.record`), refuses a bank on a project with no loan and any closed milestone,
+> and the customer app does not read it. A receivable's project link opens the Finance tab, so
+> the path is banner → row → switch, and the banner count drops as projects are corrected.
+
 Rows for loan projects show `financingBank`, or a **"Add bank"** button for the 149 properties
 that have none. Not muted text and not blank — blank reads as "no bank involved", which is the
 opposite of the truth, and muted text tells a collector about a problem they cannot fix from
@@ -504,9 +521,13 @@ Beneath it, one line, shown only when there is something to show:
 
 > \+ ₹1,00,000 owed to vendors, not yet paid
 
-Credit bills appear in the entries list with an **Unpaid** chip and the vendor name. Vendor
-payments appear as **"Paid Arihant Associates"**. Two rows for one cost is correct and reads
-correctly, because only one of them is cash.
+Credit bills appear in the entries list with an **On credit** chip, in a neutral tone, and the
+vendor name. Vendor payments appear as **"Paid Arihant Associates"**. Two rows for one cost is
+correct and reads correctly, because only one of them is cash.
+
+> **Changed 2026-09-14.** The chip first said "Unpaid". A ledger entry never changes, so it kept
+> saying "Unpaid" after the vendor was paid in full. "On credit" describes how the bill was taken
+> on, which stays true; whether a vendor is still owed is their balance on Payables.
 
 ### 6.5 Finance → Approvals
 
@@ -518,6 +539,14 @@ correctly, because only one of them is cash.
   after** approval. The approver sees the consequence, not just the amount.
 
 ### 6.6 Record expense dialog
+
+> **Added 2026-09-14 — add a vendor without leaving.** When the typed name matches no vendor, the
+> picker offers "Add “Sharma Traders” as a new vendor", last in the list so an existing near-match
+> is seen first. It opens a small dialog over the expense asking only for a name, phone and credit
+> days, refuses a name that already exists, and selects the new vendor without losing the
+> expense. The server generates the code (`VEN-0001`, …) when none is sent. Gated on
+> `finance.payments.record` by the owner's choice: whoever may record the bill may name who it is
+> owed to. Before this, a finance-only user could not add a vendor at all.
 
 - **Vendor picker**, reusing `components/features/inventory/components/shared/vendor-picker.tsx`.
   Optional in general; **required** the moment `Credit` is chosen, with the reason stated
@@ -551,6 +580,12 @@ that is correct, not a bug. Do not "fix" it.
 A **Payable** tile and the vendor's bill list, so the loop closes from either direction. This is
 `v_vendor_payable` scoped to one vendor — a different scope of the same fact, not a second copy
 of it.
+
+> **Built 2026-09-14** — the first pass shipped only the tile. `GET
+> /finance/payables/:vendorId/entries` returns every credit bill and payment with the vendor,
+> newest first, with the balance after each line, computed across all rows before the newest 100
+> are cut. It renders as a **Bills & payments** tab here and as the expanded row under a vendor on
+> Payables. No line claims to be paid or unpaid; without bill-by-bill matching a row cannot know.
 
 ## 7. RBAC
 
