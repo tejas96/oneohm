@@ -415,6 +415,17 @@ control, per the house preference for few controls that each do more.
 anything: customer name, **phone**, project number, amount open, days since the meter went in,
 oldest overdue milestone. `customerPhone` is already returned by `RECEIVABLES_SQL`.
 
+> **Changed 2026-09-14 — one row per project.** Recovery first listed a job once per open
+> milestone, so one call took up to four rows (57 rows for 38 jobs). `GET /finance/recovery`
+> groups the same `v_milestone_balance` rows per project: still owed, the overdue part, oldest
+> overdue, days since the meter, open milestone count, bank, and whether a loan job's bank share
+> was ever split out (marked on the row; the banner counts them). Chips count projects by their
+> oldest overdue milestone. Opening a row lists its open milestones, which add up to the row.
+> Sorts: days since meter, amount owed, oldest overdue, customer (case-insensitive). Checked
+> against the milestone list: Cash 23 projects ₹13,22,346.38, Loan 15 projects ₹4,99,575.72, and
+> every project equals its milestone rows. "All open" keeps one row per milestone. The scope is
+> in the URL (`?scope=recovery-cash`), so a refresh or a link keeps it.
+
 **Recovery — Loan carries a banner** when any project in scope lacks a lender milestone:
 
 > 14 of 15 loan projects have no bank share recorded. You may be chasing the customer for the
@@ -484,7 +495,8 @@ Nav entry added to `navigation.ts` under `MONEY`, and `ROUTES.FINANCE.PAYABLES` 
   *by* us now sit on the same screen. This is the single biggest clarity win for the business
   team and costs one tile.
 - The existing **"Meter installations"** tile becomes a link into `Receivables → Recovery`.
-  A count that already exists becomes a way in.
+  A count that already exists becomes a way in. *(2026-09-14: it opens **Recovery — Cash**
+  directly, `?scope=recovery-cash`; Loan is one click away.)*
 - **"Spent"** stays cash-only. This is a cash page; that is the correct meaning here.
 
 ### 6.4 Project → Money tab
@@ -538,6 +550,16 @@ correct and reads correctly, because only one of them is cash.
 - Vendor payments show which vendor is being paid and that vendor's payable **before and
   after** approval. The approver sees the consequence, not just the amount.
 
+> **Added 2026-09-14 — the bell.** A payment waiting for approval notifies everyone holding
+> `finance.approvals.process`, never the person who recorded it; when nobody else holds it, the
+> admins are told instead, so a payment never waits unseen. Approving or rejecting tells the
+> recorder, reason first on a reject. Each link is one the recipient can open (the project's
+> Finance tab, else the approvals list, else none). Sends run after the commit and cannot fail an
+> approval. The web bell used to open `/notifications`, a page that was never built; it now opens
+> a list where clicking a notice marks it read and goes where it points. The approvals tab is in
+> the URL (`?status=rejected`), and the Type filter gains Vendor payment. Vendor payments are
+> numbered in their own `VPY-` series; older ones keep `EXP-`.
+
 ### 6.6 Record expense dialog
 
 > **Added 2026-09-14 — add a vendor without leaving.** When the typed name matches no vendor, the
@@ -564,6 +586,15 @@ payable and stays editable — part payments are ordinary. Project is a required
 reason stated: *"Every ledger entry belongs to a project. One cheque covering three projects is
 recorded as three lines."* Paying more than the payable is allowed and warns inline that the
 excess becomes an advance.
+
+> **Changed 2026-09-14 — pay project by project.** Prefilling the vendor's whole balance against
+> one searched project moved cost between projects while the vendor's figure looked right.
+> `GET /finance/payables/:vendorId/projects` returns credit bills less payments per project (only
+> projects still owing), plus vendor payments already waiting for approval, using the same
+> filters as `v_vendor_payable`. The dialog lists those projects; picking one fills project and
+> amount, and a vendor owed on one project gets it picked. It warns when a payment on that
+> project is already waiting, and says how much was paid ahead elsewhere when the list adds up to
+> more than the balance.
 
 ### 6.8 Business dashboard
 
