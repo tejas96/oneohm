@@ -78,6 +78,8 @@ export class SequenceService {
         return 'PA';
       case FinanceSequenceScope.REFUND:
         return 'RFD';
+      case FinanceSequenceScope.VENDOR_PAYMENT:
+        return 'VPY';
       default: {
         const exhaustive: never = scope;
         this.logger.error(`Unhandled finance sequence scope: ${String(exhaustive)}`);

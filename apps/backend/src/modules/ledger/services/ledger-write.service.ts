@@ -286,7 +286,10 @@ export class LedgerWriteService {
       this.insertEntry(manager, {
         projectId: input.projectId,
         customerId: null,
-        entryNo: await this.sequenceService.getNextNumber(FinanceSequenceScope.EXPENSE, manager),
+        entryNo: await this.sequenceService.getNextNumber(
+          FinanceSequenceScope.VENDOR_PAYMENT,
+          manager,
+        ),
         entryType: 'vendor_payment',
         direction: 'out',
         amountPaise: -input.amountPaise,
@@ -432,8 +435,13 @@ export class LedgerWriteService {
         );
       }
 
-      const scope =
+      // A vendor payment's reversal stays in the VPY- series, so the vendor's
+      // bill list reads as one run of payments rather than a stray EXP- number.
+      let scope =
         original.direction === 'in' ? FinanceSequenceScope.RECEIPT : FinanceSequenceScope.EXPENSE;
+      if (original.entryType === 'vendor_payment') {
+        scope = FinanceSequenceScope.VENDOR_PAYMENT;
+      }
 
       const reversal = await this.insertEntry(manager, {
         projectId: original.projectId,
