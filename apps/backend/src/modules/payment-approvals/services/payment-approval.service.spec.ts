@@ -661,7 +661,7 @@ describe('PaymentApprovalService', () => {
     it('reports another payment with the same project, amount and date', async () => {
       repoFind.mockResolvedValue([pending({ id: 'other', submittedAt: new Date() })]);
 
-      const dupes = await service.findDuplicates(PROJECT, 50_000, '2026-08-01');
+      const dupes = await service.findDuplicates(PROJECT, 50_000, '2026-08-01', 'receipt');
 
       expect(dupes).toHaveLength(1);
     });
@@ -670,7 +670,9 @@ describe('PaymentApprovalService', () => {
       const old = new Date(Date.now() - 48 * 3_600_000);
       repoFind.mockResolvedValue([pending({ id: 'other', submittedAt: old })]);
 
-      await expect(service.findDuplicates(PROJECT, 50_000, '2026-08-01')).resolves.toHaveLength(0);
+      await expect(
+        service.findDuplicates(PROJECT, 50_000, '2026-08-01', 'receipt'),
+      ).resolves.toHaveLength(0);
     });
 
     it('ignores a rejected row — it is not a competing claim', async () => {
@@ -678,7 +680,9 @@ describe('PaymentApprovalService', () => {
         pending({ id: 'other', submittedAt: new Date(), status: 'rejected' }),
       ]);
 
-      await expect(service.findDuplicates(PROJECT, 50_000, '2026-08-01')).resolves.toHaveLength(0);
+      await expect(
+        service.findDuplicates(PROJECT, 50_000, '2026-08-01', 'receipt'),
+      ).resolves.toHaveLength(0);
     });
   });
 });

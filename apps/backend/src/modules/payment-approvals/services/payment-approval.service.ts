@@ -33,7 +33,7 @@ import {
   APPROVALS_PAGE_SQL,
   APPROVAL_BY_ID_SQL,
 } from './payment-approval-queries.sql';
-import { PendingLedgerEntryEntity } from '../entities';
+import { PendingKind, PendingLedgerEntryEntity } from '../entities';
 
 export interface BulkApproveResult {
   approved: string[];
@@ -635,27 +635,33 @@ export class PaymentApprovalService {
     }
 
     const possibleDuplicates = (
-      await this.findDuplicates(row.projectId, Number(row.amountPaise), row.valueDate)
+      await this.findDuplicates(row.projectId, Number(row.amountPaise), row.valueDate, row.kind)
     ).filter((d) => d.id !== row.id);
 
     return { ...normaliseRow(row), possibleDuplicates };
   }
 
   /**
-   * Same project, amount and payment date, submitted recently.
+   * Same project, kind, amount and payment date, submitted recently.
    *
    * Surfaced to the approver as a warning, never a block — a customer genuinely
    * can pay the same amount twice in one day.
+   *
+   * Kind is part of the match. Money out is stored negative for every kind, so
+   * without it the vendor payment that settles a bill on credit — same project,
+   * same amount, often the same day — was flagged as a double entry of that
+   * bill. Paying a bill is the ordinary case, not a duplicate.
    */
   async findDuplicates(
     projectId: string,
     amountPaise: number,
     valueDate: string,
+    kind: PendingKind,
   ): Promise<PendingLedgerEntryEntity[]> {
     const since = new Date(Date.now() - DUPLICATE_WINDOW_HOURS * 3_600_000);
 
     const candidates = await this.dataSource.getRepository(PendingLedgerEntryEntity).find({
-      where: { projectId, amountPaise, valueDate },
+      where: { projectId, kind, amountPaise, valueDate },
       order: { submittedAt: 'DESC' },
       take: 5,
     });

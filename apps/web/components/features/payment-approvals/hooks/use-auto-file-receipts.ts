@@ -8,7 +8,7 @@ import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import type { LedgerEntry, ProjectLedgerSummary } from '@/lib/hooks/resources/ledger';
 import type { PaymentApproval } from '@/lib/hooks/resources/payment-approvals';
-import { getErrorMessage } from '@/lib/utils/error';
+import { getErrorReason } from '@/lib/utils/error';
 
 interface ProjectBundle {
   project: ProjectDetail;
@@ -62,7 +62,7 @@ export function useAutoFileApprovedReceipts(): {
       } catch (error) {
         showToast.error(
           `${approval.requestNo} approved, but its receipt could not be filed: ` +
-            `${getErrorMessage(error)}. Use Receipt on the entry in the project Money tab to try again.`,
+            `${getErrorReason(error)}. Use Receipt on the entry in the project Money tab to try again.`,
         );
         return;
       }
@@ -107,7 +107,7 @@ export function useAutoFileApprovedReceipts(): {
           } catch (error) {
             showToast.error(
               `Approved, but receipts for ${approval.projectNumber ?? 'this project'} could not ` +
-                `be filed: ${getErrorMessage(error)}.`,
+                `be filed: ${getErrorReason(error)}.`,
             );
             continue;
           }

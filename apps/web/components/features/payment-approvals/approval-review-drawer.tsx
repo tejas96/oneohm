@@ -41,6 +41,17 @@ const KIND_LABEL = {
   vendor_payment: 'Vendor payment',
 } as const;
 
+/**
+ * What the duplicate warning calls the other requests. The server only matches
+ * the same kind, so "payment" was the wrong word for an expense or a bill.
+ */
+const DUPLICATE_NOUN = {
+  receipt: 'payment',
+  expense: 'expense',
+  reversal: 'reversal',
+  vendor_payment: 'vendor payment',
+} as const;
+
 /** "a bill on credit from Sharma Traders", "a payment to Sharma Traders", "an expense". */
 function describeReversed(data: {
   reversesEntryType?: string | null;
@@ -184,7 +195,7 @@ export function ApprovalReviewDrawer({
 
             {data.possibleDuplicates && data.possibleDuplicates.length > 0 && (
               <Alert severity="warning">
-                {data.possibleDuplicates.length} other payment
+                {data.possibleDuplicates.length} other {DUPLICATE_NOUN[data.kind]}
                 {data.possibleDuplicates.length === 1 ? '' : 's'} with the same amount and date
                 exist{data.possibleDuplicates.length === 1 ? 's' : ''} for this project. Check this
                 is not a double entry.

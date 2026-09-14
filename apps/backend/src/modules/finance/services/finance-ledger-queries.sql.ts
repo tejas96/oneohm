@@ -203,7 +203,10 @@ export const LEDGER_PAGE_SQL = `
     e.is_cash                     AS "isCash",
     e.vendor_id                   AS "vendorId",
     vn.name                       AS "vendorName",
-    ledger_norm_category(e.category) AS "category",
+    -- Only an expense has a category. ledger_norm_category turns NULL into
+    -- 'uncategorised', which on a receipt, refund or vendor payment replaced the
+    -- payment method the Detail column falls back to ("upi · UTR-…").
+    CASE WHEN e.entry_type = 'expense' THEN ledger_norm_category(e.category) END AS "category",
     e.reverses_id           AS "reversesId",
     e.reversal_reason       AS "reversalReason",
     e.created_at            AS "createdAt",
