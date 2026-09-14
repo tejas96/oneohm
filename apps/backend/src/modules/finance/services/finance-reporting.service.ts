@@ -15,6 +15,9 @@ import {
   RECEIVABLES_BUCKETS_SQL,
   RECEIVABLES_COUNT_SQL,
   RECEIVABLES_SQL,
+  RECOVERY_BUCKETS_SQL,
+  RECOVERY_COUNT_SQL,
+  RECOVERY_PAGE_SQL,
   SPEND_BY_CATEGORY_SQL,
   TOP_CUSTOMERS_OUTSTANDING_SQL,
 } from './finance-ledger-queries.sql';
@@ -309,6 +312,63 @@ export class FinanceReportingService {
         expectedPaise: Number(r.expectedPaise),
         allocatedPaise: Number(r.allocatedPaise),
         balancePaise: Number(r.balancePaise),
+      })),
+      buckets: Object.fromEntries(
+        Object.entries(bucketRow ?? {}).map(([k, v]) => [k, Number(v ?? 0)]),
+      ),
+      total: Number(countRow?.count ?? 0),
+      page,
+      limit,
+    };
+  }
+
+  /**
+   * Recovery, one row per project — the call list. Same page / limit / sort
+   * contract as `getReceivables`; every figure is computed server-side over
+   * the whole list, never summed from the visible page.
+   */
+  async getRecovery(
+    opts: {
+      page?: number;
+      limit?: number;
+      funding?: string | null;
+      bucket?: string | null;
+      search?: string | null;
+      sortBy?: string | null;
+      sortOrder?: 'asc' | 'desc' | null;
+    } = {},
+  ): Promise<{
+    data: Record<string, unknown>[];
+    total: number;
+    page: number;
+    limit: number;
+    buckets: Record<string, number>;
+  }> {
+    const page = Math.max(1, opts.page ?? 1);
+    const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
+    // $1 funding, $2 search in every query; $3 bucket in page and count only.
+    const base = [opts.funding ?? null, opts.search ?? null];
+    const filters = [...base, opts.bucket ?? null];
+
+    const [rows, [countRow], [bucketRow]] = await Promise.all([
+      this.dataSource.query(RECOVERY_PAGE_SQL, [
+        ...filters,
+        opts.sortBy ?? null,
+        opts.sortOrder ?? 'desc',
+        limit,
+        (page - 1) * limit,
+      ]),
+      this.dataSource.query(RECOVERY_COUNT_SQL, filters),
+      this.dataSource.query(RECOVERY_BUCKETS_SQL, base),
+    ]);
+
+    return {
+      data: rows.map((r: Record<string, unknown>) => ({
+        ...r,
+        // bigint arrives as a string; adding two would concatenate.
+        outstandingPaise: Number(r.outstandingPaise),
+        overduePaise: Number(r.overduePaise),
+        undatedPaise: Number(r.undatedPaise),
       })),
       buckets: Object.fromEntries(
         Object.entries(bucketRow ?? {}).map(([k, v]) => [k, Number(v ?? 0)]),

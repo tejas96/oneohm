@@ -173,3 +173,60 @@ export class ReceivablesQueryDto {
   @IsOptional()
   limit?: number;
 }
+
+/** Recovery, one row per project — see RECOVERY_PROJECTS_CTE. */
+export class RecoveryQueryDto {
+  @ApiPropertyOptional({
+    enum: ['loan', 'cash'],
+    description: 'Reads customer_properties.wants_loan.',
+  })
+  @IsIn(['loan', 'cash'])
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  funding?: 'loan' | 'cash';
+
+  @ApiPropertyOptional({
+    enum: ['current', '1-30', '31-60', '61-90', '90plus', 'no_due_date'],
+    description:
+      "By the project's worst overdue milestone. `no_due_date` keeps projects with any open " +
+      'money that has no due date.',
+  })
+  @IsIn(['current', '1-30', '31-60', '61-90', '90plus', 'no_due_date'])
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus' | 'no_due_date';
+
+  @ApiPropertyOptional({ description: 'Matches customer, project number or project name.' })
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  search?: string;
+
+  /** Whitelisted: the value reaches ORDER BY, so free text would be injectable. */
+  @ApiPropertyOptional({
+    enum: ['daysSinceMeter', 'outstanding', 'worstDaysOverdue', 'customerName'],
+  })
+  @IsIn(['daysSinceMeter', 'outstanding', 'worstDaysOverdue', 'customerName'])
+  @IsOptional()
+  sortBy?: 'daysSinceMeter' | 'outstanding' | 'worstDaysOverdue' | 'customerName';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsIn(['asc', 'desc'])
+  @IsOptional()
+  sortOrder?: 'asc' | 'desc';
+
+  @ApiPropertyOptional({ default: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @ApiPropertyOptional({ default: 25, maximum: 200 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  @IsOptional()
+  limit?: number;
+}

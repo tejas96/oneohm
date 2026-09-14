@@ -393,6 +393,7 @@ export interface ReceivablesPage extends Paginated<Receivable> {
 
 export function useReceivables(
   filters: ReceivableFilters = {},
+  options?: { enabled?: boolean },
 ): UseQueryResult<ReceivablesPage, AxiosError> {
   const params = Object.fromEntries(
     Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
@@ -406,6 +407,85 @@ export function useReceivables(
       });
       return data;
     },
+    enabled: options?.enabled ?? true,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * One delivered job with money still open — a Recovery row. Grouped server-side
+ * from the same milestone rows the Receivables list shows, so `outstandingPaise`
+ * is exactly the sum of this project's open milestones.
+ */
+export interface RecoveryRow {
+  projectId: string;
+  projectNumber: string;
+  projectName: string;
+  customerName: string | null;
+  customerPhone?: string | null;
+  /** The property the project is on; feeds AttachBankDialog. */
+  propertyId?: string | null;
+  wantsLoan: boolean;
+  /** A BANKS code or a typed name. Render through `bankLabel`. */
+  financingBank?: string | null;
+  meterCompletedAt?: string | null;
+  /** Null, never 0, when the meter date is unknown. */
+  daysSinceMeter?: number | null;
+  openMilestones: number;
+  outstandingPaise: Paise;
+  overduePaise: Paise;
+  /** Days overdue of the project's oldest overdue milestone; 0 when none is overdue. */
+  worstDaysOverdue: number;
+  /** Open money on milestones with no due date. */
+  undatedPaise: Paise;
+  /** False on a loan job: the bank's share was never split out of the contract. */
+  hasLenderMilestone: boolean;
+}
+
+export interface RecoveryFilters {
+  funding?: 'loan' | 'cash';
+  /** By the project's worst overdue milestone; `no_due_date` = any undated money. */
+  bucket?: ReceivableFilters['bucket'];
+  search?: string;
+  sortBy?: 'daysSinceMeter' | 'outstanding' | 'worstDaysOverdue' | 'customerName';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface RecoveryPage extends Paginated<RecoveryRow> {
+  /** Server-computed over the whole list, never summed from the visible page. */
+  buckets: {
+    current: number;
+    d1to30: number;
+    d31to60: number;
+    d61to90: number;
+    d90plus: number;
+    /** Projects, not milestones. */
+    all: number;
+    totalOutstandingPaise: Paise;
+    overduePaise: Paise;
+    /** Projects with any open money that has no due date. */
+    noDueDateProjects: number;
+    noDueDatePaise: Paise;
+    missingLenderProjects: number;
+  };
+}
+
+export function useRecovery(
+  filters: RecoveryFilters = {},
+  options?: { enabled?: boolean },
+): UseQueryResult<RecoveryPage, AxiosError> {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
+  );
+  return useQuery({
+    queryKey: [...ledgerKeys.root(), 'recovery', params],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<RecoveryPage>('/finance/recovery', { params, signal });
+      return data;
+    },
+    enabled: options?.enabled ?? true,
     staleTime: 30_000,
   });
 }

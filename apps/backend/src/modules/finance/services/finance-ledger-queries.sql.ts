@@ -365,8 +365,8 @@ export const RECEIVABLES_SQL = `
     CASE WHEN $5 = 'outstandingAmount' AND $6 = 'desc' THEN v.balance_paise  END DESC,
     CASE WHEN $5 = 'dueDate'           AND $6 = 'asc'  THEN v.due_date       END ASC,
     CASE WHEN $5 = 'dueDate'           AND $6 = 'desc' THEN v.due_date       END DESC,
-    CASE WHEN $5 = 'customerName'      AND $6 = 'asc'  THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
-    CASE WHEN $5 = 'customerName'      AND $6 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
+    CASE WHEN $5 = 'customerName'      AND $6 = 'asc'  THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END ASC,
+    CASE WHEN $5 = 'customerName'      AND $6 = 'desc' THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END DESC,
     -- Default: worst overdue first, which is the order to work the list in.
     v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number
   LIMIT $7 OFFSET $8
@@ -431,6 +431,157 @@ export const RECEIVABLES_BUCKETS_SQL = `
       OR ($3 = 'loan' AND prop.wants_loan = true)
       OR ($3 = 'cash' AND COALESCE(prop.wants_loan, false) = false)
     )
+`;
+
+/**
+ * Recovery, one row per project: the net meter is in and money is still open.
+ *
+ * The milestone list (`RECEIVABLES_SQL` with scope=recovery) showed a job once
+ * per open milestone, so one customer to call took up to four rows and the
+ * list's length was not the number of calls to make. This groups the SAME
+ * rows — identical `v_milestone_balance` filters, commissioning join and
+ * funding split — so a project's `outstanding_paise` is exactly the sum of the
+ * milestone rows it replaces, and the totals match the milestone scope.
+ *
+ * Search matches customer and project only. Matching a milestone name inside
+ * a GROUP BY would drop the project's other milestones from its total.
+ *
+ * $1 funding ('cash' | 'loan' | NULL), $2 search.
+ */
+const RECOVERY_PROJECTS_CTE = `
+  WITH open_ms AS (
+    SELECT v.project_id, v.balance_paise, v.days_overdue, v.due_date
+      FROM v_milestone_balance v
+     WHERE v.status = 'active'
+       AND v.balance_paise > 0
+  ),
+  recovery AS (
+    SELECT
+      pr.id                                                          AS project_id,
+      pr.project_number,
+      pr.name                                                        AS project_name,
+      NULLIF(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)), '')  AS customer_name,
+      cp.phone                                                       AS customer_phone,
+      prop.id                                                        AS property_id,
+      COALESCE(prop.wants_loan, false)                               AS wants_loan,
+      prop.financing_bank,
+      com.meter_completed_at,
+      -- NULL, never 0, when there is no meter date — see RECEIVABLES_SQL.
+      CASE WHEN com.meter_completed_at IS NULL THEN NULL
+           ELSE (CURRENT_DATE - com.meter_completed_at::date)::int
+      END                                                            AS days_since_meter,
+      COUNT(*)::int                                                  AS open_milestones,
+      SUM(o.balance_paise)::BIGINT                                   AS outstanding_paise,
+      COALESCE(SUM(o.balance_paise) FILTER (WHERE o.days_overdue > 0), 0)::BIGINT
+                                                                     AS overdue_paise,
+      -- The oldest overdue milestone decides the project's ageing bucket.
+      MAX(o.days_overdue)::int                                       AS worst_days_overdue,
+      COUNT(*) FILTER (WHERE o.due_date IS NULL)::int                AS undated_milestones,
+      COALESCE(SUM(o.balance_paise) FILTER (WHERE o.due_date IS NULL), 0)::BIGINT
+                                                                     AS undated_paise,
+      EXISTS (SELECT 1 FROM payment_milestones m2
+               WHERE m2.project_id = pr.id AND m2.payer_type = 'lender')
+                                                                     AS has_lender_milestone
+    FROM open_ms o
+    JOIN projects pr                   ON pr.id = o.project_id AND pr.deleted_at IS NULL
+    JOIN v_project_commissioning com   ON com.project_id = pr.id
+    LEFT JOIN customer_properties prop ON prop.id = pr.property_id
+    LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+    WHERE (
+            $1::text IS NULL
+            OR ($1 = 'loan' AND prop.wants_loan = true)
+            OR ($1 = 'cash' AND COALESCE(prop.wants_loan, false) = false)
+          )
+      AND (
+            $2::text IS NULL
+            OR pr.project_number ILIKE '%' || $2 || '%'
+            OR pr.name           ILIKE '%' || $2 || '%'
+            OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $2 || '%'
+          )
+    GROUP BY pr.id, pr.project_number, pr.name, cp.first_name, cp.last_name, cp.phone,
+             prop.id, prop.wants_loan, prop.financing_bank, com.meter_completed_at
+  )
+`;
+
+/** $3 bucket — by the project's WORST overdue milestone, or any undated money. */
+const RECOVERY_BUCKET_FILTER = `
+  WHERE (
+    $3::text IS NULL
+    OR ($3 = 'current'     AND worst_days_overdue <= 0)
+    OR ($3 = '1-30'        AND worst_days_overdue BETWEEN 1 AND 30)
+    OR ($3 = '31-60'       AND worst_days_overdue BETWEEN 31 AND 60)
+    OR ($3 = '61-90'       AND worst_days_overdue BETWEEN 61 AND 90)
+    OR ($3 = '90plus'      AND worst_days_overdue > 90)
+    OR ($3 = 'no_due_date' AND undated_milestones > 0)
+  )
+`;
+
+export const RECOVERY_PAGE_SQL = `
+  ${RECOVERY_PROJECTS_CTE}
+  SELECT
+    project_id                                  AS "projectId",
+    project_number                              AS "projectNumber",
+    project_name                                AS "projectName",
+    customer_name                               AS "customerName",
+    customer_phone                              AS "customerPhone",
+    property_id                                 AS "propertyId",
+    wants_loan                                  AS "wantsLoan",
+    financing_bank                              AS "financingBank",
+    to_char(meter_completed_at, 'YYYY-MM-DD')   AS "meterCompletedAt",
+    days_since_meter                            AS "daysSinceMeter",
+    open_milestones                             AS "openMilestones",
+    outstanding_paise                           AS "outstandingPaise",
+    overdue_paise                               AS "overduePaise",
+    worst_days_overdue                          AS "worstDaysOverdue",
+    undated_paise                               AS "undatedPaise",
+    has_lender_milestone                        AS "hasLenderMilestone"
+  FROM recovery
+  ${RECOVERY_BUCKET_FILTER}
+  ORDER BY
+    -- $4/$5 are whitelisted on the DTO and compared, never interpolated.
+    CASE WHEN $4 = 'daysSinceMeter'   AND $5 = 'asc'  THEN days_since_meter   END ASC NULLS LAST,
+    CASE WHEN $4 = 'daysSinceMeter'   AND $5 = 'desc' THEN days_since_meter   END DESC NULLS LAST,
+    CASE WHEN $4 = 'outstanding'      AND $5 = 'asc'  THEN outstanding_paise  END ASC,
+    CASE WHEN $4 = 'outstanding'      AND $5 = 'desc' THEN outstanding_paise  END DESC,
+    CASE WHEN $4 = 'worstDaysOverdue' AND $5 = 'asc'  THEN worst_days_overdue END ASC,
+    CASE WHEN $4 = 'worstDaysOverdue' AND $5 = 'desc' THEN worst_days_overdue END DESC,
+    -- LOWER: a name typed in lower case must not sort after every capital.
+    CASE WHEN $4 = 'customerName'     AND $5 = 'asc'  THEN LOWER(customer_name) END ASC NULLS LAST,
+    CASE WHEN $4 = 'customerName'     AND $5 = 'desc' THEN LOWER(customer_name) END DESC NULLS LAST,
+    -- Default: worst overdue first, then the biggest amount.
+    worst_days_overdue DESC, outstanding_paise DESC, project_number
+  LIMIT $6 OFFSET $7
+`;
+
+export const RECOVERY_COUNT_SQL = `
+  ${RECOVERY_PROJECTS_CTE}
+  SELECT COUNT(*)::int AS count
+  FROM recovery
+  ${RECOVERY_BUCKET_FILTER}
+`;
+
+/**
+ * Chip counts (projects, by worst overdue) and the money totals. Follows
+ * funding and search ($1, $2) but never the bucket, so picking one chip does
+ * not zero the others — the rule `RECEIVABLES_BUCKETS_SQL` follows.
+ */
+export const RECOVERY_BUCKETS_SQL = `
+  ${RECOVERY_PROJECTS_CTE}
+  SELECT
+    COUNT(*) FILTER (WHERE worst_days_overdue <= 0)::int               AS "current",
+    COUNT(*) FILTER (WHERE worst_days_overdue BETWEEN 1 AND 30)::int   AS "d1to30",
+    COUNT(*) FILTER (WHERE worst_days_overdue BETWEEN 31 AND 60)::int  AS "d31to60",
+    COUNT(*) FILTER (WHERE worst_days_overdue BETWEEN 61 AND 90)::int  AS "d61to90",
+    COUNT(*) FILTER (WHERE worst_days_overdue > 90)::int               AS "d90plus",
+    COUNT(*)::int                                                      AS "all",
+    COALESCE(SUM(outstanding_paise), 0)::BIGINT                        AS "totalOutstandingPaise",
+    COALESCE(SUM(overdue_paise), 0)::BIGINT                            AS "overduePaise",
+    COUNT(*) FILTER (WHERE undated_milestones > 0)::int                AS "noDueDateProjects",
+    COALESCE(SUM(undated_paise), 0)::BIGINT                            AS "noDueDatePaise",
+    -- Defect 5, per project: a loan job with no lender milestone means the
+    -- customer is being chased for the bank's share.
+    COUNT(*) FILTER (WHERE wants_loan AND NOT has_lender_milestone)::int AS "missingLenderProjects"
+  FROM recovery
 `;
 
 /**

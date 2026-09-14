@@ -14,6 +14,7 @@ import {
   KpisQueryDto,
   LedgerEntriesQueryDto,
   ReceivablesQueryDto,
+  RecoveryQueryDto,
 } from '../dto/ledger-query.dto';
 import { FinanceReportingService } from '../services/finance-reporting.service';
 
@@ -134,6 +135,28 @@ export class FinanceController {
   // than below — the same discipline as `payment-approvals/summary` — so a
   // future vendor-scoped `:vendorId` route on this controller can never
   // capture it.
+  @Get('recovery')
+  @ApiOperation({
+    summary: 'Recovery — delivered jobs with money still open, one row per project',
+    description:
+      'The net meter is installed and at least one active milestone still has a balance. ' +
+      "Grouped from the same rows as receivables?scope=recovery, so each project's total is " +
+      'the sum of those milestone rows. Chips bucket projects by their worst overdue milestone.',
+  })
+  async getRecovery(
+    @Query() query: RecoveryQueryDto,
+  ): Promise<Awaited<ReturnType<FinanceReportingService['getRecovery']>>> {
+    return this.reportingService.getRecovery({
+      page: query.page ?? 1,
+      limit: query.limit ?? 25,
+      funding: query.funding,
+      bucket: query.bucket,
+      search: query.search,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    });
+  }
+
   @Get('payables')
   @ApiOperation({
     summary: 'What we owe each vendor',

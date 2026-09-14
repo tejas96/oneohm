@@ -268,13 +268,13 @@ function KpiStrip({
       // name — 65 all-time, because 26 projects carry that stage on more
       // than one task. It now counts the PROJECTS themselves (41): a project
       // has one net meter. The label says so, rather than let a ~38% drop
-      // read as a regression instead of a fix. Links through to Receivables,
-      // whose Recovery scope is selected by this same commissioning event.
+      // read as a regression instead of a fix. Opens Recovery — Cash, which is
+      // selected by this same commissioning event; Loan is one click away.
       label: 'Projects commissioned',
       value: String(data?.meterInstallations ?? 0),
       sub: 'net meter installed',
       tone: 'default',
-      href: ROUTES.FINANCE.RECEIVABLES,
+      href: `${ROUTES.FINANCE.RECEIVABLES}?scope=recovery-cash`,
       gate: 'finance.receivables.view',
     },
   ];
