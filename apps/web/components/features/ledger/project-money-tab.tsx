@@ -30,6 +30,7 @@ import type { ProjectDetail } from '@/components/features/projects/hooks/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showToast } from '@/components/ui/sonner';
 import {
+  useLedgerMutations,
   useProjectEntries,
   useProjectLedger,
   type LedgerEntry,
@@ -159,6 +160,11 @@ export function ProjectMoneyTab({
     () => setDialog('changeOrder'),
     'Add change order',
   );
+  // Same code as Waive and Change order: it changes who is chased for a
+  // balance, never money. The switch takes arguments, so the gate is read via
+  // `allowed` at the call site and `onGatedClick` only raises the access dialog.
+  const changePayer = useGatedAction('finance.payments.record', () => undefined, 'Change who pays');
+  const { setMilestonePayer } = useLedgerMutations(projectId);
   const [reversing, setReversing] = useState<LedgerEntry | null>(null);
   const [waiving, setWaiving] = useState<MilestoneBalance | null>(null);
   const receiptPdf = useReceiptPdf();
@@ -272,6 +278,20 @@ export function ProjectMoneyTab({
             recordForMilestone.onGatedClick();
           }}
           onWaive={setWaiving}
+          // A bank can only pay on a loan project. Also offered once any
+          // milestone is already the bank's, so a mistake can be switched back.
+          canSetPayer={
+            Boolean(project?.property?.wantsLoan) ||
+            s.milestones.some((m) => m.payerType === 'lender')
+          }
+          onSetPayer={(m, payerType) => {
+            if (!changePayer.allowed) {
+              changePayer.onGatedClick();
+              return;
+            }
+            setMilestonePayer.mutate({ milestoneId: m.milestoneId, payerType });
+          }}
+          payerSaving={setMilestonePayer.isPending}
         />
       </DetailCard>
 

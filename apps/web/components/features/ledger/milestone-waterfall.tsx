@@ -26,6 +26,14 @@ interface MilestoneWaterfallProps {
   lenderName?: string;
   onRecordPayment?: (milestoneId: string) => void;
   onWaive?: (milestone: MilestoneBalance) => void;
+  /**
+   * Set who pays a milestone. Offered only when the caller says the project can
+   * have a bank paying (`canSetPayer`) — a project with no loan has no bank.
+   */
+  onSetPayer?: (milestone: MilestoneBalance, payerType: 'customer' | 'lender') => void;
+  canSetPayer?: boolean;
+  /** Disables the switch while a change is being saved, so it cannot be double-sent. */
+  payerSaving?: boolean;
 }
 
 const STATUS: Record<string, { label: string; tone: Tone }> = {
@@ -51,6 +59,9 @@ export function MilestoneWaterfall({
   lenderName,
   onRecordPayment,
   onWaive,
+  onSetPayer,
+  canSetPayer = false,
+  payerSaving = false,
 }: MilestoneWaterfallProps): JSX.Element {
   const [expanded, setExpanded] = useState<string | null>(null);
   /*
@@ -177,7 +188,47 @@ export function MilestoneWaterfall({
                   </span>
                 </button>
 
-                <span className="flex shrink-0 gap-1.5">
+                <span className="flex shrink-0 items-center gap-1.5">
+                  {/* Who pays. On EVERY open milestone of a loan project, not only
+                    short ones: the bank's share can already be paid and still be
+                    wrongly marked as the customer's, and the Recovery banner counts
+                    that project until it is corrected. Waived and cancelled
+                    milestones are closed, and the server refuses them. */}
+                  {canSetPayer &&
+                  onSetPayer &&
+                  m.derivedStatus !== 'waived' &&
+                  m.derivedStatus !== 'cancelled' ? (
+                    <span
+                      role="radiogroup"
+                      aria-label={`Who pays ${m.name}`}
+                      title="Who is expected to pay what is still owed. No money moves."
+                      className="inline-flex h-7 items-center rounded-pill bg-background-tertiary p-0.5"
+                    >
+                      {(['customer', 'lender'] as const).map((payer) => {
+                        const active = m.payerType === payer;
+                        return (
+                          <button
+                            key={payer}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            disabled={payerSaving}
+                            onClick={() => {
+                              if (!active) onSetPayer(m, payer);
+                            }}
+                            className={cn(
+                              'inline-flex h-6 items-center rounded-pill px-2.5 text-[12px] font-medium transition-colors duration-fast focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60',
+                              active
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-foreground-secondary hover:text-foreground',
+                            )}
+                          >
+                            {payer === 'customer' ? 'Customer' : 'Bank'}
+                          </button>
+                        );
+                      })}
+                    </span>
+                  ) : null}
                   {isShort && onRecordPayment ? (
                     <button
                       type="button"

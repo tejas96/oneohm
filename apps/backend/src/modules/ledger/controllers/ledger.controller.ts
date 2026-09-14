@@ -36,6 +36,7 @@ import {
   RecordReceiptDto,
   RecordVendorPaymentDto,
   ReverseEntryDto,
+  SetMilestonePayerDto,
   WaiveMilestoneDto,
 } from '../dto';
 import { LedgerRepository } from '../repositories/ledger.repository';
@@ -352,6 +353,27 @@ export class LedgerController {
   ): Promise<{ id: string; status: string }> {
     const milestone = await this.milestoneService.waive(milestoneId, dto.reason, currentUser.id);
     return { id: milestone.id, status: milestone.status };
+  }
+
+  @Patch('ledger/milestones/:milestoneId/payer')
+  @ApiOperation({
+    summary: 'Set who pays a milestone — the customer or their bank',
+    description:
+      'Changes only who is chased for the balance still owed. No money moves, and receipts already ' +
+      'allocated stay where they are. A bank can pay only on a loan-financed project.',
+  })
+  @ApiParam({ name: 'milestoneId', type: String })
+  async setPayer(
+    @Param('milestoneId', ParseUUIDPipe) milestoneId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() dto: SetMilestonePayerDto,
+  ): Promise<{ id: string; payerType: string }> {
+    const milestone = await this.milestoneService.setPayer(
+      milestoneId,
+      dto.payerType,
+      currentUser.id,
+    );
+    return { id: milestone.id, payerType: milestone.payerType };
   }
 
   @Delete('ledger/milestones/:milestoneId')

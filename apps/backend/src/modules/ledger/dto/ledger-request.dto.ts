@@ -5,6 +5,7 @@ import {
   IsArray,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsPositive,
@@ -304,4 +305,16 @@ export class WaiveMilestoneDto {
   @IsString()
   @MaxLength(500)
   reason!: string;
+}
+
+/**
+ * Who is expected to pay a milestone: the customer, or the bank lending to them.
+ *
+ * Changes only who is chased for what is still owed. No money moves, receipts
+ * already allocated stay where they are, and the customer's app does not read it.
+ */
+export class SetMilestonePayerDto {
+  @ApiProperty({ enum: ['customer', 'lender'], example: 'lender' })
+  @IsIn(['customer', 'lender'])
+  payerType!: 'customer' | 'lender';
 }

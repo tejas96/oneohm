@@ -690,6 +690,32 @@ export function useLedgerMutations(projectId: string) {
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
 
+  /**
+   * Who is expected to pay a milestone — the customer or their bank. Moves no
+   * money; it changes who is chased for what is still owed, which is what the
+   * Recovery — Loan banner counts, so invalidating the ledger refreshes it.
+   */
+  const setMilestonePayer = useMutation({
+    mutationFn: async ({
+      milestoneId,
+      payerType,
+    }: {
+      milestoneId: string;
+      payerType: 'customer' | 'lender';
+    }) => {
+      const { data } = await apiClient.patch<{ id: string; payerType: string }>(
+        `/ledger/milestones/${milestoneId}/payer`,
+        { payerType },
+      );
+      return data;
+    },
+    onSuccess: (_data, { payerType }) => {
+      invalidate();
+      showToast.success(payerType === 'lender' ? 'Marked as the bank\'s share' : 'Marked as the customer\'s share');
+    },
+    onError: (error) => showToast.error(getErrorMessage(error)),
+  });
+
   return {
     recordReceipt,
     recordExpense,
@@ -697,5 +723,6 @@ export function useLedgerMutations(projectId: string) {
     reverseEntry,
     addChangeOrder,
     waiveMilestone,
+    setMilestonePayer,
   };
 }

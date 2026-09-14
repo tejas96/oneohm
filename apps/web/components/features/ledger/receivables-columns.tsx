@@ -77,8 +77,11 @@ export const RECEIVABLE_COLUMNS: CrmColumn<ReceivableRow>[] = [
     track: crm['col-recv-project'],
     stopPropagation: true,
     renderCell: (row) => (
+      // Straight to the Finance tab: everyone arriving from a receivable is
+      // there to record a payment or fix who pays a milestone, and the project
+      // Overview made that an extra click every time.
       <NextLink
-        href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: row.projectId })}
+        href={`${buildRoute(ROUTES.PROJECTS.DETAIL, { id: row.projectId })}?tab=finance`}
         style={{ color: color.accent, textDecoration: 'none', fontWeight: 500 }}
       >
         {row.projectNumber}
