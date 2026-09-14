@@ -37,7 +37,7 @@ import {
   type MilestoneBalance,
   type ProjectLedgerSummary,
 } from '@/lib/hooks/resources/ledger';
-import { usePaymentApprovals } from '@/lib/hooks/resources/payment-approvals';
+import { usePaymentApprovals, type PaymentApproval } from '@/lib/hooks/resources/payment-approvals';
 import { useGatedAction } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
@@ -246,6 +246,7 @@ export function ProjectMoneyTab({
                 className="flex flex-wrap items-baseline gap-x-2 text-[12.5px] text-foreground-secondary"
               >
                 <Mono className="text-foreground">{p.requestNo}</Mono>
+                <TonePill label={pendingKindLabel(p)} tone="neutral" />
                 <Mono>{p.valueDate}</Mono>
                 <Mono className="font-medium text-foreground">
                   {formatPaise(Math.abs(p.amountPaise))}
@@ -417,7 +418,21 @@ function SummaryCard({
       value: s.outstandingPaise,
       ink: s.outstandingPaise > 0 ? TONE.warning.ink : undefined,
     },
-    { label: 'Spent', value: s.spentPaise },
+    {
+      label: 'Spent',
+      value: s.spentPaise,
+      // Why margin and Spent differ, said under Spent where the question comes
+      // up. Spent is cash gone. Cost also carries credit bills still owed — or,
+      // when vendors were paid more than they billed, leaves out that advance,
+      // which is not a cost until a bill arrives. Under Contract it read as if
+      // the contract itself had grown.
+      detail:
+        committedUnpaidPaise > 0
+          ? `+ ${formatPaise(committedUnpaidPaise)} owed to vendors, not yet paid`
+          : committedUnpaidPaise < 0
+            ? `${formatPaise(-committedUnpaidPaise)} paid to vendors ahead of their bills`
+            : null,
+    },
   ];
 
   // Only when there is one. A refund is money handed back, not job cost, so it
@@ -475,20 +490,6 @@ function SummaryCard({
         ))}
       </dl>
 
-      {/* Why margin and Spent differ, said plainly rather than left for someone
-          to work out. Spent is cash gone. Cost also carries credit bills still
-          owed — or, when vendors were paid more than they billed, leaves out
-          that advance, which is not a cost until a bill arrives. */}
-      {committedUnpaidPaise > 0 ? (
-        <p className="mt-2 text-[12px] leading-relaxed text-foreground-tertiary">
-          + {formatPaise(committedUnpaidPaise)} owed to vendors, not yet paid
-        </p>
-      ) : committedUnpaidPaise < 0 ? (
-        <p className="mt-2 text-[12px] leading-relaxed text-foreground-tertiary">
-          {formatPaise(-committedUnpaidPaise)} paid to vendors ahead of their bills
-        </p>
-      ) : null}
-
       {s.contractPaise > 0 && cost > 0 && usedPct >= 80 ? (
         <p
           className="mt-4 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
@@ -534,6 +535,17 @@ function SummaryCard({
       ) : null}
     </DetailCard>
   );
+}
+
+/**
+ * What a waiting request is, in the words the rest of this tab uses. A reversal
+ * listed as a bare amount read like a new expense of the same size.
+ */
+function pendingKindLabel(p: Pick<PaymentApproval, 'kind' | 'isCredit'>): string {
+  if (p.kind === 'expense') return p.isCredit ? 'Credit bill' : 'Expense';
+  if (p.kind === 'vendor_payment') return 'Vendor payment';
+  if (p.kind === 'reversal') return 'Reversal';
+  return 'Receipt';
 }
 
 /** Every ledger entry on the project, newest first. */
@@ -678,10 +690,19 @@ function ProjectEntries({
                   ) : null}
                 </div>
 
+                {/* A reversal is a correction, not money moving: grey, and signed
+                    both ways, so undoing a bill never reads as cash coming in. */}
                 <Mono
                   className="shrink-0 whitespace-nowrap text-right text-[12.5px] font-medium"
-                  style={{ color: e.amountPaise < 0 ? TONE.danger.ink : TONE.success.ink }}
+                  style={{
+                    color: isReversal
+                      ? 'var(--ds-text-secondary)'
+                      : e.amountPaise < 0
+                        ? TONE.danger.ink
+                        : TONE.success.ink,
+                  }}
                 >
+                  {isReversal && e.amountPaise > 0 ? '+' : ''}
                   {formatPaise(e.amountPaise)}
                 </Mono>
 

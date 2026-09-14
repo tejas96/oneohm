@@ -38,8 +38,22 @@ const KIND_LABEL = {
   receipt: 'Money received',
   expense: 'Money spent',
   reversal: 'Reversal',
-  vendor_payment: 'Vendor Payment',
+  vendor_payment: 'Vendor payment',
 } as const;
+
+/** "a bill on credit from Sharma Traders", "a payment to Sharma Traders", "an expense". */
+function describeReversed(data: {
+  reversesEntryType?: string | null;
+  reversesIsCash?: boolean | null;
+  reversesVendorName?: string | null;
+}): string {
+  const vendor = data.reversesVendorName ?? 'a vendor';
+  if (data.reversesEntryType === 'vendor_payment') return `a payment to ${vendor}`;
+  if (data.reversesIsCash === false) return `a bill on credit from ${vendor}`;
+  if (data.reversesEntryType === 'receipt') return 'a customer receipt';
+  if (data.reversesEntryType === 'refund') return 'a refund';
+  return 'an expense';
+}
 
 /**
  * Same "Advance" wording as the Payables page (`payables-columns.tsx`) — a
@@ -81,6 +95,7 @@ export function ApprovalReviewDrawer({
   useEffect(() => setReason(''), [approvalId]);
 
   const isOwn = Boolean(data && user && data.submittedBy === user.id);
+  const isReversal = data?.kind === 'reversal';
   const isPending = data?.status === 'pending';
   const busy = approve.isPending || reject.isPending || cancel.isPending;
 
@@ -112,12 +127,22 @@ export function ApprovalReviewDrawer({
               </Alert>
             ) : null}
 
+            {/* A reversal is signed off on what it undoes and why. A bare amount
+                could be anything, and approving it cannot be taken back. */}
+            {isReversal ? (
+              <Alert severity="warning">
+                Undoes {data.reversesEntryNo ?? 'an earlier entry'}, {describeReversed(data)}.
+                <br />
+                Reason: {data.reversalReason ?? 'none given'}
+              </Alert>
+            ) : null}
+
             <Box>
               <Typography sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
                 {formatPaise(Math.abs(data.amountPaise))}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Paid on {data.valueDate}
+                {isReversal ? 'Dated' : data.isCredit ? 'Billed on' : 'Paid on'} {data.valueDate}
                 {data.paymentMethod ? ` · ${data.paymentMethod}` : ''}
                 {data.reference ? ` · ${data.reference}` : ''}
               </Typography>
@@ -231,7 +256,9 @@ export function ApprovalReviewDrawer({
                   )}
                 </Box>
               </Box>
-            ) : (
+            ) : isReversal ? null : (
+              // A reversal has nothing to prove: it undoes an entry already
+              // checked when it was approved.
               <Alert severity="info">
                 No proof of payment was attached. Confirm by another means before approving.
               </Alert>
@@ -273,7 +300,9 @@ export function ApprovalReviewDrawer({
               <>
                 <Divider />
                 <Box>
-                  <MUITypography variant="sectionTitle">If approved, this settles</MUITypography>
+                  <MUITypography variant="sectionTitle">
+                    {isReversal ? 'If approved' : 'If approved, this settles'}
+                  </MUITypography>
                   <Typography variant="body2" sx={{ mt: 0.5 }}>
                     {impact.data.vendorPayable.vendorName ?? 'This vendor'}&apos;s payable:{' '}
                     {formatVendorPayable(impact.data.vendorPayable.beforePaise)} →{' '}

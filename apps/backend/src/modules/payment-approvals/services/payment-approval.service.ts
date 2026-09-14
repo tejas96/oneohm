@@ -75,6 +75,11 @@ export interface ApprovalRow extends Omit<PendingLedgerEntryEntity, 'createdAt' 
   isCredit: boolean;
   /** Every image attached to this payment, oldest first. */
   proofs: ProofRef[];
+  /** For a reversal: the entry it undoes. Null on every other kind. */
+  reversesEntryNo: string | null;
+  reversesEntryType: string | null;
+  reversesIsCash: boolean | null;
+  reversesVendorName: string | null;
 }
 
 interface ProofRef {
@@ -721,6 +726,47 @@ export class PaymentApprovalService {
           afterPaise: beforePaise - Math.abs(row.amountPaise),
         },
       };
+    }
+
+    // A reversal changes a vendor's payable when what it undoes was a bill on
+    // credit (we owe less) or a vendor payment (we owe that much again). The
+    // ledger copies vendor and is_cash onto the reversing row, so this is the
+    // figure approval will produce. Anything else a reversal can undo never
+    // touched a payable and keeps the plain empty preview.
+    if (row.kind === 'reversal' && row.reversesEntryId) {
+      const [target] = await this.dataSource.query<
+        Array<{
+          vendorId: string | null;
+          vendorName: string | null;
+          isCash: boolean;
+          entryType: string;
+          amountPaise: string | number;
+          payablePaise: string | number | null;
+        }>
+      >(
+        `
+          SELECT e.vendor_id AS "vendorId", vp.name AS "vendorName", e.is_cash AS "isCash",
+                 e.entry_type AS "entryType", e.amount_paise AS "amountPaise",
+                 vp.payable_paise AS "payablePaise"
+          FROM ledger_entries e
+          LEFT JOIN v_vendor_payable vp ON vp.vendor_id = e.vendor_id
+          WHERE e.id = $1
+        `,
+        [row.reversesEntryId],
+      );
+      if (target?.vendorId && (target.isCash === false || target.entryType === 'vendor_payment')) {
+        const beforePaise = Number(target.payablePaise ?? 0);
+        const magnitude = Math.abs(Number(target.amountPaise));
+        return {
+          lines: [],
+          unallocatedPaise: 0,
+          vendorPayable: {
+            vendorName: target.vendorName,
+            beforePaise,
+            afterPaise: target.isCash === false ? beforePaise - magnitude : beforePaise + magnitude,
+          },
+        };
+      }
     }
 
     if (row.kind !== 'receipt') {

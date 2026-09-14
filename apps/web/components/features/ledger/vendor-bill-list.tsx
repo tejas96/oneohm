@@ -122,7 +122,9 @@ export function VendorBillList({ vendorId }: { vendorId: string }): JSX.Element 
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {line.kind === 'payment' && line.amountPaise > 0 ? '−' : ''}
+                  {/* Signed by what the line does to the balance: a bill adds, a
+                      payment takes away, and each one's reversal does the opposite. */}
+                  {(line.kind === 'bill' ? line.amountPaise : -line.amountPaise) < 0 ? '−' : ''}
                   {formatPaise(Math.abs(line.amountPaise))}
                 </td>
                 <td

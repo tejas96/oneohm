@@ -54,7 +54,8 @@ export class PaymentApprovalNotifier {
             type: NotificationType.PAYMENT_APPROVAL_PENDING,
             title: `${describePayment(row)} waiting for approval`,
             body: joinParts([row.requestNo, where(row), `Recorded by ${who}${roles}`]),
-            link: '/finance/approvals',
+            // Opens this request in the approvals drawer, not just the queue.
+            link: `/finance/approvals?open=${row.id}`,
             metadata: metadataOf(row),
             dedupeKey: `payment-approval:${row.id}:submitted`,
           }),
@@ -177,7 +178,7 @@ export class PaymentApprovalNotifier {
       return `/projects/${row.projectId}?tab=finance`;
     }
     if (access?.codes.includes('finance.approvals.view')) {
-      return `/finance/approvals?status=${status}`;
+      return `/finance/approvals?status=${status}&open=${row.id}`;
     }
     return undefined;
   }

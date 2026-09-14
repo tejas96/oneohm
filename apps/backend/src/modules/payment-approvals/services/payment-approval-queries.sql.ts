@@ -63,7 +63,12 @@ const SELECT_COLUMNS = `
     -- rows in local data have none), and under SQL's three-valued logic
     -- NULL = 'credit' is NULL, not false. ApprovalRow types this as a plain
     -- boolean, so a stray NULL here would be a real type/runtime mismatch.
-    COALESCE(p.payment_method = 'credit', false)                                  AS "isCredit"
+    COALESCE(p.payment_method = 'credit', false)                                  AS "isCredit",
+    -- What a reversal undoes, so its approver sees more than a bare amount.
+    re.entry_no                                                                    AS "reversesEntryNo",
+    re.entry_type                                                                  AS "reversesEntryType",
+    re.is_cash                                                                     AS "reversesIsCash",
+    rvn.name                                                                       AS "reversesVendorName"
 `;
 
 const JOINS = `
@@ -87,6 +92,10 @@ const JOINS = `
   -- Safe as a plain join, unlike user_roles above: vendors.id is a primary
   -- key, so this matches at most one row per p and cannot multiply it.
   LEFT JOIN vendors vn                 ON vn.id = p.vendor_id
+  -- The entry a reversal undoes, and that entry's vendor. Both are primary
+  -- keys, so like the vendor join above neither can multiply a row.
+  LEFT JOIN ledger_entries re          ON re.id = p.reverses_entry_id
+  LEFT JOIN vendors rvn                ON rvn.id = re.vendor_id
 `;
 
 /**

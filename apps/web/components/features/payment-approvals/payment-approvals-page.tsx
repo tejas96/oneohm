@@ -11,6 +11,7 @@ import { useAutoFileApprovedReceipts } from './hooks/use-auto-file-receipts';
 
 import type { FilterState, TableSortModel } from '@/components/shared/advanced-table';
 import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
+import { showToast } from '@/components/ui/sonner';
 import {
   useApprovalMutations,
   useApprovalSummary,
@@ -79,6 +80,32 @@ export function PaymentApprovalsPage(): JSX.Element {
   const [filters, setFilters] = useState<FilterState>({});
   const [sortModel, setSortModel] = useState<TableSortModel | null>(null);
   const [selected, setSelected] = useState<ApprovalRow | null>(null);
+
+  // A notice links to one request (`?open=<id>`). Arriving on one opens that
+  // request in the drawer and clears whatever search was left in the box, so
+  // the queue behind it is not quietly filtered to something else — a stale
+  // search once made the page say "Nothing waiting" right under a notice that
+  // said something was. Keyed on the link, not on typing, so typing never
+  // remounts the table.
+  const openId = searchParams.get('open');
+  const [linkSeen, setLinkSeen] = useState<string | null>(null);
+  const [tableKey, setTableKey] = useState(0);
+  if (openId !== linkSeen) {
+    setLinkSeen(openId);
+    if (openId) {
+      setSearch('');
+      setPageFor({ status, page: 0 });
+      setTableKey((k) => k + 1);
+    }
+  }
+  const closeDrawer = (): void => {
+    setSelected(null);
+    if (!openId) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('open');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
   const summary = useApprovalSummary();
   const kindFilter = readFilter(filters, 'kind');
@@ -158,6 +185,8 @@ export function PaymentApprovalsPage(): JSX.Element {
       <ApprovalKpiCards />
 
       <CrmTable<ApprovalRow>
+        key={tableKey}
+        initialSearch={search}
         columns={APPROVAL_COLUMNS}
         rows={rows}
         getRowId={(row) => row.id}
@@ -223,6 +252,17 @@ export function PaymentApprovalsPage(): JSX.Element {
                       processApprovals.onGatedClick();
                       return;
                     }
+                    // Say so, rather than doing nothing: a click that silently
+                    // approves nothing looks like the button is broken.
+                    const own = selectedRows.length - ids.length;
+                    if (own > 0) {
+                      const them = own === 1 ? 'it' : 'them';
+                      showToast.warning(
+                        ids.length === 0
+                          ? `You recorded ${own === 1 ? 'this payment' : 'these payments'}, so someone else must approve ${them}.`
+                          : `${own} you recorded ${own === 1 ? 'was' : 'were'} skipped. Someone else must approve ${them}.`,
+                      );
+                    }
                     if (ids.length > 0) {
                       bulkApprove.mutate(ids, {
                         // Not awaited — see the single-approve drawer for why.
@@ -239,7 +279,7 @@ export function PaymentApprovalsPage(): JSX.Element {
         }
       />
 
-      <ApprovalReviewDrawer approvalId={selected?.id ?? null} onClose={() => setSelected(null)} />
+      <ApprovalReviewDrawer approvalId={selected?.id ?? openId} onClose={closeDrawer} />
     </Box>
   );
 }

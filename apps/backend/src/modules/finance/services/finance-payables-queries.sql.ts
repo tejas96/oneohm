@@ -1,8 +1,9 @@
 /**
  * What we owe each vendor.
  *
- * `daysPastTerms` is null when there is no bill or no agreed credit period —
- * "0 days late" against terms nobody set would be an invented fact.
+ * `daysPastTerms` is null when there is no bill, no agreed credit period, or
+ * nothing owed — "0 days late" against terms nobody set, or on a balance that is
+ * paid or held as an advance, would be an invented fact.
  *
  * A soft-deleted vendor still carrying a balance is INCLUDED, flagged inactive.
  * Money must not disappear because someone tidied a list.
@@ -18,7 +19,7 @@ export const PAYABLES_PAGE_SQL = `
     p.paid_paise                                  AS "paidPaise",
     to_char(p.oldest_bill_date, 'YYYY-MM-DD')     AS "oldestBillDate",
     p.bill_count                                  AS "billCount",
-    CASE WHEN p.oldest_bill_date IS NULL OR p.credit_days IS NULL THEN NULL
+    CASE WHEN p.oldest_bill_date IS NULL OR p.credit_days IS NULL OR p.payable_paise <= 0 THEN NULL
          ELSE GREATEST(CURRENT_DATE - (p.oldest_bill_date + p.credit_days * INTERVAL '1 day')::date, 0)::int
     END                                           AS "daysPastTerms",
     (p.deleted_at IS NOT NULL)                    AS "isInactive"

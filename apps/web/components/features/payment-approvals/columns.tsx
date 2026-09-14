@@ -31,7 +31,7 @@ const KIND_LABEL: Record<PaymentApproval['kind'], string> = {
   receipt: 'Receipt',
   expense: 'Expense',
   reversal: 'Reversal',
-  vendor_payment: 'Vendor Payment',
+  vendor_payment: 'Vendor payment',
 };
 
 /**

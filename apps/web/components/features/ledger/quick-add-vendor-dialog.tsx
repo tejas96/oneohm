@@ -135,7 +135,11 @@ export function QuickAddVendorDialog({
             fieldLabel="Vendor name"
             required
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              // A warning about the old name must not sit under a new one.
+              setError(null);
+            }}
             disabled={busy}
             autoFocus
           />

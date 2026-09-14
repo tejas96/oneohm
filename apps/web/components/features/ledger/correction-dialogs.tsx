@@ -65,7 +65,10 @@ export function ReverseEntryDialog({
       <MUIDialogHeader>
         <MUIDialogTitle>Reverse {entry.entryNo}</MUIDialogTitle>
         <MUIDialogDescription>
-          {formatPaise(entry.amountPaise)} received {entry.valueDate}
+          {/* Money in was received; a bill on credit was billed; anything else out was paid. */}
+          {formatPaise(entry.amountPaise)}{' '}
+          {entry.direction === 'in' ? 'received' : entry.isCash === false ? 'billed' : 'paid'}{' '}
+          {entry.valueDate}
           {entry.valueDateIsInferred ? ' (approx)' : ''}, recorded {formatDate(entry.createdAt)}
         </MUIDialogDescription>
       </MUIDialogHeader>

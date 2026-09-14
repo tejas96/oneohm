@@ -376,7 +376,7 @@ const root = {
     // Payment approval queue (design min-width 1180px)
     'col-approval-request': '152px',
     'col-approval-date': '96px',
-    'col-approval-type': '88px',
+    'col-approval-type': '124px',
     'col-approval-project': 'minmax(148px,1.2fr)',
     'col-approval-customer': 'minmax(148px,1.3fr)',
     'col-approval-amount': '112px',

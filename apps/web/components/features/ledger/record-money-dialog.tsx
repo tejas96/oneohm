@@ -26,6 +26,7 @@ import {
 } from '@/lib/hooks/resources/ledger';
 import { useVendors } from '@/lib/hooks/resources/vendors';
 import { useGatedAction } from '@/lib/rbac';
+import { blurStayedInDialog } from '@/lib/utils/focus';
 import { formatPaise, paiseToRupees, parseRupeeInput, rupeeInputError } from '@/lib/utils/paise';
 
 type Mode = 'receipt' | 'expense';
@@ -333,7 +334,9 @@ export function RecordMoneyDialog({
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            onBlur={() => setAmountTouched(true)}
+            onBlur={(e) => {
+              if (blurStayedInDialog(e)) setAmountTouched(true);
+            }}
             placeholder="0.00"
             autoFocus
             error={

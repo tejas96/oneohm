@@ -184,9 +184,16 @@ export const CASH_COLUMNS: CrmColumn<CashRow>[] = [
         sx={{
           fontWeight: 600,
           fontVariantNumeric: 'tabular-nums',
-          color: row.amountPaise < 0 ? color.danger : color.success,
+          // A reversal is a correction, not cash moving: grey and signed, so
+          // undoing a bill on credit never reads as money coming in.
+          color: row.reversesId
+            ? color['text-secondary']
+            : row.amountPaise < 0
+              ? color.danger
+              : color.success,
         }}
       >
+        {row.reversesId && row.amountPaise > 0 ? '+' : ''}
         {formatPaise(row.amountPaise)}
       </Box>
     ),

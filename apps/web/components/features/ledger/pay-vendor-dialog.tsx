@@ -24,6 +24,7 @@ import {
 } from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
 import { color, radius } from '@/lib/theme/tokens';
+import { blurStayedInDialog } from '@/lib/utils/focus';
 import { formatPaise, paiseToRupees, parseRupeeInput, rupeeInputError } from '@/lib/utils/paise';
 
 export interface PayVendorDialogProps {
@@ -376,7 +377,9 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            onBlur={() => setAmountTouched(true)}
+            onBlur={(e) => {
+              if (blurStayedInDialog(e)) setAmountTouched(true);
+            }}
             placeholder="0.00"
             autoFocus
             error={

@@ -3,7 +3,7 @@
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { Badge, Box, ButtonBase, IconButton, Popover, Tooltip } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { type JSX, useState } from 'react';
+import { type JSX, useEffect, useRef, useState } from 'react';
 
 import {
   type Notification,
@@ -11,6 +11,7 @@ import {
   useNotificationUnreadCount,
   useRecentNotifications,
 } from '@/lib/hooks/resources/notifications';
+import { useRefreshMoneyViews } from '@/lib/hooks/resources/payment-approvals';
 import { color, crm, radius } from '@/lib/theme/tokens';
 import { formatTimeAgo } from '@/lib/utils';
 
@@ -43,9 +44,23 @@ export function NotificationBell(): JSX.Element {
   const unreadCount = unreadData?.count ?? 0;
   const recent = useRecentNotifications(open);
   const { markRead, markAllRead } = useNotificationActions();
+  const refreshMoney = useRefreshMoneyViews();
+
+  // A new notice means something changed somewhere else — a payment waiting,
+  // approved or rejected. Refetch the money screens then, so the page under the
+  // bell agrees with it instead of waiting for someone to reload.
+  const lastCount = useRef<number | null>(null);
+  useEffect(() => {
+    if (!unreadData) return;
+    if (lastCount.current !== null && unreadData.count > lastCount.current) refreshMoney();
+    lastCount.current = unreadData.count;
+  }, [unreadData, refreshMoney]);
 
   const openItem = (item: Notification): void => {
     if (!item.readAt) markRead.mutate(item.id);
+    // The page this opens must show what the notice describes, even when the
+    // notice arrived before the badge's last poll noticed it.
+    if (item.type.startsWith('payment_')) refreshMoney();
     setAnchor(null);
     if (isWebLink(item.link)) router.push(item.link);
   };

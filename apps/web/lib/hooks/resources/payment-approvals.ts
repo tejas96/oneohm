@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
+import { useCallback } from 'react';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
@@ -46,6 +47,11 @@ export interface PaymentApproval {
   isCredit?: boolean;
   reversesEntryId?: string | null;
   reversalReason?: string | null;
+  /** For a reversal: the entry it undoes. */
+  reversesEntryNo?: string | null;
+  reversesEntryType?: string | null;
+  reversesIsCash?: boolean | null;
+  reversesVendorName?: string | null;
   /** Every image attached to this payment, oldest first. */
   proofs?: ProofRef[];
   submittedBy: string;
@@ -225,18 +231,30 @@ export function useApprovalSummary(): UseQueryResult<ApprovalSummary, AxiosError
 // Mutations
 // ============================================================================
 
-export function useApprovalMutations() {
+/**
+ * Refetch every screen that shows money waiting or moved: the approval queue and
+ * its cards, the ledger, and the org-wide finance figures.
+ *
+ * Approving here needs it, and so does hearing that someone ELSE submitted,
+ * approved or rejected a payment — without it the queue and a project's
+ * "Awaiting approval" kept showing the old state until a manual refresh, even
+ * while the bell announced the change.
+ */
+export function useRefreshMoneyViews(): () => void {
   const queryClient = useQueryClient();
+  return useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: approvalKeys.root() });
+    void queryClient.invalidateQueries({ queryKey: ['ledger'] });
+    void queryClient.invalidateQueries({ queryKey: ['finance-org'] });
+  }, [queryClient]);
+}
 
+export function useApprovalMutations() {
   /**
    * Approving moves money, so the ledger and org-finance caches are stale too —
    * not just the approval list.
    */
-  const invalidate = (): void => {
-    void queryClient.invalidateQueries({ queryKey: approvalKeys.root() });
-    void queryClient.invalidateQueries({ queryKey: ['ledger'] });
-    void queryClient.invalidateQueries({ queryKey: ['finance-org'] });
-  };
+  const invalidate = useRefreshMoneyViews();
 
   const approve = useMutation({
     mutationFn: async (id: string) => {
