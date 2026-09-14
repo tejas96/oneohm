@@ -1,6 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { VendorType } from '@tejas96/shared/types';
-import { Type } from 'class-transformer';
+import {
+  GSTIN_FORMAT_MESSAGE,
+  GSTIN_REGEX,
+  IFSC_FORMAT_MESSAGE,
+  IFSC_REGEX,
+  PAN_FORMAT_MESSAGE,
+  PAN_REGEX,
+} from '@tejas96/shared/utils';
+import { Transform, Type } from 'class-transformer';
 import {
   IsEmail,
   IsEnum,
@@ -9,10 +17,13 @@ import {
   IsOptional,
   IsString,
   Length,
+  Matches,
   Max,
   MaxLength,
   Min,
 } from 'class-validator';
+
+import { upperCaseIdentifier, VENDOR_PHONE_CHARACTERS } from './vendor-field-rules';
 
 /**
  * DTO for updating a vendor
@@ -22,6 +33,7 @@ export class UpdateVendorDto {
   // ==================== Basic Info ====================
 
   @ApiProperty({ example: 'Tata Power Solar', required: false })
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsOptional()
   @MaxLength(255)
@@ -63,12 +75,18 @@ export class UpdateVendorDto {
   @IsString()
   @IsOptional()
   @Length(10, 20)
+  @Matches(VENDOR_PHONE_CHARACTERS, {
+    message: 'Phone must contain only numbers, spaces, and +()-',
+  })
   phone?: string;
 
   @ApiProperty({ example: '+91-9876543211', required: false })
   @IsString()
   @IsOptional()
   @Length(10, 20)
+  @Matches(VENDOR_PHONE_CHARACTERS, {
+    message: 'Alternate phone must contain only numbers, spaces, and +()-',
+  })
   alternatePhone?: string;
 
   // ==================== Address ====================
@@ -100,20 +118,25 @@ export class UpdateVendorDto {
   @IsString()
   @IsOptional()
   @Length(6, 10)
+  @Matches(/^\d+$/, { message: 'PIN code must contain only digits' })
   pincode?: string;
 
   // ==================== Tax Details ====================
 
   @ApiProperty({ example: '27AAACT1234A1Z5', required: false })
+  @Transform(upperCaseIdentifier)
   @IsString()
   @IsOptional()
   @Length(15, 15)
+  @Matches(GSTIN_REGEX, { message: GSTIN_FORMAT_MESSAGE })
   gstin?: string;
 
   @ApiProperty({ example: 'AAACT1234A', required: false })
+  @Transform(upperCaseIdentifier)
   @IsString()
   @IsOptional()
   @Length(10, 10)
+  @Matches(PAN_REGEX, { message: PAN_FORMAT_MESSAGE })
   pan?: string;
 
   // ==================== Payment Terms ====================
@@ -145,9 +168,11 @@ export class UpdateVendorDto {
   accountNumber?: string;
 
   @ApiProperty({ example: 'HDFC0001234', required: false })
+  @Transform(upperCaseIdentifier)
   @IsString()
   @IsOptional()
   @Length(11, 11)
+  @Matches(IFSC_REGEX, { message: IFSC_FORMAT_MESSAGE })
   ifscCode?: string;
 
   // ==================== Rating ====================

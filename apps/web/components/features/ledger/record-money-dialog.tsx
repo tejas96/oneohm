@@ -6,7 +6,7 @@ import { ExpenseCategory, PaymentMethod } from '@tejas96/shared/types';
 import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
 
 import { VendorPickerControlled } from '@/components/features/inventory/components/shared/vendor-picker';
-import { QuickAddVendorDialog } from '@/components/features/ledger/quick-add-vendor-dialog';
+import { VendorFormDialog } from '@/components/features/inventory/components/vendor-form-dialog';
 import {
   MUIDialog,
   MUIDialogBody,
@@ -405,13 +405,21 @@ export function RecordMoneyDialog({
                 loading={vendorsLoading}
                 onCreateNew={setAddingVendor}
               />
-              <QuickAddVendorDialog
+              {/* The full vendor form from Inventory — every field and every
+                  check — saving to the same vendors table. Only the code may be
+                  left blank here (the server assigns VEN-####), and a name
+                  already on file is refused rather than added twice. */}
+              <VendorFormDialog
                 open={addingVendor !== null}
-                initialName={addingVendor ?? ''}
-                onClose={() => {
+                onOpenChange={(next) => {
+                  if (next) return;
                   setAddingVendor(null);
                   setVendorQuery('');
                 }}
+                initialName={addingVendor ?? ''}
+                gate="finance.payments.record"
+                autoCode
+                refuseDuplicateName
                 onCreated={(v) => {
                   setAddingVendor(null);
                   handleVendorChange(v.id);
