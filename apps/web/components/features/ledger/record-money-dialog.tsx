@@ -6,6 +6,7 @@ import { ExpenseCategory, PaymentMethod } from '@tejas96/shared/types';
 import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
 
 import { VendorPickerControlled } from '@/components/features/inventory/components/shared/vendor-picker';
+import { QuickAddVendorDialog } from '@/components/features/ledger/quick-add-vendor-dialog';
 import {
   MUIDialog,
   MUIDialogBody,
@@ -117,6 +118,9 @@ export function RecordMoneyDialog({
   // typing to search must not clobber a selection already made.
   const [vendorId, setVendorId] = useState('');
   const [vendorQuery, setVendorQuery] = useState('');
+  // The name typed into the vendor search when "Add as a new vendor" was
+  // picked; null while that dialog is closed.
+  const [addingVendor, setAddingVendor] = useState<string | null>(null);
 
   /*
    * Vendor list for the Credit picker. Fetched unconditionally, same as
@@ -231,6 +235,7 @@ export function RecordMoneyDialog({
     setProof(null);
     setProofName('');
     setVendorId('');
+    setAddingVendor(null);
     setVendorQuery('');
   };
 
@@ -395,6 +400,20 @@ export function RecordMoneyDialog({
                 }
                 options={vendorOptions}
                 loading={vendorsLoading}
+                onCreateNew={setAddingVendor}
+              />
+              <QuickAddVendorDialog
+                open={addingVendor !== null}
+                initialName={addingVendor ?? ''}
+                onClose={() => {
+                  setAddingVendor(null);
+                  setVendorQuery('');
+                }}
+                onCreated={(v) => {
+                  setAddingVendor(null);
+                  handleVendorChange(v.id);
+                  setVendorQuery(v.code ? `${v.name} (${v.code})` : v.name);
+                }}
               />
               <MUISelect
                 fieldLabel="Category"

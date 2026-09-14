@@ -43,6 +43,22 @@ export class VendorRepository {
   /**
    * Find vendor by code
    */
+  /**
+   * The next `VEN-0001`-style code, for a vendor added without one.
+   *
+   * Counts soft-deleted vendors too: the unique constraint on `code` covers
+   * every row, so a deleted vendor's code is still taken even though
+   * `findByCode` does not see it.
+   */
+  async nextGeneratedCode(): Promise<string> {
+    const rows: Array<{ next: number }> = await this.repository.query(
+      `SELECT COALESCE(MAX(SUBSTRING(code FROM '^VEN-([0-9]+)$')::int), 0) + 1 AS next
+         FROM vendors
+        WHERE code ~ '^VEN-[0-9]+$'`,
+    );
+    return `VEN-${String(rows[0]?.next ?? 1).padStart(4, '0')}`;
+  }
+
   async findByCode(code: string): Promise<VendorEntity | null> {
     return this.repository.findOne({
       where: { code, deletedAt: IsNull() },

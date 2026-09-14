@@ -27,11 +27,15 @@ export class CreateVendorDto {
   @MaxLength(255)
   name!: string;
 
-  @ApiProperty({ example: 'VEN-001', description: 'Unique vendor code' })
+  @ApiProperty({
+    example: 'VEN-001',
+    description: 'Unique vendor code. Generated as VEN-0001, VEN-0002, … when omitted.',
+    required: false,
+  })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @Length(1, 50)
-  code!: string;
+  code?: string;
 
   // ==================== Vendor Type ====================
 
