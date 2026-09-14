@@ -15,6 +15,7 @@ import { LedgerRepository } from '../../ledger/repositories/ledger.repository';
 import { LedgerWriteService } from '../../ledger/services/ledger-write.service';
 import { StorageService } from '../../storage/services/storage.service';
 import { PendingLedgerEntryEntity } from '../entities';
+import { PaymentApprovalNotifier } from './payment-approval-notifier.service';
 import { PaymentApprovalService } from './payment-approval.service';
 
 const PROJECT = 'project-1';
@@ -157,6 +158,10 @@ describe('PaymentApprovalService', () => {
         {
           provide: StorageService,
           useValue: { getPublicUrl: jest.fn((key: string) => `https://storage.test/${key}`) },
+        },
+        {
+          provide: PaymentApprovalNotifier,
+          useValue: { submitted: jest.fn(), approved: jest.fn(), rejected: jest.fn() },
         },
       ],
     }).compile();

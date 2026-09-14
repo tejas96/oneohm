@@ -1,6 +1,7 @@
 'use client';
 
 import { Box } from '@mui/material';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useMemo, useState } from 'react';
 
 import { ApprovalKpiCards } from './approval-kpi-cards';
@@ -51,10 +52,29 @@ export function PaymentApprovalsPage(): JSX.Element {
   );
   const { user } = useAuth();
 
-  const [status, setStatus] = useState<ApprovalStatus>('pending');
+  // The status tab lives in the URL (`?status=rejected`), so a notification can
+  // open the right tab and a refresh keeps it. Pending is the bare URL.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const status = toStatus(searchParams.get('status'));
+  const setStatus = (next: ApprovalStatus): void => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === 'pending') params.delete('status');
+    else params.set('status', next);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+
   // CrmTable's `page` is zero-indexed (it renders `page + 1`); the API is
-  // one-indexed. Kept zero-based here and converted at the call.
-  const [page, setPage] = useState(0);
+  // one-indexed. Kept zero-based here and converted at the call. Remembered per
+  // status, so arriving on another tab from a link starts at its first page.
+  const [pageFor, setPageFor] = useState<{ status: ApprovalStatus; page: number }>({
+    status,
+    page: 0,
+  });
+  const page = pageFor.status === status ? pageFor.page : 0;
+  const setPage = (next: number): void => setPageFor({ status, page: next });
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<FilterState>({});
   const [sortModel, setSortModel] = useState<TableSortModel | null>(null);
@@ -155,10 +175,7 @@ export function PaymentApprovalsPage(): JSX.Element {
         }}
         quickFilters={quickFilters}
         activeQuickFilter={status}
-        onQuickFilterChange={(key) => {
-          setStatus((key || 'pending') as ApprovalStatus);
-          setPage(0);
-        }}
+        onQuickFilterChange={(key) => setStatus(toStatus(key))}
         filterColumns={[
           {
             field: 'kind',
@@ -168,6 +185,7 @@ export function PaymentApprovalsPage(): JSX.Element {
             filterOptions: [
               { label: 'Receipt', value: 'receipt' },
               { label: 'Expense', value: 'expense' },
+              { label: 'Vendor payment', value: 'vendor_payment' },
               { label: 'Reversal', value: 'reversal' },
             ],
           },
@@ -224,6 +242,11 @@ export function PaymentApprovalsPage(): JSX.Element {
       <ApprovalReviewDrawer approvalId={selected?.id ?? null} onClose={() => setSelected(null)} />
     </Box>
   );
+}
+
+/** Anything that is not a known tab is the pending queue. */
+function toStatus(value: string | null): ApprovalStatus {
+  return value === 'approved' || value === 'rejected' || value === 'cancelled' ? value : 'pending';
 }
 
 /** Narrows the free-form filter value to a kind the API accepts. */

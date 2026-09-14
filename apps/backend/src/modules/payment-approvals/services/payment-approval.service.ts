@@ -18,6 +18,7 @@ import {
 } from '@tejas96/shared/types';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 
+import { PaymentApprovalNotifier } from './payment-approval-notifier.service';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { allocateWaterfall } from '../../ledger/domain/allocation';
@@ -147,6 +148,7 @@ export class PaymentApprovalService {
     private readonly ledgerRepository: LedgerRepository,
     private readonly sequenceService: SequenceService,
     private readonly storageService: StorageService,
+    private readonly notifier: PaymentApprovalNotifier,
   ) {}
 
   // ============================================
@@ -177,7 +179,7 @@ export class PaymentApprovalService {
       throw new BadRequestException('Settling a credit bill with more credit is not a payment');
     }
 
-    return this.dataSource.transaction(async (manager) => {
+    const saved = await this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PendingLedgerEntryEntity);
 
       const requestNo = await this.sequenceService.getNextNumber(
@@ -270,6 +272,10 @@ export class PaymentApprovalService {
 
       return repo.findOneOrFail({ where: { id } });
     });
+
+    // After the commit, so nobody is told about a payment that rolled back.
+    this.notifier.submitted(saved.id);
+    return saved;
   }
 
   /**
@@ -339,7 +345,7 @@ export class PaymentApprovalService {
    * same milestone.
    */
   async approve(id: string, approverId: string): Promise<PendingLedgerEntryEntity> {
-    return this.dataSource.transaction(async (manager) => {
+    const approved = await this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PendingLedgerEntryEntity);
 
       const row = await repo.findOne({ where: { id }, lock: { mode: 'pessimistic_write' } });
@@ -454,6 +460,9 @@ export class PaymentApprovalService {
 
       return repo.findOneOrFail({ where: { id: pending.id } });
     });
+
+    this.notifier.approved(approved.id);
+    return approved;
   }
 
   async bulkApprove(ids: string[], approverId: string): Promise<BulkApproveResult> {
@@ -505,7 +514,7 @@ export class PaymentApprovalService {
   // ============================================
 
   async reject(id: string, reason: string, approverId: string): Promise<PendingLedgerEntryEntity> {
-    return this.transitionPending(id, (row, repo) => {
+    const rejected = await this.transitionPending(id, (row, repo) => {
       if (row.submittedBy === approverId) {
         throw new ForbiddenException('You submitted this payment — another user must review it');
       }
@@ -516,6 +525,9 @@ export class PaymentApprovalService {
         reviewedAt: new Date(),
       });
     });
+
+    this.notifier.rejected(rejected.id);
+    return rejected;
   }
 
   /** Withdrawing your own submission. Terminal, and needs no approver. */
