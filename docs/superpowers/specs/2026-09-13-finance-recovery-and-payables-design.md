@@ -284,6 +284,13 @@ name always claimed.
 > equals cash expenses plus credit bills. It may be negative, meaning vendors hold an advance; the
 > Money tab then says "paid to vendors ahead of their bills", and the advance stays out of cost.
 
+> **Corrected 2026-09-14 (migration `1857170000000-UnappliedCreditNetOfRefunds`).**
+> `unallocated_paise` — the customer's unapplied credit — was received less allocated and never
+> looked at refunds, so credit handed back on a cancellation kept reading as held. A refund now
+> draws on unapplied credit first, floored at zero. The cancellation settlement's own copy of the
+> formula subtracts refunds too, or it would offer refunded credit a second time. No figure changed
+> on the local data (239 projects, ₹31,772.72 before and after).
+
 **Downstream cleanup, mandatory and in the same change:** `waivedRemainderPaise` in
 `apps/web/components/features/projects/components/project-detail/lib/derive.ts` exists solely
 to work around the old `waivedPaise`. It is deleted and its callers read `waivedPaise`
@@ -411,6 +418,12 @@ inside whichever scope is selected.
 That link sets `bucket = no_due_date`. The fact is visible and actionable without another
 control, per the house preference for few controls that each do more.
 
+> **Changed 2026-09-14 — "Not due / no date".** A number audit found 198 of the chip's 202
+> milestones have no due date at all, so "Not due yet" claimed a date that does not exist. The chip
+> says both; each row's pill says which one it is. A milestone the bank pays is tagged **Bank
+> pays**, and the list's sort ends on `milestone_id` so no milestone repeats or goes missing
+> between pages.
+
 **Recovery rows are a call list.** A financier should be able to work the list without opening
 anything: customer name, **phone**, project number, amount open, days since the meter went in,
 oldest overdue milestone. `customerPhone` is already returned by `RECEIVABLES_SQL`.
@@ -482,6 +495,12 @@ unambiguous half is fixed inline; the expensive, ambiguous half stays a warning.
 Columns: vendor, payable, oldest bill, days past terms (`oldest_bill_date + credit_days`
 against today), bill count, and a **Pay** action.
 
+> **Changed 2026-09-14 — oldest unpaid bill.** Counting from the oldest bill ever put a vendor
+> 45 days past terms when its old bill was paid in full and its only unpaid bill was 4 days old.
+> Payments now settle the oldest bills first, and both "Oldest unpaid" and past terms start at the
+> oldest bill with money left (computed in `PAYABLES_PAGE_SQL`; the view is unchanged). The Pay
+> dialog's over-payment warning measures the chosen project, not the vendor's total.
+
 Three KPI tiles: total payable, vendors owed, advances paid.
 
 A negative payable renders as **Advance ₹X** in the success tone, not as a negative number.
@@ -498,6 +517,13 @@ Nav entry added to `navigation.ts` under `MONEY`, and `ROUTES.FINANCE.PAYABLES` 
   A count that already exists becomes a way in. *(2026-09-14: it opens **Recovery — Cash**
   directly, `?scope=recovery-cash`; Loan is one click away.)*
 - **"Spent"** stays cash-only. This is a cash page; that is the correct meaning here.
+
+> **Changed 2026-09-14 — what the tiles count.** Spent also included customer refunds (₹4,44,000
+> of September's ₹5,68,900), unlike the project card, which has kept refunds out of spend since
+> `1857030000000`. **Refunded** is now its own tile and Net is unchanged. Counts are of entries still
+> standing at the end of the period ("8 receipts" had counted three reversed the same day) and name
+> each kind: expenses, vendor payments, refunds. The chart follows the search. A credit bill in the
+> list says "On credit" in grey rather than a red "Out".
 
 ### 6.4 Project → Money tab
 
