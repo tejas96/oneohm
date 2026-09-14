@@ -77,6 +77,7 @@ export function PaymentApprovalsPage(): JSX.Element {
   const page = pageFor.status === status ? pageFor.page : 0;
   const setPage = (next: number): void => setPageFor({ status, page: next });
   const [search, setSearch] = useState('');
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [filters, setFilters] = useState<FilterState>({});
   const [sortModel, setSortModel] = useState<TableSortModel | null>(null);
   const [selected, setSelected] = useState<ApprovalRow | null>(null);
@@ -114,7 +115,7 @@ export function PaymentApprovalsPage(): JSX.Element {
   const query = usePaymentApprovals({
     status,
     page: page + 1,
-    limit: PAGE_SIZE,
+    limit: pageSize,
     search: search || undefined,
     kind: toKind(kindFilter),
     // A single date filter means that exact day, so it bounds both ends.
@@ -245,9 +246,13 @@ export function PaymentApprovalsPage(): JSX.Element {
           setPage(0);
         }}
         page={page}
-        pageSize={PAGE_SIZE}
+        pageSize={pageSize}
         totalRowCount={query.data?.total ?? 0}
         onPageChange={setPage}
+        onPageSizeChange={(next) => {
+          setPageSize(next);
+          setPage(0);
+        }}
         onRowClick={setSelected}
         enableRowSelection={status === 'pending'}
         selectionLabel={(count) => `${count} payment${count === 1 ? '' : 's'} selected`}
