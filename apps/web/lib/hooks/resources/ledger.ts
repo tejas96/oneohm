@@ -158,6 +158,8 @@ export interface ProjectLedgerSummary {
    * which already includes those payments — see `costPaise` in derive.ts.
    */
   committedUnpaidPaise?: Paise;
+  /** The part of cancelled milestones never collected. Sits beside received/outstanding/written off. */
+  cancelledPaise?: Paise;
   milestones: MilestoneBalance[];
 }
 

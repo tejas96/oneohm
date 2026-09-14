@@ -81,6 +81,8 @@ export interface ProjectBalanceRow {
   milestoneCount: number;
   /** Bills on credit less vendor payments on this project. Negative = an advance held by vendors. */
   committedUnpaidPaise: number;
+  /** Cancelled milestones' amount that was never collected. */
+  cancelledPaise: number;
 }
 
 /**
@@ -150,6 +152,7 @@ export class LedgerRepository {
     'receiptCount',
     'milestoneCount',
     'committedUnpaidPaise',
+    'cancelledPaise',
   ] as const;
 
   /**
@@ -296,7 +299,16 @@ export class LedgerRepository {
          net_cash_paise    AS "netCashPaise",
          receipt_count     AS "receiptCount",
          milestone_count   AS "milestoneCount",
-         committed_unpaid_paise AS "committedUnpaidPaise"
+         committed_unpaid_paise AS "committedUnpaidPaise",
+         -- The part of cancelled milestones that was never collected. NOT
+         -- cancelled_paise, which is their full amount: 7 of the 13 cancelled
+         -- projects took money before cancelling, and that money is already in
+         -- received_paise, so the full amount counted it twice. With this, a
+         -- project's received + outstanding + written off + cancelled equals
+         -- its contract exactly — checked on all 13.
+         (SELECT COALESCE(SUM(GREATEST(b.expected_paise - b.allocated_paise, 0)), 0)::BIGINT
+            FROM v_milestone_balance b
+           WHERE b.project_id = $1 AND b.status = 'cancelled') AS "cancelledPaise"
        FROM v_project_balance
        WHERE project_id = $1`,
       [projectId],

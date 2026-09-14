@@ -86,11 +86,18 @@ export function MoneyCard({
    * add up to the contract exactly and the bar has no unexplained grey tail.
    */
   const waived = s ? s.waivedPaise : 0;
+  // Cancelled milestones' uncollected part. Without it every cancelled project's
+  // bar ended in an unexplained grey gap.
+  const cancelled = s?.cancelledPaise ?? 0;
   const share = (paise: number): number =>
     s && s.contractPaise > 0 ? Math.max(0, (paise / s.contractPaise) * 100) : 0;
   const receivedShare = Math.min(100, share(s?.receivedPaise ?? 0));
   const outstandingShare = Math.min(100 - receivedShare, share(s?.outstandingPaise ?? 0));
   const waivedShare = Math.min(100 - receivedShare - outstandingShare, share(waived));
+  const cancelledShare = Math.min(
+    100 - receivedShare - outstandingShare - waivedShare,
+    share(cancelled),
+  );
 
   return (
     <DetailCard
@@ -122,11 +129,12 @@ export function MoneyCard({
             className="flex h-2.5 w-full gap-[2px] overflow-hidden rounded-pill"
             style={{ background: 'var(--ds-canvas-sunken)' }}
             role="img"
-            aria-label={`${Math.round(receivedShare)} percent of the contract received, ${Math.round(outstandingShare)} percent outstanding${waived > 0 ? `, ${Math.round(waivedShare)} percent written off` : ''}.`}
+            aria-label={`${Math.round(receivedShare)} percent of the contract received, ${Math.round(outstandingShare)} percent outstanding${waived > 0 ? `, ${Math.round(waivedShare)} percent written off` : ''}${cancelled > 0 ? `, ${Math.round(cancelledShare)} percent cancelled` : ''}.`}
           >
             <span style={{ width: `${receivedShare}%`, background: TONE.success.ink }} />
             <span style={{ width: `${outstandingShare}%`, background: TONE.warning.ink }} />
             <span style={{ width: `${waivedShare}%`, background: 'var(--ds-neutral-300)' }} />
+            <span style={{ width: `${cancelledShare}%`, background: 'var(--ds-neutral-400)' }} />
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-foreground-secondary">
             <span className="inline-flex items-center gap-1.5">
@@ -153,6 +161,16 @@ export function MoneyCard({
                   style={{ background: 'var(--ds-neutral-300)' }}
                 />
                 Written off <Mono>{formatPaise(waived)}</Mono>
+              </span>
+            ) : null}
+            {cancelled > 0 ? (
+              <span className="inline-flex items-center gap-1.5 text-foreground-tertiary">
+                <span
+                  aria-hidden
+                  className="size-2 rounded-[2px]"
+                  style={{ background: 'var(--ds-neutral-400)' }}
+                />
+                Cancelled <Mono>{formatPaise(cancelled)}</Mono>
               </span>
             ) : null}
             {owedLate > 0 ? (

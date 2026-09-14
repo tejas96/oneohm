@@ -183,7 +183,10 @@ export function FinancePayablesPage(): JSX.Element {
         <StatCard
           label="Advances paid"
           value={formatPaise(totals?.advancePaise ?? 0)}
-          note="paid ahead of bills"
+          // The totals cover every vendor, but "Owing only" hides the vendors
+          // holding an advance — so say so rather than show a figure the list
+          // below cannot explain.
+          note={onlyOwing ? 'all vendors, incl. ones this filter hides' : 'paid ahead of bills'}
         />
       </Box>
 

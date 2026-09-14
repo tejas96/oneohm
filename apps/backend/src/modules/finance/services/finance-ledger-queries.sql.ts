@@ -402,10 +402,10 @@ export const RECEIVABLES_BUCKETS_SQL = `
     COUNT(*) FILTER (WHERE v.days_overdue BETWEEN 61 AND 90)   AS "d61to90",
     COUNT(*) FILTER (WHERE v.days_overdue > 90)                AS "d90plus",
     COUNT(*)                                                   AS "all",
-    COALESCE(SUM(v.balance_paise), 0)                          AS "totalOutstandingPaise",
-    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.days_overdue > 0), 0) AS "overduePaise",
+    COALESCE(SUM(v.balance_paise), 0)::BIGINT                  AS "totalOutstandingPaise",
+    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.days_overdue > 0), 0)::BIGINT AS "overduePaise",
     COUNT(*) FILTER (WHERE v.due_date IS NULL)                          AS "noDueDate",
-    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.due_date IS NULL), 0) AS "noDueDatePaise",
+    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.due_date IS NULL), 0)::BIGINT AS "noDueDatePaise",
     COUNT(DISTINCT pr.id)                                              AS "recoveryProjects",
     -- Defect 5: a loan project with no lender milestone means the customer is
     -- being chased for the bank's share. Counted, never repaired — a 10/70/20

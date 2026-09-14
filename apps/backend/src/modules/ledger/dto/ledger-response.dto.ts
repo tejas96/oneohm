@@ -359,6 +359,15 @@ export class ProjectLedgerSummaryDto {
   @Transform(({ value }) => toNum(value))
   committedUnpaidPaise!: number;
 
+  @ApiProperty({
+    description:
+      'The part of cancelled milestones that was never collected — not their full amount, which ' +
+      'would count money received before cancelling twice.',
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  cancelledPaise!: number;
+
   @ApiProperty({ type: [MilestoneBalanceResponseDto] })
   @Expose()
   @Type(() => MilestoneBalanceResponseDto)

@@ -224,9 +224,10 @@ export class FinanceReportingService {
     return {
       data: rows.map((r: Record<string, unknown>) => ({
         ...r,
+        // Paise only. A rupee `amount` used to ride along beside it; nothing read
+        // it, and two units of the same money in one row is how a component
+        // ends up adding the wrong one.
         amountPaise: Number(r.amountPaise),
-        // rupee value for display; never sum these client-side
-        amount: rs(r.amountPaise),
       })),
       total: Number(countRow?.count ?? 0),
       page,
