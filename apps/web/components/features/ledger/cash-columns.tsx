@@ -105,14 +105,17 @@ export const CASH_COLUMNS: CrmColumn<CashRow>[] = [
           </Box>
         );
       }
-      // Cash never moved — the cost is taken on, not paid. Labelling it
-      // plainly here is what keeps the amount column from reading as money
-      // that left the bank.
+      // A bill taken on credit: the cost was taken on when it was recorded, not
+      // paid then. "On credit" rather than "Unpaid" — an entry is a permanent
+      // fact and cannot change once written, so a status label on it would
+      // stay "Unpaid" long after the vendor is paid. Whether a vendor is still
+      // owed is answered by their balance on Payables, not by this row.
+      // Neutral tone for the same reason: it is a description, not a warning.
       if (row.isCash === false) {
         return (
           <Box sx={{ minWidth: 0 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-              <CrmStatusPill label="Unpaid" tone="warning" dot={false} size="sm" />
+              <CrmStatusPill label="On credit" tone="neutral" dot={false} size="sm" />
               <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {row.vendorName ?? 'Vendor'}
               </Box>

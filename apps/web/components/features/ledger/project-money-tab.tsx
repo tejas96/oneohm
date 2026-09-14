@@ -623,13 +623,14 @@ function ProjectEntries({
                       Paid {e.vendorName ?? 'vendor'}
                     </span>
                   ) : e.isCash === false ? (
-                    // Cash never moved — the cost is taken on, not paid. This
-                    // is the one screen a credit bill is actually RECORDED on,
-                    // so it is the one screen that must not let it read as an
-                    // ordinary settled expense (or as a duplicate beside the
-                    // vendor_payment that later settles it).
+                    // A bill taken on credit. This is the one screen a credit
+                    // bill is actually RECORDED on, so it must not read as an
+                    // ordinary expense paid on the day, or as a duplicate beside
+                    // the vendor payment that later settles it. "On credit",
+                    // not "Unpaid": the entry can never change, so a status
+                    // label would still say unpaid after the vendor is paid.
                     <span className="flex min-w-0 items-center gap-1.5">
-                      <TonePill label="Unpaid" tone="warning" />
+                      <TonePill label="On credit" tone="neutral" />
                       <span className="min-w-0 truncate text-[12.5px] text-foreground">
                         {e.vendorName ?? 'Vendor'}
                       </span>
