@@ -98,7 +98,9 @@ export function QuickAddVendorDialog({
         (v) => v.name.trim().toLowerCase() === trimmedName.toLowerCase(),
       );
       if (clash) {
-        setError(`“${clash.name}” is already a vendor (${clash.code}). Close this and pick them from the list.`);
+        setError(
+          `“${clash.name}” is already a vendor (${clash.code}). Close this and pick them from the list.`,
+        );
         return;
       }
 

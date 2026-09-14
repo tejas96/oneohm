@@ -339,7 +339,9 @@ export class MilestoneService {
         return milestone;
       }
       if (payerType === 'lender' && !(await this.isLoanFinanced(milestone.projectId, manager))) {
-        throw new BadRequestException('This project is not paid for by a loan, so a bank cannot pay it');
+        throw new BadRequestException(
+          'This project is not paid for by a loan, so a bank cannot pay it',
+        );
       }
 
       const before = { payerType: milestone.payerType };

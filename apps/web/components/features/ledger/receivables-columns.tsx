@@ -133,9 +133,7 @@ export const RECEIVABLE_COLUMNS: CrmColumn<ReceivableRow>[] = [
     cellSx: { pr: 1.5 },
     // The number the page exists for, so it carries the weight.
     renderCell: (row) => (
-      <Box sx={{ fontWeight: 700, color: color.danger }}>
-        {formatPaise(row.balancePaise)}
-      </Box>
+      <Box sx={{ fontWeight: 700, color: color.danger }}>{formatPaise(row.balancePaise)}</Box>
     ),
   },
   {
