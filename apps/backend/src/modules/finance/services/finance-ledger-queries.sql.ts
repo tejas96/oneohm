@@ -422,7 +422,12 @@ export const RECEIVABLES_SQL = `
     CASE WHEN $5 = 'customerName'      AND $6 = 'asc'  THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END ASC,
     CASE WHEN $5 = 'customerName'      AND $6 = 'desc' THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END DESC,
     -- Default: worst overdue first, which is the order to work the list in.
-    v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number
+    v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number,
+    -- Unique last key. Milestones of one project tie on everything above, and
+    -- LIMIT/OFFSET over tied rows may order them differently per page: the
+    -- no-due-date list showed one of PRJ-0101's milestones twice and never
+    -- showed the other.
+    v.milestone_id
   LIMIT $7 OFFSET $8
 `;
 
@@ -466,8 +471,10 @@ export const RECEIVABLES_BUCKETS_SQL = `
     -- guess would silently move money off a customer's name.
     COUNT(DISTINCT pr.id) FILTER (
       WHERE COALESCE(prop.wants_loan, false)
+        -- A cancelled bank milestone is not a share split out: it was taken off.
         AND NOT EXISTS (SELECT 1 FROM payment_milestones m2
-                         WHERE m2.project_id = pr.id AND m2.payer_type = 'lender')
+                         WHERE m2.project_id = pr.id AND m2.payer_type = 'lender'
+                           AND m2.status <> 'cancelled')
     )                                                                  AS "missingLenderProjects"
   ${RECEIVABLES_JOINS}
   WHERE v.status = 'active'
@@ -533,8 +540,10 @@ const RECOVERY_PROJECTS_CTE = `
       COUNT(*) FILTER (WHERE o.due_date IS NULL)::int                AS undated_milestones,
       COALESCE(SUM(o.balance_paise) FILTER (WHERE o.due_date IS NULL), 0)::BIGINT
                                                                      AS undated_paise,
+      -- A cancelled bank milestone is not a share split out: it was taken off.
       EXISTS (SELECT 1 FROM payment_milestones m2
-               WHERE m2.project_id = pr.id AND m2.payer_type = 'lender')
+               WHERE m2.project_id = pr.id AND m2.payer_type = 'lender'
+                 AND m2.status <> 'cancelled')
                                                                      AS has_lender_milestone
     FROM open_ms o
     JOIN projects pr                   ON pr.id = o.project_id AND pr.deleted_at IS NULL
@@ -753,7 +762,9 @@ export const OUTSTANDING_SQL = `
     AND v.balance_paise > 0
     AND ($3::uuid IS NULL OR cp.id = $3)
     AND ($4::uuid IS NULL OR v.project_id = $4)
-  ORDER BY v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number
+  -- milestone_id last: without a unique key, rows tied inside one project can
+  -- repeat or go missing between pages.
+  ORDER BY v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number, v.milestone_id
   LIMIT $1 OFFSET $2
 `;
 

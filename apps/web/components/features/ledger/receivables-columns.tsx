@@ -23,11 +23,12 @@ export type RecoveryTableRow = RecoveryRow & Record<string, unknown>;
  * Colour is never the only signal — the label carries it too, so the list is
  * still readable to someone who cannot distinguish the tones.
  */
-export function ageingBucket(days: number): { label: string; tone: CrmTone } {
-  // "Not due yet", matching the quick-filter chip's rename (finance-receivables-page.tsx)
-  // — the two must agree, or a row's pill and the active chip describe the
-  // same milestone in two different words.
-  if (days <= 0) return { label: 'Not due yet', tone: 'neutral' };
+export function ageingBucket(days: number, undated = false): { label: string; tone: CrmTone } {
+  // The quick-filter chip is "Not due / no date" (finance-receivables-page.tsx);
+  // a row knows which of the two it is, so it says that one. A milestone is
+  // only dated once its stage work is done, so most rows here have no date at
+  // all, and "Not due yet" claimed a date that does not exist.
+  if (days <= 0) return { label: undated ? 'No due date' : 'Not due yet', tone: 'neutral' };
   if (days <= 30) return { label: '1–30 days', tone: 'warning' };
   if (days <= 60) return { label: '31–60 days', tone: 'warning' };
   if (days <= 90) return { label: '61–90 days', tone: 'danger' };
@@ -94,8 +95,15 @@ export const RECEIVABLE_COLUMNS: CrmColumn<ReceivableRow>[] = [
     header: 'Milestone',
     track: crm['col-recv-milestone'],
     renderCell: (row) => (
-      <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {row.milestoneName}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+        <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {row.milestoneName}
+        </Box>
+        {/* The row carries the customer's name and phone, but the bank pays
+            this one. Without the tag a collector calls the wrong party. */}
+        {row.payerType === 'lender' ? (
+          <CrmStatusPill label="Bank pays" tone="info" dot={false} size="sm" />
+        ) : null}
       </Box>
     ),
   },
@@ -143,7 +151,7 @@ export const RECEIVABLE_COLUMNS: CrmColumn<ReceivableRow>[] = [
     track: crm['col-recv-ageing'],
     sortable: true,
     renderCell: (row) => {
-      const { label, tone } = ageingBucket(row.daysOverdue);
+      const { label, tone } = ageingBucket(row.daysOverdue, !row.dueDate);
       return <CrmStatusPill label={label} tone={tone} size="sm" />;
     },
   },
@@ -294,7 +302,11 @@ export const RECOVERY_PROJECT_COLUMNS: CrmColumn<RecoveryTableRow>[] = [
     track: crm['col-recv-ageing'],
     sortable: true,
     renderCell: (row) => {
-      const { label, tone } = ageingBucket(row.worstDaysOverdue);
+      // Nothing overdue, and none of the open money has a date either.
+      const { label, tone } = ageingBucket(
+        row.worstDaysOverdue,
+        row.undatedPaise === row.outstandingPaise,
+      );
       return <CrmStatusPill label={label} tone={tone} size="sm" />;
     },
   },

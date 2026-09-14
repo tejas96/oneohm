@@ -74,7 +74,7 @@ export function RecoveryMilestones({ projectId }: { projectId: string }): JSX.El
         </thead>
         <tbody>
           {open.map((m) => {
-            const { label, tone } = ageingBucket(m.daysOverdue);
+            const { label, tone } = ageingBucket(m.daysOverdue, !m.dueDate);
             return (
               <tr key={m.milestoneId} style={{ borderTop: `1px solid ${color.divider}` }}>
                 <td style={{ ...cell, whiteSpace: 'normal' }}>{m.name}</td>

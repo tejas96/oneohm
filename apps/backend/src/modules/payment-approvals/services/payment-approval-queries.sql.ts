@@ -133,8 +133,10 @@ export const APPROVALS_PAGE_SQL = `
     CASE WHEN $8 = 'submittedAt'  AND $9 = 'desc' THEN p.submitted_at  END DESC,
     CASE WHEN $8 = 'customerName' AND $9 = 'asc'  THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
     CASE WHEN $8 = 'customerName' AND $9 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
-    -- Default and final tie-break: the queue drains in the order it filled.
-    p.submitted_at ASC
+    -- Default: the queue drains in the order it filled. p.id is the unique last
+    -- key, so two requests stamped in the same millisecond cannot trade places
+    -- between pages.
+    p.submitted_at ASC, p.id
   LIMIT $10 OFFSET $11
 `;
 

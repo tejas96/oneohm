@@ -160,6 +160,7 @@ export function FinanceReceivablesPage(): JSX.Element {
 
   const [bucket, setBucket] = useState<ReceivableFilters['bucket']>(undefined);
   const [search, setSearch] = useState('');
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   // Page and sort belong to one scope: the two lists sort on different
   // columns, and page 3 of one is not page 3 of the other. Keyed by scope so
   // a scope change — from the toggle or from the URL — starts both afresh.
@@ -174,6 +175,10 @@ export function FinanceReceivablesPage(): JSX.Element {
   const setPage = (next: number): void => setView({ scope, page: next, sort: sortModel });
   const setSortModel = (next: TableSortModel | null): void =>
     setView({ scope, page: 0, sort: next });
+  const changePageSize = (next: number): void => {
+    setPageSize(next);
+    setPage(0);
+  };
 
   const setScope = (next: Scope): void => {
     const params = new URLSearchParams(searchParams.toString());
@@ -190,7 +195,7 @@ export function FinanceReceivablesPage(): JSX.Element {
       sortBy: SORTABLE.find((f) => f === sortModel?.field),
       sortOrder: sortModel?.direction,
       page: page + 1,
-      limit: PAGE_SIZE,
+      limit: pageSize,
     },
     { enabled: !isRecovery },
   );
@@ -202,7 +207,7 @@ export function FinanceReceivablesPage(): JSX.Element {
       sortBy: RECOVERY_SORTABLE.find((f) => f === sortModel?.field),
       sortOrder: sortModel?.direction,
       page: page + 1,
-      limit: PAGE_SIZE,
+      limit: pageSize,
     },
     { enabled: isRecovery },
   );
@@ -210,6 +215,11 @@ export function FinanceReceivablesPage(): JSX.Element {
   const receivableRows = (receivables.data?.data ?? []) as ReceivableRow[];
   const recoveryRows = (recovery.data?.data ?? []) as RecoveryTableRow[];
   const buckets = isRecovery ? recovery.data?.buckets : receivables.data?.buckets;
+  // No figure until this scope, chip and search have answered. The cards used
+  // to fall back to 0, so a slow or failed request read "₹0.00 — nothing
+  // outstanding" on a book with ₹1.9 crore open.
+  const failed = isRecovery ? recovery.isError : receivables.isError;
+  const pending = failed ? 'could not load' : 'loading…';
   // The undated note counts projects on Recovery and milestones on the full list.
   const undatedCount = isRecovery
     ? (recovery.data?.buckets.noDueDateProjects ?? 0)
@@ -219,7 +229,16 @@ export function FinanceReceivablesPage(): JSX.Element {
   const quickFilters = useMemo<CrmQuickFilter[]>(
     () => [
       { key: '', label: 'All open', count: buckets?.all, tone: 'neutral', dot: false },
-      { key: 'current', label: 'Not due yet', count: buckets?.current, tone: 'success', dot: true },
+      // Most of this bucket has no due date at all (198 of 202): a milestone is
+      // only dated once its stage work is done. "Not due yet" claimed a date
+      // that does not exist.
+      {
+        key: 'current',
+        label: 'Not due / no date',
+        count: buckets?.current,
+        tone: 'success',
+        dot: true,
+      },
       { key: '1-30', label: '1–30 days', count: buckets?.d1to30, tone: 'warning', dot: true },
       { key: '31-60', label: '31–60 days', count: buckets?.d31to60, tone: 'warning', dot: true },
       { key: '61-90', label: '61–90 days', count: buckets?.d61to90, tone: 'danger', dot: true },
@@ -274,14 +293,24 @@ export function FinanceReceivablesPage(): JSX.Element {
       >
         <StatCard
           label={isRecovery ? 'Projects to recover' : 'Open milestones'}
-          value={String(buckets?.all ?? 0)}
-          note={isRecovery ? 'delivered, money still due' : 'with money still due'}
+          value={buckets ? String(buckets.all) : '—'}
+          note={
+            !buckets ? pending : isRecovery ? 'delivered, money still due' : 'with money still due'
+          }
         />
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
           <StatCard
             label="Total outstanding"
-            value={formatPaise(buckets?.totalOutstandingPaise ?? 0)}
-            note={isRecovery ? 'across these projects' : 'across every open milestone'}
+            value={buckets ? formatPaise(buckets.totalOutstandingPaise) : '—'}
+            note={
+              !buckets
+                ? pending
+                : search
+                  ? 'matching the search'
+                  : isRecovery
+                    ? 'across these projects'
+                    : 'across every open milestone'
+            }
           />
           {/*
             A forecasting gap, not hidden debt: per spec §2.4, 178 of these 198
@@ -334,8 +363,8 @@ export function FinanceReceivablesPage(): JSX.Element {
         </Box>
         <StatCard
           label="Overdue"
-          value={formatPaise(buckets?.overduePaise ?? 0)}
-          note="past its due date"
+          value={buckets ? formatPaise(buckets.overduePaise) : '—'}
+          note={buckets ? 'past its due date' : pending}
           danger={(buckets?.overduePaise ?? 0) > 0}
         />
       </Box>
@@ -386,6 +415,13 @@ export function FinanceReceivablesPage(): JSX.Element {
         </Alert>
       ) : null}
 
+      {failed ? (
+        <Alert variant="error">
+          Couldn&apos;t load {isRecovery ? 'the recovery list' : 'receivables'}. Refresh the page to
+          try again.
+        </Alert>
+      ) : null}
+
       {isRecovery ? (
         <CrmTable<RecoveryTableRow>
           // Keyed by scope so Cash and Loan never share expanded rows.
@@ -413,11 +449,12 @@ export function FinanceReceivablesPage(): JSX.Element {
           sortModel={sortModel}
           onSortChange={setSortModel}
           page={page}
-          pageSize={PAGE_SIZE}
+          pageSize={pageSize}
           totalRowCount={recovery.data?.total ?? 0}
           onPageChange={setPage}
+          onPageSizeChange={changePageSize}
           renderExpandedRow={(row) => <RecoveryMilestones projectId={row.projectId} />}
-          emptyMessage="Nothing to recover."
+          emptyMessage={recovery.isError ? 'Could not load.' : 'Nothing to recover.'}
         />
       ) : (
         <CrmTable<ReceivableRow>
@@ -444,10 +481,11 @@ export function FinanceReceivablesPage(): JSX.Element {
           sortModel={sortModel}
           onSortChange={setSortModel}
           page={page}
-          pageSize={PAGE_SIZE}
+          pageSize={pageSize}
           totalRowCount={receivables.data?.total ?? 0}
           onPageChange={setPage}
-          emptyMessage="Nothing outstanding."
+          onPageSizeChange={changePageSize}
+          emptyMessage={receivables.isError ? 'Could not load.' : 'Nothing outstanding.'}
         />
       )}
     </Box>
