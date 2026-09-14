@@ -128,13 +128,27 @@ export function PaymentApprovalsPage(): JSX.Element {
 
   const rows = (query.data?.data ?? []) as ApprovalRow[];
 
+  /*
+   * The Pending chip counts what the table under it holds. The queue-wide
+   * summary said "Pending · 14" beside 4 rows once a type filter was on. While
+   * Pending is open that is the list's own total; on another tab the whole
+   * queue is only right when nothing narrows it, so otherwise it shows none.
+   */
+  const narrowed = Boolean(search || kindFilter || dateFilter);
+  const pendingChipCount =
+    status === 'pending' && query.data
+      ? query.data.total
+      : narrowed
+        ? undefined
+        : summary.data?.pendingCount;
+
   /** Status chips carry a live count only where one is meaningful. */
   const quickFilters = useMemo<CrmQuickFilter[]>(
     () => [
       {
         key: 'pending',
         label: 'Pending',
-        count: summary.data?.pendingCount,
+        count: pendingChipCount,
         tone: 'warning',
         dot: true,
       },
@@ -142,7 +156,7 @@ export function PaymentApprovalsPage(): JSX.Element {
       { key: 'rejected', label: 'Rejected', tone: 'danger', dot: true },
       { key: 'cancelled', label: 'Withdrawn', tone: 'neutral', dot: false },
     ],
-    [summary.data?.pendingCount],
+    [pendingChipCount],
   );
 
   return (
@@ -192,7 +206,7 @@ export function PaymentApprovalsPage(): JSX.Element {
         getRowId={(row) => row.id}
         loading={query.isLoading}
         refetching={query.isFetching && !query.isLoading}
-        itemLabel="payments"
+        itemLabel="requests"
         // Narrower than the CRM default of 1280px: this grid has fewer columns
         // than the customer list, and Status must stay on screen rather than
         // sitting past a horizontal scroll.
@@ -218,7 +232,7 @@ export function PaymentApprovalsPage(): JSX.Element {
               { label: 'Reversal', value: 'reversal' },
             ],
           },
-          { field: 'valueDate', headerName: 'Payment date', filterable: true, filterType: 'date' },
+          { field: 'valueDate', headerName: 'Date', filterable: true, filterType: 'date' },
         ]}
         filterModel={filters}
         onFilterChange={(next) => {

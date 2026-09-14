@@ -65,10 +65,15 @@ export const APPROVAL_COLUMNS: CrmColumn<ApprovalRow>[] = [
   },
   {
     field: 'valueDate',
-    header: 'Paid on',
+    // Not "Paid on": the column also dates bills on credit and reversals.
+    header: 'Date',
     track: crm['col-approval-date'],
     sortable: true,
-    renderCell: (row) => formatBusinessDate(row.valueDate),
+    renderCell: (row) =>
+      // A reversal is dated the day it is approved, so until then it has none.
+      row.kind === 'reversal' && row.status === 'pending'
+        ? 'On approval'
+        : formatBusinessDate(row.valueDate),
   },
   {
     field: 'kind',

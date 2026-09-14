@@ -3,7 +3,7 @@
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import { Box, Skeleton } from '@mui/material';
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 
 import { useApprovalSummary } from '@/lib/hooks/resources/payment-approvals';
 import { color, crm, radius, shadow } from '@/lib/theme/tokens';
@@ -11,7 +11,7 @@ import { formatPaise } from '@/lib/utils/paise';
 
 interface StatCardProps {
   label: string;
-  value: string;
+  value: ReactNode;
   note: string;
   /** Desirability, not arithmetic: a queue growing older is bad news. */
   noteDir: 'good' | 'bad' | 'idle';
@@ -111,9 +111,31 @@ export function ApprovalKpiCards(): JSX.Element {
         noteDir={(data?.pendingCount ?? 0) === 0 ? 'good' : 'idle'}
         loading={isLoading}
       />
+      {/* In and out on their own lines: added together they made one figure
+          that was neither what is coming in nor what is going out. */}
       <StatCard
         label="Value waiting"
-        value={formatPaise(data?.pendingValuePaise ?? 0)}
+        value={
+          <Box
+            component="span"
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr',
+              columnGap: 1,
+              fontSize: 'var(--text-body-size)',
+              lineHeight: 1.35,
+            }}
+          >
+            <Box component="span" sx={{ fontWeight: 500, color: color['text-tertiary'] }}>
+              In
+            </Box>
+            <span>{formatPaise(data?.pendingInPaise ?? 0)}</span>
+            <Box component="span" sx={{ fontWeight: 500, color: color['text-tertiary'] }}>
+              Out
+            </Box>
+            <span>{formatPaise(data?.pendingOutPaise ?? 0)}</span>
+          </Box>
+        }
         note="not counted in any balance yet"
         noteDir="idle"
         loading={isLoading}

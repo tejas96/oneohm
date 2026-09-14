@@ -133,8 +133,10 @@ export interface ApprovalImpact {
 
 export interface ApprovalSummary {
   pendingCount: number;
-  /** Total size of what is waiting, in paise. */
-  pendingValuePaise: number;
+  /** Money waiting to come in, in paise. Never added to `pendingOutPaise`. */
+  pendingInPaise: number;
+  /** Money waiting to go out, in paise. */
+  pendingOutPaise: number;
   approvedToday: number;
   /** Hours the longest-waiting request has been queued. Null when none. */
   oldestPendingHours: number | null;

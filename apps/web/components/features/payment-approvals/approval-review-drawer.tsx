@@ -26,6 +26,7 @@ import {
   usePaymentApproval,
 } from '@/lib/hooks/resources/payment-approvals';
 import { useAccessDialog, useCan } from '@/lib/rbac';
+import { formatBusinessDate, formatDate, formatPaymentMethod } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -91,7 +92,10 @@ export function ApprovalReviewDrawer({
 }: ApprovalReviewDrawerProps): JSX.Element {
   const { user } = useAuth();
   const { data, isLoading } = usePaymentApproval(approvalId);
-  const impact = useApprovalImpact(approvalId);
+  // Only a pending request has a consequence to preview. Once decided, its
+  // effect is already in the balances the preview is worked out from, so it
+  // would be counted a second time.
+  const impact = useApprovalImpact(data?.status === 'pending' ? approvalId : null);
   const { approve, reject, cancel } = useApprovalMutations();
   const autoFileReceipt = useAutoFileApprovedReceipts();
   const [reason, setReason] = useState('');
@@ -153,8 +157,12 @@ export function ApprovalReviewDrawer({
                 {formatPaise(Math.abs(data.amountPaise))}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {isReversal ? 'Dated' : data.isCredit ? 'Billed on' : 'Paid on'} {data.valueDate}
-                {data.paymentMethod ? ` · ${data.paymentMethod}` : ''}
+                {/* A reversal is posted with the day it is approved, whatever
+                    day it was asked for. */}
+                {isReversal && isPending
+                  ? 'Dated the day it is approved'
+                  : `${isReversal ? 'Dated' : data.isCredit ? 'Billed on' : 'Paid on'} ${formatBusinessDate(data.valueDate)}`}
+                {data.paymentMethod ? ` · ${formatPaymentMethod(data.paymentMethod)}` : ''}
                 {data.reference ? ` · ${data.reference}` : ''}
               </Typography>
             </Box>
@@ -177,7 +185,7 @@ export function ApprovalReviewDrawer({
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 Submitted by {data.submittedByName ?? 'unknown'}
                 {data.submittedByRoles ? ` (${data.submittedByRoles})` : ''} on{' '}
-                {new Date(data.submittedAt).toLocaleDateString()}
+                {formatDate(data.submittedAt)}
               </Typography>
               {/* Only once the row has actually been reviewed — `reviewedAt`
                   is null for both a pending row and one the submitter simply
@@ -186,7 +194,7 @@ export function ApprovalReviewDrawer({
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                   Reviewed by {data.reviewedByName ?? 'unknown'}
                   {data.reviewedByRoles ? ` (${data.reviewedByRoles})` : ''} on{' '}
-                  {new Date(data.reviewedAt).toLocaleDateString()}
+                  {formatDate(data.reviewedAt)}
                 </Typography>
               ) : null}
             </Box>
@@ -271,11 +279,13 @@ export function ApprovalReviewDrawer({
               // A reversal has nothing to prove: it undoes an entry already
               // checked when it was approved.
               <Alert severity="info">
-                No proof of payment was attached. Confirm by another means before approving.
+                No proof of payment was attached.
+                {/* The instruction is for the approver; once decided it is moot. */}
+                {isPending ? ' Confirm by another means before approving.' : ''}
               </Alert>
             )}
 
-            {impact.data && impact.data.lines.length > 0 && (
+            {isPending && impact.data && impact.data.lines.length > 0 && (
               <>
                 <Divider />
                 <Box>
@@ -307,7 +317,7 @@ export function ApprovalReviewDrawer({
                 kind. `afterPaise` is rendered exactly as the server sends it
                 — never clamped — because a negative result is the signal
                 that this payment pays ahead of what's owed. */}
-            {impact.data?.vendorPayable && (
+            {isPending && impact.data?.vendorPayable && (
               <>
                 <Divider />
                 <Box>

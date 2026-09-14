@@ -91,8 +91,10 @@ interface ProofRef {
 
 export interface ApprovalSummary {
   pendingCount: number;
-  /** Total size of what is waiting, in paise. */
-  pendingValuePaise: number;
+  /** Money waiting to come in (receipts, less reversals of receipts), in paise. */
+  pendingInPaise: number;
+  /** Money waiting to go out (expenses, bills, vendor payments, less their reversals), in paise. */
+  pendingOutPaise: number;
   approvedToday: number;
   /** How long the longest-waiting request has been queued. Null when none. */
   oldestPendingHours: number | null;
@@ -401,6 +403,14 @@ export class PaymentApprovalService {
           manager,
         );
       } else if (pending.kind === 'vendor_payment') {
+        // Submission refuses a vendor payment with no vendor, but a queued row
+        // is approved later and nothing downstream checks again. Posting one
+        // records cash paid that no vendor's balance will ever show.
+        if (!pending.vendorId) {
+          throw new BadRequestException(
+            'This vendor payment has no vendor. Reject it and record it again with the vendor.',
+          );
+        }
         entry = await this.ledgerWrite.recordVendorPayment(
           {
             projectId: pending.projectId,
@@ -408,7 +418,7 @@ export class PaymentApprovalService {
             // itself; this table already stores the value signed.
             amountPaise: Math.abs(pending.amountPaise),
             valueDate: pending.valueDate,
-            vendorId: pending.vendorId as string,
+            vendorId: pending.vendorId,
             paymentMethod: pending.paymentMethod ?? undefined,
             reference: pending.reference ?? undefined,
             notes: pending.notes ?? undefined,
@@ -461,6 +471,10 @@ export class PaymentApprovalService {
         reviewedBy: approverId,
         reviewedAt: new Date(),
         ledgerEntryId: entry.id,
+        // The date that was posted, not the one queued: a reversal is dated the
+        // day it is approved, so a request approved a day later kept showing
+        // the day it was submitted.
+        valueDate: entry.valueDate,
       });
 
       return repo.findOneOrFail({ where: { id: pending.id } });
@@ -594,21 +608,27 @@ export class PaymentApprovalService {
    *
    * Money awaiting verification is the figure that matters most — a count of 3
    * says nothing about whether ₹500 or ₹5,00,000 is sitting unconfirmed.
-   * `ABS` because expenses are stored negative and this is a size, not a
-   * cash-flow direction.
+   *
+   * In and out are summed apart and never added together. One `SUM(ABS())`
+   * put a ₹53,933 receipt and ₹2,90,427 of expenses into a single ₹3,44,360
+   * that was neither, and counted a pending reversal UP although approving it
+   * takes money back. Signed sums per direction net a reversal correctly:
+   * money in is stored positive, money out negative, a reversal the opposite.
    */
   async summary(): Promise<ApprovalSummary> {
     const [row] = await this.dataSource.query<
       Array<{
         pendingCount: string;
-        pendingValuePaise: string | null;
+        pendingInPaise: string | null;
+        pendingOutPaise: string | null;
         oldestPendingAt: Date | null;
         approvedToday: string;
       }>
     >(`
       SELECT
-        COUNT(*) FILTER (WHERE status = 'pending')                       AS "pendingCount",
-        SUM(ABS(amount_paise)) FILTER (WHERE status = 'pending')         AS "pendingValuePaise",
+        COUNT(*) FILTER (WHERE status = 'pending')                                 AS "pendingCount",
+        SUM(amount_paise)  FILTER (WHERE status = 'pending' AND direction = 'in')  AS "pendingInPaise",
+        SUM(-amount_paise) FILTER (WHERE status = 'pending' AND direction = 'out') AS "pendingOutPaise",
         MIN(submitted_at) FILTER (WHERE status = 'pending')              AS "oldestPendingAt",
         COUNT(*) FILTER (
           WHERE status = 'approved' AND reviewed_at >= date_trunc('day', now())
@@ -620,7 +640,8 @@ export class PaymentApprovalService {
 
     return {
       pendingCount: Number(row?.pendingCount ?? 0),
-      pendingValuePaise: Number(row?.pendingValuePaise ?? 0),
+      pendingInPaise: Number(row?.pendingInPaise ?? 0),
+      pendingOutPaise: Number(row?.pendingOutPaise ?? 0),
       approvedToday: Number(row?.approvedToday ?? 0),
       oldestPendingHours: oldest ? Math.floor((Date.now() - oldest.getTime()) / 3_600_000) : null,
     };
@@ -687,6 +708,14 @@ export class PaymentApprovalService {
       .findOne({ where: { id } });
     if (!row) {
       throw new NotFoundException('Approval request not found');
+    }
+
+    // A decided request has nothing left to preview. Its effect is already in
+    // today's balances (or never will be), so previewing it again counts it
+    // twice: approved PA-2026-27-000073 read "₹20,000 still due" on the
+    // milestone its ₹5,000 had left at ₹25,000.
+    if (row.status !== 'pending') {
+      return { lines: [], unallocatedPaise: 0 };
     }
 
     // Only receipts allocate against a milestone. Expenses and reversals never

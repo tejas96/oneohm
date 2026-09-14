@@ -37,6 +37,7 @@ export {
   formatFollowupWhen,
   formatLabel,
   formatNumber,
+  formatPaymentMethod,
   formatRelativeDate,
   formatRoleCode,
   formatSystemSize,

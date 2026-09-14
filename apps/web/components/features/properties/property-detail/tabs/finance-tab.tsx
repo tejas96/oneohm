@@ -18,7 +18,6 @@ import {
   Typography,
 } from '@mui/material';
 import { bankLabel } from '@tejas96/shared/constants';
-import { PaymentMethod } from '@tejas96/shared/types';
 import type { JSX } from 'react';
 
 import {
@@ -41,7 +40,7 @@ import {
 import { detailTableSx, tableCardSx } from '@/components/features/customers/customer-detail/styles';
 import { ReceiptDates } from '@/components/features/ledger/receipt-dates';
 import { KpiStripe } from '@/components/shared/inventory/kpi-stripe';
-import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
+import { formatCurrency, formatDate, formatPaymentMethod, toTitleLabel } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 export interface FinanceTabProps {
@@ -54,29 +53,6 @@ export interface FinanceTabProps {
    * until finance raises one — see the loan section.
    */
   financingBank?: string;
-}
-
-/**
- * Half the payment methods are acronyms, and `toTitleLabel` lowercases them
- * into "Neft", "Rtgs", "Imps" and "Upi" — which is not how any of them are
- * written on a bank statement.
- */
-const PAYMENT_METHOD_LABEL = {
-  [PaymentMethod.ONLINE]: 'Online',
-  [PaymentMethod.CHEQUE]: 'Cheque',
-  [PaymentMethod.CASH]: 'Cash',
-  [PaymentMethod.NEFT]: 'NEFT',
-  [PaymentMethod.RTGS]: 'RTGS',
-  [PaymentMethod.IMPS]: 'IMPS',
-  [PaymentMethod.UPI]: 'UPI',
-  [PaymentMethod.DEMAND_DRAFT]: 'Demand draft',
-  [PaymentMethod.CREDIT]: 'Credit',
-} satisfies Record<PaymentMethod, string>;
-
-function methodLabel(method: string): string {
-  return (
-    (PAYMENT_METHOD_LABEL as Record<string, string | undefined>)[method] ?? toTitleLabel(method)
-  );
 }
 
 function statusTone(status: string): DetailTone {
@@ -450,7 +426,7 @@ export function FinanceTab({
                             </TableCell>
 
                             <TableCell sx={{ color: 'var(--ds-text-secondary)' }}>
-                              {entry.paymentMethod ? methodLabel(entry.paymentMethod) : '—'}
+                              {entry.paymentMethod ? formatPaymentMethod(entry.paymentMethod) : '—'}
                             </TableCell>
 
                             <TableCell>
