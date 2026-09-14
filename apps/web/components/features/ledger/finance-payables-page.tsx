@@ -96,6 +96,7 @@ function StatCard({
 export function FinancePayablesPage(): JSX.Element {
   // CrmTable's `page` is zero-indexed; the API is one-indexed.
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [search, setSearch] = useState('');
   const [onlyOwing, setOnlyOwing] = useState<boolean | undefined>(undefined);
   // The single `PayVendorDialog` instance this page owns — see
@@ -107,7 +108,7 @@ export function FinancePayablesPage(): JSX.Element {
     search: search || undefined,
     onlyOwing,
     page: page + 1,
-    limit: PAGE_SIZE,
+    limit: pageSize,
   });
 
   const rows = query.data?.data ?? [];
@@ -210,9 +211,13 @@ export function FinancePayablesPage(): JSX.Element {
           setPage(0);
         }}
         page={page}
-        pageSize={PAGE_SIZE}
+        pageSize={pageSize}
         totalRowCount={query.data?.total ?? 0}
         onPageChange={setPage}
+        onPageSizeChange={(next) => {
+          setPageSize(next);
+          setPage(0);
+        }}
         // Click a vendor to see the bills and payments behind their balance.
         renderExpandedRow={(row) => <VendorBillList vendorId={row.vendorId} />}
         emptyMessage="Nothing owed to anyone."

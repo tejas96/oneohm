@@ -9,6 +9,32 @@
  * Money must not disappear because someone tidied a list.
  */
 export const PAYABLES_PAGE_SQL = `
+  WITH live_bills AS (
+    -- Bills still standing: not a reversal row, and not undone by one.
+    SELECT e.vendor_id,
+           e.value_date,
+           SUM(-e.amount_paise) OVER (
+             PARTITION BY e.vendor_id ORDER BY e.value_date, e.created_at, e.id
+           ) AS billed_through_paise
+      FROM ledger_entries e
+      LEFT JOIN ledger_entries rev ON rev.reverses_id = e.id
+     WHERE e.is_cash = false
+       AND e.reverses_id IS NULL
+       AND rev.id IS NULL
+       AND e.vendor_id IS NOT NULL
+  ),
+  -- Payments settle the oldest bills first. The oldest bill with money still
+  -- unpaid is the first whose running total passes everything paid, and "past
+  -- terms" counts from that bill. Counting from the oldest bill ever put a
+  -- vendor 45 days past terms when its only unpaid bill was 4 days old and the
+  -- old one had been paid in full.
+  oldest_unpaid AS (
+    SELECT b.vendor_id, MIN(b.value_date) AS bill_date
+      FROM live_bills b
+      JOIN v_vendor_payable v ON v.vendor_id = b.vendor_id
+     WHERE b.billed_through_paise > v.paid_paise
+     GROUP BY b.vendor_id
+  )
   SELECT
     p.vendor_id                                   AS "vendorId",
     p.name                                        AS "vendorName",
@@ -17,17 +43,20 @@ export const PAYABLES_PAGE_SQL = `
     p.payable_paise                               AS "payablePaise",
     p.billed_paise                                AS "billedPaise",
     p.paid_paise                                  AS "paidPaise",
-    to_char(p.oldest_bill_date, 'YYYY-MM-DD')     AS "oldestBillDate",
+    to_char(u.bill_date, 'YYYY-MM-DD')            AS "oldestUnpaidBillDate",
     p.bill_count                                  AS "billCount",
-    CASE WHEN p.oldest_bill_date IS NULL OR p.credit_days IS NULL OR p.payable_paise <= 0 THEN NULL
-         ELSE GREATEST(CURRENT_DATE - (p.oldest_bill_date + p.credit_days * INTERVAL '1 day')::date, 0)::int
+    CASE WHEN u.bill_date IS NULL OR p.credit_days IS NULL OR p.payable_paise <= 0 THEN NULL
+         ELSE GREATEST(CURRENT_DATE - (u.bill_date + p.credit_days * INTERVAL '1 day')::date, 0)::int
     END                                           AS "daysPastTerms",
     (p.deleted_at IS NOT NULL)                    AS "isInactive"
   FROM v_vendor_payable p
+  LEFT JOIN oldest_unpaid u ON u.vendor_id = p.vendor_id
   WHERE ($1::text IS NULL OR p.name ILIKE '%' || $1 || '%' OR p.code ILIKE '%' || $1 || '%')
     AND ($2::boolean IS NOT TRUE OR p.payable_paise > 0) -- "Owing only" is a work list to pay; advances are not owed
     AND (p.deleted_at IS NULL OR p.payable_paise <> 0)
-  ORDER BY p.payable_paise DESC, p.name
+  -- vendor_id last: two vendors can share a name and a balance, and a tie with
+  -- no unique key can swap places between pages.
+  ORDER BY p.payable_paise DESC, p.name, p.vendor_id
   LIMIT $3 OFFSET $4
 `;
 

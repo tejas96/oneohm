@@ -428,7 +428,12 @@ export class FinanceReportingService {
     };
   }
 
-  /** Projects this vendor is still owed on, with any payment already waiting approval. */
+  /**
+   * Projects this vendor is still owed on, with any payment already waiting
+   * approval — and the vendor's whole balance read in the same request, so the
+   * Pay dialog never sets fresh per-project figures beside a total copied from
+   * the list when Pay was clicked.
+   */
   async getVendorPayableByProject(vendorId: string): Promise<{
     data: Array<{
       projectId: string;
@@ -438,12 +443,20 @@ export class FinanceReportingService {
       owedPaise: number;
       waitingPaise: number;
     }>;
+    vendorPayablePaise: number;
   }> {
-    const rows: Array<Record<string, unknown>> = await this.dataSource.query(
-      VENDOR_PAYABLE_BY_PROJECT_SQL,
-      [vendorId],
-    );
+    const [rows, [totalRow]]: [
+      Array<Record<string, unknown>>,
+      Array<{ payablePaise: string | number } | undefined>,
+    ] = await Promise.all([
+      this.dataSource.query(VENDOR_PAYABLE_BY_PROJECT_SQL, [vendorId]),
+      this.dataSource.query(
+        'SELECT payable_paise AS "payablePaise" FROM v_vendor_payable WHERE vendor_id = $1',
+        [vendorId],
+      ),
+    ]);
     return {
+      vendorPayablePaise: Number(totalRow?.payablePaise ?? 0),
       data: rows.map((r) => ({
         projectId: String(r.projectId),
         projectNumber: (r.projectNumber as string | null) ?? null,

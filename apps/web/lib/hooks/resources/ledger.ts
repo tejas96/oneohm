@@ -507,7 +507,8 @@ export interface PayableRow {
   payablePaise: Paise;
   billedPaise: Paise;
   paidPaise: Paise;
-  oldestBillDate?: string | null;
+  /** The oldest bill with money still unpaid, payments settling the oldest first. */
+  oldestUnpaidBillDate?: string | null;
   billCount: number;
   daysPastTerms?: number | null;
   isInactive: boolean;
@@ -579,14 +580,15 @@ export interface VendorProjectPayable {
 export function useVendorPayableProjects(
   vendorId: string,
   options?: { enabled?: boolean },
-): UseQueryResult<{ data: VendorProjectPayable[] }, AxiosError> {
+): UseQueryResult<{ data: VendorProjectPayable[]; vendorPayablePaise: number }, AxiosError> {
   return useQuery({
     queryKey: [...ledgerKeys.root(), 'payables', 'projects', vendorId],
     queryFn: async ({ signal }) => {
-      const { data } = await apiClient.get<{ data: VendorProjectPayable[] }>(
-        `/finance/payables/${vendorId}/projects`,
-        { signal },
-      );
+      const { data } = await apiClient.get<{
+        data: VendorProjectPayable[];
+        /** The vendor's whole balance, read with the per-project figures. */
+        vendorPayablePaise: number;
+      }>(`/finance/payables/${vendorId}/projects`, { signal });
       return data;
     },
     enabled: Boolean(vendorId) && (options?.enabled ?? true),

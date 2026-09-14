@@ -149,14 +149,14 @@ export function buildPayableColumns(onPay: (row: PayableRow) => void): CrmColumn
       },
     },
     {
-      field: 'oldestBillDate',
-      header: 'Oldest bill',
+      field: 'oldestUnpaidBillDate',
+      header: 'Oldest unpaid',
       track: crm['col-pay-oldest'],
-      // The oldest CREDIT bill, not the oldest unpaid one — `v_vendor_payable`
-      // does no bill-by-bill matching, which is why this is labelled "Oldest
-      // bill" rather than "Oldest unpaid bill". Do not relabel it.
+      // The oldest bill with money still owed on it, payments settling the
+      // oldest bills first (PAYABLES_PAGE_SQL). "Past terms" counts from this
+      // bill, so the two columns always agree. Blank once nothing is owed.
       renderCell: (row) =>
-        row.oldestBillDate ? formatBusinessDate(row.oldestBillDate) : <Empty />,
+        row.oldestUnpaidBillDate ? formatBusinessDate(row.oldestUnpaidBillDate) : <Empty />,
     },
     {
       field: 'daysPastTerms',

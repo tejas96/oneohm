@@ -154,16 +154,6 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
   const projectOptions = useMemo(() => projectItems.map(toOption), [projectItems]);
 
   /*
-   * The balance this dialog is settling. `payablePaise` is signed — negative
-   * means a standing advance — so the sign is read once, here, and every
-   * branch below (the header's label, the amount default, the warning) works
-   * off `isAdvance`/`owedPaise` rather than re-deriving it and risking an
-   * `ABS()` that quietly picks the wrong label.
-   */
-  const isAdvance = vendor.payablePaise < 0;
-  const owedPaise = Math.max(vendor.payablePaise, 0);
-
-  /*
    * Where the balance sits, project by project. A payment is one project's
    * line, so the dialog offers those projects rather than the vendor's total:
    * recording the whole balance against one project would move cost between
@@ -173,12 +163,22 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
   const picks = useMemo(() => projectsOwed.data?.data ?? [], [projectsOwed.data]);
 
   /*
+   * The balance this dialog is settling. It comes back with the per-project
+   * figures, so the two are read at the same moment; the row's copy is only a
+   * stand-in until then — read when the list loaded, beside fresh project
+   * figures it could invent a "paid ahead on other projects" gap. Signed:
+   * negative is a standing advance, read once here as `isAdvance` rather than
+   * re-derived with an `ABS()` that quietly picks the wrong label.
+   */
+  const payablePaise = projectsOwed.data?.vendorPayablePaise ?? vendor.payablePaise;
+  const isAdvance = payablePaise < 0;
+
+  /*
    * Projects paid ahead (payments above their bills) net the vendor's balance
    * down, so the picks can add up to more than the header. Say by how much,
    * rather than leave two figures that do not reconcile on screen.
    */
-  const paidAheadElsewherePaise =
-    picks.reduce((sum, p) => sum + p.owedPaise, 0) - vendor.payablePaise;
+  const paidAheadElsewherePaise = picks.reduce((sum, p) => sum + p.owedPaise, 0) - payablePaise;
 
   const choosePick = (pick: VendorProjectPayable): void => {
     setSelectedProject(pickToOption(pick));
@@ -220,10 +220,16 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
   const showAmountError = amountTouched && !parsedAmount.ok;
   const showFutureDateError = valueDate > todayIst();
 
-  // Paying more than the balance is allowed — see the module doc above. This
-  // is the inline, non-blocking warning that says so; it never feeds `valid`.
-  const overPaise = amountPaise - owedPaise;
-  const showAdvanceWarning = parsedAmount.ok && overPaise > 0;
+  // Paying more than is owed is allowed — see the module doc above. This is the
+  // inline, non-blocking warning that says so; it never feeds `valid`. It is
+  // measured against the chosen PROJECT, because the payment is recorded on
+  // that project: against the vendor's total, ₹12,000 on a project owed
+  // ₹10,000 passed silently while another project stayed owed, and the
+  // suggested ₹1,000 on a project owed ₹1,000 warned because another project
+  // held a ₹500 advance. A project not in the picks owes nothing.
+  const owedOnProjectPaise = picks.find((p) => p.projectId === projectId)?.owedPaise ?? 0;
+  const overPaise = amountPaise - owedOnProjectPaise;
+  const showAdvanceWarning = parsedAmount.ok && Boolean(projectId) && overPaise > 0;
 
   const valid = parsedAmount.ok && valueDate <= todayIst() && Boolean(projectId);
 
@@ -296,7 +302,7 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
                   fontWeight={600}
                   className="tabular-nums"
                 >
-                  {formatPaise(Math.abs(vendor.payablePaise))}
+                  {formatPaise(Math.abs(payablePaise))}
                 </MUITypography>
               </div>
             </div>
@@ -401,8 +407,8 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
           {showAdvanceWarning && (
             <Alert severity="warning" variant="outlined">
               <span className="text-sm">
-                {formatPaise(overPaise)} more than we owe. The extra becomes an advance with this
-                vendor.
+                {formatPaise(overPaise)} more than this project owes the vendor. The extra is
+                recorded as paid ahead on this project.
               </span>
             </Alert>
           )}
