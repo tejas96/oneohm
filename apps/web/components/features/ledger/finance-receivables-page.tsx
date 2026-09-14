@@ -310,9 +310,9 @@ export function FinanceReceivablesPage(): JSX.Element {
       {scope === 'recovery-loan' && buckets && buckets.missingLenderProjects > 0 ? (
         <Alert variant="warning">
           {buckets.missingLenderProjects} of {buckets.recoveryProjects} loan projects have no bank
-          share split out of the contract. The customer may be getting chased for the
-          bank&apos;s money. This needs the project&apos;s payment terms reviewed — adding a bank
-          name below won&apos;t change this count.
+          share split out of the contract. The customer may be getting chased for the bank&apos;s
+          money. This needs the project&apos;s payment terms reviewed — adding a bank name below
+          won&apos;t change this count.
         </Alert>
       ) : null}
 

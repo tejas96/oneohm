@@ -1,13 +1,19 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-import { CREATE_V_PROJECT_COMMISSIONING, DROP_V_PROJECT_COMMISSIONING } from './sql/ledger/13-commissioning.sql';
+import {
+  CREATE_V_PROJECT_COMMISSIONING,
+  DROP_V_PROJECT_COMMISSIONING,
+} from './sql/ledger/13-commissioning.sql';
 import {
   CREATE_LEDGER_NORM_CATEGORY,
   CREATE_V_VENDOR_PAYABLE,
   DROP_LEDGER_NORM_CATEGORY,
   DROP_V_VENDOR_PAYABLE,
 } from './sql/ledger/14-vendor-payable.sql';
-import { CREATE_V_PROJECT_BALANCE_V1, CREATE_V_PROJECT_BALANCE_V2 } from './sql/ledger/15-project-balance-v2.sql';
+import {
+  CREATE_V_PROJECT_BALANCE_V1,
+  CREATE_V_PROJECT_BALANCE_V2,
+} from './sql/ledger/15-project-balance-v2.sql';
 
 /**
  * Vendors and credit on the ledger, and the read model Recovery and Payables need.
@@ -48,18 +54,24 @@ export class FinanceRecoveryAndPayables1857140000000 implements MigrationInterfa
       `ALTER TABLE pending_ledger_entries ADD COLUMN IF NOT EXISTS vendor_id UUID NULL REFERENCES vendors(id)`,
     );
 
-    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type`);
+    await queryRunner.query(
+      `ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type`,
+    );
     await queryRunner.query(`
       ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_type
         CHECK (entry_type IN ('receipt','expense','refund','write_off','vendor_payment'))`);
 
-    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type_direction`);
+    await queryRunner.query(
+      `ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type_direction`,
+    );
     await queryRunner.query(`
       ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_type_direction
         CHECK ((entry_type = 'receipt' AND direction = 'in')
             OR (entry_type IN ('expense','refund','write_off','vendor_payment') AND direction = 'out'))`);
 
-    await queryRunner.query(`ALTER TABLE pending_ledger_entries DROP CONSTRAINT IF EXISTS chk_ple_kind`);
+    await queryRunner.query(
+      `ALTER TABLE pending_ledger_entries DROP CONSTRAINT IF EXISTS chk_ple_kind`,
+    );
     await queryRunner.query(`
       ALTER TABLE pending_ledger_entries ADD CONSTRAINT chk_ple_kind
         CHECK (kind IN ('receipt','expense','reversal','vendor_payment'))`);
@@ -108,8 +120,12 @@ export class FinanceRecoveryAndPayables1857140000000 implements MigrationInterfa
     await queryRunner.query(DROP_V_PROJECT_COMMISSIONING);
     await queryRunner.query(DROP_LEDGER_NORM_CATEGORY);
     await queryRunner.query(`DROP INDEX IF EXISTS idx_ledger_entries_vendor`);
-    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_credit_is_out`);
-    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_credit_vendor`);
+    await queryRunner.query(
+      `ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_credit_is_out`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_credit_vendor`,
+    );
 
     // chk_ple_kind CANNOT be narrowed back to 'receipt'/'expense'/'reversal'.
     // pending_ledger_entries has no append-only trigger of its own, so today's
@@ -119,7 +135,9 @@ export class FinanceRecoveryAndPayables1857140000000 implements MigrationInterfa
     // ledger_entries row described below, which cannot be undone. So this
     // constraint is dropped and put back in the SAME widened form `up()`
     // creates, not the original narrow one.
-    await queryRunner.query(`ALTER TABLE pending_ledger_entries DROP CONSTRAINT IF EXISTS chk_ple_kind`);
+    await queryRunner.query(
+      `ALTER TABLE pending_ledger_entries DROP CONSTRAINT IF EXISTS chk_ple_kind`,
+    );
     await queryRunner.query(`
       ALTER TABLE pending_ledger_entries ADD CONSTRAINT chk_ple_kind
         CHECK (kind IN ('receipt','expense','reversal','vendor_payment'))`);
@@ -138,12 +156,16 @@ export class FinanceRecoveryAndPayables1857140000000 implements MigrationInterfa
     // that the pre-migration code has never heard of. That is a permanent
     // limit on this migration's reversibility, not a bug in down() — naming it
     // here is the point.
-    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type_direction`);
+    await queryRunner.query(
+      `ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type_direction`,
+    );
     await queryRunner.query(`
       ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_type_direction
         CHECK ((entry_type = 'receipt' AND direction = 'in')
             OR (entry_type IN ('expense','refund','write_off','vendor_payment') AND direction = 'out'))`);
-    await queryRunner.query(`ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type`);
+    await queryRunner.query(
+      `ALTER TABLE ledger_entries DROP CONSTRAINT IF EXISTS chk_ledger_entries_type`,
+    );
     await queryRunner.query(`
       ALTER TABLE ledger_entries ADD CONSTRAINT chk_ledger_entries_type
         CHECK (entry_type IN ('receipt','expense','refund','write_off','vendor_payment'))`);
@@ -185,7 +207,9 @@ export class FinanceRecoveryAndPayables1857140000000 implements MigrationInterfa
     // A SELECT with no FROM always yields one row. If it somehow did not, fail
     // closed: nothing here proves the rollback is safe, so it does not run.
     if (!counts) {
-      throw new Error(`Cannot roll back ${this.name}: could not confirm no credit data would be lost.`);
+      throw new Error(
+        `Cannot roll back ${this.name}: could not confirm no credit data would be lost.`,
+      );
     }
 
     const { creditBills, vendorEntries, vendorRequests } = counts;

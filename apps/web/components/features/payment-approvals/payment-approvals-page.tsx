@@ -228,5 +228,10 @@ export function PaymentApprovalsPage(): JSX.Element {
 
 /** Narrows the free-form filter value to a kind the API accepts. */
 function toKind(value: string | undefined): ApprovalKind | undefined {
-  return value === 'receipt' || value === 'expense' || value === 'reversal' || value === 'vendor_payment' ? value : undefined;
+  return value === 'receipt' ||
+    value === 'expense' ||
+    value === 'reversal' ||
+    value === 'vendor_payment'
+    ? value
+    : undefined;
 }

@@ -237,41 +237,47 @@ function KpiStrip({
 }): JSX.Element {
   const rupees = (v: number): string => formatPaise(Math.round((v ?? 0) * 100));
 
-  const flows: Array<{ label: string; value: string; sub: string; tone: string; href?: string; gate?: Gate }> =
-    [
-      {
-        label: 'Received',
-        value: rupees(data?.revenueInRange ?? 0),
-        sub: `${data?.receiptCountInRange ?? 0} receipts`,
-        tone: 'success',
-      },
-      {
-        label: 'Spent',
-        value: rupees(data?.spendInRange ?? 0),
-        sub: `${data?.expenseCountInRange ?? 0} expenses`,
-        tone: 'default',
-      },
-      {
-        label: 'Net',
-        value: rupees(data?.netCashflowInRange ?? 0),
-        sub: 'in period',
-        tone: (data?.netCashflowInRange ?? 0) < 0 ? 'error' : 'success',
-      },
-      {
-        // This used to count TASKS carrying the "Net meter installation" stage
-        // name — 65 all-time, because 26 projects carry that stage on more
-        // than one task. It now counts the PROJECTS themselves (41): a project
-        // has one net meter. The label says so, rather than let a ~38% drop
-        // read as a regression instead of a fix. Links through to Receivables,
-        // whose Recovery scope is selected by this same commissioning event.
-        label: 'Projects commissioned',
-        value: String(data?.meterInstallations ?? 0),
-        sub: 'net meter installed',
-        tone: 'default',
-        href: ROUTES.FINANCE.RECEIVABLES,
-        gate: 'finance.receivables.view',
-      },
-    ];
+  const flows: Array<{
+    label: string;
+    value: string;
+    sub: string;
+    tone: string;
+    href?: string;
+    gate?: Gate;
+  }> = [
+    {
+      label: 'Received',
+      value: rupees(data?.revenueInRange ?? 0),
+      sub: `${data?.receiptCountInRange ?? 0} receipts`,
+      tone: 'success',
+    },
+    {
+      label: 'Spent',
+      value: rupees(data?.spendInRange ?? 0),
+      sub: `${data?.expenseCountInRange ?? 0} expenses`,
+      tone: 'default',
+    },
+    {
+      label: 'Net',
+      value: rupees(data?.netCashflowInRange ?? 0),
+      sub: 'in period',
+      tone: (data?.netCashflowInRange ?? 0) < 0 ? 'error' : 'success',
+    },
+    {
+      // This used to count TASKS carrying the "Net meter installation" stage
+      // name — 65 all-time, because 26 projects carry that stage on more
+      // than one task. It now counts the PROJECTS themselves (41): a project
+      // has one net meter. The label says so, rather than let a ~38% drop
+      // read as a regression instead of a fix. Links through to Receivables,
+      // whose Recovery scope is selected by this same commissioning event.
+      label: 'Projects commissioned',
+      value: String(data?.meterInstallations ?? 0),
+      sub: 'net meter installed',
+      tone: 'default',
+      href: ROUTES.FINANCE.RECEIVABLES,
+      gate: 'finance.receivables.view',
+    },
+  ];
 
   const snapshots: Array<{ label: string; value: string; sub: string; tone: string }> = [
     {

@@ -654,9 +654,11 @@ export class PaymentApprovalService {
    * Read-only and unlocked. The binding allocation is computed again inside
    * `approve`, because balances can move between viewing and approving.
    */
-  async previewImpact(
-    id: string,
-  ): Promise<{ lines: ImpactLine[]; unallocatedPaise: number; vendorPayable?: VendorPayableImpact }> {
+  async previewImpact(id: string): Promise<{
+    lines: ImpactLine[];
+    unallocatedPaise: number;
+    vendorPayable?: VendorPayableImpact;
+  }> {
     const row = await this.dataSource
       .getRepository(PendingLedgerEntryEntity)
       .findOne({ where: { id } });

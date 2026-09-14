@@ -225,8 +225,8 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
       <MUIDialogHeader>
         <MUIDialogTitle>Pay vendor</MUIDialogTitle>
         <MUIDialogDescription>
-          Sent for verification, like any other payment out — the vendor&apos;s balance changes
-          only once it&apos;s approved.
+          Sent for verification, like any other payment out — the vendor&apos;s balance changes only
+          once it&apos;s approved.
         </MUIDialogDescription>
       </MUIDialogHeader>
 
@@ -235,7 +235,9 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
           <Alert severity="info" variant="outlined">
             <div className="flex items-center justify-between gap-4">
               <MUITypography variant="bodyPrimary" component="span" fontWeight={600}>
-                {vendor.vendorCode ? `${vendor.vendorName} (${vendor.vendorCode})` : vendor.vendorName}
+                {vendor.vendorCode
+                  ? `${vendor.vendorName} (${vendor.vendorCode})`
+                  : vendor.vendorName}
               </MUITypography>
               <div className="flex flex-col items-end gap-0.5">
                 <MUITypography variant="metaLabel" component="span">

@@ -338,7 +338,12 @@ describe('LedgerWriteService', () => {
     it('refuses a credit bill with no vendor', async () => {
       await expect(
         service.recordExpense(
-          { projectId, amountPaise: 100_000, category: 'materials', paymentMethod: PaymentMethod.CREDIT },
+          {
+            projectId,
+            amountPaise: 100_000,
+            category: 'materials',
+            paymentMethod: PaymentMethod.CREDIT,
+          },
           userId,
         ),
       ).rejects.toThrow(/owed to a vendor/);

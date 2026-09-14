@@ -135,7 +135,9 @@ export function buildPayableColumns(onPay: (row: PayableRow) => void): CrmColumn
         const isAdvance = row.payablePaise < 0;
         return (
           <Box sx={{ fontWeight: 700, color: isAdvance ? color.success : undefined }}>
-            {isAdvance ? `Advance ${formatPaise(-row.payablePaise)}` : formatPaise(row.payablePaise)}
+            {isAdvance
+              ? `Advance ${formatPaise(-row.payablePaise)}`
+              : formatPaise(row.payablePaise)}
           </Box>
         );
       },
@@ -147,7 +149,8 @@ export function buildPayableColumns(onPay: (row: PayableRow) => void): CrmColumn
       // The oldest CREDIT bill, not the oldest unpaid one — `v_vendor_payable`
       // does no bill-by-bill matching, which is why this is labelled "Oldest
       // bill" rather than "Oldest unpaid bill". Do not relabel it.
-      renderCell: (row) => (row.oldestBillDate ? formatBusinessDate(row.oldestBillDate) : <Empty />),
+      renderCell: (row) =>
+        row.oldestBillDate ? formatBusinessDate(row.oldestBillDate) : <Empty />,
     },
     {
       field: 'daysPastTerms',

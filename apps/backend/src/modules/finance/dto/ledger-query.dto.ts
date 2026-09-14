@@ -132,7 +132,10 @@ export class ReceivablesQueryDto {
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))
   scope?: 'all' | 'recovery';
 
-  @ApiPropertyOptional({ enum: ['loan', 'cash'], description: 'Reads customer_properties.wants_loan.' })
+  @ApiPropertyOptional({
+    enum: ['loan', 'cash'],
+    description: 'Reads customer_properties.wants_loan.',
+  })
   @IsIn(['loan', 'cash'])
   @IsOptional()
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))
