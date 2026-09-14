@@ -1,6 +1,6 @@
 'use client';
 
-import { Alert, Button, CircularProgress } from '@mui/material';
+import { Alert, Button, ButtonBase, CircularProgress } from '@mui/material';
 import { PaymentMethod } from '@tejas96/shared/types';
 import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -16,8 +16,14 @@ import {
   MUITypography,
 } from '@/components/ui';
 import { useResourceList, type BaseFilters } from '@/lib/hooks/core';
-import { useLedgerMutations, type PayableRow } from '@/lib/hooks/resources/ledger';
+import {
+  useLedgerMutations,
+  useVendorPayableProjects,
+  type PayableRow,
+  type VendorProjectPayable,
+} from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
+import { color, radius } from '@/lib/theme/tokens';
 import { formatPaise, paiseToRupees, parseRupeeInput, rupeeInputError } from '@/lib/utils/paise';
 
 export interface PayVendorDialogProps {
@@ -66,6 +72,13 @@ const toOption = (p: ProjectPick): ProjectOption => ({
   value: p.id,
   label: p.projectNumber ? `${p.projectNumber} — ${p.name}` : p.name,
 });
+
+const pickToOption = (pick: VendorProjectPayable): ProjectOption =>
+  toOption({
+    id: pick.projectId,
+    name: pick.projectName ?? pick.projectNumber ?? pick.projectId,
+    projectNumber: pick.projectNumber ?? undefined,
+  });
 
 /**
  * Settle what we owe a vendor.
@@ -150,20 +163,53 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
   const owedPaise = Math.max(vendor.payablePaise, 0);
 
   /*
-   * Re-seeds the amount every time this dialog opens, keyed on `owedPaise`
-   * (derived from `vendor.payablePaise`, a primitive) rather than the `vendor`
-   * object itself. `usePayables` — Task 14's caller — can refetch and hand
-   * this dialog a new `PayableRow` reference for the SAME vendor while it
-   * happens to still be open; keying the effect on the object would re-run it
-   * on every such refetch and wipe an amount the operator is mid-typing.
-   * Keying on the numeric balance instead only re-seeds when the dialog opens
-   * fresh, or the balance itself genuinely changes — never on a reference
-   * change alone.
+   * Where the balance sits, project by project. A payment is one project's
+   * line, so the dialog offers those projects rather than the vendor's total:
+   * recording the whole balance against one project would move cost between
+   * projects even though the vendor's figure came out right.
    */
+  const projectsOwed = useVendorPayableProjects(vendor.vendorId, { enabled: open });
+  const picks = useMemo(() => projectsOwed.data?.data ?? [], [projectsOwed.data]);
+
+  /*
+   * Projects paid ahead (payments above their bills) net the vendor's balance
+   * down, so the picks can add up to more than the header. Say by how much,
+   * rather than leave two figures that do not reconcile on screen.
+   */
+  const paidAheadElsewherePaise =
+    picks.reduce((sum, p) => sum + p.owedPaise, 0) - vendor.payablePaise;
+
+  const choosePick = (pick: VendorProjectPayable): void => {
+    setSelectedProject(pickToOption(pick));
+    setProjectId(pick.projectId);
+    setAmount(paiseToRupees(pick.owedPaise).toFixed(2));
+    setAmountTouched(false);
+  };
+
+  /*
+   * Seeds once per open, when the per-project figures arrive — never again
+   * while it stays open, so a background refetch cannot wipe what the operator
+   * is typing. One owing project is picked for them. Several are left to pick:
+   * any default would be a guess about which bill is being paid.
+   */
+  const seeded = useRef(false);
   useEffect(() => {
-    if (!open) return;
-    setAmount(paiseToRupees(owedPaise).toFixed(2));
-  }, [open, owedPaise]);
+    if (!open) {
+      seeded.current = false;
+      return;
+    }
+    if (seeded.current || !projectsOwed.isSuccess) return;
+    seeded.current = true;
+    const [only, ...rest] = picks;
+    if (only && rest.length === 0) {
+      setSelectedProject(pickToOption(only));
+      setProjectId(only.projectId);
+      setAmount(paiseToRupees(only.owedPaise).toFixed(2));
+    }
+  }, [open, projectsOwed.isSuccess, picks]);
+
+  /** Vendor payments on the chosen project already queued for approval. */
+  const waitingPaise = picks.find((p) => p.projectId === projectId)?.waitingPaise ?? 0;
 
   const pending = recordVendorPayment.isPending;
   // Same parser as `RecordMoneyDialog`: accepts "1,000", refuses text and
@@ -255,6 +301,72 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
             </div>
           </Alert>
 
+          {picks.length > 0 ? (
+            <div className="flex flex-col gap-1.5">
+              <MUITypography variant="metaLabel" component="span">
+                Owed by project — pick one to fill project and amount
+              </MUITypography>
+              <div role="radiogroup" aria-label="Owed by project" className="flex flex-col gap-1">
+                {picks.map((pick) => {
+                  const selected = pick.projectId === projectId;
+                  return (
+                    <ButtonBase
+                      key={pick.projectId}
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => choosePick(pick)}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 2,
+                        px: 1.5,
+                        py: 1,
+                        textAlign: 'left',
+                        borderRadius: radius['card-functional'],
+                        border: `1px solid ${selected ? color.accent : color.divider}`,
+                        backgroundColor: selected ? 'var(--ds-accent-subtle)' : undefined,
+                      }}
+                    >
+                      <span className="flex min-w-0 flex-col">
+                        <MUITypography variant="bodyPrimary" component="span" fontWeight={600}>
+                          {pick.projectNumber ?? pick.projectName}
+                        </MUITypography>
+                        {pick.customerName ? (
+                          <MUITypography variant="finePrint" component="span">
+                            {pick.customerName}
+                          </MUITypography>
+                        ) : null}
+                      </span>
+                      <MUITypography
+                        variant="bodyPrimary"
+                        component="span"
+                        fontWeight={600}
+                        className="tabular-nums"
+                      >
+                        {formatPaise(pick.owedPaise)}
+                      </MUITypography>
+                    </ButtonBase>
+                  );
+                })}
+              </div>
+              {paidAheadElsewherePaise > 0 ? (
+                <MUITypography variant="finePrint" component="span">
+                  {formatPaise(paidAheadElsewherePaise)} was paid ahead on other projects, so the
+                  balance above is lower than these add up to.
+                </MUITypography>
+              ) : null}
+            </div>
+          ) : null}
+
+          {projectsOwed.isError ? (
+            <Alert severity="warning" variant="outlined">
+              <span className="text-sm">
+                Could not load what this vendor is owed per project. Pick the project below.
+              </span>
+            </Alert>
+          ) : null}
+
           <MUIInput
             fieldLabel="Amount (₹)"
             /* Not type="number" — see RecordMoneyDialog: that input rejects a
@@ -273,6 +385,15 @@ export function PayVendorDialog({ open, onClose, vendor }: PayVendorDialogProps)
                 : undefined
             }
           />
+
+          {waitingPaise > 0 ? (
+            <Alert severity="warning" variant="outlined">
+              <span className="text-sm">
+                {formatPaise(waitingPaise)} to this vendor on this project is already waiting for
+                approval. Check it is not this same payment.
+              </span>
+            </Alert>
+          ) : null}
 
           {showAdvanceWarning && (
             <Alert severity="warning" variant="outlined">

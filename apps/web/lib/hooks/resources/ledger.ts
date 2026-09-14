@@ -468,6 +468,45 @@ export interface VendorPayableLine {
   balanceAfterPaise: Paise;
 }
 
+/** A project one vendor is still owed on — a quick pick in the Pay dialog. */
+export interface VendorProjectPayable {
+  projectId: string;
+  projectNumber: string | null;
+  projectName: string | null;
+  customerName: string | null;
+  /** Credit bills less payments on this project. Always above zero. */
+  owedPaise: Paise;
+  /** Vendor payments on this project still waiting for approval. Not yet in `owedPaise`. */
+  waitingPaise: Paise;
+}
+
+/**
+ * Where a vendor's payable sits, project by project.
+ *
+ * Never served from cache: it seeds a payment, and a stale figure invites
+ * paying a bill twice. `gcTime: 0` drops it when the Pay dialog closes, so the
+ * next open waits for fresh figures instead of showing — and seeding the amount
+ * from — the last open's answer while it refetches.
+ */
+export function useVendorPayableProjects(
+  vendorId: string,
+  options?: { enabled?: boolean },
+): UseQueryResult<{ data: VendorProjectPayable[] }, AxiosError> {
+  return useQuery({
+    queryKey: [...ledgerKeys.root(), 'payables', 'projects', vendorId],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<{ data: VendorProjectPayable[] }>(
+        `/finance/payables/${vendorId}/projects`,
+        { signal },
+      );
+      return data;
+    },
+    enabled: Boolean(vendorId) && (options?.enabled ?? true),
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
 /**
  * The credit bills and payments behind one vendor's payable, newest first.
  * Keyed under the ledger root, so recording or approving money refreshes it.

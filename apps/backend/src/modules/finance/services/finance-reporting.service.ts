@@ -22,6 +22,7 @@ import {
   PAYABLES_COUNT_SQL,
   PAYABLES_PAGE_SQL,
   PAYABLES_TOTALS_SQL,
+  VENDOR_PAYABLE_BY_PROJECT_SQL,
   VENDOR_PAYABLE_ENTRIES_COUNT_SQL,
   VENDOR_PAYABLE_ENTRIES_SQL,
 } from './finance-payables-queries.sql';
@@ -353,6 +354,34 @@ export class FinanceReportingService {
         balanceAfterPaise: Number(r.balanceAfterPaise),
       })),
       total: Number(countRow?.count ?? 0),
+    };
+  }
+
+  /** Projects this vendor is still owed on, with any payment already waiting approval. */
+  async getVendorPayableByProject(vendorId: string): Promise<{
+    data: Array<{
+      projectId: string;
+      projectNumber: string | null;
+      projectName: string | null;
+      customerName: string | null;
+      owedPaise: number;
+      waitingPaise: number;
+    }>;
+  }> {
+    const rows: Array<Record<string, unknown>> = await this.dataSource.query(
+      VENDOR_PAYABLE_BY_PROJECT_SQL,
+      [vendorId],
+    );
+    return {
+      data: rows.map((r) => ({
+        projectId: String(r.projectId),
+        projectNumber: (r.projectNumber as string | null) ?? null,
+        projectName: (r.projectName as string | null) ?? null,
+        customerName: (r.customerName as string | null) ?? null,
+        // bigint arrives as a string; see getVendorPayableEntries.
+        owedPaise: Number(r.owedPaise),
+        waitingPaise: Number(r.waitingPaise),
+      })),
     };
   }
 

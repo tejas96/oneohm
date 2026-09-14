@@ -55,6 +55,12 @@ function PayableRowMenu({
         open={Boolean(anchorEl)}
         onClose={handleClose}
         onClick={(e) => e.stopPropagation()}
+        // Its only item opens a dialog. While this menu fades out it still
+        // traps focus, and pulled it back out of the dialog's Amount field —
+        // which then counted as touched and said "Enter an amount" before
+        // anyone typed. Let focus go, and do not hand it back to the ⋮ button.
+        disableEnforceFocus
+        disableRestoreFocus
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{ paper: { elevation: 2, sx: { minWidth: 160 } } }}

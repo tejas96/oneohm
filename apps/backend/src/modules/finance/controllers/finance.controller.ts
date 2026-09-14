@@ -167,6 +167,21 @@ export class FinanceController {
     return this.reportingService.getVendorPayableEntries(vendorId);
   }
 
+  @Get('payables/:vendorId/projects')
+  @ApiOperation({
+    summary: 'Projects one vendor is still owed on',
+    description:
+      'Credit bills less payments, per project, largest first — only projects still owing. ' +
+      'waitingPaise is vendor payments on that project already queued for approval, which ' +
+      'do not reduce owedPaise until approved.',
+  })
+  @ApiParam({ name: 'vendorId', type: String })
+  async getVendorPayableByProject(
+    @Param('vendorId', ParseUUIDPipe) vendorId: string,
+  ): Promise<Awaited<ReturnType<FinanceReportingService['getVendorPayableByProject']>>> {
+    return this.reportingService.getVendorPayableByProject(vendorId);
+  }
+
   // ============================================
   // OUTSTANDING — unpaid payment terms
   // ============================================

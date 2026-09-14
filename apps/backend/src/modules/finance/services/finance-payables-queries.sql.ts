@@ -111,3 +111,49 @@ export const VENDOR_PAYABLE_ENTRIES_COUNT_SQL = `
    WHERE e.vendor_id = $1
      AND (e.is_cash = false OR e.entry_type = 'vendor_payment')
 `;
+
+/**
+ * What one vendor is owed, project by project — the Pay dialog's quick picks.
+ *
+ * The same two filters as `v_vendor_payable`, grouped by project instead, so
+ * the projects add up to the vendor's payable. Only projects that still owe
+ * come back: a project holding an advance is not one to pay.
+ *
+ * `waitingPaise` is vendor payments already queued for approval on the
+ * project. They are not in the ledger yet, so they do not reduce `owedPaise` —
+ * but paying again without seeing them is how one bill gets paid twice.
+ */
+export const VENDOR_PAYABLE_BY_PROJECT_SQL = `
+  WITH owed AS (
+    SELECT e.project_id,
+           (COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.is_cash = false), 0)
+            - COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.entry_type = 'vendor_payment'), 0)
+           )::BIGINT AS owed_paise
+      FROM ledger_entries e
+     WHERE e.vendor_id = $1
+       AND (e.is_cash = false OR e.entry_type = 'vendor_payment')
+     GROUP BY e.project_id
+  ),
+  waiting AS (
+    -- Stored signed like the ledger: money out is negative.
+    SELECT p.project_id, SUM(-p.amount_paise)::BIGINT AS waiting_paise
+      FROM pending_ledger_entries p
+     WHERE p.vendor_id = $1
+       AND p.kind = 'vendor_payment'
+       AND p.status = 'pending'
+     GROUP BY p.project_id
+  )
+  SELECT pr.id                                                          AS "projectId",
+         pr.project_number                                              AS "projectNumber",
+         pr.name                                                        AS "projectName",
+         NULLIF(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)), '')  AS "customerName",
+         o.owed_paise                                                   AS "owedPaise",
+         COALESCE(w.waiting_paise, 0)::BIGINT                           AS "waitingPaise"
+    FROM owed o
+    JOIN projects pr                   ON pr.id = o.project_id
+    LEFT JOIN customer_properties prop ON prop.id = pr.property_id
+    LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+    LEFT JOIN waiting w                ON w.project_id = o.project_id
+   WHERE o.owed_paise > 0
+   ORDER BY o.owed_paise DESC, pr.project_number
+`;
