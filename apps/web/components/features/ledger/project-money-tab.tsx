@@ -2,7 +2,14 @@
 
 import { Tooltip } from '@mui/material';
 import { bankLabel } from '@tejas96/shared/constants';
-import { ArrowDownLeft, ArrowUpRight, Clock, IndianRupee, ReceiptText, XCircle } from 'lucide-react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Clock,
+  IndianRupee,
+  ReceiptText,
+  XCircle,
+} from 'lucide-react';
 import { type JSX, useState } from 'react';
 
 import { ChangeOrderDialog, ReverseEntryDialog, WaiveMilestoneDialog } from './correction-dialogs';
@@ -306,7 +313,10 @@ export function ProjectMoneyTab({
           </p>
           <ul className="flex flex-col gap-1.5">
             {rejectedApprovals.data?.data.map((p) => (
-              <li key={p.id} className="flex flex-col gap-0.5 text-[12.5px] text-foreground-secondary">
+              <li
+                key={p.id}
+                className="flex flex-col gap-0.5 text-[12.5px] text-foreground-secondary"
+              >
                 <span className="flex flex-wrap items-center gap-x-2">
                   <XCircle
                     className="size-3.5 shrink-0"
