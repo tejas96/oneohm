@@ -1,7 +1,7 @@
 'use client';
 
 import { Tooltip } from '@mui/material';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowDownLeft, ChevronDown, ChevronRight, RotateCcw } from 'lucide-react';
 import { type JSX, useState } from 'react';
 
 import {
@@ -281,6 +281,24 @@ export function MilestoneWaterfall({
                             )}
                           >
                             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                              {/* Reversed/reversal money is a correction, not
+                                  cash landing — the undo arrow says so, dimmed
+                                  the same as its text. A live receipt gets the
+                                  same inbound arrow "Record payment" uses. */}
+                              {isReversal ? (
+                                <RotateCcw
+                                  className="size-3 shrink-0 text-foreground-tertiary"
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                              ) : (
+                                <ArrowDownLeft
+                                  className="size-3 shrink-0"
+                                  strokeWidth={2}
+                                  style={{ color: dim ? undefined : TONE.success.ink }}
+                                  aria-hidden
+                                />
+                              )}
                               <Mono className="text-[11px] text-foreground-secondary">
                                 {a.entryNo}
                               </Mono>

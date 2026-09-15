@@ -299,7 +299,7 @@ export const RECOVERY_PROJECT_COLUMNS: CrmColumn<RecoveryTableRow>[] = [
   {
     field: 'worstDaysOverdue',
     header: 'Oldest overdue',
-    track: crm['col-recv-ageing'],
+    track: crm['col-recv-overdue'],
     sortable: true,
     renderCell: (row) => {
       // Nothing overdue, and none of the open money has a date either.

@@ -393,10 +393,15 @@ const root = {
     'col-recv-paid': '112px',
     'col-recv-outstanding': '124px',
     'col-recv-ageing': '116px',
-    // Recovery-only columns, appended after ageing (Task 15). "Since meter"
-    // renders up to 4 digits plus "d"; "Bank" is sized for the longest bank
+    // Recovery-only columns, appended after ageing (Task 15). "Oldest
+    // overdue" needs its own track, not the "Ageing" one above — that header
+    // is one word and 116px, but "Oldest overdue" plus the sort icon wraps
+    // onto two lines at that width, throwing off every column after it.
+    // "Since meter" renders up to 4 digits plus "d", but its header is the
+    // wrapping risk, not its value. "Bank" is sized for the longest bank
     // label, which is roughly as wide as the vendor column.
-    'col-recv-meter': '104px',
+    'col-recv-overdue': '148px',
+    'col-recv-meter': '136px',
     'col-recv-bank': 'minmax(160px,1.2fr)',
     // Payables grid — vendor, net payable, oldest credit bill, days past
     // agreed terms, bill count, row menu. Payable is sized for

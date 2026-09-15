@@ -58,9 +58,14 @@ export function useUpdateTask() {
         }
       }
       void queryClient.invalidateQueries({ queryKey: myTaskKeys.all() });
-      void queryClient.invalidateQueries({
-        queryKey: taskDetailKeys.detail(variables.taskId),
-      });
+      // Every cached task detail, not just this one: `hasDependencyBlockers`
+      // is computed server-side from OTHER tasks' status, so completing this
+      // task can unlock a task the drawer has never fetched this change for.
+      // Narrowing to `taskDetailKeys.detail(variables.taskId)` left a
+      // dependent task's drawer showing "Waiting on dependencies" — and its
+      // status editable but silently refused — until a hard refresh forced a
+      // real refetch.
+      void queryClient.invalidateQueries({ queryKey: taskDetailKeys.all() });
     },
     onError: (error) => {
       showToast.error(getErrorMessage(error));

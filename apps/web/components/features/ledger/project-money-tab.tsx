@@ -2,7 +2,7 @@
 
 import { Tooltip } from '@mui/material';
 import { bankLabel } from '@tejas96/shared/constants';
-import { ArrowDownLeft, ArrowUpRight, IndianRupee, ReceiptText } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Clock, IndianRupee, ReceiptText, XCircle } from 'lucide-react';
 import { type JSX, useState } from 'react';
 
 import { ChangeOrderDialog, ReverseEntryDialog, WaiveMilestoneDialog } from './correction-dialogs';
@@ -48,6 +48,14 @@ import { formatPaise } from '@/lib/utils/paise';
  * true number and a pointer to the full queue rather than silently truncating.
  */
 const PENDING_PREVIEW_LIMIT = 10;
+
+/**
+ * How many rejected rows the project tab lists inline. Smaller than
+ * `PENDING_PREVIEW_LIMIT` — a rejection is not an open task, just a record of
+ * one, so it gets a quieter, shorter card rather than matching the queue's
+ * full page size.
+ */
+const REJECTED_PREVIEW_LIMIT = 5;
 
 /*
  * Track widths sized to what the cells actually hold, measured rather than
@@ -175,6 +183,15 @@ export function ProjectMoneyTab({
     status: 'pending',
     limit: PENDING_PREVIEW_LIMIT,
   });
+  // Newest rejection first — a Recorder checking this card wants to know what
+  // just happened, not the oldest thing still on file.
+  const rejectedApprovals = usePaymentApprovals({
+    projectId,
+    status: 'rejected',
+    sortBy: 'submittedAt',
+    sortOrder: 'desc',
+    limit: REJECTED_PREVIEW_LIMIT,
+  });
 
   /**
    * Re-file (or re-download) the receipt for an entry recorded earlier.
@@ -216,6 +233,7 @@ export function ProjectMoneyTab({
 
   const s = summary.data;
   const pendingTotal = pendingApprovals.data?.total ?? 0;
+  const rejectedTotal = rejectedApprovals.data?.total ?? 0;
 
   return (
     <div className="grid grid-cols-12 gap-4">
@@ -244,8 +262,14 @@ export function ProjectMoneyTab({
             {pendingApprovals.data?.data.map((p) => (
               <li
                 key={p.id}
-                className="flex flex-wrap items-baseline gap-x-2 text-[12.5px] text-foreground-secondary"
+                className="flex flex-wrap items-center gap-x-2 text-[12.5px] text-foreground-secondary"
               >
+                <Clock
+                  className="size-3.5 shrink-0"
+                  strokeWidth={2}
+                  style={{ color: TONE.warning.ink }}
+                  aria-hidden
+                />
                 <Mono className="text-foreground">{p.requestNo}</Mono>
                 <TonePill label={pendingKindLabel(p)} tone="neutral" />
                 <Mono>{formatBusinessDate(p.valueDate)}</Mono>
@@ -259,6 +283,56 @@ export function ProjectMoneyTab({
           {pendingTotal > PENDING_PREVIEW_LIMIT ? (
             <p className="pt-2 text-[11.5px] text-foreground-tertiary">
               and {pendingTotal - PENDING_PREVIEW_LIMIT} more in Finance › Payment approvals
+            </p>
+          ) : null}
+        </DetailCard>
+      ) : null}
+
+      {/* Never posted to the ledger, so it never shows in Money or Money in
+          and out — this is the only place on the project a rejection is
+          visible without going to the approval queue or the bell. */}
+      {rejectedTotal > 0 ? (
+        <DetailCard
+          label="Recently rejected"
+          aside={`${rejectedTotal} ${rejectedTotal === 1 ? 'request' : 'requests'}`}
+          className="col-span-12"
+        >
+          <p
+            className="mb-3 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
+            style={{ background: TONE.danger.tint, color: TONE.danger.ink }}
+          >
+            Nothing was posted to the ledger for these — record a corrected entry instead of
+            resubmitting the same one.
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {rejectedApprovals.data?.data.map((p) => (
+              <li key={p.id} className="flex flex-col gap-0.5 text-[12.5px] text-foreground-secondary">
+                <span className="flex flex-wrap items-center gap-x-2">
+                  <XCircle
+                    className="size-3.5 shrink-0"
+                    strokeWidth={2}
+                    style={{ color: TONE.danger.ink }}
+                    aria-hidden
+                  />
+                  <Mono className="text-foreground">{p.requestNo}</Mono>
+                  <TonePill label={pendingKindLabel(p)} tone="neutral" />
+                  <Mono>{formatBusinessDate(p.valueDate)}</Mono>
+                  <Mono className="font-medium text-foreground">
+                    {formatPaise(Math.abs(p.amountPaise))}
+                  </Mono>
+                </span>
+                {p.rejectionReason ? (
+                  <span className="pl-5 text-[11px] text-foreground-tertiary">
+                    {p.reviewedByName ? `Rejected by ${p.reviewedByName}: ` : 'Rejected: '}
+                    {p.rejectionReason}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {rejectedTotal > REJECTED_PREVIEW_LIMIT ? (
+            <p className="pt-2 text-[11.5px] text-foreground-tertiary">
+              and {rejectedTotal - REJECTED_PREVIEW_LIMIT} more in Finance › Payment approvals
             </p>
           ) : null}
         </DetailCard>
