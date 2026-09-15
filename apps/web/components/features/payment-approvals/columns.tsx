@@ -1,6 +1,6 @@
 'use client';
 
-import { Box } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 import NextLink from 'next/link';
 import type { JSX } from 'react';
 
@@ -24,12 +24,14 @@ const KIND_TONE: Record<PaymentApproval['kind'], CrmTone> = {
   receipt: 'success',
   expense: 'info',
   reversal: 'warning',
+  vendor_payment: 'info',
 };
 
 const KIND_LABEL: Record<PaymentApproval['kind'], string> = {
   receipt: 'Receipt',
   expense: 'Expense',
   reversal: 'Reversal',
+  vendor_payment: 'Vendor payment',
 };
 
 /**
@@ -63,10 +65,15 @@ export const APPROVAL_COLUMNS: CrmColumn<ApprovalRow>[] = [
   },
   {
     field: 'valueDate',
-    header: 'Paid on',
+    // Not "Paid on": the column also dates bills on credit and reversals.
+    header: 'Date',
     track: crm['col-approval-date'],
     sortable: true,
-    renderCell: (row) => formatBusinessDate(row.valueDate),
+    renderCell: (row) =>
+      // A reversal is dated the day it is approved, so until then it has none.
+      row.kind === 'reversal' && row.status === 'pending'
+        ? 'On approval'
+        : formatBusinessDate(row.valueDate),
   },
   {
     field: 'kind',
@@ -150,10 +157,21 @@ export const APPROVAL_COLUMNS: CrmColumn<ApprovalRow>[] = [
   },
   {
     field: 'submittedByName',
-    header: 'Submitted by',
+    header: 'Recorded by',
     track: crm['col-approval-submitter'],
-    defaultHidden: true,
-    renderCell: (row) => row.submittedByName ?? <Empty />,
+    // The role read as the person's capacity — most senior first, exactly as
+    // the API orders it. Never split, truncated to one, or re-sorted here.
+    // Null (no role held) renders nothing, not an empty second line.
+    renderCell: (row) => (
+      <Stack spacing={0}>
+        <span>{row.submittedByName ?? <Empty />}</span>
+        {row.submittedByRoles ? (
+          <span style={{ fontSize: crm['text-row-sm'], color: color['text-tertiary'] }}>
+            {row.submittedByRoles}
+          </span>
+        ) : null}
+      </Stack>
+    ),
   },
   {
     field: 'submittedAt',

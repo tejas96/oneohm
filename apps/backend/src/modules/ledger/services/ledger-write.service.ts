@@ -11,6 +11,7 @@ import {
   DocumentEntityType,
   DocumentTag,
   FinanceSequenceScope,
+  PaymentMethod,
 } from '@tejas96/shared/types';
 import { DataSource, EntityManager } from 'typeorm';
 
@@ -72,6 +73,8 @@ type LedgerEntryValues = Pick<
       | 'sourceId'
       | 'reversesId'
       | 'reversalReason'
+      | 'vendorId'
+      | 'isCash'
     >
   >;
 
@@ -82,6 +85,19 @@ export interface RecordExpenseInput {
   category: string;
   payee?: string;
   paymentMethod?: string;
+  notes?: string;
+  proofDocument?: ProofDocumentInput;
+  /** Required when `paymentMethod` is `credit`. A bill is owed to someone. */
+  vendorId?: string;
+}
+
+export interface RecordVendorPaymentInput {
+  projectId: string;
+  amountPaise: number;
+  valueDate?: string;
+  vendorId: string;
+  paymentMethod?: string;
+  reference?: string;
   notes?: string;
   proofDocument?: ProofDocumentInput;
 }
@@ -205,6 +221,10 @@ export class LedgerWriteService {
     externalManager?: EntityManager,
   ): Promise<LedgerEntryEntity> {
     this.assertWritesAllowed();
+    const onCredit = input.paymentMethod === PaymentMethod.CREDIT;
+    if (onCredit && !input.vendorId) {
+      throw new BadRequestException('A credit bill has to be owed to a vendor');
+    }
     const valueDate = this.resolveValueDate(input.valueDate);
     this.assertAmount(input.amountPaise);
     await this.assertProjectInOrg(input.projectId);
@@ -223,6 +243,62 @@ export class LedgerWriteService {
         counterparty: input.payee ?? null,
         category: input.category,
         notes: input.notes ?? null,
+        vendorId: input.vendorId ?? null,
+        // A bill on credit is a cost taken on, not cash gone. Every money-out
+        // total filters on `is_cash`, so this one flag keeps it off the cash
+        // page, the cash-flow chart and the project's Spent figure until a
+        // vendor payment settles it.
+        isCash: !onCredit,
+        createdBy,
+      }).then(async (entry) => {
+        await this.attachProof(manager, entry, input.proofDocument, createdBy);
+        return entry;
+      }),
+    );
+  }
+
+  /**
+   * Settle what we owe a vendor.
+   *
+   * This is cash leaving, so `isCash` is true and it lands in every spend total.
+   * The credit bill it settles stays exactly where it is — the ledger is
+   * append-only, and `v_vendor_payable` nets the two rather than matching them
+   * bill by bill.
+   *
+   * Deliberately NOT allocated against milestones. Money out never changes what
+   * the customer owes; extra scope the customer agreed to pay for is a change
+   * order, not an expense.
+   */
+  async recordVendorPayment(
+    input: RecordVendorPaymentInput,
+    createdBy: string,
+    externalManager?: EntityManager,
+  ): Promise<LedgerEntryEntity> {
+    this.assertWritesAllowed();
+    if (input.paymentMethod === PaymentMethod.CREDIT) {
+      throw new BadRequestException('Settling a credit bill with more credit is not a payment');
+    }
+    const valueDate = this.resolveValueDate(input.valueDate);
+    this.assertAmount(input.amountPaise);
+    await this.assertProjectInOrg(input.projectId);
+
+    return this.runInTransaction(externalManager, async (manager) =>
+      this.insertEntry(manager, {
+        projectId: input.projectId,
+        customerId: null,
+        entryNo: await this.sequenceService.getNextNumber(
+          FinanceSequenceScope.VENDOR_PAYMENT,
+          manager,
+        ),
+        entryType: 'vendor_payment',
+        direction: 'out',
+        amountPaise: -input.amountPaise,
+        valueDate,
+        paymentMethod: input.paymentMethod ?? null,
+        reference: input.reference ?? null,
+        notes: input.notes ?? null,
+        vendorId: input.vendorId,
+        isCash: true,
         createdBy,
       }).then(async (entry) => {
         await this.attachProof(manager, entry, input.proofDocument, createdBy);
@@ -359,8 +435,13 @@ export class LedgerWriteService {
         );
       }
 
-      const scope =
+      // A vendor payment's reversal stays in the VPY- series, so the vendor's
+      // bill list reads as one run of payments rather than a stray EXP- number.
+      let scope =
         original.direction === 'in' ? FinanceSequenceScope.RECEIPT : FinanceSequenceScope.EXPENSE;
+      if (original.entryType === 'vendor_payment') {
+        scope = FinanceSequenceScope.VENDOR_PAYMENT;
+      }
 
       const reversal = await this.insertEntry(manager, {
         projectId: original.projectId,
@@ -388,6 +469,11 @@ export class LedgerWriteService {
         category: original.category ?? null,
         paymentMethod: original.paymentMethod ?? null,
         reference: original.reference ?? null,
+        vendorId: original.vendorId ?? null,
+        // Copied, never defaulted. A reversal of an unpaid bill written with
+        // `isCash: true` would report cash coming back into a bank account that
+        // never sent any — and `v_vendor_payable` would stop netting it off.
+        isCash: original.isCash,
         reversesId: original.id,
         reversalReason: reason.trim(),
         createdBy,

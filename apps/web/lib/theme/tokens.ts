@@ -376,7 +376,7 @@ const root = {
     // Payment approval queue (design min-width 1180px)
     'col-approval-request': '152px',
     'col-approval-date': '96px',
-    'col-approval-type': '88px',
+    'col-approval-type': '124px',
     'col-approval-project': 'minmax(148px,1.2fr)',
     'col-approval-customer': 'minmax(148px,1.3fr)',
     'col-approval-amount': '112px',
@@ -393,6 +393,25 @@ const root = {
     'col-recv-paid': '112px',
     'col-recv-outstanding': '124px',
     'col-recv-ageing': '116px',
+    // Recovery-only columns, appended after ageing (Task 15). "Oldest
+    // overdue" needs its own track, not the "Ageing" one above — that header
+    // is one word and 116px, but "Oldest overdue" plus the sort icon wraps
+    // onto two lines at that width, throwing off every column after it.
+    // "Since meter" renders up to 4 digits plus "d", but its header is the
+    // wrapping risk, not its value. "Bank" is sized for the longest bank
+    // label, which is roughly as wide as the vendor column.
+    'col-recv-overdue': '148px',
+    'col-recv-meter': '136px',
+    'col-recv-bank': 'minmax(160px,1.2fr)',
+    // Payables grid — vendor, net payable, oldest credit bill, days past
+    // agreed terms, bill count, row menu. Payable is sized for
+    // "Advance ₹XX,XX,XXX.XX", the longest string that column ever renders.
+    'col-pay-vendor': 'minmax(180px,1.6fr)',
+    'col-pay-payable': '160px',
+    'col-pay-oldest': '112px',
+    'col-pay-past-terms': '108px',
+    'col-pay-bills': '76px',
+    'col-pay-actions': '44px',
     // Cash ledger grid (design min-width 960px)
     'col-cash-date': '104px',
     'col-cash-entry': '150px',

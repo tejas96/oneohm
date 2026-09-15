@@ -20,7 +20,7 @@ export class LedgerEntryResponseDto {
   @Expose()
   entryNo!: string;
 
-  @ApiProperty({ enum: ['receipt', 'expense', 'refund', 'write_off'] })
+  @ApiProperty({ enum: ['receipt', 'expense', 'refund', 'write_off', 'vendor_payment'] })
   @Expose()
   entryType!: string;
 
@@ -59,6 +59,29 @@ export class LedgerEntryResponseDto {
   @ApiPropertyOptional()
   @Expose()
   category?: string | null;
+
+  /**
+   * Did cash actually move? False means the cost is taken on and the money is
+   * still in the bank — a bill on credit, not yet paid. Present on every row:
+   * the column defaults to `true` and is never null at the database.
+   */
+  @ApiProperty({
+    description:
+      'Did cash actually move? False means the cost is taken on and the money is still in the ' +
+      'bank — a bill on credit, not yet paid.',
+  })
+  @Expose()
+  isCash!: boolean;
+
+  @ApiPropertyOptional({ description: 'The vendor this entry is owed to or paid to' })
+  @Expose()
+  vendorId?: string | null;
+
+  @ApiPropertyOptional({
+    description: "The vendor's name — joined in for display, not stored on the entry itself",
+  })
+  @Expose()
+  vendorName?: string | null;
 
   @ApiPropertyOptional()
   @Expose()
@@ -277,7 +300,10 @@ export class ProjectLedgerSummaryDto {
   @Transform(({ value }) => toNum(value))
   expectedPaise!: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    description:
+      'Money actually written off on a waived milestone — the unpaid remainder, not its original expected amount.',
+  })
   @Expose()
   @Transform(({ value }) => toNum(value))
   waivedPaise!: number;
@@ -323,6 +349,24 @@ export class ProjectLedgerSummaryDto {
   @ApiProperty()
   @Expose()
   milestoneCount!: number;
+
+  @ApiProperty({
+    description:
+      'Bills on credit less payments made to vendors on this project. Negative means vendors hold an ' +
+      'advance. Cost is spentPaise + committedUnpaidPaise: spentPaise already includes vendor payments.',
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  committedUnpaidPaise!: number;
+
+  @ApiProperty({
+    description:
+      'The part of cancelled milestones that was never collected — not their full amount, which ' +
+      'would count money received before cancelling twice.',
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  cancelledPaise!: number;
 
   @ApiProperty({ type: [MilestoneBalanceResponseDto] })
   @Expose()

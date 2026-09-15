@@ -69,4 +69,10 @@ export enum FinanceSequenceScope {
   EXPENSE = 'expense',
   PAYMENT_APPROVAL = 'payment_approval',
   REFUND = 'refund',
+  /**
+   * Paying a vendor against bills taken on credit (`VPY-`). Its own series so
+   * a payment is never mistaken for a new expense. Payments made before this
+   * scope existed keep their `EXP-` numbers — ledger rows cannot be edited.
+   */
+  VENDOR_PAYMENT = 'vendor_payment',
 }

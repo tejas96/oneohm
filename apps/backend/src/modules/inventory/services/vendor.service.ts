@@ -22,17 +22,24 @@ export class VendorService {
   async create(createDto: CreateVendorDto, createdBy: string): Promise<VendorEntity> {
     // Verify organization exists
 
-    // Check if code already exists
-    const existingVendor = await this.vendorRepository.findByCode(createDto.code);
+    // A vendor added from the expense dialog arrives with no code: an accountant
+    // recording a bill should not have to invent one. Generate the next
+    // VEN-#### instead. A code someone typed is still checked as before.
+    const generated = !createDto.code?.trim();
+    const code = generated
+      ? await this.vendorRepository.nextGeneratedCode()
+      : (createDto.code as string).trim();
+
+    const existingVendor = await this.vendorRepository.findByCode(code);
 
     if (existingVendor) {
-      throw new BadRequestException(`Vendor with code ${createDto.code} already exists`);
+      throw new BadRequestException(`Vendor with code ${code} already exists`);
     }
 
     // Create vendor
     const vendor = await this.vendorRepository.create({
       name: createDto.name,
-      code: createDto.code,
+      code,
       vendorType: createDto.vendorType,
       contactPerson: createDto.contactPerson,
       email: createDto.email,

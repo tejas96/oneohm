@@ -85,6 +85,11 @@ export class ProjectLedgerService {
     // payment of MINUS rupees. The milestone's `allocated_paise` already nets
     // the reversal out, so the balance stays correct without listing it.
     //
+    // The receipt a reversal undid is excluded as well. With only the mirror
+    // left out, the original still listed: PRJ-ONEOHM_EPC-2026-0234 showed the
+    // customer three reversed ₹3,385.01 receipts as CLEARED installments, beside
+    // a milestone balance that no longer counted them.
+    //
     // The org predicate matters too: this was the only ledger read in the module
     // without one.
     const allocationRows: Array<{
@@ -107,6 +112,7 @@ export class ProjectLedgerService {
        WHERE a.project_id = $1
          AND e.direction = 'in'
          AND e.reverses_id IS NULL
+         AND NOT EXISTS (SELECT 1 FROM ledger_entries r WHERE r.reverses_id = e.id)
          AND a.amount_paise > 0
        ORDER BY e.value_date, e.created_at`,
       [projectId],

@@ -44,7 +44,31 @@ const SELECT_COLUMNS = `
     NULLIF(TRIM(CONCAT_WS(' ', ru.first_name, ru.last_name)), '')                 AS "reviewedByName",
     p.reviewed_at                                                                 AS "reviewedAt",
     p.rejection_reason                                                            AS "rejectionReason",
-    p.ledger_entry_id                                                             AS "ledgerEntryId"
+    p.ledger_entry_id                                                             AS "ledgerEntryId",
+    -- A list, not one value: 32 users hold more than one role, and picking one
+    -- arbitrarily would misreport the capacity someone acted in. Ordered most
+    -- senior first (roles.level ascending — lower is more senior). A
+    -- correlated subquery, not a join to user_roles: joining it here would
+    -- multiply each approval row by the user's role count and inflate
+    -- APPROVALS_COUNT_SQL's total right along with it.
+    (SELECT STRING_AGG(r.name, ', ' ORDER BY r.level, r.name)
+       FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+      WHERE ur.user_id = p.submitted_by)                                          AS "submittedByRoles",
+    (SELECT STRING_AGG(r.name, ', ' ORDER BY r.level, r.name)
+       FROM user_roles ur JOIN roles r ON r.id = ur.role_id
+      WHERE ur.user_id = p.reviewed_by)                                           AS "reviewedByRoles",
+    p.vendor_id                                                                    AS "vendorId",
+    vn.name                                                                        AS "vendorName",
+    -- COALESCE, not a bare comparison: payment_method is nullable (11 of 36
+    -- rows in local data have none), and under SQL's three-valued logic
+    -- NULL = 'credit' is NULL, not false. ApprovalRow types this as a plain
+    -- boolean, so a stray NULL here would be a real type/runtime mismatch.
+    COALESCE(p.payment_method = 'credit', false)                                  AS "isCredit",
+    -- What a reversal undoes, so its approver sees more than a bare amount.
+    re.entry_no                                                                    AS "reversesEntryNo",
+    re.entry_type                                                                  AS "reversesEntryType",
+    re.is_cash                                                                     AS "reversesIsCash",
+    rvn.name                                                                       AS "reversesVendorName"
 `;
 
 const JOINS = `
@@ -65,6 +89,13 @@ const JOINS = `
   ) proofs ON TRUE
   LEFT JOIN users su                  ON su.id = p.submitted_by
   LEFT JOIN users ru                  ON ru.id = p.reviewed_by
+  -- Safe as a plain join, unlike user_roles above: vendors.id is a primary
+  -- key, so this matches at most one row per p and cannot multiply it.
+  LEFT JOIN vendors vn                 ON vn.id = p.vendor_id
+  -- The entry a reversal undoes, and that entry's vendor. Both are primary
+  -- keys, so like the vendor join above neither can multiply a row.
+  LEFT JOIN ledger_entries re          ON re.id = p.reverses_entry_id
+  LEFT JOIN vendors rvn                ON rvn.id = re.vendor_id
 `;
 
 /**
@@ -102,8 +133,10 @@ export const APPROVALS_PAGE_SQL = `
     CASE WHEN $8 = 'submittedAt'  AND $9 = 'desc' THEN p.submitted_at  END DESC,
     CASE WHEN $8 = 'customerName' AND $9 = 'asc'  THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
     CASE WHEN $8 = 'customerName' AND $9 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
-    -- Default and final tie-break: the queue drains in the order it filled.
-    p.submitted_at ASC
+    -- Default: the queue drains in the order it filled. p.id is the unique last
+    -- key, so two requests stamped in the same millisecond cannot trade places
+    -- between pages.
+    p.submitted_at ASC, p.id
   LIMIT $10 OFFSET $11
 `;
 

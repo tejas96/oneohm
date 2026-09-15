@@ -9,7 +9,7 @@ import {
 
 import { paiseTransformer } from '../../ledger/domain/paise';
 
-export type PendingKind = 'receipt' | 'expense' | 'reversal';
+export type PendingKind = 'receipt' | 'expense' | 'reversal' | 'vendor_payment';
 export type PendingStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
 /**
@@ -73,6 +73,14 @@ export class PendingLedgerEntryEntity {
 
   @Column({ type: 'varchar', length: 30, nullable: true })
   category?: string | null;
+
+  /**
+   * The vendor, carried through approval. `is_cash` is deliberately NOT stored
+   * here — it is derived from `kind` and `paymentMethod` at approval, so exactly
+   * one place decides it.
+   */
+  @Column({ name: 'vendor_id', type: 'uuid', nullable: true })
+  vendorId?: string | null;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   reference?: string | null;

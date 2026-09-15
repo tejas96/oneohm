@@ -14,7 +14,7 @@ import type { ProjectDetail } from '@/components/features/projects/hooks/types';
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import type { LedgerEntry, ProjectLedgerSummary } from '@/lib/hooks/resources/ledger';
-import { getErrorMessage } from '@/lib/utils/error';
+import { getErrorMessage, getErrorReason } from '@/lib/utils/error';
 
 /**
  * Build the receipt payload from data already on the page.
@@ -134,7 +134,7 @@ export function useReceiptPdf(): UseReceiptPdfResult {
         // not appear to have failed because a PDF did not render. The message
         // says what actually went wrong and points at the retry.
         showToast.error(
-          `Payment saved, but the receipt could not be filed: ${getErrorMessage(error)}. ` +
+          `Payment saved, but the receipt could not be filed: ${getErrorReason(error)}. ` +
             'Use Receipt on the entry to try again.',
         );
         return false;

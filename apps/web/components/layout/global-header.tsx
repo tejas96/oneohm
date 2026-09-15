@@ -1,14 +1,10 @@
 'use client';
 
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import { Badge, IconButton, Tooltip } from '@mui/material';
-import { useRouter } from 'next/navigation';
-
 import { MobileNav } from './mobile-nav';
+import { NotificationBell } from './notification-bell';
 import { UserMenu } from './user-menu';
 
 import { SearchTrigger } from '@/components/shared/search';
-import { useNotificationUnreadCount } from '@/lib/hooks/resources/notifications';
 import { cn } from '@/lib/utils';
 
 interface GlobalHeaderProps {
@@ -21,12 +17,6 @@ interface GlobalHeaderProps {
  * Features: Logo, global search (Cmd+K), notifications bell with live unread count, user menu, mobile nav
  */
 export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
-  const router = useRouter();
-  // Your own notifications. Nothing to gate: they were sent to you.
-  const canViewNotifications = true;
-  const { data: unreadData } = useNotificationUnreadCount();
-  const unreadCount = unreadData?.count ?? 0;
-
   return (
     <header
       className={cn(
@@ -59,26 +49,8 @@ export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
 
       {/* Right: Actions */}
       <div className="flex items-center space-x-1 lg:space-x-2">
-        {/* Notifications — only for users with notifications:read */}
-        {canViewNotifications ? (
-          <Tooltip title="Notifications">
-            <IconButton
-              size="small"
-              aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
-              onClick={() => router.push('/notifications')}
-              sx={{ borderRadius: '8px' }}
-            >
-              <Badge
-                badgeContent={unreadCount > 0 ? unreadCount : undefined}
-                color="error"
-                max={99}
-                sx={{ '& .MuiBadge-badge': { fontSize: 10, minWidth: 16, height: 16 } }}
-              >
-                <NotificationsIcon sx={{ fontSize: 20, color: 'var(--color-muted-foreground)' }} />
-              </Badge>
-            </IconButton>
-          </Tooltip>
-        ) : null}
+        {/* Your own notifications. Nothing to gate: they were sent to you. */}
+        <NotificationBell />
 
         {/* User Menu */}
         <UserMenu />

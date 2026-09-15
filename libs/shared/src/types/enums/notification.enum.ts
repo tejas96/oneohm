@@ -14,6 +14,10 @@ export enum NotificationType {
   PROJECT_ONBOARDED = 'project_onboarded',
   PROJECT_COMPLETED = 'project_completed',
   CHAT_MESSAGE = 'chat_message',
+  // Payment approvals (staff, web bell)
+  PAYMENT_APPROVAL_PENDING = 'payment_approval_pending',
+  PAYMENT_APPROVED = 'payment_approved',
+  PAYMENT_REJECTED = 'payment_rejected',
 }
 
 /**

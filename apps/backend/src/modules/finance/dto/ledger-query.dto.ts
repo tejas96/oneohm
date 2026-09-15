@@ -48,6 +48,16 @@ export class CashFlowQueryDto extends LedgerRangeQueryDto {
   @IsIn(['day', 'week', 'month', 'year'])
   @IsOptional()
   grain?: 'day' | 'week' | 'month' | 'year';
+
+  @ApiPropertyOptional({
+    description:
+      'Narrows the series to matching entries, the same search the period cards and the ' +
+      'entry list take, so the bars describe the rows on screen.',
+  })
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  search?: string;
 }
 
 export class LedgerEntriesQueryDto extends LedgerRangeQueryDto {
@@ -110,13 +120,36 @@ export class LedgerEntriesQueryDto extends LedgerRangeQueryDto {
 
 export class ReceivablesQueryDto {
   @ApiPropertyOptional({
-    enum: ['current', '1-30', '31-60', '61-90', '90plus'],
-    description: 'Ageing bucket. Computed server-side so the chip counts and the rows agree.',
+    enum: ['current', '1-30', '31-60', '61-90', '90plus', 'no_due_date'],
+    description:
+      'Ageing bucket. `no_due_date` is a SUBSET of `current` — money with no due date at all, ' +
+      'which can be collected but cannot be forecast.',
   })
-  @IsIn(['current', '1-30', '31-60', '61-90', '90plus'])
+  @IsIn(['current', '1-30', '31-60', '61-90', '90plus', 'no_due_date'])
   @IsOptional()
   @Transform(({ value }) => (value === '' || value === null ? undefined : value))
-  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus';
+  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus' | 'no_due_date';
+
+  @ApiPropertyOptional({
+    enum: ['all', 'recovery'],
+    description:
+      '`recovery` keeps only projects whose net meter is installed — the job is delivered and ' +
+      'the money is still open. Never reads projects.status, which is not maintained: 7 rows ' +
+      'claim completed while 41 have the meter in.',
+  })
+  @IsIn(['all', 'recovery'])
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  scope?: 'all' | 'recovery';
+
+  @ApiPropertyOptional({
+    enum: ['loan', 'cash'],
+    description: 'Reads customer_properties.wants_loan.',
+  })
+  @IsIn(['loan', 'cash'])
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  funding?: 'loan' | 'cash';
 
   @ApiPropertyOptional({ description: 'Matches customer, project number or name, or milestone.' })
   @IsString()
@@ -129,6 +162,63 @@ export class ReceivablesQueryDto {
   @IsIn(['daysOverdue', 'outstandingAmount', 'dueDate', 'customerName'])
   @IsOptional()
   sortBy?: 'daysOverdue' | 'outstandingAmount' | 'dueDate' | 'customerName';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsIn(['asc', 'desc'])
+  @IsOptional()
+  sortOrder?: 'asc' | 'desc';
+
+  @ApiPropertyOptional({ default: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number;
+
+  @ApiPropertyOptional({ default: 25, maximum: 200 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  @IsOptional()
+  limit?: number;
+}
+
+/** Recovery, one row per project — see RECOVERY_PROJECTS_CTE. */
+export class RecoveryQueryDto {
+  @ApiPropertyOptional({
+    enum: ['loan', 'cash'],
+    description: 'Reads customer_properties.wants_loan.',
+  })
+  @IsIn(['loan', 'cash'])
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  funding?: 'loan' | 'cash';
+
+  @ApiPropertyOptional({
+    enum: ['current', '1-30', '31-60', '61-90', '90plus', 'no_due_date'],
+    description:
+      "By the project's worst overdue milestone. `no_due_date` keeps projects with any open " +
+      'money that has no due date.',
+  })
+  @IsIn(['current', '1-30', '31-60', '61-90', '90plus', 'no_due_date'])
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus' | 'no_due_date';
+
+  @ApiPropertyOptional({ description: 'Matches customer, project number or project name.' })
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  search?: string;
+
+  /** Whitelisted: the value reaches ORDER BY, so free text would be injectable. */
+  @ApiPropertyOptional({
+    enum: ['daysSinceMeter', 'outstanding', 'worstDaysOverdue', 'customerName'],
+  })
+  @IsIn(['daysSinceMeter', 'outstanding', 'worstDaysOverdue', 'customerName'])
+  @IsOptional()
+  sortBy?: 'daysSinceMeter' | 'outstanding' | 'worstDaysOverdue' | 'customerName';
 
   @ApiPropertyOptional({ enum: ['asc', 'desc'] })
   @IsIn(['asc', 'desc'])

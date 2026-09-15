@@ -273,26 +273,6 @@ function isOpen(m: MilestoneBalance): boolean {
   return (m.derivedStatus === 'pending' || m.derivedStatus === 'partial') && m.balancePaise > 0;
 }
 
-/**
- * The money actually written off, as opposed to the API's `waivedPaise`.
- *
- * `waivedPaise` is the sum of EXPECTED on every waived milestone, so anything
- * already collected against one is counted twice — once as received, once as
- * waived. A real project showed contract ₹1,60,537, received ₹30,000,
- * outstanding ₹16,053 and waived ₹1,44,483: read together those overshoot the
- * contract by exactly the ₹30,000 that had been paid before the milestone was
- * written off.
- *
- * Summing the outstanding BALANCE on waived milestones gives the amount nobody
- * intends to collect, and makes received + outstanding + waived come to the
- * contract to the paisa.
- */
-export function waivedRemainderPaise(ledger: ProjectLedgerSummary): number {
-  return ledger.milestones
-    .filter((m) => m.derivedStatus === 'waived')
-    .reduce((sum, m) => sum + Math.max(0, m.balancePaise), 0);
-}
-
 /** Milestones past their due date with money still owed on them. */
 export function overdueMilestones(ledger: ProjectLedgerSummary): MilestoneBalance[] {
   return ledger.milestones.filter((m) => isOpen(m) && m.daysOverdue > 0);
@@ -313,18 +293,43 @@ export function openMilestonesByUrgency(ledger: ProjectLedgerSummary): Milestone
 }
 
 /**
- * Contract minus spend.
+ * What the project has really cost: cash expenses plus bills taken on credit.
+ *
+ * `spentPaise` is cash that has left, and it includes payments to vendors.
+ * `committedUnpaidPaise` is credit bills LESS those payments. Adding the two
+ * counts each bill once — before it is paid it sits in the second half, after
+ * it is paid its cash sits in the first and it drops out of the second. When a
+ * vendor was paid more than billed, `committedUnpaidPaise` is negative and the
+ * advance correctly stays out of cost. This is the one place that adds `committedUnpaidPaise` on top of
+ * `spentPaise` — margin, the used-percent and the overrun warning all read
+ * THIS, on every screen that shows them, so the figures cannot drift apart
+ * the way they did when the Money tab computed cost and the Overview card's
+ * Money card computed cash for the same project.
+ */
+export function costPaise(ledger: ProjectLedgerSummary): number {
+  return ledger.spentPaise + (ledger.committedUnpaidPaise ?? 0);
+}
+
+/**
+ * Contract minus cost (cash spent plus committed-but-unpaid).
  *
  * Null until there is a contract AND at least one cost recorded against it.
- * With nothing spent the arithmetic returns the whole contract, which the card
- * then printed as "Margin left ₹1,54,444" beside "Contract ₹1,54,444" — the
- * same figure twice, claiming a margin nobody has verified. Unknown is the
- * honest answer, and the card says so.
+ * With nothing spent or committed the arithmetic returns the whole contract,
+ * which a card would then print as "Margin left ₹1,54,444" beside
+ * "Contract ₹1,54,444" — the same figure twice, claiming a margin nobody has
+ * verified. Unknown is the honest answer, and callers say so.
  */
 export function marginPaise(ledger: ProjectLedgerSummary): number | null {
   if (ledger.contractPaise <= 0) return null;
-  if (ledger.spentPaise <= 0) return null;
-  return ledger.contractPaise - ledger.spentPaise;
+  const cost = costPaise(ledger);
+  if (cost <= 0) return null;
+  return ledger.contractPaise - cost;
+}
+
+/** Cost as a whole percent of the contract. 0 when there is no contract. */
+export function costUsedPct(ledger: ProjectLedgerSummary): number {
+  if (ledger.contractPaise <= 0) return 0;
+  return Math.round((costPaise(ledger) / ledger.contractPaise) * 100);
 }
 
 // ============================================================================

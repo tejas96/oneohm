@@ -26,6 +26,7 @@ import {
   usePaymentApproval,
 } from '@/lib/hooks/resources/payment-approvals';
 import { useAccessDialog, useCan } from '@/lib/rbac';
+import { formatBusinessDate, formatDate, formatPaymentMethod } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -38,7 +39,45 @@ const KIND_LABEL = {
   receipt: 'Money received',
   expense: 'Money spent',
   reversal: 'Reversal',
+  vendor_payment: 'Vendor payment',
 } as const;
+
+/**
+ * What the duplicate warning calls the other requests. The server only matches
+ * the same kind, so "payment" was the wrong word for an expense or a bill.
+ */
+const DUPLICATE_NOUN = {
+  receipt: 'payment',
+  expense: 'expense',
+  reversal: 'reversal',
+  vendor_payment: 'vendor payment',
+} as const;
+
+/** "a bill on credit from Sharma Traders", "a payment to Sharma Traders", "an expense". */
+function describeReversed(data: {
+  reversesEntryType?: string | null;
+  reversesIsCash?: boolean | null;
+  reversesVendorName?: string | null;
+}): string {
+  const vendor = data.reversesVendorName ?? 'a vendor';
+  if (data.reversesEntryType === 'vendor_payment') return `a payment to ${vendor}`;
+  if (data.reversesIsCash === false) return `a bill on credit from ${vendor}`;
+  if (data.reversesEntryType === 'receipt') return 'a customer receipt';
+  if (data.reversesEntryType === 'refund') return 'a refund';
+  return 'an expense';
+}
+
+/**
+ * Same "Advance" wording as the Payables page (`payables-columns.tsx`) — a
+ * negative payable is never shown as a red debt, so one concept keeps one
+ * name everywhere it appears. Applies to both `beforePaise` and `afterPaise`:
+ * either can be negative, and `afterPaise` going negative when `beforePaise`
+ * was not is exactly the "this payment overshoots what's owed" case the
+ * approver needs to see plainly, not as an unexplained minus sign.
+ */
+function formatVendorPayable(paise: number): string {
+  return paise < 0 ? `Advance ${formatPaise(-paise)}` : formatPaise(paise);
+}
 
 /**
  * Where verification actually happens.
@@ -53,7 +92,10 @@ export function ApprovalReviewDrawer({
 }: ApprovalReviewDrawerProps): JSX.Element {
   const { user } = useAuth();
   const { data, isLoading } = usePaymentApproval(approvalId);
-  const impact = useApprovalImpact(approvalId);
+  // Only a pending request has a consequence to preview. Once decided, its
+  // effect is already in the balances the preview is worked out from, so it
+  // would be counted a second time.
+  const impact = useApprovalImpact(data?.status === 'pending' ? approvalId : null);
   const { approve, reject, cancel } = useApprovalMutations();
   const autoFileReceipt = useAutoFileApprovedReceipts();
   const [reason, setReason] = useState('');
@@ -68,6 +110,7 @@ export function ApprovalReviewDrawer({
   useEffect(() => setReason(''), [approvalId]);
 
   const isOwn = Boolean(data && user && data.submittedBy === user.id);
+  const isReversal = data?.kind === 'reversal';
   const isPending = data?.status === 'pending';
   const busy = approve.isPending || reject.isPending || cancel.isPending;
 
@@ -90,13 +133,36 @@ export function ApprovalReviewDrawer({
               <Typography variant="body2">{KIND_LABEL[data.kind]}</Typography>
             </Stack>
 
+            {/* An approver must know which of the two they are signing off:
+                this records a debt, or this moves cash right now. */}
+            {data.isCredit ? (
+              <Alert severity="info">
+                On credit · {data.vendorName ?? 'vendor'}. Approving records what we owe. No cash
+                moves.
+              </Alert>
+            ) : null}
+
+            {/* A reversal is signed off on what it undoes and why. A bare amount
+                could be anything, and approving it cannot be taken back. */}
+            {isReversal ? (
+              <Alert severity="warning">
+                Undoes {data.reversesEntryNo ?? 'an earlier entry'}, {describeReversed(data)}.
+                <br />
+                Reason: {data.reversalReason ?? 'none given'}
+              </Alert>
+            ) : null}
+
             <Box>
               <Typography sx={{ fontSize: '1.5rem', fontWeight: 600 }}>
                 {formatPaise(Math.abs(data.amountPaise))}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Paid on {data.valueDate}
-                {data.paymentMethod ? ` · ${data.paymentMethod}` : ''}
+                {/* A reversal is posted with the day it is approved, whatever
+                    day it was asked for. */}
+                {isReversal && isPending
+                  ? 'Dated the day it is approved'
+                  : `${isReversal ? 'Dated' : data.isCredit ? 'Billed on' : 'Paid on'} ${formatBusinessDate(data.valueDate)}`}
+                {data.paymentMethod ? ` · ${formatPaymentMethod(data.paymentMethod)}` : ''}
                 {data.reference ? ` · ${data.reference}` : ''}
               </Typography>
             </Box>
@@ -117,16 +183,27 @@ export function ApprovalReviewDrawer({
                 {data.projectName ? ` — ${data.projectName}` : ''}
               </MUILink>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                Submitted by {data.submittedByName ?? 'unknown'} on{' '}
-                {new Date(data.submittedAt).toLocaleDateString()}
+                Submitted by {data.submittedByName ?? 'unknown'}
+                {data.submittedByRoles ? ` (${data.submittedByRoles})` : ''} on{' '}
+                {formatDate(data.submittedAt)}
               </Typography>
+              {/* Only once the row has actually been reviewed — `reviewedAt`
+                  is null for both a pending row and one the submitter simply
+                  withdrew, neither of which anyone "reviewed". */}
+              {data.reviewedAt ? (
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Reviewed by {data.reviewedByName ?? 'unknown'}
+                  {data.reviewedByRoles ? ` (${data.reviewedByRoles})` : ''} on{' '}
+                  {formatDate(data.reviewedAt)}
+                </Typography>
+              ) : null}
             </Box>
 
             {data.notes ? <Typography variant="body2">{data.notes}</Typography> : null}
 
             {data.possibleDuplicates && data.possibleDuplicates.length > 0 && (
               <Alert severity="warning">
-                {data.possibleDuplicates.length} other payment
+                {data.possibleDuplicates.length} other {DUPLICATE_NOUN[data.kind]}
                 {data.possibleDuplicates.length === 1 ? '' : 's'} with the same amount and date
                 exist{data.possibleDuplicates.length === 1 ? 's' : ''} for this project. Check this
                 is not a double entry.
@@ -198,13 +275,17 @@ export function ApprovalReviewDrawer({
                   )}
                 </Box>
               </Box>
-            ) : (
+            ) : isReversal ? null : (
+              // A reversal has nothing to prove: it undoes an entry already
+              // checked when it was approved.
               <Alert severity="info">
-                No proof of payment was attached. Confirm by another means before approving.
+                No proof of payment was attached.
+                {/* The instruction is for the approver; once decided it is moot. */}
+                {isPending ? ' Confirm by another means before approving.' : ''}
               </Alert>
             )}
 
-            {impact.data && impact.data.lines.length > 0 && (
+            {isPending && impact.data && impact.data.lines.length > 0 && (
               <>
                 <Divider />
                 <Box>
@@ -225,6 +306,29 @@ export function ApprovalReviewDrawer({
                       will be held as credit against future milestones.
                     </Alert>
                   )}
+                </Box>
+              </>
+            )}
+
+            {/* The vendor-payment sibling of the block above: `lines` is
+                always empty for `kind === 'vendor_payment'` (a vendor
+                payment never allocates against a milestone), so without this
+                the drawer would show no consequence preview at all for that
+                kind. `afterPaise` is rendered exactly as the server sends it
+                — never clamped — because a negative result is the signal
+                that this payment pays ahead of what's owed. */}
+            {isPending && impact.data?.vendorPayable && (
+              <>
+                <Divider />
+                <Box>
+                  <MUITypography variant="sectionTitle">
+                    {isReversal ? 'If approved' : 'If approved, this settles'}
+                  </MUITypography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    {impact.data.vendorPayable.vendorName ?? 'This vendor'}&apos;s payable:{' '}
+                    {formatVendorPayable(impact.data.vendorPayable.beforePaise)} →{' '}
+                    {formatVendorPayable(impact.data.vendorPayable.afterPaise)}
+                  </Typography>
                 </Box>
               </>
             )}

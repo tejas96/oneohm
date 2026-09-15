@@ -18,7 +18,6 @@ import {
   Typography,
 } from '@mui/material';
 import { bankLabel } from '@tejas96/shared/constants';
-import { PaymentMethod } from '@tejas96/shared/types';
 import { useRouter } from 'next/navigation';
 import { type JSX, useMemo } from 'react';
 
@@ -49,7 +48,7 @@ import {
   lastReceiptValueDate,
   type LedgerEntry,
 } from '@/lib/hooks/resources/ledger';
-import { formatCurrency, formatDate, toTitleLabel } from '@/lib/utils';
+import { formatCurrency, formatDate, formatPaymentMethod, toTitleLabel } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 export interface FinanceTabProps {
@@ -64,28 +63,6 @@ const RECEIPT_PAGE_LIMIT = 100;
 
 function isReceiptEntry(entry: LedgerEntry): boolean {
   return entry.entryType === 'receipt' && entry.direction === 'in';
-}
-
-/**
- * Half the payment methods are acronyms, and `toTitleLabel` lowercases them
- * into "Neft", "Rtgs", "Imps" and "Upi" — which is simply not how any of them
- * are written on a bank statement.
- */
-const PAYMENT_METHOD_LABEL = {
-  [PaymentMethod.ONLINE]: 'Online',
-  [PaymentMethod.CHEQUE]: 'Cheque',
-  [PaymentMethod.CASH]: 'Cash',
-  [PaymentMethod.NEFT]: 'NEFT',
-  [PaymentMethod.RTGS]: 'RTGS',
-  [PaymentMethod.IMPS]: 'IMPS',
-  [PaymentMethod.UPI]: 'UPI',
-  [PaymentMethod.DEMAND_DRAFT]: 'Demand draft',
-} satisfies Record<PaymentMethod, string>;
-
-function methodLabel(method: string): string {
-  return (
-    (PAYMENT_METHOD_LABEL as Record<string, string | undefined>)[method] ?? toTitleLabel(method)
-  );
 }
 
 interface ProjectGroup {
@@ -635,7 +612,7 @@ export function FinanceTab({ customerId, enabled }: FinanceTabProps): JSX.Elemen
                           {entry.projectNumber ?? '—'}
                         </TableCell>
                         <TableCell sx={{ color: 'var(--ds-text-secondary)' }}>
-                          {entry.paymentMethod ? methodLabel(entry.paymentMethod) : '—'}
+                          {entry.paymentMethod ? formatPaymentMethod(entry.paymentMethod) : '—'}
                         </TableCell>
                         <TableCell>
                           {isReversal ? (

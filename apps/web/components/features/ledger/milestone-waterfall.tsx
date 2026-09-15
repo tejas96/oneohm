@@ -1,7 +1,7 @@
 'use client';
 
 import { Tooltip } from '@mui/material';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowDownLeft, ChevronDown, ChevronRight, RotateCcw } from 'lucide-react';
 import { type JSX, useState } from 'react';
 
 import {
@@ -14,7 +14,7 @@ import {
   type Tone,
 } from '@/components/features/projects/components/project-detail/primitives';
 import type { MilestoneBalance } from '@/lib/hooks/resources/ledger';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatBusinessDate, formatPaymentMethod } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 interface MilestoneWaterfallProps {
@@ -26,6 +26,14 @@ interface MilestoneWaterfallProps {
   lenderName?: string;
   onRecordPayment?: (milestoneId: string) => void;
   onWaive?: (milestone: MilestoneBalance) => void;
+  /**
+   * Set who pays a milestone. Offered only when the caller says the project can
+   * have a bank paying (`canSetPayer`) — a project with no loan has no bank.
+   */
+  onSetPayer?: (milestone: MilestoneBalance, payerType: 'customer' | 'lender') => void;
+  canSetPayer?: boolean;
+  /** Disables the switch while a change is being saved, so it cannot be double-sent. */
+  payerSaving?: boolean;
 }
 
 const STATUS: Record<string, { label: string; tone: Tone }> = {
@@ -51,6 +59,9 @@ export function MilestoneWaterfall({
   lenderName,
   onRecordPayment,
   onWaive,
+  onSetPayer,
+  canSetPayer = false,
+  payerSaving = false,
 }: MilestoneWaterfallProps): JSX.Element {
   const [expanded, setExpanded] = useState<string | null>(null);
   /*
@@ -170,14 +181,56 @@ export function MilestoneWaterfall({
                       ) : null}
                       {m.dueDate ? (
                         <span>
-                          Due <Mono>{formatDate(m.dueDate)}</Mono>
+                          {/* A calendar date, not an instant: formatDate shifted it a
+                              day early for anyone west of UTC. */}
+                          Due <Mono>{formatBusinessDate(m.dueDate)}</Mono>
                         </span>
                       ) : null}
                     </span>
                   </span>
                 </button>
 
-                <span className="flex shrink-0 gap-1.5">
+                <span className="flex shrink-0 items-center gap-1.5">
+                  {/* Who pays. On EVERY open milestone of a loan project, not only
+                    short ones: the bank's share can already be paid and still be
+                    wrongly marked as the customer's, and the Recovery banner counts
+                    that project until it is corrected. Waived and cancelled
+                    milestones are closed, and the server refuses them. */}
+                  {canSetPayer &&
+                  onSetPayer &&
+                  m.derivedStatus !== 'waived' &&
+                  m.derivedStatus !== 'cancelled' ? (
+                    <span
+                      role="radiogroup"
+                      aria-label={`Who pays ${m.name}`}
+                      title="Who is expected to pay what is still owed. No money moves."
+                      className="inline-flex h-7 items-center rounded-pill bg-background-tertiary p-0.5"
+                    >
+                      {(['customer', 'lender'] as const).map((payer) => {
+                        const active = m.payerType === payer;
+                        return (
+                          <button
+                            key={payer}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            disabled={payerSaving}
+                            onClick={() => {
+                              if (!active) onSetPayer(m, payer);
+                            }}
+                            className={cn(
+                              'inline-flex h-6 items-center rounded-pill px-2.5 text-[12px] font-medium transition-colors duration-fast focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60',
+                              active
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-foreground-secondary hover:text-foreground',
+                            )}
+                          >
+                            {payer === 'customer' ? 'Customer' : 'Bank'}
+                          </button>
+                        );
+                      })}
+                    </span>
+                  ) : null}
                   {isShort && onRecordPayment ? (
                     <button
                       type="button"
@@ -228,11 +281,29 @@ export function MilestoneWaterfall({
                             )}
                           >
                             <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                              {/* Reversed/reversal money is a correction, not
+                                  cash landing — the undo arrow says so, dimmed
+                                  the same as its text. A live receipt gets the
+                                  same inbound arrow "Record payment" uses. */}
+                              {isReversal ? (
+                                <RotateCcw
+                                  className="size-3 shrink-0 text-foreground-tertiary"
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                              ) : (
+                                <ArrowDownLeft
+                                  className="size-3 shrink-0"
+                                  strokeWidth={2}
+                                  style={{ color: dim ? undefined : TONE.success.ink }}
+                                  aria-hidden
+                                />
+                              )}
                               <Mono className="text-[11px] text-foreground-secondary">
                                 {a.entryNo}
                               </Mono>
                               <span className="text-foreground-secondary">
-                                <Mono>{formatDate(a.valueDate)}</Mono>
+                                <Mono>{formatBusinessDate(a.valueDate)}</Mono>
                                 {a.valueDateIsInferred ? (
                                   /* Historical rows have no recoverable value date —
                                    say so rather than implying the date is a fact. */
@@ -243,7 +314,7 @@ export function MilestoneWaterfall({
                               </span>
                               {a.paymentMethod ? (
                                 <span className="text-[11px] uppercase tracking-[0.06em] text-foreground-tertiary">
-                                  {a.paymentMethod}
+                                  {formatPaymentMethod(a.paymentMethod)}
                                 </span>
                               ) : null}
                               {/* Both halves of a reversal stay on screen. Hiding the

@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getDataSourceToken } from '@nestjs/typeorm';
+import { PaymentMethod } from '@tejas96/shared/types';
 
+import { DocumentEntity } from '../../documents/entities/document.entity';
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { StorageService } from '../../storage/services/storage.service';
 import { LedgerAllocationEntity, LedgerEntryEntity } from '../entities';
@@ -17,14 +19,24 @@ import { LedgerRepository } from '../repositories/ledger.repository';
 const PROJECT = 'project-1';
 const USER = 'user-1';
 
+// task-3-brief.md Step 5 writes its two new tests against these lowerCamelCase
+// names rather than PROJECT/USER above. Aliased here (not renamed in-place)
+// so the brief's test bodies can be copied verbatim.
+const projectId = PROJECT;
+const userId = USER;
+const otherUserId = 'user-2';
+const vendorId = 'vendor-1';
+
 /** Captures what was inserted so the tests can assert on the rows, not the mocks. */
 interface Captured {
   entries: any[];
   allocations: any[][];
+  documents: any[];
 }
 
 function makeManager(captured: Captured, insertedEntry: Partial<LedgerEntryEntity>): any {
   return {
+    query: jest.fn(async () => [{ property_id: 'property-1' }]),
     getRepository: (entity: unknown) => {
       if (entity === LedgerEntryEntity) {
         return {
@@ -44,6 +56,14 @@ function makeManager(captured: Captured, insertedEntry: Partial<LedgerEntryEntit
         return {
           insert: jest.fn(async (rows: any[]) => {
             captured.allocations.push(rows);
+            return { identifiers: [] };
+          }),
+        };
+      }
+      if (entity === DocumentEntity) {
+        return {
+          insert: jest.fn(async (values: any) => {
+            captured.documents.push(values);
             return { identifiers: [] };
           }),
         };
@@ -79,7 +99,7 @@ describe('LedgerWriteService', () => {
   });
 
   beforeEach(async () => {
-    captured = { entries: [], allocations: [] };
+    captured = { entries: [], allocations: [], documents: [] };
 
     repo = {
       projectExists: jest.fn(async () => true),
@@ -314,6 +334,51 @@ describe('LedgerWriteService', () => {
       );
       expect(captured.allocations).toHaveLength(0);
     });
+
+    it('refuses a credit bill with no vendor', async () => {
+      await expect(
+        service.recordExpense(
+          {
+            projectId,
+            amountPaise: 100_000,
+            category: 'materials',
+            paymentMethod: PaymentMethod.CREDIT,
+          },
+          userId,
+        ),
+      ).rejects.toThrow(/owed to a vendor/);
+    });
+  });
+
+  describe('recordVendorPayment', () => {
+    it('attaches proof when supplied', async () => {
+      const outer = makeManager(captured, {});
+
+      await service.recordVendorPayment(
+        {
+          projectId: PROJECT,
+          amountPaise: 50_000,
+          vendorId: 'vendor-1',
+          proofDocument: {
+            fileKey: 'cheque-2026-09-13.jpg',
+            fileName: 'cheque.jpg',
+            mimeType: 'image/jpeg',
+            fileSize: 245_000,
+          },
+        },
+        USER,
+        outer,
+      );
+
+      expect(captured.documents).toHaveLength(1);
+      expect(captured.documents[0]).toMatchObject({
+        entityType: 'ledger_entry',
+        entityId: 'new-entry-id',
+        fileName: 'cheque.jpg',
+        mimeType: 'image/jpeg',
+        fileSizeBytes: 245_000,
+      });
+    });
   });
 
   describe('tenancy', () => {
@@ -468,6 +533,31 @@ describe('LedgerWriteService', () => {
     it('404s on an unknown entry', async () => {
       repo.findEntryById.mockResolvedValue(null);
       await expect(service.reverse('missing', 'x', USER)).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('a reversal inherits the original entry cash flag and vendor', async () => {
+      const original = await service.recordExpense(
+        {
+          projectId,
+          amountPaise: 100_000,
+          category: 'materials',
+          paymentMethod: PaymentMethod.CREDIT,
+          vendorId,
+        },
+        userId,
+      );
+      expect(original.isCash).toBe(false);
+
+      // recordExpense above wrote through the mocked dataSource/manager, not
+      // through `repo` — reverse() reads the entry back via
+      // `ledgerRepository.findEntryById`, so that mock has to be wired to what
+      // was just recorded or `reverse` 404s instead of reversing it.
+      repo.findEntryById.mockResolvedValue(original);
+
+      const reversal = await service.reverse(original.id, 'Wrong vendor', otherUserId);
+
+      expect(reversal.isCash).toBe(false);
+      expect(reversal.vendorId).toBe(vendorId);
     });
   });
 

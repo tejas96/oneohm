@@ -2,7 +2,14 @@
 
 import { Tooltip } from '@mui/material';
 import { bankLabel } from '@tejas96/shared/constants';
-import { ArrowDownLeft, ArrowUpRight, IndianRupee, ReceiptText } from 'lucide-react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Clock,
+  IndianRupee,
+  ReceiptText,
+  XCircle,
+} from 'lucide-react';
 import { type JSX, useState } from 'react';
 
 import { ChangeOrderDialog, ReverseEntryDialog, WaiveMilestoneDialog } from './correction-dialogs';
@@ -12,6 +19,11 @@ import { MilestoneWaterfall } from './milestone-waterfall';
 import { ReceiptDates } from './receipt-dates';
 import { RecordMoneyDialog } from './record-money-dialog';
 
+import {
+  costPaise,
+  costUsedPct,
+  marginPaise,
+} from '@/components/features/projects/components/project-detail/lib/derive';
 import {
   ColumnHeader,
   DetailCard,
@@ -25,15 +37,16 @@ import type { ProjectDetail } from '@/components/features/projects/hooks/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showToast } from '@/components/ui/sonner';
 import {
+  useLedgerMutations,
   useProjectEntries,
   useProjectLedger,
   type LedgerEntry,
   type MilestoneBalance,
   type ProjectLedgerSummary,
 } from '@/lib/hooks/resources/ledger';
-import { usePaymentApprovals } from '@/lib/hooks/resources/payment-approvals';
+import { usePaymentApprovals, type PaymentApproval } from '@/lib/hooks/resources/payment-approvals';
 import { useGatedAction } from '@/lib/rbac';
-import { cn } from '@/lib/utils';
+import { cn, formatBusinessDate, formatPaymentMethod, toTitleLabel } from '@/lib/utils';
 import { formatPaise } from '@/lib/utils/paise';
 
 /**
@@ -42,6 +55,14 @@ import { formatPaise } from '@/lib/utils/paise';
  * true number and a pointer to the full queue rather than silently truncating.
  */
 const PENDING_PREVIEW_LIMIT = 10;
+
+/**
+ * How many rejected rows the project tab lists inline. Smaller than
+ * `PENDING_PREVIEW_LIMIT` — a rejection is not an open task, just a record of
+ * one, so it gets a quieter, shorter card rather than matching the queue's
+ * full page size.
+ */
+const REJECTED_PREVIEW_LIMIT = 5;
 
 /*
  * Track widths sized to what the cells actually hold, measured rather than
@@ -154,6 +175,11 @@ export function ProjectMoneyTab({
     () => setDialog('changeOrder'),
     'Add change order',
   );
+  // Same code as Waive and Change order: it changes who is chased for a
+  // balance, never money. The switch takes arguments, so the gate is read via
+  // `allowed` at the call site and `onGatedClick` only raises the access dialog.
+  const changePayer = useGatedAction('finance.payments.record', () => undefined, 'Change who pays');
+  const { setMilestonePayer } = useLedgerMutations(projectId);
   const [reversing, setReversing] = useState<LedgerEntry | null>(null);
   const [waiving, setWaiving] = useState<MilestoneBalance | null>(null);
   const receiptPdf = useReceiptPdf();
@@ -163,6 +189,15 @@ export function ProjectMoneyTab({
     projectId,
     status: 'pending',
     limit: PENDING_PREVIEW_LIMIT,
+  });
+  // Newest rejection first — a Recorder checking this card wants to know what
+  // just happened, not the oldest thing still on file.
+  const rejectedApprovals = usePaymentApprovals({
+    projectId,
+    status: 'rejected',
+    sortBy: 'submittedAt',
+    sortOrder: 'desc',
+    limit: REJECTED_PREVIEW_LIMIT,
   });
 
   /**
@@ -205,6 +240,7 @@ export function ProjectMoneyTab({
 
   const s = summary.data;
   const pendingTotal = pendingApprovals.data?.total ?? 0;
+  const rejectedTotal = rejectedApprovals.data?.total ?? 0;
 
   return (
     <div className="grid grid-cols-12 gap-4">
@@ -225,17 +261,25 @@ export function ProjectMoneyTab({
             className="mb-3 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
             style={{ background: TONE.warning.tint, color: TONE.warning.ink }}
           >
-            Not counted in Received or Outstanding. A second person must approve these before they
-            move the customer&apos;s balance.
+            {/* Money in and money out both queue here, so the note names every
+                figure a request can move, not only the customer's balance. */}
+            Not counted in Received, Outstanding or Spent until a second person approves them.
           </p>
           <ul className="flex flex-col gap-1">
             {pendingApprovals.data?.data.map((p) => (
               <li
                 key={p.id}
-                className="flex flex-wrap items-baseline gap-x-2 text-[12.5px] text-foreground-secondary"
+                className="flex flex-wrap items-center gap-x-2 text-[12.5px] text-foreground-secondary"
               >
+                <Clock
+                  className="size-3.5 shrink-0"
+                  strokeWidth={2}
+                  style={{ color: TONE.warning.ink }}
+                  aria-hidden
+                />
                 <Mono className="text-foreground">{p.requestNo}</Mono>
-                <Mono>{p.valueDate}</Mono>
+                <TonePill label={pendingKindLabel(p)} tone="neutral" />
+                <Mono>{formatBusinessDate(p.valueDate)}</Mono>
                 <Mono className="font-medium text-foreground">
                   {formatPaise(Math.abs(p.amountPaise))}
                 </Mono>
@@ -246,6 +290,59 @@ export function ProjectMoneyTab({
           {pendingTotal > PENDING_PREVIEW_LIMIT ? (
             <p className="pt-2 text-[11.5px] text-foreground-tertiary">
               and {pendingTotal - PENDING_PREVIEW_LIMIT} more in Finance › Payment approvals
+            </p>
+          ) : null}
+        </DetailCard>
+      ) : null}
+
+      {/* Never posted to the ledger, so it never shows in Money or Money in
+          and out — this is the only place on the project a rejection is
+          visible without going to the approval queue or the bell. */}
+      {rejectedTotal > 0 ? (
+        <DetailCard
+          label="Recently rejected"
+          aside={`${rejectedTotal} ${rejectedTotal === 1 ? 'request' : 'requests'}`}
+          className="col-span-12"
+        >
+          <p
+            className="mb-3 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
+            style={{ background: TONE.danger.tint, color: TONE.danger.ink }}
+          >
+            Nothing was posted to the ledger for these — record a corrected entry instead of
+            resubmitting the same one.
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {rejectedApprovals.data?.data.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-col gap-0.5 text-[12.5px] text-foreground-secondary"
+              >
+                <span className="flex flex-wrap items-center gap-x-2">
+                  <XCircle
+                    className="size-3.5 shrink-0"
+                    strokeWidth={2}
+                    style={{ color: TONE.danger.ink }}
+                    aria-hidden
+                  />
+                  <Mono className="text-foreground">{p.requestNo}</Mono>
+                  <TonePill label={pendingKindLabel(p)} tone="neutral" />
+                  <Mono>{formatBusinessDate(p.valueDate)}</Mono>
+                  <Mono className="font-medium text-foreground">
+                    {formatPaise(Math.abs(p.amountPaise))}
+                  </Mono>
+                </span>
+                {p.rejectionReason ? (
+                  <span className="pl-5 text-[11px] text-foreground-tertiary">
+                    {p.reviewedByName ? `Rejected by ${p.reviewedByName}: ` : 'Rejected: '}
+                    {p.rejectionReason}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {rejectedTotal > REJECTED_PREVIEW_LIMIT ? (
+            <p className="pt-2 text-[11.5px] text-foreground-tertiary">
+              and {rejectedTotal - REJECTED_PREVIEW_LIMIT} more in Finance › Payment approvals
             </p>
           ) : null}
         </DetailCard>
@@ -267,6 +364,20 @@ export function ProjectMoneyTab({
             recordForMilestone.onGatedClick();
           }}
           onWaive={setWaiving}
+          // A bank can only pay on a loan project. Also offered once any
+          // milestone is already the bank's, so a mistake can be switched back.
+          canSetPayer={
+            Boolean(project?.property?.wantsLoan) ||
+            s.milestones.some((m) => m.payerType === 'lender')
+          }
+          onSetPayer={(m, payerType) => {
+            if (!changePayer.allowed) {
+              changePayer.onGatedClick();
+              return;
+            }
+            setMilestonePayer.mutate({ milestoneId: m.milestoneId, payerType });
+          }}
+          payerSaving={setMilestonePayer.isPending}
         />
       </DetailCard>
 
@@ -353,9 +464,27 @@ function SummaryCard({
   // project with no change orders the two are identical and a "quote ₹X + ₹0"
   // line would be pure noise.
   const hasChangeOrders = s.changeOrderPaise !== 0;
-  const marginPaise = s.contractPaise > 0 ? s.contractPaise - s.spentPaise : null;
-  const usedPct = s.contractPaise > 0 ? Math.round((s.spentPaise / s.contractPaise) * 100) : 0;
-  const overrun = marginPaise != null && marginPaise < 0;
+
+  /**
+   * Cost, not cash.
+   *
+   * `spentPaise` is cash that has left. A bill taken on credit is a cost the
+   * project already carries, and leaving it out reported a project holding
+   * Rs 1,00,000 of unpaid material bills as Rs 1,00,000 more profitable than it
+   * is — with the 80%-of-contract warning staying silent on top.
+   *
+   * Paying the vendor next month does not make the job more profitable this month.
+   *
+   * `costPaise`/`marginPaise`/`costUsedPct` live in derive.ts, not here — the
+   * Overview tab's Money card computes the identical figures from the identical
+   * fields by calling the identical three functions, so the two screens cannot
+   * print two different margins for the same project again.
+   */
+  const committedUnpaidPaise = s.committedUnpaidPaise ?? 0;
+  const cost = costPaise(s);
+  const margin = marginPaise(s);
+  const usedPct = costUsedPct(s);
+  const overrun = margin != null && margin < 0;
 
   const figures: Array<{ label: string; value: number; ink?: string; detail?: string | null }> = [
     {
@@ -373,8 +502,32 @@ function SummaryCard({
       label: 'Outstanding',
       value: s.outstandingPaise,
       ink: s.outstandingPaise > 0 ? TONE.warning.ink : undefined,
+      // The rest of the contract, so the card adds up. On a waived or
+      // cancelled project, Contract minus Received and Outstanding left lakhs
+      // unexplained on this tab while the Overview card showed where they went.
+      detail:
+        [
+          (s.waivedPaise ?? 0) > 0 ? `${formatPaise(s.waivedPaise)} written off` : null,
+          (s.cancelledPaise ?? 0) > 0 ? `${formatPaise(s.cancelledPaise ?? 0)} cancelled` : null,
+        ]
+          .filter(Boolean)
+          .join(' · ') || null,
     },
-    { label: 'Spent', value: s.spentPaise },
+    {
+      label: 'Spent',
+      value: s.spentPaise,
+      // Why margin and Spent differ, said under Spent where the question comes
+      // up. Spent is cash gone. Cost also carries credit bills still owed — or,
+      // when vendors were paid more than they billed, leaves out that advance,
+      // which is not a cost until a bill arrives. Under Contract it read as if
+      // the contract itself had grown.
+      detail:
+        committedUnpaidPaise > 0
+          ? `+ ${formatPaise(committedUnpaidPaise)} owed to vendors, not yet paid`
+          : committedUnpaidPaise < 0
+            ? `${formatPaise(-committedUnpaidPaise)} paid to vendors ahead of their bills`
+            : null,
+    },
   ];
 
   // Only when there is one. A refund is money handed back, not job cost, so it
@@ -432,7 +585,7 @@ function SummaryCard({
         ))}
       </dl>
 
-      {s.contractPaise > 0 && s.spentPaise > 0 && usedPct >= 80 ? (
+      {s.contractPaise > 0 && cost > 0 && usedPct >= 80 ? (
         <p
           className="mt-4 rounded-2xl px-3.5 py-2.5 text-[12.5px] leading-relaxed"
           style={{
@@ -442,12 +595,12 @@ function SummaryCard({
         >
           <span className="font-semibold">
             {overrun
-              ? `Costs have passed the contract by ${formatPaise(Math.abs(marginPaise ?? 0))}.`
+              ? `Costs have passed the contract by ${formatPaise(Math.abs(margin ?? 0))}.`
               : `Costs are at ${usedPct}% of the contract.`}
           </span>{' '}
           {overrun
             ? 'This does not change what the customer owes. If the extra work was agreed, raise a change order so the contract reflects it.'
-            : `Margin left: ${formatPaise(Math.abs(marginPaise ?? 0))}.`}
+            : `Margin left: ${formatPaise(Math.abs(margin ?? 0))}.`}
         </p>
       ) : null}
 
@@ -477,6 +630,17 @@ function SummaryCard({
       ) : null}
     </DetailCard>
   );
+}
+
+/**
+ * What a waiting request is, in the words the rest of this tab uses. A reversal
+ * listed as a bare amount read like a new expense of the same size.
+ */
+function pendingKindLabel(p: Pick<PaymentApproval, 'kind' | 'isCredit'>): string {
+  if (p.kind === 'expense') return p.isCredit ? 'Credit bill' : 'Expense';
+  if (p.kind === 'vendor_payment') return 'Vendor payment';
+  if (p.kind === 'reversal') return 'Reversal';
+  return 'Receipt';
 }
 
 /** Every ledger entry on the project, newest first. */
@@ -579,11 +743,32 @@ function ProjectEntries({
                     <span className="text-[12.5px] text-foreground-secondary">
                       Reversal — {e.reversalReason ?? 'no reason given'}
                     </span>
+                  ) : e.entryType === 'vendor_payment' ? (
+                    // A vendor payment settles a bill recorded earlier — say
+                    // whose, the same way the org-wide Cash page already does.
+                    <span className="block truncate text-[12.5px] text-foreground">
+                      Paid {e.vendorName ?? 'vendor'}
+                    </span>
+                  ) : e.isCash === false ? (
+                    // A bill taken on credit. This is the one screen a credit
+                    // bill is actually RECORDED on, so it must not read as an
+                    // ordinary expense paid on the day, or as a duplicate beside
+                    // the vendor payment that later settles it. "On credit",
+                    // not "Unpaid": the entry can never change, so a status
+                    // label would still say unpaid after the vendor is paid.
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <TonePill label="On credit" tone="neutral" />
+                      <span className="min-w-0 truncate text-[12.5px] text-foreground">
+                        {e.vendorName ?? 'Vendor'}
+                      </span>
+                    </span>
                   ) : (
                     <span className="block truncate text-[12.5px] text-foreground">
                       {e.category
                         ? formatExpenseCategory(e.category)
-                        : (e.paymentMethod ?? e.entryType)}
+                        : e.paymentMethod
+                          ? formatPaymentMethod(e.paymentMethod)
+                          : toTitleLabel(e.entryType)}
                       {e.counterparty ? ` · ${e.counterparty}` : ''}
                       {e.reference ? ` · ${e.reference}` : ''}
                     </span>
@@ -602,10 +787,19 @@ function ProjectEntries({
                   ) : null}
                 </div>
 
+                {/* A reversal is a correction, not money moving: grey, and signed
+                    both ways, so undoing a bill never reads as cash coming in. */}
                 <Mono
                   className="shrink-0 whitespace-nowrap text-right text-[12.5px] font-medium"
-                  style={{ color: e.amountPaise < 0 ? TONE.danger.ink : TONE.success.ink }}
+                  style={{
+                    color: isReversal
+                      ? 'var(--ds-text-secondary)'
+                      : e.amountPaise < 0
+                        ? TONE.danger.ink
+                        : TONE.success.ink,
+                  }}
                 >
+                  {isReversal && e.amountPaise > 0 ? '+' : ''}
                   {formatPaise(e.amountPaise)}
                 </Mono>
 

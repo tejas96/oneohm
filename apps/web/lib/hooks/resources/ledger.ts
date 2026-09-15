@@ -42,7 +42,7 @@ export interface LedgerEntry {
   approvedAt?: string | null;
   id: string;
   entryNo: string;
-  entryType: 'receipt' | 'expense' | 'refund' | 'write_off';
+  entryType: 'receipt' | 'expense' | 'refund' | 'write_off' | 'vendor_payment';
   direction: LedgerDirection;
   /** Signed. Negative rows are reversals or money out. */
   amountPaise: Paise;
@@ -55,6 +55,14 @@ export interface LedgerEntry {
   counterparty?: string | null;
   category?: string | null;
   notes?: string | null;
+  /**
+   * Did cash actually move? False means the cost is taken on and the money is
+   * still in the bank — a bill on credit.
+   */
+  isCash?: boolean;
+  /** The vendor this entry is owed to or paid to. */
+  vendorId?: string | null;
+  vendorName?: string | null;
   /** Set when this entry reverses another — render it as a correction. */
   reversesId?: string | null;
   reversalReason?: string | null;
@@ -126,6 +134,12 @@ export interface ProjectLedgerSummary {
   /** Agreed after signing. `quotedPaise + changeOrderPaise === contractPaise`. */
   changeOrderPaise: Paise;
   expectedPaise: Paise;
+  /**
+   * Money actually written off on a waived milestone — the unpaid remainder,
+   * not the milestone's original expected amount. A milestone waived after
+   * part of it was already collected writes off only what was left; the part
+   * already collected was never at risk and must not be counted twice.
+   */
   waivedPaise: Paise;
   receivedPaise: Paise;
   spentPaise: Paise;
@@ -138,22 +152,46 @@ export interface ProjectLedgerSummary {
   netCashPaise: Paise;
   receiptCount: number;
   milestoneCount: number;
+  /**
+   * Bills on credit less payments made to vendors on this project. NEGATIVE
+   * means vendors hold an advance. Never add it to anything but `spentPaise`,
+   * which already includes those payments — see `costPaise` in derive.ts.
+   */
+  committedUnpaidPaise?: Paise;
+  /** The part of cancelled milestones never collected. Sits beside received/outstanding/written off. */
+  cancelledPaise?: Paise;
   milestones: MilestoneBalance[];
 }
 
 export interface FinanceKpis {
   revenueInRange: number;
+  /** Cash spent on the work: expenses and vendor payments. Refunds are not spend. */
   spendInRange: number;
+  /** Cash handed back to customers. Net subtracts it as well as spend. */
+  refundInRange: number;
   netCashflowInRange: number;
   /** A SNAPSHOT as of today — deliberately not bounded by the selected period. */
   outstandingNow: number;
   overdueCountNow: number;
   /** Of `outstandingNow`, how much is past due. Authoritative — see KPIS_SQL. */
   overdueNow: number;
+  /** Counts are of entries still standing at the end of the period — reversed ones drop out. */
   receiptCountInRange: number;
+  /** Cash expenses only; vendor payments and refunds have their own counts. */
   expenseCountInRange: number;
+  vendorPaymentCountInRange: number;
+  refundCountInRange: number;
   unallocatedCredit: number;
   meterInstallations: number;
+  /**
+   * What we owe vendors, netted — the mirror of `outstandingNow`. A SNAPSHOT
+   * as of today, like that field: a debt does not belong to a month. Like
+   * every other money field on this DTO, `finance-reporting.service.ts`
+   * divides to RUPEES before responding — never feed this straight into
+   * `formatPaise` without the same `* 100` the sibling fields on this
+   * interface already need.
+   */
+  vendorPayable: number;
 }
 
 export interface CashFlowPoint {
@@ -176,9 +214,37 @@ export interface Receivable {
   expectedAmount: number;
   paidAmount: number;
   outstandingAmount: number;
+  /**
+   * Integer paise — RECEIVABLES_SQL selects these alongside the rupee floats
+   * above (`expectedAmount`/`paidAmount`/`outstandingAmount` are the same
+   * three values, divided once server-side for display). Use these, never
+   * `outstandingAmount * 100` or similar, whenever a paise value needs to
+   * cross the wire again (e.g. AttachBankDialog's `outstandingPaise` prop):
+   * multiplying a rupee float back by 100 can land on a non-integer paise
+   * value (float drift), even when nothing currently mis-renders from it.
+   */
+  expectedPaise: Paise;
+  allocatedPaise: Paise;
+  balancePaise: Paise;
   dueDate?: string | null;
   daysOverdue: number;
   derivedStatus: MilestoneDerivedStatus;
+  /**
+   * The customer_properties row this milestone's project is on. Null only
+   * when the project itself has no property, which cannot happen when
+   * `wantsLoan` is true (wants_loan lives on this same row). Feeds
+   * AttachBankDialog's propertyId prop — the recovery-loan "Add bank" action.
+   */
+  propertyId?: string | null;
+  wantsLoan: boolean;
+  /** A BANKS code or a typed name. Render through `bankLabel`. */
+  financingBank?: string | null;
+  meterCompletedAt?: string | null;
+  /**
+   * Null, never 0, when the meter task predates activity logging. Zero would
+   * read as "commissioned today" on a project commissioned months ago.
+   */
+  daysSinceMeter?: number | null;
 }
 
 export interface Paginated<T> {
@@ -221,7 +287,7 @@ export interface LedgerFilters {
  * because `paid_amount` was cached in two tables and could disagree. With every
  * balance derived from the ledger there is exactly one cache to bust.
  */
-const ledgerKeys = {
+export const ledgerKeys = {
   root: () => ['ledger'] as const,
   kpis: (from?: string, to?: string) => [...ledgerKeys.root(), 'kpis', from, to] as const,
   cashFlow: (from?: string, to?: string, grain?: string) =>
@@ -260,14 +326,15 @@ export function useCashFlow(
   from?: string,
   to?: string,
   grain: 'day' | 'week' | 'month' = 'month',
-  options?: { enabled?: boolean },
+  options?: { enabled?: boolean; search?: string },
 ): UseQueryResult<CashFlowPoint[], AxiosError> {
+  const search = options?.search;
   return useQuery({
-    queryKey: ledgerKeys.cashFlow(from, to, grain),
+    queryKey: [...ledgerKeys.cashFlow(from, to, grain), search ?? ''],
     enabled: options?.enabled !== false,
     queryFn: async ({ signal }) => {
       const { data } = await apiClient.get<CashFlowPoint[]>('/finance/cash-flow', {
-        params: { from, to, grain },
+        params: search ? { from, to, grain, search } : { from, to, grain },
         signal,
       });
       return data;
@@ -295,7 +362,10 @@ export function useLedgerEntries(
 }
 
 export interface ReceivableFilters {
-  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus';
+  bucket?: 'current' | '1-30' | '31-60' | '61-90' | '90plus' | 'no_due_date';
+  /** `recovery` = the net meter is in and money is still open. */
+  scope?: 'all' | 'recovery';
+  funding?: 'loan' | 'cash';
   search?: string;
   sortBy?: 'daysOverdue' | 'outstandingAmount' | 'dueDate' | 'customerName';
   sortOrder?: 'asc' | 'desc';
@@ -318,11 +388,20 @@ export interface ReceivablesPage extends Paginated<Receivable> {
     all: number;
     totalOutstandingPaise: number;
     overduePaise: number;
+    /** `no_due_date` is a SUBSET of `current` — collectible but not forecastable. */
+    noDueDate: number;
+    noDueDatePaise: Paise;
+    /** Distinct projects in scope — `all` counts milestones, this counts projects. */
+    recoveryProjects: number;
+    /** Loan-funded projects with no lender milestone at all — the bank's share
+     *  is not being tracked as anyone's debt. Counted, never repaired. */
+    missingLenderProjects: number;
   };
 }
 
 export function useReceivables(
   filters: ReceivableFilters = {},
+  options?: { enabled?: boolean },
 ): UseQueryResult<ReceivablesPage, AxiosError> {
   const params = Object.fromEntries(
     Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
@@ -336,6 +415,206 @@ export function useReceivables(
       });
       return data;
     },
+    enabled: options?.enabled ?? true,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * One delivered job with money still open — a Recovery row. Grouped server-side
+ * from the same milestone rows the Receivables list shows, so `outstandingPaise`
+ * is exactly the sum of this project's open milestones.
+ */
+export interface RecoveryRow {
+  projectId: string;
+  projectNumber: string;
+  projectName: string;
+  customerName: string | null;
+  customerPhone?: string | null;
+  /** The property the project is on; feeds AttachBankDialog. */
+  propertyId?: string | null;
+  wantsLoan: boolean;
+  /** A BANKS code or a typed name. Render through `bankLabel`. */
+  financingBank?: string | null;
+  meterCompletedAt?: string | null;
+  /** Null, never 0, when the meter date is unknown. */
+  daysSinceMeter?: number | null;
+  openMilestones: number;
+  outstandingPaise: Paise;
+  overduePaise: Paise;
+  /** Days overdue of the project's oldest overdue milestone; 0 when none is overdue. */
+  worstDaysOverdue: number;
+  /** Open money on milestones with no due date. */
+  undatedPaise: Paise;
+  /** False on a loan job: the bank's share was never split out of the contract. */
+  hasLenderMilestone: boolean;
+}
+
+export interface RecoveryFilters {
+  funding?: 'loan' | 'cash';
+  /** By the project's worst overdue milestone; `no_due_date` = any undated money. */
+  bucket?: ReceivableFilters['bucket'];
+  search?: string;
+  sortBy?: 'daysSinceMeter' | 'outstanding' | 'worstDaysOverdue' | 'customerName';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface RecoveryPage extends Paginated<RecoveryRow> {
+  /** Server-computed over the whole list, never summed from the visible page. */
+  buckets: {
+    current: number;
+    d1to30: number;
+    d31to60: number;
+    d61to90: number;
+    d90plus: number;
+    /** Projects, not milestones. */
+    all: number;
+    totalOutstandingPaise: Paise;
+    overduePaise: Paise;
+    /** Projects with any open money that has no due date. */
+    noDueDateProjects: number;
+    noDueDatePaise: Paise;
+    missingLenderProjects: number;
+  };
+}
+
+export function useRecovery(
+  filters: RecoveryFilters = {},
+  options?: { enabled?: boolean },
+): UseQueryResult<RecoveryPage, AxiosError> {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
+  );
+  return useQuery({
+    queryKey: [...ledgerKeys.root(), 'recovery', params],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<RecoveryPage>('/finance/recovery', { params, signal });
+      return data;
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 30_000,
+  });
+}
+
+export interface PayableRow {
+  vendorId: string;
+  vendorName: string;
+  vendorCode: string;
+  creditDays?: number | null;
+  /** NEGATIVE means we have paid ahead — an advance, not a debt. */
+  payablePaise: Paise;
+  billedPaise: Paise;
+  paidPaise: Paise;
+  /** The oldest bill with money still unpaid, payments settling the oldest first. */
+  oldestUnpaidBillDate?: string | null;
+  billCount: number;
+  daysPastTerms?: number | null;
+  isInactive: boolean;
+}
+
+export interface PayablesPage extends Paginated<PayableRow> {
+  /**
+   * Debts and advances are summed SEPARATELY here, never netted — owing one
+   * vendor while holding an advance with another is a debt and a credit, not
+   * one smaller number.
+   */
+  totals: { totalPayablePaise: Paise; vendorsOwedCount: number; advancePaise: Paise };
+}
+
+export function usePayables(
+  filters: { search?: string; onlyOwing?: boolean; page?: number; limit?: number } = {},
+): UseQueryResult<PayablesPage, AxiosError> {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== undefined && v !== ''),
+  );
+  return useQuery({
+    queryKey: [...ledgerKeys.root(), 'payables', params],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<PayablesPage>('/finance/payables', { params, signal });
+      return data;
+    },
+    staleTime: 30_000,
+  });
+}
+
+/** One line behind a vendor's payable: a bill on credit, or a payment. */
+export interface VendorPayableLine {
+  entryId: string;
+  entryNo: string;
+  valueDate: string;
+  kind: 'bill' | 'payment';
+  /** Positive for a bill or payment; NEGATIVE for a reversal, which undoes a line. */
+  amountPaise: Paise;
+  paymentMethod?: string | null;
+  reference?: string | null;
+  projectId: string;
+  projectNumber: string;
+  isReversal: boolean;
+  isReversed: boolean;
+  /** The vendor's payable once this line is counted. Negative = an advance. */
+  balanceAfterPaise: Paise;
+}
+
+/** A project one vendor is still owed on — a quick pick in the Pay dialog. */
+export interface VendorProjectPayable {
+  projectId: string;
+  projectNumber: string | null;
+  projectName: string | null;
+  customerName: string | null;
+  /** Credit bills less payments on this project. Always above zero. */
+  owedPaise: Paise;
+  /** Vendor payments on this project still waiting for approval. Not yet in `owedPaise`. */
+  waitingPaise: Paise;
+}
+
+/**
+ * Where a vendor's payable sits, project by project.
+ *
+ * Never served from cache: it seeds a payment, and a stale figure invites
+ * paying a bill twice. `gcTime: 0` drops it when the Pay dialog closes, so the
+ * next open waits for fresh figures instead of showing — and seeding the amount
+ * from — the last open's answer while it refetches.
+ */
+export function useVendorPayableProjects(
+  vendorId: string,
+  options?: { enabled?: boolean },
+): UseQueryResult<{ data: VendorProjectPayable[]; vendorPayablePaise: number }, AxiosError> {
+  return useQuery({
+    queryKey: [...ledgerKeys.root(), 'payables', 'projects', vendorId],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<{
+        data: VendorProjectPayable[];
+        /** The vendor's whole balance, read with the per-project figures. */
+        vendorPayablePaise: number;
+      }>(`/finance/payables/${vendorId}/projects`, { signal });
+      return data;
+    },
+    enabled: Boolean(vendorId) && (options?.enabled ?? true),
+    staleTime: 0,
+    gcTime: 0,
+  });
+}
+
+/**
+ * The credit bills and payments behind one vendor's payable, newest first.
+ * Keyed under the ledger root, so recording or approving money refreshes it.
+ */
+export function useVendorPayableEntries(
+  vendorId: string,
+  options?: { enabled?: boolean },
+): UseQueryResult<{ data: VendorPayableLine[]; total: number }, AxiosError> {
+  return useQuery({
+    queryKey: [...ledgerKeys.root(), 'payables', 'entries', vendorId],
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get<{ data: VendorPayableLine[]; total: number }>(
+        `/finance/payables/${vendorId}/entries`,
+        { signal },
+      );
+      return data;
+    },
+    enabled: Boolean(vendorId) && (options?.enabled ?? true),
     staleTime: 30_000,
   });
 }
@@ -402,9 +681,29 @@ export interface RecordExpenseInput {
   valueDate?: string;
   category: string;
   payee?: string;
+  /** Required by the server when `paymentMethod` is `'credit'`; a 400 otherwise. */
+  vendorId?: string;
   paymentMethod?: string;
   notes?: string;
   proofDocument?: ProofDocumentInput;
+}
+
+export interface RecordVendorPaymentInput {
+  amountPaise: Paise;
+  /** Omit to default to today. */
+  valueDate?: string;
+  vendorId: string;
+  paymentMethod?: string;
+  reference?: string;
+  notes?: string;
+  /**
+   * Plural only. Unlike `RecordReceiptInput`/`RecordExpenseInput`, the
+   * backend's `RecordVendorPaymentDto` has no legacy singular `proofDocument`
+   * field to stay compatible with — this endpoint is new. The global
+   * `ValidationPipe` runs with `forbidNonWhitelisted`, so sending a singular
+   * `proofDocument` here is a 400, not a silently dropped field.
+   */
+  proofDocuments?: ProofDocumentInput[];
 }
 
 /**
@@ -491,6 +790,26 @@ export function useLedgerMutations(projectId: string) {
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
 
+  // Mirrors `recordExpense` exactly — same invalidation, same toast shape.
+  // `invalidate()` busts the whole `ledgerKeys.root()` tree, which is also the
+  // root `usePayables` keys its query on, so a vendor's balance on the
+  // Payables page is never left stale after this is approved.
+  const recordVendorPayment = useMutation({
+    mutationFn: async (input: RecordVendorPaymentInput) => {
+      const { data } = await apiClient.post<PaymentApproval>(
+        `/projects/${projectId}/ledger/vendor-payments`,
+        input,
+      );
+      return data;
+    },
+    onSuccess: (request) => {
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['payment-approvals'] });
+      showToast.success(`${request.requestNo} submitted for approval`);
+    },
+    onError: (error) => showToast.error(getErrorMessage(error)),
+  });
+
   /** Corrections are new rows — the original stays visible forever. */
   const reverseEntry = useMutation({
     mutationFn: async ({ entryId, reason }: { entryId: string; reason: string }) => {
@@ -542,5 +861,41 @@ export function useLedgerMutations(projectId: string) {
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
 
-  return { recordReceipt, recordExpense, reverseEntry, addChangeOrder, waiveMilestone };
+  /**
+   * Who is expected to pay a milestone — the customer or their bank. Moves no
+   * money; it changes who is chased for what is still owed, which is what the
+   * Recovery — Loan banner counts, so invalidating the ledger refreshes it.
+   */
+  const setMilestonePayer = useMutation({
+    mutationFn: async ({
+      milestoneId,
+      payerType,
+    }: {
+      milestoneId: string;
+      payerType: 'customer' | 'lender';
+    }) => {
+      const { data } = await apiClient.patch<{ id: string; payerType: string }>(
+        `/ledger/milestones/${milestoneId}/payer`,
+        { payerType },
+      );
+      return data;
+    },
+    onSuccess: (_data, { payerType }) => {
+      invalidate();
+      showToast.success(
+        payerType === 'lender' ? "Marked as the bank's share" : "Marked as the customer's share",
+      );
+    },
+    onError: (error) => showToast.error(getErrorMessage(error)),
+  });
+
+  return {
+    recordReceipt,
+    recordExpense,
+    recordVendorPayment,
+    reverseEntry,
+    addChangeOrder,
+    waiveMilestone,
+    setMilestonePayer,
+  };
 }

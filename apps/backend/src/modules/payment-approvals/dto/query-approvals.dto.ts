@@ -15,9 +15,9 @@ export class QueryApprovalsDto {
   @IsIn(['pending', 'approved', 'rejected', 'cancelled'])
   status?: PendingStatus;
 
-  @ApiPropertyOptional({ enum: ['receipt', 'expense', 'reversal'] })
+  @ApiPropertyOptional({ enum: ['receipt', 'expense', 'reversal', 'vendor_payment'] })
   @IsOptional()
-  @IsIn(['receipt', 'expense', 'reversal'])
+  @IsIn(['receipt', 'expense', 'reversal', 'vendor_payment'])
   kind?: PendingKind;
 
   @ApiPropertyOptional()

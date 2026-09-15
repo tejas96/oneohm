@@ -15,9 +15,20 @@ import {
   RECEIVABLES_BUCKETS_SQL,
   RECEIVABLES_COUNT_SQL,
   RECEIVABLES_SQL,
+  RECOVERY_BUCKETS_SQL,
+  RECOVERY_COUNT_SQL,
+  RECOVERY_PAGE_SQL,
   SPEND_BY_CATEGORY_SQL,
   TOP_CUSTOMERS_OUTSTANDING_SQL,
 } from './finance-ledger-queries.sql';
+import {
+  PAYABLES_COUNT_SQL,
+  PAYABLES_PAGE_SQL,
+  PAYABLES_TOTALS_SQL,
+  VENDOR_PAYABLE_BY_PROJECT_SQL,
+  VENDOR_PAYABLE_ENTRIES_COUNT_SQL,
+  VENDOR_PAYABLE_ENTRIES_SQL,
+} from './finance-payables-queries.sql';
 
 const rs = (paise: unknown): number => Number(paise ?? 0) / 100;
 
@@ -26,17 +37,26 @@ export type CashFlowGrain = 'day' | 'week' | 'month' | 'year';
 
 export interface FinanceKpis {
   revenueInRange: number;
+  /** Cash spent on the work: expenses and vendor payments. Refunds are not spend. */
   spendInRange: number;
+  /** Cash handed back to customers. Summed apart from spend; Net subtracts both. */
+  refundInRange: number;
   netCashflowInRange: number;
   outstandingNow: number;
   overdueCountNow: number;
   /** Of `outstandingNow`, how much is past its due date. Same population. */
   overdueNow: number;
+  /** Counts are of entries still standing at the end of the period. */
   receiptCountInRange: number;
+  /** Cash expenses only — vendor payments and refunds are counted on their own. */
   expenseCountInRange: number;
+  vendorPaymentCountInRange: number;
+  refundCountInRange: number;
   unallocatedCredit: number;
   /** Meter installations completed in the period — dated by task completion. */
   meterInstallations: number;
+  /** What we owe vendors, netted. A snapshot as of today, like `outstandingNow`. */
+  vendorPayable: number;
 }
 
 /**
@@ -72,14 +92,18 @@ export class FinanceReportingService {
     return {
       revenueInRange: rs(row?.revenuePaise),
       spendInRange: rs(row?.spendPaise),
+      refundInRange: rs(row?.refundPaise),
       netCashflowInRange: rs(row?.netPaise),
       outstandingNow: rs(row?.outstandingPaise),
       overdueCountNow: Number(row?.overdueCount ?? 0),
       overdueNow: rs(row?.overduePaise),
       receiptCountInRange: Number(row?.receiptCount ?? 0),
       expenseCountInRange: Number(row?.expenseCount ?? 0),
+      vendorPaymentCountInRange: Number(row?.vendorPaymentCount ?? 0),
+      refundCountInRange: Number(row?.refundCount ?? 0),
       unallocatedCredit: rs(row?.unallocatedPaise),
       meterInstallations: Number(row?.meterInstallations ?? 0),
+      vendorPayable: rs(row?.vendorPayablePaise),
     };
   }
 
@@ -91,8 +115,9 @@ export class FinanceReportingService {
     from: string,
     to: string,
     grain: CashFlowGrain = 'month',
+    search?: string | null,
   ): Promise<Array<{ month: string; cashIn: number; cashOut: number; net: number }>> {
-    const rows = await this.dataSource.query(CASH_FLOW_SQL, [from, to, grain]);
+    const rows = await this.dataSource.query(CASH_FLOW_SQL, [from, to, grain, search ?? null]);
     return rows.map((r: Record<string, unknown>) => ({
       month: String(r.bucket),
       cashIn: rs(r.cashInPaise),
@@ -214,9 +239,10 @@ export class FinanceReportingService {
     return {
       data: rows.map((r: Record<string, unknown>) => ({
         ...r,
+        // Paise only. A rupee `amount` used to ride along beside it; nothing read
+        // it, and two units of the same money in one row is how a component
+        // ends up adding the wrong one.
         amountPaise: Number(r.amountPaise),
-        // rupee value for display; never sum these client-side
-        amount: rs(r.amountPaise),
       })),
       total: Number(countRow?.count ?? 0),
       page,
@@ -237,6 +263,8 @@ export class FinanceReportingService {
       limit?: number;
       bucket?: string | null;
       search?: string | null;
+      scope?: string | null;
+      funding?: string | null;
       sortBy?: string | null;
       sortOrder?: 'asc' | 'desc' | null;
     } = {},
@@ -249,7 +277,14 @@ export class FinanceReportingService {
   }> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
-    const filters = [opts.bucket ?? null, opts.search ?? null];
+    // Shared by RECEIVABLES_SQL and RECEIVABLES_COUNT_SQL, which both expand
+    // RECEIVABLES_FILTERS: $1 bucket, $2 search, $3 scope, $4 funding.
+    const filters = [
+      opts.bucket ?? null,
+      opts.search ?? null,
+      opts.scope ?? null,
+      opts.funding ?? null,
+    ];
 
     const [rows, [countRow], [bucketRow]] = await Promise.all([
       this.dataSource.query(RECEIVABLES_SQL, [
@@ -260,10 +295,17 @@ export class FinanceReportingService {
         (page - 1) * limit,
       ]),
       this.dataSource.query(RECEIVABLES_COUNT_SQL, filters),
-      // Follows `search` but not `bucket`: search narrows the whole page, so
-      // the headline totals must follow it, while selecting one chip must not
-      // zero the counts on the others.
-      this.dataSource.query(RECEIVABLES_BUCKETS_SQL, [opts.search ?? null]),
+      // Follows `search`, `scope` and `funding` but not `bucket`: those three
+      // narrow the whole page, so the headline totals must follow them, while
+      // selecting one ageing chip must not zero the counts on the others.
+      // RECEIVABLES_BUCKETS_SQL does NOT share RECEIVABLES_FILTERS and has its
+      // own, independent placeholder numbering: $1 search, $2 scope, $3
+      // funding — bucket is never passed to it at all.
+      this.dataSource.query(RECEIVABLES_BUCKETS_SQL, [
+        opts.search ?? null,
+        opts.scope ?? null,
+        opts.funding ?? null,
+      ]),
     ]);
 
     return {
@@ -273,6 +315,14 @@ export class FinanceReportingService {
         paidAmount: rs(r.allocatedPaise),
         outstandingAmount: rs(r.balancePaise),
         daysOverdue: Number(r.daysOverdue ?? 0),
+        // Raw bigint columns straight off the view, not SUM results — but
+        // node-postgres still hands bigint back as a string either way, same
+        // as getPayables below. AttachBankDialog (receivables-columns.tsx)
+        // holds this raw value instead of formatting it, so it must arrive
+        // as a number, not a string that happens to divide correctly.
+        expectedPaise: Number(r.expectedPaise),
+        allocatedPaise: Number(r.allocatedPaise),
+        balancePaise: Number(r.balancePaise),
       })),
       buckets: Object.fromEntries(
         Object.entries(bucketRow ?? {}).map(([k, v]) => [k, Number(v ?? 0)]),
@@ -280,6 +330,190 @@ export class FinanceReportingService {
       total: Number(countRow?.count ?? 0),
       page,
       limit,
+    };
+  }
+
+  /**
+   * Recovery, one row per project — the call list. Same page / limit / sort
+   * contract as `getReceivables`; every figure is computed server-side over
+   * the whole list, never summed from the visible page.
+   */
+  async getRecovery(
+    opts: {
+      page?: number;
+      limit?: number;
+      funding?: string | null;
+      bucket?: string | null;
+      search?: string | null;
+      sortBy?: string | null;
+      sortOrder?: 'asc' | 'desc' | null;
+    } = {},
+  ): Promise<{
+    data: Record<string, unknown>[];
+    total: number;
+    page: number;
+    limit: number;
+    buckets: Record<string, number>;
+  }> {
+    const page = Math.max(1, opts.page ?? 1);
+    const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
+    // $1 funding, $2 search in every query; $3 bucket in page and count only.
+    const base = [opts.funding ?? null, opts.search ?? null];
+    const filters = [...base, opts.bucket ?? null];
+
+    const [rows, [countRow], [bucketRow]] = await Promise.all([
+      this.dataSource.query(RECOVERY_PAGE_SQL, [
+        ...filters,
+        opts.sortBy ?? null,
+        opts.sortOrder ?? 'desc',
+        limit,
+        (page - 1) * limit,
+      ]),
+      this.dataSource.query(RECOVERY_COUNT_SQL, filters),
+      this.dataSource.query(RECOVERY_BUCKETS_SQL, base),
+    ]);
+
+    return {
+      data: rows.map((r: Record<string, unknown>) => ({
+        ...r,
+        // bigint arrives as a string; adding two would concatenate.
+        outstandingPaise: Number(r.outstandingPaise),
+        overduePaise: Number(r.overduePaise),
+        undatedPaise: Number(r.undatedPaise),
+      })),
+      buckets: Object.fromEntries(
+        Object.entries(bucketRow ?? {}).map(([k, v]) => [k, Number(v ?? 0)]),
+      ),
+      total: Number(countRow?.count ?? 0),
+      page,
+      limit,
+    };
+  }
+
+  /**
+   * What we owe each vendor — a net balance per vendor, not bill-by-bill.
+   *
+   * `payablePaise` may be NEGATIVE: that is an advance, money paid ahead of
+   * any bill, and it is never clamped to zero. `totals` sums debts and
+   * advances SEPARATELY and never nets them — owing one vendor while holding
+   * an advance with another is a debt and a credit, not one smaller number.
+   * A soft-deleted vendor still carrying a balance stays in the list,
+   * flagged `isInactive`; only a soft-deleted vendor at exactly zero
+   * disappears.
+   *
+   * Mirrors `getReceivables` exactly: same option names, same one-indexed
+   * page, same offset maths, three queries in one `Promise.all`.
+   */
+  /**
+   * The credit bills and payments behind one vendor's payable, newest first,
+   * with the balance after each line. At most 100 lines; `total` says how many
+   * exist so the screen can say when older ones are not shown.
+   */
+  async getVendorPayableEntries(
+    vendorId: string,
+  ): Promise<{ data: Record<string, unknown>[]; total: number }> {
+    const [rows, [countRow]] = await Promise.all([
+      this.dataSource.query(VENDOR_PAYABLE_ENTRIES_SQL, [vendorId]),
+      this.dataSource.query(VENDOR_PAYABLE_ENTRIES_COUNT_SQL, [vendorId]),
+    ]);
+    return {
+      // Coerce bigints: node-postgres hands them over as strings, and adding
+      // two of those would concatenate.
+      data: rows.map((r: Record<string, unknown>) => ({
+        ...r,
+        amountPaise: Number(r.amountPaise),
+        balanceAfterPaise: Number(r.balanceAfterPaise),
+      })),
+      total: Number(countRow?.count ?? 0),
+    };
+  }
+
+  /**
+   * Projects this vendor is still owed on, with any payment already waiting
+   * approval — and the vendor's whole balance read in the same request, so the
+   * Pay dialog never sets fresh per-project figures beside a total copied from
+   * the list when Pay was clicked.
+   */
+  async getVendorPayableByProject(vendorId: string): Promise<{
+    data: Array<{
+      projectId: string;
+      projectNumber: string | null;
+      projectName: string | null;
+      customerName: string | null;
+      owedPaise: number;
+      waitingPaise: number;
+    }>;
+    vendorPayablePaise: number;
+  }> {
+    const [rows, [totalRow]]: [
+      Array<Record<string, unknown>>,
+      Array<{ payablePaise: string | number } | undefined>,
+    ] = await Promise.all([
+      this.dataSource.query(VENDOR_PAYABLE_BY_PROJECT_SQL, [vendorId]),
+      this.dataSource.query(
+        'SELECT payable_paise AS "payablePaise" FROM v_vendor_payable WHERE vendor_id = $1',
+        [vendorId],
+      ),
+    ]);
+    return {
+      vendorPayablePaise: Number(totalRow?.payablePaise ?? 0),
+      data: rows.map((r) => ({
+        projectId: String(r.projectId),
+        projectNumber: (r.projectNumber as string | null) ?? null,
+        projectName: (r.projectName as string | null) ?? null,
+        customerName: (r.customerName as string | null) ?? null,
+        // bigint arrives as a string; see getVendorPayableEntries.
+        owedPaise: Number(r.owedPaise),
+        waitingPaise: Number(r.waitingPaise),
+      })),
+    };
+  }
+
+  async getPayables(
+    opts: {
+      page?: number;
+      limit?: number;
+      search?: string | null;
+      onlyOwing?: boolean | null;
+    } = {},
+  ): Promise<{
+    data: Record<string, unknown>[];
+    total: number;
+    page: number;
+    limit: number;
+    totals: { totalPayablePaise: number; vendorsOwedCount: number; advancePaise: number };
+  }> {
+    const page = Math.max(1, opts.page ?? 1);
+    const limit = Math.min(200, Math.max(1, opts.limit ?? 25));
+    // Shared by PAYABLES_PAGE_SQL and PAYABLES_COUNT_SQL: $1 search, $2 onlyOwing.
+    const filters = [opts.search ?? null, opts.onlyOwing ?? null];
+
+    const [rows, [countRow], [totalsRow]] = await Promise.all([
+      this.dataSource.query(PAYABLES_PAGE_SQL, [...filters, limit, (page - 1) * limit]),
+      this.dataSource.query(PAYABLES_COUNT_SQL, filters),
+      // Follows `search` only, not `onlyOwing`: the headline totals describe
+      // every vendor matching the search, not just the page's filtered rows —
+      // the same reason RECEIVABLES_BUCKETS_SQL ignores `bucket`.
+      this.dataSource.query(PAYABLES_TOTALS_SQL, [opts.search ?? null]),
+    ]);
+
+    return {
+      data: rows.map((r: Record<string, unknown>) => ({
+        ...r,
+        // Raw bigint columns straight off the view, not SUM results — but
+        // node-postgres still hands bigint back as a string either way.
+        payablePaise: Number(r.payablePaise),
+        billedPaise: Number(r.billedPaise),
+        paidPaise: Number(r.paidPaise),
+      })),
+      total: Number(countRow?.count ?? 0),
+      page,
+      limit,
+      totals: {
+        totalPayablePaise: Number(totalsRow?.totalPayablePaise ?? 0),
+        vendorsOwedCount: Number(totalsRow?.vendorsOwedCount ?? 0),
+        advancePaise: Number(totalsRow?.advancePaise ?? 0),
+      },
     };
   }
 }

@@ -69,7 +69,7 @@ export function VendorPicker<T extends FieldValues>({
   );
 }
 
-interface ControlledProps {
+export interface VendorPickerControlledProps {
   value: string;
   onChange: (next: string) => void;
   options: VendorOption[];
@@ -80,9 +80,26 @@ interface ControlledProps {
   required: boolean;
   placeholder: string;
   error?: string;
+  /**
+   * Offer to create a vendor when what was typed matches none. Receives the
+   * typed name. Leave it out and the picker behaves exactly as it always has —
+   * the Inventory form does not pass it.
+   */
+  onCreateNew?: (name: string) => void;
 }
 
-function VendorPickerControlled({
+/** A value no real vendor id can take, marking the "add a new vendor" row. */
+const CREATE_VALUE = '__create_vendor__';
+
+/**
+ * The controlled half of the vendor picker, with no react-hook-form
+ * dependency — for a caller like `RecordMoneyDialog` that manages its own
+ * `useState` and has no form to hang a `Control` off of. `VendorPicker` above
+ * is a thin `Controller` wrapper around this; both render the exact same
+ * autocomplete, so a vendor picked here and one picked through the RHF form
+ * look and behave identically.
+ */
+export function VendorPickerControlled({
   value,
   onChange,
   options,
@@ -93,7 +110,8 @@ function VendorPickerControlled({
   required,
   placeholder,
   error,
-}: ControlledProps): React.JSX.Element {
+  onCreateNew,
+}: VendorPickerControlledProps): React.JSX.Element {
   const pageHasMatch = options.some((o) => o.value === value);
 
   const detail = useResourceDetail<Vendor>({
@@ -124,15 +142,41 @@ function VendorPickerControlled({
   const selected =
     mergedOptions.find((o) => o.value === value) ?? (value && preloaded ? preloaded : null);
 
+  /*
+   * "Add “Sharma Traders” as a new vendor", LAST in the list. Search is fuzzy,
+   * so typing "Arihant" also lists "Arihant Associates" — an existing vendor
+   * must sit above the offer to create one, or people add duplicates.
+   *
+   * Hidden when the typed text already names a vendor. An option's label is
+   * "Name (CODE)", and after a pick the input holds that label, so both forms
+   * count as a match — otherwise picking a vendor would offer to create it.
+   */
+  const typed = inputValue.trim();
+  const typedLower = typed.toLowerCase();
+  const namesExisting = mergedOptions.some((o) => {
+    const label = o.label.toLowerCase();
+    return label === typedLower || label.startsWith(`${typedLower} (`);
+  });
+  const optionsWithCreate =
+    onCreateNew && typed && !namesExisting
+      ? [...mergedOptions, { value: CREATE_VALUE, label: `Add “${typed}” as a new vendor` }]
+      : mergedOptions;
+
   return (
     <MUIInput
       mode="autocomplete"
       fieldLabel={label}
       required={required}
-      options={mergedOptions}
+      options={optionsWithCreate}
       value={selected}
       onChange={(opt) => {
         const next = opt && typeof opt === 'object' && 'value' in opt ? String(opt.value) : '';
+        if (next === CREATE_VALUE) {
+          // Not a selection. The caller opens its own dialog and sets the
+          // search text itself when that closes.
+          onCreateNew?.(typed);
+          return;
+        }
         onChange(next);
       }}
       inputValue={inputValue}

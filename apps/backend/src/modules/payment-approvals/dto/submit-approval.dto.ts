@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsDateString,
@@ -27,8 +27,8 @@ import type { PendingKind } from '../entities';
  * a reversal cannot silently reverse a different figure than the original.
  */
 export class SubmitApprovalDto {
-  @ApiProperty({ enum: ['receipt', 'expense', 'reversal'] })
-  @IsIn(['receipt', 'expense', 'reversal'])
+  @ApiProperty({ enum: ['receipt', 'expense', 'reversal', 'vendor_payment'] })
+  @IsIn(['receipt', 'expense', 'reversal', 'vendor_payment'])
   kind!: PendingKind;
 
   @ApiPropertyOptional({ description: 'Required for receipt and expense.' })
@@ -57,6 +57,12 @@ export class SubmitApprovalDto {
     example: 'upi',
     description: 'upi | neft | rtgs | imps | cheque | cash | dd',
   })
+  /**
+   * Normalized to lowercase and trimmed before comparison. `is_cash` is derived
+   * from an exact match on this value, so a capitalised or padded `Credit` would
+   * silently be filed as cash spent.
+   */
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   @IsString()
   @IsOptional()
   @MaxLength(50)
@@ -73,6 +79,11 @@ export class SubmitApprovalDto {
   @IsOptional()
   @MaxLength(255)
   counterparty?: string;
+
+  @ApiPropertyOptional({ description: 'The vendor this money is owed to or paid to' })
+  @IsUUID()
+  @IsOptional()
+  vendorId?: string;
 
   @ApiPropertyOptional({ description: 'Required for expense.' })
   @ValidateIf((o: SubmitApprovalDto) => o.kind === 'expense')

@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
+import { useCallback } from 'react';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
@@ -14,7 +15,7 @@ import { getErrorMessage } from '@/lib/utils/error';
 // only learns about it when an approver says yes.
 // ============================================================================
 
-export type ApprovalKind = 'receipt' | 'expense' | 'reversal';
+export type ApprovalKind = 'receipt' | 'expense' | 'reversal' | 'vendor_payment';
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
 export interface PaymentApproval {
@@ -39,15 +40,29 @@ export interface PaymentApproval {
   category?: string | null;
   reference?: string | null;
   notes?: string | null;
+  /** The vendor this claim is about. Set only when `kind === 'vendor_payment'`. */
+  vendorId?: string | null;
+  vendorName?: string | null;
+  /** True when approving this records an obligation rather than moving cash. */
+  isCredit?: boolean;
   reversesEntryId?: string | null;
   reversalReason?: string | null;
+  /** For a reversal: the entry it undoes. */
+  reversesEntryNo?: string | null;
+  reversesEntryType?: string | null;
+  reversesIsCash?: boolean | null;
+  reversesVendorName?: string | null;
   /** Every image attached to this payment, oldest first. */
   proofs?: ProofRef[];
   submittedBy: string;
   submittedByName?: string | null;
+  /** Comma-separated, most senior first. Null when the user holds no role. */
+  submittedByRoles?: string | null;
   submittedAt: string;
   reviewedBy?: string | null;
   reviewedByName?: string | null;
+  /** Comma-separated, most senior first. Null when the user holds no role. */
+  reviewedByRoles?: string | null;
   reviewedAt?: string | null;
   rejectionReason?: string | null;
   ledgerEntryId?: string | null;
@@ -91,15 +106,37 @@ interface ImpactLine {
   settlesFully: boolean;
 }
 
+/**
+ * A vendor payment's impact on what we owe that vendor — a sibling of `lines`,
+ * never folded into it: `lines`/`ImpactLine` is milestone-only, and a vendor
+ * payment never allocates against a milestone. Present only when
+ * `kind === 'vendor_payment'`.
+ */
+export interface VendorPayableImpact {
+  vendorName: string | null;
+  /** The vendor's net payable right now. */
+  beforePaise: number;
+  /**
+   * `beforePaise` minus this payment's magnitude. Can go NEGATIVE — a vendor
+   * advance, paying ahead of what's owed — and is deliberately not clamped:
+   * the negative number is what tells the approver this payment overshoots
+   * the payable.
+   */
+  afterPaise: number;
+}
+
 export interface ApprovalImpact {
   lines: ImpactLine[];
   unallocatedPaise: number;
+  vendorPayable?: VendorPayableImpact;
 }
 
 export interface ApprovalSummary {
   pendingCount: number;
-  /** Total size of what is waiting, in paise. */
-  pendingValuePaise: number;
+  /** Money waiting to come in, in paise. Never added to `pendingOutPaise`. */
+  pendingInPaise: number;
+  /** Money waiting to go out, in paise. */
+  pendingOutPaise: number;
   approvedToday: number;
   /** Hours the longest-waiting request has been queued. Null when none. */
   oldestPendingHours: number | null;
@@ -196,18 +233,30 @@ export function useApprovalSummary(): UseQueryResult<ApprovalSummary, AxiosError
 // Mutations
 // ============================================================================
 
-export function useApprovalMutations() {
+/**
+ * Refetch every screen that shows money waiting or moved: the approval queue and
+ * its cards, the ledger, and the org-wide finance figures.
+ *
+ * Approving here needs it, and so does hearing that someone ELSE submitted,
+ * approved or rejected a payment — without it the queue and a project's
+ * "Awaiting approval" kept showing the old state until a manual refresh, even
+ * while the bell announced the change.
+ */
+export function useRefreshMoneyViews(): () => void {
   const queryClient = useQueryClient();
+  return useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: approvalKeys.root() });
+    void queryClient.invalidateQueries({ queryKey: ['ledger'] });
+    void queryClient.invalidateQueries({ queryKey: ['finance-org'] });
+  }, [queryClient]);
+}
 
+export function useApprovalMutations() {
   /**
    * Approving moves money, so the ledger and org-finance caches are stale too —
    * not just the approval list.
    */
-  const invalidate = (): void => {
-    void queryClient.invalidateQueries({ queryKey: approvalKeys.root() });
-    void queryClient.invalidateQueries({ queryKey: ['ledger'] });
-    void queryClient.invalidateQueries({ queryKey: ['finance-org'] });
-  };
+  const invalidate = useRefreshMoneyViews();
 
   const approve = useMutation({
     mutationFn: async (id: string) => {

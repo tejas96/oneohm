@@ -18,7 +18,7 @@ import {
   type MilestoneBalance,
 } from '@/lib/hooks/resources/ledger';
 import { useGatedAction } from '@/lib/rbac';
-import { formatDate } from '@/lib/utils';
+import { formatBusinessDate, formatDate } from '@/lib/utils';
 import { formatPaise, rupeesToPaise } from '@/lib/utils/paise';
 
 /**
@@ -65,7 +65,10 @@ export function ReverseEntryDialog({
       <MUIDialogHeader>
         <MUIDialogTitle>Reverse {entry.entryNo}</MUIDialogTitle>
         <MUIDialogDescription>
-          {formatPaise(entry.amountPaise)} received {entry.valueDate}
+          {/* Money in was received; a bill on credit was billed; anything else out was paid. */}
+          {formatPaise(entry.amountPaise)}{' '}
+          {entry.direction === 'in' ? 'received' : entry.isCash === false ? 'billed' : 'paid'}{' '}
+          {formatBusinessDate(entry.valueDate)}
           {entry.valueDateIsInferred ? ' (approx)' : ''}, recorded {formatDate(entry.createdAt)}
         </MUIDialogDescription>
       </MUIDialogHeader>

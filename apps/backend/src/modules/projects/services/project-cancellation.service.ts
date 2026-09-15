@@ -403,10 +403,14 @@ export class ProjectCancellationService {
     const totals: Record<string, number> = {};
     for (const row of rows) totals[row.payer_type] = Number(row.paise);
 
+    // Refunds already paid come off first — the same rule as unapplied credit
+    // in v_project_balance (18-project-balance-v4). Without it, credit handed
+    // back before the cancellation was offered for refund a second time.
     const [unallocated]: Array<{ paise: string }> = await this.dataSource.query(
       `SELECT (COALESCE(SUM(e.amount_paise) FILTER (WHERE e.direction = 'in'), 0)
              - COALESCE((SELECT SUM(a.amount_paise) FROM ledger_allocations a
-                          WHERE a.project_id = $1), 0))::text AS paise
+                          WHERE a.project_id = $1), 0)
+             - COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.entry_type = 'refund'), 0))::text AS paise
          FROM ledger_entries e WHERE e.project_id = $1`,
       [projectId],
     );

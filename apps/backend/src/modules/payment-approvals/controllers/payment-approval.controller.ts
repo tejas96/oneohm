@@ -21,6 +21,7 @@ import {
   BulkApproveResult,
   ImpactLine,
   PaymentApprovalService,
+  VendorPayableImpact,
 } from '../services';
 
 /**
@@ -104,9 +105,11 @@ export class PaymentApprovalController {
       'Computed with the same waterfall the real write uses, but nothing is committed. A ' +
       'preview of this moment — the binding allocation is recalculated at approval.',
   })
-  async impact(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ lines: ImpactLine[]; unallocatedPaise: number }> {
+  async impact(@Param('id', ParseUUIDPipe) id: string): Promise<{
+    lines: ImpactLine[];
+    unallocatedPaise: number;
+    vendorPayable?: VendorPayableImpact;
+  }> {
     return this.service.previewImpact(id);
   }
 

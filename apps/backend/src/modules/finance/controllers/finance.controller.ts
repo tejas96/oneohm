@@ -1,14 +1,20 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { type PaginatedResponse } from '@tejas96/shared/types';
 
 import { JwtAuthGuard } from '../../auth/guards';
-import { CustomerAgingDto, OutstandingQueryDto, OutstandingTermDto } from '../dto';
+import {
+  CustomerAgingDto,
+  OutstandingQueryDto,
+  OutstandingTermDto,
+  PayablesQueryDto,
+} from '../dto';
 import {
   CashFlowQueryDto,
   KpisQueryDto,
   LedgerEntriesQueryDto,
   ReceivablesQueryDto,
+  RecoveryQueryDto,
 } from '../dto/ledger-query.dto';
 import { FinanceReportingService } from '../services/finance-reporting.service';
 
@@ -78,7 +84,7 @@ export class FinanceController {
     @Query() query: CashFlowQueryDto,
   ): Promise<Awaited<ReturnType<FinanceReportingService['getCashFlow']>>> {
     const { from, to } = resolveRange(query.from, query.to);
-    return this.reportingService.getCashFlow(from, to, query.grain ?? 'month');
+    return this.reportingService.getCashFlow(from, to, query.grain ?? 'month', query.search);
   }
 
   @Get('entries')
@@ -118,9 +124,85 @@ export class FinanceController {
       limit: query.limit ?? 25,
       bucket: query.bucket,
       search: query.search,
+      scope: query.scope,
+      funding: query.funding,
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,
     });
+  }
+
+  // A literal path, declared alongside the other literal GETs above rather
+  // than below — the same discipline as `payment-approvals/summary` — so a
+  // future vendor-scoped `:vendorId` route on this controller can never
+  // capture it.
+  @Get('recovery')
+  @ApiOperation({
+    summary: 'Recovery — delivered jobs with money still open, one row per project',
+    description:
+      'The net meter is installed and at least one active milestone still has a balance. ' +
+      "Grouped from the same rows as receivables?scope=recovery, so each project's total is " +
+      'the sum of those milestone rows. Chips bucket projects by their worst overdue milestone.',
+  })
+  async getRecovery(
+    @Query() query: RecoveryQueryDto,
+  ): Promise<Awaited<ReturnType<FinanceReportingService['getRecovery']>>> {
+    return this.reportingService.getRecovery({
+      page: query.page ?? 1,
+      limit: query.limit ?? 25,
+      funding: query.funding,
+      bucket: query.bucket,
+      search: query.search,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
+    });
+  }
+
+  @Get('payables')
+  @ApiOperation({
+    summary: 'What we owe each vendor',
+    description:
+      'A net balance per vendor — bills taken on credit, less what has been paid. No ' +
+      'bill-by-bill matching: a net figure cannot drift from the rows behind it. A negative ' +
+      'balance is an advance, not a debt, and is reported separately rather than netted off.',
+  })
+  async getPayables(
+    @Query() query: PayablesQueryDto,
+  ): Promise<Awaited<ReturnType<FinanceReportingService['getPayables']>>> {
+    return this.reportingService.getPayables({
+      page: query.page ?? 1,
+      limit: query.limit ?? 25,
+      search: query.search,
+      onlyOwing: query.onlyOwing,
+    });
+  }
+
+  @Get('payables/:vendorId/entries')
+  @ApiOperation({
+    summary: "The credit bills and payments behind one vendor's payable",
+    description:
+      "Newest first, at most 100 lines, each with the vendor's balance after it. Only rows that " +
+      'change what we owe appear — an expense paid on the day never did.',
+  })
+  @ApiParam({ name: 'vendorId', type: String })
+  async getVendorPayableEntries(
+    @Param('vendorId', ParseUUIDPipe) vendorId: string,
+  ): Promise<Awaited<ReturnType<FinanceReportingService['getVendorPayableEntries']>>> {
+    return this.reportingService.getVendorPayableEntries(vendorId);
+  }
+
+  @Get('payables/:vendorId/projects')
+  @ApiOperation({
+    summary: 'Projects one vendor is still owed on',
+    description:
+      'Credit bills less payments, per project, largest first — only projects still owing. ' +
+      'waitingPaise is vendor payments on that project already queued for approval, which ' +
+      'do not reduce owedPaise until approved.',
+  })
+  @ApiParam({ name: 'vendorId', type: String })
+  async getVendorPayableByProject(
+    @Param('vendorId', ParseUUIDPipe) vendorId: string,
+  ): Promise<Awaited<ReturnType<FinanceReportingService['getVendorPayableByProject']>>> {
+    return this.reportingService.getVendorPayableByProject(vendorId);
   }
 
   // ============================================

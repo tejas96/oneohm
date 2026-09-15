@@ -308,6 +308,54 @@ export class MilestoneService {
   }
 
   /**
+   * Say who is expected to pay a milestone — the customer, or their bank.
+   *
+   * On a loan-financed project the bank's share (the 70 of a 10/70/20) should be
+   * `lender`, or the customer gets chased for money the bank owes. Milestones
+   * generated before that rule existed were all marked `customer`, and nothing
+   * could correct them: the Recovery page flagged every loan project with no way
+   * to act on it.
+   *
+   * No money moves. Receipts already allocated stay where they are; this changes
+   * only who is expected to pay what is still owed. Only an open milestone can
+   * change, and a bank can pay only on a loan-financed project. Setting the same
+   * payer again is a no-op rather than an error, so a double click is harmless.
+   */
+  async setPayer(
+    milestoneId: string,
+    payerType: 'customer' | 'lender',
+    updatedBy: string,
+  ): Promise<PaymentMilestoneEntity> {
+    return this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(PaymentMilestoneEntity);
+      const milestone = await repo.findOne({ where: { id: milestoneId } });
+      if (!milestone) {
+        throw new NotFoundException(`Milestone ${milestoneId} not found`);
+      }
+      if (milestone.status !== 'active') {
+        throw new ConflictException('Only an open milestone can change who pays it');
+      }
+      if (milestone.payerType === payerType) {
+        return milestone;
+      }
+      if (payerType === 'lender' && !(await this.isLoanFinanced(milestone.projectId, manager))) {
+        throw new BadRequestException(
+          'This project is not paid for by a loan, so a bank cannot pay it',
+        );
+      }
+
+      const before = { payerType: milestone.payerType };
+
+      milestone.payerType = payerType;
+      milestone.updatedBy = updatedBy;
+      const saved = await repo.save(milestone);
+
+      await this.audit('update', saved, updatedBy, { action: 'set_payer', before });
+      return saved;
+    });
+  }
+
+  /**
    * Change a milestone's expected amount.
    *
    * Refused once any money is allocated against it. Editing an amount under

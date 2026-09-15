@@ -5,6 +5,7 @@ import {
   IsArray,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsPositive,
@@ -175,7 +176,18 @@ export class RecordExpenseDto {
   @MaxLength(255)
   payee?: string;
 
+  @ApiPropertyOptional({ description: 'The vendor billed. Required when paymentMethod is credit.' })
+  @IsUUID()
+  @IsOptional()
+  vendorId?: string;
+
+  /**
+   * Normalized to lowercase and trimmed before comparison. `is_cash` is derived
+   * from an exact match on this value, so a capitalised or padded `Credit` would
+   * silently be filed as cash spent.
+   */
   @ApiPropertyOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
   @IsString()
   @IsOptional()
   @MaxLength(50)
@@ -191,6 +203,59 @@ export class RecordExpenseDto {
   @Type(() => ProofDocumentDto)
   @IsOptional()
   proofDocument?: ProofDocumentDto;
+
+  @ApiPropertyOptional({ type: [ProofDocumentDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProofDocumentDto)
+  @IsOptional()
+  proofDocuments?: ProofDocumentDto[];
+}
+
+/**
+ * Money paid to a vendor against what we owe them.
+ *
+ * There is no `category`: a settlement is not a new cost. The cost was recorded
+ * when the bill was taken on. Categorising it again would double-count spend the
+ * moment anyone groups by category.
+ */
+export class RecordVendorPaymentDto {
+  @ApiProperty({ description: 'Amount paid, in paise', example: 5000000 })
+  @IsInt()
+  @IsPositive()
+  amountPaise!: number;
+
+  @ApiPropertyOptional({ description: 'The date the money left (IST). Defaults to today.' })
+  @IsDateString()
+  @IsOptional()
+  valueDate?: string;
+
+  @ApiProperty({ description: 'Who was paid' })
+  @IsUUID()
+  vendorId!: string;
+
+  /**
+   * Normalized to lowercase and trimmed before comparison. `is_cash` is derived
+   * from an exact match on this value, so a capitalised or padded `Credit` would
+   * silently be filed as cash spent.
+   */
+  @ApiPropertyOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  paymentMethod?: string;
+
+  @ApiPropertyOptional({ description: 'UTR, cheque number, or other bank reference' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  reference?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  notes?: string;
 
   @ApiPropertyOptional({ type: [ProofDocumentDto] })
   @IsArray()
@@ -240,4 +305,16 @@ export class WaiveMilestoneDto {
   @IsString()
   @MaxLength(500)
   reason!: string;
+}
+
+/**
+ * Who is expected to pay a milestone: the customer, or the bank lending to them.
+ *
+ * Changes only who is chased for what is still owed. No money moves, receipts
+ * already allocated stay where they are, and the customer's app does not read it.
+ */
+export class SetMilestonePayerDto {
+  @ApiProperty({ enum: ['customer', 'lender'], example: 'lender' })
+  @IsIn(['customer', 'lender'])
+  payerType!: 'customer' | 'lender';
 }

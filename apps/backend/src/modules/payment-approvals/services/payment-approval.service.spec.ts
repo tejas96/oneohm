@@ -15,6 +15,7 @@ import { LedgerRepository } from '../../ledger/repositories/ledger.repository';
 import { LedgerWriteService } from '../../ledger/services/ledger-write.service';
 import { StorageService } from '../../storage/services/storage.service';
 import { PendingLedgerEntryEntity } from '../entities';
+import { PaymentApprovalNotifier } from './payment-approval-notifier.service';
 import { PaymentApprovalService } from './payment-approval.service';
 
 const PROJECT = 'project-1';
@@ -125,6 +126,7 @@ describe('PaymentApprovalService', () => {
     ledgerWrite = {
       recordReceipt: jest.fn(async () => ({ id: 'new-entry-id' })),
       recordExpense: jest.fn(async () => ({ id: 'new-entry-id' })),
+      recordVendorPayment: jest.fn(async () => ({ id: 'new-entry-id' })),
       reverse: jest.fn(async () => ({ id: 'new-entry-id' })),
     };
 
@@ -156,6 +158,10 @@ describe('PaymentApprovalService', () => {
         {
           provide: StorageService,
           useValue: { getPublicUrl: jest.fn((key: string) => `https://storage.test/${key}`) },
+        },
+        {
+          provide: PaymentApprovalNotifier,
+          useValue: { submitted: jest.fn(), approved: jest.fn(), rejected: jest.fn() },
         },
       ],
     }).compile();
@@ -306,6 +312,39 @@ describe('PaymentApprovalService', () => {
       await service.submit({ kind: 'receipt', projectId: PROJECT, amountPaise: 1_000 }, SUBMITTER);
       expect(captured.inserted[0]).toMatchObject({ valueDate: TODAY });
     });
+
+    it('persists the vendor beside counterparty', async () => {
+      await service.submit(
+        { kind: 'vendor_payment', projectId: PROJECT, amountPaise: 15_000, vendorId: 'vendor-1' },
+        SUBMITTER,
+      );
+
+      expect(captured.inserted[0]).toMatchObject({ vendorId: 'vendor-1' });
+    });
+
+    it('refuses a credit expense with no vendor to owe it to', async () => {
+      await expect(
+        service.submit(
+          {
+            kind: 'expense',
+            projectId: PROJECT,
+            amountPaise: 15_000,
+            category: 'materials',
+            paymentMethod: 'credit',
+          },
+          SUBMITTER,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('refuses a vendor payment that does not say which vendor', async () => {
+      await expect(
+        service.submit(
+          { kind: 'vendor_payment', projectId: PROJECT, amountPaise: 15_000 },
+          SUBMITTER,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
   });
 
   describe('approve', () => {
@@ -415,6 +454,35 @@ describe('PaymentApprovalService', () => {
         APPROVER,
         expect.anything(),
       );
+    });
+
+    it('routes a vendor payment to recordVendorPayment, not recordExpense', async () => {
+      rows['p-1'] = pending({
+        kind: 'vendor_payment',
+        entryType: 'expense',
+        direction: 'out',
+        amountPaise: -20_000,
+        vendorId: 'vendor-1',
+        paymentMethod: 'upi',
+        reference: 'UTR123',
+      });
+
+      await service.approve('p-1', APPROVER);
+
+      expect(ledgerWrite.recordVendorPayment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: PROJECT,
+          // Same sign convention as recordExpense: stored signed, handed over
+          // as a positive magnitude for the write service to negate itself.
+          amountPaise: 20_000,
+          vendorId: 'vendor-1',
+          paymentMethod: 'upi',
+          reference: 'UTR123',
+        }),
+        APPROVER,
+        expect.anything(),
+      );
+      expect(ledgerWrite.recordExpense).not.toHaveBeenCalled();
     });
 
     it('refuses a reversal whose target has already been reversed', async () => {
@@ -593,7 +661,7 @@ describe('PaymentApprovalService', () => {
     it('reports another payment with the same project, amount and date', async () => {
       repoFind.mockResolvedValue([pending({ id: 'other', submittedAt: new Date() })]);
 
-      const dupes = await service.findDuplicates(PROJECT, 50_000, '2026-08-01');
+      const dupes = await service.findDuplicates(PROJECT, 50_000, '2026-08-01', 'receipt');
 
       expect(dupes).toHaveLength(1);
     });
@@ -602,7 +670,9 @@ describe('PaymentApprovalService', () => {
       const old = new Date(Date.now() - 48 * 3_600_000);
       repoFind.mockResolvedValue([pending({ id: 'other', submittedAt: old })]);
 
-      await expect(service.findDuplicates(PROJECT, 50_000, '2026-08-01')).resolves.toHaveLength(0);
+      await expect(
+        service.findDuplicates(PROJECT, 50_000, '2026-08-01', 'receipt'),
+      ).resolves.toHaveLength(0);
     });
 
     it('ignores a rejected row — it is not a competing claim', async () => {
@@ -610,7 +680,9 @@ describe('PaymentApprovalService', () => {
         pending({ id: 'other', submittedAt: new Date(), status: 'rejected' }),
       ]);
 
-      await expect(service.findDuplicates(PROJECT, 50_000, '2026-08-01')).resolves.toHaveLength(0);
+      await expect(
+        service.findDuplicates(PROJECT, 50_000, '2026-08-01', 'receipt'),
+      ).resolves.toHaveLength(0);
     });
   });
 });

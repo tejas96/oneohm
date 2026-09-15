@@ -32,10 +32,36 @@ export const KPIS_SQL = `
   WITH flows AS (
     SELECT
       COALESCE(SUM(e.amount_paise) FILTER (WHERE e.direction = 'in'), 0)::BIGINT  AS revenue_paise,
-      COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out'), 0)::BIGINT AS spend_paise,
-      COUNT(*) FILTER (WHERE e.direction = 'in'  AND e.reverses_id IS NULL)::int  AS receipt_count,
-      COUNT(*) FILTER (WHERE e.direction = 'out' AND e.reverses_id IS NULL)::int  AS expense_count
+      -- Spend is what the work cost in cash: expenses and vendor payments. A
+      -- refund is money handed back to a customer, not a cost — the rule
+      -- v_project_balance has followed since 1857030000000 — so it is summed
+      -- on its own. Net subtracts both, so it is unchanged.
+      COALESCE(SUM(-e.amount_paise) FILTER (
+        WHERE e.direction = 'out' AND e.is_cash AND e.entry_type <> 'refund'
+      ), 0)::BIGINT AS spend_paise,
+      COALESCE(SUM(-e.amount_paise) FILTER (
+        WHERE e.direction = 'out' AND e.is_cash AND e.entry_type = 'refund'
+      ), 0)::BIGINT AS refund_paise,
+      -- Counts are of entries still standing at the end of the period. A
+      -- reversal row is not an entry of its own, and the entry it undid no
+      -- longer stands once the reversal is dated inside the period: "8
+      -- receipts" once counted 3 that were reversed the same day. The sums
+      -- need no such care — a reversal carries the opposite sign.
+      COUNT(*) FILTER (
+        WHERE e.direction = 'in' AND e.reverses_id IS NULL AND rev.id IS NULL
+      )::int AS receipt_count,
+      COUNT(*) FILTER (
+        WHERE e.entry_type = 'expense' AND e.is_cash AND e.reverses_id IS NULL AND rev.id IS NULL
+      )::int AS expense_count,
+      COUNT(*) FILTER (
+        WHERE e.entry_type = 'vendor_payment' AND e.reverses_id IS NULL AND rev.id IS NULL
+      )::int AS vendor_payment_count,
+      COUNT(*) FILTER (
+        WHERE e.entry_type = 'refund' AND e.reverses_id IS NULL AND rev.id IS NULL
+      )::int AS refund_count
     FROM ledger_entries e
+    -- At most one row: uq_ledger_entries_reverses allows one reversal per entry.
+    LEFT JOIN ledger_entries rev       ON rev.reverses_id = e.id AND rev.value_date <= $2::date
     JOIN projects pr                   ON pr.id = e.project_id
     LEFT JOIN customer_properties prop ON prop.id = pr.property_id
     LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
@@ -71,29 +97,34 @@ export const KPIS_SQL = `
     WHERE status = 'active'
       AND balance_paise > 0
   ),
-  -- Client requirement: "number of meter installations done on the selected date".
-  -- Dated by completed_at - never by end_date, which is a schedule, not a fact.
+  -- How many projects had their net meter commissioned in this period.
   --
-  -- Matched on milestone_name, the workflow stage the task belongs to. The
-  -- original filter tested t.name ILIKE '%meter%' OR t.code ILIKE '%LIA-011%'
-  -- and could never match: project_tasks.name is empty on all 9,778 rows, and
-  -- code holds a generated task number (TSK-ONEOHM_EPC-YYYY-NNNN) rather than a
-  -- workflow code. This KPI therefore reported 0 permanently.
+  -- Counts PROJECTS, not tasks. The predicate that used to live here inline
+  -- counted rows in project_tasks, so a project whose workflow carries the
+  -- stage name on more than one task was counted once per task: 65 all-time
+  -- against 41 projects, because 26 projects carry several. A project has one
+  -- net meter. Expect this tile to read ~38% lower than it used to, and to be
+  -- right for the first time.
   --
-  -- 'Net Metering Application' is deliberately excluded - applying to the DISCOM
-  -- is not the same event as the meter going in, and counting both would roughly
-  -- double the figure.
+  -- It also now shares its definition with the Recovery scope on Receivables,
+  -- so the two can never drift.
+  --
+  -- One project is missing from every dated period on purpose: its meter task
+  -- predates activity logging and has no completed_at, so the view reports
+  -- meter_dated = false. A completion we cannot evidence is not one we count —
+  -- the same rule 08-task-completion.sql.ts already states.
   meters AS (
     SELECT COUNT(*)::int AS meter_installations
-    FROM project_tasks t
-    JOIN projects pr             ON pr.id = t.project_id AND pr.deleted_at IS NULL
-    JOIN customer_properties cpr ON cpr.id = pr.property_id
-    WHERE t.deleted_at IS NULL
-      AND t.status = 'done'
-      AND t.completed_at IS NOT NULL
-      AND BTRIM(LOWER(t.milestone_name)) LIKE 'net meter installation%'
-      AND t.completed_at::date >= $1::date
-      AND t.completed_at::date <= $2::date
+    FROM v_project_commissioning c
+    JOIN projects pr ON pr.id = c.project_id AND pr.deleted_at IS NULL
+    WHERE c.meter_completed_at::date >= $1::date
+      AND c.meter_completed_at::date <= $2::date
+  ),
+  -- What WE owe, so the page that shows money owed to us shows both directions.
+  -- A snapshot as of today, like outstanding — a debt does not belong to a month.
+  payable AS (
+    SELECT COALESCE(SUM(payable_paise) FILTER (WHERE payable_paise > 0), 0)::BIGINT AS vendor_payable_paise
+    FROM v_vendor_payable
   ),
   credit AS (
     SELECT COALESCE(SUM(unallocated_paise), 0)::BIGINT AS unallocated_paise
@@ -102,15 +133,19 @@ export const KPIS_SQL = `
   SELECT
     flows.revenue_paise        AS "revenuePaise",
     flows.spend_paise          AS "spendPaise",
-    (flows.revenue_paise - flows.spend_paise)::BIGINT AS "netPaise",
+    flows.refund_paise         AS "refundPaise",
+    (flows.revenue_paise - flows.spend_paise - flows.refund_paise)::BIGINT AS "netPaise",
     flows.receipt_count        AS "receiptCount",
     flows.expense_count        AS "expenseCount",
+    flows.vendor_payment_count AS "vendorPaymentCount",
+    flows.refund_count         AS "refundCount",
     snapshot.outstanding_paise AS "outstandingPaise",
     snapshot.overdue_count     AS "overdueCount",
     snapshot.overdue_paise     AS "overduePaise",
     credit.unallocated_paise   AS "unallocatedPaise",
-    meters.meter_installations AS "meterInstallations"
-  FROM flows, snapshot, credit, meters
+    meters.meter_installations AS "meterInstallations",
+    payable.vendor_payable_paise AS "vendorPayablePaise"
+  FROM flows, snapshot, credit, meters, payable
 `;
 
 /**
@@ -119,6 +154,10 @@ export const KPIS_SQL = `
  * `generate_series` spans the requested range so empty periods appear as zeros
  * rather than being missing — a chart with holes in it reads as lost data.
  * The grain is a parameter, so the same query serves day, week and month.
+ *
+ * `$4` is the same search the period cards and the entry list take. Without it
+ * a search narrowed the cards to one project while the bars beside them kept
+ * showing the whole company.
  */
 export const CASH_FLOW_SQL = `
   WITH buckets AS (
@@ -131,10 +170,28 @@ export const CASH_FLOW_SQL = `
   SELECT
     to_char(b.bucket, 'YYYY-MM-DD')                                          AS "bucket",
     COALESCE(SUM(e.amount_paise) FILTER (WHERE e.direction = 'in'), 0)::BIGINT  AS "cashInPaise",
-    COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out'), 0)::BIGINT AS "cashOutPaise",
-    COALESCE(SUM(e.amount_paise), 0)::BIGINT                                  AS "netPaise"
+    COALESCE(SUM(-e.amount_paise) FILTER (WHERE e.direction = 'out' AND e.is_cash), 0)::BIGINT AS "cashOutPaise",
+    -- Net must equal cashIn - cashOut on this same row. is_cash is enforced
+    -- true on every 'in' row (chk_ledger_entries_credit_is_out), so filtering
+    -- this SUM on is_cash alone keeps all revenue and only cash spend: a bill
+    -- on credit cannot silently shrink "net cash" while being excluded from the
+    -- cash-out bar right next to it on the same chart.
+    COALESCE(SUM(e.amount_paise) FILTER (WHERE e.is_cash), 0)::BIGINT         AS "netPaise"
   FROM buckets b
-  LEFT JOIN ledger_entries e
+  LEFT JOIN (
+    SELECT e.*
+    FROM ledger_entries e
+    JOIN projects pr                   ON pr.id = e.project_id
+    LEFT JOIN customer_properties prop ON prop.id = pr.property_id
+    LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+    WHERE $4::text IS NULL
+       OR e.entry_no     ILIKE '%' || $4 || '%'
+       OR e.reference    ILIKE '%' || $4 || '%'
+       OR e.counterparty ILIKE '%' || $4 || '%'
+       OR pr.project_number ILIKE '%' || $4 || '%'
+       OR pr.name        ILIKE '%' || $4 || '%'
+       OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $4 || '%'
+  ) e
     ON date_trunc($3, e.value_date) = b.bucket
   GROUP BY b.bucket
   ORDER BY b.bucket
@@ -143,13 +200,14 @@ export const CASH_FLOW_SQL = `
 /** Money out grouped by category, for the selected period. */
 export const SPEND_BY_CATEGORY_SQL = `
   SELECT
-    COALESCE(category, 'misc')            AS "category",
+    ledger_norm_category(category)        AS "category",
     SUM(-amount_paise)::BIGINT            AS "totalPaise"
   FROM ledger_entries
   WHERE direction = 'out'
+    AND is_cash
     AND value_date >= $1::date
     AND value_date <= $2::date
-  GROUP BY COALESCE(category, 'misc')
+  GROUP BY ledger_norm_category(category)
   ORDER BY "totalPaise" DESC
 `;
 
@@ -187,7 +245,14 @@ export const LEDGER_PAGE_SQL = `
     to_char(e.value_date, 'YYYY-MM-DD') AS "valueDate",
     e.value_date_is_inferred AS "valueDateIsInferred",
     e.payment_method        AS "paymentMethod",
-    e.reference, e.counterparty, e.category, e.notes,
+    e.reference, e.counterparty, e.notes,
+    e.is_cash                     AS "isCash",
+    e.vendor_id                   AS "vendorId",
+    vn.name                       AS "vendorName",
+    -- Only an expense has a category. ledger_norm_category turns NULL into
+    -- 'uncategorised', which on a receipt, refund or vendor payment replaced the
+    -- payment method the Detail column falls back to ("upi · UTR-…").
+    CASE WHEN e.entry_type = 'expense' THEN ledger_norm_category(e.category) END AS "category",
     e.reverses_id           AS "reversesId",
     e.reversal_reason       AS "reversalReason",
     e.created_at            AS "createdAt",
@@ -199,6 +264,7 @@ export const LEDGER_PAGE_SQL = `
   JOIN projects pr              ON pr.id = e.project_id
   LEFT JOIN customer_properties prop ON prop.id = pr.property_id
   LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+  LEFT JOIN vendors vn               ON vn.id = e.vendor_id
   WHERE ($1::text IS NULL OR e.direction = $1)
     AND ($2::date IS NULL OR e.value_date >= $2)
     AND ($3::date IS NULL OR e.value_date <= $3)
@@ -222,7 +288,12 @@ export const LEDGER_PAGE_SQL = `
     CASE WHEN $7 = 'customerName' AND $8 = 'asc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
     CASE WHEN $7 = 'customerName' AND $8 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
     -- Default: newest money first.
-    e.value_date DESC, e.created_at DESC
+    e.value_date DESC, e.created_at DESC,
+    -- Unique last key, so a tie can never straddle two pages. Entries posted in
+    -- one transaction share created_at (now() is the transaction's time), and
+    -- LIMIT/OFFSET over tied rows may order them differently per page: a row
+    -- would show twice and another never.
+    e.id DESC
   LIMIT $9 OFFSET $10
 `;
 
@@ -261,11 +332,12 @@ const RECEIVABLES_FILTERS = `
     AND v.balance_paise > 0
     AND (
       $1::text IS NULL
-      OR ($1 = 'current' AND v.days_overdue <= 0)
-      OR ($1 = '1-30'    AND v.days_overdue BETWEEN 1 AND 30)
-      OR ($1 = '31-60'   AND v.days_overdue BETWEEN 31 AND 60)
-      OR ($1 = '61-90'   AND v.days_overdue BETWEEN 61 AND 90)
-      OR ($1 = '90plus'  AND v.days_overdue > 90)
+      OR ($1 = 'current'     AND v.days_overdue <= 0)
+      OR ($1 = '1-30'        AND v.days_overdue BETWEEN 1 AND 30)
+      OR ($1 = '31-60'       AND v.days_overdue BETWEEN 31 AND 60)
+      OR ($1 = '61-90'       AND v.days_overdue BETWEEN 61 AND 90)
+      OR ($1 = '90plus'      AND v.days_overdue > 90)
+      OR ($1 = 'no_due_date' AND v.due_date IS NULL)
     )
     AND (
       $2::text IS NULL
@@ -273,6 +345,17 @@ const RECEIVABLES_FILTERS = `
       OR pr.name           ILIKE '%' || $2 || '%'
       OR v.name            ILIKE '%' || $2 || '%'
       OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $2 || '%'
+    )
+    -- $3 scope: 'recovery' keeps only projects whose net meter is installed —
+    -- the job is delivered and the money is still open.
+    AND ($3::text IS NULL OR $3 <> 'recovery' OR com.project_id IS NOT NULL)
+    -- $4 funding: COALESCE on the cash branch so a milestone whose project has
+    -- no property row still appears in one segment. Money in neither tab is
+    -- worse than money in the wrong one.
+    AND (
+      $4::text IS NULL
+      OR ($4 = 'loan' AND prop.wants_loan = true)
+      OR ($4 = 'cash' AND COALESCE(prop.wants_loan, false) = false)
     )
 `;
 
@@ -282,12 +365,18 @@ const RECEIVABLES_FILTERS = `
  * The count previously omitted the customer tables; adding a customer-name
  * search without adding them here too would have made "showing 1-25 of N"
  * disagree with the rows actually returned.
+ *
+ * `v_project_commissioning` is a LEFT join, not an inner one, so the default
+ * `scope = all` is unaffected. The `recovery` scope is expressed as a
+ * predicate in RECEIVABLES_FILTERS rather than by swapping join types, so
+ * this one join clause serves every query.
  */
 const RECEIVABLES_JOINS = `
   FROM v_milestone_balance v
   JOIN projects pr                   ON pr.id = v.project_id AND pr.deleted_at IS NULL
   LEFT JOIN customer_properties prop ON prop.id = pr.property_id
   LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+  LEFT JOIN v_project_commissioning com ON com.project_id = pr.id
 `;
 
 export const RECEIVABLES_SQL = `
@@ -306,22 +395,40 @@ export const RECEIVABLES_SQL = `
     v.balance_paise    AS "balancePaise",
     to_char(v.due_date, 'YYYY-MM-DD') AS "dueDate",
     v.days_overdue     AS "daysOverdue",
-    v.derived_status   AS "derivedStatus"
+    v.derived_status   AS "derivedStatus",
+    -- Added for AttachBankDialog's caller (Task 15): RECEIVABLES_JOINS's
+    -- LEFT JOIN means this is NULL only when the project itself has no
+    -- property row, which cannot happen for a wantsLoan row -- wants_loan
+    -- lives on prop, so a true value implies prop matched.
+    prop.id                                          AS "propertyId",
+    COALESCE(prop.wants_loan, false)                AS "wantsLoan",
+    prop.financing_bank                             AS "financingBank",
+    to_char(com.meter_completed_at, 'YYYY-MM-DD')   AS "meterCompletedAt",
+    -- NULL, never 0, when there is no meter date yet — zero would read as
+    -- "commissioned today" on a project commissioned months ago.
+    CASE WHEN com.meter_completed_at IS NULL THEN NULL
+         ELSE (CURRENT_DATE - com.meter_completed_at::date)::int
+    END                                             AS "daysSinceMeter"
   ${RECEIVABLES_JOINS}
   ${RECEIVABLES_FILTERS}
   ORDER BY
-    -- $3/$4 are whitelisted on the DTO and compared, never interpolated.
-    CASE WHEN $3 = 'daysOverdue'       AND $4 = 'asc'  THEN v.days_overdue   END ASC,
-    CASE WHEN $3 = 'daysOverdue'       AND $4 = 'desc' THEN v.days_overdue   END DESC,
-    CASE WHEN $3 = 'outstandingAmount' AND $4 = 'asc'  THEN v.balance_paise  END ASC,
-    CASE WHEN $3 = 'outstandingAmount' AND $4 = 'desc' THEN v.balance_paise  END DESC,
-    CASE WHEN $3 = 'dueDate'           AND $4 = 'asc'  THEN v.due_date       END ASC,
-    CASE WHEN $3 = 'dueDate'           AND $4 = 'desc' THEN v.due_date       END DESC,
-    CASE WHEN $3 = 'customerName'      AND $4 = 'asc'  THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END ASC,
-    CASE WHEN $3 = 'customerName'      AND $4 = 'desc' THEN TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) END DESC,
+    -- $5/$6 are whitelisted on the DTO and compared, never interpolated.
+    CASE WHEN $5 = 'daysOverdue'       AND $6 = 'asc'  THEN v.days_overdue   END ASC,
+    CASE WHEN $5 = 'daysOverdue'       AND $6 = 'desc' THEN v.days_overdue   END DESC,
+    CASE WHEN $5 = 'outstandingAmount' AND $6 = 'asc'  THEN v.balance_paise  END ASC,
+    CASE WHEN $5 = 'outstandingAmount' AND $6 = 'desc' THEN v.balance_paise  END DESC,
+    CASE WHEN $5 = 'dueDate'           AND $6 = 'asc'  THEN v.due_date       END ASC,
+    CASE WHEN $5 = 'dueDate'           AND $6 = 'desc' THEN v.due_date       END DESC,
+    CASE WHEN $5 = 'customerName'      AND $6 = 'asc'  THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END ASC,
+    CASE WHEN $5 = 'customerName'      AND $6 = 'desc' THEN LOWER(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name))) END DESC,
     -- Default: worst overdue first, which is the order to work the list in.
-    v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number
-  LIMIT $5 OFFSET $6
+    v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number,
+    -- Unique last key. Milestones of one project tie on everything above, and
+    -- LIMIT/OFFSET over tied rows may order them differently per page: the
+    -- no-due-date list showed one of PRJ-0101's milestones twice and never
+    -- showed the other.
+    v.milestone_id
+  LIMIT $7 OFFSET $8
 `;
 
 export const RECEIVABLES_COUNT_SQL = `
@@ -337,6 +444,14 @@ export const RECEIVABLES_COUNT_SQL = `
  * headline totals must follow it or they claim a filtered list is worth the
  * org-wide figure. The bucket is deliberately ignored, because selecting one
  * chip must not zero the counts on the others.
+ *
+ * `scope` and `funding` ARE honoured here, so the chips describe the list
+ * actually on screen.
+ *
+ * IMPORTANT: this query does NOT share RECEIVABLES_FILTERS and its
+ * placeholders are numbered independently of RECEIVABLES_SQL /
+ * RECEIVABLES_COUNT_SQL above. Here $1 is `search` (bucket is never a
+ * parameter of this query at all), $2 is `scope`, $3 is `funding`.
  */
 export const RECEIVABLES_BUCKETS_SQL = `
   SELECT
@@ -346,8 +461,21 @@ export const RECEIVABLES_BUCKETS_SQL = `
     COUNT(*) FILTER (WHERE v.days_overdue BETWEEN 61 AND 90)   AS "d61to90",
     COUNT(*) FILTER (WHERE v.days_overdue > 90)                AS "d90plus",
     COUNT(*)                                                   AS "all",
-    COALESCE(SUM(v.balance_paise), 0)                          AS "totalOutstandingPaise",
-    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.days_overdue > 0), 0) AS "overduePaise"
+    COALESCE(SUM(v.balance_paise), 0)::BIGINT                  AS "totalOutstandingPaise",
+    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.days_overdue > 0), 0)::BIGINT AS "overduePaise",
+    COUNT(*) FILTER (WHERE v.due_date IS NULL)                          AS "noDueDate",
+    COALESCE(SUM(v.balance_paise) FILTER (WHERE v.due_date IS NULL), 0)::BIGINT AS "noDueDatePaise",
+    COUNT(DISTINCT pr.id)                                              AS "recoveryProjects",
+    -- Defect 5: a loan project with no lender milestone means the customer is
+    -- being chased for the bank's share. Counted, never repaired — a 10/70/20
+    -- guess would silently move money off a customer's name.
+    COUNT(DISTINCT pr.id) FILTER (
+      WHERE COALESCE(prop.wants_loan, false)
+        -- A cancelled bank milestone is not a share split out: it was taken off.
+        AND NOT EXISTS (SELECT 1 FROM payment_milestones m2
+                         WHERE m2.project_id = pr.id AND m2.payer_type = 'lender'
+                           AND m2.status <> 'cancelled')
+    )                                                                  AS "missingLenderProjects"
   ${RECEIVABLES_JOINS}
   WHERE v.status = 'active'
     AND v.balance_paise > 0
@@ -358,6 +486,165 @@ export const RECEIVABLES_BUCKETS_SQL = `
       OR v.name            ILIKE '%' || $1 || '%'
       OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $1 || '%'
     )
+    AND ($2::text IS NULL OR $2 <> 'recovery' OR com.project_id IS NOT NULL)
+    AND (
+      $3::text IS NULL
+      OR ($3 = 'loan' AND prop.wants_loan = true)
+      OR ($3 = 'cash' AND COALESCE(prop.wants_loan, false) = false)
+    )
+`;
+
+/**
+ * Recovery, one row per project: the net meter is in and money is still open.
+ *
+ * The milestone list (`RECEIVABLES_SQL` with scope=recovery) showed a job once
+ * per open milestone, so one customer to call took up to four rows and the
+ * list's length was not the number of calls to make. This groups the SAME
+ * rows — identical `v_milestone_balance` filters, commissioning join and
+ * funding split — so a project's `outstanding_paise` is exactly the sum of the
+ * milestone rows it replaces, and the totals match the milestone scope.
+ *
+ * Search matches customer and project only. Matching a milestone name inside
+ * a GROUP BY would drop the project's other milestones from its total.
+ *
+ * $1 funding ('cash' | 'loan' | NULL), $2 search.
+ */
+const RECOVERY_PROJECTS_CTE = `
+  WITH open_ms AS (
+    SELECT v.project_id, v.balance_paise, v.days_overdue, v.due_date
+      FROM v_milestone_balance v
+     WHERE v.status = 'active'
+       AND v.balance_paise > 0
+  ),
+  recovery AS (
+    SELECT
+      pr.id                                                          AS project_id,
+      pr.project_number,
+      pr.name                                                        AS project_name,
+      NULLIF(TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)), '')  AS customer_name,
+      cp.phone                                                       AS customer_phone,
+      prop.id                                                        AS property_id,
+      COALESCE(prop.wants_loan, false)                               AS wants_loan,
+      prop.financing_bank,
+      com.meter_completed_at,
+      -- NULL, never 0, when there is no meter date — see RECEIVABLES_SQL.
+      CASE WHEN com.meter_completed_at IS NULL THEN NULL
+           ELSE (CURRENT_DATE - com.meter_completed_at::date)::int
+      END                                                            AS days_since_meter,
+      COUNT(*)::int                                                  AS open_milestones,
+      SUM(o.balance_paise)::BIGINT                                   AS outstanding_paise,
+      COALESCE(SUM(o.balance_paise) FILTER (WHERE o.days_overdue > 0), 0)::BIGINT
+                                                                     AS overdue_paise,
+      -- The oldest overdue milestone decides the project's ageing bucket.
+      MAX(o.days_overdue)::int                                       AS worst_days_overdue,
+      COUNT(*) FILTER (WHERE o.due_date IS NULL)::int                AS undated_milestones,
+      COALESCE(SUM(o.balance_paise) FILTER (WHERE o.due_date IS NULL), 0)::BIGINT
+                                                                     AS undated_paise,
+      -- A cancelled bank milestone is not a share split out: it was taken off.
+      EXISTS (SELECT 1 FROM payment_milestones m2
+               WHERE m2.project_id = pr.id AND m2.payer_type = 'lender'
+                 AND m2.status <> 'cancelled')
+                                                                     AS has_lender_milestone
+    FROM open_ms o
+    JOIN projects pr                   ON pr.id = o.project_id AND pr.deleted_at IS NULL
+    JOIN v_project_commissioning com   ON com.project_id = pr.id
+    LEFT JOIN customer_properties prop ON prop.id = pr.property_id
+    LEFT JOIN customer_profiles cp     ON cp.id = prop.customer_id
+    WHERE (
+            $1::text IS NULL
+            OR ($1 = 'loan' AND prop.wants_loan = true)
+            OR ($1 = 'cash' AND COALESCE(prop.wants_loan, false) = false)
+          )
+      AND (
+            $2::text IS NULL
+            OR pr.project_number ILIKE '%' || $2 || '%'
+            OR pr.name           ILIKE '%' || $2 || '%'
+            OR TRIM(CONCAT_WS(' ', cp.first_name, cp.last_name)) ILIKE '%' || $2 || '%'
+          )
+    GROUP BY pr.id, pr.project_number, pr.name, cp.first_name, cp.last_name, cp.phone,
+             prop.id, prop.wants_loan, prop.financing_bank, com.meter_completed_at
+  )
+`;
+
+/** $3 bucket — by the project's WORST overdue milestone, or any undated money. */
+const RECOVERY_BUCKET_FILTER = `
+  WHERE (
+    $3::text IS NULL
+    OR ($3 = 'current'     AND worst_days_overdue <= 0)
+    OR ($3 = '1-30'        AND worst_days_overdue BETWEEN 1 AND 30)
+    OR ($3 = '31-60'       AND worst_days_overdue BETWEEN 31 AND 60)
+    OR ($3 = '61-90'       AND worst_days_overdue BETWEEN 61 AND 90)
+    OR ($3 = '90plus'      AND worst_days_overdue > 90)
+    OR ($3 = 'no_due_date' AND undated_milestones > 0)
+  )
+`;
+
+export const RECOVERY_PAGE_SQL = `
+  ${RECOVERY_PROJECTS_CTE}
+  SELECT
+    project_id                                  AS "projectId",
+    project_number                              AS "projectNumber",
+    project_name                                AS "projectName",
+    customer_name                               AS "customerName",
+    customer_phone                              AS "customerPhone",
+    property_id                                 AS "propertyId",
+    wants_loan                                  AS "wantsLoan",
+    financing_bank                              AS "financingBank",
+    to_char(meter_completed_at, 'YYYY-MM-DD')   AS "meterCompletedAt",
+    days_since_meter                            AS "daysSinceMeter",
+    open_milestones                             AS "openMilestones",
+    outstanding_paise                           AS "outstandingPaise",
+    overdue_paise                               AS "overduePaise",
+    worst_days_overdue                          AS "worstDaysOverdue",
+    undated_paise                               AS "undatedPaise",
+    has_lender_milestone                        AS "hasLenderMilestone"
+  FROM recovery
+  ${RECOVERY_BUCKET_FILTER}
+  ORDER BY
+    -- $4/$5 are whitelisted on the DTO and compared, never interpolated.
+    CASE WHEN $4 = 'daysSinceMeter'   AND $5 = 'asc'  THEN days_since_meter   END ASC NULLS LAST,
+    CASE WHEN $4 = 'daysSinceMeter'   AND $5 = 'desc' THEN days_since_meter   END DESC NULLS LAST,
+    CASE WHEN $4 = 'outstanding'      AND $5 = 'asc'  THEN outstanding_paise  END ASC,
+    CASE WHEN $4 = 'outstanding'      AND $5 = 'desc' THEN outstanding_paise  END DESC,
+    CASE WHEN $4 = 'worstDaysOverdue' AND $5 = 'asc'  THEN worst_days_overdue END ASC,
+    CASE WHEN $4 = 'worstDaysOverdue' AND $5 = 'desc' THEN worst_days_overdue END DESC,
+    -- LOWER: a name typed in lower case must not sort after every capital.
+    CASE WHEN $4 = 'customerName'     AND $5 = 'asc'  THEN LOWER(customer_name) END ASC NULLS LAST,
+    CASE WHEN $4 = 'customerName'     AND $5 = 'desc' THEN LOWER(customer_name) END DESC NULLS LAST,
+    -- Default: worst overdue first, then the biggest amount.
+    worst_days_overdue DESC, outstanding_paise DESC, project_number
+  LIMIT $6 OFFSET $7
+`;
+
+export const RECOVERY_COUNT_SQL = `
+  ${RECOVERY_PROJECTS_CTE}
+  SELECT COUNT(*)::int AS count
+  FROM recovery
+  ${RECOVERY_BUCKET_FILTER}
+`;
+
+/**
+ * Chip counts (projects, by worst overdue) and the money totals. Follows
+ * funding and search ($1, $2) but never the bucket, so picking one chip does
+ * not zero the others — the rule `RECEIVABLES_BUCKETS_SQL` follows.
+ */
+export const RECOVERY_BUCKETS_SQL = `
+  ${RECOVERY_PROJECTS_CTE}
+  SELECT
+    COUNT(*) FILTER (WHERE worst_days_overdue <= 0)::int               AS "current",
+    COUNT(*) FILTER (WHERE worst_days_overdue BETWEEN 1 AND 30)::int   AS "d1to30",
+    COUNT(*) FILTER (WHERE worst_days_overdue BETWEEN 31 AND 60)::int  AS "d31to60",
+    COUNT(*) FILTER (WHERE worst_days_overdue BETWEEN 61 AND 90)::int  AS "d61to90",
+    COUNT(*) FILTER (WHERE worst_days_overdue > 90)::int               AS "d90plus",
+    COUNT(*)::int                                                      AS "all",
+    COALESCE(SUM(outstanding_paise), 0)::BIGINT                        AS "totalOutstandingPaise",
+    COALESCE(SUM(overdue_paise), 0)::BIGINT                            AS "overduePaise",
+    COUNT(*) FILTER (WHERE undated_milestones > 0)::int                AS "noDueDateProjects",
+    COALESCE(SUM(undated_paise), 0)::BIGINT                            AS "noDueDatePaise",
+    -- Defect 5, per project: a loan job with no lender milestone means the
+    -- customer is being chased for the bank's share.
+    COUNT(*) FILTER (WHERE wants_loan AND NOT has_lender_milestone)::int AS "missingLenderProjects"
+  FROM recovery
 `;
 
 /**
@@ -475,7 +762,9 @@ export const OUTSTANDING_SQL = `
     AND v.balance_paise > 0
     AND ($3::uuid IS NULL OR cp.id = $3)
     AND ($4::uuid IS NULL OR v.project_id = $4)
-  ORDER BY v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number
+  -- milestone_id last: without a unique key, rows tied inside one project can
+  -- repeat or go missing between pages.
+  ORDER BY v.days_overdue DESC, v.due_date NULLS LAST, pr.project_number, v.milestone_id
   LIMIT $1 OFFSET $2
 `;
 

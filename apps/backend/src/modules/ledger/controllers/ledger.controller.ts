@@ -34,7 +34,9 @@ import {
   RecordExpenseDto,
   ProofDocumentDto,
   RecordReceiptDto,
+  RecordVendorPaymentDto,
   ReverseEntryDto,
+  SetMilestonePayerDto,
   WaiveMilestoneDto,
 } from '../dto';
 import { LedgerRepository } from '../repositories/ledger.repository';
@@ -121,14 +123,18 @@ export class LedgerController {
   async listEntries(
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<LedgerEntryResponseDto[]> {
-    const [entries, attribution] = await Promise.all([
+    const [entries, attribution, vendorNames] = await Promise.all([
       this.ledgerRepository.listEntriesByProject(projectId),
       this.ledgerRepository.getEntryAttributionByProject(projectId),
+      this.ledgerRepository.getEntryVendorNamesByProject(projectId),
     ]);
 
     // Merged here rather than joined into the entity read, so the append-only
-    // entity query stays a plain entity query.
+    // entity query stays a plain entity query. `isCash`/`vendorId` need no
+    // merge — they are plain columns on `LedgerEntryEntity` already, carried
+    // through by `...entry` below; only `vendorName` is joined in.
     const byEntry = new Map(attribution.map((a) => [a.entryId, a]));
+    const byVendor = new Map(vendorNames.map((v) => [v.entryId, v.vendorName]));
 
     return toDtoArray(
       LedgerEntryResponseDto,
@@ -137,6 +143,7 @@ export class LedgerController {
         recordedByName: byEntry.get(entry.id)?.recordedByName ?? null,
         approvedByName: byEntry.get(entry.id)?.approvedByName ?? null,
         approvedAt: byEntry.get(entry.id)?.approvedAt ?? null,
+        vendorName: byVendor.get(entry.id) ?? null,
       })),
     );
   }
@@ -220,7 +227,37 @@ export class LedgerController {
         valueDate: dto.valueDate,
         category: dto.category,
         counterparty: dto.payee,
+        vendorId: dto.vendorId,
         paymentMethod: dto.paymentMethod,
+        notes: dto.notes,
+        proofDocuments: mergeProofs(dto),
+      },
+      currentUser.id,
+    );
+  }
+
+  @Post('projects/:projectId/ledger/vendor-payments')
+  @ApiOperation({
+    summary: 'Pay a vendor what we owe them',
+    description:
+      'Settles a payable. Every ledger entry belongs to a project, so one cheque covering ' +
+      'three projects is recorded as three lines. Waits for approval like any other money out.',
+  })
+  @ApiParam({ name: 'projectId', type: String })
+  async recordVendorPayment(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() dto: RecordVendorPaymentDto,
+  ): Promise<PendingLedgerEntryEntity> {
+    return this.approvals.submit(
+      {
+        kind: 'vendor_payment',
+        projectId,
+        amountPaise: dto.amountPaise,
+        valueDate: dto.valueDate,
+        vendorId: dto.vendorId,
+        paymentMethod: dto.paymentMethod,
+        reference: dto.reference,
         notes: dto.notes,
         proofDocuments: mergeProofs(dto),
       },
@@ -316,6 +353,27 @@ export class LedgerController {
   ): Promise<{ id: string; status: string }> {
     const milestone = await this.milestoneService.waive(milestoneId, dto.reason, currentUser.id);
     return { id: milestone.id, status: milestone.status };
+  }
+
+  @Patch('ledger/milestones/:milestoneId/payer')
+  @ApiOperation({
+    summary: 'Set who pays a milestone — the customer or their bank',
+    description:
+      'Changes only who is chased for the balance still owed. No money moves, and receipts already ' +
+      'allocated stay where they are. A bank can pay only on a loan-financed project.',
+  })
+  @ApiParam({ name: 'milestoneId', type: String })
+  async setPayer(
+    @Param('milestoneId', ParseUUIDPipe) milestoneId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() dto: SetMilestonePayerDto,
+  ): Promise<{ id: string; payerType: string }> {
+    const milestone = await this.milestoneService.setPayer(
+      milestoneId,
+      dto.payerType,
+      currentUser.id,
+    );
+    return { id: milestone.id, payerType: milestone.payerType };
   }
 
   @Delete('ledger/milestones/:milestoneId')

@@ -14,9 +14,11 @@ import {
   DocumentTag,
   ExpenseCategory,
   FinanceSequenceScope,
+  PaymentMethod,
 } from '@tejas96/shared/types';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 
+import { PaymentApprovalNotifier } from './payment-approval-notifier.service';
 import { DocumentEntity } from '../../documents/entities/document.entity';
 import { SequenceService } from '../../finance-common/services/sequence.service';
 import { allocateWaterfall } from '../../ledger/domain/allocation';
@@ -31,7 +33,7 @@ import {
   APPROVALS_PAGE_SQL,
   APPROVAL_BY_ID_SQL,
 } from './payment-approval-queries.sql';
-import { PendingLedgerEntryEntity } from '../entities';
+import { PendingKind, PendingLedgerEntryEntity } from '../entities';
 
 export interface BulkApproveResult {
   approved: string[];
@@ -61,9 +63,23 @@ export interface ApprovalRow extends Omit<PendingLedgerEntryEntity, 'createdAt' 
   customerName: string | null;
   customerPhone: string | null;
   submittedByName: string | null;
+  /**
+   * Comma-separated, most senior first (roles.level ascending). Null when the
+   * user holds no role — always present as a column, so never `undefined`.
+   */
+  submittedByRoles: string | null;
   reviewedByName: string | null;
+  reviewedByRoles: string | null;
+  vendorName: string | null;
+  /** True when approving this records an obligation rather than moving cash. */
+  isCredit: boolean;
   /** Every image attached to this payment, oldest first. */
   proofs: ProofRef[];
+  /** For a reversal: the entry it undoes. Null on every other kind. */
+  reversesEntryNo: string | null;
+  reversesEntryType: string | null;
+  reversesIsCash: boolean | null;
+  reversesVendorName: string | null;
 }
 
 interface ProofRef {
@@ -75,8 +91,10 @@ interface ProofRef {
 
 export interface ApprovalSummary {
   pendingCount: number;
-  /** Total size of what is waiting, in paise. */
-  pendingValuePaise: number;
+  /** Money waiting to come in (receipts, less reversals of receipts), in paise. */
+  pendingInPaise: number;
+  /** Money waiting to go out (expenses, bills, vendor payments, less their reversals), in paise. */
+  pendingOutPaise: number;
   approvedToday: number;
   /** How long the longest-waiting request has been queued. Null when none. */
   oldestPendingHours: number | null;
@@ -88,6 +106,24 @@ export interface ImpactLine {
   appliedPaise: number;
   balanceAfterPaise: number;
   settlesFully: boolean;
+}
+
+/**
+ * A vendor payment's impact: what the vendor's net payable does, not a
+ * milestone line. Sibling to `lines`/`unallocatedPaise` on the impact
+ * response, never inside `lines` — see the comment in `previewImpact`.
+ */
+export interface VendorPayableImpact {
+  vendorName: string | null;
+  /** The vendor's net payable right now, straight off `v_vendor_payable`. */
+  beforePaise: number;
+  /**
+   * `beforePaise` minus this payment's magnitude. May go NEGATIVE — a vendor
+   * advance, paying ahead of what's owed — and is deliberately NOT clamped:
+   * the negative number is what tells the approver this payment overshoots
+   * the payable.
+   */
+  afterPaise: number;
 }
 
 /** How far back duplicate detection looks. A warning, never a block. */
@@ -119,6 +155,7 @@ export class PaymentApprovalService {
     private readonly ledgerRepository: LedgerRepository,
     private readonly sequenceService: SequenceService,
     private readonly storageService: StorageService,
+    private readonly notifier: PaymentApprovalNotifier,
   ) {}
 
   // ============================================
@@ -135,7 +172,21 @@ export class PaymentApprovalService {
       throw new BadRequestException(`Value date ${valueDate} is in the future`);
     }
 
-    return this.dataSource.transaction(async (manager) => {
+    // Refused here as well as by the database check, so the operator gets a
+    // sentence rather than a constraint-violation stack trace.
+    if (dto.paymentMethod === PaymentMethod.CREDIT && !dto.vendorId) {
+      throw new BadRequestException('A credit bill has to be owed to a vendor');
+    }
+    if (dto.kind === 'vendor_payment' && !dto.vendorId) {
+      throw new BadRequestException('Say which vendor is being paid');
+    }
+    // Validation at submission, not approval, so the submitter gets feedback
+    // immediately rather than the approver facing a cryptic error later.
+    if (dto.kind === 'vendor_payment' && dto.paymentMethod === PaymentMethod.CREDIT) {
+      throw new BadRequestException('Settling a credit bill with more credit is not a payment');
+    }
+
+    const saved = await this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PendingLedgerEntryEntity);
 
       const requestNo = await this.sequenceService.getNextNumber(
@@ -153,6 +204,7 @@ export class PaymentApprovalService {
         reference: dto.reference ?? null,
         paymentMethod: dto.paymentMethod ?? null,
         counterparty: dto.counterparty ?? null,
+        vendorId: dto.vendorId ?? null,
       };
 
       let row: Partial<PendingLedgerEntryEntity>;
@@ -227,6 +279,10 @@ export class PaymentApprovalService {
 
       return repo.findOneOrFail({ where: { id } });
     });
+
+    // After the commit, so nobody is told about a payment that rolled back.
+    this.notifier.submitted(saved.id);
+    return saved;
   }
 
   /**
@@ -296,7 +352,7 @@ export class PaymentApprovalService {
    * same milestone.
    */
   async approve(id: string, approverId: string): Promise<PendingLedgerEntryEntity> {
-    return this.dataSource.transaction(async (manager) => {
+    const approved = await this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PendingLedgerEntryEntity);
 
       const row = await repo.findOne({ where: { id }, lock: { mode: 'pessimistic_write' } });
@@ -346,7 +402,31 @@ export class PaymentApprovalService {
           approverId,
           manager,
         );
-      } else {
+      } else if (pending.kind === 'vendor_payment') {
+        // Submission refuses a vendor payment with no vendor, but a queued row
+        // is approved later and nothing downstream checks again. Posting one
+        // records cash paid that no vendor's balance will ever show.
+        if (!pending.vendorId) {
+          throw new BadRequestException(
+            'This vendor payment has no vendor. Reject it and record it again with the vendor.',
+          );
+        }
+        entry = await this.ledgerWrite.recordVendorPayment(
+          {
+            projectId: pending.projectId,
+            // recordVendorPayment takes a positive magnitude and negates it
+            // itself; this table already stores the value signed.
+            amountPaise: Math.abs(pending.amountPaise),
+            valueDate: pending.valueDate,
+            vendorId: pending.vendorId,
+            paymentMethod: pending.paymentMethod ?? undefined,
+            reference: pending.reference ?? undefined,
+            notes: pending.notes ?? undefined,
+          },
+          approverId,
+          manager,
+        );
+      } else if (pending.kind === 'expense') {
         entry = await this.ledgerWrite.recordExpense(
           {
             projectId: pending.projectId,
@@ -362,10 +442,17 @@ export class PaymentApprovalService {
             payee: pending.counterparty ?? undefined,
             paymentMethod: pending.paymentMethod ?? undefined,
             notes: pending.notes ?? undefined,
+            vendorId: pending.vendorId ?? undefined,
           },
           approverId,
           manager,
         );
+      } else {
+        // A `never` here is the point: adding a fifth PendingKind without a
+        // branch above stops compiling, instead of silently filing that row as
+        // an expense with the wrong entry type and its fields dropped.
+        const unreachable: never = pending.kind;
+        throw new BadRequestException(`Cannot approve an entry of kind ${String(unreachable)}`);
       }
 
       // Move every attached proof onto the entry now that one exists, so it
@@ -384,10 +471,17 @@ export class PaymentApprovalService {
         reviewedBy: approverId,
         reviewedAt: new Date(),
         ledgerEntryId: entry.id,
+        // The date that was posted, not the one queued: a reversal is dated the
+        // day it is approved, so a request approved a day later kept showing
+        // the day it was submitted.
+        valueDate: entry.valueDate,
       });
 
       return repo.findOneOrFail({ where: { id: pending.id } });
     });
+
+    this.notifier.approved(approved.id);
+    return approved;
   }
 
   async bulkApprove(ids: string[], approverId: string): Promise<BulkApproveResult> {
@@ -439,7 +533,7 @@ export class PaymentApprovalService {
   // ============================================
 
   async reject(id: string, reason: string, approverId: string): Promise<PendingLedgerEntryEntity> {
-    return this.transitionPending(id, (row, repo) => {
+    const rejected = await this.transitionPending(id, (row, repo) => {
       if (row.submittedBy === approverId) {
         throw new ForbiddenException('You submitted this payment — another user must review it');
       }
@@ -450,6 +544,9 @@ export class PaymentApprovalService {
         reviewedAt: new Date(),
       });
     });
+
+    this.notifier.rejected(rejected.id);
+    return rejected;
   }
 
   /** Withdrawing your own submission. Terminal, and needs no approver. */
@@ -511,21 +608,27 @@ export class PaymentApprovalService {
    *
    * Money awaiting verification is the figure that matters most — a count of 3
    * says nothing about whether ₹500 or ₹5,00,000 is sitting unconfirmed.
-   * `ABS` because expenses are stored negative and this is a size, not a
-   * cash-flow direction.
+   *
+   * In and out are summed apart and never added together. One `SUM(ABS())`
+   * put a ₹53,933 receipt and ₹2,90,427 of expenses into a single ₹3,44,360
+   * that was neither, and counted a pending reversal UP although approving it
+   * takes money back. Signed sums per direction net a reversal correctly:
+   * money in is stored positive, money out negative, a reversal the opposite.
    */
   async summary(): Promise<ApprovalSummary> {
     const [row] = await this.dataSource.query<
       Array<{
         pendingCount: string;
-        pendingValuePaise: string | null;
+        pendingInPaise: string | null;
+        pendingOutPaise: string | null;
         oldestPendingAt: Date | null;
         approvedToday: string;
       }>
     >(`
       SELECT
-        COUNT(*) FILTER (WHERE status = 'pending')                       AS "pendingCount",
-        SUM(ABS(amount_paise)) FILTER (WHERE status = 'pending')         AS "pendingValuePaise",
+        COUNT(*) FILTER (WHERE status = 'pending')                                 AS "pendingCount",
+        SUM(amount_paise)  FILTER (WHERE status = 'pending' AND direction = 'in')  AS "pendingInPaise",
+        SUM(-amount_paise) FILTER (WHERE status = 'pending' AND direction = 'out') AS "pendingOutPaise",
         MIN(submitted_at) FILTER (WHERE status = 'pending')              AS "oldestPendingAt",
         COUNT(*) FILTER (
           WHERE status = 'approved' AND reviewed_at >= date_trunc('day', now())
@@ -537,7 +640,8 @@ export class PaymentApprovalService {
 
     return {
       pendingCount: Number(row?.pendingCount ?? 0),
-      pendingValuePaise: Number(row?.pendingValuePaise ?? 0),
+      pendingInPaise: Number(row?.pendingInPaise ?? 0),
+      pendingOutPaise: Number(row?.pendingOutPaise ?? 0),
       approvedToday: Number(row?.approvedToday ?? 0),
       oldestPendingHours: oldest ? Math.floor((Date.now() - oldest.getTime()) / 3_600_000) : null,
     };
@@ -552,27 +656,33 @@ export class PaymentApprovalService {
     }
 
     const possibleDuplicates = (
-      await this.findDuplicates(row.projectId, Number(row.amountPaise), row.valueDate)
+      await this.findDuplicates(row.projectId, Number(row.amountPaise), row.valueDate, row.kind)
     ).filter((d) => d.id !== row.id);
 
     return { ...normaliseRow(row), possibleDuplicates };
   }
 
   /**
-   * Same project, amount and payment date, submitted recently.
+   * Same project, kind, amount and payment date, submitted recently.
    *
    * Surfaced to the approver as a warning, never a block — a customer genuinely
    * can pay the same amount twice in one day.
+   *
+   * Kind is part of the match. Money out is stored negative for every kind, so
+   * without it the vendor payment that settles a bill on credit — same project,
+   * same amount, often the same day — was flagged as a double entry of that
+   * bill. Paying a bill is the ordinary case, not a duplicate.
    */
   async findDuplicates(
     projectId: string,
     amountPaise: number,
     valueDate: string,
+    kind: PendingKind,
   ): Promise<PendingLedgerEntryEntity[]> {
     const since = new Date(Date.now() - DUPLICATE_WINDOW_HOURS * 3_600_000);
 
     const candidates = await this.dataSource.getRepository(PendingLedgerEntryEntity).find({
-      where: { projectId, amountPaise, valueDate },
+      where: { projectId, kind, amountPaise, valueDate },
       order: { submittedAt: 'DESC' },
       take: 5,
     });
@@ -588,7 +698,11 @@ export class PaymentApprovalService {
    * Read-only and unlocked. The binding allocation is computed again inside
    * `approve`, because balances can move between viewing and approving.
    */
-  async previewImpact(id: string): Promise<{ lines: ImpactLine[]; unallocatedPaise: number }> {
+  async previewImpact(id: string): Promise<{
+    lines: ImpactLine[];
+    unallocatedPaise: number;
+    vendorPayable?: VendorPayableImpact;
+  }> {
     const row = await this.dataSource
       .getRepository(PendingLedgerEntryEntity)
       .findOne({ where: { id } });
@@ -596,8 +710,100 @@ export class PaymentApprovalService {
       throw new NotFoundException('Approval request not found');
     }
 
-    // Only receipts allocate. Expenses never touch a milestone, and a reversal's
-    // effect is simply the removal of its target's allocations.
+    // A decided request has nothing left to preview. Its effect is already in
+    // today's balances (or never will be), so previewing it again counts it
+    // twice: approved PA-2026-27-000073 read "₹20,000 still due" on the
+    // milestone its ₹5,000 had left at ₹25,000.
+    if (row.status !== 'pending') {
+      return { lines: [], unallocatedPaise: 0 };
+    }
+
+    // Only receipts allocate against a milestone. Expenses and reversals never
+    // touch one, and a vendor payment reduces what we owe a vendor, not a
+    // project milestone balance.
+    //
+    // `lines`/`ImpactLine` stays milestone-only — it is never bent to carry a
+    // vendor's payable. `milestoneId`/`milestoneName`/`settlesFully` name a
+    // milestone specifically, and the approval drawer renders every entry in
+    // `lines` as a milestone row (`{line.milestoneName}: {formatPaise(...)}
+    // ... still due`). Coercing vendor data through those fields would either
+    // fail to compile or render a fabricated milestone for money that never
+    // allocated against one — worse than showing nothing.
+    //
+    // A vendor payment still needs *some* preview though: an approver signing
+    // off money leaving the business should see what it settles, same as a
+    // receipt's approver does. So it gets its own sibling field instead —
+    // `vendorPayable`, additive and optional, never populating `lines`. This
+    // is the one branch below that isn't a plain empty return.
+    if (row.kind === 'vendor_payment') {
+      const [payableRow] = await this.dataSource.query<
+        Array<{ vendorName: string | null; payablePaise: string | number }>
+      >(
+        `
+          SELECT name AS "vendorName", payable_paise AS "payablePaise"
+          FROM v_vendor_payable
+          WHERE vendor_id = $1
+        `,
+        [row.vendorId],
+      );
+      const beforePaise = Number(payableRow?.payablePaise ?? 0);
+      return {
+        lines: [],
+        unallocatedPaise: 0,
+        vendorPayable: {
+          vendorName: payableRow?.vendorName ?? null,
+          beforePaise,
+          // `pending_ledger_entries.amount_paise` is signed (money out is
+          // negative on a vendor_payment) — Math.abs turns it into the plain
+          // magnitude being paid, matching every other branch in this
+          // service that reads that column. Not clamped: see
+          // `VendorPayableImpact.afterPaise`.
+          afterPaise: beforePaise - Math.abs(row.amountPaise),
+        },
+      };
+    }
+
+    // A reversal changes a vendor's payable when what it undoes was a bill on
+    // credit (we owe less) or a vendor payment (we owe that much again). The
+    // ledger copies vendor and is_cash onto the reversing row, so this is the
+    // figure approval will produce. Anything else a reversal can undo never
+    // touched a payable and keeps the plain empty preview.
+    if (row.kind === 'reversal' && row.reversesEntryId) {
+      const [target] = await this.dataSource.query<
+        Array<{
+          vendorId: string | null;
+          vendorName: string | null;
+          isCash: boolean;
+          entryType: string;
+          amountPaise: string | number;
+          payablePaise: string | number | null;
+        }>
+      >(
+        `
+          SELECT e.vendor_id AS "vendorId", vp.name AS "vendorName", e.is_cash AS "isCash",
+                 e.entry_type AS "entryType", e.amount_paise AS "amountPaise",
+                 vp.payable_paise AS "payablePaise"
+          FROM ledger_entries e
+          LEFT JOIN v_vendor_payable vp ON vp.vendor_id = e.vendor_id
+          WHERE e.id = $1
+        `,
+        [row.reversesEntryId],
+      );
+      if (target?.vendorId && (target.isCash === false || target.entryType === 'vendor_payment')) {
+        const beforePaise = Number(target.payablePaise ?? 0);
+        const magnitude = Math.abs(Number(target.amountPaise));
+        return {
+          lines: [],
+          unallocatedPaise: 0,
+          vendorPayable: {
+            vendorName: target.vendorName,
+            beforePaise,
+            afterPaise: target.isCash === false ? beforePaise - magnitude : beforePaise + magnitude,
+          },
+        };
+      }
+    }
+
     if (row.kind !== 'receipt') {
       return { lines: [], unallocatedPaise: 0 };
     }

@@ -400,10 +400,12 @@ export const navigationConfig: NavigationConfig = {
 
     finance: {
       title: 'Finance',
-      // Two items, down from nine. Receipts, expenses, calendar, reports,
+      // Four items, down from nine. Receipts, expenses, calendar, reports,
       // vendors, profitability and customers-AR were separate screens over the
       // same data; the ledger view replaces all of them with one filterable
-      // table, and receivables replaces outstanding + customers-AR.
+      // table, receivables replaces outstanding + customers-AR, and payables
+      // is the vendor-side mirror of receivables. Payment Approvals is new,
+      // not a consolidation of an old screen.
       sections: [
         {
           title: 'MONEY',
@@ -422,6 +424,13 @@ export const navigationConfig: NavigationConfig = {
               icon: FileBarChart,
               label: 'Receivables',
               href: ROUTES.FINANCE.RECEIVABLES,
+            },
+            {
+              id: 'finance-payables',
+              permission: 'finance.view',
+              icon: Wallet,
+              label: 'Payables',
+              href: ROUTES.FINANCE.PAYABLES,
             },
             {
               id: 'finance-approvals',

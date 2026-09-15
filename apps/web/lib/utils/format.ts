@@ -13,7 +13,37 @@ export {
   formatSystemSize,
 } from '@tejas96/shared/utils';
 
+import { PaymentMethod } from '@tejas96/shared/types';
 import { formatDate } from '@tejas96/shared/utils';
+
+/**
+ * Half the payment methods are acronyms, and `toTitleLabel` lowercases them
+ * into "Neft", "Rtgs", "Imps" and "Upi" — which is simply not how any of them
+ * are written on a bank statement.
+ */
+const PAYMENT_METHOD_LABEL = {
+  [PaymentMethod.ONLINE]: 'Online',
+  [PaymentMethod.CHEQUE]: 'Cheque',
+  [PaymentMethod.CASH]: 'Cash',
+  [PaymentMethod.NEFT]: 'NEFT',
+  [PaymentMethod.RTGS]: 'RTGS',
+  [PaymentMethod.IMPS]: 'IMPS',
+  [PaymentMethod.UPI]: 'UPI',
+  [PaymentMethod.DEMAND_DRAFT]: 'Demand draft',
+  [PaymentMethod.CREDIT]: 'Credit',
+} satisfies Record<PaymentMethod, string>;
+
+/** "upi" → "UPI", "demand_draft" → "Demand draft"; anything unknown is title-cased. */
+export function formatPaymentMethod(method: string): string {
+  return (
+    (PAYMENT_METHOD_LABEL as Record<string, string | undefined>)[method] ?? toTitleLabel(method)
+  );
+}
+
+/** "1 receipt", "5 receipts" — never "1 receipts". */
+export function formatCount(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
 
 export function formatLabel(key: string): string {
   return key

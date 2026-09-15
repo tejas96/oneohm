@@ -1,6 +1,7 @@
 'use client';
 
 import { Box } from '@mui/material';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useMemo, useState } from 'react';
 
 import { ApprovalKpiCards } from './approval-kpi-cards';
@@ -10,6 +11,7 @@ import { useAutoFileApprovedReceipts } from './hooks/use-auto-file-receipts';
 
 import type { FilterState, TableSortModel } from '@/components/shared/advanced-table';
 import { CrmTable, type CrmQuickFilter } from '@/components/shared/crm-table';
+import { showToast } from '@/components/ui/sonner';
 import {
   useApprovalMutations,
   useApprovalSummary,
@@ -51,14 +53,60 @@ export function PaymentApprovalsPage(): JSX.Element {
   );
   const { user } = useAuth();
 
-  const [status, setStatus] = useState<ApprovalStatus>('pending');
+  // The status tab lives in the URL (`?status=rejected`), so a notification can
+  // open the right tab and a refresh keeps it. Pending is the bare URL.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const status = toStatus(searchParams.get('status'));
+  const setStatus = (next: ApprovalStatus): void => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === 'pending') params.delete('status');
+    else params.set('status', next);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+
   // CrmTable's `page` is zero-indexed (it renders `page + 1`); the API is
-  // one-indexed. Kept zero-based here and converted at the call.
-  const [page, setPage] = useState(0);
+  // one-indexed. Kept zero-based here and converted at the call. Remembered per
+  // status, so arriving on another tab from a link starts at its first page.
+  const [pageFor, setPageFor] = useState<{ status: ApprovalStatus; page: number }>({
+    status,
+    page: 0,
+  });
+  const page = pageFor.status === status ? pageFor.page : 0;
+  const setPage = (next: number): void => setPageFor({ status, page: next });
   const [search, setSearch] = useState('');
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
   const [filters, setFilters] = useState<FilterState>({});
   const [sortModel, setSortModel] = useState<TableSortModel | null>(null);
   const [selected, setSelected] = useState<ApprovalRow | null>(null);
+
+  // A notice links to one request (`?open=<id>`). Arriving on one opens that
+  // request in the drawer and clears whatever search was left in the box, so
+  // the queue behind it is not quietly filtered to something else — a stale
+  // search once made the page say "Nothing waiting" right under a notice that
+  // said something was. Keyed on the link, not on typing, so typing never
+  // remounts the table.
+  const openId = searchParams.get('open');
+  const [linkSeen, setLinkSeen] = useState<string | null>(null);
+  const [tableKey, setTableKey] = useState(0);
+  if (openId !== linkSeen) {
+    setLinkSeen(openId);
+    if (openId) {
+      setSearch('');
+      setPageFor({ status, page: 0 });
+      setTableKey((k) => k + 1);
+    }
+  }
+  const closeDrawer = (): void => {
+    setSelected(null);
+    if (!openId) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('open');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
   const summary = useApprovalSummary();
   const kindFilter = readFilter(filters, 'kind');
@@ -67,7 +115,7 @@ export function PaymentApprovalsPage(): JSX.Element {
   const query = usePaymentApprovals({
     status,
     page: page + 1,
-    limit: PAGE_SIZE,
+    limit: pageSize,
     search: search || undefined,
     kind: toKind(kindFilter),
     // A single date filter means that exact day, so it bounds both ends.
@@ -81,13 +129,27 @@ export function PaymentApprovalsPage(): JSX.Element {
 
   const rows = (query.data?.data ?? []) as ApprovalRow[];
 
+  /*
+   * The Pending chip counts what the table under it holds. The queue-wide
+   * summary said "Pending · 14" beside 4 rows once a type filter was on. While
+   * Pending is open that is the list's own total; on another tab the whole
+   * queue is only right when nothing narrows it, so otherwise it shows none.
+   */
+  const narrowed = Boolean(search || kindFilter || dateFilter);
+  const pendingChipCount =
+    status === 'pending' && query.data
+      ? query.data.total
+      : narrowed
+        ? undefined
+        : summary.data?.pendingCount;
+
   /** Status chips carry a live count only where one is meaningful. */
   const quickFilters = useMemo<CrmQuickFilter[]>(
     () => [
       {
         key: 'pending',
         label: 'Pending',
-        count: summary.data?.pendingCount,
+        count: pendingChipCount,
         tone: 'warning',
         dot: true,
       },
@@ -95,7 +157,7 @@ export function PaymentApprovalsPage(): JSX.Element {
       { key: 'rejected', label: 'Rejected', tone: 'danger', dot: true },
       { key: 'cancelled', label: 'Withdrawn', tone: 'neutral', dot: false },
     ],
-    [summary.data?.pendingCount],
+    [pendingChipCount],
   );
 
   return (
@@ -138,12 +200,14 @@ export function PaymentApprovalsPage(): JSX.Element {
       <ApprovalKpiCards />
 
       <CrmTable<ApprovalRow>
+        key={tableKey}
+        initialSearch={search}
         columns={APPROVAL_COLUMNS}
         rows={rows}
         getRowId={(row) => row.id}
         loading={query.isLoading}
         refetching={query.isFetching && !query.isLoading}
-        itemLabel="payments"
+        itemLabel="requests"
         // Narrower than the CRM default of 1280px: this grid has fewer columns
         // than the customer list, and Status must stay on screen rather than
         // sitting past a horizontal scroll.
@@ -155,10 +219,7 @@ export function PaymentApprovalsPage(): JSX.Element {
         }}
         quickFilters={quickFilters}
         activeQuickFilter={status}
-        onQuickFilterChange={(key) => {
-          setStatus((key || 'pending') as ApprovalStatus);
-          setPage(0);
-        }}
+        onQuickFilterChange={(key) => setStatus(toStatus(key))}
         filterColumns={[
           {
             field: 'kind',
@@ -168,10 +229,11 @@ export function PaymentApprovalsPage(): JSX.Element {
             filterOptions: [
               { label: 'Receipt', value: 'receipt' },
               { label: 'Expense', value: 'expense' },
+              { label: 'Vendor payment', value: 'vendor_payment' },
               { label: 'Reversal', value: 'reversal' },
             ],
           },
-          { field: 'valueDate', headerName: 'Payment date', filterable: true, filterType: 'date' },
+          { field: 'valueDate', headerName: 'Date', filterable: true, filterType: 'date' },
         ]}
         filterModel={filters}
         onFilterChange={(next) => {
@@ -184,12 +246,17 @@ export function PaymentApprovalsPage(): JSX.Element {
           setPage(0);
         }}
         page={page}
-        pageSize={PAGE_SIZE}
+        pageSize={pageSize}
         totalRowCount={query.data?.total ?? 0}
         onPageChange={setPage}
+        onPageSizeChange={(next) => {
+          setPageSize(next);
+          setPage(0);
+        }}
         onRowClick={setSelected}
         enableRowSelection={status === 'pending'}
-        selectionLabel={(count) => `${count} payment${count === 1 ? '' : 's'} selected`}
+        // "requests", like the footer: a selection can hold expenses and bills too.
+        selectionLabel={(count) => `${count} request${count === 1 ? '' : 's'} selected`}
         bulkActions={
           status === 'pending'
             ? [
@@ -204,6 +271,17 @@ export function PaymentApprovalsPage(): JSX.Element {
                     if (!processApprovals.allowed) {
                       processApprovals.onGatedClick();
                       return;
+                    }
+                    // Say so, rather than doing nothing: a click that silently
+                    // approves nothing looks like the button is broken.
+                    const own = selectedRows.length - ids.length;
+                    if (own > 0) {
+                      const them = own === 1 ? 'it' : 'them';
+                      showToast.warning(
+                        ids.length === 0
+                          ? `You recorded ${own === 1 ? 'this payment' : 'these payments'}, so someone else must approve ${them}.`
+                          : `${own} you recorded ${own === 1 ? 'was' : 'were'} skipped. Someone else must approve ${them}.`,
+                      );
                     }
                     if (ids.length > 0) {
                       bulkApprove.mutate(ids, {
@@ -221,12 +299,22 @@ export function PaymentApprovalsPage(): JSX.Element {
         }
       />
 
-      <ApprovalReviewDrawer approvalId={selected?.id ?? null} onClose={() => setSelected(null)} />
+      <ApprovalReviewDrawer approvalId={selected?.id ?? openId} onClose={closeDrawer} />
     </Box>
   );
 }
 
+/** Anything that is not a known tab is the pending queue. */
+function toStatus(value: string | null): ApprovalStatus {
+  return value === 'approved' || value === 'rejected' || value === 'cancelled' ? value : 'pending';
+}
+
 /** Narrows the free-form filter value to a kind the API accepts. */
 function toKind(value: string | undefined): ApprovalKind | undefined {
-  return value === 'receipt' || value === 'expense' || value === 'reversal' ? value : undefined;
+  return value === 'receipt' ||
+    value === 'expense' ||
+    value === 'reversal' ||
+    value === 'vendor_payment'
+    ? value
+    : undefined;
 }

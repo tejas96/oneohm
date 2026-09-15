@@ -4,11 +4,12 @@ import { Lock } from 'lucide-react';
 import * as React from 'react';
 
 import {
+  costPaise,
+  costUsedPct,
   marginPaise,
   openMilestonesByUrgency,
   overdueMilestones,
   plural,
-  waivedRemainderPaise,
 } from '../../lib/derive';
 import { CardLink, DetailCard, EmptyPane, Mono, TONE, TonePill } from '../../primitives';
 import type { ProjectDetailData } from '../../types';
@@ -67,21 +68,36 @@ export function MoneyCard({
   const overdue = s ? overdueMilestones(s) : [];
   const owedLate = overdue.reduce((sum, m) => sum + m.balancePaise, 0);
   const schedule = s ? openMilestonesByUrgency(s).slice(0, MAX_SCHEDULE_ROWS) : [];
+  /**
+   * Cost, not cash — same fields, same formula as the project Money tab
+   * (`costPaise`/`marginPaise`/`costUsedPct` in `lib/derive.ts`, the one place
+   * this arithmetic lives). A bill taken on credit is a cost the project
+   * already carries, so leaving it out of this card the way the Money tab no
+   * longer does would print two different margins for the same project.
+   */
+  const cost = s ? costPaise(s) : 0;
   const margin = s ? marginPaise(s) : null;
-  const usedPct = s && s.contractPaise > 0 ? Math.round((s.spentPaise / s.contractPaise) * 100) : 0;
+  const usedPct = s ? costUsedPct(s) : 0;
 
   /*
    * The bar splits the contract three ways: collected, still owed, written off.
-   * `waivedRemainderPaise` rather than the API's `waivedPaise` — see the note on
-   * that helper. With it the three shares add up to the contract exactly, so the
-   * bar has no unexplained grey tail.
+   * `waivedPaise` is the money actually written off on a waived milestone — the
+   * unpaid remainder, not its original expected amount — so the three shares
+   * add up to the contract exactly and the bar has no unexplained grey tail.
    */
-  const waived = s ? waivedRemainderPaise(s) : 0;
+  const waived = s ? s.waivedPaise : 0;
+  // Cancelled milestones' uncollected part. Without it every cancelled project's
+  // bar ended in an unexplained grey gap.
+  const cancelled = s?.cancelledPaise ?? 0;
   const share = (paise: number): number =>
     s && s.contractPaise > 0 ? Math.max(0, (paise / s.contractPaise) * 100) : 0;
   const receivedShare = Math.min(100, share(s?.receivedPaise ?? 0));
   const outstandingShare = Math.min(100 - receivedShare, share(s?.outstandingPaise ?? 0));
   const waivedShare = Math.min(100 - receivedShare - outstandingShare, share(waived));
+  const cancelledShare = Math.min(
+    100 - receivedShare - outstandingShare - waivedShare,
+    share(cancelled),
+  );
 
   return (
     <DetailCard
@@ -113,11 +129,12 @@ export function MoneyCard({
             className="flex h-2.5 w-full gap-[2px] overflow-hidden rounded-pill"
             style={{ background: 'var(--ds-canvas-sunken)' }}
             role="img"
-            aria-label={`${Math.round(receivedShare)} percent of the contract received, ${Math.round(outstandingShare)} percent outstanding${waived > 0 ? `, ${Math.round(waivedShare)} percent written off` : ''}.`}
+            aria-label={`${Math.round(receivedShare)} percent of the contract received, ${Math.round(outstandingShare)} percent outstanding${waived > 0 ? `, ${Math.round(waivedShare)} percent written off` : ''}${cancelled > 0 ? `, ${Math.round(cancelledShare)} percent cancelled` : ''}.`}
           >
             <span style={{ width: `${receivedShare}%`, background: TONE.success.ink }} />
             <span style={{ width: `${outstandingShare}%`, background: TONE.warning.ink }} />
             <span style={{ width: `${waivedShare}%`, background: 'var(--ds-neutral-300)' }} />
+            <span style={{ width: `${cancelledShare}%`, background: 'var(--ds-neutral-400)' }} />
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-foreground-secondary">
             <span className="inline-flex items-center gap-1.5">
@@ -144,6 +161,16 @@ export function MoneyCard({
                   style={{ background: 'var(--ds-neutral-300)' }}
                 />
                 Written off <Mono>{formatPaise(waived)}</Mono>
+              </span>
+            ) : null}
+            {cancelled > 0 ? (
+              <span className="inline-flex items-center gap-1.5 text-foreground-tertiary">
+                <span
+                  aria-hidden
+                  className="size-2 rounded-[2px]"
+                  style={{ background: 'var(--ds-neutral-400)' }}
+                />
+                Cancelled <Mono>{formatPaise(cancelled)}</Mono>
               </span>
             ) : null}
             {owedLate > 0 ? (
@@ -186,7 +213,7 @@ export function MoneyCard({
             </div>
           </dl>
 
-          {s.spentPaise > 0 && usedPct >= 80 ? (
+          {cost > 0 && usedPct >= 80 ? (
             <p
               className="mt-3 rounded-2xl px-3 py-2 text-[12px]"
               style={{

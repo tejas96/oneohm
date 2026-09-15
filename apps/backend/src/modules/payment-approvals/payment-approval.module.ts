@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { PaymentApprovalController } from './controllers';
 import { PendingLedgerEntryEntity } from './entities';
-import { PaymentApprovalService } from './services';
+import { PaymentApprovalNotifier, PaymentApprovalService } from './services';
 import { FinanceCommonModule } from '../finance-common/finance-common.module';
 import { LedgerModule } from '../ledger/ledger.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { StorageModule } from '../storage/storage.module';
 
 /**
@@ -20,9 +21,11 @@ import { StorageModule } from '../storage/storage.module';
     forwardRef(() => LedgerModule),
     FinanceCommonModule,
     StorageModule,
+    // The bell: waiting → approvers, approved / rejected → the submitter.
+    NotificationsModule,
   ],
   controllers: [PaymentApprovalController],
-  providers: [PaymentApprovalService],
+  providers: [PaymentApprovalService, PaymentApprovalNotifier],
   exports: [PaymentApprovalService],
 })
 export class PaymentApprovalModule {}

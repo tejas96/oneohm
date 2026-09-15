@@ -79,6 +79,10 @@ export interface ProjectBalanceRow {
   netCashPaise: number;
   receiptCount: number;
   milestoneCount: number;
+  /** Bills on credit less vendor payments on this project. Negative = an advance held by vendors. */
+  committedUnpaidPaise: number;
+  /** Cancelled milestones' amount that was never collected. */
+  cancelledPaise: number;
 }
 
 /**
@@ -147,6 +151,8 @@ export class LedgerRepository {
     'netCashPaise',
     'receiptCount',
     'milestoneCount',
+    'committedUnpaidPaise',
+    'cancelledPaise',
   ] as const;
 
   /**
@@ -292,7 +298,17 @@ export class LedgerRepository {
          unallocated_paise AS "unallocatedPaise",
          net_cash_paise    AS "netCashPaise",
          receipt_count     AS "receiptCount",
-         milestone_count   AS "milestoneCount"
+         milestone_count   AS "milestoneCount",
+         committed_unpaid_paise AS "committedUnpaidPaise",
+         -- The part of cancelled milestones that was never collected. NOT
+         -- cancelled_paise, which is their full amount: 7 of the 13 cancelled
+         -- projects took money before cancelling, and that money is already in
+         -- received_paise, so the full amount counted it twice. With this, a
+         -- project's received + outstanding + written off + cancelled equals
+         -- its contract exactly — checked on all 13.
+         (SELECT COALESCE(SUM(GREATEST(b.expected_paise - b.allocated_paise, 0)), 0)::BIGINT
+            FROM v_milestone_balance b
+           WHERE b.project_id = $1 AND b.status = 'cancelled') AS "cancelledPaise"
        FROM v_project_balance
        WHERE project_id = $1`,
       [projectId],
@@ -387,6 +403,36 @@ export class LedgerRepository {
          JOIN pending_ledger_entries p ON p.ledger_entry_id = e.id
          LEFT JOIN users su ON su.id = p.submitted_by
          LEFT JOIN users ru ON ru.id = p.reviewed_by
+        WHERE e.project_id = $1`,
+      [projectId],
+    );
+  }
+
+  /**
+   * The vendor name for entries that carry a `vendor_id` — a credit bill or a
+   * vendor payment. Kept separate from `listEntriesByProject` for the same
+   * reason as `getEntryAttributionByProject` above: the entity read stays a
+   * plain entity read, and this side query is merged in by `entryId` in the
+   * controller.
+   *
+   * Mirrors `LEDGER_PAGE_SQL`'s identical `vendors` join for the org-wide Cash
+   * page — same table, same column, no `deleted_at` filter — so a soft-deleted
+   * vendor still resolves a name here. A settled bill should not lose the
+   * vendor's name just because that vendor was later deactivated.
+   *
+   * An INNER JOIN on purpose: most entries (receipts, most expenses) carry no
+   * `vendor_id` at all, so this returns only the rows worth resolving, the
+   * same shape as the attribution query's own INNER JOIN.
+   */
+  async getEntryVendorNamesByProject(
+    projectId: string,
+    manager?: EntityManager,
+  ): Promise<Array<{ entryId: string; vendorName: string | null }>> {
+    return this.exec(manager).query(
+      `SELECT e.id   AS "entryId",
+              vn.name AS "vendorName"
+         FROM ledger_entries e
+         JOIN vendors vn ON vn.id = e.vendor_id
         WHERE e.project_id = $1`,
       [projectId],
     );
