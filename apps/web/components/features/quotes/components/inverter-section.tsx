@@ -327,8 +327,8 @@ export function InverterSection({
                 <>
                   <AlertTriangle className="size-3.5 shrink-0 text-warning" />
                   <span>
-                    Only {totalCapacityKw} kW of inverters for a {systemSizeKw} kW system. Output may
-                    be cut.
+                    Only {totalCapacityKw} kW of inverters for a {systemSizeKw} kW system. Output
+                    may be cut.
                   </span>
                 </>
               ) : (
