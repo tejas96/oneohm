@@ -45,7 +45,10 @@ export class WcrMapper implements ReportMapper<ProjectReportRawData, WcrViewMode
     if (inverters.length > 0) {
       fields.inverter_make_model = inverters
         .map((inv) =>
-          `${[inv.brand, inv.name].filter(Boolean).join(' ')} ${inv.capacityKw} kW × ${inv.quantity}`.trim(),
+          // str() rather than bare interpolation: a template literal stringifies a
+          // nullish capacity as the text "null", and this field is filed with the
+          // utility. The reduce below guards the same two fields for the same reason.
+          `${[inv.brand, inv.name].filter(Boolean).join(' ')} ${str(inv.capacityKw)} kW × ${str(inv.quantity)}`.trim(),
         )
         .join(', ');
       const totalCapacityKw = inverters.reduce(
