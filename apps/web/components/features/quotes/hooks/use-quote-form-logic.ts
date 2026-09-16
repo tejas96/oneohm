@@ -10,6 +10,8 @@ import type { QuoteBuilderFormData } from '../schemas/quote.schema';
 export interface UseQuoteFormLogicOptions {
   form: UseFormReturn<QuoteBuilderFormData>;
   onCalculationCleared: () => void;
+  /** Called when the phase changes under the rep, so hand-picked inverters can be dropped. */
+  onInverterSelectionInvalidated: () => void;
 }
 
 export interface UseQuoteFormLogicReturn {
@@ -43,6 +45,7 @@ export interface UseQuoteFormLogicReturn {
 export function useQuoteFormLogic({
   form,
   onCalculationCleared,
+  onInverterSelectionInvalidated,
 }: UseQuoteFormLogicOptions): UseQuoteFormLogicReturn {
   const { setValue, watch, getValues } = form;
 
@@ -63,14 +66,21 @@ export function useQuoteFormLogic({
   // Auto-switch phase based on system size (>7kW must be three phase)
   const handleSystemSizeChange = useCallback(
     (value: number) => {
+      const previousPhase = getValues('phaseType');
       setValue('systemSizeKw', value, { shouldValidate: true });
       if (value > 7) {
         setValue('phaseType', 'three_phase');
         setValue('preferredInverterCapacityKw', undefined);
+        // Only a real crossing clears hand-picked rows. A quote already on
+        // three phase keeps them through a size change — the capacity warning
+        // re-runs instead, exactly as it does below 7 kW.
+        if (previousPhase !== 'three_phase') {
+          onInverterSelectionInvalidated();
+        }
       }
       clearCalculationIfNeeded('systemSizeKw');
     },
-    [setValue, clearCalculationIfNeeded],
+    [setValue, getValues, clearCalculationIfNeeded, onInverterSelectionInvalidated],
   );
 
   const handleSelectedSubsidyIdsChange = useCallback(
@@ -156,11 +166,18 @@ export function useQuoteFormLogic({
   // Phase change -> reset inverter capacity
   const handlePhaseChange = useCallback(
     (value: string) => {
+      const previousPhase = getValues('phaseType');
       setValue('phaseType', value);
       setValue('preferredInverterCapacityKw', undefined);
+      // The phase buttons fire on every click, the selected one included. A
+      // click that leaves the phase where it was is not a change, so it must
+      // not cost the rep the inverters they picked.
+      if (previousPhase !== value) {
+        onInverterSelectionInvalidated();
+      }
       clearCalculationIfNeeded('phaseType');
     },
-    [setValue, clearCalculationIfNeeded],
+    [setValue, getValues, clearCalculationIfNeeded, onInverterSelectionInvalidated],
   );
 
   // Generic field change that checks if calculation should be cleared

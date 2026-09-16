@@ -18,7 +18,7 @@ export class AnnexureProformaAMapper
     const property = project.property;
     const snapshot = getQuoteSnapshot(project);
     const panel = snapshot?.calculation?.panels?.[0];
-    const inverter = snapshot?.calculation?.inverters?.inverters?.[0];
+    const inverters = snapshot?.calculation?.inverters?.inverters ?? [];
     const kw = getSystemSizeKw(project);
 
     fields.vendor_name = companyName;
@@ -41,9 +41,17 @@ export class AnnexureProformaAMapper
       fields.module_capacity_kw = str(moduleKw);
     }
 
-    if (inverter) {
-      fields.inverter_capacity_kw = str(inverter.capacityKw);
-      fields.inverter_make = str(inverter.brand);
+    // Same first-entry bug as the WCR: this form goes to the PM Surya Ghar
+    // portal, so an understated capacity and a missing make are not cosmetic.
+    if (inverters.length > 0) {
+      const totalCapacityKw = inverters.reduce(
+        (sum, inv) => sum + (inv.capacityKw ?? 0) * (inv.quantity ?? 0),
+        0,
+      );
+      fields.inverter_capacity_kw = str(totalCapacityKw);
+      fields.inverter_make = Array.from(
+        new Set(inverters.map((inv) => inv.brand).filter(Boolean)),
+      ).join(', ');
     }
 
     return fields;

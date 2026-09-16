@@ -193,7 +193,12 @@ export class QuoteCalculatorController {
     const calculatorInputs: CalculatorInputs = {
       phaseType: input.phaseType,
       dcrPreference: input.dcrPreference ?? DcrPreference.DCR_ONLY,
-      calculationMode: QuoteCalculationMode.AUTO,
+      // Hardcoded AUTO until now, so every hand-picked quote recorded itself as
+      // one the server chose. Nothing rebuilds a form from these inputs today,
+      // so nothing was visibly wrong — the record was simply false.
+      calculationMode: input.inverterOverrides?.length
+        ? QuoteCalculationMode.MANUAL
+        : QuoteCalculationMode.AUTO,
       dcrSystemSizeKw: calculation.systemConfig.dcrSizeKw,
       nonDcrSystemSizeKw: calculation.systemConfig.nonDcrSizeKw,
       floorNumber: input.floorNumber ?? 0,
@@ -209,6 +214,7 @@ export class QuoteCalculatorController {
       manualDcrPanelCount: input.manualDcrPanelCount,
       manualNonDcrPanelCount: input.manualNonDcrPanelCount,
       manualInverterCount: input.manualInverterCount,
+      inverterOverrides: input.inverterOverrides,
       projectType: input.projectType,
       actualSystemSizeKw: calculation.actualTotalWattage / 1000,
       actualDcrSizeKw: calculation.systemConfig.dcrSizeKw,

@@ -54,6 +54,14 @@ export interface CalculatorInputs {
   manualDcrPanelCount?: number;
   manualNonDcrPanelCount?: number;
   manualInverterCount?: number;
+  /**
+   * The exact inverters a rep chose by hand. Present only on a manual quote.
+   *
+   * The priced result lives in the snapshot's `calculation`, so a quote reads
+   * correctly without this — but without it the stored INPUT says the server
+   * chose, which is not what happened.
+   */
+  inverterOverrides?: Array<{ productId: string; quantity: number }>;
   projectType?: ProjectType;
   actualSystemSizeKw?: number;
   actualDcrSizeKw?: number;
