@@ -26,6 +26,34 @@ const MAX_ROWS = 10;
 /** Matches @Max(20) on InverterOverrideDto.quantity. */
 const MAX_QUANTITY_PER_ROW = 20;
 
+/**
+ * The rules every inverter list obeys, wherever the rows came from.
+ *
+ * A product already on the list merges into its row. Two rows of one product
+ * are two identical lines on the quote and on the BOM, and the server refuses
+ * them outright — so the merge happens here rather than as an error the rep
+ * has to read and undo. Each quantity stays between 1 and the server's cap, and
+ * products past the row limit are dropped.
+ *
+ * The Auto → Manual pre-fill needs this as much as a hand edit does. The
+ * server's fallback combination puts no cap on one product, so a large auto
+ * quote can price more of one inverter than a row may carry; copied raw, the
+ * next Calculate is refused.
+ */
+export function normalizeInverterRows(rows: readonly InverterOverride[]): InverterOverride[] {
+  const merged: InverterOverride[] = [];
+  for (const row of rows) {
+    const quantity = Math.min(MAX_QUANTITY_PER_ROW, Math.max(1, row.quantity));
+    const existing = merged.find((candidate) => candidate.productId === row.productId);
+    if (existing) {
+      existing.quantity = Math.min(MAX_QUANTITY_PER_ROW, existing.quantity + quantity);
+    } else if (merged.length < MAX_ROWS) {
+      merged.push({ productId: row.productId, quantity });
+    }
+  }
+  return merged;
+}
+
 export interface InverterSectionProps {
   mode: 'auto' | 'manual';
   onModeChange: (mode: 'auto' | 'manual') => void;
@@ -80,28 +108,11 @@ export function InverterSection({
     0,
   );
 
-  /*
-    Adding a product already on the list merges into its row.
-
-    Two rows of one product are two identical lines on the quote and on the
-    BOM, and the server refuses them outright — so the merge happens here
-    rather than as an error the rep has to read and undo.
-  */
+  // One more of this product: a new row, or — through normalizeInverterRows —
+  // one more on the row it already has.
   const addRow = useCallback(
     (productId: string) => {
-      const existing = rows.find((row) => row.productId === productId);
-      if (existing) {
-        onRowsChange(
-          rows.map((row) =>
-            row.productId === productId
-              ? { ...row, quantity: Math.min(MAX_QUANTITY_PER_ROW, row.quantity + 1) }
-              : row,
-          ),
-        );
-        return;
-      }
-      if (rows.length >= MAX_ROWS) return;
-      onRowsChange([...rows, { productId, quantity: 1 }]);
+      onRowsChange(normalizeInverterRows([...rows, { productId, quantity: 1 }]));
     },
     [rows, onRowsChange],
   );
@@ -109,10 +120,8 @@ export function InverterSection({
   const setQuantity = useCallback(
     (productId: string, quantity: number) => {
       onRowsChange(
-        rows.map((row) =>
-          row.productId === productId
-            ? { ...row, quantity: Math.min(MAX_QUANTITY_PER_ROW, Math.max(1, quantity)) }
-            : row,
+        normalizeInverterRows(
+          rows.map((row) => (row.productId === productId ? { ...row, quantity } : row)),
         ),
       );
     },
@@ -297,9 +306,13 @@ export function InverterSection({
                 No asChild: the design-system SelectTrigger always renders its own
                 chevron beside its children, and Radix's Slot accepts exactly one
                 child — asChild here crashed the page the moment Manual opened.
+
+                flex! because SelectTrigger's [&>span]:line-clamp-1 targets this
+                span with a more specific selector, and its display:-webkit-box
+                stacked the icon above the label.
               */}
               <SelectTrigger>
-                <span className="flex items-center gap-1.5 text-foreground-secondary">
+                <span className="flex! items-center gap-1.5 text-foreground-secondary">
                   <Plus className="size-3.5" />
                   Add inverter
                 </span>

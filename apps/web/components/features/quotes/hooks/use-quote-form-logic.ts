@@ -166,12 +166,18 @@ export function useQuoteFormLogic({
   // Phase change -> reset inverter capacity
   const handlePhaseChange = useCallback(
     (value: string) => {
+      const previousPhase = getValues('phaseType');
       setValue('phaseType', value);
       setValue('preferredInverterCapacityKw', undefined);
-      onInverterSelectionInvalidated();
+      // The phase buttons fire on every click, the selected one included. A
+      // click that leaves the phase where it was is not a change, so it must
+      // not cost the rep the inverters they picked.
+      if (previousPhase !== value) {
+        onInverterSelectionInvalidated();
+      }
       clearCalculationIfNeeded('phaseType');
     },
-    [setValue, clearCalculationIfNeeded, onInverterSelectionInvalidated],
+    [setValue, getValues, clearCalculationIfNeeded, onInverterSelectionInvalidated],
   );
 
   // Generic field change that checks if calculation should be cleared

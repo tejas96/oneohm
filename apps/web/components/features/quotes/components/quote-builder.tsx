@@ -51,7 +51,7 @@ import type {
   CreateFromCalculationRequest,
   SubsidyConfigResponse,
 } from '../types';
-import { InverterSection, type InverterOverride } from './inverter-section';
+import { InverterSection, normalizeInverterRows, type InverterOverride } from './inverter-section';
 import { PaymentTermsModal } from './payment-terms-modal';
 import { QuotePreviewPanel } from './quote-preview-panel';
 
@@ -339,10 +339,21 @@ export function QuoteBuilder(): JSX.Element {
     about this roof, and the capacity warning re-runs against the new size and
     says so. A phase change is different — the inverter itself becomes the
     wrong device.
+
+    Dropped rows are said out loud, because the click that drops them — a phase
+    button, or a size past 7 kW — is not a click on the inverters. An empty list
+    loses nothing and says nothing. The toast is raised here, from the rows this
+    render holds, and never inside a state updater: StrictMode runs updaters
+    twice, and the rep would read the same sentence twice.
   */
   const onInverterSelectionInvalidated = useCallback(() => {
+    if (inverterOverrides.length > 0) {
+      showToast.warning(
+        'The inverters you picked are cleared. An inverter built for one phase is the wrong device on the other.',
+      );
+    }
     setInverterOverrides([]);
-  }, []);
+  }, [inverterOverrides]);
 
   /*
     Switching to Manual starts from what Auto just priced rather than from
@@ -357,11 +368,16 @@ export function QuoteBuilder(): JSX.Element {
       if (next === inverterMode) return;
       setInverterMode(next);
       if (next === 'manual') {
+        // Through the same rules as a hand edit: a large auto quote can price
+        // more of one inverter than a row may carry, and the rep would meet
+        // that as a refused Calculate on rows they never touched.
         setInverterOverrides(
-          calculation?.inverters.inverters.map((inv) => ({
-            productId: inv.productId,
-            quantity: inv.quantity,
-          })) ?? [],
+          normalizeInverterRows(
+            calculation?.inverters.inverters.map((inv) => ({
+              productId: inv.productId,
+              quantity: inv.quantity,
+            })) ?? [],
+          ),
         );
         // Manual never sends a brand or capacity, and returning to Auto must
         // start from auto — not from a preference set before the switch.
