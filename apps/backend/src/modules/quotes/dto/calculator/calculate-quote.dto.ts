@@ -58,10 +58,12 @@ export class InverterOverrideDto {
     description: 'Number of inverters of this type',
     example: 2,
     minimum: 1,
+    maximum: 20,
   })
   @IsNumber()
   @IsPositive()
   @Min(1)
+  @Max(20)
   quantity!: number;
 }
 

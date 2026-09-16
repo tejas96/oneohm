@@ -354,6 +354,19 @@ export class QuoteCalculatorService {
           'Use inverterOverrides to specify exact products, or manual count to let the system find optimal combination.',
       );
     }
+
+    // Overrides name exact products, so `calculateInverters` never applies the
+    // brand or capacity filter. Accepting both silently drops one of them and
+    // returns a plausible price built from an input the caller did not send.
+    if (
+      input.inverterOverrides?.length &&
+      (input.preferredInverterBrand || input.preferredInverterCapacityKw !== undefined)
+    ) {
+      throw new BadRequestException(
+        'Cannot use inverterOverrides together with preferredInverterBrand or preferredInverterCapacityKw. ' +
+          'Overrides name exact products, so a brand or capacity preference would be ignored.',
+      );
+    }
   }
 
   /**
@@ -919,7 +932,13 @@ export class QuoteCalculatorService {
   ): Promise<CalculatedInverterConfig> {
     // If overrides provided, validate and use them (capacity filter is NOT applied -- overrides specify exact products)
     if (overrides && overrides.length > 0) {
-      return this.calculateInvertersWithOverrides(systemSizeKw, projectType, overrides, warnings);
+      return this.calculateInvertersWithOverrides(
+        systemSizeKw,
+        phaseType,
+        projectType,
+        overrides,
+        warnings,
+      );
     }
 
     // Auto-calculate inverters
@@ -1007,10 +1026,23 @@ export class QuoteCalculatorService {
    */
   private async calculateInvertersWithOverrides(
     systemSizeKw: number,
+    phaseType: string,
     projectType: ProjectType,
     overrides: InverterOverrideDto[],
     warnings: ValidationWarning[],
   ): Promise<CalculatedInverterConfig> {
+    // Two rows of one product price as two identical BOM lines and read on the
+    // quote as two different pieces of equipment. One row, one product.
+    const seenProductIds = new Set<string>();
+    for (const override of overrides) {
+      if (seenProductIds.has(override.productId)) {
+        throw new BadRequestException(
+          `Inverter ${override.productId} is listed twice. Send one row per product with a combined quantity.`,
+        );
+      }
+      seenProductIds.add(override.productId);
+    }
+
     const invertersWithPricing: CalculatedInverterConfig['inverters'] = [];
     let totalCapacityKw = 0;
 
@@ -1026,9 +1058,29 @@ export class QuoteCalculatorService {
         throw new BadRequestException(`Inverter product ${override.productId} not found`);
       }
 
+      // `findById` looks up ANY product. Without this, a panel's id prices as a
+      // 0 kW "inverter" and lands in the BOM under itemType 'inverter'.
+      if (inverter.productType?.code !== PRODUCT_TYPE_INVERTER) {
+        throw new BadRequestException(
+          `${inverter.name} is not an inverter and cannot be used as one.`,
+        );
+      }
+
       const specs = inverter.specifications;
       if (!specs) {
         throw new BadRequestException(`Inverter ${inverter.name} has invalid specifications`);
+      }
+
+      // Overrides do not run through `findInvertersByPhase`, so nothing has
+      // checked the phase. It warns rather than blocks, to match how the
+      // capacity rule already behaves on this path.
+      const specPhase = specs.phase_type;
+      if (typeof specPhase === 'string' && specPhase && specPhase !== phaseType) {
+        warnings.push({
+          code: 'INVERTER_PHASE_MISMATCH',
+          message: `${inverter.name} is a ${specPhase.replace(/_/g, ' ')} inverter on a ${phaseType.replace(/_/g, ' ')} system.`,
+          severity: 'warning',
+        });
       }
 
       const capacityKw = Number(specs.capacity_kw || 0);
