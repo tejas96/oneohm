@@ -520,7 +520,10 @@ with:
     if (inverters.length > 0) {
       fields.inverter_make_model = inverters
         .map((inv) =>
-          `${[inv.brand, inv.name].filter(Boolean).join(' ')} ${inv.capacityKw} kW × ${inv.quantity}`.trim(),
+          // str() rather than bare interpolation: a template literal stringifies a
+          // nullish capacity as the text "null", and this field is filed with the
+          // utility. The reduce below guards the same two fields for the same reason.
+          `${[inv.brand, inv.name].filter(Boolean).join(' ')} ${str(inv.capacityKw)} kW × ${str(inv.quantity)}`.trim(),
         )
         .join(', ');
       const totalCapacityKw = inverters.reduce(
@@ -1441,11 +1444,19 @@ In `applyPhase`, replace the whole function body:
 
 ```ts
 export function applyPhase(form: QuoteForm, phaseType: string): Applied {
+  /*
+    The phase card fires on every tap, including a tap on the phase already
+    chosen. That is not a change, so it must not cost the rep the inverters
+    they picked. (The capacity reset below is the old behaviour and is left
+    exactly as it was.)
+  */
+  const phaseChanged = phaseType !== form.phaseType;
+
   const next: QuoteForm = {
     ...form,
     phaseType,
     preferredInverterCapacityKw: undefined,
-    inverterOverrides: [],
+    inverterOverrides: phaseChanged ? [] : form.inverterOverrides,
   };
 
   const consequences: Consequence[] = [];
@@ -1457,7 +1468,7 @@ export function applyPhase(form: QuoteForm, phaseType: string): Applied {
     });
   }
 
-  if (form.inverterOverrides.length > 0) {
+  if (phaseChanged && form.inverterOverrides.length > 0) {
     consequences.push({
       field: 'inverterOverrides',
       message:
@@ -1487,6 +1498,12 @@ export function applyInverterMode(
   inverterMode: 'auto' | 'manual',
   pricedInverters?: readonly { productId: string; quantity: number }[],
 ): QuoteForm {
+  // Choosing the mode already on is not a change. Without this, a second tap on
+  // "Choose myself" copies the last price over rows the rep has edited — or,
+  // once those edits have killed the price, empties the list outright.
+  if (form.inverterMode === inverterMode) {
+    return form;
+  }
   if (inverterMode === 'auto') {
     return { ...form, inverterMode, inverterOverrides: [] };
   }
@@ -1618,6 +1635,7 @@ EOF
 
 **Files:**
 - Modify: `src/features/quotes/api/catalogue.api.ts:1-12, 185-192, 137-152, 213-230`
+- Modify: `src/features/quotes/components/OptionPicker.tsx:44-75, 90-100, 150-160` (one optional prop)
 - Modify: `src/features/quotes/components/configSteps.tsx:1-10, 355-382, 464-505`
 - Modify: `src/features/quotes/screens/CreateQuoteRoute.tsx:355-380, 455-485, 700-735, 1005-1026`
 
@@ -1746,9 +1764,26 @@ Replace the whole `<FieldGroup label="Inverter">…</FieldGroup>` block (lines 4
       </FieldGroup>
 ```
 
-- [ ] **Step 4: Add the rows sub-component**
+- [ ] **Step 4: Let `OptionPicker` omit its "Auto" choice, then add the rows sub-component**
 
-Add to `configSteps.tsx`, immediately before `EquipmentStep`:
+`OptionPicker` always renders an "Auto" choice — a chip on the inline path, a pre-ticked first row in the sheet — and shows `autoLabel` as the field's value while nothing is selected. For every existing caller that is right: `undefined` means "the server picks". For "Add inverter" it is wrong twice over: the field would read "Auto" inside the manual picker, and the sheet would open on a ticked "Auto" row that does nothing.
+
+In `src/features/quotes/components/OptionPicker.tsx`, add one optional prop, defaulting to today's behaviour so no existing caller changes:
+
+```ts
+  /**
+   * Offer "Auto" as a choice. On by default — for every picker that sets a
+   * preference, `undefined` means the server picks.
+   *
+   * Off for a picker that ADDS something, where there is no server choice to
+   * fall back to. `autoLabel` then serves only as the field's placeholder.
+   */
+  allowAuto?: boolean;
+```
+
+Destructure it as `allowAuto = true,`. Then wrap the auto `ValueChip` on the inline path and the auto `PickerRow` in the sheet, each in `{allowAuto ? ( … ) : null}`. Nothing else in the component changes.
+
+Now add to `configSteps.tsx`, immediately before `EquipmentStep`:
 
 ```tsx
 /**
@@ -1821,6 +1856,8 @@ function InverterRows({
       {form.inverterOverrides.length < MAX_INVERTER_ROWS ? (
         <OptionPicker
           alwaysField
+          allowAuto={false}
+          autoLabel="Choose an inverter"
           emptyNote={
             products.length === 0
               ? `No inverters at ${form.phaseType.replace('_', ' ')} in the catalogue.`
@@ -1963,12 +2000,18 @@ Add two handlers after `capacity`:
         unlike the panel counts it goes through `guardedChange` and takes the
         price with it.
       */
-      inverterMode: (mode: 'auto' | 'manual') =>
+      inverterMode: (mode: 'auto' | 'manual') => {
+        // A tap on the mode already showing changes nothing, so it must not
+        // raise the kill-the-price sheet either.
+        if (mode === form.inverterMode) {
+          return;
+        }
         guardedChange(() =>
           setForm(current =>
             applyInverterMode(current, mode, calculation?.inverters.inverters),
           ),
-        ),
+        );
+      },
       inverterRows: (rows: InverterOverride[]) =>
         guardedChange(() => setForm(current => applyInverterRows(current, rows))),
 ```

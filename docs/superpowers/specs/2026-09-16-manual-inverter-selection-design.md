@@ -206,3 +206,13 @@ Annexure and confirm both inverters print.
 **EPC app** (debug build, Metro running, backend on `8085`): the same walk
 through the wizard, plus the project detail screen showing two inverter lines
 rather than a false multiplied total.
+
+## As built
+
+- `@tejas96/shared` shipped as 1.12.4, published from the feature branch by workflow_dispatch, not as 1.13.0.
+- The web holds the mode and the rows as component state, so `constants.ts` and the shared form schema were not changed.
+- Mobile `OptionPicker` gained an `allowAuto` prop, so "Add inverter" offers no "Auto" choice.
+- The mobile severe-warning list lives in `components/priceSections.tsx`, not `model/pricing.ts`.
+- The web hides its inverter summary line while the preview shows a price, so the total has one home.
+- A tap on the phase already chosen keeps the rows on both clients, and dropped rows are announced on both.
+- The Auto → Manual pre-fill is clamped to 20 per row and 10 rows on both clients.
