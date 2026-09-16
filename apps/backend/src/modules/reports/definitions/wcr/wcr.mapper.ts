@@ -13,7 +13,7 @@ export class WcrMapper implements ReportMapper<ProjectReportRawData, WcrViewMode
     const property = project.property;
     const snapshot = getQuoteSnapshot(project);
     const panel = snapshot?.calculation?.panels?.[0];
-    const inverter = snapshot?.calculation?.inverters?.inverters?.[0];
+    const inverters = snapshot?.calculation?.inverters?.inverters ?? [];
     const kw = getSystemSizeKw(project);
 
     fields.vendor_name = companyName;
@@ -36,11 +36,24 @@ export class WcrMapper implements ReportMapper<ProjectReportRawData, WcrViewMode
         pw || perf ? `${pw ?? ''}${pw && perf ? '+' : ''}${perf ?? ''} Years`.trim() : '';
     }
 
-    if (inverter) {
-      const makeModel = [inverter.brand, inverter.name].filter(Boolean).join(' ');
-      fields.inverter_make_model = makeModel;
-      fields.inverter_rating = str(inverter.capacityKw);
-      fields.inverter_capacity = str(inverter.capacityKw);
+    /*
+      The form carries one field per fact, so a mixed set is joined into it.
+      Taking the first entry — which this did — printed a 12 kW Sungrow on a
+      system that also carries a 6 kW Deye, and understated the rating by a
+      third, on a document filed with the utility.
+    */
+    if (inverters.length > 0) {
+      fields.inverter_make_model = inverters
+        .map((inv) =>
+          `${[inv.brand, inv.name].filter(Boolean).join(' ')} ${inv.capacityKw} kW × ${inv.quantity}`.trim(),
+        )
+        .join(', ');
+      const totalCapacityKw = inverters.reduce(
+        (sum, inv) => sum + (inv.capacityKw ?? 0) * (inv.quantity ?? 0),
+        0,
+      );
+      fields.inverter_rating = str(totalCapacityKw);
+      fields.inverter_capacity = str(totalCapacityKw);
     }
 
     return fields;
