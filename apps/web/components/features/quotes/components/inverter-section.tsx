@@ -4,7 +4,6 @@ import type { InverterProductOption } from '@tejas96/shared/utils';
 import { AlertTriangle, Info, Plus, X } from 'lucide-react';
 import { useCallback } from 'react';
 
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -284,11 +283,16 @@ export function InverterSection({
 
           {rows.length < MAX_ROWS && (
             <Select value="" onValueChange={addRow}>
-              <SelectTrigger asChild>
-                <Button type="button" variant="outline" size="sm" className="w-full justify-start">
-                  <Plus className="mr-1.5 size-3.5" />
+              {/*
+                No asChild: the design-system SelectTrigger always renders its own
+                chevron beside its children, and Radix's Slot accepts exactly one
+                child — asChild here crashed the page the moment Manual opened.
+              */}
+              <SelectTrigger>
+                <span className="flex items-center gap-1.5 text-foreground-secondary">
+                  <Plus className="size-3.5" />
                   Add inverter
-                </Button>
+                </span>
               </SelectTrigger>
               <SelectContent>
                 {productOptions.map((product) => (
