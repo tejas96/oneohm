@@ -66,18 +66,21 @@ export function useQuoteFormLogic({
   // Auto-switch phase based on system size (>7kW must be three phase)
   const handleSystemSizeChange = useCallback(
     (value: number) => {
+      const previousPhase = getValues('phaseType');
       setValue('systemSizeKw', value, { shouldValidate: true });
       if (value > 7) {
         setValue('phaseType', 'three_phase');
         setValue('preferredInverterCapacityKw', undefined);
-        // Crossing 7 kW rewrites the phase. A single-phase inverter on a
-        // three-phase site is wrong, not merely oversized, so the hand-picked
-        // rows go with it.
-        onInverterSelectionInvalidated();
+        // Only a real crossing clears hand-picked rows. A quote already on
+        // three phase keeps them through a size change — the capacity warning
+        // re-runs instead, exactly as it does below 7 kW.
+        if (previousPhase !== 'three_phase') {
+          onInverterSelectionInvalidated();
+        }
       }
       clearCalculationIfNeeded('systemSizeKw');
     },
-    [setValue, clearCalculationIfNeeded, onInverterSelectionInvalidated],
+    [setValue, getValues, clearCalculationIfNeeded, onInverterSelectionInvalidated],
   );
 
   const handleSelectedSubsidyIdsChange = useCallback(
