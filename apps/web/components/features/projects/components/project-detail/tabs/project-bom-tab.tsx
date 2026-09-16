@@ -78,12 +78,15 @@ const ALLOC_TONE: Record<RowAllocStatus, Tone> = {
   allocated: 'success',
   partial: 'warning',
   pending: 'neutral',
+  not_reservable: 'neutral',
 };
 
 const ALLOC_LABEL: Record<RowAllocStatus, string> = {
   allocated: 'Reserved',
   partial: 'Partial',
   pending: 'Pending',
+  // Structure is sold by the kW and moves as sets; reserve it by hand from Allocations.
+  not_reservable: 'Not from BOM',
 };
 
 // Trailing 36px column holds the per-row actions menu, on every row that has
@@ -529,6 +532,11 @@ export const ProjectBomTab = React.memo(
                           <TonePill
                             label={ALLOC_LABEL[item.allocationStatus]}
                             tone={ALLOC_TONE[item.allocationStatus]}
+                            title={
+                              item.allocationStatus === 'not_reservable'
+                                ? 'Counted in kW, so Reserve stock skips it. Reserve structure in sets from the Allocations tab.'
+                                : undefined
+                            }
                           />
                         </div>
 

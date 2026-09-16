@@ -28,11 +28,10 @@ export class BomItemResponseDto {
   source!: string;
   changeState!: BomLineChangeState;
   /**
-   * Per-product stock reservation status. 'pending' also covers lines the
-   * allocation map has no entry for at all — a per_kw/per_watt line (not a
-   * reservable unit) or a removed line (quantity 0).
+   * Per-product stock reservation status. 'not_reservable' is a per_kw line:
+   * its quantity is kW, which no warehouse holds. See basisTakesStock.
    */
-  allocationStatus!: 'allocated' | 'partial' | 'pending';
+  allocationStatus!: 'allocated' | 'partial' | 'pending' | 'not_reservable';
   serials!: BomItemSerialResponseDto[];
   sortOrder!: number;
 }
@@ -85,7 +84,7 @@ export class BomResponseDto {
   /**
    * Aggregate stock-reservation status derived from the same per-product map
    * that fills each line's `allocationStatus`: 'fully_allocated' when every
-   * product line is fully reserved, 'partial' when some are, 'pending'
+   * reservable line is fully reserved, 'partial' when some are, 'pending'
    * otherwise (including "nothing to reserve"). Duplicates information
    * already in `items[]`, kept anyway because `project-bom-tab.tsx` and
    * `project-dashboard-page.tsx` both read this exact top-level field and

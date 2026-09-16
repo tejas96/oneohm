@@ -15,6 +15,7 @@ import { DataSource, EntityManager, IsNull, Not } from 'typeorm';
 import { BomItemEntity } from '../../bom/entities/bom-item.entity';
 import { BomEntity } from '../../bom/entities/bom.entity';
 import { BomRepository } from '../../bom/repositories/bom.repository';
+import { isReservableLine } from '../../bom/services/reservable-line';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { InventoryStockEntity } from '../entities/inventory-stock.entity';
 import { InventoryTransactionEntity } from '../entities/inventory-transaction.entity';
@@ -96,17 +97,13 @@ export class BomAllocationService {
       const itemRepo = manager.getRepository(BomItemEntity);
       const items = await itemRepo.find({ where: { bomId }, relations: ['product'] });
 
-      // Group by productId. quantity is NUMERIC (string) now, and a per_kw
-      // line's quantity is kW — which is not a reservable unit. Only
-      // per_unit lines reserve stock, and a removed line (quantity 0)
-      // reserves nothing.
+      // Group by productId. quantity is NUMERIC (string) now. Which lines
+      // reserve at all is isReservableLine's call — see that file.
       const groupedItems = items.reduce<
         Map<string, { productId: string; name: string; totalQty: number }>
       >((acc, item) => {
-        if (!item.productId) return acc;
-        if (item.pricingBasis !== 'per_unit') return acc;
+        if (!isReservableLine(item)) return acc;
         const qty = Number(item.quantity);
-        if (qty <= 0) return acc;
         const existing = acc.get(item.productId);
         if (existing) {
           existing.totalQty += qty;
@@ -346,9 +343,9 @@ export class BomAllocationService {
   /**
    * Per-product allocation status for a BOM, computed from live allocations.
    *
-   * Only per_unit lines with quantity > 0 count toward requirement — a
-   * per_kw line's quantity is kW (not a reservable unit) and a removed
-   * line keeps its row at zero.
+   * Only lines isReservableLine accepts count toward requirement — a per_kw
+   * line's quantity is kW (not a reservable unit) and a removed line keeps
+   * its row at zero.
    *
    * Returns the map instead of writing it to bom.allocation_status: that
    * column no longer exists, and the caller always recomputed and
@@ -364,10 +361,8 @@ export class BomAllocationService {
 
     const required = new Map<string, number>();
     for (const item of items) {
-      if (!item.productId) continue;
-      if (item.pricingBasis !== 'per_unit') continue;
+      if (!isReservableLine(item)) continue;
       const qty = Number(item.quantity);
-      if (qty <= 0) continue;
       required.set(item.productId, (required.get(item.productId) ?? 0) + qty);
     }
 
