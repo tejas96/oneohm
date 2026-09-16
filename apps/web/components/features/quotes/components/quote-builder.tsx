@@ -351,6 +351,10 @@ export function QuoteBuilder(): JSX.Element {
   */
   const handleInverterModeChange = useCallback(
     (next: 'auto' | 'manual') => {
+      // A click on the mode already showing is not a change. Without this, a
+      // second click on "Manual" copies the last price over rows the rep has
+      // edited — or, once an edit has cleared the price, empties the list.
+      if (next === inverterMode) return;
       setInverterMode(next);
       if (next === 'manual') {
         setInverterOverrides(
@@ -359,12 +363,16 @@ export function QuoteBuilder(): JSX.Element {
             quantity: inv.quantity,
           })) ?? [],
         );
+        // Manual never sends a brand or capacity, and returning to Auto must
+        // start from auto — not from a preference set before the switch.
+        form.setValue('preferredInverterBrand', '');
+        form.setValue('preferredInverterCapacityKw', undefined);
       } else {
         setInverterOverrides([]);
       }
       onCalculationCleared();
     },
-    [calculation, onCalculationCleared],
+    [inverterMode, calculation, onCalculationCleared, form],
   );
 
   const handleInverterRowsChange = useCallback(
