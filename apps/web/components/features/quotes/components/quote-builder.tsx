@@ -1404,6 +1404,7 @@ export function QuoteBuilder(): JSX.Element {
                 systemSizeKw={form.watch('systemSizeKw')}
                 phaseType={form.watch('phaseType')}
                 isLoading={config.isLoading}
+                hasPrice={!!calculation}
               />
 
               {/* Structure Type */}

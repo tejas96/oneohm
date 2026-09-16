@@ -46,6 +46,13 @@ export interface InverterSectionProps {
   systemSizeKw: number;
   phaseType: string;
   isLoading: boolean;
+
+  /**
+   * A price is on screen. The preview panel then states the inverter total and
+   * the server's capacity warning, so this section's own summary line would say
+   * the same thing a second time — it is hidden until the price clears.
+   */
+  hasPrice: boolean;
 }
 
 export function InverterSection({
@@ -63,6 +70,7 @@ export function InverterSection({
   systemSizeKw,
   phaseType,
   isLoading,
+  hasPrice,
 }: InverterSectionProps): React.JSX.Element {
   const byId = new Map(productOptions.map((p) => [p.productId, p]));
   const totalCapacityKw = rows.reduce(
@@ -304,7 +312,7 @@ export function InverterSection({
             </Select>
           )}
 
-          {rows.length > 0 && (
+          {rows.length > 0 && !hasPrice && (
             <div
               className={cn(
                 'flex items-center gap-2 rounded-md px-3 py-2 text-xs',
