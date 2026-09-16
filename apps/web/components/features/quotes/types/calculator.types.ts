@@ -52,7 +52,6 @@ export interface CalculateQuoteRequest {
   distanceKm?: number;
   panelOverrides?: PanelOverride[];
   inverterOverrides?: InverterOverride[];
-  manualInverterCount?: number;
   manualDcrPanelCount?: number;
   manualNonDcrPanelCount?: number;
   selectedSubsidyIds?: string[];

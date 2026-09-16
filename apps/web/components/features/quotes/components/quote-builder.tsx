@@ -51,6 +51,7 @@ import type {
   CreateFromCalculationRequest,
   SubsidyConfigResponse,
 } from '../types';
+import { InverterSection, type InverterOverride } from './inverter-section';
 import { PaymentTermsModal } from './payment-terms-modal';
 import { QuotePreviewPanel } from './quote-preview-panel';
 
@@ -244,6 +245,13 @@ export function QuoteBuilder(): JSX.Element {
   const [calculation, setCalculation] = useState<CalculateQuoteResponse | null>(null);
   const calculateMutation = useCalculateQuote();
 
+  // Manual quantity adjusters
+  const [manualDcrPanelCount, setManualDcrPanelCount] = useState<number | undefined>();
+  const [manualNonDcrPanelCount, setManualNonDcrPanelCount] = useState<number | undefined>();
+  const [inverterMode, setInverterMode] = useState<'auto' | 'manual'>('auto');
+  const [inverterOverrides, setInverterOverrides] = useState<InverterOverride[]>([]);
+  const [hasQuantityChanges, setHasQuantityChanges] = useState(false);
+
   // Detect missing product categories (no products configured at all)
   const missingProductCategories = useMemo(() => {
     if (config.isLoading) return [];
@@ -258,6 +266,7 @@ export function QuoteBuilder(): JSX.Element {
   const { isCalculateDisabled, missingFields, tooltipMessage } = useMemo(() => {
     const missing = [];
     if (!structureType) missing.push('Structure Type');
+    if (inverterMode === 'manual' && inverterOverrides.length === 0) missing.push('Inverters');
 
     const hasMissingFields = missing.length > 0;
     const hasNoProducts = missingProductCategories.length > 0;
@@ -310,13 +319,9 @@ export function QuoteBuilder(): JSX.Element {
     transportRatePerKm,
     systemSizeKw,
     isInactiveCustomer,
+    inverterMode,
+    inverterOverrides,
   ]);
-
-  // Manual quantity adjusters
-  const [manualDcrPanelCount, setManualDcrPanelCount] = useState<number | undefined>();
-  const [manualNonDcrPanelCount, setManualNonDcrPanelCount] = useState<number | undefined>();
-  const [manualInverterCount, setManualInverterCount] = useState<number | undefined>();
-  const [hasQuantityChanges, setHasQuantityChanges] = useState(false);
 
   // ── Business rules hook ──
   const onCalculationCleared = useCallback(() => {
@@ -324,13 +329,56 @@ export function QuoteBuilder(): JSX.Element {
     setSavedQuoteNumber(null);
     setManualDcrPanelCount(undefined);
     setManualNonDcrPanelCount(undefined);
-    setManualInverterCount(undefined);
     setHasQuantityChanges(false);
   }, []);
+
+  /*
+    The rows die with the phase, and only with the phase.
+
+    A size change leaves them standing: a chosen combination is a decision
+    about this roof, and the capacity warning re-runs against the new size and
+    says so. A phase change is different — the inverter itself becomes the
+    wrong device.
+  */
+  const onInverterSelectionInvalidated = useCallback(() => {
+    setInverterOverrides([]);
+  }, []);
+
+  /*
+    Switching to Manual starts from what Auto just priced rather than from
+    nothing, so the rep edits a real combination instead of rebuilding one.
+    With no price yet there is nothing to copy and the list starts empty.
+  */
+  const handleInverterModeChange = useCallback(
+    (next: 'auto' | 'manual') => {
+      setInverterMode(next);
+      if (next === 'manual') {
+        setInverterOverrides(
+          calculation?.inverters.inverters.map((inv) => ({
+            productId: inv.productId,
+            quantity: inv.quantity,
+          })) ?? [],
+        );
+      } else {
+        setInverterOverrides([]);
+      }
+      onCalculationCleared();
+    },
+    [calculation, onCalculationCleared],
+  );
+
+  const handleInverterRowsChange = useCallback(
+    (rows: InverterOverride[]) => {
+      setInverterOverrides(rows);
+      onCalculationCleared();
+    },
+    [onCalculationCleared],
+  );
 
   const formLogic = useQuoteFormLogic({
     form: form as never,
     onCalculationCleared,
+    onInverterSelectionInvalidated,
   });
 
   const prevProjectTypeRef = useRef<ProjectType | null>(null);
@@ -437,16 +485,20 @@ export function QuoteBuilder(): JSX.Element {
       preferredPanelBrand: values.preferredPanelBrand || undefined,
       preferredPanelTechnology: values.preferredPanelTechnology,
       preferredPanelWattage: values.preferredPanelWattage,
-      preferredInverterBrand: values.preferredInverterBrand || undefined,
-      preferredInverterCapacityKw: values.preferredInverterCapacityKw || undefined,
+      // Never both: the server refuses a brand or capacity sent beside rows,
+      // because it would silently ignore one of them.
+      preferredInverterBrand:
+        inverterMode === 'manual' ? undefined : values.preferredInverterBrand || undefined,
+      preferredInverterCapacityKw:
+        inverterMode === 'manual' ? undefined : values.preferredInverterCapacityKw || undefined,
+      inverterOverrides: inverterMode === 'manual' ? inverterOverrides : undefined,
       structureType: values.structureType,
       floorNumber: values.floorNumber,
       distanceKm: values.distanceKm,
       manualDcrPanelCount,
       manualNonDcrPanelCount,
-      manualInverterCount,
     }),
-    [manualDcrPanelCount, manualNonDcrPanelCount, manualInverterCount],
+    [manualDcrPanelCount, manualNonDcrPanelCount, inverterMode, inverterOverrides],
   );
 
   const toggleSubsidySelection = useCallback(
@@ -493,11 +545,9 @@ export function QuoteBuilder(): JSX.Element {
           ...request,
           manualDcrPanelCount: undefined,
           manualNonDcrPanelCount: undefined,
-          manualInverterCount: undefined,
         };
         setManualDcrPanelCount(undefined);
         setManualNonDcrPanelCount(undefined);
-        setManualInverterCount(undefined);
         setHasQuantityChanges(false);
       }
 
@@ -700,10 +750,8 @@ export function QuoteBuilder(): JSX.Element {
       distanceKm={distanceKm}
       manualDcrPanelCount={manualDcrPanelCount}
       manualNonDcrPanelCount={manualNonDcrPanelCount}
-      manualInverterCount={manualInverterCount}
       onManualDcrPanelCountChange={handleQuantityChange(setManualDcrPanelCount)}
       onManualNonDcrPanelCountChange={handleQuantityChange(setManualNonDcrPanelCount)}
-      onManualInverterCountChange={handleQuantityChange(setManualInverterCount)}
       hasQuantityChanges={hasQuantityChanges}
       onRecalculate={handleRecalculate}
       isSaving={saveMutation.isPending}
@@ -1328,101 +1376,27 @@ export function QuoteBuilder(): JSX.Element {
                   </div>
                 )}
 
-              {/* Inverter Brand */}
-              <div className="space-y-2">
-                <Label>Inverter Brand</Label>
-                {config.isLoading ? (
-                  <Skeleton className="h-9 w-full" />
-                ) : config.inverterBrands.length === 0 ? (
-                  <div className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2">
-                    <AlertTriangle className="size-3.5 shrink-0 text-warning" />
-                    <p className="text-xs text-foreground-secondary">
-                      No active inverters found.{' '}
-                      <a
-                        href={ROUTES.ADMIN.PRODUCTS}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        Add inverters
-                      </a>
-                    </p>
-                  </div>
-                ) : (
-                  <Select
-                    value={form.watch('preferredInverterBrand') || 'auto'}
-                    onValueChange={(v) =>
-                      formLogic.handleInverterBrandChange(v === 'auto' ? '' : v)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Auto-select best available" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="auto">
-                        <span className="text-foreground-tertiary">Auto-select best available</span>
-                      </SelectItem>
-                      {config.inverterBrands.map((brand) => (
-                        <SelectItem key={brand.value} value={brand.value}>
-                          {brand.label}
-                          {brand.capacityRange && (
-                            <span className="ml-2 text-foreground-secondary">
-                              {brand.capacityRange}
-                            </span>
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <InverterSection
+                mode={inverterMode}
+                onModeChange={handleInverterModeChange}
+                brandValue={form.watch('preferredInverterBrand')}
+                onBrandChange={formLogic.handleInverterBrandChange}
+                brandOptions={config.inverterBrands}
+                capacityValue={form.watch('preferredInverterCapacityKw')}
+                onCapacityChange={(v) =>
+                  formLogic.handleFieldChange('preferredInverterCapacityKw', v)
+                }
+                capacityOptions={config.getInverterCapacities(
+                  form.watch('phaseType'),
+                  form.watch('preferredInverterBrand'),
                 )}
-              </div>
-
-              {/* Inverter Capacity */}
-              <div className="space-y-2">
-                <Label>Inverter Capacity</Label>
-                {config.isLoading ? (
-                  <Skeleton className="h-9 w-full" />
-                ) : (
-                  (() => {
-                    const capacityOptions = config.getInverterCapacities(
-                      form.watch('phaseType'),
-                      form.watch('preferredInverterBrand'),
-                    );
-                    return capacityOptions.length === 0 ? (
-                      <div className="flex items-center gap-2 rounded-md bg-background-secondary px-3 py-2">
-                        <Info className="size-3.5 shrink-0 text-foreground-tertiary" />
-                        <p className="text-xs text-foreground-tertiary">
-                          {config.inverterBrands.length === 0
-                            ? 'No inverters configured yet.'
-                            : 'No capacity options for the selected brand and phase type. Try a different brand or leave on auto-select.'}
-                        </p>
-                      </div>
-                    ) : (
-                      <Select
-                        value={form.watch('preferredInverterCapacityKw')?.toString() ?? 'auto'}
-                        onValueChange={(v) =>
-                          formLogic.handleFieldChange(
-                            'preferredInverterCapacityKw',
-                            v === 'auto' ? undefined : Number(v),
-                          )
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Auto-select optimal" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="auto">
-                            <span className="text-foreground-tertiary">Auto-select optimal</span>
-                          </SelectItem>
-                          {capacityOptions.map((cap) => (
-                            <SelectItem key={cap.value} value={cap.value.toString()}>
-                              {cap.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    );
-                  })()
-                )}
-              </div>
+                rows={inverterOverrides}
+                onRowsChange={handleInverterRowsChange}
+                productOptions={config.getInverterProductOptions(form.watch('phaseType'))}
+                systemSizeKw={form.watch('systemSizeKw')}
+                phaseType={form.watch('phaseType')}
+                isLoading={config.isLoading}
+              />
 
               {/* Structure Type */}
 

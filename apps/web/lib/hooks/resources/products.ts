@@ -4,9 +4,11 @@ import {
   type ProductOptionInput,
   type PanelTechnologyVariant,
   type InverterCapacityOption,
+  type InverterProductOption,
   derivePanelBrands,
   deriveInverterBrands,
   deriveStructureTypes,
+  deriveInverterProductOptions,
   getInverterCapacities as getInverterCapacitiesUtil,
 } from '@tejas96/shared/utils';
 import { useCallback, useMemo } from 'react';
@@ -15,7 +17,7 @@ import { useResourceList, STALE_TIMES, type BaseFilters } from '../core';
 
 // ── Types ──────────────────────────────────────────────────────
 
-export type { PanelTechnologyVariant, InverterCapacityOption };
+export type { PanelTechnologyVariant, InverterCapacityOption, InverterProductOption };
 
 interface ProductListFilters extends BaseFilters {
   type?: string;
@@ -126,6 +128,20 @@ export function useProductOptions() {
     [inverters.items],
   );
 
+  /*
+    The individual inverters, for the manual picker.
+
+    `useAllInverterProducts` already filters `status: active` and
+    `hasActivePrice: true`, so an inverter that cannot be priced is never
+    offered — the same rule that stopped the capacity list showing three
+    unpriceable DEYE units.
+  */
+  const getInverterProductOptions = useCallback(
+    (phaseType?: string): InverterProductOption[] =>
+      deriveInverterProductOptions(inverters.items, phaseType),
+    [inverters.items],
+  );
+
   return {
     isLoading: panels.isLoading || inverters.isLoading || structures.isLoading,
     error: panels.error?.message ?? inverters.error?.message ?? structures.error?.message ?? null,
@@ -134,5 +150,6 @@ export function useProductOptions() {
     structureTypes,
     getTechnologyVariantsForBrand,
     getInverterCapacities,
+    getInverterProductOptions,
   };
 }

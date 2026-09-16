@@ -61,10 +61,8 @@ export interface QuotePreviewPanelProps {
   distanceKm: number;
   manualDcrPanelCount: number | undefined;
   manualNonDcrPanelCount: number | undefined;
-  manualInverterCount: number | undefined;
   onManualDcrPanelCountChange: (val: number | undefined) => void;
   onManualNonDcrPanelCountChange: (val: number | undefined) => void;
-  onManualInverterCountChange: (val: number | undefined) => void;
   hasQuantityChanges: boolean;
   onRecalculate: () => void;
   isSaving: boolean;
@@ -89,10 +87,8 @@ export function QuotePreviewPanel({
   distanceKm,
   manualDcrPanelCount,
   manualNonDcrPanelCount,
-  manualInverterCount,
   onManualDcrPanelCountChange,
   onManualNonDcrPanelCountChange,
-  onManualInverterCountChange,
   hasQuantityChanges,
   onRecalculate,
   isSaving,
@@ -468,39 +464,14 @@ export function QuotePreviewPanel({
                   </p>
                 </div>
               </div>
-              <div className="flex items-center overflow-hidden rounded-lg bg-muted">
-                <button
-                  type="button"
-                  onClick={() =>
-                    onManualInverterCountChange(
-                      Math.max(
-                        1,
-                        (manualInverterCount ??
-                          calculation.inverters.inverters.reduce((s, i) => s + i.quantity, 0)) - 1,
-                      ),
-                    )
-                  }
-                  className="px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors duration-fast hover:bg-background-secondary"
-                >
-                  &minus;
-                </button>
-                <span className="min-w-8 px-1 text-center text-sm font-semibold">
-                  {manualInverterCount ??
-                    calculation.inverters.inverters.reduce((s, i) => s + i.quantity, 0)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const current =
-                      manualInverterCount ??
-                      calculation.inverters.inverters.reduce((s, i) => s + i.quantity, 0);
-                    onManualInverterCountChange(Math.min(20, current + 1));
-                  }}
-                  className="px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors duration-fast hover:bg-background-secondary"
-                >
-                  +
-                </button>
-              </div>
+              {/*
+                No stepper. A count was a weaker way of asking for what the
+                Manual picker now asks for exactly, and the server refuses the
+                two together. The inverters are chosen in the form.
+              */}
+              <span className="text-sm font-semibold">
+                {calculation.inverters.inverters.reduce((s, i) => s + i.quantity, 0)}
+              </span>
             </div>
           </div>
 

@@ -10,6 +10,8 @@ import type { QuoteBuilderFormData } from '../schemas/quote.schema';
 export interface UseQuoteFormLogicOptions {
   form: UseFormReturn<QuoteBuilderFormData>;
   onCalculationCleared: () => void;
+  /** Called when the phase changes under the rep, so hand-picked inverters can be dropped. */
+  onInverterSelectionInvalidated: () => void;
 }
 
 export interface UseQuoteFormLogicReturn {
@@ -43,6 +45,7 @@ export interface UseQuoteFormLogicReturn {
 export function useQuoteFormLogic({
   form,
   onCalculationCleared,
+  onInverterSelectionInvalidated,
 }: UseQuoteFormLogicOptions): UseQuoteFormLogicReturn {
   const { setValue, watch, getValues } = form;
 
@@ -67,10 +70,14 @@ export function useQuoteFormLogic({
       if (value > 7) {
         setValue('phaseType', 'three_phase');
         setValue('preferredInverterCapacityKw', undefined);
+        // Crossing 7 kW rewrites the phase. A single-phase inverter on a
+        // three-phase site is wrong, not merely oversized, so the hand-picked
+        // rows go with it.
+        onInverterSelectionInvalidated();
       }
       clearCalculationIfNeeded('systemSizeKw');
     },
-    [setValue, clearCalculationIfNeeded],
+    [setValue, clearCalculationIfNeeded, onInverterSelectionInvalidated],
   );
 
   const handleSelectedSubsidyIdsChange = useCallback(
@@ -158,9 +165,10 @@ export function useQuoteFormLogic({
     (value: string) => {
       setValue('phaseType', value);
       setValue('preferredInverterCapacityKw', undefined);
+      onInverterSelectionInvalidated();
       clearCalculationIfNeeded('phaseType');
     },
-    [setValue, clearCalculationIfNeeded],
+    [setValue, clearCalculationIfNeeded, onInverterSelectionInvalidated],
   );
 
   // Generic field change that checks if calculation should be cleared
