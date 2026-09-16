@@ -24,7 +24,7 @@ import { getErrorMessage } from '@/lib/utils/error';
 
 export type BomLineChangeState = 'unchanged' | 'added' | 'increased' | 'decreased' | 'removed';
 type BomItemSource = 'quote' | 'site' | 'office';
-type BomItemAllocationStatus = 'allocated' | 'partial' | 'pending';
+type BomItemAllocationStatus = 'allocated' | 'partial' | 'pending' | 'not_reservable';
 type BomAllocationStatus = 'pending' | 'partial' | 'fully_allocated';
 export type BomChangeType = 'add' | 'quantity' | 'remove' | 'replace';
 

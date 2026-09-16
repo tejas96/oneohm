@@ -3,6 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { BomAllocationStatus } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
+import { basisTakesStock, isPerKwBasis } from './reservable-line';
 import { BomAllocationService } from '../../inventory/services/bom-allocation.service';
 import {
   BomChangeResponseDto,
@@ -101,7 +102,8 @@ export class BomReadService {
     // Aggregate BOM-level status, derived from the same map. Two screens
     // (project-bom-tab.tsx, project-dashboard-page.tsx) read this exact
     // top-level field, so it is preserved even though it duplicates
-    // information already on each line.
+    // information already on each line. Judged over every reservable line —
+    // the map holds exactly those products, panels included.
     const statuses = Object.values(productAllocationStatus);
     let allocationStatus: BomAllocationStatus = BomAllocationStatus.PENDING;
     if (statuses.length > 0) {
@@ -189,7 +191,8 @@ export class BomReadService {
         productCode: item.product?.code ?? null,
         brandName: item.product?.brand?.name ?? null,
         productTypeCode: item.product?.productType?.code ?? null,
-        unit: item.unit,
+        // A per_kw line's quantity is kW, so "20.13 set" misstated it.
+        unit: isPerKwBasis(item.pricingBasis) ? 'kW' : item.unit,
         pricingBasis: item.pricingBasis,
         quotedQuantity: quoted,
         quantity: current,
@@ -199,10 +202,11 @@ export class BomReadService {
         variancePaise: currentTotalPaise - quotedTotalPaise,
         source: item.source,
         changeState,
-        // Per-row status prefers the per-product map; a line whose product
-        // has no entry (a per_kw/per_watt line, or nothing left to reserve)
-        // falls back to 'pending', not to the BOM-level aggregate above.
-        allocationStatus: productAllocationStatus[item.productId] ?? 'pending',
+        // A per_kw line (structure, counted in kW) never takes stock from a
+        // BOM, so it says so rather than reading 'pending' forever.
+        allocationStatus: basisTakesStock(item.pricingBasis)
+          ? (productAllocationStatus[item.productId] ?? 'pending')
+          : 'not_reservable',
         serials: (item.serials ?? []).map((s) => ({
           id: s.id,
           serialNumber: s.serialNumber,

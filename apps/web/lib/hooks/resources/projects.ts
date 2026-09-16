@@ -248,8 +248,11 @@ export function useUpdateProjectWarehouse() {
     },
     onSuccess: (_data, { projectId }) => {
       void queryClient.invalidateQueries({ queryKey: projectResourceKeys.lists() });
+      // The project page reads ['projects', 'detail', id]. ['projects', id] matched
+      // no query, so the BOM tab kept a project with no warehouse and "Reserve
+      // stock" stayed disabled until a reload.
       void queryClient.invalidateQueries({
-        queryKey: [...projectResourceKeys.all(), projectId],
+        queryKey: projectResourceKeys.detail(projectId),
       });
     },
   });
