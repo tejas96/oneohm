@@ -48,9 +48,11 @@ export interface InverterSectionProps {
   isLoading: boolean;
 
   /**
-   * A price is on screen. The preview panel then states the inverter total and
-   * the server's capacity warning, so this section's own summary line would say
-   * the same thing a second time — it is hidden until the price clears.
+   * A price is actually on screen. The preview panel then states the inverter
+   * total and the server's capacity warning, so this section's own summary line
+   * would say the same thing a second time. Holding an old result is not the
+   * same: behind a loading skeleton or "Calculation Failed" the preview states
+   * neither, and hiding the line then would leave the total with no home at all.
    */
   hasPrice: boolean;
 }
