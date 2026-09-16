@@ -54,6 +54,15 @@ export interface InverterCapacityOption {
   label: string;
 }
 
+export interface InverterProductOption {
+  productId: string;
+  capacityKw: number;
+  brandName: string;
+  name: string;
+  /** "12 kW · Sungrow · SG12RT" — capacity first, because that is what a rep is sizing. */
+  label: string;
+}
+
 function getBrandName(product: ProductOptionInput): string {
   if (typeof product.brand === 'string') return product.brand || 'Unknown';
   if (product.brand && typeof product.brand === 'object') return product.brand.name || 'Unknown';
@@ -210,4 +219,52 @@ export function getInverterCapacities(
   return Array.from(capacities)
     .sort((a, b) => a - b)
     .map((c) => ({ value: c, label: `${c} kW` }));
+}
+
+/**
+ * Every inverter a rep may pick by hand, one entry per product.
+ *
+ * The phase filter is deliberately the LENIENT one that `getInverterCapacities`
+ * already uses — a product that states no `phase_type` still qualifies. The
+ * backend's auto-select query is strict, so the two disagree for products with
+ * no phase set; that disagreement is pre-existing and is not mirrored here,
+ * because the override path does not run through that query at all. A real
+ * mismatch is reported by the calculator as a warning instead.
+ *
+ * Sorted by capacity descending: a rep building a mix reaches for the big unit
+ * first and fills the remainder underneath it.
+ */
+export function deriveInverterProductOptions(
+  products: ProductOptionInput[],
+  phaseType?: string,
+): InverterProductOption[] {
+  let filtered = products;
+
+  if (phaseType) {
+    filtered = filtered.filter(
+      (p) => !p.specifications?.phase_type || p.specifications.phase_type === phaseType,
+    );
+  }
+
+  const options: InverterProductOption[] = [];
+
+  for (const product of filtered) {
+    const capacityKw = product.specifications?.capacity_kw ?? 0;
+    // A product with no capacity cannot be sized against a system, and pricing
+    // it would put a 0 kW line on the quote. Never offered.
+    if (capacityKw <= 0) continue;
+
+    const brandName = getBrandName(product);
+    options.push({
+      productId: product.id,
+      capacityKw,
+      brandName,
+      name: product.name,
+      label: `${capacityKw} kW · ${brandName} · ${product.name}`,
+    });
+  }
+
+  return options.sort(
+    (a, b) => b.capacityKw - a.capacityKw || a.brandName.localeCompare(b.brandName),
+  );
 }
