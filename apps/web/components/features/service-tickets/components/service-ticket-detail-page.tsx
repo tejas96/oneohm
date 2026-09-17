@@ -3,7 +3,7 @@
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined';
 import { Box, Button, Card, CardContent, Link as MuiLink, Stack, Tooltip } from '@mui/material';
-import { ServiceTicketStatus } from '@tejas96/shared/types';
+import { ServiceTicketKind, ServiceTicketStatus } from '@tejas96/shared/types';
 import NextLink from 'next/link';
 import { type JSX, useState } from 'react';
 
@@ -14,6 +14,7 @@ import {
   SERVICE_TICKET_STATUS_LABELS,
   SERVICE_TICKET_STATUS_TONE,
 } from '../constants';
+import { ServiceTicketChecklistCard } from './service-ticket-checklist-card';
 import { ServiceTicketFormDialog } from './service-ticket-form-dialog';
 import { ServiceTicketLocationCard } from './service-ticket-location-card';
 import { ServiceTicketStatusDialog } from './service-ticket-status-dialog';
@@ -141,12 +142,18 @@ export function ServiceTicketDetailPage({ ticketId }: ServiceTicketDetailPagePro
         <Stack spacing={2} sx={{ flex: 1, minWidth: 0, width: '100%' }}>
           <Card variant="outlined">
             <CardContent>
-              <MUITypography variant="sectionTitle">Issue</MUITypography>
+              <MUITypography variant="sectionTitle">
+                {ticket.kind === ServiceTicketKind.MAINTENANCE ? 'Checkup' : 'Issue'}
+              </MUITypography>
               <MUITypography variant="body" sx={{ mt: 1, whiteSpace: 'pre-line' }}>
                 {ticket.description}
               </MUITypography>
             </CardContent>
           </Card>
+
+          {ticket.kind === ServiceTicketKind.MAINTENANCE && (
+            <ServiceTicketChecklistCard ticket={ticket} />
+          )}
 
           {ticket.photos && ticket.photos.length > 0 && (
             <Card variant="outlined">

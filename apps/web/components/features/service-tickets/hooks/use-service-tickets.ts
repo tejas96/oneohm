@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type MaintenanceChecklist,
+  type MaintenanceChecklistAnswer,
   type ServiceTicketKind,
   type ServiceTicketPhoto,
   type ServiceTicketPriority,
@@ -247,5 +248,30 @@ export function useServiceTicketMutations() {
     onError: (error) => showToast.error(getErrorMessage(error)),
   });
 
-  return { create, update, updateStatus, remove };
+  /**
+   * One tap = one request. No success toast: the card updates in place, and a
+   * toast per tap would bury the page.
+   */
+  const saveChecklist = useMutation({
+    mutationFn: async ({
+      id,
+      ...body
+    }: {
+      id: string;
+      items?: Record<string, MaintenanceChecklistAnswer>;
+      readings?: Partial<MaintenanceChecklist['readings']>;
+    }): Promise<ServiceTicketDetail> => {
+      const { data } = await apiClient.patch<ServiceTicketDetail>(
+        `/service-tickets/${id}/checklist`,
+        body,
+      );
+      return data;
+    },
+    onSuccess: (ticket) => {
+      queryClient.setQueryData(serviceTicketKeys.detail(ticket.id), ticket);
+    },
+    onError: (error) => showToast.error(getErrorMessage(error)),
+  });
+
+  return { create, update, updateStatus, remove, saveChecklist };
 }
