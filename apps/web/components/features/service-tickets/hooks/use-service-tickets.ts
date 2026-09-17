@@ -249,8 +249,8 @@ export function useServiceTicketMutations() {
   });
 
   /**
-   * One tap = one request. No success toast: the card updates in place, and a
-   * toast per tap would bury the page.
+   * The card now edits a local draft and saves it all in one click, so one
+   * click = one request and a single toast per click is fine.
    */
   const saveChecklist = useMutation({
     mutationFn: async ({
@@ -269,6 +269,7 @@ export function useServiceTicketMutations() {
     },
     onSuccess: (ticket) => {
       queryClient.setQueryData(serviceTicketKeys.detail(ticket.id), ticket);
+      showToast.success('Checklist saved');
     },
     onError: (error) => showToast.error(getErrorMessage(error)),
   });

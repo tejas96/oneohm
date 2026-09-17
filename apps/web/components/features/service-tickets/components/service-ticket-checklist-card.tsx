@@ -19,6 +19,7 @@ import {
 import {
   ServiceTicketStatus,
   type MaintenanceChecklist,
+  type MaintenanceChecklistAnswer,
   type MaintenanceItemResult,
 } from '@tejas96/shared/types';
 import { emptyMaintenanceChecklist, maintenanceChecklistDoneCount } from '@tejas96/shared/utils';
@@ -30,78 +31,176 @@ import { describeCustomerWhatsapp } from '@/components/features/tasks/components
 import { MUITypography } from '@/components/ui/mui-typography';
 import { color } from '@/lib/theme/tokens';
 
+type ReadingKey = 'generationKwh' | 'netMeterReading';
+
+interface ChecklistDraft {
+  items: Record<string, MaintenanceChecklistAnswer>;
+  readings: Record<ReadingKey, string>;
+}
+
+function draftFromChecklist(checklist: MaintenanceChecklist): ChecklistDraft {
+  return {
+    items: { ...checklist.items },
+    readings: {
+      generationKwh: checklist.readings.generationKwh?.toString() ?? '',
+      netMeterReading: checklist.readings.netMeterReading?.toString() ?? '',
+    },
+  };
+}
+
+/** Comma decimals (`12,5`) are read as `12.5`. Empty string is "not entered". */
+function parseReadingInput(raw: string): number | null | 'invalid' {
+  const trimmed = raw.trim();
+  if (trimmed === '') return null;
+  const value = Number(trimmed.replace(',', '.'));
+  if (!Number.isFinite(value) || value < 0) return 'invalid';
+  return value;
+}
+
+/** Item keys whose draft answer differs from the saved copy. */
+function diffItemKeys(
+  draftItems: Record<string, MaintenanceChecklistAnswer>,
+  savedItems: Record<string, MaintenanceChecklistAnswer>,
+): string[] {
+  const keys = new Set([...Object.keys(draftItems), ...Object.keys(savedItems)]);
+  const changed: string[] = [];
+  for (const key of keys) {
+    const draftResult = draftItems[key]?.result ?? null;
+    const savedResult = savedItems[key]?.result ?? null;
+    const draftNote = draftResult === 'issue' ? (draftItems[key]?.note ?? '') : '';
+    const savedNote = savedResult === 'issue' ? (savedItems[key]?.note ?? '') : '';
+    if (draftResult !== savedResult || draftNote !== savedNote) changed.push(key);
+  }
+  return changed;
+}
+
+/** Reading keys whose draft value differs from the saved copy, and which ones are invalid. */
+function diffReadingKeys(
+  draftReadings: Record<ReadingKey, string>,
+  savedReadings: MaintenanceChecklist['readings'],
+): { changed: ReadingKey[]; invalid: ReadingKey[] } {
+  const changed: ReadingKey[] = [];
+  const invalid: ReadingKey[] = [];
+  for (const reading of MAINTENANCE_READINGS) {
+    const key = reading.key as ReadingKey;
+    const parsed = parseReadingInput(draftReadings[key]);
+    if (parsed === 'invalid') {
+      invalid.push(key);
+      changed.push(key);
+      continue;
+    }
+    if (parsed !== (savedReadings[key] ?? null)) changed.push(key);
+  }
+  return { changed, invalid };
+}
+
 export function ServiceTicketChecklistCard({
   ticket,
+  onDirtyChange,
 }: {
   ticket: ServiceTicketDetail;
+  onDirtyChange: (dirty: boolean) => void;
 }): JSX.Element {
   const { saveChecklist } = useServiceTicketMutations();
   const checklist: MaintenanceChecklist = ticket.checklist ?? emptyMaintenanceChecklist();
   const locked = ticket.status === ServiceTicketStatus.CLOSED;
   const done = maintenanceChecklistDoneCount(checklist);
 
-  // Notes and readings are typed locally and saved on blur, not per key.
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  const [readings, setReadings] = useState<Record<string, string>>({});
-  // Whichever note/reading field is currently focused keeps its in-progress
-  // local value when the re-seed effect below runs, instead of being
-  // clobbered by a save that landed for a *different* field (e.g. an All OK
-  // click, another item's OK/Issue toggle, or a status change).
-  const focusedNoteKeyRef = useRef<string | null>(null);
-  const focusedReadingKeyRef = useRef<'generationKwh' | 'netMeterReading' | null>(null);
+  const [draft, setDraft] = useState<ChecklistDraft>(() => draftFromChecklist(checklist));
+
+  const itemChanges = diffItemKeys(draft.items, checklist.items);
+  const readingChanges = diffReadingKeys(draft.readings, checklist.readings);
+  const changeCount = itemChanges.length + readingChanges.changed.length;
+  const isDirty = changeCount > 0;
+  const hasInvalidReading = readingChanges.invalid.length > 0;
+
+  // Re-seed from the server copy only when the draft is clean: another save
+  // or a refetch should not clobber changes the user is mid-typing.
   useEffect(() => {
-    setNotes((prev) => {
-      const next = Object.fromEntries(
-        Object.entries(checklist.items).map(([key, a]) => [key, a.note ?? '']),
-      );
-      const focused = focusedNoteKeyRef.current;
-      if (focused !== null) next[focused] = prev[focused] ?? '';
-      return next;
+    setDraft((prev) => {
+      const clean =
+        diffItemKeys(prev.items, checklist.items).length === 0 &&
+        diffReadingKeys(prev.readings, checklist.readings).changed.length === 0;
+      return clean ? draftFromChecklist(checklist) : prev;
     });
-    setReadings((prev) => {
-      const next = {
-        generationKwh: checklist.readings.generationKwh?.toString() ?? '',
-        netMeterReading: checklist.readings.netMeterReading?.toString() ?? '',
-      };
-      const focused = focusedReadingKeyRef.current;
-      if (focused !== null) next[focused] = prev[focused] ?? '';
-      return next;
-    });
-    // Re-seed only when the server copy changes.
-    // (react-hooks/exhaustive-deps is off in this repo's eslint config, so no
-    // disable comment is needed here.)
+    // react-hooks/exhaustive-deps is off in this repo's eslint config, so no
+    // disable comment is needed here.
   }, [ticket.updatedAt]);
 
+  // Report "has unsaved changes" up without depending on the parent's
+  // callback identity, so this effect only re-runs when dirtiness changes.
+  const onDirtyChangeRef = useRef(onDirtyChange);
+  onDirtyChangeRef.current = onDirtyChange;
+  useEffect(() => {
+    onDirtyChangeRef.current(isDirty);
+  }, [isDirty]);
+  useEffect(() => () => onDirtyChangeRef.current(false), []);
+
   const setResult = (key: string, result: MaintenanceItemResult): void => {
-    saveChecklist.mutate({
-      id: ticket.id,
-      items: { [key]: { result, note: result === 'issue' ? (notes[key] ?? null) : null } },
-    });
+    setDraft((prev) => ({
+      ...prev,
+      items: {
+        ...prev.items,
+        [key]: { result, note: result === 'issue' ? (prev.items[key]?.note ?? '') : null },
+      },
+    }));
   };
 
   const allOk = (keys: string[]): void => {
-    saveChecklist.mutate({
-      id: ticket.id,
-      items: Object.fromEntries(keys.map((key) => [key, { result: 'ok' as const, note: null }])),
-    });
+    setDraft((prev) => ({
+      ...prev,
+      items: {
+        ...prev.items,
+        ...Object.fromEntries(keys.map((key) => [key, { result: 'ok' as const, note: null }])),
+      },
+    }));
   };
 
-  const saveNote = (key: string): void => {
-    const current = checklist.items[key];
-    if (current?.result !== 'issue' || (current.note ?? '') === (notes[key] ?? '')) return;
-    saveChecklist.mutate({
-      id: ticket.id,
-      items: { [key]: { result: 'issue', note: notes[key] } },
-    });
+  const setNote = (key: string, note: string): void => {
+    setDraft((prev) => ({
+      ...prev,
+      items: { ...prev.items, [key]: { result: 'issue', note } },
+    }));
   };
 
-  const saveReading = (key: 'generationKwh' | 'netMeterReading'): void => {
-    const raw = (readings[key] ?? '').trim();
-    const value = raw === '' ? null : Number(raw);
-    if (value !== null && !Number.isFinite(value)) return;
-    if (value === checklist.readings[key]) return;
-    saveChecklist.mutate({ id: ticket.id, readings: { [key]: value } });
+  const setReading = (key: ReadingKey, raw: string): void => {
+    setDraft((prev) => ({ ...prev, readings: { ...prev.readings, [key]: raw } }));
   };
+
+  const handleSave = (): void => {
+    if (!isDirty || hasInvalidReading) return;
+    const body: {
+      items?: Record<string, MaintenanceChecklistAnswer>;
+      readings?: Partial<MaintenanceChecklist['readings']>;
+    } = {};
+    if (itemChanges.length > 0) {
+      // itemChanges only contains keys the user has answered in the draft
+      // (the UI never removes an existing answer), so this is always defined.
+      body.items = Object.fromEntries(
+        itemChanges.map((key) => [key, draft.items[key] as MaintenanceChecklistAnswer]),
+      );
+    }
+    if (readingChanges.changed.length > 0) {
+      body.readings = Object.fromEntries(
+        readingChanges.changed.map((key) => {
+          const parsed = parseReadingInput(draft.readings[key]);
+          return [key, parsed === 'invalid' ? null : parsed];
+        }),
+      );
+    }
+    saveChecklist.mutate(
+      { id: ticket.id, ...body },
+      {
+        onSuccess: (updated) => {
+          setDraft(draftFromChecklist(updated.checklist ?? emptyMaintenanceChecklist()));
+        },
+      },
+    );
+  };
+
+  const saveLabel = isDirty
+    ? `Save checklist (${changeCount} ${changeCount === 1 ? 'change' : 'changes'})`
+    : 'Saved';
 
   return (
     <Card variant="outlined">
@@ -150,7 +249,7 @@ export function ServiceTicketChecklistCard({
                 </Stack>
                 <Stack spacing={1} sx={{ mt: 0.5 }}>
                   {group.items.map((item) => {
-                    const answer = checklist.items[item.key];
+                    const answer = draft.items[item.key];
                     return (
                       <Box key={item.key}>
                         <Stack
@@ -183,17 +282,8 @@ export function ServiceTicketChecklistCard({
                             size="small"
                             placeholder="What is wrong?"
                             disabled={locked}
-                            value={notes[item.key] ?? ''}
-                            onChange={(event) =>
-                              setNotes((prev) => ({ ...prev, [item.key]: event.target.value }))
-                            }
-                            onFocus={() => {
-                              focusedNoteKeyRef.current = item.key;
-                            }}
-                            onBlur={() => {
-                              focusedNoteKeyRef.current = null;
-                              saveNote(item.key);
-                            }}
+                            value={answer.note ?? ''}
+                            onChange={(event) => setNote(item.key, event.target.value)}
                             inputProps={{ maxLength: 500 }}
                             sx={{ mt: 1 }}
                           />
@@ -209,28 +299,34 @@ export function ServiceTicketChecklistCard({
           <Box>
             <MUITypography variant="metaLabel">READINGS</MUITypography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 1 }}>
-              {MAINTENANCE_READINGS.map((reading) => (
-                <TextField
-                  key={reading.key}
-                  label={reading.label}
-                  size="small"
-                  type="number"
-                  disabled={locked}
-                  value={readings[reading.key] ?? ''}
-                  onChange={(event) =>
-                    setReadings((prev) => ({ ...prev, [reading.key]: event.target.value }))
-                  }
-                  onFocus={() => {
-                    focusedReadingKeyRef.current = reading.key;
-                  }}
-                  onBlur={() => {
-                    focusedReadingKeyRef.current = null;
-                    saveReading(reading.key);
-                  }}
-                  inputProps={{ min: 0, step: 'any' }}
-                />
-              ))}
+              {MAINTENANCE_READINGS.map((reading) => {
+                const key = reading.key as ReadingKey;
+                const invalid = readingChanges.invalid.includes(key);
+                return (
+                  <TextField
+                    key={reading.key}
+                    label={reading.label}
+                    size="small"
+                    disabled={locked}
+                    value={draft.readings[key]}
+                    onChange={(event) => setReading(key, event.target.value)}
+                    error={invalid}
+                    helperText={invalid ? 'Must be 0 or more' : undefined}
+                    inputProps={{ inputMode: 'decimal' }}
+                  />
+                );
+              })}
             </Stack>
+          </Box>
+
+          <Box>
+            <Button
+              variant="contained"
+              disabled={locked || !isDirty || hasInvalidReading}
+              onClick={handleSave}
+            >
+              {saveLabel}
+            </Button>
           </Box>
         </Stack>
       </CardContent>
