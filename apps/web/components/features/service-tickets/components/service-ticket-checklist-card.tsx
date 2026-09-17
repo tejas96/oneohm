@@ -126,24 +126,34 @@ export function ServiceTicketChecklistCard({
 
   const [draft, setDraft] = useState<ChecklistDraft>(() => draftFromChecklist(checklist));
 
+  /**
+   * The checklist the current draft was seeded from: set on mount, on a
+   * clean re-seed below, and after a successful save. Diffing (and the
+   * re-seed effect's "is the draft clean" check) is always against THIS, not
+   * the latest `ticket.checklist` — otherwise a save by someone else (or a
+   * refetch that just brings newer answers) would make an untouched draft
+   * look dirty against the new copy, and Save would send back the old
+   * values for fields the user never touched.
+   */
+  const seededChecklistRef = useRef<MaintenanceChecklist>(checklist);
+
   // The counter counts the draft, so it moves as the user taps, before Save.
   const done = maintenanceChecklistDoneCount(checklistFromDraft(draft));
 
-  const itemChanges = diffItemKeys(draft.items, checklist.items);
-  const readingChanges = diffReadingKeys(draft.readings, checklist.readings);
+  const itemChanges = diffItemKeys(draft.items, seededChecklistRef.current.items);
+  const readingChanges = diffReadingKeys(draft.readings, seededChecklistRef.current.readings);
   const changeCount = itemChanges.length + readingChanges.changed.length;
   const isDirty = changeCount > 0;
   const hasInvalidReading = readingChanges.invalid.length > 0;
 
-  // Re-seed from the server copy only when the draft is clean: another save
-  // or a refetch should not clobber changes the user is mid-typing.
+  // Re-seed from the server copy only when the draft is clean (isDirty is
+  // false, i.e. it still matches what it was seeded from): another save or a
+  // refetch should not clobber changes the user is mid-typing.
   useEffect(() => {
-    setDraft((prev) => {
-      const clean =
-        diffItemKeys(prev.items, checklist.items).length === 0 &&
-        diffReadingKeys(prev.readings, checklist.readings).changed.length === 0;
-      return clean ? draftFromChecklist(checklist) : prev;
-    });
+    if (!isDirty) {
+      seededChecklistRef.current = checklist;
+      setDraft(draftFromChecklist(checklist));
+    }
     // react-hooks/exhaustive-deps is off in this repo's eslint config, so no
     // disable comment is needed here.
   }, [ticket.updatedAt]);
@@ -213,7 +223,9 @@ export function ServiceTicketChecklistCard({
       { id: ticket.id, ...body },
       {
         onSuccess: (updated) => {
-          setDraft(draftFromChecklist(updated.checklist ?? emptyMaintenanceChecklist()));
+          const savedChecklist = updated.checklist ?? emptyMaintenanceChecklist();
+          seededChecklistRef.current = savedChecklist;
+          setDraft(draftFromChecklist(savedChecklist));
         },
       },
     );
