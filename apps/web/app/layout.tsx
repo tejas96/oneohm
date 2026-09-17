@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   description: 'OneOhm Solar EPC Management Platform',
   keywords: ['solar', 'EPC', 'energy', 'management', 'CRM'],
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icon.png',
     apple: '/apple-touch-icon.png',
   },
 };

@@ -36,6 +36,16 @@ export function isActiveTicketStatus(status: ServiceTicketStatus): boolean {
   return ACTIVE_TICKET_STATUSES.includes(status);
 }
 
+/**
+ * `issue` is a complaint someone raised. `maintenance` is a routine checkup the
+ * hourly job made after the project was completed. Only a maintenance ticket
+ * carries a visit number and an inspection checklist.
+ */
+export enum ServiceTicketKind {
+  ISSUE = 'issue',
+  MAINTENANCE = 'maintenance',
+}
+
 /** Shape of one entry in `service_tickets.photos`. */
 export interface ServiceTicketPhoto {
   fileName: string;

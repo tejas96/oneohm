@@ -92,6 +92,10 @@ scoped AS (
     -- The single definition of an active ticket, mirrored from
     -- ACTIVE_TICKET_STATUSES in libs/shared. Do not inline a different list.
     AND t.status IN ('open', 'in_progress')
+    -- Unassigned checkups are office planning (Routine Maintenance tab);
+    -- assigned checkups are someone's work and must show. Include all issue
+    -- tickets and any non-issue ticket assigned to an employee.
+    AND (t.kind = 'issue' OR t.assigned_to_employee_id IS NOT NULL)
     -- Ownership lives in scope.sql.ts, like every other provider's. This one
     -- used to inline its own four-way predicate.
     AND t.id IN (SELECT id FROM my_service_tickets)

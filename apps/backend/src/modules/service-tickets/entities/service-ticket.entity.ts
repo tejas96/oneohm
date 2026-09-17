@@ -1,7 +1,10 @@
 import {
+  ServiceTicketKind,
   ServiceTicketPriority,
   ServiceTicketStatus,
+  type MaintenanceChecklist,
   type ServiceTicketPhoto,
+  type TicketCustomerWhatsapp,
 } from '@tejas96/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
@@ -38,6 +41,25 @@ export class ServiceTicketEntity extends BaseEntity {
 
   @Column({ type: 'varchar', length: 20, default: ServiceTicketStatus.OPEN })
   status: ServiceTicketStatus;
+
+  /** `maintenance` tickets are made by MaintenanceTicketService, never by hand. */
+  @Column({ type: 'varchar', length: 20, default: ServiceTicketKind.ISSUE })
+  kind: ServiceTicketKind;
+
+  /** 1–20 on a checkup, NULL on an issue. Unique per project. */
+  @Column({ name: 'visit_number', type: 'smallint', nullable: true })
+  visitNumber: number | null;
+
+  /** Inspection answers and readings. Checkups only. */
+  @Column({ type: 'jsonb', nullable: true })
+  checklist: MaintenanceChecklist | null;
+
+  /**
+   * `{ opened?, closed? }` send records. Written only by the job and the
+   * WhatsApp status listener, with raw SQL, so `updated_at` never moves.
+   */
+  @Column({ name: 'customer_whatsapp', type: 'jsonb', nullable: true })
+  customerWhatsapp: TicketCustomerWhatsapp | null;
 
   // ============================================
   // RELATIONS

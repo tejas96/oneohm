@@ -1,10 +1,14 @@
 'use client';
 
 import AddIcon from '@mui/icons-material/Add';
-import { Box, Button, Link as MuiLink, Stack } from '@mui/material';
-import { ServiceTicketPriority, ServiceTicketStatus } from '@tejas96/shared/types';
+import { Box, Button, Link as MuiLink, Stack, Tab, Tabs } from '@mui/material';
+import {
+  ServiceTicketKind,
+  ServiceTicketPriority,
+  ServiceTicketStatus,
+} from '@tejas96/shared/types';
 import NextLink from 'next/link';
-import { type JSX, useCallback, useMemo, useState } from 'react';
+import { type JSX, type SyntheticEvent, useCallback, useMemo, useState } from 'react';
 
 import {
   isTicketOverdue,
@@ -62,6 +66,7 @@ const PRIORITY_FILTER_KEY = TICKET_FILTER_KEYS.priority;
 const ASSIGNEE_FILTER_KEY = TICKET_FILTER_KEYS.assigneeId;
 const OVERDUE_FILTER_KEY = TICKET_FILTER_KEYS.overdue;
 const CREATED_BY_FILTER_KEY = TICKET_FILTER_KEYS.createdBy;
+const KIND_FILTER_KEY = TICKET_FILTER_KEYS.kind;
 
 const UNASSIGNED_FILTER_VALUE = 'unassigned';
 
@@ -291,11 +296,28 @@ export function ServiceTicketsPage(): JSX.Element {
   const createdByFilter =
     (urlState.state.filters[CREATED_BY_FILTER_KEY] as string | undefined) ?? '';
 
+  // No value in the URL is the Issues tab, so every old link keeps working.
+  const kind =
+    urlState.state.filters[KIND_FILTER_KEY] === ServiceTicketKind.MAINTENANCE
+      ? ServiceTicketKind.MAINTENANCE
+      : ServiceTicketKind.ISSUE;
+
+  const handleKindChange = useCallback(
+    (_: SyntheticEvent, next: ServiceTicketKind) => {
+      const filters: FilterState = { ...urlState.state.filters };
+      if (next === ServiceTicketKind.MAINTENANCE) filters[KIND_FILTER_KEY] = next;
+      else delete filters[KIND_FILTER_KEY];
+      urlState.setFilters(filters);
+    },
+    [urlState],
+  );
+
   const { data: employees } = useEmployees();
-  const { data: stats, isLoading: statsLoading } = useServiceTicketStats();
+  const { data: stats, isLoading: statsLoading } = useServiceTicketStats(kind);
 
   const params = useMemo<ServiceTicketListParams>(
     () => ({
+      kind,
       page: urlState.state.page + 1,
       limit: urlState.state.pageSize,
       search: urlState.state.search || undefined,
@@ -310,6 +332,7 @@ export function ServiceTicketsPage(): JSX.Element {
       sortOrder: urlState.state.sortModel?.direction === 'asc' ? 'ASC' : 'DESC',
     }),
     [
+      kind,
       urlState.state.page,
       urlState.state.pageSize,
       urlState.state.search,
@@ -510,6 +533,25 @@ export function ServiceTicketsPage(): JSX.Element {
     ];
   }, [assigneeFilterOptions, assigneeSelectorOptions, creatorOptions]);
 
+  /**
+   * The tab is the control for `kind`, so it must not also show up as a filter
+   * chip or count toward the filter button's badge.
+   */
+  const tableFilterModel = useMemo<FilterState>(() => {
+    const rest: FilterState = { ...urlState.state.filters };
+    delete rest[KIND_FILTER_KEY];
+    return rest;
+  }, [urlState.state.filters]);
+
+  const handleTableFilterChange = useCallback(
+    (next: FilterState): void => {
+      const filters: FilterState = { ...next };
+      if (kind === ServiceTicketKind.MAINTENANCE) filters[KIND_FILTER_KEY] = kind;
+      urlState.setFilters(filters);
+    },
+    [kind, urlState],
+  );
+
   const secondaryQuickFilters = useMemo<CrmQuickFilter[]>(
     () => [
       {
@@ -584,16 +626,23 @@ export function ServiceTicketsPage(): JSX.Element {
           </Box>
         </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={newTicket.onGatedClick}
-          aria-disabled={!newTicket.allowed}
-          sx={{ flexShrink: 0 }}
-        >
-          New Ticket
-        </Button>
+        {kind === ServiceTicketKind.ISSUE && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={newTicket.onGatedClick}
+            aria-disabled={!newTicket.allowed}
+            sx={{ flexShrink: 0 }}
+          >
+            New Ticket
+          </Button>
+        )}
       </Stack>
+
+      <Tabs value={kind} onChange={handleKindChange} aria-label="Ticket type">
+        <Tab value={ServiceTicketKind.ISSUE} label="Issues" />
+        <Tab value={ServiceTicketKind.MAINTENANCE} label="Routine Maintenance" />
+      </Tabs>
 
       <ServiceTicketStatTiles
         stats={stats}
@@ -618,8 +667,8 @@ export function ServiceTicketsPage(): JSX.Element {
         activeSecondaryQuickFilter={activeSecondaryQuickFilter}
         onSecondaryQuickFilterChange={handleSecondaryQuickFilterChange}
         filterColumns={filterColumns}
-        filterModel={urlState.state.filters}
-        onFilterChange={urlState.setFilters}
+        filterModel={tableFilterModel}
+        onFilterChange={handleTableFilterChange}
         sortModel={urlState.state.sortModel}
         onSortChange={urlState.setSortModel}
         page={urlState.state.page}
@@ -628,7 +677,11 @@ export function ServiceTicketsPage(): JSX.Element {
         onPageChange={urlState.setPage}
         onPageSizeChange={urlState.setPageSize}
         itemLabel="tickets"
-        emptyMessage="No service tickets yet."
+        emptyMessage={
+          kind === ServiceTicketKind.MAINTENANCE
+            ? 'No routine checkups yet.'
+            : 'No service tickets yet.'
+        }
         gridMinWidth={crm['grid-min-width-ticket']}
         pageSizeOptions={[10, 20, 25, 50, 100]}
       />

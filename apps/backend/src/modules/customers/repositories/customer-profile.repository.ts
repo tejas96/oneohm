@@ -8,6 +8,7 @@ import {
   LossReason,
   PropertyStatus,
   QuoteStatus,
+  ServiceTicketKind,
   SortOrder,
 } from '@tejas96/shared/types';
 import {
@@ -679,6 +680,12 @@ export class CustomerProfileRepository {
             .where('activeTicketRel.deletedAt IS NULL')
             .andWhere('activeTicketRel.status IN (:...activeTicketStatuses)', {
               activeTicketStatuses: [...ACTIVE_TICKET_STATUSES],
+            })
+            // Issue tickets only (fix 2): a checkup is created open and
+            // unassigned, so counting it here would fold every routine
+            // maintenance visit into this existing "active ticket" chip.
+            .andWhere('activeTicketRel.kind = :activeTicketKind', {
+              activeTicketKind: ServiceTicketKind.ISSUE,
             }),
       )
       .leftJoinAndSelect('customer.creator', 'creator')
@@ -817,17 +824,22 @@ export class CustomerProfileRepository {
     // Same predicate as the activeTicketCount mapping above, so the chip a row
     // shows and this filter can never disagree about what "active" means.
     if (query.hasActiveTickets !== undefined) {
+      // Issue tickets only (fix 2): same predicate as activeTicketCount above.
       const activeTicketSubQuery = `
         SELECT 1 FROM service_tickets st
         WHERE st.customer_id = customer.id
           AND st.status IN (:...activeTicketFilterStatuses)
+          AND st.kind = :activeTicketFilterKind
           AND st.deleted_at IS NULL
       `;
       qb.andWhere(
         query.hasActiveTickets
           ? `EXISTS (${activeTicketSubQuery})`
           : `NOT EXISTS (${activeTicketSubQuery})`,
-        { activeTicketFilterStatuses: [...ACTIVE_TICKET_STATUSES] },
+        {
+          activeTicketFilterStatuses: [...ACTIVE_TICKET_STATUSES],
+          activeTicketFilterKind: ServiceTicketKind.ISSUE,
+        },
       );
     }
 

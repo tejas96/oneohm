@@ -2,10 +2,24 @@
 
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SwapHorizOutlinedIcon from '@mui/icons-material/SwapHorizOutlined';
-import { Box, Button, Card, CardContent, Link as MuiLink, Stack, Tooltip } from '@mui/material';
-import { ServiceTicketStatus } from '@tejas96/shared/types';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Link as MuiLink,
+  Stack,
+  Tooltip,
+} from '@mui/material';
+import { ServiceTicketKind, ServiceTicketStatus } from '@tejas96/shared/types';
 import NextLink from 'next/link';
-import { type JSX, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { type JSX, useEffect, useState } from 'react';
 
 import {
   isTicketOverdue,
@@ -14,6 +28,7 @@ import {
   SERVICE_TICKET_STATUS_LABELS,
   SERVICE_TICKET_STATUS_TONE,
 } from '../constants';
+import { ServiceTicketChecklistCard } from './service-ticket-checklist-card';
 import { ServiceTicketFormDialog } from './service-ticket-form-dialog';
 import { ServiceTicketLocationCard } from './service-ticket-location-card';
 import { ServiceTicketStatusDialog } from './service-ticket-status-dialog';
@@ -40,9 +55,23 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 export function ServiceTicketDetailPage({ ticketId }: ServiceTicketDetailPageProps): JSX.Element {
+  const router = useRouter();
   const { data: ticket, isLoading, isError } = useServiceTicket(ticketId);
   const [statusOpen, setStatusOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [checklistDirty, setChecklistDirty] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
+
+  // Unsaved checklist changes ask before the tab closes/reloads.
+  useEffect(() => {
+    if (!checklistDirty) return;
+    const handler = (event: BeforeUnloadEvent): void => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [checklistDirty]);
 
   if (isLoading) {
     return (
@@ -78,7 +107,17 @@ export function ServiceTicketDetailPage({ ticketId }: ServiceTicketDetailPagePro
         spacing={2}
       >
         <Box sx={{ minWidth: 0 }}>
-          <MuiLink component={NextLink} href={ROUTES.SERVICE.HOME} underline="hover">
+          <MuiLink
+            component={NextLink}
+            href={ROUTES.SERVICE.HOME}
+            underline="hover"
+            onClick={(event) => {
+              if (checklistDirty) {
+                event.preventDefault();
+                setDiscardOpen(true);
+              }
+            }}
+          >
             <MUITypography variant="finePrint">← All tickets</MUITypography>
           </MuiLink>
           <Box
@@ -121,13 +160,15 @@ export function ServiceTicketDetailPage({ ticketId }: ServiceTicketDetailPagePro
               </Button>
             </span>
           </Tooltip>
-          <Tooltip title={isClosed ? closedHint : ''}>
+          <Tooltip
+            title={isClosed ? closedHint : checklistDirty ? 'Save the checklist first.' : ''}
+          >
             <span>
               <Button
                 variant="contained"
                 startIcon={<SwapHorizOutlinedIcon />}
                 onClick={() => setStatusOpen(true)}
-                disabled={isClosed}
+                disabled={isClosed || checklistDirty}
               >
                 Change Status
               </Button>
@@ -141,12 +182,18 @@ export function ServiceTicketDetailPage({ ticketId }: ServiceTicketDetailPagePro
         <Stack spacing={2} sx={{ flex: 1, minWidth: 0, width: '100%' }}>
           <Card variant="outlined">
             <CardContent>
-              <MUITypography variant="sectionTitle">Issue</MUITypography>
+              <MUITypography variant="sectionTitle">
+                {ticket.kind === ServiceTicketKind.MAINTENANCE ? 'Checkup' : 'Issue'}
+              </MUITypography>
               <MUITypography variant="body" sx={{ mt: 1, whiteSpace: 'pre-line' }}>
                 {ticket.description}
               </MUITypography>
             </CardContent>
           </Card>
+
+          {ticket.kind === ServiceTicketKind.MAINTENANCE && (
+            <ServiceTicketChecklistCard ticket={ticket} onDirtyChange={setChecklistDirty} />
+          )}
 
           {ticket.photos && ticket.photos.length > 0 && (
             <Card variant="outlined">
@@ -304,6 +351,32 @@ export function ServiceTicketDetailPage({ ticketId }: ServiceTicketDetailPagePro
         ticket={ticket}
       />
       <ServiceTicketFormDialog open={editOpen} onClose={() => setEditOpen(false)} ticket={ticket} />
+
+      {/* Discard checklist changes — look copied from the edit-project modal. */}
+      <Dialog open={discardOpen} onClose={() => setDiscardOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 600 }}>Discard changes?</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning">
+            You have unsaved checklist changes. Leave without saving?
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button variant="outlined" onClick={() => setDiscardOpen(false)}>
+            Stay here
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => {
+              setDiscardOpen(false);
+              setChecklistDirty(false);
+              router.push(ROUTES.SERVICE.HOME);
+            }}
+          >
+            Leave
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

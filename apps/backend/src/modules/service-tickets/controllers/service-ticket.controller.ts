@@ -22,6 +22,8 @@ import {
   ServiceTicketQueryDto,
   ServiceTicketResponseDto,
   ServiceTicketStatsDto,
+  ServiceTicketStatsQueryDto,
+  UpdateMaintenanceChecklistDto,
   UpdateServiceTicketDto,
   UpdateTicketStatusDto,
 } from '../dto';
@@ -79,8 +81,8 @@ export class ServiceTicketController {
   @Get('stats')
   @ApiOperation({ summary: 'Ticket counts by status, plus the active urgent count' })
   @ApiResponse({ status: HttpStatus.OK, type: ServiceTicketStatsDto })
-  async getStats(): Promise<ServiceTicketStatsDto> {
-    return this.ticketService.getStats();
+  async getStats(@Query() query: ServiceTicketStatsQueryDto): Promise<ServiceTicketStatsDto> {
+    return this.ticketService.getStats(query.kind);
   }
 
   @Get(':id')
@@ -122,6 +124,21 @@ export class ServiceTicketController {
   ): Promise<ServiceTicketResponseDto> {
     return this.ticketService.toResponseDto(
       await this.ticketService.updateStatus(id, dto, user.id),
+    );
+  }
+
+  @Patch(':id/checklist')
+  @ApiOperation({ summary: 'Save part of a checkup inspection checklist' })
+  @ApiResponse({ status: HttpStatus.OK, type: ServiceTicketResponseDto })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Not a checkup, or a bad item' })
+  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Ticket is closed' })
+  async updateChecklist(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateMaintenanceChecklistDto,
+    @CurrentUser() user: { id: string },
+  ): Promise<ServiceTicketResponseDto> {
+    return this.ticketService.toResponseDto(
+      await this.ticketService.updateChecklist(id, dto, user.id),
     );
   }
 

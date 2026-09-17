@@ -15,7 +15,7 @@ function formatWhen(iso: string | null): string {
 }
 
 /** The one line that says what happened to the customer's WhatsApp update. */
-function describeCustomerWhatsapp(status: CustomerWhatsappStatus): string {
+export function describeCustomerWhatsapp(status: CustomerWhatsappStatus): string {
   switch (status.state) {
     case 'waiting':
       return `WhatsApp to customer at ${formatWhen(status.at)}`;

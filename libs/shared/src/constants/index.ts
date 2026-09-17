@@ -7,3 +7,4 @@ export * from './product.constants';
 export * from './solar';
 export * from './task-catalog';
 export * from './milestone-lifecycle';
+export * from './maintenance';

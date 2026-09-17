@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ACTIVE_TICKET_STATUSES, ServiceTicketPriority } from '@tejas96/shared/types';
+import {
+  ACTIVE_TICKET_STATUSES,
+  ServiceTicketKind,
+  ServiceTicketPriority,
+} from '@tejas96/shared/types';
 import { type EntityManager, Repository, type SelectQueryBuilder } from 'typeorm';
 
 import { type ServiceTicketQueryDto } from '../dto';
@@ -92,6 +96,9 @@ export class ServiceTicketRepository {
   ): Promise<{ items: ServiceTicketEntity[]; total: number }> {
     const qb = this.baseQuery();
 
+    if (query.kind) {
+      qb.andWhere('ticket.kind = :kind', { kind: query.kind });
+    }
     if (query.status?.length) {
       qb.andWhere('ticket.status IN (:...statuses)', { statuses: query.status });
     }
@@ -163,7 +170,7 @@ export class ServiceTicketRepository {
       .getOne();
   }
 
-  async getStats(): Promise<{
+  async getStats(kind?: ServiceTicketKind): Promise<{
     open: number;
     inProgress: number;
     resolved: number;
@@ -177,6 +184,7 @@ export class ServiceTicketRepository {
       .select('ticket.status', 'status')
       .addSelect('COUNT(*)::int', 'count')
       .where('ticket.deletedAt IS NULL')
+      .andWhere(kind ? 'ticket.kind = :kind' : '1=1', { kind })
       .groupBy('ticket.status')
       .getRawMany<{ status: string; count: number }>();
 
@@ -185,6 +193,7 @@ export class ServiceTicketRepository {
     const urgent = await this.repository
       .createQueryBuilder('ticket')
       .where('ticket.deletedAt IS NULL')
+      .andWhere(kind ? 'ticket.kind = :kind' : '1=1', { kind })
       .andWhere('ticket.priority = :priority', { priority: ServiceTicketPriority.URGENT })
       .andWhere('ticket.status IN (:...statuses)', { statuses: [...ACTIVE_TICKET_STATUSES] })
       .getCount();
@@ -192,6 +201,7 @@ export class ServiceTicketRepository {
     const unassigned = await this.repository
       .createQueryBuilder('ticket')
       .where('ticket.deletedAt IS NULL')
+      .andWhere(kind ? 'ticket.kind = :kind' : '1=1', { kind })
       .andWhere('ticket.assignedToEmployeeId IS NULL')
       .andWhere('ticket.status IN (:...statuses)', { statuses: [...ACTIVE_TICKET_STATUSES] })
       .getCount();
@@ -199,6 +209,7 @@ export class ServiceTicketRepository {
     const overdue = await this.repository
       .createQueryBuilder('ticket')
       .where('ticket.deletedAt IS NULL')
+      .andWhere(kind ? 'ticket.kind = :kind' : '1=1', { kind })
       .andWhere('ticket.dueDate IS NOT NULL')
       .andWhere('ticket.dueDate < CURRENT_DATE')
       .andWhere('ticket.status IN (:...statuses)', { statuses: [...ACTIVE_TICKET_STATUSES] })

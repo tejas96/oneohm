@@ -45,6 +45,7 @@ export const SERVICE_TICKET_SORT_FIELD_MAP: Record<string, string> = {
 
 /** URL filter keys, shared by the stat tiles and the quick-filter chips. */
 export const TICKET_FILTER_KEYS = {
+  kind: 'kind',
   status: 'status',
   priority: 'priority',
   assigneeId: 'assigneeId',
