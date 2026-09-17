@@ -22,7 +22,7 @@ import {
   type MaintenanceItemResult,
 } from '@tejas96/shared/types';
 import { emptyMaintenanceChecklist, maintenanceChecklistDoneCount } from '@tejas96/shared/utils';
-import { type JSX, useEffect, useState } from 'react';
+import { type JSX, useEffect, useRef, useState } from 'react';
 
 import { useServiceTicketMutations, type ServiceTicketDetail } from '../hooks/use-service-tickets';
 
@@ -43,13 +43,29 @@ export function ServiceTicketChecklistCard({
   // Notes and readings are typed locally and saved on blur, not per key.
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [readings, setReadings] = useState<Record<string, string>>({});
+  // Whichever note/reading field is currently focused keeps its in-progress
+  // local value when the re-seed effect below runs, instead of being
+  // clobbered by a save that landed for a *different* field (e.g. an All OK
+  // click, another item's OK/Issue toggle, or a status change).
+  const focusedNoteKeyRef = useRef<string | null>(null);
+  const focusedReadingKeyRef = useRef<'generationKwh' | 'netMeterReading' | null>(null);
   useEffect(() => {
-    setNotes(
-      Object.fromEntries(Object.entries(checklist.items).map(([key, a]) => [key, a.note ?? ''])),
-    );
-    setReadings({
-      generationKwh: checklist.readings.generationKwh?.toString() ?? '',
-      netMeterReading: checklist.readings.netMeterReading?.toString() ?? '',
+    setNotes((prev) => {
+      const next = Object.fromEntries(
+        Object.entries(checklist.items).map(([key, a]) => [key, a.note ?? '']),
+      );
+      const focused = focusedNoteKeyRef.current;
+      if (focused !== null) next[focused] = prev[focused] ?? '';
+      return next;
+    });
+    setReadings((prev) => {
+      const next = {
+        generationKwh: checklist.readings.generationKwh?.toString() ?? '',
+        netMeterReading: checklist.readings.netMeterReading?.toString() ?? '',
+      };
+      const focused = focusedReadingKeyRef.current;
+      if (focused !== null) next[focused] = prev[focused] ?? '';
+      return next;
     });
     // Re-seed only when the server copy changes.
     // (react-hooks/exhaustive-deps is off in this repo's eslint config, so no
@@ -171,7 +187,13 @@ export function ServiceTicketChecklistCard({
                             onChange={(event) =>
                               setNotes((prev) => ({ ...prev, [item.key]: event.target.value }))
                             }
-                            onBlur={() => saveNote(item.key)}
+                            onFocus={() => {
+                              focusedNoteKeyRef.current = item.key;
+                            }}
+                            onBlur={() => {
+                              focusedNoteKeyRef.current = null;
+                              saveNote(item.key);
+                            }}
                             inputProps={{ maxLength: 500 }}
                             sx={{ mt: 1 }}
                           />
@@ -198,7 +220,13 @@ export function ServiceTicketChecklistCard({
                   onChange={(event) =>
                     setReadings((prev) => ({ ...prev, [reading.key]: event.target.value }))
                   }
-                  onBlur={() => saveReading(reading.key)}
+                  onFocus={() => {
+                    focusedReadingKeyRef.current = reading.key;
+                  }}
+                  onBlur={() => {
+                    focusedReadingKeyRef.current = null;
+                    saveReading(reading.key);
+                  }}
                   inputProps={{ min: 0, step: 'any' }}
                 />
               ))}
