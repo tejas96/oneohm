@@ -1,5 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ServiceTicketPriority, ServiceTicketStatus } from '@tejas96/shared/types';
+import {
+  ServiceTicketKind,
+  ServiceTicketPriority,
+  ServiceTicketStatus,
+} from '@tejas96/shared/types';
 import { Transform, Type } from 'class-transformer';
 import { IsArray, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
@@ -19,6 +23,11 @@ function toArray(value: unknown): string[] | undefined {
 }
 
 export class ServiceTicketQueryDto {
+  @ApiPropertyOptional({ enum: ServiceTicketKind })
+  @IsOptional()
+  @IsEnum(ServiceTicketKind)
+  kind?: ServiceTicketKind;
+
   @ApiPropertyOptional({ enum: ServiceTicketStatus, isArray: true })
   @IsOptional()
   @Transform(({ value }) => toArray(value))
@@ -107,4 +116,11 @@ export class ServiceTicketQueryDto {
   @IsOptional()
   @IsString()
   sortOrder: 'ASC' | 'DESC' = 'DESC';
+}
+
+export class ServiceTicketStatsQueryDto {
+  @ApiPropertyOptional({ enum: ServiceTicketKind })
+  @IsOptional()
+  @IsEnum(ServiceTicketKind)
+  kind?: ServiceTicketKind;
 }

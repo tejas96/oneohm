@@ -1,3 +1,10 @@
+import {
+  ServiceTicketKind,
+  type CustomerWhatsappStatus,
+  type TicketCustomerWhatsappStatus,
+  type TicketWhatsappRecord,
+} from '@tejas96/shared/types';
+
 import { type UserEntity } from '../../users/entities/user.entity';
 import {
   type ServiceTicketListItemDto,
@@ -58,6 +65,27 @@ function coercePropertyCoordinates(
   return { latitude, longitude };
 }
 
+function toWhatsappStatus(record?: TicketWhatsappRecord): CustomerWhatsappStatus | null {
+  if (!record) return null;
+  const at =
+    record.status === 'read'
+      ? (record.readAt ?? null)
+      : record.status === 'delivered'
+        ? (record.deliveredAt ?? null)
+        : record.status === 'sent'
+          ? (record.sentAt ?? null)
+          : null;
+  return { state: record.status, at, reason: record.reason ?? null };
+}
+
+function customerWhatsappDto(ticket: ServiceTicketEntity): TicketCustomerWhatsappStatus | null {
+  if (ticket.kind !== ServiceTicketKind.MAINTENANCE) return null;
+  return {
+    opened: toWhatsappStatus(ticket.customerWhatsapp?.opened),
+    closed: toWhatsappStatus(ticket.customerWhatsapp?.closed),
+  };
+}
+
 export function toListItemDto(ticket: ServiceTicketEntity): ServiceTicketListItemDto {
   return {
     id: ticket.id,
@@ -65,6 +93,8 @@ export function toListItemDto(ticket: ServiceTicketEntity): ServiceTicketListIte
     title: ticket.title,
     status: ticket.status,
     priority: ticket.priority,
+    kind: ticket.kind,
+    visitNumber: ticket.visitNumber ?? null,
     customerId: ticket.customerId,
     customerName: customerDisplayName(ticket.customer),
     projectId: ticket.projectId,
@@ -108,6 +138,8 @@ export function toResponseDto(ticket: ServiceTicketEntity): ServiceTicketRespons
     resolutionNote: ticket.resolutionNote,
     resolvedAt: ticket.resolvedAt?.toISOString() ?? null,
     closedAt: ticket.closedAt?.toISOString() ?? null,
+    checklist: ticket.checklist ?? null,
+    customerWhatsapp: customerWhatsappDto(ticket),
     updatedAt: ticket.updatedAt.toISOString(),
     statusHistory: (ticket.statusHistory ?? [])
       .slice()

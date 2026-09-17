@@ -1,8 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ServiceTicketKind,
   ServiceTicketPriority,
   ServiceTicketStatus,
+  type MaintenanceChecklist,
   type ServiceTicketPhoto,
+  type TicketCustomerWhatsappStatus,
 } from '@tejas96/shared/types';
 
 export class ServiceTicketListItemDto {
@@ -20,6 +23,12 @@ export class ServiceTicketListItemDto {
 
   @ApiProperty({ enum: ServiceTicketPriority })
   priority: ServiceTicketPriority;
+
+  @ApiProperty({ enum: ServiceTicketKind })
+  kind: ServiceTicketKind;
+
+  @ApiPropertyOptional({ example: 5, nullable: true, description: 'Checkups only, 1–20' })
+  visitNumber: number | null;
 
   @ApiProperty({ format: 'uuid' })
   customerId: string;
@@ -112,6 +121,22 @@ export class ServiceTicketResponseDto extends ServiceTicketListItemDto {
 
   @ApiPropertyOptional({ nullable: true })
   closedAt: string | null;
+
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    nullable: true,
+    description: 'Checkups only',
+  })
+  checklist: MaintenanceChecklist | null;
+
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    nullable: true,
+    description: 'Checkups only',
+  })
+  customerWhatsapp: TicketCustomerWhatsappStatus | null;
 
   @ApiProperty()
   updatedAt: string;

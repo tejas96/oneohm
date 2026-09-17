@@ -4,3 +4,4 @@ export * from './update-ticket-status.dto';
 export * from './service-ticket-query.dto';
 export * from './service-ticket-response.dto';
 export * from './service-ticket-stats.dto';
+export * from './update-maintenance-checklist.dto';

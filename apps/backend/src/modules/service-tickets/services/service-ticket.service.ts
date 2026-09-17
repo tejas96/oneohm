@@ -5,8 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { COMPANY } from '@tejas96/shared/constants';
-import { ServiceTicketStatus } from '@tejas96/shared/types';
+import { COMPANY, MAINTENANCE_CHECKLIST_ITEM_KEYS } from '@tejas96/shared/constants';
+import {
+  ServiceTicketKind,
+  ServiceTicketStatus,
+  type MaintenanceChecklist,
+} from '@tejas96/shared/types';
+import { emptyMaintenanceChecklist, missingMaintenanceChecklist } from '@tejas96/shared/utils';
 import { DataSource, Repository } from 'typeorm';
 
 import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
@@ -17,6 +22,7 @@ import {
   type ServiceTicketQueryDto,
   type ServiceTicketResponseDto,
   type ServiceTicketStatsDto,
+  type UpdateMaintenanceChecklistDto,
   type UpdateServiceTicketDto,
   type UpdateTicketStatusDto,
 } from '../dto';
@@ -54,6 +60,7 @@ export class ServiceTicketService {
         projectId: dto.projectId,
         ticketNumber,
         status: ServiceTicketStatus.OPEN,
+        kind: ServiceTicketKind.ISSUE,
         assignedToEmployeeId: dto.assignedToEmployeeId ?? null,
         assignedAt: dto.assignedToEmployeeId ? new Date() : null,
         dueDate: dto.dueDate ?? null,
@@ -189,6 +196,18 @@ export class ServiceTicketService {
 
     const note = dto.note?.trim() || null;
 
+    if (
+      ticket.kind === ServiceTicketKind.MAINTENANCE &&
+      (dto.status === ServiceTicketStatus.RESOLVED || dto.status === ServiceTicketStatus.CLOSED)
+    ) {
+      const missing = missingMaintenanceChecklist(ticket.checklist);
+      if (missing.length > 0) {
+        throw new BadRequestException(
+          `Finish the inspection checklist first. Missing: ${missing.join(', ')}.`,
+        );
+      }
+    }
+
     if (dto.status === ServiceTicketStatus.RESOLVED && !note) {
       throw new BadRequestException('A resolution note is required when resolving a ticket.');
     }
@@ -235,8 +254,54 @@ export class ServiceTicketService {
     return this.findById(id);
   }
 
-  async getStats(): Promise<ServiceTicketStatsDto> {
-    return this.ticketRepository.getStats();
+  async getStats(kind?: ServiceTicketKind): Promise<ServiceTicketStatsDto> {
+    return this.ticketRepository.getStats(kind);
+  }
+
+  /**
+   * Saves part of a checkup's inspection. Each tap on web or mobile sends one
+   * item, so answers merge by key rather than replacing the whole list.
+   */
+  async updateChecklist(
+    id: string,
+    dto: UpdateMaintenanceChecklistDto,
+    userId: string,
+  ): Promise<ServiceTicketEntity> {
+    const ticket = await this.findById(id);
+    this.assertNotClosed(ticket);
+    if (ticket.kind !== ServiceTicketKind.MAINTENANCE) {
+      throw new BadRequestException('Only checkup tickets have an inspection checklist.');
+    }
+
+    const current: MaintenanceChecklist = ticket.checklist ?? emptyMaintenanceChecklist();
+    const items = { ...current.items };
+
+    for (const [key, answer] of Object.entries(dto.items ?? {})) {
+      if (!MAINTENANCE_CHECKLIST_ITEM_KEYS.includes(key)) {
+        throw new BadRequestException(`Unknown checklist item: ${key}`);
+      }
+      if (answer?.result !== 'ok' && answer?.result !== 'issue') {
+        throw new BadRequestException(`Checklist item ${key} must be ok or issue`);
+      }
+      const note = typeof answer.note === 'string' ? answer.note.trim().slice(0, 500) : null;
+      items[key] = { result: answer.result, note: answer.result === 'issue' ? note || null : null };
+    }
+
+    const readings = { ...current.readings };
+    for (const key of ['generationKwh', 'netMeterReading'] as const) {
+      if (!dto.readings || !Object.prototype.hasOwnProperty.call(dto.readings, key)) continue;
+      const value = dto.readings[key];
+      if (value !== null && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) {
+        throw new BadRequestException(`${key} must be a number of 0 or more`);
+      }
+      readings[key] = value ?? null;
+    }
+
+    await this.dataSource
+      .getRepository(ServiceTicketEntity)
+      .update(id, { checklist: { items, readings }, updatedBy: userId });
+
+    return this.findById(id);
   }
 
   // ============================================
@@ -245,6 +310,10 @@ export class ServiceTicketService {
 
   async softDelete(id: string): Promise<void> {
     const ticket = await this.findById(id);
+    // The job would make the same visit again within the hour.
+    if (ticket.kind === ServiceTicketKind.MAINTENANCE) {
+      throw new BadRequestException('Checkup tickets cannot be deleted.');
+    }
     await this.dataSource.getRepository(ServiceTicketEntity).softDelete(ticket.id);
   }
 
