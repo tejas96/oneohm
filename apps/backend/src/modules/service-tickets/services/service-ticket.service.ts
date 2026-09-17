@@ -5,7 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { COMPANY, MAINTENANCE_CHECKLIST_ITEM_KEYS } from '@tejas96/shared/constants';
+import {
+  COMPANY,
+  MAINTENANCE_CHECKLIST_ITEM_KEYS,
+  MAINTENANCE_READINGS,
+} from '@tejas96/shared/constants';
 import {
   ServiceTicketKind,
   ServiceTicketStatus,
@@ -289,11 +293,11 @@ export class ServiceTicketService {
     }
 
     const readingsPatch: Record<string, number | null> = {};
-    for (const key of ['generationKwh', 'netMeterReading'] as const) {
+    for (const { key, label } of MAINTENANCE_READINGS) {
       if (!dto.readings || !Object.prototype.hasOwnProperty.call(dto.readings, key)) continue;
       const value = dto.readings[key];
       if (value !== null && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) {
-        throw new BadRequestException(`${key} must be a number of 0 or more`);
+        throw new BadRequestException(`${label} must be 0 or more.`);
       }
       readingsPatch[key] = value ?? null;
     }
