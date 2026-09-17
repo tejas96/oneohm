@@ -362,7 +362,7 @@ export function ServiceTicketDetailPage({ ticketId }: ServiceTicketDetailPagePro
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
           <Button variant="outlined" onClick={() => setDiscardOpen(false)}>
-            Stay
+            Stay here
           </Button>
           <Button
             variant="contained"

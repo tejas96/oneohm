@@ -57,6 +57,25 @@ function parseReadingInput(raw: string): number | null | 'invalid' {
   return value;
 }
 
+/**
+ * The draft as a `MaintenanceChecklist`, so the "{done} of 20 done" counter
+ * can count the draft (spec section 7), not just the last saved copy.
+ * Invalid/empty readings count as not entered, same as `null`.
+ */
+function checklistFromDraft(draft: ChecklistDraft): MaintenanceChecklist {
+  return {
+    items: draft.items,
+    readings: {
+      generationKwh: readingOrNull(parseReadingInput(draft.readings.generationKwh)),
+      netMeterReading: readingOrNull(parseReadingInput(draft.readings.netMeterReading)),
+    },
+  };
+}
+
+function readingOrNull(parsed: number | null | 'invalid'): number | null {
+  return parsed === 'invalid' ? null : parsed;
+}
+
 /** Item keys whose draft answer differs from the saved copy. */
 function diffItemKeys(
   draftItems: Record<string, MaintenanceChecklistAnswer>,
@@ -104,9 +123,11 @@ export function ServiceTicketChecklistCard({
   const { saveChecklist } = useServiceTicketMutations();
   const checklist: MaintenanceChecklist = ticket.checklist ?? emptyMaintenanceChecklist();
   const locked = ticket.status === ServiceTicketStatus.CLOSED;
-  const done = maintenanceChecklistDoneCount(checklist);
 
   const [draft, setDraft] = useState<ChecklistDraft>(() => draftFromChecklist(checklist));
+
+  // The counter counts the draft, so it moves as the user taps, before Save.
+  const done = maintenanceChecklistDoneCount(checklistFromDraft(draft));
 
   const itemChanges = diffItemKeys(draft.items, checklist.items);
   const readingChanges = diffReadingKeys(draft.readings, checklist.readings);
