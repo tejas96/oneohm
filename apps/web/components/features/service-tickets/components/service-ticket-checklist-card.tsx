@@ -122,7 +122,11 @@ export function ServiceTicketChecklistCard({
 }): JSX.Element {
   const { saveChecklist } = useServiceTicketMutations();
   const checklist: MaintenanceChecklist = ticket.checklist ?? emptyMaintenanceChecklist();
-  const locked = ticket.status === ServiceTicketStatus.CLOSED;
+  // Locked while a save is in flight too (fix 1): otherwise a user can keep
+  // typing between clicking Save and the response, and `onSuccess` below
+  // replaces the whole draft with the server copy, silently dropping it. This
+  // also stops a double click from sending the PATCH twice.
+  const locked = ticket.status === ServiceTicketStatus.CLOSED || saveChecklist.isPending;
 
   const [draft, setDraft] = useState<ChecklistDraft>(() => draftFromChecklist(checklist));
 
