@@ -254,3 +254,34 @@ Those projects get no checkups until an end date is set.
 - Checkups in the consumer app.
 - A checklist editable in Settings.
 - Photos per checklist item (the ticket's existing photos still work).
+
+## 7. Change 2026-09-17 — the checklist saves with one button (owner decision)
+
+Replaces "every tap saves" on web and mobile. Found in mobile QA: notes and readings saved
+only on blur, and on a phone blur often never fires, so typed text was lost.
+
+- The checklist card edits a **draft**. OK / Issue / All OK / notes / readings change only the draft.
+- One button at the bottom of the card: **`Save checklist`**. With changes it reads
+  **`Save checklist ({n} changes)`** (`1 change` when one). No changes → disabled, reads `Saved`.
+  `n` = number of items whose answer or note differs from the saved copy, plus readings that differ.
+- Save sends only what changed (same `PATCH /service-tickets/:id/checklist`, server merge unchanged).
+  On success the draft is replaced by the server copy. On failure the draft stays and the
+  server's message is shown.
+- The counter `{done} of 20 done` counts the draft.
+- Issue → OK clears that item's note in the draft.
+- Readings: a value that is not a number of 0 or more shows `Must be 0 or more` under the field
+  and disables Save until fixed. Comma decimals (`12,5`) are read as `12.5`.
+- When the server copy changes (another save, a refetch): if the draft has no changes, take the
+  server copy; if it has changes, keep the draft.
+- While the draft has changes, status cannot change: web **Change Status** is disabled with the
+  tooltip `Save the checklist first.`; mobile **Update status** is disabled with the note
+  `Save the checklist first.`
+- Leaving with unsaved changes asks first:
+  - Web: the card's own `← All tickets` link and the browser close/reload (`beforeunload`)
+    ask `Discard changes?` / `You have unsaved checklist changes. Leave without saving?`
+    Copy the web edit-project modal's discard dialog.
+  - Mobile: Android back and the top-bar back ask with the app's `ConfirmSheet`, like
+    `CreateQuoteRoute`: title `Leave without saving the checklist?`, message
+    `Your checklist answers are not saved yet. Leaving now loses them.`,
+    buttons `Stay here` / `Leave`.
+- Closed ticket or offline (mobile): the whole card looks disabled (dimmed controls), not just inert.
