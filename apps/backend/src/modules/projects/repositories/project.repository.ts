@@ -4,6 +4,7 @@ import {
   ACTIVE_TICKET_STATUSES,
   ProjectPriority,
   ProjectStatus,
+  ServiceTicketKind,
   TaskStatus,
 } from '@tejas96/shared/types';
 import { type EntityManager, IsNull, Not, Repository } from 'typeorm';
@@ -170,6 +171,12 @@ export class ProjectRepository {
             .where('activeTicketRel.deletedAt IS NULL')
             .andWhere('activeTicketRel.status IN (:...activeTicketStatuses)', {
               activeTicketStatuses: [...ACTIVE_TICKET_STATUSES],
+            })
+            // Issue tickets only (fix 2): a checkup is created open and
+            // unassigned, so counting it here would fold every routine
+            // maintenance visit into this existing "active ticket" chip.
+            .andWhere('activeTicketRel.kind = :activeTicketKind', {
+              activeTicketKind: ServiceTicketKind.ISSUE,
             }),
       )
       .innerJoinAndSelect('project.property', 'property')
@@ -314,17 +321,22 @@ export class ProjectRepository {
     // Same predicate as the activeTicketCount mapping above, so the chip a row
     // shows and this filter can never disagree about what "active" means.
     if (filters?.hasActiveTickets !== undefined) {
+      // Issue tickets only (fix 2): same predicate as activeTicketCount above.
       const activeTicketSubQuery = `
         SELECT 1 FROM service_tickets st
         WHERE st.project_id = project.id
           AND st.status IN (:...activeTicketFilterStatuses)
+          AND st.kind = :activeTicketFilterKind
           AND st.deleted_at IS NULL
       `;
       query.andWhere(
         filters.hasActiveTickets
           ? `EXISTS (${activeTicketSubQuery})`
           : `NOT EXISTS (${activeTicketSubQuery})`,
-        { activeTicketFilterStatuses: [...ACTIVE_TICKET_STATUSES] },
+        {
+          activeTicketFilterStatuses: [...ACTIVE_TICKET_STATUSES],
+          activeTicketFilterKind: ServiceTicketKind.ISSUE,
+        },
       );
     }
 

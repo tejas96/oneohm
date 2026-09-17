@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { ServiceTicketKind } from '@tejas96/shared/types';
 import * as React from 'react';
 
 import { BusinessCard } from './business-card';
@@ -192,7 +193,11 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
     { limit: OLDEST_DEBT_ROWS },
     { enabled: mayFetch(showMoney) },
   );
-  const tickets = useServiceTicketStats(undefined, mayFetch(showService));
+  // Issue tickets only (fix 2): checkups are created open, unassigned and
+  // due within 14 days, so an unfiltered count would fold every routine
+  // checkup into this existing "active ticket" figure the day the cron job
+  // starts creating them.
+  const tickets = useServiceTicketStats(ServiceTicketKind.ISSUE, mayFetch(showService));
   const workload = useWorkload(
     { fromDate: range.from, toDate: range.to },
     { enabled: mayFetch(showWorkload) },
