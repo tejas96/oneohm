@@ -118,7 +118,7 @@ function toHistoryDto(
     fromStatus: entry.fromStatus,
     toStatus: entry.toStatus,
     note: entry.note,
-    changedByName: userDisplayName(entry.changedByUser),
+    changedByName: entry.changedBy ? userDisplayName(entry.changedByUser) : 'System',
     createdAt: entry.createdAt.toISOString(),
   };
 }
