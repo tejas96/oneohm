@@ -9,4 +9,5 @@ export * from './project-expense.interface';
 export * from './project.interface';
 export * from './quote.interface';
 export * from './quote-calculator.interface';
+export * from './service-ticket-maintenance.interface';
 export * from './task.interface';
