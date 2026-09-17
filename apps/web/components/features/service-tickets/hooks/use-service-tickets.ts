@@ -2,9 +2,12 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  type MaintenanceChecklist,
+  type ServiceTicketKind,
   type ServiceTicketPhoto,
   type ServiceTicketPriority,
   type ServiceTicketStatus,
+  type TicketCustomerWhatsappStatus,
 } from '@tejas96/shared/types';
 
 import { showToast } from '@/components/ui';
@@ -21,6 +24,8 @@ export interface ServiceTicket {
   title: string;
   status: ServiceTicketStatus;
   priority: ServiceTicketPriority;
+  kind: ServiceTicketKind;
+  visitNumber: number | null;
   customerId: string;
   customerName: string;
   projectId: string;
@@ -52,6 +57,8 @@ export interface ServiceTicketDetail extends ServiceTicket {
   resolutionNote: string | null;
   resolvedAt: string | null;
   closedAt: string | null;
+  checklist: MaintenanceChecklist | null;
+  customerWhatsapp: TicketCustomerWhatsappStatus | null;
   updatedAt: string;
   statusHistory: ServiceTicketHistoryEntry[];
 }
@@ -67,6 +74,7 @@ export interface ServiceTicketStats {
 }
 
 export interface ServiceTicketListParams {
+  kind?: ServiceTicketKind;
   status?: ServiceTicketStatus[] | ServiceTicketStatus;
   priority?: ServiceTicketPriority[] | ServiceTicketPriority;
   customerId?: string;
@@ -113,7 +121,8 @@ export const serviceTicketKeys = {
   all: () => ['service-tickets'] as const,
   lists: () => [...serviceTicketKeys.all(), 'list'] as const,
   list: (params: ServiceTicketListParams) => [...serviceTicketKeys.lists(), params] as const,
-  stats: () => [...serviceTicketKeys.all(), 'stats'] as const,
+  stats: (kind?: ServiceTicketKind) =>
+    [...serviceTicketKeys.all(), 'stats', kind ?? 'all'] as const,
   detail: (id: string) => [...serviceTicketKeys.all(), 'detail', id] as const,
 };
 
@@ -135,12 +144,14 @@ export function useServiceTickets(params: ServiceTicketListParams, enabled = tru
   });
 }
 
-export function useServiceTicketStats(enabled = true) {
+export function useServiceTicketStats(kind?: ServiceTicketKind, enabled = true) {
   return useQuery({
-    queryKey: serviceTicketKeys.stats(),
+    queryKey: serviceTicketKeys.stats(kind),
     enabled,
     queryFn: async (): Promise<ServiceTicketStats> => {
-      const { data } = await apiClient.get<ServiceTicketStats>('/service-tickets/stats');
+      const { data } = await apiClient.get<ServiceTicketStats>('/service-tickets/stats', {
+        params: kind ? { kind } : undefined,
+      });
       return data;
     },
   });

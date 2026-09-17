@@ -192,7 +192,7 @@ export function BusinessMode({ range, format }: BusinessModeProps): React.JSX.El
     { limit: OLDEST_DEBT_ROWS },
     { enabled: mayFetch(showMoney) },
   );
-  const tickets = useServiceTicketStats(mayFetch(showService));
+  const tickets = useServiceTicketStats(undefined, mayFetch(showService));
   const workload = useWorkload(
     { fromDate: range.from, toDate: range.to },
     { enabled: mayFetch(showWorkload) },
