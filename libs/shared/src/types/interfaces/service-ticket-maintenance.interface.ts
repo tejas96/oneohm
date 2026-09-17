@@ -33,7 +33,9 @@ export interface TicketWhatsappRecord {
 }
 
 /** Stored on `service_tickets.customer_whatsapp`. */
-export type TicketCustomerWhatsapp = Partial<Record<MaintenanceWhatsappEvent, TicketWhatsappRecord>>;
+export type TicketCustomerWhatsapp = Partial<
+  Record<MaintenanceWhatsappEvent, TicketWhatsappRecord>
+>;
 
 /** What the API returns for the detail screens. */
 export type TicketCustomerWhatsappStatus = Record<

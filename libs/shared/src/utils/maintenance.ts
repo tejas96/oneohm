@@ -42,11 +42,7 @@ export function nextMaintenanceVisit(
 }
 
 export function addDaysToIsoDate(date: string, days: number): string {
-  const [year, month, day] = date.slice(0, 10).split('-').map(Number) as [
-    number,
-    number,
-    number,
-  ];
+  const [year, month, day] = date.slice(0, 10).split('-').map(Number) as [number, number, number];
   const next = new Date(Date.UTC(year, month - 1, day + days));
   return `${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-${pad(next.getUTCDate())}`;
 }
