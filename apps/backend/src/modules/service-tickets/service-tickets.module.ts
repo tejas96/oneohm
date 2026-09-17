@@ -4,8 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServiceTicketController } from './controllers';
 import { ServiceTicketEntity, ServiceTicketStatusHistoryEntity } from './entities';
 import { ServiceTicketRepository } from './repositories';
-import { ServiceTicketService } from './services';
+import { MaintenanceTicketService, ServiceTicketService } from './services';
 import { EmployeeProfileEntity } from '../employees/entities/employee-profile.entity';
+import { IntegrationsModule } from '../integrations/integrations.module';
 import { ProjectEntity } from '../projects/entities/project.entity';
 
 /**
@@ -22,9 +23,10 @@ import { ProjectEntity } from '../projects/entities/project.entity';
       ProjectEntity,
       EmployeeProfileEntity,
     ]),
+    IntegrationsModule,
   ],
   controllers: [ServiceTicketController],
-  providers: [ServiceTicketService, ServiceTicketRepository],
+  providers: [ServiceTicketService, ServiceTicketRepository, MaintenanceTicketService],
   exports: [ServiceTicketService, ServiceTicketRepository],
 })
 export class ServiceTicketsModule {}
