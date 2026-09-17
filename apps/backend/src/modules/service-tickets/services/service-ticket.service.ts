@@ -9,9 +9,9 @@ import { COMPANY, MAINTENANCE_CHECKLIST_ITEM_KEYS } from '@tejas96/shared/consta
 import {
   ServiceTicketKind,
   ServiceTicketStatus,
-  type MaintenanceChecklist,
+  type MaintenanceChecklistAnswer,
 } from '@tejas96/shared/types';
-import { emptyMaintenanceChecklist, missingMaintenanceChecklist } from '@tejas96/shared/utils';
+import { missingMaintenanceChecklist } from '@tejas96/shared/utils';
 import { DataSource, Repository } from 'typeorm';
 
 import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
@@ -273,9 +273,7 @@ export class ServiceTicketService {
       throw new BadRequestException('Only checkup tickets have an inspection checklist.');
     }
 
-    const current: MaintenanceChecklist = ticket.checklist ?? emptyMaintenanceChecklist();
-    const items = { ...current.items };
-
+    const itemsPatch: Record<string, MaintenanceChecklistAnswer> = {};
     for (const [key, answer] of Object.entries(dto.items ?? {})) {
       if (!MAINTENANCE_CHECKLIST_ITEM_KEYS.includes(key)) {
         throw new BadRequestException(`Unknown checklist item: ${key}`);
@@ -284,22 +282,37 @@ export class ServiceTicketService {
         throw new BadRequestException(`Checklist item ${key} must be ok or issue`);
       }
       const note = typeof answer.note === 'string' ? answer.note.trim().slice(0, 500) : null;
-      items[key] = { result: answer.result, note: answer.result === 'issue' ? note || null : null };
+      itemsPatch[key] = {
+        result: answer.result,
+        note: answer.result === 'issue' ? note || null : null,
+      };
     }
 
-    const readings = { ...current.readings };
+    const readingsPatch: Record<string, number | null> = {};
     for (const key of ['generationKwh', 'netMeterReading'] as const) {
       if (!dto.readings || !Object.prototype.hasOwnProperty.call(dto.readings, key)) continue;
       const value = dto.readings[key];
       if (value !== null && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) {
         throw new BadRequestException(`${key} must be a number of 0 or more`);
       }
-      readings[key] = value ?? null;
+      readingsPatch[key] = value ?? null;
     }
 
-    await this.dataSource
-      .getRepository(ServiceTicketEntity)
-      .update(id, { checklist: { items, readings }, updatedBy: userId });
+    // Overlapping saves (fast web + mobile taps) must not clobber each other's
+    // answers, so merge into the current DB value with one atomic UPDATE
+    // instead of read-modify-write in memory.
+    await this.dataSource.query(
+      `UPDATE service_tickets
+          SET checklist = jsonb_build_object(
+                'items', COALESCE(checklist->'items', '{}'::jsonb) || $2::jsonb,
+                'readings', COALESCE(checklist->'readings',
+                  '{"generationKwh":null,"netMeterReading":null}'::jsonb) || $3::jsonb
+              ),
+              updated_by = $4,
+              updated_at = now()
+        WHERE id = $1`,
+      [id, JSON.stringify(itemsPatch), JSON.stringify(readingsPatch), userId],
+    );
 
     return this.findById(id);
   }
