@@ -143,6 +143,8 @@ Each run does 3 steps, in order. One step failing is logged and does not stop th
    `closed_at`. The ticket is reopened and closed again → no second message.
 
 Send rules — copied from `task-whatsapp.service.ts`:
+- Sends happen only from 09:00 to 19:59 India time. Ticket creation still runs
+  every hour. A message waiting overnight goes out at 9 am.
 - Runs only when `NODE_ENV === 'production'` or `TASK_WHATSAPP_ALLOW_LOCAL === 'true'`
   (the local DB is a production copy with real phone numbers).
 - Atomic claim: set the record to `sending` in one UPDATE … WHERE empty, so two
@@ -188,10 +190,10 @@ steps 2 and 3 do nothing. It is set on Fly only after Meta approves both templat
 `components/features/service-tickets/components/service-tickets-page.tsx`)
 - Two tabs at the top: **Issues** and **Routine Maintenance**. The tab is kept in
   the URL state. Each tab is the same table filtered by `kind`. Stat tiles follow the tab.
-- Routine Maintenance tab adds columns **Visit** (`5/20`) and **Due date**.
-  Overdue rows use the existing overdue style.
+- No extra columns. The title already says `Routine checkup 5 of 20`, and the
+  table already has a **Due** column with the overdue style.
 - **New ticket** is shown on the Issues tab only.
-- The row menu hides **Delete** on maintenance tickets.
+- Web has no delete button today, so only the server guard is needed.
 
 **Ticket detail** (`service-ticket-detail-page.tsx`)
 - New **Inspection checklist** card, maintenance tickets only.
@@ -207,8 +209,8 @@ beyond the visit label.
 
 ## 3. Mobile (`oneohm-mobile`)
 
-- List (`features/serviceTickets/list`): maintenance rows show a
-  `Checkup 5/20` label. The filter sheet gets **Type** (All / Issues / Checkups).
+- List (`features/serviceTickets/list`): maintenance rows show a plain
+  `Checkup` badge (the title already carries the visit number). The filter sheet gets **Type** (All / Issues / Checkups).
 - Detail (`features/serviceTickets/detail`): the same checklist card as web,
   with large tap targets, **All OK** per group, OK/Issue per item, note on
   Issue, number inputs for readings. Each change saves at once.
