@@ -166,6 +166,8 @@ export function useServiceTicket(id: string | null | undefined) {
       const { data } = await apiClient.get<ServiceTicketDetail>(`/service-tickets/${id}`);
       return data;
     },
+    // 'always', not true: the app-wide 60s staleTime would skip a tab switch soon after load.
+    refetchOnWindowFocus: 'always',
   });
 }
 
