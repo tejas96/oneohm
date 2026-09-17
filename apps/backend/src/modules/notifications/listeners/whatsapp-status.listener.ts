@@ -19,8 +19,9 @@ function describeWhatsappError(errors: WhatsappStatusError[]): string {
 }
 
 /**
- * Moves a customer step update along as Meta reports it. Statuses for messages
- * this app did not log (quotes, OTPs) match no row and change nothing.
+ * Moves a customer step update or checkup message along as Meta reports it.
+ * Statuses for messages this app did not log (quotes, OTPs) match no row and
+ * change nothing.
  *
  * Order rules: delivered never overwrites read; failed never overwrites
  * delivered or read, because Meta can report them out of order.
@@ -43,19 +44,17 @@ export class WhatsappStatusListener {
         await this.apply(
           event.providerMessageId,
           { status: 'delivered', deliveredAt: at.toISOString() },
-          `customer_whatsapp ->> 'status' NOT IN ('delivered', 'read')`,
+          ['delivered', 'read'],
         );
       } else if (event.status === 'read') {
-        await this.apply(
-          event.providerMessageId,
-          { status: 'read', readAt: at.toISOString() },
-          `customer_whatsapp ->> 'status' <> 'read'`,
-        );
+        await this.apply(event.providerMessageId, { status: 'read', readAt: at.toISOString() }, [
+          'read',
+        ]);
       } else if (event.status === 'failed') {
         await this.apply(
           event.providerMessageId,
           { status: 'failed', reason: describeWhatsappError(event.errors) },
-          `customer_whatsapp ->> 'status' NOT IN ('delivered', 'read')`,
+          ['delivered', 'read'],
         );
       }
       // 'sent' is already recorded by the send itself.
@@ -68,21 +67,34 @@ export class WhatsappStatusListener {
   }
 
   /**
-   * Merges Meta's outcome into the task carrying that message id. The partial
-   * index on the id means this reads only tasks that were actually messaged,
-   * and a status for someone else's message (a quote, an OTP) matches nothing.
+   * Merges Meta's outcome into the task or checkup ticket carrying that message
+   * id. `blocked` lists the statuses that must not be overwritten. A status for
+   * someone else's message (a quote, an OTP) matches nothing.
    */
   private async apply(
     providerMessageId: string,
     patch: Partial<TaskWhatsappRecord>,
-    guard: string,
+    blocked: string[],
   ): Promise<void> {
+    const json = JSON.stringify({ ...patch, updatedAt: new Date().toISOString() });
+
     await this.dataSource.query(
       `UPDATE project_tasks
           SET customer_whatsapp = customer_whatsapp || $2::jsonb
         WHERE customer_whatsapp ->> 'providerMessageId' = $1
-          AND ${guard}`,
-      [providerMessageId, JSON.stringify({ ...patch, updatedAt: new Date().toISOString() })],
+          AND customer_whatsapp ->> 'status' <> ALL($3::text[])`,
+      [providerMessageId, json, blocked],
     );
+
+    for (const key of ['opened', 'closed'] as const) {
+      await this.dataSource.query(
+        `UPDATE service_tickets
+            SET customer_whatsapp = jsonb_set(
+                  customer_whatsapp, '{${key}}', (customer_whatsapp -> '${key}') || $2::jsonb)
+          WHERE customer_whatsapp -> '${key}' ->> 'providerMessageId' = $1
+            AND customer_whatsapp -> '${key}' ->> 'status' <> ALL($3::text[])`,
+        [providerMessageId, json, blocked],
+      );
+    }
   }
 }
