@@ -34,7 +34,7 @@ export function resolveFacts({ project, panelSerials }: ReportSource): Record<Fa
   const property = project.property;
   const customer = property.customer;
   const snapshot = getQuoteSnapshot(project);
-  const panel = snapshot?.calculation?.panels?.[0];
+  const panels = snapshot?.calculation?.panels ?? [];
   const inverters = snapshot?.calculation?.inverters?.inverters ?? [];
   const kw = getSystemSizeKw(project);
 
@@ -56,19 +56,38 @@ export function resolveFacts({ project, panelSerials }: ReportSource): Record<Fa
   facts.installed_capacity_kw = str(kw);
   facts.installed_capacity_wp = kw != null ? str(Math.round(kw * 1000)) : '';
 
-  if (panel) {
-    facts.module_make = str(panel.brand);
-    facts.module_model_number = str(panel.name);
-    facts.module_wattage = str(panel.wattagePerPanel);
-    facts.module_count = str(panel.quantity);
-    const totalWp = (panel.wattagePerPanel ?? 0) * (panel.quantity ?? 0);
+  // A mixed panel set is joined, never truncated to its first entry: this is
+  // filed with the utility, and the first entry understated module count and
+  // capacity for every quote with more than one panel line.
+  if (panels.length > 0) {
+    facts.module_make = Array.from(
+      new Set(panels.map((panel) => str(panel.brand)).filter(Boolean)),
+    ).join(', ');
+    facts.module_model_number = Array.from(
+      new Set(panels.map((panel) => str(panel.name)).filter(Boolean)),
+    ).join(', ');
+    facts.module_wattage = Array.from(
+      new Set(panels.map((panel) => str(panel.wattagePerPanel)).filter(Boolean)),
+    ).join(', ');
+    facts.module_count = str(panels.reduce((sum, panel) => sum + (panel.quantity ?? 0), 0));
+    const totalWp = panels.reduce(
+      (sum, panel) => sum + (panel.wattagePerPanel ?? 0) * (panel.quantity ?? 0),
+      0,
+    );
     facts.module_total_kw = totalWp > 0 ? str(totalWp / 1000) : '';
-    const product = panel.productWarrantyYears;
-    const performance = panel.performanceWarrantyYears;
-    facts.module_warranty =
-      product || performance
-        ? `${product ?? ''}${product && performance ? '+' : ''}${performance ?? ''} Years`.trim()
-        : '';
+    facts.module_warranty = Array.from(
+      new Set(
+        panels
+          .map((panel) => {
+            const product = panel.productWarrantyYears;
+            const performance = panel.performanceWarrantyYears;
+            return product || performance
+              ? `${product ?? ''}${product && performance ? '+' : ''}${performance ?? ''} Years`.trim()
+              : '';
+          })
+          .filter(Boolean),
+      ),
+    ).join(', ');
   }
 
   // A mixed inverter set is joined, never truncated to its first entry: this
