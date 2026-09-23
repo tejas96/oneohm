@@ -110,3 +110,19 @@ export function autoDashFieldPlaceholders(source: string): string {
     return `{{dash ${token}}}`;
   });
 }
+
+/** Shared blocks any report template can use: {{> docTitle …}} and {{> signature …}}. */
+export function registerReportPartials(): void {
+  Handlebars.registerPartial(
+    'docTitle',
+    autoDashFieldPlaceholders(
+      `<header class="doc-head"><h1 class="doc-title">{{title}}</h1><p class="doc-subtitle">{{subtitle}}</p></header>`,
+    ),
+  );
+  Handlebars.registerPartial(
+    'signature',
+    autoDashFieldPlaceholders(
+      `<div class="sig-block"><div class="sig-space"></div><div class="sig-rule"></div><div class="sig-name">{{name}}</div><div class="sig-role">{{role}}</div></div>`,
+    ),
+  );
+}

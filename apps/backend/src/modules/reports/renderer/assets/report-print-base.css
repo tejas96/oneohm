@@ -67,26 +67,6 @@ thead th {
   overflow-wrap: break-word;
 }
 
-.header-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 9px;
-}
-
-.header-table td {
-  border: none;
-  border-bottom: 2px solid #1a1a1a;
-  padding: 0 0 6px 0;
-  vertical-align: bottom;
-  font-size: 10.5pt;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.header-table td.doc-title {
-  text-align: right;
-}
-
 .blank-line {
   display: inline-block;
   border-bottom: 1.5px solid #1a1a1a;
@@ -94,4 +74,50 @@ thead th {
   height: 14px;
   vertical-align: bottom;
   margin: 0 4px;
+}
+
+/* ── Centered document title (replaces the header bar) ── */
+.doc-head {
+  text-align: center;
+  margin: 0 0 12px;
+}
+.doc-title {
+  font-size: 13pt;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+.doc-subtitle {
+  font-size: 9.5pt;
+  font-weight: 600;
+  color: #444;
+  margin: 3px 0 0;
+}
+
+/* ── Signature: space to sign, rule, printed name, role ── */
+.sig-row {
+  display: flex;
+  gap: 40px;
+  margin-top: 14px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+.sig-row > * {
+  flex: 1;
+}
+.sig-space {
+  height: 34px;
+}
+.sig-rule {
+  border-top: 1px solid #1a1a1a;
+}
+.sig-name {
+  font-size: 9pt;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.sig-role {
+  font-size: 8pt;
+  color: #555;
+  margin-top: 1px;
 }

@@ -6,6 +6,7 @@ import Handlebars from 'handlebars';
 import {
   autoDashFieldPlaceholders,
   registerReportHandlebarsHelpers,
+  registerReportPartials,
 } from './report-handlebars.helpers';
 import { resolveReportAsset } from '../utils/report.utils';
 
@@ -46,6 +47,7 @@ export class TemplateRendererService implements OnModuleInit {
     const cssPath = resolveReportAsset('renderer', 'assets', 'base-report.css');
     this.baseCss = readTextFileOrEmpty(cssPath);
     registerReportHandlebarsHelpers();
+    registerReportPartials();
   }
 
   render(templateFile: string, viewModel: Record<string, string>): string {

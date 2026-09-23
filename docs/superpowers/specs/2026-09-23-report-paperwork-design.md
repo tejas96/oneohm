@@ -217,7 +217,7 @@ and cancelled projects do not owe paperwork yet.
 | 2 | Remove "free of cost" | Removed from both sentences of the guarantee. |
 | 3 | Consumer signature properly | Signature line, then consumer name in bold, then "Consumer". |
 | 4 | Vendor full legal name | `COMPANY.legalName = 'Oneohm Sustainable Green Energy Private Limited'`; fact `vendor_name` reads it; used by all four reports. |
-| 5 | No header, centered title + subtitle | Header table removed. Centered title "Work Completion Report for Solar Power Plant", subtitle = vendor legal name. Page 2 gets a centered section title "Certification and Guarantee". |
+| 5 | No header, centered title + subtitle | Header table removed. Centered title "Work Completion Report for Solar Power Plant", subtitle = vendor legal name. Page 2 is titled "Guarantee Certificate Undertaking", subtitle "To be submitted by the vendor". |
 | 6 | Category = property type | `category` reads `property.propertyType` through the existing label map. |
 | 7 | Guarantee on page 2 | Page 1: table, certifications, signatures. Page 2: guarantee, vendor signature, identity block. |
 | 8 | Exactly two pages | `pages: 2`, a forced break before the guarantee, a compact page-1 table, and the page-count guard. |
