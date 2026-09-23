@@ -29,7 +29,10 @@ the new model, not before it.
 4. Zero silent errors: bad input is refused at entry, a report with a missing
    required fact cannot be filed, and a PDF with the wrong page count is not saved.
 5. Pending reports are visible on the projects list.
-6. A new report is one schema file plus one template. No new screen code.
+6. A new report is one definition plus one template, with no new screen code,
+   when the facts it prints and its `DocumentTag` already exist. A new fact also
+   needs a catalog entry (and a resolver line if it is read from live data); a
+   new tag needs a `DocumentTag` enum value.
 7. The 10 WCR corrections.
 
 ## Non-goals
@@ -143,7 +146,8 @@ Pure, shared: `getReportStatus(definition, facts, filed, currentHash)` returns o
 
 Fingerprint: sha256 of the report's own facts, in definition order, stored on the
 filed document as `metadata.factsHash` with `metadata.templateVersion` and
-`metadata.reportFacts` (the values printed, for audit). A document without a
+`metadata.reportFacts` (the values printed, for audit; the Aadhaar is stored
+masked as `XXXX XXXX 1234`, while the fingerprint uses the full value). A document without a
 fingerprint (filed before this change) is `stale`. That is correct: the vendor
 legal name changes all four reports, and the WCR wording changes.
 
@@ -153,14 +157,16 @@ does not.
 
 ## API (`/reports`)
 
-All under `JwtAuthGuard`; write routes gated `projects.edit` as today.
+All under `JwtAuthGuard`. `projects.edit` is enforced in the web, as it was for
+the old drawer: without it, manual facts are read-only and Generate opens the
+access dialog. The routes themselves check only the JWT.
 
 | Route | Does |
 | --- | --- |
 | `GET /reports/projects/:projectId` | Workspace: every fact the catalog reports use (key, value, source, editable, editAt, usedBy[]) and every report (id, name, status, missing[], filedAt, documentId, fileUrl, pages). |
 | `PATCH /reports/projects/:projectId/facts` | `{ facts: { [key]: string \| null } }`. Manual keys only, each validated by its fact rule. Rejects the whole request on any bad value. Returns the workspace. |
-| `POST /reports/projects/:projectId/render` | `{ reportId }` → `{ html, pages }` rendered from stored facts. No field values in the body: the server is the one source. |
-| `POST /reports/projects/:projectId/file` | `{ reportId, file }` → re-resolves facts, refuses if any required fact is missing, stores the document with fingerprint, purges the older copy (as today). |
+| `POST /reports/projects/:projectId/render` | `{ reportId }` → `{ html, pages, factsHash }` rendered from stored facts. No field values in the body: the server is the one source. |
+| `POST /reports/projects/:projectId/file` | `{ reportId, file, factsHash }` → re-resolves facts, returns 409 ("<report> changed while it was being generated. Generate it again.") when the fingerprint differs from the rendered one, refuses if any required fact is missing, stores the document with fingerprint, purges the older copy (as today). |
 
 Removed: `POST /reports/initialize`, `POST /reports/preview`, `POST /reports/save`,
 `GET /reports/completeness`. Their callers move to the workspace endpoint.
@@ -179,9 +185,13 @@ Replaces the drawer. Layout as approved in the chat mockup:
    (PATCH), and a field with an error is not sent. System facts show read-only
    with an Edit link. When one report is picked, the form shows only that
    report's facts.
-4. **Preview mode**: form hidden, only the rendered pages, with "Page 1 of 2".
+4. **Preview mode**: form hidden, only the rendered report in one continuous
+   frame. Page breaks exist only in the generated PDF, so a report that declares
+   `pages` shows a sentence instead ("WCR must print on exactly 2 pages. Generate
+   checks this and files nothing if it does not."); the page-count guard enforces it.
 5. **Generate**: for each chosen report in `ready` or `stale`, in order:
    render → PDF → page-count check against `schema.pages` → upload → file.
+   Generate is disabled while a fact save is in flight.
    `missing` reports are skipped and named. One failure does not stop the rest.
    A result list shows each report's outcome.
 
