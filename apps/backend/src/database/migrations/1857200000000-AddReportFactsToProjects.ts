@@ -35,15 +35,36 @@ const MANUAL_KEYS: Record<string, string> = {
 };
 
 const MONTHS = [
-  'january', 'february', 'march', 'april', 'may', 'june',
-  'july', 'august', 'september', 'october', 'november', 'december',
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
 ];
 
+function text(value: unknown): string {
+  return typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+}
+
 function agreementDate(fields: Record<string, unknown>): string | null {
-  const day = Number(String(fields.day ?? '').trim());
-  const monthIndex = MONTHS.indexOf(String(fields.month ?? '').trim().toLowerCase());
-  const year = Number(String(fields.year ?? '').trim());
-  if (!Number.isInteger(day) || day < 1 || day > 31 || monthIndex < 0 || !Number.isInteger(year) || year < 2000) {
+  const day = Number(text(fields.day));
+  const monthIndex = MONTHS.indexOf(text(fields.month).toLowerCase());
+  const year = Number(text(fields.year));
+  if (
+    !Number.isInteger(day) ||
+    day < 1 ||
+    day > 31 ||
+    monthIndex < 0 ||
+    !Number.isInteger(year) ||
+    year < 2000
+  ) {
     return null;
   }
   const iso = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -95,10 +116,10 @@ export class AddReportFactsToProjects1857200000000 implements MigrationInterface
     }
 
     for (const [projectId, facts] of factsByProject) {
-      await queryRunner.query(`UPDATE projects SET report_facts = $1::jsonb WHERE id = $2`, [
-        JSON.stringify(facts),
-        projectId,
-      ]);
+      await queryRunner.query(
+        `UPDATE projects SET report_facts = $1::jsonb || report_facts WHERE id = $2`,
+        [JSON.stringify(facts), projectId],
+      );
     }
 
     for (const [projectId, aadhaar] of aadhaarByProject) {
