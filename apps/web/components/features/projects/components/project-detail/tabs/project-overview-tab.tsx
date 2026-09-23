@@ -97,7 +97,6 @@ export function ProjectOverviewTab({
       />
       <ReportsCard
         reports={data.reports}
-        projectId={project.id}
         projectPath={projectPath}
         className="col-span-12 xl:col-span-4"
       />
