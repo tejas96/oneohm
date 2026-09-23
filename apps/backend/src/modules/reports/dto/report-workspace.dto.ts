@@ -54,6 +54,11 @@ export class FileReportDto extends RenderReportDto {
   @ValidateNested()
   @Type(() => ReportFileRefDto)
   file!: ReportFileRefDto;
+
+  @ApiProperty({ description: 'factsHash returned by render for the PDF being filed' })
+  @IsString()
+  @IsNotEmpty()
+  factsHash!: string;
 }
 
 export class ReportsPendingDto {

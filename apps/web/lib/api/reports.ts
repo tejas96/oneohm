@@ -39,10 +39,11 @@ export async function fileReport(
   projectId: string,
   reportId: string,
   file: ReportFileRef,
+  factsHash: string,
 ): Promise<{ documentId: string; fileUrl: string }> {
   const { data } = await apiClient.post<{ documentId: string; fileUrl: string }>(
     `/reports/projects/${projectId}/file`,
-    { reportId, file },
+    { reportId, file, factsHash },
   );
   return data;
 }

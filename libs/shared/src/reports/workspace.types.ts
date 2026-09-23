@@ -24,6 +24,7 @@ export interface FiledReportInfo {
 export interface WorkspaceReport {
   id: string;
   name: string;
+  shortName: string;
   description: string;
   status: ReportStatus;
   missing: MissingFact[];
@@ -44,4 +45,6 @@ export interface ReportWorkspace {
 export interface ReportRenderResult {
   html: string;
   pages?: number;
+  /** Fingerprint of the facts this html was rendered from; filing sends it back. */
+  factsHash: string;
 }

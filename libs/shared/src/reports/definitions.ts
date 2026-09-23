@@ -9,6 +9,8 @@ export interface ReportFactRef {
 export interface ReportDefinition {
   id: string;
   name: string;
+  /** Tag text where the full name does not fit, e.g. "Used by WCR, DCR". */
+  shortName: string;
   description: string;
   documentTag: DocumentTag;
   /** Bump when the template's wording or layout changes: filed copies turn "out of date". */
@@ -24,6 +26,7 @@ const opt = (key: FactKey): ReportFactRef => ({ key });
 export const WCR_REPORT: ReportDefinition = {
   id: 'wcr',
   name: 'Work Completion Report',
+  shortName: 'WCR',
   description: 'Solar plant installation completion certificate (WCR).',
   documentTag: DocumentTag.WCR,
   templateVersion: 2,
@@ -59,6 +62,7 @@ export const WCR_REPORT: ReportDefinition = {
 export const DCR_REPORT: ReportDefinition = {
   id: 'dcr',
   name: 'DCR Undertaking / Self-Declaration',
+  shortName: 'DCR',
   description: 'Domestic Content Requirement self-declaration for MNRE/MSEDCL submission.',
   documentTag: DocumentTag.DCR,
   templateVersion: 3,
@@ -85,6 +89,7 @@ export const DCR_REPORT: ReportDefinition = {
 export const NET_METERING_AGREEMENT_REPORT: ReportDefinition = {
   id: 'net-metering-agreement',
   name: 'Net Metering Connection Agreement',
+  shortName: 'Net metering',
   description: 'Annexure-3 legal agreement between consumer and MSEDCL for net-metering.',
   documentTag: DocumentTag.NET_METERING_AGREEMENT,
   templateVersion: 2,
@@ -105,6 +110,7 @@ export const NET_METERING_AGREEMENT_REPORT: ReportDefinition = {
 export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
   id: 'annexure-proforma-a',
   name: 'Annexure-I & Proforma-A',
+  shortName: 'Annexure A',
   description: 'MAHAVITARAN commissioning report for grid-connected solar PV plant.',
   documentTag: DocumentTag.ANNEXURE_PROFORMA_A,
   templateVersion: 3,

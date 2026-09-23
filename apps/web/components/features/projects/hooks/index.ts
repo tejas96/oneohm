@@ -13,7 +13,7 @@ export { projectDetailKeys, useProjectTeam, useProjectTasks } from './use-projec
 export { useProjectTaskList, type ProjectTaskItem } from '@/lib/hooks/resources';
 
 export { useProjectMilestones } from './use-project-payments';
-export { useProjectReports, useReportsPending } from './use-project-reports';
+export { projectReportKeys, useProjectReports, useReportsPending } from './use-project-reports';
 export { useUpdateProjectStatus } from './use-update-project-status';
 export {
   useCancelProject,

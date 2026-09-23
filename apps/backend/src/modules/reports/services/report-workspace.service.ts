@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   applyFactPatch,
   type FactKey,
@@ -86,6 +92,7 @@ export class ReportWorkspaceService {
       return {
         id: definition.id,
         name: definition.name,
+        shortName: definition.shortName,
         description: definition.description,
         status,
         missing,
@@ -130,7 +137,12 @@ export class ReportWorkspaceService {
     if (Object.keys(errors).length > 0) {
       throw new BadRequestException({ message: Object.values(errors).join('; '), errors });
     }
-    await this.projectRepository.update(projectId, { reportFacts: next });
+    const keys = Object.keys(patch);
+    await this.projectRepository.mergeReportFacts(
+      projectId,
+      Object.fromEntries(keys.filter((key) => key in next).map((key) => [key, next[key]!])),
+      keys.filter((key) => !(key in next)),
+    );
     return this.getWorkspace(projectId);
   }
 
@@ -140,6 +152,7 @@ export class ReportWorkspaceService {
     return {
       html: this.templateRenderer.render(templateFileFor(definition), facts),
       pages: definition.pages,
+      factsHash: hashReportFacts(definition, facts),
     };
   }
 
@@ -147,10 +160,17 @@ export class ReportWorkspaceService {
     projectId: string,
     reportId: string,
     file: ReportFileRefDto,
+    renderedFactsHash: string,
     userId: string,
   ): Promise<{ documentId: string; fileUrl: string }> {
     const definition = this.definition(reportId);
     const { facts } = await this.load(projectId);
+    const factsHash = hashReportFacts(definition, facts);
+    if (factsHash !== renderedFactsHash) {
+      throw new ConflictException(
+        `${definition.name} changed while it was being generated. Generate it again.`,
+      );
+    }
 
     const missing = getMissingFacts(definition, facts);
     if (missing.length > 0) {
@@ -172,7 +192,7 @@ export class ReportWorkspaceService {
         mimeType: 'application/pdf',
         metadata: {
           reportFacts: pickReportFacts(definition, facts),
-          factsHash: hashReportFacts(definition, facts),
+          factsHash,
           templateVersion: definition.templateVersion,
         },
       },
@@ -190,7 +210,10 @@ export class ReportWorkspaceService {
     const [projects, serials, docs] = await Promise.all([
       this.projectRepository.findByIdsForReports(projectIds),
       this.bomReadService.getPanelSerialsByProjects(projectIds),
-      this.documentService.findByEntityBatch(DocumentEntityType.PROJECT, projectIds),
+      this.documentService.findByEntitiesWithTags(DocumentEntityType.PROJECT, projectIds, {
+        category: DocumentCategory.REPORT,
+        tags: [...REPORT_TAGS],
+      }),
     ]);
 
     const docsByProject = new Map<string, DocumentEntity[]>();

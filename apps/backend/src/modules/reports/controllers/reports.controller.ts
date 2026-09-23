@@ -64,7 +64,7 @@ export class ReportsController {
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Body() dto: FileReportDto,
   ): Promise<{ documentId: string; fileUrl: string }> {
-    return this.workspace.file(projectId, dto.reportId, dto.file, user.id);
+    return this.workspace.file(projectId, dto.reportId, dto.file, dto.factsHash, user.id);
   }
 
   @Post('pending')

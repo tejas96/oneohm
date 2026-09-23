@@ -20,11 +20,13 @@ export interface GenerateOutcome {
 }
 
 async function generateOne(projectId: string, report: WorkspaceReport): Promise<GenerateOutcome> {
-  const { html, pages } = await renderReport(projectId, report.id);
+  const { html, pages, factsHash } = await renderReport(projectId, report.id);
   const pdf = await renderReportPdf(html);
 
   if (pages && pdf.pages !== pages) {
-    throw new Error(`${report.name} came out as ${pdf.pages} pages, expected ${pages}. Nothing was filed.`);
+    throw new Error(
+      `${report.name} came out as ${pdf.pages} pages, expected ${pages}. Nothing was filed.`,
+    );
   }
 
   const upload = await uploadFile({
@@ -36,11 +38,16 @@ async function generateOne(projectId: string, report: WorkspaceReport): Promise<
   });
 
   try {
-    await fileReport(projectId, report.id, {
-      fileKey: upload.fileKey,
-      publicUrl: upload.publicUrl,
-      fileSizeBytes: pdf.blob.size,
-    });
+    await fileReport(
+      projectId,
+      report.id,
+      {
+        fileKey: upload.fileKey,
+        publicUrl: upload.publicUrl,
+        fileSizeBytes: pdf.blob.size,
+      },
+      factsHash,
+    );
   } catch (err) {
     try {
       await deleteFile(upload.fileKey);

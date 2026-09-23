@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseQueryResult,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import type { ReportWorkspace } from '@tejas96/shared/reports';
 import type { AxiosError } from 'axios';
 
@@ -17,6 +12,7 @@ export const projectReportKeys = {
   byProject: (projectId: string) => [...projectReportKeys.all(), projectId] as const,
   pending: (projectIds: string[]) =>
     [...projectReportKeys.all(), 'pending', [...projectIds].sort().join(',')] as const,
+  saveFacts: (projectId: string) => [...projectReportKeys.all(), 'save-facts', projectId] as const,
 };
 
 export function useProjectReports(
@@ -34,6 +30,7 @@ export function useProjectReports(
 export function useUpdateReportFacts(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: projectReportKeys.saveFacts(projectId),
     mutationFn: (facts: Record<string, string | null>) => updateReportFacts(projectId, facts),
     onSuccess: (workspace) => {
       queryClient.setQueryData(projectReportKeys.byProject(projectId), workspace);
