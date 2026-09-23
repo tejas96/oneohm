@@ -59,16 +59,33 @@ interface ReportFact {
   type: 'text' | 'textarea' | 'number' | 'date' | 'email' | 'phone' | 'year';
   group: FactGroup;             // vendor | consumer | sanction | system | installation | agreement | signatory
   source: FactSource;           // company | customer | property | project | bom | manual | fixed
-  placeholder?: string;
-  editAt?: 'customer' | 'property' | 'quote' | 'bom';  // where a system fact is changed
+  placeholder?: string;         // always "e.g. …"
   fixedValue?: string;          // for source: fixed
+  help: string;                 // tooltip: where it is saved or comes from, what else changes
+  edit?: {                      // a customer/site fact editable in place
+    target: 'property' | 'customer';
+    field: string;              // field on the owner's update DTO
+    input?: 'text' | 'number' | 'select' | 'digits';
+    digits?: { min: number; max: number };
+    options?: Record<string, string>;  // select: stored value → label
+    required?: boolean;         // the owner cannot store an empty value
+  };
+  hidden?: boolean;             // printed but not on the form (composed or derived)
+  partOf?: FactKey;             // a shown part of a hidden composed fact
+  derivedFrom?: FactKey;        // a hidden fact worked out from a shown one
 }
 ```
 
 - `REPORT_FACTS` is the one catalog. Every fact key used by any report is in it.
 - `source: manual` facts are typed on the Reports tab and stored per project.
-- Every other source is read-only on the Reports tab. The form shows the value
-  and an "Edit" link to `editAt`. One fact, one home.
+- Customer and site facts with `edit` are edited in place on the Reports tab
+  and saved on their owner (the site or the customer), through the owner's own
+  update. One fact, one home: the value lives on its owner, never copied.
+- Quote, BOM and company facts are locked on the Reports tab; their tooltip
+  says where they change.
+- `site_address` is composed from `site_address_line`, `site_city`,
+  `site_state`, `site_pincode` (and the country), which the form shows instead.
+  `installed_capacity_wp` is derived from `installed_capacity_kw`.
 - `source: fixed` is a constant (HPD = "Not applicable").
 
 ### One name per fact
@@ -163,8 +180,8 @@ access dialog. The routes themselves check only the JWT.
 
 | Route | Does |
 | --- | --- |
-| `GET /reports/projects/:projectId` | Workspace: every fact the catalog reports use (key, value, source, editable, editAt, usedBy[]) and every report (id, name, status, missing[], filedAt, documentId, fileUrl, pages). |
-| `PATCH /reports/projects/:projectId/facts` | `{ facts: { [key]: string \| null } }`. Manual keys only, each validated by its fact rule. Rejects the whole request on any bad value. Returns the workspace. |
+| `GET /reports/projects/:projectId` | Workspace: every shown fact (key, label, help, value, editValue, editable, edit, usedBy[], covers[]) and every report (id, name, status, missing[], filedAt, documentId, fileUrl, pages). Hidden facts (`site_address`, `installed_capacity_wp`) are printed but not listed. |
+| `PATCH /reports/projects/:projectId/facts` | `{ facts: { [key]: string \| null } }`. The one save path for the tab. Manual keys go to `projects.report_facts`, each validated by its fact rule. Customer and site keys (those with `edit` in the catalog) go through `CustomerService.update` / `CustomerPropertyService.update`, after the owner's own DTO validates the payload (whitelist, forbidNonWhitelisted); `null` clears where the owner allows it. One request touches one group (manual, site or customer): a mix is 400 "Save one field at a time." Unknown, locked (quote/BOM/company/fixed) and hidden keys are 400. Rejects the whole request on any bad value; returns the workspace, re-resolved from live records. |
 | `POST /reports/projects/:projectId/render` | `{ reportId }` → `{ html, pages, factsHash }` rendered from stored facts. No field values in the body: the server is the one source. |
 | `POST /reports/projects/:projectId/file` | `{ reportId, file, factsHash }` → re-resolves facts, returns 409 ("<report> changed while it was being generated. Generate it again.") when the fingerprint differs from the rendered one, refuses if any required fact is missing, stores the document with fingerprint, purges the older copy (as today). |
 
@@ -175,16 +192,47 @@ Removed: `POST /reports/initialize`, `POST /reports/preview`, `POST /reports/sav
 
 Replaces the drawer. Layout as approved in the chat mockup:
 
-1. **Top bar**: pending pill · report picker (`All reports` / one report) ·
-   `Preview` / `Edit details` toggle · `Generate` (label reads `Generate all`
-   when "All reports" is picked).
+1. **Top bar**, one row: report picker (compact, left) · `Preview` /
+   `Edit details` toggle · `Generate` (right; reads `Generate all` when "All
+   reports" is picked). The pending pill sits in the card header.
 2. **Status cards**, one per report: Missing N / Ready / Filed <date> / Out of
    date. Clicking a card picks that report. Filed cards offer Download.
-3. **Facts form**, grouped by `group`, each fact once, a tag naming the reports
-   that use it. Manual facts are inputs with inline validation; they save on blur
-   (PATCH), and a field with an error is not sent. System facts show read-only
-   with an Edit link. When one report is picked, the form shows only that
-   report's facts.
+3. **Facts form**, grouped by `group`; each group header shows "N to fill"
+   (warning) or "Complete". Every fact is one uniform field and is edited in
+   place — nothing on the tab links or navigates away:
+   - **Label row**: label · ⓘ (MUI Tooltip on a focusable icon button: hover,
+     keyboard focus and tap) · a warning `Required` chip when a picked report is
+     missing it · a used-by chip ("All reports", or short names joined " · ").
+     Below it the input; error text only when there is an error.
+   - **Tooltips** come from the catalog's `help` and say where the value is
+     saved and what else changes (e.g. the mobile number is also the
+     customer's login and WhatsApp number; Category does not change the
+     project's tasks). Manual facts add "Typed once for this project and
+     printed on <reports>."
+   - **Editable facts**: manual facts, and the customer/site facts the catalog
+     marks with `edit` (consumer name and number, site address line, city,
+     state, PIN code, category, sanctioned load → the site; mobile, email,
+     Aadhaar → the customer). Plain inputs (a select for Category, which saves
+     on change) that save on blur and on Enter, only when the value changed;
+     Esc restores the stored value. A legacy value that fails its rule is shown
+     with its error and never wiped by a blur. Input is normalised before it is
+     sent (a mobile number becomes +91XXXXXXXXXX; digits lose spaces) and
+     checked by the same shared rule the server runs; a server 400/409 message
+     shows under the field and the field stays dirty. Only the saving field
+     shows a spinner and is read-only until the reply; the rest stay usable.
+     Aadhaar reads masked (XXXX XXXX 1234) except while its input has focus.
+     A customer/site save also refreshes the customer, site and project header
+     queries.
+   - **Locked facts** (quote, BOM, company, fixed): the same box, muted, with a
+     lock icon; the tooltip says where the value comes from.
+   - Without `projects.edit`, or on a cancelled project, every field is
+     read-only; chips and tooltips stay.
+   - The site address prints as one composed fact; the form shows its parts
+     (address line, city, state, PIN code), whose chips count the reports
+     that print the composed address. Installed capacity shows once, in kW;
+     the Wp the net metering agreement prints is derived from it.
+   - Placeholders always read "e.g. …" in the muted placeholder colour.
+   When one report is picked, the form shows only that report's facts.
 4. **Preview mode**: form hidden, only the rendered report in one continuous
    frame. Page breaks exist only in the generated PDF, so a report that declares
    `pages` shows a sentence instead ("WCR must print on exactly 2 pages. Generate
