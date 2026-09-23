@@ -111,18 +111,26 @@ export function autoDashFieldPlaceholders(source: string): string {
   });
 }
 
-/** Shared blocks any report template can use: {{> docTitle …}} and {{> signature …}}. */
+/**
+ * Shared blocks any report template can use: {{> docTitle …}} and {{> signature …}}.
+ *
+ * Wrapper/element classes are prefixed `rpt-` so the shared CSS in
+ * report-print-base.css can target them without colliding with the several
+ * other report templates that already define their own `.doc-title`,
+ * `.sig-block`, `.sig-name`, etc. (see report-print-base.css for the scoped
+ * selectors).
+ */
 export function registerReportPartials(): void {
   Handlebars.registerPartial(
     'docTitle',
     autoDashFieldPlaceholders(
-      `<header class="doc-head"><h1 class="doc-title">{{title}}</h1><p class="doc-subtitle">{{subtitle}}</p></header>`,
+      `<header class="rpt-doc-head"><h1 class="rpt-doc-title">{{title}}</h1><p class="rpt-doc-subtitle">{{subtitle}}</p></header>`,
     ),
   );
   Handlebars.registerPartial(
     'signature',
     autoDashFieldPlaceholders(
-      `<div class="sig-block"><div class="sig-space"></div><div class="sig-rule"></div><div class="sig-name">{{name}}</div><div class="sig-role">{{role}}</div></div>`,
+      `<div class="rpt-sig"><div class="rpt-sig-space"></div><div class="rpt-sig-rule"></div><div class="rpt-sig-name">{{name}}</div><div class="rpt-sig-role">{{role}}</div></div>`,
     ),
   );
 }

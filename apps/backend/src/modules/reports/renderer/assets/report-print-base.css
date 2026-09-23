@@ -76,47 +76,58 @@ thead th {
   margin: 0 4px;
 }
 
-/* ── Centered document title (replaces the header bar) ── */
-.doc-head {
+/*
+ * ── Centered document title (replaces the header bar) ──
+ * Scoped to the `.rpt-doc-head` wrapper the docTitle partial emits
+ * (report-handlebars.helpers.ts) — several other report templates (DCR,
+ * Net Metering, Annexure Proforma-A) define their own bare `.doc-title` /
+ * `.doc-header .doc-title` rules, so these must not be bare selectors.
+ */
+.rpt-doc-head {
   text-align: center;
   margin: 0 0 12px;
 }
-.doc-title {
+.rpt-doc-head .rpt-doc-title {
   font-size: 13pt;
   font-weight: 700;
   margin: 0;
   letter-spacing: 0.01em;
 }
-.doc-subtitle {
+.rpt-doc-head .rpt-doc-subtitle {
   font-size: 9.5pt;
   font-weight: 600;
   color: #444;
   margin: 3px 0 0;
 }
 
-/* ── Signature: space to sign, rule, printed name, role ── */
-.sig-row {
+/*
+ * ── Signature: space to sign, rule, printed name, role ──
+ * Scoped to the `.rpt-sig` wrapper the signature partial emits —
+ * DCR and Annexure Proforma-A both already define their own `.sig-block`
+ * (and Annexure its own `.sig-name`), so these must not be bare selectors.
+ */
+.rpt-sig-row {
   display: flex;
   gap: 40px;
   margin-top: 14px;
   page-break-inside: avoid;
   break-inside: avoid;
 }
-.sig-row > * {
+.rpt-sig-row > * {
   flex: 1;
 }
-.sig-space {
+.rpt-sig .rpt-sig-space {
   height: 34px;
 }
-.sig-rule {
+.rpt-sig .rpt-sig-rule {
   border-top: 1px solid #1a1a1a;
 }
-.sig-name {
+.rpt-sig .rpt-sig-name {
   font-size: 9pt;
   font-weight: 700;
   margin-top: 4px;
 }
-.sig-role {
+.rpt-sig .rpt-sig-role {
   font-size: 8pt;
   color: #555;
   margin-top: 1px;
