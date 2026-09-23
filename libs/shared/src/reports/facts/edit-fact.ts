@@ -55,7 +55,10 @@ export function validateFactInput(
       return Number.isFinite(n) && n >= 0 ? null : `${fact.label} must be a number, 0 or more.`;
     }
     case 'select':
-      return edit.options && value in edit.options ? null : `Pick a ${fact.label.toLowerCase()}.`;
+      // Own keys only ("constructor" is not an option). Object.hasOwn needs ES2022; this lib targets lower.
+      return edit.options && Object.prototype.hasOwnProperty.call(edit.options, value)
+        ? null
+        : `Pick a ${fact.label.toLowerCase()}.`;
     default:
       break;
   }

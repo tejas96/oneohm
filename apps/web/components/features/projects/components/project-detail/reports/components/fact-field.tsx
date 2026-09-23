@@ -30,11 +30,26 @@ function storedError(fact: WorkspaceFact): string | null {
   return fact.editValue ? validateFactInput(fact, fact.editValue) : null;
 }
 
-/** Aadhaar reads masked everywhere except inside the input being edited. */
+/**
+ * Aadhaar reads masked everywhere except inside the focused input, even with
+ * unsaved changes. A stored value that is not 12 digits still shows only its
+ * last 4 digits.
+ */
 function shownValue(fact: WorkspaceFact, value: string): string {
-  if (fact.key !== 'consumer_aadhaar_number') return value;
-  return maskAadhaar(value, ' ') ?? value;
+  if (fact.key !== 'consumer_aadhaar_number' || !value) return value;
+  const full = maskAadhaar(value, ' ');
+  if (full) return full;
+  const digits = value.replace(/\D/g, '');
+  return digits.length > 4 ? `XXXX ${digits.slice(-4)}` : 'XXXX';
 }
+
+/** Never editable here: quote, BOM, company and fixed facts. A cancelled project is read-only without the lock. */
+function isLockedFact(fact: WorkspaceFact): boolean {
+  return fact.source !== 'manual' && !fact.edit;
+}
+
+/** Multi-line facts keep their line breaks: a single-line input would join them on any edit. */
+const MULTILINE_ROWS = { minRows: 1, maxRows: 4 } as const;
 
 function inputMode(fact: WorkspaceFact): React.HTMLAttributes<HTMLInputElement>['inputMode'] {
   if (fact.edit?.input === 'digits') return 'numeric';
@@ -70,7 +85,7 @@ function FactLabelRow({
       >
         {label}
       </Typography>
-      <Tooltip title={help} enterTouchDelay={0} leaveTouchDelay={6000} arrow>
+      <Tooltip title={help} enterTouchDelay={0} leaveTouchDelay={6000} arrow describeChild>
         <IconButton size="small" aria-label={`About ${label}`} sx={{ p: 0.25 }}>
           <Info className="size-3.5" />
         </IconButton>
@@ -116,7 +131,7 @@ export function FactField({
       {fact.editable && !readOnly ? (
         <EditableFactInput inputId={inputId} fact={fact} onSave={onSave} />
       ) : (
-        <ReadOnlyFactInput inputId={inputId} fact={fact} locked={!fact.editable} />
+        <ReadOnlyFactInput inputId={inputId} fact={fact} />
       )}
     </Box>
   );
@@ -125,14 +140,13 @@ export function FactField({
 function ReadOnlyFactInput({
   inputId,
   fact,
-  locked,
 }: {
   inputId: string;
   fact: WorkspaceFact;
-  /** Comes from the quote, BOM or company: shows a lock. */
-  locked: boolean;
 }): React.JSX.Element {
-  const error = fact.editable ? storedError(fact) : null;
+  const locked = isLockedFact(fact);
+  const error = locked ? null : storedError(fact);
+  const multiline = fact.type === 'textarea';
   return (
     <TextField
       id={inputId}
@@ -140,7 +154,8 @@ function ReadOnlyFactInput({
       fullWidth
       value={shownValue(fact, fact.value)}
       placeholder="Not set"
-      multiline={locked && fact.type === 'textarea'}
+      multiline={multiline}
+      {...(multiline ? MULTILINE_ROWS : {})}
       error={!!error}
       helperText={error ?? undefined}
       sx={MUTED_BOX}
@@ -162,7 +177,9 @@ function ReadOnlyFactInput({
  * `application_date` saved as "12/03/2025"). Blurring an untouched field must
  * never send anything for a value like that: `dirty` tracks a real edit and
  * a save only runs when it is set. A failed save stays dirty with the server's
- * message under the field. Esc puts the stored value back.
+ * message under the field. Esc puts the stored value back. Multi-line facts
+ * (addresses, the lightning arrester text) keep their line breaks: Shift+Enter
+ * adds one, Enter alone saves.
  *
  * A date whose stored value fails its rule renders as plain text (showing
  * exactly what is stored, with the rule error) so it can be retyped; it goes
@@ -259,16 +276,19 @@ function EditableFactInput({
 
   const storedIsInvalidDate = fact.type === 'date' && storedError(fact) !== null;
   const type = fact.type === 'date' && !storedIsInvalidDate ? 'date' : 'text';
-  const masked = !focused && !dirty ? shownValue(fact, draft) : draft;
+  const multiline = fact.type === 'textarea';
+  const shown = focused ? draft : shownValue(fact, draft);
 
   return (
     <TextField
       id={inputId}
       size="small"
       fullWidth
-      type={type}
+      type={multiline ? undefined : type}
+      multiline={multiline}
+      {...(multiline ? MULTILINE_ROWS : {})}
       placeholder={fact.placeholder}
-      value={masked}
+      value={shown}
       error={!!error}
       helperText={error ?? undefined}
       onFocus={() => setFocused(true)}
@@ -281,7 +301,8 @@ function EditableFactInput({
         if (dirty) commit(draft);
       }}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') {
+        // Shift+Enter is a line break in a multi-line fact; Enter alone saves.
+        if (e.key === 'Enter' && !(multiline && e.shiftKey)) {
           e.preventDefault();
           if (dirty) commit(draft);
         } else if (e.key === 'Escape') {

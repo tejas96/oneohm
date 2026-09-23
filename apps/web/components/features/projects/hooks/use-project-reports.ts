@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { getFact, type ReportWorkspace } from '@tejas96/shared/reports';
 import type { AxiosError } from 'axios';
+import { useRef } from 'react';
 
 import { projectKeys } from './use-projects';
 
@@ -33,11 +34,20 @@ export function useProjectReports(
 /**
  * One save path for every field on the Reports tab. The caller shows a failed
  * save's message under its field, so there is no toast here. A customer or
- * site fact also refreshes the screens that show that record: the customer,
- * the site and the project header (customer name and phone).
+ * site fact also refreshes the screens that show that record: customers,
+ * sites and the project header (customer name and phone).
+ *
+ * Saves can overlap (blur one field, then another before the first replies).
+ * Each reply is a whole workspace, and an older one landing last would put a
+ * just-saved field back to its old value. So a reply is written to the cache
+ * only when no other save was in flight; otherwise the workspace is refetched
+ * once each overlapping save settles.
  */
 export function useUpdateReportFacts(projectId: string) {
   const queryClient = useQueryClient();
+  const inFlight = useRef(0);
+  const overlapped = useRef(false);
+
   return useMutation<
     ReportWorkspace,
     AxiosError<{ message?: string }>,
@@ -45,17 +55,27 @@ export function useUpdateReportFacts(projectId: string) {
   >({
     mutationKey: projectReportKeys.saveFacts(projectId),
     mutationFn: (facts) => updateReportFacts(projectId, facts),
+    onMutate: () => {
+      if (inFlight.current > 0) overlapped.current = true;
+      inFlight.current += 1;
+    },
     onSuccess: (workspace, facts) => {
-      queryClient.setQueryData(projectReportKeys.byProject(projectId), workspace);
+      if (!overlapped.current) {
+        queryClient.setQueryData(projectReportKeys.byProject(projectId), workspace);
+      }
       void queryClient.invalidateQueries({ queryKey: [...projectReportKeys.all(), 'pending'] });
 
       if (!Object.keys(facts).some((key) => getFact(key)?.edit)) return;
       void queryClient.invalidateQueries({ queryKey: customerKeys.detail(workspace.customerId) });
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.detail(workspace.propertyId) });
-      void queryClient.invalidateQueries({
-        queryKey: propertyKeys.byCustomer(workspace.customerId),
-      });
+      void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all() });
       void queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId), exact: true });
+    },
+    onSettled: () => {
+      inFlight.current -= 1;
+      if (!overlapped.current) return;
+      void queryClient.invalidateQueries({ queryKey: projectReportKeys.byProject(projectId) });
+      if (inFlight.current === 0) overlapped.current = false;
     },
   });
 }

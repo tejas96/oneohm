@@ -33,13 +33,13 @@ export function ReportsToolbar({
   hideGenerate,
 }: ReportsToolbarProps) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
       <TextField
         select
         size="small"
         value={picked}
         onChange={(e) => onPick(e.target.value)}
-        sx={{ flex: '0 1 240px', minWidth: 0 }}
+        sx={{ flex: '0 1 260px', minWidth: 200 }}
         slotProps={{ htmlInput: { 'aria-label': 'Report' } }}
       >
         <MenuItem value={ALL_REPORTS}>All reports ({reports.length})</MenuItem>
