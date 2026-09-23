@@ -63,30 +63,32 @@ export function applyFactPatch(
   current: Record<string, string>,
   patch: Record<string, unknown>,
 ): FactPatchResult {
-  const next = { ...current };
-  const errors: Record<string, string> = {};
+  // Maps, not objects: keys come from the request, so a key like "__proto__"
+  // must never be written as a property.
+  const next = new Map(Object.entries(current));
+  const errors = new Map<string, string>();
 
   for (const [key, value] of Object.entries(patch)) {
     const fact = getFact(key);
     if (!fact || fact.source !== 'manual') {
-      errors[key] = `${key} cannot be edited on the Reports tab`;
+      errors.set(key, `${key} cannot be edited on the Reports tab`);
       continue;
     }
     if (value === null || (typeof value === 'string' && value.trim() === '')) {
-      delete next[key];
+      next.delete(fact.key);
       continue;
     }
     if (typeof value !== 'string') {
-      errors[key] = `${fact.label} must be text`;
+      errors.set(fact.key, `${fact.label} must be text`);
       continue;
     }
     const message = validateFactValue(fact, value);
     if (message) {
-      errors[key] = message;
+      errors.set(fact.key, message);
       continue;
     }
-    next[key] = value.trim();
+    next.set(fact.key, value.trim());
   }
 
-  return { next, errors };
+  return { next: Object.fromEntries(next), errors: Object.fromEntries(errors) };
 }
