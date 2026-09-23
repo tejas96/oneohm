@@ -27,12 +27,9 @@ import type { ReportFileRefDto } from '../dto/report-workspace.dto';
 import { hashReportFacts, pickReportFacts } from '../facts/facts-hash';
 import { resolveFacts } from '../facts/resolve-facts';
 import { TemplateRendererService } from '../renderer/template-renderer.service';
+import { templateFileFor } from '../utils/report.utils';
 
 const REPORT_TAGS = new Set<string>(REPORT_DEFINITIONS.map((definition) => definition.documentTag));
-
-function templateFileFor(definition: ReportDefinition): string {
-  return `definitions/${definition.id}/templates/${definition.id}.hbs`;
-}
 
 /** Newest filed report document per tag. Hand uploads with the same tag do not count. */
 function latestFiledByTag(docs: DocumentEntity[]): Map<string, DocumentEntity> {
