@@ -236,11 +236,19 @@ Replaces the drawer. Layout as approved in the chat mockup:
      facts (`formOnly` in the catalog: printed by no report, chip "Needed to
      save the site"), placed with the consumer name and number. The site
      saves a change to any of the four only when all four are complete, so
-     while any is missing the tab holds a changed value (its field says
-     "Set the DISCOM too. The site's utility details save together.") and
-     sends the held values in one request once the last is set. A consumer
-     name shown from the customer-name fallback is sent with them. The
-     missing ones show a "Needed" chip while any of the four is being edited
+     while any is missing the tab holds a changed value and sends the held
+     values in one request once the last is set. Held values belong to the
+     tab (they survive Preview, report picking and generating); every held
+     field reads "Not saved yet — also set <what is missing>.", recomputed
+     from current values. Any change to a held field replaces or drops its
+     held value (Esc, an invalid value, or clearing it drops it). A failed
+     batch keeps the values held and shows its message under every field in
+     it. While anything is held, Generate is off ("Finish the site's utility
+     details first — N changes not saved yet") and leaving the page asks
+     first. While the site is incomplete or anything is held, all four
+     utility fields show whatever report is picked. A consumer name shown
+     from the customer-name fallback is sent with the batch. The missing
+     ones show a "Needed" chip while any of the four is being edited, held
      or shows an error.
    - The site address prints as one composed fact; the form shows its parts
      (address line, city, state, PIN code), whose chips count the reports
