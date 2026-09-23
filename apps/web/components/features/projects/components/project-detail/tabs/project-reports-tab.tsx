@@ -21,9 +21,9 @@ interface ProjectReportsTabProps {
 }
 
 /**
- * The DISCOM paperwork. Every fact is typed once here and printed by every
- * report that needs it; facts that live on the customer, property, quote or
- * BOM are shown read-only with a link to where they are changed.
+ * The DISCOM paperwork. Every fact is shown once and printed by every report
+ * that needs it. Hand-typed, customer and site facts are edited in place;
+ * quote, BOM and company facts are locked. Nothing here navigates away.
  */
 export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.JSX.Element {
   const workspaceQuery = useProjectReports(projectId);

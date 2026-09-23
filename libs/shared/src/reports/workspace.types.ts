@@ -1,6 +1,7 @@
-import type { FactEditAt, FactGroup, FactKey, FactSource, FactType } from './facts/report-facts';
+import type { FactEdit, FactGroup, FactKey, FactSource, FactType } from './facts/report-facts';
 import type { MissingFact, ReportStatus } from './status';
 
+/** One field on the Reports tab. Hidden (composed or derived) facts are not listed. */
 export interface WorkspaceFact {
   key: FactKey;
   label: string;
@@ -8,10 +9,20 @@ export interface WorkspaceFact {
   group: FactGroup;
   source: FactSource;
   placeholder?: string;
-  editAt?: FactEditAt;
+  /** Tooltip text. */
+  help: string;
+  /** Present on customer and site facts that save to their owner. */
+  edit?: FactEdit;
+  /** What reports print. */
   value: string;
-  /** Ids of the reports that print this fact. */
+  /** What the input starts from, e.g. the stored property type rather than its label. */
+  editValue: string;
+  /** The value can be changed here: a manual or editable source fact, project not cancelled. `projects.edit` is checked by the web. */
+  editable: boolean;
+  /** Ids of the reports that print this fact, or the composed/derived fact it stands for. */
   usedBy: string[];
+  /** The fact itself plus the hidden facts it stands for; a report missing any of them marks this field Required. */
+  covers: FactKey[];
 }
 
 export interface FiledReportInfo {

@@ -38,12 +38,16 @@ export class ReportsController {
   }
 
   @Patch('projects/:projectId/facts')
-  @ApiOperation({ summary: 'Set or clear (null) hand-typed report facts' })
+  @ApiOperation({
+    summary:
+      'Set or clear (null) report facts: hand-typed ones, or customer/site ones via their owner',
+  })
   updateFacts(
+    @CurrentUser() user: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Body() dto: UpdateReportFactsDto,
   ): Promise<ReportWorkspace> {
-    return this.workspace.updateFacts(projectId, dto.facts);
+    return this.workspace.updateFacts(projectId, dto.facts, user.id);
   }
 
   @Post('projects/:projectId/render')

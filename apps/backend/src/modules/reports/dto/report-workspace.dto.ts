@@ -18,7 +18,9 @@ const REPORT_IDS = REPORT_DEFINITIONS.map((definition) => definition.id);
 
 export class UpdateReportFactsDto {
   @ApiProperty({
-    description: 'Manual fact values by key. null clears a value; an omitted key is left alone.',
+    description:
+      'Fact values by key. null clears a value; an omitted key is left alone. Keys must all be ' +
+      'hand-typed facts, or all be saved on the site, or all on the customer.',
     type: 'object',
     additionalProperties: { type: 'string', nullable: true },
   })

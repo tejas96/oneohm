@@ -46,8 +46,10 @@ export function resolveFacts({ project, panelSerials }: ReportSource): Record<Fa
   facts.consumer_email = str(customer?.email);
   facts.consumer_aadhaar_number = str(customer?.aadhaarNumber);
   facts.site_address = formatPropertyAddress(property);
+  facts.site_address_line = str(property.address);
   facts.site_city = str(property.city);
   facts.site_state = str(property.state);
+  facts.site_pincode = str(property.pincode);
   facts.site_category = property.propertyType
     ? (PROPERTY_TYPE_LABELS[property.propertyType] ?? '')
     : '';
@@ -111,4 +113,17 @@ export function resolveFacts({ project, panelSerials }: ReportSource): Record<Fa
   facts.module_serial_numbers = [...panelSerials].sort().join(', ');
 
   return facts;
+}
+
+/**
+ * What an editable field's input starts from, where that differs from the
+ * printed value: the stored property type (the printed value is its label).
+ * Everything else starts from the printed value — the consumer name falls
+ * back to the customer's name, and saving it writes the site's consumer name.
+ */
+export function resolveEditValues(
+  project: ProjectEntity,
+  facts: Record<FactKey, string>,
+): Record<FactKey, string> {
+  return { ...facts, site_category: str(project.property.propertyType) };
 }

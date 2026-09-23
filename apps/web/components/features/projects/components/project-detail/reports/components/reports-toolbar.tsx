@@ -33,13 +33,13 @@ export function ReportsToolbar({
   hideGenerate,
 }: ReportsToolbarProps) {
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
       <TextField
         select
         size="small"
         value={picked}
         onChange={(e) => onPick(e.target.value)}
-        sx={{ minWidth: 220 }}
+        sx={{ flex: '0 1 240px', minWidth: 0 }}
         slotProps={{ htmlInput: { 'aria-label': 'Report' } }}
       >
         <MenuItem value={ALL_REPORTS}>All reports ({reports.length})</MenuItem>
@@ -55,6 +55,7 @@ export function ReportsToolbar({
         startIcon={mode === 'edit' ? <Eye className="size-4" /> : <Pencil className="size-4" />}
         onClick={onToggleMode}
         disabled={generating}
+        sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
       >
         {mode === 'edit' ? 'Preview' : 'Edit details'}
       </Button>
@@ -70,6 +71,7 @@ export function ReportsToolbar({
           }
           onClick={onGenerate}
           disabled={generating || !canGenerate}
+          sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
         >
           {generating
             ? `Filing ${runningName ?? ''}…`

@@ -7,7 +7,10 @@ import {
 } from '@nestjs/common';
 import {
   applyFactPatch,
+  factCoverage,
+  type FactEditTarget,
   type FactKey,
+  getFact,
   getMissingFacts,
   getReportDefinition,
   getReportStatus,
@@ -22,6 +25,7 @@ import {
 } from '@tejas96/shared/reports';
 import { DocumentCategory, DocumentEntityType, ProjectStatus } from '@tejas96/shared/types';
 
+import { ReportFactSourceService } from './report-fact-source.service';
 import { BomReadService } from '../../bom/services/bom-read.service';
 import type { DocumentEntity } from '../../documents/entities/document.entity';
 import { DocumentService } from '../../documents/services/document.service';
@@ -31,11 +35,21 @@ import { ProjectService } from '../../projects/services/project.service';
 import { StorageService } from '../../storage/services/storage.service';
 import type { ReportFileRefDto } from '../dto/report-workspace.dto';
 import { hashReportFacts, pickReportFacts } from '../facts/facts-hash';
-import { resolveFacts } from '../facts/resolve-facts';
+import { resolveEditValues, resolveFacts } from '../facts/resolve-facts';
 import { TemplateRendererService } from '../renderer/template-renderer.service';
 import { templateFileFor } from '../utils/report.utils';
 
 const REPORT_TAGS = new Set<string>(REPORT_DEFINITIONS.map((definition) => definition.documentTag));
+
+const CANCELLED_MESSAGE = 'This project is cancelled. Its reports can no longer be changed.';
+
+/** Where a patched key is saved; undefined when it cannot be edited on the Reports tab. */
+function saveGroupOf(key: string): 'manual' | FactEditTarget | undefined {
+  const fact = getFact(key);
+  if (!fact || fact.hidden) return undefined;
+  if (fact.source === 'manual') return 'manual';
+  return fact.edit?.target;
+}
 
 /** Newest filed report document per tag. Hand uploads with the same tag do not count. */
 function latestFiledByTag(docs: DocumentEntity[]): Map<string, DocumentEntity> {
@@ -72,6 +86,7 @@ export class ReportWorkspaceService {
     private readonly documentService: DocumentService,
     private readonly storageService: StorageService,
     private readonly templateRenderer: TemplateRendererService,
+    private readonly factSource: ReportFactSourceService,
   ) {}
 
   async getWorkspace(projectId: string): Promise<ReportWorkspace> {
@@ -80,12 +95,7 @@ export class ReportWorkspaceService {
     const docs = await this.documentService.findByEntity(DocumentEntityType.PROJECT, projectId);
     const filedByTag = latestFiledByTag(docs);
 
-    const usedBy = new Map<string, string[]>();
-    for (const definition of REPORT_DEFINITIONS) {
-      for (const { key } of definition.facts) {
-        usedBy.set(key, [...(usedBy.get(key) ?? []), definition.id]);
-      }
-    }
+    const editValues = resolveEditValues(project, facts);
 
     const reports = REPORT_DEFINITIONS.map((definition) => {
       const filedDoc = filedByTag.get(definition.documentTag);
@@ -115,36 +125,76 @@ export class ReportWorkspaceService {
       propertyId: project.propertyId,
       quoteId: project.quote.id,
       facts: (REPORT_FACTS as readonly ReportFact[])
-        .filter((fact) => usedBy.has(fact.key))
-        .map((fact) => ({
-          key: fact.key as FactKey,
-          label: fact.label,
-          type: fact.type,
-          group: fact.group,
-          source: fact.source,
-          placeholder: fact.placeholder,
-          editAt: fact.editAt,
-          value: facts[fact.key as FactKey] ?? '',
-          usedBy: usedBy.get(fact.key) ?? [],
-        })),
+        .filter((fact) => !fact.hidden)
+        .map((fact) => {
+          const covers = factCoverage(fact.key) as FactKey[];
+          return {
+            key: fact.key as FactKey,
+            label: fact.label,
+            type: fact.type,
+            group: fact.group,
+            source: fact.source,
+            placeholder: fact.placeholder,
+            help: fact.help,
+            edit: fact.edit,
+            value: facts[fact.key as FactKey] ?? '',
+            editValue: editValues[fact.key as FactKey] ?? '',
+            editable: !locked && (fact.source === 'manual' || !!fact.edit),
+            usedBy: REPORT_DEFINITIONS.filter((definition) =>
+              definition.facts.some(({ key }) => covers.includes(key)),
+            ).map((definition) => definition.id),
+            covers,
+          };
+        })
+        .filter((fact) => fact.usedBy.length > 0),
       reports,
       pendingCount: locked ? 0 : reports.filter((report) => isPendingStatus(report.status)).length,
       locked,
     };
   }
 
-  async updateFacts(projectId: string, patch: Record<string, unknown>): Promise<ReportWorkspace> {
+  /**
+   * One save path for every field on the Reports tab. Manual facts go to the
+   * project's report_facts; customer and site facts go through their owner's
+   * update. One request touches one of those groups: the web sends one key per
+   * save, and a mixed request could half-apply across two transactions.
+   */
+  async updateFacts(
+    projectId: string,
+    patch: Record<string, unknown>,
+    userId: string,
+  ): Promise<ReportWorkspace> {
     const project = await this.projectService.findById(projectId);
     if (project.status === ProjectStatus.CANCELLED) {
-      throw new BadRequestException(
-        'This project is cancelled. Its reports can no longer be changed.',
-      );
+      throw new BadRequestException(CANCELLED_MESSAGE);
     }
+
+    const keys = Object.keys(patch);
+    // Nothing to save (e.g. a lone "__proto__", which never arrives as an own key): no write.
+    if (keys.length === 0) return this.getWorkspace(projectId);
+    const unknown = keys.filter((key) => !saveGroupOf(key));
+    if (unknown.length > 0) {
+      const errors = new Map(
+        unknown.map((key) => [key, `${key} cannot be edited on the Reports tab`]),
+      );
+      throw new BadRequestException({
+        message: [...errors.values()].join('; '),
+        errors: Object.fromEntries(errors),
+      });
+    }
+    const groups = new Set(keys.map(saveGroupOf));
+    if (groups.size > 1) throw new BadRequestException('Save one field at a time.');
+
+    const [group] = groups;
+    if (group && group !== 'manual') {
+      await this.factSource.save(project, group, patch, userId);
+      return this.getWorkspace(projectId);
+    }
+
     const { next, errors } = applyFactPatch(project.reportFacts ?? {}, patch);
     if (Object.keys(errors).length > 0) {
       throw new BadRequestException({ message: Object.values(errors).join('; '), errors });
     }
-    const keys = Object.keys(patch);
     await this.projectRepository.mergeReportFacts(
       projectId,
       Object.fromEntries(keys.filter((key) => key in next).map((key) => [key, next[key]!])),
@@ -173,9 +223,7 @@ export class ReportWorkspaceService {
     const definition = this.definition(reportId);
     const { project, facts } = await this.load(projectId);
     if (project.status === ProjectStatus.CANCELLED) {
-      throw new BadRequestException(
-        'This project is cancelled. Its reports can no longer be changed.',
-      );
+      throw new BadRequestException(CANCELLED_MESSAGE);
     }
     const factsHash = hashReportFacts(definition, facts);
     if (factsHash !== renderedFactsHash) {
