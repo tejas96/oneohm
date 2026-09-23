@@ -110,7 +110,9 @@ export function ReportFactsForm({
                   readOnly={!canEdit || !!disabled}
                   onSave={(value) => saves.save(fact, value)}
                   onActivity={saves.activityHandlers.get(fact.key)}
-                  held={saves.held.get(fact.key)}
+                  held={saves.held.get(fact.key)?.value}
+                  heldBase={saves.held.get(fact.key)?.base}
+                  savedValue={saves.saved.get(fact.key)}
                   note={saves.noteFor(fact.key)}
                   onDiscard={() => saves.discard(fact.key)}
                 />

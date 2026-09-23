@@ -120,6 +120,10 @@ interface FactFieldProps {
   onActivity?: (active: boolean) => void;
   /** A utility value held by the tab, not saved yet: the input shows it. */
   held?: string;
+  /** The stored value `held` replaces. */
+  heldBase?: string;
+  /** A value a batch just saved for this field, until the workspace shows it: the baseline meanwhile. */
+  savedValue?: string;
   /** Shown under the field when it has no error of its own (held note, failed batch). */
   note?: string | null;
   /** The field went back to its stored value or holds an invalid value: drop what it held. */
@@ -137,6 +141,8 @@ export function FactField({
   onSave,
   onActivity,
   held,
+  heldBase,
+  savedValue,
   note,
   onDiscard,
 }: FactFieldProps): React.JSX.Element {
@@ -158,6 +164,8 @@ export function FactField({
           onSave={onSave}
           onActivity={onActivity}
           held={held}
+          heldBase={heldBase}
+          savedValue={savedValue}
           note={note ?? null}
           onDiscard={onDiscard}
         />
@@ -222,6 +230,8 @@ function EditableFactInput({
   onSave,
   onActivity,
   held,
+  heldBase,
+  savedValue,
   note,
   onDiscard,
 }: {
@@ -230,10 +240,12 @@ function EditableFactInput({
   onSave: (value: string | null) => Promise<FactSaveResult>;
   onActivity?: (active: boolean) => void;
   held?: string;
+  heldBase?: string;
+  savedValue?: string;
   note: string | null;
   onDiscard?: () => void;
 }): React.JSX.Element {
-  const [draft, setDraft] = useState(held ?? fact.editValue);
+  const [draft, setDraft] = useState(held ?? savedValue ?? fact.editValue);
   const [dirty, setDirty] = useState(held !== undefined);
   const [saving, setSaving] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -243,17 +255,33 @@ function EditableFactInput({
   // What this field last saved, until the workspace catches up: when saves
   // overlap the cache waits for a refetch, and Esc must not flash the old value.
   const [saved, setSaved] = useState<string | null>(null);
-  const baseline = saved ?? fact.editValue;
+  const baseline = saved ?? savedValue ?? fact.editValue;
 
-  // Reset only when the stored value changes (a save, or another user's save on
-  // refetch) — not on mount, so a held value shown on remount stays.
+  // A batch another field completed saved this one too: it is no longer a
+  // change, so a blur must not hold or send it again.
+  useEffect(() => {
+    if (savedValue === undefined || normalizeFactInput(fact, draft) !== savedValue) return;
+    setDirty(false);
+    setError(null);
+  }, [savedValue]);
+
+  // React only when the stored value changes (a save, or another user's save
+  // on refetch) — not on mount, so a held value shown on remount stays. A held
+  // value based on the new stored value (typed while a batch was saving) is
+  // kept; anything else resets to the stored value and drops what it held.
   const lastEditValue = useRef(fact.editValue);
   useEffect(() => {
     if (lastEditValue.current === fact.editValue) return;
     lastEditValue.current = fact.editValue;
+    setSaved(null);
+    if (held !== undefined && heldBase === fact.editValue) {
+      setDraft(held);
+      setDirty(true);
+      setError(null);
+      return;
+    }
     setDraft(fact.editValue);
     setDirty(false);
-    setSaved(null);
     setError(storedError(fact));
     onDiscard?.();
   }, [fact.editValue]);
@@ -271,7 +299,7 @@ function EditableFactInput({
     if (value === baseline) {
       setDraft(baseline);
       setDirty(false);
-      setError(saved === null ? storedError(fact) : null);
+      setError(baseline === fact.editValue ? storedError(fact) : null);
       onDiscard?.();
       return;
     }
@@ -302,7 +330,7 @@ function EditableFactInput({
   const restore = (): void => {
     setDraft(baseline);
     setDirty(false);
-    setError(saved === null ? storedError(fact) : null);
+    setError(baseline === fact.editValue ? storedError(fact) : null);
     onDiscard?.();
   };
 

@@ -19,9 +19,17 @@ type SaveError = AxiosError<{ message?: string | string[] }>;
 /** `held`: kept in the page until the site's other utility details are set. */
 export type FactSaveResult = 'saved' | 'held';
 
+/** A held value and the stored value it replaces; a changed stored value makes it stale. */
+export interface HeldEntry {
+  value: string;
+  base: string;
+}
+
 export interface ReportFactSaves {
-  /** Utility values not sent yet, by fact key. */
-  held: ReadonlyMap<string, string>;
+  /** Utility values not sent yet, by fact key, with the stored value each was based on. */
+  held: ReadonlyMap<string, HeldEntry>;
+  /** Values a batch saved, by fact key, until the workspace shows them: the fields' baseline meanwhile. */
+  saved: ReadonlyMap<string, string>;
   /** The note under a field: a failed batch's message, or "Not saved yet — also set …" on a held field. */
   noteFor: (key: string) => string | null;
   /** Utility details to mark "Needed" while any of the four is being edited, held or failing. */
@@ -36,6 +44,24 @@ export interface ReportFactSaves {
   discard: (key: string) => void;
 }
 
+const editValueOf = (facts: WorkspaceFact[], key: string): string =>
+  facts.find((fact) => fact.key === key)?.editValue ?? '';
+
+const valuesOf = (entries: ReadonlyMap<string, HeldEntry>): Map<string, string> =>
+  new Map([...entries].map(([key, entry]) => [key, entry.value]));
+
+/** The workspace as the site stands after batch saves it does not show yet. */
+const withSaved = (
+  facts: WorkspaceFact[],
+  saved: ReadonlyMap<string, HeldEntry>,
+): WorkspaceFact[] =>
+  saved.size === 0
+    ? facts
+    : facts.map((fact) => {
+        const s = saved.get(fact.key);
+        return s ? { ...fact, editValue: s.value, fallback: undefined } : fact;
+      });
+
 /**
  * Every save on the Reports tab, owned by the tab so held values survive
  * Preview, picking a report and generating.
@@ -47,18 +73,29 @@ export interface ReportFactSaves {
  * says what else to set; once the last one is set, all held values go in one
  * request. A failed batch keeps them held and shows its message under each
  * field in it. Leaving the page while anything is held asks first.
+ *
+ * Each held value remembers the stored value it replaces. If the stored value
+ * changes underneath it (another user, or a save while the form was hidden),
+ * the held value is stale and dropped. If the site becomes complete while
+ * values are held, they are sent, or dropped when they already match.
  */
 export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): ReportFactSaves {
   const update = useUpdateReportFacts(projectId);
-  const heldRef = useRef<Map<string, string>>(new Map());
-  const [held, setHeldState] = useState<ReadonlyMap<string, string>>(new Map());
+  const heldRef = useRef<Map<string, HeldEntry>>(new Map());
+  const [heldEntries, setHeldEntries] = useState<ReadonlyMap<string, HeldEntry>>(new Map());
+  /** Keys → values of the batch in flight; stale-pruning leaves them alone. */
+  const inFlight = useRef<Map<string, string> | null>(null);
+  const [saved, setSaved] = useState<ReadonlyMap<string, HeldEntry>>(new Map());
   const [batchError, setBatchError] = useState<{ keys: Set<string>; message: string } | null>(null);
   const [active, setActive] = useState<ReadonlySet<string>>(new Set());
 
-  const setHeld = (next: Map<string, string>): void => {
+  const setHeld = (next: Map<string, HeldEntry>): void => {
     heldRef.current = next;
-    setHeldState(next);
+    setHeldEntries(next);
   };
+
+  const held = useMemo(() => valuesOf(heldEntries), [heldEntries]);
+  const current = withSaved(facts, saved);
 
   useEffect(() => {
     if (held.size === 0) return;
@@ -88,11 +125,89 @@ export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): R
     [],
   );
 
-  const heldNote = missingUtilityMessage(facts, held);
-  const { missing } = utilityBatch(facts, held);
-  const incomplete =
-    utilityBatch(facts, new Map()).missing.length > 0 ||
-    facts.some((fact) => isUtilityFact(fact.key) && fact.fallback);
+  /**
+   * Sends the held values plus `changes`. On success, drops only the sent
+   * entries still holding what was sent; an entry changed meanwhile stays,
+   * rebased on the value just saved. On failure, the sent values go back into
+   * the current held map without overwriting anything held meanwhile.
+   */
+  const sendBatch = async (
+    changes: Map<string, HeldEntry>,
+    triggerKey: string | null,
+  ): Promise<void> => {
+    const batch = utilityBatch(current, valuesOf(changes));
+    const sent = new Map(Object.entries(batch.send));
+    inFlight.current = sent;
+    try {
+      await update.mutateAsync(batch.send);
+      // Entries replaced during the flight were based on the sent value already (see save).
+      const next = new Map(heldRef.current);
+      for (const [key, value] of sent) if (next.get(key)?.value === value) next.delete(key);
+      setHeld(next);
+      setSaved((prev) => {
+        const nextSaved = new Map(prev);
+        for (const [key, value] of Object.entries(batch.send)) {
+          nextSaved.set(key, { value, base: editValueOf(facts, key) });
+        }
+        return nextSaved;
+      });
+    } catch (err) {
+      // Nothing was stored: entries replaced during the flight go back to the
+      // stored value as their base, and the sent values rejoin the held map
+      // without overwriting anything held meanwhile.
+      const next = new Map<string, HeldEntry>();
+      for (const [key, entry] of heldRef.current) {
+        next.set(
+          key,
+          sent.get(key) === entry.base && entry.base !== editValueOf(current, key)
+            ? { value: entry.value, base: editValueOf(current, key) }
+            : entry,
+        );
+      }
+      for (const [key, entry] of changes) if (!next.has(key)) next.set(key, entry);
+      setHeld(next);
+      const message = saveErrorMessage(
+        current,
+        valuesOf(changes),
+        triggerKey ?? Object.keys(batch.send)[0] ?? '',
+        err as SaveError,
+      );
+      setBatchError({ keys: new Set(Object.keys(batch.send)), message });
+      throw new Error(message);
+    } finally {
+      inFlight.current = null;
+    }
+  };
+
+  // The workspace moved on: forget batch-saved values it now shows (or that
+  // another change replaced), drop held values that are stale or already
+  // stored, and send what is held if the site has become complete.
+  useEffect(() => {
+    setSaved((prev) => {
+      if (prev.size === 0) return prev;
+      const next = new Map([...prev].filter(([key, s]) => editValueOf(facts, key) === s.base));
+      return next.size === prev.size ? prev : next;
+    });
+
+    if (inFlight.current || heldRef.current.size === 0) return;
+    // Stale: the stored value moved away from what the held value replaced.
+    // Pointless: the stored value already is the held value.
+    const next = new Map(
+      [...heldRef.current].filter(([key, entry]) => {
+        const stored = editValueOf(facts, key);
+        return stored === entry.base && stored !== entry.value;
+      }),
+    );
+    if (next.size !== heldRef.current.size) setHeld(next);
+    if (
+      next.size > 0 &&
+      !batchError &&
+      utilityBatch(withSaved(facts, saved), valuesOf(next)).missing.length === 0
+    ) {
+      void sendBatch(next, null).catch(() => undefined); // its message shows under each field
+    }
+    // Runs on workspace changes only; sendBatch and batchError are read at that moment.
+  }, [facts]);
 
   const discard = (key: string): void => {
     if (heldRef.current.has(key)) {
@@ -108,33 +223,34 @@ export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): R
       try {
         await update.mutateAsync({ [fact.key]: value });
       } catch (err) {
-        throw new Error(saveErrorMessage(facts, new Map(), fact.key, err as SaveError));
+        throw new Error(saveErrorMessage(current, new Map(), fact.key, err as SaveError));
       }
       return 'saved';
     }
 
     setBatchError(null);
     const changes = new Map(heldRef.current);
-    changes.set(fact.key, value ?? '');
-    const batch = utilityBatch(facts, changes);
-    if (batch.missing.length > 0) {
+    // During a batch this value replaces what that batch is storing, so that is its base.
+    const flying = inFlight.current;
+    const base = flying?.get(fact.key) ?? editValueOf(current, fact.key);
+    changes.set(fact.key, { value: value ?? '', base });
+    if (flying || utilityBatch(current, valuesOf(changes)).missing.length > 0) {
       setHeld(changes);
       return 'held';
     }
-    try {
-      await update.mutateAsync(batch.send);
-      setHeld(new Map());
-      return 'saved';
-    } catch (err) {
-      const message = saveErrorMessage(facts, changes, fact.key, err as SaveError);
-      setHeld(changes);
-      setBatchError({ keys: new Set(Object.keys(batch.send)), message });
-      throw new Error(message);
-    }
+    await sendBatch(changes, fact.key);
+    return 'saved';
   };
 
+  const heldNote = missingUtilityMessage(current, held);
+  const { missing } = utilityBatch(current, held);
+  const incomplete =
+    utilityBatch(current, new Map()).missing.length > 0 ||
+    current.some((fact) => isUtilityFact(fact.key) && fact.fallback);
+
   return {
-    held,
+    held: heldEntries,
+    saved: new Map([...saved].map(([key, s]) => [key, s.value])),
     noteFor: (key) =>
       batchError?.keys.has(key) ? batchError.message : held.has(key) ? heldNote : null,
     neededKeys: new Set(active.size > 0 || held.size > 0 ? missing : []),
