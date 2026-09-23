@@ -149,7 +149,10 @@ export function FactField({
 }: FactFieldProps): React.JSX.Element {
   const inputId = useId();
   return (
-    <Box sx={{ minWidth: 0, gridColumn: fact.type === 'textarea' ? '1 / -1' : undefined }}>
+    <Box
+      data-fact-key={fact.key}
+      sx={{ minWidth: 0, gridColumn: fact.type === 'textarea' ? '1 / -1' : undefined }}
+    >
       <FactLabelRow
         inputId={inputId}
         label={fact.label}
