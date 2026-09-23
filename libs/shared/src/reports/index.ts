@@ -10,3 +10,8 @@ export * from './utils/validate-report-fields';
 export * from './utils/report-completeness';
 export * from './templates/quote-pdf.template';
 export * from './templates/quote-pdf.types';
+export * from './definitions';
+export * from './facts/report-facts';
+export * from './facts/validate-fact';
+export * from './status';
+export * from './workspace.types';
