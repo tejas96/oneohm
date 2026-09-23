@@ -15,7 +15,7 @@ import { useReportFactSaves } from '../reports/hooks/use-report-fact-saves';
 import { useReportRender } from '../reports/hooks/use-report-render';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { useGatedAction } from '@/lib/rbac';
+import { useCan, useGatedAction } from '@/lib/rbac';
 
 interface ProjectReportsTabProps {
   projectId: string;
@@ -34,7 +34,12 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
   const { generate, runningId, outcomes, clearOutcomes } = useGenerateReports(projectId);
   const savingFacts = useIsMutating({ mutationKey: projectReportKeys.saveFacts(projectId) }) > 0;
   // Owned here, not by the form: held utility values must survive Preview, picking and generating.
-  const saves = useReportFactSaves(projectId, workspace?.facts ?? []);
+  const canEdit = useCan().can('projects.edit');
+  const saves = useReportFactSaves(
+    projectId,
+    workspace?.facts ?? [],
+    canEdit && !(workspace?.locked ?? false),
+  );
   const heldCount = saves.held.size;
 
   const reports = workspace?.reports ?? [];

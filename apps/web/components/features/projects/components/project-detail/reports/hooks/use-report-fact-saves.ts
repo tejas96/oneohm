@@ -79,12 +79,19 @@ const withSaved = (
  * the held value is stale and dropped. If the site becomes complete while
  * values are held, they are sent, or dropped when they already match.
  */
-export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): ReportFactSaves {
+export function useReportFactSaves(
+  projectId: string,
+  facts: WorkspaceFact[],
+  /** `projects.edit` and the project is not cancelled. Without it nothing is ever sent or held. */
+  canSave: boolean,
+): ReportFactSaves {
   const update = useUpdateReportFacts(projectId);
   const heldRef = useRef<Map<string, HeldEntry>>(new Map());
   const [heldEntries, setHeldEntries] = useState<ReadonlyMap<string, HeldEntry>>(new Map());
   /** Keys → values of the batch in flight; stale-pruning leaves them alone. */
   const inFlight = useRef<Map<string, string> | null>(null);
+  /** Keys discarded while a batch was in flight: a failure must not bring them back. */
+  const discardedInFlight = useRef(new Set<string>());
   const [saved, setSaved] = useState<ReadonlyMap<string, HeldEntry>>(new Map());
   const [batchError, setBatchError] = useState<{ keys: Set<string>; message: string } | null>(null);
   const [active, setActive] = useState<ReadonlySet<string>>(new Set());
@@ -95,6 +102,15 @@ export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): R
   };
 
   const held = useMemo(() => valuesOf(heldEntries), [heldEntries]);
+
+  // Read-only now (cancelled, or no `projects.edit`): the fields cannot clear
+  // anything later, so held values and a batch error go at once.
+  useEffect(() => {
+    if (canSave) return;
+    heldRef.current = new Map();
+    setHeldEntries(new Map());
+    setBatchError(null);
+  }, [canSave]);
   const current = withSaved(facts, saved);
 
   useEffect(() => {
@@ -135,9 +151,11 @@ export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): R
     changes: Map<string, HeldEntry>,
     triggerKey: string | null,
   ): Promise<void> => {
+    if (!canSave) throw new Error('This project can no longer be changed here.');
     const batch = utilityBatch(current, valuesOf(changes));
     const sent = new Map(Object.entries(batch.send));
     inFlight.current = sent;
+    discardedInFlight.current = new Set();
     try {
       await update.mutateAsync(batch.send);
       // Entries replaced during the flight were based on the sent value already (see save).
@@ -164,7 +182,9 @@ export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): R
             : entry,
         );
       }
-      for (const [key, entry] of changes) if (!next.has(key)) next.set(key, entry);
+      for (const [key, entry] of changes) {
+        if (!next.has(key) && !discardedInFlight.current.has(key)) next.set(key, entry);
+      }
       setHeld(next);
       const message = saveErrorMessage(
         current,
@@ -176,6 +196,7 @@ export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): R
       throw new Error(message);
     } finally {
       inFlight.current = null;
+      discardedInFlight.current = new Set();
     }
   };
 
@@ -189,7 +210,7 @@ export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): R
       return next.size === prev.size ? prev : next;
     });
 
-    if (inFlight.current || heldRef.current.size === 0) return;
+    if (!canSave || inFlight.current || heldRef.current.size === 0) return;
     // Stale: the stored value moved away from what the held value replaced.
     // Pointless: the stored value already is the held value.
     const next = new Map(
@@ -210,6 +231,7 @@ export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): R
   }, [facts]);
 
   const discard = (key: string): void => {
+    if (inFlight.current) discardedInFlight.current.add(key);
     if (heldRef.current.has(key)) {
       const next = new Map(heldRef.current);
       next.delete(key);
@@ -219,6 +241,7 @@ export function useReportFactSaves(projectId: string, facts: WorkspaceFact[]): R
   };
 
   const save = async (fact: WorkspaceFact, value: string | null): Promise<FactSaveResult> => {
+    if (!canSave) throw new Error('This project can no longer be changed here.');
     if (!isUtilityFact(fact.key)) {
       try {
         await update.mutateAsync({ [fact.key]: value });
