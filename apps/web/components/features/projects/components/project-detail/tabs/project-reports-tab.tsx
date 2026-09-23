@@ -1,9 +1,10 @@
 'use client';
 
 import { Alert, Box } from '@mui/material';
+import { useIsMutating } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
-import { useProjectReports } from '../../../hooks';
+import { projectReportKeys, useProjectReports } from '../../../hooks';
 import { DetailCard, TonePill } from '../primitives';
 import { ReportFactsForm } from '../reports/components/report-facts-form';
 import { ReportPreviewPanel } from '../reports/components/report-preview-panel';
@@ -30,6 +31,7 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
   const [picked, setPicked] = useState<string>(ALL_REPORTS);
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const { generate, runningId, outcomes, clearOutcomes } = useGenerateReports(projectId);
+  const savingFacts = useIsMutating({ mutationKey: projectReportKeys.saveFacts(projectId) }) > 0;
 
   const reports = workspace?.reports ?? [];
   const pickedId = picked === ALL_REPORTS ? null : picked;
@@ -44,7 +46,10 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
   );
 
   const targets = useMemo(
-    () => (pickedId ? reports.filter((r) => r.id === pickedId) : reports.filter((r) => r.status !== 'filed')),
+    () =>
+      pickedId
+        ? reports.filter((r) => r.id === pickedId)
+        : reports.filter((r) => r.status !== 'filed'),
     [pickedId, reports],
   );
 
@@ -62,7 +67,6 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
   return (
     <DetailCard
       label="Reports"
-      aside={workspace ? `${reports.length - pendingCount} of ${reports.length} filed` : undefined}
       action={
         workspace ? (
           pendingCount > 0 ? (
@@ -93,7 +97,7 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
             onGenerate={runGenerate.onGatedClick}
             generating={runningId !== null}
             runningName={reports.find((r) => r.id === runningId)?.name ?? null}
-            canGenerate={targets.length > 0}
+            canGenerate={targets.length > 0 && !savingFacts}
           />
 
           <ReportStatusCards
@@ -113,9 +117,15 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
           )}
 
           {mode === 'edit' ? (
-            <ReportFactsForm workspace={workspace} reportId={pickedId} disabled={runningId !== null} />
+            <ReportFactsForm
+              workspace={workspace}
+              reportId={pickedId}
+              disabled={runningId !== null}
+            />
           ) : (
-            <Box sx={{ height: 'min(80vh, 1200px)', display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box
+              sx={{ height: 'min(80vh, 1200px)', display: 'flex', flexDirection: 'column', gap: 1 }}
+            >
               {previewReport?.pages && (
                 <p className="text-[12px] text-foreground-secondary">
                   {previewReport.name} must print on exactly {previewReport.pages} pages. Generate

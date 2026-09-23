@@ -7,12 +7,15 @@ import {
   type ReportWorkspace,
   type WorkspaceFact,
 } from '@tejas96/shared/reports';
+import { maskAadhaar } from '@tejas96/shared/utils';
+import type { AxiosError } from 'axios';
 import NextLink from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import { factEditHref } from '../utils/fact-edit-href';
 
 import { useUpdateReportFacts } from '@/components/features/projects/hooks/use-project-reports';
+import { useCan } from '@/lib/rbac';
 
 interface ReportFactsFormProps {
   workspace: ReportWorkspace;
@@ -28,9 +31,10 @@ function todayIso(): string {
 
 export function ReportFactsForm({ workspace, reportId, disabled }: ReportFactsFormProps) {
   const update = useUpdateReportFacts(workspace.projectId);
+  const canEdit = useCan().can('projects.edit');
 
   const reportNames = useMemo(
-    () => new Map(workspace.reports.map((r) => [r.id, r.name.split(' ')[0]])),
+    () => new Map(workspace.reports.map((r) => [r.id, r.shortName])),
     [workspace.reports],
   );
   const missingKeys = useMemo(
@@ -79,7 +83,8 @@ export function ReportFactsForm({ workspace, reportId, disabled }: ReportFactsFo
                     hint={usedByText(fact)}
                     missing={missingKeys.has(fact.key)}
                     disabled={disabled || update.isPending}
-                    onCommit={(value) => update.mutate({ [fact.key]: value })}
+                    readOnly={!canEdit}
+                    onCommit={(value) => update.mutateAsync({ [fact.key]: value })}
                   />
                 ))}
               </Box>
@@ -102,10 +107,18 @@ export function ReportFactsForm({ workspace, reportId, disabled }: ReportFactsFo
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, minWidth: 0 }}>
                       <Typography
                         variant="body2"
-                        color={fact.value ? 'text.primary' : missingKeys.has(fact.key) ? 'warning.main' : 'text.secondary'}
+                        color={
+                          fact.value
+                            ? 'text.primary'
+                            : missingKeys.has(fact.key)
+                              ? 'warning.main'
+                              : 'text.secondary'
+                        }
                         sx={{ overflowWrap: 'anywhere' }}
                       >
-                        {fact.value || 'Not set'}
+                        {(fact.key === 'consumer_aadhaar_number'
+                          ? maskAadhaar(fact.value, ' ')
+                          : fact.value) || 'Not set'}
                       </Typography>
                       {fact.editAt && (
                         <MuiLink
@@ -134,7 +147,8 @@ interface ManualFactInputProps {
   hint: string;
   missing: boolean;
   disabled?: boolean;
-  onCommit: (value: string | null) => void;
+  readOnly?: boolean;
+  onCommit: (value: string | null) => Promise<unknown>;
 }
 
 /**
@@ -151,7 +165,14 @@ interface ManualFactInputProps {
  * seeing a blank date picker. It goes back to `type="date"` once the stored
  * value is a valid ISO date.
  */
-function ManualFactInput({ fact, hint, missing, disabled, onCommit }: ManualFactInputProps) {
+function ManualFactInput({
+  fact,
+  hint,
+  missing,
+  disabled,
+  readOnly,
+  onCommit,
+}: ManualFactInputProps) {
   const [draft, setDraft] = useState(fact.value);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(
@@ -174,8 +195,11 @@ function ManualFactInput({ fact, hint, missing, disabled, onCommit }: ManualFact
     const message = validateFactValue(fact, value);
     setError(message);
     if (!message) {
-      onCommit(value === '' ? null : value);
-      setDirty(false);
+      onCommit(value === '' ? null : value).then(
+        () => setDirty(false),
+        (err: AxiosError<{ message?: string }>) =>
+          setError(err.response?.data?.message ?? 'Could not save. Try again.'),
+      );
     }
   };
 
@@ -210,8 +234,9 @@ function ManualFactInput({ fact, hint, missing, disabled, onCommit }: ManualFact
         htmlInput: {
           inputMode: fact.type === 'number' || fact.type === 'year' ? 'decimal' : undefined,
         },
-        input:
-          fact.type === 'date'
+        input: readOnly
+          ? { readOnly: true }
+          : fact.type === 'date'
             ? {
                 endAdornment: (
                   <Button

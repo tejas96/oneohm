@@ -4,8 +4,7 @@ import type { ReportWorkspace } from '@tejas96/shared/reports';
 import { FileCheck2 } from 'lucide-react';
 import NextLink from 'next/link';
 
-import { plural } from '../../lib/derive';
-import { CardLink, DetailCard, EmptyPane, Mono, TonePill, Track } from '../../primitives';
+import { CardLink, DetailCard, EmptyPane, TonePill, Track } from '../../primitives';
 import { REPORT_STATUS_META } from '../../reports/constants/report-status';
 import type { Panel } from '../../types';
 
@@ -21,7 +20,11 @@ interface ReportsCardProps {
  * The DISCOM paperwork still outstanding — only what is not filed or is out
  * of date. The Reports tab holds the full set; this card links there.
  */
-export function ReportsCard({ reports, projectPath, className }: ReportsCardProps): React.JSX.Element {
+export function ReportsCard({
+  reports,
+  projectPath,
+  className,
+}: ReportsCardProps): React.JSX.Element {
   const all = reports.data?.reports ?? [];
   const outstanding = all.filter((r) => r.status !== 'filed');
   const filedCount = all.length - outstanding.length;
@@ -46,11 +49,8 @@ export function ReportsCard({ reports, projectPath, className }: ReportsCardProp
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-3 pb-3">
+          <div className="pb-3">
             <Track pct={donePct} tone={donePct >= 100 ? 'success' : 'accent'} height={6} />
-            <Mono className="shrink-0 text-[12px] font-medium text-foreground-secondary">
-              {Math.round(donePct)}%
-            </Mono>
           </div>
 
           {outstanding.length === 0 ? (
@@ -61,24 +61,19 @@ export function ReportsCard({ reports, projectPath, className }: ReportsCardProp
               description="The DISCOM submission pack for this project is complete."
             />
           ) : (
-            <>
-              <p className="pb-1 text-[11.5px] text-foreground-tertiary">
-                {outstanding.length} {plural(outstanding.length, 'report')} still to file
-              </p>
-              {outstanding.map((report) => {
-                const meta = REPORT_STATUS_META[report.status];
-                return (
-                  <NextLink
-                    key={report.id}
-                    href={tabHref}
-                    className="flex items-center justify-between gap-3 rounded-lg py-2 hover:bg-background-tertiary"
-                  >
-                    <span className="truncate text-[13px]">{report.name}</span>
-                    <TonePill label={meta.label} tone={meta.tone} dot />
-                  </NextLink>
-                );
-              })}
-            </>
+            outstanding.map((report) => {
+              const meta = REPORT_STATUS_META[report.status];
+              return (
+                <NextLink
+                  key={report.id}
+                  href={tabHref}
+                  className="flex items-center justify-between gap-3 rounded-lg py-2 hover:bg-background-tertiary"
+                >
+                  <span className="truncate text-[13px]">{report.name}</span>
+                  <TonePill label={meta.label} tone={meta.tone} dot />
+                </NextLink>
+              );
+            })
           )}
         </>
       )}
