@@ -11,6 +11,7 @@ import { ReportPreviewPanel } from '../reports/components/report-preview-panel';
 import { ReportStatusCards } from '../reports/components/report-status-cards';
 import { ALL_REPORTS, ReportsToolbar } from '../reports/components/reports-toolbar';
 import { useGenerateReports } from '../reports/hooks/use-generate-reports';
+import { useReportFactSaves } from '../reports/hooks/use-report-fact-saves';
 import { useReportRender } from '../reports/hooks/use-report-render';
 
 import { Skeleton } from '@/components/ui/skeleton';
@@ -32,6 +33,9 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const { generate, runningId, outcomes, clearOutcomes } = useGenerateReports(projectId);
   const savingFacts = useIsMutating({ mutationKey: projectReportKeys.saveFacts(projectId) }) > 0;
+  // Owned here, not by the form: held utility values must survive Preview, picking and generating.
+  const saves = useReportFactSaves(projectId, workspace?.facts ?? []);
+  const heldCount = saves.held.size;
 
   const reports = workspace?.reports ?? [];
   const pickedId = picked === ALL_REPORTS ? null : picked;
@@ -104,7 +108,14 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
             onGenerate={runGenerate.onGatedClick}
             generating={runningId !== null}
             runningName={reports.find((r) => r.id === runningId)?.name ?? null}
-            canGenerate={!locked && targets.length > 0 && !savingFacts}
+            canGenerate={!locked && targets.length > 0 && !savingFacts && heldCount === 0}
+            blockedReason={
+              heldCount > 0
+                ? `Finish the site's utility details first — ${heldCount} ${
+                    heldCount === 1 ? 'change' : 'changes'
+                  } not saved yet`
+                : undefined
+            }
             hideGenerate={locked}
           />
 
@@ -129,6 +140,7 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
               workspace={workspace}
               reportId={pickedId}
               disabled={runningId !== null}
+              saves={saves}
             />
           ) : (
             <Box

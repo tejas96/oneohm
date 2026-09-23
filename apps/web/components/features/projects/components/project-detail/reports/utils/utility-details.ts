@@ -8,7 +8,7 @@ import type { AxiosError } from 'axios';
  * utility-details rule). This mirrors that rule on the Reports tab so it can
  * say which ones are missing, and so a site missing two of them can still be
  * completed: saving one alone would always be refused, so they are held and
- * sent together once all four have a value.
+ * sent together once all four have a value (useReportFactSaves).
  */
 export const UTILITY_FACT_KEYS = [
   'consumer_name',
@@ -70,13 +70,22 @@ function listOf(names: string[]): string {
     : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
-/** "Set the DISCOM and connection type too. …" — the message under a held utility field. */
-export function missingUtilityMessage(missing: string[], facts: WorkspaceFact[]): string {
-  const names = listOf(missing.map((key) => SHORT_NAME[key] ?? key));
-  const badNumber =
-    missing.includes('consumer_number') &&
-    !!facts.find((f) => f.key === 'consumer_number')?.editValue.trim();
-  return `Set the ${names} too${badNumber ? ' (the consumer number must be 10–12 digits)' : ''}. The site's utility details save together.`;
+/**
+ * The note under every held utility field, recomputed from the current values:
+ * "Not saved yet — also set the DISCOM and connection type."
+ */
+export function missingUtilityMessage(
+  facts: WorkspaceFact[],
+  changes: ReadonlyMap<string, string>,
+): string | null {
+  const { missing } = utilityBatch(facts, changes);
+  if (missing.length === 0) return null;
+  const names = missing.map((key) => {
+    if (key !== 'consumer_number') return `the ${SHORT_NAME[key] ?? key}`;
+    const value = changes.get(key) ?? facts.find((f) => f.key === key)?.editValue ?? '';
+    return value.trim() ? 'a 10–12 digit consumer number' : 'the consumer number';
+  });
+  return `Not saved yet — also set ${listOf(names)}.`;
 }
 
 /**
@@ -94,6 +103,5 @@ export function saveErrorMessage(
   const serverMessage =
     (Array.isArray(body) ? body.join('; ') : body) ?? 'Could not save. Try again.';
   if (err.response?.status !== 400 || !isUtilityFact(key)) return serverMessage;
-  const { missing } = utilityBatch(facts, changes);
-  return missing.length > 0 ? missingUtilityMessage(missing, facts) : serverMessage;
+  return missingUtilityMessage(facts, changes) ?? serverMessage;
 }

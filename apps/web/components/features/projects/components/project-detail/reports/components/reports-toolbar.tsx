@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, CircularProgress, MenuItem, TextField } from '@mui/material';
+import { Box, Button, CircularProgress, MenuItem, TextField, Typography } from '@mui/material';
 import type { WorkspaceReport } from '@tejas96/shared/reports';
 import { Eye, FileDown, Pencil } from 'lucide-react';
 
@@ -18,6 +18,8 @@ interface ReportsToolbarProps {
   canGenerate: boolean;
   /** Cancelled projects have nothing left to file. */
   hideGenerate?: boolean;
+  /** Why Generate is off when the reason is not obvious (held utility details). */
+  blockedReason?: string;
 }
 
 export function ReportsToolbar({
@@ -31,6 +33,7 @@ export function ReportsToolbar({
   runningName,
   canGenerate,
   hideGenerate,
+  blockedReason,
 }: ReportsToolbarProps) {
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
@@ -59,6 +62,11 @@ export function ReportsToolbar({
       >
         {mode === 'edit' ? 'Preview' : 'Edit details'}
       </Button>
+      {!hideGenerate && blockedReason && (
+        <Typography variant="caption" sx={{ color: 'warning.main' }}>
+          {blockedReason}
+        </Typography>
+      )}
       {!hideGenerate && (
         <Button
           variant="contained"

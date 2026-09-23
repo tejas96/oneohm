@@ -13,10 +13,11 @@ import {
 import { normalizeFactInput, validateFactInput, type WorkspaceFact } from '@tejas96/shared/reports';
 import { maskAadhaar } from '@tejas96/shared/utils';
 import { Info, Lock } from 'lucide-react';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { DiscomFactInput } from './discom-fact-input';
 import { TonePill } from '../../primitives';
+import type { FactSaveResult } from '../hooks/use-report-fact-saves';
 
 const MUTED_BOX = { '& .MuiInputBase-root': { bgcolor: 'action.hover' } };
 
@@ -48,7 +49,7 @@ function isLockedFact(fact: WorkspaceFact): boolean {
   return fact.source !== 'manual' && !fact.edit;
 }
 
-/** Multi-line facts keep their line breaks: a single-line input would join them on any edit. */
+/** Multi-line facts keep their line breaks: a single-line input would join them on any edit. Read-only ones grow to fit. */
 const MULTILINE_ROWS = { minRows: 1, maxRows: 4 } as const;
 
 function inputMode(fact: WorkspaceFact): React.HTMLAttributes<HTMLInputElement>['inputMode'] {
@@ -114,9 +115,15 @@ interface FactFieldProps {
   /** No `projects.edit`, or reports are being generated. */
   readOnly: boolean;
   /** Rejects with an Error whose message is shown under the field. */
-  onSave: (value: string | null) => Promise<unknown>;
+  onSave: (value: string | null) => Promise<FactSaveResult>;
   /** Focused, changed or showing an error. */
   onActivity?: (active: boolean) => void;
+  /** A utility value held by the tab, not saved yet: the input shows it. */
+  held?: string;
+  /** Shown under the field when it has no error of its own (held note, failed batch). */
+  note?: string | null;
+  /** The field went back to its stored value or holds an invalid value: drop what it held. */
+  onDiscard?: () => void;
 }
 
 /** One fact: the same box for every fact; locked ones are muted with a lock and never editable. */
@@ -129,6 +136,9 @@ export function FactField({
   readOnly,
   onSave,
   onActivity,
+  held,
+  note,
+  onDiscard,
 }: FactFieldProps): React.JSX.Element {
   const inputId = useId();
   return (
@@ -142,7 +152,15 @@ export function FactField({
         usedBy={usedBy}
       />
       {fact.editable && !readOnly ? (
-        <EditableFactInput inputId={inputId} fact={fact} onSave={onSave} onActivity={onActivity} />
+        <EditableFactInput
+          inputId={inputId}
+          fact={fact}
+          onSave={onSave}
+          onActivity={onActivity}
+          held={held}
+          note={note ?? null}
+          onDiscard={onDiscard}
+        />
       ) : (
         <ReadOnlyFactInput inputId={inputId} fact={fact} />
       )}
@@ -168,7 +186,7 @@ function ReadOnlyFactInput({
       value={shownValue(fact, fact.value)}
       placeholder="Not set"
       multiline={multiline}
-      {...(multiline ? MULTILINE_ROWS : {})}
+      minRows={multiline ? 1 : undefined}
       error={!!error}
       helperText={error ?? undefined}
       sx={MUTED_BOX}
@@ -203,26 +221,45 @@ function EditableFactInput({
   fact,
   onSave,
   onActivity,
+  held,
+  note,
+  onDiscard,
 }: {
   inputId: string;
   fact: WorkspaceFact;
-  onSave: (value: string | null) => Promise<unknown>;
+  onSave: (value: string | null) => Promise<FactSaveResult>;
   onActivity?: (active: boolean) => void;
+  held?: string;
+  note: string | null;
+  onDiscard?: () => void;
 }): React.JSX.Element {
-  const [draft, setDraft] = useState(fact.editValue);
-  const [dirty, setDirty] = useState(false);
+  const [draft, setDraft] = useState(held ?? fact.editValue);
+  const [dirty, setDirty] = useState(held !== undefined);
   const [saving, setSaving] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [error, setError] = useState<string | null>(() => storedError(fact));
+  const [error, setError] = useState<string | null>(() =>
+    held !== undefined ? null : storedError(fact),
+  );
+  // What this field last saved, until the workspace catches up: when saves
+  // overlap the cache waits for a refetch, and Esc must not flash the old value.
+  const [saved, setSaved] = useState<string | null>(null);
+  const baseline = saved ?? fact.editValue;
 
+  // Reset only when the stored value changes (a save, or another user's save on
+  // refetch) — not on mount, so a held value shown on remount stays.
+  const lastEditValue = useRef(fact.editValue);
   useEffect(() => {
+    if (lastEditValue.current === fact.editValue) return;
+    lastEditValue.current = fact.editValue;
     setDraft(fact.editValue);
     setDirty(false);
+    setSaved(null);
     setError(storedError(fact));
-    // Reset only when the stored value changes (a save, or another user's save on refetch).
+    onDiscard?.();
   }, [fact.editValue]);
 
-  const active = focused || dirty || !!error;
+  const shownError = error ?? note;
+  const active = focused || dirty || !!shownError;
   useEffect(() => {
     onActivity?.(active);
     return () => onActivity?.(false);
@@ -231,20 +268,29 @@ function EditableFactInput({
   const commit = (raw: string): void => {
     if (saving) return;
     const value = normalizeFactInput(fact, raw);
-    if (value === fact.editValue) {
-      setDraft(fact.editValue);
+    if (value === baseline) {
+      setDraft(baseline);
       setDirty(false);
-      setError(storedError(fact));
+      setError(saved === null ? storedError(fact) : null);
+      onDiscard?.();
       return;
     }
     const message = validateFactInput(fact, value);
     setError(message);
-    if (message) return;
+    if (message) {
+      // An invalid replacement must not leave an older held value to be sent later.
+      onDiscard?.();
+      return;
+    }
 
     setSaving(true);
     onSave(value === '' ? null : value)
       .then(
-        () => setDirty(false),
+        (result) => {
+          if (result === 'held') return; // stays dirty; the tab's note says what else to set
+          setDirty(false);
+          setSaved(value);
+        },
         (err: unknown) =>
           setError(
             err instanceof Error && err.message ? err.message : 'Could not save. Try again.',
@@ -254,9 +300,10 @@ function EditableFactInput({
   };
 
   const restore = (): void => {
-    setDraft(fact.editValue);
+    setDraft(baseline);
     setDirty(false);
-    setError(storedError(fact));
+    setError(saved === null ? storedError(fact) : null);
+    onDiscard?.();
   };
 
   const pick = (value: string): void => {
@@ -275,7 +322,7 @@ function EditableFactInput({
         <DiscomFactInput
           inputId={inputId}
           value={draft}
-          error={error}
+          error={shownError}
           saving={saving}
           onPick={pick}
         />
@@ -292,8 +339,8 @@ function EditableFactInput({
         size="small"
         fullWidth
         value={draft}
-        error={!!error}
-        helperText={error ?? undefined}
+        error={!!shownError}
+        helperText={shownError ?? undefined}
         onChange={(e) => pick(e.target.value)}
         slotProps={{
           select: { readOnly: saving, displayEmpty: true },
@@ -331,8 +378,8 @@ function EditableFactInput({
       {...(multiline ? MULTILINE_ROWS : {})}
       placeholder={fact.placeholder}
       value={shown}
-      error={!!error}
-      helperText={error ?? undefined}
+      error={!!shownError}
+      helperText={shownError ?? undefined}
       onFocus={() => setFocused(true)}
       onChange={(e) => {
         setDraft(e.target.value);

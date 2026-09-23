@@ -5,9 +5,9 @@ import { FACT_GROUPS, type ReportWorkspace, type WorkspaceFact } from '@tejas96/
 import { useMemo } from 'react';
 
 import { FactField } from './fact-field';
-import { useUtilityDetails } from '../hooks/use-utility-details';
+import type { ReportFactSaves } from '../hooks/use-report-fact-saves';
+import { isUtilityFact } from '../utils/utility-details';
 
-import { useUpdateReportFacts } from '@/components/features/projects/hooks/use-project-reports';
 import { useCan } from '@/lib/rbac';
 
 interface ReportFactsFormProps {
@@ -16,6 +16,8 @@ interface ReportFactsFormProps {
   reportId: string | null;
   /** Reports are being generated: nothing can change until they are filed. */
   disabled?: boolean;
+  /** Owned by the tab, so held utility values survive Preview and report picking. */
+  saves: ReportFactSaves;
 }
 
 /**
@@ -23,14 +25,14 @@ interface ReportFactsFormProps {
  * to the project; customer and site facts save to their owner; quote, BOM and
  * company facts are locked. Each field saves on its own and only that field
  * waits for the reply — except the site's utility details, which are held
- * and saved together while any of them is missing (useUtilityDetails).
+ * and saved together while any of them is missing (useReportFactSaves).
  */
 export function ReportFactsForm({
   workspace,
   reportId,
   disabled,
+  saves,
 }: ReportFactsFormProps): React.JSX.Element {
-  const update = useUpdateReportFacts(workspace.projectId);
   const canEdit = useCan().can('projects.edit');
 
   const reportNames = useMemo(
@@ -46,9 +48,11 @@ export function ReportFactsForm({
       ),
     [workspace.reports, reportId],
   );
-  const visible = workspace.facts.filter((f) => !reportId || f.usedBy.includes(reportId));
-
-  const utility = useUtilityDetails(workspace.facts, (patch) => update.mutateAsync(patch));
+  // While the site's utility details are incomplete or held, all four show whatever report is picked.
+  const visible = workspace.facts.filter(
+    (f) =>
+      !reportId || f.usedBy.includes(reportId) || (saves.showUtilityFields && isUtilityFact(f.key)),
+  );
 
   const isRequired = (fact: WorkspaceFact): boolean =>
     fact.covers.some((key) => missingKeys.has(key));
@@ -102,10 +106,13 @@ export function ReportFactsForm({
                   help={helpText(fact)}
                   usedBy={usedByText(fact)}
                   required={isRequired(fact)}
-                  needed={utility.neededKeys.has(fact.key)}
+                  needed={saves.neededKeys.has(fact.key)}
                   readOnly={!canEdit || !!disabled}
-                  onSave={(value) => utility.save(fact, value)}
-                  onActivity={utility.activityHandlers.get(fact.key)}
+                  onSave={(value) => saves.save(fact, value)}
+                  onActivity={saves.activityHandlers.get(fact.key)}
+                  held={saves.held.get(fact.key)}
+                  note={saves.noteFor(fact.key)}
+                  onDiscard={() => saves.discard(fact.key)}
                 />
               ))}
             </Box>
