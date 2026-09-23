@@ -155,6 +155,10 @@ export class CustomerResponseDto {
   @Expose()
   alternatePhone?: string;
 
+  @ApiPropertyOptional()
+  @Expose()
+  aadhaarNumber?: string;
+
   // ==================== Address (Billing/Mailing) ====================
   @ApiPropertyOptional()
   @Expose()

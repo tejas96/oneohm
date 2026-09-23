@@ -283,6 +283,7 @@ export interface ContactInfo {
   phone?: string;
   mobile?: string;
   alternatePhone?: string;
+  aadhaarNumber?: string;
 }
 
 // ============================================================================

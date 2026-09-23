@@ -60,6 +60,17 @@ export class UpdateCustomerDto {
   @MaxLength(13)
   alternatePhone?: string | null;
 
+  @ApiPropertyOptional({
+    example: '123412341234',
+    description: 'Aadhaar number, 12 digits; null clears it',
+    nullable: true,
+  })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsString()
+  @Matches(/^\d{12}$/, { message: 'Aadhaar number must be exactly 12 digits' })
+  aadhaarNumber?: string | null;
+
   // ==================== Address (Billing/Mailing) ====================
   @ApiPropertyOptional({
     example: '123, MG Road, Koramangala',

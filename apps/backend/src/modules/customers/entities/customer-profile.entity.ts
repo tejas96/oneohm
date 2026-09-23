@@ -75,6 +75,9 @@ export class CustomerProfileEntity extends BaseEntity {
   @Column({ name: 'alternate_phone', type: 'varchar', length: 20, nullable: true })
   alternatePhone?: string;
 
+  @Column({ name: 'aadhaar_number', type: 'varchar', length: 12, nullable: true })
+  aadhaarNumber?: string | null;
+
   // ==================== Address (Billing/Mailing) ====================
   @Column({ type: 'text', nullable: true })
   address?: string;

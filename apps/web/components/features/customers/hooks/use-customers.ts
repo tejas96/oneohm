@@ -123,6 +123,7 @@ export interface Customer {
   email?: string;
   phone: string;
   alternatePhone?: string;
+  aadhaarNumber?: string;
   address?: string;
   city?: string;
   state?: string;
@@ -193,6 +194,7 @@ export interface UpdateCustomerData {
   email?: string | null;
   phone?: string;
   alternatePhone?: string | null;
+  aadhaarNumber?: string | null;
   address?: string;
   city?: string;
   state?: string;

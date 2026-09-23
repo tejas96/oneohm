@@ -170,6 +170,15 @@ export function Step1CustomerIdentity({
           error={customerErrors.alternatePhone?.message}
           {...register('customer.alternatePhone')}
         />
+        <MUIInput
+          fieldLabel="Aadhaar Number"
+          disabled={isLocked}
+          inputMode="numeric"
+          placeholder="1234 1234 1234"
+          inputProps={{ maxLength: 12 }}
+          error={customerErrors.aadhaarNumber?.message}
+          {...register('customer.aadhaarNumber')}
+        />
       </div>
 
       <MUIInput

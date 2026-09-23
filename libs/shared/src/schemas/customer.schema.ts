@@ -18,6 +18,12 @@ export const createCustomerProfileSchema = z
     phone: indianMobileSchema,
     email: z.union([z.string().email('Invalid email address'), z.literal('')]).optional(),
     alternatePhone: z.union([z.literal(''), indianMobileSchema]).optional(),
+    aadhaarNumber: z
+      .union([
+        z.literal(''),
+        z.string().regex(/^\d{12}$/, 'Aadhaar number must be exactly 12 digits'),
+      ])
+      .optional(),
     address: z.string().max(500, 'Address too long').optional().or(z.literal('')),
     city: z.string().min(1, 'City is required').max(100, 'City too long'),
     state: z.string().min(1, 'State is required').max(100, 'State too long'),
