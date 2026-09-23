@@ -213,7 +213,9 @@ Replaces the drawer. Layout as approved in the chat mockup:
      marks with `edit` (consumer name and number, site address line, city,
      state, PIN code, category, sanctioned load → the site; mobile, email,
      Aadhaar → the customer). Plain inputs (a select for Category, which saves
-     on change) that save on blur and on Enter, only when the value changed;
+     on change; multi-line facts such as addresses grow to 4 rows and keep
+     their line breaks, Shift+Enter adds one) that save on blur and on Enter,
+     only when the value changed;
      Esc restores the stored value. A legacy value that fails its rule is shown
      with its error and never wiped by a blur. Input is normalised before it is
      sent (a mobile number becomes +91XXXXXXXXXX; digits lose spaces) and
@@ -221,6 +223,8 @@ Replaces the drawer. Layout as approved in the chat mockup:
      shows under the field and the field stays dirty. Only the saving field
      shows a spinner and is read-only until the reply; the rest stay usable.
      Aadhaar reads masked (XXXX XXXX 1234) except while its input has focus.
+     Overlapping saves never cache an older reply over a newer one: the
+     workspace is refetched instead.
      A customer/site save also refreshes the customer, site and project header
      queries.
    - **Locked facts** (quote, BOM, company, fixed): the same box, muted, with a
