@@ -5,6 +5,7 @@ import {
   Button,
   CircularProgress,
   IconButton,
+  Link,
   MenuItem,
   TextField,
   Tooltip,
@@ -334,6 +335,30 @@ function EditableFactInput({
     onDiscard?.();
   };
 
+  // A held value can always be undone, including in a select, where Esc only
+  // closes the menu. Same path as Esc: back to the stored value, held entry dropped.
+  const helper =
+    held !== undefined ? (
+      <>
+        {shownError}{' '}
+        <Link
+          component="button"
+          type="button"
+          variant="caption"
+          disabled={saving}
+          // Keep focus in the input: a blur here would re-commit the held value first.
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={restore}
+          aria-label={`Undo the change to ${fact.label}`}
+          sx={{ verticalAlign: 'baseline' }}
+        >
+          Undo
+        </Link>
+      </>
+    ) : (
+      (shownError ?? undefined)
+    );
+
   const pick = (value: string): void => {
     setDraft(value);
     setDirty(true);
@@ -351,6 +376,7 @@ function EditableFactInput({
           inputId={inputId}
           value={draft}
           error={shownError}
+          helper={helper}
           saving={saving}
           onPick={pick}
         />
@@ -368,7 +394,7 @@ function EditableFactInput({
         fullWidth
         value={draft}
         error={!!shownError}
-        helperText={shownError ?? undefined}
+        helperText={helper}
         onChange={(e) => pick(e.target.value)}
         slotProps={{
           select: { readOnly: saving, displayEmpty: true },
@@ -407,7 +433,7 @@ function EditableFactInput({
       placeholder={fact.placeholder}
       value={shown}
       error={!!shownError}
-      helperText={shownError ?? undefined}
+      helperText={helper}
       onFocus={() => setFocused(true)}
       onChange={(e) => {
         setDraft(e.target.value);

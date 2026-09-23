@@ -15,6 +15,8 @@ interface DiscomFactInputProps {
   /** DISCOM id, or '' when the site has none. */
   value: string;
   error: string | null;
+  /** Under the field: the error, plus Undo on a held value. */
+  helper?: React.ReactNode;
   saving: boolean;
   onPick: (discomId: string) => void;
 }
@@ -28,6 +30,7 @@ export function DiscomFactInput({
   inputId,
   value,
   error,
+  helper,
   saving,
   onPick,
 }: DiscomFactInputProps): React.JSX.Element {
@@ -65,7 +68,7 @@ export function DiscomFactInput({
           id={inputId}
           placeholder="Not set"
           error={!!error}
-          helperText={error ?? undefined}
+          helperText={helper ?? error ?? undefined}
           slotProps={{
             input: {
               ...params.InputProps,
