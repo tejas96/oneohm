@@ -3,6 +3,7 @@ import { validateFactValue } from './validate-fact';
 import { EMAIL_REGEX } from '../../utils/validation';
 
 const INDIAN_MOBILE_E164 = /^\+91[6-9]\d{9}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** "98765 43210", "+91 98765 43210", "09876543210" → "+919876543210". Anything else is returned trimmed. */
 export function normalizeIndianMobile(raw: string): string {
@@ -54,6 +55,9 @@ export function validateFactInput(
       const n = Number(value);
       return Number.isFinite(n) && n >= 0 ? null : `${fact.label} must be a number, 0 or more.`;
     }
+    case 'discom':
+      // Format only: whether it exists and is active is the site owner's check.
+      return UUID_RE.test(value) ? null : 'Pick a DISCOM.';
     case 'select':
       // Own keys only ("constructor" is not an option). Object.hasOwn needs ES2022; this lib targets lower.
       return edit.options && Object.prototype.hasOwnProperty.call(edit.options, value)

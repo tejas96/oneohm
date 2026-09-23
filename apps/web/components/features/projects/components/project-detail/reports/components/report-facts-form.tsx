@@ -5,6 +5,7 @@ import { FACT_GROUPS, type ReportWorkspace, type WorkspaceFact } from '@tejas96/
 import { useMemo } from 'react';
 
 import { FactField } from './fact-field';
+import { useUtilityDetails } from '../hooks/use-utility-details';
 
 import { useUpdateReportFacts } from '@/components/features/projects/hooks/use-project-reports';
 import { useCan } from '@/lib/rbac';
@@ -21,7 +22,8 @@ interface ReportFactsFormProps {
  * Every fact the reports print, each once, edited in place. Manual facts save
  * to the project; customer and site facts save to their owner; quote, BOM and
  * company facts are locked. Each field saves on its own and only that field
- * waits for the reply.
+ * waits for the reply — except the site's utility details, which are held
+ * and saved together while any of them is missing (useUtilityDetails).
  */
 export function ReportFactsForm({
   workspace,
@@ -46,14 +48,17 @@ export function ReportFactsForm({
   );
   const visible = workspace.facts.filter((f) => !reportId || f.usedBy.includes(reportId));
 
+  const utility = useUtilityDetails(workspace.facts, (patch) => update.mutateAsync(patch));
+
   const isRequired = (fact: WorkspaceFact): boolean =>
     fact.covers.some((key) => missingKeys.has(key));
   const allReports = (fact: WorkspaceFact): boolean =>
     fact.usedBy.length === workspace.reports.length;
   const usedByText = (fact: WorkspaceFact): string =>
-    allReports(fact)
+    fact.chip ??
+    (allReports(fact)
       ? 'All reports'
-      : fact.usedBy.map((id) => reportNames.get(id) ?? id).join(' · ');
+      : fact.usedBy.map((id) => reportNames.get(id) ?? id).join(' · '));
   const helpText = (fact: WorkspaceFact): string =>
     fact.source === 'manual'
       ? `${fact.help} Typed once for this project and printed on ${
@@ -97,8 +102,10 @@ export function ReportFactsForm({
                   help={helpText(fact)}
                   usedBy={usedByText(fact)}
                   required={isRequired(fact)}
+                  needed={utility.neededKeys.has(fact.key)}
                   readOnly={!canEdit || !!disabled}
-                  onSave={(value) => update.mutateAsync({ [fact.key]: value })}
+                  onSave={(value) => utility.save(fact, value)}
+                  onActivity={utility.activityHandlers.get(fact.key)}
                 />
               ))}
             </Box>

@@ -1,4 +1,4 @@
-import { PROPERTY_TYPE_LABELS } from '../../types/enums/customer.enum';
+import { CONNECTION_TYPE_LABELS, PROPERTY_TYPE_LABELS } from '../../types/enums/customer.enum';
 
 export type FactSource =
   | 'company'
@@ -23,8 +23,11 @@ export type FactGroup =
 /** The record a source fact is saved on when it is edited on the Reports tab. */
 export type FactEditTarget = 'property' | 'customer';
 
-/** `digits` is a text box that accepts only digits (Aadhaar, PIN code, consumer number). */
-export type FactEditInput = 'text' | 'number' | 'select' | 'digits';
+/**
+ * `digits` is a text box that accepts only digits (Aadhaar, PIN code, consumer
+ * number). `discom` is a DISCOM picker whose options the web loads.
+ */
+export type FactEditInput = 'text' | 'number' | 'select' | 'digits' | 'discom';
 
 /**
  * How a customer or site fact is edited in place. The save goes through the
@@ -64,9 +67,21 @@ export interface ReportFact {
   readonly partOf?: string;
   /** A hidden fact worked out from a shown one (Wp from kW). */
   readonly derivedFrom?: string;
+  /**
+   * A form-only fact: printed by no report, shown because saving the facts in
+   * `supports` needs it (the site's DISCOM and connection type). The form
+   * shows it wherever those facts show, with `chip` in place of report names.
+   */
+  readonly formOnly?: { readonly chip: string; readonly supports: readonly string[] };
 }
 
 const OUT_OF_DATE = 'Filed reports turn Out of date.';
+const UTILITY_HELP =
+  "Saved on this site. Needed, with the consumer name and number, before the site's utility details can be saved.";
+const UTILITY_SUPPORT = {
+  chip: 'Needed to save the site',
+  supports: ['consumer_name', 'consumer_number'],
+} as const;
 const FROM_QUOTE =
   'From the approved quote. Change it by revising the quote, so the contract and the paperwork match.';
 
@@ -112,6 +127,32 @@ export const REPORT_FACTS = [
       field: 'consumerNumber',
       input: 'digits',
       digits: { min: 10, max: 12 },
+      required: true,
+    },
+  },
+  {
+    key: 'site_discom',
+    label: 'DISCOM',
+    type: 'text',
+    group: 'consumer',
+    source: 'property',
+    formOnly: UTILITY_SUPPORT,
+    help: `${UTILITY_HELP} Only active DISCOMs can be picked.`,
+    edit: { target: 'property', field: 'discomId', input: 'discom', required: true },
+  },
+  {
+    key: 'site_connection_type',
+    label: 'Connection type',
+    type: 'text',
+    group: 'consumer',
+    source: 'property',
+    formOnly: UTILITY_SUPPORT,
+    help: UTILITY_HELP,
+    edit: {
+      target: 'property',
+      field: 'connectionType',
+      input: 'select',
+      options: CONNECTION_TYPE_LABELS,
       required: true,
     },
   },
@@ -547,10 +588,11 @@ export type FactKey = (typeof REPORT_FACTS)[number]['key'];
 
 type CatalogFact = (typeof REPORT_FACTS)[number];
 type MustBeFactKey<K extends FactKey> = K;
-/** Compile-time check: every `partOf` / `derivedFrom` names a fact in this catalog. */
+/** Compile-time check: every `partOf` / `derivedFrom` / `formOnly.supports` names a fact in this catalog. */
 export type LinkedFactKey = MustBeFactKey<
   | Extract<CatalogFact, { partOf: string }>['partOf']
   | Extract<CatalogFact, { derivedFrom: string }>['derivedFrom']
+  | Extract<CatalogFact, { formOnly: object }>['formOnly']['supports'][number]
 >;
 
 const FACTS_BY_KEY = new Map<string, ReportFact>(

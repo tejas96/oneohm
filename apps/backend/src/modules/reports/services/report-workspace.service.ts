@@ -35,7 +35,7 @@ import { ProjectService } from '../../projects/services/project.service';
 import { StorageService } from '../../storage/services/storage.service';
 import type { ReportFileRefDto } from '../dto/report-workspace.dto';
 import { hashReportFacts, pickReportFacts } from '../facts/facts-hash';
-import { resolveEditValues, resolveFacts } from '../facts/resolve-facts';
+import { resolveEditValues, resolveFacts, resolveFallbackKeys } from '../facts/resolve-facts';
 import { TemplateRendererService } from '../renderer/template-renderer.service';
 import { templateFileFor } from '../utils/report.utils';
 
@@ -96,6 +96,7 @@ export class ReportWorkspaceService {
     const filedByTag = latestFiledByTag(docs);
 
     const editValues = resolveEditValues(project, facts);
+    const fallbacks = resolveFallbackKeys(project);
 
     const reports = REPORT_DEFINITIONS.map((definition) => {
       const filedDoc = filedByTag.get(definition.documentTag);
@@ -128,6 +129,10 @@ export class ReportWorkspaceService {
         .filter((fact) => !fact.hidden)
         .map((fact) => {
           const covers = factCoverage(fact.key) as FactKey[];
+          // A form-only fact shows wherever the facts it supports show.
+          const usage = fact.formOnly
+            ? fact.formOnly.supports.flatMap((key) => factCoverage(key))
+            : covers;
           return {
             key: fact.key as FactKey,
             label: fact.label,
@@ -141,9 +146,12 @@ export class ReportWorkspaceService {
             editValue: editValues[fact.key as FactKey] ?? '',
             editable: !locked && (fact.source === 'manual' || !!fact.edit),
             usedBy: REPORT_DEFINITIONS.filter((definition) =>
-              definition.facts.some(({ key }) => covers.includes(key)),
+              definition.facts.some(({ key }) => usage.includes(key)),
             ).map((definition) => definition.id),
             covers,
+            chip: fact.formOnly?.chip,
+            fallback:
+              fallbacks.has(fact.key as FactKey) && !!facts[fact.key as FactKey] ? true : undefined,
           };
         })
         .filter((fact) => fact.usedBy.length > 0),

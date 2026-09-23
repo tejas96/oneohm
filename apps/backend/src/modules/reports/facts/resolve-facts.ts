@@ -1,7 +1,8 @@
 import { COMPANY } from '@tejas96/shared/constants';
 import { type FactKey, REPORT_FACTS, type ReportFact } from '@tejas96/shared/reports';
-import { PROPERTY_TYPE_LABELS } from '@tejas96/shared/types';
+import { CONNECTION_TYPE_LABELS, PROPERTY_TYPE_LABELS } from '@tejas96/shared/types';
 
+import { buildDiscomLabel } from '../../discoms/utils/discom-label.util';
 import type { ProjectEntity } from '../../projects/entities/project.entity';
 import { getQuoteSnapshot, getSystemSizeKw } from '../utils/quote-snapshot.util';
 import { customerDisplayName, formatPropertyAddress, str } from '../utils/report.utils';
@@ -54,6 +55,14 @@ export function resolveFacts({ project, panelSerials }: ReportSource): Record<Fa
     ? (PROPERTY_TYPE_LABELS[property.propertyType] ?? '')
     : '';
   facts.sanctioned_capacity_kw = str(property.sanctionedLoad);
+
+  // Form-only facts: no report prints them, so no fingerprint reads them. The
+  // DISCOM label needs `property.discom`, which the workspace loads and the
+  // list batch does not; the batch only computes statuses, so it never needs it.
+  facts.site_discom = property.discom ? buildDiscomLabel(property.discom) : '';
+  facts.site_connection_type = property.connectionType
+    ? (CONNECTION_TYPE_LABELS[property.connectionType] ?? '')
+    : '';
 
   facts.installed_capacity_kw = str(kw);
   facts.installed_capacity_wp = kw != null ? str(Math.round(kw * 1000)) : '';
@@ -117,7 +126,8 @@ export function resolveFacts({ project, panelSerials }: ReportSource): Record<Fa
 
 /**
  * What an editable field's input starts from, where that differs from the
- * printed value: the stored property type (the printed value is its label).
+ * printed value: the stored property type, DISCOM id and connection type
+ * (the printed values are their labels).
  * Everything else starts from the printed value — the consumer name falls
  * back to the customer's name, and saving it writes the site's consumer name.
  */
@@ -125,5 +135,16 @@ export function resolveEditValues(
   project: ProjectEntity,
   facts: Record<FactKey, string>,
 ): Record<FactKey, string> {
-  return { ...facts, site_category: str(project.property.propertyType) };
+  const property = project.property;
+  return {
+    ...facts,
+    site_category: str(property.propertyType),
+    site_discom: str(property.discomId),
+    site_connection_type: str(property.connectionType),
+  };
+}
+
+/** Facts shown from a fallback because their own field is empty: a site without a consumer name shows the customer's name. */
+export function resolveFallbackKeys(project: ProjectEntity): Set<FactKey> {
+  return new Set<FactKey>(project.property.consumerName?.trim() ? [] : ['consumer_name']);
 }

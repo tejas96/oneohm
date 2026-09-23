@@ -23,6 +23,10 @@ export interface WorkspaceFact {
   usedBy: string[];
   /** The fact itself plus the hidden facts it stands for; a report missing any of them marks this field Required. */
   covers: FactKey[];
+  /** Form-only facts (printed by no report): chip text shown in place of report names. */
+  chip?: string;
+  /** The value shown is a fallback: the fact's own field is empty (a site without a consumer name shows the customer's name). */
+  fallback?: boolean;
 }
 
 export interface FiledReportInfo {

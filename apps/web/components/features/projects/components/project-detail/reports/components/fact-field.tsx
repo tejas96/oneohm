@@ -12,10 +12,10 @@ import {
 } from '@mui/material';
 import { normalizeFactInput, validateFactInput, type WorkspaceFact } from '@tejas96/shared/reports';
 import { maskAadhaar } from '@tejas96/shared/utils';
-import type { AxiosError } from 'axios';
 import { Info, Lock } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 
+import { DiscomFactInput } from './discom-fact-input';
 import { TonePill } from '../../primitives';
 
 const MUTED_BOX = { '& .MuiInputBase-root': { bgcolor: 'action.hover' } };
@@ -64,15 +64,17 @@ interface FactLabelRowProps {
   label: string;
   help: string;
   required: boolean;
+  needed: boolean;
   usedBy: string;
 }
 
-/** Label · ⓘ · spacer · Required · used-by. The ⓘ opens on hover, keyboard focus and tap. */
+/** Label · ⓘ · spacer · Required / Needed · used-by. The ⓘ opens on hover, keyboard focus and tap. */
 function FactLabelRow({
   inputId,
   label,
   help,
   required,
+  needed,
   usedBy,
 }: FactLabelRowProps): React.JSX.Element {
   return (
@@ -93,6 +95,9 @@ function FactLabelRow({
       <Box sx={{ flex: 1 }} />
       <Box sx={{ display: 'flex', gap: 0.5, minWidth: 0, overflow: 'hidden' }}>
         {required && <TonePill label="Required" tone="warning" className="h-[18px] px-2" />}
+        {needed && !required && (
+          <TonePill label="Needed" tone="warning" className="h-[18px] px-2" />
+        )}
         <TonePill label={usedBy} tone="neutral" className="h-[18px] px-2" />
       </Box>
     </Box>
@@ -104,9 +109,14 @@ interface FactFieldProps {
   help: string;
   usedBy: string;
   required: boolean;
+  /** A utility detail the site needs before a utility field being edited can save. */
+  needed: boolean;
   /** No `projects.edit`, or reports are being generated. */
   readOnly: boolean;
+  /** Rejects with an Error whose message is shown under the field. */
   onSave: (value: string | null) => Promise<unknown>;
+  /** Focused, changed or showing an error. */
+  onActivity?: (active: boolean) => void;
 }
 
 /** One fact: the same box for every fact; locked ones are muted with a lock and never editable. */
@@ -115,8 +125,10 @@ export function FactField({
   help,
   usedBy,
   required,
+  needed,
   readOnly,
   onSave,
+  onActivity,
 }: FactFieldProps): React.JSX.Element {
   const inputId = useId();
   return (
@@ -126,10 +138,11 @@ export function FactField({
         label={fact.label}
         help={help}
         required={required}
+        needed={needed}
         usedBy={usedBy}
       />
       {fact.editable && !readOnly ? (
-        <EditableFactInput inputId={inputId} fact={fact} onSave={onSave} />
+        <EditableFactInput inputId={inputId} fact={fact} onSave={onSave} onActivity={onActivity} />
       ) : (
         <ReadOnlyFactInput inputId={inputId} fact={fact} />
       )}
@@ -189,10 +202,12 @@ function EditableFactInput({
   inputId,
   fact,
   onSave,
+  onActivity,
 }: {
   inputId: string;
   fact: WorkspaceFact;
   onSave: (value: string | null) => Promise<unknown>;
+  onActivity?: (active: boolean) => void;
 }): React.JSX.Element {
   const [draft, setDraft] = useState(fact.editValue);
   const [dirty, setDirty] = useState(false);
@@ -206,6 +221,12 @@ function EditableFactInput({
     setError(storedError(fact));
     // Reset only when the stored value changes (a save, or another user's save on refetch).
   }, [fact.editValue]);
+
+  const active = focused || dirty || !!error;
+  useEffect(() => {
+    onActivity?.(active);
+    return () => onActivity?.(false);
+  }, [active, onActivity]);
 
   const commit = (raw: string): void => {
     if (saving) return;
@@ -224,10 +245,10 @@ function EditableFactInput({
     onSave(value === '' ? null : value)
       .then(
         () => setDirty(false),
-        (err: AxiosError<{ message?: string | string[] }>) => {
-          const body = err.response?.data?.message;
-          setError((Array.isArray(body) ? body.join('; ') : body) ?? 'Could not save. Try again.');
-        },
+        (err: unknown) =>
+          setError(
+            err instanceof Error && err.message ? err.message : 'Could not save. Try again.',
+          ),
       )
       .finally(() => setSaving(false));
   };
@@ -238,9 +259,34 @@ function EditableFactInput({
     setError(storedError(fact));
   };
 
+  const pick = (value: string): void => {
+    setDraft(value);
+    setDirty(true);
+    commit(value);
+  };
+  const focusTracking = {
+    onFocus: () => setFocused(true),
+    onBlur: () => setFocused(false),
+  };
+
+  if (fact.edit?.input === 'discom') {
+    return (
+      <Box {...focusTracking}>
+        <DiscomFactInput
+          inputId={inputId}
+          value={draft}
+          error={error}
+          saving={saving}
+          onPick={pick}
+        />
+      </Box>
+    );
+  }
+
   if (fact.edit?.input === 'select') {
     return (
       <TextField
+        {...focusTracking}
         id={inputId}
         select
         size="small"
@@ -248,11 +294,7 @@ function EditableFactInput({
         value={draft}
         error={!!error}
         helperText={error ?? undefined}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          setDirty(true);
-          commit(e.target.value);
-        }}
+        onChange={(e) => pick(e.target.value)}
         slotProps={{
           select: { readOnly: saving, displayEmpty: true },
           input: {

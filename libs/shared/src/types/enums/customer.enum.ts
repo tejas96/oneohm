@@ -71,6 +71,15 @@ export enum ConnectionType {
 }
 
 /**
+ * Screen labels for connection types. Same wording as CONNECTION_TYPE_OPTIONS in
+ * apps/web/lib/config/constants.ts.
+ */
+export const CONNECTION_TYPE_LABELS: Record<ConnectionType, string> = {
+  [ConnectionType.SINGLE_PHASE]: 'Single phase',
+  [ConnectionType.THREE_PHASE]: 'Three phase',
+};
+
+/**
  * Lead Source Enum
  * Note: Initially using flexible VARCHAR in DB, but defining common sources here
  * May be expanded to separate table if needed in future
