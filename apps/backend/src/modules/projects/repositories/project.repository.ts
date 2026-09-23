@@ -129,6 +129,19 @@ export class ProjectRepository {
     return project;
   }
 
+  /** The report resolver's inputs for many projects in one query. */
+  async findByIdsForReports(ids: string[]): Promise<ProjectEntity[]> {
+    if (ids.length === 0) return [];
+    return this.getRepo()
+      .createQueryBuilder('project')
+      .innerJoinAndSelect('project.property', 'property')
+      .innerJoinAndSelect('project.quote', 'quote')
+      .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
+      .leftJoinAndSelect('property.customer', 'customer')
+      .where('project.id IN (:...ids)', { ids })
+      .getMany();
+  }
+
   /**
    * Find all projects with filters and pagination
    * Filters by organization via property.organizationId

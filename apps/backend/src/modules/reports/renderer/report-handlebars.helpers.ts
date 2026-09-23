@@ -43,6 +43,35 @@ export function registerReportHandlebarsHelpers(): void {
     }
     return options.inverse(this);
   });
+
+  const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  const isoParts = (value: unknown): [string, string, string] | null => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(typeof value === 'string' ? value.trim() : '');
+    return match ? [match[1]!, match[2]!, match[3]!] : null;
+  };
+  Handlebars.registerHelper('formatDate', (value: unknown) => {
+    const parts = isoParts(value);
+    return parts ? `${parts[2]}-${parts[1]}-${parts[0]}` : '—';
+  });
+  Handlebars.registerHelper('dateDay', (value: unknown) => {
+    const parts = isoParts(value);
+    return parts ? String(Number(parts[2])) : '—';
+  });
+  Handlebars.registerHelper('dateMonthName', (value: unknown) => {
+    const parts = isoParts(value);
+    return parts ? MONTH_NAMES[Number(parts[1]) - 1] : '—';
+  });
+  Handlebars.registerHelper('dateYear', (value: unknown) => {
+    const parts = isoParts(value);
+    return parts ? parts[0] : '—';
+  });
+  Handlebars.registerHelper('formatAadhaar', (value: unknown) => {
+    const digits = typeof value === 'string' ? value.replace(/\D/g, '') : '';
+    return digits.length === 12 ? `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}` : '—';
+  });
 }
 
 const RESERVED_MUSTACHE = new Set([

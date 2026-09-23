@@ -4,92 +4,73 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Post,
-  Query,
+  Param,
   ParseUUIDPipe,
+  Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { ReportRenderResult, ReportWorkspace } from '@tejas96/shared/reports';
 
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { ReportsPendingSummaryDto } from '../dto/report-completeness-response.dto';
 import {
-  ReportInitializeDto,
-  ReportInitializeResponseDto,
-  ReportPreviewResponseDto,
-  ReportRenderDto,
-  ReportSaveDto,
-  ReportSaveResponseDto,
-} from '../dto/report.dto';
-import { ReportEngineService } from '../engine/report-engine.service';
-import type { ReportEngineContext } from '../registry/report-plugin.interface';
+  FileReportDto,
+  RenderReportDto,
+  ReportsPendingDto,
+  UpdateReportFactsDto,
+} from '../dto/report-workspace.dto';
+import { ReportWorkspaceService } from '../services/report-workspace.service';
 
 @ApiTags('Reports')
 @ApiBearerAuth()
 @Controller('reports')
 @UseGuards(JwtAuthGuard)
 export class ReportsController {
-  constructor(private readonly reportEngine: ReportEngineService) {}
+  constructor(private readonly workspace: ReportWorkspaceService) {}
 
-  @Get()
-  @ApiOperation({ summary: 'List available report templates' })
-  list() {
-    return this.reportEngine.listCatalog();
+  @Get('projects/:projectId')
+  @ApiOperation({ summary: 'Every report fact and every report status for a project' })
+  getWorkspace(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<ReportWorkspace> {
+    return this.workspace.getWorkspace(projectId);
   }
 
-  @Get('completeness')
-  @ApiOperation({ summary: 'Get completeness summary for all reports of a project' })
-  @ApiResponse({ status: HttpStatus.OK, type: ReportsPendingSummaryDto })
-  async getCompleteness(
-    @Query('projectId', ParseUUIDPipe) projectId: string,
-  ): Promise<ReportsPendingSummaryDto> {
-    return this.reportEngine.getCompleteness(projectId);
+  @Patch('projects/:projectId/facts')
+  @ApiOperation({ summary: 'Set or clear (null) hand-typed report facts' })
+  updateFacts(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Body() dto: UpdateReportFactsDto,
+  ): Promise<ReportWorkspace> {
+    return this.workspace.updateFacts(projectId, dto.facts);
   }
 
-  @Post('initialize')
+  @Post('projects/:projectId/render')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Initialize report — fetch project data and merge saved fields' })
-  @ApiResponse({ status: HttpStatus.OK, type: ReportInitializeResponseDto })
-  async initialize(
-    @CurrentUser() user: CurrentUserType,
-    @Body() dto: ReportInitializeDto,
-  ): Promise<ReportInitializeResponseDto> {
-    return this.reportEngine.initialize(dto.reportId, this.buildContext(dto, user), {
-      ignoreSavedDraft: dto.ignoreSavedDraft,
-    });
+  @ApiOperation({ summary: 'Render one report from stored facts' })
+  render(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Body() dto: RenderReportDto,
+  ): Promise<ReportRenderResult> {
+    return this.workspace.render(projectId, dto.reportId);
   }
 
-  @Post('preview')
+  @Post('projects/:projectId/file')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Render preview HTML from field snapshot' })
-  async preview(
+  @ApiOperation({ summary: 'File a generated report PDF against the project' })
+  file(
     @CurrentUser() user: CurrentUserType,
-    @Body() dto: ReportRenderDto,
-  ): Promise<ReportPreviewResponseDto> {
-    return this.reportEngine.preview(dto.reportId, this.buildContext(dto, user), dto.fields);
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Body() dto: FileReportDto,
+  ): Promise<{ documentId: string; fileUrl: string }> {
+    return this.workspace.file(projectId, dto.reportId, dto.file, user.id);
   }
 
-  @Post('save')
+  @Post('pending')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Save client-generated PDF and field snapshot to project documents' })
-  @ApiResponse({ status: HttpStatus.OK, type: ReportSaveResponseDto })
-  async save(
-    @CurrentUser() user: CurrentUserType,
-    @Body() dto: ReportSaveDto,
-  ): Promise<ReportSaveResponseDto> {
-    return this.reportEngine.save(dto.reportId, this.buildContext(dto, user), dto.fields, dto.file);
-  }
-
-  private buildContext(
-    dto: ReportInitializeDto | ReportRenderDto,
-    user: CurrentUserType,
-  ): ReportEngineContext {
-    return {
-      userId: user.id,
-      entityType: dto.context.entityType,
-      entityId: dto.context.entityId,
-    };
+  @ApiOperation({ summary: 'Pending report count per project, for list badges' })
+  pending(@Body() dto: ReportsPendingDto): Promise<Record<string, number>> {
+    return this.workspace.pendingCounts(dto.projectIds);
   }
 }
