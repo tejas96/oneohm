@@ -61,7 +61,7 @@ export const DCR_REPORT: ReportDefinition = {
   name: 'DCR Undertaking / Self-Declaration',
   description: 'Domestic Content Requirement self-declaration for MNRE/MSEDCL submission.',
   documentTag: DocumentTag.DCR,
-  templateVersion: 2,
+  templateVersion: 3,
   facts: [
     req('vendor_name'),
     req('installed_capacity_kw'),
@@ -107,7 +107,7 @@ export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
   name: 'Annexure-I & Proforma-A',
   description: 'MAHAVITARAN commissioning report for grid-connected solar PV plant.',
   documentTag: DocumentTag.ANNEXURE_PROFORMA_A,
-  templateVersion: 2,
+  templateVersion: 3,
   facts: [
     req('consumer_name'),
     req('consumer_number'),
