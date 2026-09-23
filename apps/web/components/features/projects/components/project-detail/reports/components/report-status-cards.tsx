@@ -66,7 +66,10 @@ export function ReportStatusCards({ reports, selectedId, onSelect }: ReportStatu
                   aria-label={`Download ${report.name}`}
                   disabled={isDownloading}
                   onClick={() =>
-                    void download({ fileUrl: report.filed!.fileUrl, fileName: report.filed!.fileName })
+                    void download({
+                      fileUrl: report.filed!.fileUrl,
+                      fileName: report.filed!.fileName,
+                    })
                   }
                   sx={{ position: 'absolute', top: 6, right: 6 }}
                 >

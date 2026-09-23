@@ -48,7 +48,9 @@ export function resolveFacts({ project, panelSerials }: ReportSource): Record<Fa
   facts.site_address = formatPropertyAddress(property);
   facts.site_city = str(property.city);
   facts.site_state = str(property.state);
-  facts.site_category = property.propertyType ? (PROPERTY_TYPE_LABELS[property.propertyType] ?? '') : '';
+  facts.site_category = property.propertyType
+    ? (PROPERTY_TYPE_LABELS[property.propertyType] ?? '')
+    : '';
   facts.sanctioned_capacity_kw = str(property.sanctionedLoad);
 
   facts.installed_capacity_kw = str(kw);

@@ -35,12 +35,13 @@ export class NormalizeBackfilledReportFacts1857210000000 implements MigrationInt
   name = 'NormalizeBackfilledReportFacts1857210000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    const rows: Array<{ id: string; report_facts: Record<string, string> }> = await queryRunner.query(
-      `SELECT id, report_facts
+    const rows: Array<{ id: string; report_facts: Record<string, string> }> =
+      await queryRunner.query(
+        `SELECT id, report_facts
          FROM projects
         WHERE report_facts IS NOT NULL
           AND report_facts != '{}'::jsonb`,
-    );
+      );
 
     for (const row of rows) {
       const facts = row.report_facts ?? {};

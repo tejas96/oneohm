@@ -57,7 +57,13 @@ export function ReportsToolbar({
       </Button>
       <Button
         variant="contained"
-        startIcon={generating ? <CircularProgress size={14} color="inherit" /> : <FileDown className="size-4" />}
+        startIcon={
+          generating ? (
+            <CircularProgress size={14} color="inherit" />
+          ) : (
+            <FileDown className="size-4" />
+          )
+        }
         onClick={onGenerate}
         disabled={generating || !canGenerate}
       >

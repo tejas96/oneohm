@@ -852,7 +852,9 @@ export function ProjectListPage(): JSX.Element {
   const reportProjectIds = useMemo(
     () =>
       tableRows
-        .filter((row) => row.status === ProjectStatus.ACTIVE || row.status === ProjectStatus.COMPLETED)
+        .filter(
+          (row) => row.status === ProjectStatus.ACTIVE || row.status === ProjectStatus.COMPLETED,
+        )
         .map((row) => row.id),
     [tableRows],
   );

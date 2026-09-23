@@ -59,7 +59,9 @@ export function findUndeclaredTemplateFacts(): string[] {
     const source = readFileSync(resolveReportAsset(templateFileFor(definition)), 'utf8');
     for (const name of templateVariables(source)) {
       if (!declared.has(name) && !KNOWN_UNDECLARED.has(name)) {
-        problems.push(`${templateFileFor(definition)} prints "${name}", which ${definition.id} does not declare`);
+        problems.push(
+          `${templateFileFor(definition)} prints "${name}", which ${definition.id} does not declare`,
+        );
       }
     }
   }
