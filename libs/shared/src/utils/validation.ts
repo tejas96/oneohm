@@ -117,11 +117,11 @@ export function isValidAadhaar(value: string): boolean {
  * Mask an Aadhaar number for API responses (e.g. XXXX-XXXX-1234).
  * Never expose full Aadhaar in list or detail payloads.
  */
-export function maskAadhaar(value: string | null | undefined): string | undefined {
+export function maskAadhaar(value: string | null | undefined, separator = '-'): string | undefined {
   const normalized = normalizeAadhaar(value ?? '');
   if (normalized.length !== AADHAAR_LENGTH) {
     return undefined;
   }
 
-  return `XXXX-XXXX-${normalized.slice(-4)}`;
+  return ['XXXX', 'XXXX', normalized.slice(-4)].join(separator);
 }

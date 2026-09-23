@@ -9,6 +9,9 @@
 export const COMPANY = {
   name: 'OneOhm',
 
+  /** Printed wherever a filed document names the vendor. */
+  legalName: 'Oneohm Sustainable Green Energy Private Limited',
+
   /**
    * Embedded in every generated human-readable code — `TSK-ONEOHM_EPC-2026-6435`,
    * `CUST-ONEOHM_EPC-2026-0234`, `PROP-…`, `PRJ-…`. The generators find the next

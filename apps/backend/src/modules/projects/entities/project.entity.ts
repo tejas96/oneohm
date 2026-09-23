@@ -100,6 +100,12 @@ export class ProjectEntity extends BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   metadata?: ProjectMetadata;
 
+  // ==================== Reports ====================
+
+  /** Hand-typed report facts, keyed by manual FactKey. Everything else is read live. */
+  @Column({ name: 'report_facts', type: 'jsonb', default: () => "'{}'::jsonb" })
+  reportFacts!: Record<string, string>;
+
   // ==================== Cancellation & Settlement ====================
 
   @Column({ name: 'cancel_reason', type: 'text', nullable: true })

@@ -1,7 +1,7 @@
+import type { ReportWorkspace } from '@tejas96/shared/reports';
 import type { AttentionItem } from '@tejas96/shared/types';
 
 import type { MilestoneAggregateItem, ProjectTeamMember } from '../../hooks/types';
-import type { ProjectReportsData } from '../../hooks/use-project-reports';
 
 import type { ProjectSummary } from '@/lib/hooks/resources';
 import type { ProjectLedgerSummary } from '@/lib/hooks/resources/ledger';
@@ -32,6 +32,6 @@ export interface ProjectDetailData {
   attention: Panel<AttentionItem[]>;
   /** `allowed` is the `finance.view` gate. When false nothing was requested. */
   ledger: Panel<ProjectLedgerSummary> & { allowed: boolean };
-  reports: Panel<ProjectReportsData>;
+  reports: Panel<ReportWorkspace>;
   team: Panel<ProjectTeamMember[]>;
 }

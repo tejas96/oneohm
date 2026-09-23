@@ -66,6 +66,12 @@ export class CreateCustomerDto {
   @MaxLength(13)
   alternatePhone?: string;
 
+  @ApiPropertyOptional({ example: '123412341234', description: 'Aadhaar number, 12 digits' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{12}$/, { message: 'Aadhaar number must be exactly 12 digits' })
+  aadhaarNumber?: string;
+
   // ==================== Address (Billing/Mailing) ====================
   @ApiPropertyOptional({
     example: '123, MG Road, Koramangala',

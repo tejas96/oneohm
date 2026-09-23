@@ -43,6 +43,49 @@ export function registerReportHandlebarsHelpers(): void {
     }
     return options.inverse(this);
   });
+
+  const MONTH_NAMES = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  const isoParts = (value: unknown): [string, string, string] | null => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(typeof value === 'string' ? value.trim() : '');
+    return match ? [match[1]!, match[2]!, match[3]!] : null;
+  };
+  /** ISO dates print DD-MM-YYYY; legacy free-text dates print as typed. */
+  Handlebars.registerHelper('formatDate', (value: unknown) => {
+    if (isBlank(value)) return new Handlebars.SafeString('<span class="blank-line"></span>');
+    const parts = isoParts(value);
+    return parts ? `${parts[2]}-${parts[1]}-${parts[0]}` : toDisplayString(value);
+  });
+  Handlebars.registerHelper('dateDay', (value: unknown) => {
+    const parts = isoParts(value);
+    return parts ? String(Number(parts[2])) : '—';
+  });
+  Handlebars.registerHelper('dateMonthName', (value: unknown) => {
+    const parts = isoParts(value);
+    return parts ? MONTH_NAMES[Number(parts[1]) - 1] : '—';
+  });
+  Handlebars.registerHelper('dateYear', (value: unknown) => {
+    const parts = isoParts(value);
+    return parts ? parts[0] : '—';
+  });
+  Handlebars.registerHelper('formatAadhaar', (value: unknown) => {
+    const digits = typeof value === 'string' ? value.replace(/\D/g, '') : '';
+    return digits.length === 12
+      ? `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}`
+      : '—';
+  });
 }
 
 const RESERVED_MUSTACHE = new Set([
@@ -80,4 +123,28 @@ export function autoDashFieldPlaceholders(source: string): string {
     }
     return `{{dash ${token}}}`;
   });
+}
+
+/**
+ * Shared blocks any report template can use: {{> docTitle …}} and {{> signature …}}.
+ *
+ * Wrapper/element classes are prefixed `rpt-` so the shared CSS in
+ * report-print-base.css can target them without colliding with the several
+ * other report templates that already define their own `.doc-title`,
+ * `.sig-block`, `.sig-name`, etc. (see report-print-base.css for the scoped
+ * selectors).
+ */
+export function registerReportPartials(): void {
+  Handlebars.registerPartial(
+    'docTitle',
+    autoDashFieldPlaceholders(
+      `<header class="rpt-doc-head"><h1 class="rpt-doc-title">{{title}}</h1><p class="rpt-doc-subtitle">{{subtitle}}</p></header>`,
+    ),
+  );
+  Handlebars.registerPartial(
+    'signature',
+    autoDashFieldPlaceholders(
+      `<div class="rpt-sig"><div class="rpt-sig-space"></div><div class="rpt-sig-rule"></div><div class="rpt-sig-name">{{name}}</div><div class="rpt-sig-role">{{role}}</div></div>`,
+    ),
+  );
 }

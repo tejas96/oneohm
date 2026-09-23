@@ -102,36 +102,27 @@ async function mountReportHtml(html: string): Promise<{ cleanup: () => void; roo
   };
 }
 
-export async function renderReportPdfBlob(html: string): Promise<Blob> {
-  const html2pdf = (await import('html2pdf.js')).default;
-  const { cleanup, root } = await mountReportHtml(html);
-
-  try {
-    // html2pdf.js type definitions are incomplete — pagebreak is a real runtime option.
-    const blob = (await html2pdf()
-      .set(buildPdfOptions() as never)
-      .from(root)
-      .output('blob')) as Blob;
-
-    if (!(blob instanceof Blob)) {
-      throw new Error('Failed to generate report PDF');
-    }
-
-    return blob;
-  } finally {
-    cleanup();
-  }
+interface JsPdfLike {
+  getNumberOfPages(): number;
+  output(type: 'blob'): Blob;
 }
 
-export async function downloadReportPdf(html: string, filename: string): Promise<void> {
+/** The PDF exactly as it will be filed, and how many pages it came out as. */
+export async function renderReportPdf(html: string): Promise<{ blob: Blob; pages: number }> {
   const html2pdf = (await import('html2pdf.js')).default;
   const { cleanup, root } = await mountReportHtml(html);
 
   try {
-    await html2pdf()
-      .set(buildPdfOptions(filename) as never)
+    // html2pdf.js type definitions are incomplete — pagebreak and get('pdf') are real.
+    const pdf = (await (html2pdf() as any)
+      .set(buildPdfOptions() as never)
       .from(root)
-      .save();
+      .toPdf()
+      .get('pdf')) as JsPdfLike;
+
+    const blob = pdf.output('blob');
+    if (!(blob instanceof Blob)) throw new Error('Failed to generate report PDF');
+    return { blob, pages: pdf.getNumberOfPages() };
   } finally {
     cleanup();
   }

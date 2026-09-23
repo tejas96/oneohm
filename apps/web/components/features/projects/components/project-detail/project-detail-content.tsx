@@ -281,7 +281,7 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
           </Box>
 
           <Box sx={{ display: activeTab === 'reports' ? 'block' : 'none' }}>
-            <ProjectReportsTab projectId={projectId} />
+            <ProjectReportsTab key={projectId} projectId={projectId} />
           </Box>
 
           <Box sx={{ display: activeTab === 'surveys' ? 'block' : 'none' }}>

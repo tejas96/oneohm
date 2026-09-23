@@ -262,6 +262,29 @@ export class BomReadService {
       .filter((s): s is string => Boolean(s?.trim()));
   }
 
+  /** Same rows as getPanelSerials, for many projects in one query. */
+  async getPanelSerialsByProjects(projectIds: string[]): Promise<Map<string, string[]>> {
+    const byProject = new Map<string, string[]>();
+    if (projectIds.length === 0) return byProject;
+
+    const rows: Array<{ project_id: string; serial_number: string }> = await this.dataSource.query(
+      `SELECT b.project_id, s.serial_number
+         FROM bom b
+         JOIN bom_items i ON i.bom_id = b.id
+         JOIN bom_item_serials s ON s.bom_item_id = i.id
+        WHERE b.project_id = ANY($1)
+          AND TRIM(COALESCE(s.serial_number, '')) <> ''`,
+      [projectIds],
+    );
+
+    for (const row of rows) {
+      const list = byProject.get(row.project_id) ?? [];
+      list.push(row.serial_number);
+      byProject.set(row.project_id, list);
+    }
+    return byProject;
+  }
+
   /**
    * The project's BOM change log, newest first. Every mutation carries a
    * mandatory reason, so this reads as the "why" history of the bill of

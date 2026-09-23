@@ -1,8 +1,14 @@
 import { join } from 'path';
 
+import type { ReportDefinition } from '@tejas96/shared/reports';
+
 /** Resolve template assets whether running from src or dist. */
 export function resolveReportAsset(...segments: string[]): string {
   return join(__dirname, '..', ...segments);
+}
+
+export function templateFileFor(definition: ReportDefinition): string {
+  return `definitions/${definition.id}/templates/${definition.id}.hbs`;
 }
 
 export function str(value: unknown): string {

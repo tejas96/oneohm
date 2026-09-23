@@ -90,6 +90,7 @@ export function useCreateCustomer(): UseMutationResult<
         ...rest,
         phone: `+91${data.phone}`,
         alternatePhone: data.alternatePhone ? `+91${data.alternatePhone}` : undefined,
+        aadhaarNumber: data.aadhaarNumber ? data.aadhaarNumber : undefined,
         email: data.email ? data.email.trim().toLowerCase() : undefined,
         country: 'India',
         leadSource: resolvedLeadSource,

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { DocumentEntityType } from '@tejas96/shared/types';
+import { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 import { DataSource } from 'typeorm';
 
 import { CreateDocumentDto } from '../dto/create-document.dto';
@@ -76,6 +76,14 @@ export class DocumentService {
     entityIds: string[],
   ): Promise<DocumentEntity[]> {
     return this.documentRepository.findByEntityBatch(entityType, entityIds);
+  }
+
+  async findByEntitiesWithTags(
+    entityType: DocumentEntityType,
+    entityIds: string[],
+    filters: { category: DocumentCategory; tags: string[] },
+  ): Promise<DocumentEntity[]> {
+    return this.documentRepository.findByEntitiesWithTags(entityType, entityIds, filters);
   }
 
   async findById(id: string): Promise<DocumentEntity> {

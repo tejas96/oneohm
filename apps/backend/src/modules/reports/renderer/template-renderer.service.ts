@@ -6,7 +6,10 @@ import Handlebars from 'handlebars';
 import {
   autoDashFieldPlaceholders,
   registerReportHandlebarsHelpers,
+  registerReportPartials,
 } from './report-handlebars.helpers';
+import { findUndeclaredTemplateFacts } from './template-fact-guard';
+import { ConfigService } from '../../../config/config.service';
 import { resolveReportAsset } from '../utils/report.utils';
 
 function readTextFileOrThrow(fullPath: string, notFoundMessage: string): string {
@@ -42,10 +45,19 @@ export class TemplateRendererService implements OnModuleInit {
   >();
   private baseCss = '';
 
+  constructor(private readonly configService: ConfigService) {}
+
   onModuleInit(): void {
     const cssPath = resolveReportAsset('renderer', 'assets', 'base-report.css');
     this.baseCss = readTextFileOrEmpty(cssPath);
     registerReportHandlebarsHelpers();
+    registerReportPartials();
+    if (this.configService.isDevelopment) {
+      const problems = findUndeclaredTemplateFacts();
+      if (problems.length > 0) {
+        throw new Error(`Report templates print undeclared facts:\n${problems.join('\n')}`);
+      }
+    }
   }
 
   render(templateFile: string, viewModel: Record<string, string>): string {

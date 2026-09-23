@@ -71,7 +71,7 @@ export class CustomerController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.create(createDto, currentUser.id);
-    return toDto(CustomerResponseDto, customer);
+    return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
 
   /**
@@ -253,7 +253,7 @@ export class CustomerController {
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.findById(id);
-    return toDto(CustomerResponseDto, customer);
+    return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
 
   /**
@@ -277,7 +277,7 @@ export class CustomerController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.update(id, updateDto, currentUser.id);
-    return toDto(CustomerResponseDto, customer);
+    return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
 
   /**
@@ -295,7 +295,7 @@ export class CustomerController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.updateStatus(id, statusDto.status, currentUser.id);
-    return toDto(CustomerResponseDto, customer);
+    return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
 
   /**
@@ -330,7 +330,7 @@ export class CustomerController {
       assigneeDto.assigneeId,
       currentUser.id,
     );
-    return toDto(CustomerResponseDto, customer);
+    return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
 
   /**
@@ -371,6 +371,6 @@ export class CustomerController {
       dto.lossReason,
       currentUser.id,
     );
-    return toDto(CustomerResponseDto, customer);
+    return toDto(CustomerResponseDto, customer, { groups: ['detail'] });
   }
 }

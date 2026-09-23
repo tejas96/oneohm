@@ -151,6 +151,11 @@ function ProfileCard({ customer }: { customer: Customer }): JSX.Element {
         fields={[
           { label: 'Phone', value: customer.phone || '—', mono: true },
           { label: 'Alternate phone', value: customer.alternatePhone || '—', mono: true },
+          {
+            label: 'Aadhaar',
+            value: customer.aadhaarNumber ? `XXXX XXXX ${customer.aadhaarNumber.slice(-4)}` : '—',
+            mono: true,
+          },
           { label: 'Email', value: customer.email || '—', wide: true },
           { label: 'Billing address', value: address, wide: true },
           {

@@ -155,6 +155,16 @@ export class CustomerResponseDto {
   @Expose()
   alternatePhone?: string;
 
+  /**
+   * Single-record reads/writes only (get by id, create, update, ...). Stripped
+   * from the paginated list — see `groups: ['detail']` at the `toDto` call
+   * sites in `CustomerController` vs. the group-less `toPaginatedResponse`
+   * call in `findAll`.
+   */
+  @ApiPropertyOptional()
+  @Expose({ groups: ['detail'] })
+  aadhaarNumber?: string;
+
   // ==================== Address (Billing/Mailing) ====================
   @ApiPropertyOptional()
   @Expose()

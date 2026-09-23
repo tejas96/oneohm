@@ -68,6 +68,7 @@ const ONBOARDING_STEPS: OnboardingStepConfig[] = [
       'customer.lastName',
       'customer.phone',
       'customer.alternatePhone',
+      'customer.aadhaarNumber',
       'customer.email',
       'customer.leadSource',
       'customer.leadSourceOther',

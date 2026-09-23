@@ -1,103 +1,54 @@
-import { DocumentEntityType } from '@tejas96/shared/types';
+import type { ReportRenderResult, ReportWorkspace } from '@tejas96/shared/reports';
 
 import apiClient from './client';
-import type { DocumentRecord } from './documents';
 
-export interface ReportContextPayload {
-  entityType: DocumentEntityType;
-  entityId: string;
-}
-
-export interface ReportInitializeResponse {
-  fields: Record<string, string>;
-  html: string;
-  savedDocumentId?: string;
-}
-
-export interface ReportPreviewResponse {
-  html: string;
-}
-
-export interface ReportSaveFilePayload {
+export interface ReportFileRef {
   fileKey: string;
   publicUrl: string;
   fileSizeBytes: number;
 }
 
-export interface ReportSaveResponse {
-  documentId: string;
-  downloadUrl: string;
+export async function getReportWorkspace(projectId: string): Promise<ReportWorkspace> {
+  const { data } = await apiClient.get<ReportWorkspace>(`/reports/projects/${projectId}`);
+  return data;
 }
 
-export async function initializeReport(payload: {
-  reportId: string;
-  context: ReportContextPayload;
-  ignoreSavedDraft?: boolean;
-}): Promise<ReportInitializeResponse> {
-  const { data } = await apiClient.post<ReportInitializeResponse>(
-    '/reports/initialize',
-    payload,
-    {},
+/** `null` clears a fact. */
+export async function updateReportFacts(
+  projectId: string,
+  facts: Record<string, string | null>,
+): Promise<ReportWorkspace> {
+  const { data } = await apiClient.patch<ReportWorkspace>(`/reports/projects/${projectId}/facts`, {
+    facts,
+  });
+  return data;
+}
+
+export async function renderReport(
+  projectId: string,
+  reportId: string,
+): Promise<ReportRenderResult> {
+  const { data } = await apiClient.post<ReportRenderResult>(
+    `/reports/projects/${projectId}/render`,
+    { reportId },
   );
   return data;
 }
 
-export async function previewReport(
-  payload: {
-    reportId: string;
-    context: ReportContextPayload;
-    fields: Record<string, string>;
-  },
-  signal?: AbortSignal,
-): Promise<ReportPreviewResponse> {
-  const { data } = await apiClient.post<ReportPreviewResponse>('/reports/preview', payload, {
-    signal,
-  });
+export async function fileReport(
+  projectId: string,
+  reportId: string,
+  file: ReportFileRef,
+  factsHash: string,
+): Promise<{ documentId: string; fileUrl: string }> {
+  const { data } = await apiClient.post<{ documentId: string; fileUrl: string }>(
+    `/reports/projects/${projectId}/file`,
+    { reportId, file, factsHash },
+  );
   return data;
 }
 
-export async function saveReport(payload: {
-  reportId: string;
-  context: ReportContextPayload;
-  fields: Record<string, string>;
-  file: ReportSaveFilePayload;
-}): Promise<ReportSaveResponse> {
-  const { data } = await apiClient.post<ReportSaveResponse>('/reports/save', payload, {
-    timeout: 60_000,
-  });
-  return data;
-}
-
-interface ReportCompletenessField {
-  key: string;
-  label: string;
-}
-
-export interface ReportCompletenessItem {
-  reportId: string;
-  reportName: string;
-  totalRequired: number;
-  filledRequired: number;
-  missingRequired: number;
-  missingFields: ReportCompletenessField[];
-  isComplete: boolean;
-  isSaved: boolean;
-  savedDocumentId?: string;
-}
-
-export interface ReportsPendingSummary {
-  totalReports: number;
-  savedReports: number;
-  incompleteReports: number;
-  unsavedReports: number;
-  pendingCount: number;
-  reports: ReportCompletenessItem[];
-  saved: DocumentRecord[];
-}
-
-export async function getReportCompleteness(projectId: string): Promise<ReportsPendingSummary> {
-  const { data } = await apiClient.get<ReportsPendingSummary>('/reports/completeness', {
-    params: { projectId },
-  });
+export async function getReportsPending(projectIds: string[]): Promise<Record<string, number>> {
+  const { data } = await apiClient.post<Record<string, number>>('/reports/pending', { projectIds });
   return data;
 }

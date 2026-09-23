@@ -24,11 +24,21 @@ import { ClassConstructor, plainToInstance } from 'class-transformer';
  * Uses excludeExtraneousValues to only include @Expose() properties.
  * JSONB fields typed as interfaces need @Transform on the DTO property
  * to preserve their nested structure (see QuoteConfigurationResponseDto).
+ *
+ * `options.groups` is forwarded to class-transformer: a property marked
+ * `@Expose({ groups: [...] })` is only included when one of its groups is
+ * passed here (e.g. a field shown on the single-record read but stripped
+ * from the list read — see `CustomerResponseDto.aadhaarNumber`).
  */
-export function toDto<T, V>(DtoClass: ClassConstructor<T>, entity: V): T {
+export function toDto<T, V>(
+  DtoClass: ClassConstructor<T>,
+  entity: V,
+  options?: { groups?: string[] },
+): T {
   return plainToInstance(DtoClass, entity, {
     excludeExtraneousValues: true,
     enableImplicitConversion: true,
+    groups: options?.groups,
   });
 }
 
