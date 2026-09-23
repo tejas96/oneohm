@@ -31,7 +31,7 @@ function todayIso(): string {
 
 export function ReportFactsForm({ workspace, reportId, disabled }: ReportFactsFormProps) {
   const update = useUpdateReportFacts(workspace.projectId);
-  const canEdit = useCan().can('projects.edit');
+  const canEdit = useCan().can('projects.edit') && !workspace.locked;
 
   const reportNames = useMemo(
     () => new Map(workspace.reports.map((r) => [r.id, r.shortName])),

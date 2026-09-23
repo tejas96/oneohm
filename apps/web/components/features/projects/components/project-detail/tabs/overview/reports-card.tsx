@@ -1,5 +1,6 @@
 'use client';
 
+import { Alert } from '@mui/material';
 import type { ReportWorkspace } from '@tejas96/shared/reports';
 import { FileCheck2 } from 'lucide-react';
 import NextLink from 'next/link';
@@ -26,7 +27,8 @@ export function ReportsCard({
   className,
 }: ReportsCardProps): React.JSX.Element {
   const all = reports.data?.reports ?? [];
-  const outstanding = all.filter((r) => r.status !== 'filed');
+  const locked = reports.data?.locked ?? false;
+  const outstanding = locked ? [] : all.filter((r) => r.status !== 'filed');
   const filedCount = all.length - outstanding.length;
   const donePct = all.length > 0 ? (filedCount / all.length) * 100 : 0;
   const tabHref = `${projectPath}?tab=reports`;
@@ -34,7 +36,7 @@ export function ReportsCard({
   return (
     <DetailCard
       label="Reports"
-      aside={reports.data ? `${filedCount} of ${all.length} filed` : undefined}
+      aside={reports.data && !locked ? `${filedCount} of ${all.length} filed` : undefined}
       action={<CardLink href={tabHref}>All reports</CardLink>}
       isError={reports.isError}
       onRetry={reports.refetch}
@@ -47,6 +49,10 @@ export function ReportsCard({
             <Skeleton key={index} className="h-9 rounded-xl" />
           ))}
         </div>
+      ) : locked ? (
+        <Alert severity="info" sx={{ py: 0 }}>
+          This project is cancelled. Its reports are read-only.
+        </Alert>
       ) : (
         <>
           <div className="pb-3">

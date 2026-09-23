@@ -16,6 +16,8 @@ interface ReportsToolbarProps {
   generating: boolean;
   runningName: string | null;
   canGenerate: boolean;
+  /** Cancelled projects have nothing left to file. */
+  hideGenerate?: boolean;
 }
 
 export function ReportsToolbar({
@@ -28,6 +30,7 @@ export function ReportsToolbar({
   generating,
   runningName,
   canGenerate,
+  hideGenerate,
 }: ReportsToolbarProps) {
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
@@ -55,24 +58,26 @@ export function ReportsToolbar({
       >
         {mode === 'edit' ? 'Preview' : 'Edit details'}
       </Button>
-      <Button
-        variant="contained"
-        startIcon={
-          generating ? (
-            <CircularProgress size={14} color="inherit" />
-          ) : (
-            <FileDown className="size-4" />
-          )
-        }
-        onClick={onGenerate}
-        disabled={generating || !canGenerate}
-      >
-        {generating
-          ? `Filing ${runningName ?? ''}…`
-          : picked === ALL_REPORTS
-            ? 'Generate all'
-            : 'Generate'}
-      </Button>
+      {!hideGenerate && (
+        <Button
+          variant="contained"
+          startIcon={
+            generating ? (
+              <CircularProgress size={14} color="inherit" />
+            ) : (
+              <FileDown className="size-4" />
+            )
+          }
+          onClick={onGenerate}
+          disabled={generating || !canGenerate}
+        >
+          {generating
+            ? `Filing ${runningName ?? ''}…`
+            : picked === ALL_REPORTS
+              ? 'Generate all'
+              : 'Generate'}
+        </Button>
+      )}
     </Box>
   );
 }

@@ -63,12 +63,13 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
   );
 
   const pendingCount = workspace?.pendingCount ?? 0;
+  const locked = workspace?.locked ?? false;
 
   return (
     <DetailCard
       label="Reports"
       action={
-        workspace ? (
+        workspace && !locked ? (
           pendingCount > 0 ? (
             <TonePill label={`${pendingCount} still to file`} tone="warning" dot />
           ) : (
@@ -88,6 +89,12 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
         </div>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {locked && (
+            <Alert severity="info" sx={{ py: 0 }}>
+              This project is cancelled. Its reports are read-only.
+            </Alert>
+          )}
+
           <ReportsToolbar
             reports={reports}
             picked={picked}
@@ -97,7 +104,8 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
             onGenerate={runGenerate.onGatedClick}
             generating={runningId !== null}
             runningName={reports.find((r) => r.id === runningId)?.name ?? null}
-            canGenerate={targets.length > 0 && !savingFacts}
+            canGenerate={!locked && targets.length > 0 && !savingFacts}
+            hideGenerate={locked}
           />
 
           <ReportStatusCards

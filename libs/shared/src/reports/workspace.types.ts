@@ -40,6 +40,8 @@ export interface ReportWorkspace {
   facts: WorkspaceFact[];
   reports: WorkspaceReport[];
   pendingCount: number;
+  /** True when the project is cancelled: reports are read-only, facts cannot be edited or filed. */
+  locked: boolean;
 }
 
 export interface ReportRenderResult {

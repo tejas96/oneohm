@@ -20,7 +20,7 @@ import {
   type ReportStatusResult,
   type ReportWorkspace,
 } from '@tejas96/shared/reports';
-import { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
+import { DocumentCategory, DocumentEntityType, ProjectStatus } from '@tejas96/shared/types';
 
 import { BomReadService } from '../../bom/services/bom-read.service';
 import type { DocumentEntity } from '../../documents/entities/document.entity';
@@ -76,6 +76,7 @@ export class ReportWorkspaceService {
 
   async getWorkspace(projectId: string): Promise<ReportWorkspace> {
     const { project, facts } = await this.load(projectId);
+    const locked = project.status === ProjectStatus.CANCELLED;
     const docs = await this.documentService.findByEntity(DocumentEntityType.PROJECT, projectId);
     const filedByTag = latestFiledByTag(docs);
 
@@ -127,12 +128,18 @@ export class ReportWorkspaceService {
           usedBy: usedBy.get(fact.key) ?? [],
         })),
       reports,
-      pendingCount: reports.filter((report) => isPendingStatus(report.status)).length,
+      pendingCount: locked ? 0 : reports.filter((report) => isPendingStatus(report.status)).length,
+      locked,
     };
   }
 
   async updateFacts(projectId: string, patch: Record<string, unknown>): Promise<ReportWorkspace> {
     const project = await this.projectService.findById(projectId);
+    if (project.status === ProjectStatus.CANCELLED) {
+      throw new BadRequestException(
+        'This project is cancelled. Its reports can no longer be changed.',
+      );
+    }
     const { next, errors } = applyFactPatch(project.reportFacts ?? {}, patch);
     if (Object.keys(errors).length > 0) {
       throw new BadRequestException({ message: Object.values(errors).join('; '), errors });
@@ -164,7 +171,12 @@ export class ReportWorkspaceService {
     userId: string,
   ): Promise<{ documentId: string; fileUrl: string }> {
     const definition = this.definition(reportId);
-    const { facts } = await this.load(projectId);
+    const { project, facts } = await this.load(projectId);
+    if (project.status === ProjectStatus.CANCELLED) {
+      throw new BadRequestException(
+        'This project is cancelled. Its reports can no longer be changed.',
+      );
+    }
     const factsHash = hashReportFacts(definition, facts);
     if (factsHash !== renderedFactsHash) {
       throw new ConflictException(
@@ -223,6 +235,10 @@ export class ReportWorkspaceService {
 
     const counts: Record<string, number> = {};
     for (const project of projects) {
+      if (project.status === ProjectStatus.CANCELLED) {
+        counts[project.id] = 0;
+        continue;
+      }
       const facts = resolveFacts({ project, panelSerials: serials.get(project.id) ?? [] });
       const filedByTag = latestFiledByTag(docsByProject.get(project.id) ?? []);
       counts[project.id] = REPORT_DEFINITIONS.filter((definition) =>
