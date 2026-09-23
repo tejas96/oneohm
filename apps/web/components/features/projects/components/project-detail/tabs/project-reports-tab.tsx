@@ -1,127 +1,134 @@
 'use client';
 
-import { REPORT_CATALOG } from '@tejas96/shared/reports';
+import { Alert, Box } from '@mui/material';
 import { useMemo, useState } from 'react';
 
 import { useProjectReports } from '../../../hooks';
-import { ColumnHeader, DetailCard, Mono, ROW_BLEED, TonePill, Track } from '../primitives';
-import { ReportEditorDrawer } from '../reports/components/report-editor-drawer';
-import { ReportRow } from '../reports/components/report-row';
+import { DetailCard, TonePill } from '../primitives';
+import { ReportFactsForm } from '../reports/components/report-facts-form';
+import { ReportPreviewPanel } from '../reports/components/report-preview-panel';
+import { ReportStatusCards } from '../reports/components/report-status-cards';
+import { ALL_REPORTS, ReportsToolbar } from '../reports/components/reports-toolbar';
+import { useGenerateReports } from '../reports/hooks/use-generate-reports';
+import { useReportRender } from '../reports/hooks/use-report-render';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import type { DocumentRecord } from '@/lib/api/documents';
-import type { ReportCompletenessItem } from '@/lib/api/reports';
-import { cn } from '@/lib/utils';
+import { useGatedAction } from '@/lib/rbac';
 
 interface ProjectReportsTabProps {
   projectId: string;
 }
 
 /**
- * The DISCOM paperwork.
- *
- * This drawer is the only place in the product that holds the sanction number,
- * the ALMM model number, earthing and lightning-arrester details, the CMC
- * period, the DCR application number and the module serials. Without a saved
- * report there is no submission, which is why the tab leads with how many are
- * still outstanding rather than with the list.
+ * The DISCOM paperwork. Every fact is typed once here and printed by every
+ * report that needs it; facts that live on the customer, property, quote or
+ * BOM are shown read-only with a link to where they are changed.
  */
 export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.JSX.Element {
-  const { data: reportsData, isLoading, isError, refetch } = useProjectReports(projectId);
-  const [activeReportId, setActiveReportId] = useState<string | null>(null);
+  const workspaceQuery = useProjectReports(projectId);
+  const workspace = workspaceQuery.data;
+  const [picked, setPicked] = useState<string>(ALL_REPORTS);
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const { generate, runningId, outcomes, clearOutcomes } = useGenerateReports(projectId);
 
-  const savedByTag = useMemo(() => {
-    const map = new Map<string, DocumentRecord>();
-    for (const doc of reportsData?.saved ?? []) {
-      if (!map.has(doc.tag)) map.set(doc.tag, doc);
-    }
-    return map;
-  }, [reportsData?.saved]);
+  const reports = workspace?.reports ?? [];
+  const pickedId = picked === ALL_REPORTS ? null : picked;
 
-  const completenessMap = useMemo(() => {
-    const map = new Map<string, ReportCompletenessItem>();
-    for (const r of reportsData?.reports ?? []) map.set(r.reportId, r);
-    return map;
-  }, [reportsData?.reports]);
+  const previewId =
+    pickedId ?? reports.find((r) => r.status !== 'filed')?.id ?? reports[0]?.id ?? null;
+  const previewReport = reports.find((r) => r.id === previewId);
+  const render = useReportRender(
+    projectId,
+    mode === 'preview' ? previewId : null,
+    workspaceQuery.dataUpdatedAt,
+  );
 
-  const totalCount = reportsData?.totalCount ?? REPORT_CATALOG.length;
-  const completedCount = reportsData?.reports.filter((r) => r.isSaved && r.isComplete).length ?? 0;
-  const pendingCount = reportsData?.pendingCount ?? 0;
-  const donePct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+  const targets = useMemo(
+    () => (pickedId ? reports.filter((r) => r.id === pickedId) : reports.filter((r) => r.status !== 'filed')),
+    [pickedId, reports],
+  );
+
+  const runGenerate = useGatedAction(
+    'projects.edit',
+    () => {
+      clearOutcomes();
+      void generate(targets);
+    },
+    'Generate reports',
+  );
+
+  const pendingCount = workspace?.pendingCount ?? 0;
 
   return (
-    <>
-      <DetailCard
-        label="Reports"
-        aside={reportsData ? `${completedCount} of ${totalCount} complete` : undefined}
-        action={
+    <DetailCard
+      label="Reports"
+      aside={workspace ? `${reports.length - pendingCount} of ${reports.length} filed` : undefined}
+      action={
+        workspace ? (
           pendingCount > 0 ? (
-            <TonePill
-              label={`${pendingCount} still to file`}
-              tone={completedCount === 0 ? 'danger' : 'warning'}
-              dot
-            />
-          ) : reportsData ? (
+            <TonePill label={`${pendingCount} still to file`} tone="warning" dot />
+          ) : (
             <TonePill label="All filed" tone="success" dot />
-          ) : null
-        }
-        isError={isError}
-        onRetry={() => {
-          void refetch();
-        }}
-        errorHeight={200}
-      >
-        {isLoading ? (
-          <div className="flex flex-col gap-2">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} className="h-14 rounded-xl" />
-            ))}
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center gap-3 pb-4">
-              <Track pct={donePct} tone={donePct >= 100 ? 'success' : 'accent'} height={6} />
-              <Mono className="shrink-0 text-[12px] font-medium text-foreground-secondary">
-                {Math.round(donePct)}%
-              </Mono>
-            </div>
+          )
+        ) : null
+      }
+      isError={workspaceQuery.isError}
+      onRetry={() => void workspaceQuery.refetch()}
+      errorHeight={200}
+    >
+      {workspaceQuery.isLoading || !workspace ? (
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-9 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
+        </div>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <ReportsToolbar
+            reports={reports}
+            picked={picked}
+            onPick={setPicked}
+            mode={mode}
+            onToggleMode={() => setMode((m) => (m === 'edit' ? 'preview' : 'edit'))}
+            onGenerate={runGenerate.onGatedClick}
+            generating={runningId !== null}
+            runningName={reports.find((r) => r.id === runningId)?.name ?? null}
+            canGenerate={targets.length > 0}
+          />
 
-            <div className={cn('hidden items-center gap-3 pb-1.5 sm:flex', ROW_BLEED)} aria-hidden>
-              <ColumnHeader className="w-[92px] text-center">State</ColumnHeader>
-              <ColumnHeader className="flex-1">Report</ColumnHeader>
-              <ColumnHeader className="w-[104px] text-right">Last saved</ColumnHeader>
-              <span className="w-7 shrink-0" />
-            </div>
+          <ReportStatusCards
+            reports={reports}
+            selectedId={pickedId}
+            onSelect={(id) => setPicked((current) => (current === id ? ALL_REPORTS : id))}
+          />
 
-            {REPORT_CATALOG.map((schema) => {
-              const completeness = completenessMap.get(schema.id);
-              return (
-                <ReportRow
-                  key={schema.id}
-                  reportId={schema.id}
-                  savedDoc={savedByTag.get(schema.documentTag) ?? null}
-                  isComplete={completeness?.isComplete}
-                  missingRequired={completeness?.missingRequired}
-                  onOpen={setActiveReportId}
-                  variant="full"
-                />
-              );
-            })}
+          {outcomes.length > 0 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {outcomes.map((o) => (
+                <Alert key={o.reportId} severity={o.ok ? 'success' : 'warning'} sx={{ py: 0 }}>
+                  <strong>{o.name}</strong> — {o.message}
+                </Alert>
+              ))}
+            </Box>
+          )}
 
-            <p className="pt-4 text-[11.5px] leading-relaxed text-foreground-tertiary">
-              Saving a report files its PDF against this project and replaces the previous copy.
-              Download the filed version first if you need to keep it.
-            </p>
-          </>
-        )}
-      </DetailCard>
-
-      <ReportEditorDrawer
-        reportId={activeReportId}
-        projectId={projectId}
-        open={!!activeReportId}
-        onClose={() => setActiveReportId(null)}
-      />
-    </>
+          {mode === 'edit' ? (
+            <ReportFactsForm workspace={workspace} reportId={pickedId} disabled={runningId !== null} />
+          ) : (
+            <Box sx={{ height: 'min(80vh, 1200px)', display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {previewReport?.pages && (
+                <p className="text-[12px] text-foreground-secondary">
+                  {previewReport.name} must print on exactly {previewReport.pages} pages. Generate
+                  checks this and files nothing if it does not.
+                </p>
+              )}
+              <Box sx={{ flex: 1, minHeight: 0 }}>
+                <ReportPreviewPanel html={render.data?.html ?? ''} loading={render.isFetching} />
+              </Box>
+            </Box>
+          )}
+        </Box>
+      )}
+    </DetailCard>
   );
 }
