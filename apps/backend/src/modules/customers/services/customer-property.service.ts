@@ -572,6 +572,24 @@ export class CustomerPropertyService {
         throw new NotFoundException(`Property with ID '${id}' not found`);
       }
 
+      // Checked against the row as it will be saved (locked row + this update),
+      // before the write: a failing check must save nothing.
+      if (hasUtilityFieldUpdate(updateDto)) {
+        assertUtilityDetailsComplete({
+          consumerName:
+            updateDto.consumerName !== undefined ? updateDto.consumerName : locked.consumerName,
+          consumerNumber:
+            updateDto.consumerNumber !== undefined
+              ? updateDto.consumerNumber
+              : locked.consumerNumber,
+          discomId: updateDto.discomId !== undefined ? updateDto.discomId : locked.discomId,
+          connectionType:
+            updateDto.connectionType !== undefined
+              ? updateDto.connectionType
+              : locked.connectionType,
+        });
+      }
+
       // The loan sync lands with the save or not at all: a site that says "no loan"
       // while its project still waits on loan tasks is the state this exists to end.
       const loanChanged =
@@ -608,10 +626,6 @@ export class CustomerPropertyService {
         CONSUMER_EVENTS.PROJECT_COMPLETED,
         new ProjectCompletedEvent(taskRuleSync.projectId, id, taskRuleSync.projectName),
       );
-    }
-
-    if (hasUtilityFieldUpdate(updateDto)) {
-      assertUtilityDetailsComplete(updated);
     }
 
     this.logger.log(`Property updated successfully: ${id}`);
