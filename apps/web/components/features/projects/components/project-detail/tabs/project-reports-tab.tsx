@@ -117,7 +117,9 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
       ? `Filing ${runningReport?.shortName ?? runningReport?.name ?? ''} (${runningIndex} of ${runningTotal})…`
       : pickedId
         ? `Generate ${reports.find((r) => r.id === pickedId)?.shortName ?? 'report'}`
-        : `Generate ${sendableTargets.length} ready report${sendableTargets.length === 1 ? '' : 's'}`;
+        : sendableTargets.length === 0
+          ? 'Generate all'
+          : `Generate ${sendableTargets.length} ready report${sendableTargets.length === 1 ? '' : 's'}`;
 
   const filedCount = outcomes.filter((o) => o.ok).length;
   const failedOutcomes = outcomes.filter((o) => !o.ok);
