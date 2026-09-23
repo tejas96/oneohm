@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DocumentEntityType } from '@tejas96/shared/types';
+import { DocumentCategory, DocumentEntityType } from '@tejas96/shared/types';
 import { In, IsNull, Repository } from 'typeorm';
 
 import { DocumentEntity } from '../entities/document.entity';
@@ -58,6 +58,25 @@ export class DocumentRepository {
     return this.repository.find({
       where: { entityType, entityId: In(entityIds), deletedAt: IsNull() },
       relations: ['uploadedByUser'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /** Lean batch read for status checks: no uploader join. */
+  async findByEntitiesWithTags(
+    entityType: DocumentEntityType,
+    entityIds: string[],
+    filters: { category: DocumentCategory; tags: string[] },
+  ): Promise<DocumentEntity[]> {
+    if (entityIds.length === 0 || filters.tags.length === 0) return [];
+    return this.repository.find({
+      where: {
+        entityType,
+        entityId: In(entityIds),
+        category: filters.category,
+        tag: In(filters.tags),
+        deletedAt: IsNull(),
+      },
       order: { createdAt: 'DESC' },
     });
   }

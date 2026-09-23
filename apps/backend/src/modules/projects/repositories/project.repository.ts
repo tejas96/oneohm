@@ -129,6 +129,17 @@ export class ProjectRepository {
     return project;
   }
 
+  /** Sets and clears report facts in one statement, so concurrent saves of different keys both land. */
+  async mergeReportFacts(id: string, set: Record<string, string>, clear: string[]): Promise<void> {
+    await this.getRepo()
+      .createQueryBuilder()
+      .update(ProjectEntity)
+      .set({ reportFacts: () => '(report_facts || CAST(:set AS jsonb)) - CAST(:clear AS text[])' })
+      .setParameters({ set: JSON.stringify(set), clear })
+      .where('id = :id', { id })
+      .execute();
+  }
+
   /** The report resolver's inputs for many projects in one query. */
   async findByIdsForReports(ids: string[]): Promise<ProjectEntity[]> {
     if (ids.length === 0) return [];
