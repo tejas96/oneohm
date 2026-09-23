@@ -30,7 +30,14 @@ import {
   PROJECT_TYPE_LABELS,
   PROJECT_TYPE_OPTIONS,
 } from '../constants';
-import { type ProjectFilters, type ProjectListItem, useEmployees, useProjects } from '../hooks';
+import {
+  type ProjectFilters,
+  type ProjectListItem,
+  useEmployees,
+  useProjects,
+  useReportsPending,
+} from '../hooks';
+import { ReportsPendingChip } from './reports-pending-chip';
 import { TeamAvatarGroup } from './team-avatar-group';
 
 import { ActiveTicketsChip } from '@/components/features/service-tickets';
@@ -340,6 +347,7 @@ const CRM_COLUMNS: CrmColumn<ProjectRow>[] = [
             />
             {/* Same component the customers list renders — do not restyle here. */}
             <ActiveTicketsChip count={project.activeTicketCount} />
+            <ReportsPendingChip count={(row.reportsPending as number | undefined) ?? 0} />
           </Stack>
         </Box>
       );
@@ -839,6 +847,24 @@ export function ProjectListPage(): JSX.Element {
     [data?.data],
   );
 
+  // Paperwork is owed once work has started; planning, on-hold and cancelled
+  // projects would only add noise to a badge people are meant to act on.
+  const reportProjectIds = useMemo(
+    () =>
+      tableRows
+        .filter((row) => row.status === ProjectStatus.ACTIVE || row.status === ProjectStatus.COMPLETED)
+        .map((row) => row.id),
+    [tableRows],
+  );
+  const { data: reportsPending } = useReportsPending(reportProjectIds);
+  const rowsWithReports = useMemo<ProjectRow[]>(
+    () =>
+      reportsPending
+        ? tableRows.map((row) => ({ ...row, reportsPending: reportsPending[row.id] ?? 0 }))
+        : tableRows,
+    [tableRows, reportsPending],
+  );
+
   const getRowId = useCallback((row: ProjectRow) => row.id, []);
 
   /**
@@ -1078,7 +1104,7 @@ export function ProjectListPage(): JSX.Element {
       {/* ── Table ── */}
       <CrmTable<ProjectRow>
         columns={CRM_COLUMNS}
-        rows={tableRows}
+        rows={rowsWithReports}
         getRowId={getRowId}
         loading={isLoading}
         refetching={isFetching && !isLoading}
