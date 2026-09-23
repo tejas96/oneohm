@@ -231,6 +231,17 @@ Replaces the drawer. Layout as approved in the chat mockup:
      lock icon; the tooltip says where the value comes from.
    - Without `projects.edit`, or on a cancelled project, every field is
      read-only; chips and tooltips stay.
+   - **Utility details**: the site's DISCOM (the site form's picker: active
+     DISCOMs plus the site's current one) and connection type are form-only
+     facts (`formOnly` in the catalog: printed by no report, chip "Needed to
+     save the site"), placed with the consumer name and number. The site
+     saves a change to any of the four only when all four are complete, so
+     while any is missing the tab holds a changed value (its field says
+     "Set the DISCOM too. The site's utility details save together.") and
+     sends the held values in one request once the last is set. A consumer
+     name shown from the customer-name fallback is sent with them. The
+     missing ones show a "Needed" chip while any of the four is being edited
+     or shows an error.
    - The site address prints as one composed fact; the form shows its parts
      (address line, city, state, PIN code), whose chips count the reports
      that print the composed address. Installed capacity shows once, in kW;
