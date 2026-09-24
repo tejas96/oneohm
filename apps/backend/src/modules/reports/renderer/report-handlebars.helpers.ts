@@ -144,7 +144,7 @@ export function registerReportPartials(): void {
   Handlebars.registerPartial(
     'signature',
     autoDashFieldPlaceholders(
-      `<div class="rpt-sig"><div class="rpt-sig-space"></div><div class="rpt-sig-rule"></div><div class="rpt-sig-name">{{name}}</div><div class="rpt-sig-role">{{role}}</div></div>`,
+      `<div class="rpt-sig"><div class="rpt-sig-space"></div><div class="rpt-sig-name">{{name}}</div><div class="rpt-sig-rule"></div><div class="rpt-sig-role">{{role}}</div></div>`,
     ),
   );
 }
