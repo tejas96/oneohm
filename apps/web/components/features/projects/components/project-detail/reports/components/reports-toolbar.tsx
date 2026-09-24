@@ -14,7 +14,8 @@ interface ReportsToolbarProps {
   onToggleMode: () => void;
   onGenerate: () => void;
   generating: boolean;
-  runningName: string | null;
+  /** What the Generate button reads, idle or running — computed by the tab, which knows the pick and progress. */
+  generateLabel: string;
   canGenerate: boolean;
   /** Cancelled projects have nothing left to file. */
   hideGenerate?: boolean;
@@ -30,7 +31,7 @@ export function ReportsToolbar({
   onToggleMode,
   onGenerate,
   generating,
-  runningName,
+  generateLabel,
   canGenerate,
   hideGenerate,
   blockedReason,
@@ -81,11 +82,7 @@ export function ReportsToolbar({
           disabled={generating || !canGenerate}
           sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
         >
-          {generating
-            ? `Filing ${runningName ?? ''}…`
-            : picked === ALL_REPORTS
-              ? 'Generate all'
-              : 'Generate'}
+          {generateLabel}
         </Button>
       )}
     </Box>

@@ -63,29 +63,33 @@ async function generateOne(projectId: string, report: WorkspaceReport): Promise<
 /**
  * Generates one after another: html2pdf mounts a hidden frame per run and
  * parallel runs fight over fonts and layout. A failure is recorded and the
- * rest still run; a report with missing facts is skipped by name.
+ * rest still run. A report with missing facts is never sent — it is reported
+ * once, up front, as `skipped`.
  */
 export function useGenerateReports(projectId: string) {
   const queryClient = useQueryClient();
   const [runningId, setRunningId] = useState<string | null>(null);
+  const [runningIndex, setRunningIndex] = useState(0);
+  const [runningTotal, setRunningTotal] = useState(0);
   const [outcomes, setOutcomes] = useState<GenerateOutcome[]>([]);
+  const [skipped, setSkipped] = useState<WorkspaceReport[]>([]);
+
+  const clearOutcomes = useCallback(() => {
+    setOutcomes([]);
+    setSkipped([]);
+  }, []);
 
   const generate = useCallback(
     async (reports: WorkspaceReport[]): Promise<GenerateOutcome[]> => {
-      const results: GenerateOutcome[] = [];
+      const sendable = reports.filter((r) => r.status !== 'missing');
       setOutcomes([]);
+      setSkipped(reports.filter((r) => r.status === 'missing'));
+      setRunningTotal(sendable.length);
 
-      for (const report of reports) {
-        if (report.status === 'missing') {
-          results.push({
-            reportId: report.id,
-            name: report.name,
-            ok: false,
-            message: `Skipped — missing ${report.missing.map((m) => m.label).join(', ')}`,
-          });
-          continue;
-        }
+      const results: GenerateOutcome[] = [];
+      for (const [i, report] of sendable.entries()) {
         setRunningId(report.id);
+        setRunningIndex(i + 1);
         try {
           results.push(await generateOne(projectId, report));
         } catch (err) {
@@ -101,6 +105,8 @@ export function useGenerateReports(projectId: string) {
       }
 
       setRunningId(null);
+      setRunningIndex(0);
+      setRunningTotal(0);
       setOutcomes(results);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: projectReportKeys.all() }),
@@ -111,5 +117,5 @@ export function useGenerateReports(projectId: string) {
     [projectId, queryClient],
   );
 
-  return { generate, runningId, outcomes, clearOutcomes: () => setOutcomes([]) };
+  return { generate, runningId, runningIndex, runningTotal, outcomes, skipped, clearOutcomes };
 }
