@@ -113,7 +113,7 @@ export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
   shortName: 'Annexure A',
   description: 'MAHAVITARAN commissioning report for grid-connected solar PV plant.',
   documentTag: DocumentTag.ANNEXURE_PROFORMA_A,
-  templateVersion: 4,
+  templateVersion: 5,
   facts: [
     req('consumer_name'),
     req('consumer_number'),
