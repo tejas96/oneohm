@@ -7,6 +7,7 @@ import {
   type StoredChangeRequest,
   PropertyStatus,
   PropertyType,
+  ReArrangementType,
   type ShadingAnalysis,
   SiteStatus,
   type SurveyData,
@@ -111,6 +112,14 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ name: 'connection_type', type: 'varchar', length: 20, nullable: true })
   connectionType?: ConnectionType;
 
+  @Column({
+    name: 're_arrangement_type',
+    type: 'varchar',
+    length: 30,
+    default: ReArrangementType.NET_METERING,
+  })
+  reArrangementType!: ReArrangementType;
+
   @Column({ name: 'sanctioned_load', type: 'decimal', precision: 10, scale: 2, nullable: true })
   sanctionedLoad?: number;
 
@@ -201,6 +210,26 @@ export class CustomerPropertyEntity extends BaseEntity {
     nullable: true,
   })
   availableRoofAreaSqft?: number;
+
+  /** kW placed on the roof, set at the site visit or survey. Printed on Annexure-I. */
+  @Column({
+    name: 'rooftop_capacity_kw',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  rooftopCapacityKw?: number | null;
+
+  /** kW placed on the ground, set at the site visit or survey. Printed on Annexure-I. */
+  @Column({
+    name: 'ground_capacity_kw',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  groundCapacityKw?: number | null;
 
   @Column({ name: 'shading_analysis', type: 'jsonb', nullable: true })
   shadingAnalysis?: ShadingAnalysis;

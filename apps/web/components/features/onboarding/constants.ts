@@ -112,7 +112,14 @@ const ONBOARDING_STEPS: OnboardingStepConfig[] = [
     title: 'Utility & DISCOM',
     blurb:
       "Copy these straight off the latest electricity bill — net metering paperwork is rejected when they don't match.",
-    fields: ['discomId', 'consumerName', 'consumerNumber', 'connectionType', 'sanctionedLoad'],
+    fields: [
+      'discomId',
+      'consumerName',
+      'consumerNumber',
+      'connectionType',
+      'reArrangementType',
+      'sanctionedLoad',
+    ],
   },
   {
     key: 'change-requests',

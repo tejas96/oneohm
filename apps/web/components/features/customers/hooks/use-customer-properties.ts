@@ -15,6 +15,7 @@ import {
   type ShadingAnalysis,
   type StoredChangeRequest,
   type SurveyData,
+  ReArrangementType,
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
@@ -51,6 +52,7 @@ export interface CustomerPropertyResponse {
   discomId?: string;
   discom?: DiscomResponse;
   connectionType?: ConnectionType;
+  reArrangementType?: ReArrangementType;
   sanctionedLoad?: number;
   meterNumber?: string;
   // Lead Tracking
@@ -92,6 +94,8 @@ export interface CustomerPropertyResponse {
   siteStatus: SiteStatus;
   siteVisitDone: boolean;
   availableRoofAreaSqft?: number;
+  rooftopCapacityKw?: number;
+  groundCapacityKw?: number;
   shadingAnalysis?: ShadingAnalysis;
   siteNotes?: string;
   surveyDone: boolean;

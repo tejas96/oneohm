@@ -307,11 +307,16 @@ export class CustomerPropertyService {
       property.id,
     ]);
     const followupState = followupStateMap.get(property.id);
+    // The survey screen shows the quoted size next to its rooftop/ground split.
+    const quoteInfo = (await this.quoteRepository.findLatestByPropertyIds([property.id])).get(
+      property.id,
+    );
 
     return {
       ...property,
       nextFollowupAt: followupState?.nextAt ?? undefined,
       needsFollowup: followupState?.needsFollowup ?? false,
+      latestQuoteSystemSizeKw: systemSizeKwOf({ totalWattageWp: quoteInfo?.totalWattageWp }),
     };
   }
 
@@ -932,8 +937,11 @@ export class CustomerPropertyService {
       throw new BadRequestException('Cannot complete survey for a cancelled site activity');
     }
 
+    // A ground-mount-only site has no roof to describe.
     const survey = property.surveyData;
-    if (!survey?.roofType || !survey?.roofCondition) {
+    const groundOnly =
+      Number(property.groundCapacityKw) > 0 && !(Number(property.rooftopCapacityKw) > 0);
+    if (!groundOnly && (!survey?.roofType || !survey?.roofCondition)) {
       throw new BadRequestException(
         'Roof type and roof condition are required in survey details before completing the survey',
       );

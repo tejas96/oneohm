@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { changeRequestsSchema } from './change-request.schema';
 import { gpsCoordinatesSchema } from './coordinates.schema';
-import { ConnectionType, LeadTemperature, PropertyType } from '../types/enums';
+import { ConnectionType, LeadTemperature, PropertyType, ReArrangementType } from '../types/enums';
 import {
   CONSUMER_NUMBER_MESSAGE,
   CONSUMER_NUMBER_REGEX,
@@ -58,6 +58,7 @@ export const createPropertySchema = z.object({
   consumerName: consumerNameSchema,
   discomId: discomIdSchema,
   connectionType: connectionTypeSchema,
+  reArrangementType: z.nativeEnum(ReArrangementType).optional(),
   sanctionedLoad: z
     .number({ coerce: true })
     .min(0.1, 'Sanctioned load must be greater than 0')

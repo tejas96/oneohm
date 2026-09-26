@@ -113,7 +113,7 @@ export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
   shortName: 'Annexure A',
   description: 'MAHAVITARAN commissioning report for grid-connected solar PV plant.',
   documentTag: DocumentTag.ANNEXURE_PROFORMA_A,
-  templateVersion: 3,
+  templateVersion: 4,
   facts: [
     req('consumer_name'),
     req('consumer_number'),
@@ -126,6 +126,9 @@ export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
     opt('capacity_type'),
     opt('project_model'),
     req('installed_capacity_kw'),
+    opt('re_installed_capacity_rooftop_kw'),
+    opt('re_installed_capacity_ground_kw'),
+    opt('re_installed_capacity_rooftop_ground_kw'),
     req('inverter_total_kw'),
     req('inverter_make'),
     req('module_count'),

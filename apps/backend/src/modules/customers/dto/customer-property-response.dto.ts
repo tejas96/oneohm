@@ -7,6 +7,7 @@ import {
   ProjectStatus,
   PropertyStatus,
   PropertyType,
+  ReArrangementType,
   QuoteStatus,
   type ShadingAnalysis,
   SiteStatus,
@@ -135,6 +136,10 @@ export class CustomerPropertyResponseDto {
   @Expose()
   connectionType?: ConnectionType;
 
+  @ApiPropertyOptional({ enum: ReArrangementType })
+  @Expose()
+  reArrangementType?: ReArrangementType;
+
   @ApiPropertyOptional()
   @Expose()
   @Transform(({ value }) => toNum(value))
@@ -236,6 +241,16 @@ export class CustomerPropertyResponseDto {
   @Expose()
   @Transform(({ value }) => toNum(value))
   availableRoofAreaSqft?: number;
+
+  @ApiPropertyOptional()
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  rooftopCapacityKw?: number;
+
+  @ApiPropertyOptional()
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  groundCapacityKw?: number;
 
   @ApiPropertyOptional()
   @Expose()
