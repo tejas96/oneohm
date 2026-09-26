@@ -328,9 +328,10 @@ export const REPORT_FACTS = [
     label: 'RE source',
     type: 'text',
     group: 'sanction',
-    source: 'manual',
-    placeholder: 'e.g. Solar',
-    help: 'The renewable energy source, as the DISCOM form asks.',
+    source: 'fixed',
+    fixedValue: 'Solar',
+    hidden: true,
+    help: 'Always printed as "Solar" for these systems. Not shown on the form.',
   },
   {
     key: 'capacity_type',
@@ -345,9 +346,10 @@ export const REPORT_FACTS = [
     label: 'Project model',
     type: 'text',
     group: 'sanction',
-    source: 'manual',
-    placeholder: 'e.g. CAPEX',
-    help: 'How the plant is owned and paid for, as the DISCOM form asks.',
+    source: 'fixed',
+    fixedValue: 'CAPEX',
+    hidden: true,
+    help: 'Always printed as "CAPEX": the customer pays for and owns the plant. Not shown on the form.',
   },
 
   {
@@ -480,7 +482,8 @@ export const REPORT_FACTS = [
     group: 'system',
     source: 'fixed',
     fixedValue: 'Not applicable',
-    help: 'Always printed as "Not applicable" for these systems. It is fixed and cannot be changed.',
+    hidden: true,
+    help: 'Always printed as "Not applicable" for these systems. Not shown on the form.',
   },
   {
     key: 'charge_controller_type',
