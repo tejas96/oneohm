@@ -3,6 +3,7 @@ import {
   ConnectionType,
   LeadTemperature,
   PropertyType,
+  ReArrangementType,
   type ShadingAnalysis,
   type SurveyData,
 } from '@tejas96/shared/types';
@@ -149,6 +150,15 @@ export class UpdateCustomerPropertyDto {
   connectionType?: ConnectionType;
 
   @ApiPropertyOptional({
+    enum: ReArrangementType,
+    example: ReArrangementType.NET_METERING,
+    description: 'How the plant connects to the grid. Cannot be cleared.',
+  })
+  @ValidateIf((o: UpdateCustomerPropertyDto) => o.reArrangementType !== undefined)
+  @IsEnum(ReArrangementType)
+  reArrangementType?: ReArrangementType;
+
+  @ApiPropertyOptional({
     example: 5.0,
     description: 'Sanctioned load in KW',
   })
@@ -239,6 +249,20 @@ export class UpdateCustomerPropertyDto {
   @IsOptional()
   @Min(0)
   availableRoofAreaSqft?: number;
+
+  @ApiPropertyOptional({ description: 'kW placed on the roof; null clears it', nullable: true })
+  @ValidateIf((_, v) => v !== null)
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  rooftopCapacityKw?: number | null;
+
+  @ApiPropertyOptional({ description: 'kW placed on the ground; null clears it', nullable: true })
+  @ValidateIf((_, v) => v !== null)
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  groundCapacityKw?: number | null;
 
   @ApiPropertyOptional({ description: 'Shading analysis data' })
   @IsObject()

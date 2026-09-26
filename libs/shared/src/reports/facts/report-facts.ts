@@ -1,4 +1,8 @@
-import { CONNECTION_TYPE_LABELS, PROPERTY_TYPE_LABELS } from '../../types/enums/customer.enum';
+import {
+  CONNECTION_TYPE_LABELS,
+  PROPERTY_TYPE_LABELS,
+  RE_ARRANGEMENT_TYPE_LABELS,
+} from '../../types/enums/customer.enum';
 
 export type FactSource =
   | 'company'
@@ -76,6 +80,7 @@ export interface ReportFact {
 }
 
 const OUT_OF_DATE = 'Filed reports turn Out of date.';
+const FROM_SURVEY = 'Set in the site visit or survey on the mobile app.';
 const UTILITY_HELP =
   "Saved on this site. Needed, with the consumer name and number, before the site's utility details can be saved.";
 const UTILITY_SUPPORT = {
@@ -308,9 +313,15 @@ export const REPORT_FACTS = [
     label: 'RE arrangement type',
     type: 'text',
     group: 'sanction',
-    source: 'manual',
-    placeholder: 'e.g. Net metering',
-    help: 'How the plant connects to the grid, as the DISCOM form asks.',
+    source: 'property',
+    help: `How the plant connects to the grid, saved on this site. A new site starts on net metering. ${OUT_OF_DATE}`,
+    edit: {
+      target: 'property',
+      field: 'reArrangementType',
+      input: 'select',
+      options: RE_ARRANGEMENT_TYPE_LABELS,
+      required: true,
+    },
   },
   {
     key: 're_source',
@@ -326,9 +337,8 @@ export const REPORT_FACTS = [
     label: 'Capacity type',
     type: 'text',
     group: 'sanction',
-    source: 'manual',
-    placeholder: 'e.g. Rooftop',
-    help: 'Where the plant is installed, as the DISCOM form asks.',
+    source: 'property',
+    help: `Rooftop, ground mount or both: whichever has a kW on this site. ${FROM_SURVEY} ${OUT_OF_DATE}`,
   },
   {
     key: 'project_model',
@@ -357,6 +367,31 @@ export const REPORT_FACTS = [
     hidden: true,
     derivedFrom: 'installed_capacity_kw',
     help: 'The installed capacity in Wp, worked out from the kW on the approved quote.',
+  },
+  {
+    key: 're_installed_capacity_rooftop_kw',
+    label: 'Rooftop capacity (kW)',
+    type: 'number',
+    group: 'system',
+    source: 'property',
+    help: `The kW placed on the roof. ${FROM_SURVEY} ${OUT_OF_DATE}`,
+  },
+  {
+    key: 're_installed_capacity_ground_kw',
+    label: 'Ground mount capacity (kW)',
+    type: 'number',
+    group: 'system',
+    source: 'property',
+    help: `The kW placed on the ground. ${FROM_SURVEY} ${OUT_OF_DATE}`,
+  },
+  {
+    key: 're_installed_capacity_rooftop_ground_kw',
+    label: 'Rooftop + ground capacity (kW)',
+    type: 'number',
+    group: 'system',
+    source: 'property',
+    hidden: true,
+    help: 'Rooftop plus ground mount kW, printed only when the site has both.',
   },
   {
     key: 'module_make',

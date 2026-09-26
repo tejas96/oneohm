@@ -40,6 +40,7 @@ export interface PropertyResponse {
   discomId?: string;
   discom?: DiscomResponse;
   connectionType?: string;
+  reArrangementType?: string;
   sanctionedLoad?: number;
   consumerNumber?: string;
   meterNumber?: string;

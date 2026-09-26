@@ -15,6 +15,8 @@ import {
   LeadTemperature,
   DocumentEntityType,
   type StoredChangeRequest,
+  RE_ARRANGEMENT_TYPE_LABELS,
+  type ReArrangementType,
 } from '@tejas96/shared/types';
 import * as React from 'react';
 import { useFormContext } from 'react-hook-form';
@@ -122,6 +124,7 @@ export function ReviewSummary({
   const sanctionedLoad = watch('sanctionedLoad') as number | undefined;
   const currentLoad = watch('currentLoad') as string;
   const meterNumber = watch('meterNumber') as string;
+  const reArrangementType = watch('reArrangementType') as ReArrangementType | undefined;
 
   const changeRequests = (watch('changeRequests') as ChangeRequestFormItem[] | undefined) ?? [];
   const totalChangeRequestCount = changeRequests.length + convertedChangeRequests.length;
@@ -293,6 +296,14 @@ export function ReviewSummary({
                 : connectionType === ConnectionType.THREE_PHASE
                   ? 'Three Phase'
                   : '—'}
+            </MUITypography>
+          </div>
+          <div>
+            <MUITypography variant="timestamp" className="text-foreground-secondary">
+              RE Arrangement
+            </MUITypography>
+            <MUITypography variant="bodyPrimary" className="font-medium mt-0.5">
+              {reArrangementType ? RE_ARRANGEMENT_TYPE_LABELS[reArrangementType] : '—'}
             </MUITypography>
           </div>
           <div>

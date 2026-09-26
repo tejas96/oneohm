@@ -6,11 +6,7 @@ import Handlebars from 'handlebars';
 import { resolveReportAsset, templateFileFor } from '../utils/report.utils';
 
 /** Printed as blank lines until these facts exist. */
-const KNOWN_UNDECLARED = new Set([
-  'installation_date',
-  're_installed_capacity_ground_kw',
-  're_installed_capacity_rooftop_ground_kw',
-]);
+const KNOWN_UNDECLARED = new Set(['installation_date']);
 
 type Call = Pick<hbs.AST.MustacheStatement, 'path' | 'params' | 'hash'>;
 

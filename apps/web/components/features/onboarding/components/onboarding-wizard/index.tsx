@@ -12,6 +12,7 @@ import {
   atDefaultHour,
   PropertyType,
   type StoredChangeRequest,
+  ReArrangementType,
 } from '@tejas96/shared/types';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -151,6 +152,7 @@ function buildDefaults(
       consumerName: property?.consumerName ?? '',
       discomId: property?.discomId ?? '',
       connectionType: property?.connectionType as ConnectionType | undefined,
+      reArrangementType: property?.reArrangementType ?? ReArrangementType.NET_METERING,
       sanctionedLoad: property?.sanctionedLoad ?? undefined,
       currentLoad: property?.currentLoad ?? '',
       meterNumber: property?.meterNumber ?? '',
@@ -182,6 +184,7 @@ function buildDefaults(
     consumerName: '',
     discomId: '',
     connectionType: undefined,
+    reArrangementType: ReArrangementType.NET_METERING,
     sanctionedLoad: undefined,
     currentLoad: '',
     meterNumber: '',

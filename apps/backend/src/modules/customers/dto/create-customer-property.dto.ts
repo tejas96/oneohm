@@ -4,6 +4,7 @@ import {
   LeadTemperature,
   PropertyStatus,
   PropertyType,
+  ReArrangementType,
 } from '@tejas96/shared/types';
 import { CONSUMER_NUMBER_REGEX } from '@tejas96/shared/utils';
 import { Type, Transform } from 'class-transformer';
@@ -148,6 +149,15 @@ export class CreateCustomerPropertyDto {
   @IsEnum(ConnectionType)
   @IsNotEmpty()
   connectionType!: ConnectionType;
+
+  @ApiPropertyOptional({
+    enum: ReArrangementType,
+    example: ReArrangementType.NET_METERING,
+    description: 'How the plant connects to the grid. Defaults to net metering.',
+  })
+  @IsEnum(ReArrangementType)
+  @IsOptional()
+  reArrangementType?: ReArrangementType;
 
   @ApiPropertyOptional({
     example: 5.0,

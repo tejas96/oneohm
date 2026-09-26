@@ -80,6 +80,22 @@ export const CONNECTION_TYPE_LABELS: Record<ConnectionType, string> = {
 };
 
 /**
+ * How the site's plant connects to the grid (RE arrangement type). Printed on
+ * Annexure Proforma-A. A new site starts on net metering.
+ */
+export enum ReArrangementType {
+  NET_METERING = 'net_metering',
+  BEHIND_THE_METER = 'behind_the_meter',
+  NET_BILLING = 'net_billing',
+}
+
+export const RE_ARRANGEMENT_TYPE_LABELS: Record<ReArrangementType, string> = {
+  [ReArrangementType.NET_METERING]: 'Net metering',
+  [ReArrangementType.BEHIND_THE_METER]: 'Behind the meter',
+  [ReArrangementType.NET_BILLING]: 'Net billing',
+};
+
+/**
  * Lead Source Enum
  * Note: Initially using flexible VARCHAR in DB, but defining common sources here
  * May be expanded to separate table if needed in future

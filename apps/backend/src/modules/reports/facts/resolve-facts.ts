@@ -1,6 +1,10 @@
 import { COMPANY } from '@tejas96/shared/constants';
 import { type FactKey, REPORT_FACTS, type ReportFact } from '@tejas96/shared/reports';
-import { CONNECTION_TYPE_LABELS, PROPERTY_TYPE_LABELS } from '@tejas96/shared/types';
+import {
+  CONNECTION_TYPE_LABELS,
+  PROPERTY_TYPE_LABELS,
+  RE_ARRANGEMENT_TYPE_LABELS,
+} from '@tejas96/shared/types';
 
 import { buildDiscomLabel } from '../../discoms/utils/discom-label.util';
 import type { ProjectEntity } from '../../projects/entities/project.entity';
@@ -55,6 +59,21 @@ export function resolveFacts({ project, panelSerials }: ReportSource): Record<Fa
     ? (PROPERTY_TYPE_LABELS[property.propertyType] ?? '')
     : '';
   facts.sanctioned_capacity_kw = str(property.sanctionedLoad);
+  const rooftopKw =
+    Number(property.rooftopCapacityKw) > 0 ? Number(property.rooftopCapacityKw) : null;
+  const groundKw = Number(property.groundCapacityKw) > 0 ? Number(property.groundCapacityKw) : null;
+  facts.re_installed_capacity_rooftop_kw = str(rooftopKw);
+  facts.re_installed_capacity_ground_kw = str(groundKw);
+  facts.re_installed_capacity_rooftop_ground_kw =
+    rooftopKw != null && groundKw != null
+      ? str(Math.round((rooftopKw + groundKw) * 100) / 100)
+      : '';
+  facts.capacity_type = [rooftopKw != null ? 'Rooftop' : '', groundKw != null ? 'Ground mount' : '']
+    .filter(Boolean)
+    .join(' + ');
+  facts.re_arrangement_type = property.reArrangementType
+    ? (RE_ARRANGEMENT_TYPE_LABELS[property.reArrangementType] ?? '')
+    : '';
 
   // Form-only facts: no report prints them, so no fingerprint reads them. The
   // DISCOM label needs `property.discom`, which the workspace loads and the
@@ -126,7 +145,8 @@ export function resolveFacts({ project, panelSerials }: ReportSource): Record<Fa
 
 /**
  * What an editable field's input starts from, where that differs from the
- * printed value: the stored property type, DISCOM id and connection type
+ * printed value: the stored property type, DISCOM id, connection type and RE
+ * arrangement type
  * (the printed values are their labels).
  * Everything else starts from the printed value — the consumer name falls
  * back to the customer's name, and saving it writes the site's consumer name.
@@ -141,6 +161,7 @@ export function resolveEditValues(
     site_category: str(property.propertyType),
     site_discom: str(property.discomId),
     site_connection_type: str(property.connectionType),
+    re_arrangement_type: str(property.reArrangementType),
   };
 }
 

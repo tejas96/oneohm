@@ -1,6 +1,11 @@
 'use client';
 
-import { ConnectionType } from '@tejas96/shared/types';
+import { Box, Radio } from '@mui/material';
+import {
+  ConnectionType,
+  RE_ARRANGEMENT_TYPE_LABELS,
+  ReArrangementType,
+} from '@tejas96/shared/types';
 import { normalizeConsumerNumber } from '@tejas96/shared/utils';
 import * as React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
@@ -8,7 +13,8 @@ import { Controller, useFormContext } from 'react-hook-form';
 import { useDiscomById, useDiscoms } from '../../hooks/use-discoms';
 
 import { ConnectionTypeSelector } from '@/components/shared/forms';
-import { MUIInput } from '@/components/ui';
+import { OptionCard } from '@/components/shared/forms/option-card';
+import { MUIFieldLabel, MUIInput } from '@/components/ui';
 
 /** DISCOM + consumer fields. Card chrome is supplied by the wizard's StepCard. */
 export function UtilityFields(): React.JSX.Element {
@@ -140,6 +146,38 @@ export function UtilityFields(): React.JSX.Element {
             error={errors.connectionType?.message as string | undefined}
           />
         )}
+      />
+
+      <Controller
+        name="reArrangementType"
+        control={control}
+        render={({ field }) => {
+          const selected =
+            (field.value as ReArrangementType | undefined) ?? ReArrangementType.NET_METERING;
+          return (
+            <div>
+              <MUIFieldLabel fieldLabel="RE arrangement type" />
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                  gap: 1.5,
+                  mt: 1,
+                }}
+              >
+                {Object.values(ReArrangementType).map((type) => (
+                  <OptionCard
+                    key={type}
+                    active={selected === type}
+                    onClick={() => field.onChange(type)}
+                    label={RE_ARRANGEMENT_TYPE_LABELS[type]}
+                    leading={<Radio checked={selected === type} size="small" sx={{ p: 0 }} />}
+                  />
+                ))}
+              </Box>
+            </div>
+          );
+        }}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

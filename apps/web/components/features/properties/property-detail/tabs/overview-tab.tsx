@@ -14,6 +14,7 @@ import {
   PropertyStatus,
   QuoteStatus,
   SiteStatus,
+  RE_ARRANGEMENT_TYPE_LABELS,
 } from '@tejas96/shared/types';
 import { useState, type JSX, type ReactNode } from 'react';
 
@@ -215,6 +216,12 @@ function ConnectionCard({ property }: { property: CustomerPropertyResponse }): J
           },
           { label: 'Current load', value: property.currentLoad || '—', mono: true },
           { label: 'Meter number', value: property.meterNumber || '—', mono: true },
+          {
+            label: 'RE arrangement',
+            value: property.reArrangementType
+              ? RE_ARRANGEMENT_TYPE_LABELS[property.reArrangementType]
+              : '—',
+          },
         ]}
       />
 
@@ -622,6 +629,14 @@ function ReadinessCard({ property }: { property: CustomerPropertyResponse }): JS
     completeSurvey.mutate(property.id);
   };
 
+  // Set in the visit or survey on the mobile app; read-only here.
+  const mounting = [
+    property.rooftopCapacityKw ? `Rooftop ${property.rooftopCapacityKw} kW` : '',
+    property.groundCapacityKw ? `Ground ${property.groundCapacityKw} kW` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   const visitFacts = [
     ...(property.siteVisitCompletedAt
       ? [{ label: 'Completed', value: formatDate(property.siteVisitCompletedAt) }]
@@ -630,6 +645,7 @@ function ReadinessCard({ property }: { property: CustomerPropertyResponse }): JS
     ...(property.availableRoofAreaSqft != null
       ? [{ label: 'Roof area', value: `${property.availableRoofAreaSqft} sqft` }]
       : []),
+    ...(mounting ? [{ label: 'Mounting', value: mounting }] : []),
     ...(property.siteNotes ? [{ label: 'Notes', value: property.siteNotes }] : []),
   ];
 

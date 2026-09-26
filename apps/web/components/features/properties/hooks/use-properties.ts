@@ -12,6 +12,7 @@ import type {
   ShadingAnalysis,
   SurveyData,
   TaskRuleSyncResult,
+  ReArrangementType,
 } from '@tejas96/shared/types';
 import type { AxiosError } from 'axios';
 
@@ -43,6 +44,7 @@ export interface Property {
   discomId?: string;
   discom?: DiscomResponse;
   connectionType?: ConnectionType;
+  reArrangementType?: ReArrangementType;
   sanctionedLoad?: number;
   meterNumber?: string;
   leadTemperature: LeadTemperature;
@@ -90,6 +92,7 @@ export interface UpdatePropertyData {
   consumerNumber?: string;
   discomId?: string;
   connectionType?: ConnectionType;
+  reArrangementType?: ReArrangementType;
   sanctionedLoad?: number;
   meterNumber?: string;
   currentLoad?: string;
@@ -101,6 +104,8 @@ export interface UpdatePropertyData {
   isPrimary?: boolean;
   documents?: PropertyDocument[];
   availableRoofAreaSqft?: number | null;
+  rooftopCapacityKw?: number | null;
+  groundCapacityKw?: number | null;
   shadingAnalysis?: ShadingAnalysis | null;
   siteNotes?: string | null;
   surveyData?: SurveyData | null;
