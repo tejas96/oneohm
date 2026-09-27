@@ -7,10 +7,14 @@
 function parseEarthing(raw: string): { declared: number | null; values: string[] } | null {
   const value = raw.trim();
   if (!value || /Ω|ohm/i.test(value)) return null;
-  const counted = /^(\d+)\s*-\s*(.+)$/.exec(value);
-  const values = (counted ? counted[2]! : value).split(/[\s,;]+/).filter(Boolean);
+  // "3 - 3, 4, 3": a pit count before the dash. Split by hand, not with one
+  // regex: overlapping \s* and .+ around the dash backtrack badly on long input.
+  const dash = value.indexOf('-');
+  const head = dash >= 0 ? value.slice(0, dash).trim() : '';
+  const counted = dash >= 0 && /^\d+$/.test(head);
+  const values = (counted ? value.slice(dash + 1) : value).split(/[\s,;]+/).filter(Boolean);
   if (values.length === 0 || !values.every((v) => /^\d+(\.\d+)?$/.test(v))) return null;
-  return { declared: counted ? Number(counted[1]) : null, values };
+  return { declared: counted ? Number(head) : null, values };
 }
 
 /**
