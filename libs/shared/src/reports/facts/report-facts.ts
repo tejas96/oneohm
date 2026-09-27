@@ -65,6 +65,14 @@ export interface ReportFact {
   readonly help: string;
   /** Set when a customer or site fact can be edited on the Reports tab. */
   readonly edit?: FactEdit;
+  /**
+   * A quote fact that can be changed on the Reports tab. The typed value is
+   * kept in the project's report facts and printed in place of the quote's;
+   * clearing it brings the quote value back. The quote itself never changes.
+   */
+  readonly overridable?: boolean;
+  /** Shown beside a read-only value in place of where it comes from: why it cannot be typed. */
+  readonly readOnlyNote?: string;
   /** Printed by reports but not shown on the form: composed or derived from facts that are. */
   readonly hidden?: boolean;
   /** A shown fact that is one part of a hidden composed fact (the site address). */
@@ -80,15 +88,13 @@ export interface ReportFact {
 }
 
 const OUT_OF_DATE = 'Filed reports turn Out of date.';
-const FROM_SURVEY = 'Set in the site visit or survey on the mobile app.';
 const UTILITY_HELP =
   "Saved on this site. Needed, with the consumer name and number, before the site's utility details can be saved.";
 const UTILITY_SUPPORT = {
   chip: 'Needed to save the site',
   supports: ['consumer_name', 'consumer_number'],
 } as const;
-const FROM_QUOTE =
-  'From the approved quote. Change it by revising the quote, so the contract and the paperwork match.';
+const FROM_QUOTE = `From the approved quote. A change here prints on the reports only: the quote stays the same. Reset brings back the quote value. ${OUT_OF_DATE}`;
 
 export const FACT_GROUPS: ReadonlyArray<{ id: FactGroup; title: string }> = [
   { id: 'vendor', title: 'Vendor' },
@@ -339,7 +345,8 @@ export const REPORT_FACTS = [
     type: 'text',
     group: 'sanction',
     source: 'property',
-    help: `Rooftop, ground mount or both: whichever has a kW on this site. ${FROM_SURVEY} ${OUT_OF_DATE}`,
+    readOnlyNote: 'Worked out from rooftop and ground kW',
+    help: `Rooftop, ground mount or both: whichever has a kW on this site. Change the rooftop or ground mount kW to change it. ${OUT_OF_DATE}`,
   },
   {
     key: 'project_model',
@@ -358,6 +365,7 @@ export const REPORT_FACTS = [
     type: 'number',
     group: 'system',
     source: 'project',
+    overridable: true,
     help: `${FROM_QUOTE} The net metering agreement prints it in Wp.`,
   },
   {
@@ -376,7 +384,9 @@ export const REPORT_FACTS = [
     type: 'number',
     group: 'system',
     source: 'property',
-    help: `The kW placed on the roof. ${FROM_SURVEY} ${OUT_OF_DATE}`,
+    placeholder: 'e.g. 5',
+    help: `The kW placed on the roof, saved on this site: the site page and the survey show the same value. ${OUT_OF_DATE}`,
+    edit: { target: 'property', field: 'rooftopCapacityKw', input: 'number' },
   },
   {
     key: 're_installed_capacity_ground_kw',
@@ -384,7 +394,9 @@ export const REPORT_FACTS = [
     type: 'number',
     group: 'system',
     source: 'property',
-    help: `The kW placed on the ground. ${FROM_SURVEY} ${OUT_OF_DATE}`,
+    placeholder: 'e.g. 2',
+    help: `The kW placed on the ground, saved on this site: the site page and the survey show the same value. ${OUT_OF_DATE}`,
+    edit: { target: 'property', field: 'groundCapacityKw', input: 'number' },
   },
   {
     key: 're_installed_capacity_rooftop_ground_kw',
@@ -401,6 +413,7 @@ export const REPORT_FACTS = [
     type: 'text',
     group: 'system',
     source: 'project',
+    overridable: true,
     help: FROM_QUOTE,
   },
   {
@@ -409,14 +422,16 @@ export const REPORT_FACTS = [
     type: 'text',
     group: 'system',
     source: 'project',
+    overridable: true,
     help: FROM_QUOTE,
   },
   {
     key: 'module_wattage',
     label: 'Wattage per module (Wp)',
-    type: 'number',
+    type: 'text',
     group: 'system',
     source: 'project',
+    overridable: true,
     help: FROM_QUOTE,
   },
   {
@@ -425,6 +440,7 @@ export const REPORT_FACTS = [
     type: 'number',
     group: 'system',
     source: 'project',
+    overridable: true,
     help: FROM_QUOTE,
   },
   {
@@ -433,6 +449,7 @@ export const REPORT_FACTS = [
     type: 'number',
     group: 'system',
     source: 'project',
+    overridable: true,
     help: `${FROM_QUOTE} Worked out as wattage × number of modules.`,
   },
   {
@@ -441,6 +458,7 @@ export const REPORT_FACTS = [
     type: 'text',
     group: 'system',
     source: 'project',
+    overridable: true,
     help: FROM_QUOTE,
   },
   {
@@ -457,6 +475,7 @@ export const REPORT_FACTS = [
     type: 'text',
     group: 'system',
     source: 'project',
+    overridable: true,
     help: FROM_QUOTE,
   },
   {
@@ -465,6 +484,7 @@ export const REPORT_FACTS = [
     type: 'text',
     group: 'system',
     source: 'project',
+    overridable: true,
     help: FROM_QUOTE,
   },
   {
@@ -473,6 +493,7 @@ export const REPORT_FACTS = [
     type: 'number',
     group: 'system',
     source: 'project',
+    overridable: true,
     help: `${FROM_QUOTE} Worked out as capacity × quantity of each inverter.`,
   },
   {

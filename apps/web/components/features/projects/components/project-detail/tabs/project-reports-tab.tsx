@@ -1,18 +1,18 @@
 'use client';
 
 import { Alert, Box } from '@mui/material';
-import { useIsMutating } from '@tanstack/react-query';
 import type { WorkspaceFact, WorkspaceReport } from '@tejas96/shared/reports';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { projectReportKeys, useProjectReports } from '../../../hooks';
+import { useProjectReports } from '../../../hooks';
 import { DetailCard, TonePill } from '../primitives';
 import { ReportFactsForm } from '../reports/components/report-facts-form';
 import { ReportPreviewPanel } from '../reports/components/report-preview-panel';
 import { ReportStatusCards } from '../reports/components/report-status-cards';
+import { ReportsSaveBar } from '../reports/components/reports-save-bar';
 import { ALL_REPORTS, ReportsToolbar } from '../reports/components/reports-toolbar';
 import { useGenerateReports } from '../reports/hooks/use-generate-reports';
-import { useReportFactSaves } from '../reports/hooks/use-report-fact-saves';
+import { useReportFactDrafts } from '../reports/hooks/use-report-fact-drafts';
 import { useReportRender } from '../reports/hooks/use-report-render';
 import { isQuoteSourcedKey } from '../reports/utils/fact-source';
 
@@ -33,8 +33,9 @@ interface ProjectReportsTabProps {
 
 /**
  * The DISCOM paperwork. Every fact is shown once and printed by every report
- * that needs it. Hand-typed, customer and site facts are edited in place;
- * quote, BOM and company facts are locked. Nothing here navigates away.
+ * that needs it. Hand-typed, customer, site and quote facts are edited in
+ * place and saved together with Save; BOM and company facts are locked.
+ * Nothing here navigates away.
  */
 export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.JSX.Element {
   const workspaceQuery = useProjectReports(projectId);
@@ -43,26 +44,33 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const { generate, runningId, runningIndex, runningTotal, outcomes, skipped, clearOutcomes } =
     useGenerateReports(projectId);
-  const savingFacts = useIsMutating({ mutationKey: projectReportKeys.saveFacts(projectId) }) > 0;
-  // Owned here, not by the form: held utility values must survive Preview, picking and generating.
+  // Owned here, not by the form: drafts must survive Preview, picking and generating.
   const canEdit = useCan().can('projects.edit');
-  const rawSaves = useReportFactSaves(
+  const rawDrafts = useReportFactDrafts(
     projectId,
     workspace?.facts ?? [],
     canEdit && !(workspace?.locked ?? false),
   );
   // A run's outcome lines describe a past run: any new edit makes them stale.
-  const saves = useMemo(
+  const drafts = useMemo(
     () => ({
-      ...rawSaves,
-      save: (fact: WorkspaceFact, value: string | null) => {
+      ...rawDrafts,
+      change: (fact: WorkspaceFact, raw: string) => {
         clearOutcomes();
-        return rawSaves.save(fact, value);
+        rawDrafts.change(fact, raw);
       },
     }),
-    [rawSaves, clearOutcomes],
+    [rawDrafts, clearOutcomes],
   );
-  const heldCount = saves.held.size;
+  const unsavedCount = drafts.changedKeys.size;
+  const [saveFailed, setSaveFailed] = useState(false);
+  const runSave = (): void => {
+    void drafts.saveAll().then((ok) => setSaveFailed(!ok));
+  };
+  const discardAll = (): void => {
+    drafts.discardAll();
+    setSaveFailed(false);
+  };
 
   const reports = workspace?.reports ?? [];
   const pickedId = picked === ALL_REPORTS ? null : picked;
@@ -99,17 +107,12 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
   const pendingCount = workspace?.pendingCount ?? 0;
   const locked = workspace?.locked ?? false;
 
-  const heldReason =
-    heldCount > 0
-      ? `Finish the site's utility details first — ${heldCount} ${
-          heldCount === 1 ? 'change' : 'changes'
-        } not saved yet`
-      : undefined;
+  const unsavedReason = unsavedCount > 0 ? 'Save your changes first' : undefined;
   const missingReason = allTargetsMissing
     ? `Fill in the missing details first${targets.length > 1 ? ` — ${targets.length} reports` : ''}`
     : undefined;
-  // Held utility values take precedence: they block every target, not just the missing ones.
-  const blockedReason = heldReason ?? missingReason;
+  // Unsaved changes take precedence: Generate would print the stored values, not them.
+  const blockedReason = unsavedReason ?? missingReason;
 
   const runningReport = reports.find((r) => r.id === runningId);
   const generateLabel =
@@ -216,10 +219,22 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
             generating={runningId !== null}
             generateLabel={generateLabel}
             canGenerate={
-              !locked && targets.length > 0 && !savingFacts && heldCount === 0 && !allTargetsMissing
+              !locked &&
+              targets.length > 0 &&
+              !drafts.saving &&
+              unsavedCount === 0 &&
+              !allTargetsMissing
             }
             blockedReason={blockedReason}
             hideGenerate={locked}
+          />
+
+          <ReportsSaveBar
+            changedCount={unsavedCount}
+            saving={drafts.saving}
+            failed={saveFailed && [...drafts.changedKeys].some((key) => drafts.errorFor(key))}
+            onDiscard={discardAll}
+            onSave={runSave}
           />
 
           <ReportStatusCards
@@ -255,13 +270,18 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
                 workspace={workspace}
                 reportId={pickedId}
                 disabled={runningId !== null}
-                saves={saves}
+                drafts={drafts}
               />
             </Box>
           ) : (
             <Box
               sx={{ height: 'min(80vh, 1200px)', display: 'flex', flexDirection: 'column', gap: 1 }}
             >
+              {unsavedCount > 0 && (
+                <Alert severity="warning" sx={{ py: 0 }}>
+                  The preview shows saved values. Save your changes to see them here.
+                </Alert>
+              )}
               {previewReport?.pages && (
                 <p className="text-[12px] text-foreground-secondary">
                   {previewReport.name} must print on exactly {previewReport.pages} pages. Generate

@@ -17,7 +17,7 @@ export interface WorkspaceFact {
   value: string;
   /** What the input starts from, e.g. the stored property type rather than its label. */
   editValue: string;
-  /** The value can be changed here: a manual or editable source fact, project not cancelled. `projects.edit` is checked by the web. */
+  /** The value can be changed here: a manual, editable source or overridable quote fact, project not cancelled. `projects.edit` is checked by the web. */
   editable: boolean;
   /** Ids of the reports that print this fact, or the composed/derived fact it stands for. */
   usedBy: string[];
@@ -25,6 +25,12 @@ export interface WorkspaceFact {
   covers: FactKey[];
   /** Form-only facts (printed by no report): chip text shown in place of report names. */
   chip?: string;
+  /** An overridable quote fact holds a value typed on the Reports tab, not the quote's. */
+  overridden?: boolean;
+  /** A read-only fact's reason, shown in place of its source (e.g. worked out from other facts). */
+  readOnlyNote?: string;
+  /** Overridable quote facts: the quote's own value, which Reset brings back. */
+  quoteValue?: string;
   /** The value shown is a fallback: the fact's own field is empty (a site without a consumer name shows the customer's name). */
   fallback?: boolean;
 }

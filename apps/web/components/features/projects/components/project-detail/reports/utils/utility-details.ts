@@ -8,7 +8,7 @@ import type { AxiosError } from 'axios';
  * utility-details rule). This mirrors that rule on the Reports tab so it can
  * say which ones are missing, and so a site missing two of them can still be
  * completed: saving one alone would always be refused, so they are held and
- * sent together once all four have a value (useReportFactSaves).
+ * saved together once all four have a value (useReportFactDrafts).
  */
 export const UTILITY_FACT_KEYS = [
   'consumer_name',

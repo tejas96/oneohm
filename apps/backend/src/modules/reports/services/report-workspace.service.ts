@@ -15,6 +15,7 @@ import {
   getReportDefinition,
   getReportStatus,
   isPendingStatus,
+  isProjectStoredFact,
   REPORT_DEFINITIONS,
   REPORT_FACTS,
   type ReportDefinition,
@@ -35,7 +36,12 @@ import { ProjectService } from '../../projects/services/project.service';
 import { StorageService } from '../../storage/services/storage.service';
 import type { ReportFileRefDto } from '../dto/report-workspace.dto';
 import { hashReportFacts, pickReportFacts } from '../facts/facts-hash';
-import { resolveEditValues, resolveFacts, resolveFallbackKeys } from '../facts/resolve-facts';
+import {
+  resolveEditValues,
+  resolveFacts,
+  resolveFallbackKeys,
+  resolveSourceFacts,
+} from '../facts/resolve-facts';
 import { TemplateRendererService } from '../renderer/template-renderer.service';
 import { templateFileFor } from '../utils/report.utils';
 
@@ -47,7 +53,7 @@ const CANCELLED_MESSAGE = 'This project is cancelled. Its reports can no longer 
 function saveGroupOf(key: string): 'manual' | FactEditTarget | undefined {
   const fact = getFact(key);
   if (!fact || fact.hidden) return undefined;
-  if (fact.source === 'manual') return 'manual';
+  if (isProjectStoredFact(fact)) return 'manual';
   return fact.edit?.target;
 }
 
@@ -90,8 +96,9 @@ export class ReportWorkspaceService {
   ) {}
 
   async getWorkspace(projectId: string): Promise<ReportWorkspace> {
-    const { project, facts } = await this.load(projectId);
+    const { project, facts, sourceFacts } = await this.load(projectId);
     const locked = project.status === ProjectStatus.CANCELLED;
+    const stored = project.reportFacts ?? {};
     const docs = await this.documentService.findByEntity(DocumentEntityType.PROJECT, projectId);
     const filedByTag = latestFiledByTag(docs);
 
@@ -142,9 +149,12 @@ export class ReportWorkspaceService {
             placeholder: fact.placeholder,
             help: fact.help,
             edit: fact.edit,
+            readOnlyNote: fact.readOnlyNote,
             value: facts[fact.key as FactKey] ?? '',
             editValue: editValues[fact.key as FactKey] ?? '',
-            editable: !locked && (fact.source === 'manual' || !!fact.edit),
+            editable: !locked && (isProjectStoredFact(fact) || !!fact.edit),
+            overridden: fact.overridable && stored[fact.key]?.trim() ? true : undefined,
+            quoteValue: fact.overridable ? (sourceFacts[fact.key as FactKey] ?? '') : undefined,
             usedBy: REPORT_DEFINITIONS.filter((definition) =>
               definition.facts.some(({ key }) => usage.includes(key)),
             ).map((definition) => definition.id),
@@ -164,8 +174,8 @@ export class ReportWorkspaceService {
   /**
    * One save path for every field on the Reports tab. Manual facts go to the
    * project's report_facts; customer and site facts go through their owner's
-   * update. One request touches one of those groups: the web sends one key per
-   * save, and a mixed request could half-apply across two transactions.
+   * update. One request touches one of those groups: a mixed request could
+   * half-apply across two transactions, so the web's Save sends one per group.
    */
   async updateFacts(
     projectId: string,
@@ -191,7 +201,9 @@ export class ReportWorkspaceService {
       });
     }
     const groups = new Set(keys.map(saveGroupOf));
-    if (groups.size > 1) throw new BadRequestException('Save one field at a time.');
+    if (groups.size > 1) {
+      throw new BadRequestException('Send report, site and customer fields in separate requests.');
+    }
 
     const [group] = groups;
     if (group && group !== 'manual') {
@@ -310,12 +322,19 @@ export class ReportWorkspaceService {
     return definition;
   }
 
-  private async load(
-    projectId: string,
-  ): Promise<{ project: ProjectEntity; facts: Record<FactKey, string> }> {
+  private async load(projectId: string): Promise<{
+    project: ProjectEntity;
+    facts: Record<FactKey, string>;
+    /** The same facts before Reports-tab overrides: the quote's own values. */
+    sourceFacts: Record<FactKey, string>;
+  }> {
     const project = await this.projectService.findById(projectId);
     const panelSerials = await this.bomReadService.getPanelSerials(projectId);
-    return { project, facts: resolveFacts({ project, panelSerials }) };
+    return {
+      project,
+      facts: resolveFacts({ project, panelSerials }),
+      sourceFacts: resolveSourceFacts({ project, panelSerials }),
+    };
   }
 
   private async validateUploadedFile(

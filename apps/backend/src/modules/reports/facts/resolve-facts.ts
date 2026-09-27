@@ -25,7 +25,35 @@ export interface ReportSource {
  * string for the same data. Serials are sorted for that reason — their load
  * order differs between the two paths.
  */
-export function resolveFacts({ project, panelSerials }: ReportSource): Record<FactKey, string> {
+export function resolveFacts(source: ReportSource): Record<FactKey, string> {
+  return applyOverrides(resolveSourceFacts(source), source.project.reportFacts ?? {});
+}
+
+/**
+ * Quote facts changed on the Reports tab print in place of the quote's. The
+ * Wp is worked out again from an overridden kW, so the two never disagree.
+ */
+export function applyOverrides(
+  facts: Record<FactKey, string>,
+  stored: Record<string, string>,
+): Record<FactKey, string> {
+  const next = { ...facts };
+  for (const fact of REPORT_FACTS as readonly ReportFact[]) {
+    const value = fact.overridable ? stored[fact.key]?.trim() : undefined;
+    if (value) next[fact.key as FactKey] = value;
+  }
+  const kw = Number(next.installed_capacity_kw);
+  if (stored.installed_capacity_kw?.trim() && Number.isFinite(kw)) {
+    next.installed_capacity_wp = str(Math.round(kw * 1000));
+  }
+  return next;
+}
+
+/** Every fact as the live records give it: quote facts show the quote's value, never an override. */
+export function resolveSourceFacts({
+  project,
+  panelSerials,
+}: ReportSource): Record<FactKey, string> {
   const facts = {} as Record<FactKey, string>;
   const manual = project.reportFacts ?? {};
 
