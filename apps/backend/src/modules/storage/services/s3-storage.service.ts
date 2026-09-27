@@ -186,6 +186,18 @@ export class S3StorageService implements StorageProvider, OnModuleInit {
   }
 
   /**
+   * Read a whole file into memory. For server-side work on small files
+   * (joining documents for printing), not for streaming large ones.
+   */
+  async getFileBuffer(fileKey: string): Promise<Buffer> {
+    const response = await this.s3Client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: fileKey }),
+    );
+    if (!response.Body) throw new BadRequestException(`File is empty: ${fileKey}`);
+    return Buffer.from(await response.Body.transformToByteArray());
+  }
+
+  /**
    * Delete a file from storage
    */
   async deleteFile(fileKey: string): Promise<void> {

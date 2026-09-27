@@ -51,6 +51,7 @@ export function DocumentManager({
   viewMode: controlledViewMode,
   onViewModeChange,
   disableEntityTypeSelector = false,
+  selection,
 }: DocumentManagerProps & {
   onPreview?: (doc: DocumentRecord | DraftDocument) => void;
 }): React.JSX.Element {
@@ -279,6 +280,15 @@ export function DocumentManager({
                 onDownload={(doc: DocumentRecord | DraftDocument) => void downloadDocument(doc)}
                 onDelete={readOnly ? undefined : requestDelete}
                 isDeleting={deleteMutation.isPending}
+                selection={
+                  selection && !('status' in item)
+                    ? {
+                        selected: selection.isSelected(item.id),
+                        disabled: !selection.canSelect(item),
+                        onToggle: () => selection.onToggle(item),
+                      }
+                    : undefined
+                }
               />
             ))}
           </Box>
@@ -306,6 +316,15 @@ export function DocumentManager({
                 }
                 onDownload={(doc: DocumentRecord | DraftDocument) => void downloadDocument(doc)}
                 onDelete={readOnly ? undefined : requestDelete}
+                selection={
+                  selection && !('status' in item)
+                    ? {
+                        selected: selection.isSelected(item.id),
+                        disabled: !selection.canSelect(item),
+                        onToggle: () => selection.onToggle(item),
+                      }
+                    : undefined
+                }
               />
             ))}
           </Box>

@@ -20,6 +20,8 @@ export interface DocumentManagerProps {
   viewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
   disableEntityTypeSelector?: boolean;
+  /** Set while documents are being picked for printing: items show a checkbox instead of actions. */
+  selection?: ManagerSelection;
 }
 
 export interface DraftDocument {
@@ -36,4 +38,19 @@ export interface DraftDocument {
   status: 'uploading' | 'success' | 'error';
   progress: number;
   error?: string;
+}
+
+/** One item while documents are being picked for printing. */
+export interface ItemSelection {
+  selected: boolean;
+  /** Not a PDF or JPG/PNG photo: it cannot go in a print bundle. */
+  disabled: boolean;
+  onToggle: () => void;
+}
+
+/** Picking documents across a manager: the hub owns what is picked. */
+export interface ManagerSelection {
+  isSelected: (id: string) => boolean;
+  canSelect: (doc: DocumentRecord) => boolean;
+  onToggle: (doc: DocumentRecord) => void;
 }

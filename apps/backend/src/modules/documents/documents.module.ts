@@ -4,12 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DocumentController } from './controllers';
 import { DocumentEntity } from './entities';
 import { DocumentRepository } from './repositories';
-import { DocumentService } from './services';
+import { DocumentPrintService, DocumentService } from './services';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DocumentEntity])],
+  imports: [TypeOrmModule.forFeature([DocumentEntity]), StorageModule],
   controllers: [DocumentController],
-  providers: [DocumentRepository, DocumentService],
+  providers: [DocumentRepository, DocumentService, DocumentPrintService],
   exports: [DocumentRepository, DocumentService],
 })
 export class DocumentsModule {}
