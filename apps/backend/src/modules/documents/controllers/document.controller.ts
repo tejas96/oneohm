@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -22,9 +23,11 @@ import {
   BulkCreateDocumentDto,
   CreateDocumentDto,
   DocumentResponseDto,
+  PrintDocumentsDto,
   QueryDocumentsDto,
   UpdateDocumentDto,
 } from '../dto';
+import { DocumentPrintService } from '../services/document-print.service';
 import { DocumentService } from '../services/document.service';
 
 @ApiTags('Documents')
@@ -32,7 +35,10 @@ import { DocumentService } from '../services/document.service';
 @Controller('documents')
 @UseGuards(JwtAuthGuard)
 export class DocumentController {
-  constructor(private readonly documentService: DocumentService) {}
+  constructor(
+    private readonly documentService: DocumentService,
+    private readonly documentPrintService: DocumentPrintService,
+  ) {}
 
   private parseCsv(value?: string): string[] | undefined {
     if (!value) return undefined;
@@ -65,6 +71,18 @@ export class DocumentController {
   ): Promise<DocumentResponseDto[]> {
     const documents = await this.documentService.createBulk(dto.documents, currentUser.id);
     return toDtoArray(DocumentResponseDto, documents);
+  }
+
+  @Post('print')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Join documents into one PDF, in the order given, for printing' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'application/pdf' })
+  async print(@Body() dto: PrintDocumentsDto): Promise<StreamableFile> {
+    const pdf = await this.documentPrintService.bundle(dto.ids);
+    return new StreamableFile(pdf, {
+      type: 'application/pdf',
+      disposition: 'inline; filename="documents.pdf"',
+    });
   }
 
   @Get()

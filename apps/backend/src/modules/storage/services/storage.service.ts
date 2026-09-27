@@ -177,6 +177,17 @@ export class StorageService {
   }
 
   /**
+   * Read a stored file into memory (e.g. to join documents for printing)
+   */
+  async readFile(fileKey: string): Promise<Buffer> {
+    if (!this.isValidFileKey(fileKey)) {
+      throw new BadRequestException('Invalid file key format');
+    }
+
+    return this.s3Storage.getFileBuffer(fileKey);
+  }
+
+  /**
    * Delete a file from storage
    */
   async deleteFile(fileKey: string): Promise<void> {

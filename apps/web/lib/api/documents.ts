@@ -89,3 +89,14 @@ export async function deleteDocument(id: string, options?: { permanent?: boolean
     params: options?.permanent ? { permanent: 'true' } : undefined,
   });
 }
+
+/** The documents joined into one PDF, in the order given, ready to print. */
+export async function printDocuments(ids: string[]): Promise<Blob> {
+  // Joining many photos can take longer than the usual 30 s limit: up to 3 minutes.
+  const { data } = await apiClient.post<Blob>(
+    '/documents/print',
+    { ids },
+    { responseType: 'blob', timeout: 180_000 },
+  );
+  return data;
+}

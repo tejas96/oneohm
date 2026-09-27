@@ -3,12 +3,20 @@
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { Box, Chip, CircularProgress, IconButton, Typography } from '@mui/material';
+import {
+  Box,
+  Checkbox,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { FileTypeIcon } from './file-type-icon';
 import { MoveDocumentPopover } from './move-document-popover';
-import type { DraftDocument } from './types';
+import type { DraftDocument, ItemSelection } from './types';
 import { formatBytes, formatDocDate, getTagLabel } from './utils';
 
 import type { DocumentRecord } from '@/lib/api/documents';
@@ -24,6 +32,8 @@ interface DocumentListItemProps {
   onDelete?: (doc: AnyDocItem) => void;
   isDeleting?: boolean;
   extraChip?: string;
+  /** Picking for print: a click toggles the checkbox, and the actions hide. */
+  selection?: ItemSelection;
 }
 
 function Thumbnail({ doc }: { doc: AnyDocItem }): React.JSX.Element {
@@ -122,14 +132,16 @@ export function DocumentListItem({
   onDelete,
   isDeleting = false,
   extraChip,
+  selection,
 }: DocumentListItemProps): React.JSX.Element {
   const createdAt = 'createdAt' in doc ? doc.createdAt : undefined;
   const fileSize = 'fileSizeBytes' in doc ? doc.fileSizeBytes : undefined;
   const uploadedBy = getUploadedBy(doc);
 
-  return (
+  const row = (
     <Box
       className="group"
+      onClick={selection && !selection.disabled ? () => selection.onToggle() : undefined}
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -137,7 +149,9 @@ export function DocumentListItem({
         p: 1.5,
         borderRadius: 1,
         border: 1,
-        borderColor: 'divider',
+        borderColor: selection?.selected ? 'primary.main' : 'divider',
+        opacity: selection?.disabled ? 0.45 : 1,
+        cursor: selection && !selection.disabled ? 'pointer' : undefined,
         transition: 'background-color 0.15s',
         '&:hover': { bgcolor: 'action.hover' },
       }}
@@ -146,6 +160,17 @@ export function DocumentListItem({
       <Box
         sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden', minWidth: 0 }}
       >
+        {selection && (
+          <Checkbox
+            checked={selection.selected}
+            disabled={selection.disabled}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => selection.onToggle()}
+            slotProps={{ input: { 'aria-label': `Select ${doc.fileName} for printing` } }}
+            size="small"
+            sx={{ p: 0.5 }}
+          />
+        )}
         <Thumbnail doc={doc} />
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="body2" fontWeight={600} noWrap sx={{ mb: 0.25 }}>
@@ -181,8 +206,15 @@ export function DocumentListItem({
         </Box>
       </Box>
 
-      {/* Right: Actions */}
-      <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, ml: 1.5 }}>
+      {/* Right: Actions (hidden while picking for print) */}
+      <Box
+        sx={{
+          display: selection ? 'none' : 'flex',
+          alignItems: 'center',
+          flexShrink: 0,
+          ml: 1.5,
+        }}
+      >
         <IconButton
           size="small"
           onClick={() => onPreview(doc)}
@@ -221,5 +253,13 @@ export function DocumentListItem({
         )}
       </Box>
     </Box>
+  );
+
+  return selection?.disabled ? (
+    <Tooltip title="Only PDFs and JPG or PNG photos can be printed" placement="top-start">
+      <span>{row}</span>
+    </Tooltip>
+  ) : (
+    row
   );
 }
