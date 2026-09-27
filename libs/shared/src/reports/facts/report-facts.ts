@@ -574,14 +574,6 @@ export const REPORT_FACTS = [
   },
 
   {
-    key: 'agreement_date',
-    label: 'Agreement date',
-    type: 'date',
-    group: 'agreement',
-    source: 'manual',
-    help: 'The date the net metering agreement is signed.',
-  },
-  {
     key: 'licensee_address',
     label: 'Licensee address',
     type: 'textarea',
@@ -596,14 +588,6 @@ export const REPORT_FACTS = [
     group: 'agreement',
     source: 'manual',
     help: 'The DISCOM officer who signs the agreement.',
-  },
-  {
-    key: 'witness_consumer_name',
-    label: 'Witness (consumer)',
-    type: 'text',
-    group: 'agreement',
-    source: 'manual',
-    help: "The witness who signs on the consumer's side.",
   },
   {
     key: 'witness_licensee_name',

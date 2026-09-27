@@ -92,16 +92,16 @@ export const NET_METERING_AGREEMENT_REPORT: ReportDefinition = {
   shortName: 'Net metering',
   description: 'Annexure-3 legal agreement between consumer and MSEDCL for net-metering.',
   documentTag: DocumentTag.NET_METERING_AGREEMENT,
-  templateVersion: 2,
+  // 3: agreement date left blank to fill by hand, customer name in the witness
+  // line, no "Shri.", customer name optional.
+  templateVersion: 3,
   facts: [
     req('site_city'),
-    req('agreement_date'),
-    req('consumer_name'),
+    opt('consumer_name'),
     req('site_address'),
     req('consumer_number'),
     opt('licensee_address'),
     req('installed_capacity_wp'),
-    opt('witness_consumer_name'),
     opt('witness_licensee_name'),
     req('signatory_licensee_name'),
   ],
