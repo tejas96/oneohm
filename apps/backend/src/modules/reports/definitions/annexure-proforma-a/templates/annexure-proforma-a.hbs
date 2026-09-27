@@ -37,9 +37,8 @@
         .maha-header .title-cell .org-name {
           font-size: 12pt;
           font-weight: 700;
-          letter-spacing: 4px;
           color: #1a1a1a;
-          line-height: 1.6;
+          line-height: 1.4;
         }
   
         /* ── DOC TITLE BLOCK ── */
@@ -123,42 +122,12 @@
           padding-left: 22px;
         }
   
-        /* ── SIGNATURE BLOCK ── */
-        .sig-bottom {
-          margin-top: 40px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          align-items: end;
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
-  
-        .sig-bottom .date-block {
-          font-size: 10pt;
-          font-weight: 600;
-          color: #1a1a1a;
-        }
-  
-        .sig-bottom .sig-block {
-          text-align: center;
-          font-size: 10pt;
-        }
-  
-        .sig-bottom .sig-block .sig-label {
-          font-weight: 600;
-          color: #1a1a1a;
-        }
-  
-        .sig-bottom .sig-block .sig-name {
-          font-weight: 700;
-          color: #1a1a1a;
-          margin-top: 4px;
-        }
-  
         /* ── PROFORMA-A ── */
         .proforma-title-block {
           text-align: center;
           margin-bottom: 16px;
+          /* Page 2 starts at the sheet's edge after the break: give it page 1's 12mm. */
+          padding-top: 12mm;
         }
   
         .proforma-title-block .p-heading {
@@ -178,23 +147,6 @@
           break-inside: avoid;
         }
   
-        .proforma-sig-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 40px;
-          margin-top: 36px;
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
-
-        .proforma-sig-box .sig-line {
-          border-top: 1px solid #1a1a1a;
-          padding-top: 6px;
-          font-size: 10pt;
-          font-weight: 600;
-          color: #1a1a1a;
-        }
-  
         .proforma-final {
           margin-top: 32px;
           font-size: 10pt;
@@ -205,21 +157,6 @@
           break-inside: avoid;
         }
   
-        .proforma-officer-sig {
-          margin-top: 36px;
-          page-break-inside: avoid;
-          break-inside: avoid;
-        }
-  
-        .proforma-officer-sig .sig-line {
-          border-top: 1px solid #1a1a1a;
-          padding-top: 6px;
-          font-size: 10pt;
-          font-weight: 600;
-          color: #1a1a1a;
-          display: inline-block;
-          min-width: 200px;
-        }
       </style>
     </head>
     <body>
@@ -230,8 +167,7 @@
   
           <div class="maha-header">
             <div class="title-cell">
-              <div class="org-name">Maharashtra State Electricity</div>
-              <div class="org-name">Distribution Co. Ltd.</div>
+              <div class="org-name">Maharashtra State Electricity Distribution Co. Ltd.</div>
             </div>
           </div>
   
@@ -352,12 +288,10 @@
             </tbody>
           </table>
   
-          <div class="sig-bottom">
-            <div class="date-block">Date :- {{installation_date}}</div>
-            <div class="sig-block">
-              <div class="sig-label">Signature of Consumer</div>
-              <div class="sig-name">{{consumer_name}}</div>
-            </div>
+          <!-- Signatures as on the WCR: space to sign, the name above the line, the role below. -->
+          <div class="rpt-sig-row" style="margin-top: 36px">
+            {{> signature name=installation_date role="Date"}}
+            {{> signature name=consumer_name role="Signature of Consumer"}}
           </div>
   
         </div><!-- end page 1 -->
@@ -384,23 +318,18 @@
             order for further commissioning.
           </p>
   
-          <div class="proforma-sig-row">
-            <div class="proforma-sig-box">
-              <div class="sig-line">{{consumer_name}}</div>
-              <div style="font-size:9.5pt; margin-top:4px; color:#444;">Signature of the beneficiary</div>
-            </div>
-            <div class="proforma-sig-box">
-              <div class="sig-line">&nbsp;</div>
-              <div style="font-size:9.5pt; margin-top:4px; color:#444;">Signature of the agency with name, seal and date</div>
-            </div>
+          <div class="rpt-sig-row">
+            {{> signature name=consumer_name role="Signature of the beneficiary"}}
+            {{> signature name=vendor_name role="Signature of the agency with name, seal and date"}}
           </div>
   
           <p class="proforma-final">
             The above RTS installation has been inspected by me for Pre-Commissioning Testing of Roof Top Solar Connection on date as per guidelines issued by the office of The Chief Engineer vide letter no 21653 on dt. 18.08.2022 and found in order for commissioning.
           </p>
   
-          <div class="proforma-officer-sig">
-            <div class="sig-line">Signature of the MSEDCL Officer Name,</div>
+          <div class="rpt-sig-row" style="margin-top: 28px">
+            {{> signature name="" role="Signature of the MSEDCL Officer (name)"}}
+            <div></div>
           </div>
   
         </div><!-- end page 2 -->

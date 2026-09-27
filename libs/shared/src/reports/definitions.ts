@@ -65,14 +65,15 @@ export const DCR_REPORT: ReportDefinition = {
   shortName: 'DCR',
   description: 'Domestic Content Requirement self-declaration for MNRE/MSEDCL submission.',
   documentTag: DocumentTag.DCR,
-  templateVersion: 3,
+  // 4: prints the one application / sanction number and date the WCR prints.
+  templateVersion: 4,
   facts: [
     req('vendor_name'),
     req('installed_capacity_kw'),
     req('consumer_name'),
     req('site_address'),
-    req('application_number'),
-    opt('application_date'),
+    req('sanction_number'),
+    opt('sanction_date'),
     opt('module_wattage'),
     req('module_count'),
     opt('module_serial_numbers'),
@@ -92,16 +93,16 @@ export const NET_METERING_AGREEMENT_REPORT: ReportDefinition = {
   shortName: 'Net metering',
   description: 'Annexure-3 legal agreement between consumer and MSEDCL for net-metering.',
   documentTag: DocumentTag.NET_METERING_AGREEMENT,
-  templateVersion: 2,
+  // 3: agreement date left blank to fill by hand, customer name in the witness
+  // line, no "Shri.", customer name optional.
+  templateVersion: 3,
   facts: [
     req('site_city'),
-    req('agreement_date'),
-    req('consumer_name'),
+    opt('consumer_name'),
     req('site_address'),
     req('consumer_number'),
     opt('licensee_address'),
     req('installed_capacity_wp'),
-    opt('witness_consumer_name'),
     opt('witness_licensee_name'),
     req('signatory_licensee_name'),
   ],
@@ -113,7 +114,8 @@ export const ANNEXURE_PROFORMA_A_REPORT: ReportDefinition = {
   shortName: 'Annexure A',
   description: 'MAHAVITARAN commissioning report for grid-connected solar PV plant.',
   documentTag: DocumentTag.ANNEXURE_PROFORMA_A,
-  templateVersion: 5,
+  // 6: one-line header, WCR-style signatures (vendor name as the agency), page 2 top margin.
+  templateVersion: 6,
   facts: [
     req('consumer_name'),
     req('consumer_number'),

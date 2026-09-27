@@ -15,8 +15,19 @@ function lockedSource(fact: WorkspaceFact): string {
   return 'Fixed';
 }
 
+/** ISO dates read DD-MM-YYYY, as the reports print them; anything else as stored. */
+function asPrintedDate(fact: WorkspaceFact, value: string): string {
+  if (fact.type !== 'date') return value;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : value;
+}
+
 /** What the row shows: the unsaved draft when there is one, else what reports print. */
 function readValue(fact: WorkspaceFact, draft: string | undefined): string {
+  return asPrintedDate(fact, rawReadValue(fact, draft));
+}
+
+function rawReadValue(fact: WorkspaceFact, draft: string | undefined): string {
   if (draft === undefined) return shownValue(fact, fact.value);
   const raw = draft.trim();
   if (fact.quoteValue !== undefined && !raw) return fact.quoteValue;
