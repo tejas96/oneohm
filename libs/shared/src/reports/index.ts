@@ -1,5 +1,6 @@
 export * from './definitions';
 export * from './facts/edit-fact';
+export * from './facts/format-fact';
 export * from './facts/report-facts';
 export * from './facts/validate-fact';
 export * from './status';

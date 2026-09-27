@@ -71,6 +71,8 @@ export interface ReportFact {
    * clearing it brings the quote value back. The quote itself never changes.
    */
   readonly overridable?: boolean;
+  /** Longest value accepted, when the type's own limit is too small (a panel serial list). */
+  readonly maxLength?: number;
   /** Shown beside a read-only value in place of where it comes from: why it cannot be typed. */
   readonly readOnlyNote?: string;
   /** Printed by reports but not shown on the form: composed or derived from facts that are. */
@@ -467,7 +469,10 @@ export const REPORT_FACTS = [
     type: 'textarea',
     group: 'system',
     source: 'bom',
-    help: "From this project's BOM tab: the serial numbers recorded against its panels. Change them there.",
+    overridable: true,
+    maxLength: 10000,
+    placeholder: 'e.g. WS2405A0012, WS2405A0013',
+    help: `The serial number of every panel. Type or paste them, one per line or separated by commas; they print separated by commas. Saved for this project's reports. ${OUT_OF_DATE}`,
   },
   {
     key: 'inverter_make_model',
@@ -543,12 +548,12 @@ export const REPORT_FACTS = [
 
   {
     key: 'earthing_details',
-    label: 'Earthing details',
+    label: 'Earth resistance of each pit (Ω)',
     type: 'text',
     group: 'installation',
     source: 'manual',
-    placeholder: 'e.g. 3 - 3Ω, 4Ω, 3Ω',
-    help: 'Number of earthing pits and the resistance measured at each.',
+    placeholder: 'e.g. 3, 4, 3',
+    help: 'The resistance measured at each earthing pit, in ohms. Type the numbers only: "3, 4, 3" prints as "3 - 3Ω, 4Ω, 3Ω" (number of pits, then each value). A value typed with Ω prints as typed.',
   },
   {
     key: 'lightning_arrester_text',

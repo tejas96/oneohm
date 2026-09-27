@@ -1,5 +1,11 @@
 import { COMPANY } from '@tejas96/shared/constants';
-import { type FactKey, REPORT_FACTS, type ReportFact } from '@tejas96/shared/reports';
+import {
+  type FactKey,
+  formatEarthing,
+  formatSerials,
+  REPORT_FACTS,
+  type ReportFact,
+} from '@tejas96/shared/reports';
 import {
   CONNECTION_TYPE_LABELS,
   PROPERTY_TYPE_LABELS,
@@ -26,7 +32,10 @@ export interface ReportSource {
  * order differs between the two paths.
  */
 export function resolveFacts(source: ReportSource): Record<FactKey, string> {
-  return applyOverrides(resolveSourceFacts(source), source.project.reportFacts ?? {});
+  const facts = applyOverrides(resolveSourceFacts(source), source.project.reportFacts ?? {});
+  facts.earthing_details = formatEarthing(facts.earthing_details);
+  facts.module_serial_numbers = formatSerials(facts.module_serial_numbers);
+  return facts;
 }
 
 /**
@@ -184,8 +193,12 @@ export function resolveEditValues(
   facts: Record<FactKey, string>,
 ): Record<FactKey, string> {
   const property = project.property;
+  const stored = project.reportFacts ?? {};
   return {
     ...facts,
+    // The input starts from what was typed, not the printed form (Ω and commas added).
+    earthing_details: stored.earthing_details ?? '',
+    module_serial_numbers: stored.module_serial_numbers ?? facts.module_serial_numbers,
     site_category: str(property.propertyType),
     site_discom: str(property.discomId),
     site_connection_type: str(property.connectionType),
